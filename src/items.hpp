@@ -226,14 +226,18 @@ typedef enum ItemType
 	SPELLBOOK_STONEBLOOD,
 	SPELLBOOK_BLEED,
 	SPELLBOOK_REFLECT_MAGIC,
-	SPELLBOOK_BLANK_1,
-	SPELLBOOK_BLANK_2,
-	SPELLBOOK_BLANK_3,
-	SPELLBOOK_BLANK_4,
+	SPELLBOOK_ACID_SPRAY,
+	SPELLBOOK_STEAL_WEAPON,
+	SPELLBOOK_DRAIN_SOUL,
+	SPELLBOOK_VAMPIRIC_AURA,
 	SPELLBOOK_BLANK_5,
-	POTION_EMPTY
+	POTION_EMPTY,
+	ARTIFACT_ORB_BLUE,
+	ARTIFACT_ORB_RED,
+	ARTIFACT_ORB_PURPLE,
+	ARTIFACT_ORB_GREEN
 } ItemType;
-const int NUMITEMS = 211;
+const int NUMITEMS = 215;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -334,13 +338,16 @@ public:
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
+	void applyOrb(int player, ItemType type, Entity& entity);
 
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*
 	 * Returns which weapon hits harder.
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
-	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave);
+	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
+
+	bool isShield() const;
 
 };
 extern Uint32 itemuids;
@@ -368,6 +375,7 @@ public:
 	list_t images;              // item image filenames (inventory)
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
+	int level;					// item level for random generation
 };
 extern ItemGeneric items[NUMITEMS];
 
@@ -413,8 +421,10 @@ void item_Spellbook(Item* item, int player);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
+void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
+ItemType itemLevelCurve(Category cat);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
@@ -445,13 +455,16 @@ bool inline isMeleeWeapon(const Item& item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
 void copyItem(Item* itemToSet, Item* itemToCopy);
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode);
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats);
+node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
 ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
+
+bool loadItemLists();

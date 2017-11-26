@@ -125,6 +125,7 @@ Uint32 colorWhite = 0xFFFFFFFF;
 
 int firstendmoviealpha[30];
 int secondendmoviealpha[30];
+int thirdendmoviealpha[30];
 int intromoviealpha[30];
 int rebindkey = -1;
 int rebindaction = -1;
@@ -140,6 +141,9 @@ int firstendmovietime = 0;
 int firstendmoviestage = 0;
 int secondendmovietime = 0;
 int secondendmoviestage = 0;
+int thirdendmoviestage = 0;
+int thirdendmovietime = 0;
+int thirdEndNumLines = 6;
 real_t drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
@@ -4422,6 +4426,43 @@ void handleMainMenu(bool mode)
 				movie = true;
 			}
 		}
+		else if ( introstage == 9 )     // mid game sequence
+		{
+#ifdef MUSIC
+			if ( thirdendmoviestage == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+				thirdendmoviestage++;
+			}
+#endif
+			if ( thirdendmoviestage >= thirdEndNumLines )
+			{
+				int c;
+				for ( c = 0; c < 30; c++ )
+				{
+					thirdendmoviealpha[c] = 0;
+				}
+				fadefinished = false;
+				fadeout = false;
+				if ( multiplayer != CLIENT )
+				{
+					movie = false; // allow normal pause screen.
+					thirdendmoviestage = 0;
+					thirdendmovietime = 0;
+					introstage = 1; // return to normal game functionality
+					skipLevelsOnLoad = 5;
+					loadnextlevel = true; // load the next level.
+					pauseGame(1, false); // unpause game
+				}
+			}
+			else
+			{
+				fadefinished = false;
+				fadeout = false;
+				thirdendmovietime = 0;
+				movie = true;
+			}
+		}
 	}
 
 	// credits sequence
@@ -4768,6 +4809,87 @@ void handleMainMenu(bool mode)
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[5]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1432]);
+		}
+	}
+
+	// third end movie stage
+	if ( thirdendmoviestage > 0 )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_bmp, NULL, &pos);
+
+		if ( thirdendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
+		{
+			thirdendmovietime = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( thirdendmoviestage < thirdEndNumLines )
+			{
+				thirdendmoviestage++;
+			}
+			else if ( thirdendmoviestage == thirdEndNumLines )
+			{
+				if ( multiplayer != CLIENT )
+				{
+					fadeout = true;
+					++thirdendmoviestage;
+				}
+			}
+		}
+		Uint32 color = 0x00FFFFFF;
+		if ( thirdendmoviestage >= 1 )
+		{
+			thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+		}
+		if ( thirdendmoviestage >= 2 )
+		{
+			thirdendmoviealpha[0] = std::min(thirdendmoviealpha[0] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[0]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, language[2600]);
+		}
+		if ( thirdendmoviestage >= 3 )
+		{
+			thirdendmoviealpha[1] = std::min(thirdendmoviealpha[1] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[1]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2601]);
+		}
+		if ( thirdendmoviestage >= 4 )
+		{
+			thirdendmoviealpha[2] = std::min(thirdendmoviealpha[2] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[2]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2602]);
+		}
+		if ( thirdendmoviestage >= 5 )
+		{
+			thirdendmoviealpha[3] = std::min(thirdendmoviealpha[3] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[3]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
+		}
+		if ( thirdendmoviestage >= 6 )
+		{
+			thirdendmoviealpha[4] = std::min(thirdendmoviealpha[4] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[4]), 255) << 24;
+			if ( multiplayer == CLIENT )
+			{
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
+			}
+			else
+			{
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
+			}
 		}
 	}
 }
@@ -6859,10 +6981,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	//Random Name.
 	button = newButton();
-	strcpy(button->label, language[2450]);
+	strcpy(button->label, language[2498]);
 	button->x = button_back_x + button_back_width + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[2450]) * 12 + 8;
+	button->sizex = strlen(language[2498]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonRandomName;
 	button->visible = 1;

@@ -114,6 +114,10 @@ void gameLogic(void)
 	{
 		secondendmovietime++;
 	}
+	if ( thirdendmoviestage > 0 )
+	{
+		thirdendmovietime++;
+	}
 
 #ifdef SOUND
 	sound_update(); //Update FMOD and whatnot.
@@ -439,7 +443,7 @@ void gameLogic(void)
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -648,7 +652,15 @@ void gameLogic(void)
 					// signal clients about level change
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
-					currentlevel++;
+					if ( skipLevelsOnLoad > 0 )
+					{
+						currentlevel += skipLevelsOnLoad;
+					}
+					else
+					{
+						++currentlevel;
+					}
+					skipLevelsOnLoad = 0;
 					if ( multiplayer == SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; c++ )
@@ -756,6 +768,18 @@ void gameLogic(void)
 							default:
 								break;
 						}
+					}
+					if ( MFLAG_DISABLETELEPORT )
+					{
+						messagePlayer(clientnum, language[2382]);
+					}
+					if ( MFLAG_DISABLELEVITATION )
+					{
+						messagePlayer(clientnum, language[2383]);
+					}
+					if ( MFLAG_DISABLEDIGGING )
+					{
+						messagePlayer(clientnum, language[2450]);
 					}
 					loadnextlevel = false;
 					loading = false;
@@ -1158,7 +1182,7 @@ void gameLogic(void)
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -1526,7 +1550,7 @@ void handleButtons(void)
 			}
 		}
 		//Hide "Random Name" button if not on character naming screen.
-		if ( !strcmp(button->label, language[2450]) )
+		if ( !strcmp(button->label, language[2498]) )
 		{
 			if ( charcreation_step != 4 )
 			{
@@ -2014,6 +2038,10 @@ void pauseGame(int mode, int ignoreplayer)
 		return;
 	}
 	if ( mode == 2 && gamePaused )
+	{
+		return;
+	}
+	if ( introstage == 9 )
 	{
 		return;
 	}

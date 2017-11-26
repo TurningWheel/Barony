@@ -36,7 +36,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
@@ -101,7 +101,7 @@ void initGhoul(Entity* my, Stat* myStats)
 				case 2:
 					if ( rand() % 10 == 0 )
 					{
-						newItem(itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+						newItem(itemLevelCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
 					}
 				case 1:
 					if ( rand() % 4 == 0 )
@@ -241,8 +241,8 @@ void ghoulDie(Entity* my)
 void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL;
-	Entity* rightbody = NULL;
+	Entity* entity = nullptr;
+	Entity* rightbody = nullptr;
 	int bodypart;
 
 	// set invisibility //TODO: isInvisible()?
@@ -253,9 +253,9 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
@@ -278,9 +278,9 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
@@ -294,6 +294,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -303,9 +304,9 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	my->x -= cos(my->yaw);
 	my->y -= sin(my->yaw);
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -314,45 +315,74 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			if ( bodypart == 3 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( bodypart == 6 )
+			if ( bodypart == LIMB_HUMANOID_LEFTARM )
 			{
-				if ( MONSTER_ATTACK )
+				if ( my->monsterAttack > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// vertical chop windup
+					if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							entity->pitch = 0;
+							my->monsterArmbended = 0;
+							//my->monsterWeaponYaw = 0; // keep the arms outstretched.
+							entity->roll = 0;
+							entity->skill[1] = 0;
+						}
+
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(1, 0, nullptr);
+							}
+						}
 					}
-					else
+					// vertical chop attack
+					else if ( my->monsterAttack == 1 )
 					{
-						if ( entity->pitch >= -PI / 2 )
+						my->monsterWeaponYaw = 0;
+						if ( entity->pitch >= 3 * PI / 2 )
 						{
-							MONSTER_ARMBENDED = 1;
+							my->monsterArmbended = 1;
 						}
-						if ( entity->pitch >= PI / 4 )
+
+						if ( entity->skill[1] == 0 )
 						{
-							entity->skill[0] = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							// chop forwards
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								entity->skill[1] = 1;
+							}
 						}
-						else
+						else if ( entity->skill[1] == 1 )
 						{
-							entity->pitch += .25;
+							my->monsterWeaponYaw = -PI / 16.0;
+							// return to neutral
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 25 * PI / 16, false, 0.0) )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+							}
 						}
 					}
 				}
 				else
 				{
-					MONSTER_WEAPONYAW = -PI / 16.0;
+					my->monsterWeaponYaw = -PI / 16.0;
 					entity->pitch = -7 * PI / 16;
 					entity->roll = 0;
 				}
@@ -399,39 +429,27 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
-		else if ( bodypart == 4 || bodypart == 5 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
-			if ( bodypart == 5 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
-				if ( MONSTER_ATTACK )
+				if ( my->monsterAttack > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					 //vertical chop
+					 //get leftarm from bodypart 6 element if ready to attack
+					Entity* leftarm = (Entity*)node->next->element;
+					if ( my->monsterAttack == 1 || my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( leftarm != nullptr )
 						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
+							// follow the right arm animation.
+							entity->pitch = leftarm->pitch;
+							entity->roll = -leftarm->roll;
 						}
 					}
 				}
 				else
 				{
-					MONSTER_WEAPONYAW = -PI / 16.0;
 					entity->pitch = -7 * PI / 16;
 					entity->roll = 0;
 				}
@@ -483,21 +501,21 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				entity->x += .5 * cos(my->yaw);
 				entity->y += .5 * sin(my->yaw);
 				entity->z += 1.5;
 				entity->pitch = PI / 16;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
 				entity->x -= .5 * cos(my->yaw) - 1 * cos(my->yaw + PI / 2);
 				entity->y -= .5 * sin(my->yaw) - 1 * sin(my->yaw + PI / 2);
 				entity->z += 4;
 				entity->yaw += PI / 16;
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
 				entity->x -= .5 * cos(my->yaw) + 1 * cos(my->yaw + PI / 2);
 				entity->y -= .5 * sin(my->yaw) + 1 * sin(my->yaw + PI / 2);
 				entity->z += 4;
@@ -505,28 +523,32 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 8;
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 				entity->x += 1 * cos(my->yaw) + 2 * cos(my->yaw + PI / 2);
 				entity->y += 1 * sin(my->yaw) + 2 * sin(my->yaw + PI / 2);
 				entity->z -= 1;
-				entity->yaw -= MONSTER_WEAPONYAW;
+				entity->yaw -= my->monsterWeaponYaw;
 				break;
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 				entity->x += 1 * cos(my->yaw) - 2 * cos(my->yaw + PI / 2);
 				entity->y += 1 * sin(my->yaw) - 2 * sin(my->yaw + PI / 2);
 				entity->z -= 1;
-				entity->yaw += MONSTER_WEAPONYAW;
+				entity->yaw += my->monsterWeaponYaw;
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 	my->x += cos(my->yaw);
 	my->y += sin(my->yaw);

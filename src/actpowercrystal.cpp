@@ -143,7 +143,7 @@ void Entity::actPowerCrystal()
 			this->vel_z = this->fskill[1]; // reset velocity at the mid point of animation
 		}
 
-		spawnAmbientParticles(80, 579, 10 + rand() % 40);
+		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
 
 		if ( crystalTurning == 1 )
 		{

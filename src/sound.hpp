@@ -68,6 +68,10 @@ extern FMOD_SOUND** minotaurmusic, *herxmusic, *templemusic;
 extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic;
 extern FMOD_SOUND* introductionmusic;
 #define NUMMINOTAURMUSIC 2
+extern FMOD_SOUND** cavesmusic;
+extern FMOD_SOUND** citadelmusic;
+#define NUMCAVESMUSIC 3
+#define NUMCITADELMUSIC 2
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
 extern FMOD_CHANNEL* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
@@ -144,6 +148,10 @@ extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
 extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
+extern OPENAL_BUFFER* cavesmusic;
+extern OPENAL_BUFFER* citadelmusic;
+#define NUMCAVESMUSIC 3
+#define NUMCITADELMUSIC 2
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
 extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.

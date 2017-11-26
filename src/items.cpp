@@ -153,6 +153,87 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	return item;
 }
 
+void addItemToMonsterInventory(Item &item, list_t& inventory)
+{
+	// add the item to the inventory
+
+	item.node = list_AddNodeLast(&inventory);
+	item.node->element = &item;
+	item.node->deconstructor = &defaultDeconstructor;
+	item.node->size = sizeof(Item);
+
+	int x, y;
+	bool notfree = false, foundaspot = false;
+
+	bool is_spell = false;
+	if (itemCategory(&item) == SPELL_CAT)
+	{
+		is_spell = true;
+	}
+
+	x = 0;
+	while ( 1 )
+	{
+		for ( y = 0; y < INVENTORY_SIZEY; ++y )
+		{
+			node_t* node;
+			for ( node = inventory.first; node != nullptr; node = node->next )
+			{
+				Item* tempItem = (Item*)node->element;
+				if ( tempItem == &item )
+				{
+					continue;
+				}
+				if ( tempItem )
+				{
+					if ( tempItem->x == x && tempItem->y == y )
+					{
+						if (is_spell && itemCategory(tempItem) == SPELL_CAT)
+						{
+							notfree = true;  //Both spells. Can't fit in the same slot.
+						}
+						else if (!is_spell && itemCategory(tempItem) != SPELL_CAT)
+						{
+							notfree = true;  //Both not spells. Can't fit in the same slot.
+						}
+					}
+				}
+			}
+			if ( notfree )
+			{
+				notfree = false;
+				continue;
+			}
+			item.x = x;
+			item.y = y;
+			foundaspot = true;
+			break;
+		}
+		if ( foundaspot )
+		{
+			break;
+		}
+		++x;
+	}
+
+	// add the item to the hotbar automatically
+	if ( !intro && auto_hotbar_new_items )
+	{
+		if ( &inventory == &stats[clientnum]->inventory )
+		{
+			int c;
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			{
+				if ( !uidToItem(hotbar[c].item) )
+				{
+					hotbar[c].item = item.uid;
+					break;
+				}
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	uidToItem
@@ -306,6 +387,113 @@ ItemType itemCurve(Category cat)
 			{
 				if ( pick == 0 )
 				{
+					return static_cast<ItemType>(c);
+				}
+				else
+				{
+					pick--;
+				}
+			}
+		}
+	}
+
+	return GEM_ROCK;
+}
+
+/*-------------------------------------------------------------------------------
+
+itemLevelCurve
+
+Selects an item type from the given category of items by factoring in
+dungeon level and defined level of the item
+
+-------------------------------------------------------------------------------*/
+
+ItemType itemLevelCurve(Category cat)
+{
+	int numitems = NUMITEMS;
+	bool chances[NUMITEMS];
+	int c;
+
+	if ( cat < 0 || cat >= NUMCATEGORIES )
+	{
+		printlog("warning: itemLevelCurve() called with bad category value!\n");
+		return GEM_ROCK;
+	}
+
+	Uint32 numoftype = 0;
+	for ( c = 0; c < numitems; ++c )
+	{
+		chances[c] = false;
+		if ( items[c].category == cat )
+		{
+			if ( items[c].level != -1 && (items[c].level <= currentlevel) )
+			{
+				chances[c] = true;
+				numoftype++;
+				if ( cat == TOOL )
+				{
+					switch ( (ItemType)c )
+					{
+						case TOOL_TINOPENER:
+							if ( prng_get_uint() % 2 )   // 50% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						case TOOL_LANTERN:
+							if ( prng_get_uint() % 4 == 0 )   // 25% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
+	if ( numoftype == 0 )
+	{
+		printlog("warning: category passed to itemLevelCurve has no items!\n");
+		return GEM_ROCK;
+	}
+
+	// calculate number of items left
+	Uint32 numleft = 0;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( chances[c] == true )
+		{
+			numleft++;
+		}
+	}
+	if ( numleft == 0 )
+	{
+		return GEM_ROCK;
+	}
+
+	// most gems are worthless pieces of glass
+	if ( cat == GEM )
+	{
+		if ( prng_get_uint() % 10 )
+		{
+			return GEM_GLASS;
+		}
+	}
+
+	// pick the item
+	int pick = prng_get_uint() % numleft;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( items[c].category == cat )
+		{
+			if ( chances[c] == true )
+			{
+				if ( pick == 0 )
+				{
+					messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
 					return static_cast<ItemType>(c);
 				}
 				else
@@ -924,12 +1112,60 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		return nullptr;
 	}
 
-	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	/*if ( monsterStats->type == SHADOW && itemCategory(item) == SPELLBOOK )
 	{
-		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE) && itemCategory(item) == SPELLBOOK )
+		//Shadows don't drop spellbooks.
+		itemDroppable = false;
+	}*/
+
+	if ( monsterStats && item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	{
+		if ( monsterStats->type == SHADOW )
+		{
+			itemDroppable = false;
+		}
+
+		if ( (monsterStats->type == KOBOLD 
+			|| monsterStats->type == COCKATRICE 
+			|| monsterStats->type == INSECTOID 
+			|| monsterStats->type == INCUBUS
+			|| monsterStats->type == VAMPIRE)
+			&& itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.
 			itemDroppable = false;
+		}
+		if ( monsterStats->type == INSECTOID && itemCategory(item) == THROWN )
+		{
+			// insectoids won't drop their un-thrown daggers.
+			itemDroppable = false;
+		}
+		if ( monsterStats->type == INCUBUS && itemCategory(item) == POTION )
+		{
+			// incubus won't drop excess potions.
+			itemDroppable = false;
+		}
+		if ( monsterStats->type == GOATMAN && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK) )
+		{
+			// goatman sometimes won't drop excess potions.
+			itemDroppable = false;
+		}
+	}
+	else if ( monsterStats && monsterStats->HP <= 0 )
+	{
+		// we're dropping the item on death.
+		switch ( itemCategory(item) )
+		{
+			case WEAPON:
+			case ARMOR:
+			case THROWN:
+				if ( item->status == BROKEN )
+				{
+					itemDroppable = false;
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -1638,10 +1874,10 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_STONEBLOOD:
 		case SPELLBOOK_BLEED:
 		case SPELLBOOK_REFLECT_MAGIC:
-		case SPELLBOOK_BLANK_1:
-		case SPELLBOOK_BLANK_2:
-		case SPELLBOOK_BLANK_3:
-		case SPELLBOOK_BLANK_4:
+		case SPELLBOOK_ACID_SPRAY:
+		case SPELLBOOK_STEAL_WEAPON:
+		case SPELLBOOK_DRAIN_SOUL:
+		case SPELLBOOK_VAMPIRIC_AURA:
 		case SPELLBOOK_BLANK_5:
 			item_Spellbook(item, player);
 			break;
@@ -1756,9 +1992,130 @@ void useItem(Item* item, int player)
 		case ARTIFACT_BOW:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
+		case ARTIFACT_ORB_BLUE:
+		case ARTIFACT_ORB_RED:
+		case ARTIFACT_ORB_PURPLE:
+		case ARTIFACT_ORB_GREEN:
+			equipItem(item, &stats[player]->weapon, player);
+			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
 			break;
+	}
+
+	// on-equip messages.
+	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
+	{
+		switch ( item->type )
+		{
+			case AMULET_LIFESAVING:
+				messagePlayer(player, language[2478]);
+				break;
+			case AMULET_WATERBREATHING:
+				messagePlayer(player, language[2479]);
+				break;
+			case AMULET_MAGICREFLECTION:
+				messagePlayer(player, language[2480]);
+				break;
+			case HAT_WIZARD:
+				messagePlayer(player, language[2481]);
+				break;
+			case SPIKED_GAUNTLETS:
+			case BRASS_KNUCKLES:
+			case IRON_KNUCKLES:
+				messagePlayer(player, language[2482]);
+				break;
+			case HAT_JESTER:
+				messagePlayer(player, language[2483]);
+				break;
+			case IRON_BOOTS_WATERWALKING:
+				messagePlayer(player, language[2484]);
+				break;
+			case LEATHER_BOOTS_SPEED:
+				messagePlayer(player, language[2485]);
+				break;
+			case CLOAK_INVISIBILITY:
+				messagePlayer(player, language[2486]);
+				break;
+			case CLOAK_PROTECTION:
+				messagePlayer(player, language[2487]);
+				break;
+			case CLOAK_MAGICREFLECTION:
+				messagePlayer(player, language[2488]);
+				break;
+			case GLOVES_DEXTERITY:
+				messagePlayer(player, language[2489]);
+				break;
+			case BRACERS_CONSTITUTION:
+				messagePlayer(player, language[2490]);
+				break;
+			case GAUNTLETS_STRENGTH:
+				messagePlayer(player, language[2491]);
+				break;
+			case AMULET_POISONRESISTANCE:
+				messagePlayer(player, language[2492]);
+				break;
+			case RING_ADORNMENT:
+				messagePlayer(player, language[2384]);
+				break;
+			case RING_SLOWDIGESTION:
+				messagePlayer(player, language[2385]);
+				break;
+			case RING_PROTECTION:
+				messagePlayer(player, language[2386]);
+				break;
+			case RING_WARNING:
+				messagePlayer(player, language[2387]);
+				break;
+			case RING_STRENGTH:
+				messagePlayer(player, language[2388]);
+				break;
+			case RING_CONSTITUTION:
+				messagePlayer(player, language[2389]);
+				break;
+			case RING_INVISIBILITY:
+				messagePlayer(player, language[2412]);
+				break;
+			case RING_MAGICRESISTANCE:
+				messagePlayer(player, language[2413]);
+				break;
+			case RING_CONFLICT:
+				messagePlayer(player, language[2414]);
+				break;
+			case RING_LEVITATION:
+				if ( !MFLAG_DISABLELEVITATION )
+				{
+					// can levitate
+					messagePlayer(player, language[2415]);
+				}
+				else
+				{
+					messagePlayer(player, language[2381]);
+				}
+				break;
+			case RING_REGENERATION:
+				messagePlayer(player, language[2416]);
+				break;
+			case RING_TELEPORTATION:
+				messagePlayer(player, language[2417]);
+				break;
+			case STEEL_BOOTS_FEATHER:
+				messagePlayer(player, language[2418]);
+				break;
+			case STEEL_BOOTS_LEVITATION:
+				if ( !MFLAG_DISABLELEVITATION )
+				{
+					// can levitate
+					messagePlayer(player, language[2419]);
+				}
+				else
+				{
+					messagePlayer(player, language[2381]);
+				}
+				break;
+			default:
+				break;
+		}
 	}
 }
 
@@ -2057,8 +2414,11 @@ Sint32 Item::weaponGetAttack() const
 	{
 		attack += 7;
 	}
-	attack *= (double)(status / 5.0);
-
+	// old formula
+	//attack *= (double)(status / 5.0);
+	//
+	// new formula
+	attack += status - 3;
 	return attack;
 }
 
@@ -2343,6 +2703,11 @@ void Item::apply(int player, Entity* entity)
 		return;
 	}
 
+	if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+	{
+		applyOrb(player, type, *entity);
+	}
+
 	// for clients:
 	if ( multiplayer == CLIENT )
 	{
@@ -2421,7 +2786,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemCurve(static_cast<Category>(category - 1));
+					itemId = itemLevelCurve(static_cast<Category>(category - 1));
 				}
 				else
 				{
@@ -2432,11 +2797,11 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(WEAPON));
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(ARMOR));
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR));
 						}
 					}
 					else if ( category == 15 )
@@ -2445,11 +2810,11 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(AMULET));
+							itemId = itemLevelCurve(static_cast<Category>(AMULET));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(RING));
+							itemId = itemLevelCurve(static_cast<Category>(RING));
 						}
 					}
 					else if ( category == 16 )
@@ -2458,15 +2823,15 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(SCROLL));
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK));
 						}
 					}
 				}
@@ -2543,7 +2908,41 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
+node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
+{
+	if ( spellIDToFind == SPELL_NONE )
+	{
+		return nullptr;
+	}
+
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+	//messagePlayer(clientnum, "Got into spellbookNodeInInventory().");
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr && itemCategory(item) == SPELLBOOK && getSpellIDFromSpellbook(item->type) == spellIDToFind )
+		{
+			return node;
+		}
+		else
+		{
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				//messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
+			}
+		}
+	}
+
+	//messagePlayer(clientnum, "Spellbook %d not found.", spellIDToFind);
+
+	return nullptr;
+}
+
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
 {
 	if ( myStats == nullptr )
 	{
@@ -2556,6 +2955,10 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
 		if ( item != nullptr )
 		{
 			if ( isRangedWeapon(*item) )
+			{
+				return node;
+			}
+			if ( includeMagicstaff && itemCategory(item) == MAGICSTAFF )
 			{
 				return node;
 			}
@@ -2611,7 +3014,17 @@ bool inline isMeleeWeapon(const Item& item)
 	return ( !isRangedWeapon(item) );
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
+bool Item::isShield() const
+{
+	if ( itemCategory(this) != ARMOR || checkEquipType(this) != TYPE_SHIELD )
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -2622,14 +3035,14 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false;
 	}
 
-	if ( myStats->weapon && myStats->weapon->beatitude < 0 )
+	if ( (myStats->weapon && myStats->weapon->beatitude < 0) && !overrideCursed )
 	{
 		return false; //Can't unequip cursed items!
 	}
 
 	item = (Item*)inventoryNode->element;
 	
-	if ( item->count == 1 )
+	if ( item->count == 1 || moveStack )
 	{
 		// TODO: handle stacks.
 		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
@@ -2642,7 +3055,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			copyItem(item, myStats->weapon);
 			copyItem(myStats->weapon, tmpItem);
-			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}
@@ -2669,14 +3082,16 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			return false;
 		}
+
 		copyItem(tmpItem, item);
 		tmpItem->count = 1;
 		item->count--;
+
 		if ( myStats->weapon != nullptr )
 		{
 			my->addItemToMonsterInventory(myStats->weapon);
 			myStats->weapon = tmpItem;
-			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}
@@ -2751,8 +3166,13 @@ bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
 	return false;
 }
 
-void copyItem(Item* itemToSet, Item* itemToCopy)
+void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use references instead...
 {
+	if ( !itemToSet || !itemToCopy )
+	{
+		return;
+	}
+
 	itemToSet->type = itemToCopy->type;
 	itemToSet->status = itemToCopy->status;
 	itemToSet->beatitude = itemToCopy->beatitude;
