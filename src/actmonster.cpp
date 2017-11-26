@@ -5664,4 +5664,5 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[3
 		messagePlayer(monsterclicked, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
 		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
 	}
+	return true;
 }
