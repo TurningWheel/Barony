@@ -1435,13 +1435,13 @@ void useItem(Item* item, int player)
 		return;
 	}
 
-	if (openedChest[player] && itemCategory(item) != SPELL_CAT)
+	if (openedChest[player] && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		//If a chest is open, put the item in the chest.
 		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
-	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT)
+	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype )
@@ -1684,49 +1684,49 @@ void useItem(Item* item, int player)
 			break;
 		case POTION_WATER:
 			item_PotionWater(item, players[player]->entity);
-			break;
+			return; //Potions are consumed, so return.
 		case POTION_BOOZE:
 			item_PotionBooze(item, players[player]->entity);
-			break;
+			return;
 		case POTION_JUICE:
 			item_PotionJuice(item, players[player]->entity);
-			break;
+			return;
 		case POTION_SICKNESS:
 			item_PotionSickness(item, players[player]->entity);
-			break;
+			return;
 		case POTION_CONFUSION:
 			item_PotionConfusion(item, players[player]->entity);
-			break;
+			return;
 		case POTION_EXTRAHEALING:
 			item_PotionExtraHealing(item, players[player]->entity);
-			break;
+			return;
 		case POTION_HEALING:
 			item_PotionHealing(item, players[player]->entity);
-			break;
+			return;
 		case POTION_CUREAILMENT:
 			item_PotionCureAilment(item, players[player]->entity);
-			break;
+			return;
 		case POTION_BLINDNESS:
 			item_PotionBlindness(item, players[player]->entity);
-			break;
+			return;
 		case POTION_RESTOREMAGIC:
 			item_PotionRestoreMagic(item, players[player]->entity);
-			break;
+			return;
 		case POTION_INVISIBILITY:
 			item_PotionInvisibility(item, players[player]->entity);
-			break;
+			return;
 		case POTION_LEVITATION:
 			item_PotionLevitation(item, players[player]->entity);
-			break;
+			return;
 		case POTION_SPEED:
 			item_PotionSpeed(item, players[player]->entity);
-			break;
+			return;
 		case POTION_ACID:
 			item_PotionAcid(item, players[player]->entity);
-			break;
+			return;
 		case POTION_PARALYSIS:
 			item_PotionParalysis(item, players[player]->entity);
-			break;
+			return;
 		case POTION_EMPTY:
 			messagePlayer(player, language[2359]);
 			break;
