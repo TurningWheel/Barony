@@ -3788,8 +3788,8 @@ timeToGoAgain:
 					}
 					entity->z = -64;
 					entity->yaw = angle * (PI / 2.f);
-					entity->sizex = 7;
-					entity->sizey = 7;
+					entity->sizex = 8;
+					entity->sizey = 8;
 					entity->behavior = &actBoulder;
 					entity->flags[UPDATENEEDED] = true;
 					entity->flags[PASSABLE] = true;
@@ -3838,8 +3838,8 @@ timeToGoAgain:
 					}
 					entity->z = -64;
 					entity->yaw = angle * (PI / 2.f);
-					entity->sizex = 7;
-					entity->sizey = 7;
+					entity->sizex = 8;
+					entity->sizey = 8;
 					entity->behavior = &actBoulder;
 					entity->flags[UPDATENEEDED] = true;
 					entity->flags[PASSABLE] = true;
@@ -3888,8 +3888,8 @@ timeToGoAgain:
 					}
 					entity->z = -64;
 					entity->yaw = angle * (PI / 2.f);
-					entity->sizex = 7;
-					entity->sizey = 7;
+					entity->sizex = 8;
+					entity->sizey = 8;
 					entity->behavior = &actBoulder;
 					entity->flags[UPDATENEEDED] = true;
 					entity->flags[PASSABLE] = true;
