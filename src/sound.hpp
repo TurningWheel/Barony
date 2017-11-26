@@ -148,8 +148,8 @@ extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
 extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
-extern OPENAL_BUFFER* cavesmusic;
-extern OPENAL_BUFFER* citadelmusic;
+extern OPENAL_BUFFER** cavesmusic;
+extern OPENAL_BUFFER** citadelmusic;
 #define NUMCAVESMUSIC 3
 #define NUMCITADELMUSIC 2
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
