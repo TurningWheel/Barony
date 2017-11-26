@@ -6117,6 +6117,7 @@ void createMonsterEquipment(Stat* stats)
 	{
 		for ( itemIndex = 0; itemIndex < 10; ++itemIndex )
 		{
+			bool generateItem = true;
 			category = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + ITEM_SLOT_CATEGORY];
 			if ( category > 0 && stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 			{
@@ -6174,10 +6175,18 @@ void createMonsterEquipment(Stat* stats)
 			}
 			else
 			{
-				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2);
+				if ( static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2) >= 0 )
+				{
+					itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2);
+				}
+				else
+				{
+					itemId = ItemType::WOODEN_SHIELD;
+					generateItem = false;
+				}
 			}
 
-			if ( itemId >= 0 )
+			if ( itemId >= 0 && generateItem )
 			{
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 1]);
 				if ( itemStatus == 0 )
