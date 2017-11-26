@@ -41,7 +41,8 @@ static const int EFF_BLEEDING = 14;
 static const int EFF_SLOW = 15;
 static const int EFF_MAGICRESIST = 16;
 static const int EFF_MAGICREFLECT = 17;
-static const int NUMEFFECTS = 18;
+static const int EFF_VAMPIRICAURA = 18;
+static const int NUMEFFECTS = 19;
 
 // stats
 static const int STAT_STR = 0;
@@ -124,6 +125,9 @@ static const int NUMCATEGORIES = 14;
 #define ITEM_CUSTOM_SLOT_LIMIT 6
 #define ITEM_SLOT_NUM ITEM_SLOT_INV_6 + ITEM_SLOT_NUMPROPERTIES
 
+//--Stat Flag constants--
+static const int STAT_FLAG_NPC = 0;
+
 typedef enum
 {
 	MALE,
@@ -199,6 +203,7 @@ public:
 	Stat* copyStats();
 	void printStats();
 	Sint32 EDITOR_ITEMS[ITEM_SLOT_NUM];
+	int pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
 };
 extern Stat* stats[MAXPLAYERS];
 

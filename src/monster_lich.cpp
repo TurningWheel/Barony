@@ -193,11 +193,7 @@ void lichDie(Entity* my)
 	my->removeMonsterDeathNodes();
 
 	//playSoundEntity(my, 94, 128);
-	if ( my->light )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
+	my->removeLightField();
 	// kill all other monsters on the level
 	for ( node = map.entities->first; node != NULL; node = nextnode )
 	{
@@ -255,11 +251,7 @@ void lichAnimate(Entity* my, double dist)
 	int bodypart;
 
 	// remove old light field
-	if ( my->light )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
+	my->removeLightField();
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
@@ -303,6 +295,7 @@ void lichAnimate(Entity* my, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}

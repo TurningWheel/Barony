@@ -245,6 +245,37 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_reflectMagic.duration = 3000;
 	strcpy(spellElement_reflectMagic.name, language[2394]);
 
+	spellElementConstructor(&spellElement_acidSpray);
+	spellElement_acidSpray.mana = 20;
+	spellElement_acidSpray.base_mana = 20;
+	spellElement_acidSpray.overload_multiplier = 1;
+	spellElement_acidSpray.damage = 7;
+	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
+	strcpy(spellElement_acidSpray.name, language[2395]);
+
+	spellElementConstructor(&spellElement_stealWeapon);
+	spellElement_stealWeapon.mana = 80;
+	spellElement_stealWeapon.base_mana = 80;
+	spellElement_stealWeapon.overload_multiplier = 1;
+	spellElement_stealWeapon.damage = 0;
+	spellElement_stealWeapon.duration = 0;
+	strcpy(spellElement_stealWeapon.name, language[2396]);
+
+	spellElementConstructor(&spellElement_drainSoul);
+	spellElement_drainSoul.mana = 17;
+	spellElement_drainSoul.base_mana = 17;
+	spellElement_drainSoul.overload_multiplier = 1;
+	spellElement_drainSoul.damage = 18;
+	spellElement_drainSoul.duration = 0;
+	strcpy(spellElement_drainSoul.name, language[2397]);
+
+	spellElementConstructor(&spellElement_vampiricAura);
+	spellElement_vampiricAura.mana = 30;
+	spellElement_vampiricAura.base_mana = 30;
+	spellElement_vampiricAura.overload_multiplier = 1;
+	spellElement_vampiricAura.damage = 0;
+	spellElement_vampiricAura.duration = 1500; //TODO: Decide on something.
+	strcpy(spellElement_vampiricAura.name, language[2398]);
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
@@ -698,6 +729,80 @@ void setupSpells()   ///TODO: Verify this function.
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
+	element->node = node; //Tell the element what list it resides in.
+	element->channeled = true;
+
+	spellConstructor(&spell_acidSpray);
+	strcpy(spell_acidSpray.name, language[2395]);
+	spell_acidSpray.ID = SPELL_ACID_SPRAY;
+	spell_acidSpray.difficulty = 75;
+	node = list_AddNodeLast(&spell_acidSpray.elements);
+	node->element = copySpellElement(&spellElement_missile_trio);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_acidSpray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_stealWeapon);
+	strcpy(spell_stealWeapon.name, language[2396]);
+	spell_stealWeapon.ID = SPELL_STEAL_WEAPON;
+	spell_stealWeapon.difficulty = 100;
+	node = list_AddNodeLast(&spell_stealWeapon.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_stealWeapon);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_drainSoul);
+	strcpy(spell_drainSoul.name, language[2397]);
+	spell_drainSoul.ID = SPELL_DRAIN_SOUL;
+	spell_drainSoul.difficulty = 75;
+	node = list_AddNodeLast(&spell_drainSoul.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_drainSoul);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_vampiricAura);
+	strcpy(spell_vampiricAura.name, language[2398]);
+	spell_vampiricAura.ID = SPELL_VAMPIRIC_AURA;
+	spell_vampiricAura.difficulty = 50;
+	spell_vampiricAura.elements.first = nullptr;
+	spell_vampiricAura.elements.last = nullptr;
+	node = list_AddNodeLast(&spell_vampiricAura.elements);
+	node->element = copySpellElement(&spellElement_vampiricAura);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
 	element->node = node; //Tell the element what list it resides in.
 	element->channeled = true;
 }

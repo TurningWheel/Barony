@@ -30,8 +30,6 @@
 
 #define ARROW_STUCK my->skill[0]
 #define ARROW_LIFE my->skill[1]
-#define ARROW_POWER my->skill[3]
-#define ARROW_POISON my->skill[4]
 #define ARROW_VELX my->vel_x
 #define ARROW_VELY my->vel_y
 #define ARROW_VELZ my->vel_z
@@ -49,9 +47,9 @@ void actArrow(Entity* my)
 
 	my->skill[2] = -7; // invokes actEmpty() on clients
 
-	if ( !ARROW_POWER )
+	if ( my->arrowPower == 0 )
 	{
-		ARROW_POWER = 10 + (my->sprite == 167);
+		my->arrowPower = 10 + (my->sprite == 167);
 	}
 
 	// lifespan
@@ -104,7 +102,24 @@ void actArrow(Entity* my)
 					}
 
 					// do damage
-					damage = std::max(ARROW_POWER - AC(hitstats), 0) * damagetables[hitstats->type][4];
+					if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+					{
+						if ( hit.entity->behavior == &actPlayer && hitstats && !hitstats->defending )
+						{
+							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
+						}
+						else
+						{
+							damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+						}
+					}
+					else
+					{
+						damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+					}
+					damage *= damagetables[hitstats->type][4];
+					//messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
+					//messagePlayer(0, "Resolved to %d damage.", damage);
 					hit.entity->modHP(-damage);
 
 					// write obituary
@@ -168,6 +183,7 @@ void actArrow(Entity* my)
 					}
 					else
 					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							if ( hit.entity->skill[2] == clientnum )
@@ -254,6 +270,17 @@ void actArrow(Entity* my)
 								{
 									messagePlayer(parent->skill[2], language[447]);
 								}
+								else if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+								{
+									if ( hitstats->type < KOBOLD ) //Original monster count
+									{
+										messagePlayerColor(parent->skill[2], color, language[2513], language[90 + hitstats->type]);
+									}
+									else if ( hitstats->type >= KOBOLD ) //New monsters
+									{
+										messagePlayerColor(parent->skill[2], color, language[2513], language[2000 + (hitstats->type - KOBOLD)]);
+									}
+								}
 							}
 							else
 							{
@@ -270,23 +297,59 @@ void actArrow(Entity* my)
 										messagePlayer(parent->skill[2], language[450]);
 									}
 								}
+								else if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+								{
+									if ( hitstats->type < KOBOLD ) //Original monster count
+									{
+										messagePlayerColor(parent->skill[2], color, language[2514], language[90 + hitstats->type]);
+									}
+									else if ( hitstats->type >= KOBOLD ) //New monsters
+									{
+										messagePlayerColor(parent->skill[2], color, language[2514], language[2000 + (hitstats->type - KOBOLD)]);
+									}
+								}
 							}
 						}
 					}
 					else if ( hit.entity->behavior == &actPlayer )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(hit.entity->skill[2], color, language[451]);
+						if ( my )
+						{
+							if ( my->sprite == 78 )
+							{
+								// rock.
+								messagePlayerColor(hit.entity->skill[2], color, language[2512]);
+							}
+							else if (my->sprite == 167)
+							{
+								// bolt.
+								messagePlayerColor(hit.entity->skill[2], color, language[2511]);
+							}
+							else
+							{
+								// arrow.
+								messagePlayerColor(hit.entity->skill[2], color, language[451]);
+							}
+						}
+						else
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[451]);
+						}
 						if ( damage == 0 )
 						{
 							messagePlayer(hit.entity->skill[2], language[452]);
 						}
+						else if (my->arrowArmorPierce > 0 && AC(hitstats) > 0)
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[2515]);
+						}
 					}
-					if ( ARROW_POISON && damage > 0 )
+					if ( my->arrowPoisonTime > 0 && damage > 0 )
 					{
 						hitstats->poisonKiller = my->parent;
 						hitstats->EFFECTS[EFF_POISONED] = true;
-						hitstats->EFFECTS_TIMERS[EFF_POISONED] = ARROW_POISON;
+						hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);

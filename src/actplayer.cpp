@@ -141,11 +141,7 @@ void actDeathCam(Entity* my)
 		}
 	}
 
-	if (my->light)
-	{
-		list_RemoveNode(my->light->node);
-		my->light = nullptr;
-	}
+	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
 
 	camera.x = my->x / 16.f;
@@ -896,8 +892,10 @@ void actPlayer(Entity* my)
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
-			if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]
+				|| lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
+				// can swim in lavatiles or swimmingtiles only.
 				if ( rand() % 400 == 0 && multiplayer != CLIENT )
 				{
 					my->increaseSkill(PRO_SWIMMING);
@@ -911,14 +909,14 @@ void actPlayer(Entity* my)
 					{
 						messagePlayer(PLAYER_NUM, language[573]);
 					}
-					else
+					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						playSound(136, 128);
 					}
 				}
 				if ( multiplayer != CLIENT )
 				{
-					if ( !lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						if ( my->flags[BURNING] )
 						{
@@ -968,7 +966,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMOVE -= .03;
 				}
 			}
-			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && !swimming)
+			if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
 				if (!stats[clientnum]->defending)
 				{
@@ -1193,11 +1191,9 @@ void actPlayer(Entity* my)
 	{
 		PLAYER_TORCH = 0;
 	}
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
+
+	my->removeLightField();
+
 	if ( PLAYER_TORCH && my->light == NULL )
 	{
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
@@ -1276,7 +1272,7 @@ void actPlayer(Entity* my)
 								entity = newEntity(160, 1, map.entities);
 								entity->x = my->x;
 								entity->y = my->y;
-								entity->z = 7.4 + (rand() % 20) / 100.f;
+								entity->z = 8.0 + (rand() % 20) / 100.0;
 								entity->parent = my->getUID();
 								entity->sizex = 2;
 								entity->sizey = 2;
@@ -1504,11 +1500,7 @@ void actPlayer(Entity* my)
 						messagePlayer(PLAYER_NUM, language[578]);
 					}
 				}
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-					my->light = NULL;
-				}
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -1546,7 +1538,7 @@ void actPlayer(Entity* my)
 		weightratio = fmin(fmax(0, weightratio), 1);
 
 		// calculate movement forces
-		if ( !command )
+		if ( !command && my->isMobile() )
 		{
 			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 			float x_force = 0;
@@ -1596,10 +1588,15 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			PLAYER_VELX += y_force * cos(my->yaw) * .045 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += y_force * sin(my->yaw) * .045 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
+			real_t speedFactor = std::min((my->getDEX() * 0.4 + 13) * weightratio, 25 * 0.5 + 10);
+			if ( my->getDEX() <= 5 )
+			{
+				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
+			}
+			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;
@@ -2486,6 +2483,13 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				if ( weaponarm != NULL )
 				{
 					if ( entity->sprite == items[SHORTBOW].index )
@@ -2593,6 +2597,13 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
@@ -2687,6 +2698,13 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
 				entity->yaw += PI / 2;
@@ -2759,6 +2777,13 @@ void actPlayer(Entity* my)
 						entity->roll = PI / 2;
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				break;
 			// mask
 			case 10:
@@ -2811,6 +2836,13 @@ void actPlayer(Entity* my)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != 165 )

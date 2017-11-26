@@ -68,6 +68,36 @@ int checkSpriteType(Sint32 sprite)
 		//power crystal
 		return 5;
 		break;
+	case 115:
+		// lever timer
+		return 6;
+	case 102:
+	case 103:
+	case 104:
+	case 105:
+		//boulder traps
+		return 7;
+		break;
+	case 116:
+		//pedestal
+		return 8;
+	case 118:
+		//teleporter
+		return 9;
+	case 119:
+		//ceiling tile model
+		return 10;
+	case 120:
+		//magic ceiling trap
+		return 11;
+	case 121:
+	case 122:
+	case 123:
+	case 124:
+	case 125:
+		// general furniture/misc.
+		return 12;
+		break;
 	default:
 		return 0;
 		break;
@@ -285,12 +315,16 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_stoneblood",
 	"spellbook_bleed",
 	"spellbook_reflect_magic",
-	"spellbook_blank_1",
-	"spellbook_blank_2",
-	"spellbook_blank_3",
-	"spellbook_blank_4",
+	"spellbook_acid_spray",
+	"spellbook_steal_weapon",
+	"spellbook_drain_soul",
+	"spellbook_vampiric_aura",
 	"spellbook_blank_5",
-	"potion_empty"
+	"potion_empty",
+	"artifact_orb_blue",
+	"artifact_orb_red",
+	"artifact_orb_purple",
+	"artifact_orb_green",
 	""
 };
 
@@ -336,6 +370,21 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"iron_dagger",
 		"steel_chakram",
 		"crystal_shuriken",
+		"potion_water",
+		"potion_booze",
+		"potion_juice",
+		"potion_sickness",
+		"potion_confusion",
+		"potion_extrahealing",
+		"potion_healing",
+		"potion_cureailment",
+		"potion_blindness",
+		"potion_restoremagic",
+		"potion_invisibility",
+		"potion_levitation",
+		"potion_speed",
+		"potion_acid",
+		"potion_paralysis",
 		"magicstaff_light",
 		"magicstaff_digging",
 		"magicstaff_locking",
@@ -374,10 +423,10 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_bleed",
 		"spellbook_dig",
 		"spellbook_reflect_magic",
-		"spellbook_blank_1",
-		"spellbook_blank_2",
-		"spellbook_blank_3",
-		"spellbook_blank_4",
+		"spellbook_acid_spray",
+		"spellbook_steal_weapon",
+		"spellbook_drain_soul",
+		"spellbook_vampiric_aura",
 		"spellbook_blank_5",
 		"tool_pickaxe",
 		"artifact_sword",
@@ -475,6 +524,10 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
+		"artifact_orb_blue",
+		"artifact_orb_red",
+		"artifact_orb_purple",
+		"artifact_orb_green",
 		""
 	},
 	{
@@ -607,10 +660,24 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"POWER CRYSTAL",
 	"ARMED BEAR TRAP",
 	"STALAG-COLUMN",
-	"STALAGMITE 1",
-	"STALAGMITE 2",
-	"STALAGTITE 1",
-	"STALAGTITE 2"
+	"STALAGMITE SINGLE",
+	"STALAGMITE MULTIPLE",
+	"STALAGTITE SINGLE",
+	"STALAGTITE MULTIPLE",
+	"GATE INVERTED (North-South)",
+	"GATE INVERTED (East-West)",
+	"LEVER WITH TIMER",
+	"PEDESTAL",
+	"MID PORTAL",
+	"TELEPORTER",
+	"CEILING TILE MODEL",
+	"SPELL TRAP CEILING",
+	"ARCANE CHAIR",
+	"ARCANE BED",
+	"BUNK BED",
+	"COLUMN DECO",
+	"PODIUM",
+	"PISTONS"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -650,7 +717,7 @@ char monsterEditorNameStrings[NUMMONSTERS][13] =
 	"lich_fire"
 };
 
-char tileEditorNameStrings[202][44] =
+char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 {
 	"backdrop.png",
 	"bback.png",
@@ -853,7 +920,14 @@ char tileEditorNameStrings[202][44] =
 	"Crystal Wall Column Right.png",
 	"Bronze Columns.png",
 	"Bronze Columns Alcove.png",
-	"Submap.png"
+	"Submap.png",
+	"Cave Wall Reinforced No Beam",
+	"Cave Wall Reinforced Left Cap",
+	"Cave Wall Reinforced Right Cap",
+	"Crystal Wall Reinforced No Beam",
+	"Crystal Wall Reinforced Left Cap",
+	"Crystal Wall Reinforced Right Cap"
+
 };
 
 int canWearEquip(Entity* entity, int category)
@@ -876,13 +950,11 @@ int canWearEquip(Entity* entity, int category)
 				case TROLL:
 				case RAT:
 				case SLIME:
-				case SUCCUBUS:
 				case SCORPION:
 				case MINOTAUR:
 				case GHOUL:
 				case SCARAB:
 				case CRYSTALGOLEM:
-				case INCUBUS:
 				case COCKATRICE:
 					equipType = 0;
 					break;
@@ -896,7 +968,8 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
-				case INSECTOID:
+				case INCUBUS:
+				case SUCCUBUS:
 				case LICH_FIRE:
 				case LICH_ICE:
 					equipType = 2;
@@ -912,6 +985,7 @@ int canWearEquip(Entity* entity, int category)
 				case AUTOMATON:
 				case GOATMAN:
 				case KOBOLD:
+				case INSECTOID:
 					equipType = 3;
 					break;
 
@@ -942,7 +1016,8 @@ int canWearEquip(Entity* entity, int category)
 	{
 		return 1;
 	}
-	else if ( category == 5 || category == 6 ) { //RINGS/AMULETS WORN BY ALL
+	else if ( category == 5 || category == 6 )  //RINGS/AMULETS WORN BY ALL
+	{
 		return 1;
 	}
 	else if ( (category >= 7 && category <= 9) && equipType >= 2 ) //CLOAK/MASK/GLOVES
@@ -1079,6 +1154,115 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->crystalNumElectricityNodes = 5;
 			entityNew->crystalTurnReverse = 0;
 			entityNew->crystalSpellToActivate = 0;
+		}
+	}
+	// lever timer
+	else if ( spriteType == 6 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->leverTimerTicks = entityToCopy->leverTimerTicks;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->leverTimerTicks = 3;
+		}
+	}
+	// boulder trap with re-fire
+	else if ( spriteType == 7 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->boulderTrapRefireDelay = entityToCopy->boulderTrapRefireDelay;
+			entityNew->boulderTrapRefireAmount = entityToCopy->boulderTrapRefireAmount;
+			entityNew->boulderTrapPreDelay = entityToCopy->boulderTrapPreDelay;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->boulderTrapRefireDelay = 3;
+			entityNew->boulderTrapRefireAmount = 0;
+			entityNew->boulderTrapPreDelay = 0;
+		}
+	}
+	// pedestal
+	else if ( spriteType == 8 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->pedestalOrbType = entityToCopy->pedestalOrbType;
+			entityNew->pedestalHasOrb = entityToCopy->pedestalHasOrb;
+			entityNew->pedestalInvertedPower = entityToCopy->pedestalInvertedPower;
+			entityNew->pedestalInGround = entityToCopy->pedestalInGround;
+			entityNew->pedestalLockOrb = entityToCopy->pedestalLockOrb;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->pedestalOrbType = 0;
+			entityNew->pedestalHasOrb = 0;
+			entityNew->pedestalInvertedPower = 0;
+			entityNew->pedestalInGround = 0;
+			entityNew->pedestalLockOrb = 0;
+		}
+	}
+	// teleporter
+	else if ( spriteType == 9 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->teleporterX = entityToCopy->teleporterX;
+			entityNew->teleporterY = entityToCopy->teleporterY;
+			entityNew->teleporterType = entityToCopy->teleporterType;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->teleporterX = 1;
+			entityNew->teleporterY = 1;
+			entityNew->teleporterType = 0;
+		}
+	}
+	// ceiling tile
+	else if ( spriteType == 10 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->ceilingTileModel = entityToCopy->ceilingTileModel;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->ceilingTileModel = 0;
+		}
+	}
+	// spell trap
+	else if ( spriteType == 11 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->spellTrapType = entityToCopy->spellTrapType;
+			entityNew->spellTrapRefire = entityToCopy->spellTrapRefire;
+			entityNew->spellTrapLatchPower = entityToCopy->spellTrapLatchPower;
+			entityNew->spellTrapFloorTile = entityToCopy->spellTrapFloorTile;
+			entityNew->spellTrapRefireRate = entityToCopy->spellTrapRefireRate;
+		}
+		else
+		{
+			// set default new entity attributes.
+			// copy old entity attributes to newly created.
+			entityNew->spellTrapType = -1;
+			entityNew->spellTrapRefire = -1;
+			entityNew->spellTrapLatchPower = 0;
+			entityNew->spellTrapFloorTile = 0;
+			entityNew->spellTrapRefireRate = 1;
 		}
 	}
 

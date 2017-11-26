@@ -406,10 +406,10 @@ void item_PotionCureAilment(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( players[clientnum]->entity->flags[BURNING] )
+	if ( players[player]->entity->flags[BURNING] )
 	{
-		players[clientnum]->entity->flags[BURNING] = false;
-		serverUpdateEntityFlag(players[clientnum]->entity, BURNING);
+		players[player]->entity->flags[BURNING] = false;
+		serverUpdateEntityFlag(players[player]->entity, BURNING);
 	}
 	if ( multiplayer == CLIENT )
 	{
@@ -2857,17 +2857,17 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_REFLECT_MAGIC:
 				addSpell(SPELL_REFLECT_MAGIC, player);
 				break;
-			case SPELLBOOK_BLANK_1:
-				messagePlayer(player, "You no can has spell of TODO!");
+			case SPELLBOOK_ACID_SPRAY:
+				addSpell(SPELL_ACID_SPRAY, player);
 				break;
-			case SPELLBOOK_BLANK_2:
-				messagePlayer(player, "Wot?! Blank speel?");
+			case SPELLBOOK_STEAL_WEAPON:
+				addSpell(SPELL_STEAL_WEAPON, player);
 				break;
-			case SPELLBOOK_BLANK_3:
-				messagePlayer(player, "No, you no can has!");
+			case SPELLBOOK_DRAIN_SOUL:
+				addSpell(SPELL_DRAIN_SOUL, player);
 				break;
-			case SPELLBOOK_BLANK_4:
-				messagePlayer(player, "Oops, misplaced that spell...");
+			case SPELLBOOK_VAMPIRIC_AURA:
+				addSpell(SPELL_VAMPIRIC_AURA, player);
 				break;
 			case SPELLBOOK_BLANK_5:
 				messagePlayer(player, "Nope. Spell doesn't exist yet.");
