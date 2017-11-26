@@ -43,8 +43,12 @@ void list_FreeAll(list_t* list)
 
 void list_RemoveNode(node_t* node)
 {
-
-	if (node->list == map.entities) {
+	if ( !node )
+	{
+		return;
+	}
+	if (node->list && node->list == map.entities)
+	{
 		map.entities_map.erase(((Entity*)node->element)->getUID());
 	}
 	if ( node->list && node->list->first )
