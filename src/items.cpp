@@ -2004,6 +2004,11 @@ void useItem(Item* item, int player)
 			break;
 	}
 
+	if ( !item )
+	{
+		return;
+	}
+
 	// on-equip messages.
 	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
 	{
