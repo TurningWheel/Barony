@@ -169,7 +169,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	furnitureMaxHealth(skill[9]),
 	pistonCamDir(skill[0]),
 	pistonCamTimer(skill[1]),
-	pistonCamRotateSpeed(fskill[0])
+	pistonCamRotateSpeed(fskill[0]),
+	arrowPower(skill[3]),
+	arrowPoisonTime(skill[4]),
+	arrowArmorPierce(skill[5])
 {
 	int c;
 	// add the entity to the entity list
@@ -2231,24 +2234,27 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EFFECTS[EFF_VOMITING] && ticks % 2 == 0 )
 	{
 		Entity* entity = spawnGib(this);
-		entity->sprite = 29;
-		entity->flags[SPRITE] = true;
-		entity->flags[GENIUS] = true;
-		entity->flags[INVISIBLE] = false;
-		entity->yaw = this->yaw - 0.1 + (rand() % 20) * 0.01;
-		entity->pitch = (rand() % 360) * PI / 180.0;
-		entity->roll = (rand() % 360) * PI / 180.0;
-		double vel = (rand() % 15) / 10.f;
-		entity->vel_x = vel * cos(entity->yaw);
-		entity->vel_y = vel * sin(entity->yaw);
-		entity->vel_z = -.5;
-		myStats->HUNGER -= 40;
-		if ( myStats->HUNGER <= 50 )
+		if ( entity )
 		{
-			myStats->HUNGER = 50;
-			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+			entity->sprite = 29;
+			entity->flags[SPRITE] = true;
+			entity->flags[GENIUS] = true;
+			entity->flags[INVISIBLE] = false;
+			entity->yaw = this->yaw - 0.1 + (rand() % 20) * 0.01;
+			entity->pitch = (rand() % 360) * PI / 180.0;
+			entity->roll = (rand() % 360) * PI / 180.0;
+			double vel = (rand() % 15) / 10.f;
+			entity->vel_x = vel * cos(entity->yaw);
+			entity->vel_y = vel * sin(entity->yaw);
+			entity->vel_z = -.5;
+			myStats->HUNGER -= 40;
+			if ( myStats->HUNGER <= 50 )
+			{
+				myStats->HUNGER = 50;
+				myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+			}
+			serverSpawnGibForClient(entity);
 		}
-		serverSpawnGibForClient(entity);
 	}
 
 	// healing over time
@@ -2328,49 +2334,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// regaining energy over time
-	int manaring = 0;
-	int manaRegenInterval = 0;
-	if ( myStats->breastplate != NULL )
-	{
-		if ( myStats->breastplate->type == VAMPIRE_DOUBLET )
-		{
-			if ( myStats->breastplate->beatitude >= 0 )
-			{
-				manaring++;
-			}
-			else
-			{
-				manaring--;
-			}
-		}
-	}
-	if ( myStats->cloak != NULL )
-	{
-		if ( myStats->cloak->type == ARTIFACT_CLOAK )
-		{
-			if ( myStats->cloak->beatitude >= 0 )
-			{
-				manaring++;
-			}
-			else
-			{
-				manaring--;
-			}
-		}
-	}
-
-	if ( manaring > 0 )
-	{
-		manaRegenInterval = MAGIC_REGEN_TIME / (manaring * 8);
-	}
-	else if ( manaring < 0 )
-	{
-		manaRegenInterval = manaring * MAGIC_REGEN_TIME * 4;
-	}
-	else if ( manaring == 0 )
-	{
-		manaRegenInterval = MAGIC_REGEN_TIME;
-	}
+	int manaRegenInterval = getManaRegenInterval(*myStats);
 
 	if ( myStats->MP < myStats->MAXMP )
 	{
@@ -3409,11 +3373,6 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	//if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
-	//{
-	//	return false; //Shadows can't do anything while they are casting their special ability.
-	//}
-
 	return true;
 }
 
@@ -3641,14 +3600,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
-		if ( myStats->type == GOATMAN )
-		{
-			if ( monsterSpecialState > 0 )
-			{
-				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
-			}
-		}
-		else if ( myStats->type == SHADOW )
+		if ( myStats->type == SHADOW )
 		{
 			if ( myStats->EFFECTS[EFF_INVISIBLE] )
 			{
@@ -3888,14 +3840,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
 
-				// arrow power
-				entity->skill[3] = getAttack() - 1 + myStats->PROFICIENCIES[PRO_RANGED] / 20;
-
-				// poison arrow
-				if ( myStats->weapon->type == ARTIFACT_BOW )
-				{
-					entity->skill[4] = 540;    // 9 seconds of poison
-				}
+				// set properties of the arrow.
+				entity->setRangedProjectileAttack(*this, *myStats);
 				return;
 			}
 
@@ -4750,7 +4696,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// if no armor piece was chosen to break, grant chance to improve shield skill.
 							if ( itemCategory(hitstats->shield) == ARMOR )
 							{
-								if ( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) )
+								if ( (rand() % 15 == 0 && damage > 0) || (damage == 0 && rand() % 8 == 0) )
 								{
 									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 								}
@@ -6233,7 +6179,7 @@ void createMonsterEquipment(Stat* stats)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemCurve(static_cast<Category>(category - 1));
+					itemId = itemLevelCurve(static_cast<Category>(category - 1));
 				}
 				else
 				{
@@ -6244,11 +6190,11 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(WEAPON));
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(ARMOR));
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR));
 						}
 					}
 					else if ( category == 15 )
@@ -6257,11 +6203,11 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(AMULET));
+							itemId = itemLevelCurve(static_cast<Category>(AMULET));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(RING));
+							itemId = itemLevelCurve(static_cast<Category>(RING));
 						}
 					}
 					else if ( category == 16 )
@@ -6270,15 +6216,15 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(SCROLL));
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK));
 						}
 					}
 				}
@@ -7009,14 +6955,19 @@ int Entity::getAttackPose() const
 		{
 			if ( myStats->type == GOATMAN )
 			{
-				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+				/*if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP3;
 				}
 				else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
 				{
 					pose = MONSTER_POSE_MELEE_WINDUP1;
+				}*/
+				if ( monsterSpecialState == GOATMAN_POTION )
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP3;
 				}
+
 			}
 			else if ( myStats->type == INCUBUS )
 			{
@@ -7723,7 +7674,7 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 			else
 			{
 				// coming to a stop
-				if ( limb->pitch < 0 )
+				if ( limb->pitch < 0 || (limb->pitch > PI && limb->pitch < 2 * PI) )
 				{
 					limb->pitch += 1 / fmax(dist * .1, 10.0);
 					if ( limb->pitch > 0 )
@@ -8885,7 +8836,14 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 
-	if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
+	if ( myStats.MAXHP >= 100 )
+	{
+		if ( myStats.HP <= myStats.MAXHP / 6 && this->getCHR() >= -2 )
+		{
+			return true;
+		}
+	}
+	else if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
 	{
 		return true;
 	}
@@ -9152,4 +9110,98 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 		//messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
 	}
 	return spellbook;
+}
+
+int Entity::getManaRegenInterval(Stat& myStats)
+{
+	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
+	int statMultiplier = std::max(getINT(), 0); // get intelligence
+
+	int regenTime = (MAGIC_REGEN_TIME - std::min(profMultiplier * statMultiplier, 150)); // return 300-150 ticks, 6-3 seconds.
+
+	int manaring = 0;
+	if ( myStats.breastplate != nullptr )
+	{
+		if ( myStats.breastplate->type == VAMPIRE_DOUBLET )
+		{
+			if ( myStats.breastplate->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( myStats.cloak != nullptr )
+	{
+		if ( myStats.cloak->type == ARTIFACT_CLOAK )
+		{
+			if ( myStats.cloak->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( manaring > 0 )
+	{
+		return regenTime / (manaring * 6);
+	}
+	else if ( manaring < 0 )
+	{
+		return regenTime * manaring * 4;
+	}
+	else if ( manaring == 0 )
+	{
+		return regenTime;
+	}
+	return MAGIC_REGEN_TIME;
+}
+
+void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
+{
+	// get arrow power.
+	int attack = 7; // base ranged attack strength
+	if ( myStats.weapon != nullptr )
+	{
+		attack += myStats.weapon->weaponGetAttack();
+	}
+	attack += marksman.getDEX();
+	if ( marksman.behavior == &actMonster )
+	{
+		attack += marksman.getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
+	}
+	attack += myStats.PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack.
+	this->arrowPower = attack;
+
+	// get arrow effects.
+	if ( myStats.weapon )
+	{
+		if ( myStats.weapon->type == ARTIFACT_BOW )
+		{
+			// poison arrow
+			this->arrowPoisonTime = 540;    // 9 seconds of poison
+		}
+
+		if ( myStats.weapon->type != SLING )
+		{
+			// get armor pierce chance.
+			int statChance = std::min(std::max(marksman.getPER() / 2, 0), 50); // 0 to 50 value.
+			int chance = rand() % 100;
+			if ( chance < statChance )
+			{
+				this->arrowArmorPierce = 1; // pierce half of armor in damage calc.
+			}
+			else
+			{
+				this->arrowArmorPierce = 0;
+			}
+		}
+	}
 }

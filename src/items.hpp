@@ -375,6 +375,7 @@ public:
 	list_t images;              // item image filenames (inventory)
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
+	int level;					// item level for random generation
 };
 extern ItemGeneric items[NUMITEMS];
 
@@ -423,6 +424,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
+ItemType itemLevelCurve(Category cat);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
@@ -464,3 +466,5 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
+
+bool loadItemLists();

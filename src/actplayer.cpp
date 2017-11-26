@@ -1538,7 +1538,7 @@ void actPlayer(Entity* my)
 		weightratio = fmin(fmax(0, weightratio), 1);
 
 		// calculate movement forces
-		if ( !command )
+		if ( !command && my->isMobile() )
 		{
 			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 			float x_force = 0;
@@ -1588,10 +1588,15 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			PLAYER_VELX += y_force * cos(my->yaw) * .045 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += y_force * sin(my->yaw) * .045 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
+			real_t speedFactor = std::min((my->getDEX() * 0.4 + 13) * weightratio, 25 * 0.5 + 10);
+			if ( my->getDEX() <= 5 )
+			{
+				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
+			}
+			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;

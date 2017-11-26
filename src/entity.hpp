@@ -289,6 +289,11 @@ public:
 	Sint32& pistonCamTimer;
 	real_t& pistonCamRotateSpeed;
 
+	//--PUBLIC ARROR/PROJECTILE SKILLS--
+	Sint32& arrowPower;
+	Sint32& arrowPoisonTime;
+	Sint32& arrowArmorPierce;
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
@@ -506,6 +511,10 @@ public:
 	bool shouldRetreat(Stat& myStats);
 	// check if monster should retreat or stand still when less than given distance
 	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
+	// calc time required for a mana regen tick.
+	int getManaRegenInterval(Stat& myStats); 
+	// calc damage/effects for ranged weapons.
+	void setRangedProjectileAttack(Entity& marksman, Stat& myStats);
 
 	spell_t* getActiveMagicEffect(int spellID);
 

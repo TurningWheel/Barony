@@ -153,9 +153,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 			|| entity->sprite == 19 
 			|| entity->sprite == 20 
 			|| entity->sprite == 39 
-			|| entity->sprite == 44
-			|| entity->sprite == 106
-			|| entity->sprite == 116 )
+			|| entity->sprite == 44 )
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
 			{

@@ -3097,6 +3097,11 @@ last of your magic is drained!#
 2508 Your spell destroys the %s!#
 2509 You hit the %s!#
 2510 The %s breaks into pieces!#
+2511 You are hit by a bolt!#
+2512 You are hit by a flying rock!#
+2513 You pierced the %s's armor!#
+2514 You pierced %s's armor!#
+2515 The shot pierced your armor!#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 

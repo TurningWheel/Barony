@@ -158,10 +158,10 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
-	{ 0.9, 1.2, 1.2, 0.9, 1.1, 1.3 }, // kobold
+	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2 }, // kobold
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
-	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
+	{ 1.2, 1.f, 1.f, 0.9, 1.3, 0.8 }, // incubus
 	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8 }, // vampire
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0 }, // shadow
 	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5 }, // cockatrice
@@ -399,8 +399,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 1000;
-static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
-static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 200;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 300;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 350;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST = 250;
@@ -486,6 +486,8 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[3
 //--Goatman--
 static const int GOATMAN_HEALINGPOTION_MOD = 3;
 static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
+static const int GOATMAN_POTION = 1;
+static const int GOATMAN_THROW = 2;
 
 //--Automaton--
 static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;

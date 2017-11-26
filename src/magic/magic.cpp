@@ -313,7 +313,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	{
 		int damage = element.damage;
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-		damage /= (1 + (int)resistance);
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 		{
@@ -328,7 +327,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 					return;
 				}
 			}
-			playSoundEntity(&my, 173, 64);
+			//playSoundEntity(&my, 173, 64);
 			playSoundEntity(hit.entity, 249, 64);
 			//playSoundEntity(hit.entity, 28, 64);
 
@@ -337,7 +336,13 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			{
 				return;
 			}
-
+			bool hasamulet = false;
+			if ( hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE )
+			{
+				resistance += 2;
+				hasamulet = true;
+			}
+			damage /= (1 + (int)resistance);
 			damage *= damagetables[hitstats->type][5];
 			hit.entity->modHP(-damage);
 
@@ -347,9 +352,12 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				parent->killedByMonsterObituary(hit.entity);
 			}
 
-			hitstats->EFFECTS[EFF_POISONED] = true;
-			hitstats->EFFECTS_TIMERS[EFF_POISONED] = (element.duration * (((element.mana) / static_cast<double>(element.base_mana)) * element.overload_multiplier));
-			hitstats->EFFECTS_TIMERS[EFF_POISONED] /= (1 + (int)resistance);
+			if ( !hasamulet )
+			{
+				hitstats->EFFECTS[EFF_POISONED] = true;
+				hitstats->EFFECTS_TIMERS[EFF_POISONED] = 300; // 6 seconds.
+				hitstats->EFFECTS_TIMERS[EFF_POISONED] /= (1 + (int)resistance);
+			}
 			/*hitstats->EFFECTS[EFF_SLOW] = true;
 			hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 			hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);*/
@@ -420,11 +428,11 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				// damage armor
 				Item* armor = nullptr;
 				int armornum = -1;
-				if ( hitstats->defending && (rand() % (6 + resistance) == 0) ) // 1 in 6 to corrode shield
+				if ( hitstats->defending && (rand() % (8 + resistance) == 0) ) // 1 in 8 to corrode shield
 				{
 					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, true, true);
 				}
-				else if ( !hitstats->defending && (rand() % (3 + resistance) == 0) ) // 1 in 3 to corrode armor
+				else if ( !hitstats->defending && (rand() % (4 + resistance) == 0) ) // 1 in 4 to corrode armor
 				{
 					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
 				}

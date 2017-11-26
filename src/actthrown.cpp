@@ -270,10 +270,17 @@ void actThrown(Entity* my)
 		item->count = 1;
 		if ( hit.entity != nullptr )
 		{
+			Entity* parent = uidToEntity(my->parent);
+			Stat* parentStats = nullptr;
+			if ( parent )
+			{
+				parentStats = parent->getStats();
+			}
+			Stat* hitstats = hit.entity->getStats();
+
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				Entity* parent = uidToEntity(my->parent);
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
 					list_RemoveNode(my->mynode);
@@ -282,9 +289,19 @@ void actThrown(Entity* my)
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
-				int damage = (10 - AC(hit.entity->getStats()) + item->beatitude);
+				int damage = (9 - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
+				if ( parentStats )
+				{
+					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 5 increase.
+				}
+				if ( hitstats && !hitstats->defending )
+				{
+					// zero out the damage if negative, thrown weapons will do piercing damage if not blocking.
+					damage = std::max(0, damage);
+				}
 				switch ( item->type )
 				{
+					// thrown weapons do damage if absorbed by armor.
 					case BRONZE_TOMAHAWK:
 						damage += 2;
 						break;
@@ -301,7 +318,6 @@ void actThrown(Entity* my)
 						break;
 				}
 				damage = std::max(0, damage);
-
 				hit.entity->modHP(-damage);
 
 				// set the obituary
@@ -309,8 +325,6 @@ void actThrown(Entity* my)
 				snprintf(whatever, 255, language[1508], itemname);
 				hit.entity->setObituary(whatever);
 
-				Entity* parent = uidToEntity(my->parent);
-				Stat* hitstats = hit.entity->getStats();
 				if ( hitstats )
 				{
 					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER )   // this makes it impossible to bork the end boss :)
@@ -430,6 +444,10 @@ void actThrown(Entity* my)
 				}
 				else
 				{
+					if ( cat == THROWN )
+					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
+					}
 					if ( hit.entity->behavior == &actPlayer )
 					{
 						if ( hit.entity->skill[2] == clientnum )

@@ -53,7 +53,7 @@ static const int NUM_SPELLS = 31;
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
 #define SPELLELEMENT_STONEBLOOD_BASE_DURATION 5//In seconds.
-static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 10;
+static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 5;
 
 //Definitions for actMagic(note that other functions may use this)
 #define MAGIC_TYPE (Item)my->skill[10] //TODO: OLD.

@@ -641,7 +641,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
-						if ( parent->behavior == &actMagicTrapCeiling )
+						if ( parent && parent->behavior == &actMagicTrapCeiling )
 						{
 							// this missile came from the ceiling, let's redirect it..
 							my->x = hit.entity->x + cos(hit.entity->yaw);
@@ -1447,7 +1447,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_ASLEEP] = true;
-							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 600 + rand() % 300;
+							if ( parent && parent->behavior == &actMagicTrapCeiling )
+							{
+								hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 200 + rand() % 150; // 4 seconds + 0 to 3 seconds.
+							}
+							else
+							{
+								hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 600 + rand() % 300; // 12 seconds + 0 to 6 seconds.
+							}
 							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] /= (1 + (int)resistance);
 							hitstats->OLDHP = hitstats->HP;
 							if ( hit.entity->behavior == &actPlayer )
@@ -2108,7 +2115,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							camera_shakex += .1;
 							camera_shakey += 10;
-							messagePlayer(0, "shak");
 						}
 					}
 				}
