@@ -156,7 +156,7 @@ int selectedTile = 0;
 int tilepalette = 0;
 int spritepalette = 0;
 int mclick = 0;
-int selectedTool = 0; // 0: point draw 1: brush 2: select 3: fill
+int selectedTool = 0; // 0: Pencil 1: Point 2: Brush 3: Select 4: Fill
 int allowediting = 0; // only turned on when the mouse is over paintable screen region
 int openwindow = 0, savewindow = 0, newwindow = 0;
 int slidery = 0, slidersize = 16;
@@ -173,7 +173,7 @@ char mapflagtext[MAPFLAGS][32];
 char spriteProperties[32][128];
 char tmpSpriteProperties[32][128];
 int editproperty = 0;
-SDL_Cursor* cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
+SDL_Cursor* cursorArrow, *cursorPencil, *cursorPoint, *cursorBrush, *cursorSelect, *cursorFill;
 int* palette;
 
 // video definitions
