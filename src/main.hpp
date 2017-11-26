@@ -111,6 +111,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define PI 3.14159265358979323846
 
 extern FILE* logfile;
+static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 
 class Item;
 //enum Item;
