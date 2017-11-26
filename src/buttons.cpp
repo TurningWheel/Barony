@@ -20,6 +20,7 @@ button_t* butX;
 button_t* but_;
 button_t* butTilePalette;
 button_t* butSprite;
+button_t* butPencil;
 button_t* butPoint;
 button_t* butBrush;
 button_t* butSelect;
@@ -144,27 +145,33 @@ void buttonSprite(button_t* my)
 	spritepalette = 1;
 }
 
-void buttonPoint(button_t* my)
+void buttonPencil(button_t* my)
 {
 	selectedTool = 0;
 	selectedarea = false;
 }
 
-void buttonBrush(button_t* my)
+void buttonPoint(button_t* my)
 {
 	selectedTool = 1;
 	selectedarea = false;
 }
 
-void buttonSelect(button_t* my)
+void buttonBrush(button_t* my)
 {
 	selectedTool = 2;
 	selectedarea = false;
 }
 
-void buttonFill(button_t* my)
+void buttonSelect(button_t* my)
 {
 	selectedTool = 3;
+	selectedarea = false;
+}
+
+void buttonFill(button_t* my)
+{
+	selectedTool = 4;
 	selectedarea = false;
 }
 
@@ -244,6 +251,14 @@ void buttonNew(button_t* my)
 	else
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 0) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[ ]");
 	}
 	cursorflash = ticks;
 	menuVisible = 0;
@@ -344,6 +359,10 @@ void buttonNewConfirm(button_t* my)
 			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
 			{
 				map.flags[z] |= (1 << 8) & 0xFF;
+			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 0) & 0xFF;
 			}
 		}
 		else
@@ -808,7 +827,7 @@ void buttonCycleSprites(button_t* my)
 void buttonSelectAll(button_t* my)
 {
 	menuVisible = 0;
-	selectedTool = 2;
+	selectedTool = 3;
 	selectedarea = true;
 	selectingspace = false;
 	selectedarea_x1 = 0;
@@ -936,7 +955,7 @@ void buttonAttributes(button_t* my)
 
 	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 16) & static_cast<int>(0xFF) )
 	{
-		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]");
+		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]");
 	}
 	else
 	{
@@ -950,6 +969,15 @@ void buttonAttributes(button_t* my)
 	else
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[ ]");
+	}
+
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 0) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[ ]");
 	}
 
 	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
@@ -1105,6 +1133,10 @@ void buttonAttributesConfirm(button_t* my)
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
 	{
 		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 8); // store in third leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 0); // store in fourth leftmost byte.
 	}
 
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
