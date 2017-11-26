@@ -1260,8 +1260,8 @@ void consumeItem(Item*& item)
 		else
 		{
 			free(item);
-			item = nullptr;
 		}
+		item = nullptr;
 	}
 }
 
