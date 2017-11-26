@@ -5249,7 +5249,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// lifesteal
-					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
+					if ( damage > 0 && ((myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr) || myStats->type == VAMPIRE) )
 					{
 						bool lifestealSuccess = false;
 						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
