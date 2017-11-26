@@ -2903,7 +2903,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 			if ( cat >= WEAPON && itemCategory(item) == cat )
 			{
 				return node;
-			} 
+			}
 			else if ( itemToFind != -1 && item->type == itemToFind )
 			{
 				return node;
