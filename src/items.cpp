@@ -2990,7 +2990,7 @@ node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
 	return nullptr;
 }
 
-bool inline isRangedWeapon(const Item& item)
+bool isRangedWeapon(const Item& item)
 {
 	switch ( item.type )
 	{
@@ -3004,7 +3004,7 @@ bool inline isRangedWeapon(const Item& item)
 	}
 }
 
-bool inline isMeleeWeapon(const Item& item)
+bool isMeleeWeapon(const Item& item)
 {
 	if ( itemCategory(&item) != WEAPON )
 	{
