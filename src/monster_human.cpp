@@ -1636,7 +1636,7 @@ void Entity::humanSetLimbsClient(int bodypart)
 		|| (sprite >= 332 && sprite < 334) )
 	{
 		skinColor = 0; // light.
-		if ( sprite >= 125 && sprite < 130
+		if ( (sprite >= 125 && sprite < 130)
 			|| sprite == 333 )
 		{
 			sex = FEMALE;

@@ -9,8 +9,6 @@ See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"

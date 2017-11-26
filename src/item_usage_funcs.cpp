@@ -23,7 +23,7 @@
 #include "monster.hpp"
 #include "player.hpp"
 
-void item_PotionWater(Item* item, Entity* entity)
+void item_PotionWater(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -126,7 +126,7 @@ void item_PotionWater(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem)
+void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -186,7 +186,7 @@ void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem)
 	}
 }
 
-void item_PotionJuice(Item* item, Entity* entity)
+void item_PotionJuice(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -239,7 +239,7 @@ void item_PotionJuice(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionSickness(Item* item, Entity* entity)
+void item_PotionSickness(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -307,7 +307,7 @@ void item_PotionSickness(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionConfusion(Item* item, Entity* entity)
+void item_PotionConfusion(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -366,7 +366,7 @@ void item_PotionConfusion(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionCureAilment(Item* item, Entity* entity)
+void item_PotionCureAilment(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -431,7 +431,7 @@ void item_PotionCureAilment(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionBlindness(Item* item, Entity* entity)
+void item_PotionBlindness(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -486,7 +486,7 @@ void item_PotionBlindness(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionInvisibility(Item* item, Entity* entity)
+void item_PotionInvisibility(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -541,7 +541,7 @@ void item_PotionInvisibility(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionLevitation(Item* item, Entity* entity)
+void item_PotionLevitation(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -596,7 +596,7 @@ void item_PotionLevitation(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionSpeed(Item* item, Entity* entity)
+void item_PotionSpeed(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -660,7 +660,7 @@ void item_PotionSpeed(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionAcid(Item* item, Entity* entity)
+void item_PotionAcid(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -726,7 +726,7 @@ void item_PotionAcid(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionParalysis(Item* item, Entity* entity)
+void item_PotionParalysis(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -781,7 +781,7 @@ void item_PotionParalysis(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem)
+void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -869,7 +869,7 @@ void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 	}
 }
 
-void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem)
+void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -957,7 +957,7 @@ void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 	}
 }
 
-void item_PotionRestoreMagic(Item* item, Entity* entity)
+void item_PotionRestoreMagic(Item*& item, Entity* entity)
 {
 	if (!entity)
 	{
@@ -2122,7 +2122,7 @@ void item_ScrollSummon(Item* item, int player)
 	}
 }
 
-void item_ToolTowel(Item* item, int player)
+void item_ToolTowel(Item*& item, int player)
 {
 	if ( player == clientnum )
 	{
@@ -2166,7 +2166,7 @@ void item_ToolTinOpener(Item* item, int player)
 	messagePlayer(player, language[886]);
 }
 
-void item_ToolMirror(Item* item, int player)
+void item_ToolMirror(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2283,7 +2283,7 @@ void item_ToolMirror(Item* item, int player)
 	}
 }
 
-void item_ToolBeartrap(Item* item, int player)
+void item_ToolBeartrap(Item*& item, int player)
 {
 	Entity* entity;
 
@@ -2350,7 +2350,7 @@ void item_ToolBeartrap(Item* item, int player)
 	return;
 }
 
-void item_Food(Item* item, int player)
+void item_Food(Item*& item, int player)
 {
 	int oldcount;
 	int pukeChance;
@@ -2522,7 +2522,7 @@ void item_Food(Item* item, int player)
 	consumeItem(item);
 }
 
-void item_FoodTin(Item* item, int player)
+void item_FoodTin(Item*& item, int player)
 {
 	int oldcount;
 	int pukeChance;
@@ -2721,7 +2721,7 @@ void item_AmuletSexChange(Item* item, int player)
 	messagePlayer(player, language[969]);
 }
 
-void item_Spellbook(Item* item, int player)
+void item_Spellbook(Item*& item, int player)
 {
 	node_t* node, *nextnode;
 

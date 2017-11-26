@@ -391,6 +391,11 @@ void drawStatus()
 			}
 		}
 	}
+	if (showfirst)
+	{
+		textscroll = list_Size(&messages) - 3;
+	}
+
 
 	//Text scroll up button.
 	if ( buttonclick == 3 )

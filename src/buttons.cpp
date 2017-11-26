@@ -9,8 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"

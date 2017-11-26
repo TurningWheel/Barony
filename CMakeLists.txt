@@ -13,7 +13,7 @@ else()
   set (STEAMWORKS_ENABLED 0)
 endif()
 
-#FMOD can be disabled in one of two ways: 
+#FMOD can be disabled in one of two ways:
 # * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
 # * Running cmake with -DFMOD_ENABLED=OFF
 set(FMOD 0) #Acts as an alias to FMOD_FOUND
@@ -59,7 +59,8 @@ if( NOT WIN32 )
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin -fsingle-precision-constant")
   else()
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg")
+  #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover -Wreturn-type -Werror=return-type")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all -Wreturn-type -Werror=return-type")
   set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -ffast-math -funroll-loops -fstrict-aliasing")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
   endif()
