@@ -1227,7 +1227,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item* item)
+void consumeItem(Item*& item)
 {
 	if ( item == nullptr )
 	{
@@ -1260,6 +1260,7 @@ void consumeItem(Item* item)
 		else
 		{
 			free(item);
+			item = nullptr;
 		}
 	}
 }
@@ -1684,49 +1685,49 @@ void useItem(Item* item, int player)
 			break;
 		case POTION_WATER:
 			item_PotionWater(item, players[player]->entity);
-			return; //Potions are consumed, so return.
+			break;
 		case POTION_BOOZE:
 			item_PotionBooze(item, players[player]->entity);
-			return;
+			break;
 		case POTION_JUICE:
 			item_PotionJuice(item, players[player]->entity);
-			return;
+			break;
 		case POTION_SICKNESS:
 			item_PotionSickness(item, players[player]->entity);
-			return;
+			break;
 		case POTION_CONFUSION:
 			item_PotionConfusion(item, players[player]->entity);
-			return;
+			break;
 		case POTION_EXTRAHEALING:
 			item_PotionExtraHealing(item, players[player]->entity);
-			return;
+			break;
 		case POTION_HEALING:
 			item_PotionHealing(item, players[player]->entity);
-			return;
+			break;
 		case POTION_CUREAILMENT:
 			item_PotionCureAilment(item, players[player]->entity);
-			return;
+			break;
 		case POTION_BLINDNESS:
 			item_PotionBlindness(item, players[player]->entity);
-			return;
+			break;
 		case POTION_RESTOREMAGIC:
 			item_PotionRestoreMagic(item, players[player]->entity);
-			return;
+			break;
 		case POTION_INVISIBILITY:
 			item_PotionInvisibility(item, players[player]->entity);
-			return;
+			break;
 		case POTION_LEVITATION:
 			item_PotionLevitation(item, players[player]->entity);
-			return;
+			break;
 		case POTION_SPEED:
 			item_PotionSpeed(item, players[player]->entity);
-			return;
+			break;
 		case POTION_ACID:
 			item_PotionAcid(item, players[player]->entity);
-			return;
+			break;
 		case POTION_PARALYSIS:
 			item_PotionParalysis(item, players[player]->entity);
-			return;
+			break;
 		case POTION_EMPTY:
 			messagePlayer(player, language[2359]);
 			break;
