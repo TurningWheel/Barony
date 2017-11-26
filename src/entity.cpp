@@ -4726,9 +4726,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// shield still has chance to degrade after raising skill.
 							// crystal golem special attack increase chance for shield to break if defended. (33%)
 							// special attack only degrades shields if primary target.
-							if ( (hitstats->defending && rand() % 10 == 0)
-								|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
-								&& armor == NULL )
+							if ( ((hitstats->defending && rand() % 10 == 0)
+								|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0))
+								&& armor == nullptr )
 							{
 								armor = hitstats->shield;
 								armornum = 4;
@@ -5249,7 +5249,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// lifesteal
-					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
+					if ( damage > 0 && ((myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr) || myStats->type == VAMPIRE) )
 					{
 						bool lifestealSuccess = false;
 						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
