@@ -146,6 +146,7 @@ void Entity::actChest()
 					int itemnum = rand() % NUMITEMS;
 					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 4 )
 					{
+						//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
 						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
 					}
 					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
