@@ -119,6 +119,14 @@ void Entity::actChest()
 			if (strcmp(map.name, "The Mystic Library")) 
 			{
 				chesttype = rand() % 8;
+				if ( chesttype == 1 )
+				{
+					if ( rand() % 2 == 0 )
+					{
+						// re-roll the garbage chest.
+						chesttype = rand() % 8;
+					}
+				}
 			}
 			else 
 			{
@@ -136,9 +144,9 @@ void Entity::actChest()
 				{
 					//And add the current entity to it.
 					int itemnum = rand() % NUMITEMS;
-					while (itemnum == SPELL_ITEM)
+					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 4 )
 					{
-						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell.
+						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
 					}
 					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
