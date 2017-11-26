@@ -393,7 +393,6 @@ void drawStatus()
 	}
 	if (showfirst)
 	{
-		std::cout << "Showing first!\n";
 		textscroll = list_Size(&messages) - 3;
 	}
 
