@@ -1165,7 +1165,6 @@ void updateRecentTileList(int tile)
 
 	if ( checkEmpty == -1 )
 	{
-		checkEmpty == 0;
 		for ( int j = 8; j > 0; j-- )
 		{
 			recentUsedTiles[recentUsedTilePalette][j] = recentUsedTiles[recentUsedTilePalette][j - 1]; // shift array by 1 to insert new tile as the array is full.
