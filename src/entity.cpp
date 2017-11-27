@@ -8231,6 +8231,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		return; //Can't continue without these.
 	}
 
+	if ( list_Size(&myStats->inventory) >= maxInventoryItems + 1 )
+	{
+		return;
+	}
+
 	list_t* items = nullptr;
 	//X and Y in terms of tiles.
 	int tx = x / 16;
