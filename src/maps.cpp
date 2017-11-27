@@ -4189,7 +4189,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				if ( entity->teleporterType == 0 )
 				{
-					entity->sprite = 253; // ladder hole
+					entity->sprite = 620; // ladder hole
 					entity->behavior = &actTeleporter;
 					x = entity->x / 16;
 					y = entity->y / 16;
@@ -4212,7 +4212,7 @@ void assignActions(map_t* map)
 					entity->z = 5.45;
 					entity->flags[PASSABLE] = true;
 					entity->behavior = &actTeleporter;
-					entity->sprite = 161; // ladder
+					entity->sprite = 619; // ladder
 				}
 				else
 				{
@@ -4469,7 +4469,7 @@ void assignActions(map_t* map)
 	for ( node = map->entities->first; node != nullptr; node = node->next )
 	{
 		Entity* itemEnt = (Entity*)node->element;
-		if ( itemEnt->behavior == &actItem )
+		if ( itemEnt && itemEnt->behavior == &actItem )
 		{
 			// see if there's any platforms to set items upon.
 			for ( node_t* tmpnode = map->entities->first; tmpnode != nullptr; tmpnode = tmpnode->next )
