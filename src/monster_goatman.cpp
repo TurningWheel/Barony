@@ -115,7 +115,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			bool isShaman = false;
-			if ( rand() % 2 )
+			if ( rand() % 2 && boss == 0 )
 			{
 				isShaman = true;
 			}
