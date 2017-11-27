@@ -40,10 +40,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		//TODO: Update with new goatman sound effects.
-		MONSTER_SPOTSND = 265;
-		MONSTER_SPOTVAR = 4;
-		MONSTER_IDLESND = 260;
-		MONSTER_IDLEVAR = 5;
+		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 1;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
