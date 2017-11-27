@@ -123,7 +123,7 @@ void actDoor(Entity* my)
 			{
 				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
 				{
-					if (inrange[i])
+					if ( players[i]->entity && inrange[i])
 					{
 						if ( !my->doorLocked )   // door unlocked
 						{
