@@ -4127,6 +4127,7 @@ void assignActions(map_t* map)
 				//entity->pedestalInvertedPower // set in editor
 				entity->pedestalInit = 0;
 				//entity->pedestalInGround = 0; // set in editor
+				//entity->pedestalLockOrb // set in editor
 				if ( entity->pedestalInGround )
 				{
 					entity->z += 11;
