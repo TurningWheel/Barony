@@ -1700,7 +1700,8 @@ void clientHandlePacket()
 		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
 		{
 			// ... or lived
-			stats[clientnum]->HP = stats[clientnum]->MAXHP / 2;
+			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
+			stats[clientnum]->MP = stats[clientnum]->MAXMP * 0.5;
 			stats[clientnum]->HUNGER = 500;
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
