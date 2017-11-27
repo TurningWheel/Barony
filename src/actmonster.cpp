@@ -1549,7 +1549,10 @@ void actMonster(Entity* my)
 		my->effectTimes();
 	}
 
-	my->checkGroundForItems();
+	if ( ticks % TICKS_PER_SECOND == 0 )
+	{
+		my->checkGroundForItems();
+	}
 
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
@@ -2758,7 +2761,7 @@ timeToGoAgain:
 											my->monsterHitTime++;
 											if ( my->monsterHitTime >= HITRATE )
 											{
-												my->monsterAttack = (rand() % 3) + 1; // random attack motion
+												my->monsterAttack = my->getAttackPose(); // random attack motion
 												my->monsterHitTime = 0;
 												hit.entity->skill[4]--; // decrease door health
 												if ( myStats->type == MINOTAUR )
@@ -3487,7 +3490,7 @@ timeToGoAgain:
 										my->monsterHitTime++;
 										if ( my->monsterHitTime >= HITRATE )
 										{
-											my->monsterAttack = (rand() % 3) + 1; // random attack motion
+											my->monsterAttack = my->getAttackPose(); // random attack motion
 											my->monsterHitTime = 0;
 											hit.entity->skill[4]--; // decrease door health
 											if ( myStats->type == MINOTAUR )
