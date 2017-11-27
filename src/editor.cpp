@@ -4781,7 +4781,7 @@ int main(int argc, char** argv)
 								}
 								else if ( i == 2 )
 								{
-									if ( propertyInt > 1 || propertyInt < 0 )
+									if ( propertyInt > 2 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0 up.
 									}
