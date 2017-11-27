@@ -712,9 +712,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				for ( x0 = 0; x0 < map.width; x0++ )
 				{
-					for ( y1 = y0; y1 < std::min(y0 + tempMap->height + 1, map.height); y1++ )
+					for ( y1 = y0; y1 < std::min(y0 + tempMap->height, map.height); y1++ )
 					{
-						for ( x1 = x0; x1 < std::min(x0 + tempMap->width + 1, map.width); x1++ )
+						for ( x1 = x0; x1 < std::min(x0 + tempMap->width, map.width); x1++ )
 						{
 							if ( possiblelocations[x1 + y1 * map.width] == false && possiblelocations2[x0 + y0 * map.width] == true )
 							{
