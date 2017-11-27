@@ -4190,7 +4190,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				if ( entity->teleporterType == 0 )
 				{
-					entity->sprite = 620; // ladder hole
+					entity->sprite = 618; // ladder hole
 					entity->behavior = &actTeleporter;
 					x = entity->x / 16;
 					y = entity->y / 16;
