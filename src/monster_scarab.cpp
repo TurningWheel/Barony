@@ -32,10 +32,10 @@ void initScarab(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		//MONSTER_SPOTSND = 29; //TODO: Scarab spot sound effect.
-		MONSTER_SPOTVAR = 1;
-		//MONSTER_IDLESND = 29; //TODO: Scarab idle soundefect.
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 310;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 306;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -501,7 +501,7 @@ void scarabDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 30, 64); //TODO: Scarab death sound effect.
+	playSoundEntity(my, 308 + rand() % 2, 64); //TODO: Scarab death sound effect.
 	list_RemoveNode(my->mynode);
 	return;
 }

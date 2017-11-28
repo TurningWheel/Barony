@@ -36,9 +36,9 @@ void initShadow(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 60; //TODO: Shadow SPOTSND.
+		MONSTER_SPOTSND = 318;
 		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 98; //TODO: Shadow IDLESND.
+		MONSTER_IDLESND = 313;
 		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -305,7 +305,7 @@ void shadowDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 
-	playSoundEntity(my, 63 + rand() % 3, 128);
+	playSoundEntity(my, 316 + rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -598,7 +598,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// play casting sound
 							playSoundEntityLocal(my, 170, 64);
 							// monster scream
-							playSoundEntityLocal(my, 99, 128);
+							playSoundEntityLocal(my, MONSTER_SPOTSND, 128);
 							if ( multiplayer != CLIENT )
 							{
 								// freeze in place.

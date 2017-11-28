@@ -31,10 +31,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 60;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 98;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_SPOTSND = 291;
+		MONSTER_SPOTVAR = 4;
+		MONSTER_IDLESND = 285;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -497,7 +497,7 @@ void insectoidDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 63 + rand() % 3, 128);
+	playSoundEntity(my, 287 + rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -742,7 +742,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// play casting sound
 							playSoundEntityLocal(my, 170, 64);
 							// monster scream
-							playSoundEntityLocal(my, 99, 128);
+							playSoundEntityLocal(my, MONSTER_SPOTSND + 1, 128);
 							if ( multiplayer != CLIENT )
 							{
 								myStats->EFFECTS[EFF_PARALYZED] = true;
