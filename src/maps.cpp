@@ -4269,7 +4269,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						childEntity = newEntity(252, 1, map->entities);
+						childEntity = newEntity(644, 1, map->entities);
 						childEntity->parent = entity->getUID();
 						childEntity->x = entity->x;
 						childEntity->y = entity->y;
@@ -4277,13 +4277,25 @@ void assignActions(map_t* map)
 						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
-							childEntity->z = -26.99;
+							childEntity->z = -22.99;
 						}
 						else
 						{
-							childEntity->z = -10.99;
+							childEntity->z = -6.99;
 						}
 						node_t* tempNode = list_AddNodeLast(&entity->children);
+						tempNode->element = childEntity; // add the node to the children list.
+						tempNode->deconstructor = &emptyDeconstructor;
+						tempNode->size = sizeof(Entity*);
+
+						childEntity = newEntity(645, 1, map->entities);
+						childEntity->parent = entity->getUID();
+						childEntity->x = entity->x;
+						childEntity->y = entity->y;
+						childEntity->z = 8.24;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						childEntity->flags[PASSABLE] = true;
+						tempNode = list_AddNodeLast(&entity->children);
 						tempNode->element = childEntity; // add the node to the children list.
 						tempNode->deconstructor = &emptyDeconstructor;
 						tempNode->size = sizeof(Entity*);
