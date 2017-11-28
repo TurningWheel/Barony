@@ -445,7 +445,7 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % (TICKS_PER_SECOND * 2) == (y + x * map.height) % (TICKS_PER_SECOND * 2) && rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && rand() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
