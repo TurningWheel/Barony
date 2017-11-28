@@ -1090,12 +1090,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity)
 					{
-						if ( hit.entity->flags[BURNABLE] )
-							if ( !hit.entity->flags[BURNING] )
-							{
-								hit.entity->flags[BURNING] = true;
-								serverUpdateEntityFlag(hit.entity, BURNING);
-							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -1220,6 +1214,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
+						}
+
+						// Set the Entity on Fire, if the Entity is a friendly, and Friendly Fire is Off, then this will not be reached
+						if ( hit.entity->flags[BURNABLE] )
+						{
+							if ( !hit.entity->flags[BURNING] )
+							{
+								hit.entity->flags[BURNING] = true;
+								serverUpdateEntityFlag(hit.entity, BURNING);
+							}
 						}
 					}
 				}
