@@ -79,6 +79,8 @@ extern bool everybodyfriendly;
 extern bool combat, combattoggle;
 extern bool assailant[MAXPLAYERS];
 extern bool oassailant[MAXPLAYERS];
+extern int assailantTimer[MAXPLAYERS];
+static const int COMBAT_MUSIC_COOLDOWN = 200; // 200 ticks of combat music before it fades away.
 extern list_t removedEntities;
 extern list_t entitiesToDelete[MAXPLAYERS];
 extern bool gamepaused;
