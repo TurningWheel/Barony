@@ -523,56 +523,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
-				if (hit.entity)
-				{
-					// alert the hit entity if it was a monster
-					if ( hit.entity->behavior == &actMonster && parent != nullptr )
-					{
-						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
-						{
-							/*hit.entity->monsterState = MONSTER_STATE_PATH;
-							hit.entity->monsterTarget = parent->getUID();
-							hit.entity->monsterTargetX = parent->x;
-							hit.entity->monsterTargetY = parent->y;*/
-
-							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-						}
-
-						// alert other monsters too
-						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
-						{
-							entity = (Entity*)node->element;
-							if ( entity->behavior == &actMonster && entity != ohitentity )
-							{
-								Stat* buddystats = entity->getStats();
-								if ( buddystats != nullptr )
-								{
-									if ( hit.entity && hit.entity->checkFriend(entity) ) //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
-									{
-										if ( entity->monsterState == MONSTER_STATE_WAIT )
-										{
-											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-											if ( hit.entity == entity )
-											{
-												/*entity->monsterState = MONSTER_STATE_PATH;
-												entity->monsterTarget = parent->getUID();
-												entity->monsterTargetX = parent->x;
-												entity->monsterTargetY = parent->y;*/
-
-												entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
-											}
-										}
-									}
-								}
-							}
-						}
-						hit.entity = ohitentity;
-					}
-				}
-
-				// check for magic reflection...
+				// Handling reflecting the missile
 				int reflection = 0;
 				if ( hitstats )
 				{
@@ -610,7 +561,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					spell_t* spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
 					playSoundEntity(hit.entity, 166, 128);
-					if (hit.entity)
+					if ( hit.entity )
 					{
 						if ( hit.entity->behavior == &actPlayer )
 						{
@@ -639,7 +590,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						my->vel_y *= -1;
 					}
-					if (hit.entity)
+					if ( hit.entity )
 					{
 						if ( parent && parent->behavior == &actMagicTrapCeiling )
 						{
@@ -655,7 +606,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						my->parent = hit.entity->getUID();
 					}
-					
+
 					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
 					bool bShouldEquipmentDegrade = false;
 					if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -769,7 +720,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 					}
-					
+
 					if ( spellIsReflectingMagic )
 					{
 						int spellCost = getCostOfSpell(spell);
@@ -804,6 +755,56 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
 						return;
+					}
+				}
+
+				// Alerting the hit Entity
+				if (hit.entity)
+				{
+					// alert the hit entity if it was a monster
+					if ( hit.entity->behavior == &actMonster && parent != nullptr )
+					{
+						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+						{
+							/*hit.entity->monsterState = MONSTER_STATE_PATH;
+							hit.entity->monsterTarget = parent->getUID();
+							hit.entity->monsterTargetX = parent->x;
+							hit.entity->monsterTargetY = parent->y;*/
+
+							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+						}
+
+						// alert other monsters too
+						Entity* ohitentity = hit.entity;
+						for ( node = map.entities->first; node != nullptr; node = node->next )
+						{
+							entity = (Entity*)node->element;
+							if ( entity->behavior == &actMonster && entity != ohitentity )
+							{
+								Stat* buddystats = entity->getStats();
+								if ( buddystats != nullptr )
+								{
+									if ( hit.entity && hit.entity->checkFriend(entity) ) //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
+									{
+										if ( entity->monsterState == MONSTER_STATE_WAIT )
+										{
+											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
+											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
+											if ( hit.entity == entity )
+											{
+												/*entity->monsterState = MONSTER_STATE_PATH;
+												entity->monsterTarget = parent->getUID();
+												entity->monsterTargetX = parent->x;
+												entity->monsterTargetY = parent->y;*/
+
+												entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+											}
+										}
+									}
+								}
+							}
+						}
+						hit.entity = ohitentity;
 					}
 				}
 
