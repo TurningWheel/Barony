@@ -404,7 +404,16 @@ void gameLogic(void)
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				assailant[c] = false;
+				if ( assailantTimer[c] > 0 )
+				{
+					--assailantTimer[c];
+					//messagePlayer(0, "music cd: %d", assailantTimer[c]);
+				}
+				if ( assailant[c] == true && assailantTimer[c] <= 0 )
+				{
+					assailant[c] = false;
+					assailantTimer[c] = 0;
+				}
 			}
 
 			// animate tiles
@@ -436,7 +445,7 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 2) == (y + x * map.height) % (TICKS_PER_SECOND * 2) && rand() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
@@ -591,6 +600,11 @@ void gameLogic(void)
 						OPENAL_ChannelGroup_Stop(sound_group);
 					}
 #endif
+					// stop combat music
+					for ( c = 0; c < MAXPLAYERS; ++c )
+					{
+						assailantTimer[c] = 0;
+					}
 
 					// show loading message
 					loading = true;

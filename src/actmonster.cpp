@@ -1199,6 +1199,7 @@ void actMonster(Entity* my)
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
 			assailant[c] = true; // as long as this is active, combat music doesn't turn off
+			assailantTimer[c] = COMBAT_MUSIC_COOLDOWN;
 		}
 	}
 
@@ -1209,6 +1210,7 @@ void actMonster(Entity* my)
 			if ( players[c] && players[c]->entity && players[c]->entity->getUID() == my->monsterTarget )
 			{
 				assailant[c] = true; //Keeps combat music on as long as a shadow is hunting you down down down!
+				assailantTimer[c] = COMBAT_MUSIC_COOLDOWN;
 				break;
 			}
 		}
@@ -2171,6 +2173,7 @@ void actMonster(Entity* my)
 										if ( entity->behavior == &actPlayer )
 										{
 											assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+											assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
 										}
 									}
 
@@ -2533,6 +2536,7 @@ void actMonster(Entity* my)
 				if ( entity->behavior == &actPlayer )
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+					assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
 				}
 			}
 			my->monsterTargetX = entity->x;
@@ -2992,6 +2996,7 @@ timeToGoAgain:
 				if ( entity->behavior == &actPlayer )
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+					assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
 				}
 				my->monsterTargetX = entity->x;
 				my->monsterTargetY = entity->y;
@@ -3223,6 +3228,7 @@ timeToGoAgain:
 													if ( entity->behavior == &actPlayer )
 													{
 														assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+														assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
 													}
 												}
 												break;
@@ -3419,6 +3425,7 @@ timeToGoAgain:
 				if ( entity->behavior == &actPlayer )
 				{
 					assailant[entity->skill[2]] = true; // as long as this is active, combat music doesn't turn off
+					assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
 				}
 			}
 			if ( my->children.first != NULL )
