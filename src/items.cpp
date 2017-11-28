@@ -493,7 +493,7 @@ ItemType itemLevelCurve(Category cat)
 			{
 				if ( pick == 0 )
 				{
-					messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
+					//messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
 					return static_cast<ItemType>(c);
 				}
 				else
