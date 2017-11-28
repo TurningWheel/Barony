@@ -656,7 +656,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						my->parent = hit.entity->getUID();
 					}
 					
-					// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
+					// Only degrade the equipment if Friendly Fire is ON or if it is (OFF && target is an enemy)
 					bool bShouldEquipmentDegrade = false;
 					if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
 					{
@@ -796,6 +796,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					return;
 				}
 
+				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
+				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+				{
+					if ( parent && parent->checkFriend(hit.entity) )
+					{
+						my->removeLightField();
+						list_RemoveNode(my->mynode);
+						return;
+					}
+				}
+
 				// check for magic resistance...
 				// resistance stacks diminishingly
 				//TODO: EFFECTS[EFF_MAGICRESIST]
@@ -853,15 +864,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
@@ -980,16 +982,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent &&  parent->checkFriend(hit.entity) )
-								{
-									my->removeLightField();
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
@@ -1120,16 +1112,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									my->removeLightField();
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
@@ -1251,20 +1233,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_CONFUSED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
@@ -1315,16 +1283,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									my->removeLightField();
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 172, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
@@ -1398,16 +1356,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									my->removeLightField();
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 172, 64); //TODO: Slow spell sound.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
@@ -1457,16 +1405,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									my->removeLightField();
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_ASLEEP] = true;
 							if ( parent && parent->behavior == &actMagicTrapCeiling )
@@ -1519,20 +1457,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							Entity* parent = uidToEntity(my->parent);
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
@@ -1935,20 +1859,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 						{
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 							hitstats->EFFECTS[EFF_PARALYZED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
@@ -1998,16 +1908,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 						{
 							Entity* parent = uidToEntity(my->parent);
-							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
-							{
-								// test for friendly fire
-								if ( parent && parent->checkFriend(hit.entity) )
-								{
-									my->removeLightField();
-									list_RemoveNode(my->mynode);
-									return;
-								}
-							}
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
