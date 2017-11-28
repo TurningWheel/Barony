@@ -30,10 +30,10 @@ void initAutomaton(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 263;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 257;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -428,7 +428,7 @@ void automatonDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	playSoundEntity(my, 94, 128);
+	playSoundEntity(my, 260 + rand() % 3, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }

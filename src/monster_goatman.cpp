@@ -642,7 +642,7 @@ void goatmanDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 257 + rand() % 3, 128);
+	//playSoundEntity(my, 257 + rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
