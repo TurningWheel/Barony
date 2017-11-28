@@ -655,99 +655,121 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						my->parent = hit.entity->getUID();
 					}
-					// reflection of 3 does not degrade.
-					if ( rand() % 2 == 0 && hitstats && reflection < 3 )
+					
+					// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
+					bool bShouldEquipmentDegrade = false;
+					if ( (svFlags & SV_FLAG_FRIENDLYFIRE) )
 					{
-						// set armornum to the relevant equipment slot to send to clients
-						int armornum = 5 + reflection;
-						if ( player == clientnum || player < 0 )
+						// Friendly Fire is ON, equipment should always degrade, as hit will register
+						bShouldEquipmentDegrade = true;
+					}
+					else
+					{
+						// Friendly Fire is OFF, is the target an enemy?
+						if ( parent != nullptr && (parent->checkFriend(hit.entity)) == false )
 						{
+							// Target is an enemy, equipment should degrade
+							bShouldEquipmentDegrade = true;
+						}
+					}
+
+					if ( bShouldEquipmentDegrade )
+					{
+						// Reflection of 3 does not degrade equipment
+						if ( rand() % 2 == 0 && hitstats && reflection < 3 )
+						{
+							// set armornum to the relevant equipment slot to send to clients
+							int armornum = 5 + reflection;
+							if ( player == clientnum || player < 0 )
+							{
+								if ( reflection == 1 )
+								{
+									if ( hitstats->cloak->count > 1 )
+									{
+										newItem(hitstats->cloak->type, hitstats->cloak->status, hitstats->cloak->beatitude, hitstats->cloak->count - 1, hitstats->cloak->appearance, hitstats->cloak->identified, &hitstats->inventory);
+									}
+								}
+								else if ( reflection == 2 )
+								{
+									if ( hitstats->amulet->count > 1 )
+									{
+										newItem(hitstats->amulet->type, hitstats->amulet->status, hitstats->amulet->beatitude, hitstats->amulet->count - 1, hitstats->amulet->appearance, hitstats->amulet->identified, &hitstats->inventory);
+									}
+								}
+								else if ( reflection == -1 )
+								{
+									if ( hitstats->shield->count > 1 )
+									{
+										newItem(hitstats->shield->type, hitstats->shield->status, hitstats->shield->beatitude, hitstats->shield->count - 1, hitstats->shield->appearance, hitstats->shield->identified, &hitstats->inventory);
+									}
+								}
+							}
 							if ( reflection == 1 )
 							{
-								if ( hitstats->cloak->count > 1 )
+								hitstats->cloak->count = 1;
+								hitstats->cloak->status = static_cast<Status>(hitstats->cloak->status - 1);
+								if ( hitstats->cloak->status != BROKEN )
 								{
-									newItem(hitstats->cloak->type, hitstats->cloak->status, hitstats->cloak->beatitude, hitstats->cloak->count - 1, hitstats->cloak->appearance, hitstats->cloak->identified, &hitstats->inventory);
+									messagePlayer(player, language[380]);
+								}
+								else
+								{
+									messagePlayer(player, language[381]);
+									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
 							else if ( reflection == 2 )
 							{
-								if ( hitstats->amulet->count > 1 )
+								hitstats->amulet->count = 1;
+								hitstats->amulet->status = static_cast<Status>(hitstats->amulet->status - 1);
+								if ( hitstats->amulet->status != BROKEN )
 								{
-									newItem(hitstats->amulet->type, hitstats->amulet->status, hitstats->amulet->beatitude, hitstats->amulet->count - 1, hitstats->amulet->appearance, hitstats->amulet->identified, &hitstats->inventory);
+									messagePlayer(player, language[382]);
+								}
+								else
+								{
+									messagePlayer(player, language[383]);
+									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
 							else if ( reflection == -1 )
 							{
-								if ( hitstats->shield->count > 1 )
+								hitstats->shield->count = 1;
+								hitstats->shield->status = static_cast<Status>(hitstats->shield->status - 1);
+								if ( hitstats->shield->status != BROKEN )
 								{
-									newItem(hitstats->shield->type, hitstats->shield->status, hitstats->shield->beatitude, hitstats->shield->count - 1, hitstats->shield->appearance, hitstats->shield->identified, &hitstats->inventory);
+									messagePlayer(player, language[384]);
+								}
+								else
+								{
+									messagePlayer(player, language[385]);
+									playSoundEntity(hit.entity, 76, 64);
 								}
 							}
-						}
-						if ( reflection == 1 )
-						{
-							hitstats->cloak->count = 1;
-							hitstats->cloak->status = static_cast<Status>(hitstats->cloak->status - 1);
-							if ( hitstats->cloak->status != BROKEN )
+							if ( player > 0 && multiplayer == SERVER )
 							{
-								messagePlayer(player, language[380]);
+								strcpy((char*)net_packet->data, "ARMR");
+								net_packet->data[4] = armornum;
+								if ( reflection == 1 )
+								{
+									net_packet->data[5] = hitstats->cloak->status;
+								}
+								else if ( reflection == 2 )
+								{
+									net_packet->data[5] = hitstats->amulet->status;
+								}
+								else
+								{
+									net_packet->data[5] = hitstats->shield->status;
+								}
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
-							else
-							{
-								messagePlayer(player, language[381]);
-								playSoundEntity(hit.entity, 76, 64);
-							}
-						}
-						else if ( reflection == 2 )
-						{
-							hitstats->amulet->count = 1;
-							hitstats->amulet->status = static_cast<Status>(hitstats->amulet->status - 1);
-							if ( hitstats->amulet->status != BROKEN )
-							{
-								messagePlayer(player, language[382]);
-							}
-							else
-							{
-								messagePlayer(player, language[383]);
-								playSoundEntity(hit.entity, 76, 64);
-							}
-						}
-						else if ( reflection == -1 )
-						{
-							hitstats->shield->count = 1;
-							hitstats->shield->status = static_cast<Status>(hitstats->shield->status - 1);
-							if ( hitstats->shield->status != BROKEN )
-							{
-								messagePlayer(player, language[384]);
-							}
-							else
-							{
-								messagePlayer(player, language[385]);
-								playSoundEntity(hit.entity, 76, 64);
-							}
-						}
-						if (player > 0 && multiplayer == SERVER)
-						{
-							strcpy((char*)net_packet->data, "ARMR");
-							net_packet->data[4] = armornum;
-							if (reflection == 1)
-							{
-								net_packet->data[5] = hitstats->cloak->status;
-							}
-							else if (reflection == 2)
-							{
-								net_packet->data[5] = hitstats->amulet->status;
-							}
-							else
-							{
-								net_packet->data[5] = hitstats->shield->status;
-							}
-							net_packet->address.host = net_clients[player - 1].host;
-							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
+					
 					if ( spellIsReflectingMagic )
 					{
 						int spellCost = getCostOfSpell(spell);
