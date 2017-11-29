@@ -1582,6 +1582,17 @@ void Entity::handleEffects(Stat* myStats)
 							this->setHP(1);
 						}
 					}
+					else
+					{
+						this->modHP(-4);
+
+						if ( myStats->HP > 0 )
+						{
+							messagePlayer(player, language[633]);
+						}
+
+						this->setObituary(language[1530]);
+					}
 				}
 			}
 		}
