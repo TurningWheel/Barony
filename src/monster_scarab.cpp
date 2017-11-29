@@ -109,7 +109,7 @@ void initScarab(Entity* my, Stat* myStats)
 					{
 						if ( rand() % 3 > 0 )
 						{
-							newItem(FOOD_TOMALLEY, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
 						}
 						else
 						{
@@ -138,7 +138,7 @@ void initScarab(Entity* my, Stat* myStats)
 									gem = GEM_GLASS;
 									break;
 							}
-							newItem(gem, static_cast<Status>(0 + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
+							newItem(gem, static_cast<Status>(DECREPIT + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;

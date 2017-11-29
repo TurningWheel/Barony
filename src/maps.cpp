@@ -2840,6 +2840,14 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[SCARAB][0][0]; // 0
 						entity->focaly = limbs[SCARAB][0][1]; // 0
 						entity->focalz = limbs[SCARAB][0][2]; // 0
+						if ( !strncmp(map->name, "The Labyrinth", 13) )
+						{
+							if ( myStats )
+							{
+								myStats->DEX -= 4;
+								myStats->LVL = 10;
+							}
+						}
 						break;
 					case CRYSTALGOLEM:
 						entity->z = -1.5;
@@ -2888,7 +2896,7 @@ void assignActions(map_t* map)
 								myStats->STR = 8;
 								myStats->RANDOM_STR = 0;
 								myStats->DEX = 6;
-								myStats->CON = 10;
+								myStats->CON = 7;
 								myStats->INT = -2;
 								myStats->PER = 5;
 								myStats->CHR = 5;
