@@ -116,9 +116,10 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
+	// Calculate the cost of the Spell for Singleplayer
 	if ( spell->ID == SPELL_MAGICMISSILE && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
 	{
-		//Spellcasting capstone.
+		// Reaching Spellcasting capstone makes Magic Missile free
 		magiccost = 0;
 	}
 	else
@@ -216,16 +217,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				messagePlayer(player, "Error: Invalid spell. Mana cost is negative?");
 			return NULL;
 		}*/
-		if (multiplayer == SINGLE)
+		if ( multiplayer == SINGLE )
 		{
 			magiccost = cast_animation.mana_left;
 			caster->drainMP(magiccost);
 		}
-		else
+		else // Calculate the cost of the Spell for Multiplayer
 		{
-			//TODO: Fix issue #141: Spellcasting capstone doesn't work in multiplayer.
-			magiccost = getCostOfSpell(spell);
-			caster->drainMP(magiccost);
+			if ( spell->ID == SPELL_MAGICMISSILE && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			{
+				// Reaching Spellcasting capstone makes Magic Missile free
+				magiccost = 0;
+			}
+			else
+			{
+				magiccost = getCostOfSpell(spell);
+				caster->drainMP(magiccost);
+			}
 		}
 	}
 

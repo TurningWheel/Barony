@@ -22,6 +22,9 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
+bool spamming = false;
+bool showfirst = false;
+
 /*-------------------------------------------------------------------------------
 
 	consoleCommand
@@ -305,6 +308,14 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[292]);
 			}
 		}
+	}
+	else if ( !strncmp(command_str, "/spam", 5) )
+	{
+		spamming = !(spamming);
+	}
+	else if ( !strncmp(command_str, "/showfirst", 10) )
+	{
+		showfirst = !(showfirst);
 	}
 	else if ( !strncmp(command_str, "/buddha", 7) )
 	{

@@ -102,6 +102,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 	if (!(packetsend->packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
 	{
 		printlog("warning: packet allocation failed: %s\n", SDLNet_GetError());
+		free(packetsend);
 		return 0;
 	}
 
@@ -233,6 +234,10 @@ void messagePlayerColor(int player, Uint32 color, char* message, ...)
 	if ( player == clientnum )
 	{
 		newString(&messages, color, str);
+		while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
+		{
+			list_RemoveNode(messages.first);
+		}
 		if ( !disable_messages )
 		{
 			addMessage(color, str);
