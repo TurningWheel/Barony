@@ -1812,6 +1812,21 @@ void Entity::handleEffects(Stat* myStats)
 					this->setHP(1);
 				}
 			}
+			else
+			{
+				this->modHP(-poisonhurt);
+
+				if ( myStats->HP <= 0 )
+				{
+					Entity* killer = uidToEntity(myStats->poisonKiller);
+					if ( killer )
+					{
+						killer->awardXP(this, true, true);
+					}
+				}
+
+				this->setObituary(language[1531]);
+			}
 
 			playSoundEntity(this, 28, 64);
 
