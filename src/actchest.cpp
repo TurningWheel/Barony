@@ -442,6 +442,8 @@ void Entity::actChest()
 		}
 		playSoundEntity(this, 177, 64);
 
+		this->closeChest();
+
 		// remove chest entities
 		Entity* parentEntity = uidToEntity(parent);
 		if ( parentEntity )
