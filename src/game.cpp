@@ -2809,12 +2809,6 @@ int main(int argc, char** argv)
 
 				if ( !gamePaused )
 				{
-					// status bar
-					if ( !nohud )
-					{
-						drawStatus();
-					}
-
 					// interface
 					if ( (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) )
 					{
@@ -3080,9 +3074,12 @@ int main(int argc, char** argv)
 							SDL_SetRelativeMouseMode(SDL_TRUE);
 						}
 					}
+
+					// Draw the static HUD elements
 					if ( !nohud )
 					{
-						drawMinimap();
+						drawMinimap(); // Draw the Minimap
+						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
 
 					drawSustainedSpells();
