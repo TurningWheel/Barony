@@ -550,7 +550,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 300;
+			stats->MAXHP = 220;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;
 			stats->MP = stats->MAXMP;
@@ -601,7 +601,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 500;
+			stats->HP = 230;
 			stats->RANDOM_HP = 0;
 			stats->MAXHP = stats->HP;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
@@ -659,7 +659,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
 			stats->sex = static_cast<sex_t>(rand() % 2);
-			stats->MAXHP = 200;
+			stats->MAXHP = 170;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 500;
 			stats->MP = stats->MAXMP;
@@ -730,7 +730,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 175;
+			stats->MAXHP = 130;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;
 			stats->MP = stats->MAXMP;
@@ -837,7 +837,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 130;
+			stats->MAXHP = 115;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 20;
 			stats->MP = stats->MAXMP;
@@ -848,7 +848,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
 			stats->STR = 20;
 			stats->DEX = 5;
-			stats->CON = 5;
+			stats->CON = 8;
 			stats->INT = -1;
 			stats->PER = 10;
 			stats->CHR = -3;
