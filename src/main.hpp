@@ -31,6 +31,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define STEAM_APPID 371970
 #endif
 
+extern bool spamming;
+extern bool showfirst;
+
 #include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -111,6 +114,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define PI 3.14159265358979323846
 
 extern FILE* logfile;
+static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 
 class Item;
 //enum Item;
@@ -294,10 +298,10 @@ static const int MAP_FLAG_DISABLETELEPORT = 13;
 static const int MAP_FLAG_DISABLELEVITATION = 14;
 static const int MAP_FLAG_GENADJACENTROOMS = 15;
 
-#define MFLAG_DISABLEDIGGING (map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF // first leftmost byte
-#define MFLAG_DISABLETELEPORT (map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF // second leftmost byte
-#define MFLAG_DISABLELEVITATION (map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF // third leftmost byte
-#define MFLAG_GENADJACENTROOMS (map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF // fourth leftmost byte
+#define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
+#define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
+#define MFLAG_DISABLELEVITATION ((map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF) // third leftmost byte
+#define MFLAG_GENADJACENTROOMS ((map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF) // fourth leftmost byte
 
 // light structure
 typedef struct light_t

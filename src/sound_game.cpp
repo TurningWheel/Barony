@@ -91,7 +91,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		return NULL;
 	}
-	if (snd < 0 || snd >= numsounds)
+	if (snd < 0 || snd >= numsounds) //TODO: snd < 0 is impossible with a Uint32.
 	{
 		return NULL;
 	}

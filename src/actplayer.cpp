@@ -187,6 +187,14 @@ void actPlayer(Entity* my)
 		return;
 	}
 
+	if ( spamming )
+	{
+		for (int i = 0; i < 1000; ++i)
+		{
+			messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
+		}
+	}
+
 	Entity* entity;
 	Entity* entity2 = nullptr;
 	Entity* rightbody = nullptr;

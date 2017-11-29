@@ -717,6 +717,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 	}
+	return true;
 }
 
 //int devilintro=0;
@@ -4530,7 +4531,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		int bow = 1;
 		if ( hasrangedweapon )
 		{
-			if ( myStats->weapon && myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
+			if ( myStats->weapon && (myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW) )
 			{
 				bow = 2;
 			}
