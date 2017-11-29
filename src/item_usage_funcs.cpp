@@ -802,7 +802,7 @@ void item_PotionParalysis(Item* item, Entity* entity)
 	if ( player >= 0 )
 	{
 		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getPER() + entity->getCON()) * 5);
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getCON()) * 5);
 	}
 	else
 	{
