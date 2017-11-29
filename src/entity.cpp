@@ -2426,7 +2426,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 		this->char_poison++;
-		if ( this->char_poison > 180 )   // three seconds
+		if ( this->char_poison > 150 )   // three seconds
 		{
 			this->char_poison = 0;
 			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
@@ -4734,6 +4734,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					bool statusInflicted = false;
+
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
@@ -4760,14 +4762,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							case SCORPION:
 								hitstats->EFFECTS[EFF_PARALYZED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = 120;
+								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
 								messagePlayer(playerhit, language[684]);
 								messagePlayer(playerhit, language[685]);
 								serverUpdateEffects(playerhit);
 								break;
 							case SPIDER:
 								hitstats->EFFECTS[EFF_POISONED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_POISONED] = 600;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
 								messagePlayer(playerhit, language[686]);
 								messagePlayer(playerhit, language[687]);
 								serverUpdateEffects(playerhit);
@@ -4857,6 +4859,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 								break;
 							default:
 								break;
+						}
+					}
+					else if ( damage == 0 )
+					{
+						// special chance effects when damage is 0.
+						if ( rand() % 20 == 0 )
+						{
+							switch ( myStats->type )
+							{
+								case SCORPION:
+									hitstats->EFFECTS[EFF_PARALYZED] = true;
+									hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
+									messagePlayer(playerhit, language[684]);
+									messagePlayer(playerhit, language[685]);
+									serverUpdateEffects(playerhit);
+									statusInflicted = true;
+									break;
+								case SPIDER:
+									hitstats->EFFECTS[EFF_POISONED] = true;
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
+									messagePlayer(playerhit, language[686]);
+									messagePlayer(playerhit, language[687]);
+									serverUpdateEffects(playerhit);
+									statusInflicted = true;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 
@@ -5006,7 +5036,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						// display 'blow bounces off' message
 						//messagePlayer(playerhit, language[700]);
-						messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT);
+						if ( !statusInflicted )
+						{
+							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT);
+						}
 					}
 
 					playSoundEntity(hit.entity, 28, 64);
