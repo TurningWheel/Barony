@@ -94,21 +94,33 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Labyrinth", 13) )     // sand labyrinth
 	{
-		switch ( rand() % 10 )
+		switch ( rand() % 20 )
 		{
 			case 0:
 			case 1:
-				return GOBLIN;
 			case 2:
 			case 3:
+				return GOBLIN;
 			case 4:
 			case 5:
-				return SCORPION;
 			case 6:
 			case 7:
 			case 8:
 			case 9:
+				return SCORPION;
+			case 10:
+			case 11:
+			case 12:
+			case 13:
 				return TROLL;
+			case 14:
+			case 15:
+			case 16:
+			case 17:
+				return SCARAB;
+			case 18:
+			case 19:
+				return INSECTOID;
 		}
 	}
 	else if ( !strncmp(map.name, "The Ruins", 9) )     // blue ruins
@@ -2672,7 +2684,6 @@ void assignActions(map_t* map)
 				else
 				{
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
-
 				}
 
 				if ( multiplayer != CLIENT )
@@ -2865,6 +2876,26 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[INSECTOID][0][0]; // 0
 						entity->focaly = limbs[INSECTOID][0][1]; // 0
 						entity->focalz = limbs[INSECTOID][0][2]; // -1.75
+						if ( !strncmp(map->name, "The Labyrinth", 13) )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "lesser insectoid");
+								myStats->HP = 70;
+								myStats->MAXHP = myStats->HP;
+								myStats->RANDOM_MAXHP = 10;
+								myStats->RANDOM_HP = myStats->RANDOM_MAXHP;
+								myStats->STR = 8;
+								myStats->RANDOM_STR = 0;
+								myStats->DEX = 6;
+								myStats->CON = 10;
+								myStats->INT = -2;
+								myStats->PER = 5;
+								myStats->CHR = 5;
+								myStats->EXP = 0;
+								myStats->LVL = 10;
+							}
+						}
 						break;
 					case GOATMAN:
 						entity->z = 0;

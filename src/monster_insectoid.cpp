@@ -97,6 +97,12 @@ void initInsectoid(Entity* my, Stat* myStats)
 			// always give special spell to insectoid, undroppable.
 			newItem(SPELLBOOK_ACID_SPRAY, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "lesser insectoid", strlen("lesser insectoid")) )
+			{
+				lesserMonster = true;
+			}
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -110,179 +116,293 @@ void initInsectoid(Entity* my, Stat* myStats)
 						newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 					}
 				case 1:
-					newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					if ( lesserMonster )
+					{
+						newItem(IRON_DAGGER, SERVICABLE, 0, 0 + rand() % 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
+					else
+					{
+						newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
 					break;
 				default:
 					break;
 			}
 
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			if ( lesserMonster )
 			{
-				// give shield
-				switch ( rand() % 20 )
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-						myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 8:
-					case 9:
-					case 10:
-					case 11:
-						myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 18:
-						myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 19:
-						myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					default:
-						break;
+					// give shield
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 7:
+						case 8:
+						case 9:
+							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							break;
+					}
+				}
+
+				//give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+							myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							myStats->weapon = newItem(IRON_SWORD, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 5:
+						case 6:
+						case 7:
+							myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 8:
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							break;
+					}
+				}
+
+				// give cloak
+				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+						case 9:
+							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+
+				// give booties
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 7:
+						case 8:
+						case 9:
+							break;
+						default:
+							break;
+
+					}
 				}
 			}
-
-			//give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			else
 			{
-				switch ( rand() % 20 )
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-					case 10:
-					case 11:
-					case 12:
-					case 13:
-					case 14:
-						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 15:
-						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 16:
-					case 17:
-						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 18:
-						myStats->weapon = newItem(CRYSTAL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 19:
-						myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
+					// give shield
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 8:
+						case 9:
+						case 10:
+						case 11:
+							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 18:
+							myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 19:
+							myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							break;
+					}
 				}
-			}
 
-			// give cloak
-			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
-			{
-				switch ( rand() % 10 )
+				//give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-						myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+							myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+						case 10:
+						case 11:
+						case 12:
+						case 13:
+						case 14:
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 15:
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 16:
+						case 17:
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 18:
+							myStats->weapon = newItem(CRYSTAL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 19:
+							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
 				}
-			}
 
-			// give helmet
-			/*if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
+				// give cloak
+				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-						break;
-					case 3:
-					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
-						break;
-					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
-						break;
-					case 6:
-					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
-						break;
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+						case 9:
+							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
 				}
-			}*/
 
-			// give armor
-			/*if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
-			{
-				switch ( rand() % 10 )
+				// give helmet
+				/*if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-						break;
-					case 8:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-				}
-			}*/
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+							break;
+						case 3:
+						case 4:
+							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							break;
+						case 5:
+							myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							break;
+						case 6:
+						case 7:
+							myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							break;
+						case 8:
+						case 9:
+							myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							break;
+					}
+				}*/
 
-			// give booties
-			if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
-			{
-				switch ( rand() % 20 )
+				// give armor
+				/*if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 19:
-						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					default:
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							break;
+						case 8:
+							myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}*/
 
+				// give booties
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 19:
+							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							break;
+
+					}
 				}
 			}
 		}
