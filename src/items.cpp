@@ -1117,55 +1117,57 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		//Shadows don't drop spellbooks.
 		itemDroppable = false;
 	}*/
-
-	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	if ( monsterStats )
 	{
-		if ( monsterStats->type == SHADOW )
+		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 		{
-			itemDroppable = false;
-		}
+			if ( monsterStats->type == SHADOW )
+			{
+				itemDroppable = false;
+			}
 
-		if ( (monsterStats->type == KOBOLD 
-			|| monsterStats->type == COCKATRICE 
-			|| monsterStats->type == INSECTOID 
-			|| monsterStats->type == INCUBUS
-			|| monsterStats->type == VAMPIRE)
-			&& itemCategory(item) == SPELLBOOK )
-		{
-			// monsters with special spell attacks won't drop their book.
-			itemDroppable = false;
+			if ( (monsterStats->type == KOBOLD
+				|| monsterStats->type == COCKATRICE
+				|| monsterStats->type == INSECTOID
+				|| monsterStats->type == INCUBUS
+				|| monsterStats->type == VAMPIRE)
+				&& itemCategory(item) == SPELLBOOK )
+			{
+				// monsters with special spell attacks won't drop their book.
+				itemDroppable = false;
+			}
+			if ( monsterStats->type == INSECTOID && itemCategory(item) == THROWN )
+			{
+				// insectoids won't drop their un-thrown daggers.
+				itemDroppable = false;
+			}
+			if ( monsterStats->type == INCUBUS && itemCategory(item) == POTION )
+			{
+				// incubus won't drop excess potions.
+				itemDroppable = false;
+			}
+			if ( monsterStats->type == GOATMAN && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK) )
+			{
+				// goatman sometimes won't drop excess potions.
+				itemDroppable = false;
+			}
 		}
-		if ( monsterStats->type == INSECTOID && itemCategory(item) == THROWN )
+		else if ( monsterStats->HP <= 0 )
 		{
-			// insectoids won't drop their un-thrown daggers.
-			itemDroppable = false;
-		}
-		if ( monsterStats->type == INCUBUS && itemCategory(item) == POTION )
-		{
-			// incubus won't drop excess potions.
-			itemDroppable = false;
-		}
-		if ( monsterStats->type == GOATMAN && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK) )
-		{
-			// goatman sometimes won't drop excess potions.
-			itemDroppable = false;
-		}
-	}
-	else if ( monsterStats->HP <= 0 )
-	{
-		// we're dropping the item on death.
-		switch ( itemCategory(item) )
-		{
-			case WEAPON:
-			case ARMOR:
-			case THROWN:
-				if ( item->status == BROKEN )
-				{
-					itemDroppable = false;
-				}
-				break;
-			default:
-				break;
+			// we're dropping the item on death.
+			switch ( itemCategory(item) )
+			{
+				case WEAPON:
+				case ARMOR:
+				case THROWN:
+					if ( item->status == BROKEN )
+					{
+						itemDroppable = false;
+					}
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
