@@ -659,7 +659,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 			{
 				if ( (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS) ) )
 				{
-					canAlly = true;
+					if ( race != AUTOMATON )
+					{
+						canAlly = true;
+					}
 				}
 			}
 		}
