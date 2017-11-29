@@ -1809,17 +1809,48 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			this->char_poison = 0;
 			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
-			this->modHP(-poisonhurt);
-			if ( myStats->HP <= 0 )
+
+			if ( buddhamode )
 			{
-				Entity* killer = uidToEntity( myStats->poisonKiller );
-				if ( killer )
+				if ( myStats->HP - poisonhurt > 0 )
 				{
-					killer->awardXP( this, true, true );
+					this->modHP(-poisonhurt);
+
+					if ( myStats->HP <= 0 )
+					{
+						Entity* killer = uidToEntity(myStats->poisonKiller);
+						if ( killer )
+						{
+							killer->awardXP(this, true, true);
+						}
+					}
+
+					this->setObituary(language[1531]);
+				}
+				else
+				{
+					// Instead of killing the Buddha Player, set their HP to 1
+					this->setHP(1);
 				}
 			}
-			this->setObituary(language[1531]);
+			else
+			{
+				this->modHP(-poisonhurt);
+
+				if ( myStats->HP <= 0 )
+				{
+					Entity* killer = uidToEntity(myStats->poisonKiller);
+					if ( killer )
+					{
+						killer->awardXP(this, true, true);
+					}
+				}
+
+				this->setObituary(language[1531]);
+			}
+
 			playSoundEntity(this, 28, 64);
+
 			if ( player == clientnum )
 			{
 				camera_shakex += .1;
@@ -1835,6 +1866,7 @@ void Entity::handleEffects(Stat* myStats)
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
+
 			if ( rand() % 5 == 0 )
 			{
 				messagePlayer(player, language[641]);
