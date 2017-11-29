@@ -117,18 +117,49 @@ void actFountain(Entity* my)
 						case 0:
 						{
 							playSoundEntity(players[i]->entity, 52, 64);
-
 							//Spawn succubus.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-							messagePlayerColor(i, color, language[469]);
-							summonMonster(SUCCUBUS, my->x, my->y);
+							if ( currentlevel < 10 )
+							{
+								messagePlayerColor(i, color, language[469]);
+								summonMonster(SUCCUBUS, my->x, my->y);
+							}
+							else
+							{
+								if ( rand() % 2 )
+								{
+									Entity* incubus = summonMonster(INCUBUS, my->x, my->y);
+									Stat* tmpStats = incubus->getStats();
+									if ( tmpStats )
+									{
+										strcpy(tmpStats->name, "lesser incubus");
+										tmpStats->HP = 80;
+										tmpStats->MAXHP = tmpStats->HP;
+										tmpStats->STR = 12;
+										tmpStats->DEX = 6;
+										tmpStats->CON = 3;
+										tmpStats->INT = -2;
+										tmpStats->PER = 5;
+										tmpStats->CHR = 5;
+										tmpStats->EXP = 0;
+										tmpStats->LVL = 15;
+									}
+									messagePlayerColor(i, color, language[2519]);
+								}
+								else
+								{
+									messagePlayerColor(i, color, language[469]);
+									summonMonster(SUCCUBUS, my->x, my->y);
+								}
+							}
 							break;
 						}
 						case 1:
 							messagePlayer(i, language[470]);
 							messagePlayer(i, language[471]);
 							playSoundEntity(players[i]->entity, 52, 64);
-							stats[i]->HUNGER += 50;
+							stats[i]->HUNGER += 100;
+							players[i]->entity->modHP(5);
 							break;
 						case 2:
 						{

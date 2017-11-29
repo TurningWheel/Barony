@@ -96,6 +96,12 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 			}
 
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "lesser incubus", strlen("lesser incubus")) )
+			{
+				lesserMonster = true;
+			}
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -103,7 +109,7 @@ void initIncubus(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 2 == 0 ) // 1 in 2
+					if ( rand() % 2 == 0 && !lesserMonster ) // 1 in 2
 					{
 						newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
 					}
@@ -123,7 +129,32 @@ void initIncubus(Entity* my, Stat* myStats)
 			}
 
 			//give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			if ( lesserMonster )
+			{
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+			}
+			else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
