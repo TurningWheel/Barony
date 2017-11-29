@@ -70,7 +70,7 @@ void item_PotionWater(Item* item, Entity* entity)
 		playSoundEntity(entity, 52, 64);
 		if ( item->beatitude > 0 )
 		{
-			entity->modHP(item->beatitude);
+			entity->modHP(5);
 		}
 		if ( player != clientnum )
 		{
@@ -87,6 +87,7 @@ void item_PotionWater(Item* item, Entity* entity)
 	{
 		messagePlayer(player, language[753]);
 		stats->HUNGER += 50;
+		entity->modHP(2);
 	}
 	else if ( item->beatitude < 0 )
 	{
@@ -174,8 +175,17 @@ void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem)
 	messagePlayer(player, language[758]);
 	messagePlayer(player, language[759]);
 	stats->EFFECTS[EFF_DRUNK] = true;
-	stats->EFFECTS_TIMERS[EFF_DRUNK] = 3600;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+	}
 	stats->HUNGER += 100;
+	entity->modHP(5);
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -233,6 +243,7 @@ void item_PotionJuice(Item* item, Entity* entity)
 
 	messagePlayer(player, language[760]);
 	stats->HUNGER += 50;
+	entity->modHP(5);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -354,7 +365,14 @@ void item_PotionConfusion(Item* item, Entity* entity)
 
 	messagePlayer(player, language[762]);
 	stats->EFFECTS[EFF_CONFUSED] = true;
-	stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = std::max(300, 1800 - (entity->getPER() + entity->getCON()) * 20);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+	}
 	if ( entity->behavior == &actMonster )
 	{
 		entity->monsterTarget = 0; // monsters forget what they're doing
@@ -478,7 +496,15 @@ void item_PotionBlindness(Item* item, Entity* entity)
 
 	messagePlayer(player, language[765]);
 	stats->EFFECTS[EFF_BLIND] = true;
-	stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+		stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -773,7 +799,15 @@ void item_PotionParalysis(Item* item, Entity* entity)
 
 	messagePlayer(player, language[771]);
 	stats->EFFECTS[EFF_PARALYZED] = true;
-	stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getPER() + entity->getCON()) * 5);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
