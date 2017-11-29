@@ -1229,7 +1229,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item* item)
+void consumeItem(Item*& item)
 {
 	if ( item == nullptr )
 	{
@@ -1263,6 +1263,7 @@ void consumeItem(Item* item)
 		{
 			free(item);
 		}
+		item = nullptr;
 	}
 }
 
@@ -1437,13 +1438,13 @@ void useItem(Item* item, int player)
 		return;
 	}
 
-	if (openedChest[player] && itemCategory(item) != SPELL_CAT)
+	if ( openedChest[player] && itemCategory(item) != SPELL_CAT ) //TODO: What if fountain called this function for its potion effect?
 	{
 		//If a chest is open, put the item in the chest.
 		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
-	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT)
+	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT) //TODO: What if fountain called this function for its potion effect?
 	{
 		bool deal = true;
 		switch ( shopkeepertype )
@@ -2003,6 +2004,11 @@ void useItem(Item* item, int player)
 		default:
 			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
 			break;
+	}
+
+	if ( !item )
+	{
+		return;
 	}
 
 	// on-equip messages.
@@ -2899,7 +2905,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 			if ( cat >= WEAPON && itemCategory(item) == cat )
 			{
 				return node;
-			} 
+			}
 			else if ( itemToFind != -1 && item->type == itemToFind )
 			{
 				return node;
@@ -2992,7 +2998,7 @@ node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
 	return nullptr;
 }
 
-bool inline isRangedWeapon(const Item& item)
+bool isRangedWeapon(const Item& item)
 {
 	switch ( item.type )
 	{
@@ -3006,7 +3012,7 @@ bool inline isRangedWeapon(const Item& item)
 	}
 }
 
-bool inline isMeleeWeapon(const Item& item)
+bool isMeleeWeapon(const Item& item)
 {
 	if ( itemCategory(&item) != WEAPON )
 	{
