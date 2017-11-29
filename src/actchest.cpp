@@ -234,7 +234,7 @@ void Entity::actChest()
 						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						 * 16 - 19 are the hats & helmets, items 40 - 43
 						 */
-						int item = rand() % 20;
+						int item = rand() % 15;
 						if (item <= 1)
 							//Steel shields. Items 17 & 18.
 						{
@@ -243,17 +243,25 @@ void Entity::actChest()
 						else if (item <= 5)
 							//Gauntlets. Items 20 - 23.
 						{
-							newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 15)
-							//Boots & shirts. Items 28 - 37.
-						{
-							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							if ( rand() % 3 > 0 )
+							{
+								newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
+							else
+							{
+								// new gauntlets
+								newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
 						}
 						else if (item <= 10)
 							//Hats & helmets. Items 40 - 43.
 						{
 							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
+						else if (item <= 15)
+							//Boots & shirts. Items 28 - 37.
+						{
+							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
 					}
 					break;
@@ -288,17 +296,25 @@ void Entity::actChest()
 						else if (item <= 5)
 							//Gauntlets. Items 20 - 23.
 						{
-							newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 15)
-							//Boots & shirts. Items 28 - 37.
-						{
-							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							if ( rand() % 3 > 0 )
+							{
+								newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
+							else
+							{
+								// new gauntlets
+								newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
 						}
 						else if (item <= 10)
 							//Hats & helmets. Items 40 - 43.
 						{
 							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
+						else if (item <= 15)
+							//Boots & shirts. Items 28 - 37.
+						{
+							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
 					}
 					break;
@@ -309,10 +325,26 @@ void Entity::actChest()
 				break;
 			case 5:
 				//Tools.
-				itemcount = 1 + rand() % 2;
-				for (i = 0; i < itemcount; ++i)
+				switch ( rand() % 3 )
 				{
-					newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					case 0:
+					case 1:
+						itemcount = 1 + rand() % 2;
+						for (i = 0; i < itemcount; ++i)
+						{
+							newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
+						break;
+					case 2:
+						itemcount = 1 + rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(itemLevelCurve(THROWN), durability, 0, 2 + rand() % 2, rand(), false, inventory);
+						}
+						break;
+					default:
+						break;
 				}
 				break;
 			case 6:
@@ -1108,4 +1140,25 @@ void Entity::unlockChest()
 void Entity::lockChest()
 {
 	chestLocked = 1;
+}
+
+void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+{
+	chestHealth -= damage; //Decrease door health.
+	if ( caster )
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			if ( chestHealth <= 0 )
+			{
+				messagePlayer(caster->skill[2], language[2520]);
+			}
+			else
+			{
+				messagePlayer(caster->skill[2], language[378], language[675]);
+			}
+		}
+		updateEnemyBar(caster, this, language[675], chestHealth, chestMaxHealth);
+	}
+	playSoundEntity(this, 28, 128);
 }
