@@ -410,6 +410,7 @@ public:
 	void removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
 	void unlockChest();
 	void lockChest();
+	void chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
 
 	//Power Crystal functions.
 	void powerCrystalCreateElectricityNodes();
