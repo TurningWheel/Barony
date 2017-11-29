@@ -4861,7 +4861,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								break;
 						}
 					}
-					else if ( damage == 0 )
+					else if ( damage == 0 && !(hitstats->defending) )
 					{
 						// special chance effects when damage is 0.
 						if ( rand() % 20 == 0 )
