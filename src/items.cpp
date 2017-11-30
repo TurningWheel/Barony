@@ -2711,10 +2711,6 @@ void Item::apply(int player, Entity* entity)
 		return;
 	}
 
-	if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
-	{
-		applyOrb(player, type, *entity);
-	}
 
 	// for clients:
 	if ( multiplayer == CLIENT )
@@ -2732,9 +2728,17 @@ void Item::apply(int player, Entity* entity)
 		net_packet->address.port = net_server.port;
 		net_packet->len = 30;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
+		if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+		{
+			applyOrb(player, type, *entity);
+		}
 		return;
 	}
 
+	if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+	{
+		applyOrb(player, type, *entity);
+	}
 	// effects
 	if ( type == TOOL_SKELETONKEY )
 	{
