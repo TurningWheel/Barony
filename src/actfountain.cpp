@@ -133,16 +133,6 @@ void actFountain(Entity* my)
 									if ( tmpStats )
 									{
 										strcpy(tmpStats->name, "lesser incubus");
-										tmpStats->HP = 80;
-										tmpStats->MAXHP = tmpStats->HP;
-										tmpStats->STR = 12;
-										tmpStats->DEX = 6;
-										tmpStats->CON = 3;
-										tmpStats->INT = -2;
-										tmpStats->PER = 5;
-										tmpStats->CHR = 5;
-										tmpStats->EXP = 0;
-										tmpStats->LVL = 15;
 									}
 									messagePlayerColor(i, color, language[2519]);
 								}

@@ -137,8 +137,17 @@ int monsterCurve(int level)
 			case 5:
 			case 6:
 			case 7:
-			case 8:
 				return TROLL;
+			case 8:
+				if ( rand() % 10 > 0 )
+				{
+					return TROLL;
+				}
+				else
+				{
+					return VAMPIRE;
+					messagePlayer(0, "true");
+				}
 			case 9:
 				return DEMON;
 		}
@@ -1545,7 +1554,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 	{
 		genEntityMin = (map.flags[MAP_FLAG_GENBYTES1] >> 24) & 0xFF; // first leftmost byte
 		genEntityMax = (map.flags[MAP_FLAG_GENBYTES1] >> 16) & 0xFF; // second leftmost byte
-		genEntityMin = std::max(genEntityMin, 2); // make sure there's room for a ladder.
 
 		genMonsterMin = (map.flags[MAP_FLAG_GENBYTES1] >> 8) & 0xFF; // third leftmost byte
 		genMonsterMax = (map.flags[MAP_FLAG_GENBYTES1] >> 0) & 0xFF; // fourth leftmost byte
@@ -1562,6 +1570,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 	if ( genEntityMin > 0 || genEntityMax > 0 )
 	{
+		genEntityMin = std::max(genEntityMin, 2); // make sure there's room for a ladder.
 		entitiesToGenerate = genEntityMin;
 		randomEntities = std::max(genEntityMax - genEntityMin, 1); // difference between min and max is the extra chances.
 		//Needs to be 1 for prng_get_uint() % to not divide by 0.
@@ -1572,7 +1581,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 		// revert to old mechanics.
 		j = std::min<Uint32>(30 + prng_get_uint() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
 	}
-
 	int forcedMonsterSpawns = 0;
 	int forcedLootSpawns = 0;
 	int forcedDecorationSpawns = 0;
@@ -2866,6 +2874,13 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[VAMPIRE][0][0]; // 0
 						entity->focaly = limbs[VAMPIRE][0][1]; // 0
 						entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
+						if ( !strncmp(map->name, "The Ruins", 9) )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "young vampire");
+							}
+						}
 						break;
 					case SHADOW:
 						entity->z = -1;
@@ -2889,19 +2904,6 @@ void assignActions(map_t* map)
 							if ( myStats )
 							{
 								strcpy(myStats->name, "lesser insectoid");
-								myStats->HP = 70;
-								myStats->MAXHP = myStats->HP;
-								myStats->RANDOM_MAXHP = 10;
-								myStats->RANDOM_HP = myStats->RANDOM_MAXHP;
-								myStats->STR = 8;
-								myStats->RANDOM_STR = 0;
-								myStats->DEX = 6;
-								myStats->CON = 7;
-								myStats->INT = -2;
-								myStats->PER = 5;
-								myStats->CHR = 5;
-								myStats->EXP = 0;
-								myStats->LVL = 10;
 							}
 						}
 						break;

@@ -46,6 +46,49 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "young vampire", strlen("young vampire")) )
+			{
+				lesserMonster = true;
+				myStats->HP = 150;
+				myStats->MAXHP = myStats->HP;
+				myStats->RANDOM_MAXHP = 0;
+				myStats->RANDOM_HP = myStats->RANDOM_MAXHP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 15;
+				myStats->RANDOM_STR = 0;
+				myStats->DEX = 8;
+				myStats->RANDOM_DEX = 0;
+				myStats->CON = -10;
+				myStats->RANDOM_CON = 0;
+				myStats->INT = 15;
+				myStats->RANDOM_INT = 0;
+				myStats->PER = 5;
+				myStats->RANDOM_PER = 0;
+				myStats->CHR = -3;
+				myStats->RANDOM_CHR = 0;
+				myStats->EXP = 0;
+				myStats->LVL = 18;
+				myStats->GOLD = 50 + rand() % 50;
+				myStats->RANDOM_GOLD = 0;
+				for ( c = 0; c < 4; ++c )
+				{
+					if ( rand() % 2 == 0 )
+					{
+						Entity* entity = summonMonster(GHOUL, my->x, my->y);
+						if ( entity )
+						{
+							entity->parent = my->getUID();
+							Stat* followerStats = entity->getStats();
+							if ( followerStats )
+							{
+								strcpy(followerStats->name, "enslaved ghoul");
+							}
+						}
+					}
+				}
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -53,43 +96,43 @@ void initVampire(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
-			{
-				if ( strncmp(map.name, "Underworld", 10) )
-				{
-					switch ( rand() % 10 )
-					{
-						case 0:
-						case 1:
-							//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 2:
-						case 3:
-							//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 4:
-						case 5:
-							//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 6:
-						case 7:
-							//myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 8:
-						case 9:
-							//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-					}
-				}
-			}
-			else
-			{
-				/*myStats->HP = 100;
-				myStats->MAXHP = 100;
-				strcpy(myStats->name, "Funny Bones");
-				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);*/
-			}
+			//if ( rand() % 50 || my->flags[USERFLAG2] )
+			//{
+			//	if ( strncmp(map.name, "Underworld", 10) )
+			//	{
+			//		switch ( rand() % 10 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//				//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+			//				break;
+			//			case 2:
+			//			case 3:
+			//				//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+			//				break;
+			//			case 4:
+			//			case 5:
+			//				//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+			//				break;
+			//			case 6:
+			//			case 7:
+			//				//myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+			//				break;
+			//			case 8:
+			//			case 9:
+			//				//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+			//				break;
+			//		}
+			//	}
+			//}
+			//else
+			//{
+			//	/*myStats->HP = 100;
+			//	myStats->MAXHP = 100;
+			//	strcpy(myStats->name, "Funny Bones");
+			//	myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
+			//	myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);*/
+			//}
 			
 			// random effects
 			//my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
@@ -124,7 +167,7 @@ void initVampire(Entity* my, Stat* myStats)
 				case 1:
 					if ( rand() % 10 == 0 ) // 1 in 10
 					{
-						newItem(VAMPIRE_DOUBLET, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						newItem(VAMPIRE_DOUBLET, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
