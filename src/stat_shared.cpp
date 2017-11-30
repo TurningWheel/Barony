@@ -627,13 +627,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_GOLD = 70;
 			stats->HUNGER = 900;
 
-			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			/*stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;*/
 
 			//stats->PROFICIENCIES[PRO_SWORD] = 45;
 			//stats->PROFICIENCIES[PRO_MACE] = 35;
@@ -645,7 +645,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_SPELLCASTING] = 80;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 10; // booze potion
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 10; // doublet
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 25; // magicstaff
 			break;

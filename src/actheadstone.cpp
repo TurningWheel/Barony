@@ -120,6 +120,14 @@ void actHeadstone(Entity* my)
 			if ( monster )
 			{
 				monster->z = 13;
+				if ( currentlevel >= 15 )
+				{
+					Stat* tmpStats = monster->getStats();
+					if ( tmpStats )
+					{
+						strcpy(tmpStats->name, "enslaved ghoul");
+					}
+				}
 			}
 		}
 	}

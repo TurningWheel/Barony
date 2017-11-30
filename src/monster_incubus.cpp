@@ -45,6 +45,22 @@ void initIncubus(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "lesser incubus", strlen("lesser incubus")) )
+			{
+				lesserMonster = true;
+				myStats->HP = 80;
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 12;
+				myStats->DEX = 6;
+				myStats->CON = 3;
+				myStats->INT = -2;
+				myStats->PER = 5;
+				myStats->CHR = 5;
+				myStats->EXP = 0;
+				myStats->LVL = 15;
+			}
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -96,11 +112,6 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 			}
 
-			bool lesserMonster = false;
-			if ( !strncmp(myStats->name, "lesser incubus", strlen("lesser incubus")) )
-			{
-				lesserMonster = true;
-			}
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
