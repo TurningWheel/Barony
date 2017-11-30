@@ -804,35 +804,40 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
+			int volume = 128;
+			if ( trap )
+			{
+				volume = 96;
+			}
 			if ( !strcmp(spell->name, spell_fireball.name) )
 			{
-				playSoundEntity(entity, 164, 128 );
+				playSoundEntity(entity, 164, volume);
 			}
 			else if ( !strcmp(spell->name, spell_lightning.name) )
 			{
-				playSoundEntity(entity, 171, 128 );
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_cold.name) )
 			{
-				playSoundEntity(entity, 172, 128 );
+				playSoundEntity(entity, 172, 64);
 			}
 			else if ( !strcmp(spell->name, spell_bleed.name) )
 			{
-				playSoundEntity(entity, 171, 128);
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_stoneblood.name) )
 			{
-				playSoundEntity(entity, 171, 128);
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
-				playSoundEntity(entity, 164, 128);
+				playSoundEntity(entity, 164, volume);
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
 			else
 			{
-				playSoundEntity(entity, 169, 128 );
+				playSoundEntity(entity, 169, volume);
 			}
 			result = entity;
 

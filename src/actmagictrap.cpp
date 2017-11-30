@@ -45,7 +45,7 @@ void Entity::actMagicTrapCeiling()
 	spellTrapAmbience--;
 	if ( spellTrapAmbience <= 0 )
 	{
-		spellTrapAmbience = TICKS_PER_SECOND * 30;
+		spellTrapAmbience = TICKS_PER_SECOND * 120;
 		playSoundEntity(this, 149, 64);
 	}
 
@@ -104,6 +104,29 @@ void Entity::actMagicTrapCeiling()
 
 	node_t* node = children.first;
 	Entity* ceilingModel = (Entity*)(node->element);
+	int triggerSprite = 0;
+	switch ( spellTrapType )
+	{
+		case SPELL_FORCEBOLT:
+		case SPELL_MAGICMISSILE:
+		case SPELL_CONFUSE:
+			triggerSprite = 173;
+			break;
+		case SPELL_FIREBALL:
+			triggerSprite = 168;
+			break;
+		case SPELL_LIGHTNING:
+			triggerSprite = 170;
+			break;
+		case SPELL_COLD:
+		case SPELL_SLEEP:
+			triggerSprite = 172;
+			break;
+		case SPELL_SLOW:
+		default:
+			triggerSprite = 171;
+			break;
+	}
 
 	if ( spellTrapCounter > spellTrapRefireRate )
 	{
@@ -111,8 +134,11 @@ void Entity::actMagicTrapCeiling()
 		if ( spellTrapReset == 0 )
 		{
 			// once off magic particles. reset once power is cut.
-			spawnMagicEffectParticles(x, y, z, 171);
+			spawnMagicEffectParticles(x, y, z, triggerSprite);
+			playSoundEntity(this, 252, 128);
 			spellTrapReset = 1;
+			/*spellTrapCounter = spellTrapRefireRate - 5; // delay?
+			return;*/
 		}
 		Entity* entity = castSpell(getUID(), getSpellFromID(spellTrapType), false, true);
 		if ( ceilingModel && entity )
