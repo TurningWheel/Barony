@@ -865,14 +865,52 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 94:
 		case (1000 + LICH_ICE):
 			stats->type = LICH_ICE;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "Ice Boy");
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->HP = 10;
+			stats->MAXHP = stats->HP;
+			stats->MP = 1000;
+			stats->MAXMP = 1000;
+			stats->OLDHP = stats->HP;
+			stats->STR = -5;
+			stats->DEX = 8;
+			stats->CON = 8;
+			stats->INT = 20;
+			stats->PER = 80;
+			stats->CHR = 50;
+			stats->EXP = 0;
+			stats->LVL = 25;
+			stats->GOLD = 100;
+			stats->HUNGER = 900;
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			break;
 		case 95:
 		case (1000 + LICH_FIRE):
 			stats->type = LICH_FIRE;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "Fire Boy");
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->HP = 10;
+			stats->MAXHP = stats->HP;
+			stats->MP = 1000;
+			stats->MAXMP = 1000;
+			stats->OLDHP = stats->HP;
+			stats->STR = -5;
+			stats->DEX = 8;
+			stats->CON = 8;
+			stats->INT = 20;
+			stats->PER = 80;
+			stats->CHR = 50;
+			stats->EXP = 0;
+			stats->LVL = 25;
+			stats->GOLD = 100;
+			stats->HUNGER = 900;
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			break;
 		case 83:
 		case (1000 + SKELETON):

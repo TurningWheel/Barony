@@ -146,7 +146,6 @@ int monsterCurve(int level)
 				else
 				{
 					return VAMPIRE;
-					messagePlayer(0, "true");
 				}
 			case 9:
 				return DEMON;
@@ -2925,7 +2924,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[LICH_ICE][0][2]; // 0
 						entity->z = -2;
 						entity->yaw = PI;
-						entity->sprite = 274;
+						entity->sprite = 650;
 						entity->skill[29] = 120;
 						break;
 					case LICH_FIRE:
@@ -2934,7 +2933,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[LICH_FIRE][0][2]; // 0
 						entity->z = -2;
 						entity->yaw = PI;
-						entity->sprite = 274;
+						entity->sprite = 646;
 						entity->skill[29] = 120;
 						break;
 					default:
