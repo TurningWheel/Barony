@@ -2936,10 +2936,10 @@ client (player %d) (direct ip)#
 2362 You hear a click from the mechanism!#
 2363 You attempt to pull the lever back,
 but it retracts beyond your might!#
-2364 Pedestal Reply1#
-2365 Pedestal Reply2#
-2366 Pedestal Reply3#
-2367 Pedestal Reply4#
+2364 You pound the pedestal in frustration.#
+2365 You admire the intricate carving of the pedestal.#
+2366 The pedestal seems to require some sort of primordial artifact.#
+2367 The orb defies your grasp and is unable to be retrieved!#
 2368 You place the orb in the receptacle...#
 2369 But it had no effect.#
 2370 The orb starts floating!#
@@ -3102,10 +3102,13 @@ last of your magic is drained!#
 2513 You pierced the %s's armor!#
 2514 You pierced %s's armor!#
 2515 The shot pierced your armor!#
+
 ## 2516 - ???, More effect messages
 2516 You feel as if a part of your essence is seized!#
 2517 You feel as if a sliver of your essence is taken!#
 2518 You feel something tug at your essence and pull itself near...#
+2519 You summon an incubus!#
+2520 Your spell destroys the chest!#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
