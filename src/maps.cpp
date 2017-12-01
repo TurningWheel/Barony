@@ -2931,7 +2931,7 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
 						entity->focaly = limbs[LICH_FIRE][0][1]; // 0
 						entity->focalz = limbs[LICH_FIRE][0][2]; // 0
-						entity->z = -2;
+						entity->z = -1.2;
 						entity->yaw = PI;
 						entity->sprite = 646;
 						entity->skill[29] = 120;

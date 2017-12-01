@@ -342,6 +342,16 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			my->skill[27] = 1;
 			serverUpdateEntitySkill(my, 27);
 		}*/
+		if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+		{
+			my->z = -1.2;
+			my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+		}
+		if ( dist < 0.1 )
+		{
+			// not moving, float.
+			limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -1.5, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+		}
 	}
 	else
 	{
@@ -372,7 +382,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			weaponarm = entity;
 			if ( !MONSTER_ATTACK )
 			{
-				entity->pitch = 0;
+				entity->pitch = PI / 8;
 			}
 			else
 			{
@@ -382,14 +392,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					if ( my->monsterAttackTime == 0 )
 					{
 						// init rotations
-						weaponarm->pitch = 0;
+						//weaponarm->pitch = 0;
 						//my->monsterArmbended = 0;
 						my->monsterWeaponYaw = 0;
 						weaponarm->roll = 0;
 						weaponarm->skill[1] = 0;
 					}
 
-					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0);
 
 					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 					{
@@ -417,10 +427,10 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					}
 					else if ( weaponarm->skill[1] == 1 )
 					{
-						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 0, false, 0.0) )
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, PI / 8, false, 0.0) )
 						{
 							my->monsterWeaponYaw = 0;
-							weaponarm->pitch = 0;
+							weaponarm->pitch = PI / 8;
 							weaponarm->roll = 0;
 							//my->monsterArmbended = 0;
 							my->monsterAttack = 0;
@@ -472,14 +482,30 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							// restore pitch and roll after yaw is set
 							if ( limbAnimateToLimit(weaponarm, ANIMATE_ROLL, 0.4, 0, false, 0.0)
-								&& limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.4, 0, false, 0.0) )
+								&& limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 8, false, 0.0) )
 							{
-								weaponarm->skill[0] = 0;
+								weaponarm->skill[1] = 0;
 								my->monsterWeaponYaw = 0;
-								weaponarm->pitch = 0;
+								weaponarm->pitch = PI / 8;
 								weaponarm->roll = 0;
 								my->monsterArmbended = 0;
 								my->monsterAttack = 0;
+								my->monsterAttackTime = 0;
+								my->monsterHitTime = 0;
+								if ( multiplayer != CLIENT )
+								{
+									switch ( my->monsterLichFireMeleeSeq )
+									{
+										case 0:
+											break;
+										case 1:
+											//my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+											my->monsterLichFireMeleeSeq = 0;
+											break;
+										default:
+											break;
+									}
+								}
 							}
 						}
 					}
@@ -636,15 +662,15 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					entity->x = weaponarm->x;// +1.5 * cos(weaponarm->yaw);// *(my->monsterAttack == 0);
 					entity->y = weaponarm->y;// +1.5 * sin(weaponarm->yaw);// * (my->monsterAttack == 0);
 					entity->z = weaponarm->z;// -.5 * (my->monsterAttack == 0);
-					entity->pitch = weaponarm->pitch;// -.25 * (my->monsterAttack == 0);
-					entity->yaw = weaponarm->yaw;
+					entity->pitch = weaponarm->pitch;
+					entity->yaw = weaponarm->yaw + 0.1 * (my->monsterAttack == 0);
 					entity->roll = weaponarm->roll;
 					if ( my->monsterAttack == 2 || my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 					{
 					}
 					else
 					{
-						entity->pitch += PI / 2;
+						entity->pitch += PI / 2 + 0.25;
 					}
 
 					entity->focalx = limbs[LICH_FIRE][4][0];
@@ -652,8 +678,8 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					entity->focalz = limbs[LICH_FIRE][4][2];
 					if ( my->monsterArmbended )
 					{
-						entity->focalx = limbs[LICH_FIRE][4][0] - 0.5;
-						//entity->focalz = limbs[LICH_FIRE][4][2] - 2;
+						entity->focalx = limbs[LICH_FIRE][4][0] - 0.8;
+						entity->focalz = limbs[LICH_FIRE][4][2] + 1;
 						entity->pitch += cos(weaponarm->roll) * PI / 2;
 						entity->yaw -= sin(weaponarm->roll) * PI / 2;
 					}
