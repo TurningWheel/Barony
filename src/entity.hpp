@@ -180,6 +180,9 @@ public:
 	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
 	Sint32& monsterShadowDontChangeName; //skill[35]. 0 = false, 1 = true. Doesn't change name in its mimic if = 1.
 
+	//--PUBLIC MONSTER LICH SKILLS--
+	Sint32& monsterLichFireMeleeSeq; //skill[34]
+	
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // skill[9] 0 Clockwise, 1 Anti-Clockwise
 	Sint32& crystalNumElectricityNodes; // skill[6] how many nodes to spawn in the facing dir

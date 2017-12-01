@@ -88,6 +88,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterWeaponYaw(fskill[5]),
 	monsterShadowInitialMimic(skill[34]),
 	monsterShadowDontChangeName(skill[35]),
+	monsterLichFireMeleeSeq(skill[34]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
@@ -6873,7 +6874,18 @@ int Entity::getAttackPose() const
 	{
 		if ( myStats->type == LICH_FIRE )
 		{
-			pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+			switch ( monsterLichFireMeleeSeq )
+			{
+				case 0:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					monsterLichFireMeleeSeq = rand() % 2;
+					break;
+				case 1:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				default:
+					break;
+			}
 		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
