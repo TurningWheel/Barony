@@ -6871,7 +6871,11 @@ int Entity::getAttackPose() const
 
 	if ( myStats->weapon != nullptr )
 	{
-		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+		if ( myStats->type == LICH_FIRE )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+		}
+		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 

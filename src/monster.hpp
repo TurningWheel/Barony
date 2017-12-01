@@ -245,6 +245,8 @@ void initVampire(Entity* my, Stat* myStats);
 void initIncubus(Entity* my, Stat* myStats);
 void initInsectoid(Entity* my, Stat* myStats);
 void initGoatman(Entity* my, Stat* myStats);
+void initLichFire(Entity* my, Stat* myStats);
+void initLichIce(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -272,6 +274,8 @@ void actIncubusLimb(Entity* my);
 void actInsectoidLimb(Entity* my);
 void actGoatmanLimb(Entity* my);
 void actScarabLimb(Entity* my);
+void actLichFireLimb(Entity* my);
+void actLichIceLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -301,6 +305,8 @@ void vampireDie(Entity* my);
 void incubusDie(Entity* my);
 void insectoidDie(Entity* my);
 void goatmanDie(Entity* my);
+void lichFireDie(Entity* my);
+void lichIceDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -330,6 +336,8 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void lichFireAnimate(Entity* my, Stat* myStats, double dist);
+void lichIceAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
