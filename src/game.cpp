@@ -2234,7 +2234,9 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		strcpy(datadir, "./");
+		size_t datadirsz = std::min(sizeof(datadir) - 1, strlen(BASE_DATA_DIR));
+		strncpy(datadir, BASE_DATA_DIR, datadirsz);
+		datadir[datadirsz] = '\0';
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2274,7 +2276,9 @@ int main(int argc, char** argv)
 					}
 					else if (!strncmp(argv[c], "-datadir=", 9))
 					{
-						strcpy(datadir, argv[c] + 9);
+						datadirsz = std::min(sizeof(datadir) - 1, strlen(argv[c] + 9));
+						strncpy(datadir, argv[c] + 9, datadirsz);
+						datadir[datadirsz] = '\0';
 					}
 				}
 			}
