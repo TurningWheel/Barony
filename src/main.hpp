@@ -42,11 +42,13 @@ extern bool showfirst;
 #include <fcntl.h>
 #ifndef WINDOWS
 #include <unistd.h>
+#include <limits.h>
 #endif
 #include <string.h>
 #include <ctype.h>
 #ifdef WINDOWS
 #define GL_GLEXT_PROTOTYPES
+#define PATH_MAX 1024
 #include <windows.h>
 #undef min
 #undef max
@@ -705,7 +707,7 @@ extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y);
-extern char datadir[1024];
+extern char datadir[PATH_MAX];
 FILE *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
