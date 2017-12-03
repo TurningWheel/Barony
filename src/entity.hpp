@@ -469,6 +469,8 @@ public:
 
 	//--monster type from sprite
 	int getMonsterTypeFromSprite();
+	//--monster helmet limb offsets
+	void setHelmetLimbOffset(Entity* helm);
 
 	void actMonsterLimb(bool processLight = false);
 
@@ -713,7 +715,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 218;
+static const int NUM_ITEM_STRINGS = 219;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
 static const int NUM_EDITOR_SPRITES = 127;
 static const int NUM_EDITOR_TILES = 234;

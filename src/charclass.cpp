@@ -1307,7 +1307,7 @@ void initClass(int player)
 		}
 
 		// tunic
-		item = newItem(WIZARD_DOUBLET, SERVICABLE, 0, 1, 0, true, NULL);
+		item = newItem(TUNIC, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1411,7 +1411,7 @@ void initClass(int player)
 		}
 
 		// tunic
-		item = newItem(HEALER_DOUBLET, EXCELLENT, 0, 1, 0, true, NULL);
+		item = newItem(TUNIC, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);

@@ -235,9 +235,10 @@ typedef enum ItemType
 	ARTIFACT_ORB_BLUE,
 	ARTIFACT_ORB_RED,
 	ARTIFACT_ORB_PURPLE,
-	ARTIFACT_ORB_GREEN
+	ARTIFACT_ORB_GREEN,
+	TUNIC
 } ItemType;
-const int NUMITEMS = 215;
+const int NUMITEMS = 216;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

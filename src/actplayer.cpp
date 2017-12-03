@@ -2812,37 +2812,6 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[HUMAN][9][0] - .5;
-						entity->focaly = limbs[HUMAN][9][1] - 3.25;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[HUMAN][9][0] - .5;
-						entity->focaly = limbs[HUMAN][9][1] - 2.5;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[HUMAN][9][0];
-						entity->focaly = limbs[HUMAN][9][1] - 4.75;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[HUMAN][9][0];
-						entity->focaly = limbs[HUMAN][9][1] - 4.75;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-				}
 				else
 				{
 					if ( entity->sprite <= 0 )
@@ -2850,6 +2819,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case 10:
