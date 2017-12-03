@@ -1172,25 +1172,25 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					// spell was harder.
 					spellCastChance = 3; // 33%
-					magicChance = 4; // 25%
+					magicChance = 3; // 33%
 				}
 				else if ( castDifficulty == 0 )
 				{
 					// spell was same level
-					spellCastChance = 5; // 20%
-					magicChance = 6; // 16.67%
+					spellCastChance = 3; // 33%
+					magicChance = 4; // 25%
 				}
 				else if ( castDifficulty == 1 )
 				{
 					// spell was easy.
-					spellCastChance = 6; // 16.67%
-					magicChance = 7; // 14.2%
+					spellCastChance = 4; // 25%
+					magicChance = 5; // 20%
 				}
 				else if ( castDifficulty > 1 )
 				{
 					// piece of cake!
-					spellCastChance = 7; // 14.2%
-					magicChance = 8; // 12.5%
+					spellCastChance = 6; // 16.67%
+					magicChance = 7; // 14.2%
 				}
 				messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
 				if ( rand() % spellCastChance == 0 )
