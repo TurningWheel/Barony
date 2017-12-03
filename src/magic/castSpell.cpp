@@ -1163,22 +1163,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else
 		{
-			int spellCastChance = 5; // 20%
-			int magicChance = 6; // 16.67%
 			if ( stat )
 			{
+				int spellCastChance = 5; // 20%
+				int magicChance = 6; // 16.67%
 				int castDifficulty = stat->PROFICIENCIES[PRO_SPELLCASTING] / 20 - spell->difficulty / 20;
-				if ( castDifficulty < -1 )
+				if ( castDifficulty <= -1 )
 				{
-					// spell was much harder.
+					// spell was harder.
 					spellCastChance = 3; // 33%
 					magicChance = 4; // 25%
-				}
-				else if ( castDifficulty == -1 )
-				{
-					// spell was a little harder.
-					spellCastChance = 4; // 25%
-					magicChance = 5; // 20%
 				}
 				else if ( castDifficulty == 0 )
 				{
