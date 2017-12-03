@@ -9199,7 +9199,8 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 
 /*-------------------------------------------------------------------------------
 
-messageMonsterDetail
+messagePlayerMonsterEvent
+handles text for monster interaction/damage/obituaries
 
 -------------------------------------------------------------------------------*/
 
@@ -9335,5 +9336,51 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[2100 + (monsterStats.type - KOBOLD)]);
 			}
 		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+playerClassLangEntry
+get text string for the different player chosen classes.
+
+-------------------------------------------------------------------------------*/
+
+char* playerClassLangEntry(int classnum)
+{
+	if ( classnum >= 0 && classnum <= 9 )
+	{
+		return language[1900 + classnum];
+	}
+	else if ( classnum >= 10 && classnum <= NUMCLASSES )
+	{
+		return language[2550 + classnum - 10];
+	}
+	else
+	{
+		return "undefined classname";
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+playerClassDescription
+get text string for the description of player chosen classes.
+
+-------------------------------------------------------------------------------*/
+
+char* playerClassDescription(int classnum)
+{
+	if ( classnum >= 0 && classnum <= 9 )
+	{
+		return language[10 + classnum];
+	}
+	else if ( classnum >= 10 && classnum <= NUMCLASSES )
+	{
+		return language[2560 + classnum - 10];
+	}
+	else
+	{
+		return "undefined description";
 	}
 }
