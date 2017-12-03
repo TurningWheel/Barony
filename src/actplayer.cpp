@@ -685,7 +685,7 @@ void actPlayer(Entity* my)
 							if ( items[tempItem->type].value < 100 )
 							{
 								// easy junk items
-								appraisalEaseOfDifficulty = 2;
+								appraisalEaseOfDifficulty = 1;
 							}
 							else if ( items[tempItem->type].value < 200 )
 							{
@@ -708,7 +708,7 @@ void actPlayer(Entity* my)
 								appraisalEaseOfDifficulty = -1;
 							}
 							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] / 20;
-							// difficulty ranges from 1-in-1 to 1-in-7
+							// difficulty ranges from 1-in-1 to 1-in-6
 							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
 							messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
 							if ( rand() % appraisalEaseOfDifficulty == 0 )
@@ -716,7 +716,7 @@ void actPlayer(Entity* my)
 								my->increaseSkill(PRO_APPRAISAL);
 							}
 						}
-						else if ( rand() % 7 == 0 )
+						else if ( rand() % 6 == 0 )
 						{
 							my->increaseSkill(PRO_APPRAISAL);
 						}
