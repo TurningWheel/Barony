@@ -2544,9 +2544,9 @@ int main(int argc, char** argv)
 				{
 					if (strcmp(classtoquickstart, ""))
 					{
-						for ( c = 0; c < 10; c++ )
+						for ( c = 0; c < NUMCLASSES; c++ )
 						{
-							if ( !strcmp(classtoquickstart, language[1900 + c]) )
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c)) )
 							{
 								client_classes[0] = c;
 								break;

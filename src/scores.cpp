@@ -29,7 +29,7 @@ bool conductFoodless = true;
 bool conductVegetarian = true;
 bool conductIlliterate = true;
 list_t booksRead;
-bool usedClass[10] = {0};
+bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
 
 /*-------------------------------------------------------------------------------
