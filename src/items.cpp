@@ -1651,6 +1651,7 @@ void useItem(Item* item, int player)
 		case WIZARD_DOUBLET:
 		case HEALER_DOUBLET:
 		case ARTIFACT_BREASTPIECE:
+		case TUNIC:
 			equipItem(item, &stats[player]->breastplate, player);
 			break;
 		case HAT_PHRYGIAN:
