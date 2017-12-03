@@ -2356,7 +2356,7 @@ char* getSaveGameName()
 	fread(&level, sizeof(Sint32), 1, fp);
 
 	// assemble string
-	snprintf(tempstr, 1024, language[1540 + mul], name, level, language[1900 + class_], plnum);
+	snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), plnum);
 
 	// close file
 	fclose(fp);

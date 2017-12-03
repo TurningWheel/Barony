@@ -3577,7 +3577,7 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[32];
-				strcpy(classname, language[1900 + client_classes[0]]);
+				strcpy(classname, playerClassLangEntry(client_classes[0]));
 				classname[0] -= 32;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
 			}
