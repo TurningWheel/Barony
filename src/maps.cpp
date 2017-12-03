@@ -2324,7 +2324,7 @@ void assignActions(map_t* map)
 									{
 										randType = prng_get_uint() % (NUMCATEGORIES - 1);
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
 								}
 								else
 								{
@@ -2342,12 +2342,12 @@ void assignActions(map_t* map)
 											randType++;
 										}
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
 								}
 							}
 							else
 							{
-								entity->skill[10] = itemLevelCurve(FOOD);
+								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel);
 							}
 						}
 					}
@@ -2356,7 +2356,7 @@ void assignActions(map_t* map)
 						// editor set the random category of the item to be spawned.
 						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
 						{
-							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1));
+							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel);
 						}
 						else
 						{
@@ -2367,11 +2367,11 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
 								}
 							}
 							else if ( entity->skill[16] == 15 )
@@ -2380,11 +2380,11 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
 								}
 							}
 							else if ( entity->skill[16] == 16 )
@@ -2393,15 +2393,15 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 3;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
 								}
 							}
 						}

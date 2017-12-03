@@ -144,7 +144,7 @@ void Entity::actChest()
 				{
 					//And add the current entity to it.
 					int itemnum = rand() % NUMITEMS;
-					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 4 )
+					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 5 )
 					{
 						//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
 						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
@@ -340,7 +340,7 @@ void Entity::actChest()
 						for ( i = 0; i < itemcount; ++i )
 						{
 							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
-							newItem(itemLevelCurve(THROWN), durability, 0, 2 + rand() % 2, rand(), false, inventory);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 2 + rand() % 2, rand(), false, inventory);
 						}
 						break;
 					default:
