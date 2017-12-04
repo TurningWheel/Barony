@@ -2176,6 +2176,26 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, language[633]);
 				}
 				this->setObituary(language[1530]);
+				// Play the Damage sound
+				playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+				// Shake the Host's screen
+				if ( player == clientnum )
+				{
+					camera_shakex += .1;
+					camera_shakey += 10;
+				}
+				else if ( player > 0 && multiplayer == SERVER )
+				{
+					// Shake the Client's screen
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = 10; // turns into .1
+					net_packet->data[5] = 10;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
 			}
 		}
 	}
