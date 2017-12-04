@@ -9128,7 +9128,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 
-	int regenTime = (MAGIC_REGEN_TIME - std::min(profMultiplier * statMultiplier, 150)); // return 300-150 ticks, 6-3 seconds.
+	int regenTime = (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 150))); // return 300-150 ticks, 6-3 seconds.
 	int manaring = 0;
 	if ( myStats.breastplate != nullptr )
 	{
@@ -9160,7 +9160,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	}
 	if ( manaring > 0 )
 	{
-		return regenTime / (manaring * 6);
+		return regenTime / (manaring * 2);
 	}
 	else if ( manaring < 0 )
 	{
