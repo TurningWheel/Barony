@@ -44,6 +44,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_energize(skill[23]),
 	char_torchtime(skill[25]),
 	char_poison(skill[21]),
+	char_fire(0),
+	chanceToPutOutFire(MAX_CHANCE_STOP_FIRE),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
@@ -2584,77 +2586,107 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
 	}
 
-	// burning
+	// Process Burning Status Effect
 	if ( this->flags[BURNING] )
 	{
-		if ( ticks % 30 == 0 )
+		this->char_fire--; // Decrease the fire counter
+		messagePlayer(clientnum, "Time: %d, Chance: %d", this->char_fire, this->chanceToPutOutFire);
+		// Check to see if time has run out
+		if ( this->char_fire <= 0 )
 		{
-			this->modHP(-2 - rand() % 3);
-			if ( myStats->HP <= 0 )
+			this->flags[BURNING] = false;
+			messagePlayer(player, language[647]); // "The flames go out."
+			serverUpdateEntityFlag(this, BURNING);
+		}
+		else
+		{
+			// If 1 second has passed (50 ticks), process the Burning Status Effect
+			if ( (this->char_fire % TICKS_PER_SECOND) == 0 )
 			{
-				Entity* killer = uidToEntity(myStats->poisonKiller);
-				if ( killer )
+				// Check to see if the fire is put out
+				if ( (rand() % this->chanceToPutOutFire) == 0 )
 				{
-					killer->awardXP(this, true, true);
+					this->flags[BURNING] = false;
+					messagePlayer(player, language[647]); // "The flames go out."
+					serverUpdateEntityFlag(this, BURNING);
 				}
-			}
-			this->setObituary(language[1533]);
-			messagePlayer(player, language[644]);
-			playSoundEntity(this, 28, 64);
-			if ( player == clientnum )
-			{
-				camera_shakey += 3;
-			}
-			else if ( player > 0 && multiplayer == SERVER )
-			{
-				strcpy((char*)net_packet->data, "SHAK");
-				net_packet->data[4] = 0; // turns into 0
-				net_packet->data[5] = 3;
-				net_packet->address.host = net_clients[player - 1].host;
-				net_packet->address.port = net_clients[player - 1].port;
-				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player - 1);
-			}
-			if ( rand() % 10 == 0 )
-			{
-				if ( myStats->cloak != NULL )
+				else
 				{
-					if ( player == clientnum )
+					this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
+
+					// If the Entity died, handle experience
+					if ( myStats->HP <= 0 )
 					{
-						if ( myStats->cloak->count > 1 )
+						Entity* killer = uidToEntity(myStats->poisonKiller);
+						if ( killer != nullptr )
 						{
-							newItem(myStats->cloak->type, myStats->cloak->status, myStats->cloak->beatitude, myStats->cloak->count - 1, myStats->cloak->appearance, myStats->cloak->identified, &myStats->inventory);
+							killer->awardXP(this, true, true);
 						}
 					}
-					myStats->cloak->count = 1;
-					myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
-					if ( myStats->cloak->status != BROKEN )
+
+					// Give the Player feedback on being hurt
+					this->setObituary(language[1533]); // "burns to a crisp."
+					messagePlayer(player, language[644]); // "It burns! It burns!"
+					playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+					// Shake the Camera
+					if ( player == clientnum )
 					{
-						messagePlayer(player, language[645], myStats->cloak->getName());
+						camera_shakey += 3;
 					}
-					else
+					else if ( player > 0 && multiplayer == SERVER )
 					{
-						messagePlayer(player, language[646], myStats->cloak->getName());
-					}
-					if ( player > 0 && multiplayer == SERVER )
-					{
-						strcpy((char*)net_packet->data, "ARMR");
-						net_packet->data[4] = 6;
-						net_packet->data[5] = myStats->cloak->status;
+						strcpy((char*)net_packet->data, "SHAK");
+						net_packet->data[4] = 0; // turns into 0
+						net_packet->data[5] = 3;
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
 						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
+
+					// If the Entity has a Cloak, process dealing damage to the Entity's Cloak
+					if ( myStats->cloak != nullptr )
+					{
+						// 1 in 10 chance of dealing damage to Entity's cloak
+						if ( rand() % 10 == 0 )
+						{
+							if ( player == clientnum )
+							{
+								if ( myStats->cloak->count > 1 )
+								{
+									newItem(myStats->cloak->type, myStats->cloak->status, myStats->cloak->beatitude, myStats->cloak->count - 1, myStats->cloak->appearance, myStats->cloak->identified, &myStats->inventory);
+								}
+							}
+							myStats->cloak->count = 1;
+							myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
+							if ( myStats->cloak->status != BROKEN )
+							{
+								messagePlayer(player, language[645], myStats->cloak->getName()); // "Your %s smoulders!"
+							}
+							else
+							{
+								messagePlayer(player, language[646], myStats->cloak->getName()); // "Your %s burns to ash!"
+							}
+							if ( player > 0 && multiplayer == SERVER )
+							{
+								strcpy((char*)net_packet->data, "ARMR");
+								net_packet->data[4] = 6;
+								net_packet->data[5] = myStats->cloak->status;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+						}
+					}
 				}
 			}
-			if ( rand() % 10 == 0 )
-			{
-				this->flags[BURNING] = false;
-				messagePlayer(player, language[647]);
-				serverUpdateEntityFlag(this, BURNING);
-			}
 		}
+	}
+	else
+	{
+		this->char_fire = 0; // If not on fire, then reset fire counter TODOR: This seems unecessary, but is what poison does, this is happening every tick
 	}
 
 	// amulet effects
@@ -4752,11 +4784,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									hitstats->poisonKiller = uid;
 								}
-								hit.entity->flags[BURNING] = true;
-								if ( playerhit > 0 && multiplayer == SERVER )
+
+								// Attempt to set the Entity on fire
+								hit.entity->SetEntityOnFire();
+
+								// If a Player was hit, and they are now on fire, tell them what set them on fire
+								if ( playerhit > 0 && hit.entity->flags[BURNING] )
 								{
-									messagePlayer(playerhit, language[683]);
-									serverUpdateEntityFlag(hit.entity, BURNING);
+									messagePlayer(playerhit, language[683]); // "Dyrnwyn sets you on fire!"
 								}
 							}
 						}
@@ -9225,4 +9260,83 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			}
 		}
 	}
+}
+
+/* entity.cpp
+ * Attempts to set the Entity on fire. Entities that are not Burnable or are already on fire will return before any processing
+ * Entities that do not have Stats (such as furniture) will return after setting the fire time and chance to stop at max
+ * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
+ * Calculations for reductions is outlined in this function
+ */
+void Entity::SetEntityOnFire()
+{
+	// Check if the Entity can be set on fire
+	if ( this->flags[BURNABLE] )
+	{
+		// Check if the Entity is already on fire
+		if ( !(this->flags[BURNING]) )
+		{
+			this->flags[BURNING] = true;
+			serverUpdateEntityFlag(this, BURNING);
+
+			/* Set the time the Entity will be on fire, based off their CON
+			 * |\_ MAX_TICKS_ON_FIRE is reduced by every 2 points in CON
+			 * |
+			 * |\_ Fire has a minimum of 2 seconds (100 ticks), and a maximum of 20 seconds (1000 ticks)
+			 * |  \_ Constants are defined in entity.hpp: MIN_TICKS_ON_FIRE and MAX_TICKS_ON_FIRE
+			 * |
+			 *  \_ For every 5 points of CON, the chance to stop being on fire is reduced
+			 *    \_ The chance to stop being on fire has a minimum of 1 in 10, and a maximum of 1 in 5
+			 *      \_ Constants are defined in entity.hpp: MIN_CHANCE_STOP_FIRE and MAX_CHANCE_STOP_FIRE
+			 */
+
+			// Set the default time on fire
+			this->char_fire = MAX_TICKS_ON_FIRE;
+			// Set the default chance of putting out fire
+			this->chanceToPutOutFire = MAX_CHANCE_STOP_FIRE;
+
+			// If the Entity is not a Monster, it wont have Stats, end here
+			if ( this->getStats() == nullptr )
+			{
+				return; // The Entity was set on fire, it does not have Stats, so it is on fire for maximum duration
+			}
+
+			// Determine decrease in time on fire based on the Entity's CON
+			const Sint32 entityCON = this->getStats()->CON;
+
+			// If the Entity's CON is <= 1 then their time is just MAX_TICKS_ON_FIRE
+			if ( entityCON <= 1 )
+			{
+				return; // The Entity was set on fire, with maximum duration and chance
+			}
+
+			// If the Entity's CON is <= 4 then their chance is just MAX_CHANCE_STOP_FIRE
+			if ( entityCON <= 4 )
+			{
+				this->chanceToPutOutFire = MAX_CHANCE_STOP_FIRE;
+			}
+			else if ( entityCON >= 25 ) // If the Entity has 25 or greater CON, then the reduction is equal to or less than MIN_CHANCE_STOP_FIRE
+			{
+				this->chanceToPutOutFire = MIN_CHANCE_STOP_FIRE;
+			}
+			else
+			{
+				this->chanceToPutOutFire -= static_cast<Uint8>(floor(entityCON * 0.2));
+			}
+
+			// If the Entity has 36 or greater CON, then the reduction is equal or less than MIN_TICKS_ON_FIRE
+			if ( entityCON >= 36 )
+			{
+				this->char_fire = MIN_TICKS_ON_FIRE;
+			}
+			else
+			{
+				this->char_fire -= static_cast<Sint32>(floor((entityCON * 0.5) * TICKS_PER_SECOND));
+			}
+
+			return; // The Entity was set on fire, with a reduced duration
+		}
+	}
+
+	return; // The Entity can/should not be set on fire
 }
