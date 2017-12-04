@@ -100,6 +100,14 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 642;
 		}
+		else if ( stats[clientnum]->gloves->type == CRYSTAL_GLOVES )
+		{
+			my->sprite = 591;
+		}
+		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
+		{
+			my->sprite = 590;
+		}
 		if ( stats[clientnum]->weapon == nullptr )
 		{
 			my->scalex = 0.5f;
@@ -135,13 +143,13 @@ void actHudArm(Entity* my)
 		}
 	}
 
-
 	// rotation
 	//my->yaw = atan2( my->y-camera.y*16, my->x-camera.x*16 );
 	my->yaw = -2 * PI / 32;
 	//my->fskill[0] = sqrt( pow(my->x-camera.x*16,2) + pow(my->y-camera.y*16,2) );
 	//my->pitch = atan2( my->z-camera.z*.5, my->fskill[0] );
 	my->pitch = -17 * PI / 32;
+	//messagePlayer(0, "my y: %f, my z: %f", my->y, my->z);
 }
 
 #ifdef HAVE_FMOD
@@ -783,6 +791,26 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
 						}
+					}
+				}
+				else
+				{
+					// fix for fists not resetting position after blocking.
+					if ( HUDWEAPON_MOVEY > 0 )
+					{
+						HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1, 0.0);
+					}
+					else if ( HUDWEAPON_MOVEY < 0 )
+					{
+						HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1, 0.0);
+					}
+					if ( HUDWEAPON_MOVEZ > 0 )
+					{
+						HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 1, 0.0);
+					}
+					else if ( HUDWEAPON_MOVEZ < 0 )
+					{
+						HUDWEAPON_MOVEZ = std::min<real_t>(HUDWEAPON_MOVEZ + 1, 0.0);
 					}
 				}
 			}
