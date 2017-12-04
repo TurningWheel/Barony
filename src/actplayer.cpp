@@ -924,26 +924,24 @@ void actPlayer(Entity* my)
 				}
 				if ( multiplayer != CLIENT )
 				{
+					// Check if the Player is in Water or Lava
 					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						if ( my->flags[BURNING] )
 						{
 							my->flags[BURNING] = false;
-							messagePlayer(PLAYER_NUM, language[574]);
+							messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
 							serverUpdateEntityFlag(my, BURNING);
 						}
 					}
-					else if ( ticks % 10 == 0 )
+					else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
 					{
 						my->modHP(-2 - rand() % 2);
-						my->setObituary(language[1506]);
+						my->setObituary(language[1506]); // "goes for a swim in some lava."
 						if ( !my->flags[BURNING] )
 						{
-							my->flags[BURNING] = true;
-							if ( PLAYER_NUM > 0 )
-							{
-								serverUpdateEntityFlag(my, BURNING);
-							}
+							// Attempt to set the Entity on fire
+							my->SetEntityOnFire();
 						}
 					}
 				}
