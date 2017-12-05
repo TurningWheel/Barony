@@ -307,7 +307,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SHOPKEEPER;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, language[158 + rand() % 26]);
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 300;

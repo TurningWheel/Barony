@@ -56,6 +56,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			if ( !strcmp(myStats->name, "") )
+			{
+				strcpy(myStats->name, language[158 + rand() % 26]);
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
