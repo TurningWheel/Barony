@@ -46,11 +46,11 @@ class Entity
 	Sint32& char_energize;
 	Sint32& char_torchtime;
 	Sint32& char_poison;
-	Sint32 char_fire; // Counter for how many ticks Entity will be on fire
-	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
-	Sint32& switch_power; //Switch/mechanism power status.
+	Sint32& char_fire;		// skill[36] - Counter for how many ticks Entity will be on fire
+	Sint32& circuit_status;	// Use CIRCUIT_OFF and CIRCUIT_ON.
+	Sint32& switch_power;	// Switch/mechanism power status.
 
-	Uint8 chanceToPutOutFire;
+	Uint8 chanceToPutOutFire; // Value between 5 and 10, with 10 being the default starting chance, and 5 being absolute minimum
 
 	//Chest skills.
 	//skill[0]
