@@ -2919,6 +2919,8 @@ client (player %d) (direct ip)#
 2291 purple mystic orb#
 2292 green mystic orb#
 2293 green mystic orb#
+2294 tunic#
+2295 tunic#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -3122,11 +3124,14 @@ last of your magic is drained!#
 2558 blank#
 2559 blank#
 # 2560 - 2570 new class descriptions
-2560 A sexton.
-Difficulty: Normal#
-2561 A ninja.
-Difficulty: Normal#
-2562 A monk.
+2560 A temple officer who serves unseen, using stealth and magic to slip their way
+through the dungeon with the aid of a few rare tools.
+Difficulty: Hard#
+2561 A highly specialized assassin. They ambush foes with swords or ranged weapons,
+using a few other tricks to get out of bad situations.
+Difficulty: Hard#
+2562 Disciplined and hardy. They have little in the way of offensive training and 
+material goods, but can rely on their excellent fortitude and adaptability.
 Difficulty: Normal#
 2563 A blank.
 Difficulty: Normal#
