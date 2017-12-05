@@ -1144,7 +1144,7 @@ void Entity::lockChest()
 
 void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
-	chestHealth -= damage; //Decrease door health.
+	chestHealth -= damage; //Decrease chest health.
 	if ( caster )
 	{
 		if ( caster->behavior == &actPlayer )
