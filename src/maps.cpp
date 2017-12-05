@@ -146,7 +146,7 @@ int monsterCurve(int level)
 				else
 				{
 					return VAMPIRE;
-					messagePlayer(0, "true");
+					//messagePlayer(0, "true");
 				}
 			case 9:
 				return DEMON;
