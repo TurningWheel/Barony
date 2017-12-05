@@ -189,9 +189,22 @@ void actPlayer(Entity* my)
 
 	if ( spamming )
 	{
-		for (int i = 0; i < 1000; ++i)
+		for (int i = 0; i < 1; ++i)
 		{
-			messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
+			char s[64] = "";
+			char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+			for ( int j = 0; j < 63; ++j ) {
+				s[j] = alphanum[rand() % (sizeof(alphanum) - 1)];
+			}
+			Uint32 totalSize = 0;
+			for ( size_t c = 0; c < HASH_SIZE; ++c ) {
+				totalSize += list_Size(&ttfTextHash[c]);
+			}
+			messagePlayer(0, "IMGREF: %d, total size: %d", imgref, totalSize);
+			s[63] = '\0';
+			messagePlayer(0, "%s", s);
+			//messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
 		}
 	}
 
