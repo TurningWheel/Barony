@@ -18,6 +18,7 @@
 #include "../items.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../net.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle
@@ -165,9 +166,13 @@ void actLeftHandMagic(Entity* my)
 	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	double defaultpitch = (0 - 6.f) / PI;
+	double defaultpitch = (0 - 2.2);
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
+	my->scalex = 0.5f;
+	my->scaley = 0.5f;
+	my->scalez = 0.5f;
+	my->z -= 0.75;
 
 	//Sprite
 	bool noGloves = false;
@@ -177,49 +182,52 @@ void actLeftHandMagic(Entity* my)
 	}
 	else
 	{
-		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
 		{
-			// successfully set sprite for the human model
+			my->sprite = 659;
 		}
-		else
+		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
 		{
-			noGloves = true;
+			my->sprite = 660;
+		}
+		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
+		{
+			my->sprite = 661;
+		}
+		else if ( stats[clientnum]->gloves->type == BRASS_KNUCKLES )
+		{
+			my->sprite = 662;
+		}
+		else if ( stats[clientnum]->gloves->type == IRON_KNUCKLES )
+		{
+			my->sprite = 663;
+		}
+		else if ( stats[clientnum]->gloves->type == SPIKED_GAUNTLETS )
+		{
+			my->sprite = 664;
+		}
+		else if ( stats[clientnum]->gloves->type == CRYSTAL_GLOVES )
+		{
+			my->sprite = 666;
+		}
+		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
+		{
+			my->sprite = 665;
 		}
 	}
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->appearance / 6 == 0 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 122;
-			}
-			else
-			{
-				my->sprite = 110;
-			}
+			my->sprite = 656;
 		}
 		else if ( stats[clientnum]->appearance / 6 == 1 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 351;
-			}
-			else
-			{
-				my->sprite = 338;
-			}
+			my->sprite = 657;
 		}
 		else
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 377;
-			}
-			else
-			{
-				my->sprite = 364;
-			}
+			my->sprite = 658;
 		}
 	}
 
@@ -317,7 +325,7 @@ void actLeftHandMagic(Entity* my)
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
-	defaultpitch = (0 - 6.f) / PI;
+	//defaultpitch = (0 - 2.8);
 	//my->x = 6 + HUDWEAPON_MOVEX;
 	my->x += cast_animation.lefthand_movex;
 	//my->y = 3 + HUDWEAPON_MOVEY;
@@ -358,9 +366,13 @@ void actRightHandMagic(Entity* my)
 	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	double defaultpitch = (0 - 6.f) / PI;
+	double defaultpitch = (0 - 2.2);
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
+	my->scalex = 0.5f;
+	my->scaley = 0.5f;
+	my->scalez = 0.5f;
+	my->z -= 0.75;
 
 	//Sprite
 	bool noGloves = false;
@@ -370,49 +382,52 @@ void actRightHandMagic(Entity* my)
 	}
 	else
 	{
-		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
 		{
-			// successfully set sprite for the human model
+			my->sprite = 637;
 		}
-		else
+		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
 		{
-			noGloves = true;
+			my->sprite = 638;
+		}
+		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
+		{
+			my->sprite = 639;
+		}
+		else if ( stats[clientnum]->gloves->type == BRASS_KNUCKLES )
+		{
+			my->sprite = 640;
+		}
+		else if ( stats[clientnum]->gloves->type == IRON_KNUCKLES )
+		{
+			my->sprite = 641;
+		}
+		else if ( stats[clientnum]->gloves->type == SPIKED_GAUNTLETS )
+		{
+			my->sprite = 642;
+		}
+		else if ( stats[clientnum]->gloves->type == CRYSTAL_GLOVES )
+		{
+			my->sprite = 591;
+		}
+		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
+		{
+			my->sprite = 590;
 		}
 	}
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->appearance / 6 == 0 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 121;
-			}
-			else
-			{
-				my->sprite = 109;
-			}
+			my->sprite = 634;
 		}
 		else if ( stats[clientnum]->appearance / 6 == 1 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 350;
-			}
-			else
-			{
-				my->sprite = 337;
-			}
+			my->sprite = 635;
 		}
 		else
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 376;
-			}
-			else
-			{
-				my->sprite = 363;
-			}
+			my->sprite = 636;
 		}
 	}
 
@@ -483,7 +498,7 @@ void actRightHandMagic(Entity* my)
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
-	defaultpitch = (0 - 6.f) / PI;
+	//defaultpitch = (0 - 6.f) / PI;
 	//my->x = 6 + HUDWEAPON_MOVEX;
 	my->x = 8;
 	my->x += cast_animation.lefthand_movex;
