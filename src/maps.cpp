@@ -729,13 +729,18 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			// find locations where the selected room can be added to the level
 			numpossiblelocations = map.width * map.height;
+
+			bool hellGenerationFix = !strncmp(map.name, "Hell", 4);
+
 			for ( y0 = 0; y0 < map.height; y0++ )
 			{
 				for ( x0 = 0; x0 < map.width; x0++ )
 				{
 					for ( y1 = y0; y1 < std::min(y0 + tempMap->height, map.height); y1++ )
 					{
-						for ( x1 = x0; x1 < std::min(x0 + tempMap->width, map.width); x1++ )
+						// don't generate start room in hell along the rightmost wall, causes pathing to fail. Check 2 tiles to the right extra
+						// to try fit start room.
+						for ( x1 = x0; x1 < std::min(x0 + tempMap->width + ((hellGenerationFix && c == 0) ? 2 : 0), map.width); x1++ )
 						{
 							if ( possiblelocations[x1 + y1 * map.width] == false && possiblelocations2[x0 + y0 * map.width] == true )
 							{
