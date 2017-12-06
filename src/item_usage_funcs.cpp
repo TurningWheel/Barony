@@ -70,7 +70,7 @@ void item_PotionWater(Item*& item, Entity* entity)
 		playSoundEntity(entity, 52, 64);
 		if ( item->beatitude > 0 )
 		{
-			entity->modHP(item->beatitude);
+			entity->modHP(5);
 		}
 		if ( player != clientnum )
 		{
@@ -87,6 +87,7 @@ void item_PotionWater(Item*& item, Entity* entity)
 	{
 		messagePlayer(player, language[753]);
 		stats->HUNGER += 50;
+		entity->modHP(2);
 	}
 	else if ( item->beatitude < 0 )
 	{
@@ -174,8 +175,17 @@ void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
 	messagePlayer(player, language[758]);
 	messagePlayer(player, language[759]);
 	stats->EFFECTS[EFF_DRUNK] = true;
-	stats->EFFECTS_TIMERS[EFF_DRUNK] = 3600;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+	}
 	stats->HUNGER += 100;
+	entity->modHP(5);
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -233,6 +243,7 @@ void item_PotionJuice(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[760]);
 	stats->HUNGER += 50;
+	entity->modHP(5);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -354,7 +365,14 @@ void item_PotionConfusion(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[762]);
 	stats->EFFECTS[EFF_CONFUSED] = true;
-	stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = std::max(300, 1800 - (entity->getPER() + entity->getCON()) * 20);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+	}
 	if ( entity->behavior == &actMonster )
 	{
 		entity->monsterTarget = 0; // monsters forget what they're doing
@@ -478,7 +496,15 @@ void item_PotionBlindness(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[765]);
 	stats->EFFECTS[EFF_BLIND] = true;
-	stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+		stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -773,7 +799,15 @@ void item_PotionParalysis(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[771]);
 	stats->EFFECTS[EFF_PARALYZED] = true;
-	stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getCON()) * 5);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -1342,7 +1376,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 
 void item_ScrollEnchantArmor(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1367,33 +1401,66 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if (stats[player]->helmet != nullptr)
+	int armornum = rand() % 6;
+	int startIndex = armornum;
+	bool breakloop = false;
+	while ( !armor && !breakloop )
 	{
-		armor = stats[player]->helmet;
-	}
-	else if (stats[player]->breastplate != nullptr)
-	{
-		armor = stats[player]->breastplate;
-	}
-	else if (stats[player]->gloves != nullptr)
-	{
-		armor = stats[player]->gloves;
-	}
-	else if (stats[player]->shoes != nullptr)
-	{
-		armor = stats[player]->shoes;
-	}
-	else if (stats[player]->shield != nullptr)
-	{
-		armor = stats[player]->shield;
-	}
-	else if (stats[player]->cloak != nullptr)
-	{
-		armor = stats[player]->cloak;
-	}
-	else
-	{
-		armor = nullptr;
+		switch ( armornum )
+		{
+			// intentional fall throughs...
+			case 0:
+				if ( stats[player]->helmet != nullptr )
+				{
+					armor = stats[player]->helmet;
+					break;
+				}
+			case 1:
+				if ( stats[player]->breastplate != nullptr )
+				{
+					armor = stats[player]->breastplate;
+					break;
+				}
+			case 2:
+				if ( stats[player]->gloves != nullptr )
+				{
+					armor = stats[player]->gloves;
+					break;
+				}
+			case 3:
+				if ( stats[player]->shoes != nullptr )
+				{
+					armor = stats[player]->shoes;
+					break;
+				}
+			case 4:
+				if ( stats[player]->shield != nullptr )
+				{
+					armor = stats[player]->shield;
+					break;
+				}
+			case 5:
+				if ( stats[player]->cloak != nullptr )
+				{
+					armor = stats[player]->cloak;
+					break;
+				}
+				++armornum;
+				if ( armornum > 5 )
+				{
+					// loop back around.
+					armornum = 0;
+				}
+				if ( armornum == startIndex )
+				{
+					// couldn't find a piece of armor, break.
+					breakloop = true;
+					armor = nullptr;
+					break;
+				}
+			default:
+				break;
+		}
 	}
 
 	if (armor == nullptr)

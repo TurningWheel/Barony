@@ -94,21 +94,33 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "The Labyrinth", 13) )     // sand labyrinth
 	{
-		switch ( rand() % 10 )
+		switch ( rand() % 20 )
 		{
 			case 0:
 			case 1:
-				return GOBLIN;
 			case 2:
 			case 3:
+				return GOBLIN;
 			case 4:
 			case 5:
-				return SCORPION;
 			case 6:
 			case 7:
 			case 8:
 			case 9:
+				return SCORPION;
+			case 10:
+			case 11:
+			case 12:
+			case 13:
 				return TROLL;
+			case 14:
+			case 15:
+			case 16:
+			case 17:
+				return SCARAB;
+			case 18:
+			case 19:
+				return INSECTOID;
 		}
 	}
 	else if ( !strncmp(map.name, "The Ruins", 9) )     // blue ruins
@@ -125,8 +137,17 @@ int monsterCurve(int level)
 			case 5:
 			case 6:
 			case 7:
-			case 8:
 				return TROLL;
+			case 8:
+				if ( rand() % 10 > 0 )
+				{
+					return TROLL;
+				}
+				else
+				{
+					return VAMPIRE;
+					//messagePlayer(0, "true");
+				}
 			case 9:
 				return DEMON;
 		}
@@ -708,13 +729,18 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			// find locations where the selected room can be added to the level
 			numpossiblelocations = map.width * map.height;
+
+			bool hellGenerationFix = !strncmp(map.name, "Hell", 4);
+
 			for ( y0 = 0; y0 < map.height; y0++ )
 			{
 				for ( x0 = 0; x0 < map.width; x0++ )
 				{
-					for ( y1 = y0; y1 < std::min(y0 + tempMap->height + 1, map.height); y1++ )
+					for ( y1 = y0; y1 < std::min(y0 + tempMap->height, map.height); y1++ )
 					{
-						for ( x1 = x0; x1 < std::min(x0 + tempMap->width + 1, map.width); x1++ )
+						// don't generate start room in hell along the rightmost wall, causes pathing to fail. Check 2 tiles to the right extra
+						// to try fit start room.
+						for ( x1 = x0; x1 < std::min(x0 + tempMap->width + ((hellGenerationFix && c == 0) ? 2 : 0), map.width); x1++ )
 						{
 							if ( possiblelocations[x1 + y1 * map.width] == false && possiblelocations2[x0 + y0 * map.width] == true )
 							{
@@ -1533,7 +1559,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 	{
 		genEntityMin = (map.flags[MAP_FLAG_GENBYTES1] >> 24) & 0xFF; // first leftmost byte
 		genEntityMax = (map.flags[MAP_FLAG_GENBYTES1] >> 16) & 0xFF; // second leftmost byte
-		genEntityMin = std::max(genEntityMin, 2); // make sure there's room for a ladder.
 
 		genMonsterMin = (map.flags[MAP_FLAG_GENBYTES1] >> 8) & 0xFF; // third leftmost byte
 		genMonsterMax = (map.flags[MAP_FLAG_GENBYTES1] >> 0) & 0xFF; // fourth leftmost byte
@@ -1550,6 +1575,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 	if ( genEntityMin > 0 || genEntityMax > 0 )
 	{
+		genEntityMin = std::max(genEntityMin, 2); // make sure there's room for a ladder.
 		entitiesToGenerate = genEntityMin;
 		randomEntities = std::max(genEntityMax - genEntityMin, 1); // difference between min and max is the extra chances.
 		//Needs to be 1 for prng_get_uint() % to not divide by 0.
@@ -1560,7 +1586,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 		// revert to old mechanics.
 		j = std::min<Uint32>(30 + prng_get_uint() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
 	}
-
 	int forcedMonsterSpawns = 0;
 	int forcedLootSpawns = 0;
 	int forcedDecorationSpawns = 0;
@@ -1954,7 +1979,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
-	messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
+	messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
 }
 
@@ -2304,7 +2329,7 @@ void assignActions(map_t* map)
 									{
 										randType = prng_get_uint() % (NUMCATEGORIES - 1);
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
 								}
 								else
 								{
@@ -2322,12 +2347,12 @@ void assignActions(map_t* map)
 											randType++;
 										}
 									}
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType), 0, currentlevel);
 								}
 							}
 							else
 							{
-								entity->skill[10] = itemLevelCurve(FOOD);
+								entity->skill[10] = itemLevelCurve(FOOD, 0, currentlevel);
 							}
 						}
 					}
@@ -2336,7 +2361,7 @@ void assignActions(map_t* map)
 						// editor set the random category of the item to be spawned.
 						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
 						{
-							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1));
+							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1), 0, currentlevel);
 						}
 						else
 						{
@@ -2347,11 +2372,11 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
 								}
 							}
 							else if ( entity->skill[16] == 15 )
@@ -2360,11 +2385,11 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
 								}
 							}
 							else if ( entity->skill[16] == 16 )
@@ -2373,15 +2398,15 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 3;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
 								}
 								else
 								{
-									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
 								}
 							}
 						}
@@ -2672,7 +2697,6 @@ void assignActions(map_t* map)
 				else
 				{
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
-
 				}
 
 				if ( multiplayer != CLIENT )
@@ -2829,6 +2853,14 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[SCARAB][0][0]; // 0
 						entity->focaly = limbs[SCARAB][0][1]; // 0
 						entity->focalz = limbs[SCARAB][0][2]; // 0
+						if ( !strncmp(map->name, "The Labyrinth", 13) )
+						{
+							if ( myStats )
+							{
+								myStats->DEX -= 4;
+								myStats->LVL = 10;
+							}
+						}
 						break;
 					case CRYSTALGOLEM:
 						entity->z = -1.5;
@@ -2847,6 +2879,13 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[VAMPIRE][0][0]; // 0
 						entity->focaly = limbs[VAMPIRE][0][1]; // 0
 						entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
+						if ( !strncmp(map->name, "The Ruins", 9) )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "young vampire");
+							}
+						}
 						break;
 					case SHADOW:
 						entity->z = -1;
@@ -2865,6 +2904,13 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[INSECTOID][0][0]; // 0
 						entity->focaly = limbs[INSECTOID][0][1]; // 0
 						entity->focalz = limbs[INSECTOID][0][2]; // -1.75
+						if ( !strncmp(map->name, "The Labyrinth", 13) )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "lesser insectoid");
+							}
+						}
 						break;
 					case GOATMAN:
 						entity->z = 0;
@@ -4127,6 +4173,7 @@ void assignActions(map_t* map)
 				//entity->pedestalInvertedPower // set in editor
 				entity->pedestalInit = 0;
 				//entity->pedestalInGround = 0; // set in editor
+				//entity->pedestalLockOrb // set in editor
 				if ( entity->pedestalInGround )
 				{
 					entity->z += 11;
@@ -4189,7 +4236,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				if ( entity->teleporterType == 0 )
 				{
-					entity->sprite = 253; // ladder hole
+					entity->sprite = 618; // ladder hole
 					entity->behavior = &actTeleporter;
 					x = entity->x / 16;
 					y = entity->y / 16;
@@ -4212,7 +4259,7 @@ void assignActions(map_t* map)
 					entity->z = 5.45;
 					entity->flags[PASSABLE] = true;
 					entity->behavior = &actTeleporter;
-					entity->sprite = 161; // ladder
+					entity->sprite = 619; // ladder
 				}
 				else
 				{
@@ -4268,7 +4315,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						childEntity = newEntity(252, 1, map->entities);
+						childEntity = newEntity(644, 1, map->entities);
 						childEntity->parent = entity->getUID();
 						childEntity->x = entity->x;
 						childEntity->y = entity->y;
@@ -4276,13 +4323,25 @@ void assignActions(map_t* map)
 						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
-							childEntity->z = -26.99;
+							childEntity->z = -22.99;
 						}
 						else
 						{
-							childEntity->z = -10.99;
+							childEntity->z = -6.99;
 						}
 						node_t* tempNode = list_AddNodeLast(&entity->children);
+						tempNode->element = childEntity; // add the node to the children list.
+						tempNode->deconstructor = &emptyDeconstructor;
+						tempNode->size = sizeof(Entity*);
+
+						childEntity = newEntity(645, 1, map->entities);
+						childEntity->parent = entity->getUID();
+						childEntity->x = entity->x;
+						childEntity->y = entity->y;
+						childEntity->z = 8.24;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						childEntity->flags[PASSABLE] = true;
+						tempNode = list_AddNodeLast(&entity->children);
 						tempNode->element = childEntity; // add the node to the children list.
 						tempNode->deconstructor = &emptyDeconstructor;
 						tempNode->size = sizeof(Entity*);
@@ -4469,7 +4528,7 @@ void assignActions(map_t* map)
 	for ( node = map->entities->first; node != nullptr; node = node->next )
 	{
 		Entity* itemEnt = (Entity*)node->element;
-		if ( itemEnt->behavior == &actItem )
+		if ( itemEnt && itemEnt->behavior == &actItem )
 		{
 			// see if there's any platforms to set items upon.
 			for ( node_t* tmpnode = map->entities->first; tmpnode != nullptr; tmpnode = tmpnode->next )

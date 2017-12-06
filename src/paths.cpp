@@ -258,7 +258,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->sprite == 41 && lavaIsPassable )
+		if ( lavaIsPassable &&
+			(entity->sprite == 41
+			|| lavatiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]])
+			)
 		{
 			//Fix to make ladders generate in hell.
 			continue;

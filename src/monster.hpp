@@ -186,7 +186,10 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 6
 	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
 	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 8
-	{	4,	4,	4,	4,	4,	4 }  // JOKER 9
+	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
+	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
+	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
+	{	4,	2,	5,	3,	2,	2 }  // MONK 12
 };
 
 #define WAIT_FOLLOWDIST 48

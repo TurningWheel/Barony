@@ -325,6 +325,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"artifact_orb_red",
 	"artifact_orb_purple",
 	"artifact_orb_green",
+	"tunic",
 	""
 };
 
@@ -462,6 +463,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"vampire_doublet",
 		"wizard_doublet",
 		"healer_doublet",
+		"tunic",
 		""
 	},
 	{
@@ -921,17 +923,38 @@ char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 	"Bronze Columns.png",
 	"Bronze Columns Alcove.png",
 	"Submap.png",
-	"Cave Wall Reinforced No Beam",
-	"Cave Wall Reinforced Left Cap",
-	"Cave Wall Reinforced Right Cap",
-	"Crystal Wall Reinforced No Beam",
-	"Crystal Wall Reinforced Left Cap",
-	"Crystal Wall Reinforced Right Cap",
-	"Crystal Floor Trap 1",
-	"Crystal Floor Trap 2",
-	"Crystal Floor Trap 3",
-	"Crystal Floor Trap 4",
-	"DO NOT USE - NEEDED FOR ANIMATED TILE"
+	"Cave Wall Reinforced No Beam.png",
+	"Cave Wall Reinforced Left Cap.png",
+	"Cave Wall Reinforced Right Cap.png",
+	"Crystal Wall Reinforced No Beam.png",
+	"Crystal Wall Reinforced Left Cap.png",
+	"Crystal Wall Reinforced Right Cap.png",
+	"Crystal Floor Trap 1.png",
+	"Crystal Floor Trap 2.png",
+	"Crystal Floor Trap 3.png",
+	"Crystal Floor Trap 4.png",
+	"Arcane Crystal H.png",
+	"Arcane Crystal J.png",
+	"Arcane Crystal Plating.png",
+	"Arcane Crystal Tile.png",
+	"Arcane Crystal V.png",
+	"Arcane Panel Blue.png",
+	"Arcane Panel BlueOpen.png",
+	"Arcane Panel Gold.png",
+	"Arcane Panel GoldOpen.png",
+	"Arcane Pipes Blue.png",
+	"Arcane Pipes Blue H.png",
+	"Arcane Pipes Blue J.png",
+	"Arcane Pipes Blue Plating.png",
+	"Arcane Pipes Blue Plating Decor.png",
+	"Arcane Pipes Blue V.png",
+	"Arcane Pipes Gold.png",
+	"Arcane Pipes Gold H.png",
+	"Arcane Pipes Gold J.png",
+	"Arcane Pipes Gold Plating.png",
+	"Arcane Pipes Gold Plating Decor.png",
+	"Arcane Pipes Gold V.png",
+	"Bronze Column Pipe.png"
 };
 
 int canWearEquip(Entity* entity, int category)
