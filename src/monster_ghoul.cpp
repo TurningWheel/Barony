@@ -43,6 +43,17 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "enslaved ghoul", strlen("enslaved ghoul")) )
+			{
+				myStats->HP = 110;
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 13;
+				myStats->DEX = 5;
+				myStats->LVL = 15;
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -53,7 +64,7 @@ void initGhoul(Entity* my, Stat* myStats)
 			if ( rand() % 50 || my->flags[USERFLAG2] )
 			{
 			}
-			else
+			else if ( !lesserMonster )
 			{
 				strcpy(myStats->name, "Coral Grimes");
 				for ( c = 0; c < 3; c++ )
@@ -101,7 +112,7 @@ void initGhoul(Entity* my, Stat* myStats)
 				case 2:
 					if ( rand() % 10 == 0 )
 					{
-						newItem(itemLevelCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+						newItem(itemLevelCurve(TOOL, 0, currentlevel), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
 					}
 				case 1:
 					if ( rand() % 4 == 0 )

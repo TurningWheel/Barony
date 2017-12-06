@@ -1929,14 +1929,7 @@ void Entity::handleEffects(Stat* myStats)
 						if ( players[i] && players[i]->entity == leader )
 						{
 							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( myStats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(i, color, language[2379], language[90 + myStats->type]);
-							}
-							else if ( myStats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(i, color, language[2379], language[2000 + (myStats->type - KOBOLD)]);
-							}
+							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
 						}
 					}
 				}
@@ -2177,33 +2170,32 @@ void Entity::handleEffects(Stat* myStats)
 				if ( player >= 0 )   // bad guys don't starve. Sorry.
 				{
 					this->modHP(-4);
+					// Play the Damage sound
+					playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+					// Shake the Host's screen
+					if ( player == clientnum )
+					{
+						camera_shakex += .1;
+						camera_shakey += 10;
+					}
+					else if ( player > 0 && multiplayer == SERVER )
+					{
+						// Shake the Client's screen
+						strcpy((char*)net_packet->data, "SHAK");
+						net_packet->data[4] = 10; // turns into .1
+						net_packet->data[5] = 10;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
 				}
 				if ( myStats->HP > 0 )
 				{
 					messagePlayer(player, language[633]);
 				}
 				this->setObituary(language[1530]);
-
-				// Play the Damage sound
-				playSoundEntity(this, 28, 64); // "Damage.ogg"
-
-				// Shake the Host's screen
-				if ( player == clientnum )
-				{
-					camera_shakex += .1;
-					camera_shakey += 10;
-				}
-				else if ( player > 0 && multiplayer == SERVER )
-				{
-					// Shake the Client's screen
-					strcpy((char*)net_packet->data, "SHAK");
-					net_packet->data[4] = 10; // turns into .1
-					net_packet->data[5] = 10;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
-				}
 			}
 		}
 	}
@@ -2454,7 +2446,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 		this->char_poison++;
-		if ( this->char_poison > 180 )   // three seconds
+		if ( this->char_poison > 150 )   // three seconds
 		{
 			this->char_poison = 0;
 			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
@@ -4726,9 +4718,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// shield still has chance to degrade after raising skill.
 							// crystal golem special attack increase chance for shield to break if defended. (33%)
 							// special attack only degrades shields if primary target.
-							if ( ((hitstats->defending && rand() % 10 == 0)
-								|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0))
-								&& armor == nullptr )
+							if ( (hitstats->defending && rand() % 10 == 0)
+								|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
+								&& armor == NULL )
 							{
 								armor = hitstats->shield;
 								armornum = 4;
@@ -4762,6 +4754,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					bool statusInflicted = false;
+
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
@@ -4788,14 +4782,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							case SCORPION:
 								hitstats->EFFECTS[EFF_PARALYZED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = 120;
+								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
 								messagePlayer(playerhit, language[684]);
 								messagePlayer(playerhit, language[685]);
 								serverUpdateEffects(playerhit);
 								break;
 							case SPIDER:
 								hitstats->EFFECTS[EFF_POISONED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_POISONED] = 600;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
 								messagePlayer(playerhit, language[686]);
 								messagePlayer(playerhit, language[687]);
 								serverUpdateEffects(playerhit);
@@ -4887,6 +4881,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 								break;
 						}
 					}
+					else if ( damage == 0 && !(hitstats->defending) )
+					{
+						// special chance effects when damage is 0.
+						if ( rand() % 20 == 0 )
+						{
+							switch ( myStats->type )
+							{
+								case SCORPION:
+									hitstats->EFFECTS[EFF_PARALYZED] = true;
+									hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(50, 150 - hit.entity->getCON() * 5);
+									messagePlayer(playerhit, language[684]);
+									messagePlayer(playerhit, language[685]);
+									serverUpdateEffects(playerhit);
+									statusInflicted = true;
+									break;
+								case SPIDER:
+									hitstats->EFFECTS[EFF_POISONED] = true;
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
+									messagePlayer(playerhit, language[686]);
+									messagePlayer(playerhit, language[687]);
+									serverUpdateEffects(playerhit);
+									statusInflicted = true;
+									break;
+								default:
+									break;
+							}
+						}
+					}
 
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
@@ -4896,26 +4918,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( damage > olddamage )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(player, color, language[689], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(player, color, language[689], language[2000 + (hitstats->type - KOBOLD)]);
-								}
+								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[689], MSG_COMBAT);
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(player, color, language[690], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(player, color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
-								}
+								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT);
 							}
 							if ( damage == 0 )
 							{
@@ -4925,14 +4933,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(player, color, language[692], language[90 + hitstats->type]);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(player, color, language[692], language[2000 + (hitstats->type - KOBOLD)]);
-							}
+							messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
 							awardXP(hit.entity, true, true);
 						}
 					}
@@ -4943,22 +4944,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( damage > olddamage )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(player, color, language[693], hitstats->name);
+								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[693], MSG_COMBAT);
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(player, color, language[694], hitstats->name);
+								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT);
 							}
 							if ( damage == 0 )
 							{
 								if ( hitstats->sex )
 								{
-									messagePlayer(player, language[695]);
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[695], MSG_COMBAT);
 								}
 								else
 								{
-									messagePlayer(player, language[696]);
+									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[696], MSG_COMBAT);
 								}
 							}
 						}
@@ -5048,42 +5049,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
-						if ( !strcmp(myStats->name, "") )
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							if ( myStats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
-							}
-							else if ( myStats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - KOBOLD)], language[2100 + (myStats->type - KOBOLD)]);
-							}
-						}
-						else
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							if ( myStats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
-							}
-							else if ( myStats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - KOBOLD)]);
-							}
-						}
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerMonsterEvent(playerhit, color, *myStats, language[698], language[699], MSG_ATTACKS);
 					}
 					else
 					{
 						// display 'blow bounces off' message
 						//messagePlayer(playerhit, language[700]);
-						if ( !strcmp(myStats->name, "") )
+						if ( !statusInflicted )
 						{
-							messagePlayer(playerhit, language[2457], this->getMonsterLangEntry());
-						}
-						else
-						{
-							messagePlayer(playerhit, language[2458], myStats->name);
+							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT);
 						}
 					}
 
@@ -5249,7 +5224,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// lifesteal
-					if ( damage > 0 && ((myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr) || myStats->type == VAMPIRE) )
+					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
 					{
 						bool lifestealSuccess = false;
 						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
@@ -6195,12 +6170,13 @@ void createMonsterEquipment(Stat* stats)
 	{
 		for ( itemIndex = 0; itemIndex < 10; ++itemIndex )
 		{
+			bool generateItem = true;
 			category = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + ITEM_SLOT_CATEGORY];
 			if ( category > 0 && stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemLevelCurve(static_cast<Category>(category - 1));
+					itemId = itemLevelCurve(static_cast<Category>(category - 1), 0, currentlevel);
 				}
 				else
 				{
@@ -6211,11 +6187,11 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(WEAPON));
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(ARMOR));
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
 						}
 					}
 					else if ( category == 15 )
@@ -6224,11 +6200,11 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(AMULET));
+							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(RING));
+							itemId = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
 						}
 					}
 					else if ( category == 16 )
@@ -6237,25 +6213,33 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SCROLL));
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK));
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
 						}
 					}
 				}
 			}
 			else
 			{
-				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2);
+				if ( static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2) >= 0 )
+				{
+					itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2);
+				}
+				else
+				{
+					itemId = ItemType::WOODEN_SHIELD;
+					generateItem = false;
+				}
 			}
 
-			if ( itemId >= 0 )
+			if ( itemId >= 0 && generateItem )
 			{
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 1]);
 				if ( itemStatus == 0 )
@@ -8300,6 +8284,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		return; //Can't continue without these.
 	}
 
+	if ( list_Size(&myStats->inventory) >= maxInventoryItems + 1 )
+	{
+		return;
+	}
+
 	list_t* items = nullptr;
 	//X and Y in terms of tiles.
 	int tx = x / 16;
@@ -9139,8 +9128,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 
-	int regenTime = (MAGIC_REGEN_TIME - std::min(profMultiplier * statMultiplier, 150)); // return 300-150 ticks, 6-3 seconds.
-
+	int regenTime = (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 150))); // return 300-150 ticks, 6-3 seconds.
 	int manaring = 0;
 	if ( myStats.breastplate != nullptr )
 	{
@@ -9172,7 +9160,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	}
 	if ( manaring > 0 )
 	{
-		return regenTime / (manaring * 6);
+		return regenTime / (manaring * 2);
 	}
 	else if ( manaring < 0 )
 	{
@@ -9223,6 +9211,300 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			{
 				this->arrowArmorPierce = 0;
 			}
+		}
+	}
+}
+
+
+/*-------------------------------------------------------------------------------
+
+messagePlayerMonsterEvent
+handles text for monster interaction/damage/obituaries
+
+-------------------------------------------------------------------------------*/
+
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	bool namedMonsterAsGeneric = false; 
+	if ( strstr(monsterStats.name, "lesser") || strstr(monsterStats.name, "young") || strstr(monsterStats.name, "enslaved") )
+	{
+		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
+		namedMonsterAsGeneric = true;
+	}
+	//char str[256] = { 0 };
+	if ( !strcmp(monsterStats.name, "") )
+	{
+		// use generic racial name and grammar. "You hit the skeleton"
+		if ( detailType == MSG_OBITUARY )
+		{
+			if ( monsterStats.type < KOBOLD ) // Original monster count
+			{
+				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+			}
+		}
+		else if ( detailType == MSG_ATTACKS )
+		{
+			if ( monsterStats.type < KOBOLD ) // Original monster count
+			{
+				messagePlayerColor(player, color, msgGeneric, language[90 + monsterStats.type], language[132 + monsterStats.type]);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterStats.type - KOBOLD)], language[2100 + (monsterStats.type - KOBOLD)]);
+			}
+		}
+		else
+		{
+			if ( monsterStats.type < KOBOLD ) // Original monster count
+			{
+				messagePlayerColor(player, color, msgGeneric, language[90 + monsterStats.type]);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterStats.type - KOBOLD)]);
+			}
+		}
+	}
+	else
+	{
+		// use monster's "name" and pronoun grammar. "You hit Funny Bones!"
+		if ( detailType == MSG_DESCRIPTION )
+		{
+			if ( namedMonsterAsGeneric )
+			{
+				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
+			}
+			else if ( monsterStats.type < KOBOLD ) //Original monster count
+			{
+				messagePlayerColor(player, color, msgNamed, language[90 + monsterStats.type], monsterStats.name);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.name);
+			}
+		}
+		else if ( detailType == MSG_COMBAT )
+		{
+			if ( namedMonsterAsGeneric )
+			{
+				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
+			}
+			else if ( monsterStats.type < KOBOLD ) //Original monster count
+			{
+				messagePlayerColor(player, color, msgNamed, monsterStats.name);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgNamed, monsterStats.name);
+			}
+		}
+		else if ( detailType == MSG_OBITUARY )
+		{
+			if ( namedMonsterAsGeneric )
+			{
+				messagePlayerColor(player, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
+			}
+			else
+			{
+				messagePlayerColor(player, color, "%s %s", monsterStats.name, monsterStats.obituary);
+			}
+		}
+		else if ( detailType == MSG_GENERIC )
+		{
+			if ( namedMonsterAsGeneric )
+			{
+				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
+			}
+			else if ( monsterStats.type < KOBOLD ) // Original monster count
+			{
+				messagePlayerColor(player, color, msgGeneric, language[90 + monsterStats.type]);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterStats.type - KOBOLD)]);
+			}
+		}
+		else if ( detailType == MSG_ATTACKS )
+		{
+			if ( namedMonsterAsGeneric )
+			{
+				if ( monsterStats.type < KOBOLD ) // Original monster count
+				{
+					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[132 + monsterStats.type]);
+				}
+				else if ( monsterStats.type >= KOBOLD ) //New monsters
+				{
+					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[2100 + (monsterStats.type - KOBOLD)]);
+				}
+			}
+			else if ( monsterStats.type < KOBOLD ) // Original monster count
+			{
+				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[132 + monsterStats.type]);
+			}
+			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			{
+				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[2100 + (monsterStats.type - KOBOLD)]);
+			}
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+playerClassLangEntry
+get text string for the different player chosen classes.
+
+-------------------------------------------------------------------------------*/
+
+char* playerClassLangEntry(int classnum)
+{
+	if ( classnum >= 0 && classnum <= 9 )
+	{
+		return language[1900 + classnum];
+	}
+	else if ( classnum >= 10 && classnum <= NUMCLASSES )
+	{
+		return language[2550 + classnum - 10];
+	}
+	else
+	{
+		return "undefined classname";
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+playerClassDescription
+get text string for the description of player chosen classes.
+
+-------------------------------------------------------------------------------*/
+
+char* playerClassDescription(int classnum)
+{
+	if ( classnum >= 0 && classnum <= 9 )
+	{
+		return language[10 + classnum];
+	}
+	else if ( classnum >= 10 && classnum <= NUMCLASSES )
+	{
+		return language[2560 + classnum - 10];
+	}
+	else
+	{
+		return "undefined description";
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+setHelmetLimbOffset
+Adjusts helmet offsets for all monsters, depending on the type of headwear.
+
+-------------------------------------------------------------------------------*/
+
+void Entity::setHelmetLimbOffset(Entity* helm)
+{
+	int monster = getMonsterTypeFromSprite();
+	if ( helm->sprite != items[STEEL_HELM].index )
+	{
+		if ( helm->sprite == items[HAT_PHRYGIAN].index )
+		{
+			switch ( monster )
+			{
+				case AUTOMATON:
+				case SKELETON:
+					helm->focalx = limbs[monster][9][0] - .5;
+					helm->focaly = limbs[monster][9][1] - 3.25;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				case HUMAN:
+				case SHOPKEEPER:
+				case VAMPIRE:
+					helm->focalx = limbs[monster][9][0] - .5;
+					helm->focaly = limbs[monster][9][1] - 3.25;
+					helm->focalz = limbs[monster][9][2] + 2.25;
+					break;
+				case GOATMAN:
+				case GOBLIN:
+				case INSECTOID:
+				case SHADOW:
+					helm->focalx = limbs[monster][9][0] - .5;
+					helm->focaly = limbs[monster][9][1] - 3.55;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				default:
+					break;
+			}
+			helm->roll = PI / 2;
+		}
+		else if ( helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
+		{
+			switch ( monster )
+			{
+				case AUTOMATON:
+				case SKELETON:
+					helm->focalx = limbs[monster][9][0] - .5;
+					helm->focaly = limbs[monster][9][1] - 2.5;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				case VAMPIRE:
+				case SHOPKEEPER:
+				case HUMAN:
+					helm->focalx = limbs[monster][9][0] - .5;
+					helm->focaly = limbs[monster][9][1] - 2.5;
+					helm->focalz = limbs[monster][9][2] + 2.25;
+					break;
+				case GOATMAN:
+				case GOBLIN:
+				case INSECTOID:
+				case SHADOW:
+					helm->focalx = limbs[monster][9][0] - .5;
+					helm->focaly = limbs[monster][9][1] - 2.75;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				default:
+					break;
+			}
+			helm->roll = PI / 2;
+		}
+		else if ( helm->sprite == items[HAT_WIZARD].index || helm->sprite == items[HAT_JESTER].index )
+		{
+			switch ( monster )
+			{
+				case AUTOMATON:
+				case SKELETON:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.75;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				case VAMPIRE:
+				case SHOPKEEPER:
+				case HUMAN:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.75;
+					helm->focalz = limbs[monster][9][2] + 2.25;
+					break;
+				case GOATMAN:
+				case GOBLIN:
+				case INSECTOID:
+				case SHADOW:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 5;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				default:
+					break;
+			}
+			helm->roll = PI / 2;
 		}
 	}
 }

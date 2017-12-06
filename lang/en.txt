@@ -2919,6 +2919,8 @@ client (player %d) (direct ip)#
 2291 purple mystic orb#
 2292 green mystic orb#
 2293 green mystic orb#
+2294 tunic#
+2295 tunic#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2936,10 +2938,10 @@ client (player %d) (direct ip)#
 2362 You hear a click from the mechanism!#
 2363 You attempt to pull the lever back,
 but it retracts beyond your might!#
-2364 Pedestal Reply1#
-2365 Pedestal Reply2#
-2366 Pedestal Reply3#
-2367 Pedestal Reply4#
+2364 You pound the pedestal in frustration.#
+2365 You admire the intricate carving of the pedestal.#
+2366 The pedestal seems to require some sort of primordial artifact.#
+2367 The orb defies your grasp and is unable to be retrieved!#
 2368 You place the orb in the receptacle...#
 2369 But it had no effect.#
 2370 The orb starts floating!#
@@ -3103,6 +3105,49 @@ last of your magic is drained!#
 2514 You pierced %s's armor!#
 2515 The shot pierced your armor!#
 
+## 2516 - ???, More effect messages
+2516 You feel as if a part of your essence is seized!#
+2517 You feel as if a sliver of your essence is taken!#
+2518 You feel something tug at your essence and pull itself near...#
+2519 You summon an incubus!#
+2520 Your spell destroys the chest!#
+
+# 2550 - 2560 new class names
+2550 sexton#
+2551 ninja#
+2552 monk#
+2553 blank#
+2554 blank#
+2555 blank#
+2556 blank#
+2557 blank#
+2558 blank#
+2559 blank#
+# 2560 - 2570 new class descriptions
+2560 A temple officer who serves unseen, using stealth and magic to slip their way
+through the dungeon with the aid of a few rare tools.
+Difficulty: Hard#
+2561 A highly specialized assassin. They ambush foes with swords or ranged weapons,
+using a few other tricks to get out of bad situations.
+Difficulty: Hard#
+2562 Disciplined and hardy. They have little in the way of offensive training and 
+material goods, but can rely on their excellent fortitude and adaptability.
+Difficulty: Normal#
+2563 A blank.
+Difficulty: Normal#
+2564 A blank.
+Difficulty: Normal#
+2565 A blank.
+Difficulty: Normal#
+2566 A blank.
+Difficulty: Normal#
+2567 A blank.
+Difficulty: Normal#
+2568 A blank.
+Difficulty: Normal#
+2569 A blank.
+Difficulty: Normal#
+
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
 exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.#
@@ -3166,13 +3211,6 @@ Now advance when your allies are ready!#
 Now wait for your leader to advance onward...#
 
 2606 Click to continue.#
-
-
-## 2516 - ???, More effect messages
-2516 You feel as if a part of your essence is seized!#
-2517 You feel as if a sliver of your essence is taken!#
-2518 You feel something tug at your essence and pull itself near...#
-
 
 # NPC Chatter. Groups of 10 lines for each NPC type
 2700 type:seq#

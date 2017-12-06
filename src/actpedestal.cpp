@@ -210,28 +210,54 @@ void Entity::actPedestalBase()
 				{
 					if ( orbEntity && pedestalHasOrb > 0 )
 					{
-						Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
-						itemPickup(i, itemOrb);
-						if ( pedestalHasOrb == pedestalOrbType )
+						if ( pedestalHasOrb == pedestalOrbType && pedestalLockOrb == 1 )
 						{
-							// only update power when right orb is in place.
-							if ( !pedestalInvertedPower )
-							{
-								mechanismPowerOff();
-							}
-							else
-							{
-								mechanismPowerOn();
-							}
-							updateCircuitNeighbors();
+							// if orb locked, then can't retreive.
+							messagePlayer(i, language[2367]);
 						}
-						pedestalHasOrb = 0;
-						serverUpdateEntitySkill(this, 0); // update orb status.
-						messagePlayer(i, language[2374], itemOrb->getName());
+						else
+						{
+							Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
+							itemPickup(i, itemOrb);
+							if ( pedestalHasOrb == pedestalOrbType )
+							{
+								// only update power when right orb is in place.
+								if ( !pedestalInvertedPower )
+								{
+									mechanismPowerOff();
+								}
+								else
+								{
+									mechanismPowerOn();
+								}
+								updateCircuitNeighbors();
+							}
+							pedestalHasOrb = 0;
+							serverUpdateEntitySkill(this, 0); // update orb status.
+							messagePlayer(i, language[2374], itemOrb->getName());
+						}
 					}
 					else
 					{
-						messagePlayer(i, language[2364]);
+						if ( players[i]->entity->getINT() < 10 )
+						{
+							if ( rand() % 2 == 0 )
+							{
+								messagePlayer(i, language[476]);
+							}
+							else
+							{
+								messagePlayer(i, language[2364]);
+							}
+						}
+						else if ( players[i]->entity->getINT() < 15 )
+						{
+							messagePlayer(i, language[2365]);
+						}
+						else
+						{
+							messagePlayer(i, language[2366]);
+						}
 					}
 				}
 			}	
@@ -284,24 +310,32 @@ void Entity::actPedestalOrb()
 						{
 							if ( parent->pedestalHasOrb > 0 )
 							{
-								Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
-								itemPickup(i, itemOrb);
-								if ( parent->pedestalHasOrb == parent->pedestalOrbType )
+								if ( parent->pedestalHasOrb == parent->pedestalOrbType && parent->pedestalLockOrb == 1 )
 								{
-									// only update power when right orb is in place.
-									if ( !pedestalInvertedPower )
-									{
-										parent->mechanismPowerOff();
-									}
-									else
-									{
-										parent->mechanismPowerOn();
-									}
-									updateCircuitNeighbors();
+									// if orb locked, then can't retreive.
+									messagePlayer(i, language[2367]);
 								}
-								parent->pedestalHasOrb = 0;
-								serverUpdateEntitySkill(parent, 0); // update orb status 
-								messagePlayer(i, language[2374], itemOrb->getName());
+								else
+								{
+									Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
+									itemPickup(i, itemOrb);
+									if ( parent->pedestalHasOrb == parent->pedestalOrbType )
+									{
+										// only update power when right orb is in place.
+										if ( !pedestalInvertedPower )
+										{
+											parent->mechanismPowerOff();
+										}
+										else
+										{
+											parent->mechanismPowerOn();
+										}
+										updateCircuitNeighbors();
+									}
+									parent->pedestalHasOrb = 0;
+									serverUpdateEntitySkill(parent, 0); // update orb status 
+									messagePlayer(i, language[2374], itemOrb->getName());
+								}
 							}
 						}
 					}

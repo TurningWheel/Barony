@@ -235,9 +235,10 @@ typedef enum ItemType
 	ARTIFACT_ORB_BLUE,
 	ARTIFACT_ORB_RED,
 	ARTIFACT_ORB_PURPLE,
-	ARTIFACT_ORB_GREEN
+	ARTIFACT_ORB_GREEN,
+	TUNIC
 } ItemType;
-const int NUMITEMS = 215;
+const int NUMITEMS = 216;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -424,7 +425,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
-ItemType itemLevelCurve(Category cat);
+ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);

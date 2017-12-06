@@ -518,14 +518,7 @@ void actThrown(Entity* my)
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[90 + hitstats->type]);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
 							if ( damage == 0 )
 							{
 								messagePlayer(parent->skill[2], language[447]);
@@ -533,7 +526,7 @@ void actThrown(Entity* my)
 						}
 						else
 						{
-							messagePlayerColor(parent->skill[2], color, language[694], hitstats->name);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
 							if ( damage == 0 )
 							{
 								if ( hitstats->sex )

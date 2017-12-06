@@ -301,6 +301,19 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
+		// healer doublet
+		item = newItem(HEALER_DOUBLET, SERVICABLE, 0, 1, 2, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+		
 		// cloak (red, protection)
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 2, true, NULL);
 		if ( player == clientnum )
@@ -313,6 +326,7 @@ void initClass(int player)
 		{
 			useItem(item, player);
 		}
+
 
 		if ( player == clientnum )
 		{
@@ -330,11 +344,13 @@ void initClass(int player)
 			// cure ailment spellbook
 			item = newItem(SPELLBOOK_CUREAILMENT, EXCELLENT, 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
 			free(item);
 
 			// healing spellbook
 			item = newItem(SPELLBOOK_HEALING, EXCELLENT, 0, 1, 2, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
 			free(item);
 
 			// apples
@@ -496,8 +512,8 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// phrygian hat
-		item = newItem(HAT_PHRYGIAN, SERVICABLE, 0, 1, 0, true, NULL);
+		// brown hood
+		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -838,6 +854,19 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
+		// wizard doublet
+		item = newItem(WIZARD_DOUBLET, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
 		// cloak (purple, protection)
 		item = newItem(CLOAK_PROTECTION, SERVICABLE, 0, 1, 3, true, NULL);
 		if ( player == clientnum )
@@ -893,16 +922,19 @@ void initClass(int player)
 			// spellbook of fireball
 			item = newItem(SPELLBOOK_FIREBALL, SERVICABLE, 0, 1, 3, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[7].item = item2->uid;
 			free(item);
 
 			// spellbook of cold
 			item = newItem(SPELLBOOK_COLD, SERVICABLE, 0, 1, 4, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
 			free(item);
 
 			// spellbook of light
 			item = newItem(SPELLBOOK_LIGHT, SERVICABLE, 0, 1, 5, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
 			free(item);
 		}
 	}
@@ -994,7 +1026,7 @@ void initClass(int player)
 		}
 
 		// hood (red)
-		item = newItem(HAT_HOOD, WORN, 0, 1, 2, true, NULL);
+		item = newItem(HAT_HOOD, WORN, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1017,11 +1049,13 @@ void initClass(int player)
 			// spellbook of forcebolt
 			item = newItem(SPELLBOOK_FORCEBOLT, WORN, 0, 1, 6, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
 			free(item);
 
 			// spellbook of light
 			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
 			free(item);
 		}
 	}
@@ -1087,6 +1121,7 @@ void initClass(int player)
 			// spellbook of confuse
 			item = newItem(SPELLBOOK_CONFUSE, WORN, 0, 1, 8, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
 			free(item);
 
 			// blindfold
@@ -1102,6 +1137,317 @@ void initClass(int player)
 			// fish
 			item = newItem(FOOD_FISH, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	// sexton
+	if ( client_classes[player] == 10 )
+	{
+		// attributes
+		stats[player]->STR -= 1;
+		stats[player]->DEX += 1;
+		stats[player]->CON -= 1;
+		stats[player]->INT += 1;
+
+		stats[player]->MAXMP += 5;
+		stats[player]->MP += 5;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_MACE] = 10;
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 10;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
+
+		// bronze mace
+		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// shard
+		item = newItem(TOOL_CRYSTALSHARD, SERVICABLE, 0, 2, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[2].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// leather breastpiece
+		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// leather boots
+		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// purple hood
+		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 3, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( player == clientnum )
+		{
+			// chakram
+			item = newItem(STEEL_CHAKRAM, SERVICABLE, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			// bread
+			item = newItem(FOOD_BREAD, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// bread
+			item = newItem(FOOD_TOMALLEY, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// books
+			item = newItem(SPELLBOOK_SLEEP, WORN, 0, 1, 7, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[7].item = item2->uid;
+			free(item);
+
+			item = newItem(SPELLBOOK_OPENING, WORN, 0, 1, 6, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
+			free(item);
+
+			item = newItem(SPELLBOOK_LOCKING, WORN, 0, 1, 6, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
+			free(item);
+		}
+	}
+	// ninja
+	if ( client_classes[player] == 11 )
+	{
+		// attributes
+		stats[player]->STR -= 1;
+		stats[player]->DEX += 2;
+		stats[player]->CON -= 1;
+		stats[player]->INT -= 2;
+
+		stats[player]->MAXHP += 5;
+		stats[player]->HP += 5;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 60;
+		stats[player]->PROFICIENCIES[PRO_SWORD] = 60;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 40;
+
+		// katana
+		item = newItem(CRYSTAL_SWORD, DECREPIT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// black hood
+		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// tunic
+		item = newItem(TUNIC, SERVICABLE, 0, 1, 1, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// leather boots
+		item = newItem(LEATHER_BOOTS_SPEED, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// black cloak
+		item = newItem(CLOAK_BLACK, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( player == clientnum )
+		{
+			// daggers
+			item = newItem(IRON_DAGGER, SERVICABLE, 0, 5, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			// bear trap
+			item = newItem(TOOL_BEARTRAP, SERVICABLE, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+			
+			// paralyze potion
+			item = newItem(POTION_PARALYSIS, SERVICABLE, 0, 1, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
+
+			// invis potion
+			item = newItem(POTION_INVISIBILITY, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// teleport scroll
+			item = newItem(SCROLL_TELEPORTATION, SERVICABLE, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	// monk
+	if ( client_classes[player] == 12 )
+	{
+		// attributes
+		stats[player]->STR += 1;
+		stats[player]->CON += 2;
+		stats[player]->PER -= -1;
+		stats[player]->CHR -= -1;
+
+		stats[player]->MAXHP += 10;
+		stats[player]->HP += 10;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 60;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 20;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 10;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
+
+		// knuckles
+		item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// tunic
+		item = newItem(TUNIC, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// ring slow digestion
+		item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( player == clientnum )
+		{
+			// slingshot
+			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+			
+			// light book
+			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
 			free(item);
 		}
 	}

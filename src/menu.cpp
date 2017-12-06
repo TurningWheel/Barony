@@ -1230,15 +1230,15 @@ void handleMainMenu(bool mode)
 		else if ( charcreation_step == 2 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
-			for ( c = 0; c < 10; c++ )
+			for ( c = 0; c < NUMCLASSES; c++ )
 			{
 				if ( c == client_classes[0] )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", language[1900 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", language[1900 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c));
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -1267,7 +1267,7 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						client_classes[0] = 9;
+						client_classes[0] = NUMCLASSES - 1;
 					}
 
 					// reset class loadout
@@ -1283,7 +1283,7 @@ void handleMainMenu(bool mode)
 					}
 					draw_cursor = false;
 					client_classes[0]++;
-					if (client_classes[0] > 9)
+					if ( client_classes[0] > NUMCLASSES - 1 )
 					{
 						client_classes[0] = 0;
 					}
@@ -1295,7 +1295,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// class description
-			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[10 + client_classes[0]]);
+			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0]));
 		}
 
 		// faces
@@ -3100,11 +3100,11 @@ void handleMainMenu(bool mode)
 
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], language[1900 + client_classes[c]]);
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c]));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], language[1900 + client_classes[c]]);
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c]));
 			}
 		}
 
@@ -3577,7 +3577,7 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[32];
-				strcpy(classname, language[1900 + client_classes[0]]);
+				strcpy(classname, playerClassLangEntry(client_classes[0]));
 				classname[0] -= 32;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
 			}
@@ -3591,7 +3591,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// print character stats
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, language[1900 + client_classes[clientnum]]);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
@@ -4040,7 +4040,7 @@ void handleMainMenu(bool mode)
 			// spice of life achievement
 			usedClass[client_classes[clientnum]] = true;
 			bool usedAllClasses = true;
-			for ( c = 0; c < 10; c++ )
+			for ( c = 0; c < NUMCLASSES; c++ )
 				if ( !usedClass[c] )
 				{
 					usedAllClasses = false;

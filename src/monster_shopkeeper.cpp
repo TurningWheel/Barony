@@ -56,6 +56,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			if ( !strcmp(myStats->name, "") )
+			{
+				strcpy(myStats->name, language[158 + rand() % 26]);
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -945,38 +950,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0] - .5;
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 3.25;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0] - .5;
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 2.5;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0];
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 4.75;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0];
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 4.75;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case LIMB_HUMANOID_MASK:
