@@ -135,7 +135,7 @@ void updateCharacterSheet()
 	fov = ofov;
 
 	ttfPrintTextFormatted(ttf12, 8, 202, "%s", stats[clientnum]->name);
-	ttfPrintTextFormatted(ttf12, 8, 214, language[359], stats[clientnum]->LVL, language[1900 + client_classes[clientnum]]);
+	ttfPrintTextFormatted(ttf12, 8, 214, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
 	ttfPrintTextFormatted(ttf12, 8, 226, language[360], stats[clientnum]->EXP);
 	ttfPrintTextFormatted(ttf12, 8, 238, language[361], currentlevel);
 

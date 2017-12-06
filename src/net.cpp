@@ -651,10 +651,10 @@ void serverUpdateEntityFSkill(Entity* entity, int fskill)
 			strcpy((char*)net_packet->data, "ENFS");
 			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = fskill;
-			SDLNet_Write32(static_cast<int>(entity->fskill[fskill]), &net_packet->data[9]);
+			SDLNet_Write16(static_cast<Sint16>(entity->fskill[fskill] * 256), &net_packet->data[9]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 13;
+			net_packet->len = 11;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
@@ -2363,7 +2363,7 @@ void clientHandlePacket()
 			entity = (Entity*)node->element;
 			if ( entity->getUID() == i )
 			{
-				entity->fskill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
+				entity->fskill[net_packet->data[8]] = (SDLNet_Read16(&net_packet->data[9]) / 256.0);
 			}
 		}
 		return;

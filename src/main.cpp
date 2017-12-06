@@ -124,6 +124,7 @@ bool everybodyfriendly = false;
 bool combat = false, combattoggle = false;
 bool assailant[MAXPLAYERS];
 bool oassailant[MAXPLAYERS];
+int assailantTimer[MAXPLAYERS] = { 0, 0, 0, 0 };
 Uint32 nummonsters = 0;
 bool gamePaused = false;
 bool intro = true;

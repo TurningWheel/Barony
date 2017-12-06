@@ -104,7 +104,8 @@ void initTroll(Entity* my, Stat* myStats)
 						int i = 1 + rand() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(rand() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;

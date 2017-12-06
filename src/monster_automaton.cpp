@@ -30,10 +30,10 @@ void initAutomaton(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 263;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 257;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -428,7 +428,7 @@ void automatonDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	playSoundEntity(my, 94, 128);
+	playSoundEntity(my, 260 + rand() % 3, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -1057,41 +1057,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
-						entity->focaly = limbs[AUTOMATON][9][1] - 3.25; // -3.25
-						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
-						entity->focaly = limbs[AUTOMATON][9][1] - 2.5; // -2.5
-						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // 2.5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0]; // 0
-						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0]; // 0
-						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-				}
-				else
-				{
-					my->flags[INVISIBLE] = true;
-				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case LIMB_HUMANOID_MASK:

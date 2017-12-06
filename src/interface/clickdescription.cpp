@@ -152,28 +152,7 @@ void clickDescription(int player, Entity* entity)
 							Stat* stats = parent->getStats();
 							if ( stats )
 							{
-								if ( strcmp(stats->name, "") )
-								{
-									if ( stats->type < KOBOLD ) //Original monster count
-									{
-										messagePlayer(player, language[253], language[90 + stats->type], stats->name);
-									}
-									else if ( stats->type >= KOBOLD ) //New monsters
-									{
-										messagePlayer(player, language[253], language[2000 + (stats->type - KOBOLD)], stats->name);
-									}
-								}
-								else
-								{
-									if ( stats->type < KOBOLD ) //Original monster count
-									{
-										messagePlayer(player, language[254], language[90 + stats->type]);
-									}
-									else if ( stats->type >= KOBOLD ) //New monsters
-									{
-										messagePlayer(player, language[254], language[2000 + (stats->type - KOBOLD)]);
-									}
-								}
+								messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, language[254], language[253], MSG_DESCRIPTION);
 							}
 						}
 					}
@@ -311,28 +290,7 @@ void clickDescription(int player, Entity* entity)
 			}
 			else
 			{
-				if ( !strcmp(stat->name, "") )
-				{
-					if ( stat->type < KOBOLD ) //Original monster count
-					{
-						messagePlayer(player, language[254], language[90 + stat->type]);
-					}
-					else if ( stat->type >= KOBOLD ) //New monsters
-					{
-						messagePlayer(player, language[254], language[2000 + (stat->type - KOBOLD)]);
-					}
-				}
-				else
-				{
-					if ( stat->type < KOBOLD ) //Original monster count
-					{
-						messagePlayer(player, language[253], language[90 + stat->type], stat->name);
-					}
-					else if ( stat->type >= KOBOLD ) //New monsters
-					{
-						messagePlayer(player, language[253], language[2000 + (stat->type - KOBOLD)], stat->name);
-					}
-				}
+				messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION);
 			}
 		}
 		else

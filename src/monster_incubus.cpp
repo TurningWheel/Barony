@@ -31,10 +31,10 @@ void initIncubus(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 70;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 282;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 276;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -45,6 +45,22 @@ void initIncubus(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "lesser incubus", strlen("lesser incubus")) )
+			{
+				lesserMonster = true;
+				myStats->HP = 80;
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 12;
+				myStats->DEX = 6;
+				myStats->CON = 3;
+				myStats->INT = -2;
+				myStats->PER = 5;
+				myStats->CHR = 5;
+				myStats->EXP = 0;
+				myStats->LVL = 15;
+			}
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -96,6 +112,7 @@ void initIncubus(Entity* my, Stat* myStats)
 				newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 			}
 
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -103,7 +120,7 @@ void initIncubus(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 2 == 0 ) // 1 in 2
+					if ( rand() % 2 == 0 && !lesserMonster ) // 1 in 2
 					{
 						newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
 					}
@@ -123,7 +140,32 @@ void initIncubus(Entity* my, Stat* myStats)
 			}
 
 			//give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			if ( lesserMonster )
+			{
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+			}
+			else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -315,7 +357,7 @@ void incubusDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 71, 128);
+	playSoundEntity(my, 279 + rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -534,7 +576,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// play casting sound
 							playSoundEntityLocal(my, 170, 64);
 							// monster scream
-							playSoundEntityLocal(my, 99, 128);
+							playSoundEntityLocal(my, MONSTER_SPOTSND + 1, 128);
 						}
 
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
@@ -566,7 +608,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							weaponarm->roll = 0;
 							weaponarm->skill[1] = 0; // use this for direction of animation
 							// monster scream
-							playSoundEntityLocal(my, 99, 128);
+							playSoundEntityLocal(my, MONSTER_SPOTSND + 2, 128);
 							if ( multiplayer != CLIENT )
 							{
 								// set overshoot for head, freeze incubus in place
