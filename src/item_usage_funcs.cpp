@@ -2396,7 +2396,7 @@ void item_ToolBeartrap(Item*& item, int player)
 		consumeItem(item);
 		return;
 	}
-	entity = newEntity(98, 1, map.entities);
+	entity = newEntity(668, 1, map.entities);
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
