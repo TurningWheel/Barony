@@ -165,6 +165,29 @@ void actBeartrap(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
+					else if ( parent && parent->behavior == &actPlayer )
+					{
+						int player = parent->skill[2];
+						if ( player >= 0 )
+						{
+							if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
+							{
+								messagePlayer(0, language[2521]);
+							}
+							else
+							{
+								messagePlayer(0, language[2522]);
+							}
+							if ( rand() % 2 == 0 )
+							{
+								parent->increaseSkill(PRO_LOCKPICKING);
+							}
+							if ( rand() % 5 == 0 )
+							{
+								parent->increaseSkill(PRO_RANGED);
+							}
+						}
+					}
 					playSoundEntity(my, 76, 64);
 					playSoundEntity(entity, 28, 64);
 					Entity* gib = spawnGib(entity);
