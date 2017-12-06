@@ -340,7 +340,7 @@ void Entity::actChest()
 						for ( i = 0; i < itemcount; ++i )
 						{
 							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
-							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 2 + rand() % 2, rand(), false, inventory);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 						break;
 					default:
