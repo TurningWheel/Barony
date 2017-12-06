@@ -336,6 +336,13 @@ void Entity::actChest()
 				switch ( rand() % 3 )
 				{
 					case 0:
+						itemcount = rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(TOOL_BEARTRAP, durability, 0, 1 + rand() % 3, rand(), false, inventory);
+						}
+						// fall through
 					case 1:
 						itemcount = 1 + rand() % 2;
 						for (i = 0; i < itemcount; ++i)
