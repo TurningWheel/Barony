@@ -804,35 +804,40 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
+			int volume = 128;
+			if ( trap )
+			{
+				volume = 96;
+			}
 			if ( !strcmp(spell->name, spell_fireball.name) )
 			{
-				playSoundEntity(entity, 164, 128 );
+				playSoundEntity(entity, 164, volume);
 			}
 			else if ( !strcmp(spell->name, spell_lightning.name) )
 			{
-				playSoundEntity(entity, 171, 128 );
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_cold.name) )
 			{
-				playSoundEntity(entity, 172, 128 );
+				playSoundEntity(entity, 172, 64);
 			}
 			else if ( !strcmp(spell->name, spell_bleed.name) )
 			{
-				playSoundEntity(entity, 171, 128);
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_stoneblood.name) )
 			{
-				playSoundEntity(entity, 171, 128);
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
-				playSoundEntity(entity, 164, 128);
+				playSoundEntity(entity, 164, volume);
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
 			else
 			{
-				playSoundEntity(entity, 169, 128 );
+				playSoundEntity(entity, 169, volume);
 			}
 			result = entity;
 
@@ -1052,7 +1057,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( propulsion == PROPULSION_MISSILE )
 				{
-					entity->sprite = 173;
+					entity->sprite = 643;
 				}
 			}
 			else if (!strcmp(element->name, spellElement_confuse.name))
@@ -1143,13 +1148,62 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	//Random chance to level up spellcasting skill.
-	if (rand() % 4 == 0)
+	if ( !trap )
 	{
-		caster->increaseSkill(PRO_SPELLCASTING);
-	}
-	if (rand() % 5 == 0)
-	{
-		caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+		if ( using_magicstaff )
+		{
+			if ( rand() % 6 == 0 ) //16.67%
+			{
+				caster->increaseSkill(PRO_SPELLCASTING);
+			}
+			if ( rand() % 7 == 0 ) //14.2%
+			{
+				caster->increaseSkill(PRO_MAGIC);
+			}
+		}
+		else
+		{
+			if ( stat )
+			{
+				int spellCastChance = 5; // 20%
+				int magicChance = 6; // 16.67%
+				int castDifficulty = stat->PROFICIENCIES[PRO_SPELLCASTING] / 20 - spell->difficulty / 20;
+				if ( castDifficulty <= -1 )
+				{
+					// spell was harder.
+					spellCastChance = 3; // 33%
+					magicChance = 3; // 33%
+				}
+				else if ( castDifficulty == 0 )
+				{
+					// spell was same level
+					spellCastChance = 3; // 33%
+					magicChance = 4; // 25%
+				}
+				else if ( castDifficulty == 1 )
+				{
+					// spell was easy.
+					spellCastChance = 4; // 25%
+					magicChance = 5; // 20%
+				}
+				else if ( castDifficulty > 1 )
+				{
+					// piece of cake!
+					spellCastChance = 6; // 16.67%
+					magicChance = 7; // 14.2%
+				}
+				messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
+				if ( rand() % spellCastChance == 0 )
+				{
+					caster->increaseSkill(PRO_SPELLCASTING);
+				}
+				if ( rand() % magicChance == 0 )
+				{
+					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+				}
+			}
+		}
+		
 	}
 
 	if (spell_isChanneled(spell) && !using_magicstaff)   //TODO: What about magic traps and channeled spells?

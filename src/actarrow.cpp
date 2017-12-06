@@ -258,34 +258,20 @@ void actArrow(Entity* my)
 							if ( !strcmp(hitstats->name, "") )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(parent->skill[2], color, language[446], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(parent->skill[2], color, language[446], language[2000 + (hitstats->type - KOBOLD)]);
-								}
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[446], MSG_COMBAT);
 								if ( damage == 0 )
 								{
 									messagePlayer(parent->skill[2], language[447]);
 								}
 								else if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 								{
-									if ( hitstats->type < KOBOLD ) //Original monster count
-									{
-										messagePlayerColor(parent->skill[2], color, language[2513], language[90 + hitstats->type]);
-									}
-									else if ( hitstats->type >= KOBOLD ) //New monsters
-									{
-										messagePlayerColor(parent->skill[2], color, language[2513], language[2000 + (hitstats->type - KOBOLD)]);
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2513], language[2513], MSG_COMBAT);
 								}
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(parent->skill[2], color, language[448], hitstats->name);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT);
 								if ( damage == 0 )
 								{
 									if ( hitstats->sex )
@@ -299,14 +285,7 @@ void actArrow(Entity* my)
 								}
 								else if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 								{
-									if ( hitstats->type < KOBOLD ) //Original monster count
-									{
-										messagePlayerColor(parent->skill[2], color, language[2514], language[90 + hitstats->type]);
-									}
-									else if ( hitstats->type >= KOBOLD ) //New monsters
-									{
-										messagePlayerColor(parent->skill[2], color, language[2514], language[2000 + (hitstats->type - KOBOLD)]);
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2514], language[2514], MSG_COMBAT);
 								}
 							}
 						}

@@ -199,7 +199,9 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 	{
 		if ( multiplayer == CLIENT )
 		{
-			consumeItem(stats[player]->weapon);
+			Item* item = stats[player]->weapon;
+			stats[player]->weapon = nullptr;
+			consumeItem(item);
 			return;
 		}
 		messagePlayer(player, language[2368]);
@@ -238,7 +240,9 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			}
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
 			serverUpdateEntitySkill(&entity, 0); // update orb status.
-			consumeItem(stats[player]->weapon);
+			Item* item = stats[player]->weapon;
+			consumeItem(item);
+			stats[player]->weapon = nullptr;
 		}
 	}
 	else

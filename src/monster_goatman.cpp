@@ -40,10 +40,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		//TODO: Update with new goatman sound effects.
-		MONSTER_SPOTSND = 265;
-		MONSTER_SPOTVAR = 4;
-		MONSTER_IDLESND = 260;
-		MONSTER_IDLEVAR = 5;
+		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 1;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -115,7 +115,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			bool isShaman = false;
-			if ( rand() % 2 )
+			if ( rand() % 2 && boss == 0 )
 			{
 				isShaman = true;
 			}
@@ -642,7 +642,7 @@ void goatmanDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 257 + rand() % 3, 128);
+	//playSoundEntity(my, 257 + rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -1219,41 +1219,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[GOATMAN][9][0] - .5;
-						entity->focaly = limbs[GOATMAN][9][1] - 3.55;
-						entity->focalz = limbs[GOATMAN][9][2] + 2.5;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[GOATMAN][9][0] - .5;
-						entity->focaly = limbs[GOATMAN][9][1] - 2.75;
-						entity->focalz = limbs[GOATMAN][9][2] + 2.5;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[GOATMAN][9][0];
-						entity->focaly = limbs[GOATMAN][9][1] - 5;
-						entity->focalz = limbs[GOATMAN][9][2] + 2.5;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[GOATMAN][9][0];
-						entity->focaly = limbs[GOATMAN][9][1] - 5;
-						entity->focalz = limbs[GOATMAN][9][2] + 2.5;
-						entity->roll = PI / 2;
-					}
-				}
-				else
-				{
-					my->flags[INVISIBLE] = true;
-				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case LIMB_HUMANOID_MASK:

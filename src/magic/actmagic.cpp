@@ -504,21 +504,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( strcmp(hitstats->name, "") )
-							{
-								messagePlayerColor(parent->skill[2], color, language[377], hitstats->name);
-							}
-							else
-							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(parent->skill[2], color, language[378], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(parent->skill[2], color, language[378], language[2000 + (hitstats->type - KOBOLD)]);
-								}
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
 						}
 					}
 				}
@@ -848,7 +834,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
-								spawnGib(hit.entity);
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
 							}
 
 							if (parent)
@@ -882,30 +869,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
-
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
-							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-								int damage = element->damage;
-								damage /= (1+(int)resistance);
-
-								hit.entity->skill[3] -= damage; //Decrease chest health.
-								if( hit.entity->skill[3] < 0 )
-									if( parent )
-										if( parent->behavior == &actPlayer )
-											messagePlayer(parent->skill[2],language[387]);
-								playSoundEntity(hit.entity, 28, 128);
-								if( !hit.entity->skill[0] )
-									hit.entity->skill[6] = (my->x > hit.entity->x);
-								else
-									hit.entity->skill[6] = (my->y < hit.entity->y);
-								my->removeLightField();
-								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-								list_RemoveNode(my->mynode);
-								return;*/
+						}
+						else if ( hit.entity->behavior == &actChest )
+						{
+							int damage = element->damage;
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -976,7 +952,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
-								spawnGib(hit.entity);
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
 							}
 
 							// write the obituary
@@ -1007,37 +984,24 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								parent->awardXP( hit.entity, true, true );
 							}
 						}
-						else if (hit.entity->behavior == &actDoor)
+						else if ( hit.entity->behavior == &actDoor )
 						{
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
-
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
-							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-								int damage = element->damage;
-								//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-								damage /= (1+(int)resistance);
-
-								hit.entity->skill[3] -= damage; //Decrease chest health.
-								if( hit.entity->skill[3] < 0 )
-									if( parent )
-										if( parent->behavior == &actPlayer )
-											messagePlayer(parent->skill[2],language[387]);
-								playSoundEntity(hit.entity, 28, 128);
-								if( !hit.entity->skill[0] )
-									hit.entity->skill[6] = (my->x > hit.entity->x);
-								else
-									hit.entity->skill[6] = (my->y < hit.entity->y);
-
-								my->removeLightField();
-								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-								list_RemoveNode(my->mynode);
-								return;*/
+						}
+						else if ( hit.entity->behavior == &actChest )
+						{
+							int damage = element->damage;
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -1114,7 +1078,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
-							spawnGib(hit.entity);
+							Entity* gib = spawnGib(hit.entity);
+							serverSpawnGibForClient(gib);
 							//}
 
 							// write the obituary
@@ -1155,24 +1120,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
-							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-								int damage = element->damage;
-								damage /= (1+(int)resistance);
-
-								hit.entity->skill[3] -= damage; //Decrease chest health.
-								if( hit.entity->skill[3] < 0 )
-									if( parent )
-										if( parent->behavior == &actPlayer )
-											messagePlayer(parent->skill[2],language[387]);
-								playSoundEntity(hit.entity, 28, 128);
-								if( !hit.entity->skill[0] )
-									hit.entity->skill[6] = (my->x > hit.entity->x);
-								else
-									hit.entity->skill[6] = (my->y < hit.entity->y);
-								my->removeLightField();
-								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-								list_RemoveNode(my->mynode);
-								return;*/
+						} 
+						else if (hit.entity->behavior == &actChest) 
+						{
+							int damage = element->damage;
+							damage /= (1+(int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -1257,21 +1213,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[390], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[391], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[391], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[391], language[390], MSG_COMBAT);
 								}
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1316,7 +1258,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
-							spawnGib(hit.entity);
+							Entity* gib = spawnGib(hit.entity);
+							serverSpawnGibForClient(gib);
 
 							// write the obituary
 							hit.entity->setObituary(language[1502]);
@@ -1342,21 +1285,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[393], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
 								}
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1364,6 +1293,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[395]);
 							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
 					}
 				}
@@ -1400,21 +1330,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[393], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
 								}
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1465,21 +1381,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[397], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[398], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[398], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
 								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
@@ -1543,7 +1445,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								parent->awardXP( hit.entity, true, true );
 							}
 						}
-						else if (hit.entity->behavior == &actDoor)
+						else if ( hit.entity->behavior == &actDoor )
 						{
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
@@ -1554,28 +1456,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
-							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-								int damage = element->damage;
-								//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-								damage /= (1+(int)resistance);
-
-								hit.entity->skill[3] -= damage; //Decrease chest health.
-								if( hit.entity->skill[3] < 0 ) {
-									if( parent ) {
-										if( parent->behavior == &actPlayer ) {
-											messagePlayer(parent->skill[2],language[387]);
-										}
-									}
-								}
-								playSoundEntity(hit.entity, 28, 128);
-								if( !hit.entity->skill[0] )
-									hit.entity->skill[6] = (my->x > hit.entity->x);
-								else
-									hit.entity->skill[6] = (my->y < hit.entity->y);
-								my->removeLightField();
-								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-								list_RemoveNode(my->mynode);
-								return;*/
+						}
+						else if ( hit.entity->behavior == &actChest )
+						{
+							int damage = element->damage;
+							damage /= (1 + (int)resistance);
+							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							my->removeLightField();
+							list_RemoveNode(my->mynode);
+							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -1938,21 +1827,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[2420], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[2421], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[2421], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
 								}
 							}
 
@@ -2014,21 +1889,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[2423], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[2424], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[2424], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2424], language[2423], MSG_COMBAT);
 								}
 							}
 
@@ -2064,6 +1925,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( player >= 0 )
 							{
 								messagePlayerColor(player, color, language[2425]);
+							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+							for ( int gibs = 0; gibs < 10; ++gibs )
+							{
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
 							}
 						}
 					}

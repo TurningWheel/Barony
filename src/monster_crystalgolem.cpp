@@ -29,10 +29,10 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 79;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 273;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 266;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -248,7 +248,7 @@ void crystalgolemDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 
-	playSoundEntity(my, 80, 128);
+	playSoundEntity(my, 269 + rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -518,7 +518,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else if ( MONSTER_ATTACKTIME == 40 )
 					{
-						playSoundEntityLocal(my, 79, 128);
+						playSoundEntityLocal(my, MONSTER_SPOTSND, 128);
 					}
 					else if ( MONSTER_ATTACKTIME > 50 )
 					{

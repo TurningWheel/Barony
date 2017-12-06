@@ -419,6 +419,7 @@ public:
 	void removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
 	void unlockChest();
 	void lockChest();
+	void chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
 
 	//Power Crystal functions.
 	void powerCrystalCreateElectricityNodes();
@@ -477,6 +478,8 @@ public:
 
 	//--monster type from sprite
 	int getMonsterTypeFromSprite();
+	//--monster helmet limb offsets
+	void setHelmetLimbOffset(Entity* helm);
 
 	void actMonsterLimb(bool processLight = false);
 
@@ -729,10 +732,10 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 218;
+static const int NUM_ITEM_STRINGS = 219;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
 static const int NUM_EDITOR_SPRITES = 127;
-static const int NUM_EDITOR_TILES = 213;
+static const int NUM_EDITOR_TILES = 234;
 
 // furniture types.
 static const int FURNITURE_TABLE = 0;
@@ -767,3 +770,12 @@ int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
 void playerStatIncrease(int playerClass, int chosenStats[3]);
+
+static const int MSG_DESCRIPTION = 0;
+static const int MSG_COMBAT = 1;
+static const int MSG_OBITUARY = 2;
+static const int MSG_GENERIC = 3;
+static const int MSG_ATTACKS = 4;
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType);
+char* playerClassLangEntry(int classnum);
+char* playerClassDescription(int classnum);
