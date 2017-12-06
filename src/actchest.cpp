@@ -266,7 +266,7 @@ void Entity::actChest()
 					}
 					break;
 					case 2:
-						//A weapon and an armor.
+						//A weapon and an armor, chance of thrown.
 					{
 						int item = rand() % 18;
 						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
@@ -315,6 +315,14 @@ void Entity::actChest()
 							//Boots & shirts. Items 28 - 37.
 						{
 							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
+
+						// try for thrown items.
+						itemcount = 0 + rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 					}
 					break;
