@@ -3951,15 +3951,15 @@ void assignActions(map_t* map)
 			// set beartrap
 			case 107:
 			{
-				entity->skill[0] = 1; // so everything knows I'm a chair
+				entity->skill[0] = 0;
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6.75;
 
-				entity->focalz = -5;
-				entity->sprite = 98;
+				//entity->focalz = -5;
+				entity->sprite = 668;
 
 				entity->behavior = &actBeartrap;
 				entity->flags[PASSABLE] = true;
@@ -3970,7 +3970,7 @@ void assignActions(map_t* map)
 				}
 				entity->roll = -PI / 2; // flip the model
 
-				entity->skill[11] = EXCELLENT; //status
+				entity->skill[11] = DECREPIT; //status
 				entity->skill[12] = 0; //beatitude
 				entity->skill[13] = 1; //qty
 				entity->skill[14] = 0; //appearance

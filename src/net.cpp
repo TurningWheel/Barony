@@ -1010,6 +1010,10 @@ void clientActions(Entity* entity)
 		case 605:
 			entity->behavior = &actPedestalOrb;
 			break;
+		case 667:
+		case 668:
+			entity->behavior = &actBeartrap;
+			break;
 		default:
 			break;
 	}
