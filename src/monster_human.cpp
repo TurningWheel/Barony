@@ -1585,7 +1585,7 @@ bool Entity::humanCanWieldItem(const Item& item) const
 		case MAGICSTAFF:
 			return true;
 		case THROWN:
-			return true;
+			return false;
 		default:
 			return false;
 	}
