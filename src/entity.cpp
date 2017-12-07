@@ -2630,7 +2630,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 0; // turns into 0
-						net_packet->data[5] = 3;
+						net_packet->data[5] = 5;
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
 						net_packet->len = 6;
