@@ -2595,83 +2595,81 @@ void Entity::handleEffects(Stat* myStats)
 			// If 1 second has passed (50 ticks), process the Burning Status Effect
 			if ( (this->char_fire % TICKS_PER_SECOND) == 0 )
 			{
+				this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
+
+				// If the Entity died, handle experience
+				if ( myStats->HP <= 0 )
+				{
+					Entity* killer = uidToEntity(myStats->poisonKiller);
+					if ( killer != nullptr )
+					{
+						killer->awardXP(this, true, true);
+					}
+				}
+
+				// Give the Player feedback on being hurt
+				this->setObituary(language[1533]); // "burns to a crisp."
+				messagePlayer(player, language[644]); // "It burns! It burns!"
+				playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+				// Shake the Camera
+				if ( player == clientnum )
+				{
+					camera_shakey += 3;
+				}
+				else if ( player > 0 && multiplayer == SERVER )
+				{
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = 0; // turns into 0
+					net_packet->data[5] = 5;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+
+				// If the Entity has a Cloak, process dealing damage to the Entity's Cloak
+				if ( myStats->cloak != nullptr )
+				{
+					// 1 in 10 chance of dealing damage to Entity's cloak
+					if ( rand() % 10 == 0 )
+					{
+						if ( player == clientnum )
+						{
+							if ( myStats->cloak->count > 1 )
+							{
+								newItem(myStats->cloak->type, myStats->cloak->status, myStats->cloak->beatitude, myStats->cloak->count - 1, myStats->cloak->appearance, myStats->cloak->identified, &myStats->inventory);
+							}
+						}
+						myStats->cloak->count = 1;
+						myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
+						if ( myStats->cloak->status != BROKEN )
+						{
+							messagePlayer(player, language[645], myStats->cloak->getName()); // "Your %s smoulders!"
+						}
+						else
+						{
+							messagePlayer(player, language[646], myStats->cloak->getName()); // "Your %s burns to ash!"
+						}
+						if ( player > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)net_packet->data, "ARMR");
+							net_packet->data[4] = 6;
+							net_packet->data[5] = myStats->cloak->status;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
+				}
+				
 				// Check to see if the fire is put out
 				if ( (rand() % this->chanceToPutOutFire) == 0 )
 				{
 					this->flags[BURNING] = false;
 					messagePlayer(player, language[647]); // "The flames go out."
 					serverUpdateEntityFlag(this, BURNING);
-				}
-				else
-				{
-					this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
-
-					// If the Entity died, handle experience
-					if ( myStats->HP <= 0 )
-					{
-						Entity* killer = uidToEntity(myStats->poisonKiller);
-						if ( killer != nullptr )
-						{
-							killer->awardXP(this, true, true);
-						}
-					}
-
-					// Give the Player feedback on being hurt
-					this->setObituary(language[1533]); // "burns to a crisp."
-					messagePlayer(player, language[644]); // "It burns! It burns!"
-					playSoundEntity(this, 28, 64); // "Damage.ogg"
-
-					// Shake the Camera
-					if ( player == clientnum )
-					{
-						camera_shakey += 3;
-					}
-					else if ( player > 0 && multiplayer == SERVER )
-					{
-						strcpy((char*)net_packet->data, "SHAK");
-						net_packet->data[4] = 0; // turns into 0
-						net_packet->data[5] = 5;
-						net_packet->address.host = net_clients[player - 1].host;
-						net_packet->address.port = net_clients[player - 1].port;
-						net_packet->len = 6;
-						sendPacketSafe(net_sock, -1, net_packet, player - 1);
-					}
-
-					// If the Entity has a Cloak, process dealing damage to the Entity's Cloak
-					if ( myStats->cloak != nullptr )
-					{
-						// 1 in 10 chance of dealing damage to Entity's cloak
-						if ( rand() % 10 == 0 )
-						{
-							if ( player == clientnum )
-							{
-								if ( myStats->cloak->count > 1 )
-								{
-									newItem(myStats->cloak->type, myStats->cloak->status, myStats->cloak->beatitude, myStats->cloak->count - 1, myStats->cloak->appearance, myStats->cloak->identified, &myStats->inventory);
-								}
-							}
-							myStats->cloak->count = 1;
-							myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
-							if ( myStats->cloak->status != BROKEN )
-							{
-								messagePlayer(player, language[645], myStats->cloak->getName()); // "Your %s smoulders!"
-							}
-							else
-							{
-								messagePlayer(player, language[646], myStats->cloak->getName()); // "Your %s burns to ash!"
-							}
-							if ( player > 0 && multiplayer == SERVER )
-							{
-								strcpy((char*)net_packet->data, "ARMR");
-								net_packet->data[4] = 6;
-								net_packet->data[5] = myStats->cloak->status;
-								net_packet->address.host = net_clients[player - 1].host;
-								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, player - 1);
-							}
-						}
-					}
 				}
 			}
 		}
