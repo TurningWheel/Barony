@@ -222,6 +222,10 @@ void Item::applyLockpick(int player, Entity& entity)
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, language[2527], entity.getMonsterLangEntry());
 
+						if ( rand() % 3 == 0 )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
 						//spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
 						//TODO: change color?
 						/*entity.flags[USERFLAG2] = true;
@@ -249,6 +253,41 @@ void Item::applyLockpick(int player, Entity& entity)
 						playSoundEntity(&entity, 132, 128);
 						spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
 						entity.monsterAcquireAttackTarget(*players[player]->entity, MONSTER_STATE_PATH);
+
+						if ( rand() % 5 == 0 )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
+					}
+					if ( rand() % 2 == 0 )
+					{
+						if ( player == clientnum )
+						{
+							if ( count > 1 )
+							{
+								newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+							}
+						}
+						stats[player]->weapon->count = 1;
+						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+						if ( status != BROKEN )
+						{
+							messagePlayer(player, language[1103]);
+						}
+						else
+						{
+							messagePlayer(player, language[1104]);
+						}
+						if ( player > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)(net_packet->data), "ARMR");
+							net_packet->data[4] = 5;
+							net_packet->data[5] = stats[player]->weapon->status;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
 					}
 				}
 				else
