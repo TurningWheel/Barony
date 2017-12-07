@@ -187,6 +187,81 @@ void Item::applyLockpick(int player, Entity& entity)
 			messagePlayer(player, language[1107]);
 		}
 	}
+	else if ( entity.behavior == &actMonster )
+	{
+		Stat* myStats = entity.getStats();
+		if ( myStats && myStats->type == AUTOMATON 
+			&& entity.monsterSpecialState == 0
+			&& !myStats->EFFECTS[EFF_CONFUSED] )
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				// calculate facing direction
+				real_t targetYaw = entity.yaw;
+				while ( targetYaw >= 2 * PI )
+				{
+					targetYaw -= PI * 2;
+				}
+				while ( targetYaw < 0 )
+				{
+					targetYaw += PI * 2;
+				}
+				real_t yawDiff = PI - abs(abs(players[player]->entity->yaw - targetYaw) - PI);
+				if ( yawDiff < PI / 2 )
+				{
+					messagePlayer(player, language[2524], getName(), entity.getMonsterLangEntry());
+					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
+					if ( rand() % chance > 1 )
+					{
+						entity.monsterSpecialState = AUTOMATON_MALFUNCTION_START;
+						entity.monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
+						serverUpdateEntitySkill(&entity, 33);
+
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
+						playSoundEntity(&entity, 76, 128);
+						messagePlayer(player, language[2527], entity.getMonsterLangEntry());
+
+						//spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
+						//TODO: change color?
+						/*entity.flags[USERFLAG2] = true;
+						int bodypart = 0;
+						for ( node_t* node = entity.children.first; node != nullptr; node = node->next )
+						{
+						if ( bodypart >= LIMB_HUMANOID_TORSO )
+						{
+						Entity* tmp = (Entity*)node->element;
+						if ( tmp )
+						{
+						tmp->flags[USERFLAG2] = true;
+						}
+						}
+						++bodypart;
+						}*/
+					}
+					else
+					{
+						messagePlayer(player, language[2526], entity.getMonsterLangEntry());
+						myStats->EFFECTS[EFF_CONFUSED] = true;
+						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
+						playSoundEntity(&entity, 132, 128);
+						spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
+						entity.monsterAcquireAttackTarget(*players[player]->entity, MONSTER_STATE_PATH);
+					}
+				}
+				else
+				{
+					messagePlayer(player, language[2525], entity.getMonsterLangEntry());
+				}
+			}
+		}
+		else
+		{
+			messagePlayer(player, language[2528], getName());
+		}
+	}
 	else
 	{
 		messagePlayer(player, language[1101], getName());
