@@ -45,7 +45,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_torchtime(skill[25]),
 	char_poison(skill[21]),
 	char_fire(skill[36]),
-	chanceToPutOutFire(MAX_CHANCE_STOP_FIRE),
+	chanceToPutOutFire(skill[37]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
@@ -9309,7 +9309,7 @@ void Entity::SetEntityOnFire()
 			}
 			else
 			{
-				this->chanceToPutOutFire -= static_cast<Uint8>(floor(entityCON * 0.2));
+				this->chanceToPutOutFire -= static_cast<Sint32>(floor(entityCON * 0.2));
 			}
 
 			// If the Entity has MAX_CON_FOR_FIRE_TIME (36) or greater CON, then the reduction is equal or less than MIN_TICKS_ON_FIRE
