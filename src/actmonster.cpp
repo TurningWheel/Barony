@@ -1845,7 +1845,7 @@ void actMonster(Entity* my)
 		if ( !my->isMobile() )
 		{
 			// message the player, "the %s doesn't respond"
-			messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[515], language[514], MSG_COMBAT);
+			messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[514], language[515], MSG_COMBAT);
 		}
 		else
 		{
