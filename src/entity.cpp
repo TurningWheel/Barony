@@ -8550,6 +8550,11 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 		return false;
 	}
 
+	if ( item.status == BROKEN )
+	{
+		return false; // no want broken.
+	}
+
 	switch ( myStats->type )
 	{
 		case GOBLIN:
