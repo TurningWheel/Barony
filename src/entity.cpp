@@ -2592,8 +2592,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
-			// If 1 second has passed (50 ticks), process the Burning Status Effect
-			if ( (this->char_fire % TICKS_PER_SECOND) == 0 )
+			// If 0.6 seconds have passed (30 ticks), process the Burning Status Effect
+			if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
 			{
 				this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
 
@@ -9268,7 +9268,7 @@ void Entity::SetEntityOnFire()
 			/* Set the time the Entity will be on fire, based off their CON
 			 * |\_ MAX_TICKS_ON_FIRE is reduced by every 2 points in CON
 			 * |
-			 * |\_ Fire has a minimum of 2 seconds (100 ticks), and a maximum of 20 seconds (1000 ticks)
+			 * |\_ Fire has a minimum of 4 cycles (120 ticks), and a maximum of 20 cycles (600 ticks), cycles are based off of TICKS_TO_PROCESS_FIRE
 			 * |  \_ Constants are defined in entity.hpp: MIN_TICKS_ON_FIRE and MAX_TICKS_ON_FIRE
 			 * |
 			 *  \_ For every 5 points of CON, the chance to stop being on fire is increased
@@ -9310,7 +9310,7 @@ void Entity::SetEntityOnFire()
 				this->chanceToPutOutFire -= static_cast<Sint32>(floor(entityCON * 0.2));
 			}
 
-			// If the Entity has MAX_CON_FOR_FIRE_TIME (36) or greater CON, then the reduction is equal or less than MIN_TICKS_ON_FIRE
+			// If the Entity has MAX_CON_FOR_FIRE_TIME (32) or greater CON, then the reduction is equal or less than MIN_TICKS_ON_FIRE
 			if ( entityCON >= MAX_CON_FOR_FIRE_TIME )
 			{
 				this->char_fire = MIN_TICKS_ON_FIRE;
