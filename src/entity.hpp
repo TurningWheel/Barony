@@ -97,6 +97,10 @@ class Entity
 	static const Sint32 MAX_TICKS_ON_FIRE	= TICKS_PER_SECOND * 20; // Maximum time an Entity can be on fire is 20 seconds (1000 ticks)
 	static const Uint8 MIN_CHANCE_STOP_FIRE	= 5;	// Minimum chance an Entity has to stop being on fire is 1 in  5
 	static const Uint8 MAX_CHANCE_STOP_FIRE = 10;	// Maximum chance an Entity has to stop being on fire is 1 in 10
+	// Maximum level of CON needed to get MIN_CHANCE_STOP_FIRE. Every 5 points = 1 increase in chance up to MIN_CHANCE_STOP_FIRE
+	static const Sint32 MAX_CON_FOR_STOP_FIRE = 5 * MIN_CHANCE_STOP_FIRE;	
+	// Maximum level of CON needed to get MIN_TICKS_ON_FIRE. Every 2 points = 1 second decrease in time up to MIN_TICKS_ON_FIRE
+	static const Sint32 MAX_CON_FOR_FIRE_TIME = (2 * (MAX_TICKS_ON_FIRE - MIN_TICKS_ON_FIRE)) / (TICKS_PER_SECOND);
 
 	static const int CRYSTAL_HOVER_UP = 0;
 	static const int CRYSTAL_HOVER_UP_WAIT = 1;

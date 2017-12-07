@@ -9303,7 +9303,7 @@ void Entity::SetEntityOnFire()
 			{
 				this->chanceToPutOutFire = MAX_CHANCE_STOP_FIRE;
 			}
-			else if ( entityCON >= 25 ) // If the Entity has 25 or greater CON, then the reduction is equal to or less than MIN_CHANCE_STOP_FIRE
+			else if ( entityCON >= MAX_CON_FOR_STOP_FIRE ) // If the Entity has MAX_CON_FOR_STOP_FIRE (25) or greater CON, then the reduction is equal to or less than MIN_CHANCE_STOP_FIRE
 			{
 				this->chanceToPutOutFire = MIN_CHANCE_STOP_FIRE;
 			}
@@ -9312,8 +9312,8 @@ void Entity::SetEntityOnFire()
 				this->chanceToPutOutFire -= static_cast<Uint8>(floor(entityCON * 0.2));
 			}
 
-			// If the Entity has 36 or greater CON, then the reduction is equal or less than MIN_TICKS_ON_FIRE
-			if ( entityCON >= 36 )
+			// If the Entity has MAX_CON_FOR_FIRE_TIME (36) or greater CON, then the reduction is equal or less than MIN_TICKS_ON_FIRE
+			if ( entityCON >= MAX_CON_FOR_FIRE_TIME )
 			{
 				this->char_fire = MIN_TICKS_ON_FIRE;
 			}
