@@ -2582,7 +2582,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( this->flags[BURNING] )
 	{
 		this->char_fire--; // Decrease the fire counter
-		messagePlayer(clientnum, "Time: %d, Chance: %d", this->char_fire, this->chanceToPutOutFire);
+		
 		// Check to see if time has run out
 		if ( this->char_fire <= 0 )
 		{
@@ -9273,7 +9273,7 @@ void Entity::SetEntityOnFire()
 			 * |\_ Fire has a minimum of 2 seconds (100 ticks), and a maximum of 20 seconds (1000 ticks)
 			 * |  \_ Constants are defined in entity.hpp: MIN_TICKS_ON_FIRE and MAX_TICKS_ON_FIRE
 			 * |
-			 *  \_ For every 5 points of CON, the chance to stop being on fire is reduced
+			 *  \_ For every 5 points of CON, the chance to stop being on fire is increased
 			 *    \_ The chance to stop being on fire has a minimum of 1 in 10, and a maximum of 1 in 5
 			 *      \_ Constants are defined in entity.hpp: MIN_CHANCE_STOP_FIRE and MAX_CHANCE_STOP_FIRE
 			 */
