@@ -5174,11 +5174,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// apply AoE attack
+					list_t* aoeTargets = nullptr;
+					list_t* shakeTargets = nullptr;
+					Entity* tmpEntity = nullptr;
 					if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
 					{
-						list_t* aoeTargets = nullptr;
-						list_t* shakeTargets = nullptr;
-						Entity* tmpEntity = nullptr;
 						getTargetsAroundEntity(this, hit.entity, STRIKERANGE, PI / 3, MONSTER_TARGET_ENEMY, &aoeTargets);
 						if ( aoeTargets )
 						{
@@ -5221,6 +5221,53 @@ void Entity::attack(int pose, int charge, Entity* target)
 							//Free the list.
 							list_FreeAll(shakeTargets);
 							free(shakeTargets);
+						}
+					}
+					else if ( pose == MONSTER_POSE_AUTOMATON_MALFUNCTION )
+					{
+						getTargetsAroundEntity(this, this, 20, PI, MONSTER_TARGET_ALL, &aoeTargets);
+						if ( aoeTargets )
+						{
+							for ( node = aoeTargets->first; node != NULL; node = node->next )
+							{
+								tmpEntity = (Entity*)node->element;
+								if ( tmpEntity != nullptr )
+								{
+									spawnExplosion(tmpEntity->x, tmpEntity->y, tmpEntity->z);
+									Stat* tmpStats = tmpEntity->getStats();
+									if ( tmpStats )
+									{
+										int explodeDmg = myStats->HP * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										Entity* gib = spawnGib(tmpEntity);
+										serverSpawnGibForClient(gib);
+										playerhit = tmpEntity->skill[2];
+										if ( playerhit > 0 && multiplayer == SERVER )
+										{
+											strcpy((char*)net_packet->data, "SHAK");
+											net_packet->data[4] = 20; // turns into .1
+											net_packet->data[5] = 20;
+											net_packet->address.host = net_clients[playerhit - 1].host;
+											net_packet->address.port = net_clients[playerhit - 1].port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+										}
+										else if ( playerhit == 0 )
+										{
+											camera_shakex += 0.2;
+											camera_shakey += 20;
+										}
+										tmpEntity->modHP(-explodeDmg);
+										if ( playerhit >= 0 )
+										{
+											Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+											messagePlayerColor(playerhit, color, language[2523]);
+										}
+									}
+								}
+							}
+							//Free the list.
+							list_FreeAll(aoeTargets);
+							free(aoeTargets);
 						}
 					}
 					// lifesteal
@@ -9231,7 +9278,10 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 	}
 
 	bool namedMonsterAsGeneric = false; 
-	if ( strstr(monsterStats.name, "lesser") || strstr(monsterStats.name, "young") || strstr(monsterStats.name, "enslaved") )
+	if ( strstr(monsterStats.name, "lesser") 
+		|| strstr(monsterStats.name, "young") 
+		|| strstr(monsterStats.name, "enslaved")
+		|| strstr(monsterStats.name, "damaged") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		namedMonsterAsGeneric = true;

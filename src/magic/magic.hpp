@@ -431,6 +431,7 @@ void actParticleErupt(Entity* my);
 void actParticleTimer(Entity* my);
 void actParticleSap(Entity* my);
 void actParticleSapCenter(Entity* my);
+void actParticleExplosionCharge(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -439,6 +440,7 @@ void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
+void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);

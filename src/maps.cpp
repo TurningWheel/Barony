@@ -1735,7 +1735,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
 						{
-							entity = newEntity(27, 1, map.entities);  // human
+							if ( currentlevel > 15 )
+							{
+								entity = newEntity(93, 1, map.entities);  // automaton
+								entity->monsterStoreType = 1; // weaker version
+							}
+							else
+							{
+								entity = newEntity(27, 1, map.entities);  // human
+							}
 						}
 						else
 						{
@@ -1877,7 +1885,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 							{
 								if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
 								{
-									entity = newEntity(27, 1, map.entities);  // human
+									if ( currentlevel > 15 )
+									{
+										entity = newEntity(93, 1, map.entities);  // automaton
+										entity->monsterStoreType = 1; // weaker version
+									}
+									else
+									{
+										entity = newEntity(27, 1, map.entities);  // human
+									}
 								}
 								else
 								{
@@ -2923,6 +2939,13 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[AUTOMATON][0][0]; // 0
 						entity->focaly = limbs[AUTOMATON][0][1]; // 0
 						entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
+						if ( entity->monsterStoreType == 1 )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "damaged automaton");
+							}
+						}
 						break;
 					case LICH_ICE:
 						entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
