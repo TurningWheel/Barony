@@ -9317,7 +9317,7 @@ void Entity::SetEntityOnFire()
 			}
 			else
 			{
-				this->char_fire -= static_cast<Sint32>(floor((entityCON * 0.5) * TICKS_PER_SECOND));
+				this->char_fire -= static_cast<Sint32>(floor((entityCON * 0.5) * TICKS_TO_PROCESS_FIRE));
 			}
 
 			return; // The Entity was set on fire, with a reduced duration
