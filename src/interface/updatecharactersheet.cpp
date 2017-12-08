@@ -50,7 +50,7 @@ void updateCharacterSheet()
 	//pos.x=0; pos.y=196;
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
-	drawWindowFancy(0, 196, 224, 392);
+	drawWindowFancy(0, 196, 224, 404);
 
 	// character sheet
 	double ofov = fov;
@@ -169,8 +169,11 @@ void updateCharacterSheet()
 	printStatBonus(ttf12, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 322);
 
 	// armor, gold, and weight
-	ttfPrintTextFormatted(ttf12, 8, 346, language[370], stats[clientnum]->GOLD);
+	int attackInfo[6] = { 0 };
+	ttfPrintTextFormatted(ttf12, 8, 346, "Damage:%11d ATK", displayAttackPower(attackInfo));
 	ttfPrintTextFormatted(ttf12, 8, 358, language[371], AC(stats[clientnum]));
+
+	ttfPrintTextFormatted(ttf12, 8, 370, language[370], stats[clientnum]->GOLD);
 	Uint32 weight = 0;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
@@ -178,10 +181,11 @@ void updateCharacterSheet()
 		weight += items[item->type].weight * item->count;
 	}
 	weight += stats[clientnum]->GOLD / 100;
-	ttfPrintTextFormatted(ttf12, 8, 370, language[372], weight);
+	ttfPrintTextFormatted(ttf12, 8, 382, language[372], weight);
 
 	drawSkillsSheet();
 	statsHoverText(stats[clientnum]);
+	attackHoverText(attackInfo);
 }
 
 void drawSkillsSheet()
@@ -413,6 +417,282 @@ void statsHoverText(Stat* tmpStat)
 
 			numInfoLines = 0;
 			pad_y += 12;
+		}
+	}
+}
+
+Sint32 displayAttackPower(Sint32 output[6])
+{
+	Sint32 attack = 0;
+	Entity* entity = nullptr;
+	if ( players[clientnum] && (entity = players[clientnum]->entity) )
+	{
+		if ( stats[clientnum] )
+		{
+			if ( !stats[clientnum]->weapon )
+			{
+				// fists
+				attack += entity->getAttack();
+				output[0] = 0; // melee
+				output[1] = attack;
+				output[2] = 0; // bonus from weapon
+				output[3] = entity->getSTR(); // bonus from main attribute
+				output[4] = 0; // bonus from proficiency
+				output[5] = attack - entity->getSTR() - BASE_MELEE_DAMAGE; // bonus from equipment
+			}
+			else
+			{
+				int weaponskill = getWeaponSkill(stats[clientnum]->weapon);
+				real_t variance = 0;
+				if ( weaponskill == PRO_RANGED )
+				{
+					if ( isRangedWeapon(*stats[clientnum]->weapon) )
+					{
+						attack += entity->getRangedAttack();
+						output[0] = 1; // ranged
+						output[1] = attack;
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+						output[3] = entity->getDEX(); // bonus from main attribute
+						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
+
+						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						attack -= (output[4] / 2);
+						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
+						output[1] = attack;
+					}
+					else
+					{
+						attack += entity->getThrownAttack();
+						output[0] = 2; // thrown
+						output[1] = attack;
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+						output[3] = 0;
+						output[4] = attack - output[2] - BASE_THROWN_DAMAGE; // bonus from proficiency
+						output[5] = 0; // bonus from equipment
+					}
+				}
+				else if ( weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM )
+				{
+					// melee weapon
+					attack += entity->getAttack();
+					output[0] = 3; // melee
+					output[1] = attack;
+					output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+					output[3] = entity->getSTR(); // bonus from main attribute
+					if ( weaponskill == PRO_AXE )
+					{
+						output[5] = 1; // bonus from equipment
+						attack += 1;
+					}
+					// get damage variances.
+					if ( weaponskill == PRO_POLEARM )
+					{
+						output[4] = (attack / 3) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+					}
+					else
+					{
+						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+					}
+					attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
+					output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
+					output[1] = attack;
+				}
+				else if ( itemCategory(stats[clientnum]->weapon) == MAGICSTAFF ) // staffs.
+				{
+					attack = 0;
+					output[0] = 5; // staffs
+					output[1] = attack;
+					output[2] = 0; // bonus from weapon
+					output[3] = 0; // bonus from main attribute
+					output[4] = 0; // bonus from proficiency
+					output[5] = 0; // bonus from equipment
+				}
+				else // tools etc.
+				{
+					attack += entity->getAttack();
+					output[0] = 4; // tools
+					output[1] = attack;
+					output[2] = 0; // bonus from weapon
+					output[3] = entity->getSTR(); // bonus from main attribute
+					output[4] = 0; // bonus from proficiency
+					output[5] = attack - entity->getSTR() - BASE_MELEE_DAMAGE; // bonus from equipment
+				}
+			}
+		}
+	}
+	else
+	{
+		attack = 0;
+	}
+	return attack;
+}
+
+void attackHoverText(Sint32 input[6])
+{
+	int pad_y = 346; // 262 px.
+	int pad_x = 8; // 8 px.
+	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
+	int off_w = 216; // 216px. width of stat line.
+	int i = 0;
+	int j = 0;
+	SDL_Rect src;
+	SDL_Rect pos;
+	int tooltip_offset_x = 16; // 16px.
+	int tooltip_offset_y = 16; // 16px.
+	int tooltip_base_h = TTF12_HEIGHT;
+	int tooltip_pad_h = 8;
+	int tooltip_text_pad_x = 16;
+	int numInfoLines = 3;
+	char buf[128] = "";
+
+	if ( attributespage == 0 )
+	{
+		if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+		{
+			char tooltipHeader[32] = "";
+			switch ( input[0] )
+			{
+				case 0: // fists
+					snprintf(tooltipHeader, strlen(language[2529]), language[2529]);
+					numInfoLines = 2;
+					break;
+				case 1: // ranged
+					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
+					numInfoLines = 3;
+					break;
+				case 2: // thrown
+					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
+					numInfoLines = 2;
+					break;
+				case 3: // melee
+					snprintf(tooltipHeader, strlen(language[2532]), language[2532]);
+					numInfoLines = 4;
+					break;
+				case 4: // tools
+					snprintf(tooltipHeader, strlen(language[2540]), language[2540]);
+					numInfoLines = 2;
+					break;
+				case 5: // staffs
+					snprintf(tooltipHeader, strlen(language[2541]), language[2541]);
+					numInfoLines = 0;
+					break;
+				default:
+					break;
+			}
+
+			// get tooltip draw location.
+			src.x = mousex + tooltip_offset_x;
+			src.y = mousey + tooltip_offset_y;
+			src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
+			src.w = 256;
+			drawTooltip(&src);
+
+			// draw header
+			Uint32 color = uint32ColorWhite(*mainsurface);
+			ttfPrintTextColor(ttf12, src.x + 4, src.y + 4, color, false, tooltipHeader);
+			if ( input[1] >= 0 )
+			{
+				// attack >= 0
+				color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+			}
+			else
+			{
+				// attack < 0
+				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			}
+			snprintf(tooltipHeader, 32, language[2533], input[1]);
+			ttfPrintTextColor(ttf12, src.x + 4, src.y + 4, color, false, tooltipHeader);
+
+			for ( j = 0; j < numInfoLines && numInfoLines > 0; j++ )
+			{
+				int infoText_x = src.x + 4 + tooltip_text_pad_x;
+				int infoText_y = src.y + 4 + (tooltip_base_h * (j + 1));
+				Uint32 color = uint32ColorWhite(*mainsurface);
+
+				if ( input[0] == 0 ) // fists
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							break;
+						default:
+							break;
+					}
+				}
+				else if ( input[0] == 1 ) // ranged
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[2535]), language[2535], input[3]);
+							break;
+						case 2:
+							snprintf(buf, longestline(language[2539]), language[2539], input[5]);
+							break;
+						default:
+							break;
+					}
+				}
+				else if ( input[0] == 2 ) // thrown
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[2537]), language[2537], input[4]);
+							break;
+						default:
+							break;
+					}
+				}
+				else if ( input[0] == 3 ) // melee weapons
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							break;
+						case 2:
+							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						case 3:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+						default:
+							break;
+					}
+				}
+				else if ( input[0] == 4 ) // tools
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							break;
+						default:
+							break;
+					}
+				}
+				else if ( input[0] == 5 ) // staff
+				{
+					
+				}
+				ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
+			}
 		}
 	}
 }

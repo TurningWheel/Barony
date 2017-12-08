@@ -345,6 +345,8 @@ public:
 
 	Sint32 getAttack();
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
+	Sint32 getRangedAttack();
+	Sint32 getThrownAttack();
 	bool isBlind();
 	bool isSpellcasterBeginner();
 
