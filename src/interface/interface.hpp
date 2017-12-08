@@ -381,4 +381,6 @@ extern SDL_Surface *per_bmp64;
 extern SDL_Surface *chr_bmp64;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
+void attackHoverText(Sint32 input[6]);
+Sint32 displayAttackPower(Sint32 output[6]);
 

@@ -2848,7 +2848,7 @@ Sint32 Entity::getAttack()
 		return 0;
 	}
 
-	attack = 8; // base attack strength
+	attack = BASE_MELEE_DAMAGE; // base attack strength
 	if ( entitystats->weapon != nullptr )
 	{
 		attack += entitystats->weapon->weaponGetAttack();
@@ -2860,20 +2860,87 @@ Sint32 Entity::getAttack()
 		{
 			if ( entitystats->gloves->type == BRASS_KNUCKLES )
 			{
-				attack += 1;
+				attack += 1 + entitystats->gloves->beatitude;
 			}
 			else if ( entitystats->gloves->type == IRON_KNUCKLES )
 			{
-				attack += 2;
+				attack += 2 + entitystats->gloves->beatitude;
 			}
 			else if ( entitystats->gloves->type == SPIKED_GAUNTLETS )
 			{
-				attack += 3;
+				attack += 3 + entitystats->gloves->beatitude;
 			}
 		}
 	}
 	attack += this->getSTR();
 
+	return attack;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::getRangedAttack
+
+returns the ranged attack power of an entity based on dex, ranged weapon, and a
+base number
+
+-------------------------------------------------------------------------------*/
+
+Sint32 Entity::getRangedAttack()
+{
+	Stat* entitystats;
+	int attack = BASE_RANGED_DAMAGE; // base ranged attack strength
+
+	if ( (entitystats = this->getStats()) == nullptr )
+	{
+		return 0;
+	}
+
+	if ( entitystats->weapon )
+	{
+		attack += entitystats->weapon->weaponGetAttack();
+		attack += getDEX();
+		if ( behavior == &actMonster )
+		{
+			attack += getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
+			attack += entitystats->PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack for monsters
+		}
+	}
+	else
+	{
+		return 0;
+	}
+	return attack;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::getThrownAttack
+
+returns the thrown attack power of an entity based on dex, thrown weapon, and a
+base number. For tooltip only.
+
+-------------------------------------------------------------------------------*/
+
+Sint32 Entity::getThrownAttack()
+{
+	Stat* entitystats;
+	int attack = BASE_THROWN_DAMAGE; // base thrown attack strength
+
+	if ( (entitystats = this->getStats()) == nullptr )
+	{
+		return attack;
+	}
+
+	if ( entitystats->weapon )
+	{
+		attack += entitystats->weapon->weaponGetAttack();
+		attack += entitystats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 bonus attack.
+	}
+	else
+	{
+		return 0;
+	}
 	return attack;
 }
 
@@ -2901,19 +2968,6 @@ Sint32 Entity::getBonusAttackOnTarget(Stat& hitstats)
 		{
 			// blessed weapons deal more damage under this effect.
 			bonusAttack += entitystats->weapon->beatitude;
-		}
-	}
-	else if ( entitystats->weapon == nullptr )
-	{
-		// bare handed.
-		if ( entitystats->gloves )
-		{
-			if ( entitystats->gloves->type == BRASS_KNUCKLES
-				|| entitystats->gloves->type == IRON_KNUCKLES
-				|| entitystats->gloves->type == SPIKED_GAUNTLETS )
-			{
-				bonusAttack += entitystats->gloves->beatitude;
-			}
 		}
 	}
 
@@ -4416,7 +4470,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if( hitsuccess )*/
 				{
 					// skill increase
-					if ( weaponskill >= 0 )
+					if ( weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM )
 						if ( rand() % 10 == 0 )
 						{
 							this->increaseSkill(weaponskill);
@@ -6824,6 +6878,14 @@ int getWeaponSkill(Item* weapon)
 	{
 		return PRO_AXE;
 	}
+	if ( weapon->type == SLING || weapon->type == SHORTBOW || weapon->type == CROSSBOW || weapon->type == ARTIFACT_BOW )
+	{
+		return PRO_RANGED;
+	}
+	if ( itemCategory(weapon) == THROWN || itemCategory(weapon) == POTION || itemCategory(weapon) == GEM )
+	{
+		return PRO_RANGED;
+	}
 	return -1;
 }
 
@@ -9228,17 +9290,12 @@ int Entity::getManaRegenInterval(Stat& myStats)
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 {
 	// get arrow power.
-	int attack = 7; // base ranged attack strength
-	if ( myStats.weapon != nullptr )
+	int attack = marksman.getRangedAttack();
+	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
+	if ( chance > 0 )
 	{
-		attack += myStats.weapon->weaponGetAttack();
+		attack = (attack - chance) + (rand() % chance) + 1;
 	}
-	attack += marksman.getDEX();
-	if ( marksman.behavior == &actMonster )
-	{
-		attack += marksman.getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
-	}
-	attack += myStats.PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack.
 	this->arrowPower = attack;
 
 	// get arrow effects.
@@ -9266,7 +9323,6 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 		}
 	}
 }
-
 
 /*-------------------------------------------------------------------------------
 
