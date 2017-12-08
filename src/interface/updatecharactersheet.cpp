@@ -634,7 +634,7 @@ void attackHoverText(Sint32 input[6])
 							snprintf(buf, longestline(language[2535]), language[2535], input[3]);
 							break;
 						case 2:
-							snprintf(buf, longestline(language[2539]), language[2539], input[5]);
+							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
 							break;
 						default:
 							break;
