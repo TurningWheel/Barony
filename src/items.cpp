@@ -2423,11 +2423,31 @@ Sint32 Item::weaponGetAttack() const
 	{
 		attack += 7;
 	}
+	else if ( type == BRONZE_TOMAHAWK )
+	{
+		attack += 2;
+	}
+	else if ( type == IRON_DAGGER )
+	{
+		attack += 4;
+	}
+	else if ( type == STEEL_CHAKRAM )
+	{
+		attack += 6;
+	}
+	else if ( type == CRYSTAL_SHURIKEN )
+	{
+		attack += 8;
+	}
 	// old formula
 	//attack *= (double)(status / 5.0);
 	//
-	// new formula
-	attack += status - 3;
+	if ( itemCategory(this) != TOOL && itemCategory(this) != THROWN && itemCategory(this) != GEM && itemCategory(this) != POTION )
+	{
+		// new formula
+		attack += status - 3;
+	}
+
 	return attack;
 }
 
