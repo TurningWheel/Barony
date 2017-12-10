@@ -170,7 +170,7 @@ void updateCharacterSheet()
 
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
-	ttfPrintTextFormatted(ttf12, 8, 346, "Damage:%11d ATK", displayAttackPower(attackInfo));
+	ttfPrintTextFormatted(ttf12, 8, 346, language[2542], displayAttackPower(attackInfo));
 	ttfPrintTextFormatted(ttf12, 8, 358, language[371], AC(stats[clientnum]));
 
 	ttfPrintTextFormatted(ttf12, 8, 370, language[370], stats[clientnum]->GOLD);
