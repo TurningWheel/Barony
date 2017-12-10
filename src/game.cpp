@@ -2741,6 +2741,7 @@ int main(int argc, char** argv)
 							selectedShopSlot = -1;
 						}
 						attributespage = 0;
+						proficienciesPage = 0;
 						if (openedChest[clientnum])
 						{
 							openedChest[clientnum]->closeChest();
@@ -2873,6 +2874,7 @@ int main(int argc, char** argv)
 						{
 							shootmode = false;
 							attributespage = 0;
+							proficienciesPage = 0;
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))

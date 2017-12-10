@@ -105,6 +105,7 @@ void updateRightSidebar()
 			{
 				shootmode = false;
 				attributespage = 0;
+				proficienciesPage = 0;
 			}
 		}
 	}
