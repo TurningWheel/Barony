@@ -4544,6 +4544,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damage += 5; // 5 bonus damage after reductions.
 					}
 
+					bool backstab = false;
+					bool flanking = false;
+					if ( player >= 0 )
+					{
+						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+						if ( hitAngle >= 0 && hitAngle <= 2 * PI / 3 ) // 120 degree arc
+						{
+							if ( hit.entity->monsterState == MONSTER_STATE_WAIT 
+								|| hit.entity->monsterState == MONSTER_STATE_PATH )
+							{
+								// unaware monster, get backstab damage.
+								backstab = true;
+								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
+								if ( rand() % 4 == 0 )
+								{
+									this->increaseSkill(PRO_STEALTH);
+								}
+							}
+							else if ( rand() % 2 == 0 )
+							{
+								// monster currently engaged in some form of combat maneuver
+								// 1 in 2 chance to flank defenses.
+								flanking = true;
+								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1;
+								if ( rand() % 20 == 0 )
+								{
+									this->increaseSkill(PRO_STEALTH);
+								}
+							}
+						}
+					}
+
 					bool gungnir = false;
 					if ( myStats->weapon )
 						if ( myStats->weapon->type == ARTIFACT_SPEAR )
@@ -4571,11 +4603,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
 
 					if ( myStats->weapon )
+					{
 						if ( myStats->weapon->type == ARTIFACT_AXE )
+						{
 							if ( rand() % 3 == 0 )
 							{
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
+						}
+					}
 					hit.entity->modHP(-damage); // do the damage
 
 												// write the obituary
@@ -5016,46 +5052,72 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
 					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( hitstats->HP > 0 )
 						{
 							if ( damage > olddamage )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// critical hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[689], MSG_COMBAT);
 							}
 							else
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// normal hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT);
 							}
 							if ( damage == 0 )
 							{
+								// blow bounces off
 								messagePlayer(player, language[691]);
+							}
+							else
+							{
+								if ( flanking )
+								{
+									// flank defenses
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2545], language[2545], MSG_COMBAT);
+								}
+								else if ( backstab )
+								{
+									// backstab on unaware enemy
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
+								}
 							}
 						}
 						else
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+							// HP <= 0
+							if ( backstab )
+							{
+								// assassinate monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2547], MSG_COMBAT);
+							}
+							else
+							{
+								// kill monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+							}
 							awardXP(hit.entity, true, true);
 						}
 					}
 					else
 					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( hitstats->HP > 0 )
 						{
 							if ( damage > olddamage )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// critical hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[693], MSG_COMBAT);
 							}
 							else
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// normal hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT);
 							}
 							if ( damage == 0 )
 							{
+								// blow bounces off
 								if ( hitstats->sex )
 								{
 									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[695], MSG_COMBAT);
@@ -5065,11 +5127,33 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[696], MSG_COMBAT);
 								}
 							}
+							else
+							{
+								if ( flanking )
+								{
+									// flank defenses
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2545], language[2546], MSG_COMBAT);
+								}
+								else if ( backstab )
+								{
+									// backstab on unaware enemy
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
+								}
+							}
 						}
 						else
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerColor(player, color, language[697], hitstats->name);
+							// HP <= 0
+							if ( backstab )
+							{
+								// assassinate monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2548], MSG_COMBAT);
+							}
+							else
+							{
+								// kill monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[697], MSG_COMBAT);
+							}
 							awardXP(hit.entity, true, true);
 						}
 					}
@@ -9667,4 +9751,22 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			helm->roll = PI / 2;
 		}
 	}
+}
+
+real_t Entity::yawDifferenceFromPlayer(int player)
+{
+	if ( player >= 0 && players[player] && players[player]->entity )
+	{
+		real_t targetYaw = this->yaw;
+		while ( targetYaw >= 2 * PI )
+		{
+			targetYaw -= PI * 2;
+		}
+		while ( targetYaw < 0 )
+		{
+			targetYaw += PI * 2;
+		}
+		return (PI - abs(abs(players[player]->entity->yaw - targetYaw) - PI)) * 2;
+	}
+	return 0.f;
 }

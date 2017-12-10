@@ -196,18 +196,9 @@ void Item::applyLockpick(int player, Entity& entity)
 		{
 			if ( players[player] && players[player]->entity )
 			{
-				// calculate facing direction
-				real_t targetYaw = entity.yaw;
-				while ( targetYaw >= 2 * PI )
-				{
-					targetYaw -= PI * 2;
-				}
-				while ( targetYaw < 0 )
-				{
-					targetYaw += PI * 2;
-				}
-				real_t yawDiff = PI - abs(abs(players[player]->entity->yaw - targetYaw) - PI);
-				if ( yawDiff < PI / 2 )
+				// calculate facing direction from player
+				real_t yawDiff = entity.yawDifferenceFromPlayer(player);
+				if ( yawDiff < PI )
 				{
 					messagePlayer(player, language[2524], getName(), entity.getMonsterLangEntry());
 					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;

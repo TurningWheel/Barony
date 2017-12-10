@@ -521,7 +521,7 @@ public:
 	int getManaRegenInterval(Stat& myStats); 
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats);
-
+	real_t yawDifferenceFromPlayer(int player); // calc targets yaw compared to a player, returns 0 - 2 * PI, where > PI is facing towards player.
 	spell_t* getActiveMagicEffect(int spellID);
 
 	/*
