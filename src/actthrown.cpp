@@ -431,7 +431,7 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
-					if ( rand() % 10 == 0 && parent != NULL )
+					if ( rand() % 5 == 0 && parent != NULL )
 					{
 						parent->increaseSkill(PRO_RANGED);
 					}
