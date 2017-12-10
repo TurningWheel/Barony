@@ -286,31 +286,37 @@ void statsHoverText(Stat* tmpStat)
 		"charisma: "
 	};
 
-	char tooltipText[6][2][128] =
+	char tooltipText[6][3][128] =
 	{
 		{
 			"base:  %2d",
-			"bonus: %2d"
+			"bonus: %2d",
+			""
 		},
 		{
 			"base:  %2d",
-			"bonus: %2d"
+			"bonus: %2d",
+			""
 		},
 		{
 			"base:  %2d",
-			"bonus: %2d"
+			"bonus: %2d",
+			""
 		},
 		{
 			"base:  %2d",
-			"bonus: %2d"
+			"bonus: %2d",
+			"MP regen rate: 1 / %2.1fs"
 		},
 		{
 			"base:  %2d",
-			"bonus: %2d"
+			"bonus: %2d",
+			""
 		},
 		{
 			"base:  %2d",
-			"bonus: %2d"
+			"bonus: %2d",
+			""
 		}
 	};
 
@@ -347,7 +353,7 @@ void statsHoverText(Stat* tmpStat)
 					statBonus = statGetCON(tmpStat) - statBase;
 					break;
 				case 3:
-					numInfoLines = 2;
+					numInfoLines = 3;
 					tmp_bmp = int_bmp64;
 					statBase = tmpStat->INT;
 					statBonus = statGetINT(tmpStat) - statBase;
@@ -374,7 +380,11 @@ void statsHoverText(Stat* tmpStat)
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
 				src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
-				src.w = 256;
+				src.w = 180;
+				for ( j = 0; j < numInfoLines; j++ )
+				{
+					src.w = std::max(longestline(tooltipText[i][j]) * 12, src.w);
+				}
 				drawTooltip(&src);
 
 				pos.x = src.x + 6;
@@ -409,6 +419,20 @@ void statsHoverText(Stat* tmpStat)
 						else if ( statBonus < 0 )
 						{
 							color = uint32ColorRed(*mainsurface);
+						}
+					}
+					else if ( j == 2 )
+					{
+						Entity* tmp = nullptr;
+						if ( players[clientnum] && players[clientnum]->entity )
+						{
+							tmp = players[clientnum]->entity;
+							real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
+						}
+						else
+						{
+							strcpy(buf, "");
 						}
 					}
 					ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
