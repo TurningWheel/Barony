@@ -2446,7 +2446,7 @@ void actParticleDot(Entity* my)
 	else
 	{
 		--PARTICLE_LIFE;
-		my->x += my->vel_x;
+		my->z += my->vel_z;
 		//my->z -= 0.01;
 	}
 	return;
