@@ -1236,7 +1236,7 @@ void actPlayer(Entity* my)
 				{
 					PLAYER_TORCH = 3 + (my->getPER() / 3);
 					// more visible world if defending/sneaking with no shield
-					PLAYER_TORCH += ((stats[PLAYER_NUM]->sneaking == 1) * ((stats[PLAYER_NUM]->PROFICIENCIES[PRO_STEALTH] / 25)));
+					PLAYER_TORCH += ((stats[PLAYER_NUM]->sneaking == 1) * (2 + (stats[PLAYER_NUM]->PROFICIENCIES[PRO_STEALTH] / 40)));
 				}
 				else
 				{
