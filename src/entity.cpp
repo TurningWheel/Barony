@@ -2920,6 +2920,10 @@ Sint32 Entity::getAttack()
 				attack += 3 + entitystats->gloves->beatitude;
 			}
 		}
+		if ( entitystats->ring )
+		{
+			attack += 1 + entitystats->ring->beatitude;
+		}
 	}
 	attack += this->getSTR();
 
