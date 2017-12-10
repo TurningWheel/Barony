@@ -18,7 +18,8 @@ See LICENSE for details.
 #include "magic/magic.hpp"
 
 // Constructor
-Stat::Stat(Sint32 sprite)
+Stat::Stat(Sint32 sprite) :
+	sneaking(MISC_FLAGS[1])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

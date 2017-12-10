@@ -546,6 +546,55 @@ int Entity::entityLight()
 
 /*-------------------------------------------------------------------------------
 
+Entity::entityLightAfterReductions
+
+Returns new entities' illumination,  
+after reductions depending on the entity stats and another entity observing
+
+-------------------------------------------------------------------------------*/
+
+int Entity::entityLightAfterReductions(Stat& myStats, Entity& observer)
+{
+	int player = -1;
+	int light = entityLight(); // max 255 light to start with.
+	if ( !isInvisible() )
+	{
+		if ( behavior == &actPlayer )
+		{
+			player = skill[2];
+			if ( player > -1 )
+			{
+				if ( stats[player]->shield )
+				{
+					if ( itemCategory(stats[player]->shield) == ARMOR )
+					{
+						light -= 95;
+					}
+				}
+				else
+				{
+					light -= 95;
+				}
+				if ( stats[player]->sneaking == 1 )
+				{
+					light -= 64;
+				}
+			}
+		}
+		// reduce light level 0-200 depending on target's stealth.
+		// add light level 0-150 for PER 0-30
+		light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer.getPER() * 5;
+	}
+	else
+	{
+		light = TOUCHRANGE;
+	}
+	light = std::max(light, 0);
+	return light;
+}
+
+/*-------------------------------------------------------------------------------
+
 Entity::effectTimes
 
 Counts down effect timers and toggles effects whose timers reach zero

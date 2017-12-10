@@ -3187,6 +3187,13 @@ void serverHandlePacket()
 		return;
 	}
 
+	// sneaking
+	else if ( !strncmp((char*)net_packet->data, "SNEK", 4) )
+	{
+		stats[net_packet->data[4]]->sneaking = net_packet->data[5];
+		return;
+	}
+
 	// close shop
 	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
 	{
