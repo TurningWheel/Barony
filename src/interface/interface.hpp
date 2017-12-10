@@ -69,6 +69,7 @@ extern SDL_Surface* shopkeeper_bmp;
 extern SDL_Surface* damage_bmp;
 extern int textscroll;
 extern int attributespage;
+extern int proficienciesPage;
 extern Item* invitems[4];
 extern Item* invitemschest[4];
 extern int inventorycategory;

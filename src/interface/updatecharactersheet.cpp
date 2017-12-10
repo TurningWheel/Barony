@@ -19,6 +19,7 @@
 
 void drawSkillsSheet();
 void statsHoverText(Stat* tmpStat);
+void drawPartySheet();
 
 /*-------------------------------------------------------------------------------
 
@@ -184,6 +185,10 @@ void updateCharacterSheet()
 	ttfPrintTextFormatted(ttf12, 8, 382, language[372], weight);
 
 	drawSkillsSheet();
+	if ( proficienciesPage == 1 )
+	{
+		drawPartySheet();
+	}
 	statsHoverText(stats[clientnum]);
 	attackHoverText(attackInfo);
 }
@@ -250,6 +255,40 @@ void drawSkillsSheet()
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[369]);
+		}
+	}
+}
+
+void drawPartySheet()
+{
+	SDL_Rect pos;
+	pos.x = xres - 208;
+	pos.w = 208;
+	pos.y = 32;
+	pos.h = (20 * TTF12_HEIGHT);
+
+	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
+
+	ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 8, "Party Stats");
+
+	pos.y += TTF12_HEIGHT * 2 + 8;
+
+	SDL_Rect initialSkillPos = pos;
+
+	//Draw party stats
+	Uint32 color = uint32ColorWhite(*mainsurface);
+	for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (TTF12_HEIGHT * 4) )
+	{
+		if ( !client_disconnected[i] )
+		{
+			ttfPrintTextFormattedColor(ttf12, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+
+			ttfPrintTextFormattedColor(ttf12, pos.x + 12, pos.y + TTF12_HEIGHT, color, "%s", playerClassLangEntry(client_classes[i]));
+			ttfPrintTextFormattedColor(ttf12, xres - 8 * 12, pos.y + TTF12_HEIGHT, color, "LVL %2d", stats[i]->LVL);
+
+			ttfPrintTextFormattedColor(ttf12, pos.x + 32, pos.y + TTF12_HEIGHT * 2, color, "HP:%3d/%3d", stats[i]->HP, stats[i]->MAXHP);
+
+			ttfPrintTextFormattedColor(ttf12, pos.x + 32 , pos.y + TTF12_HEIGHT * 3, color, "MP:%3d/%3d", stats[i]->MP, stats[i]->MAXMP);
 		}
 	}
 }
@@ -377,6 +416,7 @@ void statsHoverText(Stat* tmpStat)
 
 			if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 			{
+				proficienciesPage = 1;
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
 				src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
@@ -437,6 +477,10 @@ void statsHoverText(Stat* tmpStat)
 					}
 					ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
 				}
+			}
+			else
+			{
+				proficienciesPage = 0;
 			}
 
 			numInfoLines = 0;
