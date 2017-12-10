@@ -167,6 +167,7 @@ public:
 	bool EFFECTS[NUMEFFECTS];
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
+	Sint32& sneaking; // MISC_FLAGS[1]
 
 	// group think
 	Uint32 leader_uid;

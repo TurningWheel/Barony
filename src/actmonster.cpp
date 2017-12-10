@@ -1190,6 +1190,7 @@ void actMonster(Entity* my)
 		return;
 	}
 	myStats->defending = false;
+	myStats->sneaking = 0;
 
 	// levitation
 	bool levitating = isLevitating(myStats);
@@ -2057,29 +2058,7 @@ void actMonster(Entity* my)
 							}
 
 							// skip if light level is too low and distance is too high
-							int light = entity->entityLight();
-							if ( !entity->isInvisible() )
-							{
-								if ( entity->behavior == &actPlayer && entity->skill[2] == 0 )
-								{
-									if ( stats[0]->shield )
-									{
-										if ( itemCategory(stats[0]->shield) == ARMOR )
-										{
-											light -= 95;
-										}
-									}
-									else
-									{
-										light -= 95;
-									}
-								}
-								light -= hitstats->PROFICIENCIES[PRO_STEALTH] * 2 - my->getPER() * 5;
-							}
-							else
-							{
-								light = TOUCHRANGE;
-							}
+							int light = entity->entityLightAfterReductions(*hitstats, *my);
 							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
 								//See invisible.
@@ -2564,29 +2543,7 @@ void actMonster(Entity* my)
 			if ( myStats->type != DEVIL )
 			{
 				// skip if light level is too low and distance is too high
-				int light = entity->entityLight();
-				if ( !entity->isInvisible() )
-				{
-					if ( entity->behavior == &actPlayer && entity->skill[2] == 0 )
-					{
-						if ( stats[0]->shield )
-						{
-							if ( itemCategory(stats[0]->shield) == ARMOR )
-							{
-								light -= 95;
-							}
-						}
-						else
-						{
-							light -= 95;
-						}
-					}
-					light -= hitstats->PROFICIENCIES[PRO_STEALTH] * 2 - my->getPER() * 5;
-				}
-				else
-				{
-					light = TOUCHRANGE;
-				}
+				int light = entity->entityLightAfterReductions(*hitstats, *my);
 				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 				{
 					//See invisible.
@@ -3110,29 +3067,7 @@ timeToGoAgain:
 							}
 
 							// skip if light level is too low and distance is too high
-							int light = entity->entityLight();
-							if ( !entity->isInvisible() )
-							{
-								if ( entity->behavior == &actPlayer && entity->skill[2] == 0 )
-								{
-									if ( stats[0]->shield )
-									{
-										if ( itemCategory(stats[0]->shield) == ARMOR )
-										{
-											light -= 95;
-										}
-									}
-									else
-									{
-										light -= 95;
-									}
-								}
-								light -= hitstats->PROFICIENCIES[PRO_STEALTH] * 2 - my->getPER() * 5;
-							}
-							else
-							{
-								light = TOUCHRANGE;
-							}
+							int light = entity->entityLightAfterReductions(*hitstats, *my);
 							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
 								//See invisible.

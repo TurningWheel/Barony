@@ -324,6 +324,7 @@ public:
 	Sint32 getCHR();
 
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
+	int entityLightAfterReductions(Stat& myStats, Entity& observer);
 
 	void handleEffects(Stat* myStats);
 	void handleEffectsClient();
