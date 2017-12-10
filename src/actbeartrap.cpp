@@ -182,7 +182,7 @@ void actBeartrap(Entity* my)
 							{
 								parent->increaseSkill(PRO_LOCKPICKING);
 							}
-							if ( rand() % 5 == 0 )
+							if ( rand() % 2 == 0 )
 							{
 								parent->increaseSkill(PRO_RANGED);
 							}
