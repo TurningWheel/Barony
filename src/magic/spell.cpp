@@ -737,7 +737,7 @@ void spell_changeHealth(Entity* entity, int amount)
 
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < 4; ++i)
+	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (entity == players[i]->entity)
 		{
@@ -745,7 +745,7 @@ void spell_changeHealth(Entity* entity, int amount)
 		}
 	}
 
-	if (player > -1 && player <= 4)
+	if (player > -1 && player < MAXPLAYERS)
 	{
 		if (amount > 0)
 		{
@@ -768,7 +768,7 @@ void spell_changeHealth(Entity* entity, int amount)
 		if (multiplayer == SERVER)
 		{
 			strcpy((char*)net_packet->data, "UPHP");
-			SDLNet_Write32((Uint32)stats[player - 1]->HP, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);
 			SDLNet_Write32(0, &net_packet->data[8]);
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
