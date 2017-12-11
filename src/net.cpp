@@ -3598,6 +3598,16 @@ void serverHandlePacket()
 		}
 		return;
 	}
+
+	// the client asked for a level up
+	else if ( !strncmp((char*)net_packet->data, "CLVL", 4) )
+	{
+		int player = net_packet->data[4];
+		if ( players[player] && players[player]->entity )
+		{
+			players[player]->entity->getStats()->EXP += 100;
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------
