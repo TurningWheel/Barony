@@ -16,6 +16,7 @@
 #include "../player.hpp"
 #include "../colors.hpp"
 #include "interface.hpp"
+#include "../sound.hpp"
 
 void drawSkillsSheet();
 void statsHoverText(Stat* tmpStat);
@@ -220,6 +221,7 @@ void drawSkillsSheet()
 			&& omousey >= button.y && omousey <= button.y + button.h )
 		{
 			buttonclick = 14;
+			playSound(139, 64);
 			if ( proficienciesPage == 0 )
 			{
 				proficienciesPage = 1;
@@ -326,6 +328,7 @@ void drawPartySheet()
 			&& omousey >= button.y && omousey <= button.y + button.h )
 		{
 			buttonclick = 14;
+			playSound(139, 64);
 			if ( proficienciesPage == 0 )
 			{
 				proficienciesPage = 1;
