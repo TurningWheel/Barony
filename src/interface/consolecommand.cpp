@@ -788,9 +788,16 @@ void consoleCommand(char* command_str)
 				players[clientnum]->entity->getStats()->EXP += 100;
 			}
 		}
-		else
+		else if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[299]);
+			// request level up
+			strcpy((char*)net_packet->data, "CLVL");
+			net_packet->data[4] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 5;
+			sendPacket(net_sock, -1, net_packet, 0);
+			//messagePlayer(clientnum, language[299]);
 		}
 	}
 	else if ( !strncmp(command_str, "/maxout2", 8) )
@@ -822,11 +829,14 @@ void consoleCommand(char* command_str)
 			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
-
 		}
 		else
 		{
-			messagePlayer(clientnum, language[299]);
+			for ( int c = 0; c < 24; c++ )
+			{
+				consoleCommand("/levelup");
+			}
+			//messagePlayer(clientnum, language[299]);
 		}
 	}
 	else if ( !strncmp(command_str, "/maxout3", 8) )

@@ -504,6 +504,10 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
 			}
+			if ( SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			{
+				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+			}
 			bool bFailed = false;
 			SteamUtils()->GetAPICallResult(SteamAPICall_NumPlayersOnline, &NumberOfCurrentPlayers, sizeof(NumberOfCurrentPlayers_t), 1107, &bFailed);
 			if ( NumberOfCurrentPlayers.m_bSuccess )

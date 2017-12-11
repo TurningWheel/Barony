@@ -215,15 +215,15 @@ int monsterCurve(int level)
 				return SCARAB;
 			case 7:
 			case 8:
-			case 9:
 				return AUTOMATON;
+			case 9:
 			case 10:
 			case 11:
-				return CRYSTALGOLEM;
 			case 12:
+				return INSECTOID;
 			case 13:
 			case 14:
-				return INSECTOID;
+				return CRYSTALGOLEM;
 			case 15:
 			case 16:
 			case 17:
