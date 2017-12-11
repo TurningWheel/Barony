@@ -1134,5 +1134,5 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode)
 	mousex = xres / 2;
 	mousey = yres / 2;
 	attributespage = 0;
-	proficienciesPage = 0;
+	//proficienciesPage = 0;
 }

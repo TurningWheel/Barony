@@ -184,10 +184,13 @@ void updateCharacterSheet()
 	weight += stats[clientnum]->GOLD / 100;
 	ttfPrintTextFormatted(ttf12, 8, 382, language[372], weight);
 
-	drawSkillsSheet();
 	if ( proficienciesPage == 1 )
 	{
 		drawPartySheet();
+	}
+	else
+	{
+		drawSkillsSheet();
 	}
 	statsHoverText(stats[clientnum]);
 	attackHoverText(attackInfo);
@@ -204,6 +207,38 @@ void drawSkillsSheet()
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
 	ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 8, language[1883]);
+
+	SDL_Rect button;
+	button.x = xres - attributesright_bmp->w - 8;
+	button.w = attributesright_bmp->w;
+	button.y = pos.y;
+	button.h = attributesright_bmp->h;
+
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		if ( omousex >= button.x && omousex <= button.x + button.w
+			&& omousey >= button.y && omousey <= button.y + button.h )
+		{
+			buttonclick = 14;
+			if ( proficienciesPage == 0 )
+			{
+				proficienciesPage = 1;
+			}
+			else
+			{
+				proficienciesPage = 0;
+			}
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
+	}
+	if ( buttonclick == 14 )
+	{
+		drawImage(attributesright_bmp, nullptr, &button);
+	}
+	else
+	{
+		drawImage(attributesrightunclicked_bmp, nullptr, &button);
+	}
 
 	pos.y += TTF12_HEIGHT * 2 + 8;
 
@@ -262,33 +297,103 @@ void drawSkillsSheet()
 void drawPartySheet()
 {
 	SDL_Rect pos;
+	int playerCnt = 0;
+	for ( playerCnt = MAXPLAYERS - 1; playerCnt > 0; --playerCnt )
+	{
+		if ( !client_disconnected[playerCnt] )
+		{
+			break;
+		}
+	}
 	pos.x = xres - 208;
 	pos.w = 208;
 	pos.y = 32;
-	pos.h = (20 * TTF12_HEIGHT);
+	pos.h = (TTF12_HEIGHT * 2 + 12) + ((TTF12_HEIGHT * 4) + 6) * (std::max(playerCnt + 1, 1));
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
 	ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 8, "Party Stats");
 
-	pos.y += TTF12_HEIGHT * 2 + 8;
+	SDL_Rect button;
+	button.x = xres - attributesright_bmp->w - 8;
+	button.w = attributesright_bmp->w;
+	button.y = pos.y;
+	button.h = attributesright_bmp->h;
+
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		if ( omousex >= button.x && omousex <= button.x + button.w
+			&& omousey >= button.y && omousey <= button.y + button.h )
+		{
+			buttonclick = 14;
+			if ( proficienciesPage == 0 )
+			{
+				proficienciesPage = 1;
+			}
+			else
+			{
+				proficienciesPage = 0;
+			}
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
+	}
+	if ( buttonclick == 14 )
+	{
+		drawImage(attributesright_bmp, nullptr, &button);
+	}
+	else
+	{
+		drawImage(attributesrightunclicked_bmp, nullptr, &button);
+	}
+
+	pos.y += TTF12_HEIGHT * 2 + 4;
 
 	SDL_Rect initialSkillPos = pos;
+	SDL_Rect playerBar;
 
 	//Draw party stats
 	Uint32 color = uint32ColorWhite(*mainsurface);
-	for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (TTF12_HEIGHT * 4) )
+	for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (TTF12_HEIGHT * 4) + 6 )
 	{
-		if ( !client_disconnected[i] )
+		if ( !client_disconnected[i] && stats[i] )
 		{
 			ttfPrintTextFormattedColor(ttf12, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
 
 			ttfPrintTextFormattedColor(ttf12, pos.x + 12, pos.y + TTF12_HEIGHT, color, "%s", playerClassLangEntry(client_classes[i]));
 			ttfPrintTextFormattedColor(ttf12, xres - 8 * 12, pos.y + TTF12_HEIGHT, color, "LVL %2d", stats[i]->LVL);
 
-			ttfPrintTextFormattedColor(ttf12, pos.x + 32, pos.y + TTF12_HEIGHT * 2, color, "HP:%3d/%3d", stats[i]->HP, stats[i]->MAXHP);
+			playerBar.x = pos.x + 64;
+			playerBar.w = 10 * 11;
+			playerBar.y = pos.y + TTF12_HEIGHT * 2 + 1;
+			playerBar.h = TTF12_HEIGHT;
+			// draw tooltip with blue outline
+			drawTooltip(&playerBar);
+			// draw faint red bar underneath
+			playerBar.x += 1;
+			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
 
-			ttfPrintTextFormattedColor(ttf12, pos.x + 32 , pos.y + TTF12_HEIGHT * 3, color, "MP:%3d/%3d", stats[i]->MP, stats[i]->MAXMP);
+			// draw main red bar for current HP
+			playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->HP) / stats[i]->MAXHP);
+			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+
+			// draw HP values
+			ttfPrintTextFormattedColor(ttf12, pos.x + 32, pos.y + TTF12_HEIGHT * 2 + 4, color, "HP:  %3d / %3d", stats[i]->HP, stats[i]->MAXHP);
+
+			playerBar.x = pos.x + 64;
+			playerBar.w = 10 * 11;
+			playerBar.y = pos.y + TTF12_HEIGHT * 3 + 1;
+			// draw tooltip with blue outline
+			drawTooltip(&playerBar);
+			playerBar.x += 1;
+			// draw faint blue bar underneath
+			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255);
+
+			// draw blue red bar for current MP
+			playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->MP) / stats[i]->MAXMP);
+			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255);
+
+			// draw MP values
+			ttfPrintTextFormattedColor(ttf12, pos.x + 32 , pos.y + TTF12_HEIGHT * 3 + 4, color, "MP:  %3d / %3d", stats[i]->MP, stats[i]->MAXMP);
 		}
 	}
 }
@@ -416,7 +521,6 @@ void statsHoverText(Stat* tmpStat)
 
 			if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
 			{
-				proficienciesPage = 1;
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
 				src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
@@ -478,11 +582,6 @@ void statsHoverText(Stat* tmpStat)
 					ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
 				}
 			}
-			else
-			{
-				proficienciesPage = 0;
-			}
-
 			numInfoLines = 0;
 			pad_y += 12;
 		}
