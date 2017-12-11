@@ -1192,7 +1192,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spellCastChance = 6; // 16.67%
 					magicChance = 7; // 14.2%
 				}
-				messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
+				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
 				if ( rand() % spellCastChance == 0 )
 				{
 					caster->increaseSkill(PRO_SPELLCASTING);
