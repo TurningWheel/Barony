@@ -172,11 +172,11 @@ void actBeartrap(Entity* my)
 						{
 							if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
 							{
-								messagePlayer(0, language[2521]);
+								messagePlayer(player, language[2521]);
 							}
 							else
 							{
-								messagePlayer(0, language[2522]);
+								messagePlayer(player, language[2522]);
 							}
 							if ( rand() % 2 == 0 )
 							{
