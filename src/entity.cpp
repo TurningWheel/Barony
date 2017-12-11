@@ -6081,12 +6081,9 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actPlayer )
+			if ( entity && entity->behavior == &actPlayer )
 			{
-				double tangent = atan2(entity->y - src->y, entity->x - src->x);
-				lineTrace(src, src->x, src->y, tangent, XPSHARERANGE, 0, false);
-
-				if ( hit.entity == entity )
+				if ( entityDist(this, entity) < XPSHARERANGE )
 				{
 					numshares++;
 					shares[numshares] = entity;
