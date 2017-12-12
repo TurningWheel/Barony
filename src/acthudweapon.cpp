@@ -253,7 +253,7 @@ void actHudWeapon(Entity* my)
 	// swimming
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots)
+		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
 		{
 			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
