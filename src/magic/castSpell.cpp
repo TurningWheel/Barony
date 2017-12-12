@@ -279,11 +279,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool waterwalkingboots = false;
 	if (!trap)
 	{
-		if (stat->shoes != NULL)
+		if ( player >= 0 && skillCapstoneUnlocked(player, PRO_SWIMMING) )
+		{
+			waterwalkingboots = true;
+		}
+		if ( stat->shoes != NULL )
+		{
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
 			{
 				waterwalkingboots = true;
 			}
+		}
 	}
 
 	node_t* node2; //For traversing the map looking for...liquids?
