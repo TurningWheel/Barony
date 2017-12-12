@@ -238,8 +238,8 @@ void mainLogic(void)
 			}
 		}
 	}
-	camx = (camx / TEXTURESIZE) * TEXTURESIZE;
-	camy = (camy / TEXTURESIZE) * TEXTURESIZE;
+	camx -= camx % TEXTURESIZE; // make sure the camera is a multiple of 32 for hover text to work.
+	camy -= camy % TEXTURESIZE; // make sure the camera is a multiple of 32 for hover text to work.
 
 	// basic editor functions
 	if ( mode3d == false )
