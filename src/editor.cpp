@@ -238,6 +238,8 @@ void mainLogic(void)
 			}
 		}
 	}
+	camx = (camx / TEXTURESIZE) * TEXTURESIZE;
+	camy = (camy / TEXTURESIZE) * TEXTURESIZE;
 
 	// basic editor functions
 	if ( mode3d == false )
