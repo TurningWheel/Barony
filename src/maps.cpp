@@ -4357,17 +4357,17 @@ void assignActions(map_t* map)
 						tempNode->deconstructor = &emptyDeconstructor;
 						tempNode->size = sizeof(Entity*);
 
-						childEntity = newEntity(645, 1, map->entities);
-						childEntity->parent = entity->getUID();
-						childEntity->x = entity->x;
-						childEntity->y = entity->y;
-						childEntity->z = 8.24;
-						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						childEntity->flags[PASSABLE] = true;
-						tempNode = list_AddNodeLast(&entity->children);
-						tempNode->element = childEntity; // add the node to the children list.
-						tempNode->deconstructor = &emptyDeconstructor;
-						tempNode->size = sizeof(Entity*);
+						//childEntity = newEntity(645, 1, map->entities);
+						//childEntity->parent = entity->getUID();
+						//childEntity->x = entity->x;
+						//childEntity->y = entity->y;
+						//childEntity->z = 8.24;
+						////printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						//childEntity->flags[PASSABLE] = true;
+						//tempNode = list_AddNodeLast(&entity->children);
+						//tempNode->element = childEntity; // add the node to the children list.
+						//tempNode->deconstructor = &emptyDeconstructor;
+						//tempNode->size = sizeof(Entity*);
 					}
 				}
 				break;
