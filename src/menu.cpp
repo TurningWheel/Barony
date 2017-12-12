@@ -474,7 +474,10 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 			const char *website = "http://www.baronygame.com/";
 			TTF_SizeUTF8(ttf8, website, &w, &h);
-			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h) && subwindow == 0 && introstage == 1)
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h) 
+				&& subwindow == 0 
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
 			{
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -490,7 +493,10 @@ void handleMainMenu(bool mode)
 			}
 			h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
-			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2) && subwindow == 0 && introstage == 1 )
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2) 
+				&& subwindow == 0 
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
 			{
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -500,19 +506,22 @@ void handleMainMenu(bool mode)
 				}
 				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8 + h2, colorGray, language[2549], steamOnlinePlayers);
 			}
-			else
+			else if ( SteamUser()->BLoggedOn() )
 			{
 				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
 			}
-			if ( SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 			}
 			bool bFailed = false;
-			SteamUtils()->GetAPICallResult(SteamAPICall_NumPlayersOnline, &NumberOfCurrentPlayers, sizeof(NumberOfCurrentPlayers_t), 1107, &bFailed);
-			if ( NumberOfCurrentPlayers.m_bSuccess )
+			if ( SteamUser()->BLoggedOn() )
 			{
-				steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				SteamUtils()->GetAPICallResult(SteamAPICall_NumPlayersOnline, &NumberOfCurrentPlayers, sizeof(NumberOfCurrentPlayers_t), 1107, &bFailed);
+				if ( NumberOfCurrentPlayers.m_bSuccess )
+				{
+					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				}
 			}
 #endif // STEAMWORKS
 		}
