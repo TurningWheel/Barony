@@ -781,7 +781,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if (multiplayer != CLIENT)
 		{
 			if (players[clientnum] && players[clientnum]->entity)
 			{
@@ -808,7 +808,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if ( multiplayer == SINGLE )
+		if ( multiplayer != CLIENT )
 		{
 			int c;
 			Stat* myStats = stats[0];
