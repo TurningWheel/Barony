@@ -189,9 +189,22 @@ void actPlayer(Entity* my)
 
 	if ( spamming )
 	{
-		for (int i = 0; i < 1000; ++i)
+		for (int i = 0; i < 1; ++i)
 		{
-			messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
+			char s[64] = "";
+			char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+			for ( int j = 0; j < 63; ++j ) {
+				s[j] = alphanum[rand() % (sizeof(alphanum) - 1)];
+			}
+			Uint32 totalSize = 0;
+			for ( size_t c = 0; c < HASH_SIZE; ++c ) {
+				totalSize += list_Size(&ttfTextHash[c]);
+			}
+			messagePlayer(0, "IMGREF: %d, total size: %d", imgref, totalSize);
+			s[63] = '\0';
+			messagePlayer(0, "%s", s);
+			//messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
 		}
 	}
 
@@ -677,13 +690,46 @@ void actPlayer(Entity* my)
 					}
 
 					//Attempt a level up.
-					if ( items[tempItem->type].value > 0 )
+					if ( items[tempItem->type].value > 0 && stats[PLAYER_NUM] )
 					{
 						if ( tempItem->identified )
 						{
-							my->increaseSkill(PRO_APPRAISAL);
+							int appraisalEaseOfDifficulty = 0;
+							if ( items[tempItem->type].value < 100 )
+							{
+								// easy junk items
+								appraisalEaseOfDifficulty = 2;
+							}
+							else if ( items[tempItem->type].value < 200 )
+							{
+								// medium
+								appraisalEaseOfDifficulty = 1;
+							}
+							else if ( items[tempItem->type].value < 300 )
+							{
+								// medium
+								appraisalEaseOfDifficulty = 0;
+							}
+							else if ( items[tempItem->type].value < 400 )
+							{
+								// hardest
+								appraisalEaseOfDifficulty = -1;
+							}
+							else
+							{
+								// hardest
+								appraisalEaseOfDifficulty = -1;
+							}
+							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] / 20;
+							// difficulty ranges from 1-in-1 to 1-in-6
+							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
+							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
+							if ( rand() % appraisalEaseOfDifficulty == 0 )
+							{
+								my->increaseSkill(PRO_APPRAISAL);
+							}
 						}
-						else if ( rand() % 5 == 0 )
+						else if ( rand() % 7 == 0 )
 						{
 							my->increaseSkill(PRO_APPRAISAL);
 						}
@@ -926,26 +972,24 @@ void actPlayer(Entity* my)
 				}
 				if ( multiplayer != CLIENT )
 				{
+					// Check if the Player is in Water or Lava
 					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						if ( my->flags[BURNING] )
 						{
 							my->flags[BURNING] = false;
-							messagePlayer(PLAYER_NUM, language[574]);
+							messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
 							serverUpdateEntityFlag(my, BURNING);
 						}
 					}
-					else if ( ticks % 10 == 0 )
+					else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
 					{
 						my->modHP(-2 - rand() % 2);
-						my->setObituary(language[1506]);
+						my->setObituary(language[1506]); // "goes for a swim in some lava."
 						if ( !my->flags[BURNING] )
 						{
-							my->flags[BURNING] = true;
-							if ( PLAYER_NUM > 0 )
-							{
-								serverUpdateEntityFlag(my, BURNING);
-							}
+							// Attempt to set the Entity on fire
+							my->SetEntityOnFire();
 						}
 					}
 				}
@@ -978,7 +1022,7 @@ void actPlayer(Entity* my)
 			}
 			if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
-				if (!stats[clientnum]->defending)
+				if ( !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 				{
 					if (PLAYER_BOBMODE)
 					{
@@ -1007,7 +1051,7 @@ void actPlayer(Entity* my)
 				PLAYER_BOB = 0;
 				PLAYER_BOBMODE = 0;
 			}
-			if ( !swimming && !stats[clientnum]->defending )
+			if ( !swimming && !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 			{
 				if ( PLAYER_BOBMOVE > .2 )
 				{
@@ -1188,7 +1232,9 @@ void actPlayer(Entity* my)
 			{
 				if ( PLAYER_NUM == clientnum && !PLAYER_DEBUGCAM )
 				{
-					PLAYER_TORCH = 3 + my->getPER() / 3;
+					PLAYER_TORCH = 3 + (my->getPER() / 3);
+					// more visible world if defending/sneaking with no shield
+					PLAYER_TORCH += ((stats[PLAYER_NUM]->sneaking == 1) * (2 + (stats[PLAYER_NUM]->PROFICIENCIES[PRO_STEALTH] / 40)));
 				}
 				else
 				{
@@ -1240,6 +1286,11 @@ void actPlayer(Entity* my)
 		if ( !intro )
 		{
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
+			if ( ticks % (TICKS_PER_SECOND * 3) == 0 )
+			{
+				// send update to all clients for global stats[NUMPLAYERS] struct
+				serverUpdatePlayerStats();
+			}
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 )
 			{
 				// remove body parts
@@ -1598,15 +1649,15 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			real_t speedFactor = std::min((my->getDEX() * 0.4 + 13) * weightratio, 25 * 0.5 + 10);
+			real_t speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
 			if ( my->getDEX() <= 5 )
 			{
 				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
 			}
-			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;
@@ -2812,37 +2863,6 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[HUMAN][9][0] - .5;
-						entity->focaly = limbs[HUMAN][9][1] - 3.25;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[HUMAN][9][0] - .5;
-						entity->focaly = limbs[HUMAN][9][1] - 2.5;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[HUMAN][9][0];
-						entity->focaly = limbs[HUMAN][9][1] - 4.75;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[HUMAN][9][0];
-						entity->focaly = limbs[HUMAN][9][1] - 4.75;
-						entity->focalz = limbs[HUMAN][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-				}
 				else
 				{
 					if ( entity->sprite <= 0 )
@@ -2850,6 +2870,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case 10:

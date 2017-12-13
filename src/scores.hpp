@@ -38,7 +38,7 @@ extern bool conductFoodless;
 extern bool conductVegetarian;
 extern bool conductIlliterate;
 extern list_t booksRead;
-extern bool usedClass[10];
+extern bool usedClass[NUMCLASSES];
 extern Uint32 loadingsavegame;
 
 score_t* scoreConstructor();

@@ -144,7 +144,7 @@ void Entity::actChest()
 				{
 					//And add the current entity to it.
 					int itemnum = rand() % NUMITEMS;
-					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 4 )
+					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 5 )
 					{
 						//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
 						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
@@ -266,7 +266,7 @@ void Entity::actChest()
 					}
 					break;
 					case 2:
-						//A weapon and an armor.
+						//A weapon and an armor, chance of thrown.
 					{
 						int item = rand() % 18;
 						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
@@ -316,6 +316,14 @@ void Entity::actChest()
 						{
 							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
+
+						// try for thrown items.
+						itemcount = 0 + rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+						}
 					}
 					break;
 					case 3:
@@ -328,6 +336,13 @@ void Entity::actChest()
 				switch ( rand() % 3 )
 				{
 					case 0:
+						itemcount = rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(TOOL_BEARTRAP, durability, 0, 1 + rand() % 3, rand(), false, inventory);
+						}
+						// fall through
 					case 1:
 						itemcount = 1 + rand() % 2;
 						for (i = 0; i < itemcount; ++i)
@@ -340,7 +355,7 @@ void Entity::actChest()
 						for ( i = 0; i < itemcount; ++i )
 						{
 							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
-							newItem(itemLevelCurve(THROWN), durability, 0, 2 + rand() % 2, rand(), false, inventory);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 						break;
 					default:
@@ -1144,7 +1159,7 @@ void Entity::lockChest()
 
 void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
-	chestHealth -= damage; //Decrease door health.
+	chestHealth -= damage; //Decrease chest health.
 	if ( caster )
 	{
 		if ( caster->behavior == &actPlayer )

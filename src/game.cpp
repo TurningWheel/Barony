@@ -2544,9 +2544,9 @@ int main(int argc, char** argv)
 				{
 					if (strcmp(classtoquickstart, ""))
 					{
-						for ( c = 0; c < 10; c++ )
+						for ( c = 0; c < NUMCLASSES; c++ )
 						{
-							if ( !strcmp(classtoquickstart, language[1900 + c]) )
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c)) )
 							{
 								client_classes[0] = c;
 								break;
@@ -2741,6 +2741,7 @@ int main(int argc, char** argv)
 							selectedShopSlot = -1;
 						}
 						attributespage = 0;
+						//proficienciesPage = 0;
 						if (openedChest[clientnum])
 						{
 							openedChest[clientnum]->closeChest();
@@ -2873,6 +2874,7 @@ int main(int argc, char** argv)
 						{
 							shootmode = false;
 							attributespage = 0;
+							//proficienciesPage = 0;
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))

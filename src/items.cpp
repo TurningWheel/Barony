@@ -409,7 +409,7 @@ dungeon level and defined level of the item
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemLevelCurve(Category cat)
+ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 {
 	int numitems = NUMITEMS;
 	bool chances[NUMITEMS];
@@ -427,7 +427,7 @@ ItemType itemLevelCurve(Category cat)
 		chances[c] = false;
 		if ( items[c].category == cat )
 		{
-			if ( items[c].level != -1 && (items[c].level <= currentlevel) )
+			if ( items[c].level != -1 && (items[c].level >= minLevel && items[c].level <= maxLevel) )
 			{
 				chances[c] = true;
 				numoftype++;
@@ -1651,6 +1651,7 @@ void useItem(Item* item, int player)
 		case WIZARD_DOUBLET:
 		case HEALER_DOUBLET:
 		case ARTIFACT_BREASTPIECE:
+		case TUNIC:
 			equipItem(item, &stats[player]->breastplate, player);
 			break;
 		case HAT_PHRYGIAN:
@@ -2422,11 +2423,31 @@ Sint32 Item::weaponGetAttack() const
 	{
 		attack += 7;
 	}
+	else if ( type == BRONZE_TOMAHAWK )
+	{
+		attack += 2;
+	}
+	else if ( type == IRON_DAGGER )
+	{
+		attack += 4;
+	}
+	else if ( type == STEEL_CHAKRAM )
+	{
+		attack += 6;
+	}
+	else if ( type == CRYSTAL_SHURIKEN )
+	{
+		attack += 8;
+	}
 	// old formula
 	//attack *= (double)(status / 5.0);
 	//
-	// new formula
-	attack += status - 3;
+	if ( itemCategory(this) != TOOL && itemCategory(this) != THROWN && itemCategory(this) != GEM && itemCategory(this) != POTION )
+	{
+		// new formula
+		attack += status - 3;
+	}
+
 	return attack;
 }
 
@@ -2798,7 +2819,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemLevelCurve(static_cast<Category>(category - 1));
+					itemId = itemLevelCurve(static_cast<Category>(category - 1), 0, currentlevel);
 				}
 				else
 				{
@@ -2809,11 +2830,11 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(WEAPON));
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON), 0, currentlevel);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(ARMOR));
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR), 0, currentlevel);
 						}
 					}
 					else if ( category == 15 )
@@ -2822,11 +2843,11 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(AMULET));
+							itemId = itemLevelCurve(static_cast<Category>(AMULET), 0, currentlevel);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(RING));
+							itemId = itemLevelCurve(static_cast<Category>(RING), 0, currentlevel);
 						}
 					}
 					else if ( category == 16 )
@@ -2835,15 +2856,15 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SCROLL));
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL), 0, currentlevel);
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF), 0, currentlevel);
 						}
 						else
 						{
-							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK));
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK), 0, currentlevel);
 						}
 					}
 				}

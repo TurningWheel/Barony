@@ -279,11 +279,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool waterwalkingboots = false;
 	if (!trap)
 	{
-		if (stat->shoes != NULL)
+		if ( player >= 0 && skillCapstoneUnlocked(player, PRO_SWIMMING) )
+		{
+			waterwalkingboots = true;
+		}
+		if ( stat->shoes != NULL )
+		{
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
 			{
 				waterwalkingboots = true;
 			}
+		}
 	}
 
 	node_t* node2; //For traversing the map looking for...liquids?
@@ -1148,13 +1154,62 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	//Random chance to level up spellcasting skill.
-	if (rand() % 4 == 0)
+	if ( !trap )
 	{
-		caster->increaseSkill(PRO_SPELLCASTING);
-	}
-	if (rand() % 5 == 0)
-	{
-		caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+		if ( using_magicstaff )
+		{
+			if ( rand() % 6 == 0 ) //16.67%
+			{
+				caster->increaseSkill(PRO_SPELLCASTING);
+			}
+			if ( rand() % 7 == 0 ) //14.2%
+			{
+				caster->increaseSkill(PRO_MAGIC);
+			}
+		}
+		else
+		{
+			if ( stat )
+			{
+				int spellCastChance = 5; // 20%
+				int magicChance = 6; // 16.67%
+				int castDifficulty = stat->PROFICIENCIES[PRO_SPELLCASTING] / 20 - spell->difficulty / 20;
+				if ( castDifficulty <= -1 )
+				{
+					// spell was harder.
+					spellCastChance = 3; // 33%
+					magicChance = 3; // 33%
+				}
+				else if ( castDifficulty == 0 )
+				{
+					// spell was same level
+					spellCastChance = 3; // 33%
+					magicChance = 4; // 25%
+				}
+				else if ( castDifficulty == 1 )
+				{
+					// spell was easy.
+					spellCastChance = 4; // 25%
+					magicChance = 5; // 20%
+				}
+				else if ( castDifficulty > 1 )
+				{
+					// piece of cake!
+					spellCastChance = 6; // 16.67%
+					magicChance = 7; // 14.2%
+				}
+				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
+				if ( rand() % spellCastChance == 0 )
+				{
+					caster->increaseSkill(PRO_SPELLCASTING);
+				}
+				if ( rand() % magicChance == 0 )
+				{
+					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+				}
+			}
+		}
+		
 	}
 
 	if (spell_isChanneled(spell) && !using_magicstaff)   //TODO: What about magic traps and channeled spells?

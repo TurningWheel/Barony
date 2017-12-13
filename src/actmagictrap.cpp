@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: actboulder.cpp
-	Desc: implements boulder and boulder trap code
+	File: actmagictrap.cpp
+	Desc: implements magic trap code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.

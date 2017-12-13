@@ -18,7 +18,8 @@ See LICENSE for details.
 #include "magic/magic.hpp"
 
 // Constructor
-Stat::Stat(Sint32 sprite)
+Stat::Stat(Sint32 sprite) :
+	sneaking(MISC_FLAGS[1])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
@@ -307,7 +308,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SHOPKEEPER;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, language[158 + rand() % 26]);
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 300;
