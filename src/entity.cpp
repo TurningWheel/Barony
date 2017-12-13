@@ -175,7 +175,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	pistonCamRotateSpeed(fskill[0]),
 	arrowPower(skill[3]),
 	arrowPoisonTime(skill[4]),
-	arrowArmorPierce(skill[5])
+	arrowArmorPierce(skill[5]),
+	actmagicIsVertical(skill[6])
 {
 	int c;
 	// add the entity to the entity list
@@ -4706,9 +4707,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = true;
 							}
 
-							if ( myStats->type == SHADOW )
+							if ( myStats->type == SHADOW || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
-								degradeWeapon = false; //Shadow's weapons don't degrade.
+								degradeWeapon = false; //certain monster's weapons don't degrade.
 							}
 
 							if ( degradeWeapon )
@@ -7182,6 +7183,11 @@ int Entity::getAttackPose() const
 					break;
 				case 1:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
+					++monsterLichFireMeleeSeq;
+					break;
+				case 2:
+					pose = MONSTER_POSE_SPECIAL_WINDUP1;
+					monsterLichFireMeleeSeq = 0;
 					break;
 				default:
 					break;

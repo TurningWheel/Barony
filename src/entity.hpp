@@ -311,6 +311,9 @@ public:
 	Sint32& arrowPoisonTime; //skill[4]
 	Sint32& arrowArmorPierce; //skill[5]
 
+	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
+	Sint32& actmagicIsVertical; //skill[6]
+	
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
@@ -636,6 +639,9 @@ public:
 	 * Calculations for reductions is outlined in this function
 	 */
 	void SetEntityOnFire();
+
+	// special magic functions/trickery
+	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

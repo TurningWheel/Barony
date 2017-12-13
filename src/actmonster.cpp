@@ -141,8 +141,8 @@ double sightranges[NUMMONSTERS] =
 	512,  // LICH_FIRE
 };
 
-int monsterGlobalAnimationMultiplier = 5;
-int monsterGlobalAttackTimeMultiplier = 2;
+int monsterGlobalAnimationMultiplier = 10;
+int monsterGlobalAttackTimeMultiplier = 1;
 
 /*-------------------------------------------------------------------------------
 

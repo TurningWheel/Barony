@@ -463,7 +463,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			Sint32 entityHealth = 0;
 			double dist = 0.f;
 			bool hitFromAbove = false;
-			if ( parent && parent->behavior == &actMagicTrapCeiling )
+			if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical )
 			{
 				// moving vertically.
 				my->z += my->vel_z;
@@ -627,7 +627,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
-						if ( parent && parent->behavior == &actMagicTrapCeiling )
+						if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical )
 						{
 							// this missile came from the ceiling, let's redirect it..
 							my->x = hit.entity->x + cos(hit.entity->yaw);
@@ -3175,7 +3175,7 @@ bool Entity::magicFallingCollision()
 		{
 			continue;
 		}
-		if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] )
+		if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
 		{
 			hit.entity = entity;
 			//hit.side = HORIZONTAL;
@@ -3184,4 +3184,24 @@ bool Entity::magicFallingCollision()
 	}
 
 	return false;
+}
+
+void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection)
+{
+	spell_t* spell = getSpellFromID(spellID);
+	Entity* entity = castSpell(getUID(), spell, false, true);
+	if ( entity )
+	{
+		entity->x = x + distFromCaster * cos(yaw + angleFromCasterDirection);
+		entity->y = y + distFromCaster * sin(yaw + angleFromCasterDirection);
+		entity->z = -25;
+		double missile_speed = 4 * ((double)(((spellElement_t*)(spell->elements.first->element))->mana) 
+			/ ((spellElement_t*)(spell->elements.first->element))->overload_multiplier);
+		entity->vel_x = 0.0;
+		entity->vel_y = 0.0;
+		entity->vel_z = 0.5 * (missile_speed);
+		entity->pitch = PI / 2;
+		entity->actmagicIsVertical = 1;
+		spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+	}
 }

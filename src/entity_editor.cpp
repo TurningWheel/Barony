@@ -150,7 +150,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	pistonCamRotateSpeed(fskill[0]),
 	arrowPower(skill[3]),
 	arrowPoisonTime(skill[4]),
-	arrowArmorPierce(skill[5])
+	arrowArmorPierce(skill[5]),
+	actmagicIsVertical(skill[6])
 {
 	int c;
 	// add the entity to the entity list

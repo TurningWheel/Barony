@@ -19,6 +19,13 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
+
+static const int LICH_BODY = 0;
+static const int LICH_RIGHTARM = 2;
+static const int LICH_LEFTARM = 3;
+static const int LICH_HEAD = 4;
+static const int LICH_WEAPON = 5;
 
 void initLichFire(Entity* my, Stat* myStats)
 {
@@ -263,11 +270,19 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 	Entity* entity = nullptr, *entity2 = nullptr;
 	Entity* rightbody = nullptr;
 	Entity* weaponarm = nullptr;
+	Entity* head = nullptr;
 	int bodypart;
 	bool wearingring = false;
 
 	// remove old light field
 	my->removeLightField();
+
+	// obtain head entity
+	node = list_Node(&my->children, LICH_HEAD);
+	if ( node )
+	{
+		head = (Entity*)node->element;
+	}
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
@@ -289,12 +304,12 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for ( node = my->children.first; node != nullptr; node = node->next )
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LICH_RIGHTARM )
 				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LICH_WEAPON )
 				{
 					break;
 				}
@@ -314,12 +329,12 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for ( node = my->children.first; node != nullptr; node = node->next )
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LICH_RIGHTARM )
 				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LICH_WEAPON )
 				{
 					break;
 				}
@@ -342,15 +357,27 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 			my->skill[27] = 1;
 			serverUpdateEntitySkill(my, 27);
 		}*/
-		if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+
+		// passive floating effect, server only.
+		if ( my->monsterAttack == 0 )
 		{
-			my->z = -1.2;
-			my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
-		}
-		if ( dist < 0.1 )
-		{
-			// not moving, float.
-			limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -1.5, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+			if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+			{
+				if ( my->z < -1.2 )
+				{
+					my->z += 0.25;
+				}
+				else
+				{
+					my->z = -1.2;
+					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+			}
+			if ( dist < 0.1 )
+			{
+				// not moving, float.
+				limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -1.5, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+			}
 		}
 	}
 	else
@@ -362,27 +389,51 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 	}
 
 	// move arms
-	Entity* rightarm = NULL;
+	Entity* rightarm = nullptr;
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LICH_RIGHTARM )
 		{
+			if ( bodypart == 0 ) // insert head/body animation here.
+			{
+				if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+				{
+					if ( multiplayer != CLIENT && my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
+					{
+						// handle z movement on windup
+						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.2, -0.6, 0.1, -3.2, ANIMATE_DIR_POSITIVE); // default z is -1.2
+					}
+				}
+				else if ( my->monsterAttack != MONSTER_POSE_SPECIAL_WINDUP1 )
+				{
+					if ( head->pitch > PI )
+					{
+						limbAnimateToLimit(head, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+					}
+				}
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		if ( bodypart != 4 )
+		if ( bodypart != LICH_HEAD )
 		{
+			// lich head turns to track player, other limbs will rotate as normal.
 			entity->yaw = my->yaw;
 		}
-		if ( bodypart == 2 )
+		else
 		{
+
+		}
+		if ( bodypart == LICH_RIGHTARM )
+		{
+			// weapon holding arm.
 			weaponarm = entity;
-			if ( !MONSTER_ATTACK )
+			if ( my->monsterAttack == 0 )
 			{
-				entity->pitch = PI / 8;
+				entity->pitch = PI / 8; // default arm pitch when not attacking.
 			}
 			else
 			{
@@ -392,8 +443,6 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					if ( my->monsterAttackTime == 0 )
 					{
 						// init rotations
-						//weaponarm->pitch = 0;
-						//my->monsterArmbended = 0;
 						my->monsterWeaponYaw = 0;
 						weaponarm->roll = 0;
 						weaponarm->skill[1] = 0;
@@ -412,17 +461,16 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				// vertical chop attack
 				else if ( my->monsterAttack == 1 )
 				{
-					if ( weaponarm->pitch >= 3 * PI / 2 )
-					{
-						//my->monsterArmbended = 1;
-					}
-
 					if ( weaponarm->skill[1] == 0 )
 					{
 						// chop forwards
 						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 2, false, 0.0) )
 						{
 							weaponarm->skill[1] = 1;
+						}
+						if ( my->z < -1.2 )
+						{
+							my->z += 0.25;
 						}
 					}
 					else if ( weaponarm->skill[1] == 1 )
@@ -432,9 +480,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 							my->monsterWeaponYaw = 0;
 							weaponarm->pitch = PI / 8;
 							weaponarm->roll = 0;
-							//my->monsterArmbended = 0;
 							my->monsterAttack = 0;
-							//returnWeaponarmToNeutral(weaponarm, rightbody);
 						}
 					}
 				}
@@ -446,7 +492,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						weaponarm->pitch = PI / 4;
 						weaponarm->roll = 0;
-						my->monsterArmbended = 1;
+						my->monsterArmbended = 1; // don't actually bend the arm, we're just using this to adjust the limb offsets in the weapon code.
 						weaponarm->skill[1] = 0;
 						my->monsterWeaponYaw = 6 * PI / 4;
 					}
@@ -500,12 +546,50 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 											break;
 										case 1:
 											//my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
-											my->monsterLichFireMeleeSeq = 0;
+											//my->monsterLichFireMeleeSeq = 0;
+
+											//my->castFallingMagicMissile(SPELL_FIREBALL, 32.0, 0.0);
 											break;
 										default:
 											break;
 									}
 								}
+							}
+						}
+					}
+				}
+				else if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+				{
+					if ( my->monsterAttackTime == 0 )
+					{
+						// init rotations
+						my->monsterWeaponYaw = 0;
+						weaponarm->roll = 0;
+						weaponarm->skill[1] = 0;
+						createParticleDot(my);
+						if ( multiplayer != CLIENT )
+						{
+							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+							// lich can't be paralyzed, use EFF_STUNNED instead.
+							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+						}
+					}
+
+					// only do the following during 2nd + end stage of overshoot animation.
+					if ( my->monsterAnimationLimbOvershoot != ANIMATE_OVERSHOOT_TO_SETPOINT )
+					{
+						limbAnimateToLimit(head, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.05);
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= 50 / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(1, 0, nullptr);
+								my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, 0.0);
+								my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, PI / 2);
+								my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, -PI / 2);
 							}
 						}
 					}
@@ -530,46 +614,58 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				}*/
 			}
 		}
-		else if ( bodypart == 3 )
+		else if ( bodypart == LICH_LEFTARM )
 		{
-			//entity->pitch = weaponarm->pitch;
+			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+			{
+				entity->pitch = weaponarm->pitch;
+			}
+			else
+			{
+				entity->pitch = 0;
+			}
 		}
 		switch ( bodypart )
 		{
 			// right arm
-			case 2:
+			case LICH_RIGHTARM:
 				entity->x += 2.75 * cos(my->yaw + PI / 2);
 				entity->y += 2.75 * sin(my->yaw + PI / 2);
 				entity->z -= 3.25;
 				entity->yaw += MONSTER_WEAPONYAW;
 				break;
 			// left arm
-			case 3:
+			case LICH_LEFTARM:
 				entity->x -= 2.75 * cos(my->yaw + PI / 2);
 				entity->y -= 2.75 * sin(my->yaw + PI / 2);
 				entity->z -= 3.25;
-				entity->yaw -= MONSTER_WEAPONYAW;
+				if ( my->monsterAttack != MONSTER_POSE_MELEE_WINDUP2
+					&& my->monsterAttack != 2 )
+				{
+					entity->yaw -= MONSTER_WEAPONYAW;
+				}
 				break;
 			// head
-			case 4:
+			case LICH_HEAD:
 			{
 				entity->z -= 4.25;
 				node_t* tempNode;
 				Entity* playertotrack = NULL;
+				double disttoplayer = 0.0;
 				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer )
 					{
-						double disttoplayer = entityDist(my, tempEntity);
+						disttoplayer = entityDist(my, tempEntity);
 						if ( disttoplayer < lowestdist )
 						{
 							playertotrack = tempEntity;
 						}
 					}
 				}
-				if ( playertotrack && !MONSTER_ATTACK )
+				if ( playertotrack && my->monsterAttack == 0 )
 				{
 					double tangent = atan2( playertotrack->y - entity->y, playertotrack->x - entity->x );
 					double dir = entity->yaw - tangent;
@@ -603,11 +699,13 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
+					// align head as normal if attacking.
 					entity->yaw = my->yaw;
 				}
 				break;
 			}
-			case 5:
+			case LICH_WEAPON:
+				// set sprites, invisibility check etc.
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -652,9 +750,10 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
+
+				// animation
 				if ( entity != nullptr )
 				{
-					//my->handleHumanoidWeaponLimb(entity, weaponarm);
 					if ( weaponarm == nullptr )
 					{
 						return;
@@ -667,6 +766,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					entity->roll = weaponarm->roll;
 					if ( my->monsterAttack == 2 || my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 					{
+						// don't boost pitch during side-swipe
 					}
 					else
 					{
@@ -678,6 +778,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					entity->focalz = limbs[LICH_FIRE][4][2];
 					if ( my->monsterArmbended )
 					{
+						// adjust focal points during side swing
 						entity->focalx = limbs[LICH_FIRE][4][0] - 0.8;
 						entity->focalz = limbs[LICH_FIRE][4][2] + 1;
 						entity->pitch += cos(weaponarm->roll) * PI / 2;
@@ -689,13 +790,13 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
+	if ( my->monsterAttack > 0 && my->monsterAttack <= MONSTER_POSE_MAGIC_CAST3 )
 	{
-		MONSTER_ATTACKTIME++;
+		my->monsterAttackTime++;
 	}
-	else if ( MONSTER_ATTACK == 0 )
+	else if ( my->monsterAttack == 0 )
 	{
-		MONSTER_ATTACKTIME = 0;
+		my->monsterAttackTime = 0;
 	}
 	else
 	{
