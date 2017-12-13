@@ -32,6 +32,7 @@ SDL_Surface* hunger_bmp = NULL;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
+int proficienciesPage = 0;
 Item* invitems[4];
 Item* invitemschest[4];
 int inventorycategory = 7; // inventory window defaults to wildcard
@@ -1133,4 +1134,5 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode)
 	mousex = xres / 2;
 	mousey = yres / 2;
 	attributespage = 0;
+	//proficienciesPage = 0;
 }

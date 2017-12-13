@@ -215,15 +215,15 @@ int monsterCurve(int level)
 				return SCARAB;
 			case 7:
 			case 8:
-			case 9:
 				return AUTOMATON;
+			case 9:
 			case 10:
 			case 11:
-				return CRYSTALGOLEM;
 			case 12:
+				return INSECTOID;
 			case 13:
 			case 14:
-				return INSECTOID;
+				return CRYSTALGOLEM;
 			case 15:
 			case 16:
 			case 17:
@@ -909,7 +909,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
-				messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
+				//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
 				subRoomDoorNode = subRoomNode->next;
@@ -928,7 +928,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
 								foundSubRoom = 1;
-								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
+								//messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
@@ -1603,7 +1603,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		forcedDecorationSpawns = genDecorationMin + prng_get_uint() % std::max(genDecorationMax - genDecorationMin, 1);
 	}
 
-	messagePlayer(0, "Num locations: %d of %d possible, force monsters: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedLootSpawns, forcedDecorationSpawns);
+	//messagePlayer(0, "Num locations: %d of %d possible, force monsters: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedLootSpawns, forcedDecorationSpawns);
 	printlog("Num locations: %d of %d possible, force monsters: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedLootSpawns, forcedDecorationSpawns);
 	int numGenItems = 0;
 	int numGenGold = 0;
@@ -1735,7 +1735,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
 						{
-							entity = newEntity(27, 1, map.entities);  // human
+							if ( currentlevel > 15 )
+							{
+								entity = newEntity(93, 1, map.entities);  // automaton
+								entity->monsterStoreType = 1; // weaker version
+							}
+							else
+							{
+								entity = newEntity(27, 1, map.entities);  // human
+							}
 						}
 						else
 						{
@@ -1877,7 +1885,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 							{
 								if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
 								{
-									entity = newEntity(27, 1, map.entities);  // human
+									if ( currentlevel > 15 )
+									{
+										entity = newEntity(93, 1, map.entities);  // automaton
+										entity->monsterStoreType = 1; // weaker version
+									}
+									else
+									{
+										entity = newEntity(27, 1, map.entities);  // human
+									}
 								}
 								else
 								{
@@ -1979,7 +1995,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
-	messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
+	//messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
 }
 
@@ -2923,6 +2939,13 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[AUTOMATON][0][0]; // 0
 						entity->focaly = limbs[AUTOMATON][0][1]; // 0
 						entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
+						if ( entity->monsterStoreType == 1 )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "damaged automaton");
+							}
+						}
 						break;
 					case LICH_ICE:
 						entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
@@ -3951,15 +3974,15 @@ void assignActions(map_t* map)
 			// set beartrap
 			case 107:
 			{
-				entity->skill[0] = 1; // so everything knows I'm a chair
+				entity->skill[0] = 0;
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6.75;
 
-				entity->focalz = -5;
-				entity->sprite = 98;
+				//entity->focalz = -5;
+				entity->sprite = 668;
 
 				entity->behavior = &actBeartrap;
 				entity->flags[PASSABLE] = true;
@@ -3970,7 +3993,7 @@ void assignActions(map_t* map)
 				}
 				entity->roll = -PI / 2; // flip the model
 
-				entity->skill[11] = EXCELLENT; //status
+				entity->skill[11] = DECREPIT; //status
 				entity->skill[12] = 0; //beatitude
 				entity->skill[13] = 1; //qty
 				entity->skill[14] = 0; //appearance
@@ -4334,17 +4357,17 @@ void assignActions(map_t* map)
 						tempNode->deconstructor = &emptyDeconstructor;
 						tempNode->size = sizeof(Entity*);
 
-						childEntity = newEntity(645, 1, map->entities);
-						childEntity->parent = entity->getUID();
-						childEntity->x = entity->x;
-						childEntity->y = entity->y;
-						childEntity->z = 8.24;
-						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						childEntity->flags[PASSABLE] = true;
-						tempNode = list_AddNodeLast(&entity->children);
-						tempNode->element = childEntity; // add the node to the children list.
-						tempNode->deconstructor = &emptyDeconstructor;
-						tempNode->size = sizeof(Entity*);
+						//childEntity = newEntity(645, 1, map->entities);
+						//childEntity->parent = entity->getUID();
+						//childEntity->x = entity->x;
+						//childEntity->y = entity->y;
+						//childEntity->z = 8.24;
+						////printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						//childEntity->flags[PASSABLE] = true;
+						//tempNode = list_AddNodeLast(&entity->children);
+						//tempNode->element = childEntity; // add the node to the children list.
+						//tempNode->deconstructor = &emptyDeconstructor;
+						//tempNode->size = sizeof(Entity*);
 					}
 				}
 				break;

@@ -1141,7 +1141,7 @@ void initClass(int player)
 		}
 	}
 	// sexton
-	if ( client_classes[player] == 10 )
+	else if ( client_classes[player] == 10 )
 	{
 		// attributes
 		stats[player]->STR -= 1;
@@ -1263,7 +1263,7 @@ void initClass(int player)
 		}
 	}
 	// ninja
-	if ( client_classes[player] == 11 )
+	else if ( client_classes[player] == 11 )
 	{
 		// attributes
 		stats[player]->STR -= 1;
@@ -1377,7 +1377,7 @@ void initClass(int player)
 		}
 	}
 	// monk
-	if ( client_classes[player] == 12 )
+	else if ( client_classes[player] == 12 )
 	{
 		// attributes
 		stats[player]->STR += 1;

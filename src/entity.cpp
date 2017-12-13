@@ -548,6 +548,55 @@ int Entity::entityLight()
 
 /*-------------------------------------------------------------------------------
 
+Entity::entityLightAfterReductions
+
+Returns new entities' illumination,  
+after reductions depending on the entity stats and another entity observing
+
+-------------------------------------------------------------------------------*/
+
+int Entity::entityLightAfterReductions(Stat& myStats, Entity& observer)
+{
+	int player = -1;
+	int light = entityLight(); // max 255 light to start with.
+	if ( !isInvisible() )
+	{
+		if ( behavior == &actPlayer )
+		{
+			player = skill[2];
+			if ( player > -1 )
+			{
+				if ( stats[player]->shield )
+				{
+					if ( itemCategory(stats[player]->shield) == ARMOR )
+					{
+						light -= 95;
+					}
+				}
+				else
+				{
+					light -= 95;
+				}
+				if ( stats[player]->sneaking == 1 )
+				{
+					light -= 64;
+				}
+			}
+		}
+		// reduce light level 0-200 depending on target's stealth.
+		// add light level 0-150 for PER 0-30
+		light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer.getPER() * 5;
+	}
+	else
+	{
+		light = TOUCHRANGE;
+	}
+	light = std::max(light, 0);
+	return light;
+}
+
+/*-------------------------------------------------------------------------------
+
 Entity::effectTimes
 
 Counts down effect timers and toggles effects whose timers reach zero
@@ -2042,45 +2091,49 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		// inform clients of stat changes
-		if ( multiplayer == SERVER && player > 0 )
+		if ( multiplayer == SERVER )
 		{
-			strcpy((char*)net_packet->data, "ATTR");
-			net_packet->data[4] = clientnum;
-			net_packet->data[5] = (Sint8)myStats->STR;
-			net_packet->data[6] = (Sint8)myStats->DEX;
-			net_packet->data[7] = (Sint8)myStats->CON;
-			net_packet->data[8] = (Sint8)myStats->INT;
-			net_packet->data[9] = (Sint8)myStats->PER;
-			net_packet->data[10] = (Sint8)myStats->CHR;
-			net_packet->data[11] = (Sint8)myStats->EXP;
-			net_packet->data[12] = (Sint8)myStats->LVL;
-			SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
-			SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
-			SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
-			SDLNet_Write16((Sint16)myStats->MAXMP, &net_packet->data[19]);
-			net_packet->address.host = net_clients[player - 1].host;
-			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 21;
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			if ( player > 0 )
+			{
+				strcpy((char*)net_packet->data, "ATTR");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = (Sint8)myStats->STR;
+				net_packet->data[6] = (Sint8)myStats->DEX;
+				net_packet->data[7] = (Sint8)myStats->CON;
+				net_packet->data[8] = (Sint8)myStats->INT;
+				net_packet->data[9] = (Sint8)myStats->PER;
+				net_packet->data[10] = (Sint8)myStats->CHR;
+				net_packet->data[11] = (Sint8)myStats->EXP;
+				net_packet->data[12] = (Sint8)myStats->LVL;
+				SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
+				SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
+				SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
+				SDLNet_Write16((Sint16)myStats->MAXMP, &net_packet->data[19]);
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 21;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
-			strcpy((char*)net_packet->data, "LVLI");
-			net_packet->data[4] = clientnum;
-			net_packet->data[5] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_STR];
-			net_packet->data[6] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_DEX];
-			net_packet->data[7] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CON];
-			net_packet->data[8] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_INT];
-			net_packet->data[9] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_PER];
-			net_packet->data[10] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CHR];
-			net_packet->data[11] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_STR + NUMSTATS];
-			net_packet->data[12] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_DEX + NUMSTATS];
-			net_packet->data[13] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CON + NUMSTATS];
-			net_packet->data[14] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_INT + NUMSTATS];
-			net_packet->data[15] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_PER + NUMSTATS];
-			net_packet->data[16] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CHR + NUMSTATS];
-			net_packet->address.host = net_clients[player - 1].host;
-			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 17;
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				strcpy((char*)net_packet->data, "LVLI");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_STR];
+				net_packet->data[6] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_DEX];
+				net_packet->data[7] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CON];
+				net_packet->data[8] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_INT];
+				net_packet->data[9] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_PER];
+				net_packet->data[10] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CHR];
+				net_packet->data[11] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_STR + NUMSTATS];
+				net_packet->data[12] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_DEX + NUMSTATS];
+				net_packet->data[13] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CON + NUMSTATS];
+				net_packet->data[14] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_INT + NUMSTATS];
+				net_packet->data[15] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_PER + NUMSTATS];
+				net_packet->data[16] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CHR + NUMSTATS];
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 17;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
 		for ( i = 0; i < NUMSTATS; i++ )
@@ -2878,7 +2931,7 @@ Sint32 Entity::getAttack()
 		return 0;
 	}
 
-	attack = 8; // base attack strength
+	attack = BASE_MELEE_DAMAGE; // base attack strength
 	if ( entitystats->weapon != nullptr )
 	{
 		attack += entitystats->weapon->weaponGetAttack();
@@ -2890,20 +2943,91 @@ Sint32 Entity::getAttack()
 		{
 			if ( entitystats->gloves->type == BRASS_KNUCKLES )
 			{
-				attack += 1;
+				attack += 1 + entitystats->gloves->beatitude;
 			}
 			else if ( entitystats->gloves->type == IRON_KNUCKLES )
 			{
-				attack += 2;
+				attack += 2 + entitystats->gloves->beatitude;
 			}
 			else if ( entitystats->gloves->type == SPIKED_GAUNTLETS )
 			{
-				attack += 3;
+				attack += 3 + entitystats->gloves->beatitude;
 			}
+		}
+		if ( entitystats->ring )
+		{
+			attack += 1 + entitystats->ring->beatitude;
 		}
 	}
 	attack += this->getSTR();
 
+	return attack;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::getRangedAttack
+
+returns the ranged attack power of an entity based on dex, ranged weapon, and a
+base number
+
+-------------------------------------------------------------------------------*/
+
+Sint32 Entity::getRangedAttack()
+{
+	Stat* entitystats;
+	int attack = BASE_RANGED_DAMAGE; // base ranged attack strength
+
+	if ( (entitystats = this->getStats()) == nullptr )
+	{
+		return 0;
+	}
+
+	if ( entitystats->weapon )
+	{
+		attack += entitystats->weapon->weaponGetAttack();
+		attack += getDEX();
+		if ( behavior == &actMonster )
+		{
+			attack += getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
+			attack += entitystats->PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack for monsters
+		}
+	}
+	else
+	{
+		return 0;
+	}
+	return attack;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::getThrownAttack
+
+returns the thrown attack power of an entity based on dex, thrown weapon, and a
+base number. For tooltip only.
+
+-------------------------------------------------------------------------------*/
+
+Sint32 Entity::getThrownAttack()
+{
+	Stat* entitystats;
+	int attack = BASE_THROWN_DAMAGE; // base thrown attack strength
+
+	if ( (entitystats = this->getStats()) == nullptr )
+	{
+		return attack;
+	}
+
+	if ( entitystats->weapon )
+	{
+		attack += entitystats->weapon->weaponGetAttack();
+		attack += entitystats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 bonus attack.
+	}
+	else
+	{
+		return 0;
+	}
 	return attack;
 }
 
@@ -2931,19 +3055,6 @@ Sint32 Entity::getBonusAttackOnTarget(Stat& hitstats)
 		{
 			// blessed weapons deal more damage under this effect.
 			bonusAttack += entitystats->weapon->beatitude;
-		}
-	}
-	else if ( entitystats->weapon == nullptr )
-	{
-		// bare handed.
-		if ( entitystats->gloves )
-		{
-			if ( entitystats->gloves->type == BRASS_KNUCKLES
-				|| entitystats->gloves->type == IRON_KNUCKLES
-				|| entitystats->gloves->type == SPIKED_GAUNTLETS )
-			{
-				bonusAttack += entitystats->gloves->beatitude;
-			}
 		}
 	}
 
@@ -4446,7 +4557,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if( hitsuccess )*/
 				{
 					// skill increase
-					if ( weaponskill >= 0 )
+					if ( weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM )
 						if ( rand() % 10 == 0 )
 						{
 							this->increaseSkill(weaponskill);
@@ -4469,6 +4580,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( myStats->type == VAMPIRE && myStats->EFFECTS[EFF_VAMPIRICAURA] )
 					{
 						damage += 5; // 5 bonus damage after reductions.
+					}
+
+					bool backstab = false;
+					bool flanking = false;
+					if ( player >= 0 )
+					{
+						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+						if ( hitAngle >= 0 && hitAngle <= 2 * PI / 3 ) // 120 degree arc
+						{
+							if ( hit.entity->monsterState == MONSTER_STATE_WAIT 
+								|| hit.entity->monsterState == MONSTER_STATE_PATH )
+							{
+								// unaware monster, get backstab damage.
+								backstab = true;
+								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
+								if ( rand() % 4 == 0 )
+								{
+									this->increaseSkill(PRO_STEALTH);
+								}
+							}
+							else if ( rand() % 2 == 0 )
+							{
+								// monster currently engaged in some form of combat maneuver
+								// 1 in 2 chance to flank defenses.
+								flanking = true;
+								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1;
+								if ( rand() % 20 == 0 )
+								{
+									this->increaseSkill(PRO_STEALTH);
+								}
+							}
+						}
 					}
 
 					bool gungnir = false;
@@ -4498,11 +4641,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
 
 					if ( myStats->weapon )
+					{
 						if ( myStats->weapon->type == ARTIFACT_AXE )
+						{
 							if ( rand() % 3 == 0 )
 							{
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
+						}
+					}
 					hit.entity->modHP(-damage); // do the damage
 
 												// write the obituary
@@ -4946,46 +5093,72 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
 					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( hitstats->HP > 0 )
 						{
 							if ( damage > olddamage )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// critical hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[689], MSG_COMBAT);
 							}
 							else
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// normal hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT);
 							}
 							if ( damage == 0 )
 							{
+								// blow bounces off
 								messagePlayer(player, language[691]);
+							}
+							else
+							{
+								if ( flanking )
+								{
+									// flank defenses
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2545], language[2545], MSG_COMBAT);
+								}
+								else if ( backstab )
+								{
+									// backstab on unaware enemy
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
+								}
 							}
 						}
 						else
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+							// HP <= 0
+							if ( backstab )
+							{
+								// assassinate monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2547], MSG_COMBAT);
+							}
+							else
+							{
+								// kill monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+							}
 							awardXP(hit.entity, true, true);
 						}
 					}
 					else
 					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( hitstats->HP > 0 )
 						{
 							if ( damage > olddamage )
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// critical hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[693], MSG_COMBAT);
 							}
 							else
 							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								// normal hit
 								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT);
 							}
 							if ( damage == 0 )
 							{
+								// blow bounces off
 								if ( hitstats->sex )
 								{
 									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[695], MSG_COMBAT);
@@ -4995,11 +5168,33 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, 0xFFFFFFFF, *hitstats, language[691], language[696], MSG_COMBAT);
 								}
 							}
+							else
+							{
+								if ( flanking )
+								{
+									// flank defenses
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2545], language[2546], MSG_COMBAT);
+								}
+								else if ( backstab )
+								{
+									// backstab on unaware enemy
+									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
+								}
+							}
 						}
 						else
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerColor(player, color, language[697], hitstats->name);
+							// HP <= 0
+							if ( backstab )
+							{
+								// assassinate monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2548], MSG_COMBAT);
+							}
+							else
+							{
+								// kill monster
+								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[697], MSG_COMBAT);
+							}
 							awardXP(hit.entity, true, true);
 						}
 					}
@@ -5207,11 +5402,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// apply AoE attack
+					list_t* aoeTargets = nullptr;
+					list_t* shakeTargets = nullptr;
+					Entity* tmpEntity = nullptr;
 					if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
 					{
-						list_t* aoeTargets = nullptr;
-						list_t* shakeTargets = nullptr;
-						Entity* tmpEntity = nullptr;
 						getTargetsAroundEntity(this, hit.entity, STRIKERANGE, PI / 3, MONSTER_TARGET_ENEMY, &aoeTargets);
 						if ( aoeTargets )
 						{
@@ -5254,6 +5449,53 @@ void Entity::attack(int pose, int charge, Entity* target)
 							//Free the list.
 							list_FreeAll(shakeTargets);
 							free(shakeTargets);
+						}
+					}
+					else if ( pose == MONSTER_POSE_AUTOMATON_MALFUNCTION )
+					{
+						getTargetsAroundEntity(this, this, 20, PI, MONSTER_TARGET_ALL, &aoeTargets);
+						if ( aoeTargets )
+						{
+							for ( node = aoeTargets->first; node != NULL; node = node->next )
+							{
+								tmpEntity = (Entity*)node->element;
+								if ( tmpEntity != nullptr )
+								{
+									spawnExplosion(tmpEntity->x, tmpEntity->y, tmpEntity->z);
+									Stat* tmpStats = tmpEntity->getStats();
+									if ( tmpStats )
+									{
+										int explodeDmg = myStats->HP * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										Entity* gib = spawnGib(tmpEntity);
+										serverSpawnGibForClient(gib);
+										playerhit = tmpEntity->skill[2];
+										if ( playerhit > 0 && multiplayer == SERVER )
+										{
+											strcpy((char*)net_packet->data, "SHAK");
+											net_packet->data[4] = 20; // turns into .1
+											net_packet->data[5] = 20;
+											net_packet->address.host = net_clients[playerhit - 1].host;
+											net_packet->address.port = net_clients[playerhit - 1].port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+										}
+										else if ( playerhit == 0 )
+										{
+											camera_shakex += 0.2;
+											camera_shakey += 20;
+										}
+										tmpEntity->modHP(-explodeDmg);
+										if ( playerhit >= 0 )
+										{
+											Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+											messagePlayerColor(playerhit, color, language[2523]);
+										}
+									}
+								}
+							}
+							//Free the list.
+							list_FreeAll(aoeTargets);
+							free(aoeTargets);
 						}
 					}
 					// lifesteal
@@ -5872,12 +6114,9 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actPlayer )
+			if ( entity && entity->behavior == &actPlayer )
 			{
-				double tangent = atan2(entity->y - src->y, entity->x - src->x);
-				lineTrace(src, src->x, src->y, tangent, XPSHARERANGE, 0, false);
-
-				if ( hit.entity == entity )
+				if ( entityDist(this, entity) < XPSHARERANGE )
 				{
 					numshares++;
 					shares[numshares] = entity;
@@ -6809,6 +7048,14 @@ int getWeaponSkill(Item* weapon)
 	if ( weapon->type == BRONZE_AXE || weapon->type == IRON_AXE || weapon->type == STEEL_AXE || weapon->type == ARTIFACT_AXE || weapon->type == CRYSTAL_BATTLEAXE )
 	{
 		return PRO_AXE;
+	}
+	if ( weapon->type == SLING || weapon->type == SHORTBOW || weapon->type == CROSSBOW || weapon->type == ARTIFACT_BOW )
+	{
+		return PRO_RANGED;
+	}
+	if ( itemCategory(weapon) == THROWN || itemCategory(weapon) == POTION || itemCategory(weapon) == GEM )
+	{
+		return PRO_RANGED;
 	}
 	return -1;
 }
@@ -8536,6 +8783,11 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 		return false;
 	}
 
+	if ( item.status == BROKEN )
+	{
+		return false; // no want broken.
+	}
+
 	switch ( myStats->type )
 	{
 		case GOBLIN:
@@ -9209,17 +9461,12 @@ int Entity::getManaRegenInterval(Stat& myStats)
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 {
 	// get arrow power.
-	int attack = 7; // base ranged attack strength
-	if ( myStats.weapon != nullptr )
+	int attack = marksman.getRangedAttack();
+	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
+	if ( chance > 0 )
 	{
-		attack += myStats.weapon->weaponGetAttack();
+		attack = (attack - chance) + (rand() % chance) + 1;
 	}
-	attack += marksman.getDEX();
-	if ( marksman.behavior == &actMonster )
-	{
-		attack += marksman.getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
-	}
-	attack += myStats.PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack.
 	this->arrowPower = attack;
 
 	// get arrow effects.
@@ -9248,7 +9495,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 	}
 }
 
-/* entity.cpp
+/* SetEntityOnFire
  * Attempts to set the Entity on fire. Entities that are not Burnable or are already on fire will return before any processing
  * Entities that do not have Stats (such as furniture) will return after setting the fire time and chance to stop at max
  * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
@@ -9342,7 +9589,10 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 	}
 
 	bool namedMonsterAsGeneric = false; 
-	if ( strstr(monsterStats.name, "lesser") || strstr(monsterStats.name, "young") || strstr(monsterStats.name, "enslaved") )
+	if ( strstr(monsterStats.name, "lesser") 
+		|| strstr(monsterStats.name, "young") 
+		|| strstr(monsterStats.name, "enslaved")
+		|| strstr(monsterStats.name, "damaged") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		namedMonsterAsGeneric = true;
@@ -9618,4 +9868,22 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			helm->roll = PI / 2;
 		}
 	}
+}
+
+real_t Entity::yawDifferenceFromPlayer(int player)
+{
+	if ( player >= 0 && players[player] && players[player]->entity )
+	{
+		real_t targetYaw = this->yaw;
+		while ( targetYaw >= 2 * PI )
+		{
+			targetYaw -= PI * 2;
+		}
+		while ( targetYaw < 0 )
+		{
+			targetYaw += PI * 2;
+		}
+		return (PI - abs(abs(players[player]->entity->yaw - targetYaw) - PI)) * 2;
+	}
+	return 0.f;
 }
