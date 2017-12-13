@@ -46,8 +46,11 @@ class Entity
 	Sint32& char_energize;
 	Sint32& char_torchtime;
 	Sint32& char_poison;
-	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
-	Sint32& switch_power; //Switch/mechanism power status.
+	Sint32& char_fire;		// skill[36] - Counter for how many ticks Entity will be on fire
+	Sint32& circuit_status;	// Use CIRCUIT_OFF and CIRCUIT_ON.
+	Sint32& switch_power;	// Switch/mechanism power status.
+
+	Sint32& chanceToPutOutFire; // skill[37] - Value between 5 and 10, with 10 being the default starting chance, and 5 being absolute minimum
 
 	//Chest skills.
 	//skill[0]
@@ -88,6 +91,18 @@ class Entity
 
 	// Item skills
 	Sint32& itemNotMoving;
+
+	//### Begin - Private Entity Constants for BURNING Status Effect
+	static const Sint32 MIN_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE *  4; // Minimum time an Entity can be on fire is  4 cycles (120 ticks)
+	static const Sint32 MAX_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE * 20; // Maximum time an Entity can be on fire is 20 cycles (600 ticks)
+	static const Sint32 MIN_CHANCE_STOP_FIRE	= 5;	// Minimum chance an Entity has to stop being on fire is 1 in  5
+	static const Sint32 MAX_CHANCE_STOP_FIRE	= 10;	// Maximum chance an Entity has to stop being on fire is 1 in 10
+
+	// Maximum level of CON needed to get MIN_CHANCE_STOP_FIRE. Every 5 points = 1 increase in chance up to MIN_CHANCE_STOP_FIRE
+	static const Sint32 MAX_CON_FOR_STOP_FIRE = 5 * MIN_CHANCE_STOP_FIRE;	
+	// Maximum level of CON needed to get MIN_TICKS_ON_FIRE. Every 2 points = 1 second decrease in time up to MIN_TICKS_ON_FIRE
+	static const Sint32 MAX_CON_FOR_FIRE_TIME = (2 * (MAX_TICKS_ON_FIRE - MIN_TICKS_ON_FIRE)) / TICKS_TO_PROCESS_FIRE;
+	//### End   - Private Entity Constants for BURNING Status Effect
 
 	static const int CRYSTAL_HOVER_UP = 0;
 	static const int CRYSTAL_HOVER_UP_WAIT = 1;
@@ -611,6 +626,14 @@ public:
 	bool monsterHasSpellbook(int spellbookType);
 	//bool monsterKnowsSpell(int spellID); //TODO: Should monsters use the spell item instead of spellbooks?
 	node_t* chooseAttackSpellbookFromInventory();
+
+	/* entity.cpp
+	 * Attempts to set the Entity on fire. Entities that are not Burnable or are already on fire will return before any processing
+	 * Entities that do not have Stats (such as furniture) will return after setting the fire time and chance to stop at max
+	 * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
+	 * Calculations for reductions is outlined in this function
+	 */
+	void SetEntityOnFire();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
