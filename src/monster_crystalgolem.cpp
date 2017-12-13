@@ -368,9 +368,9 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 0 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
 							}
 						}
@@ -381,9 +381,9 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 1 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 0;
 							}
 						}
@@ -665,6 +665,10 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left leg
 			case 4:
@@ -675,6 +679,10 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
+				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
 				}
 				break;
 			// right arm

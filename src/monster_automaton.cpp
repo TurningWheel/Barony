@@ -43,7 +43,24 @@ void initAutomaton(Entity* my, Stat* myStats)
 			{
 				myStats->leader_uid = 0;
 			}
-
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "damaged automaton", strlen("damaged automaton")) )
+			{
+				lesserMonster = true;
+				myStats->HP = 60;
+				myStats->MAXHP = 115;
+				myStats->RANDOM_MAXHP = 0;
+				myStats->RANDOM_HP = 30;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 13;
+				myStats->DEX = 4;
+				myStats->CON = 8;
+				myStats->INT = -1;
+				myStats->PER = 10;
+				myStats->CHR = -3;
+				myStats->EXP = 0;
+				myStats->LVL = 16;
+			}
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -517,8 +534,29 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->z = -.5;
-			my->pitch = 0;
+			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+			{
+				my->z = -.5;
+				my->pitch = 0;
+			}
+		}
+	}
+
+	if ( my->monsterSpecialState == AUTOMATON_MALFUNCTION_START || my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN )
+	{
+		if ( my->monsterSpecialState == AUTOMATON_MALFUNCTION_START )
+		{
+			my->monsterSpecialState = AUTOMATON_MALFUNCTION_RUN;
+			createParticleExplosionCharge(my, 174, 100, 0.1);
+		}
+		if ( multiplayer != CLIENT )
+		{
+			if ( my->monsterSpecialTimer <= 0 )
+			{
+				my->attack(MONSTER_POSE_AUTOMATON_MALFUNCTION, 0, my);
+				spawnExplosion(my->x, my->y, my->z);
+				my->modHP(-1000);
+			}
 		}
 	}
 
@@ -527,12 +565,46 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			if ( multiplayer != CLIENT )
+			{
+				if ( bodypart == 0 && my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN  )
+				{
+					--my->monsterSpecialTimer;
+					if ( my->monsterSpecialTimer == 100 )
+					{
+						playSoundEntity(my, 321, 128);
+					}
+					if ( my->monsterSpecialTimer < 80 )
+					{
+						my->z += 0.02;
+						limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0.7, true, 0.1);
+					}
+					else
+					{
+						limbAnimateToLimit(my, ANIMATE_PITCH, 0.01, PI / 5, false, 0.0);
+					}
+				}
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
-		entity->z = my->z;
+		if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+		{
+			entity->z = my->z;
+		}
+		else
+		{
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTLEG )
+			{
+				entity->z = -.5;
+			}
+			else
+			{
+				entity->z = my->z;
+			}
+		}
 
 		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || MONSTER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
@@ -545,7 +617,14 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			if ( bodypart == LIMB_HUMANOID_LEFTARM && my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN )
+			{
+				limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 13 * PI / 8, true, 0.1);
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -654,7 +733,14 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN )
+			{
+				limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 13 * PI / 8, true, 0.1);
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			}
 
 			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{

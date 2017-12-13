@@ -253,7 +253,7 @@ void actHudWeapon(Entity* my)
 	// swimming
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots)
+		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
 		{
 			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
@@ -399,7 +399,13 @@ void actHudWeapon(Entity* my)
 	}
 
 	bool swingweapon = false;
-	if (players[clientnum]->entity && (*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) && shootmode && !gamePaused && players[clientnum]->entity->isMobile() && !(*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) && HUDWEAPON_OVERCHARGE < MAXCHARGE)
+	if ( players[clientnum]->entity 
+		&& (*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) 
+		&& shootmode 
+		&& !gamePaused
+		&& players[clientnum]->entity->isMobile() 
+		&& !(*inputPressed(impulses[IN_DEFEND]) && stats[clientnum]->defending || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]) && stats[clientnum]->defending))
+		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
 	{
 		swingweapon = true;
 	}
@@ -1373,6 +1379,7 @@ void actHudWeapon(Entity* my)
 }
 
 #define HUDSHIELD_DEFEND my->skill[0]
+#define HUDSHIELD_SNEAKING my->skill[1]
 #define HUDSHIELD_MOVEX my->fskill[0]
 #define HUDSHIELD_MOVEY my->fskill[1]
 #define HUDSHIELD_MOVEZ my->fskill[2]
@@ -1493,14 +1500,20 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
+	bool sneaking = false;
 	if (!command && !swimming)
 	{
-		if (stats[clientnum]->shield)
+		if (players[clientnum] && players[clientnum]->entity 
+			&& (*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) 
+			&& players[clientnum]->entity->isMobile() 
+			&& !gamePaused 
+			&& !cast_animation.active)
 		{
-			if (players[clientnum] && players[clientnum]->entity && (*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) && hudweapon->skill[0] % 3 == 0 && players[clientnum]->entity->isMobile() && !gamePaused && !cast_animation.active)
+			if ( stats[clientnum]->shield && (hudweapon->skill[0] % 3 == 0) )
 			{
 				defending = true;
 			}
+			sneaking = true;
 		}
 	}
 
@@ -1511,6 +1524,14 @@ void actHudShield(Entity* my)
 	else
 	{
 		stats[clientnum]->defending = false;
+	}
+	if ( sneaking )
+	{
+		stats[clientnum]->sneaking = true;
+	}
+	else
+	{
+		stats[clientnum]->sneaking = false;
 	}
 
 	if (multiplayer == CLIENT)
@@ -1525,8 +1546,19 @@ void actHudShield(Entity* my)
 			net_packet->len = 6;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
+		if ( HUDSHIELD_SNEAKING != sneaking || ticks % 120 == 0 )
+		{
+			strcpy((char*)net_packet->data, "SNEK");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = sneaking;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 6;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
 	}
 	HUDSHIELD_DEFEND = defending;
+	HUDSHIELD_SNEAKING = sneaking;
 
 	// shield switching animation
 	if ( shieldSwitch )
