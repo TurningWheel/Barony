@@ -1054,12 +1054,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity)
 					{
-						if ( hit.entity->flags[BURNABLE] )
-							if ( !hit.entity->flags[BURNING] )
-							{
-								hit.entity->flags[BURNING] = true;
-								serverUpdateEntityFlag(hit.entity, BURNING);
-							}
+						// Attempt to set the Entity on fire
+						hit.entity->SetEntityOnFire();
+
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
