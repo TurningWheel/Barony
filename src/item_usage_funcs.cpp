@@ -1749,7 +1749,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 
 void item_ScrollRepair(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1774,37 +1774,72 @@ void item_ScrollRepair(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if ( stats[player]->weapon != NULL )
+	int armornum = rand() % 7;
+	int startIndex = armornum;
+	bool breakloop = false;
+	while ( !armor && !breakloop )
 	{
-		armor = stats[player]->weapon;
-	}
-	else if ( stats[player]->helmet != NULL )
-	{
-		armor = stats[player]->helmet;
-	}
-	else if ( stats[player]->breastplate != NULL )
-	{
-		armor = stats[player]->breastplate;
-	}
-	else if ( stats[player]->gloves != NULL )
-	{
-		armor = stats[player]->gloves;
-	}
-	else if ( stats[player]->shoes != NULL )
-	{
-		armor = stats[player]->shoes;
-	}
-	else if ( stats[player]->shield != NULL )
-	{
-		armor = stats[player]->shield;
-	}
-	else if ( stats[player]->cloak != NULL )
-	{
-		armor = stats[player]->cloak;
-	}
-	else
-	{
-		armor = NULL;
+		switch ( armornum )
+		{
+			// intentional fall throughs...
+			case 0:
+				if ( stats[player]->weapon != nullptr && stats[player]->weapon->status != EXCELLENT )
+				{
+					armor = stats[player]->weapon;
+					break;
+				}
+			case 1:
+				if ( stats[player]->helmet != nullptr && stats[player]->helmet->status != EXCELLENT )
+				{
+					armor = stats[player]->helmet;
+					break;
+				}
+			case 2:
+				if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->status != EXCELLENT )
+				{
+					armor = stats[player]->breastplate;
+					break;
+				}
+			case 3:
+				if ( stats[player]->gloves != nullptr && stats[player]->gloves->status != EXCELLENT )
+				{
+					armor = stats[player]->gloves;
+					break;
+				}
+			case 4:
+				if ( stats[player]->shoes != nullptr && stats[player]->shoes->status != EXCELLENT )
+				{
+					armor = stats[player]->shoes;
+					break;
+				}
+			case 5:
+				if ( stats[player]->shield != nullptr && stats[player]->shield->status != EXCELLENT )
+				{
+					armor = stats[player]->shield;
+					break;
+				}
+			case 6:
+				if ( stats[player]->cloak != nullptr && stats[player]->cloak->status != EXCELLENT )
+				{
+					armor = stats[player]->cloak;
+					break;
+				}
+				++armornum;
+				if ( armornum > 6 )
+				{
+					// loop back around.
+					armornum = 0;
+				}
+				if ( armornum == startIndex )
+				{
+					// couldn't find a piece of armor, break.
+					breakloop = true;
+					armor = nullptr;
+					break;
+				}
+			default:
+				break;
+		}
 	}
 
 	if ( armor == NULL && player == clientnum )
@@ -1823,7 +1858,7 @@ void item_ScrollRepair(Item* item, int player)
 			{
 				messagePlayer(player, language[872], armor->getName());
 			}
-			armor->status = static_cast<Status>(std::min(armor->status + 1 + item->beatitude, 4));
+			armor->status = static_cast<Status>(std::min(armor->status + 1 + item->beatitude, static_cast<int>(EXCELLENT)));
 		}
 	}
 }
@@ -1855,36 +1890,69 @@ void item_ScrollDestroyArmor(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if ( stats[player]->shield != NULL )
+	int armornum = rand() % 6;
+	int startIndex = armornum;
+	bool breakloop = false;
+	while ( !armor && !breakloop )
 	{
-		armor = stats[player]->shield;
-	}
-	else if ( stats[player]->breastplate != NULL )
-	{
-		armor = stats[player]->breastplate;
-	}
-	else if ( stats[player]->helmet != NULL )
-	{
-		armor = stats[player]->helmet;
-	}
-	else if ( stats[player]->shoes != NULL )
-	{
-		armor = stats[player]->shoes;
-	}
-	else if ( stats[player]->gloves != NULL )
-	{
-		armor = stats[player]->gloves;
-	}
-	else if ( stats[player]->cloak != NULL )
-	{
-		armor = stats[player]->cloak;
-	}
-	else
-	{
-		armor = NULL;
+		switch ( armornum )
+		{
+			// intentional fall throughs...
+			case 0:
+				if ( stats[player]->helmet != nullptr )
+				{
+					armor = stats[player]->helmet;
+					break;
+				}
+			case 1:
+				if ( stats[player]->breastplate != nullptr )
+				{
+					armor = stats[player]->breastplate;
+					break;
+				}
+			case 2:
+				if ( stats[player]->gloves != nullptr )
+				{
+					armor = stats[player]->gloves;
+					break;
+				}
+			case 3:
+				if ( stats[player]->shoes != nullptr )
+				{
+					armor = stats[player]->shoes;
+					break;
+				}
+			case 4:
+				if ( stats[player]->shield != nullptr )
+				{
+					armor = stats[player]->shield;
+					break;
+				}
+			case 5:
+				if ( stats[player]->cloak != nullptr )
+				{
+					armor = stats[player]->cloak;
+					break;
+				}
+				++armornum;
+				if ( armornum > 5 )
+				{
+					// loop back around.
+					armornum = 0;
+				}
+				if ( armornum == startIndex )
+				{
+					// couldn't find a piece of armor, break.
+					breakloop = true;
+					armor = nullptr;
+					break;
+				}
+			default:
+				break;
+		}
 	}
 
-	if ( armor == NULL && player == clientnum )
+	if ( armor == nullptr && player == clientnum )
 	{
 		messagePlayer(player, language[873]);
 	}
@@ -2396,7 +2464,7 @@ void item_ToolBeartrap(Item*& item, int player)
 		consumeItem(item);
 		return;
 	}
-	entity = newEntity(98, 1, map.entities);
+	entity = newEntity(668, 1, map.entities);
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;

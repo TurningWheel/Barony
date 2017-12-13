@@ -124,18 +124,30 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				{
 					if ( rand() % 2 )
 					{
-						newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						if ( rand() % 7 == 0 )
+						{
+							newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						}
 					}
 					else
 					{
-						int i = rand() % 21;
+						int i = rand() % 23;
 						if ( i < 18 )
 						{
 							newItem( static_cast<ItemType>(GLOVES + i), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
 						}
-						else
+						else if ( i < 21 )
 						{
 							newItem( static_cast<ItemType>(GLOVES + i + 4), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
+						}
+						else
+						{
+							// punching armaments
+							newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
 						}
 					}
 				}
@@ -208,7 +220,14 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				// hardware store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					if ( rand() % 6 == 0 )
+					{
+						newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+					}
+					else
+					{
+						newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					}
 				}
 				break;
 			case 8:

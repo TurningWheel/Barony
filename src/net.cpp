@@ -799,6 +799,87 @@ void serverUpdateHunger(int player)
 
 /*-------------------------------------------------------------------------------
 
+serverUpdatePlayerStats
+
+Updates all player current HP/MP for clients
+
+-------------------------------------------------------------------------------*/
+
+void serverUpdatePlayerStats()
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "STAT");
+			Sint32 playerHP = 0;
+			Sint32 playerMP = 0;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( stats[i] )
+				{
+					playerHP = static_cast<Sint16>(stats[i]->MAXHP);
+					playerHP |= static_cast<Sint16>(stats[i]->HP) << 16;
+					playerMP = static_cast<Sint16>(stats[i]->MAXMP);
+					playerMP |= static_cast<Sint16>(stats[i]->MP) << 16;
+				}
+				SDLNet_Write32(playerHP, &net_packet->data[4 + i * 8]); // 4/12/20/28 data
+				SDLNet_Write32(playerMP, &net_packet->data[8 + i * 8]); // 8/16/24/32 data
+				playerHP = 0;
+				playerMP = 0;
+			}
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 36;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+serverUpdatePlayerLVL
+
+Updates all player current LVL for clients
+
+-------------------------------------------------------------------------------*/
+
+void serverUpdatePlayerLVL()
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "UPLV");
+			Sint32 playerLevels = 0;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( stats[i] )
+				{
+					playerLevels |= static_cast<Uint8>(stats[i]->LVL) << (8 * i); // store uint8 in data, highest bits for player 4.
+				}
+			}
+			SDLNet_Write32(playerLevels, &net_packet->data[4]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	receiveEntity
 
 	receives entity data from server
@@ -1009,6 +1090,10 @@ void clientActions(Entity* entity)
 		case 604:
 		case 605:
 			entity->behavior = &actPedestalOrb;
+			break;
+		case 667:
+		case 668:
+			entity->behavior = &actBeartrap;
 			break;
 		default:
 			break;
@@ -1859,6 +1944,31 @@ void clientHandlePacket()
 	{
 		stats[clientnum]->HUNGER = (Sint32)SDLNet_Read32(&net_packet->data[4]);
 		return;
+	}
+
+	// update player stat values
+	else if ( !strncmp((char*)net_packet->data, "STAT", 4) )
+	{
+		Sint32 buffer = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			buffer = (Sint32)SDLNet_Read32(&net_packet->data[4 + i * 8]);
+			stats[i]->MAXHP = buffer & 0xFFFF;
+			stats[i]->HP = (buffer >> 16) & 0xFFFF;
+			buffer = (Sint32)SDLNet_Read32(&net_packet->data[8 + i * 8]);
+			stats[i]->MAXMP = buffer & 0xFFFF;
+			stats[i]->MP = (buffer >> 16) & 0xFFFF;
+		}
+	}
+
+	// update player levels
+	else if ( !strncmp((char*)net_packet->data, "UPLV", 4) )
+	{
+		Sint32 buffer = SDLNet_Read32(&net_packet->data[4]);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			stats[i]->LVL = static_cast<Sint32>((buffer >> (i * 8) ) & 0xFF);
+		}
 	}
 
 	// current game level
@@ -3183,6 +3293,13 @@ void serverHandlePacket()
 		return;
 	}
 
+	// sneaking
+	else if ( !strncmp((char*)net_packet->data, "SNEK", 4) )
+	{
+		stats[net_packet->data[4]]->sneaking = net_packet->data[5];
+		return;
+	}
+
 	// close shop
 	else if (!strncmp((char*)net_packet->data, "SHPC", 4))
 	{
@@ -3480,6 +3597,16 @@ void serverHandlePacket()
 			item->beatitude = 0;
 		}
 		return;
+	}
+
+	// the client asked for a level up
+	else if ( !strncmp((char*)net_packet->data, "CLVL", 4) )
+	{
+		int player = net_packet->data[4];
+		if ( players[player] && players[player]->entity )
+		{
+			players[player]->entity->getStats()->EXP += 100;
+		}
 	}
 }
 

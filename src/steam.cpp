@@ -287,8 +287,11 @@ public:
 	CCallResult<SteamServerClientWrapper, EncryptedAppTicketResponse_t> m_SteamCallResultEncryptedAppTicket;
 	void m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall);
 	void RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort );
+	void GetNumberOfCurrentPlayers();
 
 private:
+	void OnGetNumberOfCurrentPlayers( NumberOfCurrentPlayers_t *pCallback, bool bIOFailure );
+	CCallResult< SteamServerClientWrapper, NumberOfCurrentPlayers_t > m_NumberOfCurrentPlayersCallResult;
 	// simple class to marshal callbacks from pinging a game server
 	class CGameServerPing : public ISteamMatchmakingPingResponse
 	{
@@ -561,6 +564,26 @@ void cpp_SteamServerClientWrapper_Destroy()
 {
 	delete steam_server_client_wrapper;
 	steam_server_client_wrapper = nullptr;
+}
+
+// Make the asynchronous request to receive the number of current players.
+void SteamServerClientWrapper::GetNumberOfCurrentPlayers()
+{
+	//printlog("Getting Number of Current Players\n");
+	SteamAPICall_t hSteamAPICall = SteamUserStats()->GetNumberOfCurrentPlayers();
+	m_NumberOfCurrentPlayersCallResult.Set(hSteamAPICall, this, &SteamServerClientWrapper::OnGetNumberOfCurrentPlayers);
+}
+
+// Called when SteamUserStats()->GetNumberOfCurrentPlayers() returns asynchronously, after a call to SteamAPI_RunCallbacks().
+void SteamServerClientWrapper::OnGetNumberOfCurrentPlayers(NumberOfCurrentPlayers_t *pCallback, bool bIOFailure)
+{
+	if ( bIOFailure || !pCallback->m_bSuccess )
+	{
+		//printlog("NumberOfCurrentPlayers_t failed!\n");
+		return;
+	}
+
+	//printlog("Number of players currently playing: %d\n", pCallback->m_cPlayers);
 }
 
 #endif //defined Steamworks

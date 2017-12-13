@@ -698,7 +698,7 @@ void actPlayer(Entity* my)
 							if ( items[tempItem->type].value < 100 )
 							{
 								// easy junk items
-								appraisalEaseOfDifficulty = 1;
+								appraisalEaseOfDifficulty = 2;
 							}
 							else if ( items[tempItem->type].value < 200 )
 							{
@@ -723,13 +723,13 @@ void actPlayer(Entity* my)
 							appraisalEaseOfDifficulty += stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] / 20;
 							// difficulty ranges from 1-in-1 to 1-in-6
 							appraisalEaseOfDifficulty = std::max(appraisalEaseOfDifficulty, 1);
-							messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
+							//messagePlayer(0, "Appraisal level up chance: 1 in %d", appraisalEaseOfDifficulty);
 							if ( rand() % appraisalEaseOfDifficulty == 0 )
 							{
 								my->increaseSkill(PRO_APPRAISAL);
 							}
 						}
-						else if ( rand() % 6 == 0 )
+						else if ( rand() % 7 == 0 )
 						{
 							my->increaseSkill(PRO_APPRAISAL);
 						}
@@ -1024,7 +1024,7 @@ void actPlayer(Entity* my)
 			}
 			if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
-				if (!stats[clientnum]->defending)
+				if ( !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 				{
 					if (PLAYER_BOBMODE)
 					{
@@ -1053,7 +1053,7 @@ void actPlayer(Entity* my)
 				PLAYER_BOB = 0;
 				PLAYER_BOBMODE = 0;
 			}
-			if ( !swimming && !stats[clientnum]->defending )
+			if ( !swimming && !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 			{
 				if ( PLAYER_BOBMOVE > .2 )
 				{
@@ -1234,7 +1234,9 @@ void actPlayer(Entity* my)
 			{
 				if ( PLAYER_NUM == clientnum && !PLAYER_DEBUGCAM )
 				{
-					PLAYER_TORCH = 3 + my->getPER() / 3;
+					PLAYER_TORCH = 3 + (my->getPER() / 3);
+					// more visible world if defending/sneaking with no shield
+					PLAYER_TORCH += ((stats[PLAYER_NUM]->sneaking == 1) * (2 + (stats[PLAYER_NUM]->PROFICIENCIES[PRO_STEALTH] / 40)));
 				}
 				else
 				{
@@ -1286,6 +1288,11 @@ void actPlayer(Entity* my)
 		if ( !intro )
 		{
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
+			if ( ticks % (TICKS_PER_SECOND * 3) == 0 )
+			{
+				// send update to all clients for global stats[NUMPLAYERS] struct
+				serverUpdatePlayerStats();
+			}
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 )
 			{
 				// remove body parts
@@ -1649,10 +1656,10 @@ void actPlayer(Entity* my)
 			{
 				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
 			}
-			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;

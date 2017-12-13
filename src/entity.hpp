@@ -324,6 +324,7 @@ public:
 	Sint32 getCHR();
 
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
+	int entityLightAfterReductions(Stat& myStats, Entity& observer);
 
 	void handleEffects(Stat* myStats);
 	void handleEffectsClient();
@@ -345,6 +346,8 @@ public:
 
 	Sint32 getAttack();
 	Sint32 getBonusAttackOnTarget(Stat& hitstats);
+	Sint32 getRangedAttack();
+	Sint32 getThrownAttack();
 	bool isBlind();
 	bool isSpellcasterBeginner();
 
@@ -518,7 +521,7 @@ public:
 	int getManaRegenInterval(Stat& myStats); 
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats);
-
+	real_t yawDifferenceFromPlayer(int player); // calc targets yaw compared to a player, returns 0 - 2 * PI, where > PI is facing towards player.
 	spell_t* getActiveMagicEffect(int spellID);
 
 	/*

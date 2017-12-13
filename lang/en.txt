@@ -580,13 +580,13 @@ thou makest use of them.#
 
 # skill levels
 
-363                 none#
-364               novice#
-365                basic#
-366              skilled#
-367               expert#
-368               master#
-369               legend#
+363                  none#
+364                novice#
+365                 basic#
+366               skilled#
+367                expert#
+368                master#
+369                legend#
 
 
 # rest of the character sheet
@@ -3105,12 +3105,44 @@ last of your magic is drained!#
 2514 You pierced %s's armor!#
 2515 The shot pierced your armor!#
 
-## 2516 - ???, More effect messages
+## 2516 - 2528 More effect messages
 2516 You feel as if a part of your essence is seized!#
 2517 You feel as if a sliver of your essence is taken!#
 2518 You feel something tug at your essence and pull itself near...#
 2519 You summon an incubus!#
 2520 Your spell destroys the chest!#
+2521 You hear a beartrap trigger in the distance.#
+2522 You hear a beartrap trigger nearby!#
+2523 You are hit by an explosion!#
+2524 You rake your %s into some exposed gears of the %s...#
+2525 You are unable to find an entry inside the %s from this angle.#
+2526 A locked gear inside the %s breaks loose!#
+2527 The %s's gears seize and begin to grind and spark!#
+2528 Your %s has no effect right now.#
+
+# 2529- 2542 atk hover text
+2529 fists: #
+2530 ranged: #
+2531 thrown: #
+2532 melee: #
+2533 %+10d TOTAL ATTACK#
+2534 %+3d from attribute (STR)#
+2535 %+3d from attribute (DEX)#
+2536 %+3d from equipment#
+2537 %+3d from skill#
+2538 %+3d from weapon#
+2539 %3d%% variance from skill#
+2540 tool:  #
+2541 staff: #
+2542 Damage:%11d ATK#
+
+2543 Your strike catches the %s unaware!#
+2544 Your strike catches %s unaware!#
+2545 Your strike flanks the %s's defenses!#
+2546 Your strike flanks %s's defenses!#
+2547 You assassinate the %s!#
+2548 You assassinate %s!#
+2549 Players online: %4d #
 
 # 2550 - 2560 new class names
 2550 sexton#

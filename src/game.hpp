@@ -209,6 +209,10 @@ extern char last_port[64];
 
 #define MAXCHARGE 30 // charging up weapons
 
+static const int BASE_MELEE_DAMAGE = 8;
+static const int BASE_RANGED_DAMAGE = 7;
+static const int BASE_THROWN_DAMAGE = 9;
+
 extern bool spawn_blood;
 extern bool capture_mouse; //Useful for debugging when the game refuses to release the mouse when it's crashed.
 

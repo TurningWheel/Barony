@@ -245,7 +245,7 @@ void sellItemToShop(Item* item)
 		switch ( shopkeepertype )
 		{
 			case 0: // arms & armor
-				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
 				{
 					deal = false;
 				}
@@ -288,7 +288,7 @@ void sellItemToShop(Item* item)
 				break;
 			case 7: // tools
 			case 8: // lights
-				if ( itemCategory(item) != TOOL )
+				if ( itemCategory(item) != TOOL && itemCategory(item) != THROWN )
 				{
 					deal = false;
 				}
