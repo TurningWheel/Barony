@@ -2649,7 +2649,7 @@ void Entity::handleEffects(Stat* myStats)
 			if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
 			{
 				this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
-
+				messagePlayer(0, "%d", this->char_fire);
 				// If the Entity died, handle experience
 				if ( myStats->HP <= 0 )
 				{
@@ -2668,7 +2668,7 @@ void Entity::handleEffects(Stat* myStats)
 				// Shake the Camera
 				if ( player == clientnum )
 				{
-					camera_shakey += 3;
+					camera_shakey += 5;
 				}
 				else if ( player > 0 && multiplayer == SERVER )
 				{
