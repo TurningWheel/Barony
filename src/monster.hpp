@@ -186,7 +186,10 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 6
 	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
 	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 8
-	{	4,	4,	4,	4,	4,	4 }  // JOKER 9
+	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
+	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
+	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
+	{	4,	2,	5,	3,	2,	2 }  // MONK 12
 };
 
 #define WAIT_FOLLOWDIST 48
@@ -399,6 +402,7 @@ static const int MONSTER_POSE_INCUBUS_TELEPORT = 27;
 static const int MONSTER_POSE_VAMPIRE_AURA_CHARGE = 28;
 static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
 static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
+static const int MONSTER_POSE_AUTOMATON_MALFUNCTION = 31;
 
 
 //--monster special cooldowns
@@ -406,7 +410,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
 static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
-static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 1000;
+static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION = 200;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 350;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK = 500;
@@ -500,6 +505,8 @@ static const int GOATMAN_THROW = 2;
 //--Automaton--
 static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;
 static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
+static const int AUTOMATON_MALFUNCTION_START = 2;
+static const int AUTOMATON_MALFUNCTION_RUN = 3;
 
 //--Insectoid--
 static const int INSECTOID_ACID = 1;

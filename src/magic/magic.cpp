@@ -285,6 +285,24 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2428], language[2427], MSG_COMBAT);
 		}
 
+		// change the color of the hit entity.
+		hit.entity->flags[USERFLAG2] = true;
+		serverUpdateEntityFlag(hit.entity, USERFLAG2);
+		int bodypart = 0;
+		for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
+		{
+			if ( bodypart >= LIMB_HUMANOID_TORSO )
+			{
+				Entity* tmp = (Entity*)node->element;
+				if ( tmp )
+				{
+					tmp->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(tmp, USERFLAG2);
+				}
+			}
+			++bodypart;
+		}
+
 		caster.drainMP(hitstats->HP); //Drain additional MP equal to health of monster.
 	}
 

@@ -457,21 +457,24 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						bool dyrnwyn = false;
 						Stat* stats = hit.entity->getStats();
 						if ( stats )
+						{
 							if ( stats->weapon )
+							{
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
 									dyrnwyn = true;
 								}
+							}
+						}
 						if ( !dyrnwyn )
 						{
-							hit.entity->flags[BURNING] = true;
-							if ( hit.entity->behavior == &actPlayer)
+							// Attempt to set the Entity on fire
+							hit.entity->SetEntityOnFire();
+
+							// If the Entity is now on fire, tell them
+							if ( hit.entity->flags[BURNING] )
 							{
-								messagePlayer(hit.entity->skill[2], language[590]);
-								if ( hit.entity->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(hit.entity, BURNING);
-								}
+								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
 							}
 						}
 					}
@@ -480,21 +483,24 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						bool dyrnwyn = false;
 						Stat* stats = my->getStats();
 						if ( stats )
+						{
 							if ( stats->weapon )
+							{
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
 									dyrnwyn = true;
 								}
+							}
+						}
 						if ( !dyrnwyn )
 						{
-							my->flags[BURNING] = true;
-							if ( my->behavior == &actPlayer)
+							// Attempt to set the Entity on fire
+							hit.entity->SetEntityOnFire();
+
+							// If the Entity is now on fire, tell them
+							if ( hit.entity->flags[BURNING] )
 							{
-								messagePlayer(my->skill[2], language[590]);
-								if ( my->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(my, BURNING);
-								}
+								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
 							}
 						}
 					}
