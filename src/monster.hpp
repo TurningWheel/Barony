@@ -403,7 +403,7 @@ static const int MONSTER_POSE_VAMPIRE_AURA_CHARGE = 28;
 static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
 static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
 static const int MONSTER_POSE_AUTOMATON_MALFUNCTION = 31;
-
+static const int MONSTER_POSE_LICH_FIRE_SWORD = 32;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
