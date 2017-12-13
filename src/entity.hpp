@@ -50,13 +50,6 @@ class Entity
 	Sint32& circuit_status;	// Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power;	// Switch/mechanism power status.
 	Sint32& chanceToPutOutFire; // skill[37] - Value between 5 and 10, with 10 being the default starting chance, and 5 being absolute minimum
-	Sint32& char_gonnavomit; //skill[26]
-	Sint32& char_heal; //skill[22]
-	Sint32& char_energize; //skill[23]
-	Sint32& char_torchtime; //skill[25]
-	Sint32& char_poison; //skill[21]
-	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON. skill[28]
-	Sint32& switch_power; //Switch/mechanism power status. skill[0]
 
 	//Chest skills.
 	//skill[0]
