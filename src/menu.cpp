@@ -46,6 +46,9 @@ void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
 	*id = SteamMatchmaking()->GetLobbyOwner(*static_cast<CSteamID*>(steamIDLobby));
 	return id; //Still don't like this method.
 }
+uint64 SteamAPICall_NumPlayersOnline = 0;
+NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
+int steamOnlinePlayers = 0;
 #endif
 
 // menu variables
@@ -393,6 +396,9 @@ void handleMainMenu(bool mode)
 			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
 
+		// gray text color
+		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
+
 		// print game version
 		if ( mode || introstage != 5 )
 		{
@@ -464,16 +470,66 @@ void handleMainMenu(bool mode)
 			int h2 = h;
 			TTF_SizeUTF8(ttf8, VERSION, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
-		}
 
+#ifdef STEAMWORKS
+			const char *website = "http://www.baronygame.com/";
+			TTF_SizeUTF8(ttf8, website, &w, &h);
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h) 
+				&& subwindow == 0 
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					playSound(139, 64);
+					SteamFriends()->ActivateGameOverlayToWebPage(website);
+				}
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, "http://www.baronygame.com/");
+			}
+			else
+			{
+				ttfPrintText(ttf8, xres - 8 - w, 8, "http://www.baronygame.com/");
+			}
+			h2 = h;
+			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2) 
+				&& subwindow == 0 
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					playSound(139, 64);
+					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+				}
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8 + h2, colorGray, language[2549], steamOnlinePlayers);
+			}
+			else if ( SteamUser()->BLoggedOn() )
+			{
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
+			}
+			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			{
+				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+			}
+			bool bFailed = false;
+			if ( SteamUser()->BLoggedOn() )
+			{
+				SteamUtils()->GetAPICallResult(SteamAPICall_NumPlayersOnline, &NumberOfCurrentPlayers, sizeof(NumberOfCurrentPlayers_t), 1107, &bFailed);
+				if ( NumberOfCurrentPlayers.m_bSuccess )
+				{
+					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				}
+			}
+#endif // STEAMWORKS
+		}
 		// navigate with arrow keys
 		if (!subwindow)
 		{
 			navigateMainMenuItems(mode);
 		}
-
-		// gray text color
-		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 
 		// draw menu
 		if ( mode )

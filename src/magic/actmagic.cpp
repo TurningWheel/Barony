@@ -3061,6 +3061,101 @@ void actParticleSapCenter(Entity* my)
 	}
 }
 
+void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale)
+{
+	for ( int c = 0; c < particleCount; c++ )
+	{
+		// shoot drops to the sky
+		Entity* entity = newEntity(sprite, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x - 3 + rand() % 7;
+		entity->y = parent->y - 3 + rand() % 7;
+		entity->z = 0 + rand() % 190;
+		entity->vel_z = -1;
+		entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->particleDuration = entity->z + 10;
+		/*if ( rand() % 5 > 0 )
+		{
+			entity->vel_x = 0.5*cos(entity->yaw);
+			entity->vel_y = 0.5*sin(entity->yaw);
+			entity->particleDuration = 6;
+			entity->z = 0;
+			entity->vel_z = 0.5 *(-1 + rand() % 3);
+		}*/
+		entity->scalex *= scale;
+		entity->scaley *= scale;
+		entity->scalez *= scale;
+		entity->behavior = &actParticleExplosionCharge;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+
+	int radius = STRIKERANGE * 2 / 3;
+	real_t arc = PI / 16;
+	int randScale = 1;
+	for ( int c = 0; c < 128; c++ )
+	{
+		// shoot drops to the sky
+		Entity* entity = newEntity(670, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->yaw = 0 + c * arc;
+
+		entity->x = parent->x + (radius * cos(entity->yaw));// - 2 + rand() % 5;
+		entity->y = parent->y + (radius * sin(entity->yaw));// - 2 + rand() % 5;
+		entity->z = radius + 150;
+		entity->particleDuration = entity->z + rand() % 3;
+		entity->vel_z = -1;
+
+		randScale = 1 + rand() % 3;
+
+		entity->scalex *= (scale / randScale);
+		entity->scaley *= (scale / randScale);
+		entity->scalez *= (scale / randScale);
+		entity->behavior = &actParticleExplosionCharge;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+		if ( c > 0 && c % 16 == 0 )
+		{
+			radius -= 2;
+		}
+	}
+}
+
+void actParticleExplosionCharge(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) )
+	{
+		list_RemoveNode(my->mynode);
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->yaw += 0.1;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		my->z += my->vel_z;
+		my->scalex /= 0.99;
+		my->scaley /= 0.99;
+		my->scalez /= 0.99;
+		//my->z -= 0.01;
+	}
+	return;
+}
+
 bool Entity::magicFallingCollision()
 {
 	hit.entity = nullptr;
