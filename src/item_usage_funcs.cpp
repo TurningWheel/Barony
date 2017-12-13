@@ -1700,9 +1700,12 @@ void item_ScrollFire(Item* item, int player)
 	}
 	else
 	{
-		playSoundEntity(players[player]->entity, 153, 128);
-		messagePlayer(player, language[864]);
-		players[player]->entity->flags[BURNING] = true;
+		playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
+		messagePlayer(player, language[864]); // "The scroll erupts in a tower of flame!"
+
+		// Attempt to set the Player on fire
+		players[player]->entity->SetEntityOnFire();
+
 		int c;
 		for (c = 0; c < 100; c++)
 		{
@@ -1713,10 +1716,6 @@ void item_ScrollFire(Item* item, int player)
 			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
-		}
-		if (player > 0)
-		{
-			serverUpdateEntityFlag(players[player]->entity, BURNING);
 		}
 	}
 }
