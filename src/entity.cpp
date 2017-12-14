@@ -5465,7 +5465,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = myStats->HP * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										int explodeDmg = (20 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];
