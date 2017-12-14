@@ -32,10 +32,10 @@ void initVampire(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 256;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = 254;
-		MONSTER_IDLEVAR = 2;
+		MONSTER_SPOTSND = 329;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 322;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -461,7 +461,7 @@ void vampireDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 253, 128);
+	playSoundEntity(my, 325 + rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
