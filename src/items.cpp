@@ -1304,19 +1304,19 @@ void equipItem(Item* item, Item** slot, int player)
 			{
 				if (players[player]->entity->ticks > 60)
 				{
-					if (itemCategory(item) == AMULET || itemCategory(item) == RING)
+					if ( itemCategory(item) == AMULET || itemCategory(item) == RING )
 					{
 						playSoundEntity(players[player]->entity, 33 + rand() % 2, 64);
 					}
-					else if (itemCategory(item) == WEAPON)
+					else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 					{
 						playSoundEntity(players[player]->entity, 40 + rand() % 4, 64);
 					}
-					else if (itemCategory(item) == ARMOR)
+					else if ( itemCategory(item) == ARMOR )
 					{
 						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
 					}
-					else if (item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
+					else if ( item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
 					{
 						playSoundEntity(players[player]->entity, 134, 64);
 					}
