@@ -2547,6 +2547,10 @@ void item_ToolBeartrap(Item*& item, int player)
 		consumeItem(item);
 		return;
 	}
+	if ( multiplayer != CLIENT )
+	{
+		playSoundEntity(players[player]->entity, 253, 64);
+	}
 	entity = newEntity(668, 1, map.entities);
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
