@@ -3241,8 +3241,9 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
 	{
 		if ( items[c].category == cat || (pickAnyCategory && items[c].category != SPELL_CAT) )
 		{
-			if ( items[c].value >= minValue && items[c].value <= maxValue )
+			if ( items[c].value >= minValue && items[c].value <= maxValue && items[c].level != -1 )
 			{
+				// chance true for an item if it's not forbidden from the global item list.
 				chances[c] = true;
 				numoftype++;
 			}
