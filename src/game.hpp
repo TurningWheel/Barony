@@ -15,7 +15,7 @@
 #include <random>
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v2.0.7"
+#define VERSION "v3.0.0"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -221,6 +221,7 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 #define LENGTH_OF_LEVEL_REGION 5
 
 #define TICKS_PER_SECOND 50
+static const Uint8 TICKS_TO_PROCESS_FIRE = 30; // The amount of ticks needed until the 'BURNING' Status Effect is processed (char_fire % TICKS_TO_PROCESS_FIRE == 0)
 
 static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
