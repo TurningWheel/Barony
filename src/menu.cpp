@@ -472,8 +472,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 
 #ifdef STEAMWORKS
-			const char *website = "http://www.baronygame.com/";
-			TTF_SizeUTF8(ttf8, website, &w, &h);
+			TTF_SizeUTF8(ttf8, language[2570], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h) 
 				&& subwindow == 0 
 				&& introstage == 1
@@ -483,13 +482,13 @@ void handleMainMenu(bool mode)
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					playSound(139, 64);
-					SteamFriends()->ActivateGameOverlayToWebPage(website);
+					SteamFriends()->ActivateGameOverlayToWebPage(language[2570]);
 				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, "http://www.baronygame.com/");
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2570]);
 			}
 			else
 			{
-				ttfPrintText(ttf8, xres - 8 - w, 8, "http://www.baronygame.com/");
+				ttfPrintText(ttf8, xres - 8 - w, 8, language[2570]);
 			}
 			h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
