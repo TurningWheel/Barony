@@ -1187,6 +1187,13 @@ void consoleCommand(char* command_str)
 	{
 		auto_hotbar_new_items = (auto_hotbar_new_items == false);
 	}
+	else if ( !strncmp(command_str, "/hotbarenablecategory ", 22) )
+	{
+		int catIndex = atoi(&command_str[22]);
+		int value = atoi(&command_str[24]);
+		auto_hotbar_categories[catIndex] = value;
+		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
+	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
 		command_str[8] = 0;

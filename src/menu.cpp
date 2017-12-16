@@ -103,6 +103,9 @@ bool spawn_blood = true;
 int multiplayerselect = SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
+bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
+																true, true, true, true,
+																true, true, true, true };
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
@@ -2184,9 +2187,32 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1373]);
 			}
 			current_y += 16;
+			int hotbar_options_x = subx1 + 72 + 256;
+			int hotbar_options_y = current_y;
 			if ( settings_auto_hotbar_new_items )
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1374]);
+				int pad_x = hotbar_options_x;
+				int pad_y = hotbar_options_y;
+				drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+				ttfPrintTextFormatted(ttf12, pad_x, current_y - 16, "%s", language[2583]);
+				for ( int i = 0; i < (NUM_HOTBAR_CATEGORIES); ++i )
+				{
+					if ( settings_auto_hotbar_categories[i] == true )
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[x] %s", language[2571 + i]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[ ] %s", language[2571 + i]);
+					}
+					pad_x += 128;
+					if ( i == 3 || i == 7 )
+					{
+						pad_x = hotbar_options_x;
+						pad_y += 16;
+					}
+				}
 			}
 			else
 			{
@@ -2295,6 +2321,29 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
+					}
+				}
+				else 
+				{
+					if ( settings_auto_hotbar_new_items )
+					{
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+							{
+								if ( mouseInBounds(hotbar_options_x, hotbar_options_x + 24, hotbar_options_y, hotbar_options_y + 12) )
+								{
+									settings_auto_hotbar_categories[i] = !settings_auto_hotbar_categories[i];
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+								}
+								hotbar_options_x += 128;
+								if ( i == 3 || i == 7 )
+								{
+									hotbar_options_x -= (128 * 4);
+									hotbar_options_y += 16;
+								}
+							}
+						}
 					}
 				}
 
@@ -5169,6 +5218,10 @@ void openSettingsWindow()
 	settings_broadcast = broadcast;
 	settings_nohud = nohud;
 	settings_auto_hotbar_new_items = auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
+	}
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
@@ -6660,6 +6713,10 @@ void applySettings()
 	nohud = settings_nohud;
 
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
+	}
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
