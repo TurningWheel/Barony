@@ -5015,7 +5015,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						specialRoll = rand() % 20;
 						//messagePlayer(0, "Rolled: %d", specialRoll);
-						if ( myStats->HP < myStats->MAXHP / 3 )
+						if ( myStats->HP < myStats->MAXHP / 2 )
 						{
 							if ( (dist < 40 && specialRoll < 10) || (dist < 100 && specialRoll < 5) ) // 50%/25% chance
 							{
@@ -5027,7 +5027,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								}
 							}
 						}
-						else if ( myStats->HP < myStats->MAXHP / 2 )
+						else if ( myStats->HP < (0.8 * myStats->MAXHP) )
 						{
 							if ( (dist < 40 && specialRoll < 5) || (dist < 100 && specialRoll < 2) ) // 25%/10% chance
 							{
@@ -5057,28 +5057,28 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					specialRoll = rand() % 20;
 					if ( myStats->HP > myStats->MAXHP * 0.8 )
 					{
-						if ( specialRoll < 1 ) // 5%
+						if ( specialRoll < 2 ) // 10%
 						{
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.6 )
 					{
-						if ( specialRoll < 2 ) // 10%
+						if ( specialRoll < 3 ) // 15%
 						{
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.4 )
 					{
-						if ( specialRoll < 3 ) // 15%
+						if ( specialRoll < 4 ) // 20%
 						{
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
-						if ( specialRoll < 4 ) // 20%
+						if ( specialRoll < 5 ) // 25%
 						{
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
@@ -5116,7 +5116,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					specialRoll = rand() % 20;
 					if ( myStats->HP > myStats->MAXHP * 0.8 )
 					{
-						if ( specialRoll < 1 ) // 5%
+						if ( specialRoll < 2 ) // 10%
 						{
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
