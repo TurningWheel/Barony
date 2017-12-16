@@ -1500,7 +1500,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 
 void item_ScrollRemoveCurse(Item* item, int player)
 {
-	Item* target;
+	Item* target = nullptr;
 	node_t* node;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -1580,7 +1580,91 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	}
 	else
 	{
-		if (player == clientnum)
+		// choose a random piece of worn equipment to curse!
+		int armornum = rand() % 7;
+		int startIndex = armornum;
+		bool breakloop = false;
+		target = nullptr;
+		while ( !target && !breakloop )
+		{
+			switch ( armornum )
+			{
+				// intentional fall throughs...
+				case 0:
+					if ( stats[player]->helmet != nullptr && stats[player]->helmet->beatitude >= 0 )
+					{
+						target = stats[player]->helmet;
+						break;
+					}
+				case 1:
+					if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->beatitude >= 0 )
+					{
+						target = stats[player]->breastplate;
+						break;
+					}
+				case 2:
+					if ( stats[player]->gloves != nullptr && stats[player]->gloves->beatitude >= 0 )
+					{
+						target = stats[player]->gloves;
+						break;
+					}
+				case 3:
+					if ( stats[player]->shoes != nullptr && stats[player]->shoes->beatitude >= 0 )
+					{
+						target = stats[player]->shoes;
+						break;
+					}
+				case 4:
+					if ( stats[player]->shield != nullptr && stats[player]->shield->beatitude >= 0 )
+					{
+						target = stats[player]->shield;
+						break;
+					}
+				case 5:
+					if ( stats[player]->cloak != nullptr && stats[player]->cloak->beatitude >= 0 )
+					{
+						target = stats[player]->cloak;
+						break;
+					}
+				case 6:
+					if ( stats[player]->weapon != nullptr && stats[player]->weapon->beatitude >= 0 )
+					{
+						target = stats[player]->weapon;
+						break;
+					}
+					++armornum;
+					if ( armornum > 6 )
+					{
+						// loop back around.
+						armornum = 0;
+					}
+					if ( armornum == startIndex )
+					{
+						// couldn't find a piece of armor, break.
+						breakloop = true;
+						target = nullptr;
+						break;
+					}
+				default:
+					break;
+			}
+		}
+		if ( target )
+		{
+			if ( target->beatitude == 0 )
+			{
+				--target->beatitude;
+			}
+			else
+			{
+				target->beatitude = -target->beatitude;
+			}
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[858], target->getName());
+			}
+		}
+		else if (player == clientnum)
 		{
 			messagePlayer(player, language[862]);
 		}
@@ -1616,9 +1700,12 @@ void item_ScrollFire(Item* item, int player)
 	}
 	else
 	{
-		playSoundEntity(players[player]->entity, 153, 128);
-		messagePlayer(player, language[864]);
-		players[player]->entity->flags[BURNING] = true;
+		playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
+		messagePlayer(player, language[864]); // "The scroll erupts in a tower of flame!"
+
+		// Attempt to set the Player on fire
+		players[player]->entity->SetEntityOnFire();
+
 		int c;
 		for (c = 0; c < 100; c++)
 		{
@@ -1629,10 +1716,6 @@ void item_ScrollFire(Item* item, int player)
 			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
-		}
-		if (player > 0)
-		{
-			serverUpdateEntityFlag(players[player]->entity, BURNING);
 		}
 	}
 }
@@ -2463,6 +2546,10 @@ void item_ToolBeartrap(Item*& item, int player)
 		}
 		consumeItem(item);
 		return;
+	}
+	if ( multiplayer != CLIENT )
+	{
+		playSoundEntity(players[player]->entity, 253, 64);
 	}
 	entity = newEntity(668, 1, map.entities);
 	entity->behavior = &actBeartrap;
