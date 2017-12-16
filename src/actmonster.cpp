@@ -141,8 +141,8 @@ double sightranges[NUMMONSTERS] =
 	512,  // LICH_FIRE
 };
 
-int monsterGlobalAnimationMultiplier = 10;
-int monsterGlobalAttackTimeMultiplier = 1;
+int monsterGlobalAnimationMultiplier = 5;
+int monsterGlobalAttackTimeMultiplier = 2;
 
 /*-------------------------------------------------------------------------------
 
@@ -443,16 +443,16 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[LICH_ICE][0][2]; // 0
 				entity->z = -2;
 				entity->yaw = PI;
-				entity->sprite = 274;
+				entity->sprite = 650;
 				entity->skill[29] = 120;
 				break;
 			case LICH_FIRE:
 				entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
 				entity->focaly = limbs[LICH_FIRE][0][1]; // 0
 				entity->focalz = limbs[LICH_FIRE][0][2]; // 0
-				entity->z = -2;
+				entity->z = -1.2;
 				entity->yaw = PI;
-				entity->sprite = 274;
+				entity->sprite = 646;
 				entity->skill[29] = 120;
 				break;
 			default:
@@ -756,11 +756,11 @@ void actMonster(Entity* my)
 
 			// make two empty nodes
 			node = list_AddNodeLast(&my->children);
-			node->element = NULL;
+			node->element = nullptr;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
 			node = list_AddNodeLast(&my->children);
-			node->element = NULL;
+			node->element = nullptr;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
 			if ( (my->sprite >= 113 && my->sprite < 118) ||
@@ -771,75 +771,75 @@ void actMonster(Entity* my)
 			        (my->sprite >= 367 && my->sprite < 373) ||
 			        (my->sprite >= 380 && my->sprite < 386) )   // human heads
 			{
-				initHuman(my, NULL);
+				initHuman(my, nullptr);
 			}
 			else if ( my->sprite == 131 || my->sprite == 265 )     // rat
 			{
-				initRat(my, NULL);
+				initRat(my, nullptr);
 			}
 			else if ( my->sprite == 180 )     // goblin head
 			{
-				initGoblin(my, NULL);
+				initGoblin(my, nullptr);
 			}
 			else if ( my->sprite == 196 || my->sprite == 266 )     // scorpion body
 			{
-				initScorpion(my, NULL);
+				initScorpion(my, nullptr);
 			}
 			else if ( my->sprite == 190 )     // succubus head
 			{
-				initSuccubus(my, NULL);
+				initSuccubus(my, nullptr);
 			}
 			else if ( my->sprite == 204 )     // troll head
 			{
-				initTroll(my, NULL);
+				initTroll(my, nullptr);
 			}
 			else if ( my->sprite == 217 )     // shopkeeper head
 			{
-				initShopkeeper(my, NULL);
+				initShopkeeper(my, nullptr);
 			}
 			else if ( my->sprite == 229 )     // skeleton head
 			{
-				initSkeleton(my, NULL);
+				initSkeleton(my, nullptr);
 			}
 			else if ( my->sprite == 239 )     // minotaur waist
 			{
-				initMinotaur(my, NULL);
+				initMinotaur(my, nullptr);
 			}
 			else if ( my->sprite == 246 )     // ghoul head
 			{
-				initGhoul(my, NULL);
+				initGhoul(my, nullptr);
 			}
 			else if ( my->sprite == 258 )     // demon head
 			{
-				initDemon(my, NULL);
+				initDemon(my, nullptr);
 			}
 			else if ( my->sprite == 267 )     // spider body
 			{
-				initSpider(my, NULL);
+				initSpider(my, nullptr);
 			}
 			else if ( my->sprite == 274 )     // lich body
 			{
-				initLich(my, NULL);
+				initLich(my, nullptr);
 			}
 			else if ( my->sprite == 289 )     // imp head
 			{
-				initImp(my, NULL);
+				initImp(my, nullptr);
 			}
 			else if ( my->sprite == 295 )     // gnome head
 			{
-				initGnome(my, NULL);
+				initGnome(my, nullptr);
 			}
 			else if ( my->sprite == 304 )     // devil torso
 			{
-				initDevil(my, NULL);
+				initDevil(my, nullptr);
 			}
 			else if ( my->sprite == 475 )     // crystal golem head
 			{
-				initCrystalgolem(my, NULL);
+				initCrystalgolem(my, nullptr);
 			}
 			else if ( my->sprite == 413 )     // cockatrice head
 			{
-				initCockatrice(my, NULL);
+				initCockatrice(my, nullptr);
 			}
 			else if ( my->sprite == 467 )     // automaton torso
 			{
@@ -847,31 +847,40 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
 			{
-				initScarab(my, NULL);
+				initScarab(my, nullptr);
 			}
 			else if ( my->sprite == 421 )     // kobold head
 			{
-				initKobold(my, NULL);
+				initKobold(my, nullptr);
 			}
 			else if ( my->sprite == 481 )     // shadow head
 			{
-				initShadow(my, NULL);
+				initShadow(my, nullptr);
 			}
 			else if ( my->sprite == 437 )     // vampire head
 			{
-				initVampire(my, NULL);
+				initVampire(my, nullptr);
 			}
 			else if ( my->sprite == 445 )     // incubus head
 			{
-				initIncubus(my, NULL);
+				initIncubus(my, nullptr);
 			}
 			else if ( my->sprite == 455 )     // insectoid head
 			{
-				initInsectoid(my, NULL);
+				initInsectoid(my, nullptr);
 			}
 			else if ( my->sprite == 463 )     // goatman head
 			{
-				initGoatman(my, NULL);
+				initGoatman(my, nullptr);
+			}
+			else if ( my->sprite == 646 )     // lich body
+			{
+				initLichFire(my, nullptr);
+				messagePlayer(0, "init");
+			}
+			else if ( my->sprite == 650 )     // lich body
+			{
+				//initLichIce(my, NULL);
 			}
 		}
 		else
@@ -994,6 +1003,16 @@ void actMonster(Entity* my)
 			{
 				automatonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
+			else if ( my->sprite == 646 )     // lich body
+			{
+				my->flags[BURNABLE] = false;
+				lichFireAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 650 )     // lich body
+			{
+				my->flags[BURNABLE] = false;
+				//lichAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
 			else
 			{
 				my->flags[BURNABLE] = false;
@@ -1099,41 +1118,41 @@ void actMonster(Entity* my)
 					initDevil(my, myStats);
 					break;
 				case KOBOLD:
-					initKobold ( my, myStats );
+					initKobold (my, myStats);
 					break;
 				case SCARAB:
-					initScarab ( my, myStats );
+					initScarab (my, myStats);
 					break;
 				case CRYSTALGOLEM:
-					initCrystalgolem ( my, myStats );
+					initCrystalgolem (my, myStats);
 					break;
 				case INCUBUS:
-					initIncubus ( my, myStats );
+					initIncubus (my, myStats);
 					break;
 				case VAMPIRE:
-					initVampire ( my, myStats );
+					initVampire (my, myStats);
 					break;
 				case SHADOW:
-					initShadow ( my, myStats );
+					initShadow (my, myStats);
 					break;
 				case COCKATRICE:
 					initCockatrice (my, myStats);
 					break;
 				case INSECTOID:
-					initInsectoid ( my, myStats );
+					initInsectoid (my, myStats);
 					break;
 				case GOATMAN:
-					initGoatman ( my, myStats );
+					initGoatman (my, myStats);
 					break;
 				case AUTOMATON:
 					my->flags[BURNABLE] = false;
 					initAutomaton (my, myStats);
 					break;
 				case LICH_ICE:
-					//initLichIce ( my, myStats );
+					//initLichIce (my, myStats);
 					break;
 				case LICH_FIRE:
-					//initLichFire ( my, myStats );
+					initLichFire (my, myStats);
 					break;
 				default:
 					break; //This should never be reached.
@@ -1542,6 +1561,12 @@ void actMonster(Entity* my)
 			case GOATMAN:
 				goatmanDie(my);
 				break;
+			case LICH_FIRE:
+				lichFireDie(my);
+				break;
+			case LICH_ICE:
+				lichFireDie(my);
+				break;
 			default:
 				break; //This should never be reached.
 		}
@@ -1780,6 +1805,8 @@ void actMonster(Entity* my)
 		case VAMPIRE:
 		case SUCCUBUS:
 		case SHOPKEEPER:
+		case LICH_FIRE:
+		case LICH_ICE:
 			handleinvisible = false;
 			break;
 		default:
@@ -4440,6 +4467,14 @@ timeToGoAgain:
 		else if ( myStats->type == VAMPIRE )
 		{
 			vampireMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == LICH_FIRE )
+		{
+			lichFireAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == LICH_ICE )
+		{
+			//lichIceAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 	}
 }
