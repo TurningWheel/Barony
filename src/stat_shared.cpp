@@ -770,6 +770,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; // iron daggers, qty 2-8
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 50; // shortbow
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 5; // spellbook
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 20; // gemstones, qty 1-2
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_4] = 1;
