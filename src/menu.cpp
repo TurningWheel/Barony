@@ -3143,8 +3143,10 @@ void handleMainMenu(bool mode)
 			int remoteIDIndex = c;
 			if ( multiplayer == SERVER )
 			{
-				remoteIDIndex--;
+				remoteIDIndex--; //But but! This is some seriously undefined behavior.
 			}
+
+			//printlog("remoteIDIndex = %d", remoteIDIndex);
 
 			if ( !directConnect && steamIDRemote[remoteIDIndex] )
 			{
