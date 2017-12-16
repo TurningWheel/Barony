@@ -136,8 +136,11 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 				{
 					if ( !uidToItem(hotbar[c].item) )
 					{
-						hotbar[c].item = item->uid;
-						break;
+						if ( autoAddHotbarFilter(*item) )
+						{
+							hotbar[c].item = item->uid;
+							break;
+						}
 					}
 				}
 			}
