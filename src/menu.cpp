@@ -476,8 +476,8 @@ void handleMainMenu(bool mode)
 
 #ifdef STEAMWORKS
 			TTF_SizeUTF8(ttf8, language[2570], &w, &h);
-			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h) 
-				&& subwindow == 0 
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
+				&& subwindow == 0
 				&& introstage == 1
 				&& SteamUser()->BLoggedOn() )
 			{
@@ -495,8 +495,8 @@ void handleMainMenu(bool mode)
 			}
 			h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
-			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2) 
-				&& subwindow == 0 
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
+				&& subwindow == 0
 				&& introstage == 1
 				&& SteamUser()->BLoggedOn() )
 			{
@@ -568,7 +568,7 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				
+
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
@@ -2323,7 +2323,7 @@ void handleMainMenu(bool mode)
 						settings_right_click_protect = (settings_right_click_protect == false);
 					}
 				}
-				else 
+				else
 				{
 					if ( settings_auto_hotbar_new_items )
 					{
@@ -3006,7 +3006,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) ) //TODO: Sometimes if a host closes a lobby, it can crash here for a client.
 					{
 						continue;
 					}
