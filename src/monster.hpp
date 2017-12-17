@@ -218,6 +218,7 @@ static std::vector<std::vector<int>> classStatGrowth =
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y);
+void summonManyMonster(Monster creature);
 bool monsterMoveAside(Entity* my, Entity* entity);
 
 //--init* functions--
