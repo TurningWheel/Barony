@@ -59,7 +59,7 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->RANDOM_STR = 0;
 				myStats->DEX = 8;
 				myStats->RANDOM_DEX = 0;
-				myStats->CON = -10;
+				myStats->CON = -5;
 				myStats->RANDOM_CON = 0;
 				myStats->INT = 15;
 				myStats->RANDOM_INT = 0;

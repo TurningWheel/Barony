@@ -49,7 +49,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 			if ( !strncmp(myStats->name, "lesser insectoid", strlen("lesser insectoid")) )
 			{
 				lesserMonster = true;
-				myStats->HP = 70;
+				myStats->HP = 110;
 				myStats->MAXHP = myStats->HP;
 				myStats->RANDOM_MAXHP = 10;
 				myStats->RANDOM_HP = myStats->RANDOM_MAXHP;
