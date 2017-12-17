@@ -686,22 +686,22 @@ void loadAllScores()
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
 	int versionNumber = 300;
-	if ( strncmp(checkstr, "v2.0.7", strlen(VERSION)) )
+	if ( !strncmp(checkstr, "v2.0.7", strlen(VERSION)) )
 	{
 		printlog("notice: '%s' version v2.0.7... upgrading\n", SCORESFILE);
 		versionNumber = 207;
 	}
-	else if ( strncmp(checkstr, "v2.0.6", strlen(VERSION)) )
+	else if ( !strncmp(checkstr, "v2.0.6", strlen(VERSION)) )
 	{
 		printlog("notice: '%s' version v2.0.6... upgrading\n", SCORESFILE);
 		versionNumber = 206;
 	}
-	else if ( strncmp(checkstr, "v2.0.5", strlen(VERSION)) )
+	else if ( !strncmp(checkstr, "v2.0.5", strlen(VERSION)) )
 	{
 		printlog("notice: '%s' version v2.0.5... upgrading\n", SCORESFILE);
 		versionNumber = 205;
 	}
-	else if ( strncmp(checkstr, "v2.0.4", strlen(VERSION)) )
+	else if ( !strncmp(checkstr, "v2.0.4", strlen(VERSION)) )
 	{
 		printlog("notice: '%s' version v2.0.4... upgrading\n", SCORESFILE);
 		versionNumber = 204;
