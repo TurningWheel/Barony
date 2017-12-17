@@ -2777,8 +2777,8 @@ client (player %d) (direct ip)#
 2007 insectoid#
 2008 goatman#
 2009 automaton#
-2010 lich ice#
-2011 lich fire#
+2010 unknown1#
+2011 unknown2#
 
 # monster plurals
 
@@ -2792,8 +2792,8 @@ client (player %d) (direct ip)#
 2057 insectoids#
 2058 goatmen#
 2059 automatons#
-2060 liches#
-2061 liches#
+2060 unknown1#
+2061 unknown2#
 
 # injury types (2100-2149)
 
@@ -2821,8 +2821,8 @@ client (player %d) (direct ip)#
 2157 is dispatched by an insectoid.#
 2158 is dispatched by a goatman.#
 2159 is dispatched by an automaton.#
-2160 is dispatched by the icy lich.#
-2161 is dispatched by the fiery lich.#
+2160 is dispatched by the unknown1.#
+2161 is dispatched by the unknown2.#
 
 #items, reserve 2200-2349 for new items
 2200 artifact breastpiece#
