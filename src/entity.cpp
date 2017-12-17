@@ -4595,7 +4595,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// unaware monster, get backstab damage.
 								backstab = true;
 								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
-								if ( rand() % 4 == 0 )
+								if ( rand() % 4 > 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -4649,6 +4649,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
 						}
+					}
+
+					if ( pose == MONSTER_POSE_GOLEM_SMASH )
+					{
+						damage *= 2;
 					}
 					hit.entity->modHP(-damage); // do the damage
 

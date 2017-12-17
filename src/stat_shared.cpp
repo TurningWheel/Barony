@@ -708,7 +708,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_CHR = 0;
 
 			stats->EXP = 0;
-			stats->LVL = 50;
+			stats->LVL = 35;
 			stats->GOLD = 50;
 			stats->RANDOM_GOLD = 100;
 			stats->HUNGER = 900;
