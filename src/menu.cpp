@@ -46,6 +46,13 @@ void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
 	*id = SteamMatchmaking()->GetLobbyOwner(*static_cast<CSteamID*>(steamIDLobby));
 	return id; //Still don't like this method.
 }
+// get player names in a lobby
+void* cpp_SteamMatchmaking_GetLobbyMember(void* steamIDLobby, int index)
+{
+	CSteamID* id = new CSteamID();
+	*id = SteamMatchmaking()->GetLobbyMemberByIndex(*static_cast<CSteamID*>(currentLobby), index);
+	return id;
+}
 uint64 SteamAPICall_NumPlayersOnline = 0;
 NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
 int steamOnlinePlayers = 0;
@@ -1113,7 +1120,7 @@ void handleMainMenu(bool mode)
 				// get number of lobby members (capped to game limit)
 
 				// record CSteamID of lobby owner (and nobody else)
-				SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
+				int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
 				if ( steamIDRemote[0] )
 				{
 					cpp_Free_CSteamID(steamIDRemote[0]);
@@ -1128,7 +1135,10 @@ void handleMainMenu(bool mode)
 						steamIDRemote[c] = NULL;
 					}
 				}
-
+				for ( c = 1; c < lobbyMembers; ++c )
+				{
+					steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+				}
 				buttonJoinLobby(NULL);
 			}
 		}
@@ -3783,11 +3793,25 @@ void handleMainMenu(bool mode)
 					nokills = false;
 					if ( kills[x] > 1 )
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[111 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
+						}
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[90 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
+						}
 					}
 					y++;
 				}
