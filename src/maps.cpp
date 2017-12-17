@@ -201,7 +201,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Caves", 5) )
 	{
-		if ( currentlevel == 26 )
+		if ( currentlevel <= 26 )
 		{
 			switch ( rand() % 20 )
 			{
