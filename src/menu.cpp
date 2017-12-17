@@ -3189,14 +3189,14 @@ void handleMainMenu(bool mode)
 
 #ifdef STEAMWORKS
 			int remoteIDIndex = c;
-			if ( multiplayer == SERVER )
+			if ( c != 0 && multiplayer == SERVER ) //Skip the server, because that would be undefined behavior (array index of -1).
 			{
-				remoteIDIndex--; //But but! This is some seriously undefined behavior.
+				remoteIDIndex--;
 			}
 
 			//printlog("remoteIDIndex = %d", remoteIDIndex);
 
-			if ( !directConnect && steamIDRemote[remoteIDIndex] )
+			if ( c != clientnum && !directConnect && steamIDRemote[remoteIDIndex] )
 			{
 				charDisplayName += " (";
 				charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
