@@ -3188,19 +3188,26 @@ void handleMainMenu(bool mode)
 			charDisplayName = stats[c]->name;
 
 #ifdef STEAMWORKS
-			int remoteIDIndex = c;
-			if ( c != 0 && multiplayer == SERVER ) //Skip the server, because that would be undefined behavior (array index of -1).
+			if ( !directConnect && c != clientnum )
 			{
-				remoteIDIndex--;
-			}
+				//printlog("\n\n/* ********* *\nc = %d", c);
+				int remoteIDIndex = c;
+				if ( multiplayer == SERVER && c != 0 ) //Skip the server, because that would be undefined behavior (array index of -1). //TODO: if c > clientnum instead?
+				{
+					remoteIDIndex--;
+				}
 
-			//printlog("remoteIDIndex = %d", remoteIDIndex);
-
-			if ( c != clientnum && !directConnect && steamIDRemote[remoteIDIndex] )
-			{
-				charDisplayName += " (";
-				charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
-				charDisplayName += ")";
+				if ( remoteIDIndex >= 0 && steamIDRemote[remoteIDIndex] )
+				{
+					//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
+					charDisplayName += " (";
+					charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
+					charDisplayName += ")";
+				}
+				/*else
+				{
+					printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
+				}*/
 			}
 #endif
 
