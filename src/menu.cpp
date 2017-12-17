@@ -3774,11 +3774,25 @@ void handleMainMenu(bool mode)
 					nokills = false;
 					if ( kills[x] > 1 )
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[111 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
+						}
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[90 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
+						}
 					}
 					y++;
 				}
