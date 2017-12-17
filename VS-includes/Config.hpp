@@ -1,6 +1,6 @@
 
 #define WINDOWS
 
-//#define STEAMWORKS
+#define STEAMWORKS
 
 #define HAVE_FMOD
