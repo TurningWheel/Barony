@@ -57,6 +57,15 @@ void initMinotaur(Entity* my, Stat* myStats)
 				myStats->DEX = 20;
 				myStats->CON = 20;
 			}
+			else if ( currentlevel >= 25 )
+			{
+				myStats->HP += 200;
+				myStats->MAXHP += 200;
+				myStats->STR = 50;
+				myStats->DEX = 20;
+				myStats->CON = 20;
+			}
+
 
 			// random effects
 			// minotaurs can traverse waters and pits (pits with magic :))
