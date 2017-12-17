@@ -549,7 +549,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 220;
+			stats->MAXHP = 280;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;
 			stats->MP = stats->MAXMP;
@@ -600,7 +600,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 230;
+			stats->HP = 300;
 			stats->RANDOM_HP = 0;
 			stats->MAXHP = stats->HP;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
@@ -611,9 +611,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->OLDHP = stats->HP;
 			stats->STR = 20;
 			stats->RANDOM_STR = 10;
-			stats->DEX = 4;
-			stats->RANDOM_DEX = 3;
-			stats->CON = -10;
+			stats->DEX = 8;
+			stats->RANDOM_DEX = 0;
+			stats->CON = 0;
 			stats->RANDOM_CON = 0;
 			stats->INT = 15;
 			stats->RANDOM_INT = 5;
@@ -698,7 +698,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_STR = 10;
 			stats->DEX = 8;
 			stats->RANDOM_DEX = 0;
-			stats->CON = 15;
+			stats->CON = 20;
 			stats->RANDOM_CON = 0;
 			stats->INT = -2;
 			stats->RANDOM_INT = 0;

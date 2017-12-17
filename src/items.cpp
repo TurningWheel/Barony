@@ -2174,7 +2174,10 @@ Item* itemPickup(int player, Item* item)
 			}
 			if (!itemCompare(item, item2, false))
 			{
-				if ( !itemIsEquipped(item2, player) && itemCategory(item2) != ARMOR )
+				if ( (!itemIsEquipped(item2, player) && itemCategory(item2) != ARMOR)
+					|| itemCategory(item2) == THROWN 
+					|| itemCategory(item2) == GEM
+					|| itemCategory(item2) == TOOL )
 				{
 					// don't stack if equipped, or item is armor.
 					item2->count += item->count;
