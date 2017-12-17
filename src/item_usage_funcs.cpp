@@ -1948,7 +1948,7 @@ void item_ScrollRepair(Item* item, int player)
 
 void item_ScrollDestroyArmor(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -2039,7 +2039,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	{
 		messagePlayer(player, language[873]);
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if ( item->beatitude < 0 && player == clientnum )
 		{

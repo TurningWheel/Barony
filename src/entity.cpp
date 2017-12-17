@@ -4595,7 +4595,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// unaware monster, get backstab damage.
 								backstab = true;
 								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
-								if ( rand() % 4 == 0 )
+								if ( rand() % 4 > 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -4649,6 +4649,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
 						}
+					}
+
+					if ( pose == MONSTER_POSE_GOLEM_SMASH )
+					{
+						damage *= 2;
 					}
 					hit.entity->modHP(-damage); // do the damage
 
@@ -5453,7 +5458,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( pose == MONSTER_POSE_AUTOMATON_MALFUNCTION )
 					{
-						getTargetsAroundEntity(this, this, 20, PI, MONSTER_TARGET_ALL, &aoeTargets);
+						getTargetsAroundEntity(this, this, 24, PI, MONSTER_TARGET_ALL, &aoeTargets);
 						if ( aoeTargets )
 						{
 							for ( node = aoeTargets->first; node != NULL; node = node->next )
@@ -5465,7 +5470,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = (20 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										int explodeDmg = (40 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];

@@ -483,7 +483,7 @@ void saveAllScores()
 		fwrite(&c, sizeof(Uint32), 1, fp);
 		fputs(book, fp);
 	}
-	for ( c = 0; c < 10; c++ )
+	for ( c = 0; c < NUMCLASSES; c++ )
 	{
 		fwrite(&usedClass[c], sizeof(bool), 1, fp);
 	}
@@ -685,7 +685,28 @@ void loadAllScores()
 		return;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = 300;
+	if ( !strncmp(checkstr, "v2.0.7", strlen(VERSION)) )
+	{
+		printlog("notice: '%s' version v2.0.7... upgrading\n", SCORESFILE);
+		versionNumber = 207;
+	}
+	else if ( !strncmp(checkstr, "v2.0.6", strlen(VERSION)) )
+	{
+		printlog("notice: '%s' version v2.0.6... upgrading\n", SCORESFILE);
+		versionNumber = 206;
+	}
+	else if ( !strncmp(checkstr, "v2.0.5", strlen(VERSION)) )
+	{
+		printlog("notice: '%s' version v2.0.5... upgrading\n", SCORESFILE);
+		versionNumber = 205;
+	}
+	else if ( !strncmp(checkstr, "v2.0.4", strlen(VERSION)) )
+	{
+		printlog("notice: '%s' version v2.0.4... upgrading\n", SCORESFILE);
+		versionNumber = 204;
+	}
+	else if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
 	{
 		printlog("error: '%s' is corrupt!\n", SCORESFILE);
 		fclose(fp);
@@ -709,9 +730,23 @@ void loadAllScores()
 		node->size = sizeof(char) * (strlen(tempstr) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-	for ( c = 0; c < 10; c++ )
+	for ( c = 0; c < NUMCLASSES; c++ )
 	{
-		fread(&usedClass[c], sizeof(bool), 1, fp);
+		if ( versionNumber < 300 )
+		{
+			if ( c < 10 )
+			{
+				fread(&usedClass[c], sizeof(bool), 1, fp);
+			}
+			else
+			{
+				usedClass[c] = false;
+			}
+		}
+		else
+		{
+			fread(&usedClass[c], sizeof(bool), 1, fp);
+		}
 	}
 
 	// read scores
@@ -737,9 +772,27 @@ void loadAllScores()
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
-		for ( c = 0; c < NUMMONSTERS; c++ )
+		if ( versionNumber < 300 )
 		{
-			fread(&score->kills[c], sizeof(Sint32), 1, fp);
+			// legacy nummonsters
+			for ( c = 0; c < NUMMONSTERS; c++ )
+			{
+				if ( c < 21 )
+				{
+					fread(&score->kills[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->kills[c] = 0;
+				}
+			}
+		}
+		else
+		{
+			for ( c = 0; c < NUMMONSTERS; c++ )
+			{
+				fread(&score->kills[c], sizeof(Sint32), 1, fp);
+			}
 		}
 		fread(&score->completionTime, sizeof(Uint32), 1, fp);
 		fread(&score->conductPenniless, sizeof(bool), 1, fp);
@@ -771,10 +824,30 @@ void loadAllScores()
 		{
 			fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
 		}
-		for ( c = 0; c < NUMEFFECTS; c++ )
+		if ( versionNumber < 300 )
 		{
-			fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
-			fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+			// legacy effects
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				if ( c < 16 )
+				{
+					fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+					fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->stats->EFFECTS[c] = false;
+					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
+		else
+		{
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+				fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+			}
 		}
 
 		score->stats->leader_uid = 0;

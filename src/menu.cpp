@@ -103,6 +103,9 @@ bool spawn_blood = true;
 int multiplayerselect = SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
+bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
+																true, true, true, true,
+																true, true, true, true };
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
@@ -472,8 +475,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 
 #ifdef STEAMWORKS
-			const char *website = "http://www.baronygame.com/";
-			TTF_SizeUTF8(ttf8, website, &w, &h);
+			TTF_SizeUTF8(ttf8, language[2570], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h) 
 				&& subwindow == 0 
 				&& introstage == 1
@@ -483,13 +485,13 @@ void handleMainMenu(bool mode)
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					playSound(139, 64);
-					SteamFriends()->ActivateGameOverlayToWebPage(website);
+					SteamFriends()->ActivateGameOverlayToWebPage(language[2570]);
 				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, "http://www.baronygame.com/");
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2570]);
 			}
 			else
 			{
-				ttfPrintText(ttf8, xres - 8 - w, 8, "http://www.baronygame.com/");
+				ttfPrintText(ttf8, xres - 8 - w, 8, language[2570]);
 			}
 			h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
@@ -2185,9 +2187,32 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1373]);
 			}
 			current_y += 16;
+			int hotbar_options_x = subx1 + 72 + 256;
+			int hotbar_options_y = current_y;
 			if ( settings_auto_hotbar_new_items )
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1374]);
+				int pad_x = hotbar_options_x;
+				int pad_y = hotbar_options_y;
+				drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+				ttfPrintTextFormatted(ttf12, pad_x, current_y - 16, "%s", language[2583]);
+				for ( int i = 0; i < (NUM_HOTBAR_CATEGORIES); ++i )
+				{
+					if ( settings_auto_hotbar_categories[i] == true )
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[x] %s", language[2571 + i]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[ ] %s", language[2571 + i]);
+					}
+					pad_x += 128;
+					if ( i == 3 || i == 7 )
+					{
+						pad_x = hotbar_options_x;
+						pad_y += 16;
+					}
+				}
 			}
 			else
 			{
@@ -2296,6 +2321,29 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
+					}
+				}
+				else 
+				{
+					if ( settings_auto_hotbar_new_items )
+					{
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+							{
+								if ( mouseInBounds(hotbar_options_x, hotbar_options_x + 24, hotbar_options_y, hotbar_options_y + 12) )
+								{
+									settings_auto_hotbar_categories[i] = !settings_auto_hotbar_categories[i];
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+								}
+								hotbar_options_x += 128;
+								if ( i == 3 || i == 7 )
+								{
+									hotbar_options_x -= (128 * 4);
+									hotbar_options_y += 16;
+								}
+							}
+						}
 					}
 				}
 
@@ -5172,6 +5220,10 @@ void openSettingsWindow()
 	settings_broadcast = broadcast;
 	settings_nohud = nohud;
 	settings_auto_hotbar_new_items = auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
+	}
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
@@ -6663,6 +6715,10 @@ void applySettings()
 	nohud = settings_nohud;
 
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
+	}
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
