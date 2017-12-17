@@ -5458,7 +5458,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( pose == MONSTER_POSE_AUTOMATON_MALFUNCTION )
 					{
-						getTargetsAroundEntity(this, this, 20, PI, MONSTER_TARGET_ALL, &aoeTargets);
+						getTargetsAroundEntity(this, this, 24, PI, MONSTER_TARGET_ALL, &aoeTargets);
 						if ( aoeTargets )
 						{
 							for ( node = aoeTargets->first; node != NULL; node = node->next )
@@ -5470,7 +5470,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = (20 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										int explodeDmg = (40 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];
