@@ -9892,3 +9892,139 @@ real_t Entity::yawDifferenceFromPlayer(int player)
 	}
 	return 0.f;
 }
+
+Entity* summonChest(long x, long y)
+{
+	Entity* entity = newEntity(21, 1, map.entities);
+	if ( !entity )
+	{
+		return nullptr;
+	}
+	entity->chestLocked = -1;
+
+	// Find a free tile next to the source and then spawn it there.
+	if ( multiplayer != CLIENT )
+	{
+		if ( entityInsideSomething(entity) )
+		{
+			do
+			{
+				entity->x = x;
+				entity->y = y - 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // north
+				}
+				entity->x = x;
+				entity->y = y + 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // south
+				}
+				entity->x = x - 16;
+				entity->y = y;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // west
+				}
+				entity->x = x + 16;
+				entity->y = y;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // east
+				}
+				entity->x = x + 16;
+				entity->y = y - 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // northeast
+				}
+				entity->x = x + 16;
+				entity->y = y + 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // southeast
+				}
+				entity->x = x - 16;
+				entity->y = y - 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // northwest
+				}
+				entity->x = x - 16;
+				entity->y = y + 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // southwest
+				}
+
+				// we can't have monsters in walls...
+				list_RemoveNode(entity->mynode);
+				entity = nullptr;
+				break;
+			}
+			while (1);
+		}
+	}
+
+	entity->sizex = 3;
+	entity->sizey = 2;
+	entity->x = x;
+	entity->y = y;
+	entity->x += 8;
+	entity->y += 8;
+	entity->z = 5.5;
+	entity->yaw = entity->yaw * (PI / 2); //set to 0 by default in editor, can be set 0-3
+	entity->behavior = &actChest;
+	entity->sprite = 188;
+	//entity->skill[9] = -1; //Set default chest as random category < 0
+
+	Entity* childEntity = newEntity(216, 0, map.entities);
+	if ( !childEntity )
+	{
+		return nullptr;
+	}
+	childEntity->parent = entity->getUID();
+	entity->parent = childEntity->getUID();
+	if ( entity->yaw == 0 ) //EAST FACING
+	{
+		childEntity->x = entity->x - 3;
+		childEntity->y = entity->y;
+	}
+	else if ( entity->yaw == PI / 2 ) //SOUTH FACING
+	{
+		childEntity->x = entity->x;
+		childEntity->y = entity->y - 3;
+	}
+	else if ( entity->yaw == PI ) //WEST FACING
+	{
+		childEntity->x = entity->x + 3;
+		childEntity->y = entity->y;
+	}
+	else if (entity->yaw == 3 * PI/2 ) //NORTH FACING
+	{
+		childEntity->x = entity->x;
+		childEntity->y = entity->y + 3;
+	}
+	else
+	{
+		childEntity->x = entity->x;
+		childEntity->y = entity->y - 3;
+	}
+	//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+	childEntity->z = entity->z - 2.75;
+	childEntity->focalx = 3;
+	childEntity->focalz = -.75;
+	childEntity->yaw = entity->yaw;
+	childEntity->sizex = 2;
+	childEntity->sizey = 2;
+	childEntity->behavior = &actChestLid;
+	childEntity->flags[PASSABLE] = true;
+
+	//Chest inventory.
+	node_t* tempNode = list_AddNodeFirst(&entity->children);
+	tempNode->element = nullptr;
+	tempNode->deconstructor = &emptyDeconstructor;
+
+	return entity;
+}
