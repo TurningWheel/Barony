@@ -124,7 +124,7 @@ void actFountain(Entity* my)
 								messagePlayerColor(i, color, language[469]);
 								summonMonster(SUCCUBUS, my->x, my->y);
 							}
-							else
+							else if ( currentlevel < 20 )
 							{
 								if ( rand() % 2 )
 								{
@@ -141,6 +141,11 @@ void actFountain(Entity* my)
 									messagePlayerColor(i, color, language[469]);
 									summonMonster(SUCCUBUS, my->x, my->y);
 								}
+							}
+							else
+							{
+								messagePlayerColor(i, color, language[2519]);
+								Entity* incubus = summonMonster(INCUBUS, my->x, my->y);
 							}
 							break;
 						}
