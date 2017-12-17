@@ -516,10 +516,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 50;
 			stats->MAXMP = 50;
 			stats->OLDHP = stats->HP;
-			stats->STR = 40;
+			stats->STR = 50;
 			stats->RANDOM_STR = 5;
-			stats->DEX = 1;
-			stats->RANDOM_DEX = 3;
+			stats->DEX = 2;
+			stats->RANDOM_DEX = 2;
 			stats->CON = 25;
 			stats->RANDOM_CON = 0;
 			stats->INT = -2;
@@ -708,7 +708,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_CHR = 0;
 
 			stats->EXP = 0;
-			stats->LVL = 50;
+			stats->LVL = 35;
 			stats->GOLD = 50;
 			stats->RANDOM_GOLD = 100;
 			stats->HUNGER = 900;
@@ -770,6 +770,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; // iron daggers, qty 2-8
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 50; // shortbow
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 5; // spellbook
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 20; // gemstones, qty 1-2
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_4] = 1;

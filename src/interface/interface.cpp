@@ -133,6 +133,9 @@ bool hotbarHasFocus = false;
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = true;
+bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
+														true, true, true, true,
+														true, true, true, true };
 bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
@@ -887,6 +890,10 @@ int saveConfig(char* filename)
 	if (!auto_hotbar_new_items)
 	{
 		fprintf(fp, "/disablehotbarnewitems\n");
+	}
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
 	}
 	if (disable_messages)
 	{

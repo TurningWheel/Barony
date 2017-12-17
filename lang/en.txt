@@ -2777,8 +2777,8 @@ client (player %d) (direct ip)#
 2007 insectoid#
 2008 goatman#
 2009 automaton#
-2010 lich ice#
-2011 lich fire#
+2010 unknown1#
+2011 unknown2#
 
 # monster plurals
 
@@ -2792,8 +2792,8 @@ client (player %d) (direct ip)#
 2057 insectoids#
 2058 goatmen#
 2059 automatons#
-2060 liches#
-2061 liches#
+2060 unknown1#
+2061 unknown2#
 
 # injury types (2100-2149)
 
@@ -2821,8 +2821,8 @@ client (player %d) (direct ip)#
 2157 is dispatched by an insectoid.#
 2158 is dispatched by a goatman.#
 2159 is dispatched by an automaton.#
-2160 is dispatched by the icy lich.#
-2161 is dispatched by the fiery lich.#
+2160 is dispatched by the unknown1.#
+2161 is dispatched by the unknown2.#
 
 #items, reserve 2200-2349 for new items
 2200 artifact breastpiece#
@@ -3136,6 +3136,7 @@ last of your magic is drained!#
 2541 staff: #
 2542 Damage:%11d ATK#
 
+# 2543 - 2549 attacking text, misc
 2543 Your strike catches the %s unaware!#
 2544 Your strike catches %s unaware!#
 2545 Your strike flanks the %s's defenses!#
@@ -3179,6 +3180,22 @@ Difficulty: Normal#
 Difficulty: Normal#
 2569 A blank.
 Difficulty: Normal#
+
+# More misc.
+2570 http://www.baronygame.com/#
+2571 Weapons#
+2572 Armor#
+2573 Jewelry#
+2574 Books#
+2575 Tools#
+2576 Thrown#
+2577 Gems#
+2578 Potions#
+2579 Scrolls#
+2580 Staves#
+2581 Food#
+2582 Spells#
+2583 Item Categories for Auto Hotbar:#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 

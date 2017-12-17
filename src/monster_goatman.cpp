@@ -133,7 +133,7 @@ void initGoatman(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( isShaman && rand() % 20 == 0 )
+					if ( isShaman && rand() % 10 == 0 )
 					{
 						switch ( rand() % 4 )
 						{
@@ -160,12 +160,12 @@ void initGoatman(Entity* my, Stat* myStats)
 			//Give weapons.
 			if ( !boss )
 			{
-				if ( !isShaman && rand() % 2 == 0 )
+				if ( !isShaman && rand() % 3 > 0 )
 				{
 					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
 				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
-				if ( rand() % 5 == 0 )
+				if ( rand() % 3 == 0 )
 				{
 					int numhealpotion = rand() % 2 + 1;
 					newItem(POTION_HEALING, static_cast<Status>(rand() % 3 + DECREPIT), 0, numhealpotion, rand(), false, &myStats->inventory);

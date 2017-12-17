@@ -3349,7 +3349,7 @@ void serverHandlePacket()
 		{
 			nextnode = node->next;
 			Item* item2 = (Item*)node->element;
-			if (!itemCompare(item, item2))
+			if (!itemCompare(item, item2, false))
 			{
 				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
 				consumeItem(item2);
