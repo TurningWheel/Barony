@@ -146,7 +146,6 @@ int monsterCurve(int level)
 				else
 				{
 					return VAMPIRE;
-					//messagePlayer(0, "true");
 				}
 			case 9:
 				return DEMON;
@@ -202,36 +201,86 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Caves", 5) )
 	{
-		switch ( rand() % 20 )
+		if ( currentlevel == 26 || currentlevel == 27 )
 		{
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-			case 4:
-				return KOBOLD;
-			case 5:
-			case 6:
-				return SCARAB;
-			case 7:
-			case 8:
-				return AUTOMATON;
-			case 9:
-			case 10:
-			case 11:
-			case 12:
-				return INSECTOID;
-			case 13:
-			case 14:
-				return CRYSTALGOLEM;
-			case 15:
-			case 16:
-			case 17:
-				return GOATMAN;
-			case 18:
-				return INCUBUS;
-			case 19:
-				return COCKATRICE;
+			switch ( rand() % 20 )
+			{
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:
+					return KOBOLD;
+				case 6:
+				case 7:
+					return SCARAB;
+				case 8:
+				case 9:
+					return AUTOMATON;
+				case 10:
+				case 11:
+				case 12:
+					return INSECTOID;
+				case 13:
+				case 14:
+				case 15:
+				case 16:
+					return GOATMAN;
+				case 17:
+					if ( rand() % 2 == 0 )
+					{
+						return INCUBUS;
+					}
+					else
+					{
+						return INSECTOID;
+					}
+				case 18:
+				case 19:
+					if ( rand() % 2 == 0 )
+					{
+						return CRYSTALGOLEM;
+					}
+					else
+					{
+						return COCKATRICE;
+					}
+			}
+		}
+		else
+		{
+			switch ( rand() % 20 )
+			{
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+					return KOBOLD;
+				case 5:
+				case 6:
+					return SCARAB;
+				case 7:
+				case 8:
+					return AUTOMATON;
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+					return INSECTOID;
+				case 13:
+				case 14:
+					return CRYSTALGOLEM;
+				case 15:
+				case 16:
+				case 17:
+					return GOATMAN;
+				case 18:
+					return INCUBUS;
+				case 19:
+					return COCKATRICE;
+			}
 		}
 	}
 	else if ( !strncmp(map.name, "Citadel", 7) )
@@ -4332,7 +4381,7 @@ void assignActions(map_t* map)
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
-				map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height] = 208; //entity->spellTrapCeilingModel
+				//map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height] = 208; //entity->spellTrapCeilingModel
 				Entity* childEntity = nullptr;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{
@@ -4357,17 +4406,17 @@ void assignActions(map_t* map)
 						tempNode->deconstructor = &emptyDeconstructor;
 						tempNode->size = sizeof(Entity*);
 
-						//childEntity = newEntity(645, 1, map->entities);
-						//childEntity->parent = entity->getUID();
-						//childEntity->x = entity->x;
-						//childEntity->y = entity->y;
-						//childEntity->z = 8.24;
-						////printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						//childEntity->flags[PASSABLE] = true;
-						//tempNode = list_AddNodeLast(&entity->children);
-						//tempNode->element = childEntity; // add the node to the children list.
-						//tempNode->deconstructor = &emptyDeconstructor;
-						//tempNode->size = sizeof(Entity*);
+						childEntity = newEntity(645, 1, map->entities);
+						childEntity->parent = entity->getUID();
+						childEntity->x = entity->x;
+						childEntity->y = entity->y;
+						childEntity->z = 8.24;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						childEntity->flags[PASSABLE] = true;
+						tempNode = list_AddNodeLast(&entity->children);
+						tempNode->element = childEntity; // add the node to the children list.
+						tempNode->deconstructor = &emptyDeconstructor;
+						tempNode->size = sizeof(Entity*);
 					}
 				}
 				break;

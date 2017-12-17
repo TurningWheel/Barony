@@ -375,10 +375,10 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							{
 								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
-								if ( rand() % 4 == 0 )
+								/*if ( rand() % 4 == 0 )
 								{
 									playSoundEntityLocal(my, 266, 32);
-								}
+								}*/
 							}
 						}
 					}
