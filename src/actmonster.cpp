@@ -491,6 +491,17 @@ Entity* summonMonster(Monster creature, long x, long y)
 	return NULL;
 }
 
+void summonManyMonster(Monster creature)
+{
+	for ( long x = 1; x < map.width - 1; ++x )
+	{
+		for ( long y = 1; y < map.height - 1; ++y )
+		{
+			summonMonster(creature, (x * 16) + 8, (y * 16) + 8);
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	monsterMoveAside
