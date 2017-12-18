@@ -36,3 +36,4 @@
 #define CREDITSLINE37 "For Sterling"
 #define CREDITSLINE38 "- Sheridan"
 #define CREDITSLINE39 "Josiah Colborn"
+#define CREDITSLINE40 "Ben Potter"
