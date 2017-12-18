@@ -1004,7 +1004,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 							if ( tempMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
 							{
 								trapexcludelocations[x0 + y0 * map.width] = true;
-								map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
+								//map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
 							}
 							if ( tempMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 							{
