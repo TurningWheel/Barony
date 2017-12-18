@@ -1228,6 +1228,25 @@ void consoleCommand(char* command_str)
 			}
 		}
 	}
+	else if (!strncmp(command_str, "/summonchest", 12)) //MAGIC TEST FUNCTION WE NEEDED LONG AGO.
+	{
+		if (!(svFlags & SV_FLAG_CHEATS))
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if (multiplayer == CLIENT)
+		{
+			messagePlayer(clientnum, language[284]);
+		}
+		else if (players[clientnum] && players[clientnum]->entity)
+		{
+			playSoundEntity(players[clientnum]->entity, 153, 64);
+
+			//Spawn monster
+			Entity* chest = summonChest(players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+		}
+	}
 	else if (!strncmp(command_str, "/broadcast", 10))
 	{
 		broadcast = (broadcast == false);

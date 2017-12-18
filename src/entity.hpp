@@ -788,3 +788,7 @@ static const int MSG_ATTACKS = 4;
 void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType);
 char* playerClassLangEntry(int classnum);
 char* playerClassDescription(int classnum);
+
+//Some testing functions/commands.
+Entity* summonChest(long x, long y);
+
