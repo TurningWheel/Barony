@@ -3196,6 +3196,7 @@ Difficulty: Normal#
 2581 Food#
 2582 Spells#
 2583 Item Categories for Auto Hotbar:#
+2584 http://www.baronygame.com/#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
