@@ -3163,7 +3163,7 @@ Difficulty: Hard#
 2561 A highly specialized assassin. They ambush foes with swords or ranged weapons,
 using a few other tricks to get out of bad situations.
 Difficulty: Hard#
-2562 Disciplined and hardy. They have little in the way of offensive training and 
+2562 Disciplined and hardy. They have little in the way of offensive training and
 material goods, but can rely on their excellent fortitude and adaptability.
 Difficulty: Normal#
 2563 A blank.
@@ -3198,25 +3198,28 @@ Difficulty: Normal#
 2583 Item Categories for Auto Hotbar:#
 2584 http://www.baronygame.com/#
 
-2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
+2585 <Open Source Shoutout>#
+2586 #
+
+2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
 exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.#
 
-2601 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in 
+2601
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
 culpa qui officia deserunt mollit anim id est laborum.#
 
-2602 
+2602
 
 
 
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium 
-doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore 
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
+doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
 veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
 
-2603 
+2603
 
 
 
@@ -3225,10 +3228,10 @@ veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
 
 
 
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, 
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
 sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
 
-2604 
+2604
 
 
 
@@ -3244,7 +3247,7 @@ sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
 
 Now advance when your allies are ready!#
 
-2605 
+2605
 
 
 
