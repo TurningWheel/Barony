@@ -13,7 +13,7 @@
 
 #define CREDITSLINE02 "Sheridan Kane Rathbun"
 #define CREDITSLINE04 "Chris Kukla"
-#define CREDITSLINE06 "Ciprian Ilies"
+#define CREDITSLINE06 "Ciprian Elies"
 #define CREDITSLINE08 "Mathias Golinelli"
 #define CREDITSLINE09 "Julian Seeger"
 #define CREDITSLINE11 "Sterling Rathbun"
