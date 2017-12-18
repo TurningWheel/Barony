@@ -482,7 +482,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 
 #ifdef STEAMWORKS
-			TTF_SizeUTF8(ttf8, language[2570], &w, &h);
+			TTF_SizeUTF8(ttf8, language[2584], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 				&& subwindow == 0
 				&& introstage == 1
@@ -494,11 +494,11 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 					SteamFriends()->ActivateGameOverlayToWebPage(language[2570]);
 				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2570]);
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2584]);
 			}
 			else
 			{
-				ttfPrintText(ttf8, xres - 8 - w, 8, language[2570]);
+				ttfPrintText(ttf8, xres - 8 - w, 8, language[2584]);
 			}
 			h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
