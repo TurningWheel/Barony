@@ -1158,13 +1158,53 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	{
 		if ( using_magicstaff )
 		{
-			if ( rand() % 6 == 0 ) //16.67%
+			if ( stat )
 			{
-				caster->increaseSkill(PRO_SPELLCASTING);
-			}
-			if ( rand() % 7 == 0 ) //14.2%
-			{
-				caster->increaseSkill(PRO_MAGIC);
+				// spellcasting increase chances.
+				if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 60 )
+				{
+					if ( rand() % 6 == 0 ) //16.67%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+				else if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 80 )
+				{
+					if ( rand() % 9 == 0 ) //11.11%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+				else // greater than 80
+				{
+					if ( rand() % 12 == 0 ) //8.33%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+
+				// magic increase chances.
+				if ( stat->PROFICIENCIES[PRO_MAGIC] < 60 )
+				{
+					if ( rand() % 7 == 0 ) //14.2%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+				else if ( stat->PROFICIENCIES[PRO_MAGIC] < 80 )
+				{
+					if ( rand() % 10 == 0 ) //10.00%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+				else // greater than 80
+				{
+					if ( rand() % 13 == 0 ) //7.69%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
 			}
 		}
 		else
