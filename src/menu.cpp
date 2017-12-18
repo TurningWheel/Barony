@@ -4216,7 +4216,7 @@ void handleMainMenu(bool mode)
 			fadefinished = false;
 			fadeout = false;
 			creditstage++;
-			if ( creditstage >= 14 )
+			if ( creditstage >= 15 )
 			{
 #ifdef MUSIC
 				playmusic(intromusic, true, false, false);
@@ -4605,8 +4605,8 @@ void handleMainMenu(bool mode)
 	// credits sequence
 	if ( creditstage > 0 )
 	{
-		if ( (credittime >= 300 && (creditstage <= 10 || creditstage > 12)) || (credittime >= 180 && creditstage == 11) ||
-		        (credittime >= 480 && creditstage == 12) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
+		        (credittime >= 480 && creditstage == 13) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if ( rebindaction == -1 )
@@ -4632,7 +4632,8 @@ void handleMainMenu(bool mode)
 		else if ( creditstage == 3 )
 		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[58]), yres / 2 - 9 - 18, colorBlue, language[58]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9 + 18, CREDITSLINE06);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9, CREDITSLINE06);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE40), yres / 2 - 9 + 18, CREDITSLINE40);
 		}
 		else if ( creditstage == 4 )
 		{
@@ -4676,10 +4677,17 @@ void handleMainMenu(bool mode)
 		}
 		else if ( creditstage == 9 )
 		{
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2585]), yres / 2 - 9 - 18, colorBlue, language[2585]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2586]), yres / 2 - 9, colorBlue, language[2586]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2587]), yres / 2 - 9 + 18, colorBlue, language[2587]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2588]), yres / 2 + 9 + 18, colorBlue, language[2588]);
+		}
+		else if ( creditstage == 10 )
+		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[64]), yres / 2 - 9 - 18, colorBlue, language[64]);
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[65]), yres / 2 - 9 + 18, language[65]);
 		}
-		else if ( creditstage == 10 )
+		else if ( creditstage == 11 )
 		{
 			// logo
 			src.x = 0;
@@ -4707,7 +4715,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[68]), yres / 2 + 136, language[68]);
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[69]), yres / 2 + 156, colorBlue, language[69]);
 		}
-		else if ( creditstage == 12 )
+		else if ( creditstage == 13 )
 		{
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE37), yres / 2 - 9, CREDITSLINE37);
 			//ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2+9,colorBlue,CREDITSLINE38);
