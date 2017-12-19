@@ -723,27 +723,27 @@ void attackHoverText(Sint32 input[6])
 			switch ( input[0] )
 			{
 				case 0: // fists
-					snprintf(tooltipHeader, strlen(language[2529]), language[2529]);
+					strcpy(tooltipHeader, language[2529]);
 					numInfoLines = 2;
 					break;
 				case 1: // ranged
-					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
+					strcpy(tooltipHeader, language[2530]);
 					numInfoLines = 3;
 					break;
 				case 2: // thrown
-					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
+					strcpy(tooltipHeader, language[2531]);
 					numInfoLines = 2;
 					break;
 				case 3: // melee
-					snprintf(tooltipHeader, strlen(language[2532]), language[2532]);
+					strcpy(tooltipHeader, language[2532]);
 					numInfoLines = 4;
 					break;
 				case 4: // tools
-					snprintf(tooltipHeader, strlen(language[2540]), language[2540]);
+					strcpy(tooltipHeader, language[2540]);
 					numInfoLines = 2;
 					break;
 				case 5: // staffs
-					snprintf(tooltipHeader, strlen(language[2541]), language[2541]);
+					strcpy(tooltipHeader, language[2541]);
 					numInfoLines = 0;
 					break;
 				default:
