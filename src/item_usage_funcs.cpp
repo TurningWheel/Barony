@@ -1470,7 +1470,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			messagePlayer(player, language[857]);
 		}
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if (item->beatitude < 0)
 		{
@@ -1925,11 +1925,11 @@ void item_ScrollRepair(Item* item, int player)
 		}
 	}
 
-	if ( armor == NULL && player == clientnum )
+	if ( armor == nullptr && player == clientnum )
 	{
 		messagePlayer(player, language[870]);
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if ( item->beatitude < 0 && player == clientnum )
 		{

@@ -3182,7 +3182,7 @@ Difficulty: Normal#
 Difficulty: Normal#
 
 # More misc.
-2570 http://www.baronygame.com/#
+2570 https://docs.google.com/forms/d/e/1FAIpQLScywW5ROX4m8cp05PspI7xZNV0jkEPAWJu3lWegS9Tj9NBDOg/viewform#
 2571 Weapons#
 2572 Armor#
 2573 Jewelry#
@@ -3196,7 +3196,7 @@ Difficulty: Normal#
 2581 Food#
 2582 Spells#
 2583 Item Categories for Auto Hotbar:#
-2584 http://www.baronygame.com/#
+2584 Click here to provide feedback for the Beta!#
 
 2585 A big shoutout to the open source community for their contributions!#
 2586 #
