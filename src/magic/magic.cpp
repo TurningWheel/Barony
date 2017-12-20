@@ -326,8 +326,8 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					my.removeLightField();
-					list_RemoveNode(my.mynode);
+					/*my.removeLightField();
+					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -458,8 +458,8 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					my.removeLightField();
-					list_RemoveNode(my.mynode);
+					/*my.removeLightField();
+					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -602,8 +602,8 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					my.removeLightField();
-					list_RemoveNode(my.mynode);
+					/*my.removeLightField();
+					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}

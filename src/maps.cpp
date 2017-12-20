@@ -174,13 +174,19 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Hell", 4) )     // hell
 	{
-		switch ( rand() % 10 )
+		switch ( rand() % 20 )
 		{
 			case 0:
 			case 1:
 				return SUCCUBUS;
 			case 2:
 			case 3:
+				return INCUBUS;
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+			case 8:
 				if ( strstr(map.name, "Boss") )
 				{
 					return DEMON;    // we would otherwise lag bomb on the boss level
@@ -189,14 +195,20 @@ int monsterCurve(int level)
 				{
 					return CREATURE_IMP;
 				}
-			case 4:
-			case 5:
-				return SHADOW;
-			case 6:
-			case 7:
-			case 8:
 			case 9:
+			case 10:
+			case 11:
+			case 12:
+			case 13:
+			case 14:
 				return DEMON;
+			case 15:
+			case 16:
+			case 17:
+			case 18:
+				return GOATMAN;
+			case 19:
+				return SHADOW;
 		}
 	}
 	else if ( !strncmp(map.name, "Caves", 5) )
