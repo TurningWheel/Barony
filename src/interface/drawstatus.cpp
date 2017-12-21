@@ -689,6 +689,15 @@ void drawStatus()
 						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
 					}
+					else if ( item->status == BROKEN )
+					{
+						SDL_Rect src;
+						src.x = pos.x + 2;
+						src.y = pos.y + hotbar_img->h - 18;
+						src.w = 16;
+						src.h = 16;
+						drawImage(itembroken_bmp, NULL, &src);
+					}
 				}
 				else
 				{
