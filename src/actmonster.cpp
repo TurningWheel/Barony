@@ -1683,6 +1683,29 @@ void actMonster(Entity* my)
 			}
 		}
 
+		// Check if Shopkeepers are now hostile against Players
+		if ( myStats->type == SHOPKEEPER )
+		{
+			Entity* targetedEntity = uidToEntity(MONSTER_TARGET);
+
+			if ( targetedEntity != nullptr )
+			{
+				// Shopkeepers hold a grudge against players
+				for ( Uint8 iPlayerIndex = 0; iPlayerIndex < MAXPLAYERS; iPlayerIndex++ )
+				{
+					if ( players[iPlayerIndex] && players[iPlayerIndex]->entity )
+					{
+						if ( MONSTER_TARGET == players[iPlayerIndex]->entity->getUID() )
+						{
+							swornenemies[SHOPKEEPER][HUMAN] = true;
+							monsterally[SHOPKEEPER][HUMAN] = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		// state machine
 		if ( MONSTER_STATE == 0 )   // wait state
 		{
@@ -2161,23 +2184,6 @@ void actMonster(Entity* my)
 			MONSTER_TARGETX = entity->x;
 			MONSTER_TARGETY = entity->y;
 			hitstats = entity->getStats();
-
-			if (myStats->type == SHOPKEEPER)
-			{
-				// shopkeepers hold a grudge against players
-				for (c = 0; c < MAXPLAYERS; c++)
-				{
-					if (players[c] && players[c]->entity)
-					{
-						if (MONSTER_TARGET == players[c]->entity->getUID())
-						{
-							swornenemies[SHOPKEEPER][HUMAN] = true;
-							monsterally[SHOPKEEPER][HUMAN] = false;
-							break;
-						}
-					}
-				}
-			}
 
 			if ( myStats->type != DEVIL )
 			{
