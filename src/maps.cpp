@@ -228,8 +228,8 @@ int monsterCurve(int level)
 				case 7:
 					return SCARAB;
 				case 8:
-				case 9:
 					return AUTOMATON;
+				case 9:
 				case 10:
 				case 11:
 				case 12:
@@ -274,16 +274,16 @@ int monsterCurve(int level)
 				case 6:
 					return SCARAB;
 				case 7:
-				case 8:
 					return AUTOMATON;
+				case 8:
 				case 9:
 				case 10:
 				case 11:
-				case 12:
 					return INSECTOID;
+				case 12:
 				case 13:
-				case 14:
 					return CRYSTALGOLEM;
+				case 14:
 				case 15:
 				case 16:
 				case 17:
@@ -1357,6 +1357,24 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
+			}
+		}
+
+		// do a second pass to look for internal doorways
+		for ( node = map.entities->first; node != nullptr; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			int x = entity->x / 16;
+			int y = entity->y / 16;
+			if ( (entity->sprite == 2 || entity->sprite == 3)
+				&& (x >= 0 && x < map.width)
+				&& (y >= 0 && y < map.height) )
+			{
+				if ( possiblelocations[y + x * map.height] )
+				{
+					possiblelocations[y + x * map.height] = false;
+					numpossiblelocations--;
+				}
 			}
 		}
 
