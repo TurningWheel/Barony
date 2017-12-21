@@ -1982,6 +1982,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+							playSoundEntity(this, 97, 128);
 						}
 					}
 				}
@@ -2137,7 +2138,20 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
-		for ( i = 0; i < NUMSTATS; i++ )
+		for ( i = 0; i < MAXPLAYERS; ++i )
+		{
+			// broadcast a player levelled up to other players.
+			if ( i != player )
+			{
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+			}
+		}
+
+		for ( i = 0; i < NUMSTATS; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
@@ -9608,13 +9622,34 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		// use generic racial name and grammar. "You hit the skeleton"
 		if ( detailType == MSG_OBITUARY )
 		{
-			if ( monsterStats.type < KOBOLD ) // Original monster count
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
-			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( c == player )
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgNamed, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
+				else
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
@@ -9675,18 +9710,32 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		}
 		else if ( detailType == MSG_OBITUARY )
 		{
-			if ( namedMonsterAsGeneric )
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
-			}
-			else
-			{
-				messagePlayerColor(player, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( namedMonsterAsGeneric )
+				{
+					if ( c == player )
+					{
+						messagePlayerColor(c, color, msgNamed, monsterStats.name, monsterStats.obituary);
+					}
+					else
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
+					}
+				}
+				else
+				{
+					messagePlayerColor(c, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				}
 			}
 		}
 		else if ( detailType == MSG_GENERIC )
 		{
-			if ( namedMonsterAsGeneric )
+			if ( namedMonsterAsGeneric || monsterStats.type == HUMAN )
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
