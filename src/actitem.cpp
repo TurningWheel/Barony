@@ -40,7 +40,6 @@
 #define ITEM_IDENTIFIED my->skill[15]
 #define ITEM_LIFE my->skill[16]
 #define ITEM_AMBIENCE my->skill[17]
-#define ITEM_NOTMOVING my->skill[18]
 
 void actItem(Entity* my)
 {
@@ -165,7 +164,7 @@ void actItem(Entity* my)
 		}
 	}
 
-	if (ITEM_NOTMOVING)
+	if ( my->itemNotMoving )
 	{
 		switch ( my->sprite )
 		{
@@ -182,7 +181,18 @@ void actItem(Entity* my)
 			default:
 				break;
 		}
-		return;
+		if ( multiplayer == CLIENT )
+		{
+			// let the client process some more gravity and make sure it isn't stopping early at an awkward angle.
+			if ( my->itemNotMovingClient == 1 )
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	// gravity
@@ -285,11 +295,15 @@ void actItem(Entity* my)
 
 	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
 	{
-		ITEM_NOTMOVING = 1;
+		my->itemNotMoving = 1;
 		my->flags[UPDATENEEDED] = false;
 		if ( multiplayer != CLIENT )
 		{
-			serverUpdateEntitySkill(my, 18);
+			serverUpdateEntitySkill(my, 18); //update itemNotMoving flag
+		}
+		else
+		{
+			my->itemNotMovingClient = 1;
 		}
 		return;
 	}
