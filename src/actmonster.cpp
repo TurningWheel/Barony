@@ -1410,14 +1410,7 @@ void actMonster(Entity* my)
 		}
 		if ( playerFollower < MAXPLAYERS )
 		{
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				if ( client_disconnected[c] )
-				{
-					continue;
-				}
-				messagePlayerMonsterEvent(c, 0xFFFFFFFF, *myStats, language[1499], language[1499], MSG_OBITUARY);
-			}
+			messagePlayerMonsterEvent(c, 0xFFFFFFFF, *myStats, language[1499], language[2589], MSG_OBITUARY);
 		}
 
 		// drop gold
