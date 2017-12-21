@@ -10,6 +10,8 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"

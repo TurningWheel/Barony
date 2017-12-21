@@ -10,11 +10,13 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "net.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "monster.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
@@ -1767,11 +1769,11 @@ void clientHandlePacket()
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
 		if ( !secretlevel )
 		{
-			fp = fopen(LEVELSFILE, "r");
+			fp = openDataFile(LEVELSFILE, "r");
 		}
 		else
 		{
-			fp = fopen(SECRETLEVELSFILE, "r");
+			fp = openDataFile(SECRETLEVELSFILE, "r");
 		}
 		for ( i = 0; i < currentlevel; i++ )
 			while ( fgetc(fp) != '\n' ) if ( feof(fp) )

@@ -11,16 +11,19 @@
 
 #include <list>
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
@@ -3778,11 +3781,11 @@ void handleMainMenu(bool mode)
 				{
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					int i;
 					for ( i = 0; i < currentlevel; i++ )
@@ -3939,11 +3942,11 @@ void handleMainMenu(bool mode)
 				{
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					int i;
 					for ( i = 0; i < currentlevel; i++ )

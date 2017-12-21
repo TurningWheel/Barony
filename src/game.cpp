@@ -10,16 +10,19 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
@@ -672,11 +675,11 @@ void gameLogic(void)
 					numplayers = 0;
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					for ( i = 0; i < currentlevel; i++ )
 						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -2184,14 +2187,6 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		// load default language file (english)
-		if ( loadLanguage("en") )
-		{
-			printlog("Fatal error: failed to load default language file!\n");
-			fclose(logfile);
-			exit(1);
-		}
-
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2229,8 +2224,25 @@ int main(int argc, char** argv)
 					{
 						strcpy(classtoquickstart, argv[c] + 12);
 					}
+					else if (!strncmp(argv[c], "-datadir=", 9))
+					{
+						setDataDir(argv[c] + 9);
+					}
+					else if (!strncmp(argv[c], "-userdir=", 9))
+					{
+						setUserDir(argv[c] + 9);
+					}
 				}
 			}
+		}
+
+
+		// load default language file (english)
+		if ( loadLanguage("en") )
+		{
+			printlog("Fatal error: failed to load default language file!\n");
+			fclose(logfile);
+			exit(1);
 		}
 
 		// load config file
@@ -2556,11 +2568,11 @@ int main(int argc, char** argv)
 						{
 							if ( !secretlevel )
 							{
-								fp = fopen(LEVELSFILE, "r");
+								fp = openDataFile(LEVELSFILE, "r");
 							}
 							else
 							{
-								fp = fopen(SECRETLEVELSFILE, "r");
+								fp = openDataFile(SECRETLEVELSFILE, "r");
 							}
 							fscanf(fp, "%s", tempstr);
 							while ( fgetc(fp) != ' ' ) if ( feof(fp) )

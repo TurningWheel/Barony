@@ -10,8 +10,11 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
+#include "files.hpp"
+#include "init.hpp"
 
 #define EDITOR
 
@@ -713,6 +716,10 @@ void processCommandLine(int argc, char** argv)
 				{
 					strcpy(maptoload, argv[c] + 5);
 					loadingmap = true;
+				}
+				else if (!strncmp(argv[c], "-datadir=", 9))
+				{
+					setDataDir(argv[c] + 9);
 				}
 			}
 		}
