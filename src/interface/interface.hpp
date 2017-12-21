@@ -64,6 +64,7 @@ extern SDL_Surface* attributesleft_bmp, *attributesleftunclicked_bmp;
 extern SDL_Surface* attributesright_bmp, *attributesrightunclicked_bmp;
 extern SDL_Surface* button_bmp, *smallbutton_bmp, *invup_bmp, *invdown_bmp;
 extern SDL_Surface* inventory_bmp, *inventoryoption_bmp, *inventoryoptionChest_bmp, *equipped_bmp;
+extern SDL_Surface* itembroken_bmp;
 //extern SDL_Surface *category_bmp[NUMCATEGORIES];
 extern SDL_Surface* shopkeeper_bmp;
 extern SDL_Surface* damage_bmp;

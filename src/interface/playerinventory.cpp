@@ -904,6 +904,14 @@ void updatePlayerInventory()
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
 			}
+			else if ( item->status == BROKEN )
+			{
+				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
+				pos.w = 16;
+				pos.h = 16;
+				drawImage(itembroken_bmp, NULL, &pos);
+			}
 		}
 		else
 		{
