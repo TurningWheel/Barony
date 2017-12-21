@@ -5882,7 +5882,6 @@ bool Entity::teleportRandom()
 	int numlocations = 0;
 	int pickedlocation;
 	int player = -1;
-
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
@@ -5896,9 +5895,9 @@ bool Entity::teleportRandom()
 		}
 
 	}
-	for ( int iy = 0; iy < map.height; ++iy )
+	for ( int iy = 1; iy < map.height; ++iy )
 	{
-		for ( int ix = 0; ix < map.width; ++ix )
+		for ( int ix = 1; ix < map.width; ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5913,9 +5912,9 @@ bool Entity::teleportRandom()
 	}
 	pickedlocation = rand() % numlocations;
 	numlocations = 0;
-	for ( int iy = 0; iy < map.height; iy++ )
+	for ( int iy = 1; iy < map.height; iy++ )
 	{
-		for ( int ix = 0; ix < map.width; ix++ )
+		for ( int ix = 1; ix < map.width; ix++ )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5959,9 +5958,9 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 			return false;
 		}
 	}
-	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
-		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
