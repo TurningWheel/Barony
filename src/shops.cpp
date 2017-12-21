@@ -73,7 +73,7 @@ void startTradingServer(Entity* entity, int player)
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		Entity* entity = uidToEntity(shopkeeper);
-		shopkeepertype = entity->skill[18];
+		shopkeepertype = entity->monsterStoreType;
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
 		identifygui_active = false;
@@ -96,7 +96,7 @@ void startTradingServer(Entity* entity, int player)
 		Stat* entitystats = entity->getStats();
 		strcpy((char*)net_packet->data, "SHOP");
 		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
-		net_packet->data[8] = entity->skill[18];
+		net_packet->data[8] = entity->monsterStoreType;
 		strcpy((char*)(&net_packet->data[9]), entitystats->name);
 		net_packet->data[9 + strlen(entitystats->name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;

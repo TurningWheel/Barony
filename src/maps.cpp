@@ -2564,7 +2564,7 @@ void assignActions(map_t* map)
 				}
 				item = newItemFromEntity(entity);
 				entity->sprite = itemModel(item);
-				if ( !entity->skill[18] )
+				if ( !entity->itemNotMoving )
 				{
 					// shurikens and chakrams need to lie flat on floor as their models are rotated.
 					if ( item->type == CRYSTAL_SHURIKEN || item->type == STEEL_CHAKRAM )
@@ -2584,7 +2584,8 @@ void assignActions(map_t* map)
 						entity->z = 7.5 - models[entity->sprite]->sizey * .25;
 					}
 				}
-				entity->skill[18] = 1; // so the item retains its position
+				entity->itemNotMoving = 1; // so the item retains its position
+				entity->itemNotMovingClient = 1; // so the item retains its position for clients
 				itemsdonebefore = true;
 				free(item);
 				break;
@@ -3598,7 +3599,8 @@ void assignActions(map_t* map)
 					childEntity->y = entity->y - 8;
 					//printlog("31 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 					childEntity->z = 0;
-					childEntity->skill[18] = 1; // so the item retains its position
+					childEntity->itemNotMoving = 1; // so the item retains its position
+					childEntity->itemNotMovingClient = 1; // so the item retains its position for clients
 					entity->parent = childEntity->getUID();
 				}
 				if ( prng_get_uint() % 2 == 0 )
