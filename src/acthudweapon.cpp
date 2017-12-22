@@ -923,6 +923,11 @@ void actHudWeapon(Entity* my)
 				{
 					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+					if ( stats[clientnum]->weapon
+						&& stats[clientnum]->weapon->type == CROSSBOW )
+					{
+						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
+					}
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -1121,6 +1126,11 @@ void actHudWeapon(Entity* my)
 				{
 					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
+					if ( stats[clientnum]->weapon
+						&& stats[clientnum]->weapon->type == CROSSBOW )
+					{
+						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
+					}
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -1232,6 +1242,11 @@ void actHudWeapon(Entity* my)
 				{
 					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+					if ( stats[clientnum]->weapon
+						&& stats[clientnum]->weapon->type == CROSSBOW )
+					{
+						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
+					}
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
