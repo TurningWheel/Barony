@@ -269,6 +269,27 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	bool rangedweapon = false;
+	if ( stats[clientnum]->weapon )
+	{
+		if ( stats[clientnum]->weapon->type == SLING )
+		{
+			rangedweapon = true;
+		}
+		else if ( stats[clientnum]->weapon->type == SHORTBOW )
+		{
+			rangedweapon = true;
+		}
+		else if ( stats[clientnum]->weapon->type == CROSSBOW )
+		{
+			rangedweapon = true;
+		}
+		else if ( stats[clientnum]->weapon->type == ARTIFACT_BOW )
+		{
+			rangedweapon = true;
+		}
+	}
+
 	// select model
 	if ( stats[clientnum]->ring != nullptr )
 	{
@@ -335,7 +356,13 @@ void actHudWeapon(Entity* my)
 #endif
 				if ( position >= length / 4 )
 				{
-					my->sprite++;
+					if ( rangedweapon )
+					{
+						if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
+						{
+							my->sprite++;
+						}
+					}
 				}
 			}
 #else
@@ -345,7 +372,13 @@ void actHudWeapon(Entity* my)
 				unsigned int length = bowDrawingLength;
 				if ( position >= length / 4 )
 				{
-					my->sprite++;
+					if ( rangedweapon )
+					{
+						if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
+						{
+							my->sprite++;
+						}
+					}
 				}
 			}
 #endif
@@ -374,27 +407,6 @@ void actHudWeapon(Entity* my)
 		if (parent != NULL)
 		{
 			parent->flags[INVISIBLE] = true;
-		}
-	}
-
-	bool rangedweapon = false;
-	if ( stats[clientnum]->weapon )
-	{
-		if ( stats[clientnum]->weapon->type == SLING )
-		{
-			rangedweapon = true;
-		}
-		else if ( stats[clientnum]->weapon->type == SHORTBOW )
-		{
-			rangedweapon = true;
-		}
-		else if ( stats[clientnum]->weapon->type == CROSSBOW )
-		{
-			rangedweapon = true;
-		}
-		else if ( stats[clientnum]->weapon->type == ARTIFACT_BOW )
-		{
-			rangedweapon = true;
 		}
 	}
 
