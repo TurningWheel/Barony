@@ -836,39 +836,35 @@ void updatePlayerInventory()
 			continue;
 		}
 
+		pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+		pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
+		pos.w = 38;
+		pos.h = 38;
 		if (!item->identified)
 		{
 			// give it a yellow background if it is unidentified
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
-			drawRect(&pos, 31875, 125);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 128, 0), 125); //31875
 		}
 		else if (item->beatitude < 0)
 		{
 			// give it a red background if cursed
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
-			drawRect(&pos, 125, 125);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 125);
 		}
 		else if (item->beatitude > 0)
 		{
 			// give it a green background if blessed (light blue if colorblind mode)
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
 			if (colorblind)
 			{
 				drawRect(&pos, SDL_MapRGB(mainsurface->format, 100, 245, 255), 65);
 			}
 			else
 			{
-				drawRect(&pos, 65280, 65);
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0), 65);
 			}
+		}
+		if ( item->status == BROKEN )
+		{
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 160, 160, 160), 64);
 		}
 
 		if ( itemMenuOpen && item == uidToItem(itemMenuItem) )
