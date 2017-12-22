@@ -1151,8 +1151,8 @@ void Entity::increaseSkill(int skill)
 				addSpell(SPELL_DOMINATE, player, true);
 			}
 		}
+		myStats->EXP += 2;
 	}
-	myStats->EXP += 2;
 
 	int statBonusSkill = getStatForProficiency(skill);
 
