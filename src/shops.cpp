@@ -175,7 +175,7 @@ void buyItemFromShop(Item* item)
 				Stat* shopstats = entity->getStats();
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
-			if ( rand() % 2 )
+			if ( rand() % 2 && item->type != GEM_GLASS )
 			{
 				players[clientnum]->entity->increaseSkill(PRO_TRADING);
 			}
@@ -323,7 +323,7 @@ void sellItemToShop(Item* item)
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{
-		if ( rand() % 2 )
+		if ( rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[clientnum]->entity->increaseSkill(PRO_TRADING);
 		}
