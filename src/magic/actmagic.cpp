@@ -1668,6 +1668,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
 								}
+								else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+									|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+								{
+									// no effect for lava/water tiles.
+								}
 								else
 								{
 									playSoundEntity(my, 66, 128);
