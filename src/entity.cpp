@@ -9095,7 +9095,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		}
 	}
 	armor.count = 1;
-	armor.status = static_cast<Status>(armor.status - 1);
+	armor.status = static_cast<Status>(std::max(static_cast<int>(BROKEN), armor.status - 1));
 	if ( armor.status > BROKEN )
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
