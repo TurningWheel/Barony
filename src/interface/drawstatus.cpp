@@ -580,6 +580,40 @@ void drawStatus()
 			bool used = false;
 			pos.w = hotbar_img->w;
 			pos.h = hotbar_img->h;
+
+			SDL_Rect highlightBox;
+			highlightBox.x = pos.x + 2;
+			highlightBox.y = pos.y + 2;
+			highlightBox.w = 60;
+			highlightBox.h = 60;
+
+			if ( !item->identified )
+			{
+				// give it a yellow background if it is unidentified
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 128, 0), 64); //31875
+			}
+			else if ( item->beatitude < 0 )
+			{
+				// give it a red background if cursed
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 0, 0), 64);
+			}
+			else if ( item->beatitude > 0 )
+			{
+				// give it a green background if blessed (light blue if colorblind mode)
+				if ( colorblind )
+				{
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 50, 128, 128), 64);
+				}
+				else
+				{
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 0, 128, 0), 64);
+				}
+			}
+			if ( item->status == BROKEN )
+			{
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 125);
+			}
+
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if ( stats[clientnum]->HP > 0 )
 			{
@@ -677,25 +711,21 @@ void drawStatus()
 					printTextFormatted(font12x12_bmp, pos.x + hotbar_img->w - (14 * digits), pos.y + hotbar_img->h - 14, "%d", item->count);
 				}
 
+				SDL_Rect src;
+				src.x = pos.x + 2;
+				src.y = pos.y + hotbar_img->h - 18;
+				src.w = 16;
+				src.h = 16;
+
 				// item equipped
 				if ( itemCategory(item) != SPELL_CAT )
 				{
 					if ( itemIsEquipped(item, clientnum) )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
 					}
 					else if ( item->status == BROKEN )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(itembroken_bmp, NULL, &src);
 					}
 				}
@@ -704,11 +734,6 @@ void drawStatus()
 					spell_t* spell = getSpellFromItem(item);
 					if ( selected_spell == spell )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
 					}
 				}
