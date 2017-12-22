@@ -955,6 +955,8 @@ void drawStatus()
 				)
 			) )
 		{
+			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
+			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
 			if ( keystatus[SDL_SCANCODE_1] )
 			{
 				keystatus[SDL_SCANCODE_1] = 0;
