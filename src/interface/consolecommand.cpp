@@ -1266,6 +1266,10 @@ void consoleCommand(char* command_str)
 		auto_hotbar_categories[catIndex] = value;
 		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
 	}
+	else if ( !strncmp(command_str, "/quickaddtohotbar", 17) )
+	{
+		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
+	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
 		command_str[8] = 0;
