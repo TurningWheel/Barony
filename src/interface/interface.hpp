@@ -353,6 +353,8 @@ extern bool auto_hotbar_new_items;
 
 extern bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES]; // true = enable auto add to hotbar. else don't add.
 
+extern bool hotbar_numkey_quick_add; // use number keys to add items to hotbar if mouse in inventory panel.
+
 extern bool disable_messages;
 
 extern bool right_click_protect;

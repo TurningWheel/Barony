@@ -124,6 +124,7 @@ extern bool colorblind;
 extern bool right_click_protect;
 extern bool settings_auto_hotbar_new_items;
 extern bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES];
+extern bool settings_hotbar_numkey_quick_add;
 extern bool settings_disable_messages;
 extern bool settings_right_click_protect;
 extern bool settings_auto_appraise_new_items;

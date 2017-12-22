@@ -137,6 +137,7 @@ bool auto_hotbar_new_items = true;
 bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
 														true, true, true, true,
 														true, true, true, true };
+bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
@@ -900,6 +901,10 @@ int saveConfig(char* filename)
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
 		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
+	}
+	if ( hotbar_numkey_quick_add )
+	{
+		fprintf(fp, "/quickaddtohotbar\n");
 	}
 	if (disable_messages)
 	{
