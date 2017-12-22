@@ -3358,7 +3358,7 @@ void serverHandlePacket()
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if (rand() % 2)
+		if (rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
@@ -3413,7 +3413,7 @@ void serverHandlePacket()
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
 		stats[client]->GOLD += item->sellValue(client);
-		if (rand() % 2)
+		if (rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
