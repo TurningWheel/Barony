@@ -615,9 +615,11 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 							if ( multiplayer != CLIENT )
 							{
 								my->attack(1, 0, nullptr);
-								my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, 0.0);
-								my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, PI / 2);
-								my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, -PI / 2);
+								real_t dir = 0.f;
+								for ( int i = 0; i < 8; ++i )
+								{
+									my->castFallingMagicMissile(SPELL_FIREBALL, 16 + rand() % 8, dir + i * PI / 4);
+								}
 							}
 						}
 					}
@@ -733,7 +735,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						spellarm->skill[1] = 1;
 						if ( multiplayer != CLIENT )
 						{
-							castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+							if ( rand() % 2 )
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+							}
+							else
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_DRAIN_SOUL), true, false);
+							}
 						}
 					}
 				}
