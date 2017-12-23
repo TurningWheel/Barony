@@ -372,6 +372,7 @@ static const Sint32 MONSTER_STATE_DEVIL_TELEPORT = 9;
 static const Sint32 MONSTER_STATE_DEVIL_RISING = 10;
 static const Sint32 MONSTER_STATE_DEVIL_SUMMON = 11;
 static const Sint32 MONSTER_STATE_DEVIL_BOULDER = 12;
+static const Sint32 MONSTER_STATE_LICHFIRE_DODGE = 13;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;

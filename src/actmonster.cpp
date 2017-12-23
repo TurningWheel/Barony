@@ -453,7 +453,6 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->z = -1.2;
 				entity->yaw = PI;
 				entity->sprite = 646;
-				entity->skill[29] = 120;
 				break;
 			default:
 				//Spawn a potato.
@@ -1312,6 +1311,56 @@ void actMonster(Entity* my)
 		}
 	}
 
+	if ( myStats->type == LICH_FIRE )
+	{
+		if ( my->monsterSpecialTimer > 0 )
+		{
+			--my->monsterSpecialTimer;
+		}
+		else
+		{
+			my->monsterSpecialTimer = 0;
+		}
+		messagePlayer(0, "timer: %d", my->monsterSpecialTimer);
+		real_t lichFireDist = 0.f;
+		Entity* target = uidToEntity(my->monsterTarget);
+		if ( my->monsterState <= MONSTER_STATE_HUNT && my->monsterSpecialTimer == 0 && my->monsterAttack == 0 )
+		{
+			if ( my->monsterTarget )
+			{
+				if ( target )
+				{
+					lichFireDist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+				}
+				if ( myStats->OLDHP != myStats->HP )
+				{
+					if ( rand() % 4 == 0 )
+					{
+						playSoundEntity(my, 180, 128);
+						dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+						MONSTER_VELX = cos(dir) * 3;
+						MONSTER_VELY = sin(dir) * 3;
+						my->monsterState = MONSTER_STATE_LICHFIRE_DODGE;
+						my->monsterSpecialTimer = 20;
+					}
+				}
+				else if ( lichFireDist > 64 )
+				{
+					if ( rand() % 100 == 0 )
+					{
+						playSoundEntity(my, 180, 128);
+						tangent = atan2(my->y - target->y, my->x - target->x);
+						dir = my->yaw - tangent + PI;
+						MONSTER_VELX = cos(dir) * 3;
+						MONSTER_VELY = sin(dir) * 3;
+						my->monsterState = MONSTER_STATE_LICHFIRE_DODGE;
+						my->monsterSpecialTimer = 20;
+					}
+				}
+			}
+		}
+	}
+
 	// hunger, regaining hp/mp, poison, etc.
 	if ( !intro )
 	{
@@ -2016,7 +2065,11 @@ void actMonster(Entity* my)
 			}
 		}
 
-		if ( myStats->type != LICH && myStats->type != DEVIL && my->monsterSpecialTimer > 0 )
+		if ( myStats->type != LICH 
+			&& myStats->type != DEVIL 
+			&& myStats->type != LICH_FIRE
+			&& myStats->type != LICH_ICE
+			&& my->monsterSpecialTimer > 0 )
 		{
 			--my->monsterSpecialTimer;
 		}
@@ -2371,7 +2424,11 @@ void actMonster(Entity* my)
 
 			// look
 			my->monsterLookTime++;
-			if ( my->monsterLookTime >= 120 && myStats->type != LICH && myStats->type != DEVIL )
+			if ( my->monsterLookTime >= 120 
+				&& myStats->type != LICH 
+				&& myStats->type != DEVIL
+				&& myStats->type != LICH_FIRE
+				&& myStats->type != LICH_ICE )
 			{
 				my->monsterLookTime = 0;
 				my->monsterMoveTime--;
@@ -4345,7 +4402,29 @@ timeToGoAgain:
 					my->monsterTargetY = playertotrack->y;
 				}
 			}
-		} //End state machine.
+		}
+		else if ( myStats->type == LICH_FIRE )
+		{
+			if ( my->monsterState == MONSTER_STATE_LICHFIRE_DODGE )
+			{
+				dist = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+				if ( my->monsterSpecialTimer == 0 )
+				{
+					my->monsterState = MONSTER_STATE_HUNT;
+					my->monsterHitTime = HITRATE * 2;
+					Entity* target = uidToEntity(my->monsterTarget);
+					if ( target )
+					{
+						if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < STRIKERANGE )
+						{
+							my->monsterLichFireMeleeSeq = 2;
+						}
+					}
+				}
+			}
+		}
+		//End state machine.
+
 	}
 	else
 	{
@@ -4494,6 +4573,14 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	chooseWeapon(target, dist);
 	bool hasrangedweapon = this->hasRangedWeapon();
 
+	if ( myStats->type == LICH_FIRE )
+	{
+		if ( monsterLichFireMeleeSeq == 3 )
+		{
+			hasrangedweapon = true;
+		}
+	}
+
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
 	{
@@ -4508,7 +4595,9 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			}
 		}
 		// check if ready to attack
-		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) || (this->monsterHitTime >= 5 && myStats->type == LICH) )
+		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) 
+			|| (this->monsterHitTime >= 5 && myStats->type == LICH)
+			)
 		{
 			bool shouldAttack = this->handleMonsterSpecialAttack(myStats, nullptr, dist);
 			if ( !shouldAttack )
@@ -5039,7 +5128,11 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 
 	if ( myStats != nullptr )
 	{
-		if ( myStats->type == LICH || myStats->type == DEVIL || myStats->type == SHOPKEEPER )
+		if ( myStats->type == LICH 
+			|| myStats->type == DEVIL 
+			|| myStats->type == SHOPKEEPER
+			|| myStats->type == LICH_FIRE
+			|| myStats->type == LICH_FIRE )
 		{
 			// monster should attack after this function is called.
 			return true;
