@@ -3202,6 +3202,9 @@ Difficulty: Normal#
 2586 #
 2587 Report issues and checkout the code at:#
 2588 https://github.com/TurningWheel/Barony#
+2589 Your %s ally %s#
+2590 modify hotbar with numkeys#
+2591 You have nothing else to learn from this spell.#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
