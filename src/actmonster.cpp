@@ -1321,6 +1321,11 @@ void actMonster(Entity* my)
 		{
 			my->monsterSpecialTimer = 0;
 		}
+
+		if ( my->monsterState != MONSTER_STATE_ATTACK )
+		{
+			my->monsterHitTime = HITRATE * 2;
+		}
 		messagePlayer(0, "timer: %d", my->monsterSpecialTimer);
 		real_t lichFireDist = 0.f;
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -1349,12 +1354,20 @@ void actMonster(Entity* my)
 					if ( rand() % 100 == 0 )
 					{
 						playSoundEntity(my, 180, 128);
-						tangent = atan2(my->y - target->y, my->x - target->x);
-						dir = my->yaw - tangent + PI;
+						tangent = atan2(target->y - my->y, target->x - my->x);
+						dir = tangent;
+						while ( dir < 0 )
+						{
+							dir += 2 * PI;
+						}
+						while ( dir > 2 * PI )
+						{
+							dir -= 2 * PI;
+						}
 						MONSTER_VELX = cos(dir) * 3;
 						MONSTER_VELY = sin(dir) * 3;
 						my->monsterState = MONSTER_STATE_LICHFIRE_DODGE;
-						my->monsterSpecialTimer = 20;
+						my->monsterSpecialTimer = 50;
 					}
 				}
 			}
@@ -2067,8 +2080,8 @@ void actMonster(Entity* my)
 
 		if ( myStats->type != LICH 
 			&& myStats->type != DEVIL 
-			&& myStats->type != LICH_FIRE
 			&& myStats->type != LICH_ICE
+			&& myStats->type != LICH_FIRE
 			&& my->monsterSpecialTimer > 0 )
 		{
 			--my->monsterSpecialTimer;
@@ -4408,10 +4421,13 @@ timeToGoAgain:
 			if ( my->monsterState == MONSTER_STATE_LICHFIRE_DODGE )
 			{
 				dist = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+				if ( dist != sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY) )
+				{
+					my->monsterSpecialTimer = 0; // hit obstacle
+				}
 				if ( my->monsterSpecialTimer == 0 )
 				{
-					my->monsterState = MONSTER_STATE_HUNT;
-					my->monsterHitTime = HITRATE * 2;
+					my->monsterState = MONSTER_STATE_PATH;
 					Entity* target = uidToEntity(my->monsterTarget);
 					if ( target )
 					{
