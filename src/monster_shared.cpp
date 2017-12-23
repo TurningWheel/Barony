@@ -147,11 +147,11 @@ void Entity::initMonster(int mySprite)
 			break;
 		case LICH_ICE:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
-			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case LICH_FIRE:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
-			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		default:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
@@ -274,6 +274,14 @@ int Entity::getMonsterTypeFromSprite()
 	else if ( mySprite == 463 )     // goatman head
 	{
 		return GOATMAN;
+	}
+	else if ( mySprite == 646 )     // lich body
+	{
+		return LICH_FIRE;
+	}
+	else if ( mySprite == 650 )     // lich body
+	{
+		return LICH_ICE;
 	}
 	return NOTHING;
 }
