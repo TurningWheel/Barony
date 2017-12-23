@@ -271,6 +271,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = nullptr;
 	Entity* weaponarm = nullptr;
 	Entity* head = nullptr;
+	Entity* spellarm = nullptr;
 	int bodypart;
 	bool wearingring = false;
 
@@ -388,6 +389,21 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		}*/
 	}
 
+	//Lich stares you down while he does his special ability windup, and any of his spellcasting animations.
+	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
+		|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
+		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
+		|| my->monsterAttack == MONSTER_POSE_MAGIC_CAST1 )
+	{
+		//Always turn to face the target.
+		Entity* target = uidToEntity(my->monsterTarget);
+		if ( target )
+		{
+			my->lookAtEntity(*target);
+			my->monsterRotate();
+		}
+	}
+
 	// move arms
 	Entity* rightarm = nullptr;
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
@@ -402,6 +418,11 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						// handle z movement on windup
 						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.2, -0.6, 0.1, -3.2, ANIMATE_DIR_POSITIVE); // default z is -1.2
+						if ( my->z > -0.5 )
+						{
+							my->z = -0.6; //failsafe for floating too low sometimes?
+						}
+
 					}
 				}
 				else if ( my->monsterAttack != MONSTER_POSE_SPECIAL_WINDUP1 )
@@ -421,7 +442,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		if ( bodypart != LICH_HEAD )
 		{
 			// lich head turns to track player, other limbs will rotate as normal.
-			entity->yaw = my->yaw;
+			if ( bodypart == LICH_LEFTARM && my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				// don't rotate leftarm here during spellcast.
+			}
+			else
+			{
+				entity->yaw = my->yaw;
+			}
 		}
 		else
 		{
@@ -616,9 +644,108 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == LICH_LEFTARM )
 		{
+			spellarm = entity;
 			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 			{
-				entity->pitch = weaponarm->pitch;
+				spellarm->pitch = weaponarm->pitch;
+			}
+			else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				if ( my->monsterAttackTime == 0 )
+				{
+					// init rotations
+					spellarm->roll = 0;
+					spellarm->skill[1] = 0;
+					spellarm->pitch = 12 * PI / 8;
+					spellarm->yaw = my->yaw;
+					createParticleDot(my);
+					playSoundEntityLocal(my, 170, 32);
+					if ( multiplayer != CLIENT )
+					{
+						myStats->EFFECTS[EFF_STUNNED] = true;
+						myStats->EFFECTS_TIMERS[EFF_STUNNED] = 20;
+					}
+				}
+				double animationYawSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
+				double animationYawEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
+				double armSwingRate = 0.15;
+				double animationPitchSetpoint = 13 * PI / 8;
+				double animationPitchEndpoint = 11 * PI / 8;
+
+				if ( spellarm->skill[1] == 0 )
+				{
+					if ( limbAnimateToLimit(spellarm, ANIMATE_PITCH, armSwingRate, animationPitchSetpoint, false, 0.0) )
+					{
+						if ( limbAnimateToLimit(spellarm, ANIMATE_YAW, armSwingRate, animationYawSetpoint, false, 0.0) )
+						{
+							spellarm->skill[1] = 1;
+						}
+					}
+				}
+				else
+				{
+					if ( limbAnimateToLimit(spellarm, ANIMATE_PITCH, -armSwingRate, animationPitchEndpoint, false, 0.0) )
+					{
+						if ( limbAnimateToLimit(spellarm, ANIMATE_YAW, -armSwingRate, animationYawEndpoint, false, 0.0) )
+						{
+							spellarm->skill[1] = 0;
+						}
+					}
+				}
+
+				if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+				{
+					if ( multiplayer != CLIENT )
+					{
+						// swing the arm after we prepped the spell
+						//my->castFallingMagicMissile(SPELL_FIREBALL, 16.0, 0.0);
+						my->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
+					}
+				}
+			}
+			// raise arm to cast spell
+			else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
+			{
+				if ( my->monsterAttackTime == 0 )
+				{
+					// init rotations
+					spellarm->pitch = 0;
+					spellarm->roll = 0;
+				}
+				spellarm->skill[1] = 0;
+
+				if ( limbAnimateToLimit(spellarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0) )
+				{
+					if ( multiplayer != CLIENT )
+					{
+						my->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
+					}
+				}
+			}
+			// vertical spell attack
+			else if ( my->monsterAttack == MONSTER_POSE_MAGIC_CAST1 )
+			{
+				if ( spellarm->skill[1] == 0 )
+				{
+					// chop forwards
+					if ( limbAnimateToLimit(spellarm, ANIMATE_PITCH, 0.4, PI / 2, false, 0.0) )
+					{
+						spellarm->skill[1] = 1;
+						if ( multiplayer != CLIENT )
+						{
+							castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+						}
+					}
+				}
+				else if ( spellarm->skill[1] == 1 )
+				{
+					if ( limbAnimateToLimit(spellarm, ANIMATE_PITCH, -0.25, PI / 8, false, 0.0) )
+					{
+						spellarm->pitch = 0;
+						spellarm->roll = 0;
+						my->monsterAttack = 0;
+					}
+				}
 			}
 			else
 			{
@@ -639,8 +766,10 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				entity->x -= 2.75 * cos(my->yaw + PI / 2);
 				entity->y -= 2.75 * sin(my->yaw + PI / 2);
 				entity->z -= 3.25;
-				if ( my->monsterAttack != MONSTER_POSE_MELEE_WINDUP2
-					&& my->monsterAttack != 2 )
+				if ( !(my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2
+					|| my->monsterAttack == 2
+					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1)
+					)
 				{
 					entity->yaw -= MONSTER_WEAPONYAW;
 				}
