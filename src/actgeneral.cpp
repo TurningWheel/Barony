@@ -215,8 +215,10 @@ void Entity::actFurniture()
 				Entity* entity;
 				if ( (entity = uidToEntity(parent)) != NULL )
 				{
-					entity->skill[18] = 0; // drop the item that was on the table
-					serverUpdateEntitySkill(entity, 18);
+					entity->itemNotMoving = 0; // drop the item that was on the table
+					entity->itemNotMovingClient = 0; // clear the client item gravity flag
+					serverUpdateEntitySkill(entity, 18); //update both the above flags.
+					serverUpdateEntitySkill(entity, 19);
 				}
 				list_RemoveNode(mynode);
 				return;

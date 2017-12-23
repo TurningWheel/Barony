@@ -88,9 +88,6 @@ class Entity
 	Sint32& orbHoverDirection; // animation, waiting/up/down floating state skill[7]
 	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state skill[8]
 
-	// Item skills
-	Sint32& itemNotMoving; // skill[18]
-
 	//### Begin - Private Entity Constants for BURNING Status Effect
 	static const Sint32 MIN_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE *  4; // Minimum time an Entity can be on fire is  4 cycles (120 ticks)
 	static const Sint32 MAX_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE * 20; // Maximum time an Entity can be on fire is 20 cycles (600 ticks)
@@ -306,10 +303,14 @@ public:
 	Sint32& pistonCamTimer; //skill[1]
 	real_t& pistonCamRotateSpeed; //fskill[0]
 
-	//--PUBLIC ARROR/PROJECTILE SKILLS--
-	Sint32& arrowPower; //skill[3]
-	Sint32& arrowPoisonTime; //skill[4]
-	Sint32& arrowArmorPierce; //skill[5]
+	//--PUBLIC ARROW/PROJECTILE SKILLS--
+	Sint32& arrowPower;
+	Sint32& arrowPoisonTime;
+	Sint32& arrowArmorPierce;
+
+	//--PUBLIC ITEM SKILLS--
+	Sint32& itemNotMoving; // skill[18]
+	Sint32& itemNotMovingClient; // skill[19]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
@@ -796,3 +797,7 @@ static const int MSG_ATTACKS = 4;
 void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType);
 char* playerClassLangEntry(int classnum);
 char* playerClassDescription(int classnum);
+
+//Some testing functions/commands.
+Entity* summonChest(long x, long y);
+

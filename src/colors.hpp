@@ -55,3 +55,7 @@ inline Uint32 uint32ColorGreen(const SDL_Surface& surface)
 	return SDL_MapRGBA(surface.format, 0, 255, 0, 255);
 }
 
+inline Uint32 uint32ColorOrange(const SDL_Surface& surface)
+{
+	return SDL_MapRGBA(surface.format, 255, 128, 0, 255);
+}

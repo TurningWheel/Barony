@@ -100,6 +100,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
+	itemNotMovingClient(skill[19]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -1152,8 +1153,8 @@ void Entity::increaseSkill(int skill)
 				addSpell(SPELL_DOMINATE, player, true);
 			}
 		}
+		myStats->EXP += 2;
 	}
-	myStats->EXP += 2;
 
 	int statBonusSkill = getStatForProficiency(skill);
 
@@ -1983,6 +1984,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+							playSoundEntity(this, 97, 128);
 						}
 					}
 				}
@@ -2138,7 +2140,20 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
-		for ( i = 0; i < NUMSTATS; i++ )
+		for ( i = 0; i < MAXPLAYERS; ++i )
+		{
+			// broadcast a player levelled up to other players.
+			if ( i != player )
+			{
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+			}
+		}
+
+		for ( i = 0; i < NUMSTATS; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
@@ -4597,7 +4612,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// unaware monster, get backstab damage.
 								backstab = true;
 								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
-								if ( rand() % 4 == 0 )
+								if ( rand() % 4 > 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
 								}
@@ -4651,6 +4666,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
 						}
+					}
+
+					if ( pose == MONSTER_POSE_GOLEM_SMASH )
+					{
+						damage *= 2;
 					}
 					hit.entity->modHP(-damage); // do the damage
 
@@ -5455,7 +5475,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( pose == MONSTER_POSE_AUTOMATON_MALFUNCTION )
 					{
-						getTargetsAroundEntity(this, this, 20, PI, MONSTER_TARGET_ALL, &aoeTargets);
+						getTargetsAroundEntity(this, this, 24, PI, MONSTER_TARGET_ALL, &aoeTargets);
 						if ( aoeTargets )
 						{
 							for ( node = aoeTargets->first; node != NULL; node = node->next )
@@ -5467,7 +5487,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = myStats->HP * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										int explodeDmg = (40 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];
@@ -5568,6 +5588,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
+							bool degradePickaxe = true;
 							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
@@ -5575,6 +5596,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+							}
+							else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+								|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+							{
+								// no effect for lava/water tiles.
+								degradePickaxe = false;
 							}
 							else
 							{
@@ -5629,7 +5656,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								generatePathMaps();
 							}
 
-							if ( rand() % 2 )
+							if ( rand() % 2 && degradePickaxe )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
@@ -5879,7 +5906,6 @@ bool Entity::teleportRandom()
 	int numlocations = 0;
 	int pickedlocation;
 	int player = -1;
-
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
@@ -5893,9 +5919,9 @@ bool Entity::teleportRandom()
 		}
 
 	}
-	for ( int iy = 0; iy < map.height; ++iy )
+	for ( int iy = 1; iy < map.height; ++iy )
 	{
-		for ( int ix = 0; ix < map.width; ++ix )
+		for ( int ix = 1; ix < map.width; ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5910,9 +5936,9 @@ bool Entity::teleportRandom()
 	}
 	pickedlocation = rand() % numlocations;
 	numlocations = 0;
-	for ( int iy = 0; iy < map.height; iy++ )
+	for ( int iy = 1; iy < map.height; iy++ )
 	{
-		for ( int ix = 0; ix < map.width; ix++ )
+		for ( int ix = 1; ix < map.width; ix++ )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5956,9 +5982,9 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 			return false;
 		}
 	}
-	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
-		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -9091,7 +9117,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		}
 	}
 	armor.count = 1;
-	armor.status = static_cast<Status>(armor.status - 1);
+	armor.status = static_cast<Status>(std::max(static_cast<int>(BROKEN), armor.status - 1));
 	if ( armor.status > BROKEN )
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
@@ -9625,13 +9651,34 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		// use generic racial name and grammar. "You hit the skeleton"
 		if ( detailType == MSG_OBITUARY )
 		{
-			if ( monsterStats.type < KOBOLD ) // Original monster count
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
-			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( c == player )
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgNamed, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
+				else
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
@@ -9692,18 +9739,32 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		}
 		else if ( detailType == MSG_OBITUARY )
 		{
-			if ( namedMonsterAsGeneric )
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
-			}
-			else
-			{
-				messagePlayerColor(player, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( namedMonsterAsGeneric )
+				{
+					if ( c == player )
+					{
+						messagePlayerColor(c, color, msgNamed, monsterStats.name, monsterStats.obituary);
+					}
+					else
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
+					}
+				}
+				else
+				{
+					messagePlayerColor(c, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				}
 			}
 		}
 		else if ( detailType == MSG_GENERIC )
 		{
-			if ( namedMonsterAsGeneric )
+			if ( namedMonsterAsGeneric || monsterStats.type == HUMAN )
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
@@ -9908,4 +9969,140 @@ real_t Entity::yawDifferenceFromPlayer(int player)
 		return (PI - abs(abs(players[player]->entity->yaw - targetYaw) - PI)) * 2;
 	}
 	return 0.f;
+}
+
+Entity* summonChest(long x, long y)
+{
+	Entity* entity = newEntity(21, 1, map.entities);
+	if ( !entity )
+	{
+		return nullptr;
+	}
+	entity->chestLocked = -1;
+
+	// Find a free tile next to the source and then spawn it there.
+	if ( multiplayer != CLIENT )
+	{
+		if ( entityInsideSomething(entity) )
+		{
+			do
+			{
+				entity->x = x;
+				entity->y = y - 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // north
+				}
+				entity->x = x;
+				entity->y = y + 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // south
+				}
+				entity->x = x - 16;
+				entity->y = y;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // west
+				}
+				entity->x = x + 16;
+				entity->y = y;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // east
+				}
+				entity->x = x + 16;
+				entity->y = y - 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // northeast
+				}
+				entity->x = x + 16;
+				entity->y = y + 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // southeast
+				}
+				entity->x = x - 16;
+				entity->y = y - 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // northwest
+				}
+				entity->x = x - 16;
+				entity->y = y + 16;
+				if (!entityInsideSomething(entity))
+				{
+					break;    // southwest
+				}
+
+				// we can't have monsters in walls...
+				list_RemoveNode(entity->mynode);
+				entity = nullptr;
+				break;
+			}
+			while (1);
+		}
+	}
+
+	entity->sizex = 3;
+	entity->sizey = 2;
+	entity->x = x;
+	entity->y = y;
+	entity->x += 8;
+	entity->y += 8;
+	entity->z = 5.5;
+	entity->yaw = entity->yaw * (PI / 2); //set to 0 by default in editor, can be set 0-3
+	entity->behavior = &actChest;
+	entity->sprite = 188;
+	//entity->skill[9] = -1; //Set default chest as random category < 0
+
+	Entity* childEntity = newEntity(216, 0, map.entities);
+	if ( !childEntity )
+	{
+		return nullptr;
+	}
+	childEntity->parent = entity->getUID();
+	entity->parent = childEntity->getUID();
+	if ( entity->yaw == 0 ) //EAST FACING
+	{
+		childEntity->x = entity->x - 3;
+		childEntity->y = entity->y;
+	}
+	else if ( entity->yaw == PI / 2 ) //SOUTH FACING
+	{
+		childEntity->x = entity->x;
+		childEntity->y = entity->y - 3;
+	}
+	else if ( entity->yaw == PI ) //WEST FACING
+	{
+		childEntity->x = entity->x + 3;
+		childEntity->y = entity->y;
+	}
+	else if (entity->yaw == 3 * PI/2 ) //NORTH FACING
+	{
+		childEntity->x = entity->x;
+		childEntity->y = entity->y + 3;
+	}
+	else
+	{
+		childEntity->x = entity->x;
+		childEntity->y = entity->y - 3;
+	}
+	//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+	childEntity->z = entity->z - 2.75;
+	childEntity->focalx = 3;
+	childEntity->focalz = -.75;
+	childEntity->yaw = entity->yaw;
+	childEntity->sizex = 2;
+	childEntity->sizey = 2;
+	childEntity->behavior = &actChestLid;
+	childEntity->flags[PASSABLE] = true;
+
+	//Chest inventory.
+	node_t* tempNode = list_AddNodeFirst(&entity->children);
+	tempNode->element = nullptr;
+	tempNode->deconstructor = &emptyDeconstructor;
+
+	return entity;
 }

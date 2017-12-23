@@ -761,7 +761,7 @@ void actBoulderTrapEast(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -772,7 +772,7 @@ void actBoulderTrapEast(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
@@ -849,7 +849,7 @@ void actBoulderTrapSouth(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -860,7 +860,7 @@ void actBoulderTrapSouth(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
@@ -938,7 +938,7 @@ void actBoulderTrapWest(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -949,7 +949,7 @@ void actBoulderTrapWest(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
@@ -1026,7 +1026,7 @@ void actBoulderTrapNorth(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+			/*	if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -1037,7 +1037,7 @@ void actBoulderTrapNorth(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
