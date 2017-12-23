@@ -64,6 +64,7 @@ extern SDL_Surface* attributesleft_bmp, *attributesleftunclicked_bmp;
 extern SDL_Surface* attributesright_bmp, *attributesrightunclicked_bmp;
 extern SDL_Surface* button_bmp, *smallbutton_bmp, *invup_bmp, *invdown_bmp;
 extern SDL_Surface* inventory_bmp, *inventoryoption_bmp, *inventoryoptionChest_bmp, *equipped_bmp;
+extern SDL_Surface* itembroken_bmp;
 //extern SDL_Surface *category_bmp[NUMCATEGORIES];
 extern SDL_Surface* shopkeeper_bmp;
 extern SDL_Surface* damage_bmp;
@@ -117,6 +118,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 damageIndicator_t* newDamageIndicator(double x, double y);
 
 void selectItemMenuSlot(const Item& item, int entry);
+bool autoAddHotbarFilter(const Item& item);
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
 extern int itemMenuSelected;
@@ -348,6 +350,10 @@ void warpMouseToSelectedHotbarSlot();
  * False = don't.
  */
 extern bool auto_hotbar_new_items;
+
+extern bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES]; // true = enable auto add to hotbar. else don't add.
+
+extern bool hotbar_numkey_quick_add; // use number keys to add items to hotbar if mouse in inventory panel.
 
 extern bool disable_messages;
 

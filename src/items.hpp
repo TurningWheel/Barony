@@ -445,7 +445,7 @@ bool itemIsEquipped(const Item* item, int player);
 /*
  * Only compares items of the same type.
  */
-int itemCompare(const Item* item1, const Item* item2);
+int itemCompare(const Item* item1, const Item* item2, bool checkAppearance);
 
 /*
  * Returns true if potion is harmful to the player.

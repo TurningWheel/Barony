@@ -800,7 +800,7 @@ void Entity::addItemToChest(Item* item)
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 	{
 		item2 = (Item*) t_node->element;
-		if (!itemCompare(item, item2))
+		if (!itemCompare(item, item2, false))
 		{
 			item2->count += item->count;
 			return;
@@ -1051,7 +1051,7 @@ void addItemToChestClientside(Item* item)
 		for (node = chestInv.first; node != NULL; node = node->next)
 		{
 			item2 = (Item*) node->element;
-			if (!itemCompare(item, item2))
+			if (!itemCompare(item, item2, false))
 			{
 				item2->count += item->count;
 				return;
@@ -1089,7 +1089,7 @@ void Entity::addItemToChestServer(Item* item)
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 	{
 		item2 = (Item*) t_node->element;
-		if (!itemCompare(item, item2))
+		if (!itemCompare(item, item2, false))
 		{
 			item2->count += item->count;
 			return;
@@ -1124,7 +1124,7 @@ void Entity::removeItemFromChestServer(Item* item, int count)
 		{
 			return;
 		}
-		if (!itemCompare(item, item2))
+		if (!itemCompare(item, item2, false))
 		{
 			if (count < item2->count)
 			{

@@ -3349,7 +3349,7 @@ void serverHandlePacket()
 		{
 			nextnode = node->next;
 			Item* item2 = (Item*)node->element;
-			if (!itemCompare(item, item2))
+			if (!itemCompare(item, item2, false))
 			{
 				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
 				consumeItem(item2);
@@ -3358,7 +3358,7 @@ void serverHandlePacket()
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if (rand() % 2)
+		if (rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
@@ -3413,7 +3413,7 @@ void serverHandlePacket()
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
 		stats[client]->GOLD += item->sellValue(client);
-		if (rand() % 2)
+		if (rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[client]->entity->increaseSkill(PRO_TRADING);
 		}

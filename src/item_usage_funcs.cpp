@@ -1470,7 +1470,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			messagePlayer(player, language[857]);
 		}
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if (item->beatitude < 0)
 		{
@@ -1925,11 +1925,11 @@ void item_ScrollRepair(Item* item, int player)
 		}
 	}
 
-	if ( armor == NULL && player == clientnum )
+	if ( armor == nullptr && player == clientnum )
 	{
 		messagePlayer(player, language[870]);
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if ( item->beatitude < 0 && player == clientnum )
 		{
@@ -1948,7 +1948,7 @@ void item_ScrollRepair(Item* item, int player)
 
 void item_ScrollDestroyArmor(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -2039,7 +2039,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	{
 		messagePlayer(player, language[873]);
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if ( item->beatitude < 0 && player == clientnum )
 		{
@@ -2546,6 +2546,10 @@ void item_ToolBeartrap(Item*& item, int player)
 		}
 		consumeItem(item);
 		return;
+	}
+	if ( multiplayer != CLIENT )
+	{
+		playSoundEntity(players[player]->entity, 253, 64);
 	}
 	entity = newEntity(668, 1, map.entities);
 	entity->behavior = &actBeartrap;

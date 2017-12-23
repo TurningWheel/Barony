@@ -338,9 +338,12 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( bodypart < 2 )
 		{
 			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
-			if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT && bodypart == 1 && multiplayer != CLIENT )
+			if ( bodypart == 1 && multiplayer != CLIENT )
 			{
-				limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
+				if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
+				{
+					limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
+				}
 			}
 			continue;
 		}
@@ -372,6 +375,10 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							{
 								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
+								/*if ( rand() % 4 == 0 )
+								{
+									playSoundEntityLocal(my, 266, 32);
+								}*/
 							}
 						}
 					}

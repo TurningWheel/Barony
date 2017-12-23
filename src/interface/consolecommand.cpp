@@ -1100,6 +1100,59 @@ void consoleCommand(char* command_str)
 			entity->skill[0] = 5 + rand() % 10;
 		}
 	}
+	else if (!strncmp(command_str, "/summonall ", 11))
+	{
+		if (!(svFlags & SV_FLAG_CHEATS))
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if (multiplayer == CLIENT)
+		{
+			messagePlayer(clientnum, language[284]);
+		}
+		else if (players[clientnum] && players[clientnum]->entity)
+		{
+			strcpy(name, command_str + 11);
+			int i, creature;
+			bool found = false;
+
+			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
+			{
+				if ( i < KOBOLD ) //Search original monsters
+				{
+					if ( strstr(language[90 + i], name) )
+					{
+						creature = i;
+						found = true;
+						break;
+					}
+				}
+				else if ( i >= KOBOLD ) //Search additional monsters
+				{
+					if ( strstr(language[2000 + (i - KOBOLD)], name) )
+					{
+						creature = i;
+						found = true;
+						break;
+					}
+				}
+
+			}
+
+			if (found)
+			{
+				playSoundEntity(players[clientnum]->entity, 153, 64);
+
+				//Spawn monster
+				summonManyMonster(static_cast<Monster>(creature));
+			}
+			else
+			{
+				messagePlayer(clientnum, language[304], name);
+			}
+		}
+	}
 	else if (!strncmp(command_str, "/summon ", 8))
 	{
 		if (!(svFlags & SV_FLAG_CHEATS))
@@ -1175,6 +1228,25 @@ void consoleCommand(char* command_str)
 			}
 		}
 	}
+	else if (!strncmp(command_str, "/summonchest", 12)) //MAGIC TEST FUNCTION WE NEEDED LONG AGO.
+	{
+		if (!(svFlags & SV_FLAG_CHEATS))
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if (multiplayer == CLIENT)
+		{
+			messagePlayer(clientnum, language[284]);
+		}
+		else if (players[clientnum] && players[clientnum]->entity)
+		{
+			playSoundEntity(players[clientnum]->entity, 153, 64);
+
+			//Spawn monster
+			Entity* chest = summonChest(players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+		}
+	}
 	else if (!strncmp(command_str, "/broadcast", 10))
 	{
 		broadcast = (broadcast == false);
@@ -1186,6 +1258,17 @@ void consoleCommand(char* command_str)
 	else if (!strncmp(command_str, "/disablehotbarnewitems", 15))
 	{
 		auto_hotbar_new_items = (auto_hotbar_new_items == false);
+	}
+	else if ( !strncmp(command_str, "/hotbarenablecategory ", 22) )
+	{
+		int catIndex = atoi(&command_str[22]);
+		int value = atoi(&command_str[24]);
+		auto_hotbar_categories[catIndex] = value;
+		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
+	}
+	else if ( !strncmp(command_str, "/quickaddtohotbar", 17) )
+	{
+		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
 	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{

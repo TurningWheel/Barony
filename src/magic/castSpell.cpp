@@ -1158,13 +1158,53 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	{
 		if ( using_magicstaff )
 		{
-			if ( rand() % 6 == 0 ) //16.67%
+			if ( stat )
 			{
-				caster->increaseSkill(PRO_SPELLCASTING);
-			}
-			if ( rand() % 7 == 0 ) //14.2%
-			{
-				caster->increaseSkill(PRO_MAGIC);
+				// spellcasting increase chances.
+				if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 60 )
+				{
+					if ( rand() % 6 == 0 ) //16.67%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+				else if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 80 )
+				{
+					if ( rand() % 9 == 0 ) //11.11%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+				else // greater than 80
+				{
+					if ( rand() % 12 == 0 ) //8.33%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+
+				// magic increase chances.
+				if ( stat->PROFICIENCIES[PRO_MAGIC] < 60 )
+				{
+					if ( rand() % 7 == 0 ) //14.2%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+				else if ( stat->PROFICIENCIES[PRO_MAGIC] < 80 )
+				{
+					if ( rand() % 10 == 0 ) //10.00%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+				else // greater than 80
+				{
+					if ( rand() % 13 == 0 ) //7.69%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
 			}
 		}
 		else
@@ -1199,13 +1239,33 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					magicChance = 7; // 14.2%
 				}
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
-				if ( rand() % spellCastChance == 0 )
+				if ( !strcmp(element->name, spellElement_light.name)
+					&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
+					&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
 				{
-					caster->increaseSkill(PRO_SPELLCASTING);
+					// light provides no levelling past 40 in both spellcasting and magic.
+					if ( rand() % 20 == 0 )
+					{
+						for ( i = 0; i < numplayers; ++i )
+						{
+							if ( caster == players[i]->entity )
+							{
+								messagePlayer(i, language[2591]);
+							}
+						}
+					}
 				}
-				if ( rand() % magicChance == 0 )
+				else
 				{
-					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+					if ( rand() % spellCastChance == 0 )
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+
+					if ( rand() % magicChance == 0 )
+					{
+						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+					}
 				}
 			}
 		}

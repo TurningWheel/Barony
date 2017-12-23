@@ -673,7 +673,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( reflection == 1 )
 						{
 							hitstats->cloak->count = 1;
-							hitstats->cloak->status = static_cast<Status>(hitstats->cloak->status - 1);
+							hitstats->cloak->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->cloak->status - 1));
 							if ( hitstats->cloak->status != BROKEN )
 							{
 								messagePlayer(player, language[380]);
@@ -687,7 +687,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( reflection == 2 )
 						{
 							hitstats->amulet->count = 1;
-							hitstats->amulet->status = static_cast<Status>(hitstats->amulet->status - 1);
+							hitstats->amulet->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->amulet->status - 1));
 							if ( hitstats->amulet->status != BROKEN )
 							{
 								messagePlayer(player, language[382]);
@@ -701,7 +701,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( reflection == -1 )
 						{
 							hitstats->shield->count = 1;
-							hitstats->shield->status = static_cast<Status>(hitstats->shield->status - 1);
+							hitstats->shield->status = static_cast<Status>(std::max(static_cast<int>(BROKEN), hitstats->shield->status - 1));
 							if ( hitstats->shield->status != BROKEN )
 							{
 								messagePlayer(player, language[384]);
@@ -1667,6 +1667,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
+								}
+								else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+									|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+								{
+									// no effect for lava/water tiles.
 								}
 								else
 								{

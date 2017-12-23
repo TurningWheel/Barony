@@ -33,7 +33,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 		MONSTER_SPOTSND = 263;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 257;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -527,7 +527,8 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->EFFECTS[EFF_ASLEEP] 
+			&& (my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN) )
 		{
 			my->z = 2;
 			my->pitch = PI / 4;
@@ -538,6 +539,28 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				my->z = -.5;
 				my->pitch = 0;
+				if ( myStats->HP < 25 && !myStats->EFFECTS[EFF_CONFUSED] )
+				{
+					// threshold for boom boom
+					if ( rand() % 3 > 0 ) // 2/3
+					{
+						my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
+						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
+						serverUpdateEntitySkill(my, 33);
+
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
+					}
+					else
+					{
+						myStats->EFFECTS[EFF_CONFUSED] = true;
+						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
+						playSoundEntity(my, 263, 128);
+						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+					}
+				}
 			}
 		}
 	}
@@ -558,6 +581,11 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				my->modHP(-1000);
 			}
 		}
+	}
+
+	if ( ticks % (2 * TICKS_PER_SECOND) == 0 && rand() % 5 > 0 )
+	{
+		playSoundEntityLocal(my, 259, 16);
 	}
 
 	//Move bodyparts

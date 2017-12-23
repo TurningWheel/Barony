@@ -49,7 +49,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 			if ( !strncmp(myStats->name, "lesser insectoid", strlen("lesser insectoid")) )
 			{
 				lesserMonster = true;
-				myStats->HP = 70;
+				myStats->HP = 110;
 				myStats->MAXHP = myStats->HP;
 				myStats->RANDOM_MAXHP = 10;
 				myStats->RANDOM_HP = myStats->RANDOM_MAXHP;
@@ -124,6 +124,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
+					if ( !lesserMonster && rand() % 20 == 0 )
+					{
+						newItem(SPELLBOOK_ACID_SPRAY, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+					}
 				case 2:
 					if ( rand() % 2 == 0 )
 					{

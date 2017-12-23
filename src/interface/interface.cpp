@@ -97,6 +97,7 @@ SDL_Surface* attributesright_bmp = NULL;
 SDL_Surface* attributesleftunclicked_bmp = NULL;
 SDL_Surface* attributesrightunclicked_bmp = NULL;
 SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
+SDL_Surface* itembroken_bmp = nullptr;
 //SDL_Surface *category_bmp[NUMCATEGORIES];
 SDL_Surface* shopkeeper_bmp = NULL;
 SDL_Surface* damage_bmp = NULL;
@@ -133,6 +134,10 @@ bool hotbarHasFocus = false;
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = true;
+bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
+														true, true, true, true,
+														true, true, true, true };
+bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
@@ -173,6 +178,7 @@ bool loadInterfaceResources()
 	inventory_mode_spell_img = loadImage("images/system/inventory_mode_spell.png");
 	inventory_mode_spell_highlighted_img = loadImage("images/system/inventory_mode_spell_highlighted.png");
 	equipped_bmp = loadImage("images/system/Equipped.png");
+	itembroken_bmp = loadImage("images/system/Broken.png");
 	//sky_bmp=scaleSurface(loadImage("images/system/sky.png"), 1280*(xres/320.0),468*(xres/320.0));
 	/*category_bmp[0]=loadImage("images/system/Weapon.png");
 	category_bmp[1]=loadImage("images/system/Armor.png");
@@ -362,6 +368,10 @@ void freeInterfaceResources()
 	if (equipped_bmp != NULL)
 	{
 		SDL_FreeSurface(equipped_bmp);
+	}
+	if ( itembroken_bmp != nullptr )
+	{
+		SDL_FreeSurface(itembroken_bmp);
 	}
 	if (inventoryChest_bmp != NULL)
 	{
@@ -887,6 +897,14 @@ int saveConfig(char* filename)
 	if (!auto_hotbar_new_items)
 	{
 		fprintf(fp, "/disablehotbarnewitems\n");
+	}
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
+	}
+	if ( hotbar_numkey_quick_add )
+	{
+		fprintf(fp, "/quickaddtohotbar\n");
 	}
 	if (disable_messages)
 	{

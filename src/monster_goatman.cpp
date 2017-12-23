@@ -40,10 +40,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		//TODO: Update with new goatman sound effects.
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 335;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 332;
+		MONSTER_IDLEVAR = 2;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -133,7 +133,7 @@ void initGoatman(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( isShaman && rand() % 20 == 0 )
+					if ( isShaman && rand() % 10 == 0 )
 					{
 						switch ( rand() % 4 )
 						{
@@ -160,12 +160,12 @@ void initGoatman(Entity* my, Stat* myStats)
 			//Give weapons.
 			if ( !boss )
 			{
-				if ( !isShaman && rand() % 2 == 0 )
+				if ( !isShaman && rand() % 3 > 0 )
 				{
 					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
 				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
-				if ( rand() % 5 == 0 )
+				if ( rand() % 3 == 0 )
 				{
 					int numhealpotion = rand() % 2 + 1;
 					newItem(POTION_HEALING, static_cast<Status>(rand() % 3 + DECREPIT), 0, numhealpotion, rand(), false, &myStats->inventory);
@@ -642,7 +642,7 @@ void goatmanDie(Entity* my)
 
 	my->spawnBlood();
 
-	//playSoundEntity(my, 257 + rand() % 3, 128);
+	playSoundEntity(my, 338 + rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
