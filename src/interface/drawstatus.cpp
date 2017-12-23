@@ -931,15 +931,7 @@ void drawStatus()
 	if ( !command && stats[clientnum]->HP > 0 )
 	{
 		Item* item = NULL;
-		x = INVENTORY_STARTX;
-		y = INVENTORY_STARTY;
-
-		// draw translucent box
-		pos.x = x;
-		pos.y = y;
-		pos.w = INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
-		pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
-		if ( !(hotbar_numkey_quick_add && 
+		if ( !(!shootmode && hotbar_numkey_quick_add &&
 				(
 					(omousex >= INVENTORY_STARTX
 						&& omousex <= INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE
