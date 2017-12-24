@@ -120,7 +120,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(237, 0, map.entities);
+	Entity* entity = newEntity(237, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -138,7 +138,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// chest
-	entity = newEntity(238, 0, map.entities);
+	entity = newEntity(238, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -156,7 +156,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(243, 0, map.entities);
+	entity = newEntity(243, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -174,7 +174,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(242, 0, map.entities);
+	entity = newEntity(242, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -192,7 +192,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(241, 0, map.entities);
+	entity = newEntity(241, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -210,7 +210,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(240, 0, map.entities);
+	entity = newEntity(240, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -707,7 +707,7 @@ void actMinotaurCeilingBuster(Entity* my)
 		int c;
 		for ( c = 0; c < 2; c++ )
 		{
-			Entity* entity = newEntity(171, 1, map.entities);
+			Entity* entity = newEntity(171, 1, map.entities, nullptr); //Particle entity.
 			entity->x = my->x - 8 + rand() % 17;
 			entity->y = my->y - 8 + rand() % 17;
 			entity->z = 10 + rand() % 3;
@@ -906,7 +906,7 @@ void actMinotaurCeilingBuster(Entity* my)
 
 void createMinotaurTimer(Entity* entity, map_t* map)
 {
-	Entity* childEntity = newEntity(37, 0, map->entities);
+	Entity* childEntity = newEntity(37, 0, map->entities, nullptr); //Timer entity.
 	childEntity->sizex = 2;
 	childEntity->sizey = 2;
 	childEntity->x = entity->x;

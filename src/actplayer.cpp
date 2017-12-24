@@ -262,7 +262,7 @@ void actPlayer(Entity* my)
 				my->flags[UPDATENEEDED] = false;
 			}
 
-			entity = newEntity(-1, 1, map.entities);
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
@@ -277,7 +277,7 @@ void actPlayer(Entity* my)
 			// magic hands
 
 			//Left hand.
-			entity = newEntity(-1, 1, map.entities);
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
@@ -286,7 +286,7 @@ void actPlayer(Entity* my)
 			entity->focalz = -4;
 			magicLeftHand = entity;
 			//Right hand.
-			entity = newEntity(-1, 1, map.entities);
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
@@ -296,7 +296,7 @@ void actPlayer(Entity* my)
 			magicRightHand = entity;
 
 			// hud shield
-			entity = newEntity(-1, 1, map.entities);
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
 			entity->flags[OVERDRAW] = true;
 			entity->flags[NOUPDATE] = true;
@@ -316,7 +316,7 @@ void actPlayer(Entity* my)
 		}
 
 		// torso
-		entity = newEntity(106 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
+		entity = newEntity(106 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -334,7 +334,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// right leg
-		entity = newEntity(107 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
+		entity = newEntity(107 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -352,7 +352,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// left leg
-		entity = newEntity(108 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
+		entity = newEntity(108 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -370,7 +370,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// right arm
-		entity = newEntity(109 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
+		entity = newEntity(109 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -388,7 +388,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// left arm
-		entity = newEntity(110 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
+		entity = newEntity(110 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -406,7 +406,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// world weapon
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -425,7 +425,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// shield
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
@@ -445,7 +445,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// cloak
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->scalex = 1.01;
@@ -467,7 +467,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// helmet
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->scalex = 1.01;
@@ -489,7 +489,7 @@ void actPlayer(Entity* my)
 		node->size = sizeof(Entity*);
 
 		// mask
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->scalex = .99;
@@ -1330,7 +1330,7 @@ void actPlayer(Entity* my)
 							y = std::min(std::max<unsigned int>(0, my->y / 16), map.height - 1);
 							if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
 							{
-								entity = newEntity(160, 1, map.entities);
+								entity = newEntity(160, 1, map.entities, nullptr); //Limb entity.
 								entity->x = my->x;
 								entity->y = my->y;
 								entity->z = 8.0 + (rand() % 20) / 100.0;
@@ -1378,7 +1378,7 @@ void actPlayer(Entity* my)
 					if ( clientnum == PLAYER_NUM )
 					{
 						// deathcam
-						entity = newEntity(-1, 1, map.entities);
+						entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
 						entity->x = my->x;
 						entity->y = my->y;
 						entity->z = -2;
@@ -1413,7 +1413,7 @@ void actPlayer(Entity* my)
 							int c = item->count;
 							for (c = item->count; c > 0; c--)
 							{
-								entity = newEntity(-1, 1, map.entities);
+								entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 								entity->flags[INVISIBLE] = true;
 								entity->flags[UPDATENEEDED] = true;
 								entity->x = my->x;

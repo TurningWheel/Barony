@@ -810,7 +810,7 @@ void buttonCycleSprites(button_t* my)
 		lastSelectedEntity = nullptr;
 
 		// create new entity on the list, copying and removing the previous last one.
-		entity = newEntity(lastEntity->sprite, 0, map.entities);
+		entity = newEntity(lastEntity->sprite, 0, map.entities, nullptr);
 		setSpriteAttributes(entity, lastEntity, lastEntity);
 		list_RemoveNode(lastEntity->mynode);
 

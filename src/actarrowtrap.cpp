@@ -81,7 +81,7 @@ void actArrowTrap(Entity* my)
 				}
 				if ( !checkObstacle(my->x + x, my->y + y, my, NULL) )
 				{
-					Entity* entity = newEntity(166, 1, map.entities); // arrow
+					Entity* entity = newEntity(166, 1, map.entities, nullptr); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
 					entity->parent = my->getUID();
 					entity->x = my->x + x;

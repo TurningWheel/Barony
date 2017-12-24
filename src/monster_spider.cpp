@@ -110,7 +110,7 @@ void initSpider(Entity* my, Stat* myStats)
 	}
 
 	// right pedipalp
-	Entity* entity = newEntity(268, 0, map.entities);
+	Entity* entity = newEntity(268, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -128,7 +128,7 @@ void initSpider(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left pedipalp
-	entity = newEntity(268, 0, map.entities);
+	entity = newEntity(268, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -149,7 +149,7 @@ void initSpider(Entity* my, Stat* myStats)
 	for ( c = 0; c < 8; c++ )
 	{
 		// "thigh"
-		entity = newEntity(269, 0, map.entities);
+		entity = newEntity(269, 0, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = my->getUID();
@@ -168,7 +168,7 @@ void initSpider(Entity* my, Stat* myStats)
 		node->size = sizeof(Entity*);
 
 		// "shin"
-		entity = newEntity(270, 0, map.entities);
+		entity = newEntity(270, 0, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = my->getUID();

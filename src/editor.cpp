@@ -817,7 +817,7 @@ void makeUndo()
 	undomap->entities->last = NULL;
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
-		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities);
+		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities, nullptr);
 
 		setSpriteAttributes(entity, (Entity*)node->element, (Entity*)node->element);
 	}
@@ -872,7 +872,7 @@ void undo()
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
 	{
-		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
+		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities, nullptr);
 
 		setSpriteAttributes(entity, (Entity*)node->element, (Entity*)node->element);
 	}
@@ -905,7 +905,7 @@ void redo()
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
 	{
-		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
+		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities, nullptr);
 
 		setSpriteAttributes(entity, (Entity*)node->element, (Entity*)node->element);
 	}
@@ -1826,7 +1826,7 @@ int main(int argc, char** argv)
 									}
 									duplicatedSprite = true;
 								}
-								selectedEntity = newEntity(entity->sprite, 0, map.entities);
+								selectedEntity = newEntity(entity->sprite, 0, map.entities, nullptr);
 								
 								setSpriteAttributes(selectedEntity, entity, lastSelectedEntity);
 
@@ -1863,7 +1863,7 @@ int main(int argc, char** argv)
 									{
 										makeUndo();
 									}
-									selectedEntity = newEntity(entity->sprite, 0, map.entities);
+									selectedEntity = newEntity(entity->sprite, 0, map.entities, nullptr);
 									lastSelectedEntity = selectedEntity;
 
 									setSpriteAttributes(selectedEntity, entity, entity);
@@ -5809,7 +5809,7 @@ int main(int argc, char** argv)
 				// create a new object
 				if (palette[mousey + mousex * yres] >= 0)
 				{
-					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities);
+					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities, nullptr);
 					selectedEntity = entity;
 					lastSelectedEntity = selectedEntity;
 					setSpriteAttributes(selectedEntity, nullptr, nullptr);

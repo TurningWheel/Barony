@@ -909,10 +909,10 @@ Entity* receiveEntity(Entity* entity)
 	//Yes, it is necessary. I don't think I like this solution though, will try something else.
 	*/
 
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
 		newentity = true;
-		entity = newEntity((int)SDLNet_Read16(&net_packet->data[8]), 0, map.entities);
+		entity = newEntity((int)SDLNet_Read16(&net_packet->data[8]), 0, map.entities, nullptr);
 	}
 	else
 	{
@@ -944,7 +944,7 @@ Entity* receiveEntity(Entity* entity)
 	entity->focalx = ((char)net_packet->data[27]) / 8.0;
 	entity->focaly = ((char)net_packet->data[28]) / 8.0;
 	entity->focalz = ((char)net_packet->data[29]) / 8.0;
-	for (c = 0; c < 16; c++)
+	for (c = 0; c < 16; ++c)
 	{
 		if ( net_packet->data[34 + c / 8]&power(2, c - (c / 8) * 8) )
 		{
@@ -1332,17 +1332,19 @@ void clientHandlePacket()
 			entity = (Entity*)node->element;
 			if ( entity->getUID() == (int)SDLNet_Read32(&net_packet->data[4]) )
 			{
-				entity2 = newEntity(entity->sprite, 1, &removedEntities);
+				entity2 = newEntity(entity->sprite, 1, &removedEntities, nullptr);
 				entity2->setUID(entity->getUID());
-				for ( j = 0; j < MAXPLAYERS; j++ )
+				for ( j = 0; j < MAXPLAYERS; ++j )
+				{
 					if (entity == players[j]->entity )
 					{
-						players[j]->entity = NULL;
+						players[j]->entity = nullptr;
 					}
+				}
 				if ( entity->light )
 				{
 					list_RemoveNode(entity->light->node);
-					entity->light = NULL;
+					entity->light = nullptr;
 				}
 				list_RemoveNode(entity->mynode);
 
@@ -1713,7 +1715,7 @@ void clientHandlePacket()
 		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
 		{
 			// this is how the client knows it died...
-			Entity* entity = newEntity(-1, 1, map.entities);
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr);
 			entity->x = camera.x * 16;
 			entity->y = camera.y * 16;
 			entity->z = -2;
@@ -2044,13 +2046,13 @@ void clientHandlePacket()
 		printlog("Received order to change level.\n");
 		currentlevel = net_packet->data[13];
 		list_FreeAll(&removedEntities);
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			entity2 = newEntity(entity->sprite, 1, &removedEntities);
+			entity2 = newEntity(entity->sprite, 1, &removedEntities, nullptr);
 			entity2->setUID(entity->getUID());
 		}
-		for ( i = 0; i < MAXPLAYERS; i++ )
+		for ( i = 0; i < MAXPLAYERS; ++i )
 		{
 			list_FreeAll(&stats[i]->FOLLOWERS);
 		}
@@ -2102,7 +2104,7 @@ void clientHandlePacket()
 				{
 					break;
 				}
-			result = loadMap(tempstr, &map, map.entities);
+			result = loadMap(tempstr, &map, map.entities, map.creatures);
 		}
 		fclose(fp);
 		numplayers = 0;
@@ -3271,7 +3273,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "DIEI", 4))
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->x = net_packet->data[26];
 		entity->x = entity->x * 16 + 8;
 		entity->y = net_packet->data[27];

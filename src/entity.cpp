@@ -38,7 +38,7 @@ Construct an Entity
 
 -------------------------------------------------------------------------------*/
 
-Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
+Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist) :
 	char_gonnavomit(skill[26]),
 	char_heal(skill[22]),
 	char_energize(skill[23]),
@@ -190,6 +190,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	mynode->deconstructor = &entityDeconstructor;
 	mynode->size = sizeof(Entity);
 
+	myCreatureListNode = nullptr;
+	addToCreatureList(creaturelist);
+
 	// now reset all of my data elements
 	lastupdate = 0;
 	lastupdateserver = 0;
@@ -218,10 +221,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	new_pitch = 0;
 	new_roll = 0;
 	sprite = in_sprite;
-	light = NULL;
-	string = NULL;
-	children.first = NULL;
-	children.last = NULL;
+	light = nullptr;
+	string = nullptr;
+	children.first = nullptr;
+	children.last = nullptr;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
 	for ( c = 0; c < NUMENTITYSKILLS; ++c )
@@ -254,10 +257,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	{
 		uid = -2;
 	}
-	behavior = NULL;
+	behavior = nullptr;
 	ranbehavior = false;
 	parent = 0;
-	path = NULL;
+	path = nullptr;
 
 	if ( checkSpriteType(this->sprite) > 1 )
 	{
@@ -268,8 +271,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	clientsHaveItsStats = false;
 }
 
-void Entity::setUID(Uint32 new_uid) {
-	if ( mynode->list == map.entities ) {
+void Entity::setUID(Uint32 new_uid)
+{
+	if ( mynode->list == map.entities )
+	{
 		map.entities_map.erase(uid);
 		map.entities_map.insert({ new_uid, mynode });
 	}
@@ -302,6 +307,13 @@ Entity::~Entity()
 	}
 	}
 	}*/
+
+	//Remove me from the
+	if ( myCreatureListNode )
+	{
+		list_RemoveNode(myCreatureListNode);
+		myCreatureListNode = nullptr;
+	}
 
 	// alert clients of the entity's deletion
 	if ( multiplayer == SERVER && !loading )
@@ -343,10 +355,12 @@ Entity::~Entity()
 
 	// set appropriate player pointer to NULL
 	for ( i = 0; i < MAXPLAYERS; i++ )
+	{
 		if ( this == players[i]->entity )
 		{
 			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
 		}
+	}
 	// destroy my children
 	list_FreeAll(&this->children);
 
@@ -2575,14 +2589,14 @@ void Entity::handleEffects(Stat* myStats)
 				messagePlayer(player, language[642]);
 				if ( spawn_blood )
 				{
-					Entity* entity = NULL;
+					Entity* entity = nullptr;
 					if ( gibtype[myStats->type] == 1 )
 					{
-						entity = newEntity(203, 1, map.entities);
+						entity = newEntity(203, 1, map.entities, nullptr); //Blood entity.
 					}
 					else if ( gibtype[myStats->type] == 2 )
 					{
-						entity = newEntity(213, 1, map.entities);
+						entity = newEntity(213, 1, map.entities, nullptr); //Blood entity.
 					}
 					if ( entity != NULL )
 					{
@@ -3970,17 +3984,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( myStats->weapon->type == SLING )
 				{
-					entity = newEntity(78, 1, map.entities); // rock
+					entity = newEntity(78, 1, map.entities, nullptr); // rock
 					playSoundEntity(this, 239 + rand() % 3, 96);
 				}
 				else if ( myStats->weapon->type == CROSSBOW )
 				{
-					entity = newEntity(167, 1, map.entities); // bolt
+					entity = newEntity(167, 1, map.entities, nullptr); // bolt
 					playSoundEntity(this, 239 + rand() % 3, 96);
 				}
 				else
 				{
-					entity = newEntity(166, 1, map.entities); // arrow
+					entity = newEntity(166, 1, map.entities, nullptr); // arrow
 					playSoundEntity(this, 239 + rand() % 3, 96);
 				}
 				entity->parent = uid;
@@ -4027,7 +4041,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( drankPotion )
 				{
 					Item* emptyBottle = newItem(POTION_EMPTY, myStats->weapon->status, myStats->weapon->beatitude, 1, myStats->weapon->appearance, myStats->weapon->appearance, nullptr);
-					entity = newEntity(itemModel(emptyBottle), 1, map.entities); // thrown item
+					entity = newEntity(itemModel(emptyBottle), 1, map.entities, nullptr); // thrown item
 					entity->parent = uid;
 					entity->x = x;
 					entity->y = y;
@@ -4047,7 +4061,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
-					entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
+					entity = newEntity(itemModel(myStats->weapon), 1, map.entities, nullptr); // thrown item
 					entity->parent = uid;
 					entity->x = x;
 					entity->y = y;
@@ -4170,7 +4184,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						int c;
 						for ( c = 0; c < i; c++ )
 						{
-							Entity* entity = newEntity(-1, 1, map.entities);
+							Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 							entity->flags[INVISIBLE] = true;
 							entity->flags[UPDATENEEDED] = true;
 							entity->x = hit.entity->x - 4 + rand() % 8;
@@ -5586,7 +5600,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								i = 8 + rand() % 4;
 								for ( c = 0; c < i; c++ )
 								{
-									entity = newEntity(-1, 1, map.entities);
+									entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 									entity->flags[INVISIBLE] = true;
 									entity->flags[UPDATENEEDED] = true;
 									entity->x = hit.mapx * 16 + 4 + rand() % 8;
@@ -8291,7 +8305,7 @@ void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration,
 {
 	if ( rand() % chance == 0 )
 	{
-		Entity* spawnParticle = newEntity(particleSprite, 1, map.entities);
+		Entity* spawnParticle = newEntity(particleSprite, 1, map.entities, nullptr); //Particle entity.
 		spawnParticle->sizex = 1;
 		spawnParticle->sizey = 1;
 		spawnParticle->x = x + (-2 + rand() % 5);
@@ -9895,7 +9909,7 @@ real_t Entity::yawDifferenceFromPlayer(int player)
 
 Entity* summonChest(long x, long y)
 {
-	Entity* entity = newEntity(21, 1, map.entities);
+	Entity* entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
 	if ( !entity )
 	{
 		return nullptr;
@@ -9979,7 +9993,7 @@ Entity* summonChest(long x, long y)
 	entity->sprite = 188;
 	//entity->skill[9] = -1; //Set default chest as random category < 0
 
-	Entity* childEntity = newEntity(216, 0, map.entities);
+	Entity* childEntity = newEntity(216, 0, map.entities, nullptr); //Sort-of limb entity.
 	if ( !childEntity )
 	{
 		return nullptr;
@@ -10028,3 +10042,23 @@ Entity* summonChest(long x, long y)
 
 	return entity;
 }
+
+void Entity::addToCreatureList(list_t *list)
+{
+	if ( list )
+	{
+		if ( myCreatureListNode )
+		{
+			list_RemoveNode(myCreatureListNode);
+			myCreatureListNode = nullptr;
+		}
+		myCreatureListNode = list_AddNodeLast(list);
+		myCreatureListNode->element = this;
+		myCreatureListNode->deconstructor = &emptyDeconstructor;
+		myCreatureListNode->size = sizeof(Entity);
+	}
+}
+
+
+
+

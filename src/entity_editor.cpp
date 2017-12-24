@@ -13,7 +13,7 @@
 
 
 
-Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
+Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist) :
 	char_gonnavomit(skill[26]),
 	char_heal(skill[22]),
 	char_energize(skill[23]),
@@ -164,6 +164,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	mynode->element = this;
 	mynode->deconstructor = &entityDeconstructor;
 	mynode->size = sizeof(Entity);
+
+	myCreatureListNode = nullptr;
 
 	// now reset all of my data elements
 	lastupdate = 0;

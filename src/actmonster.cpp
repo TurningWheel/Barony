@@ -161,7 +161,7 @@ void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 
 Entity* summonMonster(Monster creature, long x, long y)
 {
-	Entity* entity = newEntity(-1, 1, map.entities);
+	Entity* entity = newEntity(-1, 1, map.entities, map.creatures); //Monster entity.
 	//Set the monster's variables.
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -175,14 +175,14 @@ Entity* summonMonster(Monster creature, long x, long y)
 	entity->ranbehavior = true;
 	entity->skill[5] = nummonsters;
 
-	Stat* myStats = NULL;
+	Stat* myStats = nullptr;
 	if ( multiplayer != CLIENT )
 	{
 		// Need to give the entity its list stuff.
 		// create an empty first node for traversal purposes
-		node_t* node = NULL;
+		node_t* node = nullptr;
 		node = list_AddNodeFirst(&entity->children);
-		node->element = NULL;
+		node->element = nullptr;
 		node->deconstructor = &emptyDeconstructor;
 
 		myStats = new Stat(creature + 1000);
@@ -261,7 +261,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 
 				// we can't have monsters in walls...
 				list_RemoveNode(entity->mynode);
-				entity = NULL;
+				entity = nullptr;
 				break;
 			}
 			while (1);
@@ -458,7 +458,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 			default:
 				//Spawn a potato.
 				list_RemoveNode(entity->mynode);
-				return NULL;
+				return nullptr;
 				break;
 		}
 		if ( entity )
@@ -488,7 +488,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		}
 		return entity;
 	}
-	return NULL;
+	return nullptr;
 }
 
 void summonManyMonster(Monster creature)
@@ -1429,7 +1429,7 @@ void actMonster(Entity* my)
 			// check for floor to drop gold...
 			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
-				entity = newEntity(130, 0, map.entities); // 130 = goldbag model
+				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->x = my->x;
@@ -4164,7 +4164,7 @@ timeToGoAgain:
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ )
 				{
-					Entity* entity = newEntity(245, 1, map.entities); // boulder
+					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
@@ -4214,7 +4214,7 @@ timeToGoAgain:
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ )
 				{
-					Entity* entity = newEntity(245, 1, map.entities); // boulder
+					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
@@ -4264,7 +4264,7 @@ timeToGoAgain:
 				my->yaw = oyaw;
 				for ( c = 0; c < 12; c++ )
 				{
-					Entity* entity = newEntity(245, 1, map.entities); // boulder
+					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{

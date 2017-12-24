@@ -127,7 +127,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(247, 0, map.entities);
+	Entity* entity = newEntity(247, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -145,7 +145,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(251, 0, map.entities);
+	entity = newEntity(251, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -163,7 +163,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(250, 0, map.entities);
+	entity = newEntity(250, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -181,7 +181,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(249, 0, map.entities);
+	entity = newEntity(249, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -199,7 +199,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(248, 0, map.entities);
+	entity = newEntity(248, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

@@ -160,7 +160,7 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					Entity* entity = newEntity(-1, 1, map.entities);
+					Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 					entity->flags[INVISIBLE] = true;
 					entity->flags[UPDATENEEDED] = true;
 					entity->flags[PASSABLE] = true;
@@ -564,7 +564,7 @@ void actThrown(Entity* my)
 		}
 		else
 		{
-			Entity* entity = newEntity(-1, 1, map.entities);
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 			entity->flags[INVISIBLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->flags[PASSABLE] = true;
