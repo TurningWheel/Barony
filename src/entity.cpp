@@ -2218,15 +2218,45 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
+			// Process HUNGER Effect - Wasting Away
 			myStats->HUNGER = 0;
-			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 120 == 0 )
+
+			// Deal Hunger damage every three seconds
+			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 150 == 0 )
 			{
 				serverUpdateHunger(player);
-				if ( player >= 0 )   // bad guys don't starve. Sorry.
+
+				if ( player >= 0 ) // Only Players can starve
 				{
-					this->modHP(-4);
-					// Play the Damage sound
+					if ( buddhamode )
+					{
+						if ( myStats->HP - 4 > 0 )
+						{
+							this->modHP(-4);
+						}
+						else
+						{
+							// Instead of killing the Buddha Player, set their HP to 1
+							this->setHP(1);
+						}
+					}
+					else
+					{
+						this->modHP(-4);
+
+						if ( myStats->HP <= 0 )
+						{
+							this->setObituary(language[1530]);
+						}
+					}
+
+					// Give the Player feedback on being hurt
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+					if ( myStats->HP > 0 )
+					{
+						messagePlayer(player, language[633]);
+					}
 
 					// Shake the Host's screen
 					if ( player == clientnum )
@@ -2246,11 +2276,6 @@ void Entity::handleEffects(Stat* myStats)
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
-				if ( myStats->HP > 0 )
-				{
-					messagePlayer(player, language[633]);
-				}
-				this->setObituary(language[1530]);
 			}
 		}
 	}
