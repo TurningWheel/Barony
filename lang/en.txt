@@ -1037,7 +1037,7 @@ You should call a plumber!#
 637 Your %s flickers in the darkness.#
 638 Your %s burns out.#
 639 Your amulet glows a faint green.#
-640 The poison insantly subsides!#
+640 The poison instantly subsides!#
 641 The poison seems to have subsided.#
 642 You lose some blood.#
 643 You've stopped bleeding.#
