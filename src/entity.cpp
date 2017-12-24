@@ -8507,32 +8507,35 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 void Entity::checkGroundForItems()
 {
 	Stat* myStats = getStats();
-	if ( !myStats )
+	if ( myStats == nullptr )
 	{
 		return;
 	}
 
-	//Calls the function for a monster to pick up an item, if it's a monster that picks up items.
-	switch ( myStats->type )
+	// Calls the function for a monster to pick up an item, if it's a monster that picks up items, only if they are not Asleep
+	if ( myStats->EFFECTS[EFF_ASLEEP] == false )
 	{
-		case GOBLIN:
-		case HUMAN:
-			if ( !strcmp(myStats->name, "") )
-			{
-				//checkBetterEquipment(myStats);
-				monsterAddNearbyItemToInventory(myStats, 16, 9);
-			}
-			break;
-		case GOATMAN:
-			//Goatman boss picks up items too.
-			monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
-															 //checkBetterEquipment(myStats);
-			break;
-		case AUTOMATON:
-			monsterAddNearbyItemToInventory(myStats, 16, 5);
-			break;
-		default:
-			return;
+		switch ( myStats->type )
+		{
+			case GOBLIN:
+			case HUMAN:
+				if ( !strcmp(myStats->name, "") )
+				{
+					//checkBetterEquipment(myStats);
+					monsterAddNearbyItemToInventory(myStats, 16, 9);
+				}
+				break;
+			case GOATMAN:
+				//Goatman boss picks up items too.
+				monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
+																 //checkBetterEquipment(myStats);
+				break;
+			case AUTOMATON:
+				monsterAddNearbyItemToInventory(myStats, 16, 5);
+				break;
+			default:
+				return;
+		}
 	}
 }
 
