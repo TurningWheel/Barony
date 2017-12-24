@@ -31,9 +31,9 @@ void initKobold(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 220;
-		MONSTER_SPOTVAR = 5;
-		MONSTER_IDLESND = 217;
+		MONSTER_SPOTSND = 302;
+		MONSTER_SPOTVAR = 4;
+		MONSTER_IDLESND = 295;
 		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -382,7 +382,7 @@ void koboldDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 225 + rand() % 4, 128);
+	playSoundEntity(my, 298 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }

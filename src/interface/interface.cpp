@@ -32,6 +32,7 @@ SDL_Surface* hunger_bmp = NULL;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
+int proficienciesPage = 0;
 Item* invitems[4];
 Item* invitemschest[4];
 int inventorycategory = 7; // inventory window defaults to wildcard
@@ -132,6 +133,9 @@ bool hotbarHasFocus = false;
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = true;
+bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
+														true, true, true, true,
+														true, true, true, true };
 bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
@@ -887,6 +891,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/disablehotbarnewitems\n");
 	}
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
+	}
 	if (disable_messages)
 	{
 		fprintf(fp, "/disablemessages\n");
@@ -1133,4 +1141,5 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode)
 	mousex = xres / 2;
 	mousey = yres / 2;
 	attributespage = 0;
+	//proficienciesPage = 0;
 }

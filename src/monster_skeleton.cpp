@@ -948,41 +948,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 3.25; // -3.25
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 2.5; // -2.5
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // 2.5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-				}
-				else
-				{
-					my->flags[INVISIBLE] = true;
-				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case LIMB_HUMANOID_MASK:

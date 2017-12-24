@@ -216,6 +216,8 @@ static const unsigned NUM_JOY_IMPULSES = 33;
 
 static const unsigned UNBOUND_JOYBINDING = 399;
 
+static const int NUM_HOTBAR_CATEGORIES = 12; // number of filters for auto add hotbar items
+
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
 #define SDL_BUTTON_WHEELDOWN 5
@@ -710,3 +712,5 @@ FILE *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
 bool completePath(char *dest, const char * const path);
+
+static const Uint32 cacheLimit = 8096;

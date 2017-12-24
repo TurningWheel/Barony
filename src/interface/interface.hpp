@@ -69,6 +69,7 @@ extern SDL_Surface* shopkeeper_bmp;
 extern SDL_Surface* damage_bmp;
 extern int textscroll;
 extern int attributespage;
+extern int proficienciesPage;
 extern Item* invitems[4];
 extern Item* invitemschest[4];
 extern int inventorycategory;
@@ -116,6 +117,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 damageIndicator_t* newDamageIndicator(double x, double y);
 
 void selectItemMenuSlot(const Item& item, int entry);
+bool autoAddHotbarFilter(const Item& item);
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
 extern int itemMenuSelected;
@@ -348,6 +350,8 @@ void warpMouseToSelectedHotbarSlot();
  */
 extern bool auto_hotbar_new_items;
 
+extern bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES]; // true = enable auto add to hotbar. else don't add.
+
 extern bool disable_messages;
 
 extern bool right_click_protect;
@@ -381,4 +385,6 @@ extern SDL_Surface *per_bmp64;
 extern SDL_Surface *chr_bmp64;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
+void attackHoverText(Sint32 input[6]);
+Sint32 displayAttackPower(Sint32 output[6]);
 

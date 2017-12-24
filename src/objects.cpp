@@ -84,6 +84,7 @@ void entityDeconstructor(void* data)
 
 		//free(data);
 		delete entity;
+		//TODO: If I am part of the creaturelist, remove my node from that list.
 	}
 }
 

@@ -238,6 +238,8 @@ void mainLogic(void)
 			}
 		}
 	}
+	camx -= camx % TEXTURESIZE; // make sure the camera is a multiple of 32 for hover text to work.
+	camy -= camy % TEXTURESIZE; // make sure the camera is a multiple of 32 for hover text to work.
 
 	// basic editor functions
 	if ( mode3d == false )
@@ -1696,6 +1698,7 @@ int main(int argc, char** argv)
 		}*/
 		butTilePalette->x = xres - 112;
 		butSprite->x = xres - 112;
+		butPencil->x = xres - 96;
 		butPoint->x = xres - 96;
 		butBrush->x = xres - 96;
 		butSelect->x = xres - 96;
@@ -4777,7 +4780,7 @@ int main(int argc, char** argv)
 								}
 								else if ( i == 2 )
 								{
-									if ( propertyInt > 1 || propertyInt < 0 )
+									if ( propertyInt > 2 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0 up.
 									}
@@ -5831,7 +5834,7 @@ int main(int argc, char** argv)
 
 			int numsprites = static_cast<int>(sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]));
 
-			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
+			if ( (mousex <= xres && mousey <= yres) && palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", spriteEditorNameStrings[palette[mousey + mousex * yres]]);
@@ -5933,7 +5936,7 @@ int main(int argc, char** argv)
 			if (!mousestatus[SDL_BUTTON_LEFT] && mclick)
 			{
 				// select the tile under the mouse
-				if (palette[mousey + mousex * yres] >= 0)
+				if ( (mousex <= xres && mousey <= yres) && palette[mousey + mousex * yres] >= 0)
 				{
 					selectedTile = palette[mousey + mousex * yres];
 					updateRecentTileList(selectedTile);
@@ -5949,7 +5952,7 @@ int main(int argc, char** argv)
 
 			int numtiles = static_cast<int>(sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]));
 
-			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
+			if ( (mousex <= xres && mousey <= yres) && palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Tile index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", tileEditorNameStrings[palette[mousey + mousex * yres]]);

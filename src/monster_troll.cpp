@@ -104,7 +104,8 @@ void initTroll(Entity* my, Stat* myStats)
 						int i = 1 + rand() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(rand() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -333,9 +334,9 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 0 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
 							}
 						}
@@ -346,9 +347,9 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 0 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 0;
 							}
 						}
@@ -524,6 +525,10 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left leg
 			case 4:
@@ -534,6 +539,10 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
+				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
 				}
 				break;
 			// right arm

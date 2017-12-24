@@ -15,7 +15,7 @@
 #include <random>
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v2.0.7"
+#define VERSION "v3.0.0"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -79,6 +79,8 @@ extern bool everybodyfriendly;
 extern bool combat, combattoggle;
 extern bool assailant[MAXPLAYERS];
 extern bool oassailant[MAXPLAYERS];
+extern int assailantTimer[MAXPLAYERS];
+static const int COMBAT_MUSIC_COOLDOWN = 200; // 200 ticks of combat music before it fades away.
 extern list_t removedEntities;
 extern list_t entitiesToDelete[MAXPLAYERS];
 extern bool gamepaused;
@@ -95,8 +97,7 @@ extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
-#define NUMCLASSES 10
-extern char classnames[10][10];
+#define NUMCLASSES 13
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -208,6 +209,10 @@ extern char last_port[64];
 
 #define MAXCHARGE 30 // charging up weapons
 
+static const int BASE_MELEE_DAMAGE = 8;
+static const int BASE_RANGED_DAMAGE = 7;
+static const int BASE_THROWN_DAMAGE = 9;
+
 extern bool spawn_blood;
 extern bool capture_mouse; //Useful for debugging when the game refuses to release the mouse when it's crashed.
 
@@ -216,6 +221,7 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 #define LENGTH_OF_LEVEL_REGION 5
 
 #define TICKS_PER_SECOND 50
+static const Uint8 TICKS_TO_PROCESS_FIRE = 30; // The amount of ticks needed until the 'BURNING' Status Effect is processed (char_fire % TICKS_TO_PROCESS_FIRE == 0)
 
 static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";

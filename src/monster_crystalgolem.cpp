@@ -29,10 +29,10 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 79;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 273;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 266;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -248,7 +248,7 @@ void crystalgolemDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 
-	playSoundEntity(my, 80, 128);
+	playSoundEntity(my, 269 + rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -338,9 +338,12 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( bodypart < 2 )
 		{
 			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
-			if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT && bodypart == 1 && multiplayer != CLIENT )
+			if ( bodypart == 1 && multiplayer != CLIENT )
 			{
-				limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
+				if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
+				{
+					limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
+				}
 			}
 			continue;
 		}
@@ -368,10 +371,14 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 0 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
+								/*if ( rand() % 4 == 0 )
+								{
+									playSoundEntityLocal(my, 266, 32);
+								}*/
 							}
 						}
 					}
@@ -381,9 +388,9 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 1 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 0;
 							}
 						}
@@ -518,7 +525,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else if ( MONSTER_ATTACKTIME == 40 )
 					{
-						playSoundEntityLocal(my, 79, 128);
+						playSoundEntityLocal(my, MONSTER_SPOTSND, 128);
 					}
 					else if ( MONSTER_ATTACKTIME > 50 )
 					{
@@ -665,6 +672,10 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left leg
 			case 4:
@@ -675,6 +686,10 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
+				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
 				}
 				break;
 			// right arm
