@@ -54,7 +54,7 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite )
 	Entity* entity;
 	double vel;
 
-	entity = newEntity(sprite, 1, map.entities); // flame particle
+	entity = newEntity(sprite, 1, map.entities, nullptr); // flame particle
 	if ( intro )
 	{
 		entity->setUID(0);

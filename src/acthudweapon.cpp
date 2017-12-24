@@ -214,7 +214,7 @@ void actHudWeapon(Entity* my)
 		HUDWEAPON_INIT = 1;
 		hudweapon = my;
 		hudweaponuid = my->getUID();
-		entity = newEntity(109, 1, map.entities); // malearmright.vox
+		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->getUID();
 		my->parent = entity->getUID(); // just an easy way to refer to eachother, doesn't mean much

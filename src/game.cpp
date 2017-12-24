@@ -467,7 +467,7 @@ void gameLogic(void)
 											int c, j = 1 + rand() % 2;
 											for ( c = 0; c < j; c++ )
 											{
-												Entity* entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -731,7 +731,7 @@ void gameLogic(void)
 							{
 								break;
 							}
-						result = loadMap(tempstr, &map, map.entities);
+						result = loadMap(tempstr, &map, map.entities, map.creatures);
 					}
 					fclose(fp);
 					assignActions(&map);
@@ -1183,7 +1183,7 @@ void gameLogic(void)
 											int c, j = 1 + rand() % 2;
 											for ( c = 0; c < j; c++ )
 											{
-												Entity* entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -2485,28 +2485,28 @@ int main(int argc, char** argv)
 						switch ( rand() % 4 )
 						{
 							case 0:
-								loadMap("mainmenu1", &map, map.entities);
+								loadMap("mainmenu1", &map, map.entities, map.creatures);
 								camera.x = 8;
 								camera.y = 4.5;
 								camera.z = 0;
 								camera.ang = 0.6;
 								break;
 							case 1:
-								loadMap("mainmenu2", &map, map.entities);
+								loadMap("mainmenu2", &map, map.entities, map.creatures);
 								camera.x = 7;
 								camera.y = 4;
 								camera.z = -4;
 								camera.ang = 1.0;
 								break;
 							case 2:
-								loadMap("mainmenu3", &map, map.entities);
+								loadMap("mainmenu3", &map, map.entities, map.creatures);
 								camera.x = 5;
 								camera.y = 3;
 								camera.z = 0;
 								camera.ang = 1.0;
 								break;
 							case 3:
-								loadMap("mainmenu4", &map, map.entities);
+								loadMap("mainmenu4", &map, map.entities, map.creatures);
 								camera.x = 6;
 								camera.y = 14.5;
 								camera.z = -24;
@@ -2622,11 +2622,14 @@ int main(int argc, char** argv)
 							else if ( !strcmp(tempstr, "map:") )
 							{
 								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+								while ( fgetc(fp) != '\n' )
+								{
+									if ( feof(fp) )
 									{
 										break;
 									}
-								loadMap(tempstr, &map, map.entities);
+								}
+								loadMap(tempstr, &map, map.entities, map.creatures);
 							}
 							fclose(fp);
 						}
@@ -2634,7 +2637,7 @@ int main(int argc, char** argv)
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities);
+								loadMap(maptoload, &map, map.entities, map.creatures);
 							}
 							else
 							{

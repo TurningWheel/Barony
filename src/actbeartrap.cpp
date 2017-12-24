@@ -56,7 +56,7 @@ void actBeartrap(Entity* my)
 		{
 			if (inrange[i])
 			{
-				Entity* entity = newEntity(-1, 1, map.entities);
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 				entity->flags[INVISIBLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
@@ -197,7 +197,7 @@ void actBeartrap(Entity* my)
 					if ( BEARTRAP_STATUS < DECREPIT )
 					{
 						// make first arm
-						entity = newEntity(668, 1, map.entities);
+						entity = newEntity(668, 1, map.entities, nullptr); //Special effect entity.
 						entity->behavior = &actBeartrapLaunched;
 						entity->flags[PASSABLE] = true;
 						entity->flags[UPDATENEEDED] = true;
@@ -209,7 +209,7 @@ void actBeartrap(Entity* my)
 						entity->roll = 0;
 
 						// and then the second
-						entity = newEntity(668, 1, map.entities);
+						entity = newEntity(668, 1, map.entities, nullptr); //Special effect entity.
 						entity->behavior = &actBeartrapLaunched;
 						entity->flags[PASSABLE] = true;
 						entity->flags[UPDATENEEDED] = true;
