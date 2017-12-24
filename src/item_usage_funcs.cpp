@@ -70,7 +70,7 @@ void item_PotionWater(Item*& item, Entity* entity)
 		playSoundEntity(entity, 52, 64);
 		if ( item->beatitude > 0 )
 		{
-			entity->modHP(item->beatitude);
+			entity->modHP(5);
 		}
 		if ( player != clientnum )
 		{
@@ -87,6 +87,7 @@ void item_PotionWater(Item*& item, Entity* entity)
 	{
 		messagePlayer(player, language[753]);
 		stats->HUNGER += 50;
+		entity->modHP(2);
 	}
 	else if ( item->beatitude < 0 )
 	{
@@ -174,8 +175,17 @@ void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
 	messagePlayer(player, language[758]);
 	messagePlayer(player, language[759]);
 	stats->EFFECTS[EFF_DRUNK] = true;
-	stats->EFFECTS_TIMERS[EFF_DRUNK] = 3600;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+	}
 	stats->HUNGER += 100;
+	entity->modHP(5);
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -233,6 +243,7 @@ void item_PotionJuice(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[760]);
 	stats->HUNGER += 50;
+	entity->modHP(5);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -354,7 +365,14 @@ void item_PotionConfusion(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[762]);
 	stats->EFFECTS[EFF_CONFUSED] = true;
-	stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = std::max(300, 1800 - (entity->getPER() + entity->getCON()) * 20);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
+	}
 	if ( entity->behavior == &actMonster )
 	{
 		entity->monsterTarget = 0; // monsters forget what they're doing
@@ -478,7 +496,15 @@ void item_PotionBlindness(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[765]);
 	stats->EFFECTS[EFF_BLIND] = true;
-	stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+		stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -773,7 +799,15 @@ void item_PotionParalysis(Item*& item, Entity* entity)
 
 	messagePlayer(player, language[771]);
 	stats->EFFECTS[EFF_PARALYZED] = true;
-	stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+	if ( player >= 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getCON()) * 5);
+	}
+	else
+	{
+		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -1342,7 +1376,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 
 void item_ScrollEnchantArmor(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1367,33 +1401,66 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if (stats[player]->helmet != nullptr)
+	int armornum = rand() % 6;
+	int startIndex = armornum;
+	bool breakloop = false;
+	while ( !armor && !breakloop )
 	{
-		armor = stats[player]->helmet;
-	}
-	else if (stats[player]->breastplate != nullptr)
-	{
-		armor = stats[player]->breastplate;
-	}
-	else if (stats[player]->gloves != nullptr)
-	{
-		armor = stats[player]->gloves;
-	}
-	else if (stats[player]->shoes != nullptr)
-	{
-		armor = stats[player]->shoes;
-	}
-	else if (stats[player]->shield != nullptr)
-	{
-		armor = stats[player]->shield;
-	}
-	else if (stats[player]->cloak != nullptr)
-	{
-		armor = stats[player]->cloak;
-	}
-	else
-	{
-		armor = nullptr;
+		switch ( armornum )
+		{
+			// intentional fall throughs...
+			case 0:
+				if ( stats[player]->helmet != nullptr )
+				{
+					armor = stats[player]->helmet;
+					break;
+				}
+			case 1:
+				if ( stats[player]->breastplate != nullptr )
+				{
+					armor = stats[player]->breastplate;
+					break;
+				}
+			case 2:
+				if ( stats[player]->gloves != nullptr )
+				{
+					armor = stats[player]->gloves;
+					break;
+				}
+			case 3:
+				if ( stats[player]->shoes != nullptr )
+				{
+					armor = stats[player]->shoes;
+					break;
+				}
+			case 4:
+				if ( stats[player]->shield != nullptr )
+				{
+					armor = stats[player]->shield;
+					break;
+				}
+			case 5:
+				if ( stats[player]->cloak != nullptr )
+				{
+					armor = stats[player]->cloak;
+					break;
+				}
+				++armornum;
+				if ( armornum > 5 )
+				{
+					// loop back around.
+					armornum = 0;
+				}
+				if ( armornum == startIndex )
+				{
+					// couldn't find a piece of armor, break.
+					breakloop = true;
+					armor = nullptr;
+					break;
+				}
+			default:
+				break;
+		}
 	}
 
 	if (armor == nullptr)
@@ -1403,7 +1470,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			messagePlayer(player, language[857]);
 		}
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if (item->beatitude < 0)
 		{
@@ -1433,7 +1500,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 
 void item_ScrollRemoveCurse(Item* item, int player)
 {
-	Item* target;
+	Item* target = nullptr;
 	node_t* node;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -1513,7 +1580,91 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	}
 	else
 	{
-		if (player == clientnum)
+		// choose a random piece of worn equipment to curse!
+		int armornum = rand() % 7;
+		int startIndex = armornum;
+		bool breakloop = false;
+		target = nullptr;
+		while ( !target && !breakloop )
+		{
+			switch ( armornum )
+			{
+				// intentional fall throughs...
+				case 0:
+					if ( stats[player]->helmet != nullptr && stats[player]->helmet->beatitude >= 0 )
+					{
+						target = stats[player]->helmet;
+						break;
+					}
+				case 1:
+					if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->beatitude >= 0 )
+					{
+						target = stats[player]->breastplate;
+						break;
+					}
+				case 2:
+					if ( stats[player]->gloves != nullptr && stats[player]->gloves->beatitude >= 0 )
+					{
+						target = stats[player]->gloves;
+						break;
+					}
+				case 3:
+					if ( stats[player]->shoes != nullptr && stats[player]->shoes->beatitude >= 0 )
+					{
+						target = stats[player]->shoes;
+						break;
+					}
+				case 4:
+					if ( stats[player]->shield != nullptr && stats[player]->shield->beatitude >= 0 )
+					{
+						target = stats[player]->shield;
+						break;
+					}
+				case 5:
+					if ( stats[player]->cloak != nullptr && stats[player]->cloak->beatitude >= 0 )
+					{
+						target = stats[player]->cloak;
+						break;
+					}
+				case 6:
+					if ( stats[player]->weapon != nullptr && stats[player]->weapon->beatitude >= 0 )
+					{
+						target = stats[player]->weapon;
+						break;
+					}
+					++armornum;
+					if ( armornum > 6 )
+					{
+						// loop back around.
+						armornum = 0;
+					}
+					if ( armornum == startIndex )
+					{
+						// couldn't find a piece of armor, break.
+						breakloop = true;
+						target = nullptr;
+						break;
+					}
+				default:
+					break;
+			}
+		}
+		if ( target )
+		{
+			if ( target->beatitude == 0 )
+			{
+				--target->beatitude;
+			}
+			else
+			{
+				target->beatitude = -target->beatitude;
+			}
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[858], target->getName());
+			}
+		}
+		else if (player == clientnum)
 		{
 			messagePlayer(player, language[862]);
 		}
@@ -1549,9 +1700,12 @@ void item_ScrollFire(Item* item, int player)
 	}
 	else
 	{
-		playSoundEntity(players[player]->entity, 153, 128);
-		messagePlayer(player, language[864]);
-		players[player]->entity->flags[BURNING] = true;
+		playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
+		messagePlayer(player, language[864]); // "The scroll erupts in a tower of flame!"
+
+		// Attempt to set the Player on fire
+		players[player]->entity->SetEntityOnFire();
+
 		int c;
 		for (c = 0; c < 100; c++)
 		{
@@ -1562,10 +1716,6 @@ void item_ScrollFire(Item* item, int player)
 			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
-		}
-		if (player > 0)
-		{
-			serverUpdateEntityFlag(players[player]->entity, BURNING);
 		}
 	}
 }
@@ -1682,7 +1832,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 
 void item_ScrollRepair(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1707,44 +1857,79 @@ void item_ScrollRepair(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if ( stats[player]->weapon != NULL )
+	int armornum = rand() % 7;
+	int startIndex = armornum;
+	bool breakloop = false;
+	while ( !armor && !breakloop )
 	{
-		armor = stats[player]->weapon;
-	}
-	else if ( stats[player]->helmet != NULL )
-	{
-		armor = stats[player]->helmet;
-	}
-	else if ( stats[player]->breastplate != NULL )
-	{
-		armor = stats[player]->breastplate;
-	}
-	else if ( stats[player]->gloves != NULL )
-	{
-		armor = stats[player]->gloves;
-	}
-	else if ( stats[player]->shoes != NULL )
-	{
-		armor = stats[player]->shoes;
-	}
-	else if ( stats[player]->shield != NULL )
-	{
-		armor = stats[player]->shield;
-	}
-	else if ( stats[player]->cloak != NULL )
-	{
-		armor = stats[player]->cloak;
-	}
-	else
-	{
-		armor = NULL;
+		switch ( armornum )
+		{
+			// intentional fall throughs...
+			case 0:
+				if ( stats[player]->weapon != nullptr && stats[player]->weapon->status != EXCELLENT )
+				{
+					armor = stats[player]->weapon;
+					break;
+				}
+			case 1:
+				if ( stats[player]->helmet != nullptr && stats[player]->helmet->status != EXCELLENT )
+				{
+					armor = stats[player]->helmet;
+					break;
+				}
+			case 2:
+				if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->status != EXCELLENT )
+				{
+					armor = stats[player]->breastplate;
+					break;
+				}
+			case 3:
+				if ( stats[player]->gloves != nullptr && stats[player]->gloves->status != EXCELLENT )
+				{
+					armor = stats[player]->gloves;
+					break;
+				}
+			case 4:
+				if ( stats[player]->shoes != nullptr && stats[player]->shoes->status != EXCELLENT )
+				{
+					armor = stats[player]->shoes;
+					break;
+				}
+			case 5:
+				if ( stats[player]->shield != nullptr && stats[player]->shield->status != EXCELLENT )
+				{
+					armor = stats[player]->shield;
+					break;
+				}
+			case 6:
+				if ( stats[player]->cloak != nullptr && stats[player]->cloak->status != EXCELLENT )
+				{
+					armor = stats[player]->cloak;
+					break;
+				}
+				++armornum;
+				if ( armornum > 6 )
+				{
+					// loop back around.
+					armornum = 0;
+				}
+				if ( armornum == startIndex )
+				{
+					// couldn't find a piece of armor, break.
+					breakloop = true;
+					armor = nullptr;
+					break;
+				}
+			default:
+				break;
+		}
 	}
 
-	if ( armor == NULL && player == clientnum )
+	if ( armor == nullptr && player == clientnum )
 	{
 		messagePlayer(player, language[870]);
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if ( item->beatitude < 0 && player == clientnum )
 		{
@@ -1756,14 +1941,14 @@ void item_ScrollRepair(Item* item, int player)
 			{
 				messagePlayer(player, language[872], armor->getName());
 			}
-			armor->status = static_cast<Status>(std::min(armor->status + 1 + item->beatitude, 4));
+			armor->status = static_cast<Status>(std::min(armor->status + 1 + item->beatitude, static_cast<int>(EXCELLENT)));
 		}
 	}
 }
 
 void item_ScrollDestroyArmor(Item* item, int player)
 {
-	Item* armor;
+	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1788,40 +1973,73 @@ void item_ScrollDestroyArmor(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if ( stats[player]->shield != NULL )
+	int armornum = rand() % 6;
+	int startIndex = armornum;
+	bool breakloop = false;
+	while ( !armor && !breakloop )
 	{
-		armor = stats[player]->shield;
-	}
-	else if ( stats[player]->breastplate != NULL )
-	{
-		armor = stats[player]->breastplate;
-	}
-	else if ( stats[player]->helmet != NULL )
-	{
-		armor = stats[player]->helmet;
-	}
-	else if ( stats[player]->shoes != NULL )
-	{
-		armor = stats[player]->shoes;
-	}
-	else if ( stats[player]->gloves != NULL )
-	{
-		armor = stats[player]->gloves;
-	}
-	else if ( stats[player]->cloak != NULL )
-	{
-		armor = stats[player]->cloak;
-	}
-	else
-	{
-		armor = NULL;
+		switch ( armornum )
+		{
+			// intentional fall throughs...
+			case 0:
+				if ( stats[player]->helmet != nullptr )
+				{
+					armor = stats[player]->helmet;
+					break;
+				}
+			case 1:
+				if ( stats[player]->breastplate != nullptr )
+				{
+					armor = stats[player]->breastplate;
+					break;
+				}
+			case 2:
+				if ( stats[player]->gloves != nullptr )
+				{
+					armor = stats[player]->gloves;
+					break;
+				}
+			case 3:
+				if ( stats[player]->shoes != nullptr )
+				{
+					armor = stats[player]->shoes;
+					break;
+				}
+			case 4:
+				if ( stats[player]->shield != nullptr )
+				{
+					armor = stats[player]->shield;
+					break;
+				}
+			case 5:
+				if ( stats[player]->cloak != nullptr )
+				{
+					armor = stats[player]->cloak;
+					break;
+				}
+				++armornum;
+				if ( armornum > 5 )
+				{
+					// loop back around.
+					armornum = 0;
+				}
+				if ( armornum == startIndex )
+				{
+					// couldn't find a piece of armor, break.
+					breakloop = true;
+					armor = nullptr;
+					break;
+				}
+			default:
+				break;
+		}
 	}
 
-	if ( armor == NULL && player == clientnum )
+	if ( armor == nullptr && player == clientnum )
 	{
 		messagePlayer(player, language[873]);
 	}
-	else
+	else if ( armor != nullptr )
 	{
 		if ( item->beatitude < 0 && player == clientnum )
 		{
@@ -2329,7 +2547,11 @@ void item_ToolBeartrap(Item*& item, int player)
 		consumeItem(item);
 		return;
 	}
-	entity = newEntity(98, 1, map.entities);
+	if ( multiplayer != CLIENT )
+	{
+		playSoundEntity(players[player]->entity, 253, 64);
+	}
+	entity = newEntity(668, 1, map.entities);
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;

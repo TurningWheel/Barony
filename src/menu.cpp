@@ -46,6 +46,16 @@ void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
 	*id = SteamMatchmaking()->GetLobbyOwner(*static_cast<CSteamID*>(steamIDLobby));
 	return id; //Still don't like this method.
 }
+// get player names in a lobby
+void* cpp_SteamMatchmaking_GetLobbyMember(void* steamIDLobby, int index)
+{
+	CSteamID* id = new CSteamID();
+	*id = SteamMatchmaking()->GetLobbyMemberByIndex(*static_cast<CSteamID*>(currentLobby), index);
+	return id;
+}
+uint64 SteamAPICall_NumPlayersOnline = 0;
+NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
+int steamOnlinePlayers = 0;
 #endif
 
 // menu variables
@@ -100,6 +110,9 @@ bool spawn_blood = true;
 int multiplayerselect = SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
+bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
+																true, true, true, true,
+																true, true, true, true };
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
@@ -393,6 +406,9 @@ void handleMainMenu(bool mode)
 			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
 
+		// gray text color
+		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
+
 		// print game version
 		if ( mode || introstage != 5 )
 		{
@@ -464,16 +480,65 @@ void handleMainMenu(bool mode)
 			int h2 = h;
 			TTF_SizeUTF8(ttf8, VERSION, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
-		}
 
+#ifdef STEAMWORKS
+			TTF_SizeUTF8(ttf8, language[2584], &w, &h);
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
+				&& subwindow == 0
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					playSound(139, 64);
+					SteamFriends()->ActivateGameOverlayToWebPage(language[2570]);
+				}
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2584]);
+			}
+			else
+			{
+				ttfPrintText(ttf8, xres - 8 - w, 8, language[2584]);
+			}
+			h2 = h;
+			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
+				&& subwindow == 0
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					playSound(139, 64);
+					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+				}
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8 + h2, colorGray, language[2549], steamOnlinePlayers);
+			}
+			else if ( SteamUser()->BLoggedOn() )
+			{
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
+			}
+			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			{
+				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+			}
+			bool bFailed = false;
+			if ( SteamUser()->BLoggedOn() )
+			{
+				SteamUtils()->GetAPICallResult(SteamAPICall_NumPlayersOnline, &NumberOfCurrentPlayers, sizeof(NumberOfCurrentPlayers_t), 1107, &bFailed);
+				if ( NumberOfCurrentPlayers.m_bSuccess )
+				{
+					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				}
+			}
+#endif // STEAMWORKS
+		}
 		// navigate with arrow keys
 		if (!subwindow)
 		{
 			navigateMainMenuItems(mode);
 		}
-
-		// gray text color
-		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 
 		// draw menu
 		if ( mode )
@@ -510,7 +575,7 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				
+
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
@@ -1055,7 +1120,7 @@ void handleMainMenu(bool mode)
 				// get number of lobby members (capped to game limit)
 
 				// record CSteamID of lobby owner (and nobody else)
-				SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
+				int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
 				if ( steamIDRemote[0] )
 				{
 					cpp_Free_CSteamID(steamIDRemote[0]);
@@ -1070,7 +1135,10 @@ void handleMainMenu(bool mode)
 						steamIDRemote[c] = NULL;
 					}
 				}
-
+				for ( c = 1; c < lobbyMembers; ++c )
+				{
+					steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+				}
 				buttonJoinLobby(NULL);
 			}
 		}
@@ -1230,15 +1298,15 @@ void handleMainMenu(bool mode)
 		else if ( charcreation_step == 2 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
-			for ( c = 0; c < 10; c++ )
+			for ( c = 0; c < NUMCLASSES; c++ )
 			{
 				if ( c == client_classes[0] )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", language[1900 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", language[1900 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c));
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -1267,7 +1335,7 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						client_classes[0] = 9;
+						client_classes[0] = NUMCLASSES - 1;
 					}
 
 					// reset class loadout
@@ -1283,7 +1351,7 @@ void handleMainMenu(bool mode)
 					}
 					draw_cursor = false;
 					client_classes[0]++;
-					if (client_classes[0] > 9)
+					if ( client_classes[0] > NUMCLASSES - 1 )
 					{
 						client_classes[0] = 0;
 					}
@@ -1295,7 +1363,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// class description
-			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[10 + client_classes[0]]);
+			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0]));
 		}
 
 		// faces
@@ -2129,9 +2197,32 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1373]);
 			}
 			current_y += 16;
+			int hotbar_options_x = subx1 + 72 + 256;
+			int hotbar_options_y = current_y;
 			if ( settings_auto_hotbar_new_items )
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1374]);
+				int pad_x = hotbar_options_x;
+				int pad_y = hotbar_options_y;
+				drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+				ttfPrintTextFormatted(ttf12, pad_x, current_y - 16, "%s", language[2583]);
+				for ( int i = 0; i < (NUM_HOTBAR_CATEGORIES); ++i )
+				{
+					if ( settings_auto_hotbar_categories[i] == true )
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[x] %s", language[2571 + i]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[ ] %s", language[2571 + i]);
+					}
+					pad_x += 128;
+					if ( i == 3 || i == 7 )
+					{
+						pad_x = hotbar_options_x;
+						pad_y += 16;
+					}
+				}
 			}
 			else
 			{
@@ -2240,6 +2331,29 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
+					}
+				}
+				else
+				{
+					if ( settings_auto_hotbar_new_items )
+					{
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+							{
+								if ( mouseInBounds(hotbar_options_x, hotbar_options_x + 24, hotbar_options_y, hotbar_options_y + 12) )
+								{
+									settings_auto_hotbar_categories[i] = !settings_auto_hotbar_categories[i];
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+								}
+								hotbar_options_x += 128;
+								if ( i == 3 || i == 7 )
+								{
+									hotbar_options_x -= (128 * 4);
+									hotbar_options_y += 16;
+								}
+							}
+						}
 					}
 				}
 
@@ -2902,7 +3016,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) ) //TODO: Sometimes if a host closes a lobby, it can crash here for a client.
 					{
 						continue;
 					}
@@ -3084,27 +3198,36 @@ void handleMainMenu(bool mode)
 			charDisplayName = stats[c]->name;
 
 #ifdef STEAMWORKS
-			int remoteIDIndex = c;
-			if ( multiplayer == SERVER )
+			if ( !directConnect && c != clientnum )
 			{
-				remoteIDIndex--;
-			}
+				//printlog("\n\n/* ********* *\nc = %d", c);
+				int remoteIDIndex = c;
+				if ( multiplayer == SERVER && c != 0 ) //Skip the server, because that would be undefined behavior (array index of -1). //TODO: if c > clientnum instead?
+				{
+					remoteIDIndex--;
+				}
 
-			if ( !directConnect && steamIDRemote[remoteIDIndex] )
-			{
-				charDisplayName += " (";
-				charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
-				charDisplayName += ")";
+				if ( remoteIDIndex >= 0 && steamIDRemote[remoteIDIndex] )
+				{
+					//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
+					charDisplayName += " (";
+					charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
+					charDisplayName += ")";
+				}
+				/*else
+				{
+					printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
+				}*/
 			}
 #endif
 
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], language[1900 + client_classes[c]]);
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c]));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], language[1900 + client_classes[c]]);
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c]));
 			}
 		}
 
@@ -3577,7 +3700,7 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[32];
-				strcpy(classname, language[1900 + client_classes[0]]);
+				strcpy(classname, playerClassLangEntry(client_classes[0]));
 				classname[0] -= 32;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
 			}
@@ -3591,7 +3714,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// print character stats
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, language[1900 + client_classes[clientnum]]);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
@@ -3670,11 +3793,25 @@ void handleMainMenu(bool mode)
 					nokills = false;
 					if ( kills[x] > 1 )
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[111 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
+						}
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[90 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
+						}
 					}
 					y++;
 				}
@@ -4040,7 +4177,7 @@ void handleMainMenu(bool mode)
 			// spice of life achievement
 			usedClass[client_classes[clientnum]] = true;
 			bool usedAllClasses = true;
-			for ( c = 0; c < 10; c++ )
+			for ( c = 0; c < NUMCLASSES; c++ )
 				if ( !usedClass[c] )
 				{
 					usedAllClasses = false;
@@ -4079,7 +4216,7 @@ void handleMainMenu(bool mode)
 			fadefinished = false;
 			fadeout = false;
 			creditstage++;
-			if ( creditstage >= 14 )
+			if ( creditstage >= 15 )
 			{
 #ifdef MUSIC
 				playmusic(intromusic, true, false, false);
@@ -4468,8 +4605,8 @@ void handleMainMenu(bool mode)
 	// credits sequence
 	if ( creditstage > 0 )
 	{
-		if ( (credittime >= 300 && (creditstage <= 10 || creditstage > 12)) || (credittime >= 180 && creditstage == 11) ||
-		        (credittime >= 480 && creditstage == 12) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
+		        (credittime >= 480 && creditstage == 13) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if ( rebindaction == -1 )
@@ -4495,7 +4632,8 @@ void handleMainMenu(bool mode)
 		else if ( creditstage == 3 )
 		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[58]), yres / 2 - 9 - 18, colorBlue, language[58]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9 + 18, CREDITSLINE06);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9, CREDITSLINE06);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE40), yres / 2 - 9 + 18, CREDITSLINE40);
 		}
 		else if ( creditstage == 4 )
 		{
@@ -4539,10 +4677,17 @@ void handleMainMenu(bool mode)
 		}
 		else if ( creditstage == 9 )
 		{
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2585]), yres / 2 - 9 - 18, colorBlue, language[2585]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2586]), yres / 2 - 9, colorBlue, language[2586]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2587]), yres / 2 - 9 + 18, colorBlue, language[2587]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2588]), yres / 2 + 9 + 18, colorBlue, language[2588]);
+		}
+		else if ( creditstage == 10 )
+		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[64]), yres / 2 - 9 - 18, colorBlue, language[64]);
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[65]), yres / 2 - 9 + 18, language[65]);
 		}
-		else if ( creditstage == 10 )
+		else if ( creditstage == 11 )
 		{
 			// logo
 			src.x = 0;
@@ -4570,7 +4715,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[68]), yres / 2 + 136, language[68]);
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[69]), yres / 2 + 156, colorBlue, language[69]);
 		}
-		else if ( creditstage == 12 )
+		else if ( creditstage == 13 )
 		{
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE37), yres / 2 - 9, CREDITSLINE37);
 			//ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2+9,colorBlue,CREDITSLINE38);
@@ -5114,6 +5259,10 @@ void openSettingsWindow()
 	settings_broadcast = broadcast;
 	settings_nohud = nohud;
 	settings_auto_hotbar_new_items = auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
+	}
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
@@ -6605,6 +6754,10 @@ void applySettings()
 	nohud = settings_nohud;
 
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
+	}
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;

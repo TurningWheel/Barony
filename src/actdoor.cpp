@@ -123,7 +123,7 @@ void actDoor(Entity* my)
 			{
 				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
 				{
-					if (inrange[i])
+					if ( players[i]->entity && inrange[i])
 					{
 						if ( !my->doorLocked )   // door unlocked
 						{
@@ -274,17 +274,21 @@ void actDoorFrame(Entity* my)
 void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
 	doorHealth -= damage; //Decrease door health.
-	if ( doorHealth < 0 )
+	if ( caster )
 	{
-		if ( caster )
+		if ( caster->behavior == &actPlayer )
 		{
-			if ( caster->behavior == &actPlayer )
+			if ( doorHealth <= 0 )
 			{
 				messagePlayer(caster->skill[2], language[387]);
 			}
+			else
+			{
+				messagePlayer(caster->skill[2], language[378], language[674]);
+			}
+			updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
 		}
 	}
-	playSoundEntity(this, 28, 128);
 	if ( !doorDir )
 	{
 		doorSmacked = (magicProjectile.x > this->x);
@@ -294,5 +298,5 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 		doorSmacked = (magicProjectile.y < this->y);
 	}
 
-	updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
+	playSoundEntity(this, 28, 128);
 }

@@ -30,10 +30,10 @@ void initAutomaton(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 263;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 257;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -43,7 +43,24 @@ void initAutomaton(Entity* my, Stat* myStats)
 			{
 				myStats->leader_uid = 0;
 			}
-
+			bool lesserMonster = false;
+			if ( !strncmp(myStats->name, "damaged automaton", strlen("damaged automaton")) )
+			{
+				lesserMonster = true;
+				myStats->HP = 60;
+				myStats->MAXHP = 115;
+				myStats->RANDOM_MAXHP = 0;
+				myStats->RANDOM_HP = 30;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 13;
+				myStats->DEX = 4;
+				myStats->CON = 8;
+				myStats->INT = -1;
+				myStats->PER = 10;
+				myStats->CHR = -3;
+				myStats->EXP = 0;
+				myStats->LVL = 16;
+			}
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -428,7 +445,7 @@ void automatonDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	playSoundEntity(my, 94, 128);
+	playSoundEntity(my, 260 + rand() % 3, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -510,16 +527,65 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( myStats->EFFECTS[EFF_ASLEEP] 
+			&& (my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN) )
 		{
 			my->z = 2;
 			my->pitch = PI / 4;
 		}
 		else
 		{
-			my->z = -.5;
-			my->pitch = 0;
+			if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+			{
+				my->z = -.5;
+				my->pitch = 0;
+				if ( myStats->HP < 25 && !myStats->EFFECTS[EFF_CONFUSED] )
+				{
+					// threshold for boom boom
+					if ( rand() % 3 > 0 ) // 2/3
+					{
+						my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
+						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
+						serverUpdateEntitySkill(my, 33);
+
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = -1;
+					}
+					else
+					{
+						myStats->EFFECTS[EFF_CONFUSED] = true;
+						myStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
+						playSoundEntity(my, 263, 128);
+						spawnMagicEffectParticles(my->x, my->y, my->z, 170);
+					}
+				}
+			}
 		}
+	}
+
+	if ( my->monsterSpecialState == AUTOMATON_MALFUNCTION_START || my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN )
+	{
+		if ( my->monsterSpecialState == AUTOMATON_MALFUNCTION_START )
+		{
+			my->monsterSpecialState = AUTOMATON_MALFUNCTION_RUN;
+			createParticleExplosionCharge(my, 174, 100, 0.1);
+		}
+		if ( multiplayer != CLIENT )
+		{
+			if ( my->monsterSpecialTimer <= 0 )
+			{
+				my->attack(MONSTER_POSE_AUTOMATON_MALFUNCTION, 0, my);
+				spawnExplosion(my->x, my->y, my->z);
+				my->modHP(-1000);
+			}
+		}
+	}
+
+	if ( ticks % (2 * TICKS_PER_SECOND) == 0 && rand() % 5 > 0 )
+	{
+		playSoundEntityLocal(my, 259, 16);
 	}
 
 	//Move bodyparts
@@ -527,12 +593,46 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			if ( multiplayer != CLIENT )
+			{
+				if ( bodypart == 0 && my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN  )
+				{
+					--my->monsterSpecialTimer;
+					if ( my->monsterSpecialTimer == 100 )
+					{
+						playSoundEntity(my, 321, 128);
+					}
+					if ( my->monsterSpecialTimer < 80 )
+					{
+						my->z += 0.02;
+						limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0.7, true, 0.1);
+					}
+					else
+					{
+						limbAnimateToLimit(my, ANIMATE_PITCH, 0.01, PI / 5, false, 0.0);
+					}
+				}
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
-		entity->z = my->z;
+		if ( my->monsterSpecialState != AUTOMATON_MALFUNCTION_START && my->monsterSpecialState != AUTOMATON_MALFUNCTION_RUN )
+		{
+			entity->z = my->z;
+		}
+		else
+		{
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTLEG )
+			{
+				entity->z = -.5;
+			}
+			else
+			{
+				entity->z = my->z;
+			}
+		}
 
 		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || MONSTER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
@@ -545,7 +645,14 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			if ( bodypart == LIMB_HUMANOID_LEFTARM && my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN )
+			{
+				limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 13 * PI / 8, true, 0.1);
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -654,7 +761,14 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->monsterSpecialState == AUTOMATON_MALFUNCTION_RUN )
+			{
+				limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 13 * PI / 8, true, 0.1);
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			}
 
 			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
@@ -1057,41 +1171,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
-						entity->focaly = limbs[AUTOMATON][9][1] - 3.25; // -3.25
-						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
-						entity->focaly = limbs[AUTOMATON][9][1] - 2.5; // -2.5
-						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // 2.5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0]; // 0
-						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[AUTOMATON][9][0]; // 0
-						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-				}
-				else
-				{
-					my->flags[INVISIBLE] = true;
-				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case LIMB_HUMANOID_MASK:

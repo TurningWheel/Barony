@@ -289,10 +289,10 @@ void actThrown(Entity* my)
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
-				int damage = (9 - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
+				int damage = (BASE_THROWN_DAMAGE - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
 				if ( parentStats )
 				{
-					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 5 increase.
+					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 increase.
 				}
 				if ( hitstats && !hitstats->defending )
 				{
@@ -303,16 +303,10 @@ void actThrown(Entity* my)
 				{
 					// thrown weapons do damage if absorbed by armor.
 					case BRONZE_TOMAHAWK:
-						damage += 2;
-						break;
 					case IRON_DAGGER:
-						damage += 4;
-						break;
 					case STEEL_CHAKRAM:
-						damage += 6;
-						break;
 					case CRYSTAL_SHURIKEN:
-						damage += 8;
+						damage += item->weaponGetAttack();
 						break;
 					default:
 						break;
@@ -437,7 +431,7 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
-					if ( rand() % 10 == 0 && parent != NULL )
+					if ( rand() % 5 == 0 && parent != NULL )
 					{
 						parent->increaseSkill(PRO_RANGED);
 					}
@@ -518,14 +512,7 @@ void actThrown(Entity* my)
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[90 + hitstats->type]);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
 							if ( damage == 0 )
 							{
 								messagePlayer(parent->skill[2], language[447]);
@@ -533,7 +520,7 @@ void actThrown(Entity* my)
 						}
 						else
 						{
-							messagePlayerColor(parent->skill[2], color, language[694], hitstats->name);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
 							if ( damage == 0 )
 							{
 								if ( hitstats->sex )

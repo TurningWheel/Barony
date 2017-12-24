@@ -56,6 +56,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			if ( !strcmp(myStats->name, "") )
+			{
+				strcpy(myStats->name, language[158 + rand() % 26]);
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -119,18 +124,30 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				{
 					if ( rand() % 2 )
 					{
-						newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						if ( rand() % 7 == 0 )
+						{
+							newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						}
 					}
 					else
 					{
-						int i = rand() % 21;
+						int i = rand() % 23;
 						if ( i < 18 )
 						{
 							newItem( static_cast<ItemType>(GLOVES + i), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
 						}
-						else
+						else if ( i < 21 )
 						{
 							newItem( static_cast<ItemType>(GLOVES + i + 4), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
+						}
+						else
+						{
+							// punching armaments
+							newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
 						}
 					}
 				}
@@ -203,7 +220,14 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				// hardware store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					if ( rand() % 6 == 0 )
+					{
+						newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+					}
+					else
+					{
+						newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					}
 				}
 				break;
 			case 8:
@@ -945,38 +969,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0] - .5;
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 3.25;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0] - .5;
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 2.5;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0];
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 4.75;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[SHOPKEEPER][9][0];
-						entity->focaly = limbs[SHOPKEEPER][9][1] - 4.75;
-						entity->focalz = limbs[SHOPKEEPER][9][2] + 2.25;
-						entity->roll = PI / 2;
-					}
-				}
+				my->setHelmetLimbOffset(entity);
 				break;
 			// mask
 			case LIMB_HUMANOID_MASK:

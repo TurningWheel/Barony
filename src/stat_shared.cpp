@@ -18,7 +18,8 @@ See LICENSE for details.
 #include "magic/magic.hpp"
 
 // Constructor
-Stat::Stat(Sint32 sprite)
+Stat::Stat(Sint32 sprite) :
+	sneaking(MISC_FLAGS[1])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
@@ -307,7 +308,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SHOPKEEPER;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, language[158 + rand() % 26]);
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 300;
@@ -516,10 +516,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 50;
 			stats->MAXMP = 50;
 			stats->OLDHP = stats->HP;
-			stats->STR = 40;
+			stats->STR = 50;
 			stats->RANDOM_STR = 5;
-			stats->DEX = 1;
-			stats->RANDOM_DEX = 3;
+			stats->DEX = 2;
+			stats->RANDOM_DEX = 2;
 			stats->CON = 25;
 			stats->RANDOM_CON = 0;
 			stats->INT = -2;
@@ -549,7 +549,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 300;
+			stats->MAXHP = 280;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;
 			stats->MP = stats->MAXMP;
@@ -600,7 +600,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 500;
+			stats->HP = 300;
 			stats->RANDOM_HP = 0;
 			stats->MAXHP = stats->HP;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
@@ -611,9 +611,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->OLDHP = stats->HP;
 			stats->STR = 20;
 			stats->RANDOM_STR = 10;
-			stats->DEX = 4;
-			stats->RANDOM_DEX = 3;
-			stats->CON = -10;
+			stats->DEX = 8;
+			stats->RANDOM_DEX = 0;
+			stats->CON = 0;
 			stats->RANDOM_CON = 0;
 			stats->INT = 15;
 			stats->RANDOM_INT = 5;
@@ -627,13 +627,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_GOLD = 70;
 			stats->HUNGER = 900;
 
-			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			/*stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;*/
 
 			//stats->PROFICIENCIES[PRO_SWORD] = 45;
 			//stats->PROFICIENCIES[PRO_MACE] = 35;
@@ -645,7 +645,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_SPELLCASTING] = 80;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 10; // booze potion
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 10; // doublet
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 25; // magicstaff
 			break;
@@ -658,7 +658,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
 			stats->sex = static_cast<sex_t>(rand() % 2);
-			stats->MAXHP = 200;
+			stats->MAXHP = 170;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 500;
 			stats->MP = stats->MAXMP;
@@ -698,7 +698,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_STR = 10;
 			stats->DEX = 8;
 			stats->RANDOM_DEX = 0;
-			stats->CON = 15;
+			stats->CON = 20;
 			stats->RANDOM_CON = 0;
 			stats->INT = -2;
 			stats->RANDOM_INT = 0;
@@ -708,7 +708,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_CHR = 0;
 
 			stats->EXP = 0;
-			stats->LVL = 50;
+			stats->LVL = 35;
 			stats->GOLD = 50;
 			stats->RANDOM_GOLD = 100;
 			stats->HUNGER = 900;
@@ -729,7 +729,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 175;
+			stats->MAXHP = 130;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;
 			stats->MP = stats->MAXMP;
@@ -770,6 +770,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; // iron daggers, qty 2-8
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 50; // shortbow
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 5; // spellbook
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 20; // gemstones, qty 1-2
 			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_4] = 1;
@@ -836,7 +838,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 130;
+			stats->MAXHP = 115;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 20;
 			stats->MP = stats->MAXMP;
@@ -847,7 +849,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
 			stats->STR = 20;
 			stats->DEX = 5;
-			stats->CON = 5;
+			stats->CON = 8;
 			stats->INT = -1;
 			stats->PER = 10;
 			stats->CHR = -3;

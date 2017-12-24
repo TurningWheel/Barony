@@ -1829,6 +1829,18 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		}
 	}
 
+	Uint32 cacheLimit = 8096;
+	if ( imgref > cacheLimit )
+	{
+		// time to flush the cache.
+		imgref -= 6144;
+		for ( int i = 0; i < HASH_SIZE; ++i )
+		{
+			list_FreeAll(&ttfTextHash[i]);
+		}
+		printlog("notice: stored hash limit exceeded, clearing ttfTextHash...");
+	}
+
 	// retrieve text surface
 	if ( (surf = ttfTextHashRetrieve(ttfTextHash, newStr, font, outline)) == NULL )
 	{
@@ -1894,7 +1906,6 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		allsurfaces[imgref]->refcount = imgref;
 		glLoadTexture(allsurfaces[imgref], imgref);
 		imgref++;
-
 		// store the surface in the text surface cache
 		if ( !ttfTextHashStore(ttfTextHash, newStr, font, outline, surf) )
 		{

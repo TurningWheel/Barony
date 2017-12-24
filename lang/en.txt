@@ -580,13 +580,13 @@ thou makest use of them.#
 
 # skill levels
 
-363                 none#
-364               novice#
-365                basic#
-366              skilled#
-367               expert#
-368               master#
-369               legend#
+363                  none#
+364                novice#
+365                 basic#
+366               skilled#
+367                expert#
+368                master#
+369                legend#
 
 
 # rest of the character sheet
@@ -2777,8 +2777,8 @@ client (player %d) (direct ip)#
 2007 insectoid#
 2008 goatman#
 2009 automaton#
-2010 lich ice#
-2011 lich fire#
+2010 unknown1#
+2011 unknown2#
 
 # monster plurals
 
@@ -2792,8 +2792,8 @@ client (player %d) (direct ip)#
 2057 insectoids#
 2058 goatmen#
 2059 automatons#
-2060 liches#
-2061 liches#
+2060 unknown1#
+2061 unknown2#
 
 # injury types (2100-2149)
 
@@ -2821,8 +2821,8 @@ client (player %d) (direct ip)#
 2157 is dispatched by an insectoid.#
 2158 is dispatched by a goatman.#
 2159 is dispatched by an automaton.#
-2160 is dispatched by the icy lich.#
-2161 is dispatched by the fiery lich.#
+2160 is dispatched by the unknown1.#
+2161 is dispatched by the unknown2.#
 
 #items, reserve 2200-2349 for new items
 2200 artifact breastpiece#
@@ -2919,6 +2919,8 @@ client (player %d) (direct ip)#
 2291 purple mystic orb#
 2292 green mystic orb#
 2293 green mystic orb#
+2294 tunic#
+2295 tunic#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2936,10 +2938,10 @@ client (player %d) (direct ip)#
 2362 You hear a click from the mechanism!#
 2363 You attempt to pull the lever back,
 but it retracts beyond your might!#
-2364 Pedestal Reply1#
-2365 Pedestal Reply2#
-2366 Pedestal Reply3#
-2367 Pedestal Reply4#
+2364 You pound the pedestal in frustration.#
+2365 You admire the intricate carving of the pedestal.#
+2366 The pedestal seems to require some sort of primordial artifact.#
+2367 The orb defies your grasp and is unable to be retrieved!#
 2368 You place the orb in the receptacle...#
 2369 But it had no effect.#
 2370 The orb starts floating!#
@@ -3103,25 +3105,123 @@ last of your magic is drained!#
 2514 You pierced %s's armor!#
 2515 The shot pierced your armor!#
 
-2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
+## 2516 - 2528 More effect messages
+2516 You feel as if a part of your essence is seized!#
+2517 You feel as if a sliver of your essence is taken!#
+2518 You feel something tug at your essence and pull itself near...#
+2519 You summon an incubus!#
+2520 Your spell destroys the chest!#
+2521 You hear a beartrap trigger in the distance.#
+2522 You hear a beartrap trigger nearby!#
+2523 You are hit by an explosion!#
+2524 You rake your %s into some exposed gears of the %s...#
+2525 You are unable to find an entry inside the %s from this angle.#
+2526 A locked gear inside the %s breaks loose!#
+2527 The %s's gears seize and begin to grind and spark!#
+2528 Your %s has no effect right now.#
+
+# 2529- 2542 atk hover text
+2529 fists: #
+2530 ranged: #
+2531 thrown: #
+2532 melee: #
+2533 %+10d TOTAL ATTACK#
+2534 %+3d from attribute (STR)#
+2535 %+3d from attribute (DEX)#
+2536 %+3d from equipment#
+2537 %+3d from skill#
+2538 %+3d from weapon#
+2539 %3d%% variance from skill#
+2540 tool:  #
+2541 staff: #
+2542 Damage:%11d ATK#
+
+# 2543 - 2549 attacking text, misc
+2543 Your strike catches the %s unaware!#
+2544 Your strike catches %s unaware!#
+2545 Your strike flanks the %s's defenses!#
+2546 Your strike flanks %s's defenses!#
+2547 You assassinate the %s!#
+2548 You assassinate %s!#
+2549 Players online: %4d #
+
+# 2550 - 2560 new class names
+2550 sexton#
+2551 ninja#
+2552 monk#
+2553 blank#
+2554 blank#
+2555 blank#
+2556 blank#
+2557 blank#
+2558 blank#
+2559 blank#
+# 2560 - 2570 new class descriptions
+2560 A temple officer who serves unseen, using stealth and magic to slip their way
+through the dungeon with the aid of a few rare tools.
+Difficulty: Hard#
+2561 A highly specialized assassin. They ambush foes with swords or ranged weapons,
+using a few other tricks to get out of bad situations.
+Difficulty: Hard#
+2562 Disciplined and hardy. They have little in the way of offensive training and
+material goods, but can rely on their excellent fortitude and adaptability.
+Difficulty: Normal#
+2563 A blank.
+Difficulty: Normal#
+2564 A blank.
+Difficulty: Normal#
+2565 A blank.
+Difficulty: Normal#
+2566 A blank.
+Difficulty: Normal#
+2567 A blank.
+Difficulty: Normal#
+2568 A blank.
+Difficulty: Normal#
+2569 A blank.
+Difficulty: Normal#
+
+# More misc.
+2570 https://docs.google.com/forms/d/e/1FAIpQLScywW5ROX4m8cp05PspI7xZNV0jkEPAWJu3lWegS9Tj9NBDOg/viewform#
+2571 Weapons#
+2572 Armor#
+2573 Jewelry#
+2574 Books#
+2575 Tools#
+2576 Thrown#
+2577 Gems#
+2578 Potions#
+2579 Scrolls#
+2580 Staves#
+2581 Food#
+2582 Spells#
+2583 Item Categories for Auto Hotbar:#
+2584 Click here to provide feedback for the Beta!#
+
+2585 A big shoutout to the open source community for their contributions!#
+2586 #
+2587 Report issues and checkout the code at:#
+2588 https://github.com/TurningWheel/Barony#
+
+2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
 exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.#
 
-2601 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in 
+2601
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
 culpa qui officia deserunt mollit anim id est laborum.#
 
-2602 
+2602
 
 
 
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium 
-doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore 
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
+doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
 veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
 
-2603 
+2603
 
 
 
@@ -3130,10 +3230,10 @@ veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
 
 
 
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, 
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
 sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
 
-2604 
+2604
 
 
 
@@ -3149,7 +3249,7 @@ sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
 
 Now advance when your allies are ready!#
 
-2605 
+2605
 
 
 
@@ -3166,13 +3266,6 @@ Now advance when your allies are ready!#
 Now wait for your leader to advance onward...#
 
 2606 Click to continue.#
-
-
-## 2516 - ???, More effect messages
-2516 You feel as if a part of your essence is seized!#
-2517 You feel as if a sliver of your essence is taken!#
-2518 You feel something tug at your essence and pull itself near...#
-
 
 # NPC Chatter. Groups of 10 lines for each NPC type
 2700 type:seq#

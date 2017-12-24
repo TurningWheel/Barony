@@ -61,6 +61,14 @@ void actHudArm(Entity* my)
 	}
 
 	// sprite
+	my->scalex = 1.f;
+	my->scaley = 1.f;
+	my->scalez = 1.f;
+	// position
+	my->x = parent->x;
+	my->y = parent->y;
+	my->z = parent->z - 2.5;
+
 	bool noGloves = false;
 	if (stats[clientnum]->gloves == nullptr)
 	{
@@ -68,56 +76,72 @@ void actHudArm(Entity* my)
 	}
 	else
 	{
-		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
 		{
-			// successfully set sprite for the human model
+			my->sprite = 637;
 		}
-		else
+		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
 		{
-			noGloves = true;
+			my->sprite = 638;
+		}
+		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
+		{
+			my->sprite = 639;
+		}
+		else if ( stats[clientnum]->gloves->type == BRASS_KNUCKLES )
+		{
+			my->sprite = 640;
+		}
+		else if ( stats[clientnum]->gloves->type == IRON_KNUCKLES )
+		{
+			my->sprite = 641;
+		}
+		else if ( stats[clientnum]->gloves->type == SPIKED_GAUNTLETS )
+		{
+			my->sprite = 642;
+		}
+		else if ( stats[clientnum]->gloves->type == CRYSTAL_GLOVES )
+		{
+			my->sprite = 591;
+		}
+		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
+		{
+			my->sprite = 590;
+		}
+		if ( stats[clientnum]->weapon == nullptr )
+		{
+			my->scalex = 0.5f;
+			my->scaley = 0.5f;
+			my->scalez = 0.5f;
+			my->z -= 0.75;
+			//my->x += 0.5 * cos(parent->yaw);
+			//my->y += 0.5 * sin(parent->yaw);
 		}
 	}
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->appearance / 6 == 0 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 121;
-			}
-			else
-			{
-				my->sprite = 109;
-			}
+			my->sprite = 634;
 		}
 		else if ( stats[clientnum]->appearance / 6 == 1 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 350;
-			}
-			else
-			{
-				my->sprite = 337;
-			}
+			my->sprite = 635;
 		}
 		else
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 376;
-			}
-			else
-			{
-				my->sprite = 363;
-			}
+			my->sprite = 636;
+		}
+		if ( stats[clientnum]->weapon == nullptr )
+		{
+			my->scalex = 0.5f;
+			my->scaley = 0.5f;
+			my->scalez = 0.5f;
+			my->z -= 0.75;
+			//my->x += 0.5 * cos(parent->yaw);
+			//my->y += 0.5 * sin(parent->yaw);
 		}
 	}
-
-	// position
-	my->x = parent->x;
-	my->y = parent->y;
-	my->z = parent->z - 2.5;
 
 	// rotation
 	//my->yaw = atan2( my->y-camera.y*16, my->x-camera.x*16 );
@@ -125,6 +149,7 @@ void actHudArm(Entity* my)
 	//my->fskill[0] = sqrt( pow(my->x-camera.x*16,2) + pow(my->y-camera.y*16,2) );
 	//my->pitch = atan2( my->z-camera.z*.5, my->fskill[0] );
 	my->pitch = -17 * PI / 32;
+	//messagePlayer(0, "my y: %f, my z: %f", my->y, my->z);
 }
 
 #ifdef HAVE_FMOD
@@ -228,7 +253,7 @@ void actHudWeapon(Entity* my)
 	// swimming
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots)
+		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
 		{
 			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
@@ -374,7 +399,13 @@ void actHudWeapon(Entity* my)
 	}
 
 	bool swingweapon = false;
-	if (players[clientnum]->entity && (*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) && shootmode && !gamePaused && players[clientnum]->entity->isMobile() && !(*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) && HUDWEAPON_OVERCHARGE < MAXCHARGE)
+	if ( players[clientnum]->entity 
+		&& (*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) 
+		&& shootmode 
+		&& !gamePaused
+		&& players[clientnum]->entity->isMobile() 
+		&& !(*inputPressed(impulses[IN_DEFEND]) && stats[clientnum]->defending || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]) && stats[clientnum]->defending))
+		&& HUDWEAPON_OVERCHARGE < MAXCHARGE )
 	{
 		swingweapon = true;
 	}
@@ -595,7 +626,7 @@ void actHudWeapon(Entity* my)
 							}
 							else
 							{
-								if ( statGetINT(stats[clientnum]) <= 5 )
+								if ( statGetINT(stats[clientnum]) <= 10 )
 								{
 									messagePlayer(clientnum, language[2373], item->getName());
 								}
@@ -766,6 +797,26 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
 						}
+					}
+				}
+				else
+				{
+					// fix for fists not resetting position after blocking.
+					if ( HUDWEAPON_MOVEY > 0 )
+					{
+						HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1, 0.0);
+					}
+					else if ( HUDWEAPON_MOVEY < 0 )
+					{
+						HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1, 0.0);
+					}
+					if ( HUDWEAPON_MOVEZ > 0 )
+					{
+						HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 1, 0.0);
+					}
+					else if ( HUDWEAPON_MOVEZ < 0 )
+					{
+						HUDWEAPON_MOVEZ = std::min<real_t>(HUDWEAPON_MOVEZ + 1, 0.0);
 					}
 				}
 			}
@@ -1328,6 +1379,7 @@ void actHudWeapon(Entity* my)
 }
 
 #define HUDSHIELD_DEFEND my->skill[0]
+#define HUDSHIELD_SNEAKING my->skill[1]
 #define HUDSHIELD_MOVEX my->fskill[0]
 #define HUDSHIELD_MOVEY my->fskill[1]
 #define HUDSHIELD_MOVEZ my->fskill[2]
@@ -1448,14 +1500,20 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
+	bool sneaking = false;
 	if (!command && !swimming)
 	{
-		if (stats[clientnum]->shield)
+		if (players[clientnum] && players[clientnum]->entity 
+			&& (*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) 
+			&& players[clientnum]->entity->isMobile() 
+			&& !gamePaused 
+			&& !cast_animation.active)
 		{
-			if (players[clientnum] && players[clientnum]->entity && (*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]))) && hudweapon->skill[0] % 3 == 0 && players[clientnum]->entity->isMobile() && !gamePaused && !cast_animation.active)
+			if ( stats[clientnum]->shield && (hudweapon->skill[0] % 3 == 0) )
 			{
 				defending = true;
 			}
+			sneaking = true;
 		}
 	}
 
@@ -1466,6 +1524,14 @@ void actHudShield(Entity* my)
 	else
 	{
 		stats[clientnum]->defending = false;
+	}
+	if ( sneaking )
+	{
+		stats[clientnum]->sneaking = true;
+	}
+	else
+	{
+		stats[clientnum]->sneaking = false;
 	}
 
 	if (multiplayer == CLIENT)
@@ -1480,8 +1546,19 @@ void actHudShield(Entity* my)
 			net_packet->len = 6;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
+		if ( HUDSHIELD_SNEAKING != sneaking || ticks % 120 == 0 )
+		{
+			strcpy((char*)net_packet->data, "SNEK");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = sneaking;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 6;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
 	}
 	HUDSHIELD_DEFEND = defending;
+	HUDSHIELD_SNEAKING = sneaking;
 
 	// shield switching animation
 	if ( shieldSwitch )

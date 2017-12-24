@@ -282,21 +282,25 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 		if ( parent->behavior == &actPlayer )
 		{
-			if ( strcmp(hitstats->name, "") )
+			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2428], language[2427], MSG_COMBAT);
+		}
+
+		// change the color of the hit entity.
+		hit.entity->flags[USERFLAG2] = true;
+		serverUpdateEntityFlag(hit.entity, USERFLAG2);
+		int bodypart = 0;
+		for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
+		{
+			if ( bodypart >= LIMB_HUMANOID_TORSO )
 			{
-				messagePlayerColor(parent->skill[2], color, language[2427], hitstats->name);
-			}
-			else
-			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
+				Entity* tmp = (Entity*)node->element;
+				if ( tmp )
 				{
-					messagePlayerColor(parent->skill[2], color, language[2428], language[90 + hitstats->type]);
-				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
-				{
-					messagePlayerColor(parent->skill[2], color, language[2428], language[2000 + (hitstats->type - KOBOLD)]);
+					tmp->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(tmp, USERFLAG2);
 				}
 			}
+			++bodypart;
 		}
 
 		caster.drainMP(hitstats->HP); //Drain additional MP equal to health of monster.
@@ -322,8 +326,8 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					my.removeLightField();
-					list_RemoveNode(my.mynode);
+					/*my.removeLightField();
+					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -371,21 +375,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					if ( strcmp(hitstats->name, "") )
-					{
-						messagePlayerColor(parent->skill[2], color, language[2430], hitstats->name);
-					}
-					else
-					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							messagePlayerColor(parent->skill[2], color, language[2431], language[90 + hitstats->type]);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							messagePlayerColor(parent->skill[2], color, language[2431], language[2000 + (hitstats->type - KOBOLD)]);
-						}
-					}
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2431], language[2430], MSG_COMBAT);
 				}
 			}
 
@@ -468,8 +458,8 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					my.removeLightField();
-					list_RemoveNode(my.mynode);
+					/*my.removeLightField();
+					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -533,21 +523,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
-							if ( strcmp(hitstats->name, "") )
-							{
-								messagePlayerColor(parent->skill[2], color, language[2433], hitstats->name, hitstats->weapon->getName());
-							}
-							else
-							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(parent->skill[2], color, language[2434], language[90 + hitstats->type], hitstats->weapon->getName());
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(parent->skill[2], color, language[2434], language[2000 + (hitstats->type - KOBOLD)], hitstats->weapon->getName());
-								}
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2434], language[2433], MSG_COMBAT);
 						}
 					}
 
@@ -600,21 +576,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 					if ( parent->behavior == &actPlayer )
 					{
-						if ( strcmp(hitstats->name, "") )
-						{
-							messagePlayerColor(parent->skill[2], color, language[2436], hitstats->name);
-						}
-						else
-						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(parent->skill[2], color, language[2437], language[90 + hitstats->type]);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(parent->skill[2], color, language[2437], language[2000 + (hitstats->type - KOBOLD)]);
-							}
-						}
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2437], language[2436], MSG_COMBAT);
 					}
 				}
 			}
@@ -640,8 +602,8 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					my.removeLightField();
-					list_RemoveNode(my.mynode);
+					/*my.removeLightField();
+					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -723,21 +685,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
-							if ( strcmp(hitstats->name, "") )
-							{
-								messagePlayerColor(parent->skill[2], color, language[2439], hitstats->name);
-							}
-							else
-							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(parent->skill[2], color, language[2440], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(parent->skill[2], color, language[2440], language[2000 + (hitstats->type - KOBOLD)]);
-								}
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2440], language[2439], MSG_COMBAT);
 						}
 					}
 				}
@@ -757,21 +705,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 					if ( parent->behavior == &actPlayer )
 					{
-						if ( strcmp(hitstats->name, "") )
-						{
-							messagePlayerColor(parent->skill[2], color, language[2442], hitstats->name);
-						}
-						else
-						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(parent->skill[2], color, language[2443], language[90 + hitstats->type]);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(parent->skill[2], color, language[2443], language[2000 + (hitstats->type - KOBOLD)]);
-							}
-						}
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2443], language[2442], MSG_COMBAT);
 					}
 				}
 			}

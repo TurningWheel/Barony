@@ -300,7 +300,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_magicmissile);
 	strcpy(spell_magicmissile.name, language[433]);
 	spell_magicmissile.ID = SPELL_MAGICMISSILE;
-	spell_magicmissile.difficulty = 50;
+	spell_magicmissile.difficulty = 60;
 	node = list_AddNodeLast(&spell_magicmissile.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -320,7 +320,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_cold);
 	strcpy(spell_cold.name, language[429]);
 	spell_cold.ID = SPELL_COLD;
-	spell_cold.difficulty = 50;
+	spell_cold.difficulty = 40;
 	node = list_AddNodeLast(&spell_cold.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -340,7 +340,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_fireball);
 	strcpy(spell_fireball.name, language[416]);
 	spell_fireball.ID = SPELL_FIREBALL;
-	spell_fireball.difficulty = 25;
+	spell_fireball.difficulty = 20;
 	spell_fireball.elements.first = NULL;
 	spell_fireball.elements.last = NULL;
 	node = list_AddNodeLast(&spell_fireball.elements);
@@ -362,7 +362,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_lightning);
 	strcpy(spell_lightning.name, language[417]);
 	spell_lightning.ID = SPELL_LIGHTNING;
-	spell_lightning.difficulty = 50;
+	spell_lightning.difficulty = 60;
 	spell_lightning.elements.first = NULL;
 	spell_lightning.elements.last = NULL;
 	node = list_AddNodeLast(&spell_lightning.elements);
@@ -384,7 +384,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_removecurse);
 	strcpy(spell_removecurse.name, language[434]);
 	spell_removecurse.ID = SPELL_REMOVECURSE;
-	spell_removecurse.difficulty = 50;
+	spell_removecurse.difficulty = 60;
 	spell_removecurse.elements.first = NULL;
 	spell_removecurse.elements.last = NULL;
 	node = list_AddNodeLast(&spell_removecurse.elements);
@@ -411,7 +411,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_identify);
 	strcpy(spell_identify.name, language[421]);
 	spell_identify.ID = SPELL_IDENTIFY;
-	spell_identify.difficulty = 50;
+	spell_identify.difficulty = 60;
 	spell_identify.elements.first = NULL;
 	spell_identify.elements.last = NULL;
 	node = list_AddNodeLast(&spell_identify.elements);
@@ -424,7 +424,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_magicmapping);
 	strcpy(spell_magicmapping.name, language[435]);
 	spell_magicmapping.ID = SPELL_MAGICMAPPING;
-	spell_magicmapping.difficulty = 50;
+	spell_magicmapping.difficulty = 60;
 	spell_magicmapping.elements.first = NULL;
 	spell_magicmapping.elements.last = NULL;
 	node = list_AddNodeLast(&spell_magicmapping.elements);
@@ -437,7 +437,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_sleep);
 	strcpy(spell_sleep.name, language[428]);
 	spell_sleep.ID = SPELL_SLEEP;
-	spell_sleep.difficulty = 25;
+	spell_sleep.difficulty = 20;
 	node = list_AddNodeLast(&spell_sleep.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -457,7 +457,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_confuse);
 	strcpy(spell_confuse.name, language[424]);
 	spell_confuse.ID = SPELL_CONFUSE;
-	spell_confuse.difficulty = 25;
+	spell_confuse.difficulty = 20;
 	node = list_AddNodeLast(&spell_confuse.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -478,7 +478,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_slow);
 	strcpy(spell_slow.name, language[430]);
 	spell_slow.ID = SPELL_SLOW;
-	spell_slow.difficulty = 25;
+	spell_slow.difficulty = 20;
 	node = list_AddNodeLast(&spell_slow.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -498,7 +498,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_opening);
 	strcpy(spell_opening.name, language[427]);
 	spell_opening.ID = SPELL_OPENING;
-	spell_opening.difficulty = 25;
+	spell_opening.difficulty = 20;
 	node = list_AddNodeLast(&spell_opening.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -518,7 +518,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_locking);
 	strcpy(spell_locking.name, language[426]);
 	spell_locking.ID = SPELL_LOCKING;
-	spell_locking.difficulty = 25;
+	spell_locking.difficulty = 20;
 	node = list_AddNodeLast(&spell_locking.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -538,7 +538,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_levitation);
 	strcpy(spell_levitation.name, language[431]);
 	spell_levitation.ID = SPELL_LEVITATION;
-	spell_levitation.difficulty = 75;
+	spell_levitation.difficulty = 80;
 	spell_levitation.elements.first = NULL;
 	spell_levitation.elements.last = NULL;
 	node = list_AddNodeLast(&spell_levitation.elements);
@@ -552,7 +552,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_invisibility);
 	strcpy(spell_invisibility.name, language[420]);
 	spell_invisibility.ID = SPELL_INVISIBILITY;
-	spell_invisibility.difficulty = 75;
+	spell_invisibility.difficulty = 80;
 	spell_invisibility.elements.first = NULL;
 	spell_invisibility.elements.last = NULL;
 	node = list_AddNodeLast(&spell_invisibility.elements);
@@ -566,7 +566,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_teleportation);
 	strcpy(spell_teleportation.name, language[432]);
 	spell_teleportation.ID = SPELL_TELEPORTATION;
-	spell_teleportation.difficulty = 75;
+	spell_teleportation.difficulty = 80;
 	spell_teleportation.elements.first = NULL;
 	spell_teleportation.elements.last = NULL;
 	node = list_AddNodeLast(&spell_teleportation.elements);
@@ -579,7 +579,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_healing);
 	strcpy(spell_healing.name, language[423]);
 	spell_healing.ID = SPELL_HEALING;
-	spell_healing.difficulty = 25;
+	spell_healing.difficulty = 20;
 	spell_healing.elements.first = NULL;
 	spell_healing.elements.last = NULL;
 	node = list_AddNodeLast(&spell_healing.elements);
@@ -593,7 +593,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_extrahealing);
 	strcpy(spell_extrahealing.name, language[438]);
 	spell_extrahealing.ID = SPELL_EXTRAHEALING;
-	spell_extrahealing.difficulty = 50;
+	spell_extrahealing.difficulty = 60;
 	spell_extrahealing.elements.first = NULL;
 	spell_extrahealing.elements.last = NULL;
 	node = list_AddNodeLast(&spell_extrahealing.elements);
@@ -613,7 +613,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_cureailment);
 	strcpy(spell_cureailment.name, language[425]);
 	spell_cureailment.ID = SPELL_CUREAILMENT;
-	spell_cureailment.difficulty = 25;
+	spell_cureailment.difficulty = 20;
 	spell_cureailment.elements.first = NULL;
 	spell_cureailment.elements.last = NULL;
 	node = list_AddNodeLast(&spell_cureailment.elements);
@@ -626,7 +626,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_dig);
 	strcpy(spell_dig.name, "Dig");
 	spell_dig.ID = SPELL_DIG;
-	spell_dig.difficulty = 50;
+	spell_dig.difficulty = 40;
 	spell_dig.elements.first = NULL;
 	spell_dig.elements.last = NULL;
 	node = list_AddNodeLast(&spell_dig.elements);
@@ -648,7 +648,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_stoneblood);
 	strcpy(spell_stoneblood.name, language[2391]);
 	spell_stoneblood.ID = SPELL_STONEBLOOD;
-	spell_stoneblood.difficulty = 75;
+	spell_stoneblood.difficulty = 80;
 	node = list_AddNodeLast(&spell_stoneblood.elements);
 	node->element = copySpellElement(&spellElement_missile_trio);
 	node->size = sizeof(spellElement_t);
@@ -668,7 +668,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_bleed);
 	strcpy(spell_bleed.name, language[2392]);
 	spell_bleed.ID = SPELL_BLEED;
-	spell_bleed.difficulty = 75;
+	spell_bleed.difficulty = 80;
 	node = list_AddNodeLast(&spell_bleed.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -688,7 +688,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_summon);
 	strcpy(spell_summon.name, language[2390]);
 	spell_summon.ID = SPELL_SUMMON;
-	spell_summon.difficulty = 75;
+	spell_summon.difficulty = 80;
 	spell_summon.elements.first = NULL;
 	spell_summon.elements.last = NULL;
 	node = list_AddNodeLast(&spell_summon.elements);
@@ -735,7 +735,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_acidSpray);
 	strcpy(spell_acidSpray.name, language[2395]);
 	spell_acidSpray.ID = SPELL_ACID_SPRAY;
-	spell_acidSpray.difficulty = 75;
+	spell_acidSpray.difficulty = 80;
 	node = list_AddNodeLast(&spell_acidSpray.elements);
 	node->element = copySpellElement(&spellElement_missile_trio);
 	node->size = sizeof(spellElement_t);
@@ -775,7 +775,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_drainSoul);
 	strcpy(spell_drainSoul.name, language[2397]);
 	spell_drainSoul.ID = SPELL_DRAIN_SOUL;
-	spell_drainSoul.difficulty = 75;
+	spell_drainSoul.difficulty = 80;
 	node = list_AddNodeLast(&spell_drainSoul.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -795,7 +795,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_vampiricAura);
 	strcpy(spell_vampiricAura.name, language[2398]);
 	spell_vampiricAura.ID = SPELL_VAMPIRIC_AURA;
-	spell_vampiricAura.difficulty = 50;
+	spell_vampiricAura.difficulty = 60;
 	spell_vampiricAura.elements.first = nullptr;
 	spell_vampiricAura.elements.last = nullptr;
 	node = list_AddNodeLast(&spell_vampiricAura.elements);
