@@ -2671,6 +2671,8 @@ void Entity::handleEffects(Stat* myStats)
 					// If the Entity died, handle experience
 					if ( myStats->HP <= 0 )
 					{
+						this->setObituary(language[1533]); // "burns to a crisp."
+
 						Entity* killer = uidToEntity(myStats->poisonKiller);
 						if ( killer != nullptr )
 						{
@@ -2680,7 +2682,6 @@ void Entity::handleEffects(Stat* myStats)
 				}
 
 				// Give the Player feedback on being hurt
-				this->setObituary(language[1533]); // "burns to a crisp."
 				messagePlayer(player, language[644]); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
