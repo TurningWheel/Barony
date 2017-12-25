@@ -441,10 +441,9 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
 				entity->focaly = limbs[LICH_ICE][0][1]; // 0
 				entity->focalz = limbs[LICH_ICE][0][2]; // 0
-				entity->z = -2;
+				entity->z = -1.2;
 				entity->yaw = PI;
 				entity->sprite = 650;
-				entity->skill[29] = 120;
 				break;
 			case LICH_FIRE:
 				entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
@@ -1159,7 +1158,7 @@ void actMonster(Entity* my)
 					initAutomaton (my, myStats);
 					break;
 				case LICH_ICE:
-					//initLichIce (my, myStats);
+					initLichIce (my, myStats);
 					break;
 				case LICH_FIRE:
 					initLichFire (my, myStats);
@@ -1311,7 +1310,7 @@ void actMonster(Entity* my)
 		}
 	}
 
-	if ( myStats->type == LICH_FIRE )
+	if ( myStats->type == LICH_FIRE  || myStats->type == LICH_ICE )
 	{
 		if ( my->monsterSpecialTimer > 0 )
 		{
@@ -1326,7 +1325,6 @@ void actMonster(Entity* my)
 		{
 			my->monsterHitTime = HITRATE * 2;
 		}
-		messagePlayer(0, "timer: %d", my->monsterSpecialTimer);
 		real_t lichFireDist = 0.f;
 		Entity* target = uidToEntity(my->monsterTarget);
 		if ( my->monsterState <= MONSTER_STATE_HUNT && my->monsterSpecialTimer == 0 && my->monsterAttack == 0 )
@@ -1631,7 +1629,7 @@ void actMonster(Entity* my)
 				lichFireDie(my);
 				break;
 			case LICH_ICE:
-				lichFireDie(my);
+				lichIceDie(my);
 				break;
 			default:
 				break; //This should never be reached.
@@ -4416,7 +4414,7 @@ timeToGoAgain:
 				}
 			}
 		}
-		else if ( myStats->type == LICH_FIRE )
+		else if ( myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 		{
 			if ( my->monsterState == MONSTER_STATE_LICHFIRE_DODGE )
 			{
@@ -4573,7 +4571,7 @@ timeToGoAgain:
 		}
 		else if ( myStats->type == LICH_ICE )
 		{
-			//lichIceAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			lichIceAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 	}
 }
@@ -4589,7 +4587,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	chooseWeapon(target, dist);
 	bool hasrangedweapon = this->hasRangedWeapon();
 
-	if ( myStats->type == LICH_FIRE )
+	if ( myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 	{
 		if ( monsterLichFireMeleeSeq == 3 )
 		{

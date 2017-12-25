@@ -3729,7 +3729,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( (myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT)
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE)
-				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1) )
+				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
+				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1) )
 			)
 			{
 				// calls animation, but doesn't actually attack
@@ -7201,6 +7202,30 @@ int Entity::getAttackPose() const
 	if ( myStats->weapon != nullptr )
 	{
 		if ( myStats->type == LICH_FIRE )
+		{
+			switch ( monsterLichFireMeleeSeq )
+			{
+				case 0:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					monsterLichFireMeleeSeq = rand() % 2;
+					break;
+				case 1:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					++monsterLichFireMeleeSeq;
+					break;
+				case 2:
+					pose = MONSTER_POSE_SPECIAL_WINDUP1;
+					monsterLichFireMeleeSeq = 3;
+					break;
+				case 3:
+					pose = MONSTER_POSE_MAGIC_WINDUP1;
+					monsterLichFireMeleeSeq = 0;
+					break;
+				default:
+					break;
+			}
+		}
+		else if ( myStats->type == LICH_ICE )
 		{
 			switch ( monsterLichFireMeleeSeq )
 			{
