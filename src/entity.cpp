@@ -2343,7 +2343,7 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = 0;
-	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] || (myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
+	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] && !(myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
 	{
 		if ( myStats->ring != NULL )
 		{
@@ -2380,7 +2380,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( healring < 0 )
 		{
-			healthRegenInterval = healring * HEAL_TIME * 4;
+			healthRegenInterval = abs(healring) * HEAL_TIME * 4;
 		}
 		else if ( healring == 0 )
 		{
@@ -9475,7 +9475,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	}
 	else if ( manaring < 0 )
 	{
-		return regenTime * manaring * 4;
+		return regenTime * abs(manaring) * 4;
 	}
 	else if ( manaring == 0 )
 	{
