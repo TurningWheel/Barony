@@ -2288,6 +2288,18 @@ void handleMainMenu(bool mode)
 				{
 					if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
+#ifdef STEAMWORKS
+						// If not using Steam, then don't warn about Steam Achievements
+						if ( i == 0 )
+						{
+							hovering_selection = i;
+						}
+#else
+						if ( i == 0 )
+						{
+							continue;
+						}
+#endif
 						hovering_selection = i;
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
@@ -3378,6 +3390,19 @@ void handleMainMenu(bool mode)
 			{
 				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
+
+#ifdef STEAMWORKS
+					// If not using Steam, then don't warn about Steam Achievements
+					if ( i == 0 )
+					{
+						hovering_selection = i;
+					}
+#else
+					if ( i == 0 )
+					{
+						continue;
+					}
+#endif
 					hovering_selection = i;
 					tooltip_box.x = mousex - 16;
 					tooltip_box.y = mousey + 10;
