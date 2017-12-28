@@ -2233,15 +2233,45 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
+			// Process HUNGER Effect - Wasting Away
 			myStats->HUNGER = 0;
-			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 120 == 0 )
+
+			// Deal Hunger damage every three seconds
+			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 150 == 0 )
 			{
 				serverUpdateHunger(player);
-				if ( player >= 0 )   // bad guys don't starve. Sorry.
+
+				if ( player >= 0 ) // Only Players can starve
 				{
-					this->modHP(-4);
-					// Play the Damage sound
+					if ( buddhamode )
+					{
+						if ( myStats->HP - 4 > 0 )
+						{
+							this->modHP(-4);
+						}
+						else
+						{
+							// Instead of killing the Buddha Player, set their HP to 1
+							this->setHP(1);
+						}
+					}
+					else
+					{
+						this->modHP(-4);
+
+						if ( myStats->HP <= 0 )
+						{
+							this->setObituary(language[1530]);
+						}
+					}
+
+					// Give the Player feedback on being hurt
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+					if ( myStats->HP > 0 )
+					{
+						messagePlayer(player, language[633]);
+					}
 
 					// Shake the Host's screen
 					if ( player == clientnum )
@@ -2261,11 +2291,6 @@ void Entity::handleEffects(Stat* myStats)
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
-				if ( myStats->HP > 0 )
-				{
-					messagePlayer(player, language[633]);
-				}
-				this->setObituary(language[1530]);
 			}
 		}
 	}
@@ -2663,20 +2688,40 @@ void Entity::handleEffects(Stat* myStats)
 			// If 0.6 seconds have passed (30 ticks), process the Burning Status Effect
 			if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
 			{
-				this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
-
-				// If the Entity died, handle experience
-				if ( myStats->HP <= 0 )
+				// Buddha should not die to fire
+				if ( buddhamode )
 				{
-					Entity* killer = uidToEntity(myStats->poisonKiller);
-					if ( killer != nullptr )
+					Sint32 fireDamage = (-2 - rand() % 3); // Deal between -2 to -5 damage
+
+					// Fire damage is negative, so it needs to be added
+					if ( myStats->HP + fireDamage > 0 )
 					{
-						killer->awardXP(this, true, true);
+						this->modHP(fireDamage);
+					}
+					else
+					{
+						this->setHP(1); // Instead of killing the Buddha Player, set their HP to 1
+					}
+				}
+				else
+				{
+					// Player is not Buddha, process fire damage normally
+					this->modHP(-2 - rand() % 3); // Deal between -2 to -5 damage
+
+					// If the Entity died, handle experience
+					if ( myStats->HP <= 0 )
+					{
+						this->setObituary(language[1533]); // "burns to a crisp."
+
+						Entity* killer = uidToEntity(myStats->poisonKiller);
+						if ( killer != nullptr )
+						{
+							killer->awardXP(this, true, true);
+						}
 					}
 				}
 
 				// Give the Player feedback on being hurt
-				this->setObituary(language[1533]); // "burns to a crisp."
 				messagePlayer(player, language[644]); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
@@ -8528,32 +8573,35 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 void Entity::checkGroundForItems()
 {
 	Stat* myStats = getStats();
-	if ( !myStats )
+	if ( myStats == nullptr )
 	{
 		return;
 	}
 
-	//Calls the function for a monster to pick up an item, if it's a monster that picks up items.
-	switch ( myStats->type )
+	// Calls the function for a monster to pick up an item, if it's a monster that picks up items, only if they are not Asleep
+	if ( myStats->EFFECTS[EFF_ASLEEP] == false )
 	{
-		case GOBLIN:
-		case HUMAN:
-			if ( !strcmp(myStats->name, "") )
-			{
-				//checkBetterEquipment(myStats);
-				monsterAddNearbyItemToInventory(myStats, 16, 9);
-			}
-			break;
-		case GOATMAN:
-			//Goatman boss picks up items too.
-			monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
-															 //checkBetterEquipment(myStats);
-			break;
-		case AUTOMATON:
-			monsterAddNearbyItemToInventory(myStats, 16, 5);
-			break;
-		default:
-			return;
+		switch ( myStats->type )
+		{
+			case GOBLIN:
+			case HUMAN:
+				if ( !strcmp(myStats->name, "") )
+				{
+					//checkBetterEquipment(myStats);
+					monsterAddNearbyItemToInventory(myStats, 16, 9);
+				}
+				break;
+			case GOATMAN:
+				//Goatman boss picks up items too.
+				monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
+																 //checkBetterEquipment(myStats);
+				break;
+			case AUTOMATON:
+				monsterAddNearbyItemToInventory(myStats, 16, 5);
+				break;
+			default:
+				return;
+		}
 	}
 }
 
