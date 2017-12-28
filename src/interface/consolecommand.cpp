@@ -941,6 +941,28 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[299]);
 		}
 	}
+	else if (!strncmp(command_str, "/poison", 7))
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if (multiplayer == SINGLE)
+		{
+			Stat* tempStats = players[clientnum]->entity->getStats();
+			if (tempStats)
+			{
+				tempStats->EFFECTS[EFF_POISONED] = true;
+				tempStats->EFFECTS_TIMERS[EFF_POISONED] = 600;
+			}
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+	}
 	else if (!strncmp(command_str, "/testsound ", 11))
 	{
 		int num = 0;
