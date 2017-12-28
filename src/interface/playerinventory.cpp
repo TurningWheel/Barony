@@ -836,39 +836,35 @@ void updatePlayerInventory()
 			continue;
 		}
 
+		pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+		pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
+		pos.w = 38;
+		pos.h = 38;
 		if (!item->identified)
 		{
 			// give it a yellow background if it is unidentified
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
-			drawRect(&pos, 31875, 125);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 128, 0), 125); //31875
 		}
 		else if (item->beatitude < 0)
 		{
 			// give it a red background if cursed
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
-			drawRect(&pos, 125, 125);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 125);
 		}
 		else if (item->beatitude > 0)
 		{
 			// give it a green background if blessed (light blue if colorblind mode)
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
 			if (colorblind)
 			{
 				drawRect(&pos, SDL_MapRGB(mainsurface->format, 100, 245, 255), 65);
 			}
 			else
 			{
-				drawRect(&pos, 65280, 65);
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0), 65);
 			}
+		}
+		if ( item->status == BROKEN )
+		{
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 160, 160, 160), 64);
 		}
 
 		if ( itemMenuOpen && item == uidToItem(itemMenuItem) )
@@ -903,6 +899,14 @@ void updatePlayerInventory()
 				pos.w = 16;
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
+			}
+			else if ( item->status == BROKEN )
+			{
+				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
+				pos.w = 16;
+				pos.h = 16;
+				drawImage(itembroken_bmp, NULL, &pos);
 			}
 		}
 		else
@@ -1173,6 +1177,59 @@ void updatePlayerInventory()
 								*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 								toggleclick = true;
 							}
+						}
+					}
+					if ( hotbar_numkey_quick_add )
+					{
+						if ( keystatus[SDL_SCANCODE_1] )
+						{
+							keystatus[SDL_SCANCODE_1] = 0;
+							hotbar[0].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_2] )
+						{
+							keystatus[SDL_SCANCODE_2] = 0;
+							hotbar[1].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_3] )
+						{
+							keystatus[SDL_SCANCODE_3] = 0;
+							hotbar[2].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_4] )
+						{
+							keystatus[SDL_SCANCODE_4] = 0;
+							hotbar[3].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_5] )
+						{
+							keystatus[SDL_SCANCODE_5] = 0;
+							hotbar[4].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_6] )
+						{
+							keystatus[SDL_SCANCODE_6] = 0;
+							hotbar[5].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_7] )
+						{
+							keystatus[SDL_SCANCODE_7] = 0;
+							hotbar[6].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_8] )
+						{
+							keystatus[SDL_SCANCODE_8] = 0;
+							hotbar[7].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_9] )
+						{
+							keystatus[SDL_SCANCODE_9] = 0;
+							hotbar[8].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_0] )
+						{
+							keystatus[SDL_SCANCODE_0] = 0;
+							hotbar[9].item = item->uid;
 						}
 					}
 					break;
