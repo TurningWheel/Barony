@@ -25,7 +25,7 @@ T randomEntryFromVector(std::vector<T> vector)
 		throw "Empty vector!";
 	}
 
-	return vector[prng_get_uint() % vector.size()];
+	return vector[rand() % vector.size()];
 }
 
 inline std::vector<std::string> getLinesFromFile(std::string filename)

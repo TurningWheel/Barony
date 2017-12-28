@@ -106,21 +106,25 @@ void actGib(Entity* my)
 
 Entity* spawnGib(Entity* parentent)
 {
-	Entity* entity;
-	Stat* parentstats;
+	Entity* entity = nullptr;
+	Stat* parentstats = nullptr;
 	double vel;
 	int gibsprite = 5;
 
-	if ( parentent == NULL )
+	if ( !parentent )
 	{
-		return NULL;
+		return nullptr;
 	}
-	if ( (parentstats = parentent->getStats()) != NULL )
+	if ( (parentstats = parentent->getStats()) != nullptr )
 	{
+		if ( multiplayer == CLIENT )
+		{
+			printlog("[%s:%d spawnGib()] spawnGib() called on client, got clientstats. Probably bad?", __FILE__, __LINE__);
+		}
 		switch ( gibtype[(int)parentstats->type] )
 		{
 			case 0:
-				return NULL;
+				return nullptr;
 			case 1:
 				gibsprite = 5;
 				break;
@@ -145,6 +149,10 @@ Entity* spawnGib(Entity* parentent)
 	}
 
 	entity = newEntity(gibsprite, 1, map.entities);
+	if ( !entity )
+	{
+		return nullptr;
+	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;

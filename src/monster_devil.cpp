@@ -39,9 +39,9 @@ void initDevil(Entity* my, Stat* myStats)
 
 		if (players[0] && players[0]->entity)
 		{
-			MONSTER_TARGET = players[0]->entity->getUID();
-			MONSTER_TARGETX = players[0]->entity->x;
-			MONSTER_TARGETY = players[0]->entity->y;
+			my->monsterTarget = players[0]->entity->getUID();
+			my->monsterTargetX = players[0]->entity->x;
+			my->monsterTargetY = players[0]->entity->y;
 		}
 	}
 
@@ -281,6 +281,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}

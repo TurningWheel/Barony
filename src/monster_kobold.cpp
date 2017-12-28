@@ -31,9 +31,9 @@ void initKobold(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 220;
-		MONSTER_SPOTVAR = 5;
-		MONSTER_IDLESND = 217;
+		MONSTER_SPOTSND = 302;
+		MONSTER_SPOTVAR = 4;
+		MONSTER_IDLESND = 295;
 		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -106,10 +106,21 @@ void initKobold(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
+					if ( rand() % 5 == 0 ) // 20% chance
+					{
+						if ( rand() % 2 )
+						{
+							newItem(TOOL_TINOPENER, WORN, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							newItem(TOOL_TOWEL, WORN, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						}
+					}
 				case 1:
 					if ( my->hasRangedWeapon() )
 					{
-						if ( rand() % 2 == 0 ) // 50% chance
+						if ( rand() % 5 > 0 ) // 80% chance
 						{
 							newItem(SPELLBOOK_SLOW, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 						}
@@ -371,7 +382,7 @@ void koboldDie(Entity* my)
 
 	my->removeMonsterDeathNodes();
 
-	playSoundEntity(my, 225 + rand() % 4, 128);
+	playSoundEntity(my, 298 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -407,12 +418,12 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					++bodypart;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LIMB_HUMANOID_WEAPON )
 				{
 					break;
 				}
@@ -432,12 +443,12 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					++bodypart;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LIMB_HUMANOID_WEAPON )
 				{
 					break;
 				}
@@ -446,6 +457,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				++bodypart;
 			}
@@ -467,7 +479,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -484,29 +496,29 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw;
 		}
 
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 		}
-		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
 			// left leg, right arm, cloak.
 			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK > 0 )
+				if ( my->monsterAttack > 0 )
 				{
 					my->handleWeaponArmAttack(entity);
 				}
 			}
-			else if ( bodypart == 9 )
+			else if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.1);
+			my->humanoidAnimateWalk(entity, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 			
-			if ( bodypart == 9 )
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->fskill[0] = entity->pitch;
 				entity->roll = my->roll - fabs(entity->pitch) / 2;
@@ -516,13 +528,37 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 1.25;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 423;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x += 1.25 * cos(my->yaw + PI / 2);
 				entity->y += 1.25 * sin(my->yaw + PI / 2);
 				entity->z += 2.75;
@@ -533,7 +569,31 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 424;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= 1.25 * cos(my->yaw + PI / 2);
 				entity->y -= 1.25 * sin(my->yaw + PI / 2);
 				entity->z += 2.75;
@@ -544,14 +604,15 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 			{
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
+					if ( my->monsterArmbended || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 					{
+						// if weapon invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][4][0]; // 0
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2]; // 2
@@ -559,6 +620,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[KOBOLD][4][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2] - 1; // 1
@@ -576,14 +638,15 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 			{
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
+						// if shield invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][5][0]; // 0
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2]; // 2
@@ -591,6 +654,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[KOBOLD][5][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2] - 1; // 1
@@ -607,7 +671,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// weapon
-			case 7:
+			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -645,13 +709,20 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				if ( weaponarm != nullptr )
 				{
-					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			// shield
-			case 8:
+			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shield == nullptr )
@@ -687,6 +758,13 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 1;
@@ -714,7 +792,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// cloak
-			case 9:
+			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -745,10 +823,27 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= cos(my->yaw) * 1.5;
 				entity->y -= sin(my->yaw) * 1.5;
 				entity->yaw += PI / 2;
 				break;
+		}
+	}
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, 8);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
 		}
 	}
 	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
@@ -763,5 +858,4 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
-
 }

@@ -36,59 +36,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		my->createPathBoundariesNPC();
 
-		int x, y;
-		MONSTER_SHOPXS = my->x / 16;
-		MONSTER_SHOPXE = my->x / 16;
-		MONSTER_SHOPYS = my->y / 16;
-		MONSTER_SHOPYE = my->y / 16;
-		for ( x = my->x; x >= 0; x -= 16 )
+		for ( int x = my->monsterPathBoundaryXStart - 16; x <= my->monsterPathBoundaryXEnd + 16; x += 16 )
 		{
-			if ( !checkObstacle(x, my->y, my, NULL) )
-			{
-				MONSTER_SHOPXS = x;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( x = my->x; x < map.width << 4; x += 16 )
-		{
-			if ( !checkObstacle(x, my->y, my, NULL) )
-			{
-				MONSTER_SHOPXE = x;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( y = my->y; y >= 0; y -= 16 )
-		{
-			if ( !checkObstacle(my->x, y, my, NULL) )
-			{
-				MONSTER_SHOPYS = y;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( y = my->y; y < map.height << 4; y += 16 )
-		{
-			if ( !checkObstacle(my->x, y, my, NULL) )
-			{
-				MONSTER_SHOPYE = y;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( x = MONSTER_SHOPXS - 16; x <= MONSTER_SHOPXE + 16; x += 16 )
-		{
-			for ( y = MONSTER_SHOPYS - 16; y <= MONSTER_SHOPYE + 16; y += 16 )
+			for ( int y = my->monsterPathBoundaryYStart - 16; y <= my->monsterPathBoundaryYEnd + 16; y += 16 )
 			{
 				if ( x / 16 >= 0 && x / 16 < map.width && y / 16 >= 0 && y / 16 < map.height )
 				{
@@ -102,6 +54,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
+			}
+
+			if ( !strcmp(myStats->name, "") )
+			{
+				strcpy(myStats->name, language[158 + rand() % 26]);
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
@@ -153,13 +110,13 @@ void initShopkeeper(Entity* my, Stat* myStats)
 		}
 
 		// give shopkeeper items
-		MONSTER_STORETYPE = rand() % 9;
-		if ( MONSTER_STORETYPE == 8 )
+		my->monsterStoreType = rand() % 9;
+		if ( my->monsterStoreType == 8 )
 		{
-			MONSTER_STORETYPE++;
+			my->monsterStoreType++;
 		}
 		int numitems = 10 + rand() % 5;
-		switch ( MONSTER_STORETYPE )
+		switch ( my->monsterStoreType )
 		{
 			case 0:
 				// arms & armor store
@@ -167,18 +124,30 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				{
 					if ( rand() % 2 )
 					{
-						newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						if ( rand() % 7 == 0 )
+						{
+							newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						}
 					}
 					else
 					{
-						int i = rand() % 21;
+						int i = rand() % 23;
 						if ( i < 18 )
 						{
 							newItem( static_cast<ItemType>(GLOVES + i), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
 						}
-						else
+						else if ( i < 21 )
 						{
 							newItem( static_cast<ItemType>(GLOVES + i + 4), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
+						}
+						else
+						{
+							// punching armaments
+							newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
 						}
 					}
 				}
@@ -251,7 +220,14 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				// hardware store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					if ( rand() % 6 == 0 )
+					{
+						newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+					}
+					else
+					{
+						newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					}
 				}
 				break;
 			case 8:
@@ -360,6 +336,106 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+
+	// world weapon
+	entity = newEntity(-1, 0, map.entities);
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[SHOPKEEPER][6][0]; // 1.5
+	entity->focaly = limbs[SHOPKEEPER][6][1]; // 0
+	entity->focalz = limbs[SHOPKEEPER][6][2]; // -.5
+	entity->behavior = &actShopkeeperLimb;
+	entity->parent = my->getUID();
+	entity->pitch = .25;
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+
+	// shield
+	entity = newEntity(-1, 0, map.entities);
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[SHOPKEEPER][7][0]; // 2
+	entity->focaly = limbs[SHOPKEEPER][7][1]; // 0
+	entity->focalz = limbs[SHOPKEEPER][7][2]; // 0
+	entity->behavior = &actShopkeeperLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+
+	// cloak
+	entity = newEntity(-1, 0, map.entities);
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[SHOPKEEPER][8][0]; // 0
+	entity->focaly = limbs[SHOPKEEPER][8][1]; // 0
+	entity->focalz = limbs[SHOPKEEPER][8][2]; // 4
+	entity->behavior = &actShopkeeperLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+
+	// helmet
+	entity = newEntity(-1, 0, map.entities);
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[SHOPKEEPER][9][0]; // 0
+	entity->focaly = limbs[SHOPKEEPER][9][1]; // 0
+	entity->focalz = limbs[SHOPKEEPER][9][2]; // -1.75
+	entity->behavior = &actShopkeeperLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+
+	// mask
+	entity = newEntity(-1, 0, map.entities);
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = .99;
+	entity->scaley = .99;
+	entity->scalez = .99;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[SHOPKEEPER][10][0]; // 0
+	entity->focaly = limbs[SHOPKEEPER][10][1]; // 0
+	entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
+	entity->behavior = &actShopkeeperLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
 }
 
 void actShopkeeperLimb(Entity* my)
@@ -389,19 +465,31 @@ void shopkeeperDie(Entity* my)
 void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL;
-	Entity* rightbody = NULL;
+	Entity* entity = nullptr, *entity2 = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
 	int bodypart;
+	bool wearingring = false;
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
+		if ( myStats->ring != nullptr )
+			if ( myStats->ring->type == RING_INVISIBILITY )
+			{
+				wearingring = true;
+			}
+		if ( myStats->cloak != nullptr )
+			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
+			{
+				wearingring = true;
+			}
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for ( node = my->children.first; node != nullptr; node = node->next )
 			{
 				if ( bodypart < 2 )
 				{
@@ -426,7 +514,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for ( node = my->children.first; node != nullptr; node = node->next )
 			{
 				if ( bodypart < 2 )
 				{
@@ -442,6 +530,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -463,7 +552,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -471,214 +560,96 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
-			if ( bodypart == 3 )
-			{
-				rightbody = (Entity*)node->next->element;
-			}
-			if ( dist > 0.1 && bodypart != 6 )
-			{
-				if ( !rightbody->skill[0] )
-				{
-					entity->pitch -= dist * SHOPKEEPERWALKSPEED;
-					if ( entity->pitch < -PI / 4.0 )
-					{
-						entity->pitch = -PI / 4.0;
-						if (bodypart == 3)
-						{
-							entity->skill[0] = 1;
-							if ( dist > .4 )
-							{
-								playSoundEntityLocal(my, rand() % 7, 32);
-							}
-						}
-					}
-				}
-				else
-				{
-					entity->pitch += dist * SHOPKEEPERWALKSPEED;
-					if ( entity->pitch > PI / 4.0 )
-					{
-						entity->pitch = PI / 4.0;
-						if (bodypart == 3)
-						{
-							entity->skill[0] = 0;
-							if ( dist > .4 )
-							{
-								playSoundEntityLocal(my, rand() % 7, 32);
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				if ( entity->pitch < 0 )
-				{
-					entity->pitch += 1 / fmax(dist * .1, 10.0);
-					if ( entity->pitch > 0 )
-					{
-						entity->pitch = 0;
-					}
-				}
-				else if ( entity->pitch > 0 )
-				{
-					entity->pitch -= 1 / fmax(dist * .1, 10.0);
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch = 0;
-					}
-				}
-			}
+			// don't let the creatures's yaw move the casting arm
 		}
-		else if ( bodypart == 4 || bodypart == 5 )
+		else
 		{
-			if ( bodypart == 5 )
+			entity->yaw = my->yaw;
+		}
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
+		{
+			my->humanoidAnimateWalk(entity, node, bodypart, SHOPKEEPERWALKSPEED, dist, 0.4);
+		}
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
+		{
+			// left leg, right arm, cloak.
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
-				if ( MONSTER_ATTACK == 1 )
+				weaponarm = entity;
+				if ( my->monsterAttack > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							MONSTER_WEAPONYAW += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( MONSTER_ATTACKTIME >= 5 )
-						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
-						}
-						if ( MONSTER_ATTACKTIME >= 10 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-					}
+					my->handleWeaponArmAttack(weaponarm);
 				}
 			}
+			my->humanoidAnimateWalk(entity, node, bodypart, SHOPKEEPERWALKSPEED, dist, 0.4);
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
-				if ( dist > 0.1 )
-				{
-					if ( entity->skill[0] )
-					{
-						entity->pitch -= dist * SHOPKEEPERWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->skill[0] = 0;
-							entity->pitch = -PI / 4.0;
-						}
-					}
-					else
-					{
-						entity->pitch += dist * SHOPKEEPERWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->skill[0] = 1;
-							entity->pitch = PI / 4.0;
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
+				entity->fskill[0] = entity->pitch;
+				entity->roll = my->roll - fabs(entity->pitch) / 2;
+				entity->pitch = 0;
 			}
 		}
 		switch ( bodypart )
 		{
 			// torso
 			case 2:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->breastplate == nullptr )
+					{
+						entity->sprite = 218;
+					}
+					else
+					{
+						entity->sprite = itemModel(myStats->breastplate);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 2.5;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 222;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 5;
@@ -689,7 +660,31 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 221;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 5;
@@ -700,40 +695,372 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
+			{
+				node_t* weaponNode = list_Node(&my->children, LIMB_HUMANOID_WEAPON);
+				if ( weaponNode )
+				{
+					Entity* weapon = (Entity*)weaponNode->element;
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState != MONSTER_STATE_ATTACK) )
+					{
+						// if weapon invisible and I'm not attacking, relax arm.
+						entity->focalx = limbs[SHOPKEEPER][4][0]; // 0
+						entity->focaly = limbs[SHOPKEEPER][4][1]; // 0
+						entity->focalz = limbs[SHOPKEEPER][4][2]; // 1.5
+						entity->sprite = 220;
+					}
+					else
+					{
+						// else flex arm.
+						entity->focalx = limbs[SHOPKEEPER][4][0] + 0.75;
+						entity->focaly = limbs[SHOPKEEPER][4][1];
+						entity->focalz = limbs[SHOPKEEPER][4][2] - 0.75;
+						entity->sprite = 111;
+					}
+				}
 				entity->x += 2.25 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
 				entity->y += 2.25 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
 				entity->z += 1.5;
-				entity->focalx = limbs[SHOPKEEPER][4][0]; // 0
-				entity->focaly = limbs[SHOPKEEPER][4][1]; // 0
-				entity->focalz = limbs[SHOPKEEPER][4][2]; // 1.5
 				entity->yaw += MONSTER_WEAPONYAW;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
 					entity->pitch = 0;
 				}
 				break;
+			}
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
+			{
+				node_t* shieldNode = list_Node(&my->children, 8);
+				if ( shieldNode )
+				{
+					Entity* shield = (Entity*)shieldNode->element;
+					if ( shield->flags[INVISIBLE] && (my->monsterState != MONSTER_STATE_ATTACK) )
+					{
+						// if shield invisible and I'm not attacking, relax arm.
+						entity->focalx = limbs[SHOPKEEPER][5][0]; // 0
+						entity->focaly = limbs[SHOPKEEPER][5][1]; // 0
+						entity->focalz = limbs[SHOPKEEPER][5][2]; // 1.5
+						entity->sprite = 219;
+					}
+					else
+					{
+						// else flex arm.
+						entity->focalx = limbs[SHOPKEEPER][5][0] + 0.75;
+						entity->focaly = limbs[SHOPKEEPER][5][1];
+						entity->focalz = limbs[SHOPKEEPER][5][2] - 0.75;
+						entity->sprite = 112;
+					}
+				}
 				entity->x -= 2.25 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.25 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 1.5;
-				entity->focalx = limbs[SHOPKEEPER][5][0]; // 0
-				entity->focaly = limbs[SHOPKEEPER][5][1]; // 0
-				entity->focalz = limbs[SHOPKEEPER][5][2]; // 1.5
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
 					entity->pitch = 0;
 				}
 				break;
+			}
+				// weapon
+			case LIMB_HUMANOID_WEAPON:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->sprite = itemModel(myStats->weapon);
+						if ( itemCategory(myStats->weapon) == SPELLBOOK )
+						{
+							entity->flags[INVISIBLE] = true;
+						}
+						else
+						{
+							entity->flags[INVISIBLE] = false;
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				if ( weaponarm != nullptr )
+				{
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
+				}
+				break;
+				// shield
+			case LIMB_HUMANOID_SHIELD:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shield == nullptr )
+					{
+						entity->flags[INVISIBLE] = true;
+						entity->sprite = 0;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+						entity->sprite = itemModel(myStats->shield);
+					}
+					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
+				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
+				entity->z += 2.5;
+				if ( entity->sprite == items[TOOL_TORCH].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+				}
+				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+				}
+				else if ( entity->sprite == items[TOOL_LANTERN].index )
+				{
+					entity->z += 2;
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z += 1;
+				}
+				break;
+				// cloak
+			case LIMB_HUMANOID_CLOAK:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+						entity->sprite = itemModel(myStats->cloak);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				entity->x -= cos(my->yaw);
+				entity->y -= sin(my->yaw);
+				entity->yaw += PI / 2;
+				break;
+			// helm
+			case LIMB_HUMANOID_HELMET:
+				entity->focalx = limbs[SHOPKEEPER][9][0]; // 0
+				entity->focaly = limbs[SHOPKEEPER][9][1]; // 0
+				entity->focalz = limbs[SHOPKEEPER][9][2]; // -1.75
+				entity->pitch = my->pitch;
+				entity->roll = 0;
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = itemModel(myStats->helmet);
+					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				my->setHelmetLimbOffset(entity);
+				break;
+			// mask
+			case LIMB_HUMANOID_MASK:
+				entity->focalx = limbs[SHOPKEEPER][10][0]; // 0
+				entity->focaly = limbs[SHOPKEEPER][10][1]; // 0
+				entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
+				entity->pitch = my->pitch;
+				entity->roll = PI / 2;
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( myStats->mask != nullptr )
+					{
+						if ( myStats->mask->type == TOOL_GLASSES )
+						{
+							entity->sprite = 165; // GlassesWorn.vox
+						}
+						else
+						{
+							entity->sprite = itemModel(myStats->mask);
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+
+				if ( entity->sprite != 165 )
+				{
+					entity->focalx = limbs[SHOPKEEPER][10][0] + .35; // .35
+					entity->focaly = limbs[SHOPKEEPER][10][1] - 2; // -2
+					entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
+				}
+				else
+				{
+					entity->focalx = limbs[SHOPKEEPER][10][0] + .25; // .25
+					entity->focaly = limbs[SHOPKEEPER][10][1] - 2.25; // -2.25
+					entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
+				}
+				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, LIMB_HUMANOID_SHIELD);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
+		}
+	}
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 }

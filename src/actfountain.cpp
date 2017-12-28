@@ -27,6 +27,12 @@
 	The following function describes an entity behavior. The function
 	takes a pointer to the entity that uses it as an argument.
 
+	my->skill[0] is either 0 or 1. If it is 0, the fountain is dry and cannot be used
+	my->skill[1] is either 0, 1, 2, or 3. It is set at the creation of the fountain.
+		Those values correspond to what the fountain does:
+		0 = spawn succubus, 1 = raise hunger, 2 = random potion effect, 3 = bless equipment
+	my->skill[3] is a random potion effect. It is set at the creation of the fountain
+
 -------------------------------------------------------------------------------*/
 
 void actFountain(Entity* my)
@@ -51,7 +57,7 @@ void actFountain(Entity* my)
 	//TODO: Sounds.
 
 	// spray water
-	if ( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) )
+	if ( my->skill[0] > 0 )
 	{
 #define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
@@ -84,16 +90,6 @@ void actFountain(Entity* my)
 		return;
 	}
 
-	// makes the fountain stop spraying water on clients
-	if ( my->skill[0] <= 0 )
-	{
-		my->skill[2] = 1;
-	}
-	else
-	{
-		my->skill[2] = 0;
-	}
-
 	//Using the fountain (TODO: Monsters using it?).
 	int i;
 	for (i = 0; i < MAXPLAYERS; ++i)
@@ -114,28 +110,51 @@ void actFountain(Entity* my)
 					{
 						messagePlayer(i, language[468]);
 						players[i]->entity->flags[BURNING] = false;
-						if (i > 0)
-						{
-							serverUpdateEntityFlag(players[i]->entity, BURNING);
-						}
+						serverUpdateEntityFlag(players[i]->entity, BURNING);
 					}
 					switch (my->skill[1])
 					{
 						case 0:
 						{
 							playSoundEntity(players[i]->entity, 52, 64);
-
 							//Spawn succubus.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-							messagePlayerColor(i, color, language[469]);
-							summonMonster(SUCCUBUS, my->x, my->y);
+							if ( currentlevel < 10 )
+							{
+								messagePlayerColor(i, color, language[469]);
+								summonMonster(SUCCUBUS, my->x, my->y);
+							}
+							else if ( currentlevel < 20 )
+							{
+								if ( rand() % 2 )
+								{
+									Entity* incubus = summonMonster(INCUBUS, my->x, my->y);
+									Stat* tmpStats = incubus->getStats();
+									if ( tmpStats )
+									{
+										strcpy(tmpStats->name, "lesser incubus");
+									}
+									messagePlayerColor(i, color, language[2519]);
+								}
+								else
+								{
+									messagePlayerColor(i, color, language[469]);
+									summonMonster(SUCCUBUS, my->x, my->y);
+								}
+							}
+							else
+							{
+								messagePlayerColor(i, color, language[2519]);
+								Entity* incubus = summonMonster(INCUBUS, my->x, my->y);
+							}
 							break;
 						}
 						case 1:
 							messagePlayer(i, language[470]);
 							messagePlayer(i, language[471]);
 							playSoundEntity(players[i]->entity, 52, 64);
-							stats[i]->HUNGER += 50;
+							stats[i]->HUNGER += 100;
+							players[i]->entity->modHP(5);
 							break;
 						case 2:
 						{
@@ -208,6 +227,7 @@ void actFountain(Entity* my)
 					}
 					messagePlayer(i, language[474]);
 					my->skill[0] = 0; //Dry up fountain.
+					serverUpdateEntitySkill(my, my->skill[0]);
 					//TODO: messagePlayersInSight() instead.
 				}
 				//Then perform the effect randomly determined when the fountain was created.

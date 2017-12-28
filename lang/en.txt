@@ -580,13 +580,13 @@ thou makest use of them.#
 
 # skill levels
 
-363                 none#
-364               novice#
-365                basic#
-366              skilled#
-367               expert#
-368               master#
-369               legend#
+363                  none#
+364                novice#
+365                 basic#
+366               skilled#
+367                expert#
+368                master#
+369                legend#
 
 
 # rest of the character sheet
@@ -2777,8 +2777,8 @@ client (player %d) (direct ip)#
 2007 insectoid#
 2008 goatman#
 2009 automaton#
-2010 lich ice#
-2011 lich fire#
+2010 unknown1#
+2011 unknown2#
 
 # monster plurals
 
@@ -2792,8 +2792,8 @@ client (player %d) (direct ip)#
 2057 insectoids#
 2058 goatmen#
 2059 automatons#
-2060 liches#
-2061 liches#
+2060 unknown1#
+2061 unknown2#
 
 # injury types (2100-2149)
 
@@ -2821,8 +2821,8 @@ client (player %d) (direct ip)#
 2157 is dispatched by an insectoid.#
 2158 is dispatched by a goatman.#
 2159 is dispatched by an automaton.#
-2160 is dispatched by the icy lich.#
-2161 is dispatched by the fiery lich.#
+2160 is dispatched by the unknown1.#
+2161 is dispatched by the unknown2.#
 
 #items, reserve 2200-2349 for new items
 2200 artifact breastpiece#
@@ -2899,16 +2899,28 @@ client (player %d) (direct ip)#
 2271 spellbook#
 2272 spellbook of reflect magic#
 2273 spellbook#
-2274 blank spellbook 1#
+2274 spellbook of spray acid#
 2275 spellbook#
-2276 blank spellbook 2#
+2276 spellbook of steal weapon#
 2277 spellbook#
-2278 blank spellbook 3#
+2278 spellbook of drain soul#
 2279 spellbook#
-2280 blank spellbook 4#
+2280 spellbook of vampiric aura#
 2281 spellbook#
 2282 blank spellbook 5#
 2283 spellbook#
+2284 empty bottle#
+2285 empty bottle#
+2286 blue mystic orb#
+2287 blue mystic orb#
+2288 red mystic orb#
+2289 red mystic orb#
+2290 purple mystic orb#
+2291 purple mystic orb#
+2292 green mystic orb#
+2293 green mystic orb#
+2294 tunic#
+2295 tunic#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2920,6 +2932,40 @@ client (player %d) (direct ip)#
 2356 You rotate the floating crystal.#
 2357 The crystal seems locked in place.#
 2358 The crystal begins to move!#
+2359 You can't drink an empty bottle!#
+2360 You pull the lever, but the mechanism still seems inactive.#
+2361 The lever grinds further along with resistance.#
+2362 You hear a click from the mechanism!#
+2363 You attempt to pull the lever back,
+but it retracts beyond your might!#
+2364 You pound the pedestal in frustration.#
+2365 You admire the intricate carving of the pedestal.#
+2366 The pedestal seems to require some sort of primordial artifact.#
+2367 The orb defies your grasp and is unable to be retrieved!#
+2368 You place the orb in the receptacle...#
+2369 But it had no effect.#
+2370 The orb starts floating!#
+2371 This item has no use here.#
+2372 This %s appears to be a missing part of some contraption.#
+2373 This %s looks shiny, must be useful! #
+2374 You retrieve the %s from the pedestal.#
+2375 You see a mysterious crystal.#
+2376 You see a pedestal.#
+2377 You see a mystical orb sitting atop a pedestal.#
+2378 You climb the ladder.#
+2379 Your ally %s gained a level!#
+2380 The wall is fortified! It doesn't even make a dent!#
+2381 An unseen force drags your feet to the floor!#
+2382 The air here feels like it's swirling gently around you.#
+2383 A tingle rolls over your body and through each of your footsteps.#
+
+#Equip Effects
+2384 This ring has you feeling quite confident about your appearance.#
+2385 The ring gives you a sense of calm when you wear it.#
+2386 The ring makes your whole body feel scaly.#
+2387 As you don the ring, you feel threads reaching into the darkness from your mind.#
+2388 You feel the ring feeding energy into your arms.#
+2389 You slip on the ring and feel your skin harden slightly.#
 
 #New spells (2390-2399)
 2390 Conjure Familiar#
@@ -2927,10 +2973,10 @@ client (player %d) (direct ip)#
 2392 Bloodletting#
 2393 Dominate#
 2394 Reflect Magic#
-2395 blank#
-2396 blank#
-2397 blank#
-2398 blank#
+2395 Spray Acid#
+2396 Steal Weapon#
+2397 Drain Soul#
+2398 Vampiric Aura#
 2399 blank#
 
 2400 Gamepad#
@@ -2949,6 +2995,17 @@ client (player %d) (direct ip)#
 
 2411 Frames Per Second (FPS)#
 
+#Equip Effects
+
+2412 You slip the ring onto your finger and your body vanishes before your eyes.#
+2413 The ring slips on, radiating a fuzzy sensation all over your body.#
+2414 You put on the ring and are overwhelmed with paranoia.#
+2415 A hollow pulse flows from your fingers to your feet and you begin floating.#
+2416 You feel itchy all over when you wear the ring.#
+2417 The ring begins gently yanking at your finger.#
+2418 Your footsteps feel lighter in these boots.#
+2419 The footwear pushes you above the floor. You're levitating!#
+
 #New spell effects (2420-2440)
 2420 %s is paralyzed!#
 2421 The %s is paralyzed!#
@@ -2962,11 +3019,37 @@ dominate %s into your service!#
 2428 You feel energy go out from you as you
 dominate the %s into your service!#
 2429 You are unable to dominate this one.#
+2430 %s is sprayed with corrosive acid!#
+2431 The %s is sprayed with corrosive acid!#
+2432 You are sprayed with corrosive acid!#
+2433 You magically coerce %s's %s out of their grasp!#
+2434 You magically coerce the %s's %s out of their grasp!#
+2435 Your %s is magically coerced from your grasp!#
+2436 %s is not wielding a weapon to steal!#
+2437 The %s is not wielding a weapon to steal!#
+2438 The spell fails to steal the non-existent weapon from your hand!#
+2439 %s's life force is drained!#
+2440 The %s's life force is drained!#
+2441 Your life force is drained!#
+2442 You fail to drain %s's life force.#
+2443 You fail to drain the %s's life force.#
+2444 You resist the spell's drain!#
+2445 You feel restored!#
+2446 Your spell (reflect magic) was interrupted!#
+2447 Your spell (vampiric aura) was interrupted!#
+2448 Failed to sustain spell (vampiric aura).#
+2449 You begin to feel faint as your thirst for blood settles...#
+2450 The craftsmanship of the walls here is immaculate.#
 
-#More character creation screen stuff.
-2450 Random Name#
-
-#New effects.
+#New effects (contd.)
+2451 You are bleeding heavily!#
+2452 The %s is bleeding heavily!#
+2453 %s's is bleeding heavily!#
+2454 Your wounds rupture further open!#
+2455 The %s's wounds rupture further open!#
+2456 %s's wounds rupture further open!#
+2457 The %s's blow bounces off!#
+2458 %s's blow bounces off!#
 2470 You no longer feel magic weaken against you.#
 2471 You no longer feel magic bounce off you.#
 2472 You feel magic weaken against you.#
@@ -2975,6 +3058,270 @@ dominate the %s into your service!#
 2475 But you feel some energy go out and it bounces off!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
+2477 You are imbued with vampiric might!#
+
+# Equip effects
+2478 You feel a sense of great purpose when wearing the amulet.#
+2479 The air beyond the cord of the amulet smells crisp and sweet.#
+2480 The amulet makes your whole body tingle slightly.#
+2481 The hat seems to give you ideas.#
+2482 You get the urge to punch something.#
+2483 The hat seems to lift your mood.#
+2484 The inside of the boots are squishy with moisture.#
+2485 The comfortable boots seem to put pep in your step.#
+2486 The cloak whirls around your body and hides your form.#
+2487 The cloak is firm, but comfortable.#
+2488 The cloak buzzes gently against your body as you put it on.#
+2489 Your fingers feel more nimble as they slip into the gloves.#
+2490 You feel your skin harden slightly when you put the bracers on.#
+2491 The gauntlets are warm. You feel a tingling sensation flow up through to your shoulders.#
+2492 The amulet feels cool and pleasant against the veins of your neck.#
+
+# More misc text.
+2493 This is no time for sleep.#
+2494 Dibs on the top bunk.#
+2495 Dibs on the bottom bunk.#
+2496 This is no time for lecturing.#
+2497 You see a bed.#
+
+#More character creation screen stuff.
+2498 Random Name#
+
+2499 You see a bunkbed.#
+2500 You see a podium.#
+2501 You see a set of pistons.#
+2502 You see a column.#
+2503 You see a stalagmite.#
+2504 You see a stalagtite.#
+2505 bed#
+2506 bunkbed#
+2507 podium#
+2508 Your spell destroys the %s!#
+2509 You hit the %s!#
+2510 The %s breaks into pieces!#
+2511 You are hit by a bolt!#
+2512 You are hit by a flying rock!#
+2513 You pierced the %s's armor!#
+2514 You pierced %s's armor!#
+2515 The shot pierced your armor!#
+
+## 2516 - 2528 More effect messages
+2516 You feel as if a part of your essence is seized!#
+2517 You feel as if a sliver of your essence is taken!#
+2518 You feel something tug at your essence and pull itself near...#
+2519 You summon an incubus!#
+2520 Your spell destroys the chest!#
+2521 You hear a beartrap trigger in the distance.#
+2522 You hear a beartrap trigger nearby!#
+2523 You are hit by an explosion!#
+2524 You rake your %s into some exposed gears of the %s...#
+2525 You are unable to find an entry inside the %s from this angle.#
+2526 A locked gear inside the %s breaks loose!#
+2527 The %s's gears seize and begin to grind and spark!#
+2528 Your %s has no effect right now.#
+
+# 2529- 2542 atk hover text
+2529 fists: #
+2530 ranged: #
+2531 thrown: #
+2532 melee: #
+2533 %+10d TOTAL ATTACK#
+2534 %+3d from attribute (STR)#
+2535 %+3d from attribute (DEX)#
+2536 %+3d from equipment#
+2537 %+3d from skill#
+2538 %+3d from weapon#
+2539 %3d%% variance from skill#
+2540 tool:  #
+2541 staff: #
+2542 Damage:%11d ATK#
+
+# 2543 - 2549 attacking text, misc
+2543 Your strike catches the %s unaware!#
+2544 Your strike catches %s unaware!#
+2545 Your strike flanks the %s's defenses!#
+2546 Your strike flanks %s's defenses!#
+2547 You assassinate the %s!#
+2548 You assassinate %s!#
+2549 Players online: %4d #
+
+# 2550 - 2560 new class names
+2550 sexton#
+2551 ninja#
+2552 monk#
+2553 blank#
+2554 blank#
+2555 blank#
+2556 blank#
+2557 blank#
+2558 blank#
+2559 blank#
+# 2560 - 2570 new class descriptions
+2560 A temple officer who serves unseen, using stealth and magic to slip their way
+through the dungeon with the aid of a few rare tools.
+Difficulty: Hard#
+2561 A highly specialized assassin. They ambush foes with swords or ranged weapons,
+using a few other tricks to get out of bad situations.
+Difficulty: Hard#
+2562 Disciplined and hardy. They have little in the way of offensive training and
+material goods, but can rely on their excellent fortitude and adaptability.
+Difficulty: Normal#
+2563 A blank.
+Difficulty: Normal#
+2564 A blank.
+Difficulty: Normal#
+2565 A blank.
+Difficulty: Normal#
+2566 A blank.
+Difficulty: Normal#
+2567 A blank.
+Difficulty: Normal#
+2568 A blank.
+Difficulty: Normal#
+2569 A blank.
+Difficulty: Normal#
+
+# More misc.
+2570 https://docs.google.com/forms/d/e/1FAIpQLScywW5ROX4m8cp05PspI7xZNV0jkEPAWJu3lWegS9Tj9NBDOg/viewform#
+2571 Weapons#
+2572 Armor#
+2573 Jewelry#
+2574 Books#
+2575 Tools#
+2576 Thrown#
+2577 Gems#
+2578 Potions#
+2579 Scrolls#
+2580 Staves#
+2581 Food#
+2582 Spells#
+2583 Item Categories for Auto Hotbar:#
+2584 Click here to provide feedback for the Beta!#
+
+2585 A big shoutout to the open source community for their contributions!#
+2586 #
+2587 Report issues and checkout the code at:#
+2588 https://github.com/TurningWheel/Barony#
+
+2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.#
+
+2601
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+culpa qui officia deserunt mollit anim id est laborum.#
+
+2602
 
 
-2499 end#
+
+
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
+doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
+veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
+
+2603
+
+
+
+
+
+
+
+
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
+sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
+
+2604
+
+
+
+
+
+
+
+
+
+
+
+
+
+Now advance when your allies are ready!#
+
+2605
+
+
+
+
+
+
+
+
+
+
+
+
+
+Now wait for your leader to advance onward...#
+
+2606 Click to continue.#
+
+# NPC Chatter. Groups of 10 lines for each NPC type
+2700 type:seq#
+2701 %s Response 1, %s.#
+2702 %s Response 2.#
+2703 %s Response 3.#
+2704 %s Response 4.#
+2705 %s Response 5.#
+
+2710 type:rand#
+2711 %s Response 1.#
+2712 %s Response 2.#
+
+2720 type:rand#
+2721 %s Response 1.#
+
+2730 type:rand#
+2731 %s Response 1.#
+
+2740 type:rand#
+2741 %s Response 1.#
+
+2750 type:rand#
+2751 %s Response 1.#
+
+2760 type:rand#
+2761 %s Response 1.#
+
+2770 type:rand#
+2771 %s Response 1.#
+
+2780 type:rand#
+2781 %s Response 1.#
+
+2790 type:rand#
+2791 %s Response 1.#
+
+2800 type:rand#
+2801 %s Response 1.#
+
+2810 type:rand#
+2811 %s Response 1.#
+
+2820 type:rand#
+2821 %s Response 1.#
+
+2830 type:rand#
+2831 %s Response 1.#
+
+2840 type:rand#
+2841 %s Response 1.#
+
+2850 type:rand#
+2851 %s Response 1.#
+
+2860 type:rand#
+2861 %s Response 1.#
+
+2999 end#

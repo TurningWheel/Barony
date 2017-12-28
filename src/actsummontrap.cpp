@@ -9,8 +9,6 @@ See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -61,9 +59,9 @@ void actSummonTrap(Entity* my)
 				{
 					// pick a completely random monster (barring some exceptions).
 					SUMMONTRAP_MONSTER = rand() % NUMMONSTERS;
-					while ( SUMMONTRAP_MONSTER != LICH || SUMMONTRAP_MONSTER != SHOPKEEPER || SUMMONTRAP_MONSTER != DEVIL
-						|| SUMMONTRAP_MONSTER != MIMIC || SUMMONTRAP_MONSTER != BUGBEAR || SUMMONTRAP_MONSTER != OCTOPUS
-						|| SUMMONTRAP_MONSTER != MINOTAUR || SUMMONTRAP_MONSTER != LICH_FIRE || SUMMONTRAP_MONSTER != LICH_ICE )
+					while ( SUMMONTRAP_MONSTER == LICH || SUMMONTRAP_MONSTER == SHOPKEEPER || SUMMONTRAP_MONSTER == DEVIL
+						|| SUMMONTRAP_MONSTER == MIMIC || SUMMONTRAP_MONSTER == BUGBEAR || SUMMONTRAP_MONSTER == OCTOPUS
+						|| SUMMONTRAP_MONSTER == MINOTAUR || SUMMONTRAP_MONSTER == LICH_FIRE || SUMMONTRAP_MONSTER == LICH_ICE )
 					{
 						SUMMONTRAP_MONSTER = rand() % NUMMONSTERS;
 					}

@@ -56,6 +56,8 @@ FMOD_SOUND* endgamemusic = NULL;
 FMOD_SOUND* devilmusic = NULL;
 FMOD_SOUND* escapemusic = NULL;
 FMOD_SOUND* introductionmusic = NULL;
+FMOD_SOUND** cavesmusic = NULL;
+FMOD_SOUND** citadelmusic = NULL;
 bool levelmusicplaying = false;
 
 FMOD_CHANNEL* music_channel = NULL;
@@ -391,6 +393,8 @@ OPENAL_BUFFER* endgamemusic = NULL;
 OPENAL_BUFFER* devilmusic = NULL;
 OPENAL_BUFFER* escapemusic = NULL;
 OPENAL_BUFFER* introductionmusic = NULL;
+OPENAL_BUFFER** cavesmusic = NULL;
+OPENAL_BUFFER** citadelmusic = NULL;
 bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = NULL;

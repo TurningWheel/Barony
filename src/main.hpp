@@ -31,6 +31,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define STEAM_APPID 371970
 #endif
 
+extern bool spamming;
+extern bool showfirst;
+
 #include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -111,6 +114,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define PI 3.14159265358979323846
 
 extern FILE* logfile;
+static const int MESSAGE_LIST_SIZE_CAP = 100; //Cap off the message in-game log to 100 messages. Otherwise, game will eat up more RAM and more CPU the longer it goes on.
 
 class Item;
 //enum Item;
@@ -212,6 +216,8 @@ static const unsigned NUM_JOY_IMPULSES = 33;
 
 static const unsigned UNBOUND_JOYBINDING = 399;
 
+static const int NUM_HOTBAR_CATEGORIES = 12; // number of filters for auto add hotbar items
+
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
 #define SDL_BUTTON_WHEELDOWN 5
@@ -269,6 +275,35 @@ typedef struct map_t
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
 #define MAPFLAGS 16 // map flags for custom properties
+// names for the flag indices
+static const int MAP_FLAG_CEILINGTILE = 0;
+static const int MAP_FLAG_DISABLETRAPS = 1;
+static const int MAP_FLAG_DISABLEMONSTERS = 2;
+static const int MAP_FLAG_DISABLELOOT = 3;
+static const int MAP_FLAG_GENBYTES1 = 4;
+static const int MAP_FLAG_GENBYTES2 = 5;
+static const int MAP_FLAG_GENBYTES3 = 6;
+static const int MAP_FLAG_GENBYTES4 = 7;
+static const int MAP_FLAG_GENBYTES5 = 8;
+static const int MAP_FLAG_GENBYTES6 = 9;
+// indices for mapflagtext, 4 of these are stored as bytes within the above GENBYTES
+static const int MAP_FLAG_GENTOTALMIN = 4;
+static const int MAP_FLAG_GENTOTALMAX = 5;
+static const int MAP_FLAG_GENMONSTERMIN = 6;
+static const int MAP_FLAG_GENMONSTERMAX = 7;
+static const int MAP_FLAG_GENLOOTMIN = 8;
+static const int MAP_FLAG_GENLOOTMAX = 9;
+static const int MAP_FLAG_GENDECORATIONMIN = 10;
+static const int MAP_FLAG_GENDECORATIONMAX = 11;
+static const int MAP_FLAG_DISABLEDIGGING = 12;
+static const int MAP_FLAG_DISABLETELEPORT = 13;
+static const int MAP_FLAG_DISABLELEVITATION = 14;
+static const int MAP_FLAG_GENADJACENTROOMS = 15;
+
+#define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
+#define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
+#define MFLAG_DISABLELEVITATION ((map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF) // third leftmost byte
+#define MFLAG_GENADJACENTROOMS ((map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF) // fourth leftmost byte
 
 // light structure
 typedef struct light_t
@@ -450,7 +485,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 2500
+#define NUMLANGENTRIES 3000
 extern char languageCode[32];
 extern char** language;
 
@@ -500,6 +535,7 @@ extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
+extern bool useModelCache;
 extern Uint32 imgref, vboref;
 extern GLuint* texid;
 extern bool disablevbos;
@@ -513,7 +549,7 @@ extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
 extern int sfxvolume;
-extern bool* animatedtiles, *lavatiles;
+extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 extern Sint8 minimap[64][64];
 extern Uint32 mapseed;
@@ -531,7 +567,7 @@ int initApp(char* title, int fullscreen);
 int deinitApp();
 bool initVideo();
 bool changeVideoMode();
-void generatePolyModels(int start, int end);
+void generatePolyModels(int start, int end, bool forceCacheRebuild);
 void generateVBOs(int start, int end);
 int loadLanguage(char* lang);
 int reloadLanguage();
@@ -649,8 +685,9 @@ SDL_Cursor* newCursor(char* image[]);
 int generateDungeon(char* levelset, Uint32 seed);
 void assignActions(map_t* map);
 
-// cursor bitmap definitions
+// Cursor bitmap definitions
 extern char* cursor_pencil[];
+extern char* cursor_point[];
 extern char* cursor_brush[];
 extern char* cursor_fill[];
 
@@ -675,3 +712,5 @@ FILE *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
 bool completePath(char *dest, const char * const path);
+
+static const Uint32 cacheLimit = 8096;

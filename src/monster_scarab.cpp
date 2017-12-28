@@ -32,10 +32,10 @@ void initScarab(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		//MONSTER_SPOTSND = 29; //TODO: Scarab spot sound effect.
-		MONSTER_SPOTVAR = 1;
-		//MONSTER_IDLESND = 29; //TODO: Scarab idle soundefect.
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 310;
+		MONSTER_SPOTVAR = 3;
+		MONSTER_IDLESND = 306;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -109,7 +109,7 @@ void initScarab(Entity* my, Stat* myStats)
 					{
 						if ( rand() % 3 > 0 )
 						{
-							newItem(FOOD_TOMALLEY, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
 						}
 						else
 						{
@@ -138,7 +138,7 @@ void initScarab(Entity* my, Stat* myStats)
 									gem = GEM_GLASS;
 									break;
 							}
-							newItem(gem, static_cast<Status>(0 + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
+							newItem(gem, static_cast<Status>(DECREPIT + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -230,6 +230,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -310,7 +311,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( MONSTER_STATE == 1 )
+				else if ( my->monsterState == 1 )
 				{
 					if ( entity->pitch < 0.5 )
 					{
@@ -330,7 +331,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						entity->roll = -0.2;
 					}
 				}
-				else if ( MONSTER_STATE == 0 )
+				else if ( my->monsterState == 0 )
 				{
 					if ( entity->pitch > 0 )
 					{
@@ -411,7 +412,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( MONSTER_STATE == 1 )
+				else if ( my->monsterState == 1 )
 				{
 					if ( entity->pitch < 0.5 )
 					{
@@ -431,7 +432,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						entity->roll = 0.2;
 					}
 				}
-				else if ( MONSTER_STATE == 0 )
+				else if ( my->monsterState == 0 )
 				{
 					if ( entity->pitch > 0 )
 					{
@@ -500,7 +501,7 @@ void scarabDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 30, 64); //TODO: Scarab death sound effect.
+	playSoundEntity(my, 308 + rand() % 2, 64); //TODO: Scarab death sound effect.
 	list_RemoveNode(my->mynode);
 	return;
 }

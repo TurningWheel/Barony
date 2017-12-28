@@ -152,14 +152,16 @@ int initGame()
 	// load item types
 	printlog( "loading items...\n");
 	fp = openDataFile("items/items.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
+	for ( c = 0; !feof(fp); ++c )
 	{
-		if ( c > ARTIFACT_BOW ) {
+		if ( c > ARTIFACT_BOW )
+		{
 			newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];
 			items[c].name_unidentified = language[2201 + newItems * 2];
 		}
-		else {
+		else
+		{
 			items[c].name_identified = language[1545 + c * 2];
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
@@ -300,12 +302,12 @@ int initGame()
 		}
 	}
 	fclose(fp);
-
 	createBooks();
 	setupSpells();
 
 	randomPlayerNamesMale = getLinesFromFile(datadir + PLAYERNAMES_MALE_FILE);
 	randomPlayerNamesFemale = getLinesFromFile(datadir + PLAYERNAMES_FEMALE_FILE);
+	loadItemLists();
 
 	// print a loading message
 	drawClearBuffers();
@@ -461,6 +463,24 @@ int fmod_result;
 		{
 			snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
+		}
+	}
+	if ( NUMCAVESMUSIC > 0 )
+	{
+		cavesmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMCAVESMUSIC);
+		for ( c = 0; c < NUMCAVESMUSIC; c++ )
+		{
+			snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &cavesmusic[c]);
+		}
+	}
+	if ( NUMCITADELMUSIC > 0 )
+	{
+		citadelmusic = (FMOD_SOUND**)malloc(sizeof(FMOD_SOUND*)*NUMCITADELMUSIC);
+		for ( c = 0; c < NUMCITADELMUSIC; c++ )
+		{
+			snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &citadelmusic[c]);
 		}
 	}
 #ifdef HAVE_OPENAL
@@ -734,6 +754,22 @@ void deinitGame()
 	if ( minotaurmusic )
 	{
 		free(minotaurmusic);
+	}
+	for ( c = 0; c < NUMCAVESMUSIC; c++ )
+	{
+		FMOD_Sound_Release(cavesmusic[c]);
+	}
+	if ( cavesmusic )
+	{
+		free(cavesmusic);
+	}
+	for ( c = 0; c < NUMCITADELMUSIC; c++ )
+	{
+		FMOD_Sound_Release(citadelmusic[c]);
+	}
+	if ( citadelmusic )
+	{
+		free(citadelmusic);
 	}
 #ifdef HAVE_OPENAL
 #undef FMOD_Channel_Stop

@@ -41,10 +41,17 @@
 
 void actThrown(Entity* my)
 {
-	Item* item;
+	Item* item = nullptr;
 	Category cat = GEM;
-	char* itemname = NULL;
+	char* itemname = nullptr;
 	node_t* node;
+
+	item = newItemFromEntity(my);
+	if ( item )
+	{
+		cat = itemCategory(item);
+		free(item);
+	}
 
 	if ( multiplayer == CLIENT )
 	{
@@ -98,8 +105,11 @@ void actThrown(Entity* my)
 		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
-		my->sprite = itemModel(item);
-		free(item);
+		if ( item )
+		{
+			my->sprite = itemModel(item);
+			free(item);
+		}
 	}
 
 	if ( multiplayer == CLIENT )
@@ -111,7 +121,7 @@ void actThrown(Entity* my)
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
-		if ( itemCategory(item) == THROWN )
+		if ( cat == THROWN )
 		{
 			// todo: adjust falling rates for thrown items if need be
 			THROWN_VELZ += 0.03;
@@ -172,6 +182,11 @@ void actThrown(Entity* my)
 					entity->skill[13] = item->count;
 					entity->skill[14] = item->appearance;
 					entity->skill[15] = item->identified;
+					if ( itemCategory(item) == THROWN )
+					{
+						//Hack to make monsters stop catching your shurikens and chakrams.
+						entity->parent = my->parent;
+					}
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
@@ -180,7 +195,7 @@ void actThrown(Entity* my)
 			else
 			{
 				// fall
-				if ( itemCategory(item) == THROWN )
+				if ( cat == THROWN )
 				{
 					// todo: adjust falling rates for thrown items if need be
 					THROWN_VELZ += 0.04;
@@ -198,7 +213,7 @@ void actThrown(Entity* my)
 		else
 		{
 			// fall out of x and y bounds
-			if ( itemCategory(item) == THROWN )
+			if ( cat == THROWN )
 			{
 				// todo: adjust falling rates for thrown items if need be
 				THROWN_VELZ += 0.04;
@@ -230,6 +245,7 @@ void actThrown(Entity* my)
 	bool usedpotion = false;
 	if ( result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
+		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
 			real_t bouncePenalty = 0.7;
@@ -249,16 +265,22 @@ void actThrown(Entity* my)
 			}
 		}
 
-		item = newItemFromEntity(my);
 		cat = itemCategory(item);
 		itemname = item->getName();
 		item->count = 1;
-		if ( hit.entity != NULL )
+		if ( hit.entity != nullptr )
 		{
+			Entity* parent = uidToEntity(my->parent);
+			Stat* parentStats = nullptr;
+			if ( parent )
+			{
+				parentStats = parent->getStats();
+			}
+			Stat* hitstats = hit.entity->getStats();
+
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
-				Entity* parent = uidToEntity(my->parent);
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
 					list_RemoveNode(my->mynode);
@@ -267,26 +289,29 @@ void actThrown(Entity* my)
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
-				int damage = (10 - AC(hit.entity->getStats()) + item->beatitude);
+				int damage = (BASE_THROWN_DAMAGE - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
+				if ( parentStats )
+				{
+					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 increase.
+				}
+				if ( hitstats && !hitstats->defending )
+				{
+					// zero out the damage if negative, thrown weapons will do piercing damage if not blocking.
+					damage = std::max(0, damage);
+				}
 				switch ( item->type )
 				{
+					// thrown weapons do damage if absorbed by armor.
 					case BRONZE_TOMAHAWK:
-						damage += 2;
-						break;
 					case IRON_DAGGER:
-						damage += 4;
-						break;
 					case STEEL_CHAKRAM:
-						damage += 6;
-						break;
 					case CRYSTAL_SHURIKEN:
-						damage += 8;
+						damage += item->weaponGetAttack();
 						break;
 					default:
 						break;
 				}
 				damage = std::max(0, damage);
-
 				hit.entity->modHP(-damage);
 
 				// set the obituary
@@ -294,8 +319,6 @@ void actThrown(Entity* my)
 				snprintf(whatever, 255, language[1508], itemname);
 				hit.entity->setObituary(whatever);
 
-				Entity* parent = uidToEntity(my->parent);
-				Stat* hitstats = hit.entity->getStats();
 				if ( hitstats )
 				{
 					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER )   // this makes it impossible to bork the end boss :)
@@ -408,13 +431,17 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
-					if ( rand() % 10 == 0 && parent != NULL )
+					if ( rand() % 5 == 0 && parent != NULL )
 					{
 						parent->increaseSkill(PRO_RANGED);
 					}
 				}
 				else
 				{
+					if ( cat == THROWN )
+					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
+					}
 					if ( hit.entity->behavior == &actPlayer )
 					{
 						if ( hit.entity->skill[2] == clientnum )
@@ -441,35 +468,39 @@ void actThrown(Entity* my)
 				}
 
 				// alert the monster
-				if ( hit.entity->behavior == &actMonster && parent != NULL )
+				if ( hit.entity->behavior == &actMonster && parent != nullptr )
 				{
-					if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 					{
-						hit.entity->skill[0] = 2;
-						hit.entity->skill[1] = parent->getUID();
-						hit.entity->fskill[2] = parent->x;
-						hit.entity->fskill[3] = parent->y;
+						/*hit.entity->monsterState = MONSTER_STATE_PATH;
+						hit.entity->monsterTarget = parent->getUID();
+						hit.entity->monsterTargetX = parent->x;
+						hit.entity->monsterTargetY = parent->y;*/
+
+						hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 					}
 					// alert other monsters too
 					Entity* ohitentity = hit.entity;
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 						{
 							if ( entity->checkFriend(hit.entity) )
 							{
-								if ( entity->skill[0] == 0 )   // monster is waiting
+								if ( entity->monsterState == MONSTER_STATE_WAIT )
 								{
 									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
 									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 									if ( hit.entity == entity )
 									{
-										entity->skill[0] = 2; // path state
-										entity->skill[1] = parent->getUID();
-										entity->fskill[2] = parent->x;
-										entity->fskill[3] = parent->y;
+										/*entity->monsterState = MONSTER_STATE_PATH;
+										entity->monsterTarget = parent->getUID();
+										entity->monsterTargetX = parent->x;
+										entity->monsterTargetY = parent->y;*/
+
+										entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 									}
 								}
 							}
@@ -481,14 +512,7 @@ void actThrown(Entity* my)
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
-							if ( hitstats->type < KOBOLD ) //Original monster count
-							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[90 + hitstats->type]);
-							}
-							else if ( hitstats->type >= KOBOLD ) //New monsters
-							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
 							if ( damage == 0 )
 							{
 								messagePlayer(parent->skill[2], language[447]);
@@ -496,7 +520,7 @@ void actThrown(Entity* my)
 						}
 						else
 						{
-							messagePlayerColor(parent->skill[2], color, language[694], hitstats->name);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
 							if ( damage == 0 )
 							{
 								if ( hitstats->sex )
@@ -536,6 +560,7 @@ void actThrown(Entity* my)
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) && hit.entity == NULL )
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
+			playSoundEntity(my, 66, 64);
 		}
 		else
 		{
@@ -561,13 +586,23 @@ void actThrown(Entity* my)
 			entity->skill[13] = item->count;
 			entity->skill[14] = item->appearance;
 			entity->skill[15] = item->identified;
+			if ( itemCategory(item) == THROWN )
+			{
+				//Hack to make monsters stop catching your shurikens and chakrams.
+				entity->parent = my->parent;
+			}
 			free(item);
 			list_RemoveNode(my->mynode);
 			return;
 		}
+
+		if ( item )
+		{
+			free(item);
+		}
 	}
 
-	if ( itemCategory(item) == THROWN )
+	if ( cat == THROWN )
 	{
 		THROWN_VELX = THROWN_VELX * .99;
 		THROWN_VELY = THROWN_VELY * .99;

@@ -104,7 +104,8 @@ void initTroll(Entity* my, Stat* myStats)
 						int i = 1 + rand() % 3;
 						for ( c = 0; c < i; c++ )
 						{
-							newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							Category cat = static_cast<Category>(rand() % (NUMCATEGORIES - 1));
+							newItem(static_cast<ItemType>(itemLevelCurve(cat, 0, currentlevel + 10)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -234,8 +235,8 @@ void trollDie(Entity* my)
 void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL;
-	Entity* rightbody = NULL;
+	Entity* entity = nullptr;
+	Entity* rightbody = nullptr;
 	int bodypart;
 
 	// set invisibility //TODO: isInvisible()?
@@ -246,7 +247,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -287,6 +288,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -315,14 +317,15 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			if ( bodypart == 3 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( bodypart == 3 || !MONSTER_ATTACK )
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG || my->monsterAttack == 0 )
 			{
+				// swing right leg, left arm in sync.
 				if ( dist > 0.1 )
 				{
 					if ( !rightbody->skill[0] )
@@ -331,9 +334,9 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 0 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 1;
 							}
 						}
@@ -344,9 +347,9 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
+							if ( bodypart == 3 && entity->skill[0] == 0 )
 							{
-								playSoundEntityLocal(my, 115, 64);
+								playSoundEntityLocal(my, 115, 128);
 								entity->skill[0] = 0;
 							}
 						}
@@ -354,6 +357,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
+					// if not moving, reset position of the leg/arm.
 					if ( entity->pitch < 0 )
 					{
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
@@ -374,74 +378,92 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else
 			{
-				// vertical chop
-				if ( MONSTER_ATTACKTIME == 0 )
+				// vertical chop windup
+				if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 				{
-					MONSTER_ARMBENDED = 0;
-					MONSTER_WEAPONYAW = 0;
-					entity->pitch = -3 * PI / 4;
-					entity->roll = 0;
-				}
-				else
-				{
-					if ( entity->pitch >= -PI / 2 )
+					if ( my->monsterAttackTime == 0 )
 					{
-						MONSTER_ARMBENDED = 1;
-					}
-					if ( entity->pitch >= PI / 4 )
-					{
-						entity->skill[0] = rightbody->skill[0];
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = rightbody->pitch;
+						// init rotations
+						entity->pitch = 0;
+						my->monsterArmbended = 0;
+						my->monsterWeaponYaw = 0;
 						entity->roll = 0;
-						MONSTER_ARMBENDED = 0;
-						MONSTER_ATTACK = 0;
+						entity->skill[1] = 0;
 					}
-					else
+
+					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 					{
-						entity->pitch += .25;
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(1, 0, nullptr);
+						}
+					}
+				}
+				// vertical chop attack
+				else if ( my->monsterAttack == 1 )
+				{
+					if ( entity->pitch >= 3 * PI / 2 )
+					{
+						my->monsterArmbended = 1;
+					}
+
+					if ( entity->skill[1] == 0 )
+					{
+						// chop forwards
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+						{
+							entity->skill[1] = 1;
+						}
+					}
+					else if ( entity->skill[1] == 1 )
+					{
+						// return to neutral
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							my->monsterWeaponYaw = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							my->monsterArmbended = 0;
+							my->monsterAttack = 0;
+						}
 					}
 				}
 			}
 		}
-		else if ( bodypart == 4 || bodypart == 5 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
-			if ( bodypart == 5 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
-				if ( MONSTER_ATTACK )
+				if ( my->monsterAttack > 0 )
 				{
 					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// get leftarm from bodypart 6 element if ready to attack
+					Entity* leftarm = (Entity*)node->next->element;
+
+					if ( my->monsterAttack == 1 || my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( leftarm != nullptr )
 						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
+							// follow the right arm animation.
+							entity->pitch = leftarm->pitch;
+							entity->roll = -leftarm->roll;
 						}
 					}
 				}
+				else
+				{
+					entity->skill[0] = rightbody->skill[0];
+					entity->pitch = rightbody->pitch;
+					entity->roll = 0;
+				}
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+			if ( bodypart != LIMB_HUMANOID_RIGHTARM || (my->monsterAttack == 0 ) )
 			{
+				// swing right arm/ left leg in sync
 				if ( dist > 0.1 )
 				{
 					if ( entity->skill[0] )
@@ -465,6 +487,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
+					// if not moving, reset position of the leg/arm.
 					if ( entity->pitch < 0 )
 					{
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
@@ -502,6 +525,10 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left leg
 			case 4:
@@ -512,6 +539,10 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
+				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
 				}
 				break;
 			// right arm
@@ -537,12 +568,16 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 }

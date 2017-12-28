@@ -30,8 +30,6 @@
 
 #define ARROW_STUCK my->skill[0]
 #define ARROW_LIFE my->skill[1]
-#define ARROW_POWER my->skill[3]
-#define ARROW_POISON my->skill[4]
 #define ARROW_VELX my->vel_x
 #define ARROW_VELY my->vel_y
 #define ARROW_VELZ my->vel_z
@@ -49,9 +47,9 @@ void actArrow(Entity* my)
 
 	my->skill[2] = -7; // invokes actEmpty() on clients
 
-	if ( !ARROW_POWER )
+	if ( my->arrowPower == 0 )
 	{
-		ARROW_POWER = 10 + (my->sprite == 167);
+		my->arrowPower = 10 + (my->sprite == 167);
 	}
 
 	// lifespan
@@ -104,7 +102,24 @@ void actArrow(Entity* my)
 					}
 
 					// do damage
-					damage = std::max(ARROW_POWER - AC(hitstats), 0) * damagetables[hitstats->type][4];
+					if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+					{
+						if ( hit.entity->behavior == &actPlayer && hitstats && !hitstats->defending )
+						{
+							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
+						}
+						else
+						{
+							damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+						}
+					}
+					else
+					{
+						damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+					}
+					damage *= damagetables[hitstats->type][4];
+					//messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
+					//messagePlayer(0, "Resolved to %d damage.", damage);
 					hit.entity->modHP(-damage);
 
 					// write obituary
@@ -168,6 +183,7 @@ void actArrow(Entity* my)
 					}
 					else
 					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							if ( hit.entity->skill[2] == clientnum )
@@ -194,38 +210,42 @@ void actArrow(Entity* my)
 					}
 
 					// alert the monster
-					if ( hit.entity->behavior == &actMonster && parent != NULL )
+					if ( hit.entity->behavior == &actMonster && parent != nullptr )
 					{
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
-							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = parent->getUID();
-							hit.entity->fskill[2] = parent->x;
-							hit.entity->fskill[3] = parent->y;
+							/*hit.entity->monsterState = MONSTER_STATE_PATH;
+							hit.entity->monsterTarget = parent->getUID();
+							hit.entity->monsterTargetX = parent->x;
+							hit.entity->monsterTargetY = parent->y;*/
+
+							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 						}
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != NULL; node = node->next )
+						for ( node = map.entities->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 							{
 								Stat* buddystats = entity->getStats();
-								if ( buddystats != NULL )
+								if ( buddystats != nullptr )
 								{
 									if ( entity->checkFriend(hit.entity) )
 									{
-										if ( entity->skill[0] == 0 )   // monster is waiting
+										if ( entity->monsterState == MONSTER_STATE_WAIT ) // monster is waiting
 										{
 											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
-												entity->skill[0] = 2; // path state
-												entity->skill[1] = parent->getUID();
-												entity->fskill[2] = parent->x;
-												entity->fskill[3] = parent->y;
+												/*entity->monsterState = MONSTER_STATE_PATH;
+												entity->monsterTarget = parent->getUID();
+												entity->monsterTargetX = parent->x;
+												entity->monsterTargetY = parent->y;*/
+
+												entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 											}
 										}
 									}
@@ -238,23 +258,20 @@ void actArrow(Entity* my)
 							if ( !strcmp(hitstats->name, "") )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(parent->skill[2], color, language[446], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(parent->skill[2], color, language[446], language[2000 + (hitstats->type - KOBOLD)]);
-								}
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[446], MSG_COMBAT);
 								if ( damage == 0 )
 								{
 									messagePlayer(parent->skill[2], language[447]);
+								}
+								else if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2513], language[2513], MSG_COMBAT);
 								}
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(parent->skill[2], color, language[448], hitstats->name);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT);
 								if ( damage == 0 )
 								{
 									if ( hitstats->sex )
@@ -266,23 +283,52 @@ void actArrow(Entity* my)
 										messagePlayer(parent->skill[2], language[450]);
 									}
 								}
+								else if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2514], language[2514], MSG_COMBAT);
+								}
 							}
 						}
 					}
 					else if ( hit.entity->behavior == &actPlayer )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(hit.entity->skill[2], color, language[451]);
+						if ( my )
+						{
+							if ( my->sprite == 78 )
+							{
+								// rock.
+								messagePlayerColor(hit.entity->skill[2], color, language[2512]);
+							}
+							else if (my->sprite == 167)
+							{
+								// bolt.
+								messagePlayerColor(hit.entity->skill[2], color, language[2511]);
+							}
+							else
+							{
+								// arrow.
+								messagePlayerColor(hit.entity->skill[2], color, language[451]);
+							}
+						}
+						else
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[451]);
+						}
 						if ( damage == 0 )
 						{
 							messagePlayer(hit.entity->skill[2], language[452]);
 						}
+						else if (my->arrowArmorPierce > 0 && AC(hitstats) > 0)
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[2515]);
+						}
 					}
-					if ( ARROW_POISON && damage > 0 )
+					if ( my->arrowPoisonTime > 0 && damage > 0 )
 					{
 						hitstats->poisonKiller = my->parent;
 						hitstats->EFFECTS[EFF_POISONED] = true;
-						hitstats->EFFECTS_TIMERS[EFF_POISONED] = ARROW_POISON;
+						hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);

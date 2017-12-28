@@ -84,6 +84,7 @@ void entityDeconstructor(void* data)
 
 		//free(data);
 		delete entity;
+		//TODO: If I am part of the creaturelist, remove my node from that list.
 	}
 }
 
@@ -180,20 +181,26 @@ void listDeconstructor(void* data)
 
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist)
 {
-	Entity* entity;
+	Entity* entity = nullptr;
 
 	// allocate memory for entity
 	/*if( (entity = (Entity *) malloc(sizeof(Entity)))==NULL ) {
 		printlog( "failed to allocate memory for new entity!\n" );
 		exit(1);
 	}*/
+	bool failedToAllocate = false;
 	try
 	{
 		entity = new Entity(sprite, pos, entlist);
 	}
 	catch (std::bad_alloc& ba)
 	{
-		printlog( "failed to allocate memory for new entity!\n" );
+		failedToAllocate = true;
+	}
+
+	if ( failedToAllocate || !entity )
+	{
+		printlog("failed to allocate memory for new entity!\n");
 		exit(1);
 	}
 

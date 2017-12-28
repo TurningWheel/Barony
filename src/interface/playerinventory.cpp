@@ -1617,6 +1617,10 @@ void itemContextMenu()
 	{
 		is_potion_bad = isPotionBad(*current_item);
 	}
+	if ( current_item->type == POTION_EMPTY )
+	{
+		is_potion_bad = true; //So that you wield empty potions by default.
+	}
 
 	const int slot_width = 100;
 	const int slot_height = 20;
@@ -1715,4 +1719,94 @@ void selectItemMenuSlot(const Item& item, int entry)
 	}
 
 	itemMenuSelected = entry;
+}
+
+// filters out items excluded by auto_hotbar_categories
+bool autoAddHotbarFilter(const Item& item)
+{
+	Category cat = itemCategory(&item);
+	for ( int i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+	{
+		if ( auto_hotbar_categories[i] )
+		{
+			switch ( i )
+			{
+				case 0: // weapons
+					if ( cat == WEAPON )
+					{
+						return true;
+					}
+					break;
+				case 1: // armor
+					if ( cat == ARMOR )
+					{
+						return true;
+					}
+					break;
+				case 2: // jewelry
+					if ( cat == RING || cat == AMULET )
+					{
+						return true;
+					}
+					break;
+				case 3: // books/spellbooks
+					if ( cat == BOOK || cat == SPELLBOOK )
+					{
+						return true;
+					}
+					break;
+				case 4: // tools
+					if ( cat == TOOL )
+					{
+						return true;
+					}
+					break;
+				case 5: // thrown
+					if ( cat == THROWN || item.type == GEM_ROCK )
+					{
+						return true;
+					}
+					break;
+				case 6: // gems
+					if ( cat == GEM )
+					{
+						return true;
+					}
+					break;
+				case 7: // potions
+					if ( cat == POTION )
+					{
+						return true;
+					}
+					break;
+				case 8: // scrolls
+					if ( cat == SCROLL )
+					{
+						return true;
+					}
+					break;
+				case 9: // magicstaves
+					if ( cat == MAGICSTAFF )
+					{
+						return true;
+					}
+					break;
+				case 10: // food
+					if ( cat == FOOD )
+					{
+						return true;
+					}
+					break;
+				case 11: // spells
+					if ( cat == SPELL_CAT )
+					{
+						return true;
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	return false;
 }

@@ -30,6 +30,63 @@
 
 /*-------------------------------------------------------------------------------
 
+doesEntityStopBoulder
+
+checks which objects the boulder breaks when it hits.
+
+-------------------------------------------------------------------------------*/
+
+bool doesEntityStopBoulder(Entity* entity)
+{
+	if ( entity->behavior == &actGate )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actBoulder )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actChest )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actHeadstone )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actFountain )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actSink )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagCeiling )
+	{
+		if ( entity->z > -8 )
+		{
+			// not on ceiling layer
+			return true;
+		}
+	}
+	else if ( entity->behavior == &actStalagFloor )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagColumn )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPedestalBase )
+	{
+		return true;
+	}
+	return false;
+}
+
+/*-------------------------------------------------------------------------------
+
 	boulderCheckAgainstEntity
 
 	causes the boulder given in my to crush the object given in entity
@@ -139,7 +196,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 			}
 		}
 	}
-	else if ( entity->behavior == &actGate || entity->behavior == &actBoulder || entity->behavior == &actChest || entity->behavior == &actHeadstone || entity->behavior == &actFountain || entity->behavior == &actSink )
+	else if ( doesEntityStopBoulder(entity) )
 	{
 		if ( !entity->flags[PASSABLE] )
 		{
@@ -147,6 +204,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 			{
 				// stop the boulder
 				BOULDER_STOPPED = 1;
+				my->vel_x = 0.0; // TODOR: Anywhere this is could possible be changed to be a static 'if( BOULDER_ROLLING == 0 ) { vel = 0 }' instead of duplicating code everywhere
+				my->vel_y = 0.0;
 				BOULDER_ROLLING = 0;
 				playSoundEntity(my, 181, 128);
 				if ( my->flags[PASSABLE] )
@@ -200,7 +259,7 @@ void actBoulder(Entity* my)
 	int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width);
 	int y = std::min<int>(std::max(0, (int)(my->y / 16)), map.height);
 	Uint32 index = y * MAPLAYERS + x * MAPLAYERS * map.height;
-	if ( !map.tiles[index] || animatedtiles[map.tiles[index]] )
+	if ( !map.tiles[index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
 	{
 		noground = true;
 	}
@@ -436,6 +495,8 @@ void actBoulder(Entity* my)
 			y = std::min<unsigned int>(std::max<int>(0, y), map.height - 1);
 			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
+				my->vel_x = 0.0;
+				my->vel_y = 0.0;
 				BOULDER_ROLLING = 0;
 			}
 			else
@@ -450,6 +511,8 @@ void actBoulder(Entity* my)
 					if ( my->x >= BOULDER_DESTX )
 					{
 						my->x = BOULDER_DESTX;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -458,6 +521,8 @@ void actBoulder(Entity* my)
 					if ( my->y >= BOULDER_DESTY )
 					{
 						my->y = BOULDER_DESTY;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -466,6 +531,8 @@ void actBoulder(Entity* my)
 					if ( my->x <= BOULDER_DESTX )
 					{
 						my->x = BOULDER_DESTX;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -474,6 +541,8 @@ void actBoulder(Entity* my)
 					if ( my->y <= BOULDER_DESTY )
 					{
 						my->y = BOULDER_DESTY;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -640,11 +709,21 @@ void actBoulderTrapEast(Entity* my)
 	int x, y;
 	int c;
 
-	BOULDERTRAP_AMBIENCE--;
-	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
 	{
-		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
 	}
 
 	if ( !my->skill[28] )
@@ -655,14 +734,19 @@ void actBoulderTrapEast(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2 )
 	{
-		if ( !BOULDERTRAP_FIRED )
+		if ( !my->boulderTrapFired )
 		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				playSoundPlayer(c, 150, 64);
 			}
-			BOULDERTRAP_FIRED = 1;
+			my->boulderTrapFired = 1;
 
 			c = 0; // direction
 			x = ((int)(my->x)) >> 4;
@@ -677,7 +761,7 @@ void actBoulderTrapEast(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -688,10 +772,21 @@ void actBoulderTrapEast(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
 		}
 	}
@@ -702,11 +797,21 @@ void actBoulderTrapSouth(Entity* my)
 	int x, y;
 	int c;
 
-	BOULDERTRAP_AMBIENCE--;
-	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
 	{
-		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
 	}
 
 	if ( !my->skill[28] )
@@ -717,14 +822,19 @@ void actBoulderTrapSouth(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2 )
 	{
-		if ( !BOULDERTRAP_FIRED )
+		if ( !my->boulderTrapFired )
 		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				playSoundPlayer(c, 150, 64);
 			}
-			BOULDERTRAP_FIRED = 1;
+			my->boulderTrapFired = 1;
 
 			c = 1; // direction
 			x = ((int)(my->x)) >> 4;
@@ -739,7 +849,7 @@ void actBoulderTrapSouth(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -750,10 +860,21 @@ void actBoulderTrapSouth(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
 		}
 	}
@@ -764,11 +885,21 @@ void actBoulderTrapWest(Entity* my)
 	int x, y;
 	int c;
 
-	BOULDERTRAP_AMBIENCE--;
-	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
 	{
-		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
 	}
 
 	if ( !my->skill[28] )
@@ -779,14 +910,20 @@ void actBoulderTrapWest(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2 )
 	{
-		if ( !BOULDERTRAP_FIRED )
+		if ( !my->boulderTrapFired )
 		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				playSoundPlayer(c, 150, 64);
 			}
-			BOULDERTRAP_FIRED = 1;
+
+			my->boulderTrapFired = 1;
 
 			c = 2; // direction
 			x = ((int)(my->x)) >> 4;
@@ -801,7 +938,7 @@ void actBoulderTrapWest(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -812,10 +949,21 @@ void actBoulderTrapWest(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
 		}
 	}
@@ -826,11 +974,21 @@ void actBoulderTrapNorth(Entity* my)
 	int x, y;
 	int c;
 
-	BOULDERTRAP_AMBIENCE--;
-	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
 	{
-		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
 	}
 
 	if ( !my->skill[28] )
@@ -841,14 +999,19 @@ void actBoulderTrapNorth(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2 )
 	{
-		if ( !BOULDERTRAP_FIRED )
+		if ( !my->boulderTrapFired )
 		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				playSoundPlayer(c, 150, 64);
 			}
-			BOULDERTRAP_FIRED = 1;
+			my->boulderTrapFired = 1;
 
 			c = 3; // direction
 			x = ((int)(my->x)) >> 4;
@@ -863,7 +1026,7 @@ void actBoulderTrapNorth(Entity* my)
 				entity->yaw = c * (PI / 2.f);
 				entity->sizex = 7;
 				entity->sizey = 7;
-				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+			/*	if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 				{
 					entity->yaw += PI * (rand() % 2) - PI / 2;
 					if ( entity->yaw >= PI * 2 )
@@ -874,10 +1037,21 @@ void actBoulderTrapNorth(Entity* my)
 					{
 						entity->yaw += PI * 2;
 					}
-				}
+				}*/
 				entity->behavior = &actBoulder;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
 		}
 	}

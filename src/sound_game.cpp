@@ -91,7 +91,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		return NULL;
 	}
-	if (snd < 0 || snd >= numsounds)
+	if (snd < 0 || snd >= numsounds) //TODO: snd < 0 is impossible with a Uint32.
 	{
 		return NULL;
 	}
@@ -506,6 +506,32 @@ void handleLevelMusic()
 			}
 			playmusic(hellmusic[currenttrack], false, true, true);
 		}
+		else if ( !strncmp(map.name, "Caves", 5) )
+		{
+			if ( !playing )
+			{
+				currenttrack = 1 + rand() % (NUMCAVESMUSIC - 1);
+			}
+			currenttrack = currenttrack % NUMCAVESMUSIC;
+			if ( currenttrack == 0 )
+			{
+				currenttrack = 1;
+			}
+			playmusic(cavesmusic[currenttrack], false, true, true);
+		}
+		else if ( !strncmp(map.name, "Citadel", 7) )
+		{
+			if ( !playing )
+			{
+				currenttrack = 1 + rand() % (NUMCITADELMUSIC - 1);
+			}
+			currenttrack = currenttrack % NUMCITADELMUSIC;
+			if ( currenttrack == 0 )
+			{
+				currenttrack = 1;
+			}
+			playmusic(citadelmusic[currenttrack], false, true, true);
+		}
 		else
 		{
 			playmusic(intermissionmusic, true, true, true);
@@ -577,6 +603,14 @@ void handleLevelMusic()
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
 			playmusic(hellmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.name, "Caves", 5) )
+		{
+			playmusic(cavesmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.name, "Citadel", 7) )
+		{
+			playmusic(citadelmusic[0], true, true, true);
 		}
 		else
 		{
@@ -1049,6 +1083,32 @@ void handleLevelMusic()
 			}
 			playmusic(hellmusic[currenttrack], false, true, true);
 		}
+		else if ( !strncmp(map.name, "Caves", 5) )
+		{
+			if ( !playing )
+			{
+				currenttrack = 1 + rand() % (NUMCAVESMUSIC - 1);
+			}
+			currenttrack = currenttrack % NUMCAVESMUSIC;
+			if ( currenttrack == 0 )
+			{
+				currenttrack = 1;
+			}
+			playmusic(cavesmusic[currenttrack], false, true, true);
+		}
+		else if ( !strncmp(map.name, "Citadel", 7) )
+		{
+			if ( !playing )
+			{
+				currenttrack = 1 + rand() % (NUMCITADELMUSIC - 1);
+			}
+			currenttrack = currenttrack % NUMCITADELMUSIC;
+			if ( currenttrack == 0 )
+			{
+				currenttrack = 1;
+			}
+			playmusic(citadelmusic[currenttrack], false, true, true);
+		}
 		else
 		{
 			playmusic(intermissionmusic, true, true, true);
@@ -1120,6 +1180,14 @@ void handleLevelMusic()
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
 			playmusic(hellmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.name, "Caves", 5) )
+		{
+			playmusic(cavesmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.name, "Citadel", 7) )
+		{
+			playmusic(citadelmusic[0], true, true, true);
 		}
 		else
 		{

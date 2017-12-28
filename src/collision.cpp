@@ -218,7 +218,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 							{
 								isMonster = true;
 							}
-						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster )
+						if ( (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+							&& isMonster )
 						{
 							return true;
 						}
@@ -370,7 +371,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					return 0;
 				}
 	
-				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
+				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
+					|| ((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+						&& isMonster)) )
 				{
 					// no floor
 					hit.x = x * 16 + 8;
@@ -454,21 +457,24 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						bool dyrnwyn = false;
 						Stat* stats = hit.entity->getStats();
 						if ( stats )
+						{
 							if ( stats->weapon )
+							{
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
 									dyrnwyn = true;
 								}
+							}
+						}
 						if ( !dyrnwyn )
 						{
-							hit.entity->flags[BURNING] = true;
-							if ( hit.entity->behavior == &actPlayer)
+							// Attempt to set the Entity on fire
+							hit.entity->SetEntityOnFire();
+
+							// If the Entity is now on fire, tell them
+							if ( hit.entity->flags[BURNING] )
 							{
-								messagePlayer(hit.entity->skill[2], language[590]);
-								if ( hit.entity->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(hit.entity, BURNING);
-								}
+								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
 							}
 						}
 					}
@@ -477,21 +483,24 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						bool dyrnwyn = false;
 						Stat* stats = my->getStats();
 						if ( stats )
+						{
 							if ( stats->weapon )
+							{
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
 									dyrnwyn = true;
 								}
+							}
+						}
 						if ( !dyrnwyn )
 						{
-							my->flags[BURNING] = true;
-							if ( my->behavior == &actPlayer)
+							// Attempt to set the Entity on fire
+							hit.entity->SetEntityOnFire();
+
+							// If the Entity is now on fire, tell them
+							if ( hit.entity->flags[BURNING] )
 							{
-								messagePlayer(my->skill[2], language[590]);
-								if ( my->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(my, BURNING);
-								}
+								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
 							}
 						}
 					}
@@ -846,7 +855,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -987,7 +997,8 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -1086,7 +1097,8 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 					isMonster = true;
 				}
 			}
-			if ( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) )   // no floor
+			if ( !levitating && (!map.tiles[index] ||
+				(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )   // no floor
 			{
 				return 1;
 			}

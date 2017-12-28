@@ -9,8 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
@@ -20,6 +18,7 @@ button_t* butX;
 button_t* but_;
 button_t* butTilePalette;
 button_t* butSprite;
+button_t* butPencil;
 button_t* butPoint;
 button_t* butBrush;
 button_t* butSelect;
@@ -144,27 +143,33 @@ void buttonSprite(button_t* my)
 	spritepalette = 1;
 }
 
-void buttonPoint(button_t* my)
+void buttonPencil(button_t* my)
 {
 	selectedTool = 0;
 	selectedarea = false;
 }
 
-void buttonBrush(button_t* my)
+void buttonPoint(button_t* my)
 {
 	selectedTool = 1;
 	selectedarea = false;
 }
 
-void buttonSelect(button_t* my)
+void buttonBrush(button_t* my)
 {
 	selectedTool = 2;
 	selectedarea = false;
 }
 
-void buttonFill(button_t* my)
+void buttonSelect(button_t* my)
 {
 	selectedTool = 3;
+	selectedarea = false;
+}
+
+void buttonFill(button_t* my)
+{
+	selectedTool = 4;
 	selectedarea = false;
 }
 
@@ -193,14 +198,74 @@ void buttonNew(button_t* my)
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
 	snprintf(skyboxtext, 4, "%d", map.skybox);
+	for ( int z = 0; z < MAPFLAGS; ++z )
+	{
+		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+	}
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLEMONSTERS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 24) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 16) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 8) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[ ]");
+	}
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 0) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
-	subx1 = xres / 2 - 160;
-	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 100;
-	suby2 = yres / 2 + 100;
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 200;
+	suby2 = yres / 2 + 200;
 	strcpy(subtext, "New map:");
 
 	button = newButton();
@@ -243,6 +308,66 @@ void buttonNewConfirm(button_t* my)
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
 	map.skybox = atoi(skyboxtext);
+	for ( z = 0; z < MAPFLAGS; ++z )
+	{
+		if ( z == MAP_FLAG_DISABLETRAPS )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLETRAPS] = 0;
+			}
+		}
+		else if ( z == MAP_FLAG_DISABLEMONSTERS )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLEMONSTERS] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLEMONSTERS] = 0;
+			}
+		}
+		else if ( z == MAP_FLAG_DISABLELOOT )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLELOOT] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLELOOT] = 0;
+			}
+		}
+		else if ( z == MAP_FLAG_GENBYTES3 )
+		{
+			map.flags[z] = 0;
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 24) & 0xFF;
+			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 16) & 0xFF;
+			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 8) & 0xFF;
+			}
+			if ( !strncmp(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]", 3) )
+			{
+				map.flags[z] |= (1 << 0) & 0xFF;
+			}
+		}
+		else
+		{
+			map.flags[z] = atoi(mapflagtext[z]);
+		}
+	}
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -655,10 +780,52 @@ void buttonDelete(button_t* my)
 	}
 }
 
+void buttonCycleSprites(button_t* my)
+{
+	SDL_Rect pos;
+	char tmp[4];
+	Entity* entity = nullptr;
+	Entity* lastEntity = nullptr;
+	bool entityWasSelected = false;
+	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	{
+		entity = (Entity*)node->element;
+		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
+		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
+		if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y )
+		{
+			// set lastEntity to each entity on the tile.
+			lastEntity = entity;
+		}
+	}
+
+	if ( lastEntity != nullptr )
+	{
+		if ( selectedEntity )
+		{
+			entityWasSelected = true;
+		}
+
+		selectedEntity = nullptr;
+		lastSelectedEntity = nullptr;
+
+		// create new entity on the list, copying and removing the previous last one.
+		entity = newEntity(lastEntity->sprite, 0, map.entities);
+		setSpriteAttributes(entity, lastEntity, lastEntity);
+		list_RemoveNode(lastEntity->mynode);
+
+		if ( entityWasSelected )
+		{
+			selectedEntity = entity;
+			lastSelectedEntity = selectedEntity;
+		}
+	}
+}
+
 void buttonSelectAll(button_t* my)
 {
 	menuVisible = 0;
-	selectedTool = 2;
+	selectedTool = 3;
 	selectedarea = true;
 	selectingspace = false;
 	selectedarea_x1 = 0;
@@ -697,6 +864,7 @@ void buttonToolbox(button_t* my)
 {
 	toolbox = (toolbox == 0);
 	butTilePalette->visible = (butTilePalette->visible == 0);
+	butPencil->visible = (butPencil->visible == 0);
 	butSprite->visible = (butSprite->visible == 0);
 	butPoint->visible = (butPoint->visible == 0);
 	butBrush->visible = (butBrush->visible == 0);
@@ -759,14 +927,91 @@ void buttonAttributes(button_t* my)
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
 	snprintf(skyboxtext, 4, "%d", map.skybox);
+	for ( int z = 0; z < MAPFLAGS; ++z )
+	{
+		if ( z < MAP_FLAG_GENBYTES1 && z > MAP_FLAG_GENBYTES6 )
+		{
+			snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+		}
+	}
+
+	snprintf(mapflagtext[MAP_FLAG_GENTOTALMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 24) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENTOTALMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 16) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENMONSTERMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 8) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENMONSTERMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 0) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENLOOTMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 24) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENLOOTMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 16) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 8) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 0) & static_cast<int>(0xFF));
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 24) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[ ]");
+	}
+
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 16) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[ ]");
+	}
+
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 8) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[ ]");
+	}
+
+	if ( (map.flags[MAP_FLAG_GENBYTES3] >> 0) & static_cast<int>(0xFF) )
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[ ]");
+	}
+
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLEMONSTERS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+	}
+	
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
-	subx1 = xres / 2 - 160;
-	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 100;
-	suby2 = yres / 2 + 100;
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 200;
+	suby2 = yres / 2 + 200;
 	strcpy(subtext, "Map properties:");
 
 	button = newButton();
@@ -828,6 +1073,96 @@ void buttonAttributesConfirm(button_t* my)
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.skybox = atoi(skyboxtext);
+	if ( map.skybox > numtiles )
+	{
+		map.skybox = 0;
+	}
+	map.flags[MAP_FLAG_CEILINGTILE] = atoi(mapflagtext[MAP_FLAG_CEILINGTILE]);
+	if ( map.flags[MAP_FLAG_CEILINGTILE] >= numtiles )
+	{
+		map.flags[MAP_FLAG_CEILINGTILE] = 0;
+	}
+
+	// start storing some misc bytes within the Sint32 flags to save space:
+	map.flags[MAP_FLAG_GENBYTES1] = 0; // clear the flag 1 slot.
+	if ( atoi(mapflagtext[MAP_FLAG_GENTOTALMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENTOTALMIN]) << 24; // store in first leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENTOTALMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENTOTALMAX]) << 16; // store in second leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) << 8; // store in third leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) << 0; // store in fourth leftmost byte.
+	}
+
+	map.flags[MAP_FLAG_GENBYTES2] = 0; // clear the flag 2 slot.
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENLOOTMIN]) << 24; // store in first leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENLOOTMAX]) << 16; // store in second leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENDECORATIONMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENDECORATIONMIN]) << 8; // store in third leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) << 0; // store in fourth leftmost byte.
+	}
+
+	map.flags[MAP_FLAG_GENBYTES3] = 0; // clear the flag 3 slot.
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 24); // store in first leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 16); // store in second leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 8); // store in third leftmost byte.
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_GENBYTES3] |= (1 << 0); // store in fourth leftmost byte.
+	}
+
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLETRAPS] = 0;
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLEMONSTERS] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLEMONSTERS] = 0;
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLELOOT] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLELOOT] = 0;
+	}
+
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
@@ -1143,6 +1478,109 @@ void buttonSpriteProperties(button_t* my)
 			suby1 = yres / 2 - 120;
 			suby2 = yres / 2 + 120;
 			strcpy(subtext, "Power Crystal Properties:");
+			break;
+		case 6:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 8;
+			subx1 = xres / 2 - 120;
+			subx2 = xres / 2 + 120;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
+			strcpy(subtext, "Lever Timer Properties:");
+			break;
+		case 7:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireAmount));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireDelay));
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->boulderTrapPreDelay)); 
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 9;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 100;
+			suby2 = yres / 2 + 100;
+			strcpy(subtext, "Boulder Trap Properties:");
+			break;
+		case 8:
+			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->pedestalOrbType));
+			snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
+			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
+			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->pedestalInGround));
+			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->pedestalLockOrb));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 10;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 110;
+			suby2 = yres / 2 + 110;
+			strcpy(subtext, "Pedestal Properties:");
+			break;
+		case 9:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->teleporterX));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->teleporterY));
+			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->teleporterType));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 11;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 100;
+			suby2 = yres / 2 + 100;
+			strcpy(subtext, "Teleporter Properties:");
+			break;
+		case 10:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 12;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
+			strcpy(subtext, "Ceiling Tile Properties:");
+			break;
+		case 11:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
+			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
+			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 13;
+			subx1 = xres / 2 - 200;
+			subx2 = xres / 2 + 200;
+			suby1 = yres / 2 - 110;
+			suby2 = yres / 2 + 110;
+			strcpy(subtext, "Spell Trap Properties:");
+			break;
+		case 12:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->furnitureDir));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 14;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
+			strcpy(subtext, "Furniture Properties:");
 			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
@@ -1852,6 +2290,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						{
 							tmpSpriteStats->RANDOM_CHR = 0;
 						}
+						tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC] = (Sint32)atoi(spriteProperties[25]);
 					}
 				}
 				break;
@@ -1931,6 +2370,60 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->crystalNumElectricityNodes = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->crystalTurnReverse = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->crystalSpellToActivate = (Sint32)atoi(spriteProperties[3]);
+				break;
+			case 6: //lever timer
+				if ( (Sint32)atoi(spriteProperties[0]) == 0 )
+				{
+					selectedEntity->leverTimerTicks = 1;
+				}
+				else
+				{
+					selectedEntity->leverTimerTicks = (Sint32)atoi(spriteProperties[0]);
+				}
+				break;
+			case 7: //boulder trap
+				selectedEntity->boulderTrapRefireAmount = (Sint32)atoi(spriteProperties[0]);
+				if ( (Sint32)atoi(spriteProperties[1]) < 2 )
+				{
+					selectedEntity->boulderTrapRefireDelay = 2;
+				}
+				else
+				{
+					selectedEntity->boulderTrapRefireDelay = (Sint32)atoi(spriteProperties[1]);
+				}
+				if ( (Sint32)atoi(spriteProperties[2]) < 0 )
+				{
+					selectedEntity->boulderTrapPreDelay = 0;
+				}
+				else
+				{
+					selectedEntity->boulderTrapPreDelay = (Sint32)atoi(spriteProperties[2]);
+				}
+				break;
+			case 8: //pedestal
+				selectedEntity->pedestalOrbType = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->pedestalInGround = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->pedestalLockOrb = (Sint32)atoi(spriteProperties[4]);
+				break;
+			case 9: //teleporter
+				selectedEntity->teleporterX = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->teleporterY = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->teleporterType = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 10: //ceiling tile model
+				selectedEntity->ceilingTileModel = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 11: //spell trap ceiling
+				selectedEntity->spellTrapType = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->spellTrapRefire = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->spellTrapFloorTile = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->spellTrapRefireRate= (Sint32)atoi(spriteProperties[4]);
+				break;
+			case 12: //furniture
+				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;
@@ -2233,8 +2726,8 @@ void initMonsterPropertiesWindow() {
 	newwindow = 2;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 180;
-	suby2 = yres / 2 + 180;
+	suby1 = yres / 2 - 190;
+	suby2 = yres / 2 + 190;
 	strcpy(subtext, "Sprite properties: ");
 	strcat(subtext, spriteEditorNameStrings[selectedEntity->sprite]);
 }
@@ -2268,6 +2761,7 @@ void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)
 		snprintf(spriteProperties[22], 4, "%d", tmpSpriteStats->RANDOM_INT + tmpSpriteStats->INT);
 		snprintf(spriteProperties[23], 4, "%d", tmpSpriteStats->RANDOM_PER + tmpSpriteStats->PER);
 		snprintf(spriteProperties[24], 4, "%d", tmpSpriteStats->RANDOM_CHR + tmpSpriteStats->CHR);
+		snprintf(spriteProperties[25], 4, "%d", tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC]);
 	}
 	return;
 }

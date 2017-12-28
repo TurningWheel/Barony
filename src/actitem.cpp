@@ -155,6 +155,7 @@ void actItem(Entity* my)
 							{
 								free(item);
 							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -166,6 +167,21 @@ void actItem(Entity* my)
 
 	if (ITEM_NOTMOVING)
 	{
+		switch ( my->sprite )
+		{
+			case 610:
+			case 611:
+			case 612:
+			case 613:
+				my->spawnAmbientParticles(80, my->sprite - 4, 10 + rand() % 40, 1.0, false);
+				if ( !my->light )
+				{
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
+				}
+				break;
+			default:
+				break;
+		}
 		return;
 	}
 
@@ -193,7 +209,8 @@ void actItem(Entity* my)
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
-			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
+			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] 
+				|| (my->sprite >= 610 && my->sprite <= 613) )
 			{
 				// land
 				ITEM_VELZ *= -.7;
@@ -219,6 +236,7 @@ void actItem(Entity* my)
 						my->z = 7.5 - models[my->sprite]->sizey * .25;
 					}
 					ITEM_VELZ = 0;
+					onground = true;
 				}
 				else
 				{
@@ -251,11 +269,28 @@ void actItem(Entity* my)
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
-	double groundheight = 7.5 - models[my->sprite]->sizey * .25;
+	double groundheight;
+	if ( my->sprite == 569 )
+	{
+		groundheight = 8.5 - models[my->sprite]->sizey * .25;
+	}
+	else if ( my->sprite == 567 )
+	{
+		groundheight = 8.75 - models[my->sprite]->sizey * .25;
+	}
+	else
+	{
+		groundheight = 7.5 - models[my->sprite]->sizey * .25;
+	}
+
 	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
 	{
 		ITEM_NOTMOVING = 1;
 		my->flags[UPDATENEEDED] = false;
+		if ( multiplayer != CLIENT )
+		{
+			serverUpdateEntitySkill(my, 18);
+		}
 		return;
 	}
 

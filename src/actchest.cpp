@@ -119,6 +119,14 @@ void Entity::actChest()
 			if (strcmp(map.name, "The Mystic Library")) 
 			{
 				chesttype = rand() % 8;
+				if ( chesttype == 1 )
+				{
+					if ( rand() % 2 == 0 )
+					{
+						// re-roll the garbage chest.
+						chesttype = rand() % 8;
+					}
+				}
 			}
 			else 
 			{
@@ -136,9 +144,10 @@ void Entity::actChest()
 				{
 					//And add the current entity to it.
 					int itemnum = rand() % NUMITEMS;
-					while (itemnum == SPELL_ITEM)
+					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 5 )
 					{
-						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell.
+						//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
+						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
 					}
 					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
@@ -225,7 +234,7 @@ void Entity::actChest()
 						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						 * 16 - 19 are the hats & helmets, items 40 - 43
 						 */
-						int item = rand() % 20;
+						int item = rand() % 15;
 						if (item <= 1)
 							//Steel shields. Items 17 & 18.
 						{
@@ -234,22 +243,30 @@ void Entity::actChest()
 						else if (item <= 5)
 							//Gauntlets. Items 20 - 23.
 						{
-							newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 15)
-							//Boots & shirts. Items 28 - 37.
-						{
-							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							if ( rand() % 3 > 0 )
+							{
+								newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
+							else
+							{
+								// new gauntlets
+								newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
 						}
 						else if (item <= 10)
 							//Hats & helmets. Items 40 - 43.
 						{
 							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
+						else if (item <= 15)
+							//Boots & shirts. Items 28 - 37.
+						{
+							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
 					}
 					break;
 					case 2:
-						//A weapon and an armor.
+						//A weapon and an armor, chance of thrown.
 					{
 						int item = rand() % 18;
 						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
@@ -279,17 +296,33 @@ void Entity::actChest()
 						else if (item <= 5)
 							//Gauntlets. Items 20 - 23.
 						{
-							newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							if ( rand() % 3 > 0 )
+							{
+								newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
+							else
+							{
+								// new gauntlets
+								newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							}
+						}
+						else if (item <= 10)
+							//Hats & helmets. Items 40 - 43.
+						{
+							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
 						else if (item <= 15)
 							//Boots & shirts. Items 28 - 37.
 						{
 							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
-						else if (item <= 10)
-							//Hats & helmets. Items 40 - 43.
+
+						// try for thrown items.
+						itemcount = 0 + rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
 						{
-							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 					}
 					break;
@@ -300,10 +333,33 @@ void Entity::actChest()
 				break;
 			case 5:
 				//Tools.
-				itemcount = 1 + rand() % 2;
-				for (i = 0; i < itemcount; ++i)
+				switch ( rand() % 3 )
 				{
-					newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					case 0:
+						itemcount = rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(TOOL_BEARTRAP, durability, 0, 1 + rand() % 3, rand(), false, inventory);
+						}
+						// fall through
+					case 1:
+						itemcount = 1 + rand() % 2;
+						for (i = 0; i < itemcount; ++i)
+						{
+							newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						}
+						break;
+					case 2:
+						itemcount = 1 + rand() % 2;
+						for ( i = 0; i < itemcount; ++i )
+						{
+							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
+							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+						}
+						break;
+					default:
+						break;
 				}
 				break;
 			case 6:
@@ -744,7 +800,7 @@ void Entity::addItemToChest(Item* item)
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 	{
 		item2 = (Item*) t_node->element;
-		if (!itemCompare(item, item2))
+		if (!itemCompare(item, item2, false))
 		{
 			item2->count += item->count;
 			return;
@@ -995,7 +1051,7 @@ void addItemToChestClientside(Item* item)
 		for (node = chestInv.first; node != NULL; node = node->next)
 		{
 			item2 = (Item*) node->element;
-			if (!itemCompare(item, item2))
+			if (!itemCompare(item, item2, false))
 			{
 				item2->count += item->count;
 				return;
@@ -1033,7 +1089,7 @@ void Entity::addItemToChestServer(Item* item)
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 	{
 		item2 = (Item*) t_node->element;
-		if (!itemCompare(item, item2))
+		if (!itemCompare(item, item2, false))
 		{
 			item2->count += item->count;
 			return;
@@ -1068,7 +1124,7 @@ void Entity::removeItemFromChestServer(Item* item, int count)
 		{
 			return;
 		}
-		if (!itemCompare(item, item2))
+		if (!itemCompare(item, item2, false))
 		{
 			if (count < item2->count)
 			{
@@ -1099,4 +1155,25 @@ void Entity::unlockChest()
 void Entity::lockChest()
 {
 	chestLocked = 1;
+}
+
+void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+{
+	chestHealth -= damage; //Decrease chest health.
+	if ( caster )
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			if ( chestHealth <= 0 )
+			{
+				messagePlayer(caster->skill[2], language[2520]);
+			}
+			else
+			{
+				messagePlayer(caster->skill[2], language[378], language[675]);
+			}
+		}
+		updateEnemyBar(caster, this, language[675], chestHealth, chestMaxHealth);
+	}
+	playSoundEntity(this, 28, 128);
 }

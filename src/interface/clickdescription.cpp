@@ -152,28 +152,7 @@ void clickDescription(int player, Entity* entity)
 							Stat* stats = parent->getStats();
 							if ( stats )
 							{
-								if ( strcmp(stats->name, "") )
-								{
-									if ( stats->type < KOBOLD ) //Original monster count
-									{
-										messagePlayer(player, language[253], language[90 + stats->type], stats->name);
-									}
-									else if ( stats->type >= KOBOLD ) //New monsters
-									{
-										messagePlayer(player, language[253], language[2000 + (stats->type - KOBOLD)], stats->name);
-									}
-								}
-								else
-								{
-									if ( stats->type < KOBOLD ) //Original monster count
-									{
-										messagePlayer(player, language[254], language[90 + stats->type]);
-									}
-									else if ( stats->type >= KOBOLD ) //New monsters
-									{
-										messagePlayer(player, language[254], language[2000 + (stats->type - KOBOLD)]);
-									}
-								}
+								messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, language[254], language[253], MSG_DESCRIPTION);
 							}
 						}
 					}
@@ -250,46 +229,68 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, language[271]);
 				}
-				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal )
+				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal
+					|| entity->behavior == &actMidGamePortal )
 				{
 					messagePlayer(player, language[272]);
 				}
 				else if ( entity->behavior == &actFurniture )
 				{
-					if ( entity->skill[0] )
+					switch ( entity->furnitureType )
 					{
-						messagePlayer(player, language[273]);
+						case FURNITURE_CHAIR:
+							messagePlayer(player, language[273]);
+							break;
+						case FURNITURE_TABLE:
+							messagePlayer(player, language[274]);
+							break;
+						case FURNITURE_BED:
+							messagePlayer(player, language[2497]);
+							break;
+						case FURNITURE_BUNKBED:
+							messagePlayer(player, language[2499]);
+							break;
+						case FURNITURE_PODIUM:
+							messagePlayer(player, language[2500]);
+							break;
+						default:
+							messagePlayer(player, language[273]);
+							break;
 					}
-					else
-					{
-						messagePlayer(player, language[274]);
-					}
+				}
+				// need to check the sprite since these are all empty behaviors.
+				else if ( entity->sprite >= 631 && entity->sprite <= 633 ) // piston
+				{
+					messagePlayer(player, language[2501]);
+				}
+				else if  (entity->sprite == 629 || entity->sprite == 580 ) // column
+				{
+					messagePlayer(player, language[2502]);
+				}
+				else if ( entity->sprite == 581 || entity->sprite == 582 ) // floor stalag
+				{
+					messagePlayer(player, language[2503]);
+				}
+				else if ( entity->sprite == 583 || entity->sprite == 584 ) // ceiling stalag
+				{
+					messagePlayer(player, language[2504]);
+				}
+				else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+				{
+					messagePlayer(player, language[2375]);
+				}
+				else if ( entity->behavior == &actPedestalBase )
+				{
+					messagePlayer(player, language[2376]);
+				}
+				else if ( entity->behavior == &actPedestalOrb )
+				{
+					messagePlayer(player, language[2377]);
 				}
 			}
 			else
 			{
-				if ( !strcmp(stat->name, "") )
-				{
-					if ( stat->type < KOBOLD ) //Original monster count
-					{
-						messagePlayer(player, language[254], language[90 + stat->type]);
-					}
-					else if ( stat->type >= KOBOLD ) //New monsters
-					{
-						messagePlayer(player, language[254], language[2000 + (stat->type - KOBOLD)]);
-					}
-				}
-				else
-				{
-					if ( stat->type < KOBOLD ) //Original monster count
-					{
-						messagePlayer(player, language[253], language[90 + stat->type]);
-					}
-					else if ( stat->type >= KOBOLD ) //New monsters
-					{
-						messagePlayer(player, language[253], language[2000 + (stat->type - KOBOLD)]);
-					}
-				}
+				messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION);
 			}
 		}
 		else

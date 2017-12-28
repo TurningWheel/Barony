@@ -114,6 +114,10 @@ void gameLogic(void)
 	{
 		secondendmovietime++;
 	}
+	if ( thirdendmoviestage > 0 )
+	{
+		thirdendmovietime++;
+	}
 
 #ifdef SOUND
 	sound_update(); //Update FMOD and whatnot.
@@ -400,7 +404,16 @@ void gameLogic(void)
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				assailant[c] = false;
+				if ( assailantTimer[c] > 0 )
+				{
+					--assailantTimer[c];
+					//messagePlayer(0, "music cd: %d", assailantTimer[c]);
+				}
+				if ( assailant[c] == true && assailantTimer[c] <= 0 )
+				{
+					assailant[c] = false;
+					assailantTimer[c] = 0;
+				}
 			}
 
 			// animate tiles
@@ -432,14 +445,14 @@ void gameLogic(void)
 								if ( z == 0 )
 								{
 									// water and lava noises
-									if ( ticks % TICKS_PER_SECOND == (y + x * map.height) % TICKS_PER_SECOND && rand() % 3 == 0 )
+									if ( ticks % (TICKS_PER_SECOND * 4) == (y + x * map.height) % (TICKS_PER_SECOND * 4) && rand() % 3 == 0 )
 									{
 										if ( lavatiles[map.tiles[index]] )
 										{
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -587,6 +600,11 @@ void gameLogic(void)
 						OPENAL_ChannelGroup_Stop(sound_group);
 					}
 #endif
+					// stop combat music
+					for ( c = 0; c < MAXPLAYERS; ++c )
+					{
+						assailantTimer[c] = 0;
+					}
 
 					// show loading message
 					loading = true;
@@ -648,7 +666,15 @@ void gameLogic(void)
 					// signal clients about level change
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
-					currentlevel++;
+					if ( skipLevelsOnLoad > 0 )
+					{
+						currentlevel += skipLevelsOnLoad;
+					}
+					else
+					{
+						++currentlevel;
+					}
+					skipLevelsOnLoad = 0;
 					if ( multiplayer == SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; c++ )
@@ -757,6 +783,18 @@ void gameLogic(void)
 								break;
 						}
 					}
+					if ( MFLAG_DISABLETELEPORT )
+					{
+						messagePlayer(clientnum, language[2382]);
+					}
+					if ( MFLAG_DISABLELEVITATION )
+					{
+						messagePlayer(clientnum, language[2383]);
+					}
+					if ( MFLAG_DISABLEDIGGING )
+					{
+						messagePlayer(clientnum, language[2450]);
+					}
 					loadnextlevel = false;
 					loading = false;
 					fadeout = false;
@@ -783,21 +821,7 @@ void gameLogic(void)
 
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
-									if (strcmp(monsterStats->name, ""))
-									{
-										messagePlayer(c, language[720], monsterStats->name);
-									}
-									else
-									{
-										if ( monsterStats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayer(c, language[721], language[90 + monsterStats->type]);
-										}
-										else if ( monsterStats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayer(c, language[721], language[2000 + (monsterStats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT);
 									if (!monsterally[HUMAN][monsterStats->type])
 									{
 										monster->flags[USERFLAG2] = true;
@@ -821,21 +845,7 @@ void gameLogic(void)
 								}
 								else
 								{
-									if ( strcmp(tempStats->name, "") )
-									{
-										messagePlayer(c, language[722], tempStats->name);
-									}
-									else
-									{
-										if ( (int)tempStats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
-										}
-										else if ( (int)tempStats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayer(c, language[723], language[2000 + ((int)tempStats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *tempStats, language[723], language[722], MSG_COMBAT);
 								}
 							}
 						}
@@ -1158,7 +1168,7 @@ void gameLogic(void)
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -1526,7 +1536,7 @@ void handleButtons(void)
 			}
 		}
 		//Hide "Random Name" button if not on character naming screen.
-		if ( !strcmp(button->label, language[2450]) )
+		if ( !strcmp(button->label, language[2498]) )
 		{
 			if ( charcreation_step != 4 )
 			{
@@ -2014,6 +2024,10 @@ void pauseGame(int mode, int ignoreplayer)
 		return;
 	}
 	if ( mode == 2 && gamePaused )
+	{
+		return;
+	}
+	if ( introstage == 9 )
 	{
 		return;
 	}
@@ -2530,9 +2544,9 @@ int main(int argc, char** argv)
 				{
 					if (strcmp(classtoquickstart, ""))
 					{
-						for ( c = 0; c < 10; c++ )
+						for ( c = 0; c < NUMCLASSES; c++ )
 						{
-							if ( !strcmp(classtoquickstart, language[1900 + c]) )
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c)) )
 							{
 								client_classes[0] = c;
 								break;
@@ -2727,6 +2741,7 @@ int main(int argc, char** argv)
 							selectedShopSlot = -1;
 						}
 						attributespage = 0;
+						//proficienciesPage = 0;
 						if (openedChest[clientnum])
 						{
 							openedChest[clientnum]->closeChest();
@@ -2859,6 +2874,7 @@ int main(int argc, char** argv)
 						{
 							shootmode = false;
 							attributespage = 0;
+							//proficienciesPage = 0;
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))
