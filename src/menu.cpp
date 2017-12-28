@@ -3379,8 +3379,8 @@ void handleMainMenu(bool mode)
 				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
-					tooltip_box.x = mousex + 16;
-					tooltip_box.y = mousey + 8;
+					tooltip_box.x = mousex - 16;
+					tooltip_box.y = mousey + 10;
 					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}
