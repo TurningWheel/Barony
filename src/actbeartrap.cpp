@@ -75,7 +75,8 @@ void actBeartrap(Entity* my)
 				entity->skill[13] = 1;
 				entity->skill[14] = BEARTRAP_APPEARANCE;
 				entity->skill[15] = BEARTRAP_IDENTIFIED;
-				entity->skill[18] = 1;
+				entity->itemNotMoving = 1;
+				entity->itemNotMovingClient = 1;
 				messagePlayer(i, language[1300]);
 				list_RemoveNode(my->mynode);
 				return;
