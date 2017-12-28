@@ -928,10 +928,10 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if ( multiplayer == SINGLE )
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
-			if (tempStats)
+			if ( tempStats )
 			{
 				tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
 			}
@@ -949,10 +949,10 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if ( multiplayer == SINGLE )
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
-			if (tempStats)
+			if ( tempStats )
 			{
 				tempStats->EFFECTS[EFF_POISONED] = true;
 				tempStats->EFFECTS_TIMERS[EFF_POISONED] = 600;
