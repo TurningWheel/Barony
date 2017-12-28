@@ -228,8 +228,8 @@ int monsterCurve(int level)
 				case 7:
 					return SCARAB;
 				case 8:
-				case 9:
 					return AUTOMATON;
+				case 9:
 				case 10:
 				case 11:
 				case 12:
@@ -274,16 +274,16 @@ int monsterCurve(int level)
 				case 6:
 					return SCARAB;
 				case 7:
-				case 8:
 					return AUTOMATON;
+				case 8:
 				case 9:
 				case 10:
 				case 11:
-				case 12:
 					return INSECTOID;
+				case 12:
 				case 13:
-				case 14:
 					return CRYSTALGOLEM;
+				case 14:
 				case 15:
 				case 16:
 				case 17:
@@ -970,7 +970,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
-				//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
+				messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
 				subRoomDoorNode = subRoomNode->next;
@@ -989,7 +989,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
 								foundSubRoom = 1;
-								//messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
+								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
@@ -1304,6 +1304,26 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 		}
 	}
+	bool foundsubmaptile = false;
+	// if for whatever reason some submap 201 tiles didn't get filled in, let's get rid of those.
+	for ( z = 0; z < MAPLAYERS; ++z )
+	{
+		for ( y = 1; y < map.height; ++y )
+		{
+			for ( x = 1; x < map.height; ++x )
+			{
+				if ( map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] == 201 )
+				{
+					map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
+					foundsubmaptile = true;
+				}
+			}
+		}
+	}
+	if ( foundsubmaptile )
+	{
+		//messagePlayerColor(0, 0xFFFF00FF, "found some junk tiles!");
+	}
 
 	// boulder and arrow traps
 	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
@@ -1357,6 +1377,24 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
+			}
+		}
+
+		// do a second pass to look for internal doorways
+		for ( node = map.entities->first; node != nullptr; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			int x = entity->x / 16;
+			int y = entity->y / 16;
+			if ( (entity->sprite == 2 || entity->sprite == 3)
+				&& (x >= 0 && x < map.width)
+				&& (y >= 0 && y < map.height) )
+			{
+				if ( possiblelocations[y + x * map.height] )
+				{
+					possiblelocations[y + x * map.height] = false;
+					numpossiblelocations--;
+				}
 			}
 		}
 
@@ -2564,7 +2602,7 @@ void assignActions(map_t* map)
 				}
 				item = newItemFromEntity(entity);
 				entity->sprite = itemModel(item);
-				if ( !entity->skill[18] )
+				if ( !entity->itemNotMoving )
 				{
 					// shurikens and chakrams need to lie flat on floor as their models are rotated.
 					if ( item->type == CRYSTAL_SHURIKEN || item->type == STEEL_CHAKRAM )
@@ -2584,7 +2622,8 @@ void assignActions(map_t* map)
 						entity->z = 7.5 - models[entity->sprite]->sizey * .25;
 					}
 				}
-				entity->skill[18] = 1; // so the item retains its position
+				entity->itemNotMoving = 1; // so the item retains its position
+				entity->itemNotMovingClient = 1; // so the item retains its position for clients
 				itemsdonebefore = true;
 				free(item);
 				break;
@@ -3598,7 +3637,8 @@ void assignActions(map_t* map)
 					childEntity->y = entity->y - 8;
 					//printlog("31 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 					childEntity->z = 0;
-					childEntity->skill[18] = 1; // so the item retains its position
+					childEntity->itemNotMoving = 1; // so the item retains its position
+					childEntity->itemNotMovingClient = 1; // so the item retains its position for clients
 					entity->parent = childEntity->getUID();
 				}
 				if ( prng_get_uint() % 2 == 0 )

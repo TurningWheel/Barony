@@ -139,6 +139,12 @@ void initClass(int player)
 			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
+
+			// tomahawk
+			item = newItem(BRONZE_TOMAHAWK, WORN, 0, 2, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
 		}
 	}
 	// warrior

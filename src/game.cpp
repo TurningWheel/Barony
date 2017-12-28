@@ -3128,6 +3128,11 @@ int main(int argc, char** argv)
 									pos.y += 16;
 									drawImage(equipped_bmp, NULL, &pos);
 								}
+								else if ( selectedItem->status == BROKEN )
+								{
+									pos.y += 16;
+									drawImage(itembroken_bmp, NULL, &pos);
+								}
 							}
 							else
 							{

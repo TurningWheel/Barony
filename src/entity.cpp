@@ -99,6 +99,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
+	itemNotMovingClient(skill[19]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -1150,8 +1151,8 @@ void Entity::increaseSkill(int skill)
 				addSpell(SPELL_DOMINATE, player, true);
 			}
 		}
+		myStats->EXP += 2;
 	}
-	myStats->EXP += 2;
 
 	int statBonusSkill = getStatForProficiency(skill);
 
@@ -1981,6 +1982,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+							playSoundEntity(this, 97, 128);
 						}
 					}
 				}
@@ -2136,7 +2138,20 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
-		for ( i = 0; i < NUMSTATS; i++ )
+		for ( i = 0; i < MAXPLAYERS; ++i )
+		{
+			// broadcast a player levelled up to other players.
+			if ( i != player )
+			{
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+			}
+		}
+
+		for ( i = 0; i < NUMSTATS; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
@@ -2328,7 +2343,7 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = 0;
-	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] || (myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
+	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] && !(myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
 	{
 		if ( myStats->ring != NULL )
 		{
@@ -2365,7 +2380,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( healring < 0 )
 		{
-			healthRegenInterval = healring * HEAL_TIME * 4;
+			healthRegenInterval = abs(healring) * HEAL_TIME * 4;
 		}
 		else if ( healring == 0 )
 		{
@@ -5571,6 +5586,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
+							bool degradePickaxe = true;
 							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
@@ -5578,6 +5594,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+							}
+							else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+								|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+							{
+								// no effect for lava/water tiles.
+								degradePickaxe = false;
 							}
 							else
 							{
@@ -5632,7 +5654,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								generatePathMaps();
 							}
 
-							if ( rand() % 2 )
+							if ( rand() % 2 && degradePickaxe )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
@@ -5882,7 +5904,6 @@ bool Entity::teleportRandom()
 	int numlocations = 0;
 	int pickedlocation;
 	int player = -1;
-
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
@@ -5896,9 +5917,9 @@ bool Entity::teleportRandom()
 		}
 
 	}
-	for ( int iy = 0; iy < map.height; ++iy )
+	for ( int iy = 1; iy < map.height; ++iy )
 	{
-		for ( int ix = 0; ix < map.width; ++ix )
+		for ( int ix = 1; ix < map.width; ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5913,9 +5934,9 @@ bool Entity::teleportRandom()
 	}
 	pickedlocation = rand() % numlocations;
 	numlocations = 0;
-	for ( int iy = 0; iy < map.height; iy++ )
+	for ( int iy = 1; iy < map.height; iy++ )
 	{
-		for ( int ix = 0; ix < map.width; ix++ )
+		for ( int ix = 1; ix < map.width; ix++ )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5959,9 +5980,9 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 			return false;
 		}
 	}
-	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
-		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -9074,7 +9095,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		}
 	}
 	armor.count = 1;
-	armor.status = static_cast<Status>(armor.status - 1);
+	armor.status = static_cast<Status>(std::max(static_cast<int>(BROKEN), armor.status - 1));
 	if ( armor.status > BROKEN )
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
@@ -9454,7 +9475,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	}
 	else if ( manaring < 0 )
 	{
-		return regenTime * manaring * 4;
+		return regenTime * abs(manaring) * 4;
 	}
 	else if ( manaring == 0 )
 	{
@@ -9608,13 +9629,34 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		// use generic racial name and grammar. "You hit the skeleton"
 		if ( detailType == MSG_OBITUARY )
 		{
-			if ( monsterStats.type < KOBOLD ) // Original monster count
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
-			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( c == player )
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgNamed, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
+				else
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
@@ -9675,18 +9717,32 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		}
 		else if ( detailType == MSG_OBITUARY )
 		{
-			if ( namedMonsterAsGeneric )
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
-			}
-			else
-			{
-				messagePlayerColor(player, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( namedMonsterAsGeneric )
+				{
+					if ( c == player )
+					{
+						messagePlayerColor(c, color, msgNamed, monsterStats.name, monsterStats.obituary);
+					}
+					else
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
+					}
+				}
+				else
+				{
+					messagePlayerColor(c, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				}
 			}
 		}
 		else if ( detailType == MSG_GENERIC )
 		{
-			if ( namedMonsterAsGeneric )
+			if ( namedMonsterAsGeneric || monsterStats.type == HUMAN )
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
