@@ -580,6 +580,40 @@ void drawStatus()
 			bool used = false;
 			pos.w = hotbar_img->w;
 			pos.h = hotbar_img->h;
+
+			SDL_Rect highlightBox;
+			highlightBox.x = pos.x + 2;
+			highlightBox.y = pos.y + 2;
+			highlightBox.w = 60;
+			highlightBox.h = 60;
+
+			if ( !item->identified )
+			{
+				// give it a yellow background if it is unidentified
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 128, 0), 64); //31875
+			}
+			else if ( item->beatitude < 0 )
+			{
+				// give it a red background if cursed
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 0, 0), 64);
+			}
+			else if ( item->beatitude > 0 )
+			{
+				// give it a green background if blessed (light blue if colorblind mode)
+				if ( colorblind )
+				{
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 50, 128, 128), 64);
+				}
+				else
+				{
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 0, 128, 0), 64);
+				}
+			}
+			if ( item->status == BROKEN )
+			{
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 125);
+			}
+
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if ( stats[clientnum]->HP > 0 )
 			{
@@ -677,17 +711,22 @@ void drawStatus()
 					printTextFormatted(font12x12_bmp, pos.x + hotbar_img->w - (14 * digits), pos.y + hotbar_img->h - 14, "%d", item->count);
 				}
 
+				SDL_Rect src;
+				src.x = pos.x + 2;
+				src.y = pos.y + hotbar_img->h - 18;
+				src.w = 16;
+				src.h = 16;
+
 				// item equipped
 				if ( itemCategory(item) != SPELL_CAT )
 				{
 					if ( itemIsEquipped(item, clientnum) )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
+					}
+					else if ( item->status == BROKEN )
+					{
+						drawImage(itembroken_bmp, NULL, &src);
 					}
 				}
 				else
@@ -695,11 +734,6 @@ void drawStatus()
 					spell_t* spell = getSpellFromItem(item);
 					if ( selected_spell == spell )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
 					}
 				}
@@ -814,6 +848,80 @@ void drawStatus()
 							}
 						}
 					}
+					if ( hotbar_numkey_quick_add )
+					{
+						Uint32 swapItem = 0;
+						if ( keystatus[SDL_SCANCODE_1] )
+						{
+							keystatus[SDL_SCANCODE_1] = 0;
+							swapItem = hotbar[0].item;
+							hotbar[0].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_2] )
+						{
+							keystatus[SDL_SCANCODE_2] = 0;
+							swapItem = hotbar[1].item;
+							hotbar[1].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_3] )
+						{
+							keystatus[SDL_SCANCODE_3] = 0;
+							swapItem = hotbar[2].item;
+							hotbar[2].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_4] )
+						{
+							keystatus[SDL_SCANCODE_4] = 0;
+							swapItem = hotbar[3].item;
+							hotbar[3].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_5] )
+						{
+							keystatus[SDL_SCANCODE_5] = 0;
+							swapItem = hotbar[4].item;
+							hotbar[4].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_6] )
+						{
+							keystatus[SDL_SCANCODE_6] = 0;
+							swapItem = hotbar[5].item;
+							hotbar[5].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_7] )
+						{
+							keystatus[SDL_SCANCODE_7] = 0;
+							swapItem = hotbar[6].item;
+							hotbar[6].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_8] )
+						{
+							keystatus[SDL_SCANCODE_8] = 0;
+							swapItem = hotbar[7].item;
+							hotbar[7].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_9] )
+						{
+							keystatus[SDL_SCANCODE_9] = 0;
+							swapItem = hotbar[8].item;
+							hotbar[8].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_0] )
+						{
+							keystatus[SDL_SCANCODE_0] = 0;
+							swapItem = hotbar[9].item;
+							hotbar[9].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+					}
 				}
 			}
 		}
@@ -823,55 +931,74 @@ void drawStatus()
 	if ( !command && stats[clientnum]->HP > 0 )
 	{
 		Item* item = NULL;
-		if ( keystatus[SDL_SCANCODE_1] )
+		if ( !(!shootmode && hotbar_numkey_quick_add &&
+				(
+					(omousex >= INVENTORY_STARTX
+						&& omousex <= INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE
+						&& omousey >= INVENTORY_STARTY 
+						&& omousey <= INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE
+					)
+					||
+					(omousex >= initial_position.x 
+						&& omousex <= initial_position.x + hotbar_img->w * 10
+						&& omousey >= initial_position.y - hotbar_img->h
+						&& omousey <= initial_position.y
+					)
+				)
+			) )
 		{
-			keystatus[SDL_SCANCODE_1] = 0;
-			item = uidToItem(hotbar[0].item);
-		}
-		if ( keystatus[SDL_SCANCODE_2] )
-		{
-			keystatus[SDL_SCANCODE_2] = 0;
-			item = uidToItem(hotbar[1].item);
-		}
-		if ( keystatus[SDL_SCANCODE_3] )
-		{
-			keystatus[SDL_SCANCODE_3] = 0;
-			item = uidToItem(hotbar[2].item);
-		}
-		if ( keystatus[SDL_SCANCODE_4] )
-		{
-			keystatus[SDL_SCANCODE_4] = 0;
-			item = uidToItem(hotbar[3].item);
-		}
-		if ( keystatus[SDL_SCANCODE_5] )
-		{
-			keystatus[SDL_SCANCODE_5] = 0;
-			item = uidToItem(hotbar[4].item);
-		}
-		if ( keystatus[SDL_SCANCODE_6] )
-		{
-			keystatus[SDL_SCANCODE_6] = 0;
-			item = uidToItem(hotbar[5].item);
-		}
-		if ( keystatus[SDL_SCANCODE_7] )
-		{
-			keystatus[SDL_SCANCODE_7] = 0;
-			item = uidToItem(hotbar[6].item);
-		}
-		if ( keystatus[SDL_SCANCODE_8] )
-		{
-			keystatus[SDL_SCANCODE_8] = 0;
-			item = uidToItem(hotbar[7].item);
-		}
-		if ( keystatus[SDL_SCANCODE_9] )
-		{
-			keystatus[SDL_SCANCODE_9] = 0;
-			item = uidToItem(hotbar[8].item);
-		}
-		if ( keystatus[SDL_SCANCODE_0] )
-		{
-			keystatus[SDL_SCANCODE_0] = 0;
-			item = uidToItem(hotbar[9].item);
+			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
+			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
+			if ( keystatus[SDL_SCANCODE_1] )
+			{
+				keystatus[SDL_SCANCODE_1] = 0;
+				item = uidToItem(hotbar[0].item);
+			}
+			if ( keystatus[SDL_SCANCODE_2] )
+			{
+				keystatus[SDL_SCANCODE_2] = 0;
+				item = uidToItem(hotbar[1].item);
+			}
+			if ( keystatus[SDL_SCANCODE_3] )
+			{
+				keystatus[SDL_SCANCODE_3] = 0;
+				item = uidToItem(hotbar[2].item);
+			}
+			if ( keystatus[SDL_SCANCODE_4] )
+			{
+				keystatus[SDL_SCANCODE_4] = 0;
+				item = uidToItem(hotbar[3].item);
+			}
+			if ( keystatus[SDL_SCANCODE_5] )
+			{
+				keystatus[SDL_SCANCODE_5] = 0;
+				item = uidToItem(hotbar[4].item);
+			}
+			if ( keystatus[SDL_SCANCODE_6] )
+			{
+				keystatus[SDL_SCANCODE_6] = 0;
+				item = uidToItem(hotbar[5].item);
+			}
+			if ( keystatus[SDL_SCANCODE_7] )
+			{
+				keystatus[SDL_SCANCODE_7] = 0;
+				item = uidToItem(hotbar[6].item);
+			}
+			if ( keystatus[SDL_SCANCODE_8] )
+			{
+				keystatus[SDL_SCANCODE_8] = 0;
+				item = uidToItem(hotbar[7].item);
+			}
+			if ( keystatus[SDL_SCANCODE_9] )
+			{
+				keystatus[SDL_SCANCODE_9] = 0;
+				item = uidToItem(hotbar[8].item);
+			}
+			if ( keystatus[SDL_SCANCODE_0] )
+			{
+				keystatus[SDL_SCANCODE_0] = 0;
+				item = uidToItem(hotbar[9].item);
+			}
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.

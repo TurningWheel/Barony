@@ -113,6 +113,7 @@ bool settings_auto_hotbar_new_items = true;
 bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
 																true, true, true, true,
 																true, true, true, true };
+bool settings_hotbar_numkey_quick_add = false;
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
@@ -2255,7 +2256,16 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1998]);
 			}
-			current_y += 32;
+			current_y += 16;
+			if ( settings_hotbar_numkey_quick_add )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2590]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2590]);
+			}
+			current_y += 64;
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
@@ -2331,6 +2341,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
+					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_hotbar_numkey_quick_add = (settings_hotbar_numkey_quick_add == false);
 					}
 				}
 				else
@@ -5263,6 +5278,7 @@ void openSettingsWindow()
 	{
 		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
 	}
+	settings_hotbar_numkey_quick_add = hotbar_numkey_quick_add;
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
@@ -6758,6 +6774,7 @@ void applySettings()
 	{
 		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
 	}
+	hotbar_numkey_quick_add = settings_hotbar_numkey_quick_add;
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;

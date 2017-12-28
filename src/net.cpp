@@ -1785,7 +1785,8 @@ void clientHandlePacket()
 		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
 		{
 			// ... or lived
-			stats[clientnum]->HP = stats[clientnum]->MAXHP / 2;
+			stats[clientnum]->HP = stats[clientnum]->MAXHP * 0.5;
+			stats[clientnum]->MP = stats[clientnum]->MAXMP * 0.5;
 			stats[clientnum]->HUNGER = 500;
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
@@ -3358,7 +3359,7 @@ void serverHandlePacket()
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if (rand() % 2)
+		if (rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
@@ -3413,7 +3414,7 @@ void serverHandlePacket()
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
 		stats[client]->GOLD += item->sellValue(client);
-		if (rand() % 2)
+		if (rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
