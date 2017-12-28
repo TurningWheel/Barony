@@ -2688,20 +2688,40 @@ void Entity::handleEffects(Stat* myStats)
 			// If 0.6 seconds have passed (30 ticks), process the Burning Status Effect
 			if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
 			{
-				this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
-
-				// If the Entity died, handle experience
-				if ( myStats->HP <= 0 )
+				// Buddha should not die to fire
+				if ( buddhamode )
 				{
-					Entity* killer = uidToEntity(myStats->poisonKiller);
-					if ( killer != nullptr )
+					Sint32 fireDamage = (-2 - rand() % 3); // Deal between -2 to -5 damage
+
+					// Fire damage is negative, so it needs to be added
+					if ( myStats->HP + fireDamage > 0 )
 					{
-						killer->awardXP(this, true, true);
+						this->modHP(fireDamage);
+					}
+					else
+					{
+						this->setHP(1); // Instead of killing the Buddha Player, set their HP to 1
+					}
+				}
+				else
+				{
+					// Player is not Buddha, process fire damage normally
+					this->modHP(-2 - rand() % 3); // Deal between -2 to -5 damage
+
+					// If the Entity died, handle experience
+					if ( myStats->HP <= 0 )
+					{
+						this->setObituary(language[1533]); // "burns to a crisp."
+
+						Entity* killer = uidToEntity(myStats->poisonKiller);
+						if ( killer != nullptr )
+						{
+							killer->awardXP(this, true, true);
+						}
 					}
 				}
 
 				// Give the Player feedback on being hurt
-				this->setObituary(language[1533]); // "burns to a crisp."
 				messagePlayer(player, language[644]); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
