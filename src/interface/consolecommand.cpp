@@ -1009,6 +1009,34 @@ void consoleCommand(char* command_str)
 	{
 		messagePlayer(clientnum, language[2353], nummonsters);
 	}
+	else if ( !strncmp(command_str, "/verifycreaturelist", strlen("/verifycreaturelist")) )
+	{
+		//Make sure that the number of creatures in the creature list are the real count in the game world.
+		unsigned entcount = 0;
+
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			if ( node->element )
+			{
+				Entity* ent = static_cast<Entity*>(node->element);
+				if ( ent->behavior == actMonster || ent->behavior == actPlayer )
+				{
+					++entcount;
+				}
+			}
+		}
+
+		messagePlayer(clientnum, "ent count = %d, creatures list size = %d", entcount, list_Size(map.creatures));
+
+		if ( entcount == list_Size(map.creatures) )
+		{
+			messagePlayer(clientnum, "Yes, list is verified correct.");
+		}
+		else
+		{
+			messagePlayer(clientnum, "Nope, much problemo!");
+		}
+	}
 	else if ( !strncmp(command_str, "/loadmodels ", 12) )
 	{
 		char name2[128];
