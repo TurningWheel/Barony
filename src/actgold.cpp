@@ -39,7 +39,7 @@ void actGoldBag(Entity* my)
 		if ( multiplayer != CLIENT )
 		{
 			node_t* node;
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
 				if ( entity->sprite == 245 )   // boulder.vox
@@ -51,7 +51,7 @@ void actGoldBag(Entity* my)
 			serverUpdateEntityFlag(my, INVISIBLE);
 			if ( !strcmp(map.name, "Sokoban") )
 			{
-				for ( i = 0; i < MAXPLAYERS; i++ )
+				for ( i = 0; i < MAXPLAYERS; ++i )
 				{
 					steamAchievementClient(i, "BARONY_ACH_PUZZLE_MASTER");
 				}

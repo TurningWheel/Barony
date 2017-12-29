@@ -287,7 +287,7 @@ void actBoulder(Entity* my)
 			if ( my->z >= -8 && fabs(my->vel_z) > 2 )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity == my )
@@ -390,7 +390,7 @@ void actBoulder(Entity* my)
 			if ( dist && !BOULDER_NOGROUND )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity == my )
@@ -569,7 +569,7 @@ void actBoulder(Entity* my)
 				if ( dist && !BOULDER_NOGROUND )
 				{
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity == my )
