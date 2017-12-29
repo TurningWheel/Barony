@@ -61,7 +61,7 @@ void actItem(Entity* my)
 				else
 				{
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.creatures->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -78,7 +78,7 @@ void actItem(Entity* my)
 			else
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.creatures->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
