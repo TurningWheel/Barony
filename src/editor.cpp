@@ -1665,7 +1665,7 @@ int main(int argc, char** argv)
 
 	if ( loadingmap )
 	{
-		if ( loadMap(maptoload, &map, map.entities) == -1 )
+		if ( loadMap(maptoload, &map, map.entities, map.creatures) == -1 )
 		{
 			strcat(message, "Failed to open ");
 			strcat(message, maptoload);

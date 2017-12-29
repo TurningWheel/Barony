@@ -676,7 +676,8 @@ list_t* checkTileForEntity(int x, int y); //Don't forget to free the list return
 void getItemsOnTile(int x, int y, list_t** list);
 
 //--- Entity act* functions ---
-
+void actMonster(Entity* my);
+void actPlayer(Entity* my);
 
 /*
  * NOTE: Potion effects

@@ -263,8 +263,23 @@ Stat* Entity::getStats() const
 	return nullptr;
 }
 
+void Entity::addToCreatureList(list_t *list)
+{
+	return;
+}
+
 bool Entity::isInvisible() const
 {
 	//Dummy function.
 	return false;
+}
+
+void actMonster(Entity* my)
+{
+	return;
+}
+
+void actPlayer(Entity* my)
+{
+	return;
 }
