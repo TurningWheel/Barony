@@ -3327,4 +3327,6 @@ Now wait for your leader to advance onward...#
 2860 type:rand#
 2861 %s Response 1.#
 
-2999 end#
+2999 WARNING: Steam Achievements disabled for this session!#
+
+3000 end#
