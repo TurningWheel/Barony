@@ -1239,13 +1239,33 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					magicChance = 7; // 14.2%
 				}
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
-				if ( rand() % spellCastChance == 0 )
+				if ( !strcmp(element->name, spellElement_light.name)
+					&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
+					&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
 				{
-					caster->increaseSkill(PRO_SPELLCASTING);
+					// light provides no levelling past 40 in both spellcasting and magic.
+					if ( rand() % 20 == 0 )
+					{
+						for ( i = 0; i < numplayers; ++i )
+						{
+							if ( caster == players[i]->entity )
+							{
+								messagePlayer(i, language[2591]);
+							}
+						}
+					}
 				}
-				if ( rand() % magicChance == 0 )
+				else
 				{
-					caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+					if ( rand() % spellCastChance == 0 )
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+
+					if ( rand() % magicChance == 0 )
+					{
+						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+					}
 				}
 			}
 		}
