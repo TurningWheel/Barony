@@ -630,7 +630,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spell_changeHealth(players[i]->entity, amount);
 					playSoundEntity(caster, 168, 128);
 
-					for (node = map.entities->first; node->next; node = node->next)
+					for (node = map.entities->first; node; node = node->next)
 					{
 						entity = (Entity*)(node->element);
 						if ( !entity ||  entity == caster )
