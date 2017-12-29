@@ -192,7 +192,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	mynode->size = sizeof(Entity);
 
 	myCreatureListNode = nullptr;
-	addToCreatureList(creaturelist);
+	if ( creaturelist )
+	{
+		addToCreatureList(creaturelist);
+	}
 
 	// now reset all of my data elements
 	lastupdate = 0;
@@ -10149,6 +10152,7 @@ Entity* summonChest(long x, long y)
 
 void Entity::addToCreatureList(list_t *list)
 {
+	//printlog("*ATTEMPTING* to add Dennis to creature list.");
 	if ( list )
 	{
 		if ( myCreatureListNode )
@@ -10160,6 +10164,7 @@ void Entity::addToCreatureList(list_t *list)
 		myCreatureListNode->element = this;
 		myCreatureListNode->deconstructor = &emptyDeconstructor;
 		myCreatureListNode->size = sizeof(Entity);
+		//printlog("Added dennis to creature list.");
 	}
 }
 

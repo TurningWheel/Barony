@@ -145,6 +145,7 @@ void mapDeconstructor(void* data)
 		}
 		if ( map->creatures )
 		{
+			list_FreeAll(map->creatures); //TODO: This needed?
 			delete map->creatures;
 		}
 		if ( map->entities != nullptr )
