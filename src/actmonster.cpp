@@ -1242,7 +1242,7 @@ void actMonster(Entity* my)
 		{
 			node_t* node, *nextnode;
 			bool foundlights = false;
-			for ( node = map.entities->first; node != NULL; node = nextnode )
+			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
 				Entity* tempEntity = (Entity*)node->element;
@@ -1745,15 +1745,15 @@ void actMonster(Entity* my)
 
 	// effect of a ring of conflict
 	bool ringconflict = false;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures can wear rings, so don't search map.entities.
 	{
 		Entity* tempentity = (Entity*)node->element;
-		if ( tempentity != NULL && tempentity != my )
+		if ( tempentity != nullptr && tempentity != my )
 		{
 			Stat* tempstats = tempentity->getStats();
-			if ( tempstats != NULL )
+			if ( tempstats != nullptr )
 			{
-				if ( tempstats->ring != NULL )
+				if ( tempstats->ring != nullptr )
 				{
 					if ( tempstats->ring->type == RING_CONFLICT )
 					{
@@ -2046,7 +2046,7 @@ void actMonster(Entity* my)
 						continue;
 					}
 					hitstats = entity->getStats();
-					if ( hitstats != NULL )
+					if ( hitstats != nullptr )
 					{
 						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
 						{
@@ -2138,7 +2138,7 @@ void actMonster(Entity* my)
 										else
 										{
 											int c;
-											for ( c = 0; c < MAXPLAYERS; c++ )
+											for ( c = 0; c < MAXPLAYERS; ++c )
 											{
 												if ( c == 0 )
 												{
@@ -2162,7 +2162,7 @@ void actMonster(Entity* my)
 									}
 
 									// alert other monsters of this enemy's presence //TODO: Refactor into its own function.
-									for ( node = map.entities->first; node != nullptr; node = node->next )
+									for ( node = map.creatures->first; node != nullptr; node = node->next )
 									{
 										entity = (Entity*)node->element;
 										if ( entity->behavior == &actMonster )
