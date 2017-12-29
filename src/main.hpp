@@ -715,6 +715,4 @@ bool completePath(char *dest, const char * const path);
 
 static const Uint32 cacheLimit = 8096;
 
-//#ifdef STEAMWORKS
 extern bool areCheatsDisabledForSession;
-//#endif
