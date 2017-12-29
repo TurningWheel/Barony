@@ -91,7 +91,7 @@ void actBeartrap(Entity* my)
 
 	// launch beartrap
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( my->parent == entity->getUID() )
