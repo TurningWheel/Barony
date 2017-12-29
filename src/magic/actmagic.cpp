@@ -517,7 +517,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						bool founddevil = false;
 						node_t* tempNode;
-						for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+						for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next )
 						{
 							Entity* tempEntity = (Entity*)tempNode->element;
 							if ( tempEntity->behavior == &actMonster )
@@ -762,7 +762,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
+						for ( node = map.creatures->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity->behavior == &actMonster && entity != ohitentity )
@@ -3092,7 +3092,7 @@ bool Entity::magicFallingCollision()
 	}
 
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity == this )
