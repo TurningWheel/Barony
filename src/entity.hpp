@@ -89,8 +89,6 @@ class Entity
 	Sint32& orbHoverDirection; // animation, waiting/up/down floating state
 	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
 
-	// Item skills
-	Sint32& itemNotMoving;
 
 	//### Begin - Private Entity Constants for BURNING Status Effect
 	static const Sint32 MIN_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE *  4; // Minimum time an Entity can be on fire is  4 cycles (120 ticks)
@@ -304,10 +302,14 @@ public:
 	Sint32& pistonCamTimer;
 	real_t& pistonCamRotateSpeed;
 
-	//--PUBLIC ARROR/PROJECTILE SKILLS--
+	//--PUBLIC ARROW/PROJECTILE SKILLS--
 	Sint32& arrowPower;
 	Sint32& arrowPoisonTime;
 	Sint32& arrowArmorPierce;
+
+	//--PUBLIC ITEM SKILLS--
+	Sint32& itemNotMoving; // skill[18]
+	Sint32& itemNotMovingClient; // skill[19]
 
 	void pedestalOrbInit(); // init orb properties
 

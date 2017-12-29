@@ -99,6 +99,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
+	itemNotMovingClient(skill[19]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -1164,8 +1165,8 @@ void Entity::increaseSkill(int skill)
 				addSpell(SPELL_DOMINATE, player, true);
 			}
 		}
+		myStats->EXP += 2;
 	}
-	myStats->EXP += 2;
 
 	int statBonusSkill = getStatForProficiency(skill);
 
@@ -1995,6 +1996,7 @@ void Entity::handleEffects(Stat* myStats)
 						{
 							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+							playSoundEntity(this, 97, 128);
 						}
 					}
 				}
@@ -2150,7 +2152,20 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdatePlayerLVL(); // update all clients of party levels.
 		}
 
-		for ( i = 0; i < NUMSTATS; i++ )
+		for ( i = 0; i < MAXPLAYERS; ++i )
+		{
+			// broadcast a player levelled up to other players.
+			if ( i != player )
+			{
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+			}
+		}
+
+		for ( i = 0; i < NUMSTATS; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
@@ -2232,15 +2247,45 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
+			// Process HUNGER Effect - Wasting Away
 			myStats->HUNGER = 0;
-			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 120 == 0 )
+
+			// Deal Hunger damage every three seconds
+			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 150 == 0 )
 			{
 				serverUpdateHunger(player);
-				if ( player >= 0 )   // bad guys don't starve. Sorry.
+
+				if ( player >= 0 ) // Only Players can starve
 				{
-					this->modHP(-4);
-					// Play the Damage sound
+					if ( buddhamode )
+					{
+						if ( myStats->HP - 4 > 0 )
+						{
+							this->modHP(-4);
+						}
+						else
+						{
+							// Instead of killing the Buddha Player, set their HP to 1
+							this->setHP(1);
+						}
+					}
+					else
+					{
+						this->modHP(-4);
+
+						if ( myStats->HP <= 0 )
+						{
+							this->setObituary(language[1530]);
+						}
+					}
+
+					// Give the Player feedback on being hurt
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+					if ( myStats->HP > 0 )
+					{
+						messagePlayer(player, language[633]);
+					}
 
 					// Shake the Host's screen
 					if ( player == clientnum )
@@ -2260,11 +2305,6 @@ void Entity::handleEffects(Stat* myStats)
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
-				if ( myStats->HP > 0 )
-				{
-					messagePlayer(player, language[633]);
-				}
-				this->setObituary(language[1530]);
 			}
 		}
 	}
@@ -2342,7 +2382,7 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = 0;
-	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] || (myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
+	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] && !(myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
 	{
 		if ( myStats->ring != NULL )
 		{
@@ -2379,7 +2419,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( healring < 0 )
 		{
-			healthRegenInterval = healring * HEAL_TIME * 4;
+			healthRegenInterval = abs(healring) * HEAL_TIME * 4;
 		}
 		else if ( healring == 0 )
 		{
@@ -2662,20 +2702,40 @@ void Entity::handleEffects(Stat* myStats)
 			// If 0.6 seconds have passed (30 ticks), process the Burning Status Effect
 			if ( (this->char_fire % TICKS_TO_PROCESS_FIRE) == 0 )
 			{
-				this->modHP(-2 - rand() % 3); // Deal between 2 to 5 damage
-
-				// If the Entity died, handle experience
-				if ( myStats->HP <= 0 )
+				// Buddha should not die to fire
+				if ( buddhamode )
 				{
-					Entity* killer = uidToEntity(myStats->poisonKiller);
-					if ( killer != nullptr )
+					Sint32 fireDamage = (-2 - rand() % 3); // Deal between -2 to -5 damage
+
+					// Fire damage is negative, so it needs to be added
+					if ( myStats->HP + fireDamage > 0 )
 					{
-						killer->awardXP(this, true, true);
+						this->modHP(fireDamage);
+					}
+					else
+					{
+						this->setHP(1); // Instead of killing the Buddha Player, set their HP to 1
+					}
+				}
+				else
+				{
+					// Player is not Buddha, process fire damage normally
+					this->modHP(-2 - rand() % 3); // Deal between -2 to -5 damage
+
+					// If the Entity died, handle experience
+					if ( myStats->HP <= 0 )
+					{
+						this->setObituary(language[1533]); // "burns to a crisp."
+
+						Entity* killer = uidToEntity(myStats->poisonKiller);
+						if ( killer != nullptr )
+						{
+							killer->awardXP(this, true, true);
+						}
 					}
 				}
 
 				// Give the Player feedback on being hurt
-				this->setObituary(language[1533]); // "burns to a crisp."
 				messagePlayer(player, language[644]); // "It burns! It burns!"
 				playSoundEntity(this, 28, 64); // "Damage.ogg"
 
@@ -5585,6 +5645,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
+							bool degradePickaxe = true;
 							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
@@ -5592,6 +5653,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 								// bang
 								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+							}
+							else if ( swimmingtiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]]
+								|| lavatiles[map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height]] )
+							{
+								// no effect for lava/water tiles.
+								degradePickaxe = false;
 							}
 							else
 							{
@@ -5646,7 +5713,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								generatePathMaps();
 							}
 
-							if ( rand() % 2 )
+							if ( rand() % 2 && degradePickaxe )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
@@ -5896,7 +5963,6 @@ bool Entity::teleportRandom()
 	int numlocations = 0;
 	int pickedlocation;
 	int player = -1;
-
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
@@ -5910,9 +5976,9 @@ bool Entity::teleportRandom()
 		}
 
 	}
-	for ( int iy = 0; iy < map.height; ++iy )
+	for ( int iy = 1; iy < map.height; ++iy )
 	{
-		for ( int ix = 0; ix < map.width; ++ix )
+		for ( int ix = 1; ix < map.width; ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5927,9 +5993,9 @@ bool Entity::teleportRandom()
 	}
 	pickedlocation = rand() % numlocations;
 	numlocations = 0;
-	for ( int iy = 0; iy < map.height; iy++ )
+	for ( int iy = 1; iy < map.height; iy++ )
 	{
-		for ( int ix = 0; ix < map.width; ix++ )
+		for ( int ix = 1; ix < map.width; ix++ )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -5973,9 +6039,9 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 			return false;
 		}
 	}
-	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
-		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
@@ -8521,32 +8587,35 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 void Entity::checkGroundForItems()
 {
 	Stat* myStats = getStats();
-	if ( !myStats )
+	if ( myStats == nullptr )
 	{
 		return;
 	}
 
-	//Calls the function for a monster to pick up an item, if it's a monster that picks up items.
-	switch ( myStats->type )
+	// Calls the function for a monster to pick up an item, if it's a monster that picks up items, only if they are not Asleep
+	if ( myStats->EFFECTS[EFF_ASLEEP] == false )
 	{
-		case GOBLIN:
-		case HUMAN:
-			if ( !strcmp(myStats->name, "") )
-			{
-				//checkBetterEquipment(myStats);
-				monsterAddNearbyItemToInventory(myStats, 16, 9);
-			}
-			break;
-		case GOATMAN:
-			//Goatman boss picks up items too.
-			monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
-															 //checkBetterEquipment(myStats);
-			break;
-		case AUTOMATON:
-			monsterAddNearbyItemToInventory(myStats, 16, 5);
-			break;
-		default:
-			return;
+		switch ( myStats->type )
+		{
+			case GOBLIN:
+			case HUMAN:
+				if ( !strcmp(myStats->name, "") )
+				{
+					//checkBetterEquipment(myStats);
+					monsterAddNearbyItemToInventory(myStats, 16, 9);
+				}
+				break;
+			case GOATMAN:
+				//Goatman boss picks up items too.
+				monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
+																 //checkBetterEquipment(myStats);
+				break;
+			case AUTOMATON:
+				monsterAddNearbyItemToInventory(myStats, 16, 5);
+				break;
+			default:
+				return;
+		}
 	}
 }
 
@@ -9088,7 +9157,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		}
 	}
 	armor.count = 1;
-	armor.status = static_cast<Status>(armor.status - 1);
+	armor.status = static_cast<Status>(std::max(static_cast<int>(BROKEN), armor.status - 1));
 	if ( armor.status > BROKEN )
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
@@ -9468,7 +9537,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	}
 	else if ( manaring < 0 )
 	{
-		return regenTime * manaring * 4;
+		return regenTime * abs(manaring) * 4;
 	}
 	else if ( manaring == 0 )
 	{
@@ -9622,13 +9691,34 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		// use generic racial name and grammar. "You hit the skeleton"
 		if ( detailType == MSG_OBITUARY )
 		{
-			if ( monsterStats.type < KOBOLD ) // Original monster count
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
-			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
-			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( c == player )
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgNamed, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
+				else
+				{
+					if ( monsterStats.type < KOBOLD ) // Original monster count
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
+					}
+					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+					}
+				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
@@ -9689,18 +9779,32 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		}
 		else if ( detailType == MSG_OBITUARY )
 		{
-			if ( namedMonsterAsGeneric )
+			for ( int c = 0; c < MAXPLAYERS; ++c )
 			{
-				messagePlayerColor(player, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
-			}
-			else
-			{
-				messagePlayerColor(player, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				if ( client_disconnected[c] )
+				{
+					continue;
+				}
+				if ( namedMonsterAsGeneric )
+				{
+					if ( c == player )
+					{
+						messagePlayerColor(c, color, msgNamed, monsterStats.name, monsterStats.obituary);
+					}
+					else
+					{
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, monsterStats.name, monsterStats.obituary);
+					}
+				}
+				else
+				{
+					messagePlayerColor(c, color, "%s %s", monsterStats.name, monsterStats.obituary);
+				}
 			}
 		}
 		else if ( detailType == MSG_GENERIC )
 		{
-			if ( namedMonsterAsGeneric )
+			if ( namedMonsterAsGeneric || monsterStats.type == HUMAN )
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}

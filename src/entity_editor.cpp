@@ -74,6 +74,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
+	itemNotMovingClient(skill[19]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
