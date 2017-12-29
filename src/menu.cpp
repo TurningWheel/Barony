@@ -483,6 +483,19 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 
 #ifdef STEAMWORKS
+			// If Cheats are enabled, print out a warning
+			if ( areCheatsDisabledForSession )
+			{
+				ttfPrintTextFormatted(ttf8, xres - (strlen(language[2999]) * 9) + 20, yres - 17, language[2999]); // "WARNING: Steam Achievements disabled for this session!"
+			}
+			else if ( svFlags & SV_FLAG_CHEATS )
+			{
+				ttfPrintTextFormatted(ttf8, xres - (strlen(language[1942]) * 9) + 20, yres - 17, language[1942]); // "NOTE: Enabling cheats will disable Steam achievements!"
+			}
+#endif
+
+
+#ifdef STEAMWORKS
 			TTF_SizeUTF8(ttf8, language[2584], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 				&& subwindow == 0
@@ -2288,6 +2301,18 @@ void handleMainMenu(bool mode)
 				{
 					if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
+#ifdef STEAMWORKS
+						// If not using Steam, then don't warn about Steam Achievements
+						if ( i == 0 )
+						{
+							hovering_selection = i;
+						}
+#else
+						if ( i == 0 )
+						{
+							continue;
+						}
+#endif
 						hovering_selection = i;
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
@@ -2383,6 +2408,14 @@ void handleMainMenu(bool mode)
 
 							// toggle flag
 							svFlags ^= power(2, i);
+
+#ifdef STEAMWORKS
+							// If Cheats are toggled on in-game, disable Steam Achievements for the entire session
+							if ( !(areCheatsDisabledForSession) && (svFlags & SV_FLAG_CHEATS) && !(intro) )
+							{
+								areCheatsDisabledForSession = true;
+							}
+#endif
 
 							if ( multiplayer == SERVER )
 							{
@@ -3283,6 +3316,14 @@ void handleMainMenu(bool mode)
 						// toggle flag
 						svFlags ^= power(2, i);
 
+#ifdef STEAMWORKS
+						// If Cheats are toggled on in-game, disable Steam Achievements for the entire session
+						if ( !(areCheatsDisabledForSession) && (svFlags & SV_FLAG_CHEATS) && !(intro) )
+						{
+							areCheatsDisabledForSession = true;
+						}
+#endif
+
 						// update client flags
 						strcpy((char*)net_packet->data, "SVFL");
 						SDLNet_Write32(svFlags, &net_packet->data[4]);
@@ -3378,9 +3419,22 @@ void handleMainMenu(bool mode)
 			{
 				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
+
+#ifdef STEAMWORKS
+					// If not using Steam, then don't warn about Steam Achievements
+					if ( i == 0 )
+					{
+						hovering_selection = i;
+					}
+#else
+					if ( i == 0 )
+					{
+						continue;
+					}
+#endif
 					hovering_selection = i;
-					tooltip_box.x = mousex + 16;
-					tooltip_box.y = mousey + 8;
+					tooltip_box.x = mousex - 16;
+					tooltip_box.y = mousey + 10;
 					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}

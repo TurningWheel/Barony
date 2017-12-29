@@ -2700,6 +2700,13 @@ int main(int argc, char** argv)
 				handleLevelMusic();
 #endif
 
+#ifdef STEAMWORKS
+				if ( !(areCheatsDisabledForSession) && (svFlags & SV_FLAG_CHEATS) )
+				{
+					areCheatsDisabledForSession = true;
+				}
+#endif
+
 				// toggling the game menu
 				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
 				{

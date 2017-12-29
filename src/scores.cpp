@@ -28,6 +28,7 @@ bool conductPenniless = true;
 bool conductFoodless = true;
 bool conductVegetarian = true;
 bool conductIlliterate = true;
+bool areCheatsDisabledForSession = false;
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
@@ -1042,6 +1043,7 @@ int saveGame()
 	fwrite(&conductFoodless, sizeof(bool), 1, fp);
 	fwrite(&conductVegetarian, sizeof(bool), 1, fp);
 	fwrite(&conductIlliterate, sizeof(bool), 1, fp);
+	fwrite(&areCheatsDisabledForSession, sizeof(bool), 1, fp);
 
 	// write hotbar items
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
@@ -1674,6 +1676,7 @@ int loadGame(int player)
 	fread(&conductFoodless, sizeof(bool), 1, fp);
 	fread(&conductVegetarian, sizeof(bool), 1, fp);
 	fread(&conductIlliterate, sizeof(bool), 1, fp);
+	fread(&areCheatsDisabledForSession, sizeof(bool), 1, fp);
 
 	// read hotbar item offsets
 	Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
@@ -2359,7 +2362,7 @@ char* getSaveGameName()
 	fread(&plnum, sizeof(Uint32), 1, fp);
 	fseek(fp, sizeof(Uint32) + sizeof(Uint32) + sizeof(bool), SEEK_CUR);
 	fseek(fp, sizeof(Uint32)*NUM_HOTBAR_SLOTS, SEEK_CUR);
-	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
+	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
 
 	int numspells = 0;
 	fread(&numspells, sizeof(Uint32), 1, fp);

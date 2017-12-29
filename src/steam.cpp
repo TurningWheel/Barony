@@ -637,6 +637,11 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
+	if ( areCheatsDisabledForSession )
+	{
+		return;
+	}
+
 	if ( !achievementUnlocked(achName) )
 	{
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
@@ -668,6 +673,13 @@ void steamAchievementClient(int player, const char* achName)
 	{
 		return;
 	}
+
+#ifdef STEAMWORKS
+	if ( areCheatsDisabledForSession )
+	{
+		return;
+	}
+#endif
 
 	if ( player < 0 || player >= MAXPLAYERS )
 	{

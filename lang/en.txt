@@ -2702,8 +2702,8 @@ client (player %d) (direct ip)#
 
 # game/server flags tooltips
 
-# Cheats. CURRENTLY UNUSED
-1942 #
+# Cheats.
+1942 NOTE: Enabling cheats will disable Steam achievements!#
 # Friendly fire. CURRENTLY UNUSED
 1943 #
 # Minotaurs. CURRENTLY UNUSED
@@ -3327,4 +3327,6 @@ Now wait for your leader to advance onward...#
 2860 type:rand#
 2861 %s Response 1.#
 
-2999 end#
+2999 WARNING: Steam Achievements disabled for this session!#
+
+3000 end#

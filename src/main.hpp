@@ -485,7 +485,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 3000
+#define NUMLANGENTRIES 3001
 extern char languageCode[32];
 extern char** language;
 
@@ -714,3 +714,5 @@ bool dataPathExists(const char *const);
 bool completePath(char *dest, const char * const path);
 
 static const Uint32 cacheLimit = 8096;
+
+extern bool areCheatsDisabledForSession;
