@@ -1929,7 +1929,7 @@ void actMonster(Entity* my)
 		}
 
 		// being bumped by someone friendly
-		for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+		for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next ) //Can't convert to map.creatures because of doorframes.
 		{
 			entity = (Entity*)node2->element;
 			if ( entity == my )
