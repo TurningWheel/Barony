@@ -800,7 +800,7 @@ void actMinotaurCeilingBuster(Entity* my)
 					}
 				}
 				node_t* node, *nextnode;
-				for ( node = map.entities->first; node != NULL; node = nextnode )
+				for ( node = map.entities->first; node != nullptr; node = nextnode )
 				{
 					nextnode = node->next;
 					Entity* entity = (Entity*)node->element;
