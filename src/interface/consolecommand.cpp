@@ -1154,6 +1154,26 @@ void consoleCommand(char* command_str)
 			entity->skill[0] = 5 + rand() % 10;
 		}
 	}
+	else if ( !(strncmp(command_str, "/cure", 5)) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
+		{
+			players[clientnum]->entity->getStats()->EFFECTS[c] = false;
+			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+		}
+	}
 	else if (!strncmp(command_str, "/summonall ", 11))
 	{
 		if (!(svFlags & SV_FLAG_CHEATS))
