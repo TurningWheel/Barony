@@ -602,10 +602,12 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 
 		// reset minimap
 		for ( x = 0; x < 64; x++ )
+		{
 			for ( y = 0; y < 64; y++ )
 			{
 				minimap[y][x] = 0;
 			}
+		}
 
 		// reset camera
 		if ( game )

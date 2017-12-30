@@ -2160,7 +2160,7 @@ void Entity::handleEffects(Stat* myStats)
 			// broadcast a player levelled up to other players.
 			if ( i != player )
 			{
-				if ( client_disconnected[c] )
+				if ( client_disconnected[i] )
 				{
 					continue;
 				}
