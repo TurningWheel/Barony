@@ -4357,7 +4357,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
+						for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
@@ -6188,14 +6188,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		Entity* shares[MAXPLAYERS];
 		int c;
 
-		for ( c = 0; c < MAXPLAYERS; c++ )
+		for ( c = 0; c < MAXPLAYERS; ++c )
 		{
-			shares[c] = NULL;
+			shares[c] = nullptr;
 		}
 
 		// find other players to divide shares with
 		node_t* node;
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since only looking at players, this should just iterate over players[]
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( entity == this )
@@ -6206,7 +6206,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				if ( entityDist(this, entity) < XPSHARERANGE )
 				{
-					numshares++;
+					++numshares;
 					shares[numshares] = entity;
 					if ( numshares == MAXPLAYERS - 1 )
 					{
