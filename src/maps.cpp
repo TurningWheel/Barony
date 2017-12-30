@@ -369,7 +369,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	bool *lootexcludelocations;
 
 	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
-	if (loadMap(levelset, &map, map.entities, map.creatures) == -1)
+	if ( loadMap(levelset, &map, map.entities, map.creatures) == -1 )
 	{
 		printlog("error: no level of set '%s' could be found.\n", levelset);
 		return -1;
@@ -387,10 +387,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 	// determine whether minotaur level or not
 	if ( currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3 )
+	{
 		if ( prng_get_uint() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
+	}
 
 	// dark level
 	if ( !secretlevel && currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
@@ -455,10 +457,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 			shopmap.entities = (list_t*) malloc(sizeof(list_t));
 			shopmap.entities->first = nullptr;
 			shopmap.entities->last = nullptr;
+			shopmap.creatures = new list_t;
+			shopmap.creatures->first = nullptr;
+			shopmap.creatures->last = nullptr;
 			if ( loadMap(sublevelname, &shopmap, shopmap.entities, shopmap.creatures) == -1 )
 			{
 				list_FreeAll(shopmap.entities);
 				free(shopmap.entities);
+				list_FreeAll(shopmap.creatures);
+				delete shopmap.creatures;
 				if ( shopmap.tiles )
 				{
 					free(shopmap.tiles);
@@ -556,8 +563,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	subRoomName = (char*)malloc(sizeof(char) * 128);
-	subRoomMapList.first = NULL;
-	subRoomMapList.last = NULL;
+	subRoomMapList.first = nullptr;
+	subRoomMapList.last = nullptr;
 	char letterString[2];
 	letterString[1] = '\0';
 	int subroomCount[100] = {0};
@@ -582,7 +589,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 
 			printlog("Found map lv %s, count: %d", subRoomName, subroomCount[subRoomNumLevels]);
-			subroomCount[subRoomNumLevels]++;
+			++subroomCount[subRoomNumLevels];
 
 			// allocate memory for the next subroom and attempt to load it
 			subRoomMap = (map_t*)malloc(sizeof(map_t));
@@ -591,8 +598,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 			subRoomMap->entities->first = nullptr;
 			subRoomMap->entities->last = nullptr;
 			subRoomMap->creatures = new list_t;
-			subRoomMap->entities->first = nullptr;
-			subRoomMap->entities->last = nullptr;
+			subRoomMap->creatures->first = nullptr;
+			subRoomMap->creatures->last = nullptr;
 			if ( loadMap(subRoomName, subRoomMap, subRoomMap->entities, subRoomMap->creatures) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
@@ -725,6 +732,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 				secretlevelmap.entities = (list_t*) malloc(sizeof(list_t));
 				secretlevelmap.entities->first = nullptr;
 				secretlevelmap.entities->last = nullptr;
+				secretlevelmap.creatures = new list_t;
+				secretlevelmap.creatures->first = nullptr;
+				secretlevelmap.creatures->last = nullptr;
 				char secretmapname[128];
 				switch ( secretlevelexit )
 				{
@@ -747,6 +757,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					list_FreeAll(secretlevelmap.entities);
 					free(secretlevelmap.entities);
+					list_FreeAll(secretlevelmap.creatures);
+					delete secretlevelmap.creatures;
 					if ( secretlevelmap.tiles )
 					{
 						free(secretlevelmap.tiles);
@@ -779,14 +791,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if (possiblerooms[i])
 					{
-						j++;
+						++j;
 						if (j == levelnum)
 						{
 							break;
 						}
 					}
 					node = node->next;
-					i++;
+					++i;
 				}
 				levelnum2 = i;
 				node = ((list_t*)node->element)->first;
@@ -846,6 +858,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						list_FreeAll(shopmap.entities);
 						free(shopmap.entities);
+						list_FreeAll(shopmap.creatures);
+						delete shopmap.creatures;
 						if ( shopmap.tiles )
 						{
 							free(shopmap.tiles);
@@ -855,6 +869,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						list_FreeAll(secretlevelmap.entities);
 						free(secretlevelmap.entities);
+						list_FreeAll(secretlevelmap.creatures);
+						delete secretlevelmap.creatures;
 						if ( secretlevelmap.tiles )
 						{
 							free(secretlevelmap.tiles);
@@ -882,21 +898,21 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if ( possiblelocations2[x + y * map.width] == true )
 					{
-						i++;
+						++i;
 						if ( i == pickedlocation )
 						{
 							break;
 						}
 					}
-					x++;
+					++x;
 					if ( x >= map.width )
 					{
 						x = 0;
-						y++;
+						++y;
 						if ( y >= map.height )
 						{
 							y = 0;
-							pickedlocation++;
+							++pickedlocation;
 						}
 					}
 				}
@@ -911,17 +927,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if ( possiblelocations2[x + y * map.width] == true )
 					{
-						i++;
+						++i;
 						if ( i == pickedlocation )
 						{
 							break;
 						}
 					}
-					x++;
+					++x;
 					if ( x >= map.width )
 					{
 						x = 0;
-						y++;
+						++y;
 						if ( y >= map.height )
 						{
 							y = 0;
@@ -932,10 +948,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			// now copy all the geometry from the sublevel to the chosen location
 			if ( c == 0 )
-				for ( z = 0; z < map.width * map.height; z++ )
+			{
+				for ( z = 0; z < map.width * map.height; ++z )
 				{
 					firstroomtile[z] = false;
 				}
+			}
 			x1 = x + tempMap->width;
 			y1 = y + tempMap->height;
 
@@ -1000,11 +1018,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
 
-							subRoom_tilex++;
+							++subRoom_tilex;
 							if ( subRoom_tilex >= subRoomMap->width )
 							{
 								subRoom_tilex = 0;
-								subRoom_tiley++;
+								++subRoom_tiley;
 								if ( subRoom_tiley >= subRoomMap->height )
 								{
 									subRoom_tiley = 0;
@@ -1148,6 +1166,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				list_FreeAll(shopmap.entities);
 				free(shopmap.entities);
+				list_FreeAll(shopmap.creatures);
+				delete shopmap.creatures;
 				if ( shopmap.tiles )
 				{
 					free(shopmap.tiles);
@@ -1157,6 +1177,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				list_FreeAll(secretlevelmap.entities);
 				free(secretlevelmap.entities);
+				list_FreeAll(secretlevelmap.creatures);
+				delete secretlevelmap.creatures;
 				if ( secretlevelmap.tiles )
 				{
 					free(secretlevelmap.tiles);
@@ -1345,13 +1367,13 @@ int generateDungeon(char* levelset, Uint32 seed)
 	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
 	{
 		numpossiblelocations = 0;
-		for ( c = 0; c < map.width * map.height; c++ )
+		for ( c = 0; c < map.width * map.height; ++c )
 		{
 			possiblelocations[c] = false;
 		}
-		for ( y = 1; y < map.height - 1; y++ )
+		for ( y = 1; y < map.height - 1; ++y )
 		{
-			for ( x = 1; x < map.width - 1; x++ )
+			for ( x = 1; x < map.width - 1; ++x )
 			{
 				int sides = 0;
 				if ( firstroomtile[y + x * map.height] )
@@ -1384,7 +1406,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 		// don't spawn traps in doors
 		node_t* doorNode;
-		for ( doorNode = doorList.first; doorNode != NULL; doorNode = doorNode->next )
+		for ( doorNode = doorList.first; doorNode != nullptr; doorNode = doorNode->next )
 		{
 			door_t* door = (door_t*)doorNode->element;
 			int x = std::min<unsigned int>(std::max(0, door->x), map.width); //TODO: Why are const int and unsigned int being compared?
@@ -1392,7 +1414,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( possiblelocations[y + x * map.height] == true )
 			{
 				possiblelocations[y + x * map.height] = false;
-				numpossiblelocations--;
+				--numpossiblelocations;
 			}
 		}
 
@@ -1409,7 +1431,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				if ( possiblelocations[y + x * map.height] )
 				{
 					possiblelocations[y + x * map.height] = false;
-					numpossiblelocations--;
+					--numpossiblelocations;
 				}
 			}
 		}
@@ -1430,7 +1452,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 		//printlog("j: %d\n",j);
 		//printlog("numpossiblelocations: %d\n",numpossiblelocations);
-		for ( c = 0; c < j; c++ )
+		for ( c = 0; c < j; ++c )
 		{
 			// choose a random location from those available
 			pickedlocation = prng_get_uint() % numpossiblelocations;
@@ -1726,7 +1748,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
-	for ( c = 0; c < std::min(j, numpossiblelocations); c++ )
+	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
 	{
 		// choose a random location from those available
 		pickedlocation = prng_get_uint() % numpossiblelocations;
@@ -1739,17 +1761,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			if ( possiblelocations[y + x * map.height] == true )
 			{
-				i++;
+				++i;
 				if ( i == pickedlocation )
 				{
 					break;
 				}
 			}
-			x++;
+			++x;
 			if ( x >= map.width )
 			{
 				x = 0;
-				y++;
+				++y;
 				if ( y >= map.height )
 				{
 					y = 0;
