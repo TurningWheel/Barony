@@ -687,12 +687,12 @@ int saveMap(char* filename2)
 		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
 		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
 		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
-		for (node = map.entities->first; node != NULL; node = node->next)
+		for (node = map.entities->first; node != nullptr; node = node->next)
 		{
-			numentities++;
+			++numentities;
 		}
 		fwrite(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
-		for (node = map.entities->first; node != NULL; node = node->next)
+		for (node = map.entities->first; node != nullptr; node = node->next)
 		{
 			entity = (Entity*) node->element;
 			fwrite(&entity->sprite, sizeof(Sint32), 1, fp);
