@@ -2608,18 +2608,36 @@ int main(int argc, char** argv)
 							{
 								fp = openDataFile(SECRETLEVELSFILE, "r");
 							}
+							currentlevel = startfloor;
+							if ( startfloor )
+							{
+								for ( int i = 0; i < currentlevel; ++i )
+								{
+									while ( fgetc(fp) != '\n' )
+									{
+										if ( feof(fp) )
+										{
+											break;
+										}
+									}
+								}
+							}
 							fscanf(fp, "%s", tempstr);
 							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+							{
 								{
 									break;
 								}
+							}
 							if ( !strcmp(tempstr, "gen:") )
 							{
 								fscanf(fp, "%s", tempstr);
 								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+								{
 									{
 										break;
 									}
+								}
 								generateDungeon(tempstr, rand());
 							}
 							else if ( !strcmp(tempstr, "map:") )

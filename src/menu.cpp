@@ -3972,11 +3972,16 @@ void handleMainMenu(bool mode)
 						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					int i;
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+					for ( i = 0; i < currentlevel; ++i )
+					{
+						while ( fgetc(fp) != '\n' )
+						{
+							if ( feof(fp) )
 							{
 								break;
 							}
+						}
+					}
 					fscanf(fp, "%s", tempstr);
 					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
 						{
