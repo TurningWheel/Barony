@@ -195,7 +195,7 @@ void lichDie(Entity* my)
 	//playSoundEntity(my, 94, 128);
 	my->removeLightField();
 	// kill all other monsters on the level
-	for ( node = map.entities->first; node != NULL; node = nextnode )
+	for ( node = map.creatures->first; node != nullptr; node = nextnode ) //Only searching for monsters, so don't search full map.entities.
 	{
 		nextnode = node->next;
 		Entity* entity = (Entity*)node->element;
@@ -208,10 +208,12 @@ void lichDie(Entity* my)
 			spawnExplosion(entity->x, entity->y, entity->z);
 			Stat* stats = entity->getStats();
 			if ( stats )
+			{
 				if ( stats->type != HUMAN )
 				{
 					stats->HP = 0;
 				}
+			}
 		}
 	}
 	for ( c = 0; c < MAXPLAYERS; c++ )
@@ -388,8 +390,8 @@ void lichAnimate(Entity* my, double dist)
 			{
 				entity->z -= 4.25;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Only searching for players, so don't search full map.entities.
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
