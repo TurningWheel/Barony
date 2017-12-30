@@ -787,7 +787,7 @@ void buttonCycleSprites(button_t* my)
 	Entity* entity = nullptr;
 	Entity* lastEntity = nullptr;
 	bool entityWasSelected = false;
-	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
