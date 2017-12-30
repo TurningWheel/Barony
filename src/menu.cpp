@@ -3954,7 +3954,7 @@ void handleMainMenu(bool mode)
 				magicLeftHand = NULL;
 				magicRightHand = NULL;
 
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					entity = (Entity*)node->element;
 					entity->flags[NOUPDATE] = true;
@@ -4176,7 +4176,7 @@ void handleMainMenu(bool mode)
 				}
 				assignActions(&map);
 				generatePathMaps();
-				for ( node = map.entities->first; node != NULL; node = nextnode )
+				for ( node = map.entities->first; node != nullptr; node = nextnode )
 				{
 					nextnode = node->next;
 					Entity* entity = (Entity*)node->element;

@@ -423,8 +423,8 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				entity->z -= 16;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Searching for players only? Don't search full map.entities then.
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
