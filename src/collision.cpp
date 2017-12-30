@@ -1098,7 +1098,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 				}
 			}
 			if ( !levitating && (!map.tiles[index] ||
-				(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )   // no floor
+				(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )   // no floor //TODO: That AND isMonster...what is it supposed to be ANDed with?
 			{
 				return 1;
 			}
