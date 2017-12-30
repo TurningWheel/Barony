@@ -244,7 +244,7 @@ void gameLogic(void)
 	// spawn flame particles on burning objects
 	if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			if ( entity->flags[BURNING] )
@@ -255,7 +255,7 @@ void gameLogic(void)
 					continue;
 				}
 				j = 1 + rand() % 4;
-				for ( c = 0; c < j; c++ )
+				for ( c = 0; c < j; ++c )
 				{
 					Entity* flame = spawnFlame(entity, SPRITE_FLAME);
 					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
@@ -318,20 +318,20 @@ void gameLogic(void)
 		x = clientnum;
 		multiplayer = SINGLE;
 		clientnum = 0;
-		for ( node = map.entities->first; node != NULL; node = nextnode )
+		for ( node = map.entities->first; node != nullptr; node = nextnode )
 		{
 			nextnode = node->next;
 			entity = (Entity*)node->element;
 			if ( entity && !entity->ranbehavior )
 			{
 				entity->ticks++;
-				if ( entity->behavior != NULL )
+				if ( entity->behavior != nullptr )
 				{
 					(*entity->behavior)(entity);
-					if ( entitiesdeleted.first != NULL )
+					if ( entitiesdeleted.first != nullptr )
 					{
 						entitydeletedself = false;
-						for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
+						for ( node2 = entitiesdeleted.first; node2 != nullptr; node2 = node2->next )
 						{
 							if ( entity == (Entity*)node2->element )
 							{
@@ -354,7 +354,7 @@ void gameLogic(void)
 				}
 			}
 		}
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			entity->ranbehavior = false;
@@ -465,9 +465,9 @@ void gameLogic(void)
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 )
 										{
 											int c, j = 1 + rand() % 2;
-											for ( c = 0; c < j; c++ )
+											for ( c = 0; c < j; ++c )
 											{
-												Entity* entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -489,7 +489,7 @@ void gameLogic(void)
 												entity->roll = (rand() % 360) * PI / 180.0;
 												if ( multiplayer != CLIENT )
 												{
-													entity_uids--;
+													--entity_uids;
 												}
 												entity->setUID(-3);
 											}
@@ -532,7 +532,7 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
-			for ( node = map.entities->first; node != NULL; node = nextnode )
+			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
@@ -540,18 +540,18 @@ void gameLogic(void)
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
-						entity->ticks++;
+						++entity->ticks;
 					}
-					if ( entity->behavior != NULL )
+					if ( entity->behavior != nullptr )
 					{
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
 							(*entity->behavior)(entity);
 						}
-						if ( entitiesdeleted.first != NULL )
+						if ( entitiesdeleted.first != nullptr )
 						{
 							entitydeletedself = false;
-							for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
+							for ( node2 = entitiesdeleted.first; node2 != nullptr; node2 = node2->next )
 							{
 								if ( entity == (Entity*)node2->element )
 								{
@@ -576,7 +576,7 @@ void gameLogic(void)
 
 				if ( loadnextlevel == true )
 				{
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
 						entity->flags[NOUPDATE] = true;
@@ -731,7 +731,7 @@ void gameLogic(void)
 							{
 								break;
 							}
-						result = loadMap(tempstr, &map, map.entities);
+						result = loadMap(tempstr, &map, map.entities, map.creatures);
 					}
 					fclose(fp);
 					assignActions(&map);
@@ -856,7 +856,7 @@ void gameLogic(void)
 					break;
 				}
 			}
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
@@ -888,10 +888,10 @@ void gameLogic(void)
 				// send entity info to clients
 				if ( ticks % (TICKS_PER_SECOND / 8) == 0 )
 				{
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						entity = (Entity*)node->element;
-						for ( c = 1; c < MAXPLAYERS; c++ )
+						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
 							if ( !client_disconnected[c] )
 							{
@@ -1050,7 +1050,7 @@ void gameLogic(void)
 		else if ( multiplayer == CLIENT )
 		{
 			// keep alives
-			if ( multiplayer == CLIENT )
+			if ( multiplayer == CLIENT ) //lol
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -1183,7 +1183,7 @@ void gameLogic(void)
 											int c, j = 1 + rand() % 2;
 											for ( c = 0; c < j; c++ )
 											{
-												Entity* entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities, nullptr); //Gib entity.
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -1249,7 +1249,7 @@ void gameLogic(void)
 			}
 
 			// run entity actions
-			for ( node = map.entities->first; node != NULL; node = nextnode )
+			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
@@ -1299,7 +1299,7 @@ void gameLogic(void)
 											entity->z += (entity->new_z - entity->z) / 4;
 										}
 									}
-									// dead reckoning
+									// dead reckoning //TODO: I feel like this could be improved. Right now, it's effectively an O(N^2) loop when it concerns monsters and players, since for every monster and player, it loops through the entire entity list to find the limbs. Why? Just access them directly from this entity!
 									if ( fabs(entity->vel_x) > 0 || fabs(entity->vel_y) > 0 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
@@ -1315,7 +1315,7 @@ void gameLogic(void)
 										if ( entity->behavior == &actPlayer )
 										{
 											node_t* node2;
-											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+											for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
 											{
 												Entity* bodypart = (Entity*)node2->element;
 												if ( bodypart->behavior == &actPlayerLimb )
@@ -1333,7 +1333,7 @@ void gameLogic(void)
 										if ( entity->behavior == &actMonster )
 										{
 											node_t* node2;
-											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+											for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
 											{
 												Entity* bodypart = (Entity*)node2->element;
 												if ( bodypart->skill[2] == entity->getUID() && bodypart->parent == entity->getUID() )
@@ -1410,7 +1410,7 @@ void gameLogic(void)
 					}
 				}
 			}
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
@@ -2324,10 +2324,13 @@ int main(int argc, char** argv)
 		initialized = true;
 
 		// initialize map
-		map.tiles = NULL;
+		map.tiles = nullptr;
 		map.entities = (list_t*) malloc(sizeof(list_t));
-		map.entities->first = NULL;
-		map.entities->last = NULL;
+		map.entities->first = nullptr;
+		map.entities->last = nullptr;
+		map.creatures = new list_t;
+		map.creatures->first = nullptr;
+		map.creatures->last = nullptr;
 
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
@@ -2402,28 +2405,28 @@ int main(int argc, char** argv)
 						switch ( rand() % 4 )
 						{
 							case 0:
-								loadMap("mainmenu1", &map, map.entities);
+								loadMap("mainmenu1", &map, map.entities, map.creatures);
 								camera.x = 8;
 								camera.y = 4.5;
 								camera.z = 0;
 								camera.ang = 0.6;
 								break;
 							case 1:
-								loadMap("mainmenu2", &map, map.entities);
+								loadMap("mainmenu2", &map, map.entities, map.creatures);
 								camera.x = 7;
 								camera.y = 4;
 								camera.z = -4;
 								camera.ang = 1.0;
 								break;
 							case 2:
-								loadMap("mainmenu3", &map, map.entities);
+								loadMap("mainmenu3", &map, map.entities, map.creatures);
 								camera.x = 5;
 								camera.y = 3;
 								camera.z = 0;
 								camera.ang = 1.0;
 								break;
 							case 3:
-								loadMap("mainmenu4", &map, map.entities);
+								loadMap("mainmenu4", &map, map.entities, map.creatures);
 								camera.x = 6;
 								camera.y = 14.5;
 								camera.z = -24;
@@ -2485,28 +2488,28 @@ int main(int argc, char** argv)
 						switch ( rand() % 4 )
 						{
 							case 0:
-								loadMap("mainmenu1", &map, map.entities);
+								loadMap("mainmenu1", &map, map.entities, map.creatures);
 								camera.x = 8;
 								camera.y = 4.5;
 								camera.z = 0;
 								camera.ang = 0.6;
 								break;
 							case 1:
-								loadMap("mainmenu2", &map, map.entities);
+								loadMap("mainmenu2", &map, map.entities, map.creatures);
 								camera.x = 7;
 								camera.y = 4;
 								camera.z = -4;
 								camera.ang = 1.0;
 								break;
 							case 2:
-								loadMap("mainmenu3", &map, map.entities);
+								loadMap("mainmenu3", &map, map.entities, map.creatures);
 								camera.x = 5;
 								camera.y = 3;
 								camera.z = 0;
 								camera.ang = 1.0;
 								break;
 							case 3:
-								loadMap("mainmenu4", &map, map.entities);
+								loadMap("mainmenu4", &map, map.entities, map.creatures);
 								camera.x = 6;
 								camera.y = 14.5;
 								camera.z = -24;
@@ -2590,7 +2593,7 @@ int main(int argc, char** argv)
 						// load dungeon
 						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
-						for ( node = map.entities->first; node != NULL; node = node->next )
+						for ( node = map.entities->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							entity->flags[NOUPDATE] = true;
@@ -2605,28 +2608,49 @@ int main(int argc, char** argv)
 							{
 								fp = openDataFile(SECRETLEVELSFILE, "r");
 							}
+							currentlevel = startfloor;
+							if ( startfloor )
+							{
+								for ( int i = 0; i < currentlevel; ++i )
+								{
+									while ( fgetc(fp) != '\n' )
+									{
+										if ( feof(fp) )
+										{
+											break;
+										}
+									}
+								}
+							}
 							fscanf(fp, "%s", tempstr);
 							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+							{
 								{
 									break;
 								}
+							}
 							if ( !strcmp(tempstr, "gen:") )
 							{
 								fscanf(fp, "%s", tempstr);
 								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+								{
 									{
 										break;
 									}
+								}
 								generateDungeon(tempstr, rand());
 							}
 							else if ( !strcmp(tempstr, "map:") )
 							{
 								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+								while ( fgetc(fp) != '\n' )
+								{
+									if ( feof(fp) )
 									{
 										break;
 									}
-								loadMap(tempstr, &map, map.entities);
+								}
+								loadMap(tempstr, &map, map.entities, map.creatures);
 							}
 							fclose(fp);
 						}
@@ -2634,7 +2658,7 @@ int main(int argc, char** argv)
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities);
+								loadMap(maptoload, &map, map.entities, map.creatures);
 							}
 							else
 							{

@@ -274,7 +274,7 @@ void Entity::powerCrystalCreateElectricityNodes()
 
 	for ( i = 1; i <= crystalNumElectricityNodes; i++ )
 	{
-		entity = newEntity(-1, 0, map.entities); // electricity node
+		entity = newEntity(-1, 0, map.entities, nullptr); // electricity node
 		xtest = this->x + i * 16 * ((this->yaw == 0) - (this->yaw == PI)); // add/subtract x depending on direction.
 		ytest = this->y + i * 16 * ((this->yaw == PI / 2) - (this->yaw == 3 * PI / 2)); // add/subtract y depending on direction.
 		

@@ -3954,7 +3954,7 @@ void handleMainMenu(bool mode)
 				magicLeftHand = NULL;
 				magicRightHand = NULL;
 
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					entity = (Entity*)node->element;
 					entity->flags[NOUPDATE] = true;
@@ -3972,11 +3972,16 @@ void handleMainMenu(bool mode)
 						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					int i;
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+					for ( i = 0; i < currentlevel; ++i )
+					{
+						while ( fgetc(fp) != '\n' )
+						{
+							if ( feof(fp) )
 							{
 								break;
 							}
+						}
+					}
 					fscanf(fp, "%s", tempstr);
 					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
 						{
@@ -3998,7 +4003,7 @@ void handleMainMenu(bool mode)
 							{
 								break;
 							}
-						loadMap(tempstr, &map, map.entities);
+						loadMap(tempstr, &map, map.entities, map.creatures);
 					}
 					fclose(fp);
 				}
@@ -4006,7 +4011,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( genmap == false )
 					{
-						loadMap(maptoload, &map, map.entities);
+						loadMap(maptoload, &map, map.entities, map.creatures);
 					}
 					else
 					{
@@ -4159,7 +4164,7 @@ void handleMainMenu(bool mode)
 							{
 								break;
 							}
-						loadMap(tempstr, &map, map.entities);
+						loadMap(tempstr, &map, map.entities, map.creatures);
 					}
 					fclose(fp);
 				}
@@ -4167,7 +4172,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( genmap == false )
 					{
-						loadMap(maptoload, &map, map.entities);
+						loadMap(maptoload, &map, map.entities, map.creatures);
 					}
 					else
 					{
@@ -4176,7 +4181,7 @@ void handleMainMenu(bool mode)
 				}
 				assignActions(&map);
 				generatePathMaps();
-				for ( node = map.entities->first; node != NULL; node = nextnode )
+				for ( node = map.entities->first; node != nullptr; node = nextnode )
 				{
 					nextnode = node->next;
 					Entity* entity = (Entity*)node->element;
@@ -4410,28 +4415,28 @@ void handleMainMenu(bool mode)
 			switch ( rand() % 4 )
 			{
 				case 0:
-					loadMap("mainmenu1", &map, map.entities);
+					loadMap("mainmenu1", &map, map.entities, map.creatures);
 					camera.x = 8;
 					camera.y = 4.5;
 					camera.z = 0;
 					camera.ang = 0.6;
 					break;
 				case 1:
-					loadMap("mainmenu2", &map, map.entities);
+					loadMap("mainmenu2", &map, map.entities, map.creatures);
 					camera.x = 7;
 					camera.y = 4;
 					camera.z = -4;
 					camera.ang = 1.0;
 					break;
 				case 2:
-					loadMap("mainmenu3", &map, map.entities);
+					loadMap("mainmenu3", &map, map.entities, map.creatures);
 					camera.x = 5;
 					camera.y = 3;
 					camera.z = 0;
 					camera.ang = 1.0;
 					break;
 				case 3:
-					loadMap("mainmenu4", &map, map.entities);
+					loadMap("mainmenu4", &map, map.entities, map.creatures);
 					camera.x = 6;
 					camera.y = 14.5;
 					camera.z = -24;

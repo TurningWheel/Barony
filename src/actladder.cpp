@@ -197,10 +197,10 @@ void actPortal(Entity* my)
 					{
 						case 9:
 						{
-							;
+							; //lol
 							bool visiblegrave = false;
 							node_t* node;
-							for ( node = map.entities->first; node != NULL; node = node->next )
+							for ( node = map.entities->first; node != nullptr; node = node->next )
 							{
 								Entity* entity = (Entity*)node->element;
 								if ( entity->sprite == 224 && !entity->flags[INVISIBLE] )
@@ -210,14 +210,16 @@ void actPortal(Entity* my)
 								}
 							}
 							if ( visiblegrave )
-								for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								for ( c = 0; c < MAXPLAYERS; ++c )
 								{
 									steamAchievementClient(c, "BARONY_ACH_ROBBING_THE_CRADLE");
 								}
+							}
 							break;
 						}
 						case 14:
-							for ( c = 0; c < MAXPLAYERS; c++ )
+							for ( c = 0; c < MAXPLAYERS; ++c )
 							{
 								steamAchievementClient(c, "BARONY_ACH_THESEUS_LEGACY");
 							}
@@ -245,7 +247,7 @@ void actWinningPortal(Entity* my)
 		if ( my->flags[INVISIBLE] )
 		{
 			node_t* node;
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.creatures->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
 				if ( entity->behavior == &actMonster )
@@ -387,7 +389,7 @@ void Entity::actMidGamePortal()
 		if ( flags[INVISIBLE] )
 		{
 			node_t* node;
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.creatures->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
 				if ( entity->behavior == &actMonster )

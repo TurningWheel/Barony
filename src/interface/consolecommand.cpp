@@ -1001,9 +1001,41 @@ void consoleCommand(char* command_str)
 	{
 		messagePlayer(clientnum, language[300], list_Size(map.entities));
 	}
+	else if ( !strncmp(command_str, "/nummonsters2", 13) )
+	{
+		messagePlayer(clientnum, language[2353], list_Size(map.creatures));
+	}
 	else if ( !strncmp(command_str, "/nummonsters", 12) )
 	{
 		messagePlayer(clientnum, language[2353], nummonsters);
+	}
+	else if ( !strncmp(command_str, "/verifycreaturelist", strlen("/verifycreaturelist")) )
+	{
+		//Make sure that the number of creatures in the creature list are the real count in the game world.
+		unsigned entcount = 0;
+
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			if ( node->element )
+			{
+				Entity* ent = static_cast<Entity*>(node->element);
+				if ( ent->behavior == actMonster || ent->behavior == actPlayer )
+				{
+					++entcount;
+				}
+			}
+		}
+
+		messagePlayer(clientnum, "ent count = %d, creatures list size = %d", entcount, list_Size(map.creatures));
+
+		if ( entcount == list_Size(map.creatures) )
+		{
+			messagePlayer(clientnum, "Yes, list is verified correct.");
+		}
+		else
+		{
+			messagePlayer(clientnum, "Nope, much problemo!");
+		}
 	}
 	else if ( !strncmp(command_str, "/loadmodels ", 12) )
 	{
@@ -1120,6 +1152,26 @@ void consoleCommand(char* command_str)
 			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
+		}
+	}
+	else if ( !(strncmp(command_str, "/cure", 5)) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
+		{
+			players[clientnum]->entity->getStats()->EFFECTS[c] = false;
+			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
 		}
 	}
 	else if (!strncmp(command_str, "/summonall ", 11))

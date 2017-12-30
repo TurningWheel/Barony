@@ -1050,7 +1050,7 @@ void dropItem(Item* item, int player)
 		{
 			closeBookGUI();
 		}
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
 		entity->x = players[player]->entity->x;
@@ -1179,7 +1179,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	if ( itemDroppable )
 	{
 		//TODO: Spawn multiple entities for count...
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
 		entity->x = monster->x;

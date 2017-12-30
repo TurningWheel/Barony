@@ -1927,6 +1927,11 @@ int deinitApp()
 		list_FreeAll(map.entities);
 		free(map.entities);
 	}
+	if ( map.creatures != nullptr)
+	{
+		list_FreeAll(map.creatures); //TODO: Need to call this? Entities are only pointed to by the thing, not owned.
+		delete map.creatures;
+	}
 	list_FreeAll(&light_l);
 	if ( map.tiles != NULL )
 	{
