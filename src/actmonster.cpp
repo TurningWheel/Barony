@@ -1253,7 +1253,7 @@ void actMonster(Entity* my)
 					if ( tempEntity->light )
 					{
 						list_RemoveNode(tempEntity->light->node);
-						tempEntity->light = NULL;
+						tempEntity->light = nullptr;
 					}
 					list_RemoveNode(tempEntity->mynode);
 				}
@@ -1929,7 +1929,7 @@ void actMonster(Entity* my)
 		}
 
 		// being bumped by someone friendly
-		for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+		for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
 		{
 			entity = (Entity*)node2->element;
 			if ( entity == my )
@@ -2038,7 +2038,7 @@ void actMonster(Entity* my)
 			MONSTER_VELY = 0;
 			if ( myReflex )
 			{
-				for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
 				{
 					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] )
