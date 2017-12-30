@@ -13,7 +13,7 @@
 
 
 
-Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
+Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist) :
 	char_gonnavomit(skill[26]),
 	char_heal(skill[22]),
 	char_energize(skill[23]),
@@ -166,6 +166,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	mynode->deconstructor = &entityDeconstructor;
 	mynode->size = sizeof(Entity);
 
+	myCreatureListNode = nullptr;
+
 	// now reset all of my data elements
 	lastupdate = 0;
 	lastupdateserver = 0;
@@ -261,8 +263,23 @@ Stat* Entity::getStats() const
 	return nullptr;
 }
 
+void Entity::addToCreatureList(list_t *list)
+{
+	return;
+}
+
 bool Entity::isInvisible() const
 {
 	//Dummy function.
 	return false;
+}
+
+void actMonster(Entity* my)
+{
+	return;
+}
+
+void actPlayer(Entity* my)
+{
+	return;
 }

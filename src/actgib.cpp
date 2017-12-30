@@ -148,7 +148,7 @@ Entity* spawnGib(Entity* parentent)
 		}
 	}
 
-	entity = newEntity(gibsprite, 1, map.entities);
+	entity = newEntity(gibsprite, 1, map.entities, nullptr); //Gib entity.
 	if ( !entity )
 	{
 		return nullptr;
@@ -188,7 +188,7 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 {
 	double vel;
 
-	Entity* entity = newEntity(sprite, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Gib entity.
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;

@@ -84,7 +84,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	}
 
 	// bang
-	Entity* entity = newEntity(23, 1, map.entities);
+	Entity* entity = newEntity(23, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
@@ -129,7 +129,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	}
 
 	// boom
-	Entity* entity = newEntity(49, 1, map.entities);
+	Entity* entity = newEntity(49, 1, map.entities, nullptr); //Sprite entity.
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
@@ -150,7 +150,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	Entity* explosion = entity;
 	for (i = 0; i < 10; ++i)
 	{
-		entity = newEntity(16, 1, map.entities);
+		entity = newEntity(16, 1, map.entities, nullptr); //Sprite entity.
 		entity->behavior = &actFlame;
 		entity->x = explosion->x;
 		entity->y = explosion->y;
@@ -222,7 +222,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 		}
 	}
 
-	Entity* entity = newEntity(47, 1, map.entities);
+	Entity* entity = newEntity(47, 1, map.entities, nullptr); //Sprite entity.
 	entity->behavior = &actSleepZ;
 	entity->x = x;
 	entity->y = y;

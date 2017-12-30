@@ -176,7 +176,7 @@ void drawMinimap()
 
 	// draw players and allies
 	
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		bool drawchar = false;
@@ -192,7 +192,7 @@ void drawMinimap()
 		else if ( entity->behavior == &actMonster )
 		{
 			node_t* node2;
-			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != NULL; node2 = node2->next )
+			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != nullptr; node2 = node2->next )
 			{
 				if ( *((Uint32*)node2->element) == entity->getUID() )
 				{
@@ -233,7 +233,7 @@ void drawMinimap()
 
 			x = 0;
 			y = 0;
-			for ( i = 0; i < 4; i++ )
+			for ( i = 0; i < 4; ++i )
 			{
 				// move forward
 				if ( cos(entity->yaw) > .4 )
@@ -284,7 +284,7 @@ void drawMinimap()
 	{
 		return;
 	}
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 239 )
@@ -325,7 +325,7 @@ void drawMinimap()
 
 				x = 0;
 				y = 0;
-				for ( i = 0; i < 4; i++ )
+				for ( i = 0; i < 4; ++i )
 				{
 					// move forward
 					if ( cos(entity->yaw) > .4 )

@@ -224,7 +224,7 @@ void actArrow(Entity* my)
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
+						for ( node = map.creatures->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )

@@ -330,7 +330,7 @@ void actTrap(Entity* my)
 		my->switchUpdateNeighbors();
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
@@ -367,7 +367,7 @@ void actTrapPermanent(Entity* my)
 
 	if ( !strcmp(map.name, "Boss") )
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only looking at players? Don't search full map.entities.
 		{
 			entity = (Entity*)node->element;
 			if ( entity->behavior == &actPlayer )
@@ -386,7 +386,7 @@ void actTrapPermanent(Entity* my)
 	}
 	else
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )

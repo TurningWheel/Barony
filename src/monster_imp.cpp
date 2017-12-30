@@ -100,7 +100,7 @@ void initImp(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(290, 0, map.entities);
+	Entity* entity = newEntity(290, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
@@ -119,7 +119,7 @@ void initImp(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(292, 0, map.entities);
+	entity = newEntity(292, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -137,7 +137,7 @@ void initImp(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(291, 0, map.entities);
+	entity = newEntity(291, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -155,7 +155,7 @@ void initImp(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(294, 0, map.entities);
+	entity = newEntity(294, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -173,7 +173,7 @@ void initImp(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(293, 0, map.entities);
+	entity = newEntity(293, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -191,7 +191,7 @@ void initImp(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right wing
-	entity = newEntity(310, 0, map.entities);
+	entity = newEntity(310, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -209,7 +209,7 @@ void initImp(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left wing
-	entity = newEntity(309, 0, map.entities);
+	entity = newEntity(309, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
