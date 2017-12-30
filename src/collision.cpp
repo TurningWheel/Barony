@@ -279,14 +279,16 @@ bool entityInsideSomething(Entity* entity)
 	y = (long)floor(entity->y / 16);
 	#endif
 	// test against the map
-	for ( z = 0; z < MAPLAYERS; z++ )
+	for ( z = 0; z < MAPLAYERS; ++z )
+	{
 		if ( entityInsideTile(entity, x, y, z) )
 		{
 			return true;
 		}
+	}
 
 	// test against entities
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* testEntity = (Entity*)node->element;
 		if ( testEntity == entity || testEntity->flags[PASSABLE] )
@@ -386,7 +388,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 		}
 	}
-	for (node = map.entities->first; node != NULL; node = node->next)
+	for (node = map.entities->first; node != nullptr; node = node->next)
 	{
 		entity = (Entity*)node->element;
 		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
@@ -623,10 +625,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		}
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( (entity != target && target != NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
+		if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
 		{
 			continue;
 		}
@@ -1069,7 +1071,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	{
 		if ( y >= 0 && y < map.height << 4 )
 		{
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
 				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
@@ -1097,8 +1099,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 					isMonster = true;
 				}
 			}
-			if ( !levitating && (!map.tiles[index] ||
-				(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )   // no floor //TODO: That AND isMonster...what is it supposed to be ANDed with?
+			if ( !levitating
+					&& (!map.tiles[index]
+								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+								   && isMonster) ) )   // no floor
 			{
 				return 1;
 			}

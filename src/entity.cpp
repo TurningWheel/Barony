@@ -324,7 +324,7 @@ Entity::~Entity()
 	{
 		if ( mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == false )
 		{
-			for ( i = 1; i < MAXPLAYERS; i++ )
+			for ( i = 1; i < MAXPLAYERS; ++i )
 			{
 				if ( client_disconnected[i] == true )
 				{
@@ -358,7 +358,7 @@ Entity::~Entity()
 	}
 
 	// set appropriate player pointer to NULL
-	for ( i = 0; i < MAXPLAYERS; i++ )
+	for ( i = 0; i < MAXPLAYERS; ++i )
 	{
 		if ( this == players[i]->entity )
 		{
