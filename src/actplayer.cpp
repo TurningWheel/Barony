@@ -521,7 +521,7 @@ void actPlayer(Entity* my)
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{
 				bool foundherx = false;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Herx is in the creature list, so only search that.
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->sprite == 274 )
@@ -1662,7 +1662,7 @@ void actPlayer(Entity* my)
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;
 
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since looking for players only, don't search full entity list. Best idea would be to directly example players[] though.
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( entity == my )
