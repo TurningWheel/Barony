@@ -145,7 +145,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 	}
 
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 14 
@@ -239,7 +239,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 	}
 
-	for ( entityNode = map.entities->first; entityNode != NULL; entityNode = entityNode->next )
+	for ( entityNode = map.entities->first; entityNode != nullptr; entityNode = entityNode->next )
 	{
 		Entity* entity = (Entity*)entityNode->element;
 		if ( entity->flags[PASSABLE] )
