@@ -2038,7 +2038,7 @@ void actMonster(Entity* my)
 			MONSTER_VELY = 0;
 			if ( myReflex )
 			{
-				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+				for ( node2 = map.creatures->first; node2 != nullptr; node2 = node2->next ) //So my concern is that this never explicitly checks for actMonster or actPlayer, instead it relies on there being stats. Now, only monsters and players have stats, so that's not a problem, except...actPlayerLimb can still return a stat from getStat()! D: Meh, if you can find the player's hand, you can find the actual player too, so it shouldn't be an issue.
 				{
 					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] )
@@ -3047,7 +3047,7 @@ timeToGoAgain:
 
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
-				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+				for ( node2 = map.creatures->first; node2 != nullptr; node2 = node2->next ) //Stats only exist on a creature, so don't iterate all map.entities.
 				{
 					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] )
@@ -3803,12 +3803,12 @@ timeToGoAgain:
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
 			}
-			my->monsterSpecialTimer++;
+			++my->monsterSpecialTimer;
 			if ( my->z >= 64 )
 			{
 				node_t* node;
 				int c = 0;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actDevilTeleport )
@@ -3846,7 +3846,7 @@ timeToGoAgain:
 				{
 					int i = rand() % c;
 					c = 0;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actDevilTeleport )
@@ -3922,7 +3922,7 @@ timeToGoAgain:
 			}
 			else
 			{
-				my->monsterSpecialTimer--;
+				--my->monsterSpecialTimer;
 				if ( my->monsterSpecialTimer <= 0 )
 				{
 					if ( myStats->HP > 0 )
@@ -3930,7 +3930,7 @@ timeToGoAgain:
 						my->flags[PASSABLE] = false;
 					}
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since it only looks at entities that have stats, only creatures can have stats; don't iterate map.entities.
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity == my )
@@ -3941,10 +3941,12 @@ timeToGoAgain:
 						{
 							Stat* stats = entity->getStats();
 							if ( stats )
+							{
 								if ( stats->HP > 0 )
 								{
 									stats->HP = 0;
 								}
+							}
 						}
 					}
 				}
@@ -3980,8 +3982,8 @@ timeToGoAgain:
 			else
 			{
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Only inspects players, so don't iterate map.entities.
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
@@ -4057,7 +4059,7 @@ timeToGoAgain:
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			my->monsterSpecialTimer++;
+			++my->monsterSpecialTimer;
 			if ( my->monsterSpecialTimer > 120 )
 			{
 				MONSTER_ATTACK = 0;
@@ -4067,8 +4069,8 @@ timeToGoAgain:
 				my->monsterSpecialTimer = 0;
 				my->monsterState = MONSTER_STATE_ATTACK;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Only inspects players, so don't iterate map.entities. Technically, only needs to iterate through the players[] array, eh?
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
@@ -4155,7 +4157,7 @@ timeToGoAgain:
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
-				for ( c = 0; c < 7; c++ )
+				for ( c = 0; c < 7; ++c )
 				{
 					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
@@ -4199,13 +4201,13 @@ timeToGoAgain:
 			{
 				int c;
 				double oyaw = my->yaw;
-				for ( c = 0; c < 12; c++ )
+				for ( c = 0; c < 12; ++c )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
-				for ( c = 0; c < 7; c++ )
+				for ( c = 0; c < 7; ++c )
 				{
 					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
@@ -4249,13 +4251,13 @@ timeToGoAgain:
 			{
 				int c;
 				double oyaw = my->yaw;
-				for ( c = 0; c < 12; c++ )
+				for ( c = 0; c < 12; ++c )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
-				for ( c = 0; c < 12; c++ )
+				for ( c = 0; c < 12; ++c )
 				{
 					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
@@ -4297,8 +4299,8 @@ timeToGoAgain:
 				my->monsterSpecialTimer = 0;
 				my->monsterState = MONSTER_STATE_ATTACK;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Iterate map.creatures, since only inspecting players, not all entities. Technically should just iterate over players[]?
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
@@ -5435,7 +5437,7 @@ void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFin
 	node_t* node2 = nullptr;
 
 	// aoe
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only looks at monsters and players, don't iterate all entities (map.entities).
 	{
 		entity = (Entity*)node->element;
 		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
