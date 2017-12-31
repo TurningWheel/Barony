@@ -1314,20 +1314,12 @@ void gameLogic(void)
 										clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
 										if ( entity->behavior == &actPlayer )
 										{
-											node_t* node2;
-											for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+											for (Entity *bodypart : entity->bodyparts)
 											{
-												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->behavior == &actPlayerLimb )
-												{
-													if ( bodypart->skill[2] == entity->skill[2] )
-													{
-														bodypart->x += entity->x - ox;
-														bodypart->y += entity->y - oy;
-														bodypart->new_x += entity->new_x - onewx;
-														bodypart->new_y += entity->new_y - onewy;
-													}
-												}
+												bodypart->x += entity->x - ox;
+												bodypart->y += entity->y - oy;
+												bodypart->new_x += entity->new_x - onewx;
+												bodypart->new_y += entity->new_y - onewy;
 											}
 										}
 										if ( entity->behavior == &actMonster )

@@ -273,6 +273,7 @@ void actPlayer(Entity* my)
 			node->element = entity;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = sizeof(Entity*);
+			my->bodyparts.push_back(entity);
 
 			// magic hands
 
@@ -294,6 +295,7 @@ void actPlayer(Entity* my)
 			entity->behavior = &actRightHandMagic;
 			entity->focalz = -4;
 			magicRightHand = entity;
+			my->bodyparts.push_back(entity);
 
 			// hud shield
 			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
@@ -302,6 +304,7 @@ void actPlayer(Entity* my)
 			entity->flags[NOUPDATE] = true;
 			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actHudShield;
+			my->bodyparts.push_back(entity);
 		}
 		else
 		{
@@ -332,6 +335,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// right leg
 		entity = newEntity(107 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
@@ -350,6 +354,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// left leg
 		entity = newEntity(108 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
@@ -368,6 +373,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// right arm
 		entity = newEntity(109 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
@@ -386,6 +392,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// left arm
 		entity = newEntity(110 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
@@ -404,6 +411,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// world weapon
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -423,6 +431,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// shield
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -443,6 +452,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// cloak
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -465,6 +475,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// helmet
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -487,6 +498,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 
 		// mask
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -509,6 +521,7 @@ void actPlayer(Entity* my)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
 	}
 	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 
