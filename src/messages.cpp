@@ -185,7 +185,8 @@ void updateMessages()
 
 	// limit the number of onscreen messages to reduce spam
 	int c = 0;
-	for (auto it = notification_messages.begin(); it != notification_messages.end(); it++) {
+	for (auto it = notification_messages.begin(); it != notification_messages.end(); it++)
+	{
 		Message *msg = *it;
 
 		// Start fading all messages beyond index 10 immediately
@@ -202,11 +203,16 @@ void updateMessages()
 		if (msg->time_displayed >= MESSAGE_PREFADE_TIME)
 		{
 			msg->alpha -= MESSAGE_FADE_RATE;
-			// If the message has faded completely, remove it
-			if (msg->alpha <= SDL_ALPHA_TRANSPARENT)
-			{
-				it = notification_messages.erase(it);
-			}
+		}
+	}
+	// Remove all completely faded messages
+	for (auto it = notification_messages.begin(); it != notification_messages.end(); it++)
+	{
+		Message *msg = *it;
+		if (msg->alpha <= SDL_ALPHA_TRANSPARENT)
+		{
+			messageDeconstructor(msg);
+			it = notification_messages.erase(it);
 		}
 	}
 }
