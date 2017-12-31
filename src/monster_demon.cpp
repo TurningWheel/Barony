@@ -119,6 +119,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
 	entity = newEntity(263, 0, map.entities, nullptr); //Limb entity.
@@ -137,6 +138,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
 	entity = newEntity(262, 0, map.entities, nullptr); //Limb entity.
@@ -155,6 +157,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
 	entity = newEntity(261, 0, map.entities, nullptr); //Limb entity.
@@ -173,6 +176,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(260, 0, map.entities, nullptr); //Limb entity.
@@ -191,6 +195,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// jaw
 	entity = newEntity(259, 0, map.entities, nullptr); //Limb entity.
@@ -209,6 +214,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actDemonLimb(Entity* my)
