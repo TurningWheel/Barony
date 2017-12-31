@@ -639,6 +639,7 @@ public:
 	void SetEntityOnFire();
 
 	void addToCreatureList(list_t* list);
+	std::vector<Entity*> bodyparts;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
