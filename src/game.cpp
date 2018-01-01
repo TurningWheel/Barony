@@ -1299,7 +1299,7 @@ void gameLogic(void)
 											entity->z += (entity->new_z - entity->z) / 4;
 										}
 									}
-									// dead reckoning //TODO: I feel like this could be improved. Right now, it's effectively an O(N^2) loop when it concerns monsters and players, since for every monster and player, it loops through the entire entity list to find the limbs. Why? Just access them directly from this entity!
+									// dead reckoning
 									if ( fabs(entity->vel_x) > 0 || fabs(entity->vel_y) > 0 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
