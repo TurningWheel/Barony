@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <memory>
+
 #include "main.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
@@ -1789,83 +1791,65 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 
 void generateVBOs(int start, int end)
 {
-	int i, c;
+	int count = end - start;
 
-	for ( c = start; c < end; ++c )
+	std::unique_ptr<GLuint[]> vas(new GLuint[count]);
+	SDL_glGenVertexArrays(count, vas.get());
+
+	std::unique_ptr<GLuint[]> vbos(new GLuint[count]);
+	SDL_glGenBuffers(count, vbos.get());
+
+	std::unique_ptr<GLuint[]> color_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, color_buffers.get());
+
+	std::unique_ptr<GLuint[]> color_shifted_buffers(new GLuint[count]);
+	SDL_glGenBuffers(count, color_shifted_buffers.get());
+
+	for ( int c = start; c < end; ++c )
 	{
-		/*if( c>0 )
-			break;*/
-		GLfloat* points = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		GLfloat* colors = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		GLfloat* colors_shifted = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		for ( i = 0; i < polymodels[c].numfaces; i++ )
+		polymodel_t *model = &polymodels[c];
+		std::unique_ptr<GLfloat[]> points(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> colors(new GLfloat[9 * model->numfaces]);
+		std::unique_ptr<GLfloat[]> colors_shifted(new GLfloat[9 * model->numfaces]);
+		for ( int i = 0; i < model->numfaces; i++ )
 		{
-			points[i * 9] = polymodels[c].faces[i].vertex[0].x;
-			colors[i * 9] = polymodels[c].faces[i].r / 255.f;
-			colors_shifted[i * 9] = polymodels[c].faces[i].b / 255.f;
+			const polytriangle_t *face = &model->faces[i];
+			for (int vert_index = 0; vert_index < 3; vert_index++)
+			{
+				int data_index = i * 9 + vert_index * 3;
+				const vertex_t *vert = &face->vertex[vert_index];
 
-			points[i * 9 + 1] = -polymodels[c].faces[i].vertex[0].z;
-			colors[i * 9 + 1] = polymodels[c].faces[i].g / 255.f;
-			colors_shifted[i * 9 + 1] = polymodels[c].faces[i].r / 255.f;
+				points[data_index] = vert->x;
+				points[data_index + 1] = -vert->z;
+				points[data_index + 2] = vert->y;
 
-			points[i * 9 + 2] = polymodels[c].faces[i].vertex[0].y;
-			colors[i * 9 + 2] = polymodels[c].faces[i].b / 255.f;
-			colors_shifted[i * 9 + 2] = polymodels[c].faces[i].g / 255.f;
+				colors[data_index] = face->r / 255.f;
+				colors[data_index + 1] = face->g / 255.f;
+				colors[data_index + 2] = face->b / 255.f;
 
-			points[i * 9 + 3] = polymodels[c].faces[i].vertex[1].x;
-			colors[i * 9 + 3] = polymodels[c].faces[i].r / 255.f;
-			colors_shifted[i * 9 + 3] = polymodels[c].faces[i].b / 255.f;
-
-			points[i * 9 + 4] = -polymodels[c].faces[i].vertex[1].z;
-			colors[i * 9 + 4] = polymodels[c].faces[i].g / 255.f;
-			colors_shifted[i * 9 + 4] = polymodels[c].faces[i].r / 255.f;
-
-			points[i * 9 + 5] = polymodels[c].faces[i].vertex[1].y;
-			colors[i * 9 + 5] = polymodels[c].faces[i].b / 255.f;
-			colors_shifted[i * 9 + 5] = polymodels[c].faces[i].g / 255.f;
-
-			points[i * 9 + 6] = polymodels[c].faces[i].vertex[2].x;
-			colors[i * 9 + 6] = polymodels[c].faces[i].r / 255.f;
-			colors_shifted[i * 9 + 6] = polymodels[c].faces[i].b / 255.f;
-
-			points[i * 9 + 7] = -polymodels[c].faces[i].vertex[2].z;
-			colors[i * 9 + 7] = polymodels[c].faces[i].g / 255.f;
-			colors_shifted[i * 9 + 7] = polymodels[c].faces[i].r / 255.f;
-
-			points[i * 9 + 8] = polymodels[c].faces[i].vertex[2].y;
-			colors[i * 9 + 8] = polymodels[c].faces[i].b / 255.f;
-			colors_shifted[i * 9 + 8] = polymodels[c].faces[i].g / 255.f;
+				colors_shifted[data_index] = face->b / 255.f;
+				colors_shifted[data_index + 1] = face->r / 255.f;
+				colors_shifted[data_index + 2] = face->g / 255.f;
+			}
 		}
-		SDL_glGenVertexArrays(1, &polymodels[c].va);
-		SDL_glGenBuffers(1, &polymodels[c].vbo);
-		SDL_glGenBuffers(1, &polymodels[c].colors);
-		SDL_glGenBuffers(1, &polymodels[c].colors_shifted);
-		SDL_glBindVertexArray(polymodels[c].va);
+		model->va = vas[c - start];
+		model->vbo = vbos[c - start];
+		model->colors = color_buffers[c - start];
+		model->colors_shifted = color_shifted_buffers[c - start];
+		SDL_glBindVertexArray(model->va);
 
 		// vertex data
 		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 1.5 hardware)
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].vbo);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, points, GL_STATIC_DRAW);
-		//SDL_glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		//SDL_glEnableVertexAttribArray(0);
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->vbo);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, points.get(), GL_STATIC_DRAW);
 
 		// color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, colors, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		//SDL_glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glColorPointer(3, GL_FLOAT, 0, 0);
-		//SDL_glEnableVertexAttribArray(1);
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 
 		// shifted color data
-		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors_shifted);
-		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, colors_shifted, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		//SDL_glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glColorPointer(3, GL_FLOAT, 0, 0);
-		//SDL_glEnableVertexAttribArray(2);
-
-		free(points);
-		free(colors);
-		free(colors_shifted);
+		SDL_glBindBuffer(GL_ARRAY_BUFFER, model->colors_shifted);
+		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * model->numfaces, colors_shifted.get(), GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
 	}
 }
 
