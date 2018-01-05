@@ -149,7 +149,7 @@ void initScarab(Entity* my, Stat* myStats)
 	}
 
 	// right wing
-	Entity* entity = newEntity(483, 0, map.entities);
+	Entity* entity = newEntity(483, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();
@@ -167,7 +167,7 @@ void initScarab(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left wing
-	entity = newEntity(484, 0, map.entities);
+	entity = newEntity(484, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 5;
 	entity->sizey = 11;
 	entity->skill[2] = my->getUID();

@@ -2551,7 +2551,7 @@ void item_ToolBeartrap(Item*& item, int player)
 	{
 		playSoundEntity(players[player]->entity, 253, 64);
 	}
-	entity = newEntity(668, 1, map.entities);
+	entity = newEntity(668, 1, map.entities, nullptr); //Beartrap entity.
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;

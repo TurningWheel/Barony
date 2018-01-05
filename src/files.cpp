@@ -195,7 +195,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist)
+int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -215,7 +215,8 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 	printlog("LoadMap %s", filename2);
 
-	if (! (filename2 && filename2[0])) {
+	if (! (filename2 && filename2[0]))
+	{
 		printlog("map filename empty or null");
 		return -1;
 	}
@@ -224,13 +225,13 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	strcat(filename, filename2);
 
 	// add extension if missing
-	if ( strstr(filename, ".lmp") == NULL )
+	if ( strstr(filename, ".lmp") == nullptr )
 	{
 		strcat(filename, ".lmp");
 	}
 
 	// load the file!
-	if ((fp = openDataFile(filename, "rb")) == NULL)
+	if ((fp = openDataFile(filename, "rb")) == nullptr)
 	{
 		printlog("warning: failed to open file '%s' for map loading!\n", filename);
 		if ( destmap == &map && game )
@@ -340,7 +341,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	for (c = 0; c < numentities; c++)
 	{
 		fread(&sprite, sizeof(Sint32), 1, fp);
-		entity = newEntity(sprite, 0, entlist);
+		entity = newEntity(sprite, 0, entlist, nullptr); //TODO: Figure out when we need to assign an entity to the global monster list. And do it!
 		switch( editorVersion )
 		{	case 1:
 				// V1.0 of editor version
@@ -544,6 +545,10 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			default:
 				break;
 		}
+		if ( entity->behavior == actMonster || entity->behavior == actPlayer )
+		{
+			entity->addToCreatureList(creatureList);
+		}
 
 		fread(&x, sizeof(Sint32), 1, fp);
 		fread(&y, sizeof(Sint32), 1, fp);
@@ -597,10 +602,12 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 		// reset minimap
 		for ( x = 0; x < 64; x++ )
+		{
 			for ( y = 0; y < 64; y++ )
 			{
 				minimap[y][x] = 0;
 			}
+		}
 
 		// reset camera
 		if ( game )
@@ -682,12 +689,12 @@ int saveMap(char* filename2)
 		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
 		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
 		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
-		for (node = map.entities->first; node != NULL; node = node->next)
+		for (node = map.entities->first; node != nullptr; node = node->next)
 		{
-			numentities++;
+			++numentities;
 		}
 		fwrite(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
-		for (node = map.entities->first; node != NULL; node = node->next)
+		for (node = map.entities->first; node != nullptr; node = node->next)
 		{
 			entity = (Entity*) node->element;
 			fwrite(&entity->sprite, sizeof(Sint32), 1, fp);

@@ -384,7 +384,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_light.name))
 		{
-			entity = newEntity(175, 1, map.entities); // black magic ball
+			entity = newEntity(175, 1, map.entities, nullptr); // black magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
@@ -630,7 +630,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spell_changeHealth(players[i]->entity, amount);
 					playSoundEntity(caster, 168, 128);
 
-					for (node = map.entities->first; node->next; node = node->next)
+					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
 						if ( !entity ||  entity == caster )
@@ -642,7 +642,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							continue;
 						}
 
-						if (entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster))
+						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
 							spell_changeHealth(entity, amount);
 							playSoundEntity(entity, 168, 128);
@@ -678,7 +678,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
 
-					for (node = map.entities->first; node->next; node = node->next)
+					for ( node = map.creatures->first; node->next; node = node->next )
 					{
 						entity = (Entity*)(node->element);
 						if ( !entity || entity == caster )
@@ -783,9 +783,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			//Also refactor the duration determining code.
 		}
 
-		if (propulsion == PROPULSION_MISSILE)
+		if ( propulsion == PROPULSION_MISSILE )
 		{
-			entity = newEntity(168, 1, map.entities); // red magic ball
+			entity = newEntity(168, 1, map.entities, nullptr); // red magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
@@ -877,7 +877,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				traveltime = 20;
 			}
 
-			entity = newEntity(168, 1, map.entities); // red magic ball
+			entity = newEntity(168, 1, map.entities, nullptr); // red magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
@@ -914,7 +914,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			result = entity;
 
-			Entity* entity1 = newEntity(168, 1, map.entities); // red magic ball
+			Entity* entity1 = newEntity(168, 1, map.entities, nullptr); // red magic ball
 			entity1->parent = caster->getUID();
 			entity1->x = caster->x;
 			entity1->y = caster->y;
@@ -940,7 +940,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
-			Entity* entity2 = newEntity(168, 1, map.entities); // red magic ball
+			Entity* entity2 = newEntity(168, 1, map.entities, nullptr); // red magic ball
 			entity2->parent = caster->getUID();
 			entity2->x = caster->x;
 			entity2->y = caster->y;

@@ -209,12 +209,12 @@ void actHudWeapon(Entity* my)
 	}
 
 	// initialize
-	if (!HUDWEAPON_INIT)
+	if ( !HUDWEAPON_INIT )
 	{
 		HUDWEAPON_INIT = 1;
 		hudweapon = my;
 		hudweaponuid = my->getUID();
-		entity = newEntity(109, 1, map.entities); // malearmright.vox
+		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->getUID();
 		my->parent = entity->getUID(); // just an easy way to refer to eachother, doesn't mean much
@@ -226,7 +226,7 @@ void actHudWeapon(Entity* my)
 		entity->flags[NOUPDATE] = true;
 	}
 
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
 	{
 		hudweapon = nullptr; //PLAYER DED. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
@@ -236,7 +236,7 @@ void actHudWeapon(Entity* my)
 	// reduce throwGimpTimer (allows player to throw items again)
 	if ( throwGimpTimer > 0 )
 	{
-		throwGimpTimer--;
+		--throwGimpTimer;
 	}
 
 	// check levitating value
