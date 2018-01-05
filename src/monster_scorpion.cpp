@@ -121,6 +121,7 @@ void initScorpion(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void scorpionDie(Entity* my)

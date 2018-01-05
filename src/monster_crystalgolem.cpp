@@ -160,6 +160,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
 	entity = newEntity(480, 0, map.entities, nullptr); //Limb entity.
@@ -178,6 +179,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
 	entity = newEntity(479, 0, map.entities, nullptr); //Limb entity.
@@ -196,6 +198,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
 	entity = newEntity(478, 0, map.entities, nullptr); //Limb entity.
@@ -214,6 +217,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(477, 0, map.entities, nullptr); //Limb entity.
@@ -232,6 +236,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actCrystalgolemLimb(Entity* my)
