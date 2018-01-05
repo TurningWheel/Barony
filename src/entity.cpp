@@ -2107,6 +2107,19 @@ void Entity::handleEffects(Stat* myStats)
 						break;
 				}
 			}
+
+			for ( i = 0; i < MAXPLAYERS; ++i )
+			{
+				// broadcast a player levelled up to other players.
+				if ( i != player )
+				{
+					if ( client_disconnected[i] )
+					{
+						continue;
+					}
+					messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+				}
+			}
 		}
 
 		// inform clients of stat changes
@@ -2153,19 +2166,6 @@ void Entity::handleEffects(Stat* myStats)
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
 			serverUpdatePlayerLVL(); // update all clients of party levels.
-		}
-
-		for ( i = 0; i < MAXPLAYERS; ++i )
-		{
-			// broadcast a player levelled up to other players.
-			if ( i != player )
-			{
-				if ( client_disconnected[i] )
-				{
-					continue;
-				}
-				messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
-			}
 		}
 
 		for ( i = 0; i < NUMSTATS; ++i )
