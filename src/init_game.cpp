@@ -11,6 +11,8 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "interface/interface.hpp"

@@ -10,11 +10,14 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
 #include "items.hpp"
 #include "player.hpp"
 #include "interface/interface.hpp"
+#include "files.hpp"
+#include "init.hpp"
 
 #define EDITOR
 
