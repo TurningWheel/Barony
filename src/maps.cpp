@@ -970,7 +970,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
-				messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
+				//messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
 				subRoomDoorNode = subRoomNode->next;
@@ -989,7 +989,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
 								foundSubRoom = 1;
-								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
+								//messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
