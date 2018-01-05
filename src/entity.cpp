@@ -91,6 +91,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterShadowInitialMimic(skill[34]),
 	monsterShadowDontChangeName(skill[35]),
 	monsterLichFireMeleeSeq(skill[34]),
+	monsterLichFireMeleePrev(skill[35]),
+	monsterLichFireMagicCastCount(skill[37]),
+	monsterLichFireMeleeSwingCount(skill[38]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
@@ -177,7 +180,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	arrowPower(skill[3]),
 	arrowPoisonTime(skill[4]),
 	arrowArmorPierce(skill[5]),
-	actmagicIsVertical(skill[6])
+	actmagicIsVertical(skill[6]),
+	actmagicIsOrbiting(skill[7]),
+	actmagicOrbitDist(skill[8]),
+	actmagicOrbitVerticalDirection(skill[9]),
+	actmagicOrbitVerticalSpeed(fskill[2]),
+	actmagicOrbitStartZ(fskill[3])
 {
 	int c;
 	// add the entity to the entity list
@@ -4629,13 +4637,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					// calculate and perform damage to opponent
 					int damage = 0;
+					int damagePreMultiplier = 1;
+
+					if ( (myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
+						|| (myStats->type == LICH_FIRE && pose == 3) )
+					{
+						damagePreMultiplier = 2;
+					}
+
 					if ( weaponskill >= 0 )
 					{
-						damage = std::max(0, getAttack() + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
 					}
 					else
 					{
-						damage = std::max(0, getAttack() + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
 					}
 					if ( weaponskill == PRO_AXE )
 					{
@@ -4715,13 +4731,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( pose == MONSTER_POSE_GOLEM_SMASH )
-					{
-						damage *= 2;
-					}
 					hit.entity->modHP(-damage); // do the damage
 
-												// write the obituary
+					// write the obituary
 					killedByMonsterObituary(hit.entity);
 
 					// update enemy bar for attacker
@@ -7250,21 +7262,29 @@ int Entity::getAttackPose() const
 		{
 			switch ( monsterLichFireMeleeSeq )
 			{
-				case 0:
+				case LICHFIRE_ATK_VERTICAL_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP1;
-					monsterLichFireMeleeSeq = rand() % 2;
 					break;
-				case 1:
+				case LICHFIRE_ATK_HORIZONTAL_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
-					++monsterLichFireMeleeSeq;
 					break;
-				case 2:
+				case LICHFIRE_ATK_RISING_RAIN:
 					pose = MONSTER_POSE_SPECIAL_WINDUP1;
-					monsterLichFireMeleeSeq = 3;
 					break;
-				case 3:
+				case LICHFIRE_ATK_BASICSPELL_SINGLE:
 					pose = MONSTER_POSE_MAGIC_WINDUP1;
-					monsterLichFireMeleeSeq = 0;
+					break;
+				case LICHFIRE_ATK_RISING_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP3;
+					break;
+				case LICHFIRE_ATK_VERTICAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICHFIRE_ATK_HORIZONTAL_RETURN:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICHFIRE_ATK_HORIZONTAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
 				default:
 					break;
@@ -7276,19 +7296,15 @@ int Entity::getAttackPose() const
 			{
 				case 0:
 					pose = MONSTER_POSE_MELEE_WINDUP1;
-					monsterLichFireMeleeSeq = rand() % 2;
 					break;
 				case 1:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
-					++monsterLichFireMeleeSeq;
 					break;
 				case 2:
 					pose = MONSTER_POSE_SPECIAL_WINDUP1;
-					monsterLichFireMeleeSeq = 3;
 					break;
 				case 3:
 					pose = MONSTER_POSE_MAGIC_WINDUP1;
-					monsterLichFireMeleeSeq = 0;
 					break;
 				default:
 					break;
@@ -9255,6 +9271,17 @@ bool Entity::shouldRetreat(Stat& myStats)
 	if ( myStats.type == SHADOW )
 	{
 		return false;
+	}
+	else if ( myStats.type == LICH_FIRE )
+	{
+		if ( monsterLichFireMeleeSeq == LICHFIRE_ATK_BASICSPELL_SINGLE )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	if ( myStats.MAXHP >= 100 )
