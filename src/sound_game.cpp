@@ -374,7 +374,7 @@ void handleLevelMusic()
 	bool activeminotaur = false;
 	bool herxaround = false;
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 274 )   // herx head

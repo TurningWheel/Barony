@@ -427,7 +427,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(458, 0, map.entities);
+	Entity* entity = newEntity(458, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -448,7 +448,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(457, 0, map.entities);
+	entity = newEntity(457, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -466,7 +466,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(456, 0, map.entities);
+	entity = newEntity(456, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -484,7 +484,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(453, 0, map.entities);
+	entity = newEntity(453, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -502,7 +502,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(451, 0, map.entities);
+	entity = newEntity(451, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -520,7 +520,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities);
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -539,7 +539,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// shield
-	entity = newEntity(-1, 0, map.entities);
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -557,7 +557,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// cloak
-	entity = newEntity(-1, 0, map.entities);
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -575,7 +575,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// helmet
-	entity = newEntity(-1, 0, map.entities);
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -596,7 +596,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// mask
-	entity = newEntity(-1, 0, map.entities);
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

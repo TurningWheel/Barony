@@ -170,7 +170,7 @@ void Entity::actGate()
 	bool somebodyinside = false;
 	if ( this->z > gateStartHeight - 6 && this->flags[PASSABLE] )
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( entity == this || entity->flags[PASSABLE] || entity->sprite == 1 )
