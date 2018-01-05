@@ -529,3 +529,13 @@ static const int VAMPIRE_CAST_DRAIN = 2;
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
 static const int SHADOW_TELEPORT_ONLY = 2;
+
+//--Lich Fire--
+static const int LICHFIRE_ATK_VERTICAL_SINGLE = 0;
+static const int LICHFIRE_ATK_HORIZONTAL_SINGLE = 1;
+static const int LICHFIRE_ATK_RISING_RAIN = 2;
+static const int LICHFIRE_ATK_BASICSPELL_SINGLE = 3;
+static const int LICHFIRE_ATK_RISING_SINGLE = 4;
+static const int LICHFIRE_ATK_VERTICAL_QUICK = 5;
+static const int LICHFIRE_ATK_HORIZONTAL_RETURN = 6;
+static const int LICHFIRE_ATK_HORIZONTAL_QUICK = 7;

@@ -1310,7 +1310,7 @@ void actMonster(Entity* my)
 		}
 	}
 
-	if ( myStats->type == LICH_FIRE  || myStats->type == LICH_ICE )
+	if ( myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 	{
 		if ( my->monsterSpecialTimer > 0 )
 		{
@@ -1335,7 +1335,22 @@ void actMonster(Entity* my)
 				{
 					lichFireDist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
 				}
-				if ( myStats->OLDHP != myStats->HP )
+				if ( (	my->monsterLichFireMeleePrev == LICHFIRE_ATK_RISING_SINGLE
+						|| my->monsterLichFireMeleePrev == LICHFIRE_ATK_HORIZONTAL_RETURN)
+						&& rand() % 4 == 0 
+						&& ticks % 10 == 0
+					)
+				{
+					playSoundEntity(my, 180, 128);
+					dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+					MONSTER_VELX = cos(dir) * 3;
+					MONSTER_VELY = sin(dir) * 3;
+					my->monsterState = MONSTER_STATE_LICHFIRE_DODGE;
+					my->monsterSpecialTimer = 20;
+					my->monsterLichFireMeleePrev = 0;
+					my->monsterLichFireMeleeSeq = LICHFIRE_ATK_BASICSPELL_SINGLE;
+				}
+				else if ( myStats->OLDHP != myStats->HP )
 				{
 					if ( rand() % 4 == 0 )
 					{
@@ -4431,7 +4446,7 @@ timeToGoAgain:
 					{
 						if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < STRIKERANGE )
 						{
-							my->monsterLichFireMeleeSeq = 2;
+							my->monsterLichFireMeleeSeq = LICHFIRE_ATK_RISING_RAIN;
 						}
 					}
 				}
@@ -4589,7 +4604,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 
 	if ( myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 	{
-		if ( monsterLichFireMeleeSeq == 3 )
+		if ( monsterLichFireMeleeSeq == LICHFIRE_ATK_BASICSPELL_SINGLE )
 		{
 			hasrangedweapon = true;
 		}
@@ -4678,15 +4693,12 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					// turn to the target, then reset my yaw.
 					double oYaw = this->yaw;
 					this->yaw = newTangent;
-					//if ( myStats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
-					//{
-						//Do nothing, already handled in shadow's actLimnbs thing.
-						//Otherwise, this will make the shadow beat on players.
-					//}
-					//else
-					//{
-						this->attack(pose, charge, nullptr); // attacku! D:<
-					//}
+					if ( myStats->type == LICH_FIRE )
+					{
+						lichFireSetNextAttack(*myStats);
+						messagePlayer(0, "previous %d, next is %d", monsterLichFireMeleePrev, monsterLichFireMeleeSeq);
+					}
+					this->attack(pose, charge, nullptr); // attacku! D:<
 					this->yaw = oYaw;
 				}
 			}

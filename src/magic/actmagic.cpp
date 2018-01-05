@@ -473,6 +473,53 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					// nothing hit yet, let's keep trying...
 				}
 			}
+			else if ( parent && my->actmagicIsOrbiting )
+			{
+				my->yaw += 0.1;
+				MAGIC_LIFE = 0;
+				MAGIC_MAXLIFE = 100;
+				my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
+				my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+				hitFromAbove = my->magicOrbitingCollision();
+				my->z += my->vel_z * my->actmagicOrbitVerticalDirection;
+				if ( my->z > my->actmagicOrbitStartZ )
+				{
+					if ( my->actmagicOrbitVerticalDirection == 1 )
+					{
+						my->vel_z = std::max(0.01, my->vel_z * 0.95);
+						my->roll -= (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+					}
+					else
+					{
+						my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+						my->roll += (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+					}
+				}
+				else
+				{
+					if ( my->actmagicOrbitVerticalDirection == 1 )
+					{
+						my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+						my->roll += (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+					}
+					else
+					{
+						my->vel_z = std::max(0.01, my->vel_z * 0.95);
+						my->roll -= (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+					}
+				}
+				
+
+				if ( (my->z > my->actmagicOrbitStartZ + 4) && my->actmagicOrbitVerticalDirection == 1 )
+				{
+					my->actmagicOrbitVerticalDirection = -1;
+				}
+				else if ( (my->z < my->actmagicOrbitStartZ - 4) && my->actmagicOrbitVerticalDirection != 1 )
+				{
+					my->actmagicOrbitVerticalDirection = 1;
+				}
+
+			}
 			else
 			{
 				dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
@@ -3109,6 +3156,28 @@ bool Entity::magicFallingCollision()
 	return false;
 }
 
+bool Entity::magicOrbitingCollision()
+{
+	hit.entity = nullptr;
+
+	node_t* node;
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity == this )
+		{
+			continue;
+		}
+		if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
+		{
+			hit.entity = entity;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection)
 {
 	spell_t* spell = getSpellFromID(spellID);
@@ -3126,5 +3195,32 @@ void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t 
 		entity->pitch = PI / 2;
 		entity->actmagicIsVertical = 1;
 		spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+	}
+}
+
+void Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection)
+{
+	spell_t* spell = getSpellFromID(spellID);
+	Entity* entity = castSpell(getUID(), spell, false, true);
+	if ( entity )
+	{
+		entity->x = x + distFromCaster * cos(yaw + angleFromCasterDirection);
+		entity->y = y + distFromCaster * sin(yaw + angleFromCasterDirection);
+		entity->z = -2.5;
+		double missile_speed = 4 * ((double)(((spellElement_t*)(spell->elements.first->element))->mana)
+			/ ((spellElement_t*)(spell->elements.first->element))->overload_multiplier);
+		entity->vel_x = 0.0;
+		entity->vel_y = 0.0;
+		//entity->focalx = distFromCaster;
+		entity->roll += PI / 8;
+		//entity->vel_z = 0.5 * (missile_speed);
+		//entity->pitch = PI / 2;
+		entity->actmagicIsOrbiting = 1;
+		entity->actmagicOrbitDist = distFromCaster;
+		entity->actmagicOrbitStartZ = entity->z;
+		entity->actmagicOrbitVerticalSpeed = 0.1;
+		entity->actmagicOrbitVerticalDirection = 1;
+		entity->vel_z = entity->actmagicOrbitVerticalSpeed;
+		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
 }

@@ -193,6 +193,9 @@ public:
 
 	//--PUBLIC MONSTER LICH SKILLS--
 	Sint32& monsterLichFireMeleeSeq; //skill[34]
+	Sint32& monsterLichFireMeleePrev; //skill[35]
+	Sint32& monsterLichFireMagicCastCount; //skill[37] count the basic spell attacks in the melee seq and switch things up if too many in a row.
+	Sint32& monsterLichFireMeleeSwingCount; //skill[38] count the 'regular' attacks in the melee seq and switch things up if too many in a row.
 	
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // skill[9] 0 Clockwise, 1 Anti-Clockwise
@@ -314,6 +317,11 @@ public:
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
+	Sint32& actmagicIsOrbiting; //skill[7]
+	Sint32& actmagicOrbitDist; //skill[8]
+	Sint32&	actmagicOrbitVerticalDirection; //skill[9]
+	real_t actmagicOrbitVerticalSpeed; //fskill[2]
+	real_t actmagicOrbitStartZ; //fskill[3]
 	
 	void pedestalOrbInit(); // init orb properties
 
@@ -455,6 +463,7 @@ public:
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	bool magicFallingCollision();
+	bool magicOrbitingCollision();
 	void actFurniture();
 	void actPistonCam();
 	void actStalagCeiling();
@@ -643,6 +652,8 @@ public:
 
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
+	void castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
+	void lichFireSetNextAttack(Stat& myStats);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

@@ -380,6 +380,18 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -1.5, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
 			}
 		}
+		else if ( my->monsterAttack == 1 || my->monsterAttack == 3 )
+		{
+			if ( my->z < -1.2 )
+			{
+				my->z += 0.25;
+			}
+			else
+			{
+				my->z = -1.2;
+				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+			}
+		}
 	}
 	else
 	{
@@ -425,11 +437,23 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 
 					}
 				}
-				else if ( my->monsterAttack != MONSTER_POSE_SPECIAL_WINDUP1 )
+				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
+				{
+					if ( multiplayer != CLIENT && my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
+					{
+						// handle z movement on windup
+						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.3, -0.6, 0.3, -4.0, ANIMATE_DIR_POSITIVE); // default z is -1.2
+						if ( my->z > -0.5 )
+						{
+							my->z = -0.6; //failsafe for floating too low sometimes?
+						}
+					}
+				}
+				else
 				{
 					if ( head->pitch > PI )
 					{
-						limbAnimateToLimit(head, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+						limbAnimateToLimit(head, ANIMATE_PITCH, 0.1, 0, false, 0.0); // return head to a neutral position.
 					}
 				}
 			}
@@ -476,9 +500,9 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						weaponarm->skill[1] = 0;
 					}
 
-					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0);
+					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.4, 5 * PI / 4, false, 0.0);
 
-					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+					if ( my->monsterAttackTime >= 6 / (monsterGlobalAnimationMultiplier / 10.0) )
 					{
 						if ( multiplayer != CLIENT )
 						{
@@ -496,10 +520,6 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							weaponarm->skill[1] = 1;
 						}
-						if ( my->z < -1.2 )
-						{
-							my->z += 0.25;
-						}
 					}
 					else if ( weaponarm->skill[1] == 1 )
 					{
@@ -509,6 +529,13 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 							weaponarm->pitch = PI / 8;
 							weaponarm->roll = 0;
 							my->monsterAttack = 0;
+							if ( multiplayer != CLIENT )
+							{
+								if ( my->monsterLichFireMeleePrev == LICHFIRE_ATK_VERTICAL_QUICK )
+								{
+									my->monsterHitTime = HITRATE;
+								}
+							}
 						}
 					}
 				}
@@ -525,11 +552,11 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						my->monsterWeaponYaw = 6 * PI / 4;
 					}
 
-					limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
-					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0);
+					limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.3, 3 * PI / 2, false, 0.0);
+					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 0, false, 0.0);
 
 
-					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+					if ( my->monsterAttackTime >= 6 / (monsterGlobalAnimationMultiplier / 10.0) )
 					{
 						if ( multiplayer != CLIENT )
 						{
@@ -564,22 +591,11 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 								weaponarm->roll = 0;
 								my->monsterArmbended = 0;
 								my->monsterAttack = 0;
-								my->monsterAttackTime = 0;
-								my->monsterHitTime = 0;
 								if ( multiplayer != CLIENT )
 								{
-									switch ( my->monsterLichFireMeleeSeq )
+									if ( my->monsterLichFireMeleePrev == LICHFIRE_ATK_HORIZONTAL_QUICK )
 									{
-										case 0:
-											break;
-										case 1:
-											//my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
-											//my->monsterLichFireMeleeSeq = 0;
-
-											//my->castFallingMagicMissile(SPELL_FIREBALL, 32.0, 0.0);
-											break;
-										default:
-											break;
+										my->monsterHitTime = HITRATE;
 									}
 								}
 							}
@@ -594,7 +610,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						my->monsterWeaponYaw = 0;
 						weaponarm->roll = 0;
 						weaponarm->skill[1] = 0;
-						createParticleDot(my);
+						createParticleDropRising(my, 607, 1.0);
 						if ( multiplayer != CLIENT )
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
@@ -614,13 +630,69 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
-								my->attack(1, 0, nullptr);
+								my->attack(1, 0, nullptr); //optional?
 								real_t dir = 0.f;
 								for ( int i = 0; i < 8; ++i )
 								{
 									my->castFallingMagicMissile(SPELL_FIREBALL, 16 + rand() % 8, dir + i * PI / 4);
 								}
 							}
+						}
+					}
+				}
+				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
+				{
+					if ( my->monsterAttackTime == 0 )
+					{
+						// init rotations
+						my->monsterWeaponYaw = 10 * PI / 6;
+						weaponarm->roll = 0;
+						weaponarm->skill[1] = 0;
+						createParticleDot(my);
+						if ( multiplayer != CLIENT )
+						{
+							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+						//	// lich can't be paralyzed, use EFF_STUNNED instead.
+							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 40;
+						}
+					}
+
+					// only do the following during 2nd + end stage of overshoot animation.
+					if ( my->monsterAnimationLimbOvershoot != ANIMATE_OVERSHOOT_TO_SETPOINT )
+					{
+						limbAnimateToLimit(head, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.05);
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= 40 / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(3, 0, nullptr);
+							}
+						}
+					}
+				}
+				// vertical chop after melee3
+				else if ( my->monsterAttack == 3 )
+				{
+					if ( weaponarm->skill[1] == 0 )
+					{
+						// chop forwards
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 2, false, 0.0) )
+						{
+							weaponarm->skill[1] = 1;
+						}
+						limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.15, 1 * PI / 6, false, 0.0); // swing across the body
+					}
+					else if ( weaponarm->skill[1] == 1 )
+					{
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, PI / 8, false, 0.0) )
+						{
+							my->monsterWeaponYaw = 0;
+							weaponarm->pitch = PI / 8;
+							weaponarm->roll = 0;
+							my->monsterAttack = 0;
 						}
 					}
 				}
@@ -647,7 +719,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		else if ( bodypart == LICH_LEFTARM )
 		{
 			spellarm = entity;
-			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 || my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
 			{
 				spellarm->pitch = weaponarm->pitch;
 			}
@@ -735,13 +807,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						spellarm->skill[1] = 1;
 						if ( multiplayer != CLIENT )
 						{
+							my->castOrbitingMagicMissile(SPELL_FIREBALL, 16.0, 0.0);
 							if ( rand() % 2 )
 							{
 								castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
 							}
 							else
 							{
-								castSpell(my->getUID(), getSpellFromID(SPELL_DRAIN_SOUL), true, false);
+								castSpell(my->getUID(), getSpellFromID(SPELL_BLEED), true, false);
 							}
 						}
 					}
@@ -777,7 +850,8 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				entity->z -= 3.25;
 				if ( !(my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2
 					|| my->monsterAttack == 2
-					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1)
+					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
+					|| my->monsterAttack == 3)
 					)
 				{
 					entity->yaw -= MONSTER_WEAPONYAW;
@@ -790,14 +864,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				node_t* tempNode;
 				Entity* playertotrack = NULL;
 				double disttoplayer = 0.0;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				/*for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer )
 					{
 						disttoplayer = entityDist(my, tempEntity);
-						if ( disttoplayer < lowestdist )
+						if ( disttoplayer < lowestdist && my->monsterTarget)
 						{
 							playertotrack = tempEntity;
 						}
@@ -833,7 +907,12 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					else if ( dir2 < -PI / 2 )
 					{
 						entity->yaw = my->yaw + PI / 2;
-					}
+					}*/
+				Entity* target = uidToEntity(my->monsterTarget);
+				if ( target && my->monsterAttack == 0 )
+				{
+					entity->lookAtEntity(*target);
+					entity->monsterRotate();
 				}
 				else
 				{
@@ -939,5 +1018,157 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		// do nothing, don't reset attacktime or increment it.
+	}
+}
+
+void Entity::lichFireSetNextAttack(Stat& myStats)
+{
+	if ( myStats.type == LICH_FIRE )
+	{
+		monsterLichFireMeleePrev = monsterLichFireMeleeSeq;
+		messagePlayer(0, "melee: %d, magic %d", monsterLichFireMeleeSwingCount, monsterLichFireMagicCastCount);
+		switch ( monsterLichFireMeleeSeq )
+		{
+			case LICHFIRE_ATK_VERTICAL_SINGLE:
+				++monsterLichFireMeleeSwingCount;
+				switch ( rand() % 8 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						if ( monsterLichFireMeleeSwingCount < 5 )
+						{
+							monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
+						}
+						else
+						{
+							monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_QUICK;
+							monsterLichFireMeleeSwingCount = 0;
+						}
+						break;
+					case 3:
+					case 4:
+					case 5:
+						if ( monsterLichFireMeleeSwingCount < 5 )
+						{
+							monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
+						}
+						else
+						{
+							monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_QUICK;
+							monsterLichFireMeleeSwingCount = 0;
+						}
+						break;
+					case 6:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_QUICK;
+						monsterLichFireMeleeSwingCount = 0;
+						break;
+					case 7:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_QUICK;
+						monsterLichFireMeleeSwingCount = 0;
+						break;
+					default:
+						break;
+				}
+				break;
+			case LICHFIRE_ATK_HORIZONTAL_SINGLE:
+				++monsterLichFireMeleeSwingCount;
+				switch ( rand() % 4 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
+						break;
+					case 3:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_RISING_RAIN;
+						monsterLichFireMeleeSwingCount = 0;
+						break;
+					default:
+						break;
+				}
+				break;
+			case LICHFIRE_ATK_RISING_RAIN:
+				switch ( rand() % 4 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
+						break;
+					case 3:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
+						break;
+					default:
+						break;
+				}
+				break;
+			case LICHFIRE_ATK_BASICSPELL_SINGLE:
+				++monsterLichFireMagicCastCount;
+				if ( monsterLichFireMagicCastCount > 2 || rand() % 2 == 0 )
+				{
+					monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
+					monsterLichFireMagicCastCount = 0;
+				}
+				break;
+			case LICHFIRE_ATK_RISING_SINGLE:
+				switch ( rand() % 4 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
+						break;
+					case 3:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
+						break;
+					default:
+						break;
+				}
+				break;
+			case LICHFIRE_ATK_VERTICAL_QUICK:
+				monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_RETURN;
+				break;
+			case LICHFIRE_ATK_HORIZONTAL_RETURN:
+				switch ( rand() % 4 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
+						break;
+					case 3:
+						monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
+						break;
+					default:
+						break;
+				}
+				break;
+			case LICHFIRE_ATK_HORIZONTAL_QUICK:
+				monsterLichFireMeleeSeq = LICHFIRE_ATK_RISING_SINGLE;
+				break;
+			default:
+				break;
+		}
+	}
+	else if ( myStats.type == LICH_ICE )
+	{
+		switch ( monsterLichFireMeleeSeq )
+		{
+			case 0:
+				monsterLichFireMeleeSeq = rand() % 2;
+				break;
+			case 1:
+				++monsterLichFireMeleeSeq;
+				break;
+			case 2:
+				monsterLichFireMeleeSeq = 3;
+				break;
+			case 3:
+				monsterLichFireMeleeSeq = 0;
+				break;
+			default:
+				break;
+		}
 	}
 }
