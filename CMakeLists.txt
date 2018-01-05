@@ -47,6 +47,21 @@ message("Building without steamworks")
 message("------------------------")
 endif()
 
+# REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
+set(VERSION "3.0.2")
+find_package(Git)
+if (Git_FOUND)
+  # It would be nice to use `git describe` to get the whole version string from
+  # git, but we don't have the appropriate tagging discipline in the repo (yet?)
+  exec_program("${GIT_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    ARGS "rev-parse --short HEAD"
+    OUTPUT_VARIABLE VERSION_HASH
+  )
+  set(VERSION "${VERSION}-${VERSION_HASH}")
+endif(Git_FOUND)
+
+
 set (Apple 0)
 set (Windows 0)
 set (Linux 0)
@@ -71,11 +86,10 @@ if( NOT WIN32 )
     #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -x objective-c")
     set(MACOSX_BUNDLE true)
     set(MACOSX_BUNDLE_BUNDLE_NAME Barony)
-    #TODO: Make version a define which is also set in src/Config.h
-    set(MACOSX_BUNDLE_INFO_STRING Barony 2.0.2)
-    set(MACOSX_BUNDLE_LONG_VERSION 2.0.2)
-    set(MACOSX_BUNDLE_SHORT_VERSION_STRING 2.0.2)
-    set(MACOSX_BUNDLE_BUNDLE_VERSION 2.0.2)
+    set(MACOSX_BUNDLE_INFO_STRING Barony "${VERSION}")
+    set(MACOSX_BUNDLE_LONG_VERSION "${VERSION}")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
     set(MACOSX_BUNDLE_ICON_FILE "barony.icns")
     #set(MACOSX_BUNDLE_ICON_FILE "game.icns")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -stdlib=libc++")

@@ -40,3 +40,5 @@
 	 */
 	typedef unsigned long DWORD;
 #endif
+
+#define VERSION "v@VERSION@"
