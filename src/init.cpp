@@ -10,9 +10,12 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
+#include "init.hpp"
 #include "net.hpp"
 #include "editor.hpp"
 #ifdef STEAMWORKS
