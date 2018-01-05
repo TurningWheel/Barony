@@ -928,12 +928,34 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if ( multiplayer == SINGLE )
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
-			if (tempStats)
+			if ( tempStats )
 			{
 				tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
+			}
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+	}
+	else if (!strncmp(command_str, "/poison", 7))
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if ( multiplayer == SINGLE )
+		{
+			Stat* tempStats = players[clientnum]->entity->getStats();
+			if ( tempStats )
+			{
+				tempStats->EFFECTS[EFF_POISONED] = true;
+				tempStats->EFFECTS_TIMERS[EFF_POISONED] = 600;
 			}
 		}
 		else
