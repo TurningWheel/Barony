@@ -534,7 +534,7 @@ void buttonOpenConfirm(button_t* my)
 		strcat(message, " ");
 	}
 	printlog("opening map file '%s'...\n", filename);
-	if (loadMap(filename, &map, map.entities) == -1)
+	if (loadMap(filename, &map, map.entities, map.creatures) == -1)
 	{
 		strcat(message, "Failed to open ");
 		strcat(message, filename);
@@ -787,7 +787,7 @@ void buttonCycleSprites(button_t* my)
 	Entity* entity = nullptr;
 	Entity* lastEntity = nullptr;
 	bool entityWasSelected = false;
-	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
@@ -810,7 +810,7 @@ void buttonCycleSprites(button_t* my)
 		lastSelectedEntity = nullptr;
 
 		// create new entity on the list, copying and removing the previous last one.
-		entity = newEntity(lastEntity->sprite, 0, map.entities);
+		entity = newEntity(lastEntity->sprite, 0, map.entities, nullptr);
 		setSpriteAttributes(entity, lastEntity, lastEntity);
 		list_RemoveNode(lastEntity->mynode);
 

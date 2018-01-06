@@ -381,7 +381,7 @@ void Entity::spawnBlood(int bloodSprite)
 		{
 			if ( !checkObstacle(this->x, this->y, this, nullptr) )
 			{
-				Entity* entity = newEntity(bloodSprite, 1, map.entities);
+				Entity* entity = newEntity(bloodSprite, 1, map.entities, nullptr); //Blood/gib entity.
 				entity->x = this->x;
 				entity->y = this->y;
 				entity->z = 8 + (rand() % 20) / 100.0;

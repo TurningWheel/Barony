@@ -268,6 +268,7 @@ typedef struct map_t
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
+	list_t* creatures; //A list of Entity* pointers.
 
 	Entity* getEntityWithUID(Uint32 uid);
 } map_t;
@@ -609,7 +610,7 @@ void lightDeconstructor(void* data);
 void mapDeconstructor(void* data);
 void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
-Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist);
+Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 button_t* newButton(void);
 light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
 string_t* newString(list_t* list, Uint32 color, char* content, ...);
@@ -674,7 +675,7 @@ void glDrawWorld(view_t* camera, int mode);
 void glLoadTexture(SDL_Surface* image, int texnum);
 SDL_Surface* loadImage(char* filename);
 voxel_t* loadVoxel(char* filename2);
-int loadMap(char* filename, map_t* destmap, list_t* entlist);
+int loadMap(char* filename, map_t* destmap, list_t* entlist, list_t* creatureList);
 int loadConfig(char* filename);
 int saveMap(char* filename);
 
