@@ -13,6 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "items.hpp"
 #include "prng.hpp"
 #include "monster.hpp"

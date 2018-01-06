@@ -115,6 +115,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
 	entity = newEntity(195, 0, map.entities, nullptr); //Limb entity.
@@ -133,6 +134,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
 	entity = newEntity(194, 0, map.entities, nullptr); //Limb entity.
@@ -151,6 +153,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
 	entity = newEntity(193, 0, map.entities, nullptr); //Limb entity.
@@ -169,6 +172,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(192, 0, map.entities, nullptr); //Limb entity.
@@ -187,6 +191,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// world weapon
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -206,6 +211,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// shield
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -224,6 +230,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actSuccubusLimb(Entity* my)
