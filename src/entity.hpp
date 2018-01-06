@@ -14,6 +14,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
+#include "light.hpp"
 #include "monster.hpp"
 
 // entity flags
@@ -652,6 +653,7 @@ public:
 	void SetEntityOnFire();
 
 	void addToCreatureList(list_t* list);
+	std::vector<Entity*> bodyparts;
 
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
