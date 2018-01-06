@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include "png.h"
 
+#include "savepng.hpp"
+
 #define SUCCESS 0
 #define ERROR -1
 
@@ -24,6 +26,19 @@
 #define bmask 0x00FF0000
 #define amask 0xFF000000
 #endif
+
+int SDL_SavePNG(SDL_Surface *surface, const char *filename)
+{
+	SDL_RWops *file = SDL_RWFromFile(filename, "wb");
+	if (file != NULL)
+	{
+		return SDL_SavePNG_RW(surface, file, 1);
+	}
+	else
+	{
+		return -1;
+	}
+}
 
 /* libpng callbacks */
 static void png_error_SDL(png_structp ctx, png_const_charp str)
