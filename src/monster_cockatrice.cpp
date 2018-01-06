@@ -159,6 +159,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
 	entity = newEntity(416, 0, map.entities, nullptr); //Limb entity.
@@ -177,6 +178,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
 	entity = newEntity(415, 0, map.entities, nullptr); //Limb entity.
@@ -195,6 +197,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
 	entity = newEntity(418, 0, map.entities, nullptr); //Limb entity.
@@ -213,6 +216,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(417, 0, map.entities, nullptr); //Limb entity.
@@ -231,6 +235,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right wing
 	entity = newEntity(420, 0, map.entities, nullptr); //Limb entity.
@@ -249,6 +254,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left wing
 	entity = newEntity(419, 0, map.entities, nullptr); //Limb entity.
@@ -267,6 +273,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actCockatriceLimb(Entity* my)

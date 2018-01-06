@@ -10,16 +10,19 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
@@ -1299,7 +1302,7 @@ void gameLogic(void)
 											entity->z += (entity->new_z - entity->z) / 4;
 										}
 									}
-									// dead reckoning //TODO: I feel like this could be improved. Right now, it's effectively an O(N^2) loop when it concerns monsters and players, since for every monster and player, it loops through the entire entity list to find the limbs. Why? Just access them directly from this entity!
+									// dead reckoning
 									if ( fabs(entity->vel_x) > 0 || fabs(entity->vel_y) > 0 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
@@ -1312,37 +1315,14 @@ void gameLogic(void)
 										}
 										clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
 										clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
-										if ( entity->behavior == &actPlayer )
+										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 										{
-											node_t* node2;
-											for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+											for (Entity *bodypart : entity->bodyparts)
 											{
-												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->behavior == &actPlayerLimb )
-												{
-													if ( bodypart->skill[2] == entity->skill[2] )
-													{
-														bodypart->x += entity->x - ox;
-														bodypart->y += entity->y - oy;
-														bodypart->new_x += entity->new_x - onewx;
-														bodypart->new_y += entity->new_y - onewy;
-													}
-												}
-											}
-										}
-										if ( entity->behavior == &actMonster )
-										{
-											node_t* node2;
-											for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
-											{
-												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->skill[2] == entity->getUID() && bodypart->parent == entity->getUID() )
-												{
-													bodypart->x += entity->x - ox;
-													bodypart->y += entity->y - oy;
-													bodypart->new_x += entity->new_x - onewx;
-													bodypart->new_y += entity->new_y - onewy;
-												}
+												bodypart->x += entity->x - ox;
+												bodypart->y += entity->y - oy;
+												bodypart->new_x += entity->new_x - onewx;
+												bodypart->new_y += entity->new_y - onewy;
 											}
 										}
 									}
