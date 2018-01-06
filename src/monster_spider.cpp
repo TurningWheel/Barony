@@ -126,6 +126,7 @@ void initSpider(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left pedipalp
 	entity = newEntity(268, 0, map.entities, nullptr); //Limb entity.
@@ -144,6 +145,7 @@ void initSpider(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// eight legs :)
 	for ( c = 0; c < 8; c++ )
@@ -166,6 +168,7 @@ void initSpider(Entity* my, Stat* myStats)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 		// "shin"
 		entity = newEntity(270, 0, map.entities, nullptr); //Limb entity.
@@ -184,6 +187,7 @@ void initSpider(Entity* my, Stat* myStats)
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 	}
 }
 

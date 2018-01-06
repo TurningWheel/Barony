@@ -552,6 +552,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
 	entity = newEntity(107, 0, map.entities, nullptr); //Limb entity.
@@ -570,6 +571,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
 	entity = newEntity(108, 0, map.entities, nullptr); //Limb entity.
@@ -588,6 +590,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
 	entity = newEntity(109, 0, map.entities, nullptr); //Limb entity.
@@ -606,6 +609,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(110, 0, map.entities, nullptr); //Limb entity.
@@ -624,6 +628,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// world weapon
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -643,6 +648,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// shield
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -661,6 +667,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// cloak
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -682,6 +689,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// helmet
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -703,6 +711,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// mask
 	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
@@ -724,6 +733,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	if ( multiplayer == CLIENT )
 	{
