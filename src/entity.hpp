@@ -113,7 +113,7 @@ class Entity
 	static const int SWITCH_POWERED = 1;
 	Uint32 uid;                    // entity uid
 public:
-	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist);
+	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creaturelist);
 	~Entity();
 
 
@@ -327,6 +327,7 @@ public:
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
+	node_t* myCreatureListNode;
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
 
@@ -650,6 +651,8 @@ public:
 	 */
 	void SetEntityOnFire();
 
+	void addToCreatureList(list_t* list);
+
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
 	void castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
@@ -691,7 +694,8 @@ list_t* checkTileForEntity(int x, int y); //Don't forget to free the list return
 void getItemsOnTile(int x, int y, list_t** list);
 
 //--- Entity act* functions ---
-
+void actMonster(Entity* my);
+void actPlayer(Entity* my);
 
 /*
  * NOTE: Potion effects
