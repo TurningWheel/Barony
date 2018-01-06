@@ -93,7 +93,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	}
 
 	// right arm
-	Entity* entity = newEntity(649, 0, map.entities);
+	Entity* entity = newEntity(649, 0, map.entities, nullptr);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -111,7 +111,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(648, 0, map.entities);
+	entity = newEntity(648, 0, map.entities, nullptr);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -129,7 +129,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// head
-	entity = newEntity(647, 0, map.entities);
+	entity = newEntity(647, 0, map.entities, nullptr);
 	entity->yaw = my->yaw;
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -148,7 +148,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// world weapon
-	entity = newEntity(-1, 0, map.entities);
+	entity = newEntity(-1, 0, map.entities, nullptr);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
