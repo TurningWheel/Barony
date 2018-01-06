@@ -146,7 +146,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					int c;
 					for ( c = 0; c < i; c++ )
 					{
-						Entity* entity = newEntity(-1, 1, map.entities);
+						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 						entity->flags[INVISIBLE] = true;
 						entity->flags[UPDATENEEDED] = true;
 						entity->x = my->x - 4 + rand() % 8;
@@ -287,7 +287,7 @@ void actBoulder(Entity* my)
 			if ( my->z >= -8 && fabs(my->vel_z) > 2 )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity == my )
@@ -390,7 +390,7 @@ void actBoulder(Entity* my)
 			if ( dist && !BOULDER_NOGROUND )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity == my )
@@ -569,7 +569,7 @@ void actBoulder(Entity* my)
 				if ( dist && !BOULDER_NOGROUND )
 				{
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity == my )
@@ -674,7 +674,7 @@ void actBoulderTrap(Entity* my)
 				{
 					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 					{
-						Entity* entity = newEntity(245, 1, map.entities); // boulder
+						Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 						entity->parent = my->getUID();
 						entity->x = (x << 4) + 8;
 						entity->y = (y << 4) + 8;
@@ -753,7 +753,7 @@ void actBoulderTrapEast(Entity* my)
 			y = ((int)(my->y)) >> 4;
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
-				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 				entity->parent = my->getUID();
 				entity->x = (x << 4) + 8;
 				entity->y = (y << 4) + 8;
@@ -841,7 +841,7 @@ void actBoulderTrapSouth(Entity* my)
 			y = ((int)(my->y)) >> 4;
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
-				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 				entity->parent = my->getUID();
 				entity->x = (x << 4) + 8;
 				entity->y = (y << 4) + 8;
@@ -930,7 +930,7 @@ void actBoulderTrapWest(Entity* my)
 			y = ((int)(my->y)) >> 4;
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
-				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 				entity->parent = my->getUID();
 				entity->x = (x << 4) + 8;
 				entity->y = (y << 4) + 8;
@@ -1018,7 +1018,7 @@ void actBoulderTrapNorth(Entity* my)
 			y = ((int)(my->y)) >> 4;
 			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
-				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 				entity->parent = my->getUID();
 				entity->x = (x << 4) + 8;
 				entity->y = (y << 4) + 8;

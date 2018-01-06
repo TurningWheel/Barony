@@ -46,7 +46,7 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 
 	// head
-	Entity* entity = newEntity(303, 0, map.entities);
+	Entity* entity = newEntity(303, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -64,7 +64,7 @@ void initDevil(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right bicep
-	entity = newEntity(305, 0, map.entities);
+	entity = newEntity(305, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -82,7 +82,7 @@ void initDevil(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right forearm
-	entity = newEntity(306, 0, map.entities);
+	entity = newEntity(306, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -100,7 +100,7 @@ void initDevil(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left bicep
-	entity = newEntity(307, 0, map.entities);
+	entity = newEntity(307, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -118,7 +118,7 @@ void initDevil(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left forearm
-	entity = newEntity(308, 0, map.entities);
+	entity = newEntity(308, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -423,8 +423,8 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				entity->z -= 16;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Searching for players only? Don't search full map.entities then.
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;

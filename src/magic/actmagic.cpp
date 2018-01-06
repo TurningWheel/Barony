@@ -564,7 +564,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						bool founddevil = false;
 						node_t* tempNode;
-						for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+						for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next )
 						{
 							Entity* tempEntity = (Entity*)tempNode->element;
 							if ( tempEntity->behavior == &actMonster )
@@ -809,7 +809,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != nullptr; node = node->next )
+						for ( node = map.creatures->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity->behavior == &actMonster && entity != ohitentity )
@@ -1671,7 +1671,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									i = 8 + rand() % 4;
 									for ( c = 0; c < i; c++ )
 									{
-										entity = newEntity(-1, 1, map.entities);
+										entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 										entity->flags[INVISIBLE] = true;
 										entity->flags[UPDATENEEDED] = true;
 										entity->x = hit.mapx * 16 + 4 + rand() % 8;
@@ -1720,10 +1720,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							int i = 8 + rand() % 4;
 
+							// spawn several rock items //TODO: This should really be its own function.
 							int c;
 							for ( c = 0; c < i; c++ )
 							{
-								Entity* entity = newEntity(-1, 1, map.entities);
+								Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
 								entity->flags[INVISIBLE] = true;
 								entity->flags[UPDATENEEDED] = true;
 								entity->x = hit.entity->x - 4 + rand() % 8;
@@ -2064,7 +2065,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 {
 	Entity* entity;
 
-	entity = newEntity(parentent->sprite, 1, map.entities);
+	entity = newEntity(parentent->sprite, 1, map.entities, nullptr); //Particle entity.
 
 	entity->x = parentent->x + (rand() % 50 - 25) / 20.f;
 	entity->y = parentent->y + (rand() % 50 - 25) / 20.f;
@@ -2119,7 +2120,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 	// boosty boost
 	for ( c = 0; c < 10; c++ )
 	{
-		Entity* entity = newEntity(sprite, 1, map.entities);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->x = x - 5 + rand() % 11;
 		entity->y = y - 5 + rand() % 11;
 		entity->z = z - 10 + rand() % 21;
@@ -2145,7 +2146,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 
 void createParticle1(Entity* caster, int player)
 {
-	Entity* entity = newEntity(-1, 1, map.entities);
+	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 0;
 	entity->sizey = 0;
 	entity->x = caster->x;
@@ -2166,7 +2167,7 @@ void createParticle1(Entity* caster, int player)
 
 void createParticleCircling(Entity* parent, int duration, int sprite)
 {
-	Entity* entity = newEntity(sprite, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2186,7 +2187,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 
 	real_t tmp = entity->yaw;
 
-	entity = newEntity(sprite, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2204,7 +2205,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(sprite, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2222,7 +2223,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(sprite, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2240,7 +2241,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(sprite, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2258,7 +2259,7 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(sprite, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2317,7 +2318,7 @@ void createParticleDot(Entity* parent)
 {
 	for ( int c = 0; c < 50; c++ )
 	{
-		Entity* entity = newEntity(576, 1, map.entities);
+		Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x + (-4 + rand() % 9);
@@ -2342,7 +2343,7 @@ void createParticleRock(Entity* parent)
 {
 	for ( int c = 0; c < 5; c++ )
 	{
-		Entity* entity = newEntity(78, 1, map.entities);
+		Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x + (-4 + rand() % 9);
@@ -2442,7 +2443,7 @@ void createParticleErupt(Entity* parent, int sprite)
 	int numParticles = 8;
 	for ( int c = 0; c < 8; c++ )
 	{
-		Entity* entity = newEntity(sprite, 1, map.entities);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x;
@@ -2475,7 +2476,7 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 		return nullptr;
 	}
 	// spawns the invisible 'center' of the magic particle
-	Entity* entity = newEntity(sprite, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = target->x;
@@ -2535,7 +2536,7 @@ void createParticleSap(Entity* parent)
 				}
 			}
 		}
-		Entity* entity = newEntity(sprite, 1, map.entities);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x;
@@ -2614,7 +2615,7 @@ void createParticleDropRising(Entity* parent, int sprite, double scale)
 	for ( int c = 0; c < 50; c++ )
 	{
 		// shoot drops to the sky
-		Entity* entity = newEntity(sprite, 1, map.entities);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x - 4 + rand() % 9;
@@ -2640,7 +2641,7 @@ void createParticleDropRising(Entity* parent, int sprite, double scale)
 
 Entity* createParticleTimer(Entity* parent, int duration, int sprite)
 {
-	Entity* entity = newEntity(-1, 1, map.entities);
+	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Timer entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
@@ -2805,7 +2806,7 @@ void actParticleTimer(Entity* my)
 				// shoot drops to the sky
 				if ( parent && my->particleTimerCountdownSprite != 0 )
 				{
-					Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities);
+					Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr); //Particle entity.
 					entity->sizex = 1;
 					entity->sizey = 1;
 					entity->x = parent->x - 4 + rand() % 9;
@@ -3033,7 +3034,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 	for ( int c = 0; c < particleCount; c++ )
 	{
 		// shoot drops to the sky
-		Entity* entity = newEntity(sprite, 1, map.entities);
+		Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x - 3 + rand() % 7;
@@ -3070,7 +3071,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 	for ( int c = 0; c < 128; c++ )
 	{
 		// shoot drops to the sky
-		Entity* entity = newEntity(670, 1, map.entities);
+		Entity* entity = newEntity(670, 1, map.entities, nullptr); //Particle entity.
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->yaw = 0 + c * arc;
@@ -3138,7 +3139,7 @@ bool Entity::magicFallingCollision()
 	}
 
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity == this )

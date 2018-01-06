@@ -103,7 +103,7 @@ void initDemon(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(264, 0, map.entities);
+	Entity* entity = newEntity(264, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -121,7 +121,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(263, 0, map.entities);
+	entity = newEntity(263, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -139,7 +139,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(262, 0, map.entities);
+	entity = newEntity(262, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -157,7 +157,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(261, 0, map.entities);
+	entity = newEntity(261, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -175,7 +175,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(260, 0, map.entities);
+	entity = newEntity(260, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -193,7 +193,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// jaw
-	entity = newEntity(259, 0, map.entities);
+	entity = newEntity(259, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

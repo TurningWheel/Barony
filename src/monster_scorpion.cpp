@@ -106,7 +106,7 @@ void initScorpion(Entity* my, Stat* myStats)
 	}
 
 	// tail
-	Entity* entity = newEntity(197, 0, map.entities);
+	Entity* entity = newEntity(197, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

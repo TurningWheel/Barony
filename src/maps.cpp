@@ -369,7 +369,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	bool *lootexcludelocations;
 
 	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
-	if (loadMap(levelset, &map, map.entities) == -1)
+	if ( loadMap(levelset, &map, map.entities, map.creatures) == -1 )
 	{
 		printlog("error: no level of set '%s' could be found.\n", levelset);
 		return -1;
@@ -387,10 +387,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 	// determine whether minotaur level or not
 	if ( currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3 )
+	{
 		if ( prng_get_uint() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
+	}
 
 	// dark level
 	if ( !secretlevel && currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
@@ -423,10 +425,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 	}
 
-	mapList.first = NULL;
-	mapList.last = NULL;
-	doorList.first = NULL;
-	doorList.last = NULL;
+	mapList.first = nullptr;
+	mapList.last = nullptr;
+	doorList.first = nullptr;
+	doorList.last = nullptr;
 
 	// load shop room
 	if ( shoplevel )
@@ -451,14 +453,19 @@ int generateDungeon(char* levelset, Uint32 seed)
 			snprintf(sublevelnum, 3, "%02d", shopleveltouse);
 			strcat(sublevelname, sublevelnum);
 
-			shopmap.tiles = NULL;
+			shopmap.tiles = nullptr;
 			shopmap.entities = (list_t*) malloc(sizeof(list_t));
-			shopmap.entities->first = NULL;
-			shopmap.entities->last = NULL;
-			if ( loadMap(sublevelname, &shopmap, shopmap.entities) == -1 )
+			shopmap.entities->first = nullptr;
+			shopmap.entities->last = nullptr;
+			shopmap.creatures = new list_t;
+			shopmap.creatures->first = nullptr;
+			shopmap.creatures->last = nullptr;
+			if ( loadMap(sublevelname, &shopmap, shopmap.entities, shopmap.creatures) == -1 )
 			{
 				list_FreeAll(shopmap.entities);
 				free(shopmap.entities);
+				list_FreeAll(shopmap.creatures);
+				delete shopmap.creatures;
 				if ( shopmap.tiles )
 				{
 					free(shopmap.tiles);
@@ -478,7 +485,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	fullname = (char*) malloc(sizeof(char) * 128);
 
 	// a maximum of 100 (0-99 inclusive) sublevels can be added to the pool
-	for ( numlevels = 0; numlevels < 100; numlevels++ )
+	for ( numlevels = 0; numlevels < 100; ++numlevels )
 	{
 		strcpy(sublevelname, levelset);
 		snprintf(sublevelnum, 3, "%02d", numlevels);
@@ -493,11 +500,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 		// allocate memory for the next sublevel and attempt to load it
 		tempMap = (map_t*) malloc(sizeof(map_t));
-		tempMap->tiles = NULL;
+		tempMap->tiles = nullptr;
 		tempMap->entities = (list_t*) malloc(sizeof(list_t));
-		tempMap->entities->first = NULL;
-		tempMap->entities->last = NULL;
-		if ( loadMap(sublevelname, tempMap, tempMap->entities) == -1 )
+		tempMap->entities->first = nullptr;
+		tempMap->entities->last = nullptr;
+		tempMap->creatures = new list_t;
+		tempMap->creatures->first = nullptr;
+		tempMap->creatures->last = nullptr;
+		if ( loadMap(sublevelname, tempMap, tempMap->entities, tempMap->creatures) == -1 )
 		{
 			mapDeconstructor((void*)tempMap);
 			continue; // failed to load level
@@ -505,8 +515,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 		// level is successfully loaded, add it to the pool
 		newList = (list_t*) malloc(sizeof(list_t));
-		newList->first = NULL;
-		newList->last = NULL;
+		newList->first = nullptr;
+		newList->last = nullptr;
 		node = list_AddNodeLast(&mapList);
 		node->element = newList;
 		node->deconstructor = &listDeconstructor;
@@ -553,8 +563,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	subRoomName = (char*)malloc(sizeof(char) * 128);
-	subRoomMapList.first = NULL;
-	subRoomMapList.last = NULL;
+	subRoomMapList.first = nullptr;
+	subRoomMapList.last = nullptr;
 	char letterString[2];
 	letterString[1] = '\0';
 	int subroomCount[100] = {0};
@@ -579,15 +589,18 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 
 			printlog("Found map lv %s, count: %d", subRoomName, subroomCount[subRoomNumLevels]);
-			subroomCount[subRoomNumLevels]++;
+			++subroomCount[subRoomNumLevels];
 
 			// allocate memory for the next subroom and attempt to load it
 			subRoomMap = (map_t*)malloc(sizeof(map_t));
-			subRoomMap->tiles = NULL;
+			subRoomMap->tiles = nullptr;
 			subRoomMap->entities = (list_t*)malloc(sizeof(list_t));
-			subRoomMap->entities->first = NULL;
-			subRoomMap->entities->last = NULL;
-			if ( loadMap(subRoomName, subRoomMap, subRoomMap->entities) == -1 )
+			subRoomMap->entities->first = nullptr;
+			subRoomMap->entities->last = nullptr;
+			subRoomMap->creatures = new list_t;
+			subRoomMap->creatures->first = nullptr;
+			subRoomMap->creatures->last = nullptr;
+			if ( loadMap(subRoomName, subRoomMap, subRoomMap->entities, subRoomMap->creatures) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
 				continue; // failed to load level
@@ -595,8 +608,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			// level is successfully loaded, add it to the pool
 			subRoomList = (list_t*)malloc(sizeof(list_t));
-			subRoomList->first = NULL;
-			subRoomList->last = NULL;
+			subRoomList->first = nullptr;
+			subRoomList->last = nullptr;
 			node = list_AddNodeLast(&subRoomMapList);
 			node->element = subRoomList;
 			node->deconstructor = &listDeconstructor;
@@ -715,10 +728,13 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			else if ( c == 1 && secretlevelexit )
 			{
-				secretlevelmap.tiles = NULL;
+				secretlevelmap.tiles = nullptr;
 				secretlevelmap.entities = (list_t*) malloc(sizeof(list_t));
-				secretlevelmap.entities->first = NULL;
-				secretlevelmap.entities->last = NULL;
+				secretlevelmap.entities->first = nullptr;
+				secretlevelmap.entities->last = nullptr;
+				secretlevelmap.creatures = new list_t;
+				secretlevelmap.creatures->first = nullptr;
+				secretlevelmap.creatures->last = nullptr;
 				char secretmapname[128];
 				switch ( secretlevelexit )
 				{
@@ -737,10 +753,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 					default:
 						break;
 				}
-				if ( loadMap(secretmapname, &secretlevelmap, secretlevelmap.entities) == -1 )
+				if ( loadMap(secretmapname, &secretlevelmap, secretlevelmap.entities, secretlevelmap.creatures) == -1 )
 				{
 					list_FreeAll(secretlevelmap.entities);
 					free(secretlevelmap.entities);
+					list_FreeAll(secretlevelmap.creatures);
+					delete secretlevelmap.creatures;
 					if ( secretlevelmap.tiles )
 					{
 						free(secretlevelmap.tiles);
@@ -773,14 +791,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if (possiblerooms[i])
 					{
-						j++;
+						++j;
 						if (j == levelnum)
 						{
 							break;
 						}
 					}
 					node = node->next;
-					i++;
+					++i;
 				}
 				levelnum2 = i;
 				node = ((list_t*)node->element)->first;
@@ -820,7 +838,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					possiblerooms[levelnum2] = false;
 				}
-				numlevels--;
+				--numlevels;
 				if ( levelnum2 == 0 )
 				{
 					// if we couldn't even fit the entrance hall into the dungeon, we have a problem
@@ -840,6 +858,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						list_FreeAll(shopmap.entities);
 						free(shopmap.entities);
+						list_FreeAll(shopmap.creatures);
+						delete shopmap.creatures;
 						if ( shopmap.tiles )
 						{
 							free(shopmap.tiles);
@@ -849,6 +869,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						list_FreeAll(secretlevelmap.entities);
 						free(secretlevelmap.entities);
+						list_FreeAll(secretlevelmap.creatures);
+						delete secretlevelmap.creatures;
 						if ( secretlevelmap.tiles )
 						{
 							free(secretlevelmap.tiles);
@@ -876,21 +898,21 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if ( possiblelocations2[x + y * map.width] == true )
 					{
-						i++;
+						++i;
 						if ( i == pickedlocation )
 						{
 							break;
 						}
 					}
-					x++;
+					++x;
 					if ( x >= map.width )
 					{
 						x = 0;
-						y++;
+						++y;
 						if ( y >= map.height )
 						{
 							y = 0;
-							pickedlocation++;
+							++pickedlocation;
 						}
 					}
 				}
@@ -905,17 +927,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if ( possiblelocations2[x + y * map.width] == true )
 					{
-						i++;
+						++i;
 						if ( i == pickedlocation )
 						{
 							break;
 						}
 					}
-					x++;
+					++x;
 					if ( x >= map.width )
 					{
 						x = 0;
-						y++;
+						++y;
 						if ( y >= map.height )
 						{
 							y = 0;
@@ -926,10 +948,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			// now copy all the geometry from the sublevel to the chosen location
 			if ( c == 0 )
-				for ( z = 0; z < map.width * map.height; z++ )
+			{
+				for ( z = 0; z < map.width * map.height; ++z )
 				{
 					firstroomtile[z] = false;
 				}
+			}
 			x1 = x + tempMap->width;
 			y1 = y + tempMap->height;
 
@@ -994,11 +1018,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
 
-							subRoom_tilex++;
+							++subRoom_tilex;
 							if ( subRoom_tilex >= subRoomMap->width )
 							{
 								subRoom_tilex = 0;
-								subRoom_tiley++;
+								++subRoom_tiley;
 								if ( subRoom_tiley >= subRoomMap->height )
 								{
 									subRoom_tiley = 0;
@@ -1041,7 +1065,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						}
 
 						// remove any existing entities in this region too
-						for ( node = map.entities->first; node != NULL; node = nextnode )
+						for ( node = map.entities->first; node != nullptr; node = nextnode )
 						{
 							nextnode = node->next;
 							Entity* entity = (Entity*)node->element;
@@ -1055,10 +1079,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 
 			// copy the entities as well from the tempMap.
-			for ( node = tempMap->entities->first; node != NULL; node = node->next )
+			for ( node = tempMap->entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
-				childEntity = newEntity(entity->sprite, 1, map.entities);
+				childEntity = newEntity(entity->sprite, 1, map.entities, nullptr);
 
 				// entity will return nullptr on getStats called in setSpriteAttributes as behaviour &actmonster is not set.
 				// check if the monster sprite is correct and set the behaviour manually for getStats.
@@ -1071,15 +1095,20 @@ int generateDungeon(char* levelset, Uint32 seed)
 				childEntity->x = entity->x + x * 16;
 				childEntity->y = entity->y + y * 16;
 				//printlog("1 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+
+				if ( entity->behavior == actMonster || entity->behavior == actPlayer )
+				{
+					entity->addToCreatureList(map.creatures);
+				}
 			}
 
 			if ( foundSubRoom )
 			{
 				// copy the entities from subroom
-				for ( subRoomNode = subRoomMap->entities->first; subRoomNode != NULL; subRoomNode = subRoomNode->next )
+				for ( subRoomNode = subRoomMap->entities->first; subRoomNode != nullptr; subRoomNode = subRoomNode->next )
 				{
 					entity = (Entity*)subRoomNode->element;
-					childEntity = newEntity(entity->sprite, 1, map.entities);
+					childEntity = newEntity(entity->sprite, 1, map.entities, nullptr);
 
 					// entity will return nullptr on getStats called in setSpriteAttributes as behaviour &actmonster is not set.
 					// check if the monster sprite is correct and set the behaviour manually for getStats.
@@ -1092,12 +1121,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 					childEntity->x = entity->x + subRoom_tileStartx * 16;
 					childEntity->y = entity->y + subRoom_tileStarty * 16;
 
+					if ( entity->behavior == actMonster || entity->behavior == actPlayer )
+					{
+						entity->addToCreatureList(map.creatures);
+					}
+
 					//messagePlayer(0, "1 Generated entity. Sprite: %d X: %.2f Y: %.2f", childEntity->sprite, childEntity->x / 16, childEntity->y / 16);
 				}
 			}
 
 			// finally, copy the doors into a single doors list
-			while (doorNode != NULL)
+			while ( doorNode != nullptr )
 			{
 				door = (door_t*)doorNode->element;
 				newDoor = (door_t*) malloc(sizeof(door_t));
@@ -1113,7 +1147,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( foundSubRoom )
 			{
 				// copy subroom doors
-				while ( subRoomDoorNode != NULL )
+				while ( subRoomDoorNode != nullptr )
 				{
 					door = (door_t*)subRoomDoorNode->element;
 					newDoor = (door_t*)malloc(sizeof(door_t));
@@ -1132,6 +1166,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				list_FreeAll(shopmap.entities);
 				free(shopmap.entities);
+				list_FreeAll(shopmap.creatures);
+				delete shopmap.creatures;
 				if ( shopmap.tiles )
 				{
 					free(shopmap.tiles);
@@ -1141,12 +1177,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				list_FreeAll(secretlevelmap.entities);
 				free(secretlevelmap.entities);
+				list_FreeAll(secretlevelmap.creatures);
+				delete secretlevelmap.creatures;
 				if ( secretlevelmap.tiles )
 				{
 					free(secretlevelmap.tiles);
 				}
 			}
-			roomcount++;
+			++roomcount;
 		}
 		free(possiblerooms);
 		free(possiblelocations2);
@@ -1166,10 +1204,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 	// post-processing:
 
 	// doors
-	for ( node = doorList.first; node != NULL; node = node->next )
+	for ( node = doorList.first; node != nullptr; node = node->next )
 	{
 		door = (door_t*)node->element;
-		for (node2 = map.entities->first; node2 != NULL; node2 = node2->next)
+		for (node2 = map.entities->first; node2 != nullptr; node2 = node2->next)
 		{
 			entity = (Entity*)node2->element;
 			if ( entity->x / 16 == door->x && entity->y / 16 == door->y && (entity->sprite == 2 || entity->sprite == 3) )
@@ -1178,7 +1216,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					case 0: // east
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode )
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
@@ -1209,7 +1247,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 					case 1: // south
 						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode )
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
@@ -1240,7 +1278,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 					case 2: // west
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode )
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
@@ -1271,7 +1309,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 					case 3: // north
 						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
-						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode )
+						for ( node3 = map.entities->first; node3 != nullptr; node3 = nextnode )
 						{
 							entity = (Entity*)node3->element;
 							nextnode = node3->next;
@@ -1329,13 +1367,13 @@ int generateDungeon(char* levelset, Uint32 seed)
 	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
 	{
 		numpossiblelocations = 0;
-		for ( c = 0; c < map.width * map.height; c++ )
+		for ( c = 0; c < map.width * map.height; ++c )
 		{
 			possiblelocations[c] = false;
 		}
-		for ( y = 1; y < map.height - 1; y++ )
+		for ( y = 1; y < map.height - 1; ++y )
 		{
-			for ( x = 1; x < map.width - 1; x++ )
+			for ( x = 1; x < map.width - 1; ++x )
 			{
 				int sides = 0;
 				if ( firstroomtile[y + x * map.height] )
@@ -1368,7 +1406,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 		// don't spawn traps in doors
 		node_t* doorNode;
-		for ( doorNode = doorList.first; doorNode != NULL; doorNode = doorNode->next )
+		for ( doorNode = doorList.first; doorNode != nullptr; doorNode = doorNode->next )
 		{
 			door_t* door = (door_t*)doorNode->element;
 			int x = std::min<unsigned int>(std::max(0, door->x), map.width); //TODO: Why are const int and unsigned int being compared?
@@ -1376,7 +1414,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( possiblelocations[y + x * map.height] == true )
 			{
 				possiblelocations[y + x * map.height] = false;
-				numpossiblelocations--;
+				--numpossiblelocations;
 			}
 		}
 
@@ -1393,7 +1431,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				if ( possiblelocations[y + x * map.height] )
 				{
 					possiblelocations[y + x * map.height] = false;
-					numpossiblelocations--;
+					--numpossiblelocations;
 				}
 			}
 		}
@@ -1414,7 +1452,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 		//printlog("j: %d\n",j);
 		//printlog("numpossiblelocations: %d\n",numpossiblelocations);
-		for ( c = 0; c < j; c++ )
+		for ( c = 0; c < j; ++c )
 		{
 			// choose a random location from those available
 			pickedlocation = prng_get_uint() % numpossiblelocations;
@@ -1497,28 +1535,28 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( arrowtrapspawn || noceiling )
 			{
 				arrowtrap = true;
-				entity = newEntity(32, 1, map.entities); // arrow trap
+				entity = newEntity(32, 1, map.entities, nullptr); // arrow trap
 				entity->behavior = &actArrowTrap;
 				map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = 53; // trap wall
 			}
 			else
 			{
 				//messagePlayer(0, "Included at x: %d, y: %d", x, y);
-				entity = newEntity(38, 1, map.entities); // boulder trap
+				entity = newEntity(38, 1, map.entities, nullptr); // boulder trap
 				entity->behavior = &actBoulderTrap;
 			}
 			entity->x = x * 16;
 			entity->y = y * 16;
 			//printlog("2 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
-			entity = newEntity(18, 1, map.entities); // electricity node
+			entity = newEntity(18, 1, map.entities, nullptr); // electricity node
 			entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
 			entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
 			//printlog("4 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 			// make torches
 			if ( arrowtrap )
 			{
-				entity = newEntity(4 + side, 1, map.entities);
-				Entity* entity2 = newEntity(4 + side, 1, map.entities);
+				entity = newEntity(4 + side, 1, map.entities, nullptr);
+				Entity* entity2 = newEntity(4 + side, 1, map.entities, nullptr);
 				switch ( side )
 				{
 					case 0:
@@ -1558,7 +1596,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					// get rid of extraneous torch
 					node_t* tempNode;
 					node_t* nextTempNode;
-					for ( tempNode = map.entities->first; tempNode != NULL; tempNode = nextTempNode )
+					for ( tempNode = map.entities->first; tempNode != nullptr; tempNode = nextTempNode )
 					{
 						nextTempNode = tempNode->next;
 						Entity* tempEntity = (Entity*)tempNode->element;
@@ -1571,11 +1609,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 						}
 					}
 				}
-				entity = newEntity(34, 1, map.entities); // pressure plate
+				entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
 				entity->x = x * 16;
 				entity->y = y * 16;
 				//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
-				entity = newEntity(18, 1, map.entities); // electricity node
+				entity = newEntity(18, 1, map.entities, nullptr); // electricity node
 				entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
 				entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
 				//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
@@ -1629,7 +1667,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 		}
 	}
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		x = entity->x / 16;
@@ -1639,7 +1677,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( possiblelocations[y + x * map.height] )
 			{
 				possiblelocations[y + x * map.height] = false;
-				numpossiblelocations--;
+				--numpossiblelocations;
 			}
 		}
 	}
@@ -1710,7 +1748,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
-	for ( c = 0; c < std::min(j, numpossiblelocations); c++ )
+	for ( c = 0; c < std::min(j, numpossiblelocations); ++c )
 	{
 		// choose a random location from those available
 		pickedlocation = prng_get_uint() % numpossiblelocations;
@@ -1723,17 +1761,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			if ( possiblelocations[y + x * map.height] == true )
 			{
-				i++;
+				++i;
 				if ( i == pickedlocation )
 				{
 					break;
 				}
 			}
-			x++;
+			++x;
 			if ( x >= map.width )
 			{
 				x = 0;
-				y++;
+				++y;
 				if ( y >= map.height )
 				{
 					y = 0;
@@ -1742,17 +1780,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 
 		// create entity
-		entity = NULL;
+		entity = nullptr;
 		if ( (c == 0 || (minotaurlevel && c < 2)) && (!secretlevel || currentlevel != 7) && (!secretlevel || currentlevel != 20) )
 		{
 			if ( strcmp(map.name, "Hell") )
 			{
-				entity = newEntity(11, 1, map.entities); // ladder
+				entity = newEntity(11, 1, map.entities, nullptr); // ladder
 				entity->behavior = &actLadder;
 			}
 			else
 			{
-				entity = newEntity(45, 1, map.entities); // hell uses portals instead
+				entity = newEntity(45, 1, map.entities, nullptr); // hell uses portals instead
 				entity->behavior = &actPortal;
 				entity->skill[3] = 1; // not secret portals though
 			}
@@ -1795,7 +1833,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 		else if ( c == 1 && secretlevel && currentlevel == 7 )
 		{
-			entity = newEntity(68, 1, map.entities); // magic (artifact) bow
+			entity = newEntity(68, 1, map.entities, nullptr); // magic (artifact) bow
 		}
 		else
 		{
@@ -1836,20 +1874,20 @@ int generateDungeon(char* levelset, Uint32 seed)
 						{
 							if ( currentlevel > 15 )
 							{
-								entity = newEntity(93, 1, map.entities);  // automaton
+								entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
 								entity->monsterStoreType = 1; // weaker version
 							}
 							else
 							{
-								entity = newEntity(27, 1, map.entities);  // human
+								entity = newEntity(27, 1, map.entities, map.creatures);  // human
 							}
 						}
 						else
 						{
-							entity = newEntity(10, 1, map.entities);  // monster
+							entity = newEntity(10, 1, map.entities, map.creatures);  // monster
 						}
 						entity->skill[5] = nummonsters;
-						nummonsters++;
+						++nummonsters;
 					}
 				}
 				else if ( forcedLootSpawns > 0 )
@@ -1859,12 +1897,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						if ( prng_get_uint() % 10 == 0 )   // 10% chance
 						{
-							entity = newEntity(9, 1, map.entities);  // gold
+							entity = newEntity(9, 1, map.entities, nullptr);  // gold
 							numGenGold++;
 						}
 						else
 						{
-							entity = newEntity(8, 1, map.entities);  // item
+							entity = newEntity(8, 1, map.entities, nullptr);  // item
 							numGenItems++;
 						}
 					}
@@ -1878,26 +1916,26 @@ int generateDungeon(char* levelset, Uint32 seed)
 						switch ( prng_get_uint() % 7 )
 						{
 							case 0:
-								entity = newEntity(12, 1, map.entities);
+								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp.
 								break; //Firecamp
 							case 1:
-								entity = newEntity(14, 1, map.entities);
+								entity = newEntity(14, 1, map.entities, nullptr); //Fountain.
 								break; //Fountain
 							case 2:
-								entity = newEntity(15, 1, map.entities);
+								entity = newEntity(15, 1, map.entities, nullptr); //Sink.
 								break; //Sink
 							case 3:
-								entity = newEntity(21, 1, map.entities);
+								entity = newEntity(21, 1, map.entities, nullptr); //Chest.
 								entity->chestLocked = -1;
 								break; //Chest
 							case 4:
-								entity = newEntity(39, 1, map.entities);
+								entity = newEntity(39, 1, map.entities, nullptr); //Tomb.
 								break; //Tomb
 							case 5:
-								entity = newEntity(59, 1, map.entities);
+								entity = newEntity(59, 1, map.entities, nullptr); //Table.
 								break; //Table
 							case 6:
-								entity = newEntity(60, 1, map.entities);
+								entity = newEntity(60, 1, map.entities, nullptr); //Chair.
 								break; //Chair
 						}
 					}
@@ -1905,20 +1943,20 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						if ( currentlevel <= 25 )
 						{
-							entity = newEntity(64, 1, map.entities); // spear trap
+							entity = newEntity(64, 1, map.entities, nullptr); // spear trap
 						}
 						else
 						{
 							if ( prng_get_uint() % 2 == 0 )
 							{
-								entity = newEntity(120, 1, map.entities); // vertical spell trap.
+								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 							}
 							else
 							{
-								entity = newEntity(64, 1, map.entities); // spear trap
+								entity = newEntity(64, 1, map.entities, nullptr); // spear trap
 							}
 						}
-						Entity* also = newEntity(33, 1, map.entities);
+						Entity* also = newEntity(33, 1, map.entities, nullptr);
 						also->x = x * 16;
 						also->y = y * 16;
 						//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->getUID(),also->x,also->y);
@@ -1968,12 +2006,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 							{
 								if ( prng_get_uint() % 10 == 0 )   // 10% chance
 								{
-									entity = newEntity(9, 1, map.entities);  // gold
+									entity = newEntity(9, 1, map.entities, nullptr);  // gold
 									numGenGold++;
 								}
 								else
 								{
-									entity = newEntity(8, 1, map.entities);  // item
+									entity = newEntity(8, 1, map.entities, nullptr);  // item
 									numGenItems++;
 								}
 							}
@@ -1986,17 +2024,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 								{
 									if ( currentlevel > 15 )
 									{
-										entity = newEntity(93, 1, map.entities);  // automaton
+										entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
 										entity->monsterStoreType = 1; // weaker version
 									}
 									else
 									{
-										entity = newEntity(27, 1, map.entities);  // human
+										entity = newEntity(27, 1, map.entities, map.creatures);  // human
 									}
 								}
 								else
 								{
-									entity = newEntity(10, 1, map.entities);  // monster
+									entity = newEntity(10, 1, map.entities, map.creatures);  // monster
 								}
 								entity->skill[5] = nummonsters;
 								nummonsters++;
@@ -2012,26 +2050,26 @@ int generateDungeon(char* levelset, Uint32 seed)
 						switch ( prng_get_uint() % 7 )
 						{
 							case 0:
-								entity = newEntity(12, 1, map.entities);
+								entity = newEntity(12, 1, map.entities, nullptr); //Firecamp entity.
 								break; //Firecamp
 							case 1:
-								entity = newEntity(14, 1, map.entities);
+								entity = newEntity(14, 1, map.entities, nullptr); //Fountain entity.
 								break; //Fountain
 							case 2:
-								entity = newEntity(15, 1, map.entities);
+								entity = newEntity(15, 1, map.entities, nullptr); //Sink entity.
 								break; //Sink
 							case 3:
-								entity = newEntity(21, 1, map.entities);
+								entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
 								entity->chestLocked = -1;
 								break; //Chest
 							case 4:
-								entity = newEntity(39, 1, map.entities);
+								entity = newEntity(39, 1, map.entities, nullptr); //Tomb entity.
 								break; //Tomb
 							case 5:
-								entity = newEntity(59, 1, map.entities);
+								entity = newEntity(59, 1, map.entities, nullptr); //Table entity.
 								break; //Table
 							case 6:
-								entity = newEntity(60, 1, map.entities);
+								entity = newEntity(60, 1, map.entities, nullptr); //Chair entity.
 								break; //Chair
 						}
 					}
@@ -2039,20 +2077,20 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						if ( currentlevel <= 25 )
 						{
-							entity = newEntity(64, 1, map.entities); // spear trap
+							entity = newEntity(64, 1, map.entities, nullptr); // spear trap
 						}
 						else
 						{
 							if ( prng_get_uint() % 2 == 0 )
 							{
-								entity = newEntity(120, 1, map.entities); // vertical spell trap.
+								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
 							}
 							else
 							{
-								entity = newEntity(64, 1, map.entities); // spear trap
+								entity = newEntity(64, 1, map.entities, nullptr); // spear trap
 							}
 						}
-						Entity* also = newEntity(33, 1, map.entities);
+						Entity* also = newEntity(33, 1, map.entities, nullptr);
 						also->x = x * 16;
 						also->y = y * 16;
 						//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->getUID(),also->x,also->y);
@@ -2061,7 +2099,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				}
 			}
 		}
-		if ( entity != NULL )
+		if ( entity != nullptr )
 		{
 			entity->x = x * 16;
 			entity->y = y * 16;
@@ -2115,15 +2153,15 @@ void assignActions(map_t* map)
 	Item* item;
 	bool itemsdonebefore = false;
 
-	if (map == NULL)
+	if ( map == nullptr )
 	{
 		return;
 	}
 
 	// add lava lights
-	for ( y = 0; y < map->height; y++ )
+	for ( y = 0; y < map->height; ++y )
 	{
-		for ( x = 0; x < map->width; x++ )
+		for ( x = 0; x < map->width; ++x )
 		{
 			if ( lavatiles[map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height]] )
 			{
@@ -2137,7 +2175,7 @@ void assignActions(map_t* map)
 	prng_seed_bytes(&mapseed, sizeof(mapseed));
 
 	// assign entity behaviors
-	for ( node = map->entities->first; node != NULL; node = nextnode )
+	for ( node = map->entities->first; node != nullptr; node = nextnode )
 	{
 		entity = (Entity*)node->element;
 		nextnode = node->next;
@@ -2147,20 +2185,20 @@ void assignActions(map_t* map)
 			case 0:
 			{
 				list_RemoveNode(entity->mynode);
-				entity = NULL;
+				entity = nullptr;
 				break;
 				// player:
 			}
 			case 1:
 			{
-				if (numplayers >= 0 && numplayers < MAXPLAYERS)
+				if ( numplayers >= 0 && numplayers < MAXPLAYERS )
 				{
 					if ( client_disconnected[numplayers] )
 					{
 						// don't spawn missing players
-						numplayers++;
+						++numplayers;
 						list_RemoveNode(entity->mynode);
-						entity = NULL;
+						entity = nullptr;
 						break;
 					}
 					if ( multiplayer != CLIENT )
@@ -2171,7 +2209,7 @@ void assignActions(map_t* map)
 							stats[numplayers]->HP = stats[numplayers]->MAXHP / 2;
 							stats[numplayers]->MP = stats[numplayers]->MAXMP / 2;
 							stats[numplayers]->HUNGER = 500;
-							for ( c = 0; c < NUMEFFECTS; c++ )
+							for ( c = 0; c < NUMEFFECTS; ++c )
 							{
 								stats[numplayers]->EFFECTS[c] = false;
 								stats[numplayers]->EFFECTS_TIMERS[c] = 0;
@@ -2180,6 +2218,7 @@ void assignActions(map_t* map)
 					}
 				}
 				entity->behavior = &actPlayer;
+				entity->addToCreatureList(map->creatures);
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = -1;
@@ -2208,8 +2247,8 @@ void assignActions(map_t* map)
 						createMinotaurTimer(entity, map);
 					}
 				}
-				numplayers++;
-				if (numplayers > MAXPLAYERS)
+				++numplayers;
+				if ( numplayers > MAXPLAYERS )
 				{
 					printlog("warning: too many player objects in level!\n");
 				}
@@ -2223,7 +2262,7 @@ void assignActions(map_t* map)
 				entity->sprite = 1;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
-				childEntity = newEntity(2, 0, map->entities);
+				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("16 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -2232,7 +2271,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -2241,7 +2280,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -2261,7 +2300,7 @@ void assignActions(map_t* map)
 				entity->sprite = 1;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
-				childEntity = newEntity(2, 0, map->entities);
+				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("19 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -2271,7 +2310,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actDoor;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
@@ -2280,7 +2319,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
@@ -2691,6 +2730,8 @@ void assignActions(map_t* map)
 				{
 					myStats = entity->getStats();
 				}
+				//Assign entity creature list pointer.
+				entity->addToCreatureList(map->creatures);
 
 				Monster monsterType = SKELETON;
 
@@ -2822,7 +2863,7 @@ void assignActions(map_t* map)
 						// need to give the entity its list stuff.
 						// create an empty first node for traversal purposes
 						node_t* node2 = list_AddNodeFirst(&entity->children);
-						node2->element = NULL;
+						node2->element = nullptr;
 						node2->deconstructor = &emptyDeconstructor;
 
 						if ( entity->sprite == 10 )
@@ -3073,7 +3114,7 @@ void assignActions(map_t* map)
 					myStats->type = monsterType;
 					if ( myStats->type == DEVIL )
 					{
-						childEntity = newEntity(72, 1, map->entities);
+						childEntity = newEntity(72, 1, map->entities, nullptr);
 						//printlog("Generated devil spawner. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
@@ -3204,7 +3245,7 @@ void assignActions(map_t* map)
 				entity->z = 7;
 				entity->sprite = 184; // this is the switch base.
 				entity->flags[PASSABLE] = true;
-				childEntity = newEntity(186, 0, map->entities);
+				childEntity = newEntity(186, 0, map->entities, nullptr); //Switch entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3241,7 +3282,7 @@ void assignActions(map_t* map)
 				entity->behavior = &actDoorFrame;
 
 				//entity->skill[28] = 1; //It's a mechanism.
-				childEntity = newEntity(186, 0, map->entities);
+				childEntity = newEntity(186, 0, map->entities, nullptr); //Gate entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3254,7 +3295,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
@@ -3264,7 +3305,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
@@ -3282,7 +3323,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(186, 0, map->entities);
+				childEntity = newEntity(186, 0, map->entities, nullptr); //Gate entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3294,7 +3335,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -3304,7 +3345,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -3327,7 +3368,7 @@ void assignActions(map_t* map)
 				entity->sprite = 188;
 				//entity->skill[9] = -1; //Set default chest as random category < 0
 
-				childEntity = newEntity(216, 0, map->entities);
+				childEntity = newEntity(216, 0, map->entities, nullptr); //Chest lid entity.
 				childEntity->parent = entity->getUID();
 				entity->parent = childEntity->getUID();
 				if ( entity->yaw == 0 ) //EAST FACING
@@ -3510,7 +3551,7 @@ void assignActions(map_t* map)
 					{
 						if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
-							Entity* childEntity = newEntity(252, 1, map->entities);
+							Entity* childEntity = newEntity(252, 1, map->entities, nullptr);
 							childEntity->x = (x << 4) + 8;
 							childEntity->y = (y << 4) + 8;
 							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3632,7 +3673,7 @@ void assignActions(map_t* map)
 				if ( prng_get_uint() % 4 == 0 || !strcmp(map->name, "Start Map") )
 				{
 					// put an item on the table
-					childEntity = newEntity(8, 1, map->entities);
+					childEntity = newEntity(8, 1, map->entities, nullptr);
 					childEntity->x = entity->x - 8;
 					childEntity->y = entity->y - 8;
 					//printlog("31 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3648,7 +3689,7 @@ void assignActions(map_t* map)
 					j = prng_get_uint() % 4 + 1;
 					for ( c = 0; c < j; c++ )
 					{
-						childEntity = newEntity(60, 1, map->entities);
+						childEntity = newEntity(60, 1, map->entities, nullptr);
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
 						//printlog("32 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3732,7 +3773,7 @@ void assignActions(map_t* map)
 				entity->behavior = &actSpearTrap;
 				entity->skill[28] = 1; // is a mechanism
 				entity->flags[PASSABLE] = true;
-				childEntity = newEntity(283, 0, map->entities);
+				childEntity = newEntity(283, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("33 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3889,7 +3930,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						Entity* childEntity = newEntity(252, 1, map->entities);
+						Entity* childEntity = newEntity(252, 1, map->entities, nullptr);
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3928,7 +3969,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						Entity* childEntity = newEntity(252, 1, map->entities);
+						Entity* childEntity = newEntity(252, 1, map->entities, nullptr);
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -3967,7 +4008,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						Entity* childEntity = newEntity(252, 1, map->entities);
+						Entity* childEntity = newEntity(252, 1, map->entities, nullptr);
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -4006,7 +4047,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						Entity* childEntity = newEntity(252, 1, map->entities);
+						Entity* childEntity = newEntity(252, 1, map->entities, nullptr);
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -4037,7 +4078,7 @@ void assignActions(map_t* map)
 				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->flags[PASSABLE] = false;
 
-				childEntity = newEntity(578, 0, map->entities); //floating crystal
+				childEntity = newEntity(578, 0, map->entities, nullptr); //floating crystal
 				childEntity->parent = entity->getUID();
 
 				childEntity->x = entity->x;
@@ -4181,7 +4222,7 @@ void assignActions(map_t* map)
 				entity->behavior = &actDoorFrame;
 
 				//entity->skill[28] = 1; //It's a mechanism.
-				childEntity = newEntity(186, 0, map->entities);
+				childEntity = newEntity(186, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -4194,7 +4235,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
@@ -4204,7 +4245,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
@@ -4222,7 +4263,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(186, 0, map->entities);
+				childEntity = newEntity(186, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -4234,7 +4275,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -4244,7 +4285,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 
-				childEntity = newEntity(1, 0, map->entities);
+				childEntity = newEntity(1, 0, map->entities, nullptr);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
@@ -4263,7 +4304,7 @@ void assignActions(map_t* map)
 				entity->z = 7;
 				entity->sprite = 585; // this is the switch base.
 				entity->flags[PASSABLE] = true;
-				childEntity = newEntity(586, 0, map->entities);
+				childEntity = newEntity(586, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -4304,7 +4345,7 @@ void assignActions(map_t* map)
 					entity->flags[PASSABLE] = true;
 				}
 
-				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities); //floating orb
+				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities, nullptr); //floating orb
 				childEntity->parent = entity->getUID();
 				childEntity->behavior = &actPedestalOrb;
 				childEntity->x = entity->x;
@@ -4439,7 +4480,7 @@ void assignActions(map_t* map)
 				{
 					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 					{
-						childEntity = newEntity(644, 1, map->entities);
+						childEntity = newEntity(644, 1, map->entities, nullptr);
 						childEntity->parent = entity->getUID();
 						childEntity->x = entity->x;
 						childEntity->y = entity->y;
@@ -4458,7 +4499,7 @@ void assignActions(map_t* map)
 						tempNode->deconstructor = &emptyDeconstructor;
 						tempNode->size = sizeof(Entity*);
 
-						childEntity = newEntity(645, 1, map->entities);
+						childEntity = newEntity(645, 1, map->entities, nullptr);
 						childEntity->parent = entity->getUID();
 						childEntity->x = entity->x;
 						childEntity->y = entity->y;
@@ -4614,7 +4655,7 @@ void assignActions(map_t* map)
 				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actPistonBase;
 
-				childEntity = newEntity(632, 1, map->entities); //cam1
+				childEntity = newEntity(632, 1, map->entities, nullptr); //cam1
 				childEntity->parent = entity->getUID();
 				childEntity->x = entity->x + 2.25;
 				childEntity->y = entity->y + 2.25;
@@ -4626,7 +4667,7 @@ void assignActions(map_t* map)
 					childEntity->setUID(-3);
 					entity_uids--;
 				}
-				childEntity = newEntity(633, 1, map->entities); //cam2
+				childEntity = newEntity(633, 1, map->entities, nullptr); //cam2
 				childEntity->parent = entity->getUID();
 				childEntity->x = entity->x - 2.25;
 				childEntity->y = entity->y - 2.25;

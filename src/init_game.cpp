@@ -656,6 +656,10 @@ void deinitGame()
 		}
 	}
 	list_FreeAll(map.entities);
+	if ( map.creatures )
+	{
+		list_FreeAll(map.creatures); //TODO: Need to do this?
+	}
 	list_FreeAll(&messages);
 	if (multiplayer == SINGLE)
 	{

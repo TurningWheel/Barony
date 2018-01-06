@@ -1050,7 +1050,7 @@ void dropItem(Item* item, int player)
 		{
 			closeBookGUI();
 		}
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
 		entity->x = players[player]->entity->x;
@@ -1179,7 +1179,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	if ( itemDroppable )
 	{
 		//TODO: Spawn multiple entities for count...
-		entity = newEntity(-1, 1, map.entities);
+		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
 		entity->x = monster->x;
@@ -2148,6 +2148,11 @@ Item* itemPickup(int player, Item* item)
 	Item* item2;
 	node_t* node;
 
+	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	{
+		item->identified = true;
+	}
+
 	if ( player != 0 && multiplayer == SERVER )
 	{
 		// send the client info on the item it just picked up
@@ -2168,10 +2173,6 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
-			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
-			{
-				item->identified = true;
-			}
 			if (!itemCompare(item, item2, false))
 			{
 				if ( (!itemIsEquipped(item2, player) && itemCategory(item2) != ARMOR)

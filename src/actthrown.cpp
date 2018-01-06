@@ -67,7 +67,7 @@ void actThrown(Entity* my)
 				else
 				{
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Since searching for players and monsters, don't search full map.entities.
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -84,7 +84,7 @@ void actThrown(Entity* my)
 			else
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Monsters and players? Creature list, not entity list.
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -160,7 +160,7 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					Entity* entity = newEntity(-1, 1, map.entities);
+					Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 					entity->flags[INVISIBLE] = true;
 					entity->flags[UPDATENEEDED] = true;
 					entity->flags[PASSABLE] = true;
@@ -482,7 +482,7 @@ void actThrown(Entity* my)
 					// alert other monsters too
 					Entity* ohitentity = hit.entity;
 					node_t* node;
-					for ( node = map.entities->first; node != nullptr; node = node->next )
+					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Searching for monsters? Creature list, not entity list.
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity )
@@ -564,7 +564,7 @@ void actThrown(Entity* my)
 		}
 		else
 		{
-			Entity* entity = newEntity(-1, 1, map.entities);
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 			entity->flags[INVISIBLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->flags[PASSABLE] = true;
