@@ -143,6 +143,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
 	entity = newEntity(251, 0, map.entities, nullptr); //Limb entity.
@@ -161,6 +162,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
 	entity = newEntity(250, 0, map.entities, nullptr); //Limb entity.
@@ -179,6 +181,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
 	entity = newEntity(249, 0, map.entities, nullptr); //Limb entity.
@@ -197,6 +200,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(248, 0, map.entities, nullptr); //Limb entity.
@@ -215,6 +219,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actGhoulLimb(Entity* my)

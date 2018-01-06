@@ -13,6 +13,7 @@
 
 #include "main.hpp"
 #include "game.hpp"
+#include "light.hpp"
 #include "stat.hpp"
 #include "monster.hpp"
 
@@ -639,6 +640,7 @@ public:
 	void SetEntityOnFire();
 
 	void addToCreatureList(list_t* list);
+	std::vector<Entity*> bodyparts;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
