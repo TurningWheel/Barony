@@ -498,6 +498,10 @@ void Entity::actChest()
 		}
 		playSoundEntity(this, 177, 64);
 
+		messagePlayer(chestOpener, language[671]); // "The chest is smashed into pieces!"
+
+		this->closeChest();
+
 		// remove chest entities
 		Entity* parentEntity = uidToEntity(parent);
 		if ( parentEntity )
@@ -718,7 +722,11 @@ void Entity::closeChest()
 		if (openedChest[clientnum] != NULL)
 		{
 			//Message server.
-			messagePlayer(clientnum, language[460]);
+			if ( chestHealth > 0 )
+			{
+				messagePlayer(clientnum, language[460]);
+			}
+			
 			strcpy( (char*)net_packet->data, "CCLS" );
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
@@ -734,7 +742,12 @@ void Entity::closeChest()
 	if (chestStatus)
 	{
 		chestStatus = 0;
-		messagePlayer(chestOpener, language[460]);
+
+		if ( chestHealth > 0 )
+		{
+			messagePlayer(clientnum, language[460]);
+		}
+
 		openedChest[chestOpener] = nullptr;
 		if (chestOpener != 0 && multiplayer == SERVER)
 		{
