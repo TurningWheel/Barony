@@ -684,35 +684,30 @@ void loadAllScores()
 		fclose(fp);
 		return;
 	}
+
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	int versionNumber = 301;
-	if ( !strncmp(checkstr, "v3.0.0", strlen(VERSION)) )
+
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
 	{
-		printlog("notice: '%s' version v3.0.0... upgrading\n", SCORESFILE);
-		versionNumber = 300;
+		if ( checkstr[j] >= '0' && checkstr[j] <= '9' )
+		{
+			versionStr[i] = checkstr[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
 	}
-	else if ( !strncmp(checkstr, "v2.0.7", strlen(VERSION)) )
+	versionNumber = atoi(versionStr); // convert from string to int.
+	printlog("notice: '%s' version number %d", SCORESFILE, versionNumber);
+	if ( versionNumber < 200 || versionNumber > 999 )
 	{
-		printlog("notice: '%s' version v2.0.7... upgrading\n", SCORESFILE);
-		versionNumber = 207;
-	}
-	else if ( !strncmp(checkstr, "v2.0.6", strlen(VERSION)) )
-	{
-		printlog("notice: '%s' version v2.0.6... upgrading\n", SCORESFILE);
-		versionNumber = 206;
-	}
-	else if ( !strncmp(checkstr, "v2.0.5", strlen(VERSION)) )
-	{
-		printlog("notice: '%s' version v2.0.5... upgrading\n", SCORESFILE);
-		versionNumber = 205;
-	}
-	else if ( !strncmp(checkstr, "v2.0.4", strlen(VERSION)) )
-	{
-		printlog("notice: '%s' version v2.0.4... upgrading\n", SCORESFILE);
-		versionNumber = 204;
-	}
-	else if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
-	{
+		// if version number less than v2.0.0, or more than 3 digits, abort and rebuild scores file.
 		printlog("error: '%s' is corrupt!\n", SCORESFILE);
 		fclose(fp);
 		return;
