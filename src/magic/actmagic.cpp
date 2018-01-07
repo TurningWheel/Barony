@@ -476,8 +476,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			else if ( parent && my->actmagicIsOrbiting )
 			{
 				my->yaw += 0.1;
-				MAGIC_LIFE = 0;
-				MAGIC_MAXLIFE = 100;
 				my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
 				my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
 				hitFromAbove = my->magicOrbitingCollision();
@@ -509,7 +507,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 				
-
 				if ( (my->z > my->actmagicOrbitStartZ + 4) && my->actmagicOrbitVerticalDirection == 1 )
 				{
 					my->actmagicOrbitVerticalDirection = -1;
@@ -518,7 +515,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					my->actmagicOrbitVerticalDirection = 1;
 				}
-
 			}
 			else
 			{
@@ -2007,6 +2003,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		//Any init stuff that needs to happen goes here.
 		magic_init = 1;
 		my->skill[2] = -7; // ordinarily the client won't do anything with this entity
+		if ( my->actmagicIsOrbiting == 1 )
+		{
+			MAGIC_MAXLIFE = my->actmagicOrbitLifetime;
+		}
+		else if ( my->actmagicIsVertical == 1 )
+		{
+			MAGIC_MAXLIFE = 512;
+		}
 	}
 }
 
@@ -2790,6 +2794,59 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY )
+			{
+				// teleport to fixed location spell.
+				node_t* node;
+				int c = 0 + rand() % 3;
+				Entity* target = nullptr;
+				for ( node = map.entities->first; node != nullptr; node = node->next )
+				{
+					target = (Entity*)node->element;
+					if ( target->behavior == &actDevilTeleport )
+					{
+						if ( (c == 0 && target->sprite == 72)
+							|| (c == 1 && target->sprite == 73)
+							|| (c == 2 && target->sprite == 74) )
+						{
+							break;
+						}
+					}
+				}
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent && target )
+				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
+					if ( parent->teleport(target->x / 16, target->y / 16) )
+					{
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING )
+			{
+				bool teleported = false;
+				// teleport to target spell.
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent )
+				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
+					teleported = parent->teleportRandom();
+
+					if ( teleported )
+					{
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
 		}
 		list_RemoveNode(my->mynode);
 		return;
@@ -3179,7 +3236,7 @@ bool Entity::magicOrbitingCollision()
 	return false;
 }
 
-void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection)
+void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay)
 {
 	spell_t* spell = getSpellFromID(spellID);
 	Entity* entity = castSpell(getUID(), spell, false, true);
@@ -3187,7 +3244,7 @@ void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t 
 	{
 		entity->x = x + distFromCaster * cos(yaw + angleFromCasterDirection);
 		entity->y = y + distFromCaster * sin(yaw + angleFromCasterDirection);
-		entity->z = -25;
+		entity->z = -25 - heightDelay;
 		double missile_speed = 4 * ((double)(((spellElement_t*)(spell->elements.first->element))->mana) 
 			/ ((spellElement_t*)(spell->elements.first->element))->overload_multiplier);
 		entity->vel_x = 0.0;
@@ -3199,28 +3256,32 @@ void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t 
 	}
 }
 
-void Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection)
+void Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration)
 {
 	spell_t* spell = getSpellFromID(spellID);
 	Entity* entity = castSpell(getUID(), spell, false, true);
 	if ( entity )
 	{
-		entity->x = x + distFromCaster * cos(yaw + angleFromCasterDirection);
-		entity->y = y + distFromCaster * sin(yaw + angleFromCasterDirection);
+		if ( spellID == SPELL_FIREBALL )
+		{
+			entity->sprite = 671;
+		}
+		entity->yaw = angleFromCasterDirection;
+		entity->x = x + distFromCaster * cos(yaw + entity->yaw);
+		entity->y = y + distFromCaster * sin(yaw + entity->yaw);
 		entity->z = -2.5;
 		double missile_speed = 4 * ((double)(((spellElement_t*)(spell->elements.first->element))->mana)
 			/ ((spellElement_t*)(spell->elements.first->element))->overload_multiplier);
 		entity->vel_x = 0.0;
 		entity->vel_y = 0.0;
-		//entity->focalx = distFromCaster;
-		entity->roll += PI / 8;
-		//entity->vel_z = 0.5 * (missile_speed);
-		//entity->pitch = PI / 2;
 		entity->actmagicIsOrbiting = 1;
 		entity->actmagicOrbitDist = distFromCaster;
 		entity->actmagicOrbitStartZ = entity->z;
+		entity->z += 4 * sin(angleFromCasterDirection);
+		entity->roll += (PI / 8) * (1 - abs(sin(angleFromCasterDirection)));
 		entity->actmagicOrbitVerticalSpeed = 0.1;
 		entity->actmagicOrbitVerticalDirection = 1;
+		entity->actmagicOrbitLifetime = duration;
 		entity->vel_z = entity->actmagicOrbitVerticalSpeed;
 		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}

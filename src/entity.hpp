@@ -181,6 +181,7 @@ public:
 	Sint32& monsterPathBoundaryXEnd; //skill[16]
 	Sint32& monsterPathBoundaryYEnd; //skill[17]
 	Sint32& monsterStoreType; //skill[18]
+	Sint32& monsterStrafeDirection; //skill[39]
 
 	real_t& monsterLookDir; //fskill[4]
 
@@ -195,9 +196,12 @@ public:
 	//--PUBLIC MONSTER LICH SKILLS--
 	Sint32& monsterLichFireMeleeSeq; //skill[34]
 	Sint32& monsterLichFireMeleePrev; //skill[35]
-	Sint32& monsterLichFireMagicCastCount; //skill[37] count the basic spell attacks in the melee seq and switch things up if too many in a row.
-	Sint32& monsterLichFireMeleeSwingCount; //skill[38] count the 'regular' attacks in the melee seq and switch things up if too many in a row.
-	
+	Sint32& monsterLichIceCastSeq; //skill[34]
+	Sint32& monsterLichIceCastPrev; //skill[35]
+	Sint32& monsterLichMagicCastCount; //skill[37] count the basic spell attacks in the seq and switch things up if too many in a row.
+	Sint32& monsterLichMeleeSwingCount; //skill[38] count the 'regular' attacks in the seq and switch things up if too many in a row.
+	Sint32& monsterLichBattleState; //skill[27] used to track hp/battle progress
+
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // skill[9] 0 Clockwise, 1 Anti-Clockwise
 	Sint32& crystalNumElectricityNodes; // skill[6] how many nodes to spawn in the facing dir
@@ -321,6 +325,7 @@ public:
 	Sint32& actmagicIsOrbiting; //skill[7]
 	Sint32& actmagicOrbitDist; //skill[8]
 	Sint32&	actmagicOrbitVerticalDirection; //skill[9]
+	Sint32&	actmagicOrbitLifetime; //skill[10]
 	real_t actmagicOrbitVerticalSpeed; //fskill[2]
 	real_t actmagicOrbitStartZ; //fskill[3]
 	
@@ -541,6 +546,8 @@ public:
 	void incubusTeleportRandom();
 	//Shadow teleport spells.
 	void shadowTeleportToTarget(const Entity* target, int range);
+	//Lich effects
+	void lichFireTeleport();
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
@@ -656,9 +663,10 @@ public:
 	std::vector<Entity*> bodyparts;
 
 	// special magic functions/trickery
-	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
-	void castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection);
+	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
+	void castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration);
 	void lichFireSetNextAttack(Stat& myStats);
+	void lichIceSetNextAttack(Stat& myStats);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
