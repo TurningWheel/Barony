@@ -92,13 +92,17 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterShadowDontChangeName(skill[35]),
 	monsterLichFireMeleeSeq(skill[34]),
 	monsterLichFireMeleePrev(skill[35]),
-	monsterLichFireMagicCastCount(skill[37]),
-	monsterLichFireMeleeSwingCount(skill[38]),
+	monsterLichIceCastSeq(skill[34]),
+	monsterLichIceCastPrev(skill[35]),
+	monsterLichMagicCastCount(skill[37]),
+	monsterLichMeleeSwingCount(skill[38]),
+	monsterLichBattleState(skill[27]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
 	monsterPathBoundaryYEnd(skill[17]),
 	monsterStoreType(skill[18]),
+	monsterStrafeDirection(skill[39]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -184,6 +188,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicIsOrbiting(skill[7]),
 	actmagicOrbitDist(skill[8]),
 	actmagicOrbitVerticalDirection(skill[9]),
+	actmagicOrbitLifetime(skill[10]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3])
 {
@@ -3907,7 +3912,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// magicstaffs deplete themselves for each use
-					if ( rand() % 3 == 0 )
+					bool degradeWeapon = true;
+					if ( myStats->type == SHADOW || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+					{
+						degradeWeapon = false; //certain monster's weapons don't degrade.
+					}
+					if ( rand() % 3 == 0 && degradeWeapon )
 					{
 						if ( player == clientnum )
 						{
@@ -5929,7 +5939,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	double oldy = y;
 	x = (tele_x << 4) + 8;
 	y = (tele_y << 4) + 8;
-	if ( entityInsideSomething(this) )
+	if ( entityInsideSomething(this) && getRace() != LICH_FIRE && getRace() != LICH_ICE )
 	{
 		x = oldx;
 		y = oldy;
@@ -7279,28 +7289,28 @@ int Entity::getAttackPose() const
 		{
 			switch ( monsterLichFireMeleeSeq )
 			{
-				case LICHFIRE_ATK_VERTICAL_SINGLE:
+				case LICH_ATK_VERTICAL_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP1;
 					break;
-				case LICHFIRE_ATK_HORIZONTAL_SINGLE:
+				case LICH_ATK_HORIZONTAL_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
-				case LICHFIRE_ATK_RISING_RAIN:
+				case LICH_ATK_RISING_RAIN:
 					pose = MONSTER_POSE_SPECIAL_WINDUP1;
 					break;
-				case LICHFIRE_ATK_BASICSPELL_SINGLE:
+				case LICH_ATK_BASICSPELL_SINGLE:
 					pose = MONSTER_POSE_MAGIC_WINDUP1;
 					break;
-				case LICHFIRE_ATK_RISING_SINGLE:
+				case LICH_ATK_RISING_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP3;
 					break;
-				case LICHFIRE_ATK_VERTICAL_QUICK:
+				case LICH_ATK_VERTICAL_QUICK:
 					pose = MONSTER_POSE_MELEE_WINDUP1;
 					break;
-				case LICHFIRE_ATK_HORIZONTAL_RETURN:
+				case LICH_ATK_HORIZONTAL_RETURN:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
-				case LICHFIRE_ATK_HORIZONTAL_QUICK:
+				case LICH_ATK_HORIZONTAL_QUICK:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
 				default:
@@ -7309,19 +7319,31 @@ int Entity::getAttackPose() const
 		}
 		else if ( myStats->type == LICH_ICE )
 		{
-			switch ( monsterLichFireMeleeSeq )
+			switch ( monsterLichIceCastSeq )
 			{
-				case 0:
+				case LICH_ATK_VERTICAL_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP1;
 					break;
-				case 1:
+				case LICH_ATK_HORIZONTAL_SINGLE:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
-				case 2:
+				case LICH_ATK_RISING_RAIN:
 					pose = MONSTER_POSE_SPECIAL_WINDUP1;
 					break;
-				case 3:
+				case LICH_ATK_BASICSPELL_SINGLE:
 					pose = MONSTER_POSE_MAGIC_WINDUP1;
+					break;
+				case LICH_ATK_RISING_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP3;
+					break;
+				case LICH_ATK_VERTICAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICH_ATK_HORIZONTAL_RETURN:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_HORIZONTAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
 				default:
 					break;
@@ -8610,7 +8632,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		messagePlayer(clientnum, "Entity acquired new target!");
 	}*/
 
-	monsterState = state;
+	if ( myStats->type == LICH_FIRE
+		&& (monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY 
+			|| monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS
+			|| monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_ROAMING) )
+	{
+
+	}
+	else
+	{
+		monsterState = state;
+	}
 	monsterTarget = target.getUID();
 	monsterTargetX = target.x;
 	monsterTargetY = target.y;
@@ -9291,7 +9323,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 	}
 	else if ( myStats.type == LICH_FIRE )
 	{
-		if ( monsterLichFireMeleeSeq == LICHFIRE_ATK_BASICSPELL_SINGLE )
+		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
 		{
 			return true;
 		}
@@ -9299,6 +9331,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 		{
 			return false;
 		}
+	}
+	if ( myStats.type == LICH_ICE )
+	{
+		return false;
 	}
 
 	if ( myStats.MAXHP >= 100 )

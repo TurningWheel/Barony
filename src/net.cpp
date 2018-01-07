@@ -2262,6 +2262,14 @@ void clientHandlePacket()
 						spellTimer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
 					}
 						break;
+					case PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY:
+					case PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+						spellTimer->particleTimerCountdownSprite = sprite;
+					}
+						break;
 					default:
 						break;
 				}

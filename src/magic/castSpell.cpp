@@ -726,7 +726,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster == players[i]->entity )
 				{
-					caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0);
+					caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
 					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					//createParticle1(caster, i);
 					//createParticleDropRising(caster);
@@ -798,7 +798,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->flags[PASSABLE] = true;
 			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagicMissile;
-
 			double missile_speed = 4 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
