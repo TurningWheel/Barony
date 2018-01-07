@@ -1382,6 +1382,11 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		return;
 	}
 
+	if ( !item )
+	{
+		return;
+	}
+
 	if (players[player]->entity->isBlind())
 	{
 		if (player == clientnum)
