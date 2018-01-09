@@ -767,6 +767,9 @@ void actPistonCam(Entity* my);
 
 void actColumn(Entity* my);
 
+//--Floor vegetation--
+void actFloorVegetation(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
@@ -777,7 +780,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 219;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 127;
+static const int NUM_EDITOR_SPRITES = 128;
 static const int NUM_EDITOR_TILES = 234;
 
 // furniture types.

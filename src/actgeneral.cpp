@@ -464,3 +464,11 @@ void Entity::actPistonCam()
 		}
 	}
 }
+
+void actFloorVegetation(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+}

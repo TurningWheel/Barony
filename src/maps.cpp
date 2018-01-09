@@ -4682,6 +4682,25 @@ void assignActions(map_t* map)
 				}
 				break;
 			}
+			// grass texture
+			case 127:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 673;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->z = 7.5;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actFloorVegetation;
+				if ( multiplayer != CLIENT )
+				{
+					entity->setUID(-3);
+					entity_uids--;
+				}
+				break;
+			}
 			default:
 				break;
 		}
