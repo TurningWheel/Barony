@@ -458,6 +458,11 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 		return;
 	}
 
+	if ( item->beatitude < 0 )
+	{
+		messagePlayer(player, language[2900]);
+	}
+
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
@@ -465,6 +470,14 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 		stats->EFFECTS[c] = false;
 		stats->EFFECTS_TIMERS[c] = 0;
 	}
+
+	if ( item->beatitude < 0 )
+	{
+		messagePlayer(player, language[2903]);
+		stats->EFFECTS[EFF_POISONED] = true;
+		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
+	}
+
 	serverUpdateEffects(player);
 
 	// play drink sound

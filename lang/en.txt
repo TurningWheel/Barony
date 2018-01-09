@@ -3335,5 +3335,6 @@ Now wait for your leader to advance onward...#
 2900 Bluh, this potion was cursed!#
 2901 You feel heavier...#
 2902 You feel slower...#
+2903 There is an aftertaste of poison in your mouth.#
 
 2999 end#
