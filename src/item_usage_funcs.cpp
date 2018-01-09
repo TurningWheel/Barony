@@ -259,6 +259,7 @@ void item_PotionJuice(Item*& item, Entity* entity)
 		}
 		stats->HUNGER += 50;
 		entity->modHP(5);
+		serverUpdateEffects(player);
 	}
 	else
 	{
