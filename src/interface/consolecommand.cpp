@@ -1489,6 +1489,55 @@ void consoleCommand(char* command_str)
 
 		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 	}
+	else if ( !strncmp(command_str, "/dropgold", 9) )
+	{
+		int amount = 100;
+		if ( stats[clientnum]->GOLD - amount < 0 )
+		{
+			amount = stats[clientnum]->GOLD;
+		}
+		if ( amount == 0 )
+		{
+			messagePlayer(clientnum, "You have no gold!");
+			return;
+		}
+		stats[clientnum]->GOLD -= amount;
+		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+
+		if ( multiplayer == CLIENT )
+		{
+			//Tell the server we dropped some gold.
+			strcpy((char*)net_packet->data, "DGLD");
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(amount, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else
+		{
+			//Drop gold.
+			int x = std::min<int>(std::max(0, (int)(players[clientnum]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max(0, (int)(players[clientnum]->entity->y / 16)), map.height - 1);
+			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x = players[clientnum]->entity->x;
+				entity->y = players[clientnum]->entity->y;
+				entity->z = 6;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->behavior = &actGoldBag;
+				entity->skill[0] = amount; // amount
+			}
+		}
+
+		messagePlayer(clientnum, "Dropped %d gold pieces.", amount);
+	}
 	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
