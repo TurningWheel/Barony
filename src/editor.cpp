@@ -778,17 +778,17 @@ void editFill(int x, int y, int layer, int type)
 
 #define MAXUNDOS 10
 
-node_t* undospot = NULL;
-node_t* redospot = NULL;
+node_t* undospot = nullptr;
+node_t* redospot = nullptr;
 list_t undolist;
 void makeUndo()
 {
 	node_t* node, *nextnode;
 
 	// eliminate any undo nodes beyond the one we are currently on
-	if ( undospot != NULL )
+	if ( undospot != nullptr )
 	{
-		for ( node = undospot->next; node != NULL; node = nextnode )
+		for ( node = undospot->next; node != nullptr; node = nextnode )
 		{
 			nextnode = node->next;
 			list_RemoveNode(node);
@@ -816,9 +816,10 @@ void makeUndo()
 	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
 	memcpy(undomap->tiles, map.tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	undomap->entities = (list_t*) malloc(sizeof(list_t));
-	undomap->entities->first = NULL;
-	undomap->entities->last = NULL;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	undomap->entities->first = nullptr;
+	undomap->entities->last = nullptr;
+	undomap->creatures = nullptr;
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities, nullptr);
 
@@ -834,14 +835,14 @@ void makeUndo()
 		list_RemoveNode(undolist.first);
 	}
 	undospot = node;
-	redospot = NULL;
+	redospot = nullptr;
 }
 
 void clearUndos()
 {
 	list_FreeAll(&undolist);
-	undospot = NULL;
-	redospot = NULL;
+	undospot = nullptr;
+	redospot = nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1242,11 +1243,11 @@ int main(int argc, char** argv)
 	int x2, y2;
 	//char action[32];
 	int oslidery = 0;
-	light_t* light = NULL;
+	light_t* light = nullptr;
 	bool savedundo = false;
 	smoothlighting = true;
 
-	Stat* spriteStats = NULL;
+	Stat* spriteStats = nullptr;
 
 	processCommandLine(argc, argv);
 
@@ -1269,10 +1270,11 @@ int main(int argc, char** argv)
 		deinitApp();
 		exit(x);
 	}
-	copymap.tiles = NULL;
-	copymap.entities = NULL;
-	undolist.first = NULL;
-	undolist.last = NULL;
+	copymap.tiles = nullptr;
+	copymap.entities = nullptr;
+	copymap.creatures = nullptr;
+	undolist.first = nullptr;
+	undolist.last = nullptr;
 
 	// Load Cursors
 	cursorArrow = SDL_GetCursor();
@@ -1284,14 +1286,15 @@ int main(int argc, char** argv)
 
 	// instatiate a timer
 	timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
-	srand(time(NULL));
+	srand(time(nullptr));
 
 	// create an empty map
 	map.width = 32;
 	map.height = 24;
 	map.entities = (list_t*) malloc(sizeof(list_t));
-	map.entities->first = NULL;
-	map.entities->last = NULL;
+	map.creatures = nullptr;
+	map.entities->first = nullptr;
+	map.entities->last = nullptr;
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
