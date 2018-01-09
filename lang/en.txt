@@ -3207,6 +3207,8 @@ Difficulty: Normal#
 2591 You have nothing else to learn from this spell.#
 
 2592 The fountain blesses a piece of equipment.#
+2593 You have no gold!#
+2594 Dropped %d gold pieces.#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
