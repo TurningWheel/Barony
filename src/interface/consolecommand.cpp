@@ -1498,7 +1498,7 @@ void consoleCommand(char* command_str)
 		}
 		if ( amount == 0 )
 		{
-			messagePlayer(clientnum, "You have no gold!");
+			messagePlayer(clientnum, language[2593]);
 			return;
 		}
 		stats[clientnum]->GOLD -= amount;
@@ -1536,7 +1536,7 @@ void consoleCommand(char* command_str)
 			}
 		}
 
-		messagePlayer(clientnum, "Dropped %d gold pieces.", amount);
+		messagePlayer(clientnum, language[2594], amount);
 	}
 	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{
