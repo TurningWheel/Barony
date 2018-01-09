@@ -465,7 +465,7 @@ void Entity::actPistonCam()
 	}
 }
 
-void actFloorVegetation(Entity* my)
+void actFloorDecoration(Entity* my)
 {
 	if ( !my )
 	{

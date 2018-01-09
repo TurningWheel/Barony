@@ -288,6 +288,11 @@ public:
 	//--PUBLIC CEILING TILE SKILLS--
 	Sint32& ceilingTileModel; //skill[0]
 
+	//--PUBLIC FLOOR DECORATION MODELS--
+	Sint32& floorDecorationModel; //skill[0]
+	Sint32& floorDecorationRotation; //skill[1]
+	Sint32& floorDecorationHeightOffset; //skill[2] positive numbers will lift the model higher
+
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]
 	Sint32& spellTrapRefire; //skill[1]
@@ -768,7 +773,7 @@ void actPistonCam(Entity* my);
 void actColumn(Entity* my);
 
 //--Floor vegetation--
-void actFloorVegetation(Entity* my);
+void actFloorDecoration(Entity* my);
 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);

@@ -1583,6 +1583,21 @@ void buttonSpriteProperties(button_t* my)
 			suby2 = yres / 2 + 60;
 			strcpy(subtext, "Furniture Properties:");
 			break;
+		case 13:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->floorDecorationModel));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->floorDecorationRotation));
+			snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->floorDecorationHeightOffset));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 15;
+			subx1 = xres / 2 - 200;
+			subx2 = xres / 2 + 200;
+			suby1 = yres / 2 - 85;
+			suby2 = yres / 2 + 85;
+			strcpy(subtext, "Floor Decoration Model Properties:");
+			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -2425,6 +2440,11 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 12: //furniture
 				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 13: //floor decoration
+				selectedEntity->floorDecorationModel = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->floorDecorationRotation = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
 				break;
 			default:
 				break;
