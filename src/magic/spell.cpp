@@ -89,17 +89,17 @@ spell_t spell_stealWeapon;
 spell_t spell_drainSoul;
 spell_t spell_vampiricAura;
 
-void addSpell(int spell, int player, bool ignoreSkill)
+bool addSpell(int spell, int player, bool ignoreSkill)
 {
-	node_t* node = NULL;
+	node_t* node = nullptr;
 
 	// this is a local function
 	if ( player != clientnum )
 	{
-		return;
+		return false;
 	}
 
-	spell_t* new_spell = NULL;
+	spell_t* new_spell = nullptr;
 
 	switch ( spell )
 	{
@@ -194,19 +194,19 @@ void addSpell(int spell, int player, bool ignoreSkill)
 			new_spell = copySpell(&spell_vampiricAura);
 			break;
 		default:
-			return;
+			return false;
 	}
 	if ( spellInList(&spellList, new_spell) )
 	{
 		messagePlayer(player, language[439], new_spell->name);
 		spellDeconstructor((void*)new_spell);
-		return;
+		return false;
 	}
 	if ( !ignoreSkill && stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
 	{
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void*)new_spell);
-		return;
+		return false;
 	}
 	messagePlayer(player, language[441], new_spell->name);
 	node = list_AddNodeLast(&spellList);
@@ -216,9 +216,11 @@ void addSpell(int spell, int player, bool ignoreSkill)
 
 	players[player]->entity->increaseSkill(PRO_MAGIC);
 
-	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, NULL);
+	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
 	itemPickup(player, item);
 	free(item);
+
+	return true;
 }
 
 spell_t* newSpell()

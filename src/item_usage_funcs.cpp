@@ -25,7 +25,7 @@
 
 void item_PotionWater(Item*& item, Entity* entity)
 {
-	if (!entity)
+	if ( !entity )
 	{
 		return;
 	}
@@ -241,9 +241,32 @@ void item_PotionJuice(Item*& item, Entity* entity)
 		return;
 	}
 
-	messagePlayer(player, language[760]);
-	stats->HUNGER += 50;
-	entity->modHP(5);
+	if ( item->beatitude < 0 )
+	{
+		//Cursed effect inebriates you.
+		messagePlayer(player, language[2900]);
+		messagePlayer(player, language[758]);
+		messagePlayer(player, language[759]);
+		stats->EFFECTS[EFF_DRUNK] = true;
+		if ( player >= 0 )
+		{
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+		}
+		else
+		{
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
+		}
+		stats->HUNGER += 50;
+		entity->modHP(5);
+		serverUpdateEffects(player);
+	}
+	else
+	{
+		messagePlayer(player, language[760]);
+		stats->HUNGER += 50;
+		entity->modHP(5);
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -435,6 +458,11 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 		return;
 	}
 
+	if ( item->beatitude < 0 )
+	{
+		messagePlayer(player, language[2900]);
+	}
+
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
@@ -442,6 +470,14 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 		stats->EFFECTS[c] = false;
 		stats->EFFECTS_TIMERS[c] = 0;
 	}
+
+	if ( item->beatitude < 0 )
+	{
+		messagePlayer(player, language[2903]);
+		stats->EFFECTS[EFF_POISONED] = true;
+		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
+	}
+
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -612,9 +648,20 @@ void item_PotionLevitation(Item*& item, Entity* entity)
 		return;
 	}
 
-	messagePlayer(player, language[767]);
-	stats->EFFECTS[EFF_LEVITATING] = true;
-	stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800;
+	if ( item->beatitude < 0 )
+	{
+		//Cursed effect slows you.
+		messagePlayer(player, language[2900]);
+		messagePlayer(player, language[2901]);
+		stats->EFFECTS[EFF_SLOW] = true;
+		stats->EFFECTS_TIMERS[EFF_SLOW] = 1800;
+	}
+	else
+	{
+		messagePlayer(player, language[767]);
+		stats->EFFECTS[EFF_LEVITATING] = true;
+		stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -667,17 +714,38 @@ void item_PotionSpeed(Item*& item, Entity* entity)
 		return;
 	}
 
-	if ( !stats->EFFECTS[EFF_SLOW] )
+
+	if ( item->beatitude < 0 )
 	{
-		messagePlayer(player, language[768]);
-		stats->EFFECTS[EFF_FAST] = true;
-		stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+		messagePlayer(player, language[2900]);
+		//Cursed effect slows you.
+		if ( stats->EFFECTS[EFF_FAST] )
+		{
+			messagePlayer(player, language[769]);
+			stats->EFFECTS[EFF_FAST] = false;
+			stats->EFFECTS_TIMERS[EFF_FAST] = 0;
+		}
+		else
+		{
+			messagePlayer(player, language[2902]);
+			stats->EFFECTS[EFF_SLOW] = true;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+		}
 	}
 	else
 	{
-		messagePlayer(player, language[769]);
-		stats->EFFECTS[EFF_SLOW] = false;
-		stats->EFFECTS_TIMERS[EFF_SLOW] = 0;
+		if ( !stats->EFFECTS[EFF_SLOW] )
+		{
+			messagePlayer(player, language[768]);
+			stats->EFFECTS[EFF_FAST] = true;
+			stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+		}
+		else
+		{
+			messagePlayer(player, language[769]);
+			stats->EFFECTS[EFF_SLOW] = false;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 0;
+		}
 	}
 	serverUpdateEffects(player);
 
@@ -1378,6 +1446,11 @@ void item_ScrollEnchantArmor(Item* item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
+	{
+		return;
+	}
+
+	if ( !item )
 	{
 		return;
 	}
@@ -3002,101 +3075,116 @@ void item_Spellbook(Item*& item, int player)
 	}
 	else
 	{
+		bool learned = false;
 		switch ( item->type )
 		{
 			case SPELLBOOK_FORCEBOLT:
-				addSpell(SPELL_FORCEBOLT, player);
+				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;
 			case SPELLBOOK_MAGICMISSILE:
-				addSpell(SPELL_MAGICMISSILE, player);
+				learned = addSpell(SPELL_MAGICMISSILE, player);
 				break;
 			case SPELLBOOK_COLD:
-				addSpell(SPELL_COLD, player);
+				learned = addSpell(SPELL_COLD, player);
 				break;
 			case SPELLBOOK_FIREBALL:
-				addSpell(SPELL_FIREBALL, player);
+				learned = addSpell(SPELL_FIREBALL, player);
 				break;
 			case SPELLBOOK_LIGHTNING:
-				addSpell(SPELL_LIGHTNING, player);
+				learned = addSpell(SPELL_LIGHTNING, player);
 				break;
 			case SPELLBOOK_REMOVECURSE:
-				addSpell(SPELL_REMOVECURSE, player);
+				learned = addSpell(SPELL_REMOVECURSE, player);
 				break;
 			case SPELLBOOK_LIGHT:
-				addSpell(SPELL_LIGHT, player);
+				learned = addSpell(SPELL_LIGHT, player);
 				break;
 			case SPELLBOOK_IDENTIFY:
-				addSpell(SPELL_IDENTIFY, player);
+				learned = addSpell(SPELL_IDENTIFY, player);
 				break;
 			case SPELLBOOK_MAGICMAPPING:
-				addSpell(SPELL_MAGICMAPPING, player);
+				learned = addSpell(SPELL_MAGICMAPPING, player);
 				break;
 			case SPELLBOOK_SLEEP:
-				addSpell(SPELL_SLEEP, player);
+				learned = addSpell(SPELL_SLEEP, player);
 				break;
 			case SPELLBOOK_CONFUSE:
-				addSpell(SPELL_CONFUSE, player);
+				learned = addSpell(SPELL_CONFUSE, player);
 				break;
 			case SPELLBOOK_SLOW:
-				addSpell(SPELL_SLOW, player);
+				learned = addSpell(SPELL_SLOW, player);
 				break;
 			case SPELLBOOK_OPENING:
-				addSpell(SPELL_OPENING, player);
+				learned = addSpell(SPELL_OPENING, player);
 				break;
 			case SPELLBOOK_LOCKING:
-				addSpell(SPELL_LOCKING, player);
+				learned = addSpell(SPELL_LOCKING, player);
 				break;
 			case SPELLBOOK_LEVITATION:
-				addSpell(SPELL_LEVITATION, player);
+				learned = addSpell(SPELL_LEVITATION, player);
 				break;
 			case SPELLBOOK_INVISIBILITY:
-				addSpell(SPELL_INVISIBILITY, player);
+				learned = addSpell(SPELL_INVISIBILITY, player);
 				break;
 			case SPELLBOOK_TELEPORTATION:
-				addSpell(SPELL_TELEPORTATION, player);
+				learned = addSpell(SPELL_TELEPORTATION, player);
 				break;
 			case SPELLBOOK_HEALING:
-				addSpell(SPELL_HEALING, player);
+				learned = addSpell(SPELL_HEALING, player);
 				break;
 			case SPELLBOOK_EXTRAHEALING:
-				addSpell(SPELL_EXTRAHEALING, player);
+				learned = addSpell(SPELL_EXTRAHEALING, player);
 				break;
 			case SPELLBOOK_CUREAILMENT:
-				addSpell(SPELL_CUREAILMENT, player);
+				learned = addSpell(SPELL_CUREAILMENT, player);
 				break;
 			case SPELLBOOK_DIG:
-				addSpell(SPELL_DIG, player);
+				learned = addSpell(SPELL_DIG, player);
 				break;
 			case SPELLBOOK_SUMMON:
-				addSpell(SPELL_SUMMON, player);
+				learned = addSpell(SPELL_SUMMON, player);
 				break;
 			case SPELLBOOK_STONEBLOOD:
-				addSpell(SPELL_STONEBLOOD, player);
+				learned = addSpell(SPELL_STONEBLOOD, player);
 				break;
 			case SPELLBOOK_BLEED:
-				addSpell(SPELL_BLEED, player);
+				learned = addSpell(SPELL_BLEED, player);
 				break;
 			case SPELLBOOK_REFLECT_MAGIC:
-				addSpell(SPELL_REFLECT_MAGIC, player);
+				learned = addSpell(SPELL_REFLECT_MAGIC, player);
 				break;
 			case SPELLBOOK_ACID_SPRAY:
-				addSpell(SPELL_ACID_SPRAY, player);
+				learned = addSpell(SPELL_ACID_SPRAY, player);
 				break;
 			case SPELLBOOK_STEAL_WEAPON:
-				addSpell(SPELL_STEAL_WEAPON, player);
+				learned = addSpell(SPELL_STEAL_WEAPON, player);
 				break;
 			case SPELLBOOK_DRAIN_SOUL:
-				addSpell(SPELL_DRAIN_SOUL, player);
+				learned = addSpell(SPELL_DRAIN_SOUL, player);
 				break;
 			case SPELLBOOK_VAMPIRIC_AURA:
-				addSpell(SPELL_VAMPIRIC_AURA, player);
+				learned = addSpell(SPELL_VAMPIRIC_AURA, player);
 				break;
 			case SPELLBOOK_BLANK_5:
 				messagePlayer(player, "Nope. Spell doesn't exist yet.");
 				break;
 			default:
-				addSpell(SPELL_FORCEBOLT, player);
+				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;
+		}
+
+		if ( learned )
+		{
+			item->status = static_cast<Status>(item->status - 1);
+			if ( item->status != BROKEN )
+			{
+				messagePlayer(player, language[2595]);
+			}
+			else
+			{
+				messagePlayer(player, language[2596]);
+				consumeItem(item);
+			}
 		}
 	}
 }
