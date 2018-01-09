@@ -2134,7 +2134,7 @@ bool frameRateLimit( Uint32 maxFrameRate )
 	main
 
 	Initializes game resources, harbors main game loop, and cleans up
-	afterwords
+	afterwards
 
 -------------------------------------------------------------------------------*/
 
