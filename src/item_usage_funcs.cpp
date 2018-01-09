@@ -701,17 +701,38 @@ void item_PotionSpeed(Item*& item, Entity* entity)
 		return;
 	}
 
-	if ( !stats->EFFECTS[EFF_SLOW] )
+
+	if ( item->beatitude < 0 )
 	{
-		messagePlayer(player, language[768]);
-		stats->EFFECTS[EFF_FAST] = true;
-		stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+		messagePlayer(player, language[2900]);
+		//Cursed effect slows you.
+		if ( stats->EFFECTS[EFF_FAST] )
+		{
+			messagePlayer(player, language[769]);
+			stats->EFFECTS[EFF_FAST] = false;
+			stats->EFFECTS_TIMERS[EFF_FAST] = 0;
+		}
+		else
+		{
+			messagePlayer(player, language[2902]);
+			stats->EFFECTS[EFF_SLOW] = true;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+		}
 	}
 	else
 	{
-		messagePlayer(player, language[769]);
-		stats->EFFECTS[EFF_SLOW] = false;
-		stats->EFFECTS_TIMERS[EFF_SLOW] = 0;
+		if ( !stats->EFFECTS[EFF_SLOW] )
+		{
+			messagePlayer(player, language[768]);
+			stats->EFFECTS[EFF_FAST] = true;
+			stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+		}
+		else
+		{
+			messagePlayer(player, language[769]);
+			stats->EFFECTS[EFF_SLOW] = false;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 0;
+		}
 	}
 	serverUpdateEffects(player);
 
