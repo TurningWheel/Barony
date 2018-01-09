@@ -1459,6 +1459,17 @@ void consoleCommand(char* command_str)
 	{
 		gamepad_menuy_invert = true;
 	}
+	else if ( !strncmp(command_str, "/numgold", 8) )
+	{
+		for ( unsigned i = 0; i < numplayers; ++i )
+		{
+			if ( client_disconnected[i] )
+			{
+				continue;
+			}
+			messagePlayer(clientnum, "Player %d has %d gold.", i, stats[i]->GOLD);
+		}
+	}
 	else if ( !strncmp(command_str, "/gold ", 5) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
