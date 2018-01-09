@@ -3334,5 +3334,6 @@ Now wait for your leader to advance onward...#
 # 2900 - 2949 More effects text:
 2900 Bluh, this potion was cursed!#
 2901 You feel heavier...#
+2902 You feel slower...#
 
 2999 end#
