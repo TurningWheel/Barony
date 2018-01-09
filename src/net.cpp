@@ -2374,6 +2374,78 @@ void clientHandlePacket()
 		return;
 	}
 
+	// bless one piece of my equipment
+	else if (!strncmp((char*)net_packet->data, "BLE1", 4))
+	{
+		Uint32 chosen = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[4]));
+		switch ( chosen )
+		{
+			case 0:
+				if ( stats[clientnum]->helmet )
+				{
+					stats[clientnum]->helmet->beatitude++;
+				}
+				break;
+			case 1:
+				if ( stats[clientnum]->breastplate )
+				{
+					stats[clientnum]->breastplate->beatitude++;
+				}
+				break;
+			case 2:
+				if ( stats[clientnum]->gloves )
+				{
+					stats[clientnum]->gloves->beatitude++;
+				}
+				break;
+			case 3:
+				if ( stats[clientnum]->shoes )
+				{
+					stats[clientnum]->shoes->beatitude++;
+				}
+				break;
+			case 4:
+				if ( stats[clientnum]->shield )
+				{
+					stats[clientnum]->shield->beatitude++;
+				}
+				break;
+			case 5:
+				if ( stats[clientnum]->weapon )
+				{
+					stats[clientnum]->weapon->beatitude++;
+				}
+				break;
+			case 6:
+				if ( stats[clientnum]->cloak )
+				{
+					stats[clientnum]->cloak->beatitude++;
+				}
+				break;
+			case 7:
+				if ( stats[clientnum]->amulet )
+				{
+					stats[clientnum]->amulet->beatitude++;
+				}
+				break;
+			case 8:
+				if ( stats[clientnum]->ring )
+				{
+					stats[clientnum]->ring->beatitude++;
+				}
+				break;
+			case 9:
+				if ( stats[clientnum]->mask )
+				{
+					stats[clientnum]->mask->beatitude++;
+				}
+				break;
+			default:
+				break;
+		}
+		return;
+	}
+
 	// update entity appearance (sprite)
 	else if (!strncmp((char*)net_packet->data, "ENTA", 4))
 	{
