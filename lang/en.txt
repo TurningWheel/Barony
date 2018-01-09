@@ -3206,6 +3206,12 @@ Difficulty: Normal#
 2590 modify hotbar with numkeys#
 2591 You have nothing else to learn from this spell.#
 
+2592 The fountain blesses a piece of equipment.#
+2593 You have no gold!#
+2594 Dropped %d gold pieces.#
+2595 The spellbook deteriorates.#
+2596 The spellbook deteriorates and crumbles to ash!#
+
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
 exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.#
@@ -3326,5 +3332,11 @@ Now wait for your leader to advance onward...#
 
 2860 type:rand#
 2861 %s Response 1.#
+
+# 2900 - 2949 More effects text:
+2900 Bluh, this potion was cursed!#
+2901 You feel heavier...#
+2902 You feel slower...#
+2903 There is an aftertaste of poison in your mouth.#
 
 2999 end#

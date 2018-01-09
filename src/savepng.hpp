@@ -17,8 +17,7 @@
  * Returns 0 success or -1 on failure, the error message is then retrievable
  * via SDL_GetError().
  */
-#define SDL_SavePNG(surface, file) \
-	SDL_SavePNG_RW(surface, SDL_RWFromFile(file, "wb"), 1)
+int SDL_SavePNG(SDL_Surface *surface, const char *file);
 
 /*
  * Save an SDL_Surface as a PNG file, using writable RWops.
