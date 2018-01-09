@@ -84,7 +84,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->times_to_circle = (getCostOfSpell(spell) / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = getCostOfSpell(spell);
 	animation_manager->consumeMana = true;
-	if ( spell->ID == SPELL_MAGICMISSILE && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
 		animation_manager->consumeMana = false;
 	}
