@@ -163,6 +163,27 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[278], name);
 		}
 	}
+	else if ( !strncmp(command_str, "/spawnblessed ", 14) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		strcpy(name, command_str + 14);
+		for ( c = 0; c < NUMITEMS; ++c )
+		{
+			if ( strstr(items[c].name_identified, name) )
+			{
+				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			messagePlayer(clientnum, language[278], name);
+		}
+	}
 	else if ( !strncmp(command_str, "/kick ", 6) )
 	{
 		strcpy(name, command_str + 6);
@@ -1459,6 +1480,17 @@ void consoleCommand(char* command_str)
 	{
 		gamepad_menuy_invert = true;
 	}
+	else if ( !strncmp(command_str, "/numgold", 8) )
+	{
+		for ( unsigned i = 0; i < numplayers; ++i )
+		{
+			if ( client_disconnected[i] )
+			{
+				continue;
+			}
+			messagePlayer(clientnum, "Player %d has %d gold.", i, stats[i]->GOLD);
+		}
+	}
 	else if ( !strncmp(command_str, "/gold ", 5) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -1477,6 +1509,55 @@ void consoleCommand(char* command_str)
 		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
 
 		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
+	}
+	else if ( !strncmp(command_str, "/dropgold", 9) )
+	{
+		int amount = 100;
+		if ( stats[clientnum]->GOLD - amount < 0 )
+		{
+			amount = stats[clientnum]->GOLD;
+		}
+		if ( amount == 0 )
+		{
+			messagePlayer(clientnum, language[2593]);
+			return;
+		}
+		stats[clientnum]->GOLD -= amount;
+		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+
+		if ( multiplayer == CLIENT )
+		{
+			//Tell the server we dropped some gold.
+			strcpy((char*)net_packet->data, "DGLD");
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(amount, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else
+		{
+			//Drop gold.
+			int x = std::min<int>(std::max(0, (int)(players[clientnum]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max(0, (int)(players[clientnum]->entity->y / 16)), map.height - 1);
+			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x = players[clientnum]->entity->x;
+				entity->y = players[clientnum]->entity->y;
+				entity->z = 6;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->behavior = &actGoldBag;
+				entity->skill[0] = amount; // amount
+			}
+		}
+
+		messagePlayer(clientnum, language[2594], amount);
 	}
 	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{
