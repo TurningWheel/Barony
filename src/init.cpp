@@ -89,6 +89,7 @@ int initApp(char* title, int fullscreen)
 		ttfTextHash[c].last = NULL;
 	}
 	map.entities = NULL;
+	map.creatures = nullptr;
 	map.tiles = NULL;
 
 	// init steamworks
