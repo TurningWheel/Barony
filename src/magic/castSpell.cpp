@@ -117,9 +117,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 
 	// Calculate the cost of the Spell for Singleplayer
-	if ( spell->ID == SPELL_MAGICMISSILE && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+	if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
 	{
-		// Reaching Spellcasting capstone makes Magic Missile free
+		// Reaching Spellcasting capstone makes forcebolt free
 		magiccost = 0;
 	}
 	else
@@ -224,9 +224,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else // Calculate the cost of the Spell for Multiplayer
 		{
-			if ( spell->ID == SPELL_MAGICMISSILE && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
 			{
-				// Reaching Spellcasting capstone makes Magic Missile free
+				// Reaching Spellcasting capstone makes Forcebolt free
 				magiccost = 0;
 			}
 			else

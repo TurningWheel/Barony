@@ -1147,13 +1147,13 @@ void Entity::increaseSkill(int skill)
 
 		if ( skill == PRO_SPELLCASTING && skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 		{
-			//Spellcasting capstone = free casting of magic missile.
+			//Spellcasting capstone = free casting of Forcebolt.
 			//Give the player the spell if they haven't learned it yet.
 			if ( player > 0 && multiplayer == SERVER )
 			{
 				strcpy((char*)net_packet->data, "ASPL");
 				net_packet->data[4] = clientnum;
-				net_packet->data[5] = SPELL_MAGICMISSILE;
+				net_packet->data[5] = SPELL_FORCEBOLT;
 				net_packet->address.host = net_clients[player - 1].host;
 				net_packet->address.port = net_clients[player - 1].port;
 				net_packet->len = 6;
@@ -1161,7 +1161,7 @@ void Entity::increaseSkill(int skill)
 			}
 			else if ( player >= 0 )
 			{
-				addSpell(SPELL_MAGICMISSILE, player, true);
+				addSpell(SPELL_FORCEBOLT, player, true);
 			}
 		}
 
