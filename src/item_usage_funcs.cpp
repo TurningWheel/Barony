@@ -241,9 +241,31 @@ void item_PotionJuice(Item*& item, Entity* entity)
 		return;
 	}
 
-	messagePlayer(player, language[760]);
-	stats->HUNGER += 50;
-	entity->modHP(5);
+	if ( item->beatitude < 0 )
+	{
+		//Cursed effect inebriates you.
+		messagePlayer(player, language[2900]);
+		messagePlayer(player, language[758]);
+		messagePlayer(player, language[759]);
+		stats->EFFECTS[EFF_DRUNK] = true;
+		if ( player >= 0 )
+		{
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+		}
+		else
+		{
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
+		}
+		stats->HUNGER += 50;
+		entity->modHP(5);
+	}
+	else
+	{
+		messagePlayer(player, language[760]);
+		stats->HUNGER += 50;
+		entity->modHP(5);
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -614,6 +636,7 @@ void item_PotionLevitation(Item*& item, Entity* entity)
 
 	if ( item->beatitude < 0 )
 	{
+		//Cursed effect slows you.
 		messagePlayer(player, language[2900]);
 		messagePlayer(player, language[2901]);
 		stats->EFFECTS[EFF_SLOW] = true;
