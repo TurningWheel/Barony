@@ -3075,101 +3075,115 @@ void item_Spellbook(Item*& item, int player)
 	}
 	else
 	{
+		bool learned = false;
 		switch ( item->type )
 		{
 			case SPELLBOOK_FORCEBOLT:
-				addSpell(SPELL_FORCEBOLT, player);
+				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;
 			case SPELLBOOK_MAGICMISSILE:
-				addSpell(SPELL_MAGICMISSILE, player);
+				learned = addSpell(SPELL_MAGICMISSILE, player);
 				break;
 			case SPELLBOOK_COLD:
-				addSpell(SPELL_COLD, player);
+				learned = addSpell(SPELL_COLD, player);
 				break;
 			case SPELLBOOK_FIREBALL:
-				addSpell(SPELL_FIREBALL, player);
+				learned = addSpell(SPELL_FIREBALL, player);
 				break;
 			case SPELLBOOK_LIGHTNING:
-				addSpell(SPELL_LIGHTNING, player);
+				learned = addSpell(SPELL_LIGHTNING, player);
 				break;
 			case SPELLBOOK_REMOVECURSE:
-				addSpell(SPELL_REMOVECURSE, player);
+				learned = addSpell(SPELL_REMOVECURSE, player);
 				break;
 			case SPELLBOOK_LIGHT:
-				addSpell(SPELL_LIGHT, player);
+				learned = addSpell(SPELL_LIGHT, player);
 				break;
 			case SPELLBOOK_IDENTIFY:
-				addSpell(SPELL_IDENTIFY, player);
+				learned = addSpell(SPELL_IDENTIFY, player);
 				break;
 			case SPELLBOOK_MAGICMAPPING:
-				addSpell(SPELL_MAGICMAPPING, player);
+				learned = addSpell(SPELL_MAGICMAPPING, player);
 				break;
 			case SPELLBOOK_SLEEP:
-				addSpell(SPELL_SLEEP, player);
+				learned = addSpell(SPELL_SLEEP, player);
 				break;
 			case SPELLBOOK_CONFUSE:
-				addSpell(SPELL_CONFUSE, player);
+				learned = addSpell(SPELL_CONFUSE, player);
 				break;
 			case SPELLBOOK_SLOW:
-				addSpell(SPELL_SLOW, player);
+				learned = addSpell(SPELL_SLOW, player);
 				break;
 			case SPELLBOOK_OPENING:
-				addSpell(SPELL_OPENING, player);
+				learned = addSpell(SPELL_OPENING, player);
 				break;
 			case SPELLBOOK_LOCKING:
-				addSpell(SPELL_LOCKING, player);
+				learned = addSpell(SPELL_LOCKING, player);
 				break;
 			case SPELLBOOK_LEVITATION:
-				addSpell(SPELL_LEVITATION, player);
+				learned = addSpell(SPELL_LEVITATION, player);
 				break;
 			case SPELLBOOK_INVISIBILITY:
-				addSpell(SPELL_INVISIBILITY, player);
+				learned = addSpell(SPELL_INVISIBILITY, player);
 				break;
 			case SPELLBOOK_TELEPORTATION:
-				addSpell(SPELL_TELEPORTATION, player);
+				learned = addSpell(SPELL_TELEPORTATION, player);
 				break;
 			case SPELLBOOK_HEALING:
-				addSpell(SPELL_HEALING, player);
+				learned = addSpell(SPELL_HEALING, player);
 				break;
 			case SPELLBOOK_EXTRAHEALING:
-				addSpell(SPELL_EXTRAHEALING, player);
+				learned = addSpell(SPELL_EXTRAHEALING, player);
 				break;
 			case SPELLBOOK_CUREAILMENT:
-				addSpell(SPELL_CUREAILMENT, player);
+				learned = addSpell(SPELL_CUREAILMENT, player);
 				break;
 			case SPELLBOOK_DIG:
-				addSpell(SPELL_DIG, player);
+				learned = addSpell(SPELL_DIG, player);
 				break;
 			case SPELLBOOK_SUMMON:
-				addSpell(SPELL_SUMMON, player);
+				learned = addSpell(SPELL_SUMMON, player);
 				break;
 			case SPELLBOOK_STONEBLOOD:
-				addSpell(SPELL_STONEBLOOD, player);
+				learned = addSpell(SPELL_STONEBLOOD, player);
 				break;
 			case SPELLBOOK_BLEED:
-				addSpell(SPELL_BLEED, player);
+				learned = addSpell(SPELL_BLEED, player);
 				break;
 			case SPELLBOOK_REFLECT_MAGIC:
-				addSpell(SPELL_REFLECT_MAGIC, player);
+				learned = addSpell(SPELL_REFLECT_MAGIC, player);
 				break;
 			case SPELLBOOK_ACID_SPRAY:
-				addSpell(SPELL_ACID_SPRAY, player);
+				learned = addSpell(SPELL_ACID_SPRAY, player);
 				break;
 			case SPELLBOOK_STEAL_WEAPON:
-				addSpell(SPELL_STEAL_WEAPON, player);
+				learned = addSpell(SPELL_STEAL_WEAPON, player);
 				break;
 			case SPELLBOOK_DRAIN_SOUL:
-				addSpell(SPELL_DRAIN_SOUL, player);
+				learned = addSpell(SPELL_DRAIN_SOUL, player);
 				break;
 			case SPELLBOOK_VAMPIRIC_AURA:
-				addSpell(SPELL_VAMPIRIC_AURA, player);
+				learned = addSpell(SPELL_VAMPIRIC_AURA, player);
 				break;
 			case SPELLBOOK_BLANK_5:
 				messagePlayer(player, "Nope. Spell doesn't exist yet.");
 				break;
 			default:
-				addSpell(SPELL_FORCEBOLT, player);
+				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;
+		}
+
+		if ( learned )
+		{
+			item->status = static_cast<Status>(item->status - 1);
+			if ( item->status != BROKEN )
+			{
+				messagePlayer(player, language[2595]);
+			}
+			else
+			{
+				messagePlayer(player, language[2596]);
+			}
 		}
 	}
 }
