@@ -3183,6 +3183,7 @@ void item_Spellbook(Item*& item, int player)
 			else
 			{
 				messagePlayer(player, language[2596]);
+				consumeItem(item);
 			}
 		}
 	}

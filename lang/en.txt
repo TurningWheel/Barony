@@ -3210,7 +3210,7 @@ Difficulty: Normal#
 2593 You have no gold!#
 2594 Dropped %d gold pieces.#
 2595 The spellbook deteriorates.#
-2596 The spellbook crumbles to ash!#
+2596 The spellbook deteriorates and crumbles to ash!#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
