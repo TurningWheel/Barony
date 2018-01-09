@@ -25,7 +25,7 @@
 
 void item_PotionWater(Item*& item, Entity* entity)
 {
-	if (!entity)
+	if ( !entity )
 	{
 		return;
 	}
