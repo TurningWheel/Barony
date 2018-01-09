@@ -98,6 +98,9 @@ int checkSpriteType(Sint32 sprite)
 		// general furniture/misc.
 		return 12;
 		break;
+	case 127:
+		// floor decoration
+		return 13;
 	default:
 		return 0;
 		break;
@@ -1291,6 +1294,24 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->spellTrapLatchPower = 0;
 			entityNew->spellTrapFloorTile = 0;
 			entityNew->spellTrapRefireRate = 1;
+		}
+	}
+	// floor decoration
+	else if ( spriteType == 13 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->floorDecorationModel = entityToCopy->floorDecorationModel;
+			entityNew->floorDecorationRotation = entityToCopy->floorDecorationRotation;
+			entityNew->floorDecorationHeightOffset = entityToCopy->floorDecorationHeightOffset;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->floorDecorationModel = 0;
+			entityNew->floorDecorationRotation = 0;
+			entityNew->floorDecorationHeightOffset = 0;
 		}
 	}
 

@@ -4691,13 +4691,21 @@ void assignActions(map_t* map)
 			{
 				entity->x += 8;
 				entity->y += 8;
-				entity->sprite = 673;
+				entity->sprite = entity->floorDecorationModel;
 				entity->sizex = 4;
 				entity->sizey = 4;
-				entity->z = 7.5;
+				entity->z = 7.5 - entity->floorDecorationHeightOffset * 0.25;
+				if ( entity->floorDecorationRotation == -1 )
+				{
+					entity->yaw = (prng_get_uint() % 8) * (PI / 4);
+				}
+				else
+				{
+					entity->yaw = entity->floorDecorationRotation * (PI / 4);
+				}
 				entity->flags[BLOCKSIGHT] = false;
 				entity->flags[PASSABLE] = true;
-				entity->behavior = &actFloorVegetation;
+				entity->behavior = &actFloorDecoration;
 				if ( multiplayer != CLIENT )
 				{
 					entity->setUID(-3);
