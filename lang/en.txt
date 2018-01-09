@@ -3331,4 +3331,8 @@ Now wait for your leader to advance onward...#
 2860 type:rand#
 2861 %s Response 1.#
 
+# 2900 - 2949 More effects text:
+2900 The potion is cursed!#
+2901 You feel heavier...#
+
 2999 end#

@@ -612,9 +612,19 @@ void item_PotionLevitation(Item*& item, Entity* entity)
 		return;
 	}
 
-	messagePlayer(player, language[767]);
-	stats->EFFECTS[EFF_LEVITATING] = true;
-	stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800;
+	if ( item->beatitude < 0 )
+	{
+		messagePlayer(player, language[2900]);
+		messagePlayer(player, language[2901]);
+		stats->EFFECTS[EFF_SLOW] = true;
+		stats->EFFECTS_TIMERS[EFF_SLOW] = 1800;
+	}
+	else
+	{
+		messagePlayer(player, language[767]);
+		stats->EFFECTS[EFF_LEVITATING] = true;
+		stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
