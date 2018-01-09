@@ -163,6 +163,27 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[278], name);
 		}
 	}
+	else if ( !strncmp(command_str, "/spawnblessed ", 14) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		strcpy(name, command_str + 14);
+		for ( c = 0; c < NUMITEMS; ++c )
+		{
+			if ( strstr(items[c].name_identified, name) )
+			{
+				dropItem(newItem(static_cast<ItemType>(c), WORN, 2, 1, rand(), false, &stats[clientnum]->inventory), 0);
+				break;
+			}
+		}
+		if ( c == NUMITEMS )
+		{
+			messagePlayer(clientnum, language[278], name);
+		}
+	}
 	else if ( !strncmp(command_str, "/kick ", 6) )
 	{
 		strcpy(name, command_str + 6);
