@@ -2431,7 +2431,6 @@ loads the global item whitelist/blacklists and level curve.
 
 bool loadItemLists()
 {
-	char filename[128] = { 0 };
 	//FILE* fp;
 	int c;
 
@@ -2442,7 +2441,7 @@ bool loadItemLists()
 	}
 
 	// compose filename
-	strcpy(filename, "items/items_global.txt");
+	char filename[128] = "items/items_global.txt";
 	// check if item list is valid
 	if ( !dataPathExists(filename) )
 	{
@@ -2451,7 +2450,7 @@ bool loadItemLists()
 		return false;
 	}
 
-	std::vector<std::string> itemLevels = getLinesFromFile(filename);
+	std::vector<std::string> itemLevels = getLinesFromDataFile(filename);
 	std::string line;
 	int itemIndex = 0;
 
