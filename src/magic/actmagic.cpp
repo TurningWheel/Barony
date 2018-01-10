@@ -484,9 +484,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				//element = (spellElement_t *) element->elements->first->element;
 				element = (spellElement_t*)node->element;
 				//if (hit.entity != NULL) {
-				Stat* hitstats = NULL;
+				Stat* hitstats = nullptr;
 				int player = -1;
-				if (hit.entity)
+				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
 					if ( hit.entity->behavior == &actPlayer )
@@ -745,7 +745,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				// Alerting the hit Entity
-				if (hit.entity)
+				if ( hit.entity )
 				{
 					// alert the hit entity if it was a monster
 					if ( hit.entity->behavior == &actMonster && parent != nullptr )
@@ -758,6 +758,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->monsterTargetY = parent->y;*/
 
 							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+						}
+
+						if ( parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling )
+						{
+							//messagePlayer(clientnum, "Ruh oh, I got spell trappy in my bummy!");
+							//TODO: path to random place and do the thing.
 						}
 
 						// alert other monsters too
