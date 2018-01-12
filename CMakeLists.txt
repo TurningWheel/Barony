@@ -359,20 +359,20 @@ endif()
 set(BASE_DATA_DIR "./" CACHE INTERNAL "Base data dir")
 
 if (NOT APPLE AND UNIX)
-include(GNUInstallDirs)
-if (DATA_DIR)
-	set(BASE_DATA_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/barony")
-endif()
-message(STATUS "Base data directory ${BASE_DATA_DIR}")
+  include(GNUInstallDirs)
+  if (DATA_DIR)
+    set(BASE_DATA_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/barony")
+  endif()
+  message(STATUS "Base data directory ${BASE_DATA_DIR}")
 
-install(TARGETS barony
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT Runtime
-)
+  install(TARGETS barony
+	 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   COMPONENT Runtime
+  )
 else()
-install(TARGETS barony
-  RUNTIME DESTINATION bin COMPONENT Runtime BUNDLE DESTINATION Resources
-)
+  install(TARGETS barony
+    RUNTIME DESTINATION bin COMPONENT Runtime BUNDLE DESTINATION Resources
+  )
 endif()
 
 add_definitions(-DBASE_DATA_DIR=\"${BASE_DATA_DIR}\")
@@ -394,12 +394,7 @@ else()
 endif()
 
 if(WIN32)
-	target_link_libraries(${EDITOR_EXE_NAME} -lmingw32)
-	target_link_libraries(${EDITOR_EXE_NAME} -lSDL2main)
-	target_link_libraries(${EDITOR_EXE_NAME} -lSDL2)
-	target_link_libraries(${EDITOR_EXE_NAME} -lSDL2_net)
-	target_link_libraries(${EDITOR_EXE_NAME} -lSDL2_image)
-	target_link_libraries(${EDITOR_EXE_NAME} -lSDL2_ttf)
+	target_link_libraries(${EDITOR_EXE_NAME} -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lSDL2_image -lSDL2_ttf)
   if(STEAMWORKS_ENABLED)
     #target_link_libraries(editor -lsteamworks_cwrapper -lstdc++)
     target_link_libraries(${EDITOR_EXE_NAME} -lsteam_api)
@@ -446,21 +441,19 @@ if (OPENAL)
 endif()
 
 if (NOT APPLE AND UNIX)
-	install(TARGETS ${EDITOR_EXE_NAME}
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
-	)
+  install(TARGETS ${EDITOR_EXE_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
+  )
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lang DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lang DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
 
-	if (EXISTS books)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/books DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/images DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/items DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/maps DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/models DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/music DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-		install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/sound DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
-	endif()
+  if (EXISTS books)
+    install(DIRECTORY 
+        ${CMAKE_CURRENT_BINARY_DIR}/books ${CMAKE_CURRENT_BINARY_DIR}/images ${CMAKE_CURRENT_BINARY_DIR}/items
+        ${CMAKE_CURRENT_BINARY_DIR}/maps ${CMAKE_CURRENT_BINARY_DIR}/models ${CMAKE_CURRENT_BINARY_DIR}/music
+        ${CMAKE_CURRENT_BINARY_DIR}/sound DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony
+    )
+  endif()
 endif()
 
 if (APPLE)
