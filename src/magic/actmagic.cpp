@@ -463,7 +463,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			Sint32 entityHealth = 0;
 			double dist = 0.f;
 			bool hitFromAbove = false;
-			if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical )
+			if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 			{
 				// moving vertically.
 				my->z += my->vel_z;
@@ -518,10 +518,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			}
 			else
 			{
-				dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+				if ( my->actmagicIsVertical == MAGIC_ISVERTICAL_XYZ )
+				{
+					// moving vertically and horizontally, check if we hit the floor
+					my->z += my->vel_z;
+					hitFromAbove = my->magicFallingCollision();
+					dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+					if ( !hitFromAbove && my->z > -5 )
+					{
+						// if we didn't hit the floor, process normal horizontal movement collision if we aren't too high
+						if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+						{
+							hitFromAbove = true;
+						}
+					}
+				}
+				else
+				{
+					dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my); //normal flat projectiles
+				}
 			}
 
-			if ( hitFromAbove || dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+			if ( hitFromAbove || (my->actmagicIsVertical != MAGIC_ISVERTICAL_XYZ && dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y)) )
 			{
 				node = element->elements.first;
 				//element = (spellElement_t *) element->elements->first->element;
@@ -621,7 +639,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( hit.entity )
 					{
-						if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical )
+						if ( (parent && parent->behavior == &actMagicTrapCeiling) || my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 						{
 							// this missile came from the ceiling, let's redirect it..
 							my->x = hit.entity->x + cos(hit.entity->yaw);
@@ -1266,7 +1284,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							playSoundEntity(hit.entity, 172, 64);
+							playSoundEntity(hit.entity, 28, 128);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
@@ -2007,7 +2025,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		{
 			MAGIC_MAXLIFE = my->actmagicOrbitLifetime;
 		}
-		else if ( my->actmagicIsVertical == 1 )
+		else if ( my->actmagicIsVertical != MAGIC_ISVERTICAL_NONE )
 		{
 			MAGIC_MAXLIFE = 512;
 		}
@@ -3195,19 +3213,22 @@ bool Entity::magicFallingCollision()
 		return true;
 	}
 
-	node_t* node;
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	if ( actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( entity == this )
+		node_t* node;
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-		if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
-		{
-			hit.entity = entity;
-			//hit.side = HORIZONTAL;
-			return true;
+			Entity* entity = (Entity*)node->element;
+			if ( entity == this )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
+			{
+				hit.entity = entity;
+				//hit.side = HORIZONTAL;
+				return true;
+			}
 		}
 	}
 
@@ -3251,7 +3272,7 @@ void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t 
 		entity->vel_y = 0.0;
 		entity->vel_z = 0.5 * (missile_speed);
 		entity->pitch = PI / 2;
-		entity->actmagicIsVertical = 1;
+		entity->actmagicIsVertical = MAGIC_ISVERTICAL_Z;
 		spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
 }

@@ -107,6 +107,11 @@ static const int PARTICLE_EFFECT_SHADOW_TELEPORT = 11;
 static const int PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY = 12;
 static const int PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING = 13;
 
+// actmagicIsVertical constants
+static const int MAGIC_ISVERTICAL_NONE = 0;
+static const int MAGIC_ISVERTICAL_Z = 1;
+static const int MAGIC_ISVERTICAL_XYZ = 2;
+
 // misc particle timer actions
 static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
 static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;

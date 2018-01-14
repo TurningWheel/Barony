@@ -888,7 +888,7 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 650 )     // lich body
 			{
-				//initLichIce(my, NULL);
+				initLichIce(my, nullptr);
 			}
 		}
 		else
@@ -1455,9 +1455,15 @@ void actMonster(Entity* my)
 				}
 				else if ( myStats->type == LICH_ICE )
 				{
+					int enemiesInMelee = 0;
+					if ( ticks % 50 == 0 )
+					{
+						// grab enemies around the lich once per second to determine threat level.
+						enemiesInMelee = numTargetsAroundEntity(my, 32.0, PI, MONSTER_TARGET_ENEMY);
+					}
 					if ( myStats->OLDHP != myStats->HP )
 					{
-						if ( rand() % 4 == 0 )
+						if ( rand() % 3 == 0 )
 						{
 							// chance to dodge on hp loss
 							playSoundEntity(my, 180, 128);
@@ -1466,7 +1472,7 @@ void actMonster(Entity* my)
 							MONSTER_VELY = sin(dir) * 3;
 							my->monsterState = MONSTER_STATE_LICHICE_DODGE;
 							my->monsterSpecialTimer = 30;
-							if ( rand() % 4 == 0 )
+							if ( rand() % 2 == 0 )
 							{
 								// prepare off-hand spell after dodging
 								my->monsterLichIceCastPrev = 0;
@@ -1486,9 +1492,9 @@ void actMonster(Entity* my)
 							//}
 						}
 					}
-					else if ( lichDist < 32 )
+					else if ( (lichDist < 32) || (enemiesInMelee > 1) )
 					{
-						if ( ticks % 10 == 0 && rand() % 100 == 0 )
+						if ( ticks % 10 == 0 && rand() % 100 == 0 || (enemiesInMelee > 1 && rand() % 8 == 0) )
 						{
 							// chance to dodge away from target if distance is low enough.
 							playSoundEntity(my, 180, 128);
@@ -1512,6 +1518,24 @@ void actMonster(Entity* my)
 								my->monsterLichIceCastPrev = 0;
 								my->monsterLichIceCastSeq = LICH_ATK_BASICSPELL_SINGLE;
 							}
+						}
+						else if ( (ticks % 50 == 0 && rand() % 10 == 0) || (enemiesInMelee > 1 && rand() % 4 == 0) )
+						{
+							my->monsterSpecialTimer = 100;
+							my->monsterLichIceCastPrev = 0;
+							my->monsterLichIceCastSeq = LICH_ATK_CHARGE_AOE;
+						}
+					}
+					else if ( my->monsterLichMeleeSwingCount > 3 )
+					{
+						// reached 5 successive normal attacks, either move/teleport/dodge around the map
+						my->monsterLichMeleeSwingCount = 0;
+						if ( rand() % 10 > 0 )
+						{
+							my->monsterTarget = 0;
+							my->monsterTargetX = my->x - 50 + rand() % 100;
+							my->monsterTargetY = my->y - 50 + rand() % 100;
+							my->monsterState = MONSTER_STATE_PATH; // path state
 						}
 					}
 				}
@@ -3126,13 +3150,17 @@ timeToGoAgain:
 							// rotate monster
 							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 							{
+								real_t tempVelX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
+								real_t tempVelY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
 								if ( myStats->type == LICH_ICE )
 								{
-									// override turning as we're strafing
-									MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
-									MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
+									// override if we're strafing, keep facing the target
+									dir = my->yaw - atan2(-tempVelY, -tempVelX);
 								}
-								dir = my->yaw - atan2( -MONSTER_VELY, -MONSTER_VELX );
+								else
+								{
+									dir = my->yaw - atan2( -MONSTER_VELY, -MONSTER_VELX );
+								}
 							}
 							else
 							{
@@ -3509,7 +3537,10 @@ timeToGoAgain:
 			}
 
 			// minotaurs and liches chase players relentlessly.
-			if (myStats->type == MINOTAUR || (myStats->type == LICH && my->monsterSpecialTimer <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+			if ( myStats->type == MINOTAUR 
+				|| (myStats->type == LICH && my->monsterSpecialTimer <= 0)
+				|| ((myStats->type == LICH_FIRE || myStats->type == LICH_ICE) && my->monsterSpecialTimer <= 0 )
+				|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")) )
 			{
 				bool shouldHuntPlayer = false;
 				Entity* playerOrNot = uidToEntity(my->monsterTarget);
@@ -4994,6 +5025,15 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					this->monsterTargetY = this->y - 50 + rand() % 100;
 					this->monsterState = MONSTER_STATE_PATH; // path state
 				}
+			}
+			else if ( myStats->type == LICH_ICE )
+			{
+				// do attack counting.
+				//this->monsterSpecialTimer = 90;
+				//this->monsterTarget = 0;
+				//this->monsterTargetX = this->x - 50 + rand() % 100;
+				//this->monsterTargetY = this->y - 50 + rand() % 100;
+				//this->monsterState = MONSTER_STATE_PATH; // path state
 			}
 
 			// reset the hit timer

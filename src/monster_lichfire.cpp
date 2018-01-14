@@ -109,6 +109,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
 	entity = newEntity(648, 0, map.entities, nullptr);
@@ -127,6 +128,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// head
 	entity = newEntity(647, 0, map.entities, nullptr);
@@ -146,6 +148,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// world weapon
 	entity = newEntity(-1, 0, map.entities, nullptr);
@@ -165,6 +168,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void lichFireDie(Entity* my)
