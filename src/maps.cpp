@@ -4705,12 +4705,13 @@ void assignActions(map_t* map)
 				}
 				entity->flags[BLOCKSIGHT] = false;
 				entity->flags[PASSABLE] = true;
+				entity->flags[UNCLICKABLE] = true;
 				entity->behavior = &actFloorDecoration;
-				if ( multiplayer != CLIENT )
+				/*if ( multiplayer != CLIENT )
 				{
 					entity->setUID(-3);
 					entity_uids--;
-				}
+				}*/
 				break;
 			}
 			default:
