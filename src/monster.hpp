@@ -534,7 +534,7 @@ static const int VAMPIRE_CAST_DRAIN = 2;
 static const int SHADOW_SPELLCAST = 1;
 static const int SHADOW_TELEPORT_ONLY = 2;
 
-//--Lich--
+//--Lich Attacks--
 static const int LICH_ATK_VERTICAL_SINGLE = 0;
 static const int LICH_ATK_HORIZONTAL_SINGLE = 1;
 static const int LICH_ATK_RISING_RAIN = 2;
@@ -543,3 +543,8 @@ static const int LICH_ATK_RISING_SINGLE = 4;
 static const int LICH_ATK_VERTICAL_QUICK = 5;
 static const int LICH_ATK_HORIZONTAL_RETURN = 6;
 static const int LICH_ATK_HORIZONTAL_QUICK = 7;
+static const int LICH_ATK_CHARGE_AOE = 8;
+static const int LICH_ATK_FALLING_DIAGONAL = 9;
+
+//--Lich Special States--
+static const int LICH_ICE_ATTACK_COMBO = 1;

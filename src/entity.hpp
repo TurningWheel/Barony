@@ -200,6 +200,7 @@ public:
 	Sint32& monsterLichIceCastPrev; //skill[35]
 	Sint32& monsterLichMagicCastCount; //skill[37] count the basic spell attacks in the seq and switch things up if too many in a row.
 	Sint32& monsterLichMeleeSwingCount; //skill[38] count the 'regular' attacks in the seq and switch things up if too many in a row.
+	Sint32& monsterLichAttackTimer; //skill[39] used to time ranged attack frequency
 	Sint32& monsterLichBattleState; //skill[27] used to track hp/battle progress
 
 	//--PUBLIC POWER CRYSTAL SKILLS--
@@ -291,7 +292,7 @@ public:
 	//--PUBLIC FLOOR DECORATION MODELS--
 	Sint32& floorDecorationModel; //skill[0]
 	Sint32& floorDecorationRotation; //skill[1]
-	Sint32& floorDecorationHeightOffset; //skill[2] positive numbers will lift the model higher
+	Sint32& floorDecorationHeightOffset; //skill[3] positive numbers will lift the model higher
 
 	//--PUBLIC SPELL TRAP SKILLS--
 	Sint32& spellTrapType; //skill[0]

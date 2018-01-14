@@ -96,6 +96,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLichIceCastPrev(skill[35]),
 	monsterLichMagicCastCount(skill[37]),
 	monsterLichMeleeSwingCount(skill[38]),
+	monsterLichAttackTimer(skill[39]),
 	monsterLichBattleState(skill[27]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
@@ -175,7 +176,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	ceilingTileModel(skill[0]),
 	floorDecorationModel(skill[0]),
 	floorDecorationRotation(skill[1]),
-	floorDecorationHeightOffset(skill[2]),
+	floorDecorationHeightOffset(skill[3]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
@@ -3806,9 +3807,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
 			else if ( (myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT)
-				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE)
+				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
 				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
-				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1) )
+				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1)
+				|| (myStats->type == LICH_ICE 
+						&& (monsterLichIceCastPrev == LICH_ATK_CHARGE_AOE 
+							|| monsterLichIceCastPrev == LICH_ATK_RISING_RAIN
+							|| monsterLichIceCastPrev == LICH_ATK_FALLING_DIAGONAL)
+					)
 			)
 			{
 				// calls animation, but doesn't actually attack
@@ -7347,6 +7353,12 @@ int Entity::getAttackPose() const
 					break;
 				case LICH_ATK_HORIZONTAL_QUICK:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_CHARGE_AOE:
+					pose = MONSTER_POSE_SPECIAL_WINDUP2;
+					break;
+				case LICH_ATK_FALLING_DIAGONAL:
+					pose = MONSTER_POSE_SPECIAL_WINDUP3;
 					break;
 				default:
 					break;
