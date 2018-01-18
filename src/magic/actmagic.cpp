@@ -599,6 +599,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							reflection = 3;
 						}
 					}
+					else if ( (hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
+						|| (hit.entity->getRace() == LICH_FIRE && parent->getRace() == LICH_ICE) )
+					{
+						reflection = 3;
+					}
 					if ( !reflection )
 					{
 						reflection = hit.entity->getReflection();
@@ -2849,19 +2854,63 @@ void actParticleTimer(Entity* my)
 			{
 				bool teleported = false;
 				// teleport to target spell.
+				node_t* node;
 				Entity* parent = uidToEntity(my->parent);
+				Entity* target = nullptr;
 				if ( parent )
 				{
-					createParticleErupt(parent, my->particleTimerEndSprite);
-					teleported = parent->teleportRandom();
+					for ( node = map.entities->first; node != nullptr; node = node->next )
+					{
+						target = (Entity*)node->element;
+						if ( target->behavior == &actDevilTeleport
+							&& target->sprite == 128 )
+						{
+								break; // found specified center of map
+						}
+					}
 
-					if ( teleported )
+					if ( target )
+					{
+						createParticleErupt(parent, my->particleTimerEndSprite);
+						teleported = parent->teleport((target->x / 16) - 25 + rand() % 50, (target->y / 16) - 25 + rand() % 50);
+
+						if ( teleported )
+						{
+							// teleport success.
+							if ( multiplayer == SERVER )
+							{
+								serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+							}
+						}
+					}
+				}
+			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY )
+			{
+				// teleport to fixed location spell.
+				node_t* node;
+				Entity* target = nullptr;
+				for ( node = map.entities->first; node != nullptr; node = node->next )
+				{
+					target = (Entity*)node->element;
+					if ( target->behavior == &actDevilTeleport
+						&& target->sprite == 128 )
+					{
+							break;
+					}
+				}
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent && target )
+				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
+					if ( parent->teleport(target->x / 16, target->y / 16) )
 					{
 						// teleport success.
 						if ( multiplayer == SERVER )
 						{
 							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
 						}
+						parent->lichIceCreateCannon();
 					}
 				}
 			}
@@ -3239,6 +3288,11 @@ bool Entity::magicOrbitingCollision()
 {
 	hit.entity = nullptr;
 
+	if ( this->z < -10 )
+	{
+		return false;
+	}
+
 	node_t* node;
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
@@ -3277,7 +3331,7 @@ void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t 
 	}
 }
 
-void Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration)
+Entity* Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration)
 {
 	spell_t* spell = getSpellFromID(spellID);
 	Entity* entity = castSpell(getUID(), spell, false, true);
@@ -3286,6 +3340,10 @@ void Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t
 		if ( spellID == SPELL_FIREBALL )
 		{
 			entity->sprite = 671;
+		}
+		else if ( spellID == SPELL_MAGICMISSILE )
+		{
+			entity->sprite = 679;
 		}
 		entity->yaw = angleFromCasterDirection;
 		entity->x = x + distFromCaster * cos(yaw + entity->yaw);
@@ -3306,4 +3364,5 @@ void Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t
 		entity->vel_z = entity->actmagicOrbitVerticalSpeed;
 		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
+	return entity;
 }

@@ -411,7 +411,8 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_CAST1
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP2
-		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3 )
+		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3
+		|| my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -610,7 +611,6 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 								my->monsterArmbended = 0;
 								my->monsterAttack = 0;
 								my->monsterAttackTime = 0;
-								my->monsterHitTime = 0;
 							}
 						}
 					}
@@ -769,7 +769,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						my->monsterWeaponYaw = 0;
 						weaponarm->roll = 0;
 						weaponarm->skill[1] = 0;
-						createParticleDropRising(my, 672, 0.7);
+						createParticleDropRising(my, 678, 1.0);
 						if ( multiplayer != CLIENT )
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
@@ -798,7 +798,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 									if ( i != 0 )
 									{
 										// do some minor variations in spell angle
-										spell->yaw += ((PI * (-4 + rand() % 9)) / 64);
+										spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
 									}
 									spell->vel_x = horizontalSpeed * cos(spell->yaw);
 									spell->vel_y = horizontalSpeed * sin(spell->yaw);
@@ -906,7 +906,14 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						spellarm->skill[1] = 1;
 						if ( multiplayer != CLIENT )
 						{
-							castSpell(my->getUID(), getSpellFromID(SPELL_SLOW), true, false);
+							if ( rand() % 2 == 0 )
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_SLOW), true, false);
+							}
+							else
+							{
+								castSpell(my->getUID(), getSpellFromID(SPELL_DRAIN_SOUL), true, false);
+							}
 						}
 					}
 				}
@@ -1075,8 +1082,15 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 	switch ( monsterLichIceCastSeq )
 	{
 		case LICH_ATK_VERTICAL_SINGLE:
+			if ( monsterSpecialState == 0 && monsterState != MONSTER_STATE_LICHFIRE_CASTSPELLS
+				&& monsterSpecialTimer == 0 && rand() % 4 > 0 )
+			{
+				monsterLichMeleeSwingCount = 0;
+				monsterSpecialState = LICH_ICE_ATTACK_COMBO;
+				//createParticleDot(this);
+			}
 			++monsterLichMeleeSwingCount;
-			switch ( rand() % 4 )
+			switch ( rand() % 3 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
@@ -1085,10 +1099,20 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 					monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
 					break;
 				case 2:
-					monsterLichIceCastSeq = LICH_ATK_RISING_RAIN;
+					if ( monsterSpecialState == LICH_ICE_ATTACK_COMBO )
+					{
+						monsterLichIceCastSeq = LICH_ATK_FALLING_DIAGONAL;
+						//monsterSpecialState = 0;
+						//monsterSpecialTimer = 100;
+					}
+					else
+					{
+						monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
+					}
 					break;
 				case 3:
-					monsterLichIceCastSeq = LICH_ATK_FALLING_DIAGONAL;
+					//monsterLichIceCastSeq = LICH_ATK_FALLING_DIAGONAL;
+					//monsterLichIceCastSeq = LICH_ATK_RISING_RAIN;
 					//monsterLichIceCastSeq = LICH_ATK_CHARGE_AOE;
 					break;
 				default:
@@ -1096,14 +1120,33 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			}
 			break;
 		case LICH_ATK_HORIZONTAL_SINGLE:
+			if ( monsterSpecialState == 0
+				&& monsterSpecialTimer == 0 && rand() % 4 > 0 )
+			{
+				monsterLichMeleeSwingCount = 0;
+				monsterSpecialState = LICH_ICE_ATTACK_COMBO;
+				//createParticleDot(this);
+			}
 			++monsterLichMeleeSwingCount;
-			switch ( rand() % 2 )
+			switch ( rand() % 3 )
 			{
 				case 0:
 					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
 					break;
 				case 1:
 					monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
+					break;
+				case 2:
+					if ( monsterSpecialState == LICH_ICE_ATTACK_COMBO )
+					{
+						monsterLichIceCastSeq = LICH_ATK_FALLING_DIAGONAL;
+						//monsterSpecialState = 0;
+						//monsterSpecialTimer = 100;
+					}
+					else
+					{
+						monsterLichIceCastSeq = LICH_ATK_BASICSPELL_SINGLE;
+					}
 					break;
 				default:
 					break;
@@ -1134,7 +1177,20 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			}
 			break;
 		case LICH_ATK_CHARGE_AOE:
-			monsterLichMeleeSwingCount = 0;
+			//monsterLichMeleeSwingCount = 0;
+			switch ( rand() % 2 )
+			{
+				case 0:
+					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
+					break;
+				case 1:
+					monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
+					break;
+				default:
+					break;
+			}
+			break;
+		case LICH_ATK_FALLING_DIAGONAL:
 			switch ( rand() % 2 )
 			{
 				case 0:
@@ -1267,5 +1323,46 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 			break;*/
 		default:
 			break;
+	}
+}
+
+void Entity::lichIceTeleport()
+{
+	Entity* spellTimer = createParticleTimer(this, 40, 593);
+	if ( monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY )
+	{
+		spellTimer->particleTimerEndAction = PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY; // teleport behavior of timer.
+	}
+	else
+	{
+		//if ( target != nullptr )
+		//{
+		//	spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+		//}
+		//spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
+		spellTimer->particleTimerEndAction = PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING; // teleport behavior of timer.
+	}
+	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+	spellTimer->particleTimerCountdownSprite = 593;
+	if ( multiplayer == SERVER )
+	{
+		serverSpawnMiscParticles(this, spellTimer->particleTimerEndAction, 593);
+	}
+}
+
+void Entity::lichIceCreateCannon()
+{
+	//spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+	for ( int i = 0; i < 6; ++i )
+	{
+		Entity* spellOrbit = castOrbitingMagicMissile(SPELL_MAGICMISSILE, 8.0, i * PI / 3, 500);
+		spellOrbit->z = -25;
+		spellOrbit->actmagicOrbitStartZ = spellOrbit->z;
+	}
+	createParticleDropRising(this, 678, 1.0);
+	if ( multiplayer == SERVER )
+	{
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 678);
 	}
 }
