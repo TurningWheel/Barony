@@ -81,15 +81,19 @@ int checkSpriteType(Sint32 sprite)
 	case 116:
 		//pedestal
 		return 8;
+		break;
 	case 118:
 		//teleporter
 		return 9;
+		break;
 	case 119:
 		//ceiling tile model
 		return 10;
+		break;
 	case 120:
 		//magic ceiling trap
 		return 11;
+		break;
 	case 121:
 	case 122:
 	case 123:
@@ -101,6 +105,7 @@ int checkSpriteType(Sint32 sprite)
 	case 127:
 		// floor decoration
 		return 13;
+		break;
 	default:
 		return 0;
 		break;
@@ -1294,6 +1299,20 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->spellTrapLatchPower = 0;
 			entityNew->spellTrapFloorTile = 0;
 			entityNew->spellTrapRefireRate = 1;
+		}
+	}
+	// furniture
+	else if ( spriteType == 12 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->furnitureDir = entityToCopy->furnitureDir;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->furnitureDir = 0;
 		}
 	}
 	// floor decoration
