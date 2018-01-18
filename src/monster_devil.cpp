@@ -593,4 +593,5 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 void actDevilTeleport(Entity* my)
 {
 	// dummy function
+	my->flags[PASSABLE] = true;
 }

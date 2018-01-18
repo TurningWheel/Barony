@@ -916,7 +916,7 @@ void consoleCommand(char* command_str)
 		{
 			int c;
 			Stat* myStats = stats[0];
-			for ( c = 0; c < 50; c++ )
+			for ( c = 0; c < 35; c++ )
 			{
 				consoleCommand("/levelup");
 			}
@@ -934,21 +934,16 @@ void consoleCommand(char* command_str)
 			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			//consoleCommand("/nextlevel");
-			while ( myStats->PROFICIENCIES[PRO_SWORD] < 100 )
+			for ( c = 0; c < NUMPROFICIENCIES; c++ )
 			{
-				consoleCommand("/levelskill 9");
-			}
-			while ( myStats->PROFICIENCIES[PRO_AXE] < 100 )
-			{
-				consoleCommand("/levelskill 11");
-			}
-			while ( myStats->PROFICIENCIES[PRO_POLEARM] < 100 )
-			{
-				consoleCommand("/levelskill 12");
-			}
-			while ( myStats->PROFICIENCIES[PRO_MACE] < 100 )
-			{
-				consoleCommand("/levelskill 10");
+				if ( c != PRO_STEALTH )
+				{
+					while ( stats[clientnum]->PROFICIENCIES[c] < 100 )
+					{
+						//++stats[clientnum]->PROFICIENCIES[c];
+						players[clientnum]->entity->increaseSkill(c);
+					}
+				}
 			}
 		}
 		else

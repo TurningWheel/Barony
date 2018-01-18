@@ -98,6 +98,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLichMeleeSwingCount(skill[38]),
 	monsterLichAttackTimer(skill[39]),
 	monsterLichBattleState(skill[27]),
+	monsterLichTeleportTimer(skill[40]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
@@ -3814,7 +3815,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						&& (monsterLichIceCastPrev == LICH_ATK_CHARGE_AOE 
 							|| monsterLichIceCastPrev == LICH_ATK_RISING_RAIN
 							|| monsterLichIceCastPrev == LICH_ATK_FALLING_DIAGONAL
-							|| monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+							|| monsterState == MONSTER_STATE_LICH_CASTSPELLS )
 					)
 			)
 			{
@@ -4263,6 +4264,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// test for friendly fire
 				if ( checkFriend(hit.entity) )
 				{
+					return;
+				}
+				if ( (myStats->type == LICH_FIRE && entity->getRace() == LICH_ICE)
+					|| (myStats->type == LICH_ICE && entity->getRace() == LICH_FIRE) )
+				{
+					// friendship <3
 					return;
 				}
 			}
@@ -8651,8 +8658,8 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	if ( (myStats->type == LICH_FIRE || myStats->type == LICH_ICE)
 		&& (monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY 
 			|| monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY
-			|| monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS
-			|| monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_ROAMING) )
+			|| monsterState == MONSTER_STATE_LICH_CASTSPELLS
+			|| monsterState == MONSTER_STATE_LICH_TELEPORT_ROAMING) )
 	{
 
 	}

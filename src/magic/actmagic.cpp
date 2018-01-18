@@ -2850,7 +2850,7 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
-			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING )
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_LICH_TELEPORT_ROAMING )
 			{
 				bool teleported = false;
 				// teleport to target spell.
@@ -2872,7 +2872,7 @@ void actParticleTimer(Entity* my)
 					if ( target )
 					{
 						createParticleErupt(parent, my->particleTimerEndSprite);
-						teleported = parent->teleport((target->x / 16) - 25 + rand() % 50, (target->y / 16) - 25 + rand() % 50);
+						teleported = parent->teleport((target->x / 16) - 11 + rand() % 23, (target->y / 16) - 11 + rand() % 23);
 
 						if ( teleported )
 						{
