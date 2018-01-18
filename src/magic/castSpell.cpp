@@ -726,7 +726,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster == players[i]->entity )
 				{
-					caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
+					caster->lichIceCreateCannon();
+					//caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
 					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					//createParticle1(caster, i);
 					//createParticleDropRising(caster);

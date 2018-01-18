@@ -3813,7 +3813,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				|| (myStats->type == LICH_ICE 
 						&& (monsterLichIceCastPrev == LICH_ATK_CHARGE_AOE 
 							|| monsterLichIceCastPrev == LICH_ATK_RISING_RAIN
-							|| monsterLichIceCastPrev == LICH_ATK_FALLING_DIAGONAL)
+							|| monsterLichIceCastPrev == LICH_ATK_FALLING_DIAGONAL
+							|| monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
 					)
 			)
 			{
@@ -7343,7 +7344,7 @@ int Entity::getAttackPose() const
 					pose = MONSTER_POSE_MAGIC_WINDUP1;
 					break;
 				case LICH_ATK_RISING_SINGLE:
-					pose = MONSTER_POSE_MELEE_WINDUP3;
+					pose = MONSTER_POSE_MELEE_WINDUP1;
 					break;
 				case LICH_ATK_VERTICAL_QUICK:
 					pose = MONSTER_POSE_MELEE_WINDUP1;
@@ -8647,8 +8648,9 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		messagePlayer(clientnum, "Entity acquired new target!");
 	}*/
 
-	if ( myStats->type == LICH_FIRE
+	if ( (myStats->type == LICH_FIRE || myStats->type == LICH_ICE)
 		&& (monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY 
+			|| monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY
 			|| monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS
 			|| monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_ROAMING) )
 	{

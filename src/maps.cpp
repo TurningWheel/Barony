@@ -3823,10 +3823,11 @@ void assignActions(map_t* map)
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
-			// devil teleport location:
+			// devil/other teleport location:
 			case 72:
 			case 73:
 			case 74:
+			case 128:
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->x += 8;

@@ -1321,6 +1321,15 @@ void actMonster(Entity* my)
 		else
 		{
 			my->monsterSpecialTimer = 0;
+			if ( my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+			{
+				if ( myStats->type == LICH_FIRE )
+				{
+					my->monsterState = MONSTER_STATE_LICHFIRE_TELEPORT_ROAMING;
+					my->lichFireTeleport();
+					my->monsterSpecialTimer = 60;
+				}
+			}
 		}
 
 		if ( my->monsterState != MONSTER_STATE_ATTACK && my->monsterState <= MONSTER_STATE_HUNT )
@@ -1481,15 +1490,14 @@ void actMonster(Entity* my)
 						}
 						else
 						{
-							//if ( my->monsterLichBattleState % 2 == 1 && rand() % 4 == 0 )
-							//{
-							//	// chance to change state to teleport after being hit.
-							//	//messagePlayer(0, "try teleport");
-							//	my->monsterState = MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY;
-							//	my->lichFireTeleport();
-							//	my->monsterSpecialTimer = 80;
-							//	++my->monsterLichBattleState;
-							//}
+							if ( my->monsterLichBattleState % 2 == 1 && rand() % 4 == 0 )
+							{
+								// chance to change state to teleport after being hit.
+								my->monsterState = MONSTER_STATE_LICHICE_TELEPORT_STATIONARY;
+								my->lichIceTeleport();
+								my->monsterSpecialTimer = 80;
+								++my->monsterLichBattleState;
+							}
 						}
 					}
 					else if ( (lichDist < 32) || (enemiesInMelee > 1) )
@@ -1526,21 +1534,68 @@ void actMonster(Entity* my)
 							my->monsterLichIceCastSeq = LICH_ATK_CHARGE_AOE;
 						}
 					}
+					else if ( lichDist > 64 )
+					{
+						if ( rand() % 100 == 0 )
+						{
+							// chance to dodge towards the target if distance is great enough.
+							playSoundEntity(my, 180, 128);
+							tangent = atan2(target->y - my->y, target->x - my->x);
+							dir = tangent;
+							while ( dir < 0 )
+							{
+								dir += 2 * PI;
+							}
+							while ( dir > 2 * PI )
+							{
+								dir -= 2 * PI;
+							}
+							MONSTER_VELX = cos(dir) * 3;
+							MONSTER_VELY = sin(dir) * 3;
+							my->monsterState = MONSTER_STATE_LICHICE_DODGE;
+							my->monsterSpecialTimer = 50;
+						}
+					}
 					else if ( my->monsterLichMeleeSwingCount > 3 )
 					{
-						// reached 5 successive normal attacks, either move/teleport/dodge around the map
+						// reached x successive normal attacks, either move/teleport/dodge around the map
 						my->monsterLichMeleeSwingCount = 0;
 						if ( rand() % 10 > 0 )
 						{
-							my->monsterTarget = 0;
-							my->monsterTargetX = my->x - 50 + rand() % 100;
-							my->monsterTargetY = my->y - 50 + rand() % 100;
-							my->monsterState = MONSTER_STATE_PATH; // path state
+							if ( rand() % 2 == 0 )
+							{
+								my->monsterTarget = 0;
+								my->monsterTargetX = my->x - 50 + rand() % 100;
+								my->monsterTargetY = my->y - 50 + rand() % 100;
+								my->monsterState = MONSTER_STATE_PATH; // path state
+							}
+							else
+							{
+								// chance to dodge on hp loss
+								playSoundEntity(my, 180, 128);
+								dir = my->yaw - (PI / 2) + PI * (rand() % 2);
+								MONSTER_VELX = cos(dir) * 3;
+								MONSTER_VELY = sin(dir) * 3;
+								my->monsterState = MONSTER_STATE_LICHICE_DODGE;
+								my->monsterSpecialTimer = 30;
+								if ( rand() % 2 == 0 )
+								{
+									// prepare off-hand spell after dodging
+									my->monsterLichIceCastPrev = 0;
+									my->monsterLichIceCastSeq = LICH_ATK_BASICSPELL_SINGLE;
+								}
+								else
+								{
+									my->monsterLichIceCastPrev = 0;
+									my->monsterLichIceCastSeq = LICH_ATK_FALLING_DIAGONAL;
+								}
+							}
 						}
 					}
 				}
 			}
-			else if ( my->monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY )
+			else if ( my->monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY
+				|| my->monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY )
 			{
 				my->monsterState = MONSTER_STATE_LICHFIRE_CASTSPELLS;
 				my->monsterSpecialTimer = 1000; // cast spells for 20 seconds.
@@ -1589,6 +1644,11 @@ void actMonster(Entity* my)
 				if ( target )
 				{
 					my->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
+					my->monsterState = MONSTER_STATE_PATH;
+				}
+				else
+				{
+					my->monsterState = MONSTER_STATE_WAIT;
 				}
 				/*my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 0.0, 500);
 				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 2 * PI / 3, 500);
@@ -2316,34 +2376,35 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
-		/*if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget) )
-		{
-			std::string state_string;
+		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
+		//	|| myStats->type == LICH_ICE )
+		//{
+		//	std::string state_string;
 
-			switch(my->monsterState)
-			{
-			case MONSTER_STATE_WAIT:
-				state_string = "WAIT";
-				break;
-			case MONSTER_STATE_ATTACK:
-				state_string = "CHARGE";
-				break;
-			case MONSTER_STATE_PATH:
-				state_string = "PATH";
-				break;
-			case MONSTER_STATE_HUNT:
-				state_string = "HUNT";
-				break;
-			case MONSTER_STATE_TALK:
-				state_string = "TALK";
-				break;
-			default:
-				state_string = "Unknown state";
-				break;
-			}
+		//	switch(my->monsterState)
+		//	{
+		//	case MONSTER_STATE_WAIT:
+		//		state_string = "WAIT";
+		//		break;
+		//	case MONSTER_STATE_ATTACK:
+		//		state_string = "CHARGE";
+		//		break;
+		//	case MONSTER_STATE_PATH:
+		//		state_string = "PATH";
+		//		break;
+		//	case MONSTER_STATE_HUNT:
+		//		state_string = "HUNT";
+		//		break;
+		//	case MONSTER_STATE_TALK:
+		//		state_string = "TALK";
+		//		break;
+		//	default:
+		//		state_string = "Unknown state";
+		//		break;
+		//	}
 
-			messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
-		}*/
+		//	messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
+		//}
 
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
@@ -2516,7 +2577,11 @@ void actMonster(Entity* my)
 			// minotaurs and liches chase players relentlessly.
 			if (myReflex)
 			{
-				if (myStats->type == MINOTAUR || myStats->type == LICH || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+				if (myStats->type == MINOTAUR 
+					|| myStats->type == LICH 
+					|| myStats->type == LICH_FIRE 
+					|| myStats->type == LICH_ICE 
+					|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 				{
 					double distToPlayer = 0;
 					int c, playerToChase = -1;
@@ -4678,7 +4743,8 @@ timeToGoAgain:
 				}
 			}
 		}
-		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DODGE )
+		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DODGE
+			|| my->monsterState == MONSTER_STATE_LICHICE_DODGE )
 		{
 			dist = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 			if ( dist != sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY) )
@@ -4696,121 +4762,206 @@ timeToGoAgain:
 						if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < STRIKERANGE + 8 )
 						{
 							my->monsterLichFireMeleeSeq = LICH_ATK_RISING_RAIN;
+							my->monsterHitTime = HITRATE * 2;
 						}
 					}
 				}
 				else if ( myStats->type == LICH_ICE )
 				{
-					//lichice todo
+					if ( target )
+					{
+						if ( sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2)) < STRIKERANGE * 2 )
+						{
+							my->monsterLichIceCastSeq = LICH_ATK_CHARGE_AOE;
+							my->monsterHitTime = HITRATE * 2;
+						}
+					}
 				}
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
 		{
 			++my->monsterHitTime;
-			if ( my->monsterLichFireMeleeSeq == 0 )
+			if ( myStats->type == LICH_FIRE )
 			{
-				if ( my->monsterHitTime >= 60 )
+				if ( my->monsterLichFireMeleeSeq == 0 )
 				{
-					Entity* target = uidToEntity(my->monsterTarget);
-					if ( target )
+					if ( my->monsterHitTime >= 60 )
 					{
-						tangent = atan2(target->y - my->y, target->x - my->x);
-						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
-						if ( hit.entity )
+						Entity* target = uidToEntity(my->monsterTarget);
+						if ( target )
 						{
-							messagePlayer(0, "sprite: %d", hit.entity->sprite);
+							tangent = atan2(target->y - my->y, target->x - my->x);
+							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+							/*if ( hit.entity )
+							{
+								messagePlayer(0, "sprite: %d", hit.entity->sprite);
+							}*/
+							if ( hit.entity == target && rand() % 5 > 0 )
+							{
+								switch ( rand() % 3 )
+								{
+									case 0:
+										my->monsterLichFireMeleeSeq = LICH_ATK_BASICSPELL_SINGLE;
+										my->handleMonsterAttack(myStats, target, entityDist(my, target));
+										my->monsterLichFireMeleeSeq = 0;
+										break;
+									case 1:
+										my->monsterLichFireMeleeSeq = LICH_ATK_RISING_SINGLE;
+										break;
+									case 2:
+										my->monsterLichFireMeleeSeq = LICH_ATK_HORIZONTAL_SINGLE;
+										break;
+									default:
+										break;
+								}
+								my->monsterLichMagicCastCount = 0;
+								//my->handleMonsterAttack(myStats, target, entityDist(my, target));
+							}
+							else
+							{
+								my->monsterLichFireMeleeSeq = LICH_ATK_RISING_RAIN;
+								my->handleMonsterAttack(myStats, target, entityDist(my, target));
+								my->monsterLichFireMeleeSeq = 0;
+							}
+							my->monsterHitTime = 0;
 						}
-						if ( hit.entity == target && rand() % 5 > 0 )
+					}
+				}
+			
+				if ( my->monsterLichFireMeleeSeq != 0
+					&& my->monsterHitTime >= 0
+					&& my->monsterHitTime % 10 == 0 )
+				{
+					if ( my->monsterLichFireMeleeSeq == LICH_ATK_RISING_SINGLE )
+					{
+						if ( my->monsterLichMagicCastCount < 2 + rand() % 2 )
 						{
-							switch ( rand() % 3 )
+							if ( my->monsterLichMagicCastCount == 0 )
+							{
+								my->attack(MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+							}
+							else
+							{
+								Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+								spell->yaw += (PI / 64) * (-1 + rand() % 3);
+								spell->vel_x = cos(spell->yaw) * 4;
+								spell->vel_y = sin(spell->yaw) * 4;
+							}
+							++my->monsterLichMagicCastCount;
+						}
+						else
+						{
+							my->monsterLichFireMeleeSeq = 0;
+							my->monsterHitTime = 0;
+						}
+					}
+					else if ( my->monsterLichFireMeleeSeq == LICH_ATK_HORIZONTAL_SINGLE )
+					{
+						if ( my->monsterLichMagicCastCount < 2 )
+						{
+							if ( my->monsterLichMagicCastCount == 0 )
+							{
+								my->attack(MONSTER_POSE_MELEE_WINDUP2, 0, nullptr);
+							}
+							else
+							{
+								Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+								spell->yaw += PI / 16;
+								spell->vel_x = cos(spell->yaw) * 4;
+								spell->vel_y = sin(spell->yaw) * 4;
+								spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+								spell->yaw -= PI / 16;
+								spell->vel_x = cos(spell->yaw) * 4;
+								spell->vel_y = sin(spell->yaw) * 4;
+								spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+							}
+							++my->monsterLichMagicCastCount;
+						}
+						else
+						{
+							my->monsterLichFireMeleeSeq = 0;
+							my->monsterHitTime = 0;
+						}
+					}
+				}
+			}
+			else if ( myStats->type == LICH_ICE )
+			{
+				if ( my->monsterLichIceCastSeq == 0 )
+				{
+					if ( my->monsterHitTime >= 60 )
+					{
+						Entity* target = uidToEntity(my->monsterTarget);
+						if ( target )
+						{
+							tangent = atan2(target->y - my->y, target->x - my->x);
+							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+							switch ( rand() % 2 )
 							{
 								case 0:
-									my->monsterLichFireMeleeSeq = LICH_ATK_BASICSPELL_SINGLE;
-									my->handleMonsterAttack(myStats, target, entityDist(my, target));
-									my->monsterLichFireMeleeSeq = 0;
+									my->monsterLichIceCastSeq = LICH_ATK_RISING_SINGLE;
 									break;
 								case 1:
-									my->monsterLichFireMeleeSeq = LICH_ATK_RISING_SINGLE;
-									break;
-								case 2:
-									my->monsterLichFireMeleeSeq = LICH_ATK_HORIZONTAL_SINGLE;
+									my->monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
 									break;
 								default:
 									break;
 							}
+							my->monsterHitTime = 0;
 							my->monsterLichMagicCastCount = 0;
-							//my->handleMonsterAttack(myStats, target, entityDist(my, target));
 						}
-						else
-						{
-							my->monsterLichFireMeleeSeq = LICH_ATK_RISING_RAIN;
-							my->handleMonsterAttack(myStats, target, entityDist(my, target));
-							my->monsterLichFireMeleeSeq = 0;
-						}
-						my->monsterHitTime = 0;
 					}
 				}
-			}
-			
-			if ( my->monsterLichFireMeleeSeq != 0
-				&& my->monsterHitTime >= 0
-				&& my->monsterHitTime % 10 == 0 )
-			{
-				if ( my->monsterLichFireMeleeSeq == LICH_ATK_RISING_SINGLE )
+
+				if ( my->monsterLichIceCastSeq != 0
+					&& my->monsterHitTime >= 0
+					&& my->monsterHitTime % 10 == 0 )
 				{
-					if ( my->monsterLichMagicCastCount < 2 + rand() % 2 )
+					if ( my->monsterLichIceCastSeq == LICH_ATK_RISING_SINGLE
+						|| my->monsterLichIceCastSeq == LICH_ATK_HORIZONTAL_SINGLE )
 					{
-						if ( my->monsterLichMagicCastCount == 0 )
+						if ( my->monsterLichMagicCastCount < 4 )
 						{
-							my->attack(MONSTER_POSE_MELEE_WINDUP3, 0, nullptr);
+							if ( my->monsterLichMagicCastCount == 0 )
+							{
+								my->attack(my->getAttackPose(), 0, nullptr);
+							}
+							else
+							{
+								Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_MAGICMISSILE), true, false);
+								real_t horizontalSpeed = 4.0;
+								// do some minor variations in spell angle
+								spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+								spell->vel_x = horizontalSpeed * cos(spell->yaw);
+								spell->vel_y = horizontalSpeed * sin(spell->yaw);
+								spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+								spell->z = -22.0;
+								Entity* target = uidToEntity(my->monsterTarget);
+								if ( target )
+								{
+									real_t spellDistance = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+									spell->vel_z = 22.0 / (spellDistance / horizontalSpeed);
+								}
+								else
+								{
+									spell->vel_z = 1.6;
+								}
+								spell->pitch = atan2(spell->vel_z, horizontalSpeed);
+							}
+							++my->monsterLichMagicCastCount;
 						}
 						else
 						{
-							Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
-							spell->yaw += (PI / 64) * (-1 + rand() % 3);
-							spell->vel_x = cos(spell->yaw) * 4;
-							spell->vel_y = sin(spell->yaw) * 4;
+							my->monsterLichIceCastSeq = 0;
+							my->monsterHitTime = 0;
 						}
-						++my->monsterLichMagicCastCount;
-					}
-					else
-					{
-						my->monsterLichFireMeleeSeq = 0;
-						my->monsterHitTime = 0;
-					}
-				}
-				else if ( my->monsterLichFireMeleeSeq == LICH_ATK_HORIZONTAL_SINGLE )
-				{
-					if ( my->monsterLichMagicCastCount < 2 )
-					{
-						if ( my->monsterLichMagicCastCount == 0 )
-						{
-							my->attack(MONSTER_POSE_MELEE_WINDUP2, 0, nullptr);
-						}
-						else
-						{
-							Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
-							spell->yaw += PI / 16;
-							spell->vel_x = cos(spell->yaw) * 4;
-							spell->vel_y = sin(spell->yaw) * 4;
-							spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
-							spell->yaw -= PI / 16;
-							spell->vel_x = cos(spell->yaw) * 4;
-							spell->vel_y = sin(spell->yaw) * 4;
-							spell = castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
-						}
-						++my->monsterLichMagicCastCount;
-					}
-					else
-					{
-						my->monsterLichFireMeleeSeq = 0;
-						my->monsterHitTime = 0;
 					}
 				}
 			}
 		}
-		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY )
+		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY
+			|| my->monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY )
 		{
 
 		}
@@ -5002,8 +5153,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			}
 		}
 		// check if ready to attack
-		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) 
+		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow 
+				&& (myStats->type != LICH && myStats->type != LICH_ICE))
 			|| (this->monsterHitTime >= 5 && myStats->type == LICH)
+			|| (this->monsterHitTime >= HITRATE * 2 && myStats->type == LICH_ICE)
 			)
 		{
 			bool shouldAttack = this->handleMonsterSpecialAttack(myStats, nullptr, dist);
@@ -5103,6 +5256,19 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					{
 						lichIceSetNextAttack(*myStats);
 						messagePlayer(0, "previous %d, next is %d", monsterLichIceCastPrev, monsterLichIceCastSeq);
+						if ( monsterLichIceCastPrev == LICH_ATK_BASICSPELL_SINGLE )
+						{
+							monsterHitTime = HITRATE;
+						}
+						if ( monsterSpecialState == LICH_ICE_ATTACK_COMBO )
+						{
+							monsterHitTime = HITRATE * 2 - 30;
+							if ( monsterLichMeleeSwingCount > 1 )
+							{
+								monsterSpecialState = 0;
+								monsterSpecialTimer = 100;
+							}
+						}
 					}
 					this->attack(pose, charge, nullptr); // attacku! D:<
 					this->yaw = oYaw;
@@ -5564,7 +5730,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 			|| myStats->type == DEVIL 
 			|| myStats->type == SHOPKEEPER
 			|| myStats->type == LICH_FIRE
-			|| myStats->type == LICH_FIRE )
+			|| myStats->type == LICH_ICE )
 		{
 			// monster should attack after this function is called.
 			return true;
