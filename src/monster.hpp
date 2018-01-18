@@ -168,8 +168,8 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // automaton
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }, // lich ice
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }  // lich fire
+	{ 2.0, 2.0, 2.0, 2.0, 1.f, 0.7 }, // lich ice
+	{ 1.5, 1.5, 1.5, 1.5, 1.f, 1.f }  // lich fire
 
 };
 
@@ -373,9 +373,9 @@ static const Sint32 MONSTER_STATE_DEVIL_RISING = 10;
 static const Sint32 MONSTER_STATE_DEVIL_SUMMON = 11;
 static const Sint32 MONSTER_STATE_DEVIL_BOULDER = 12;
 static const Sint32 MONSTER_STATE_LICHFIRE_DODGE = 13;
-static const Sint32 MONSTER_STATE_LICHFIRE_CASTSPELLS = 14;
+static const Sint32 MONSTER_STATE_LICH_CASTSPELLS = 14;
 static const Sint32 MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY = 15;
-static const Sint32 MONSTER_STATE_LICHFIRE_TELEPORT_ROAMING = 16;
+static const Sint32 MONSTER_STATE_LICH_TELEPORT_ROAMING = 16;
 static const Sint32 MONSTER_STATE_LICHICE_TELEPORT_STATIONARY = 17;
 static const Sint32 MONSTER_STATE_LICHICE_DODGE = 13;
 

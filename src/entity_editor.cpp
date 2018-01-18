@@ -73,6 +73,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLichMeleeSwingCount(skill[38]),
 	monsterLichAttackTimer(skill[39]),
 	monsterLichBattleState(skill[27]),
+	monsterLichTeleportTimer(skill[40]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),

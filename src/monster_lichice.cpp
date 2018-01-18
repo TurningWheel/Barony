@@ -412,7 +412,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_CAST1
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP2
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3
-		|| my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+		|| my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -748,14 +748,11 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 								for ( int i = 0; i < 8; ++i )
 								{
 									Entity* spell = castSpell(my->getUID(), getSpellFromID(spellID), true, false);
-									if ( i != 0 )
-									{
-										// do some minor variations in spell angle
-										spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
-									}
+									// do some minor variations in spell angle
+									spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
 									spell->vel_x = 4 * cos(spell->yaw);
 									spell->vel_y = 4 * sin(spell->yaw);
-									spell->skill[5] = 20;
+									spell->skill[5] = 50; // travel time
 								}
 							}
 						}
@@ -798,13 +795,22 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 									if ( i != 0 )
 									{
 										// do some minor variations in spell angle
-										spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+										spell->yaw += ((PI * (-4 + rand() % 9)) / 40);
+									}
+									Entity* target = uidToEntity(my->monsterTarget);
+									if ( target )
+									{
+										real_t spellDistance = sqrt(pow(spell->x - target->x, 2) + pow(spell->y - target->y, 2));
+										spell->vel_z = 22.0 / (spellDistance / horizontalSpeed);
+									}
+									else
+									{
+										spell->vel_z = 2.0 - (i * 0.8);
 									}
 									spell->vel_x = horizontalSpeed * cos(spell->yaw);
 									spell->vel_y = horizontalSpeed * sin(spell->yaw);
 									spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
 									spell->z = -22.0;
-									spell->vel_z = 2.0 - (i * 0.8);
 									spell->pitch = atan2(spell->vel_z, horizontalSpeed);
 								}
 							}
@@ -1078,11 +1084,11 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 void Entity::lichIceSetNextAttack(Stat& myStats)
 {
 	monsterLichIceCastPrev = monsterLichIceCastSeq;
-	messagePlayer(0, "melee: %d, magic %d", monsterLichMeleeSwingCount, monsterLichMagicCastCount);
+	//messagePlayer(0, "melee: %d, magic %d", monsterLichMeleeSwingCount, monsterLichMagicCastCount);
 	switch ( monsterLichIceCastSeq )
 	{
 		case LICH_ATK_VERTICAL_SINGLE:
-			if ( monsterSpecialState == 0 && monsterState != MONSTER_STATE_LICHFIRE_CASTSPELLS
+			if ( monsterSpecialState == 0 && monsterState != MONSTER_STATE_LICH_CASTSPELLS
 				&& monsterSpecialTimer == 0 && rand() % 4 > 0 )
 			{
 				monsterLichMeleeSwingCount = 0;
@@ -1328,6 +1334,7 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 
 void Entity::lichIceTeleport()
 {
+	monsterLichTeleportTimer = 0;
 	Entity* spellTimer = createParticleTimer(this, 40, 593);
 	if ( monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY )
 	{
@@ -1335,12 +1342,7 @@ void Entity::lichIceTeleport()
 	}
 	else
 	{
-		//if ( target != nullptr )
-		//{
-		//	spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
-		//}
-		//spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
-		spellTimer->particleTimerEndAction = PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING; // teleport behavior of timer.
+		spellTimer->particleTimerEndAction = PARTICLE_EFFECT_LICH_TELEPORT_ROAMING; // teleport behavior of timer.
 	}
 	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
 	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
@@ -1365,4 +1367,32 @@ void Entity::lichIceCreateCannon()
 	{
 		serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 678);
 	}
+}
+
+Entity* Entity::lichThrowProjectile(real_t angle)
+{
+	Entity* projectile = newEntity(items[STEEL_CHAKRAM].index, 1, map.entities, nullptr); // thrown item
+	projectile->parent = uid;
+	projectile->x = x;
+	projectile->y = y;
+	projectile->z = z;
+	projectile->yaw = yaw + angle;
+	projectile->sizex = 1;
+	projectile->sizey = 1;
+	projectile->behavior = &actThrown;
+	projectile->flags[UPDATENEEDED] = true;
+	projectile->flags[PASSABLE] = true;
+	projectile->skill[10] = STEEL_CHAKRAM;
+	projectile->skill[11] = EXCELLENT;
+	projectile->skill[12] = 0;
+	projectile->skill[13] = 1;
+	projectile->skill[14] = 0;
+	projectile->skill[15] = 1;
+
+	// todo: change velocity of chakram/shuriken?
+	projectile->vel_x = 6 * cos(yaw + angle);
+	projectile->vel_y = 6 * sin(yaw + angle);
+	projectile->vel_z = -.3;
+
+	return projectile;
 }

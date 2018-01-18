@@ -202,6 +202,7 @@ public:
 	Sint32& monsterLichMeleeSwingCount; //skill[38] count the 'regular' attacks in the seq and switch things up if too many in a row.
 	Sint32& monsterLichAttackTimer; //skill[39] used to time ranged attack frequency
 	Sint32& monsterLichBattleState; //skill[27] used to track hp/battle progress
+	Sint32& monsterLichTeleportTimer; //skill[40] used to track conditions to teleport away.
 
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // skill[9] 0 Clockwise, 1 Anti-Clockwise
@@ -556,6 +557,7 @@ public:
 	void lichFireTeleport();
 	void lichIceTeleport();
 	void lichIceCreateCannon();
+	Entity* lichThrowProjectile(real_t angle);
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.

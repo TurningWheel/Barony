@@ -410,7 +410,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_CAST1
-		|| my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+		|| my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -547,7 +547,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				// horizontal chop windup
 				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 				{
-					int windupDuration = (my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS) ? 10 : 6;
+					int windupDuration = (my->monsterState == MONSTER_STATE_LICH_CASTSPELLS) ? 10 : 6;
 					if ( my->monsterAttackTime == 0 )
 					{
 						// init rotations
@@ -556,7 +556,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						my->monsterArmbended = 1; // don't actually bend the arm, we're just using this to adjust the limb offsets in the weapon code.
 						weaponarm->skill[1] = 0;
 						my->monsterWeaponYaw = 6 * PI / 4;
-						if ( my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+						if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
 						{
 							createParticleDot(my);
 						}
@@ -620,7 +620,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						my->monsterWeaponYaw = 0;
 						weaponarm->roll = 0;
 						weaponarm->skill[1] = 0;
-						if ( my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+						if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
 						{
 							createParticleDropRising(my, 672, 0.7);
 						}
@@ -649,9 +649,9 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								my->attack(1, 0, nullptr); //optional?
 								real_t dir = 0.f;
-								if ( my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS )
+								Entity* target = uidToEntity(my->monsterTarget);
+								if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
 								{
-									Entity* target = uidToEntity(my->monsterTarget);
 									if ( target )
 									{
 										real_t targetDist = std::max(8.0, entityDist(my, target) - 48.0);
@@ -663,9 +663,20 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 								}
 								else
 								{
-									for ( int i = 0; i < 8; ++i )
+									if ( target )
 									{
-										my->castFallingMagicMissile(SPELL_FIREBALL, 16 + rand() % 8, dir + i * PI / 4, 0);
+										real_t targetDist = std::min(entityDist(my, target), 32.0);
+										for ( int i = 0; i < 8; ++i )
+										{
+											my->castFallingMagicMissile(SPELL_FIREBALL, std::max(targetDist - 8 + rand() % 8, 4.0), dir + i * PI / 4, 0);
+										}
+									}
+									else
+									{
+										for ( int i = 0; i < 8; ++i )
+										{
+											my->castFallingMagicMissile(SPELL_FIREBALL, 16 + rand() % 8, dir + i * PI / 4, 0);
+										}
 									}
 								}
 							}
@@ -674,7 +685,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
 				{
-					int windupDuration = (my->monsterState == MONSTER_STATE_LICHFIRE_CASTSPELLS) ? 20 : 40;
+					int windupDuration = (my->monsterState == MONSTER_STATE_LICH_CASTSPELLS) ? 20 : 40;
 					if ( my->monsterAttackTime == 0 )
 					{
 						// init rotations
@@ -1039,7 +1050,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 void Entity::lichFireSetNextAttack(Stat& myStats)
 {
 	monsterLichFireMeleePrev = monsterLichFireMeleeSeq;
-	messagePlayer(0, "melee: %d, magic %d", monsterLichMeleeSwingCount, monsterLichMagicCastCount);
+	//messagePlayer(0, "melee: %d, magic %d", monsterLichMeleeSwingCount, monsterLichMagicCastCount);
 	switch ( monsterLichFireMeleeSeq )
 	{
 		case LICH_ATK_VERTICAL_SINGLE:
@@ -1167,6 +1178,7 @@ void Entity::lichFireSetNextAttack(Stat& myStats)
 
 void Entity::lichFireTeleport()
 {
+	monsterLichTeleportTimer = 0;
 	Entity* spellTimer = createParticleTimer(this, 40, 593);
 	if ( monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY )
 	{
@@ -1174,12 +1186,7 @@ void Entity::lichFireTeleport()
 	}
 	else
 	{
-		//if ( target != nullptr )
-		//{
-		//	spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
-		//}
-		//spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
-		spellTimer->particleTimerEndAction = PARTICLE_EFFECT_LICHFIRE_TELEPORT_ROAMING; // teleport behavior of timer.
+		spellTimer->particleTimerEndAction = PARTICLE_EFFECT_LICH_TELEPORT_ROAMING; // teleport behavior of timer.
 	}
 	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
 	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
