@@ -608,6 +608,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						reflection = hit.entity->getReflection();
 					}
+					if ( reflection == 3 && hitstats->shield && hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+					{
+						// calculate facing angle to projectile, need to be facing projectile to reflect.
+						if ( player >= 0 && players[player] && players[player]->entity )
+						{
+							real_t yawDiff = my->yawDifferenceFromPlayer(player);
+							if ( yawDiff < (6 * PI / 5) )
+							{
+								reflection = 0;
+							}
+							else
+							{
+								reflection = 3;
+							}
+						}
+					}
 				}
 				if ( reflection )
 				{
