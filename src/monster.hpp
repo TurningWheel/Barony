@@ -546,6 +546,7 @@ static const int LICH_ATK_HORIZONTAL_RETURN = 6;
 static const int LICH_ATK_HORIZONTAL_QUICK = 7;
 static const int LICH_ATK_CHARGE_AOE = 8;
 static const int LICH_ATK_FALLING_DIAGONAL = 9;
+static const int LICH_ATK_SUMMON = 10;
 
 //--Lich Special States--
 static const int LICH_ICE_ATTACK_COMBO = 1;

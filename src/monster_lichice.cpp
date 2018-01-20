@@ -468,6 +468,18 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+				{
+					if ( multiplayer != CLIENT && my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
+					{
+						// handle z movement on windup
+						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.3, -0.6, 0.3, -4.0, ANIMATE_DIR_POSITIVE); // default z is -1.2
+						if ( my->z > -0.5 )
+						{
+							my->z = -0.6; //failsafe for floating too low sometimes?
+						}
+					}
+				}
 				else
 				{
 					if ( head != nullptr )
@@ -817,6 +829,41 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+				{
+					if ( my->monsterAttackTime == 0 )
+					{
+						// init rotations
+						my->monsterWeaponYaw = 0;
+						weaponarm->roll = 0;
+						weaponarm->skill[1] = 0;
+						createParticleDropRising(my, 174, 0.5);
+						if ( multiplayer != CLIENT )
+						{
+							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+							// lich can't be paralyzed, use EFF_STUNNED instead.
+							myStats->EFFECTS[EFF_STUNNED] = true;
+							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 80;
+						}
+					}
+					else if ( my->monsterAttackTime % 20 == 0 )
+					{
+						createParticleDropRising(my, 174, 0.5);
+					}
+
+					limbAnimateToLimit(head, ANIMATE_PITCH, -0.05, 10 * PI / 6, true, 0.05);
+					limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 5 * PI / 4, false, 0.0);
+					limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.1, PI / 4, false, 0.0);
+
+					if ( my->monsterAttackTime >= 50 / (monsterGlobalAnimationMultiplier / 10.0) )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(1, 0, nullptr);
+							my->lichIceSummonMonster(DEMON);
+						}
+					}
+				}
 			}
 		}
 		else if ( bodypart == LICH_LEFTARM )
@@ -825,7 +872,8 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 			if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 
 				|| my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3
 				|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP2
-				|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3 )
+				|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3
+				|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
 			{
 				spellarm->pitch = weaponarm->pitch;
 			}
@@ -1209,124 +1257,19 @@ void Entity::lichIceSetNextAttack(Stat& myStats)
 					break;
 			}
 			break;
-		/*case LICHFIRE_ATK_VERTICAL_SINGLE:
-			++monsterLichFireMeleeSwingCount;
-			switch ( rand() % 8 )
+		case LICH_ATK_SUMMON:
+			switch ( rand() % 2 )
 			{
 				case 0:
+					monsterLichIceCastSeq = LICH_ATK_VERTICAL_SINGLE;
+					break;
 				case 1:
-				case 2:
-					if ( monsterLichFireMeleeSwingCount < 5 )
-					{
-						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
-					}
-					else
-					{
-						monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_QUICK;
-						monsterLichFireMeleeSwingCount = 0;
-					}
-					break;
-				case 3:
-				case 4:
-				case 5:
-					if ( monsterLichFireMeleeSwingCount < 5 )
-					{
-						monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
-					}
-					else
-					{
-						monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_QUICK;
-						monsterLichFireMeleeSwingCount = 0;
-					}
-					break;
-				case 6:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_QUICK;
-					monsterLichFireMeleeSwingCount = 0;
-					break;
-				case 7:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_QUICK;
-					monsterLichFireMeleeSwingCount = 0;
+					monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
 					break;
 				default:
 					break;
 			}
 			break;
-		case LICHFIRE_ATK_HORIZONTAL_SINGLE:
-			++monsterLichFireMeleeSwingCount;
-			switch ( rand() % 4 )
-			{
-				case 0:
-				case 1:
-				case 2:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
-					break;
-				case 3:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_RISING_RAIN;
-					monsterLichFireMeleeSwingCount = 0;
-					break;
-				default:
-					break;
-			}
-			break;
-		case LICHFIRE_ATK_RISING_RAIN:
-			switch ( rand() % 4 )
-			{
-				case 0:
-				case 1:
-				case 2:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
-					break;
-				case 3:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
-					break;
-				default:
-					break;
-			}
-			break;
-		case LICHFIRE_ATK_BASICSPELL_SINGLE:
-			++monsterLichMagicCastCount;
-			if ( monsterLichMagicCastCount > 2 || rand() % 2 == 0 )
-			{
-				monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
-				monsterLichMagicCastCount = 0;
-			}
-			break;
-		case LICHFIRE_ATK_RISING_SINGLE:
-			switch ( rand() % 4 )
-			{
-				case 0:
-				case 1:
-				case 2:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
-					break;
-				case 3:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
-					break;
-				default:
-					break;
-			}
-			break;
-		case LICHFIRE_ATK_VERTICAL_QUICK:
-			monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_RETURN;
-			break;
-		case LICHFIRE_ATK_HORIZONTAL_RETURN:
-			switch ( rand() % 4 )
-			{
-				case 0:
-				case 1:
-				case 2:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_VERTICAL_SINGLE;
-					break;
-				case 3:
-					monsterLichFireMeleeSeq = LICHFIRE_ATK_HORIZONTAL_SINGLE;
-					break;
-				default:
-					break;
-			}
-			break;
-		case LICHFIRE_ATK_HORIZONTAL_QUICK:
-			monsterLichFireMeleeSeq = LICHFIRE_ATK_RISING_SINGLE;
-			break;*/
 		default:
 			break;
 	}
@@ -1395,4 +1338,50 @@ Entity* Entity::lichThrowProjectile(real_t angle)
 	projectile->vel_z = -.3;
 
 	return projectile;
+}
+
+void Entity::lichIceSummonMonster(Monster creature)
+{
+	Entity* target = nullptr;
+	for ( node_t* searchNode = map.entities->first; searchNode != nullptr; searchNode = searchNode->next )
+	{
+		target = (Entity*)searchNode->element;
+		if ( target->behavior == &actDevilTeleport
+			&& target->sprite == 128 )
+		{
+			break; // found specified center of map
+		}
+	}
+	if ( target )
+	{
+		int tries = 25; // max iteration in while loop, fail safe.
+		long spawn_x = (target->x / 16) - 11 + rand() % 23;
+		long spawn_y = (target->y / 16) - 11 + rand() % 23;
+		int index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
+		while ( tries > 0 &&
+				(map.tiles[OBSTACLELAYER + index] == 1
+				|| map.tiles[index] == 0
+				|| swimmingtiles[map.tiles[index]]
+				|| lavatiles[map.tiles[index]])
+			)
+		{
+			// find a spot that isn't wall, no floor or lava/water tiles.
+			spawn_x = (target->x / 16) - 11 + rand() % 23;
+			spawn_y = (target->y / 16) - 11 + rand() % 23;
+			index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
+			--tries;
+		}
+		if ( tries > 0 )
+		{
+			Entity* timer = createParticleTimer(this, 70, 174);
+			timer->x = spawn_x * 16.0 + 8;
+			timer->y = spawn_y * 16.0 + 8;
+			timer->z = 0;
+			timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SUMMON_MONSTER;
+			timer->particleTimerCountdownSprite = 174;
+			timer->particleTimerEndAction = PARTICLE_EFFECT_SUMMON_MONSTER;
+			timer->particleTimerVariable1 = creature;
+			serverSpawnMiscParticlesAtLocation(spawn_x, spawn_y, 0, PARTICLE_EFFECT_SUMMON_MONSTER, 174);
+		}
+	}
 }

@@ -695,6 +695,39 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 
 /*-------------------------------------------------------------------------------
 
+serverSpawnMiscParticlesAtLocation
+
+Spawns misc particle effects for all clients at given coordinates.
+
+-------------------------------------------------------------------------------*/
+
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite)
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "SPPL");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			net_packet->data[10] = particleType;
+			SDLNet_Write16(particleSprite, &net_packet->data[11]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 14;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	serverUpdateEntityFlag
 
 	Updates a specific entity flag for all clients
@@ -2274,6 +2307,34 @@ void clientHandlePacket()
 						break;
 				}
 			}
+		}
+		return;
+	}
+
+	// spawn misc particle effect at fixed location 
+	else if ( !strncmp((char*)net_packet->data, "SPPL", 4) )
+	{
+		Sint16 particle_x = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[4]));
+		Sint16 particle_y = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[6]));
+		Sint16 particle_z = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[8]));
+		int particleType = static_cast<int>(net_packet->data[10]);
+		int sprite = static_cast<int>(SDLNet_Read16(&net_packet->data[11]));
+		//messagePlayer(1, "recv, %d, %d, %d, type: %d", particle_x, particle_y, particle_z, particleType);
+		switch ( particleType )
+		{
+			case PARTICLE_EFFECT_SUMMON_MONSTER:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 70, sprite);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SUMMON_MONSTER;
+				spellTimer->particleTimerCountdownSprite = 174;
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SUMMON_MONSTER;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+			}
+				break;
+			default:
+				break;
 		}
 		return;
 	}

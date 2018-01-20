@@ -1196,3 +1196,49 @@ void Entity::lichFireTeleport()
 		serverSpawnMiscParticles(this, spellTimer->particleTimerEndAction, 593);
 	}
 }
+
+void Entity::lichFireSummonMonster(Monster creature)
+{
+	Entity* target = nullptr;
+	for ( node_t* searchNode = map.entities->first; searchNode != nullptr; searchNode = searchNode->next )
+	{
+		target = (Entity*)searchNode->element;
+		if ( target->behavior == &actDevilTeleport
+			&& target->sprite == 128 )
+		{
+			break; // found specified center of map
+		}
+	}
+	if ( target )
+	{
+		int tries = 25; // max iteration in while loop, fail safe.
+		long spawn_x = (target->x / 16) - 11 + rand() % 23;
+		long spawn_y = (target->y / 16) - 11 + rand() % 23;
+		int index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
+		while ( tries > 0 &&
+			(map.tiles[OBSTACLELAYER + index] == 1
+				|| map.tiles[index] == 0
+				|| swimmingtiles[map.tiles[index]]
+				|| lavatiles[map.tiles[index]])
+			)
+		{
+			// find a spot that isn't wall, no floor or lava/water tiles.
+			spawn_x = (target->x / 16) - 11 + rand() % 23;
+			spawn_y = (target->y / 16) - 11 + rand() % 23;
+			index = (spawn_x)* MAPLAYERS + (spawn_y)* MAPLAYERS * map.height;
+			--tries;
+		}
+		if ( tries > 0 )
+		{
+			Entity* timer = createParticleTimer(this, 70, 174);
+			timer->x = spawn_x * 16.0 + 8;
+			timer->y = spawn_y * 16.0 + 8;
+			timer->z = 0;
+			timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SUMMON_MONSTER;
+			timer->particleTimerCountdownSprite = 174;
+			timer->particleTimerEndAction = PARTICLE_EFFECT_SUMMON_MONSTER;
+			timer->particleTimerVariable1 = creature;
+			serverSpawnMiscParticlesAtLocation(spawn_x, spawn_y, 0, PARTICLE_EFFECT_SUMMON_MONSTER, 174);
+		}
+	}
+}
