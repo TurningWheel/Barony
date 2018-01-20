@@ -2687,9 +2687,12 @@ Entity* createParticleTimer(Entity* parent, int duration, int sprite)
 	Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Timer entity.
 	entity->sizex = 1;
 	entity->sizey = 1;
-	entity->x = parent->x;
-	entity->y = parent->y;
-	entity->parent = (parent->getUID());
+	if ( parent )
+	{
+		entity->x = parent->x;
+		entity->y = parent->y;
+		entity->parent = (parent->getUID());
+	}
 	entity->behavior = &actParticleTimer;
 	entity->particleTimerDuration = duration;
 	entity->flags[INVISIBLE] = true;
@@ -2794,6 +2797,13 @@ void actParticleTimer(Entity* my)
 					playSoundEntity(parent, 164, 128);
 				}
 				spawnExplosion(my->x, my->y, 0);
+				my->removeLightField();
+			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SUMMON_MONSTER )
+			{
+				playSoundEntity(my, 164, 128);
+				spawnExplosion(my->x, my->y, -4.0);
+				summonMonster(static_cast<Monster>(my->particleTimerVariable1), my->x, my->y);
 				my->removeLightField();
 			}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHADOW_TELEPORT )
@@ -2975,6 +2985,17 @@ void actParticleTimer(Entity* my)
 					playSoundEntityLocal(parent, 167, 128);
 					createParticleDot(parent);
 					createParticleCircling(parent, 100, my->particleTimerCountdownSprite);
+					my->particleTimerCountdownAction = 0;
+				}
+			}
+			// fire once off.
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SUMMON_MONSTER )
+			{
+				if ( my->particleTimerCountdownAction < 100 )
+				{
+					playSoundEntityLocal(my, 167, 128);
+					createParticleDropRising(my, 680, 1.0);
+					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
 					my->particleTimerCountdownAction = 0;
 				}
 			}

@@ -1682,8 +1682,10 @@ void actMonster(Entity* my)
 					my->monsterAcquireAttackTarget(*target, MONSTER_STATE_LICH_CASTSPELLS);
 				}
 				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 0.0, 500);
-				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 2 * PI / 3, 500);
-				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 4 * PI / 3, 500);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 2 * PI / 5, 500);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 4 * PI / 5, 500);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 6 * PI / 5, 500);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 16.0, 8 * PI / 5, 500);
 			}
 			else if ( my->monsterState == MONSTER_STATE_LICH_TELEPORT_ROAMING )
 			{
@@ -4963,13 +4965,16 @@ timeToGoAgain:
 						{
 							tangent = atan2(target->y - my->y, target->x - my->x);
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
-							switch ( rand() % 2 )
+							switch ( rand() % 3 )
 							{
 								case 0:
 									my->monsterLichIceCastSeq = LICH_ATK_RISING_SINGLE;
 									break;
 								case 1:
 									my->monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
+									break;
+								case 2:
+									my->monsterLichIceCastSeq = LICH_ATK_SUMMON;
 									break;
 								default:
 									break;
@@ -4985,9 +4990,15 @@ timeToGoAgain:
 					&& my->monsterHitTime % 10 == 0 )
 				{
 					if ( my->monsterLichIceCastSeq == LICH_ATK_RISING_SINGLE
-						|| my->monsterLichIceCastSeq == LICH_ATK_HORIZONTAL_SINGLE )
+						|| my->monsterLichIceCastSeq == LICH_ATK_HORIZONTAL_SINGLE
+						|| my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
 					{
-						if ( my->monsterLichMagicCastCount < 6 )
+						int castLimit = 6;
+						if ( my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
+						{
+							castLimit = 1 + rand() % 2;
+						}
+						if ( my->monsterLichMagicCastCount < castLimit )
 						{
 							if ( my->monsterLichMagicCastCount == 0 )
 							{
@@ -4995,40 +5006,47 @@ timeToGoAgain:
 							}
 							else
 							{
-								Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_MAGICMISSILE), true, false);
-								real_t horizontalSpeed = 4.0;
-								Entity* target = uidToEntity(my->monsterTarget);
-								if ( target )
+								if ( my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
 								{
-									real_t spellDistance = sqrt(pow(spell->x - target->x, 2) + pow(spell->y - target->y, 2));
-									spell->vel_z = 22.0 / (spellDistance / horizontalSpeed);
-									if ( rand() % 3 >= 1 )
-									{
-										// spells will track the velocity of the target.
-										real_t ticksToHit = (spellDistance / horizontalSpeed);
-										real_t predictx = target->x + (target->vel_x * ticksToHit);
-										real_t predicty = target->y + (target->vel_y * ticksToHit);
-										tangent = atan2(predicty - spell->y, predictx - spell->x); // assume target will be here when spell lands.
-										//messagePlayer(0, "x: %f->%f, y: %f->%f, angle offset: %f", target->x, predictx, target->y, predicty, spell->yaw - tangent);
-										spell->yaw = tangent;
-									}
-									else
-									{
-										// do some minor variations in spell angle
-										spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
-									}
+									my->lichIceSummonMonster(CREATURE_IMP);
 								}
 								else
 								{
-									spell->vel_z = 1.6;
-									// do some minor variations in spell angle
-									spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+									Entity* spell = castSpell(my->getUID(), getSpellFromID(SPELL_MAGICMISSILE), true, false);
+									real_t horizontalSpeed = 4.0;
+									Entity* target = uidToEntity(my->monsterTarget);
+									if ( target )
+									{
+										real_t spellDistance = sqrt(pow(spell->x - target->x, 2) + pow(spell->y - target->y, 2));
+										spell->vel_z = 22.0 / (spellDistance / horizontalSpeed);
+										if ( rand() % 3 >= 1 )
+										{
+											// spells will track the velocity of the target.
+											real_t ticksToHit = (spellDistance / horizontalSpeed);
+											real_t predictx = target->x + (target->vel_x * ticksToHit);
+											real_t predicty = target->y + (target->vel_y * ticksToHit);
+											tangent = atan2(predicty - spell->y, predictx - spell->x); // assume target will be here when spell lands.
+											//messagePlayer(0, "x: %f->%f, y: %f->%f, angle offset: %f", target->x, predictx, target->y, predicty, spell->yaw - tangent);
+											spell->yaw = tangent;
+										}
+										else
+										{
+											// do some minor variations in spell angle
+											spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+										}
+									}
+									else
+									{
+										spell->vel_z = 1.6;
+										// do some minor variations in spell angle
+										spell->yaw += ((PI * (-4 + rand() % 9)) / 100);
+									}
+									spell->vel_x = horizontalSpeed * cos(spell->yaw);
+									spell->vel_y = horizontalSpeed * sin(spell->yaw);
+									spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+									spell->z = -22.0;
+									spell->pitch = atan2(spell->vel_z, horizontalSpeed);
 								}
-								spell->vel_x = horizontalSpeed * cos(spell->yaw);
-								spell->vel_y = horizontalSpeed * sin(spell->yaw);
-								spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
-								spell->z = -22.0;
-								spell->pitch = atan2(spell->vel_z, horizontalSpeed);
 							}
 							++my->monsterLichMagicCastCount;
 						}
@@ -6384,4 +6402,22 @@ bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[3
 		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
 	}
 	return true;
+}
+
+bool isMonsterAliveOnMap(Monster creature)
+{
+	node_t* node = nullptr;
+	Entity* entity = nullptr;
+	for ( node = map.creatures->first; node != nullptr; node = node->next )
+	{
+		entity = (Entity*)node->element;
+		if ( entity )
+		{
+			if ( entity->getRace() == creature )
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }

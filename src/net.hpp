@@ -34,6 +34,7 @@ void serverUpdateEntitySprite(Entity* entity);
 void serverUpdateEntitySkill(Entity* entity, int skill);
 void serverUpdateEntityFSkill(Entity* entity, int fskill);
 void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite);
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite);
 void serverUpdateEntityFlag(Entity* entity, int flag);
 void serverUpdateBodypartIDs(Entity* entity);
 void serverUpdateEntityBodypart(Entity* entity, int bodypart);

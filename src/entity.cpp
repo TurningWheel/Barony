@@ -3815,7 +3815,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						&& (monsterLichIceCastPrev == LICH_ATK_CHARGE_AOE 
 							|| monsterLichIceCastPrev == LICH_ATK_RISING_RAIN
 							|| monsterLichIceCastPrev == LICH_ATK_FALLING_DIAGONAL
-							|| monsterState == MONSTER_STATE_LICH_CASTSPELLS )
+							|| monsterState == MONSTER_STATE_LICH_CASTSPELLS
+							)
 					)
 			)
 			{
@@ -7330,6 +7331,9 @@ int Entity::getAttackPose() const
 				case LICH_ATK_HORIZONTAL_QUICK:
 					pose = MONSTER_POSE_MELEE_WINDUP2;
 					break;
+				case LICH_ATK_SUMMON:
+					pose = MONSTER_POSE_MAGIC_WINDUP3;
+					break;
 				default:
 					break;
 			}
@@ -7367,6 +7371,9 @@ int Entity::getAttackPose() const
 					break;
 				case LICH_ATK_FALLING_DIAGONAL:
 					pose = MONSTER_POSE_SPECIAL_WINDUP3;
+					break;
+				case LICH_ATK_SUMMON:
+					pose = MONSTER_POSE_MAGIC_WINDUP3;
 					break;
 				default:
 					break;
