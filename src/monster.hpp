@@ -500,6 +500,8 @@ extern int monsterGlobalAnimationMultiplier;
 extern int monsterGlobalAttackTimeMultiplier;
 // monster custom NPC chatter
 bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
+// check qty of a certain creature race alive on a map
+int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
 
 //-----RACE SPECIFIC CONSTANTS-----
 
@@ -550,3 +552,9 @@ static const int LICH_ATK_SUMMON = 10;
 
 //--Lich Special States--
 static const int LICH_ICE_ATTACK_COMBO = 1;
+static const int LICH_ALLY_ALIVE = 0;
+static const int LICH_ALLY_DEAD = 1;
+
+//--Lich Battle States--
+static const int LICH_BATTLE_IMMOBILE = -1;
+static const int LICH_BATTLE_READY = 0;

@@ -74,6 +74,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLichAttackTimer(skill[39]),
 	monsterLichBattleState(skill[27]),
 	monsterLichTeleportTimer(skill[40]),
+	monsterLichAllyStatus(skill[18]),
+	monsterLichAllyUID(skill[17]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),

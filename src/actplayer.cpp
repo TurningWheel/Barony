@@ -1662,8 +1662,12 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			real_t speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
-			if ( my->getDEX() <= 5 )
+			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);
+			if ( my->getDEX() <= 15 )
+			{
+				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
+			}
+			else if ( my->getDEX() <= 5 )
 			{
 				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
 			}
