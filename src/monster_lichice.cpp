@@ -20,6 +20,7 @@ See LICENSE for details.
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "paths.hpp"
 
 static const int LICH_BODY = 0;
 static const int LICH_RIGHTARM = 2;
@@ -353,15 +354,68 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
-		/*if ( myStats->HP > myStats->MAXHP / 2 )
+
+		// check tiles around the monster to be freed.
+		if ( my->monsterLichBattleState == LICH_BATTLE_IMMOBILE && my->ticks > TICKS_PER_SECOND )
 		{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, 192);
+			int sides = 0;
+			int my_x = static_cast<int>(my->x) >> 4;
+			int my_y = static_cast<int>(my->y) >> 4;
+			int mapIndex = (my_y)* MAPLAYERS + (my_x + 1) * MAPLAYERS * map.height;
+			if ( map.tiles[OBSTACLELAYER + mapIndex] )   // wall
+			{
+				++sides;
+			}
+			mapIndex = (my_y)* MAPLAYERS + (my_x - 1) * MAPLAYERS * map.height;
+			if ( map.tiles[OBSTACLELAYER + mapIndex] )   // wall
+			{
+				++sides;
+			}
+			mapIndex = (my_y + 1) * MAPLAYERS + (my_x)* MAPLAYERS * map.height;
+			if ( map.tiles[OBSTACLELAYER + mapIndex] )   // wall
+			{
+				++sides;
+			}
+			mapIndex = (my_y - 1) * MAPLAYERS + (my_x)* MAPLAYERS * map.height;
+			if ( map.tiles[OBSTACLELAYER + mapIndex] )   // wall
+			{
+				++sides;
+			}
+			if ( sides != 4 )
+			{
+				my->monsterLichBattleState = LICH_BATTLE_READY;
+				generatePathMaps();
+				real_t distToPlayer = 0;
+				int c, playerToChase = -1;
+				for ( c = 0; c < MAXPLAYERS; c++ )
+				{
+					if ( players[c] && players[c]->entity )
+					{
+						if ( !distToPlayer )
+						{
+							distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+							playerToChase = c;
+						}
+						else
+						{
+							double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+							if ( newDistToPlayer < distToPlayer )
+							{
+								distToPlayer = newDistToPlayer;
+								playerToChase = c;
+							}
+						}
+					}
+				}
+				if ( playerToChase >= 0 )
+				{
+					if ( players[playerToChase] && players[playerToChase]->entity )
+					{
+						my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+					}
+				}
+			}
 		}
-		else if ( !my->skill[27] )
-		{
-		my->skill[27] = 1;
-		serverUpdateEntitySkill(my, 27);
-		}*/
 
 		// passive floating effect, server only.
 		if ( my->monsterAttack == 0 )
@@ -860,7 +914,6 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(1, 0, nullptr);
-							my->lichIceSummonMonster(DEMON);
 						}
 					}
 				}

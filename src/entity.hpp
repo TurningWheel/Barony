@@ -203,6 +203,8 @@ public:
 	Sint32& monsterLichAttackTimer; //skill[39] used to time ranged attack frequency
 	Sint32& monsterLichBattleState; //skill[27] used to track hp/battle progress
 	Sint32& monsterLichTeleportTimer; //skill[40] used to track conditions to teleport away.
+	Sint32& monsterLichAllyStatus; //skill[18] used to track if allies are alive.
+	Sint32& monsterLichAllyUID; //skill[17] used to track lich ally uid.
 
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // skill[9] 0 Clockwise, 1 Anti-Clockwise
