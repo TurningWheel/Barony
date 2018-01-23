@@ -13,6 +13,7 @@ Basic guidelines for contributing:
 I hope for contributing to be as painless as possible. That said, we need to maintain some sort of standard of quality.
 Following the aforementioned contributing guidelines, the coding style guidelines, and refraining from haphazard changes to gameplay balance will increase the likelihood of your pull request being accepted.
 
+If you have questions you can ask them in the [open-source Barony channel on Discord](https://discord.gg/xPEfdWB).
 
 ###Coding Style Guidelines
 
