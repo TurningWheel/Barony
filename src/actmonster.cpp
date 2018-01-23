@@ -60,7 +60,7 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // COCKATRICE
 	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0 }, // INSECTOID
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, // GOATMAN
-	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0 }, // AUTOMATON
+	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1 }, // AUTOMATON
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // LICH_ICE
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // LICH_FIRE
 };
@@ -653,7 +653,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		//No cap on # of followers.
 		//Can control humans & goblins both.
 		//TODO: Control humanoids in general? Or otherwise something from each tileset.
-		if ( race == HUMAN || race == GOBLIN )
+		if ( race == HUMAN || race == GOBLIN || race == AUTOMATON )
 		{
 			canAlly = true;
 		}
@@ -1439,7 +1439,9 @@ void actMonster(Entity* my)
 						break;
 				}
 				if ( my->monsterLichBattleState % 2 == 1
-					&& (rand() % 8 == 0 || (rand() % 4 == 0 && my->monsterLichTeleportTimer > 0))
+					&& (rand() % 8 == 0 
+						|| (rand() % 4 == 0 && my->monsterLichTeleportTimer > 0)
+						|| (rand() % 2 == 0 && my->monsterLichAllyStatus == LICH_ALLY_DEAD))
 					)
 				{
 					// chance to change state to teleport after being hit.
@@ -1449,16 +1451,19 @@ void actMonster(Entity* my)
 					}
 					if ( myStats->type == LICH_FIRE )
 					{
-						if ( (lichAlly && lichAlly->monsterState != MONSTER_STATE_LICH_CASTSPELLS)
-							|| my->monsterLichAllyStatus == LICH_ALLY_DEAD )
+						if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] )
 						{
-							my->monsterState = MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY;
-							my->lichFireTeleport();
-							my->monsterSpecialTimer = 80;
-							++my->monsterLichBattleState;
+							if ( (lichAlly && lichAlly->monsterState != MONSTER_STATE_LICH_CASTSPELLS)
+								|| my->monsterLichAllyStatus == LICH_ALLY_DEAD )
+							{
+								my->monsterState = MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY;
+								my->lichFireTeleport();
+								my->monsterSpecialTimer = 80;
+								++my->monsterLichBattleState;
+							}
 						}
 					}
-					else
+					else if ( myStats->type == LICH_ICE )
 					{
 						if ( (lichAlly && lichAlly->monsterState != MONSTER_STATE_LICH_CASTSPELLS)
 							|| my->monsterLichAllyStatus == LICH_ALLY_DEAD )
@@ -3766,7 +3771,8 @@ timeToGoAgain:
 			if ( myStats->type == MINOTAUR 
 				|| (myStats->type == LICH && my->monsterSpecialTimer <= 0)
 				|| ((myStats->type == LICH_FIRE || myStats->type == LICH_ICE) && my->monsterSpecialTimer <= 0 )
-				|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")) )
+				|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss"))
+				|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted")) )
 			{
 				bool shouldHuntPlayer = false;
 				Entity* playerOrNot = uidToEntity(my->monsterTarget);
@@ -4958,7 +4964,7 @@ timeToGoAgain:
 			{
 				if ( my->monsterLichFireMeleeSeq == 0 )
 				{
-					if ( my->monsterHitTime >= 60 )
+					if ( my->monsterHitTime >= 60 || my->monsterLichAllyStatus == LICH_ALLY_DEAD && my->monsterHitTime >= 45 )
 					{
 						Entity* target = uidToEntity(my->monsterTarget);
 						if ( target )
@@ -5062,7 +5068,7 @@ timeToGoAgain:
 			{
 				if ( my->monsterLichIceCastSeq == 0 )
 				{
-					if ( my->monsterHitTime >= 60 )
+					if ( my->monsterHitTime >= 60 || my->monsterLichAllyStatus == LICH_ALLY_DEAD && my->monsterHitTime >= 45 )
 					{
 						Entity* target = uidToEntity(my->monsterTarget);
 						if ( target )
@@ -5080,7 +5086,15 @@ timeToGoAgain:
 								case 2:
 									if ( my->monsterLichAllyStatus == LICH_ALLY_DEAD )
 									{
-										my->monsterLichIceCastSeq = LICH_ATK_SUMMON;
+										Entity* dummyEntity = nullptr;
+										if ( numMonsterTypeAliveOnMap(AUTOMATON, dummyEntity) <= 3 )
+										{
+											my->monsterLichIceCastSeq = LICH_ATK_SUMMON;
+										}
+										else
+										{
+											my->monsterLichIceCastSeq = LICH_ATK_RISING_SINGLE;
+										}
 									}
 									else
 									{
@@ -5107,7 +5121,7 @@ timeToGoAgain:
 						int castLimit = 6;
 						if ( my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
 						{
-							castLimit = 1 + rand() % 2;
+							castLimit = 2 + rand() % 2;
 						}
 						if ( my->monsterLichMagicCastCount < castLimit )
 						{
@@ -5119,7 +5133,7 @@ timeToGoAgain:
 							{
 								if ( my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
 								{
-									my->lichIceSummonMonster(GOATMAN);
+									my->lichIceSummonMonster(AUTOMATON);
 								}
 								else
 								{
@@ -5472,7 +5486,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 						}
 						if ( monsterSpecialState == LICH_ICE_ATTACK_COMBO )
 						{
-							monsterHitTime = HITRATE * 2 - 30;
+							monsterHitTime = HITRATE * 2 - 25;
 							if ( monsterLichMeleeSwingCount > 1 )
 							{
 								monsterSpecialState = 0;

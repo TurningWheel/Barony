@@ -9837,7 +9837,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 	if ( strstr(monsterStats.name, "lesser") 
 		|| strstr(monsterStats.name, "young") 
 		|| strstr(monsterStats.name, "enslaved")
-		|| strstr(monsterStats.name, "damaged") )
+		|| strstr(monsterStats.name, "damaged")
+		|| strstr(monsterStats.name, "corrupted") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		namedMonsterAsGeneric = true;

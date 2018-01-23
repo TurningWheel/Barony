@@ -385,6 +385,9 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				my->monsterLichBattleState = LICH_BATTLE_READY;
 				generatePathMaps();
+				swornenemies[LICH_ICE][AUTOMATON] = false;
+				swornenemies[LICH_FIRE][AUTOMATON] = false;
+				swornenemies[AUTOMATON][HUMAN] = true;
 				real_t distToPlayer = 0;
 				int c, playerToChase = -1;
 				for ( c = 0; c < MAXPLAYERS; c++ )
@@ -615,7 +618,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 					}
 					else if ( weaponarm->skill[1] == 1 )
 					{
-						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, PI / 8, false, 0.0) )
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.4, PI / 8, false, 0.0) )
 						{
 							my->monsterWeaponYaw = 0;
 							weaponarm->pitch = PI / 8;
@@ -974,7 +977,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+				if ( my->monsterAttackTime >= 1 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 				{
 					if ( multiplayer != CLIENT )
 					{
