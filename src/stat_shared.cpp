@@ -869,7 +869,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = LICH_ICE;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, "Ice Boy");
+			strcpy(stats->name, "Erudyce");
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
 			stats->HP = 10;
@@ -877,42 +877,48 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 1000;
 			stats->MAXMP = 1000;
 			stats->OLDHP = stats->HP;
-			stats->STR = -5;
-			stats->DEX = 8;
-			stats->CON = 8;
+			stats->STR = 50;
+			stats->DEX = 13;
+			stats->CON = 20;
 			stats->INT = 20;
 			stats->PER = 80;
 			stats->CHR = 50;
 			stats->EXP = 0;
-			stats->LVL = 25;
+			stats->LVL = 50;
 			stats->GOLD = 100;
 			stats->HUNGER = 900;
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->PROFICIENCIES[PRO_RANGED] = 100;
+			stats->PROFICIENCIES[PRO_MAGIC] = 100;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 			break;
 		case 95:
 		case (1000 + LICH_FIRE):
 			stats->type = LICH_FIRE;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, "Fire Boy");
+			strcpy(stats->name, "Orpheus");
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 10;
+			stats->HP = 20000;
 			stats->MAXHP = stats->HP;
 			stats->MP = 1000;
 			stats->MAXMP = 1000;
 			stats->OLDHP = stats->HP;
-			stats->STR = -5;
-			stats->DEX = 8;
-			stats->CON = 8;
+			stats->STR = 40;
+			stats->DEX = 13;
+			stats->CON = 30;
 			stats->INT = 20;
 			stats->PER = 80;
 			stats->CHR = 50;
 			stats->EXP = 0;
-			stats->LVL = 25;
+			stats->LVL = 50;
 			stats->GOLD = 100;
 			stats->HUNGER = 900;
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->PROFICIENCIES[PRO_SWORD] = 80;
+			stats->PROFICIENCIES[PRO_MAGIC] = 100;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 			break;
 		case 83:
 		case (1000 + SKELETON):

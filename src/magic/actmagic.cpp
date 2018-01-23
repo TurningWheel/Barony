@@ -2807,7 +2807,26 @@ void actParticleTimer(Entity* my)
 			{
 				playSoundEntity(my, 164, 128);
 				spawnExplosion(my->x, my->y, -4.0);
-				summonMonster(static_cast<Monster>(my->particleTimerVariable1), my->x, my->y);
+				Entity* monster = summonMonster(static_cast<Monster>(my->particleTimerVariable1), my->x, my->y);
+				if ( monster )
+				{
+					Stat* monsterStats = monster->getStats();
+					if ( my->parent != 0 )
+					{
+						if ( uidToEntity(my->parent)->getRace() == LICH_ICE )
+						{
+							monsterStats->leader_uid = my->parent;
+							switch ( monsterStats->type )
+							{
+								case AUTOMATON:
+									strcpy(monsterStats->name, "corrupted automaton");
+									break;
+								default:
+									break;
+							}
+						}
+					}
+				}
 				my->removeLightField();
 			}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHADOW_TELEPORT )

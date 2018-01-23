@@ -737,6 +737,10 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
 				{
 					int windupDuration = (my->monsterState == MONSTER_STATE_LICH_CASTSPELLS) ? 20 : 40;
+					if ( multiplayer != CLIENT && myStats->EFFECTS[EFF_VAMPIRICAURA] )
+					{
+						windupDuration = 20;
+					}
 					if ( my->monsterAttackTime == 0 )
 					{
 						// init rotations
@@ -844,7 +848,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
-				if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+				if ( my->monsterAttackTime >= 1 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 				{
 					if ( multiplayer != CLIENT )
 					{
@@ -887,7 +891,19 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 							//my->castOrbitingMagicMissile(SPELL_FIREBALL, 16.0, 0.0);
 							if ( rand() % 2 )
 							{
-								castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+								if ( my->monsterLichAllyStatus == LICH_ALLY_DEAD
+									&& !myStats->EFFECTS[EFF_VAMPIRICAURA]
+									&& my->monsterState != MONSTER_STATE_LICH_CASTSPELLS )
+								{
+									createParticleDropRising(my, 600, 0.7);
+									serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
+									myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+									myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = 600;
+								}
+								else
+								{
+									castSpell(my->getUID(), getSpellFromID(SPELL_FIREBALL), true, false);
+								}
 							}
 							else
 							{

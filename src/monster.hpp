@@ -168,8 +168,8 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // automaton
-	{ 2.0, 2.0, 2.0, 2.0, 1.f, 0.7 }, // lich ice
-	{ 1.5, 1.5, 1.5, 1.5, 1.f, 1.f }  // lich fire
+	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7 }, // lich ice
+	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f }  // lich fire
 
 };
 
