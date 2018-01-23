@@ -667,6 +667,31 @@ void actPlayer(Entity* my)
 				messagePlayer(clientnum, language[570], tempItem->description());
 				appraisal_item = 0;
 				appraisal_timer = 0;
+
+				for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
+				{
+					Item* item2 = (Item*)node->element;
+					if ( item2 != tempItem && !itemCompare(tempItem, item2, false) )
+					{
+						// if items are the same, check to see if they should stack
+						if ( item2->shouldItemStack(PLAYER_NUM) )
+						{
+							item2->count += tempItem->count;
+							if ( tempItem->node )
+							{
+								list_RemoveNode(tempItem->node);
+							}
+							else
+							{
+								if ( multiplayer != CLIENT )
+								{
+									free(tempItem);
+								}
+							}
+							break;
+						}
+					}
+				}
 			}
 			else
 			{
