@@ -5436,7 +5436,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
-								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr)
+								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
 							)
 							{
 								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
