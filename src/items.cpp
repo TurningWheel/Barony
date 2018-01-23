@@ -2417,19 +2417,19 @@ Sint32 Item::weaponGetAttack() const
 	}
 	else if ( type == CRYSTAL_SWORD )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_SPEAR )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_BATTLEAXE )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_MACE )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == BRONZE_TOMAHAWK )
 	{
