@@ -2175,12 +2175,9 @@ Item* itemPickup(int player, Item* item)
 			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2, false))
 			{
-				if ( (!itemIsEquipped(item2, player) && itemCategory(item2) != ARMOR)
-					|| itemCategory(item2) == THROWN 
-					|| itemCategory(item2) == GEM
-					|| itemCategory(item2) == TOOL )
+				// if items are the same, check to see if they should stack
+				if ( item2->shouldItemStack(player) )
 				{
-					// don't stack if equipped, or item is armor.
 					item2->count += item->count;
 					return item2;
 				}
@@ -3318,5 +3315,30 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 		return true;
 	}
 
+	return false;
+}
+
+bool Item::shouldItemStack(int player)
+{
+	if ( player >= 0 )
+	{
+		if ( (!itemIsEquipped(this, player)
+				&& itemCategory(this) != ARMOR
+				&& itemCategory(this) != WEAPON
+				&& itemCategory(this) != MAGICSTAFF
+				&& itemCategory(this) != RING
+				&& itemCategory(this) != AMULET
+				&& itemCategory(this) != SPELLBOOK
+				&& this->type != TOOL_PICKAXE)
+			|| itemCategory(this) == THROWN
+			|| itemCategory(this) == GEM
+			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE)
+			)
+		{
+			// THROWN, GEM, TOOLS should stack when equipped.
+			// otherwise most equippables should not stack.
+			return true;
+		}
+	}
 	return false;
 }
