@@ -5087,7 +5087,7 @@ timeToGoAgain:
 									if ( my->monsterLichAllyStatus == LICH_ALLY_DEAD )
 									{
 										Entity* dummyEntity = nullptr;
-										if ( numMonsterTypeAliveOnMap(AUTOMATON, dummyEntity) <= 3 )
+										if ( numMonsterTypeAliveOnMap(AUTOMATON, dummyEntity) <= 1 )
 										{
 											my->monsterLichIceCastSeq = LICH_ATK_SUMMON;
 										}
