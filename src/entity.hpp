@@ -800,3 +800,5 @@ char* playerClassDescription(int classnum);
 //Some testing functions/commands.
 Entity* summonChest(long x, long y);
 
+//Various settings variables regarding entities.
+extern bool flickerTorches;
