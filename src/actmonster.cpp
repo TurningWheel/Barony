@@ -1577,7 +1577,7 @@ void actMonster(Entity* my)
 					}
 					else if ( lichDist > 64 )
 					{
-						if ( rand() % 100 == 0 )
+						if ( target && rand() % 100 == 0 )
 						{
 							// chance to dodge towards the target if distance is great enough.
 							playSoundEntity(my, 180, 128);
@@ -1627,7 +1627,7 @@ void actMonster(Entity* my)
 					}
 					else if ( (lichDist < 32) || (enemiesInMelee > 1) )
 					{
-						if ( ticks % 10 == 0 && rand() % 100 == 0 || (enemiesInMelee > 1 && rand() % 8 == 0) )
+						if ( target && ticks % 10 == 0 && rand() % 100 == 0 || (enemiesInMelee > 1 && rand() % 8 == 0) )
 						{
 							// chance to dodge away from target if distance is low enough.
 							playSoundEntity(my, 180, 128);
@@ -1670,9 +1670,9 @@ void actMonster(Entity* my)
 							}
 							if ( lichAlly && target )
 							{
+								// if ally is close to your target, then don't dodge towards.
 								if ( entityDist(lichAlly, target) > 48.0 )
 								{
-									// if ally is close to your target, then don't dodge towards.
 									playSoundEntity(my, 180, 128);
 									tangent = atan2(target->y - my->y, target->x - my->x);
 									dir = tangent;
@@ -1692,7 +1692,7 @@ void actMonster(Entity* my)
 							}
 							if ( my->monsterState != MONSTER_STATE_LICHICE_DODGE )
 							{
-								// chance to dodge if not set above.
+								// chance to dodge sideways if not set above
 								playSoundEntity(my, 180, 128);
 								dir = my->yaw - (PI / 2) + PI * (rand() % 2);
 								MONSTER_VELX = cos(dir) * 3;
@@ -2266,21 +2266,24 @@ void actMonster(Entity* my)
 
 	// effect of a ring of conflict
 	bool ringconflict = false;
-	for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures can wear rings, so don't search map.entities.
+	if ( myStats->type != LICH_ICE && myStats->type != LICH_FIRE )
 	{
-		Entity* tempentity = (Entity*)node->element;
-		if ( tempentity != nullptr && tempentity != my )
+		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures can wear rings, so don't search map.entities.
 		{
-			Stat* tempstats = tempentity->getStats();
-			if ( tempstats != nullptr )
+			Entity* tempentity = (Entity*)node->element;
+			if ( tempentity != nullptr && tempentity != my )
 			{
-				if ( tempstats->ring != nullptr )
+				Stat* tempstats = tempentity->getStats();
+				if ( tempstats != nullptr )
 				{
-					if ( tempstats->ring->type == RING_CONFLICT )
+					if ( tempstats->ring != nullptr )
 					{
-						if ( sqrt(pow(my->x - tempentity->x, 2) + pow(my->y - tempentity->y, 2)) < 200 )
+						if ( tempstats->ring->type == RING_CONFLICT )
 						{
-							ringconflict = true;
+							if ( sqrt(pow(my->x - tempentity->x, 2) + pow(my->y - tempentity->y, 2)) < 200 )
+							{
+								ringconflict = true;
+							}
 						}
 					}
 				}
@@ -4930,6 +4933,8 @@ timeToGoAgain:
 			if ( my->monsterSpecialTimer == 0 )
 			{
 				my->monsterState = MONSTER_STATE_WAIT;
+				MONSTER_VELX = 0;
+				MONSTER_VELY = 0;
 				if ( target )
 				{
 					my->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
@@ -5068,7 +5073,7 @@ timeToGoAgain:
 			{
 				if ( my->monsterLichIceCastSeq == 0 )
 				{
-					if ( my->monsterHitTime >= 60 || my->monsterLichAllyStatus == LICH_ALLY_DEAD && my->monsterHitTime >= 45 )
+					if ( my->monsterHitTime >= 60 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && my->monsterHitTime >= 45) )
 					{
 						Entity* target = uidToEntity(my->monsterTarget);
 						if ( target )
@@ -5177,8 +5182,15 @@ timeToGoAgain:
 						}
 						else
 						{
+							if ( my->monsterLichIceCastSeq == LICH_ATK_SUMMON )
+							{
+								my->monsterHitTime = 45;
+							}
+							else
+							{
+								my->monsterHitTime = 0;
+							}
 							my->monsterLichIceCastSeq = 0;
-							my->monsterHitTime = 0;
 						}
 					}
 				}
@@ -5187,7 +5199,8 @@ timeToGoAgain:
 		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY
 			|| my->monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY )
 		{
-
+			MONSTER_VELX = 0;
+			MONSTER_VELY = 0;
 		}
 		//End state machine.
 
@@ -5402,15 +5415,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					this->monsterTargetY = this->y - 50 + rand() % 100;
 					this->monsterState = MONSTER_STATE_PATH; // path state
 				}
-			}
-			else if ( myStats->type == LICH_ICE )
-			{
-				// do attack counting.
-				//this->monsterSpecialTimer = 90;
-				//this->monsterTarget = 0;
-				//this->monsterTargetX = this->x - 50 + rand() % 100;
-				//this->monsterTargetY = this->y - 50 + rand() % 100;
-				//this->monsterState = MONSTER_STATE_PATH; // path state
 			}
 
 			// reset the hit timer
