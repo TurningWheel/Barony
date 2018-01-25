@@ -2125,6 +2125,9 @@ void useItem(Item* item, int player)
 					messagePlayer(player, language[2381]);
 				}
 				break;
+			case VAMPIRE_DOUBLET:
+				messagePlayer(player, language[2597]);
+				break;
 			default:
 				break;
 		}
