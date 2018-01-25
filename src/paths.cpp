@@ -18,6 +18,7 @@
 #include "paths.hpp"
 #include "items.hpp"
 #include "net.hpp"
+#include "magic/magic.hpp"
 
 int* pathMapFlying = NULL;
 int* pathMapGrounded = NULL;
@@ -246,7 +247,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actDoorFrame || entity->behavior == &actDoor || entity->behavior == &actMagic )
+		if ( entity->behavior == &actDoorFrame || entity->behavior == &actDoor || entity->behavior == &actMagicMissile )
 		{
 			continue;
 		}
