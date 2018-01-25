@@ -600,7 +600,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 					else if ( (hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
-						|| (hit.entity->getRace() == LICH_FIRE && parent->getRace() == LICH_ICE) )
+						|| ( (hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) )
 					{
 						reflection = 3;
 					}
@@ -2815,7 +2815,7 @@ void actParticleTimer(Entity* my)
 					{
 						if ( uidToEntity(my->parent)->getRace() == LICH_ICE )
 						{
-							monsterStats->leader_uid = my->parent;
+							//monsterStats->leader_uid = my->parent;
 							switch ( monsterStats->type )
 							{
 								case AUTOMATON:

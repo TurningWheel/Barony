@@ -65,13 +65,13 @@ void initAutomaton(Entity* my, Stat* myStats)
 			else if ( !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
 			{
 				greaterMonster = true;
-				myStats->HP = 250;
-				myStats->MAXHP = 250;
+				myStats->HP = 150;
+				myStats->MAXHP = 150;
 				myStats->RANDOM_MAXHP = 0;
 				myStats->RANDOM_HP = 0;
 				myStats->OLDHP = myStats->HP;
 				myStats->STR = 30;
-				myStats->DEX = 10;
+				myStats->DEX = 13;
 				myStats->CON = 8;
 				myStats->INT = 10;
 				myStats->PER = 25;
@@ -164,13 +164,13 @@ void initAutomaton(Entity* my, Stat* myStats)
 					switch ( rand() % 4 )
 					{
 						case 0:
-							myStats->weapon = newItem(CRYSTAL_BATTLEAXE, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
+							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
 							break;
 						case 1:
 							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
 							break;
 						case 2:
-							myStats->weapon = newItem(CRYSTAL_MACE, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
+							myStats->weapon = newItem(SHORTBOW, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
 							break;
 						case 3:
 							myStats->weapon = newItem(CROSSBOW, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);

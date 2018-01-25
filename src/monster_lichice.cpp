@@ -810,7 +810,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 							{
 								my->attack(1, 0, nullptr);
 								int spellID = SPELL_COLD;
-								if ( rand() % 5 == 0 )
+								if ( rand() % 5 == 0 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && rand() % 2 == 0) )
 								{
 									spellID = SPELL_DRAIN_SOUL;
 								}
@@ -1016,7 +1016,7 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						spellarm->skill[1] = 1;
 						if ( multiplayer != CLIENT )
 						{
-							if ( rand() % 2 == 0 )
+							if ( rand() % 5 == 0 )
 							{
 								castSpell(my->getUID(), getSpellFromID(SPELL_SLOW), true, false);
 							}
