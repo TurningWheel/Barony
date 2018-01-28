@@ -2864,7 +2864,7 @@ void item_FoodTin(Item*& item, int player)
 
 	// first word
 	int word = rand() % 16;
-	strcpy(tempstr, language[918]);
+	strcpy(tempstr, language[918 + word]);
 	if ( word == 6 || word == 15 )
 	{
 		slippery = true;
@@ -2872,7 +2872,7 @@ void item_FoodTin(Item*& item, int player)
 
 	// second word
 	word = rand() % 16;
-	strcat(tempstr, language[934]);
+	strcat(tempstr, language[934 + word]);
 	if ( word == 1 || word == 7 || word == 8 || word == 12 )
 	{
 		slippery = true;
@@ -2880,7 +2880,7 @@ void item_FoodTin(Item*& item, int player)
 
 	// third word
 	word = rand() % 16;
-	strcat(tempstr, language[950]);
+	strcat(tempstr, language[950 + word]);
 	if ( word == 1 || word == 8 )
 	{
 		slippery = true;
