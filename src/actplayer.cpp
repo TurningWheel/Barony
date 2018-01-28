@@ -1227,15 +1227,15 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
 					{
-						PLAYER_TORCH = 7 + my->getPER() / 3;
+						PLAYER_TORCH = 7 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 1;
 					}
 					else if ( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN )
 					{
-						PLAYER_TORCH = 10 + my->getPER() / 3;
+						PLAYER_TORCH = 10 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 1;
 					}
 					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
 					{
-						PLAYER_TORCH = 5 + my->getPER() / 3;
+						PLAYER_TORCH = 5 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 2;
 					}
 					else if ( !PLAYER_DEBUGCAM )
 					{
