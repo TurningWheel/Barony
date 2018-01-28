@@ -471,4 +471,8 @@ void actFloorDecoration(Entity* my)
 	{
 		return;
 	}
+	if ( !my->flags[PASSABLE] )
+	{
+		my->flags[PASSABLE] == true;
+	}
 }
