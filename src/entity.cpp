@@ -8669,6 +8669,20 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	{
 		messagePlayer(clientnum, "Entity acquired new target!");
 	}*/
+	if ( monsterState != MONSTER_STATE_ATTACK && !hadOldTarget )
+	{
+		if ( myStats->type != LICH_FIRE 
+			&& myStats->type != LICH_ICE
+			&& (myStats->type < LICH || myStats->type > DEVIL)
+			)
+		{
+			// check to see if holding ranged weapon, set hittime to be ready to attack.
+			if ( hasRangedWeapon() )
+			{
+				monsterHitTime = 2 * HITRATE;
+			}
+		}
+	}
 
 	if ( (myStats->type == LICH_FIRE || myStats->type == LICH_ICE)
 		&& (monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY 
