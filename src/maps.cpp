@@ -4379,7 +4379,7 @@ void assignActions(map_t* map)
 			case 117:
 				entity->x += 8;
 				entity->y += 8;
-				entity->sprite = 278;
+				entity->sprite = 614;
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->yaw = PI / 2;
@@ -4693,8 +4693,8 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = entity->floorDecorationModel;
-				entity->sizex = 4;
-				entity->sizey = 4;
+				entity->sizex = 0.01;
+				entity->sizey = 0.01;
 				entity->z = 7.5 - entity->floorDecorationHeightOffset * 0.25;
 				if ( entity->floorDecorationRotation == -1 )
 				{
@@ -4710,9 +4710,9 @@ void assignActions(map_t* map)
 				entity->behavior = &actFloorDecoration;
 				/*if ( multiplayer != CLIENT )
 				{
-					entity->setUID(-3);
 					entity_uids--;
-				}*/
+				}
+				entity->setUID(-3);*/
 				break;
 			}
 			default:
