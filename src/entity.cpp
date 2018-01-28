@@ -5978,8 +5978,8 @@ bool Entity::teleport(int tele_x, int tele_y)
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "TELE");
-		net_packet->data[4] = x;
-		net_packet->data[5] = y;
+		net_packet->data[4] = tele_x;
+		net_packet->data[5] = tele_y;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 6;
