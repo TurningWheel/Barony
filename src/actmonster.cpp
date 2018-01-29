@@ -4069,6 +4069,13 @@ timeToGoAgain:
 											{
 												my->monsterState = MONSTER_STATE_PATH;    // try something else and remake path
 											}
+											++my->monsterPathCount;
+											if ( my->monsterPathCount > 100 )
+											{
+												my->monsterPathCount = 0;
+												messagePlayer(0, "running into monster like a fool!");
+												my->monsterMoveBackwardsAndPath();
+											}
 										}
 										else if ( my->checkEnemy(hit.entity) )
 										{
@@ -4102,6 +4109,24 @@ timeToGoAgain:
 								else
 								{
 									my->monsterState = MONSTER_STATE_PATH; // remake path
+									if ( myStats->type != LICH_FIRE && myStats->type != LICH_ICE )
+									{
+										if ( hit.entity->behavior == &actGate 
+											 )
+										{
+											++my->monsterPathCount;
+											if ( my->monsterPathCount > 100 )
+											{
+												my->monsterPathCount = 0;
+												messagePlayer(0, "remaking path!");
+												my->monsterMoveBackwardsAndPath();
+											}
+										}
+										else
+										{
+											my->monsterPathCount = 0;
+										}
+									}
 								}
 							}
 							else
@@ -6551,4 +6576,74 @@ int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster)
 		}
 	}
 	return monsterCount;
+}
+
+void Entity::monsterMoveBackwardsAndPath()
+{
+	while ( yaw < 0 )
+	{
+		yaw += 2 * PI;
+	}
+	while ( yaw >= 2 * PI )
+	{
+		yaw -= 2 * PI;
+	}
+	int x1 = ((int)floor(x)) >> 4;
+	int y1 = ((int)floor(y)) >> 4;
+	int u, v;
+	std::vector<std::pair<int, int>> areaToTry;
+	if ( yaw <= PI / 4 || yaw > 7 * PI / 4 )
+	{
+		areaToTry.push_back(std::pair<int, int>(x1 - 1, y1));
+		areaToTry.push_back(std::pair<int, int>(x1 - 2, y1));
+		areaToTry.push_back(std::pair<int, int>(x1 - 2, y1 + 1));
+		areaToTry.push_back(std::pair<int, int>(x1 - 2, y1 - 1));
+		areaToTry.push_back(std::pair<int, int>(x1 - 3, y1));
+	}
+	else if ( yaw > PI / 4 && yaw <= 3 * PI / 4 )
+	{
+		areaToTry.push_back(std::pair<int, int>(x1, y1 - 1));
+		areaToTry.push_back(std::pair<int, int>(x1, y1 - 2));
+		areaToTry.push_back(std::pair<int, int>(x1 - 1, y1 - 2));
+		areaToTry.push_back(std::pair<int, int>(x1 + 1, y1 - 2));
+		areaToTry.push_back(std::pair<int, int>(x1, y1 - 3));
+	}
+	else if ( yaw > 3 * PI / 4 && yaw <= 5 * PI / 4 )
+	{
+		areaToTry.push_back(std::pair<int, int>(x1 + 1, y1));
+		areaToTry.push_back(std::pair<int, int>(x1 + 2, y1));
+		areaToTry.push_back(std::pair<int, int>(x1 + 2, y1 + 1));
+		areaToTry.push_back(std::pair<int, int>(x1 + 2, y1 - 1));
+		areaToTry.push_back(std::pair<int, int>(x1 + 3, y1));
+	}
+	else if ( yaw > 5 * PI / 4 && yaw <= 7 * PI / 4 )
+	{
+		areaToTry.push_back(std::pair<int, int>(x1, y1 + 1));
+		areaToTry.push_back(std::pair<int, int>(x1, y1 + 2));
+		areaToTry.push_back(std::pair<int, int>(x1 - 1, y1 + 2));
+		areaToTry.push_back(std::pair<int, int>(x1 + 1, y1 + 2));
+		areaToTry.push_back(std::pair<int, int>(x1, y1 + 3));
+	}
+	bool foundplace = false;
+	for ( int tries = 0; tries < areaToTry.size() && !foundplace; ++tries )
+	{
+		std::pair<int, int> tmpPair = areaToTry[rand() % areaToTry.size()];
+		u = tmpPair.first;
+		v = tmpPair.second;
+		if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
+		{
+			x1 = u;
+			y1 = v;
+			foundplace = true;
+		}
+	}
+	path = generatePath((int)floor(x / 16), (int)floor(y / 16), x1, y1, this, this);
+	if ( children.first != NULL )
+	{
+		list_RemoveNode(children.first);
+	}
+	node_t* node = list_AddNodeFirst(&this->children);
+	node->element = path;
+	node->deconstructor = &listDeconstructor;
+	monsterState = MONSTER_STATE_HUNT; // hunt state
 }
