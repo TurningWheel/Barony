@@ -96,7 +96,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLichIceCastPrev(skill[35]),
 	monsterLichMagicCastCount(skill[37]),
 	monsterLichMeleeSwingCount(skill[38]),
-	monsterLichAttackTimer(skill[39]),
 	monsterLichBattleState(skill[27]),
 	monsterLichTeleportTimer(skill[40]),
 	monsterLichAllyStatus(skill[18]),
@@ -107,6 +106,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterPathBoundaryYEnd(skill[17]),
 	monsterStoreType(skill[18]),
 	monsterStrafeDirection(skill[39]),
+	monsterPathCount(skill[38]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -8677,7 +8677,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 			)
 		{
 			// check to see if holding ranged weapon, set hittime to be ready to attack.
-			if ( hasRangedWeapon() )
+			if ( hasRangedWeapon() && monsterSpecialTimer <= 0 )
 			{
 				monsterHitTime = 2 * HITRATE;
 			}

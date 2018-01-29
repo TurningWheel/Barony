@@ -182,7 +182,7 @@ public:
 	Sint32& monsterPathBoundaryYEnd; //skill[17]
 	Sint32& monsterStoreType; //skill[18]
 	Sint32& monsterStrafeDirection; //skill[39]
-
+	Sint32& monsterPathCount; //skill[38]
 	real_t& monsterLookDir; //fskill[4]
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
@@ -200,7 +200,6 @@ public:
 	Sint32& monsterLichIceCastPrev; //skill[35]
 	Sint32& monsterLichMagicCastCount; //skill[37] count the basic spell attacks in the seq and switch things up if too many in a row.
 	Sint32& monsterLichMeleeSwingCount; //skill[38] count the 'regular' attacks in the seq and switch things up if too many in a row.
-	Sint32& monsterLichAttackTimer; //skill[39] used to time ranged attack frequency
 	Sint32& monsterLichBattleState; //skill[27] used to track hp/battle progress
 	Sint32& monsterLichTeleportTimer; //skill[40] used to track conditions to teleport away.
 	Sint32& monsterLichAllyStatus; //skill[18] used to track if allies are alive.
@@ -681,6 +680,8 @@ public:
 	Entity* castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration);
 	void lichFireSetNextAttack(Stat& myStats);
 	void lichIceSetNextAttack(Stat& myStats);
+
+	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
