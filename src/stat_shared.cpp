@@ -609,8 +609,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			stats->MAXMP = stats->MP;
 			stats->OLDHP = stats->HP;
-			stats->STR = 20;
-			stats->RANDOM_STR = 10;
+			stats->STR = 35;
+			stats->RANDOM_STR = 5;
 			stats->DEX = 8;
 			stats->RANDOM_DEX = 0;
 			stats->CON = 0;
@@ -680,6 +680,14 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 			stats->GOLD = 100;
 			stats->RANDOM_GOLD = 50;
+			stats->PROFICIENCIES[PRO_SWORD] = 90;
+			stats->PROFICIENCIES[PRO_MACE] = 90;
+			stats->PROFICIENCIES[PRO_AXE] = 90;
+			stats->PROFICIENCIES[PRO_POLEARM] = 90;
+			stats->PROFICIENCIES[PRO_RANGED] = 60;
+			stats->PROFICIENCIES[PRO_SHIELD] = 25;
+			stats->PROFICIENCIES[PRO_MAGIC] = 80;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 80;
 			break;
 		case 90:
 		case (1000 + COCKATRICE):
@@ -784,7 +792,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 150;
+			stats->MAXHP = 220;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 20;
 			stats->MP = stats->MAXMP;
@@ -793,15 +801,15 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			//stats->RANDOM_MAXMP = 20;
 			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
-			stats->STR = 15;
-			stats->DEX = 5;
-			stats->CON = 5;
+			stats->STR = 21;
+			stats->DEX = 8;
+			stats->CON = 9;
 			stats->INT = -1;
 			stats->PER = 0;
 			stats->RANDOM_PER = 5;
 			stats->CHR = -1;
 			stats->EXP = 0;
-			stats->LVL = 20;
+			stats->LVL = 25;
 			if ( rand() % 3 > 0 )
 			{
 				stats->GOLD = 100;
