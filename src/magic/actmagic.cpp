@@ -599,8 +599,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							reflection = 3;
 						}
 					}
-					else if ( (hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
-						|| ( (hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) )
+					else if ( parent && 
+							(	(hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
+								|| ( (hit.entity->getRace() == LICH_FIRE 
+								|| hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
+							)
+						)
 					{
 						reflection = 3;
 					}
