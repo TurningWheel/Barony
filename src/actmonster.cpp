@@ -3269,6 +3269,11 @@ timeToGoAgain:
 												my->monsterAttack = my->getAttackPose(); // random attack motion
 												my->monsterHitTime = 0;
 												hit.entity->skill[4]--; // decrease door health
+												if ( myStats->STR > 20 )
+												{
+													hit.entity->skill[4] -= static_cast<int>(std::max((20 - myStats->STR), 0) / 3); // decrease door health
+													hit.entity->skill[4] = std::max(hit.entity->skill[4], 0);
+												}
 												if ( myStats->type == MINOTAUR )
 												{
 													hit.entity->skill[4] = 0;    // minotaurs smash doors instantly
@@ -4032,6 +4037,11 @@ timeToGoAgain:
 											my->monsterAttack = my->getAttackPose(); // random attack motion
 											my->monsterHitTime = 0;
 											hit.entity->skill[4]--; // decrease door health
+											if ( myStats->STR > 20 )
+											{
+												hit.entity->skill[4] -= static_cast<int>(std::max((20 - myStats->STR), 0) / 3); // decrease door health
+												hit.entity->skill[4] = std::max(hit.entity->skill[4], 0);
+											}
 											if ( myStats->type == MINOTAUR )
 											{
 												hit.entity->skill[4] = 0;    // minotaurs smash doors instantly
