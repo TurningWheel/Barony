@@ -408,6 +408,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			secretlevelexit = 4;
 		}
+		else if ( currentlevel == 27 || currentlevel == 29 )
+		{
+			secretlevelexit = 5;
+		}
 	}
 
 	mapList.first = nullptr;
@@ -741,6 +745,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 					case 4:
 						strcpy(secretmapname, "ruinssecret");
+						break;
+					case 5:
+						strcpy(secretmapname, "cavessecret");
+						break;
+					case 6:
+						strcpy(secretmapname, "citadelsecret");
 						break;
 					default:
 						break;
