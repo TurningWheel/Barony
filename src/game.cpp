@@ -2277,7 +2277,7 @@ int main(int argc, char** argv)
 									"and verify Steam is running. Alternatively, contact us through our website\n"
 									"at http://www.baronygame.com/ for support.",
 				screen);
-#elif
+#else
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 									"Barony has encountered a critical error and cannot start.\n\n"
 									"Please check the log.txt file in the game directory for additional info,\n"
