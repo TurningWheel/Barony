@@ -165,6 +165,16 @@ void Entity::actPedestalBase()
 		{
 			mechanismPowerOn();
 			updateCircuitNeighbors();
+			if ( !strncmp(map.name, "Boss", 4) )
+			{
+				for ( int i = 0; i < MAXPLAYERS; ++i )
+				{
+					if ( !client_disconnected[i] )
+					{
+						messagePlayer(i, language[2904]);
+					}
+				}
+			}
 		}
 		else if ( circuit_status == CIRCUIT_ON && pedestalInvertedPower )
 		{

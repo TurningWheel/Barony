@@ -117,6 +117,13 @@ void actThrown(Entity* my)
 		return;
 	}
 
+	Entity* parent = uidToEntity(my->parent);
+	bool specialMonster = false;
+	if ( parent && parent->getRace() == LICH_ICE )
+	{
+		specialMonster = true;
+	}
+
 	// gravity
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
@@ -124,7 +131,14 @@ void actThrown(Entity* my)
 		if ( cat == THROWN )
 		{
 			// todo: adjust falling rates for thrown items if need be
-			THROWN_VELZ += 0.03;
+			if ( specialMonster )
+			{
+				THROWN_VELZ += 0.01;
+			}
+			else
+			{
+				THROWN_VELZ += 0.03;
+			}
 			my->z += THROWN_VELZ;
 			if ( item->type == BRONZE_TOMAHAWK || item->type == IRON_DAGGER )
 			{
@@ -133,7 +147,14 @@ void actThrown(Entity* my)
 			}
 			else
 			{
-				my->roll += 0.01;
+				if ( specialMonster )
+				{
+					my->roll += 0.003;
+				}
+				else
+				{
+					my->roll += 0.01;
+				}
 				my->yaw += 0.5;
 			}
 		}
@@ -154,6 +175,12 @@ void actThrown(Entity* my)
 				if ( itemCategory(item) == POTION )
 				{
 					playSoundEntity(my, 162, 64);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( specialMonster )
+				{
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;

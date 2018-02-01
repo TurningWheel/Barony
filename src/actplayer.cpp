@@ -667,6 +667,31 @@ void actPlayer(Entity* my)
 				messagePlayer(clientnum, language[570], tempItem->description());
 				appraisal_item = 0;
 				appraisal_timer = 0;
+
+				for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
+				{
+					Item* item2 = (Item*)node->element;
+					if ( item2 != tempItem && !itemCompare(tempItem, item2, false) )
+					{
+						// if items are the same, check to see if they should stack
+						if ( item2->shouldItemStack(PLAYER_NUM) )
+						{
+							item2->count += tempItem->count;
+							if ( tempItem->node )
+							{
+								list_RemoveNode(tempItem->node);
+							}
+							else
+							{
+								if ( multiplayer != CLIENT )
+								{
+									free(tempItem);
+								}
+							}
+							break;
+						}
+					}
+				}
 			}
 			else
 			{
@@ -1202,15 +1227,15 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->shield->type == TOOL_TORCH )
 					{
-						PLAYER_TORCH = 7 + my->getPER() / 3;
+						PLAYER_TORCH = 7 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 1;
 					}
 					else if ( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN )
 					{
-						PLAYER_TORCH = 10 + my->getPER() / 3;
+						PLAYER_TORCH = 10 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 1;
 					}
 					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
 					{
-						PLAYER_TORCH = 5 + my->getPER() / 3;
+						PLAYER_TORCH = 5 + my->getPER() / 3 + (stats[PLAYER_NUM]->defending) * 2;
 					}
 					else if ( !PLAYER_DEBUGCAM )
 					{
@@ -1662,8 +1687,12 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			real_t speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
-			if ( my->getDEX() <= 5 )
+			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);
+			if ( my->getDEX() <= 15 )
+			{
+				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
+			}
+			else if ( my->getDEX() <= 5 )
 			{
 				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
 			}

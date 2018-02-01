@@ -216,31 +216,26 @@ int monsterCurve(int level)
 	{
 		if ( currentlevel <= 26 )
 		{
-			switch ( rand() % 20 )
+			switch ( rand() % 15 )
 			{
 				case 0:
 				case 1:
 				case 2:
 				case 3:
 				case 4:
-				case 5:
 					return KOBOLD;
+				case 5:
 				case 6:
-				case 7:
 					return SCARAB;
-				case 8:
+				case 7:
 					return AUTOMATON;
+				case 8:
 				case 9:
 				case 10:
 				case 11:
-				case 12:
 					return INSECTOID;
+				case 12:
 				case 13:
-				case 14:
-				case 15:
-				case 16:
-					return GOATMAN;
-				case 17:
 					if ( rand() % 2 == 0 )
 					{
 						return INCUBUS;
@@ -249,8 +244,7 @@ int monsterCurve(int level)
 					{
 						return INSECTOID;
 					}
-				case 18:
-				case 19:
+				case 14:
 					if ( rand() % 2 == 0 )
 					{
 						return CRYSTALGOLEM;
@@ -263,70 +257,60 @@ int monsterCurve(int level)
 		}
 		else
 		{
-			switch ( rand() % 20 )
+			switch ( rand() % 15 )
 			{
 				case 0:
 				case 1:
 				case 2:
 				case 3:
-				case 4:
 					return KOBOLD;
-				case 5:
-				case 6:
+				case 4:
 					return SCARAB;
-				case 7:
+				case 5:
 					return AUTOMATON;
+				case 6:
+				case 7:
 				case 8:
 				case 9:
+					return INSECTOID;
 				case 10:
 				case 11:
-					return INSECTOID;
 				case 12:
-				case 13:
 					return CRYSTALGOLEM;
-				case 14:
-				case 15:
-				case 16:
-				case 17:
-					return GOATMAN;
-				case 18:
+				case 13:
 					return INCUBUS;
-				case 19:
+				case 14:
 					return COCKATRICE;
 			}
 		}
 	}
 	else if ( !strncmp(map.name, "Citadel", 7) )
 	{
-		switch ( rand() % 20 )
+		switch ( rand() % 15 )
 		{
 			case 0:
-			case 1:
 				return KOBOLD;
+			case 1:
+				return SCARAB;
 			case 2:
 			case 3:
-				return SCARAB;
 			case 4:
 			case 5:
+				return GOATMAN;
 			case 6:
-				return CRYSTALGOLEM;
 			case 7:
-				return VAMPIRE;
+				return CRYSTALGOLEM;
 			case 8:
 			case 9:
+				return VAMPIRE;
 			case 10:
 				return SHADOW;
 			case 11:
+				return INCUBUS;
 			case 12:
+				return AUTOMATON;
 			case 13:
 			case 14:
-				return AUTOMATON;
-			case 15:
-			case 16:
-			case 17:
-				return GOATMAN;
-			case 18:
-			case 19:
 				return COCKATRICE;
 		}
 	}
@@ -424,6 +408,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			secretlevelexit = 4;
 		}
+		else if ( currentlevel == 27 || currentlevel == 29 )
+		{
+			secretlevelexit = 5;
+		}
 	}
 
 	mapList.first = nullptr;
@@ -450,9 +438,16 @@ int generateDungeon(char* levelset, Uint32 seed)
 		if ( numlevels )
 		{
 			int shopleveltouse = prng_get_uint() % numlevels;
-			strcpy(sublevelname, "shop");
-			snprintf(sublevelnum, 3, "%02d", shopleveltouse);
-			strcat(sublevelname, sublevelnum);
+			if ( !strncmp(map.name, "Citadel", 7) )
+			{
+				strcpy(sublevelname, "shopcitadel");
+			}
+			else
+			{
+				strcpy(sublevelname, "shop");
+				snprintf(sublevelnum, 3, "%02d", shopleveltouse);
+				strcat(sublevelname, sublevelnum);
+			}
 
 			shopmap.tiles = nullptr;
 			shopmap.entities = (list_t*) malloc(sizeof(list_t));
@@ -750,6 +745,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 					case 4:
 						strcpy(secretmapname, "ruinssecret");
+						break;
+					case 5:
+						strcpy(secretmapname, "cavessecret");
+						break;
+					case 6:
+						strcpy(secretmapname, "citadelsecret");
 						break;
 					default:
 						break;
@@ -3095,16 +3096,16 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[LICH_ICE][0][2]; // 0
 						entity->z = -2;
 						entity->yaw = PI;
-						entity->sprite = 274;
+						entity->sprite = 650;
 						entity->skill[29] = 120;
 						break;
 					case LICH_FIRE:
 						entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
 						entity->focaly = limbs[LICH_FIRE][0][1]; // 0
 						entity->focalz = limbs[LICH_FIRE][0][2]; // 0
-						entity->z = -2;
+						entity->z = -1.2;
 						entity->yaw = PI;
-						entity->sprite = 274;
+						entity->sprite = 646;
 						entity->skill[29] = 120;
 						break;
 					default:
@@ -3823,10 +3824,11 @@ void assignActions(map_t* map)
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
-			// devil teleport location:
+			// devil/other teleport location:
 			case 72:
 			case 73:
 			case 74:
+			case 128:
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->x += 8;
@@ -4378,7 +4380,7 @@ void assignActions(map_t* map)
 			case 117:
 				entity->x += 8;
 				entity->y += 8;
-				entity->sprite = 278;
+				entity->sprite = 614;
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->yaw = PI / 2;
@@ -4684,6 +4686,34 @@ void assignActions(map_t* map)
 					childEntity->setUID(-3);
 					entity_uids--;
 				}
+				break;
+			}
+			// grass texture
+			case 127:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = entity->floorDecorationModel;
+				entity->sizex = 0.01;
+				entity->sizey = 0.01;
+				entity->z = 7.5 - entity->floorDecorationHeightOffset * 0.25;
+				if ( entity->floorDecorationRotation == -1 )
+				{
+					entity->yaw = (prng_get_uint() % 8) * (PI / 4);
+				}
+				else
+				{
+					entity->yaw = entity->floorDecorationRotation * (PI / 4);
+				}
+				entity->flags[BLOCKSIGHT] = false;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				entity->behavior = &actFloorDecoration;
+				/*if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);*/
 				break;
 			}
 			default:

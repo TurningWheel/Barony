@@ -13,8 +13,8 @@
 
 #include "main.hpp"
 #include "game.hpp"
-#include "light.hpp"
 #include "stat.hpp"
+#include "light.hpp"
 #include "monster.hpp"
 
 // entity flags
@@ -50,7 +50,6 @@ class Entity
 	Sint32& char_fire;		// skill[36] - Counter for how many ticks Entity will be on fire
 	Sint32& circuit_status;	// Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power;	// Switch/mechanism power status.
-
 	Sint32& chanceToPutOutFire; // skill[37] - Value between 5 and 10, with 10 being the default starting chance, and 5 being absolute minimum
 
 	//Chest skills.
@@ -77,19 +76,18 @@ class Entity
 	Sint32& chestType;
 
 	// Power crystal skills
-	Sint32& crystalInitialised; // 1 if init, else 0
-	Sint32& crystalTurning; // 1 if currently rotating, else 0
-	Sint32& crystalTurnStartDir; // when rotating, the previous facing direction stored here 0-3
+	Sint32& crystalInitialised; // 1 if init, else 0 skill[1]
+	Sint32& crystalTurning; // 1 if currently rotating, else 0 skill[3]
+	Sint32& crystalTurnStartDir; // when rotating, the previous facing direction stored here 0-3 skill[4]
 
-	Sint32& crystalGeneratedElectricityNodes; // 1 if electricity nodes generated previously, else 0
-	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
-	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
+	Sint32& crystalGeneratedElectricityNodes; // 1 if electricity nodes generated previously, else 0 skill[5]
+	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state skill[7]
+	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state skill[8]
 
 	// Pedestal Orb skills
-	Sint32& orbInitialised; // 1 if init, else 0
-	Sint32& orbHoverDirection; // animation, waiting/up/down floating state
-	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
-
+	Sint32& orbInitialised; // 1 if init, else 0 skill[1]
+	Sint32& orbHoverDirection; // animation, waiting/up/down floating state skill[7]
+	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state skill[8]
 
 	//### Begin - Private Entity Constants for BURNING Status Effect
 	static const Sint32 MIN_TICKS_ON_FIRE		= TICKS_TO_PROCESS_FIRE *  4; // Minimum time an Entity can be on fire is  4 cycles (120 ticks)
@@ -169,139 +167,157 @@ public:
 	Sint32& monsterSpecialTimer; //skill[29]
 	//Only used by goatman.
 	Sint32& monsterSpecialState; //skill[33]
-	Sint32& monsterSpellAnimation;
-	Sint32& monsterFootstepType;
-	Sint32& monsterLookTime;
-	Sint32& monsterAttack;
-	Sint32& monsterAttackTime;
-	Sint32& monsterArmbended;
-	real_t& monsterWeaponYaw;
-	Sint32& monsterMoveTime;
-	Sint32& monsterHitTime;
-	Sint32& monsterPathBoundaryXStart;
-	Sint32& monsterPathBoundaryYStart;
-	Sint32& monsterPathBoundaryXEnd;
-	Sint32& monsterPathBoundaryYEnd;
-	Sint32& monsterStoreType;
-
-	real_t& monsterLookDir;
+	Sint32& monsterSpellAnimation; //skill[31]
+	Sint32& monsterFootstepType; //skill[32]
+	Sint32& monsterLookTime; //skill[4]
+	Sint32& monsterAttack; //skill[8]
+	Sint32& monsterAttackTime; //skill[9]
+	Sint32& monsterArmbended; //skill[10]
+	real_t& monsterWeaponYaw; //fskill[5]
+	Sint32& monsterMoveTime; //skill[6]
+	Sint32& monsterHitTime; //skill[7]
+	Sint32& monsterPathBoundaryXStart; //skill[14]
+	Sint32& monsterPathBoundaryYStart; //skill[15]
+	Sint32& monsterPathBoundaryXEnd; //skill[16]
+	Sint32& monsterPathBoundaryYEnd; //skill[17]
+	Sint32& monsterStoreType; //skill[18]
+	Sint32& monsterStrafeDirection; //skill[39]
+	Sint32& monsterPathCount; //skill[38]
+	real_t& monsterLookDir; //fskill[4]
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
-	Sint32& monsterAnimationLimbDirection;
-	Sint32& monsterAnimationLimbOvershoot;
+	Sint32& monsterAnimationLimbDirection;  //skill[20]
+	Sint32& monsterAnimationLimbOvershoot; //skill[30]
 
 	//--PUBLIC MONSTER SHADOW SKILLS--
 	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
 	Sint32& monsterShadowDontChangeName; //skill[35]. 0 = false, 1 = true. Doesn't change name in its mimic if = 1.
 
-	//--PUBLIC POWER CRYSTAL SKILLS--
-	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
-	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
-	Sint32& crystalSpellToActivate; // If 1, must be hit by unlocking spell to start generating electricity.
+	//--PUBLIC MONSTER LICH SKILLS--
+	Sint32& monsterLichFireMeleeSeq; //skill[34]
+	Sint32& monsterLichFireMeleePrev; //skill[35]
+	Sint32& monsterLichIceCastSeq; //skill[34]
+	Sint32& monsterLichIceCastPrev; //skill[35]
+	Sint32& monsterLichMagicCastCount; //skill[37] count the basic spell attacks in the seq and switch things up if too many in a row.
+	Sint32& monsterLichMeleeSwingCount; //skill[38] count the 'regular' attacks in the seq and switch things up if too many in a row.
+	Sint32& monsterLichBattleState; //skill[27] used to track hp/battle progress
+	Sint32& monsterLichTeleportTimer; //skill[40] used to track conditions to teleport away.
+	Sint32& monsterLichAllyStatus; //skill[18] used to track if allies are alive.
+	Sint32& monsterLichAllyUID; //skill[17] used to track lich ally uid.
 
-	real_t& crystalStartZ; // mid point of animation, starting height.
-	real_t& crystalMaxZVelocity;
-	real_t& crystalMinZVelocity;
-	real_t& crystalTurnVelocity; // how fast to turn on click.
+	//--PUBLIC POWER CRYSTAL SKILLS--
+	Sint32& crystalTurnReverse; // skill[9] 0 Clockwise, 1 Anti-Clockwise
+	Sint32& crystalNumElectricityNodes; // skill[6] how many nodes to spawn in the facing dir
+	Sint32& crystalSpellToActivate; // skill[10] If 1, must be hit by unlocking spell to start generating electricity.
+
+	real_t& crystalStartZ; // fskill[0] mid point of animation, starting height.
+	real_t& crystalMaxZVelocity; // fskill[1] 
+	real_t& crystalMinZVelocity; // fskill[2] 
+	real_t& crystalTurnVelocity; // fskill[3] how fast to turn on click.
 
 	//--PUBLIC GATE SKILLS--
-	Sint32& gateInit;
-	Sint32& gateStatus;
-	Sint32& gateRattle;
-	real_t& gateStartHeight;
-	real_t& gateVelZ;
-	Sint32& gateInverted;
+	Sint32& gateInit; //skill[1]
+	Sint32& gateStatus; //skill[3]
+	Sint32& gateRattle; //skill[4]
+	real_t& gateStartHeight; //fskill[0]
+	real_t& gateVelZ; //vel_z
+	Sint32& gateInverted; //skill[5]
 
 	//--PUBLIC LEVER SKILLS--
-	Sint32& leverTimerTicks;
-	Sint32& leverStatus;
+	Sint32& leverTimerTicks;//skill[1]
+	Sint32& leverStatus;//skill[3]
 
 	//--PUBLIC BOULDER TRAP SKILLS--
-	Sint32& boulderTrapRefireAmount;
-	Sint32& boulderTrapRefireDelay;
-	Sint32& boulderTrapAmbience;
-	Sint32& boulderTrapFired;
-	Sint32& boulderTrapRefireCounter;
-	Sint32& boulderTrapPreDelay;
+	Sint32& boulderTrapRefireAmount; //skill[1]
+	Sint32& boulderTrapRefireDelay; //skill[3]
+	Sint32& boulderTrapAmbience; //skill[6]
+	Sint32& boulderTrapFired; //skill[0]
+	Sint32& boulderTrapRefireCounter; //skill[4]
+	Sint32& boulderTrapPreDelay; //skill[5]
 
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
-	Sint32& particleDuration;
-	Sint32& particleShrink;
+	Sint32& particleDuration; //skill[0]
+	Sint32& particleShrink; //skill[1]
 
 	//--PUBLIC PARTICLE TIMER EFFECT SKILLS--
-	Sint32& particleTimerDuration;
-	Sint32& particleTimerEndAction;
-	Sint32& particleTimerEndSprite;
-	Sint32& particleTimerCountdownAction;
-	Sint32& particleTimerCountdownSprite;
-	Sint32& particleTimerTarget;
-	Sint32& particleTimerPreDelay;
-	Sint32& particleTimerVariable1;
+	Sint32& particleTimerDuration; //skill[0]
+	Sint32& particleTimerEndAction; //skill[1]
+	Sint32& particleTimerEndSprite; //skill[3]
+	Sint32& particleTimerCountdownAction; //skill[4]
+	Sint32& particleTimerCountdownSprite; //skill[5]
+	Sint32& particleTimerTarget; //skill[6]
+	Sint32& particleTimerPreDelay; //skill[7]
+	Sint32& particleTimerVariable1; //skill[8]
 
 	//--PUBLIC DOOR SKILLS--
-	Sint32& doorDir;
-	Sint32& doorInit;
-	Sint32& doorStatus;
-	Sint32& doorHealth;
-	Sint32& doorLocked;
-	Sint32& doorSmacked;
-	Sint32& doorTimer;
-	Sint32& doorOldStatus;
-	Sint32& doorMaxHealth;
-	real_t& doorStartAng;
+	Sint32& doorDir; //skill[0]
+	Sint32& doorInit; //skill[1]
+	Sint32& doorStatus; //skill[3]
+	Sint32& doorHealth; //skill[4]
+	Sint32& doorLocked; //skill[5]
+	Sint32& doorSmacked; //skill[6]
+	Sint32& doorTimer; //skill[7]
+	Sint32& doorOldStatus; //skill[8]
+	Sint32& doorMaxHealth; //skill[9]
+	real_t& doorStartAng; //fskill[0]
 
 	//--PUBLIC PEDESTAL SKILLS--
-	Sint32& pedestalHasOrb;
-	Sint32& pedestalOrbType;
-	Sint32& pedestalInvertedPower;
-	Sint32& pedestalInGround;
-	Sint32& pedestalInit;
-	Sint32& pedestalAmbience;
-	Sint32& pedestalLockOrb;
+	Sint32& pedestalHasOrb; //skill[0]
+	Sint32& pedestalOrbType;  //skill[1]
+	Sint32& pedestalInvertedPower; //skill[3]
+	Sint32& pedestalInGround; //skill[4]
+	Sint32& pedestalInit; //skill[5]
+	Sint32& pedestalAmbience; //skill[6]
+	Sint32& pedestalLockOrb; //skill[7]
 
-	real_t& orbStartZ; // mid point of animation, starting height.
-	real_t& orbMaxZVelocity;
-	real_t& orbMinZVelocity;
-	real_t& orbTurnVelocity; // how fast to turn.
+	real_t& orbStartZ; // fskill[0] mid point of animation, starting height.
+	real_t& orbMaxZVelocity; //fskill[1]
+	real_t& orbMinZVelocity; //fskill[2]
+	real_t& orbTurnVelocity; //fskill[3] how fast to turn.
 
 	//--PUBLIC PORTAL SKILLS--
-	Sint32& portalAmbience;;
-	Sint32& portalInit;
-	Sint32& portalNotSecret;
-	Sint32& portalVictoryType;
-	Sint32& portalFireAnimation;
+	Sint32& portalAmbience; //skill[0]
+	Sint32& portalInit; //skill[1]
+	Sint32& portalNotSecret; //skill[3]
+	Sint32& portalVictoryType; //skill[4]
+	Sint32& portalFireAnimation; //skill[5]
 
 	//--PUBLIC TELEPORTER SKILLS--
-	Sint32& teleporterX;
-	Sint32& teleporterY;
-	Sint32& teleporterType;
-	Sint32& teleporterAmbience;
+	Sint32& teleporterX; //skill[0]
+	Sint32& teleporterY; //skill[1]
+	Sint32& teleporterType; //skill[3]
+	Sint32& teleporterAmbience; //skill[4]
 
 	//--PUBLIC CEILING TILE SKILLS--
-	Sint32& ceilingTileModel;
+	Sint32& ceilingTileModel; //skill[0]
+
+	//--PUBLIC FLOOR DECORATION MODELS--
+	Sint32& floorDecorationModel; //skill[0]
+	Sint32& floorDecorationRotation; //skill[1]
+	Sint32& floorDecorationHeightOffset; //skill[3] positive numbers will lift the model higher
 
 	//--PUBLIC SPELL TRAP SKILLS--
-	Sint32& spellTrapType;
-	Sint32& spellTrapRefire;
-	Sint32& spellTrapLatchPower;
-	Sint32& spellTrapFloorTile;
-	Sint32& spellTrapRefireRate;
-	Sint32& spellTrapAmbience;
-	Sint32& spellTrapInit;
-	Sint32& spellTrapCounter;
-	Sint32& spellTrapReset;
+	Sint32& spellTrapType; //skill[0]
+	Sint32& spellTrapRefire; //skill[1]
+	Sint32& spellTrapLatchPower; //skill[3]
+	Sint32& spellTrapFloorTile; //skill[4]
+	Sint32& spellTrapRefireRate; //skill[5]
+	Sint32& spellTrapAmbience; //skill[6]
+	Sint32& spellTrapInit; //skill[7]
+	Sint32& spellTrapCounter; //skill[8]
+	Sint32& spellTrapReset; //skill[9]
 	
 	//--PUBLIC FURNITURE SKILLS--
-	Sint32& furnitureType;
-	Sint32& furnitureInit;
-	Sint32& furnitureDir;
-	Sint32& furnitureHealth;
-	Sint32& furnitureMaxHealth;
+	Sint32& furnitureType; //skill[0]
+	Sint32& furnitureInit; //skill[1]
+	Sint32& furnitureDir; //skill[3]
+	Sint32& furnitureHealth; //skill[4]
+	Sint32& furnitureMaxHealth; //skill[9]
 
 	//--PUBLIC PISTON SKILLS--
-	Sint32& pistonCamDir;
-	Sint32& pistonCamTimer;
-	real_t& pistonCamRotateSpeed;
+	Sint32& pistonCamDir; //skill[0]
+	Sint32& pistonCamTimer; //skill[1]
+	real_t& pistonCamRotateSpeed; //fskill[0]
 
 	//--PUBLIC ARROW/PROJECTILE SKILLS--
 	Sint32& arrowPower;
@@ -312,6 +328,15 @@ public:
 	Sint32& itemNotMoving; // skill[18]
 	Sint32& itemNotMovingClient; // skill[19]
 
+	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
+	Sint32& actmagicIsVertical; //skill[6]
+	Sint32& actmagicIsOrbiting; //skill[7]
+	Sint32& actmagicOrbitDist; //skill[8]
+	Sint32&	actmagicOrbitVerticalDirection; //skill[9]
+	Sint32&	actmagicOrbitLifetime; //skill[10]
+	real_t actmagicOrbitVerticalSpeed; //fskill[2]
+	real_t actmagicOrbitStartZ; //fskill[3]
+	
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
@@ -453,6 +478,7 @@ public:
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	bool magicFallingCollision();
+	bool magicOrbitingCollision();
 	void actFurniture();
 	void actPistonCam();
 	void actStalagCeiling();
@@ -528,6 +554,13 @@ public:
 	void incubusTeleportRandom();
 	//Shadow teleport spells.
 	void shadowTeleportToTarget(const Entity* target, int range);
+	//Lich effects
+	void lichFireTeleport();
+	void lichIceTeleport();
+	void lichIceCreateCannon();
+	Entity* lichThrowProjectile(real_t angle);
+	void lichIceSummonMonster(Monster creature);
+	void lichFireSummonMonster(Monster creature);
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
@@ -641,6 +674,14 @@ public:
 
 	void addToCreatureList(list_t* list);
 	std::vector<Entity*> bodyparts;
+
+	// special magic functions/trickery
+	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
+	Entity* castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration);
+	void lichFireSetNextAttack(Stat& myStats);
+	void lichIceSetNextAttack(Stat& myStats);
+
+	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -741,6 +782,9 @@ void actPistonCam(Entity* my);
 
 void actColumn(Entity* my);
 
+//--Floor vegetation--
+void actFloorDecoration(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
@@ -751,7 +795,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 219;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 127;
+static const int NUM_EDITOR_SPRITES = 128;
 static const int NUM_EDITOR_TILES = 234;
 
 // furniture types.

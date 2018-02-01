@@ -90,11 +90,23 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterWeaponYaw(fskill[5]),
 	monsterShadowInitialMimic(skill[34]),
 	monsterShadowDontChangeName(skill[35]),
+	monsterLichFireMeleeSeq(skill[34]),
+	monsterLichFireMeleePrev(skill[35]),
+	monsterLichIceCastSeq(skill[34]),
+	monsterLichIceCastPrev(skill[35]),
+	monsterLichMagicCastCount(skill[37]),
+	monsterLichMeleeSwingCount(skill[38]),
+	monsterLichBattleState(skill[27]),
+	monsterLichTeleportTimer(skill[40]),
+	monsterLichAllyStatus(skill[18]),
+	monsterLichAllyUID(skill[17]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
 	monsterPathBoundaryYEnd(skill[17]),
 	monsterStoreType(skill[18]),
+	monsterStrafeDirection(skill[39]),
+	monsterPathCount(skill[38]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -165,6 +177,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	spellTrapCounter(skill[8]),
 	spellTrapReset(skill[9]),
 	ceilingTileModel(skill[0]),
+	floorDecorationModel(skill[0]),
+	floorDecorationRotation(skill[1]),
+	floorDecorationHeightOffset(skill[3]),
 	furnitureType(skill[0]),
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
@@ -175,7 +190,14 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	pistonCamRotateSpeed(fskill[0]),
 	arrowPower(skill[3]),
 	arrowPoisonTime(skill[4]),
-	arrowArmorPierce(skill[5])
+	arrowArmorPierce(skill[5]),
+	actmagicIsVertical(skill[6]),
+	actmagicIsOrbiting(skill[7]),
+	actmagicOrbitDist(skill[8]),
+	actmagicOrbitVerticalDirection(skill[9]),
+	actmagicOrbitLifetime(skill[10]),
+	actmagicOrbitVerticalSpeed(fskill[2]),
+	actmagicOrbitStartZ(fskill[3])
 {
 	int c;
 	// add the entity to the entity list
@@ -2107,6 +2129,19 @@ void Entity::handleEffects(Stat* myStats)
 						break;
 				}
 			}
+
+			for ( i = 0; i < MAXPLAYERS; ++i )
+			{
+				// broadcast a player levelled up to other players.
+				if ( i != player )
+				{
+					if ( client_disconnected[i] )
+					{
+						continue;
+					}
+					messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+				}
+			}
 		}
 
 		// inform clients of stat changes
@@ -2153,19 +2188,6 @@ void Entity::handleEffects(Stat* myStats)
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
 			serverUpdatePlayerLVL(); // update all clients of party levels.
-		}
-
-		for ( i = 0; i < MAXPLAYERS; ++i )
-		{
-			// broadcast a player levelled up to other players.
-			if ( i != player )
-			{
-				if ( client_disconnected[i] )
-				{
-					continue;
-				}
-				messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
-			}
 		}
 
 		for ( i = 0; i < NUMSTATS; ++i )
@@ -3604,6 +3626,12 @@ bool Entity::isMobile()
 		return false;
 	}
 
+	if ( (entitystats->type == LICH_FIRE || entitystats->type == LICH_ICE)
+		&& monsterLichBattleState < LICH_BATTLE_READY )
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -3789,6 +3817,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( (myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT)
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
+				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
+				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1)
+				|| (myStats->type == LICH_ICE 
+						&& (monsterLichIceCastPrev == LICH_ATK_CHARGE_AOE 
+							|| monsterLichIceCastPrev == LICH_ATK_RISING_RAIN
+							|| monsterLichIceCastPrev == LICH_ATK_FALLING_DIAGONAL
+							|| monsterState == MONSTER_STATE_LICH_CASTSPELLS
+							)
+					)
 			)
 			{
 				// calls animation, but doesn't actually attack
@@ -3895,7 +3932,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// magicstaffs deplete themselves for each use
-					if ( rand() % 3 == 0 )
+					bool degradeWeapon = true;
+					if ( myStats->type == SHADOW || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+					{
+						degradeWeapon = false; //certain monster's weapons don't degrade.
+					}
+					if ( rand() % 3 == 0 && degradeWeapon )
 					{
 						if ( player == clientnum )
 						{
@@ -4231,6 +4273,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// test for friendly fire
 				if ( checkFriend(hit.entity) )
 				{
+					return;
+				}
+				if ( (myStats->type == LICH_FIRE && entity->getRace() == LICH_ICE)
+					|| (myStats->type == LICH_ICE && entity->getRace() == LICH_FIRE) )
+				{
+					// friendship <3
 					return;
 				}
 			}
@@ -4642,13 +4690,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					// calculate and perform damage to opponent
 					int damage = 0;
+					int damagePreMultiplier = 1;
+
+					if ( (myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
+						|| (myStats->type == LICH_FIRE && pose == 3) )
+					{
+						damagePreMultiplier = 2;
+					}
+
 					if ( weaponskill >= 0 )
 					{
-						damage = std::max(0, getAttack() + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
 					}
 					else
 					{
-						damage = std::max(0, getAttack() + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
 					}
 					if ( weaponskill == PRO_AXE )
 					{
@@ -4728,13 +4784,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( pose == MONSTER_POSE_GOLEM_SMASH )
-					{
-						damage *= 2;
-					}
 					hit.entity->modHP(-damage); // do the damage
 
-												// write the obituary
+					// write the obituary
 					killedByMonsterObituary(hit.entity);
 
 					// update enemy bar for attacker
@@ -4787,9 +4839,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = true;
 							}
 
-							if ( myStats->type == SHADOW )
+							if ( myStats->type == SHADOW || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
-								degradeWeapon = false; //Shadow's weapons don't degrade.
+								degradeWeapon = false; //certain monster's weapons don't degrade.
 							}
 
 							if ( degradeWeapon )
@@ -5384,7 +5436,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
-								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr)
+								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
 							)
 							{
 								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
@@ -5913,7 +5965,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	double oldy = y;
 	x = (tele_x << 4) + 8;
 	y = (tele_y << 4) + 8;
-	if ( entityInsideSomething(this) )
+	if ( entityInsideSomething(this) && getRace() != LICH_FIRE && getRace() != LICH_ICE )
 	{
 		x = oldx;
 		y = oldy;
@@ -5926,8 +5978,8 @@ bool Entity::teleport(int tele_x, int tele_y)
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "TELE");
-		net_packet->data[4] = x;
-		net_packet->data[5] = y;
+		net_packet->data[4] = tele_x;
+		net_packet->data[5] = tele_y;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 6;
@@ -7259,7 +7311,83 @@ int Entity::getAttackPose() const
 
 	if ( myStats->weapon != nullptr )
 	{
-		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+		if ( myStats->type == LICH_FIRE )
+		{
+			switch ( monsterLichFireMeleeSeq )
+			{
+				case LICH_ATK_VERTICAL_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICH_ATK_HORIZONTAL_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_RISING_RAIN:
+					pose = MONSTER_POSE_SPECIAL_WINDUP1;
+					break;
+				case LICH_ATK_BASICSPELL_SINGLE:
+					pose = MONSTER_POSE_MAGIC_WINDUP1;
+					break;
+				case LICH_ATK_RISING_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP3;
+					break;
+				case LICH_ATK_VERTICAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICH_ATK_HORIZONTAL_RETURN:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_HORIZONTAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_SUMMON:
+					pose = MONSTER_POSE_MAGIC_WINDUP3;
+					break;
+				default:
+					break;
+			}
+		}
+		else if ( myStats->type == LICH_ICE )
+		{
+			switch ( monsterLichIceCastSeq )
+			{
+				case LICH_ATK_VERTICAL_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICH_ATK_HORIZONTAL_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_RISING_RAIN:
+					pose = MONSTER_POSE_SPECIAL_WINDUP1;
+					break;
+				case LICH_ATK_BASICSPELL_SINGLE:
+					pose = MONSTER_POSE_MAGIC_WINDUP1;
+					break;
+				case LICH_ATK_RISING_SINGLE:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICH_ATK_VERTICAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+					break;
+				case LICH_ATK_HORIZONTAL_RETURN:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_HORIZONTAL_QUICK:
+					pose = MONSTER_POSE_MELEE_WINDUP2;
+					break;
+				case LICH_ATK_CHARGE_AOE:
+					pose = MONSTER_POSE_SPECIAL_WINDUP2;
+					break;
+				case LICH_ATK_FALLING_DIAGONAL:
+					pose = MONSTER_POSE_SPECIAL_WINDUP3;
+					break;
+				case LICH_ATK_SUMMON:
+					pose = MONSTER_POSE_MAGIC_WINDUP3;
+					break;
+				default:
+					break;
+			}
+		}
+		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
@@ -8541,8 +8669,33 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	{
 		messagePlayer(clientnum, "Entity acquired new target!");
 	}*/
+	if ( monsterState != MONSTER_STATE_ATTACK && !hadOldTarget )
+	{
+		if ( myStats->type != LICH_FIRE 
+			&& myStats->type != LICH_ICE
+			&& (myStats->type < LICH || myStats->type > DEVIL)
+			)
+		{
+			// check to see if holding ranged weapon, set hittime to be ready to attack.
+			if ( hasRangedWeapon() && monsterSpecialTimer <= 0 )
+			{
+				monsterHitTime = 2 * HITRATE;
+			}
+		}
+	}
 
-	monsterState = state;
+	if ( (myStats->type == LICH_FIRE || myStats->type == LICH_ICE)
+		&& (monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY 
+			|| monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY
+			|| monsterState == MONSTER_STATE_LICH_CASTSPELLS
+			|| monsterState == MONSTER_STATE_LICH_TELEPORT_ROAMING) )
+	{
+
+	}
+	else
+	{
+		monsterState = state;
+	}
 	monsterTarget = target.getUID();
 	monsterTargetX = target.x;
 	monsterTargetY = target.y;
@@ -9221,6 +9374,21 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
+	else if ( myStats.type == LICH_FIRE )
+	{
+		if ( monsterLichFireMeleeSeq == LICH_ATK_BASICSPELL_SINGLE )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	if ( myStats.type == LICH_ICE )
+	{
+		return false;
+	}
 
 	if ( myStats.MAXHP >= 100 )
 	{
@@ -9683,7 +9851,8 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 	if ( strstr(monsterStats.name, "lesser") 
 		|| strstr(monsterStats.name, "young") 
 		|| strstr(monsterStats.name, "enslaved")
-		|| strstr(monsterStats.name, "damaged") )
+		|| strstr(monsterStats.name, "damaged")
+		|| strstr(monsterStats.name, "corrupted") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		namedMonsterAsGeneric = true;

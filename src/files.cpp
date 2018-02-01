@@ -539,6 +539,11 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 					case 12:
 						fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
 						break;
+					case 13:
+						fread(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
+						fread(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
+						fread(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -798,6 +803,11 @@ int saveMap(char* filename2)
 					break;
 				case 12:
 					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+					break;
+				case 13:
+					fwrite(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;
