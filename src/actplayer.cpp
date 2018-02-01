@@ -1404,6 +1404,7 @@ void actPlayer(Entity* my)
 					}
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 					messagePlayerColor(PLAYER_NUM, color, language[577]);
+
 					/* //TODO: Eventually.
 					{
 						strcpy((char *)net_packet->data,"UDIE");
@@ -1495,6 +1496,15 @@ void actPlayer(Entity* my)
 							stats[0]->amulet = NULL;
 							stats[0]->ring = NULL;
 							stats[0]->mask = NULL;
+						}
+
+						for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+						{
+							Entity* mapCreature = (Entity*)mapNode->element;
+							if ( mapCreature )
+							{
+								mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+							}
 						}
 					}
 					else
@@ -1688,13 +1698,13 @@ void actPlayer(Entity* my)
 			}
 
 			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);
-			if ( my->getDEX() <= 15 )
-			{
-				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
-			}
-			else if ( my->getDEX() <= 5 )
+			if ( my->getDEX() <= 5 )
 			{
 				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
+			}
+			else if ( my->getDEX() <= 15 )
+			{
+				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
 			}
 			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
@@ -2005,6 +2015,26 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM != clientnum && multiplayer == CLIENT )
 	{
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
+	}
+
+	if ( PLAYER_NUM == clientnum && ticks % 65 == 0 )
+	{
+		for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+		{
+			Entity* mapCreature = (Entity*)mapNode->element;
+			if ( mapCreature )
+			{
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_TELEPATH] )
+				{
+					// periodically set the telepath rendering flag.
+					mapCreature->monsterEntityRenderAsTelepath = 1;
+				}
+				else
+				{
+					mapCreature->monsterEntityRenderAsTelepath = 0;
+				}
+			}
+		}
 	}
 
 	// move bodyparts
@@ -3063,6 +3093,15 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
+	if ( parent && parent->monsterEntityRenderAsTelepath == 1 )
+	{
+		my->monsterEntityRenderAsTelepath = 1;
+	}
+	else
+	{
+		my->monsterEntityRenderAsTelepath = 0;
+	}
+
 	if (multiplayer != CLIENT)
 	{
 		return;
@@ -3106,4 +3145,5 @@ void actPlayerLimb(Entity* my)
 			players[my->skill[2]]->entity->skill[1] = 0;
 		}
 	}
+
 }

@@ -346,6 +346,15 @@ void Entity::actMonsterLimb(bool processLight)
 			light = lightSphereShadow(x / 16, y / 16, carryingLightSource, 50 + 15 * carryingLightSource);
 		}
 	}
+
+	if ( parentEnt && parentEnt->behavior == &actMonster && parentEnt->monsterEntityRenderAsTelepath == 1 )
+	{
+		monsterEntityRenderAsTelepath = 1;
+	}
+	else
+	{
+		monsterEntityRenderAsTelepath = 0;
+	}
 }
 
 void Entity::removeMonsterDeathNodes()
