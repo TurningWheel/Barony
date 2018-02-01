@@ -84,6 +84,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLookTime(skill[4]),
 	monsterMoveTime(skill[6]),
 	monsterLookDir(fskill[4]),
+	monsterEntityRenderAsTelepath(skill[41]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
@@ -955,7 +956,28 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_TELEPATH:
-						messagePlayer(player, language[608]);
+						if ( myStats->mask != nullptr && myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+						{
+							// don't play any messages since we'll reset the counter in due time.
+							// likely to happen on level change.
+						}
+						else
+						{
+							setEffect(EFF_TELEPATH, false, 0, true);
+							messagePlayer(player, language[608]);
+							if ( player == clientnum )
+							{
+								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+								{
+									Entity* mapCreature = (Entity*)mapNode->element;
+									if ( mapCreature )
+									{
+										// undo telepath rendering.
+										mapCreature->monsterEntityRenderAsTelepath = 0;
+									}
+								}
+							}
+						}
 						break;
 					case EFF_VOMITING:
 						messagePlayer(player, language[609]);
@@ -2991,6 +3013,14 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( player >= 0 
+		&& myStats->mask != nullptr
+		&& myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY
+		&& (ticks % 65 == 0 || !myStats->EFFECTS[EFF_TELEPATH]) )
+	{
+		setEffect(EFF_TELEPATH, true, 100, true);
+	}
+
 	// unparalyze certain boss characters
 	if ( myStats->EFFECTS[EFF_PARALYZED] && ((myStats->type >= LICH && myStats->type < KOBOLD)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
@@ -3510,7 +3540,7 @@ returns true if the given entity is blind, and false if it is not
 bool Entity::isBlind()
 {
 	Stat* entitystats;
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return false;
 	}
@@ -3534,8 +3564,8 @@ bool Entity::isBlind()
 	}
 
 	// wearing blindfolds
-	if ( entitystats->mask != NULL )
-		if ( entitystats->mask->type == TOOL_BLINDFOLD )
+	if ( entitystats->mask != nullptr )
+		if ( entitystats->mask->type == TOOL_BLINDFOLD || entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
 		{
 			return true;
 		}

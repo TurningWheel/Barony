@@ -2770,7 +2770,8 @@ int main(int argc, char** argv)
 				drawClearBuffers();
 				camera.ang += camera_shakex2;
 				camera.vang += camera_shakey2 / 200.0;
-				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind())
+				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()
+					|| (stats[clientnum] && stats[clientnum]->EFFECTS[EFF_TELEPATH]) )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
@@ -2786,9 +2787,24 @@ int main(int argc, char** argv)
 						camera.ang += cosspin * drunkextend;
 						camera.vang += sinspin * drunkextend;
 					}
-					raycast(&camera, REALCOLORS);
 
-					glDrawWorld(&camera, REALCOLORS);
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_TELEPATH] )
+						{
+							// don't draw world with telepath blindfold.
+						}
+						else
+						{
+							raycast(&camera, REALCOLORS);
+							glDrawWorld(&camera, REALCOLORS);
+						}
+					}
+					else
+					{
+						raycast(&camera, REALCOLORS);
+						glDrawWorld(&camera, REALCOLORS);
+					}
 					//drawFloors(&camera);
 					drawEntities3D(&camera, REALCOLORS);
 					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)

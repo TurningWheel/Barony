@@ -59,6 +59,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterLookTime(skill[4]),
 	monsterMoveTime(skill[6]),
 	monsterLookDir(fskill[4]),
+	monsterEntityRenderAsTelepath(skill[41]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),

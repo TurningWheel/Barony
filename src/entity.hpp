@@ -184,6 +184,7 @@ public:
 	Sint32& monsterStrafeDirection; //skill[39]
 	Sint32& monsterPathCount; //skill[38]
 	real_t& monsterLookDir; //fskill[4]
+	Sint32& monsterEntityRenderAsTelepath; //skill[41]
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]

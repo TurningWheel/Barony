@@ -1818,6 +1818,15 @@ void clientHandlePacket()
 			stats[clientnum]->amulet = NULL;
 			stats[clientnum]->ring = NULL;
 			stats[clientnum]->mask = NULL;
+
+			for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+			{
+				Entity* mapCreature = (Entity*)mapNode->element;
+				if ( mapCreature )
+				{
+					mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+				}
+			}
 		}
 		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
 		{
