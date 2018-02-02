@@ -866,16 +866,17 @@ void item_PotionParalysis(Item*& item, Entity* entity)
 	}
 
 	messagePlayer(player, language[771]);
-	stats->EFFECTS[EFF_PARALYZED] = true;
+	int effectDuration = 0;
 	if ( player >= 0 )
 	{
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getCON()) * 5);
+		effectDuration = 420 + rand() % 180;
+		effectDuration = std::max(300, effectDuration - (entity->getCON()) * 5);
 	}
 	else
 	{
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+		effectDuration = 420 + rand() % 180;
 	}
+	entity->setEffect(EFF_PARALYZED, true, effectDuration, false);
 	serverUpdateEffects(player);
 
 	// play drink sound

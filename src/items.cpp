@@ -2128,6 +2128,14 @@ void useItem(Item* item, int player)
 			case VAMPIRE_DOUBLET:
 				messagePlayer(player, language[2597]);
 				break;
+			case TOOL_BLINDFOLD:
+				break;
+			case TOOL_BLINDFOLD_FOCUS:
+				messagePlayer(player, language[2907]);
+				break;
+			case TOOL_BLINDFOLD_TELEPATHY:
+				messagePlayer(player, language[2908]);
+				break;
 			default:
 				break;
 		}

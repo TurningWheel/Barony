@@ -1410,29 +1410,43 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
 							playSoundEntity(hit.entity, 174, 64);
-							hitstats->EFFECTS[EFF_ASLEEP] = true;
+							int effectDuration = 0;
 							if ( parent && parent->behavior == &actMagicTrapCeiling )
 							{
-								hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 200 + rand() % 150; // 4 seconds + 0 to 3 seconds.
+								effectDuration = 200 + rand() % 150; // 4 seconds + 0 to 3 seconds.
 							}
 							else
 							{
-								hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 600 + rand() % 300; // 12 seconds + 0 to 6 seconds.
+								effectDuration = 600 + rand() % 300; // 12 seconds + 0 to 6 seconds.
 							}
-							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] /= (1 + (int)resistance);
-							hitstats->OLDHP = hitstats->HP;
-							if ( hit.entity->behavior == &actPlayer )
+							effectDuration /= (1 + (int)resistance);
+							if ( hit.entity->setEffect(EFF_ASLEEP, true, effectDuration, false) )
 							{
-								serverUpdateEffects(hit.entity->skill[2]);
-								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(hit.entity->skill[2], color, language[396]);
-							}
-							if ( parent )
-							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( parent->behavior == &actPlayer )
+								hitstats->OLDHP = hitstats->HP;
+								if ( hit.entity->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
+									serverUpdateEffects(hit.entity->skill[2]);
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], color, language[396]);
+								}
+								if ( parent )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
+									}
+								}
+							}
+							else
+							{
+								if ( parent )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+									}
 								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
@@ -1838,27 +1852,40 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 						{
 							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
-							hitstats->EFFECTS[EFF_PARALYZED] = true;
-							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] /= (1 + (int)resistance);
-							if ( hit.entity->behavior == &actPlayer )
+							int effectDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							effectDuration /= (1 + (int)resistance);
+							if ( hit.entity->setEffect(EFF_PARALYZED, true, effectDuration, false) )
 							{
-								serverUpdateEffects(hit.entity->skill[2]);
-							}
-							// update enemy bar for attacker
-							if ( parent )
-							{
-								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( parent->behavior == &actPlayer )
+								if ( hit.entity->behavior == &actPlayer )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
+									serverUpdateEffects(hit.entity->skill[2]);
+								}
+								// update enemy bar for attacker
+								if ( parent )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
+									}
+								}
+
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								if ( player >= 0 )
+								{
+									messagePlayerColor(player, color, language[2422]);
 								}
 							}
-
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							if ( player >= 0 )
+							else
 							{
-								messagePlayerColor(player, color, language[2422]);
+								if ( parent )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+									}
+								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
@@ -3246,6 +3273,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->parent = parent->getUID();
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3279,6 +3307,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UNCLICKABLE] = true;
+		entity->parent = parent->getUID();
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
@@ -3293,7 +3322,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 
 void actParticleExplosionCharge(Entity* my)
 {
-	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) )
+	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) || my->parent == 0 )
 	{
 		list_RemoveNode(my->mynode);
 	}
