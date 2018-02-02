@@ -437,33 +437,33 @@ void statsHoverText(Stat* tmpStat)
 	char tooltipText[6][3][128] =
 	{
 		{
-			"base:  %2d",
-			"bonus: %2d",
+			"base:  %2d ",
+			"bonus: %2d ",
 			""
 		},
 		{
-			"base:  %2d",
-			"bonus: %2d",
+			"base:  %2d ",
+			"bonus: %2d ",
 			""
 		},
 		{
-			"base:  %2d",
-			"bonus: %2d",
+			"base:  %2d ",
+			"bonus: %2d ",
 			""
 		},
 		{
-			"base:  %2d",
-			"bonus: %2d",
+			"base:  %2d ",
+			"bonus: %2d ",
 			"MP regen rate: 1 / %2.1fs"
 		},
 		{
-			"base:  %2d",
-			"bonus: %2d",
+			"base:  %2d ",
+			"bonus: %2d ",
 			""
 		},
 		{
-			"base:  %2d",
-			"bonus: %2d",
+			"base:  %2d ",
+			"bonus: %2d ",
 			""
 		}
 	};
