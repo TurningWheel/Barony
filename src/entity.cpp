@@ -3042,7 +3042,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			if ( cured )
 			{
-				playSoundEntity(my, 168, 128);
+				playSoundEntity(this, 168, 128);
 			}
 		}
 	}
