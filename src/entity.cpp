@@ -3027,7 +3027,7 @@ void Entity::handleEffects(Stat* myStats)
 		&& (ticks % 65 == 0 || !myStats->EFFECTS[EFF_BLIND]) )
 	{
 		setEffect(EFF_BLIND, true, 100, true);
-		if ( myStats->mask->type == TOOL_BLINDFOLD_FOCUS && ticks % 65 == 0 )
+		if ( myStats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			bool cured = false;
 			if ( myStats->EFFECTS_TIMERS[EFF_ASLEEP] > 0 )
