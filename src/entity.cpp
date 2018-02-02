@@ -1067,7 +1067,7 @@ void Entity::effectTimes()
 									myStats->EFFECTS_TIMERS[c] = vampiricAura_hijacked->channel_duration;
 
 									// monsters have a chance to un-sustain the spell each MP consume.
-									if ( caster->behavior == &actMonster && rand() % 4 == 0 )
+									if ( caster->behavior == &actMonster && rand() % 20 == 0 )
 									{
 										sustained = false;
 										list_RemoveNode(vampiricAura_hijacked->magic_effects_node);
@@ -3021,6 +3021,32 @@ void Entity::handleEffects(Stat* myStats)
 		setEffect(EFF_TELEPATH, true, 100, true);
 	}
 
+	if ( player >= 0
+		&& myStats->mask != nullptr
+		&& (myStats->mask->type == TOOL_BLINDFOLD || myStats->mask->type == TOOL_BLINDFOLD_FOCUS || myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+		&& (ticks % 65 == 0 || !myStats->EFFECTS[EFF_BLIND]) )
+	{
+		setEffect(EFF_BLIND, true, 100, true);
+		if ( myStats->mask->type == TOOL_BLINDFOLD_FOCUS && ticks % 65 == 0 )
+		{
+			bool cured = false;
+			if ( myStats->EFFECTS_TIMERS[EFF_ASLEEP] > 0 )
+			{
+				cured = true;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+			}
+			if ( myStats->EFFECTS_TIMERS[EFF_PARALYZED] > 0 )
+			{
+				cured = true;
+				myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 1; // tick over to 0 and dissipate on the next check, and play the appropriate message.
+			}
+			if ( cured )
+			{
+				playSoundEntity(my, 168, 128);
+			}
+		}
+	}
+
 	// unparalyze certain boss characters
 	if ( myStats->EFFECTS[EFF_PARALYZED] && ((myStats->type >= LICH && myStats->type < KOBOLD)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
@@ -3478,10 +3504,18 @@ Sint32 statGetPER(Stat* entitystats)
 		PER--;
 	}
 	if ( entitystats->mask )
+	{
 		if ( entitystats->mask->type == TOOL_GLASSES )
 		{
 			PER++;
 		}
+		else if ( entitystats->mask->type == TOOL_BLINDFOLD
+					|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
+					|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
+		{
+			PER -= 10;
+		}
+	}
 	return PER;
 }
 
@@ -3565,7 +3599,9 @@ bool Entity::isBlind()
 
 	// wearing blindfolds
 	if ( entitystats->mask != nullptr )
-		if ( entitystats->mask->type == TOOL_BLINDFOLD || entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+		if ( entitystats->mask->type == TOOL_BLINDFOLD 
+			|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY 
+			|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			return true;
 		}
@@ -4740,7 +4776,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						damage++;
 					}
-					if ( myStats->type == VAMPIRE && myStats->EFFECTS[EFF_VAMPIRICAURA] )
+					if ( behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA] )
 					{
 						damage += 5; // 5 bonus damage after reductions.
 					}
@@ -8552,8 +8588,8 @@ void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration,
 			spawnParticle->particleShrink = 0;
 		}
 		spawnParticle->behavior = &actAmbientParticleEffectIdle;
-		spawnParticle->flags[PASSABLE] = true;
-		spawnParticle->setUID(-3);
+spawnParticle->flags[PASSABLE] = true;
+spawnParticle->setUID(-3);
 	}
 }
 
@@ -8571,7 +8607,7 @@ void Entity::handleEffectsClient()
 		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
 	}
 
-	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
+	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
 	{
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
@@ -8638,15 +8674,28 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 	}
 }
 
-void Entity::setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee)
+bool Entity::setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee)
 {
 	Stat* myStats = getStats();
 
 	if ( !myStats )
 	{
-		return;
+		return false;
 	}
 
+	switch ( effect )
+	{
+		case EFF_ASLEEP:
+		case EFF_PARALYZED:
+			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
+				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+			{
+				return false;
+			}
+			break;
+		default:
+			break;
+	}
 	myStats->EFFECTS[effect] = value;
 	myStats->EFFECTS_TIMERS[effect] = duration;
 
@@ -8669,6 +8718,7 @@ void Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	{
 		serverUpdateEffectsForEntity(guarantee);
 	}
+	return true;
 }
 
 void Entity::giveClientStats()
