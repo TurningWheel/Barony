@@ -120,7 +120,7 @@ void actHeadstone(Entity* my)
 			if ( monster )
 			{
 				monster->z = 13;
-				if ( currentlevel >= 15 )
+				if ( currentlevel >= 15 || !strncmp(map.name, "The Great Castle", 16));
 				{
 					Stat* tmpStats = monster->getStats();
 					if ( tmpStats )
