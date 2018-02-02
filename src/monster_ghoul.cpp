@@ -51,7 +51,20 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->OLDHP = myStats->HP;
 				myStats->STR = 13;
 				myStats->DEX = 5;
-				myStats->LVL = 15;
+				if ( !strncmp(map.name, "The Great Castle", 16) )
+				{
+					myStats->LVL = 10;
+				}
+				else
+				{
+					myStats->LVL = 15;
+				}
+				myStats->PER = 10;
+				if ( rand() % 2 == 0 )
+				{
+					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+				}
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
@@ -79,6 +92,8 @@ void initGhoul(Entity* my, Stat* myStats)
 				myStats->MAXHP *= 3;
 				myStats->OLDHP = myStats->HP;
 				myStats->LVL = 15;
+				myStats->DEX = 2;
+				myStats->STR = 13;
 				newItem(GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
 				customItemsToGenerate -= 1;
 			}
