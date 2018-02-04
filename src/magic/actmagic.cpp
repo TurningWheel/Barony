@@ -894,42 +894,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// check for magic resistance...
 				// resistance stacks diminishingly
 				//TODO: EFFECTS[EFF_MAGICRESIST]
-				int resistance = 0;
-				if ( hitstats )
-				{
-					if ( hitstats->shield )
-					{
-						if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE )
-						{
-							if ( hitstats->defending )
-							{
-								resistance += 2;
-							}
-							else
-							{
-								resistance += 1;
-							}
-						}
-					}
-					if ( hitstats->ring )
-					{
-						if ( hitstats->ring->type == RING_MAGICRESISTANCE )
-						{
-							resistance += 1;
-						}
-					}
-					if ( hitstats->gloves )
-					{
-						if ( hitstats->gloves->type == ARTIFACT_GLOVES )
-						{
-							resistance += 1;
-						}
-					}
-					if ( hitstats->EFFECTS[EFF_MAGICRESIST] )
-					{
-						resistance += 1;
-					}
-				}
+				int resistance = hit.entity->getMagicResistance();
+				
 				if ( resistance > 0 )
 				{
 					if ( parent )

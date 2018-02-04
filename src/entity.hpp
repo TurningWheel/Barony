@@ -570,8 +570,10 @@ public:
 	bool shouldRetreat(Stat& myStats);
 	// check if monster should retreat or stand still when less than given distance
 	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
-	// calc time required for a mana regen tick.
+	// calc time required for a mana regen tick, uses equipped gear as modifiers.
 	int getManaRegenInterval(Stat& myStats); 
+	// get mana regen from stats and proficiencies only.
+	int getBaseManaRegen(Stat& myStats);
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats);
 	real_t yawDifferenceFromPlayer(int player); // calc targets yaw compared to a player, returns 0 - 2 * PI, where > PI is facing towards player.
@@ -685,6 +687,7 @@ public:
 
 	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
+	int getMagicResistance(); // returns the value of magic resistance of a monster.
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
