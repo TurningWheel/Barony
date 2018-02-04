@@ -434,7 +434,7 @@ void statsHoverText(Stat* tmpStat)
 		"charisma: "
 	};
 
-	char tooltipText[6][3][128] =
+	char tooltipText[6][4][128] =
 	{
 		{
 			"base:  %2d ",
@@ -454,7 +454,8 @@ void statsHoverText(Stat* tmpStat)
 		{
 			"base:  %2d ",
 			"bonus: %2d ",
-			"MP regen rate: 1 / %2.1fs"
+			"MP regen rate: 1 / %2.1fs",
+			"magic resistance: %2.1f%% "
 		},
 		{
 			"base:  %2d ",
@@ -501,7 +502,7 @@ void statsHoverText(Stat* tmpStat)
 					statBonus = statGetCON(tmpStat) - statBase;
 					break;
 				case 3:
-					numInfoLines = 3;
+					numInfoLines = 4;
 					tmp_bmp = int_bmp64;
 					statBase = tmpStat->INT;
 					statBonus = statGetINT(tmpStat) - statBase;
@@ -571,16 +572,45 @@ void statsHoverText(Stat* tmpStat)
 					}
 					else if ( j == 2 )
 					{
-						Entity* tmp = nullptr;
-						if ( players[clientnum] && players[clientnum]->entity )
+						if ( i == 3 )
 						{
-							tmp = players[clientnum]->entity;
-							real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
-							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
+							Entity* tmp = nullptr;
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								tmp = players[clientnum]->entity;
+								real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
+								if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
+								{
+									color = uint32ColorGreen(*mainsurface);
+								}
+							}
+							else
+							{
+								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], 0.f);
+							}
 						}
-						else
+					}
+					else if ( j == 3 )
+					{
+						if ( i == 3 )
 						{
-							strcpy(buf, "");
+							Entity* tmp = nullptr;
+							real_t resistance = 0.f;
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								tmp = players[clientnum]->entity;
+								real_t resistance = 100 - 100 / (tmp->getMagicResistance() + 1);
+								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], resistance);
+								if ( resistance > 0.f )
+								{
+									color = uint32ColorGreen(*mainsurface);
+								}
+							}
+							else
+							{
+								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], 0);
+							}
 						}
 					}
 					ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);

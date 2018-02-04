@@ -3283,6 +3283,10 @@ Sint32 statGetSTR(Stat* entitystats)
 				break;
 		}
 	}
+	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
+	{
+		STR += 8;
+	}
 	return STR;
 }
 
@@ -3375,6 +3379,10 @@ Sint32 statGetDEX(Stat* entitystats)
 				break;
 		}
 	}
+	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
+	{
+		DEX += 8;
+	}
 	return DEX;
 }
 
@@ -3430,6 +3438,10 @@ Sint32 statGetCON(Stat* entitystats)
 			}
 		}
 	}
+	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
+	{
+		CON += 8;
+	}
 	return CON;
 }
 
@@ -3471,6 +3483,10 @@ Sint32 statGetINT(Stat* entitystats)
 		{
 			INT += 5;
 		}
+	}
+	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+	{
+		INT += 8;
 	}
 	return INT;
 }
@@ -3515,6 +3531,10 @@ Sint32 statGetPER(Stat* entitystats)
 		{
 			PER -= 10;
 		}
+	}
+	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
+	{
+		PER += 8;
 	}
 	return PER;
 }
@@ -9748,11 +9768,7 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 
 int Entity::getManaRegenInterval(Stat& myStats)
 {
-	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
-	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
-	int statMultiplier = std::max(getINT(), 0); // get intelligence
-
-	int regenTime = (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 150))); // return 300-150 ticks, 6-3 seconds.
+	int regenTime = getBaseManaRegen(myStats);
 	int manaring = 0;
 	if ( myStats.breastplate != nullptr )
 	{
@@ -9795,6 +9811,15 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		return regenTime;
 	}
 	return MAGIC_REGEN_TIME;
+}
+
+int Entity::getBaseManaRegen(Stat& myStats)
+{
+	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
+	int statMultiplier = std::max(getINT(), 0); // get intelligence
+
+	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 150))); // return 300-150 ticks, 6-3 seconds.
 }
 
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
@@ -10417,6 +10442,54 @@ void Entity::addToCreatureList(list_t *list)
 	}
 }
 
-
+int Entity::getMagicResistance()
+{
+	int resistance = 0;
+	Stat* myStats = getStats();
+	if ( myStats )
+	{
+		if ( myStats->shield )
+		{
+			if ( myStats->shield->type == STEEL_SHIELD_RESISTANCE )
+			{
+				if ( myStats->defending )
+				{
+					resistance += 2;
+				}
+				else
+				{
+					resistance += 1;
+				}
+			}
+		}
+		if ( myStats->ring )
+		{
+			if ( myStats->ring->type == RING_MAGICRESISTANCE )
+			{
+				resistance += 1;
+			}
+		}
+		if ( myStats->gloves )
+		{
+			if ( myStats->gloves->type == ARTIFACT_GLOVES )
+			{
+				resistance += 1;
+			}
+		}
+		if ( myStats->EFFECTS[EFF_MAGICRESIST] )
+		{
+			resistance += 1;
+		}
+		if ( myStats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+		{
+			resistance += 1;
+		}
+	}
+	else
+	{
+		return 0;
+	}
+	return resistance;
+}
 
 
