@@ -840,47 +840,54 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					// alert the hit entity if it was a monster
 					if ( hit.entity->behavior == &actMonster && parent != nullptr )
 					{
-						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+						if ( parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling )
 						{
-							/*hit.entity->monsterState = MONSTER_STATE_PATH;
-							hit.entity->monsterTarget = parent->getUID();
-							hit.entity->monsterTargetX = parent->x;
-							hit.entity->monsterTargetY = parent->y;*/
-
-							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+							monsterMoveAside(hit.entity, hit.entity);
 						}
-
-						// alert other monsters too
-						Entity* ohitentity = hit.entity;
-						for ( node = map.creatures->first; node != nullptr; node = node->next )
+						else
 						{
-							entity = (Entity*)node->element;
-							if ( entity->behavior == &actMonster && entity != ohitentity )
+							if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 							{
-								Stat* buddystats = entity->getStats();
-								if ( buddystats != nullptr )
-								{
-									if ( hit.entity && hit.entity->checkFriend(entity) ) //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
-									{
-										if ( entity->monsterState == MONSTER_STATE_WAIT )
-										{
-											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
-											if ( hit.entity == entity )
-											{
-												/*entity->monsterState = MONSTER_STATE_PATH;
-												entity->monsterTarget = parent->getUID();
-												entity->monsterTargetX = parent->x;
-												entity->monsterTargetY = parent->y;*/
+								/*hit.entity->monsterState = MONSTER_STATE_PATH;
+								hit.entity->monsterTarget = parent->getUID();
+								hit.entity->monsterTargetX = parent->x;
+								hit.entity->monsterTargetY = parent->y;*/
 
-												entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+								hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+							}
+
+							// alert other monsters too
+							Entity* ohitentity = hit.entity;
+							for ( node = map.creatures->first; node != nullptr; node = node->next )
+							{
+								entity = (Entity*)node->element;
+								if ( entity->behavior == &actMonster && entity != ohitentity )
+								{
+									Stat* buddystats = entity->getStats();
+									if ( buddystats != nullptr )
+									{
+										if ( hit.entity && hit.entity->checkFriend(entity) ) //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
+										{
+											if ( entity->monsterState == MONSTER_STATE_WAIT )
+											{
+												tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
+												lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
+												if ( hit.entity == entity )
+												{
+													/*entity->monsterState = MONSTER_STATE_PATH;
+													entity->monsterTarget = parent->getUID();
+													entity->monsterTargetX = parent->x;
+													entity->monsterTargetY = parent->y;*/
+
+													entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+												}
 											}
 										}
 									}
 								}
 							}
+							hit.entity = ohitentity;
 						}
-						hit.entity = ohitentity;
 					}
 				}
 
