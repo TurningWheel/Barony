@@ -688,7 +688,9 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"COLUMN DECO",
 	"PODIUM",
 	"PISTONS",
-	"FLOOR DECORATION"
+	"FLOOR DECORATION",
+	"TELEPORT LOCATION",
+	"ENDEND PORTAL"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =

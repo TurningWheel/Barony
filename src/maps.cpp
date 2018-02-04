@@ -4716,6 +4716,21 @@ void assignActions(map_t* map)
 				entity->setUID(-3);*/
 				break;
 			}
+			// expansion end game portal:
+			case 129:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 614;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = PI / 2;
+				entity->behavior = &actExpansionEndGamePortal;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				//entity->flags[INVISIBLE] = true;
+				entity->portalVictoryType = 3;
+				entity->skill[28] = 1; // is a mechanism
+				break;
 			default:
 				break;
 		}
