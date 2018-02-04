@@ -245,7 +245,15 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		Entity* entity = (Entity*)entityNode->element;
 		if ( entity->flags[PASSABLE] )
 		{
-			continue;
+			if ( entity->behavior == &actSpearTrap 
+				&& (my->getRace() == HUMAN || my->monsterHasLeader() == true) )
+			{
+				// humans/followers know better than that!
+			}
+			else
+			{
+				continue;
+			}
 		}
 		if ( entity->behavior == &actDoorFrame || entity->behavior == &actDoor || entity->behavior == &actMagicMissile )
 		{
@@ -255,7 +263,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( !my->checkEnemy(target) )
+		if ( entity->behavior == &actMonster && !my->checkEnemy(entity) )
 		{
 			continue;
 		}

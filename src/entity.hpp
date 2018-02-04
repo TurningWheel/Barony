@@ -684,6 +684,7 @@ public:
 	void lichIceSetNextAttack(Stat& myStats);
 
 	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
+	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

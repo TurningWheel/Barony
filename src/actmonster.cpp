@@ -6657,3 +6657,17 @@ void Entity::monsterMoveBackwardsAndPath()
 	node->deconstructor = &listDeconstructor;
 	monsterState = MONSTER_STATE_HUNT; // hunt state
 }
+
+bool Entity::monsterHasLeader()
+{
+	Stat* myStats = this->getStats();
+	if ( myStats )
+	{
+		if ( myStats->leader_uid != 0 )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
