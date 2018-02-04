@@ -476,6 +476,7 @@ public:
 	void actPedestalBase();
 	void actPedestalOrb();
 	void actMidGamePortal();
+	void actExpansionEndGamePortal();
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	bool magicFallingCollision();
@@ -801,7 +802,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 219;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 128;
+static const int NUM_EDITOR_SPRITES = 130;
 static const int NUM_EDITOR_TILES = 234;
 
 // furniture types.

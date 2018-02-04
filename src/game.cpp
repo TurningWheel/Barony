@@ -121,6 +121,10 @@ void gameLogic(void)
 	{
 		thirdendmovietime++;
 	}
+	if ( fourthendmoviestage > 0 )
+	{
+		fourthendmovietime++;
+	}
 
 #ifdef SOUND
 	sound_update(); //Update FMOD and whatnot.
