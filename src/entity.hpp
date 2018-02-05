@@ -186,6 +186,10 @@ public:
 	real_t& monsterLookDir; //fskill[4]
 	Sint32& monsterEntityRenderAsTelepath; //skill[41]
 
+	//--PUBLIC PLAYER SKILLS--
+	Sint32& playerLevelEntrySpeech; //skill[18]
+	Sint32& playerAliveTime; //skill[12]
+
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]
 	Sint32& monsterAnimationLimbOvershoot; //skill[30]
@@ -689,6 +693,7 @@ public:
 	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
+	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
