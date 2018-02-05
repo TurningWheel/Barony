@@ -452,7 +452,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 		++tries;
 	}
-	messagePlayer(0, "tries %d", tries);
+	//messagePlayer(0, "tries %d", tries);
 	list_FreeAll(openList);
 	list_FreeAll(closedList);
 	free(openList);
