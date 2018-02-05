@@ -894,7 +894,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// check for magic resistance...
 				// resistance stacks diminishingly
 				//TODO: EFFECTS[EFF_MAGICRESIST]
-				int resistance = hit.entity->getMagicResistance();
+				int resistance = 0;
+				if ( hit.entity )
+				{
+					resistance = hit.entity->getMagicResistance();
+				}
 				
 				if ( resistance > 0 )
 				{
