@@ -4760,11 +4760,13 @@ void assignActions(map_t* map)
 						{
 							// is table
 							itemEnt->z -= 6;
+							tmpentity->parent = itemEnt->getUID();
 						}
 						else if ( tmpentity->sprite == 630 )
 						{
 							// is podium
 							itemEnt->z -= 6;
+							tmpentity->parent = itemEnt->getUID();
 						}
 					}
 					break;
