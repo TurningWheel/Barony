@@ -46,25 +46,37 @@ void initGhoul(Entity* my, Stat* myStats)
 			bool lesserMonster = false;
 			if ( !strncmp(myStats->name, "enslaved ghoul", strlen("enslaved ghoul")) )
 			{
-				myStats->HP = 110;
-				myStats->MAXHP = myStats->HP;
-				myStats->OLDHP = myStats->HP;
-				myStats->STR = 13;
-				myStats->DEX = 5;
-				if ( !strncmp(map.name, "The Great Castle", 16) )
+				if ( !strncmp(map.name, "Bram's Castle", 13) )
 				{
-					myStats->LVL = 10;
 				}
 				else
 				{
-					myStats->LVL = 15;
+					myStats->HP = 110;
+					myStats->MAXHP = myStats->HP;
+					myStats->OLDHP = myStats->HP;
+					myStats->STR = 13;
+					myStats->DEX = 5;
+					if ( !strncmp(map.name, "The Haunted Castle", 18) )
+					{
+						myStats->LVL = 10;
+					}
+					else
+					{
+						myStats->LVL = 15;
+					}
+					myStats->PER = 10;
+					if ( rand() % 2 == 0 )
+					{
+						myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+						myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+					}
 				}
-				myStats->PER = 10;
-				if ( rand() % 2 == 0 )
-				{
-					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
-					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
-				}
+			}
+
+			if ( !strncmp(map.name, "Bram's Castle", 13) )
+			{
+				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
