@@ -409,9 +409,13 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			secretlevelexit = 4;
 		}
-		else if ( currentlevel == 27 || currentlevel == 29 )
+		else if ( currentlevel == 28 )
 		{
 			secretlevelexit = 5;
+		}
+		else if ( currentlevel == 33 )
+		{
+			secretlevelexit = 6;
 		}
 	}
 
@@ -897,6 +901,29 @@ int generateDungeon(char* levelset, Uint32 seed)
 				i = -1;
 				x = 0;
 				y = 0;
+
+				if ( !strncmp(map.name, "Citadel", 7) )
+				{
+					if ( c == 0 )
+					{
+						// 7x7, pick random location across all map.
+						x = 2 + (prng_get_uint() % 7) * 7;
+						y = 2 + (prng_get_uint() % 7) * 7;
+					}
+					else if ( secretlevelexit && c == 1 )
+					{
+						// 14x14, pick random location minus 1 from both edges.
+						x = 2 + (prng_get_uint() % 6) * 7;
+						y = 2 + (prng_get_uint() % 6) * 7;
+					}
+					else if ( c == 2 && shoplevel )
+					{
+						// 7x7, pick random location across all map.
+						x = 2 + (prng_get_uint() % 7) * 7;
+						y = 2 + (prng_get_uint() % 7) * 7;
+					}
+				}
+
 				while ( 1 )
 				{
 					if ( possiblelocations2[x + y * map.width] == true )
