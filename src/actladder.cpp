@@ -141,13 +141,20 @@ void actPortal(Entity* my)
 	{
 		my->portalInit = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
+		if ( !strncmp(map.name, "Cockatrice Lair", 15) )
+		{
+			my->flags[INVISIBLE] = true;
+		}
 	}
 
 	my->portalAmbience--;
 	if ( my->portalAmbience <= 0 )
 	{
 		my->portalAmbience = TICKS_PER_SECOND * 2;
-		playSoundEntityLocal( my, 154, 128 );
+		if ( !my->flags[INVISIBLE] )
+		{
+			playSoundEntityLocal( my, 154, 128 );
+		}
 	}
 
 	my->yaw += 0.01; // rotate slowly on my axis
