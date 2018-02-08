@@ -145,6 +145,10 @@ void actPortal(Entity* my)
 		{
 			my->flags[INVISIBLE] = true;
 		}
+		else if ( !strncmp(map.name, "Bram's Castle", 13) )
+		{
+			my->flags[INVISIBLE] = true;
+		}
 	}
 
 	my->portalAmbience--;
