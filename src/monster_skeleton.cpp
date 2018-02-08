@@ -51,7 +51,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
+			if ( (rand() % 50 || my->flags[USERFLAG2]) && !strcmp(myStats->name, ""))
 			{
 				if ( strncmp(map.name, "Underworld", 10) )
 				{
