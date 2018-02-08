@@ -2900,6 +2900,10 @@ void createCustomInventory(Stat* stats, int itemLimit)
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
 				}
+				else if ( itemStatus > BROKEN )
+				{
+					itemStatus = static_cast<Status>(itemStatus - 1); // reserved '0' for random, so '1' is decrepit... etc to '5' being excellent.
+				}
 				itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{

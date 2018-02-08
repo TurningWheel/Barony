@@ -122,7 +122,7 @@ static char gibtype[NUMMONSTERS] =
 	0,	//CRYSTALGOLem,
 	1,	//INCUBUS,
 	1,	//VAMPIRE,
-	0,	//SHADOW,
+	4,	//SHADOW,
 	1,	//COCKATRICE
 	2,	//INSECTOID,
 	1,	//GOATMAN,

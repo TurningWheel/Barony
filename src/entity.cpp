@@ -2687,6 +2687,10 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						entity = newEntity(213, 1, map.entities, nullptr); //Blood entity.
 					}
+					else if ( gibtype[myStats->type] == 4 )
+					{
+						entity = newEntity(682, 1, map.entities, nullptr); //Blood entity.
+					}
 					if ( entity != NULL )
 					{
 						entity->x = this->x;
@@ -6746,6 +6750,10 @@ void createMonsterEquipment(Stat* stats)
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
 				}
+				else if ( itemStatus > BROKEN )
+				{
+					itemStatus = static_cast<Status>(itemStatus - 1); // reserved '0' for random, so '1' is decrepit... etc to '5' being excellent.
+				}
 				itemBless = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 2];
 				if ( itemBless == 10 )
 				{
@@ -9959,7 +9967,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		|| strstr(monsterStats.name, "young") 
 		|| strstr(monsterStats.name, "enslaved")
 		|| strstr(monsterStats.name, "damaged")
-		|| strstr(monsterStats.name, "corrupted") )
+		|| strstr(monsterStats.name, "corrupted")
+		|| strstr(monsterStats.name, "cultist") 
+		|| strstr(monsterStats.name, "knight")
+		|| strstr(monsterStats.name, "sentinel")
+		|| strstr(monsterStats.name, "mage") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		namedMonsterAsGeneric = true;

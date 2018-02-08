@@ -1068,6 +1068,8 @@ void clientActions(Entity* entity)
 		case 212:
 		case 213:
 		case 214:
+		case 682:
+		case 681:
 			entity->flags[NOUPDATE] = true;
 			break;
 		case 162:
