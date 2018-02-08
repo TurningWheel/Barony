@@ -130,18 +130,21 @@ void initGoatman(Entity* my, Stat* myStats)
 			if ( rand() % 2 && boss == 0 && !minion )
 			{
 				isShaman = true;
-				Entity* entity = summonMonster(GOATMAN, my->x, my->y);
-				if ( entity )
+				if ( rand() % 4 == 0 )
 				{
-					entity->parent = my->getUID();
-				}
-				if ( rand() % 3 == 0 )
-				{
-					// summon second ally randomly.
-					entity = summonMonster(GOATMAN, my->x, my->y);
+					Entity* entity = summonMonster(GOATMAN, my->x, my->y);
 					if ( entity )
 					{
 						entity->parent = my->getUID();
+					}
+					if ( rand() % 5 == 0 )
+					{
+						// summon second ally randomly.
+						entity = summonMonster(GOATMAN, my->x, my->y);
+						if ( entity )
+						{
+							entity->parent = my->getUID();
+						}
 					}
 				}
 			}
