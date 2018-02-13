@@ -51,32 +51,37 @@ void initSkeleton(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( (rand() % 50 || my->flags[USERFLAG2]) && !strcmp(myStats->name, ""))
+			if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, ""))
 			{
+				// not boss if a follower, or name has already been set to something other than blank.
 				if ( strncmp(map.name, "Underworld", 10) )
 				{
-					switch ( rand() % 10 )
+					//give weapon
+					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 					{
-						case 0:
-						case 1:
-							myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 2:
-						case 3:
-							myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 4:
-						case 5:
-							myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 6:
-						case 7:
-							myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 8:
-						case 9:
-							myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+								myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 2:
+							case 3:
+								myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 4:
+							case 5:
+								myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 6:
+							case 7:
+								myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 8:
+							case 9:
+								myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+						}
 					}
 				}
 			}
