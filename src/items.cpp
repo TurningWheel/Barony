@@ -1124,7 +1124,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	{
 		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 		{
-			if ( monsterStats->type == SHADOW )
+			if ( monsterStats->type == SHADOW || monsterStats->type == AUTOMATON )
 			{
 				itemDroppable = false;
 			}

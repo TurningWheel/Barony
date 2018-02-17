@@ -2828,6 +2828,8 @@ void actParticleTimer(Entity* my)
 							{
 								case AUTOMATON:
 									strcpy(monsterStats->name, "corrupted automaton");
+									monsterStats->EFFECTS[EFF_CONFUSED] = true;
+									monsterStats->EFFECTS_TIMERS[EFF_CONFUSED] = -1;
 									break;
 								default:
 									break;
