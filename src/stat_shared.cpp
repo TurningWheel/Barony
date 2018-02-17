@@ -838,6 +838,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
 			stats->PROFICIENCIES[PRO_RANGED] = 60; //Chuck booze at you.
 			//stats->PROFICIENCIES[PRO_SHIELD] = 35;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 60;
+			stats->PROFICIENCIES[PRO_MAGIC] = 60;
 			break;
 		case 93:
 		case (1000 + AUTOMATON):
@@ -869,7 +871,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_MACE] = 60;
 			stats->PROFICIENCIES[PRO_AXE] = 60;
 			stats->PROFICIENCIES[PRO_RANGED] = 60;
-			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
+			stats->PROFICIENCIES[PRO_POLEARM] = 60;
 			stats->PROFICIENCIES[PRO_SHIELD] = 60;
 			break;
 		case 94:
