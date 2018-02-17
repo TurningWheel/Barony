@@ -33,8 +33,8 @@ void initLichFire(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 120;
-		MONSTER_SPOTVAR = 3;
+		MONSTER_SPOTSND = 376;
+		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
@@ -216,7 +216,7 @@ void lichFireDie(Entity* my)
 		}
 	}
 	my->removeMonsterDeathNodes();
-	//playSoundEntity(my, 94, 128);
+	playSoundEntity(my, 94, 128);
 	my->removeLightField();
 	// kill all other monsters on the level
 	/*for ( node = map.entities->first; node != NULL; node = nextnode )
@@ -257,8 +257,8 @@ void lichFireDie(Entity* my)
 			net_packet->len = 4;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
-	}
-	spawnExplosion(my->x, my->y, my->z);*/
+	}*/
+	spawnExplosion(my->x, my->y, my->z);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -415,7 +415,11 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		}
 
 		// passive floating effect, server only.
-		if ( my->monsterAttack == 0 )
+		if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE )
+		{
+			my->z -= 0.1;
+		}
+		else if ( my->monsterAttack == 0 )
 		{
 			if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
 			{

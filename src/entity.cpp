@@ -6550,7 +6550,15 @@ bool Entity::checkEnemy(Entity* your)
 	// confused monsters mistake their allegiances
 	if ( myStats->EFFECTS[EFF_CONFUSED] )
 	{
-		result = (result == false);
+		if ( myStats->type == AUTOMATON && yourStats->type == AUTOMATON 
+			&& !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
+		{
+			// these guys ignore themselves when confused..
+		}
+		else
+		{
+			result = (result == false);
+		}
 	}
 
 	return result;

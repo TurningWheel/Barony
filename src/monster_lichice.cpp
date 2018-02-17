@@ -385,9 +385,9 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				my->monsterLichBattleState = LICH_BATTLE_READY;
 				generatePathMaps();
-				swornenemies[LICH_ICE][AUTOMATON] = false;
+				/*swornenemies[LICH_ICE][AUTOMATON] = false;
 				swornenemies[LICH_FIRE][AUTOMATON] = false;
-				swornenemies[AUTOMATON][HUMAN] = true;
+				swornenemies[AUTOMATON][HUMAN] = true;*/
 				real_t distToPlayer = 0;
 				int c, playerToChase = -1;
 				for ( c = 0; c < MAXPLAYERS; c++ )

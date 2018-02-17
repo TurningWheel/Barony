@@ -1313,7 +1313,8 @@ void actMonster(Entity* my)
 		}
 	}
 
-	if ( myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+	if ( (myStats->type == LICH_FIRE || myStats->type == LICH_ICE)
+		&& myStats->HP > 0 )
 	{
 		//messagePlayer(0, "state: %d", my->monsterState);
 		if ( my->monsterLichBattleState >= LICH_BATTLE_READY )
@@ -1388,7 +1389,7 @@ void actMonster(Entity* my)
 		real_t lichDist = 0.f;
 		Entity* target = uidToEntity(my->monsterTarget);
 
-		if ( myStats->OLDHP != myStats->HP )
+		if ( myStats->OLDHP != myStats->HP && myStats->HP > 0 )
 		{
 			if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS
 				&& my->monsterSpecialTimer < 250 )
@@ -1813,7 +1814,11 @@ void actMonster(Entity* my)
 	{
 		my->handleEffects(myStats);
 	}
-	if ( myStats->HP <= 0 && my->monsterState != 7 && my->monsterState != 8 )
+	if ( myStats->HP <= 0
+		&& my->monsterState != MONSTER_STATE_LICH_DEATH
+		&& my->monsterState != MONSTER_STATE_DEVIL_DEATH
+		&& my->monsterState != MONSTER_STATE_LICHFIRE_DIE 
+		&& my->monsterState != MONSTER_STATE_LICHICE_DIE )
 	{
 		//TODO: Refactor die function.
 		// drop all equipment
@@ -2062,10 +2067,22 @@ void actMonster(Entity* my)
 				goatmanDie(my);
 				break;
 			case LICH_FIRE:
-				lichFireDie(my);
+				my->flags[PASSABLE] = true; // so I can't take any more hits
+				my->monsterState = MONSTER_STATE_LICHFIRE_DIE; // lich death state
+				my->monsterSpecialTimer = 180;
+				my->monsterAttack = 0;
+				my->monsterAttackTime = 0;
+				serverUpdateEntitySkill(my, 8);
+				serverUpdateEntitySkill(my, 9);
 				break;
 			case LICH_ICE:
-				lichIceDie(my);
+				my->flags[PASSABLE] = true; // so I can't take any more hits
+				my->monsterState = MONSTER_STATE_LICHICE_DIE; // lich death state
+				my->monsterSpecialTimer = 180;
+				my->monsterAttack = 0;
+				my->monsterAttackTime = 0;
+				serverUpdateEntitySkill(my, 8);
+				serverUpdateEntitySkill(my, 9);
 				break;
 			default:
 				break; //This should never be reached.
@@ -2735,7 +2752,8 @@ void actMonster(Entity* my)
 					|| myStats->type == LICH 
 					|| myStats->type == LICH_FIRE 
 					|| myStats->type == LICH_ICE 
-					|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+					|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss"))
+					|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted automaton")) )
 				{
 					double distToPlayer = 0;
 					int c, playerToChase = -1;
@@ -3780,7 +3798,7 @@ timeToGoAgain:
 				|| (myStats->type == LICH && my->monsterSpecialTimer <= 0)
 				|| ((myStats->type == LICH_FIRE || myStats->type == LICH_ICE) && my->monsterSpecialTimer <= 0 )
 				|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss"))
-				|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted")) )
+				|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted automaton")) )
 			{
 				bool shouldHuntPlayer = false;
 				Entity* playerOrNot = uidToEntity(my->monsterTarget);
@@ -4373,6 +4391,43 @@ timeToGoAgain:
 			if ( my->monsterSpecialTimer > 180 )
 			{
 				lichDie(my);
+			}
+		}
+		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE 
+			|| my->monsterState == MONSTER_STATE_LICHICE_DIE )     // lich death state
+		{
+			my->yaw += .5; // rotate
+			if ( my->yaw >= PI * 2 )
+			{
+				my->yaw -= PI * 2;
+			}
+			MONSTER_ATTACK = 1;
+			MONSTER_ATTACKTIME = 0;
+			if ( my->monsterSpecialTimer == 180 )
+			{
+				serverUpdateEntitySkill(my, 8);
+				serverUpdateEntitySkill(my, 9);
+				int c;
+				for ( c = 0; c < MAXPLAYERS; c++ )
+				{
+					playSoundPlayer(c, 377, 128);
+				}
+			}
+			if ( my->monsterSpecialTimer % 10 == 0 )
+			{
+				spawnExplosion(my->x - 8 + rand() % 16, my->y - 8 + rand() % 16, -4 + rand() % 8);
+			}
+			--my->monsterSpecialTimer;
+			if ( my->monsterSpecialTimer <= 0 )
+			{
+				if ( myStats->type == LICH_FIRE )
+				{
+					lichFireDie(my);
+				}
+				else if ( myStats->type == LICH_ICE )
+				{
+					lichIceDie(my);
+				}
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_DEVIL_DEATH )     // devil death state
@@ -5115,15 +5170,14 @@ timeToGoAgain:
 						{
 							tangent = atan2(target->y - my->y, target->x - my->x);
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
-							switch ( rand() % 3 )
+							switch ( rand() % 4 )
 							{
 								case 0:
-									my->monsterLichIceCastSeq = LICH_ATK_RISING_SINGLE;
-									break;
 								case 1:
 									my->monsterLichIceCastSeq = LICH_ATK_HORIZONTAL_SINGLE;
 									break;
 								case 2:
+								case 3:
 									if ( my->monsterLichAllyStatus == LICH_ALLY_DEAD )
 									{
 										Entity* dummyEntity = nullptr;
