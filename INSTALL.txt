@@ -1,14 +1,20 @@
 You will need the following libraries to build Barony:
 
- * libpng
- * SDL2
- * SDL2_image
- * SDL2_net
- * SDL2_ttf
+ * SDL2 (https://www.libsdl.org/download-2.0.php)
+ * SDL2_image (https://www.libsdl.org/projects/SDL_image/)
+ * SDL2_net (https://www.libsdl.org/projects/SDL_net/)
+ * SDL2_ttf (https://www.libsdl.org/projects/SDL_ttf/)
+ * libpng (http://www.libpng.org/pub/png/libpng.html)
+ * libz (https://zlib.net/) used by libpng
+ 
+For Debian/Ubuntu you can install them with
+
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev
 
 Optional dependencies required for sound:
  * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it).
-You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF.
+You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF (it's also disabled if not found).
+Use of FMOD in Barony is considered deprecated.
 OR
 * OpenAL
 You can enable OpenAL by running cmake with -DOPENAL_ENABLED=ON.
@@ -17,11 +23,14 @@ You can enable Tremor by running cmake with -DTREMOR_ENABLED=ON, otherwise libvo
 
 You will also need the following tools:
 
- * A working C++ compiler (Visual Studio 2013/2015, MinGW, GCC, or xtools)
+ * A working C++ compiler (Visual Studio, MinGW, GCC, or xtools)
  * CMake (Windows optional)
 
 If you're using Visual Studio, simply open the relevant project file, configure the library and include paths for each project, and build the whole solution to generate the .exe files.
+(Make sure that the appropriate Platform Toolset is installed.)
 
-If you're using MinGW or GCC, you'll need to run CMake first, then make.
+If you're using MinGW or GCC, you'll need to run CMake first, then make: cmake . && make
 
-Keep in mind that there are a lot of references to Steamworks in the code. They should all be #ifdef'd out, but if you get any linker errors about Steamworks, make sure STEAMWORKS is undef'd in main.hpp and try again.
+Keep in mind that there are a lot of references to Steamworks (https://partner.steamgames.com/) in the code. They should all be #ifdef'd out, but if you get any linker errors about Steamworks, make sure STEAMWORKS is undef'd in main.hpp and try again.
+
+If you are missing GL header files like glext.h they are available from https://www.khronos.org/registry/OpenGL/api/GL/.
