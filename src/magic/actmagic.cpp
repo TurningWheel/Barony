@@ -545,9 +545,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				//element = (spellElement_t *) element->elements->first->element;
 				element = (spellElement_t*)node->element;
 				//if (hit.entity != NULL) {
-				Stat* hitstats = NULL;
+				Stat* hitstats = nullptr;
 				int player = -1;
-				if (hit.entity)
+				if ( hit.entity )
 				{
 					hitstats = hit.entity->getStats();
 					if ( hit.entity->behavior == &actPlayer )
@@ -835,7 +835,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				// Alerting the hit Entity
-				if (hit.entity)
+				if ( hit.entity )
 				{
 					// alert the hit entity if it was a monster
 					if ( hit.entity->behavior == &actMonster && parent != nullptr )
