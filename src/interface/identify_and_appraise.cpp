@@ -79,6 +79,12 @@ void rebuildIdentifyGUIInventory()
 	}
 }
 
+void CloseIdentifyGUI()
+{
+	identifygui_active = false;
+	selectedIdentifySlot = -1;
+}
+
 void updateIdentifyGUI()
 {
 	//if (openedChest[clientnum])
