@@ -877,12 +877,12 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 94:
 		case (1000 + LICH_ICE):
 			stats->type = LICH_ICE;
-			stats->sex = MALE;
+			stats->sex = FEMALE;
 			stats->appearance = rand();
 			strcpy(stats->name, "Erudyce");
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 10;
+			stats->HP = 2000;
 			stats->MAXHP = stats->HP;
 			stats->MP = 1000;
 			stats->MAXMP = 1000;
@@ -910,12 +910,12 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			strcpy(stats->name, "Orpheus");
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 20000;
+			stats->HP = 2000;
 			stats->MAXHP = stats->HP;
 			stats->MP = 1000;
 			stats->MAXMP = 1000;
 			stats->OLDHP = stats->HP;
-			stats->STR = 40;
+			stats->STR = 50;
 			stats->DEX = 13;
 			stats->CON = 30;
 			stats->INT = 20;

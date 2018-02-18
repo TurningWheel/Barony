@@ -33,8 +33,8 @@ void initLichFire(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 376;
-		MONSTER_SPOTVAR = 1;
+		MONSTER_SPOTSND = 372;
+		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
@@ -198,16 +198,16 @@ void lichFireDie(Entity* my)
 					entity->sprite = 236;
 					break;
 				case 5:
-					entity->sprite = 274;
+					entity->sprite = 646;
 					break;
 				case 6:
-					entity->sprite = 275;
+					entity->sprite = 647;
 					break;
 				case 7:
-					entity->sprite = 276;
+					entity->sprite = 648;
 					break;
 				case 8:
-					entity->sprite = 277;
+					entity->sprite = 649;
 					break;
 				default:
 					break;
@@ -417,7 +417,7 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 		// passive floating effect, server only.
 		if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE )
 		{
-			my->z -= 0.1;
+			my->z -= 0.03;
 		}
 		else if ( my->monsterAttack == 0 )
 		{
@@ -461,11 +461,12 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Lich stares you down while he does his special ability windup, and any of his spellcasting animations.
-	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
+	if ( (my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_CAST1
-		|| my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
+		|| my->monsterState == MONSTER_STATE_LICH_CASTSPELLS)
+		&& my->monsterState != MONSTER_STATE_LICHFIRE_DIE )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -494,7 +495,6 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							my->z = -0.6; //failsafe for floating too low sometimes?
 						}
-
 					}
 				}
 				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
@@ -675,7 +675,8 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						my->monsterWeaponYaw = 0;
 						weaponarm->roll = 0;
 						weaponarm->skill[1] = 0;
-						if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
+						if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS
+							|| my->monsterState == MONSTER_STATE_LICHFIRE_DIE )
 						{
 							createParticleDropRising(my, 672, 0.7);
 						}
@@ -685,10 +686,18 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						}
 						if ( multiplayer != CLIENT )
 						{
-							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
-							// lich can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
-							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+							if ( my->monsterState != MONSTER_STATE_LICHFIRE_DIE )
+							{
+								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+								// lich can't be paralyzed, use EFF_STUNNED instead.
+								myStats->EFFECTS[EFF_STUNNED] = true;
+								myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+							}
+							else
+							{
+								myStats->EFFECTS[EFF_STUNNED] = true;
+								myStats->EFFECTS_TIMERS[EFF_STUNNED] = 25;
+							}
 						}
 					}
 
@@ -702,7 +711,14 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
-								my->attack(1, 0, nullptr); //optional?
+								if ( my->monsterState != MONSTER_STATE_LICHFIRE_DIE )
+								{
+									my->attack(1, 0, nullptr); //optional?
+								}
+								else
+								{
+									my->monsterAttackTime = 20; //reset this attack time to allow successive strikes
+								}
 								real_t dir = 0.f;
 								Entity* target = uidToEntity(my->monsterTarget);
 								if ( my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
@@ -714,6 +730,26 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 										{
 											my->castFallingMagicMissile(SPELL_FIREBALL, targetDist -4 + rand() % 9 + i * 16, 0.f, i * 20);
 										}
+									}
+								}
+								else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE )
+								{
+									real_t randomAngle = (PI / 180.f) * (rand() % 360);
+									for ( int i = 0; i < 5; ++i )
+									{
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle, i * 20);
+									}
+									for ( int i = 0; i < 5; ++i )
+									{
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle + PI / 2, i * 20);
+									}
+									for ( int i = 0; i < 5; ++i )
+									{
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle + PI, i * 20);
+									}
+									for ( int i = 0; i < 5; ++i )
+									{
+										my->castFallingMagicMissile(SPELL_FIREBALL, 16.f - 4 + rand() % 9 + i * 16, randomAngle + 3 * PI / 2, i * 20);
 									}
 								}
 								else
@@ -961,50 +997,6 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 				node_t* tempNode;
 				Entity* playertotrack = NULL;
 				double disttoplayer = 0.0;
-				/*for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
-				{
-					Entity* tempEntity = (Entity*)tempNode->element;
-					double lowestdist = 5000;
-					if ( tempEntity->behavior == &actPlayer )
-					{
-						disttoplayer = entityDist(my, tempEntity);
-						if ( disttoplayer < lowestdist && my->monsterTarget)
-						{
-							playertotrack = tempEntity;
-						}
-					}
-				}
-				if ( playertotrack && my->monsterAttack == 0 )
-				{
-					double tangent = atan2( playertotrack->y - entity->y, playertotrack->x - entity->x );
-					double dir = entity->yaw - tangent;
-					while ( dir >= PI )
-					{
-						dir -= PI * 2;
-					}
-					while ( dir < -PI )
-					{
-						dir += PI * 2;
-					}
-					entity->yaw -= dir / 8;
-
-					double dir2 = my->yaw - tangent;
-					while ( dir2 >= PI )
-					{
-						dir2 -= PI * 2;
-					}
-					while ( dir2 < -PI )
-					{
-						dir2 += PI * 2;
-					}
-					if ( dir2 > PI / 2 )
-					{
-						entity->yaw = my->yaw - PI / 2;
-					}
-					else if ( dir2 < -PI / 2 )
-					{
-						entity->yaw = my->yaw + PI / 2;
-					}*/
 				Entity* target = uidToEntity(my->monsterTarget);
 				if ( target && my->monsterAttack == 0 )
 				{
