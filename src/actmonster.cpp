@@ -2086,6 +2086,7 @@ void actMonster(Entity* my)
 				my->monsterAttackTime = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+				serverUpdateEntitySkill(my, 0);
 				break;
 			case LICH_ICE:
 				my->flags[PASSABLE] = true; // so I can't take any more hits
@@ -2095,6 +2096,7 @@ void actMonster(Entity* my)
 				my->monsterAttackTime = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+				serverUpdateEntitySkill(my, 0);
 				break;
 			default:
 				break; //This should never be reached.
