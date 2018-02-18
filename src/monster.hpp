@@ -122,7 +122,7 @@ static char gibtype[NUMMONSTERS] =
 	0,	//CRYSTALGOLem,
 	1,	//INCUBUS,
 	1,	//VAMPIRE,
-	0,	//SHADOW,
+	4,	//SHADOW,
 	1,	//COCKATRICE
 	2,	//INSECTOID,
 	1,	//GOATMAN,
@@ -168,8 +168,8 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // automaton
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }, // lich ice
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }  // lich fire
+	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7 }, // lich ice
+	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f }  // lich fire
 
 };
 
@@ -249,6 +249,8 @@ void initVampire(Entity* my, Stat* myStats);
 void initIncubus(Entity* my, Stat* myStats);
 void initInsectoid(Entity* my, Stat* myStats);
 void initGoatman(Entity* my, Stat* myStats);
+void initLichFire(Entity* my, Stat* myStats);
+void initLichIce(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -276,6 +278,8 @@ void actIncubusLimb(Entity* my);
 void actInsectoidLimb(Entity* my);
 void actGoatmanLimb(Entity* my);
 void actScarabLimb(Entity* my);
+void actLichFireLimb(Entity* my);
+void actLichIceLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -305,6 +309,8 @@ void vampireDie(Entity* my);
 void incubusDie(Entity* my);
 void insectoidDie(Entity* my);
 void goatmanDie(Entity* my);
+void lichFireDie(Entity* my);
+void lichIceDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -334,6 +340,8 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void lichFireAnimate(Entity* my, Stat* myStats, double dist);
+void lichIceAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
@@ -364,6 +372,14 @@ static const Sint32 MONSTER_STATE_DEVIL_TELEPORT = 9;
 static const Sint32 MONSTER_STATE_DEVIL_RISING = 10;
 static const Sint32 MONSTER_STATE_DEVIL_SUMMON = 11;
 static const Sint32 MONSTER_STATE_DEVIL_BOULDER = 12;
+static const Sint32 MONSTER_STATE_LICHFIRE_DODGE = 13;
+static const Sint32 MONSTER_STATE_LICH_CASTSPELLS = 14;
+static const Sint32 MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY = 15;
+static const Sint32 MONSTER_STATE_LICH_TELEPORT_ROAMING = 16;
+static const Sint32 MONSTER_STATE_LICHICE_TELEPORT_STATIONARY = 17;
+static const Sint32 MONSTER_STATE_LICHICE_DODGE = 13;
+static const Sint32 MONSTER_STATE_LICHFIRE_DIE = 18;
+static const Sint32 MONSTER_STATE_LICHICE_DIE = 18;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
@@ -396,7 +412,7 @@ static const int MONSTER_POSE_VAMPIRE_AURA_CHARGE = 28;
 static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
 static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
 static const int MONSTER_POSE_AUTOMATON_MALFUNCTION = 31;
-
+static const int MONSTER_POSE_LICH_FIRE_SWORD = 32;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -486,6 +502,8 @@ extern int monsterGlobalAnimationMultiplier;
 extern int monsterGlobalAttackTimeMultiplier;
 // monster custom NPC chatter
 bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
+// check qty of a certain creature race alive on a map
+int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
 
 //-----RACE SPECIFIC CONSTANTS-----
 
@@ -520,3 +538,25 @@ static const int VAMPIRE_CAST_DRAIN = 2;
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
 static const int SHADOW_TELEPORT_ONLY = 2;
+
+//--Lich Attacks--
+static const int LICH_ATK_VERTICAL_SINGLE = 0;
+static const int LICH_ATK_HORIZONTAL_SINGLE = 1;
+static const int LICH_ATK_RISING_RAIN = 2;
+static const int LICH_ATK_BASICSPELL_SINGLE = 3;
+static const int LICH_ATK_RISING_SINGLE = 4;
+static const int LICH_ATK_VERTICAL_QUICK = 5;
+static const int LICH_ATK_HORIZONTAL_RETURN = 6;
+static const int LICH_ATK_HORIZONTAL_QUICK = 7;
+static const int LICH_ATK_CHARGE_AOE = 8;
+static const int LICH_ATK_FALLING_DIAGONAL = 9;
+static const int LICH_ATK_SUMMON = 10;
+
+//--Lich Special States--
+static const int LICH_ICE_ATTACK_COMBO = 1;
+static const int LICH_ALLY_ALIVE = 0;
+static const int LICH_ALLY_DEAD = 1;
+
+//--Lich Battle States--
+static const int LICH_BATTLE_IMMOBILE = -1;
+static const int LICH_BATTLE_READY = 0;

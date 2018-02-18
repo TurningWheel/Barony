@@ -104,10 +104,20 @@ static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
 static const int PARTICLE_EFFECT_RISING_DROP = 9;
 static const int PARTICLE_EFFECT_PORTAL_SPAWN = 10;
 static const int PARTICLE_EFFECT_SHADOW_TELEPORT = 11;
+static const int PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY = 12;
+static const int PARTICLE_EFFECT_LICH_TELEPORT_ROAMING = 13;
+static const int PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY = 14;
+static const int PARTICLE_EFFECT_SUMMON_MONSTER = 15;
+
+// actmagicIsVertical constants
+static const int MAGIC_ISVERTICAL_NONE = 0;
+static const int MAGIC_ISVERTICAL_Z = 1;
+static const int MAGIC_ISVERTICAL_XYZ = 2;
 
 // misc particle timer actions
 static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
 static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
+static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 

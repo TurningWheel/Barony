@@ -619,6 +619,12 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			damage /= (1 + (int)resistance);
 			damage *= damagetables[hitstats->type][5];
 
+			Stat* casterStats = parent->getStats();
+			if ( casterStats && casterStats->type == LICH_ICE )
+			{
+				damage *= 2;
+			}
+
 			int damageHP = hitstats->HP;
 			int damageMP = hitstats->MP;
 			hit.entity->modHP(-damage);

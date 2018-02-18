@@ -147,11 +147,11 @@ void Entity::initMonster(int mySprite)
 			break;
 		case LICH_ICE:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
-			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case LICH_FIRE:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
-			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
+			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		default:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
@@ -275,6 +275,14 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return GOATMAN;
 	}
+	else if ( mySprite == 646 )     // lich body
+	{
+		return LICH_FIRE;
+	}
+	else if ( mySprite == 650 )     // lich body
+	{
+		return LICH_ICE;
+	}
 	return NOTHING;
 }
 
@@ -337,6 +345,15 @@ void Entity::actMonsterLimb(bool processLight)
 		{
 			light = lightSphereShadow(x / 16, y / 16, carryingLightSource, 50 + 15 * carryingLightSource);
 		}
+	}
+
+	if ( parentEnt && parentEnt->behavior == &actMonster && parentEnt->monsterEntityRenderAsTelepath == 1 )
+	{
+		monsterEntityRenderAsTelepath = 1;
+	}
+	else
+	{
+		monsterEntityRenderAsTelepath = 0;
 	}
 }
 

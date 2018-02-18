@@ -143,6 +143,7 @@ Uint32 colorWhite = 0xFFFFFFFF;
 int firstendmoviealpha[30];
 int secondendmoviealpha[30];
 int thirdendmoviealpha[30];
+int fourthendmoviealpha[30];
 int intromoviealpha[30];
 int rebindkey = -1;
 int rebindaction = -1;
@@ -161,6 +162,9 @@ int secondendmoviestage = 0;
 int thirdendmoviestage = 0;
 int thirdendmovietime = 0;
 int thirdEndNumLines = 6;
+int fourthendmoviestage = 0;
+int fourthendmovietime = 0;
+int fourthEndNumLines = 13;
 real_t drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
@@ -3711,6 +3715,10 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
 				}
+				else if ( victory == 3 )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+				}
 			}
 			else
 			{
@@ -4238,6 +4246,12 @@ void handleMainMenu(bool mode)
 		{
 			fadefinished = false;
 			fadeout = false;
+			if ( creditstage == 0 && victory == 3 )
+			{
+#ifdef MUSIC
+			playmusic(citadelmusic[0], true, false, false);
+#endif
+			}
 			creditstage++;
 			if ( creditstage >= 15 )
 			{
@@ -4488,9 +4502,13 @@ void handleMainMenu(bool mode)
 				{
 					introstage = 7;
 				}
-				else
+				else if ( victory == 2 )
 				{
 					introstage = 8;
+				}
+				else if ( victory == 3 )
+				{
+					introstage = 10;
 				}
 			}
 
@@ -4592,9 +4610,9 @@ void handleMainMenu(bool mode)
 			if ( thirdendmoviestage == 0 )
 			{
 				playmusic(endgamemusic, true, true, false);
-				thirdendmoviestage++;
 			}
 #endif
+			thirdendmoviestage++;
 			if ( thirdendmoviestage >= thirdEndNumLines )
 			{
 				int c;
@@ -4620,6 +4638,35 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 				thirdendmovietime = 0;
+				movie = true;
+			}
+		}
+		else if ( introstage == 10 )     // expansion end game sequence
+		{
+#ifdef MUSIC
+			if ( fourthendmoviestage == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			fourthendmoviestage++;
+			if ( fourthendmoviestage >= fourthEndNumLines )
+			{
+				int c;
+				for ( c = 0; c < 30; c++ )
+				{
+					fourthendmoviealpha[c] = 0;
+				}
+				introstage = 4;
+				fourthendmovietime = 0;
+				fourthendmoviestage = 0;
+				fadeout = true;
+			}
+			else
+			{
+				fadefinished = false;
+				fadeout = false;
+				fourthendmovietime = 0;
 				movie = true;
 			}
 		}
@@ -5022,7 +5069,7 @@ void handleMainMenu(bool mode)
 			thirdendmoviealpha[0] = std::min(thirdendmoviealpha[0] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, language[2600]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2600]);
 		}
 		if ( thirdendmoviestage >= 3 )
 		{
@@ -5058,6 +5105,146 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
 			}
+		}
+	}
+	// fourth (expansion) end movie stage
+	if ( fourthendmoviestage > 0 )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_bmp, NULL, &pos);
+
+		if ( fourthendmovietime >= 600 
+			|| (mousestatus[SDL_BUTTON_LEFT] 
+				&& fourthendmoviestage < 10 
+				&& fourthendmoviestage != 10 
+				&& fourthendmoviestage != 5
+				&& fourthendmoviestage != 1)
+			|| (fourthendmovietime >= 120 && fourthendmoviestage == 1)
+			|| (fourthendmovietime >= 60 && fourthendmoviestage == 5)
+			|| (fourthendmovietime >= 240 && fourthendmoviestage == 10)
+			|| (fourthendmovietime >= 200 && fourthendmoviestage == 11)
+			|| (fourthendmovietime >= 60 && fourthendmoviestage == 12)
+			|| (fourthendmovietime >= 400 && fourthendmoviestage == 13)
+			)
+		{
+			fourthendmovietime = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( fourthendmoviestage < fourthEndNumLines )
+			{
+				fourthendmoviestage++;
+			}
+			else if ( fourthendmoviestage == fourthEndNumLines )
+			{
+				fadeout = true;
+				introstage = 10;
+			}
+		}
+		Uint32 color = 0x00FFFFFF;
+		if ( fourthendmoviestage >= 1 )
+		{
+			fourthendmoviealpha[8] = std::min(fourthendmoviealpha[8] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+		}
+		if ( fourthendmoviestage >= 2 )
+		{
+			if ( fourthendmoviestage < 5 )
+			{
+				fourthendmoviealpha[0] = std::min(fourthendmoviealpha[0] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[0]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2607]);
+		}
+		if ( fourthendmoviestage >= 3 )
+		{
+			if ( fourthendmoviestage < 5 )
+			{
+				fourthendmoviealpha[1] = std::min(fourthendmoviealpha[1] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[1]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2608]);
+		}
+		if ( fourthendmoviestage >= 4 )
+		{
+			if ( fourthendmoviestage < 5 )
+			{
+				fourthendmoviealpha[2] = std::min(fourthendmoviealpha[2] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[2]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2609]);
+		}
+		if ( fourthendmoviestage >= 5 )
+		{
+			fourthendmoviealpha[0] = std::max(fourthendmoviealpha[2] - 2, 0);
+			fourthendmoviealpha[1] = std::max(fourthendmoviealpha[2] - 2, 0);
+			fourthendmoviealpha[2] = std::max(fourthendmoviealpha[2] - 2, 0);
+		}
+		if ( fourthendmoviestage >= 6 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[3] = std::min(fourthendmoviealpha[3] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[3]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2610]);
+		}
+		if ( fourthendmoviestage >= 7 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[4] = std::min(fourthendmoviealpha[4] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[4]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2611]);
+		}
+		if ( fourthendmoviestage >= 8 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[5] = std::min(fourthendmoviealpha[5] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[5]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2612]);
+		}
+		if ( fourthendmoviestage >= 9 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[6] = std::min(fourthendmoviealpha[6] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[6]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2613]);
+		}
+		if ( fourthendmoviestage >= 10 )
+		{
+			fourthendmoviealpha[3] = std::max(fourthendmoviealpha[3] - 2, 0);
+			fourthendmoviealpha[4] = std::max(fourthendmoviealpha[4] - 2, 0);
+			fourthendmoviealpha[5] = std::max(fourthendmoviealpha[5] - 2, 0);
+			fourthendmoviealpha[6] = std::max(fourthendmoviealpha[6] - 2, 0);
+		}
+		if ( fourthendmoviestage >= 11 )
+		{
+			fourthendmoviealpha[7] = std::min(fourthendmoviealpha[7] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[7]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres/ 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+		}
+		if ( fourthendmoviestage >= 13 )
+		{
+			fadealpha = std::min(fadealpha + 2, 255);
 		}
 	}
 }

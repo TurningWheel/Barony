@@ -1100,7 +1100,7 @@ void drawEntities3D(view_t* camera, int mode)
 		y = entity->y / 16;
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 		{
-			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] )
+			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
 			{
 				if ( entity->flags[SPRITE] == false )
 				{

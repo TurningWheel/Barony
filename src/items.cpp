@@ -1124,7 +1124,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	{
 		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 		{
-			if ( monsterStats->type == SHADOW )
+			if ( monsterStats->type == SHADOW || monsterStats->type == AUTOMATON )
 			{
 				itemDroppable = false;
 			}
@@ -1134,7 +1134,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 				|| monsterStats->type == INSECTOID
 				|| monsterStats->type == INCUBUS
 				|| monsterStats->type == VAMPIRE)
-				&& itemCategory(item) == SPELLBOOK )
+				&& (itemCategory(item) == SPELLBOOK || itemCategory(item) == MAGICSTAFF) )
 			{
 				// monsters with special spell attacks won't drop their book.
 				itemDroppable = false;
@@ -2125,6 +2125,17 @@ void useItem(Item* item, int player)
 					messagePlayer(player, language[2381]);
 				}
 				break;
+			case VAMPIRE_DOUBLET:
+				messagePlayer(player, language[2597]);
+				break;
+			case TOOL_BLINDFOLD:
+				break;
+			case TOOL_BLINDFOLD_FOCUS:
+				messagePlayer(player, language[2907]);
+				break;
+			case TOOL_BLINDFOLD_TELEPATHY:
+				messagePlayer(player, language[2908]);
+				break;
 			default:
 				break;
 		}
@@ -2148,6 +2159,11 @@ Item* itemPickup(int player, Item* item)
 	Item* item2;
 	node_t* node;
 
+	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+	{
+		item->identified = true;
+	}
+
 	if ( player != 0 && multiplayer == SERVER )
 	{
 		// send the client info on the item it just picked up
@@ -2168,18 +2184,11 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
-			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
-			{
-				item->identified = true;
-			}
 			if (!itemCompare(item, item2, false))
 			{
-				if ( (!itemIsEquipped(item2, player) && itemCategory(item2) != ARMOR)
-					|| itemCategory(item2) == THROWN 
-					|| itemCategory(item2) == GEM
-					|| itemCategory(item2) == TOOL )
+				// if items are the same, check to see if they should stack
+				if ( item2->shouldItemStack(player) )
 				{
-					// don't stack if equipped, or item is armor.
 					item2->count += item->count;
 					return item2;
 				}
@@ -2419,19 +2428,19 @@ Sint32 Item::weaponGetAttack() const
 	}
 	else if ( type == CRYSTAL_SWORD )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_SPEAR )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_BATTLEAXE )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_MACE )
 	{
-		attack += 7;
+		attack += 10;
 	}
 	else if ( type == BRONZE_TOMAHAWK )
 	{
@@ -2891,6 +2900,10 @@ void createCustomInventory(Stat* stats, int itemLimit)
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
 				}
+				else if ( itemStatus > BROKEN )
+				{
+					itemStatus = static_cast<Status>(itemStatus - 1); // reserved '0' for random, so '1' is decrepit... etc to '5' being excellent.
+				}
 				itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
 				if ( itemBless == 10 )
 				{
@@ -3317,5 +3330,30 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 		return true;
 	}
 
+	return false;
+}
+
+bool Item::shouldItemStack(int player)
+{
+	if ( player >= 0 )
+	{
+		if ( (!itemIsEquipped(this, player)
+				&& itemCategory(this) != ARMOR
+				&& itemCategory(this) != WEAPON
+				&& itemCategory(this) != MAGICSTAFF
+				&& itemCategory(this) != RING
+				&& itemCategory(this) != AMULET
+				&& itemCategory(this) != SPELLBOOK
+				&& this->type != TOOL_PICKAXE)
+			|| itemCategory(this) == THROWN
+			|| itemCategory(this) == GEM
+			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE)
+			)
+		{
+			// THROWN, GEM, TOOLS should stack when equipped.
+			// otherwise most equippables should not stack.
+			return true;
+		}
+	}
 	return false;
 }

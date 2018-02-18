@@ -89,6 +89,7 @@ int initApp(char* title, int fullscreen)
 		ttfTextHash[c].last = NULL;
 	}
 	map.entities = NULL;
+	map.creatures = nullptr;
 	map.tiles = NULL;
 
 	// init steamworks
@@ -2447,7 +2448,7 @@ bool loadItemLists()
 	if ( !dataPathExists(filename) )
 	{
 		// file doesn't exist
-		printlog("error: unable to locate tile palette file: '%s'", filename);
+		printlog("error: unable to locate global item list file: '%s'", filename);
 		return false;
 	}
 

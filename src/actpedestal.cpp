@@ -160,16 +160,62 @@ void Entity::actPedestalBase()
 
 	if ( pedestalHasOrb == pedestalOrbType )
 	{
+		bool applyAura = false;
 		// power on/off the circuit if it hasn't updated
 		if ( circuit_status == CIRCUIT_OFF && !pedestalInvertedPower )
 		{
 			mechanismPowerOn();
 			updateCircuitNeighbors();
+			if ( !strncmp(map.name, "Boss", 4) )
+			{
+				applyAura = true;
+			}
 		}
 		else if ( circuit_status == CIRCUIT_ON && pedestalInvertedPower )
 		{
 			mechanismPowerOff();
 			updateCircuitNeighbors();
+		}
+
+		if ( (applyAura || ticks % 400 == 0) && pedestalOrbType != 3 && !strncmp(map.name, "Boss", 4) )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( !client_disconnected[i] )
+				{
+					if ( players[i] && players[i]->entity )
+					{
+						switch ( pedestalOrbType )
+						{
+							case 1: // blue
+								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+								{
+									messagePlayer(i, language[2910]);
+								}
+								players[i]->entity->setEffect(EFF_SHRINE_BLUE_BUFF, true, 1000, false);
+								break;
+							case 2: // red
+								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_RED_BUFF] )
+								{
+									messagePlayer(i, language[2904]);
+								}
+								players[i]->entity->setEffect(EFF_SHRINE_RED_BUFF, true, 1000, false);
+								break;
+							case 3:
+								break;
+							case 4: // green
+								if ( stats[i] && !stats[i]->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
+								{
+									messagePlayer(i, language[2909]);
+								}
+								players[i]->entity->setEffect(EFF_SHRINE_GREEN_BUFF, true, 1000, false);
+								break;
+							default:
+								break;
+						}
+					}
+				}
+			}
 		}
 	}
 
