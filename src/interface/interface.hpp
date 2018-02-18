@@ -220,6 +220,7 @@ extern int selectedIdentifySlot;
 void selectIdentifySlot(int slot);
 void warpMouseToSelectedIdentifySlot();
 
+void CloseIdentifyGUI();
 void updateIdentifyGUI(); //Updates the identify item GUI.
 void identifyGUIIdentify(Item* item); //Identify the given item.
 int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
