@@ -379,6 +379,20 @@ void actTrapPermanent(Entity* my)
 			}
 		}
 	}
+	//else if ( !strcmp(map.name, "Boss") ) //TODO!!
+	//{
+	//	for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only looking at players? Don't search full map.entities.
+	//	{
+	//		entity = (Entity*)node->element;
+	//		if ( entity->behavior == &actPlayer )
+	//		{
+	//			if ( entity->x < 26 * 16 || entity->y < 6 * 16 || entity->y >= 26 * 16 )   // hardcoded, I know...
+	//			{
+	//				return;
+	//			}
+	//		}
+	//	}
+	//}
 
 	if ( TRAPPERMANENT_ON )
 	{
