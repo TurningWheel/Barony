@@ -9416,6 +9416,15 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		return; //Shadows' armor and shields don't break.
 	}
 
+	if ( armor.type == ARTIFACT_BOOTS
+		|| armor.type == ARTIFACT_HELM
+		|| armor.type == ARTIFACT_CLOAK
+		|| armor.type == ARTIFACT_GLOVES
+		|| armor.type == ARTIFACT_BREASTPIECE )
+	{
+		return;
+	}
+
 	int playerhit = -1;
 
 	if ( this->behavior == &actPlayer )
