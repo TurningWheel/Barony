@@ -88,6 +88,11 @@ void initVampire(Entity* my, Stat* myStats)
 					}
 				}
 			}
+			else if ( !strncmp(myStats->name, "Bram Kindly", strlen("Bram Kindly")) )
+			{
+				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
@@ -474,6 +479,20 @@ void vampireDie(Entity* my)
 	playSoundEntity(my, 325 + rand() % 4, 128);
 
 	my->removeMonsterDeathNodes();
+
+	node_t* node;
+	Entity* entity = nullptr;
+	if ( multiplayer != CLIENT && !strncmp(map.name, "Bram's Castle", 13) )
+	{
+		for ( node = map.entities->first; node != nullptr; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			if ( entity->behavior == &actPortal )
+			{
+				entity->flags[INVISIBLE] = false;
+			}
+		}
+	}
 
 	list_RemoveNode(my->mynode);
 	return;

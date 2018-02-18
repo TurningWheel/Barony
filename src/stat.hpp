@@ -42,7 +42,10 @@ static const int EFF_SLOW = 15;
 static const int EFF_MAGICRESIST = 16;
 static const int EFF_MAGICREFLECT = 17;
 static const int EFF_VAMPIRICAURA = 18;
-static const int NUMEFFECTS = 19;
+static const int EFF_SHRINE_RED_BUFF = 19;
+static const int EFF_SHRINE_GREEN_BUFF = 20;
+static const int EFF_SHRINE_BLUE_BUFF = 21;
+static const int NUMEFFECTS = 32;
 
 // stats
 static const int STAT_STR = 0;

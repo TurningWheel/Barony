@@ -121,6 +121,10 @@ void gameLogic(void)
 	{
 		thirdendmovietime++;
 	}
+	if ( fourthendmoviestage > 0 )
+	{
+		fourthendmovietime++;
+	}
 
 #ifdef SOUND
 	sound_update(); //Update FMOD and whatnot.
@@ -2270,11 +2274,20 @@ int main(int argc, char** argv)
 		if ( (c = initApp("Barony", fullscreen)) )
 		{
 			printlog("Critical error: %d\n", c);
+#ifdef STEAMWORKS
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-			                         "Barony has encountered a critical error and cannot start.\n\n"
-			                         "Please check the log.txt file in the game directory for additional info,\n"
-			                         "or contact us through our website at http://www.baronygame.com/ for support.",
-			                         screen);
+									"Barony has encountered a critical error and cannot start.\n\n"
+									"Please check the log.txt file in the game directory for additional info\n"
+									"and verify Steam is running. Alternatively, contact us through our website\n"
+									"at http://www.baronygame.com/ for support.",
+				screen);
+#else
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+									"Barony has encountered a critical error and cannot start.\n\n"
+									"Please check the log.txt file in the game directory for additional info,\n"
+									"or contact us through our website at http://www.baronygame.com/ for support.",
+									screen);
+#endif
 			deinitApp();
 			exit(c);
 		}
@@ -2761,7 +2774,8 @@ int main(int argc, char** argv)
 				drawClearBuffers();
 				camera.ang += camera_shakex2;
 				camera.vang += camera_shakey2 / 200.0;
-				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind())
+				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()
+					|| (stats[clientnum] && stats[clientnum]->EFFECTS[EFF_TELEPATH]) )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
@@ -2777,9 +2791,24 @@ int main(int argc, char** argv)
 						camera.ang += cosspin * drunkextend;
 						camera.vang += sinspin * drunkextend;
 					}
-					raycast(&camera, REALCOLORS);
 
-					glDrawWorld(&camera, REALCOLORS);
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_TELEPATH] )
+						{
+							// don't draw world with telepath blindfold.
+						}
+						else
+						{
+							raycast(&camera, REALCOLORS);
+							glDrawWorld(&camera, REALCOLORS);
+						}
+					}
+					else
+					{
+						raycast(&camera, REALCOLORS);
+						glDrawWorld(&camera, REALCOLORS);
+					}
 					//drawFloors(&camera);
 					drawEntities3D(&camera, REALCOLORS);
 					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)

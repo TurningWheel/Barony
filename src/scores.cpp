@@ -841,6 +841,22 @@ void loadAllScores()
 				}
 			}
 		}
+		else if ( versionNumber < 302 )
+		{
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				if ( c < 19 )
+				{
+					fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+					fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->stats->EFFECTS[c] = false;
+					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
 		else
 		{
 			for ( c = 0; c < NUMEFFECTS; c++ )

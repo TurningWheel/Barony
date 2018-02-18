@@ -81,15 +81,19 @@ int checkSpriteType(Sint32 sprite)
 	case 116:
 		//pedestal
 		return 8;
+		break;
 	case 118:
 		//teleporter
 		return 9;
+		break;
 	case 119:
 		//ceiling tile model
 		return 10;
+		break;
 	case 120:
 		//magic ceiling trap
 		return 11;
+		break;
 	case 121:
 	case 122:
 	case 123:
@@ -97,6 +101,10 @@ int checkSpriteType(Sint32 sprite)
 	case 125:
 		// general furniture/misc.
 		return 12;
+		break;
+	case 127:
+		// floor decoration
+		return 13;
 		break;
 	default:
 		return 0;
@@ -679,7 +687,10 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"BUNK BED",
 	"COLUMN DECO",
 	"PODIUM",
-	"PISTONS"
+	"PISTONS",
+	"FLOOR DECORATION",
+	"TELEPORT LOCATION",
+	"ENDEND PORTAL"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1290,6 +1301,38 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->spellTrapLatchPower = 0;
 			entityNew->spellTrapFloorTile = 0;
 			entityNew->spellTrapRefireRate = 1;
+		}
+	}
+	// furniture
+	else if ( spriteType == 12 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->furnitureDir = entityToCopy->furnitureDir;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->furnitureDir = 0;
+		}
+	}
+	// floor decoration
+	else if ( spriteType == 13 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->floorDecorationModel = entityToCopy->floorDecorationModel;
+			entityNew->floorDecorationRotation = entityToCopy->floorDecorationRotation;
+			entityNew->floorDecorationHeightOffset = entityToCopy->floorDecorationHeightOffset;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->floorDecorationModel = 0;
+			entityNew->floorDecorationRotation = 0;
+			entityNew->floorDecorationHeightOffset = 0;
 		}
 	}
 

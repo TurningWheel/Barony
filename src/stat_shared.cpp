@@ -600,7 +600,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 300;
+			stats->HP = 400;
 			stats->RANDOM_HP = 0;
 			stats->MAXHP = stats->HP;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
@@ -609,8 +609,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			stats->MAXMP = stats->MP;
 			stats->OLDHP = stats->HP;
-			stats->STR = 20;
-			stats->RANDOM_STR = 10;
+			stats->STR = 40;
+			stats->RANDOM_STR = 5;
 			stats->DEX = 8;
 			stats->RANDOM_DEX = 0;
 			stats->CON = 0;
@@ -680,6 +680,14 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 			stats->GOLD = 100;
 			stats->RANDOM_GOLD = 50;
+			stats->PROFICIENCIES[PRO_SWORD] = 90;
+			stats->PROFICIENCIES[PRO_MACE] = 90;
+			stats->PROFICIENCIES[PRO_AXE] = 90;
+			stats->PROFICIENCIES[PRO_POLEARM] = 90;
+			stats->PROFICIENCIES[PRO_RANGED] = 60;
+			stats->PROFICIENCIES[PRO_SHIELD] = 25;
+			stats->PROFICIENCIES[PRO_MAGIC] = 80;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 80;
 			break;
 		case 90:
 		case (1000 + COCKATRICE):
@@ -784,7 +792,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 150;
+			stats->MAXHP = 220;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 20;
 			stats->MP = stats->MAXMP;
@@ -793,15 +801,15 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			//stats->RANDOM_MAXMP = 20;
 			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
-			stats->STR = 15;
-			stats->DEX = 5;
-			stats->CON = 5;
+			stats->STR = 21;
+			stats->DEX = 8;
+			stats->CON = 9;
 			stats->INT = -1;
 			stats->PER = 0;
 			stats->RANDOM_PER = 5;
 			stats->CHR = -1;
 			stats->EXP = 0;
-			stats->LVL = 20;
+			stats->LVL = 25;
 			if ( rand() % 3 > 0 )
 			{
 				stats->GOLD = 100;
@@ -830,6 +838,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
 			stats->PROFICIENCIES[PRO_RANGED] = 60; //Chuck booze at you.
 			//stats->PROFICIENCIES[PRO_SHIELD] = 35;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 60;
+			stats->PROFICIENCIES[PRO_MAGIC] = 60;
 			break;
 		case 93:
 		case (1000 + AUTOMATON):
@@ -861,20 +871,64 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_MACE] = 60;
 			stats->PROFICIENCIES[PRO_AXE] = 60;
 			stats->PROFICIENCIES[PRO_RANGED] = 60;
-			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
+			stats->PROFICIENCIES[PRO_POLEARM] = 60;
 			stats->PROFICIENCIES[PRO_SHIELD] = 60;
 			break;
 		case 94:
 		case (1000 + LICH_ICE):
 			stats->type = LICH_ICE;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "Erudyce");
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->HP = 10;
+			stats->MAXHP = stats->HP;
+			stats->MP = 1000;
+			stats->MAXMP = 1000;
+			stats->OLDHP = stats->HP;
+			stats->STR = 50;
+			stats->DEX = 13;
+			stats->CON = 20;
+			stats->INT = 20;
+			stats->PER = 80;
+			stats->CHR = 50;
+			stats->EXP = 0;
+			stats->LVL = 50;
+			stats->GOLD = 100;
+			stats->HUNGER = 900;
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->PROFICIENCIES[PRO_RANGED] = 100;
+			stats->PROFICIENCIES[PRO_MAGIC] = 100;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 			break;
 		case 95:
 		case (1000 + LICH_FIRE):
 			stats->type = LICH_FIRE;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "Orpheus");
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->HP = 20000;
+			stats->MAXHP = stats->HP;
+			stats->MP = 1000;
+			stats->MAXMP = 1000;
+			stats->OLDHP = stats->HP;
+			stats->STR = 40;
+			stats->DEX = 13;
+			stats->CON = 30;
+			stats->INT = 20;
+			stats->PER = 80;
+			stats->CHR = 50;
+			stats->EXP = 0;
+			stats->LVL = 50;
+			stats->GOLD = 100;
+			stats->HUNGER = 900;
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->PROFICIENCIES[PRO_SWORD] = 80;
+			stats->PROFICIENCIES[PRO_MAGIC] = 100;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 			break;
 		case 83:
 		case (1000 + SKELETON):

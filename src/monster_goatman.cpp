@@ -50,9 +50,15 @@ void initGoatman(Entity* my, Stat* myStats)
 	{
 		if ( myStats != nullptr )
 		{
+			bool minion = false;
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
+			}
+
+			if ( my->parent != 0 )
+			{
+				minion = true;
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
@@ -65,6 +71,12 @@ void initGoatman(Entity* my, Stat* myStats)
 			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
 			{
 				strcpy(myStats->name, "Gharbad");
+				myStats->STR += 10;
+				myStats->DEX += 2;
+				myStats->MAXHP += 75;
+				myStats->HP = myStats->MAXHP;
+				myStats->OLDHP = myStats->MAXHP;
+				myStats->CHR = -1;
 				boss = BOSS_GHARBAD;
 				//TODO: Boss stats
 
@@ -115,13 +127,30 @@ void initGoatman(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			bool isShaman = false;
-			if ( rand() % 2 && boss == 0 )
+			if ( rand() % 2 && boss == 0 && !minion )
 			{
 				isShaman = true;
+				if ( rand() % 2 == 0 )
+				{
+					Entity* entity = summonMonster(GOATMAN, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
+					if ( rand() % 5 == 0 )
+					{
+						// summon second ally randomly.
+						entity = summonMonster(GOATMAN, my->x, my->y);
+						if ( entity )
+						{
+							entity->parent = my->getUID();
+						}
+					}
+				}
 			}
 			else
 			{
-				myStats->DEX += 3; // more speed for brawlers.
+				myStats->DEX += 1; // more speed for brawlers.
 			}
 			
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
@@ -269,26 +298,26 @@ void initGoatman(Entity* my, Stat* myStats)
 				// give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					switch ( rand() % 20 )
+					switch ( rand() % 12 )
 					{
 						case 0:
 						case 1:
 						case 2:
 						case 3:
 						case 4:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 2 + SERVICABLE), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 5:
 						case 6:
 						case 7:
 						case 8:
-							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 2 + SERVICABLE), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 9:
 							switch ( rand() % 4 )
 							{
 								case 0:
-									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 2 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 1:
 									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
