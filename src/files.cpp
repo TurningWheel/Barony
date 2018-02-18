@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <fstream>
 #include <list>
 #include <string>
 
@@ -912,4 +913,29 @@ std::list<std::string> directoryContents(const char* directory)
 	closedir(dir);
 
 	return list;
+}
+
+std::vector<std::string> getLinesFromDataFile(std::string filename)
+{
+	std::vector<std::string> lines;
+	std::string filepath(datadir);
+	filepath += "/";
+	filepath += filename;
+	std::ifstream file(filepath);
+	if ( !file )
+	{
+		printlog("Error: Failed to open file \"%s\"", filename.c_str());
+		return lines;
+	}
+	std::string line;
+	while ( std::getline(file, line) )
+	{
+		if ( !line.empty() )
+		{
+			lines.push_back(line);
+		}
+	}
+	file.close();
+
+	return lines;
 }

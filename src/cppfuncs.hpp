@@ -27,25 +27,3 @@ T randomEntryFromVector(std::vector<T> vector)
 
 	return vector[rand() % vector.size()];
 }
-
-inline std::vector<std::string> getLinesFromFile(std::string filename)
-{
-	std::vector<std::string> lines;
-	std::ifstream file(filename);
-	if ( !file )
-	{
-		printlog("Error: Failed to open file \"%s\"", filename.c_str());
-		return lines;
-	}
-	std::string line;
-	while ( std::getline(file, line) )
-	{
-		if ( !line.empty() )
-		{
-			lines.push_back(line);
-		}
-	}
-	file.close();
-
-	return lines;
-}

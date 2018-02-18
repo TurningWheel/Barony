@@ -265,13 +265,13 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity = nullptr;
 				break;
 			}
-			while (1);
+			while ( 1 );
 		}
 	}
 
 	if ( entity )
 	{
-		switch (creature)
+		switch ( creature )
 		{
 			case RAT:
 				entity->focalx = limbs[RAT][0][0]; // 0
