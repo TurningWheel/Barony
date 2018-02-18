@@ -3301,7 +3301,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 
 void actParticleExplosionCharge(Entity* my)
 {
-	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) || my->parent == 0 )
+	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) || (ticks % 14 == 0 && uidToEntity(my->parent) == nullptr) )
 	{
 		list_RemoveNode(my->mynode);
 	}
