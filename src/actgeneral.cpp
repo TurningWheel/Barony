@@ -385,6 +385,14 @@ void actCeilingTile(Entity* my)
 	{
 		return;
 	}
+	if ( !my->flags[PASSABLE] )
+	{
+		my->flags[PASSABLE] = true;
+	}
+	if ( my->flags[BLOCKSIGHT] )
+	{
+		my->flags[BLOCKSIGHT] = false;
+	}
 }
 
 void actPistonBase(Entity* my)
