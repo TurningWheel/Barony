@@ -490,6 +490,7 @@ void vampireDie(Entity* my)
 			if ( entity->behavior == &actPortal )
 			{
 				entity->flags[INVISIBLE] = false;
+				serverUpdateEntityFlag(entity, INVISIBLE);
 			}
 		}
 	}

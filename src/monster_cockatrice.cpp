@@ -29,14 +29,14 @@ void initCockatrice(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 79;
+		/*MONSTER_SPOTSND = 79;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
-		/*MONSTER_SPOTSND = 198;
+		MONSTER_IDLEVAR = 1;*/
+		MONSTER_SPOTSND = 385;
 		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 201;
-		MONSTER_IDLEVAR = 3;*/
+		MONSTER_IDLESND = 382;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -292,7 +292,8 @@ void cockatriceDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 28, 128);
+	//playSoundEntity(my, 28, 128);
+	playSoundEntity(my, 388 + rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -310,6 +311,7 @@ void cockatriceDie(Entity* my)
 			else if ( entity->behavior == &actPortal )
 			{
 				entity->flags[INVISIBLE] = false;
+				serverUpdateEntityFlag(entity, INVISIBLE);
 			}
 		}
 	}
@@ -562,7 +564,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
-						playSoundEntityLocal(my, 79, 128);
+						playSoundEntityLocal(my, 386, 128);
 						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
@@ -646,7 +648,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->pitch = 0;
 						entity->roll = 0;
 						// set overshoot for z axis animation
-						playSoundEntityLocal(my, 79, 128);
+						playSoundEntityLocal(my, 386, 128);
 						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
