@@ -5725,7 +5725,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// lifesteal
-					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
+					if ( damage > 0 
+						&& ((myStats->EFFECTS[EFF_VAMPIRICAURA] 
+								&& (myStats->weapon == nullptr || myStats->type == LICH_FIRE)
+							) 
+							|| myStats->type == VAMPIRE) )
 					{
 						bool lifestealSuccess = false;
 						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
@@ -8806,7 +8810,9 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		&& (monsterState == MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY 
 			|| monsterState == MONSTER_STATE_LICHICE_TELEPORT_STATIONARY
 			|| monsterState == MONSTER_STATE_LICH_CASTSPELLS
-			|| monsterState == MONSTER_STATE_LICH_TELEPORT_ROAMING) )
+			|| monsterState == MONSTER_STATE_LICH_TELEPORT_ROAMING
+			|| monsterState == MONSTER_STATE_LICHFIRE_DIE
+			|| monsterState == MONSTER_STATE_LICHICE_DIE) )
 	{
 
 	}
