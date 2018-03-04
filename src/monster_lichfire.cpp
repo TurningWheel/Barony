@@ -454,10 +454,11 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist)
 	}
 	else
 	{
-		/*if ( !my->skill[27] )
-		{
-			my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, 192);
-		}*/
+	}
+
+	if ( !my->light )
+	{
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, 192);
 	}
 
 	//Lich stares you down while he does his special ability windup, and any of his spellcasting animations.

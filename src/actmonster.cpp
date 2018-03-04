@@ -1364,7 +1364,7 @@ void actMonster(Entity* my)
 				numMonsterTypeAliveOnMap(LICH_FIRE, lichAlly);
 				if ( lichAlly == nullptr )
 				{
-					messagePlayer(0, "DEAD");
+					//messagePlayer(0, "DEAD");
 					my->monsterLichAllyStatus = LICH_ALLY_DEAD;
 					my->monsterLichAllyUID = 0;
 					for ( int c = 0; c < MAXPLAYERS; c++ )
@@ -1383,7 +1383,7 @@ void actMonster(Entity* my)
 				numMonsterTypeAliveOnMap(LICH_ICE, lichAlly);
 				if ( lichAlly == nullptr )
 				{
-					messagePlayer(0, "DEAD");
+					//messagePlayer(0, "DEAD");
 					my->monsterLichAllyStatus = LICH_ALLY_DEAD;
 					my->monsterLichAllyUID = 0;
 					for ( int c = 0; c < MAXPLAYERS; c++ )
@@ -1452,7 +1452,7 @@ void actMonster(Entity* my)
 						break;
 				}
 				if ( my->monsterLichBattleState % 2 == 1
-					&& (rand() % 8 == 0 
+					&& (rand() % 5 == 0 
 						|| (rand() % 4 == 0 && my->monsterLichTeleportTimer > 0)
 						|| (rand() % 2 == 0 && my->monsterLichAllyStatus == LICH_ALLY_DEAD))
 					)
@@ -4115,7 +4115,7 @@ timeToGoAgain:
 											if ( my->monsterPathCount > 100 )
 											{
 												my->monsterPathCount = 0;
-												messagePlayer(0, "running into monster like a fool!");
+												//messagePlayer(0, "running into monster like a fool!");
 												my->monsterMoveBackwardsAndPath();
 											}
 										}
@@ -4160,7 +4160,7 @@ timeToGoAgain:
 											if ( my->monsterPathCount > 100 )
 											{
 												my->monsterPathCount = 0;
-												messagePlayer(0, "remaking path!");
+												//messagePlayer(0, "remaking path!");
 												my->monsterMoveBackwardsAndPath();
 											}
 										}
@@ -4418,7 +4418,7 @@ timeToGoAgain:
 					my->yaw -= PI * 2;
 				}
 			}
-			messagePlayer(0, "timer: %d", my->monsterSpecialTimer);
+			//messagePlayer(0, "timer: %d", my->monsterSpecialTimer);
 			if ( my->monsterSpecialTimer == 180 )
 			{
 				if ( myStats->type == LICH_FIRE )
@@ -5136,6 +5136,35 @@ timeToGoAgain:
 							}
 							my->monsterHitTime = 0;
 						}
+						else
+						{
+							real_t distToPlayer = 0.f;
+							int playerToChase = -1;
+							for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								if ( players[c] && players[c]->entity )
+								{
+									if ( !distToPlayer )
+									{
+										distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										playerToChase = c;
+									}
+									else
+									{
+										double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										if ( newDistToPlayer < distToPlayer )
+										{
+											distToPlayer = newDistToPlayer;
+											playerToChase = c;
+										}
+									}
+								}
+							}
+							if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
+							{
+								my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+							}
+						}
 					}
 				}
 			
@@ -5237,6 +5266,35 @@ timeToGoAgain:
 							}
 							my->monsterHitTime = 0;
 							my->monsterLichMagicCastCount = 0;
+						}
+						else
+						{
+							real_t distToPlayer = 0.f;
+							int playerToChase = -1;
+							for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								if ( players[c] && players[c]->entity )
+								{
+									if ( !distToPlayer )
+									{
+										distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										playerToChase = c;
+									}
+									else
+									{
+										double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										if ( newDistToPlayer < distToPlayer )
+										{
+											distToPlayer = newDistToPlayer;
+											playerToChase = c;
+										}
+									}
+								}
+							}
+							if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
+							{
+								my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+							}
 						}
 					}
 				}

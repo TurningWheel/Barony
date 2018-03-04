@@ -1147,6 +1147,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
+							if ( parent )
+							{
+								Stat* casterStats = parent->getStats();
+								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
+								{
+									damage *= 2;
+								}
+							}
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
@@ -1881,7 +1889,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
+							if ( parent )
+							{
+								Stat* casterStats = parent->getStats();
+								if ( casterStats && casterStats->type == LICH_FIRE && parent->monsterLichAllyStatus == LICH_ALLY_DEAD )
+								{
+									damage *= 2;
+								}
+							}
 							damage /= (1 + (int)resistance);
+							
 							hit.entity->modHP(-damage);
 
 							// write the obituary
