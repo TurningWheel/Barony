@@ -115,6 +115,7 @@ extern bool settings_broadcast;
 extern bool settings_nohud;
 extern bool settings_colorblind;
 extern bool settings_spawn_blood;
+extern bool settings_light_flicker;
 extern char portnumber_char[6];
 extern char connectaddress[64];
 extern int multiplayerselect;
