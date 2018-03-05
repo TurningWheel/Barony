@@ -44,6 +44,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 			bool lesserMonster = false;
+			bool greaterMonster = false;
 			if ( !strncmp(myStats->name, "damaged automaton", strlen("damaged automaton")) )
 			{
 				lesserMonster = true;
@@ -60,6 +61,27 @@ void initAutomaton(Entity* my, Stat* myStats)
 				myStats->CHR = -3;
 				myStats->EXP = 0;
 				myStats->LVL = 16;
+			}
+			else if ( !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")) )
+			{
+				greaterMonster = true;
+				myStats->HP = 150;
+				myStats->MAXHP = 150;
+				myStats->RANDOM_MAXHP = 0;
+				myStats->RANDOM_HP = 0;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 35;
+				myStats->DEX = 13;
+				myStats->CON = 8;
+				myStats->INT = 10;
+				myStats->PER = 25;
+				myStats->CHR = -3;
+				myStats->LVL = 30;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+				myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 			}
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
@@ -137,24 +159,25 @@ void initAutomaton(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( rand() % 10 )
+				if ( greaterMonster )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
+					switch ( rand() % 4 )
+					{
+						case 0:
+							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 1:
+							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 2:
+							myStats->weapon = newItem(SHORTBOW, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 3:
+							myStats->weapon = newItem(CROSSBOW, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						default:
+							break;
+					}
 				}
 			}
 
@@ -184,25 +207,68 @@ void initAutomaton(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( rand() % 10 )
+				if ( greaterMonster )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 8:
-						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 9:
-						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
+					switch ( rand() % 4 )
+					{
+						case 0:
+							myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 1:
+							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 2:
+							myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 3:
+							myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						default:
+							break;
+					}
+				}
+			}
+
+			//give boots
+			if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+			{
+				if ( greaterMonster )
+				{
+					switch ( rand() % 4 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							myStats->shoes = newItem(STEEL_BOOTS_LEVITATION, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						default:
+							break;
+					}
+				}
+			}
+
+			//give cloak
+			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			{
+				if ( greaterMonster )
+				{
+					switch ( rand() % 4 )
+					{
+						case 0:
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 1:
+							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 2:
+							myStats->cloak = newItem(CLOAK, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+							break;
+						case 3:
+							break;
+						default:
+							break;
+					}
 				}
 			}
 		}
@@ -549,10 +615,12 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				my->z = -.5;
 				my->pitch = 0;
-				if ( myStats->HP < 25 && !myStats->EFFECTS[EFF_CONFUSED] )
+				if ( (myStats->HP < 25 && !myStats->EFFECTS[EFF_CONFUSED])
+					|| (myStats->HP < 50 && !strncmp(myStats->name, "corrupted automaton", strlen("corrupted automaton")))
+					)
 				{
 					// threshold for boom boom
-					if ( rand() % 3 > 0 ) // 2/3
+					if ( rand() % 4 > 0 ) // 3/4
 					{
 						my->monsterSpecialState = AUTOMATON_MALFUNCTION_START;
 						my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;

@@ -110,10 +110,8 @@ void actBeartrap(Entity* my)
 				}
 				if ( entityDist(my, entity) < 6.5 )
 				{
-					stat->EFFECTS[EFF_PARALYZED] = true;
-					stat->EFFECTS_TIMERS[EFF_PARALYZED] = 200;
-					stat->EFFECTS[EFF_BLEEDING] = true;
-					stat->EFFECTS_TIMERS[EFF_BLEEDING] = 300;
+					entity->setEffect(EFF_PARALYZED, true, 200, false);
+					entity->setEffect(EFF_BLEEDING, true, 300, false);
 					int damage = 10 + 3 * (BEARTRAP_STATUS + BEARTRAP_BEATITUDE);
 					Stat* trapperStat = nullptr;
 					if ( parent && (trapperStat = parent->getStats()) )

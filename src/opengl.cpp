@@ -137,7 +137,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		glDisable(GL_BLEND);
 	}
 
-	if ( entity->flags[OVERDRAW] )
+	if ( entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
 	{
 		glDepthRange(0, 0.1);
 	}
@@ -145,9 +145,16 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	// get shade factor
 	if (!entity->flags[BRIGHT])
 	{
-		if (!entity->flags[OVERDRAW])
+		if ( !entity->flags[OVERDRAW] )
 		{
-			s = getLightForEntity(entity->x / 16, entity->y / 16);
+			if ( entity->monsterEntityRenderAsTelepath == 1 )
+			{
+				s = 32 / 255.f;
+			}
+			else
+			{
+				s = getLightForEntity(entity->x / 16, entity->y / 16);
+			}
 		}
 		else
 		{

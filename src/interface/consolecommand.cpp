@@ -908,6 +908,53 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[299]);
 		}
 	}
+	else if ( !strncmp(command_str, "/maxout4", 8) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if ( multiplayer == SINGLE )
+		{
+			int c;
+			Stat* myStats = stats[0];
+			for ( c = 0; c < 35; c++ )
+			{
+				consoleCommand("/levelup");
+			}
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			{
+				hotbar[c].item = 0;
+			}
+			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			newItem(CROSSBOW, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->helmet = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, &myStats->inventory);
+			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			//consoleCommand("/nextlevel");
+			for ( c = 0; c < NUMPROFICIENCIES; c++ )
+			{
+				if ( c != PRO_STEALTH )
+				{
+					while ( stats[clientnum]->PROFICIENCIES[c] < 100 )
+					{
+						//++stats[clientnum]->PROFICIENCIES[c];
+						players[clientnum]->entity->increaseSkill(c);
+					}
+				}
+			}
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+	}
 	else if (!strncmp(command_str, "/maxout", 7))
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )

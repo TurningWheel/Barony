@@ -184,6 +184,13 @@ char furniturePropertyNames[1][19] =
 	"Direction (-1 - 7)"
 };
 
+char floorDecorationPropertyNames[3][59] =
+{
+	"Model texture to use (0-999)",
+	"Direction (-1 - 7)",
+	"Height Offset (Qtrs of a voxel, +ive is higher)"
+};
+
 int recentUsedTiles[9][9] = { 0 };
 int recentUsedTilePalette = 0;
 int lockTilePalette[9] = { 0 };
@@ -778,17 +785,17 @@ void editFill(int x, int y, int layer, int type)
 
 #define MAXUNDOS 10
 
-node_t* undospot = NULL;
-node_t* redospot = NULL;
+node_t* undospot = nullptr;
+node_t* redospot = nullptr;
 list_t undolist;
 void makeUndo()
 {
 	node_t* node, *nextnode;
 
 	// eliminate any undo nodes beyond the one we are currently on
-	if ( undospot != NULL )
+	if ( undospot != nullptr )
 	{
-		for ( node = undospot->next; node != NULL; node = nextnode )
+		for ( node = undospot->next; node != nullptr; node = nextnode )
 		{
 			nextnode = node->next;
 			list_RemoveNode(node);
@@ -816,9 +823,10 @@ void makeUndo()
 	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
 	memcpy(undomap->tiles, map.tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	undomap->entities = (list_t*) malloc(sizeof(list_t));
-	undomap->entities->first = NULL;
-	undomap->entities->last = NULL;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	undomap->entities->first = nullptr;
+	undomap->entities->last = nullptr;
+	undomap->creatures = nullptr;
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities, nullptr);
 
@@ -834,14 +842,14 @@ void makeUndo()
 		list_RemoveNode(undolist.first);
 	}
 	undospot = node;
-	redospot = NULL;
+	redospot = nullptr;
 }
 
 void clearUndos()
 {
 	list_FreeAll(&undolist);
-	undospot = NULL;
-	redospot = NULL;
+	undospot = nullptr;
+	redospot = nullptr;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1242,11 +1250,11 @@ int main(int argc, char** argv)
 	int x2, y2;
 	//char action[32];
 	int oslidery = 0;
-	light_t* light = NULL;
+	light_t* light = nullptr;
 	bool savedundo = false;
 	smoothlighting = true;
 
-	Stat* spriteStats = NULL;
+	Stat* spriteStats = nullptr;
 
 	processCommandLine(argc, argv);
 
@@ -1261,18 +1269,28 @@ int main(int argc, char** argv)
 	if ( (x = initApp("Barony Editor", fullscreen)) )
 	{
 		printlog("Critical error: %d\n", x);
+#ifdef STEAMWORKS
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
-		                         "Barony Editor has encountered a critical error and cannot start.\n\n"
-		                         "Please check the log.txt file in the game directory for additional info,\n"
-		                         "or contact us through our website at http://www.baronygame.com/ for support.",
-		                         screen);
+								"Barony has encountered a critical error and cannot start.\n\n"
+								"Please check the log.txt file in the game directory for additional info\n"
+								"and verify Steam is running. Alternatively, contact us through our website\n"
+								"at http://www.baronygame.com/ for support.",
+								screen);
+#else
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
+								"Barony has encountered a critical error and cannot start.\n\n"
+								"Please check the log.txt file in the game directory for additional info,\n"
+								"or contact us through our website at http://www.baronygame.com/ for support.",
+								screen);
+#endif
 		deinitApp();
 		exit(x);
 	}
-	copymap.tiles = NULL;
-	copymap.entities = NULL;
-	undolist.first = NULL;
-	undolist.last = NULL;
+	copymap.tiles = nullptr;
+	copymap.entities = nullptr;
+	copymap.creatures = nullptr;
+	undolist.first = nullptr;
+	undolist.last = nullptr;
 
 	// Load Cursors
 	cursorArrow = SDL_GetCursor();
@@ -1284,14 +1302,15 @@ int main(int argc, char** argv)
 
 	// instatiate a timer
 	timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
-	srand(time(NULL));
+	srand(time(nullptr));
 
 	// create an empty map
 	map.width = 32;
 	map.height = 24;
 	map.entities = (list_t*) malloc(sizeof(list_t));
-	map.entities->first = NULL;
-	map.entities->last = NULL;
+	map.creatures = nullptr;
+	map.entities->first = nullptr;
+	map.entities->last = nullptr;
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
@@ -5158,6 +5177,127 @@ int main(int argc, char** argv)
 
 							// set the maximum length allowed for user input
 							inputlen = 2;
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
+				if ( newwindow == 15 )
+				{
+					if ( selectedEntity != nullptr )
+					{
+						int numProperties = sizeof(floorDecorationPropertyNames) / sizeof(floorDecorationPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(floorDecorationPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, floorDecorationPropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 7 || propertyInt < -1 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										switch ( propertyInt )
+										{
+											case -1:
+												strcpy(tmpStr, "random");
+												break;
+											case 0:
+												strcpy(tmpStr, "East");
+												break;
+											case 1:
+												strcpy(tmpStr, "Southeast");
+												break;
+											case 2:
+												strcpy(tmpStr, "South");
+												break;
+											case 3:
+												strcpy(tmpStr, "Southwest");
+												break;
+											case 4:
+												strcpy(tmpStr, "West");
+												break;
+											case 5:
+												strcpy(tmpStr, "Northwest");
+												break;
+											case 6:
+												strcpy(tmpStr, "North");
+												break;
+											case 7:
+												strcpy(tmpStr, "Northeast");
+												break;
+											default:
+												break;
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 999 || propertyInt < -999 )
+									{
+										propertyPageError(i, 0); // reset to default 0.
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							inputlen = 4;
 							propertyPageCursorFlash(spacing);
 						}
 					}

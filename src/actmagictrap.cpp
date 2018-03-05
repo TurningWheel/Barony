@@ -145,12 +145,13 @@ void Entity::actMagicTrapCeiling()
 		{
 			entity->x = x;
 			entity->y = y;
-			entity->z = ceilingModel->z - 5;
+			entity->z = ceilingModel->z - 2;
 			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->overload_multiplier);
 			entity->vel_x = 0.0;
 			entity->vel_y = 0.0;
 			entity->vel_z = 0.5 * (missile_speed);
 			entity->pitch = PI / 2;
+			entity->actmagicIsVertical = MAGIC_ISVERTICAL_Z;
 		}
 	}
 }

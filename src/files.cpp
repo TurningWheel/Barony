@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <fstream>
 #include <list>
 #include <string>
 
@@ -539,6 +540,11 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 					case 12:
 						fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
 						break;
+					case 13:
+						fread(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
+						fread(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
+						fread(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -799,6 +805,11 @@ int saveMap(char* filename2)
 				case 12:
 					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
 					break;
+				case 13:
+					fwrite(&entity->floorDecorationModel, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationRotation, sizeof(Sint32), 1, fp);
+					fwrite(&entity->floorDecorationHeightOffset, sizeof(Sint32), 1, fp);
+					break;
 				default:
 					break;
 			}
@@ -902,4 +913,29 @@ std::list<std::string> directoryContents(const char* directory)
 	closedir(dir);
 
 	return list;
+}
+
+std::vector<std::string> getLinesFromDataFile(std::string filename)
+{
+	std::vector<std::string> lines;
+	std::string filepath(datadir);
+	filepath += "/";
+	filepath += filename;
+	std::ifstream file(filepath);
+	if ( !file )
+	{
+		printlog("Error: Failed to open file \"%s\"", filename.c_str());
+		return lines;
+	}
+	std::string line;
+	while ( std::getline(file, line) )
+	{
+		if ( !line.empty() )
+		{
+			lines.push_back(line);
+		}
+	}
+	file.close();
+
+	return lines;
 }
