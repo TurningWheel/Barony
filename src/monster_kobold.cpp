@@ -72,29 +72,82 @@ void initKobold(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			int cultist = 0;
+
+			if ( !strncmp(myStats->name, "kobold cultist", 14) )
+			{
+				cultist = 1 + rand() % 2;
+			}
+
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				switch ( rand() % 10 )
+				if ( cultist > 0 )
 				{
-					case 0:
-					case 1:
-					case 2:
-						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 3:
-					case 4:
-						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-						myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, nullptr);
-						break;
+					if ( cultist == 1 )
+					{
+						// mage
+						switch ( rand() % 5 )
+						{
+							case 0:
+								myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								break;
+							case 1:
+								myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								break;
+							case 2:
+								myStats->weapon = newItem(SPELLBOOK_BLEED, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								break;
+							case 3:
+								newItem(SPELLBOOK_STONEBLOOD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+								break;
+							case 4:
+								myStats->weapon = newItem(MAGICSTAFF_BLEED, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								break;
+						}
+					}
+					else
+					{
+						// ranged
+						switch ( rand() % 5 )
+						{
+							case 0:
+							case 1:
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+								break;
+							case 2:
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 3:
+							case 4:
+								myStats->weapon = newItem(SHORTBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+						}
+					}
+				}
+				else
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 3:
+						case 4:
+							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 
@@ -133,74 +186,78 @@ void initKobold(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				switch ( rand() % 10 )
+				if ( cultist > 0 )
 				{
-					case 0:
-					case 1:
-						myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
-						break;
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 6:
-					case 7:
+					if ( cultist == 1 )
+					{
+						myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+					}
+					else
+					{
 						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 8:
-						myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						// nothing
-						break;
+					}
+				}
+				else
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
+							break;
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 6:
+						case 7:
+							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 8:
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							// nothing
+							break;
+					}
 				}
 			}
 
 			// give cloak
 			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
-				switch ( rand() % 10 )
+				if ( cultist > 0 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-						myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
+					myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, cultist - 1, false, nullptr);
+				}
+				else
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+						case 9:
+							myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 
 			// give helm
-			/*if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			if ( cultist > 0 && myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 7:
-					case 8:
-					case 9:
-						myStats->helmet = newItem(STEEL_HELM, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-				}
-			}*/
+				myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, cultist - 1, false, nullptr);
+			}
 		}
 	}
 
@@ -355,6 +412,28 @@ void initKobold(Entity* my, Stat* myStats)
 	entity->focalx = limbs[KOBOLD][8][0]; // 0
 	entity->focaly = limbs[KOBOLD][8][1]; // 0
 	entity->focalz = limbs[KOBOLD][8][2]; // 4
+	entity->behavior = &actKoboldLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// helmet
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.1;
+	entity->scaley = 1.1;
+	entity->scalez = 1.1;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[KOBOLD][9][0]; // 0
+	entity->focaly = limbs[KOBOLD][9][1]; // 0
+	entity->focalz = limbs[KOBOLD][9][2]; // -2
 	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -841,6 +920,52 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->x -= cos(my->yaw) * 1.5;
 				entity->y -= sin(my->yaw) * 1.5;
 				entity->yaw += PI / 2;
+				break;
+			// helmet
+			case LIMB_HUMANOID_HELMET:
+				entity->focalx = limbs[KOBOLD][9][0]; // 0
+				entity->focaly = limbs[KOBOLD][9][1]; // 0
+				entity->focalz = limbs[KOBOLD][9][2]; // -2
+				entity->pitch = my->pitch;
+				entity->roll = 0;
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = itemModel(myStats->helmet);
+					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				my->setHelmetLimbOffset(entity);
 				break;
 		}
 	}

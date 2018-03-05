@@ -347,6 +347,7 @@ public:
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
 	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
+	bool shouldItemStack(int player);
 
 	bool isShield() const;
 

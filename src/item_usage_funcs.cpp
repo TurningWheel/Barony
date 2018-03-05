@@ -866,16 +866,17 @@ void item_PotionParalysis(Item*& item, Entity* entity)
 	}
 
 	messagePlayer(player, language[771]);
-	stats->EFFECTS[EFF_PARALYZED] = true;
+	int effectDuration = 0;
 	if ( player >= 0 )
 	{
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = std::max(300, stats->EFFECTS_TIMERS[EFF_PARALYZED] - (entity->getCON()) * 5);
+		effectDuration = 420 + rand() % 180;
+		effectDuration = std::max(300, effectDuration - (entity->getCON()) * 5);
 	}
 	else
 	{
-		stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
+		effectDuration = 420 + rand() % 180;
 	}
+	entity->setEffect(EFF_PARALYZED, true, effectDuration, false);
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -1230,10 +1231,6 @@ void item_ScrollMail(Item* item, int player)
 
 void item_ScrollIdentify(Item* item, int player)
 {
-	node_t* node;
-	Item* target;
-	int c, items, itemToIdentify, numIdentified = 0;
-
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1250,57 +1247,24 @@ void item_ScrollIdentify(Item* item, int player)
 		return;
 	}
 
-	if ( player == clientnum )
-	{
-		conductIlliterate = false;
-	}
-	item->identified = 1;
-	messagePlayer(player, language[848]);
-	messagePlayer(player, language[849]);
+	//identifygui_mode = true;
+	identifygui_active = true;
+	identifygui_appraising = false;
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 
-	// identify algorithm: locate unidentified inventory items and randomly choose
-	// one of them to be identified. Each item has equal chance of being identified.
-	// cursed = 1 item identified
-	// uncursed = 1 item identified
-	// blessed = 1+ items identified
-
-	for ( c = 0; c < std::max(item->beatitude + 1, 1); c++ )
+	if ( removecursegui_active )
 	{
-		items = 0;
-		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
-		{
-			target = (Item*)node->element;
-			if ( target && target->identified == false )
-			{
-				items++;
-			}
-		}
-		if ( items == 0 )
-		{
-			if ( numIdentified == 0 )
-			{
-				messagePlayer(player, language[850]);
-			}
-			break;
-		}
-		itemToIdentify = rand() % items;
-		items = 0;
-		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
-		{
-			target = (Item*)node->element;
-			if ( target && target->identified == false )
-			{
-				if ( items == itemToIdentify )
-				{
-					target->identified = true;
-					numIdentified++;
-					messagePlayer(player, " * %s.", target->description());
-					break;
-				}
-				items++;
-			}
-		}
+		closeRemoveCurseGUI();
 	}
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+
+	//Initialize Identify GUI game controller code here.
+	initIdentifyGUIControllerCode();
 }
 
 void item_ScrollLight(Item* item, int player)
@@ -1574,7 +1538,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 void item_ScrollRemoveCurse(Item* item, int player)
 {
 	Item* target = nullptr;
-	node_t* node;
+
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -1589,67 +1553,27 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		return;
 	}
 
-	if (player == clientnum)
-	{
-		conductIlliterate = false;
-	}
-	item->identified = 1;
-	if (player == clientnum)
-	{
-		messagePlayer(player, language[848]);
-	}
 	if (item->beatitude >= 0)
 	{
-		if (player == clientnum)
+		// Uncurse an item
+		shootmode = false;
+		gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+		removecursegui_active = true;
+		identifygui_active = false;
+
+		if ( identifygui_active )
 		{
-			messagePlayer(player, language[861]);
+			CloseIdentifyGUI();
 		}
-		if (stats[player]->helmet != nullptr)
+
+		if ( openedChest[player] )
 		{
-			stats[player]->helmet->beatitude = std::max<Sint16>(0, stats[player]->helmet->beatitude);
+			openedChest[player]->closeChest();
 		}
-		if (stats[player]->breastplate != nullptr)
-		{
-			stats[player]->breastplate->beatitude = std::max<Sint16>(0, stats[player]->breastplate->beatitude);
-		}
-		if (stats[player]->gloves != nullptr)
-		{
-			stats[player]->gloves->beatitude = std::max<Sint16>(0, stats[player]->gloves->beatitude);
-		}
-		if (stats[player]->shoes != nullptr)
-		{
-			stats[player]->shoes->beatitude = std::max<Sint16>(0, stats[player]->shoes->beatitude);
-		}
-		if (stats[player]->shield != nullptr)
-		{
-			stats[player]->shield->beatitude = std::max<Sint16>(0, stats[player]->shield->beatitude);
-		}
-		if (stats[player]->weapon != nullptr)
-		{
-			stats[player]->weapon->beatitude = std::max<Sint16>(0, stats[player]->weapon->beatitude);
-		}
-		if (stats[player]->cloak != nullptr)
-		{
-			stats[player]->cloak->beatitude = std::max<Sint16>(0, stats[player]->cloak->beatitude);
-		}
-		if (stats[player]->amulet != nullptr)
-		{
-			stats[player]->amulet->beatitude = std::max<Sint16>(0, stats[player]->amulet->beatitude);
-		}
-		if (stats[player]->ring != nullptr)
-		{
-			stats[player]->ring->beatitude = std::max<Sint16>(0, stats[player]->ring->beatitude);
-		}
-		if (stats[player]->mask != nullptr)
-		{
-			stats[player]->mask->beatitude = std::max<Sint16>(0, stats[player]->mask->beatitude);
-		}
-		if (item->beatitude > 0 && player == clientnum )
-			for (node = stats[player]->inventory.first; node != nullptr; node = node->next)
-			{
-				target = (Item*)node->element;
-				target->beatitude = std::max<Sint16>(0, target->beatitude);
-			}
+
+		initRemoveCurseGUIControllerCode();
+
+		return;
 	}
 	else
 	{
@@ -2864,7 +2788,7 @@ void item_FoodTin(Item*& item, int player)
 
 	// first word
 	int word = rand() % 16;
-	strcpy(tempstr, language[918]);
+	strcpy(tempstr, language[918 + word]);
 	if ( word == 6 || word == 15 )
 	{
 		slippery = true;
@@ -2872,7 +2796,7 @@ void item_FoodTin(Item*& item, int player)
 
 	// second word
 	word = rand() % 16;
-	strcat(tempstr, language[934]);
+	strcat(tempstr, language[934 + word]);
 	if ( word == 1 || word == 7 || word == 8 || word == 12 )
 	{
 		slippery = true;
@@ -2880,7 +2804,7 @@ void item_FoodTin(Item*& item, int player)
 
 	// third word
 	word = rand() % 16;
-	strcat(tempstr, language[950]);
+	strcat(tempstr, language[950 + word]);
 	if ( word == 1 || word == 8 )
 	{
 		slippery = true;

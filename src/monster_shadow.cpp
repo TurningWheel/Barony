@@ -315,6 +315,8 @@ void shadowDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 
+	my->spawnBlood(681);
+
 	playSoundEntity(my, 316 + rand() % 2, 128);
 
 	my->removeMonsterDeathNodes();

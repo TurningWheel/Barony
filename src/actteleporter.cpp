@@ -86,6 +86,6 @@ void Entity::actTeleporter()
 			light = lightSphereShadow(x / 16, y / 16, 3, 255);
 		}
 		yaw += 0.01; // rotate slowly on my axis
-		sprite = 614 + (this->ticks / 20) % 4; // animate
+		sprite = 620;// +(this->ticks / 20) % 4; // animate
 	}
 }

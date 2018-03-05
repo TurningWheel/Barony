@@ -569,7 +569,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if (i != 0)
 					{
 						//Tell the client to uncurse an item.
-						strcpy((char*)net_packet->data, "RCUR"); //TODO: Send a different packet, to pop open the remove curse GUI.
+						strcpy((char*)net_packet->data, "CRCU");
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
 						net_packet->len = 4;
@@ -582,6 +582,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						removecursegui_active = true;
 						identifygui_active = false;
+
+						if ( identifygui_active )
+						{
+							CloseIdentifyGUI();
+						}
+
 						if ( openedChest[i] )
 						{
 							openedChest[i]->closeChest();
@@ -726,13 +732,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster == players[i]->entity )
 				{
+					//caster->lichIceCreateCannon();
+					//caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
 					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					//createParticle1(caster, i);
 					//createParticleDropRising(caster);
 				}
 			}
-			createParticleDropRising(caster, 593, 1.0);
-			serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
+			//createParticleDropRising(caster, 593, 1.0);
+			//serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
 
 			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
 			playSoundEntity(caster, 167, 128);
@@ -797,7 +805,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->flags[PASSABLE] = true;
 			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagicMissile;
-
 			double missile_speed = 4 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);

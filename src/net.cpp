@@ -695,6 +695,39 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 
 /*-------------------------------------------------------------------------------
 
+serverSpawnMiscParticlesAtLocation
+
+Spawns misc particle effects for all clients at given coordinates.
+
+-------------------------------------------------------------------------------*/
+
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite)
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "SPPL");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			net_packet->data[10] = particleType;
+			SDLNet_Write16(particleSprite, &net_packet->data[11]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 14;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	serverUpdateEntityFlag
 
 	Updates a specific entity flag for all clients
@@ -1035,6 +1068,8 @@ void clientActions(Entity* entity)
 		case 212:
 		case 213:
 		case 214:
+		case 682:
+		case 681:
 			entity->flags[NOUPDATE] = true;
 			break;
 		case 162:
@@ -1294,10 +1329,10 @@ void clientHandlePacket()
 		{
 			return;
 		}
-		x = net_packet->data[4];
-		y = net_packet->data[5];
-		players[clientnum]->entity->x = x;
-		players[clientnum]->entity->y = y;
+		int tele_x = net_packet->data[4];
+		int tele_y = net_packet->data[5];
+		players[clientnum]->entity->x = (tele_x << 4) + 8;
+		players[clientnum]->entity->y = (tele_y << 4) + 8;
 		return;
 	}
 
@@ -1308,11 +1343,11 @@ void clientHandlePacket()
 		{
 			return;
 		}
-		x = net_packet->data[4];
-		y = net_packet->data[5];
+		int tele_x = net_packet->data[4];
+		int tele_y = net_packet->data[5];
 		int type = net_packet->data[6];
-		players[clientnum]->entity->x = x << 4 + 8;
-		players[clientnum]->entity->y = y << 4 + 8;
+		players[clientnum]->entity->x = (tele_x << 4) + 8;
+		players[clientnum]->entity->y = (tele_y << 4) + 8;
 		// play sound effect
 		if ( type == 0 || type == 1 )
 		{
@@ -1785,6 +1820,15 @@ void clientHandlePacket()
 			stats[clientnum]->amulet = NULL;
 			stats[clientnum]->ring = NULL;
 			stats[clientnum]->mask = NULL;
+
+			for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+			{
+				Entity* mapCreature = (Entity*)mapNode->element;
+				if ( mapCreature )
+				{
+					mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+				}
+			}
 		}
 		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
 		{
@@ -2262,10 +2306,46 @@ void clientHandlePacket()
 						spellTimer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
 					}
 						break;
+					case PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY:
+					case PARTICLE_EFFECT_LICH_TELEPORT_ROAMING:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+						spellTimer->particleTimerCountdownSprite = sprite;
+					}
+						break;
 					default:
 						break;
 				}
 			}
+		}
+		return;
+	}
+
+	// spawn misc particle effect at fixed location 
+	else if ( !strncmp((char*)net_packet->data, "SPPL", 4) )
+	{
+		Sint16 particle_x = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[4]));
+		Sint16 particle_y = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[6]));
+		Sint16 particle_z = static_cast<Sint16>(SDLNet_Read16(&net_packet->data[8]));
+		int particleType = static_cast<int>(net_packet->data[10]);
+		int sprite = static_cast<int>(SDLNet_Read16(&net_packet->data[11]));
+		//messagePlayer(1, "recv, %d, %d, %d, type: %d", particle_x, particle_y, particle_z, particleType);
+		switch ( particleType )
+		{
+			case PARTICLE_EFFECT_SUMMON_MONSTER:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 70, sprite);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SUMMON_MONSTER;
+				spellTimer->particleTimerCountdownSprite = 174;
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SUMMON_MONSTER;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+			}
+				break;
+			default:
+				break;
 		}
 		return;
 	}
@@ -2723,6 +2803,28 @@ void clientHandlePacket()
 
 		//Initialize Identify GUI game controller code here.
 		initIdentifyGUIControllerCode();
+
+		return;
+	}
+
+	// Open up the Remove Curse GUI
+	else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
+	{
+		removecursegui_active = true;
+		shootmode = false;
+		gui_mode = GUI_MODE_INVENTORY;
+
+		if ( identifygui_active )
+		{
+			CloseIdentifyGUI();
+		}
+
+		if ( openedChest[clientnum] )
+		{
+			openedChest[clientnum]->closeChest();
+		}
+
+		initRemoveCurseGUIControllerCode();
 
 		return;
 	}

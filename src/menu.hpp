@@ -33,6 +33,8 @@ extern int secondendmovietime;
 extern int secondendmoviestage;
 extern int thirdendmoviestage;
 extern int thirdendmovietime;
+extern int fourthendmoviestage;
+extern int fourthendmovietime;
 extern real_t drunkextend;
 extern bool losingConnection[4];
 extern int rebindaction;

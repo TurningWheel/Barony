@@ -159,6 +159,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[UPDATENEEDED] = false;
 		entity->flags[BRIGHT] = true;
+		entity->flags[PASSABLE] = true;
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
 		//entity->scalez = 0.25f;

@@ -464,3 +464,15 @@ void Entity::actPistonCam()
 		}
 	}
 }
+
+void actFloorDecoration(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	if ( !my->flags[PASSABLE] )
+	{
+		my->flags[PASSABLE] = true;
+	}
+}
