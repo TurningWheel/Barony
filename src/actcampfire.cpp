@@ -71,7 +71,11 @@ void actCampfire(Entity* my)
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 6, 160);
 			CAMPFIRE_LIGHTING = 1;
 		}
-		CAMPFIRE_FLICKER--;
+		if ( flickerLights )
+		{
+			//Campfires will never flicker if this setting is disabled.
+			CAMPFIRE_FLICKER--;
+		}
 		if (CAMPFIRE_FLICKER <= 0)
 		{
 			CAMPFIRE_LIGHTING = (CAMPFIRE_LIGHTING == 1) + 1;

@@ -3339,4 +3339,7 @@ Now wait for your leader to advance onward...#
 2902 You feel slower...#
 2903 There is an aftertaste of poison in your mouth.#
 
+# Idk
+2950 light flicker#
+
 2999 end#

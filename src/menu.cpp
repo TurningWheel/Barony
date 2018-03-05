@@ -106,6 +106,7 @@ bool settings_broadcast;
 bool settings_nohud;
 bool settings_colorblind;
 bool settings_spawn_blood;
+bool settings_light_flicker;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
@@ -1801,6 +1802,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 204, "[ ] %s", language[1345]);
 			}
+			if ( settings_light_flicker )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[x] %s", language[2950]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2950]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -1835,6 +1844,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_colorblind = (settings_colorblind == false);
+					}
+					else if ( omousey >= suby1 + 228 && omousey < suby1 + 228 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_light_flicker = (settings_light_flicker == false);
 					}
 				}
 			}
@@ -5450,6 +5464,7 @@ void openSettingsWindow()
 	settings_shaking = shaking;
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
+	settings_light_flicker = flickerLights;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
@@ -6903,6 +6918,7 @@ void applySettings()
 	shaking = settings_shaking;
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
+	flickerLights = settings_light_flicker;
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
