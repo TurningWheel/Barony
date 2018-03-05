@@ -39,7 +39,13 @@ void actMagiclightBall(Entity* my)
 
 		//Light up the area.
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
-		lightball_flicker++;
+
+
+		if ( flickerLights )
+		{
+			//Magic light ball will never flicker if this setting is disabled.
+			lightball_flicker++;
+		}
 
 		if (lightball_flicker > 5)
 		{
@@ -380,7 +386,12 @@ void actMagiclightBall(Entity* my)
 
 		//Light up the area.
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
-		lightball_flicker++;
+
+		if ( flickerLights )
+		{
+			//Magic light ball  will never flicker if this setting is disabled.
+			lightball_flicker++;
+		}
 
 		if (lightball_flicker > 5)
 		{
@@ -2021,7 +2032,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		{
 			//Make the ball light up stuff as it travels.
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
-			lightball_flicker++;
+
+			if ( flickerLights )
+			{
+				//Magic light ball will never flicker if this setting is disabled.
+				lightball_flicker++;
+			}
 			my->skill[2] = -11; // so clients know to create a light field
 
 			if (lightball_flicker > 5)
@@ -2069,7 +2085,12 @@ void actMagicClient(Entity* my)
 {
 	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
-	lightball_flicker++;
+
+	if ( flickerLights )
+	{
+		//Magic light ball will never flicker if this setting is disabled.
+		lightball_flicker++;
+	}
 	my->skill[2] = -11; // so clients know to create a light field
 
 	if (lightball_flicker > 5)
