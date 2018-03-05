@@ -149,7 +149,12 @@ void actCrystalShard(Entity* my)
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 128);
 		TORCH_LIGHTING = 1;
 	}
-	TORCH_FLICKER--;
+
+	if ( flickerLights )
+	{
+		//Crystal shards will never flicker if this setting is disabled.
+		TORCH_FLICKER--;
+	}
 	if ( TORCH_FLICKER <= 0 )
 	{
 		TORCH_LIGHTING = (TORCH_LIGHTING == 1) + 1;
