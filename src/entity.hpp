@@ -857,4 +857,4 @@ char* playerClassDescription(int classnum);
 Entity* summonChest(long x, long y);
 
 //Various settings variables regarding entities.
-extern bool flickerTorches;
+extern bool flickerLights;

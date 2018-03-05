@@ -784,7 +784,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/notorchflicker", 15))
 	{
-		flickerTorches = (flickerTorches == false);
+		flickerLights = (flickerLights == false);
 	}
 	else if (!strncmp(command_str, "/colorblind", 11))
 	{
