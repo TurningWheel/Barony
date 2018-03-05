@@ -782,7 +782,7 @@ void consoleCommand(char* command_str)
 	{
 		spawn_blood = (spawn_blood == false);
 	}
-	else if (!strncmp(command_str, "/notorchflicker", 15))
+	else if (!strncmp(command_str, "/nolightflicker", 15))
 	{
 		flickerLights = (flickerLights == false);
 	}
