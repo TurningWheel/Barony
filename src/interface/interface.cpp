@@ -879,6 +879,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/noblood\n");
 	}
+	if ( !flickerLights )
+	{
+		fprintf(fp, "/nolightflicker\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");
