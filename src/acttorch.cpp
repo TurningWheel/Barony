@@ -31,7 +31,7 @@
 #define TORCH_FLICKER my->skill[1]
 #define TORCH_FIRE my->skill[3]
 
-bool flickerTorches = true;
+bool flickerLights = true;
 
 void actTorch(Entity* my)
 {
@@ -69,7 +69,7 @@ void actTorch(Entity* my)
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
 		TORCH_LIGHTING = 1;
 	}
-	if ( flickerTorches )
+	if ( flickerLights )
 	{
 		//Torches will never flicker if this setting is disabled.
 		TORCH_FLICKER--;
