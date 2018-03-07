@@ -2591,6 +2591,29 @@ void actMonster(Entity* my)
 		//	messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
 		//}
 
+		// Check if Shopkeepers are no hostile against Players
+		if ( myStats->type == SHOPKEEPER )
+		{
+			Entity* targetedEntity = uidToEntity(my->monsterTarget);
+
+			if ( targetedEntity != nullptr )
+			{
+				// Shopkeepers hold a grudge against Players TODOR: This actually makes Shopkeepers hostile against ALL Humans
+				for ( Uint8 iPlayer = 0; iPlayer < MAXPLAYERS; iPlayer++ )
+				{
+					if ( players[iPlayer] && players[iPlayer]->entity )
+					{
+						if ( my->monsterTarget == players[iPlayer]->entity->getUID() )
+						{
+							swornenemies[SHOPKEEPER][HUMAN] = true;
+							monsterally [SHOPKEEPER][HUMAN] = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
 		{
@@ -3097,23 +3120,6 @@ void actMonster(Entity* my)
 			my->monsterTargetX = entity->x;
 			my->monsterTargetY = entity->y;
 			hitstats = entity->getStats();
-
-			if (myStats->type == SHOPKEEPER)
-			{
-				// shopkeepers hold a grudge against players
-				for ( c = 0; c < MAXPLAYERS; ++c )
-				{
-					if ( players[c] && players[c]->entity )
-					{
-						if ( my->monsterTarget == players[c]->entity->getUID() )
-						{
-							swornenemies[SHOPKEEPER][HUMAN] = true;
-							monsterally[SHOPKEEPER][HUMAN] = false;
-							break;
-						}
-					}
-				}
-			}
 
 			if ( myStats->type != DEVIL )
 			{
