@@ -34,7 +34,7 @@ void initLichIce(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 120;
+		MONSTER_SPOTSND = 377;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
@@ -88,7 +88,7 @@ void initLichIce(Entity* my, Stat* myStats)
 			//give weapon
 			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				//myStats->weapon = newItem(SPELLBOOK_LIGHTNING, EXCELLENT, 0, 1, 0, false, NULL);
+				myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -5, 1, 0, false, NULL);
 			}
 		}
 	}
@@ -199,16 +199,16 @@ void lichIceDie(Entity* my)
 					entity->sprite = 236;
 					break;
 				case 5:
-					entity->sprite = 274;
+					entity->sprite = 650;
 					break;
 				case 6:
-					entity->sprite = 275;
+					entity->sprite = 651;
 					break;
 				case 7:
-					entity->sprite = 276;
+					entity->sprite = 652;
 					break;
 				case 8:
-					entity->sprite = 277;
+					entity->sprite = 653;
 					break;
 				default:
 					break;
@@ -217,7 +217,7 @@ void lichIceDie(Entity* my)
 		}
 	}
 	my->removeMonsterDeathNodes();
-	//playSoundEntity(my, 94, 128);
+	playSoundEntity(my, 94, 128);
 	my->removeLightField();
 	// kill all other monsters on the level
 	/*for ( node = map.entities->first; node != NULL; node = nextnode )
@@ -259,7 +259,8 @@ void lichIceDie(Entity* my)
 	sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	}
 	}
-	spawnExplosion(my->x, my->y, my->z);*/
+	*/
+	spawnExplosion(my->x, my->y, my->z);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -421,6 +422,10 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 		}
 
 		// passive floating effect, server only.
+		if ( my->monsterState == MONSTER_STATE_LICHICE_DIE )
+		{
+			my->z -= 0.03;
+		}
 		if ( my->monsterAttack == 0 )
 		{
 			if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
@@ -456,20 +461,22 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 	}
 	else
 	{
-		/*if ( !my->skill[27] )
-		{
+	}
+
+	if ( !my->light )
+	{
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 4, 192);
-		}*/
 	}
 
 	//Lich stares you down while he does his special ability windup, and any of his spellcasting animations.
-	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
+	if ( (my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1
 		|| my->monsterAttack == MONSTER_POSE_MAGIC_CAST1
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP2
 		|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3
-		|| my->monsterState == MONSTER_STATE_LICH_CASTSPELLS )
+		|| my->monsterState == MONSTER_STATE_LICH_CASTSPELLS)
+		&& my->monsterState != MONSTER_STATE_LICHICE_DIE )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -498,7 +505,6 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							my->z = -0.6; //failsafe for floating too low sometimes?
 						}
-
 					}
 				}
 				else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP3 || my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP3 )
@@ -790,10 +796,18 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						createParticleDropRising(my, 592, 0.7);
 						if ( multiplayer != CLIENT )
 						{
-							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
-							// lich can't be paralyzed, use EFF_STUNNED instead.
-							myStats->EFFECTS[EFF_STUNNED] = true;
-							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+							if ( my->monsterState != MONSTER_STATE_LICHFIRE_DIE )
+							{
+								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+								// lich can't be paralyzed, use EFF_STUNNED instead.
+								myStats->EFFECTS[EFF_STUNNED] = true;
+								myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;
+							}
+							else
+							{
+								myStats->EFFECTS[EFF_STUNNED] = true;
+								myStats->EFFECTS_TIMERS[EFF_STUNNED] = 25;
+							}
 						}
 					}
 
@@ -808,20 +822,44 @@ void lichIceAnimate(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
-								my->attack(1, 0, nullptr);
-								int spellID = SPELL_COLD;
-								if ( rand() % 5 == 0 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && rand() % 2 == 0) )
+								if ( my->monsterState != MONSTER_STATE_LICHICE_DIE )
 								{
-									spellID = SPELL_DRAIN_SOUL;
+									my->attack(1, 0, nullptr);
 								}
-								for ( int i = 0; i < 8; ++i )
+								else
 								{
-									Entity* spell = castSpell(my->getUID(), getSpellFromID(spellID), true, false);
-									// do some minor variations in spell angle
-									spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
-									spell->vel_x = 4 * cos(spell->yaw);
-									spell->vel_y = 4 * sin(spell->yaw);
-									spell->skill[5] = 50; // travel time
+									my->monsterAttackTime = 25; //reset this attack time to allow successive strikes
+								}
+
+								if ( my->monsterState == MONSTER_STATE_LICHICE_DIE )
+								{
+									int spellID = SPELL_DRAIN_SOUL;
+									for ( int i = 0; i < 8; ++i )
+									{
+										Entity* spell = castSpell(my->getUID(), getSpellFromID(spellID), true, false);
+										// do some minor variations in spell angle
+										spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
+										spell->vel_x = 4 * cos(spell->yaw);
+										spell->vel_y = 4 * sin(spell->yaw);
+										spell->skill[5] = 50; // travel time
+									}
+								}
+								else
+								{
+									int spellID = SPELL_COLD;
+									if ( rand() % 5 == 0 || (my->monsterLichAllyStatus == LICH_ALLY_DEAD && rand() % 2 == 0) )
+									{
+										spellID = SPELL_DRAIN_SOUL;
+									}
+									for ( int i = 0; i < 8; ++i )
+									{
+										Entity* spell = castSpell(my->getUID(), getSpellFromID(spellID), true, false);
+										// do some minor variations in spell angle
+										spell->yaw += i * PI / 4 + ((PI * (-4 + rand() % 9)) / 64);
+										spell->vel_x = 4 * cos(spell->yaw);
+										spell->vel_y = 4 * sin(spell->yaw);
+										spell->skill[5] = 50; // travel time
+									}
 								}
 							}
 						}

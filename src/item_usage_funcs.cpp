@@ -1544,6 +1544,11 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		return;
 	}
 
+	if ( player != clientnum )
+	{
+		return;
+	}
+
 	if (players[player]->entity->isBlind())
 	{
 		if (player == clientnum)

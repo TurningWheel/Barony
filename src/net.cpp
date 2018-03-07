@@ -1132,6 +1132,22 @@ void clientActions(Entity* entity)
 		case 668:
 			entity->behavior = &actBeartrap;
 			break;
+		case 674:
+		case 675:
+		case 676:
+		case 677:
+			entity->behavior = &actCeilingTile;
+			entity->flags[NOUPDATE] = true;
+			break;
+		case 629:
+			entity->behavior = &actColumn;
+			entity->flags[NOUPDATE] = true;
+			break;
+		case 632:
+		case 633:
+			entity->behavior = &actPistonCam;
+			entity->flags[NOUPDATE] = true;
+			break;
 		default:
 			break;
 	}

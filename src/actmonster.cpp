@@ -24,6 +24,7 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "colors.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -1313,7 +1314,8 @@ void actMonster(Entity* my)
 		}
 	}
 
-	if ( (myStats->type == LICH_FIRE || myStats->type == LICH_ICE)
+	if ( (myStats->type == LICH_FIRE && my->monsterState != MONSTER_STATE_LICHFIRE_DIE) 
+		|| (myStats->type == LICH_ICE && my->monsterState != MONSTER_STATE_LICHICE_DIE )
 		&& myStats->HP > 0 )
 	{
 		//messagePlayer(0, "state: %d", my->monsterState);
@@ -1362,9 +1364,14 @@ void actMonster(Entity* my)
 				numMonsterTypeAliveOnMap(LICH_FIRE, lichAlly);
 				if ( lichAlly == nullptr )
 				{
-					messagePlayer(0, "DEAD");
+					//messagePlayer(0, "DEAD");
 					my->monsterLichAllyStatus = LICH_ALLY_DEAD;
 					my->monsterLichAllyUID = 0;
+					for ( int c = 0; c < MAXPLAYERS; c++ )
+					{
+						playSoundPlayer(c, 380, 128);
+						messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[2647]);
+					}
 				}
 				else if ( lichAlly && my->monsterLichAllyUID == 0 )
 				{
@@ -1376,9 +1383,14 @@ void actMonster(Entity* my)
 				numMonsterTypeAliveOnMap(LICH_ICE, lichAlly);
 				if ( lichAlly == nullptr )
 				{
-					messagePlayer(0, "DEAD");
+					//messagePlayer(0, "DEAD");
 					my->monsterLichAllyStatus = LICH_ALLY_DEAD;
 					my->monsterLichAllyUID = 0;
+					for ( int c = 0; c < MAXPLAYERS; c++ )
+					{
+						playSoundPlayer(c, 375, 128);
+						messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[2649]);
+					}
 				}
 				else if ( lichAlly && my->monsterLichAllyUID == 0 )
 				{
@@ -1440,7 +1452,7 @@ void actMonster(Entity* my)
 						break;
 				}
 				if ( my->monsterLichBattleState % 2 == 1
-					&& (rand() % 8 == 0 
+					&& (rand() % 5 == 0 
 						|| (rand() % 4 == 0 && my->monsterLichTeleportTimer > 0)
 						|| (rand() % 2 == 0 && my->monsterLichAllyStatus == LICH_ALLY_DEAD))
 					)
@@ -2074,6 +2086,7 @@ void actMonster(Entity* my)
 				my->monsterAttackTime = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+				serverUpdateEntitySkill(my, 0);
 				break;
 			case LICH_ICE:
 				my->flags[PASSABLE] = true; // so I can't take any more hits
@@ -2083,6 +2096,7 @@ void actMonster(Entity* my)
 				my->monsterAttackTime = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+				serverUpdateEntitySkill(my, 0);
 				break;
 			default:
 				break; //This should never be reached.
@@ -4101,7 +4115,7 @@ timeToGoAgain:
 											if ( my->monsterPathCount > 100 )
 											{
 												my->monsterPathCount = 0;
-												messagePlayer(0, "running into monster like a fool!");
+												//messagePlayer(0, "running into monster like a fool!");
 												my->monsterMoveBackwardsAndPath();
 											}
 										}
@@ -4146,7 +4160,7 @@ timeToGoAgain:
 											if ( my->monsterPathCount > 100 )
 											{
 												my->monsterPathCount = 0;
-												messagePlayer(0, "remaking path!");
+												//messagePlayer(0, "remaking path!");
 												my->monsterMoveBackwardsAndPath();
 											}
 										}
@@ -4396,26 +4410,45 @@ timeToGoAgain:
 		else if ( my->monsterState == MONSTER_STATE_LICHFIRE_DIE 
 			|| my->monsterState == MONSTER_STATE_LICHICE_DIE )     // lich death state
 		{
-			my->yaw += .5; // rotate
-			if ( my->yaw >= PI * 2 )
+			if ( my->monsterSpecialTimer < 100 )
 			{
-				my->yaw -= PI * 2;
-			}
-			MONSTER_ATTACK = 1;
-			MONSTER_ATTACKTIME = 0;
-			if ( my->monsterSpecialTimer == 180 )
-			{
-				serverUpdateEntitySkill(my, 8);
-				serverUpdateEntitySkill(my, 9);
-				int c;
-				for ( c = 0; c < MAXPLAYERS; c++ )
+				my->yaw += .5; // rotate
+				if ( my->yaw >= PI * 2 )
 				{
-					playSoundPlayer(c, 377, 128);
+					my->yaw -= PI * 2;
 				}
 			}
-			if ( my->monsterSpecialTimer % 10 == 0 )
+			//messagePlayer(0, "timer: %d", my->monsterSpecialTimer);
+			if ( my->monsterSpecialTimer == 180 )
 			{
-				spawnExplosion(my->x - 8 + rand() % 16, my->y - 8 + rand() % 16, -4 + rand() % 8);
+				if ( myStats->type == LICH_FIRE )
+				{
+					my->monsterAttack = MONSTER_POSE_SPECIAL_WINDUP1;
+				}
+				else if ( myStats->type == LICH_ICE )
+				{
+					my->monsterAttack = MONSTER_POSE_SPECIAL_WINDUP2;
+				}
+				my->monsterAttackTime = 0;
+				serverUpdateEntitySkill(my, 8);
+				serverUpdateEntitySkill(my, 9);
+				for ( int c = 0; c < MAXPLAYERS; c++ )
+				{
+					if ( myStats->type == LICH_FIRE )
+					{
+						playSoundPlayer(c, 376, 128);
+						messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[2646]);
+					}
+					else if ( myStats->type == LICH_ICE )
+					{
+						playSoundPlayer(c, 381, 128);
+						messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[2648]);
+					}
+				}
+			}
+			if ( my->monsterSpecialTimer % 15 == 0 )
+			{
+				spawnExplosion(my->x - 8 + rand() % 16, my->y - 8 + rand() % 16, my->z -4 + rand() % 8);
 			}
 			--my->monsterSpecialTimer;
 			if ( my->monsterSpecialTimer <= 0 )
@@ -5038,6 +5071,10 @@ timeToGoAgain:
 								my->monsterLichFireMeleeSeq = LICH_ATK_RISING_RAIN;
 								my->handleMonsterAttack(myStats, target, 0.f);
 							}
+							else
+							{
+								my->monsterHitTime = 25;
+							}
 						}
 					}
 					else if ( myStats->type == LICH_ICE )
@@ -5098,6 +5135,35 @@ timeToGoAgain:
 								my->monsterLichFireMeleeSeq = 0;
 							}
 							my->monsterHitTime = 0;
+						}
+						else
+						{
+							real_t distToPlayer = 0.f;
+							int playerToChase = -1;
+							for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								if ( players[c] && players[c]->entity )
+								{
+									if ( !distToPlayer )
+									{
+										distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										playerToChase = c;
+									}
+									else
+									{
+										double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										if ( newDistToPlayer < distToPlayer )
+										{
+											distToPlayer = newDistToPlayer;
+											playerToChase = c;
+										}
+									}
+								}
+							}
+							if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
+							{
+								my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+							}
 						}
 					}
 				}
@@ -5200,6 +5266,35 @@ timeToGoAgain:
 							}
 							my->monsterHitTime = 0;
 							my->monsterLichMagicCastCount = 0;
+						}
+						else
+						{
+							real_t distToPlayer = 0.f;
+							int playerToChase = -1;
+							for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								if ( players[c] && players[c]->entity )
+								{
+									if ( !distToPlayer )
+									{
+										distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										playerToChase = c;
+									}
+									else
+									{
+										double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+										if ( newDistToPlayer < distToPlayer )
+										{
+											distToPlayer = newDistToPlayer;
+											playerToChase = c;
+										}
+									}
+								}
+							}
+							if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
+							{
+								my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+							}
 						}
 					}
 				}
