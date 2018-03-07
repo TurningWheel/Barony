@@ -619,10 +619,13 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			damage /= (1 + (int)resistance);
 			damage *= damagetables[hitstats->type][5];
 
-			Stat* casterStats = parent->getStats();
-			if ( casterStats && casterStats->type == LICH_ICE )
+			if ( parent )
 			{
-				damage *= 2;
+				Stat* casterStats = parent->getStats();
+				if ( casterStats && casterStats->type == LICH_ICE )
+				{
+					damage *= 2;
+				}
 			}
 
 			int damageHP = hitstats->HP;
@@ -669,7 +672,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				parent->awardXP(hit.entity, true, true);
 			}
 
-			if ( damageHP > 0 )
+			if ( damageHP > 0 && parent )
 			{
 				Entity* spellEntity = createParticleSapCenter(parent, hit.entity, SPELL_DRAIN_SOUL, my.sprite, my.sprite);
 				if ( spellEntity )

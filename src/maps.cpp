@@ -4490,6 +4490,7 @@ void assignActions(map_t* map)
 				//entity->yaw = PI / 2;
 				entity->behavior = &actCeilingTile;
 				entity->flags[PASSABLE] = true;
+				entity->flags[BLOCKSIGHT] = false;
 				//entity->flags[BRIGHT] = true;
 				break;
 			// spell trap ceiling
@@ -4697,11 +4698,11 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actPistonCam;
 				childEntity->pistonCamRotateSpeed = 0.2;
 				childEntity->flags[UNCLICKABLE] = true;
-				if ( multiplayer != CLIENT )
+				/*if ( multiplayer != CLIENT )
 				{
-					childEntity->setUID(-3);
 					entity_uids--;
 				}
+				childEntity->setUID(-3);*/
 				childEntity = newEntity(633, 1, map->entities, nullptr); //cam2
 				childEntity->parent = entity->getUID();
 				childEntity->x = entity->x - 2.25;
@@ -4709,11 +4710,11 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actPistonCam;
 				childEntity->pistonCamRotateSpeed = -0.2;
 				childEntity->flags[UNCLICKABLE] = true;
-				if ( multiplayer != CLIENT )
+				/*if ( multiplayer != CLIENT )
 				{
-					childEntity->setUID(-3);
 					entity_uids--;
 				}
+				childEntity->setUID(-3);*/
 				break;
 			}
 			// grass texture
