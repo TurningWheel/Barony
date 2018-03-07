@@ -589,7 +589,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				break;    // no more levels to load
 			}
 
-			printlog("Found map lv %s, count: %d", subRoomName, subroomCount[subRoomNumLevels]);
+			printlog("[SUBMAP GENERATOR] Found map lv %s, count: %d", subRoomName, subroomCount[subRoomNumLevels]);
 			++subroomCount[subRoomNumLevels];
 
 			// allocate memory for the next subroom and attempt to load it
@@ -996,6 +996,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 			int subRoom_tileStartx = -1;
 			int subRoom_tileStarty = -1;
 			int foundSubRoom = 0;
+			if ( levelnum2 - levelnum > 1 && c > 0 && subroomCount[levelnum2 - 1] > 0 )
+			{
+				// levelnum is the start of map search, levelnum2 is jumps required to get to a suitable map.
+				// normal operation is levelnum2 - levelnum == 1. if a levelnum map is unavailable, 
+				// then levelnum2 will advance search by 1 (higher than normal).
+				// levelnum2 will keep incrementing until a suitable map is found.
+				printlog("[SUBMAP GENERATOR] Skipped map when searching for levelnum %d, setting to %d", levelnum, levelnum2 - 1);
+				levelnum = levelnum2 - 1;
+			}
 
 			if ( subroomCount[levelnum + 1] > 0 )
 			{
