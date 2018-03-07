@@ -30,4 +30,4 @@ DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
 bool completePath(char *dest, const char * const path);
 std::vector<std::string> getLinesFromDataFile(std::string filename);
-extern char datadir[1024];
+extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
