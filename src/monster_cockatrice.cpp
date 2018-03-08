@@ -564,7 +564,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
-						playSoundEntityLocal(my, 386, 128);
+						playSoundEntityLocal(my, 383, 128);
 						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
@@ -648,7 +648,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->pitch = 0;
 						entity->roll = 0;
 						// set overshoot for z axis animation
-						playSoundEntityLocal(my, 386, 128);
+						playSoundEntityLocal(my, 383, 128);
 						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{

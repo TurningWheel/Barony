@@ -4270,7 +4270,7 @@ void handleMainMenu(bool mode)
 			if ( creditstage >= 15 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[2], true, false, false);
 #endif
 				introstage = 1;
 				credittime = 0;
@@ -4484,7 +4484,7 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[rand() % 2], true, false, false);
 #endif
 			}
 			else
@@ -4542,7 +4542,7 @@ void handleMainMenu(bool mode)
 			if ( intromoviestage >= 9 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[1], true, false, false);
 #endif
 				introstage = 1;
 				intromovietime = 0;
