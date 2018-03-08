@@ -2395,35 +2395,79 @@ int main(int argc, char** argv)
 						fadeout = false;
 						fadefinished = false;
 #else
-						switch ( rand() % 4 )
+						switch ( rand() % 4 ) // STEAM VERSION INTRO
 						{
 							case 0:
-								loadMap("mainmenu1", &map, map.entities, map.creatures);
-								camera.x = 8;
-								camera.y = 4.5;
-								camera.z = 0;
-								camera.ang = 0.6;
-								break;
 							case 1:
-								loadMap("mainmenu2", &map, map.entities, map.creatures);
-								camera.x = 7;
-								camera.y = 4;
-								camera.z = -4;
-								camera.ang = 1.0;
-								break;
 							case 2:
-								loadMap("mainmenu3", &map, map.entities, map.creatures);
-								camera.x = 5;
-								camera.y = 3;
-								camera.z = 0;
-								camera.ang = 1.0;
+								switch ( rand() % 4 )
+								{
+									case 0:
+										loadMap("mainmenu5", &map, map.entities, map.creatures);
+										camera.x = 30.8;
+										camera.y = 24.3;
+										camera.z = 0;
+										camera.ang = 2.76;
+										break;
+									case 1:
+										loadMap("mainmenu6", &map, map.entities, map.creatures);
+										camera.x = 11;
+										camera.y = 4;
+										camera.z = 0;
+										camera.ang = 2.4;
+										break;
+									case 2:
+										loadMap("mainmenu7", &map, map.entities, map.creatures);
+										camera.x = 8.7;
+										camera.y = 9.3;
+										camera.z = 0;
+										camera.ang = 5.8;
+										break;
+									case 3:
+										loadMap("mainmenu8", &map, map.entities, map.creatures);
+										camera.x = 3.31;
+										camera.y = 5.34;
+										camera.z = 0;
+										camera.ang = 0.96;
+										break;
+									default:
+										break;
+								}
 								break;
 							case 3:
-								loadMap("mainmenu4", &map, map.entities, map.creatures);
-								camera.x = 6;
-								camera.y = 14.5;
-								camera.z = -24;
-								camera.ang = 5.0;
+								switch ( rand() % 4 )
+								{
+									case 0:
+										loadMap("mainmenu1", &map, map.entities, map.creatures);
+										camera.x = 8;
+										camera.y = 4.5;
+										camera.z = 0;
+										camera.ang = 0.6;
+										break;
+									case 1:
+										loadMap("mainmenu2", &map, map.entities, map.creatures);
+										camera.x = 7;
+										camera.y = 4;
+										camera.z = -4;
+										camera.ang = 1.0;
+										break;
+									case 2:
+										loadMap("mainmenu3", &map, map.entities, map.creatures);
+										camera.x = 5;
+										camera.y = 3;
+										camera.z = 0;
+										camera.ang = 1.0;
+										break;
+									case 3:
+										loadMap("mainmenu4", &map, map.entities, map.creatures);
+										camera.x = 6;
+										camera.y = 14.5;
+										camera.z = -24;
+										camera.ang = 5.0;
+										break;
+								}
+								break;
+							default:
 								break;
 						}
 						numplayers = 0;
@@ -2445,7 +2489,7 @@ int main(int argc, char** argv)
 							fadeout = false;
 							fadefinished = false;
 #if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
-							playmusic(intromusic, true, false, false);
+							playmusic(intromusic[1], true, false, false);
 #endif
 						}
 #endif
@@ -2478,7 +2522,7 @@ int main(int argc, char** argv)
 					//if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
 					if ( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout)
 					{
-						switch ( rand() % 4 )
+						switch ( rand() % 4 ) // DRM FREE VERSION INTRO
 						{
 							case 0:
 								loadMap("mainmenu1", &map, map.entities, map.creatures);
@@ -2531,7 +2575,7 @@ int main(int argc, char** argv)
 							fadeout = false;
 							fadefinished = false;
 #ifdef MUSIC
-							playmusic(intromusic, true, false, false);
+							playmusic(intromusic[1], true, false, false);
 #endif
 						}
 					}

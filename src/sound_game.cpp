@@ -370,6 +370,11 @@ void handleLevelMusic()
 			}
 	}
 
+	if ( !strcmp(map.name, "Mages Guild") )
+	{
+		inshop = false; // everywhere is shop!
+	}
+
 	bool devilaround = false;
 	bool activeminotaur = false;
 	bool herxaround = false;
@@ -519,7 +524,7 @@ void handleLevelMusic()
 			}
 			playmusic(cavesmusic[currenttrack], false, true, true);
 		}
-		else if ( !strncmp(map.name, "Citadel", 7) )
+		else if ( !strncmp(map.name, "Citadel", 7) || !strncmp(map.name, "Sanctum", 7) )
 		{
 			if ( !playing )
 			{
@@ -531,6 +536,10 @@ void handleLevelMusic()
 				currenttrack = 1;
 			}
 			playmusic(citadelmusic[currenttrack], false, true, true);
+		}
+		else if ( !strcmp(map.name, "Mages Guild") )
+		{
+			playmusic(minesmusic[4], true, true, true);
 		}
 		else
 		{
@@ -611,6 +620,10 @@ void handleLevelMusic()
 		else if ( !strncmp(map.name, "Citadel", 7) )
 		{
 			playmusic(citadelmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.name, "Sanctum", 7) )
+		{
+			playmusic(sanctummusic, true, true, true);
 		}
 		else
 		{
@@ -1096,7 +1109,7 @@ void handleLevelMusic()
 			}
 			playmusic(cavesmusic[currenttrack], false, true, true);
 		}
-		else if ( !strncmp(map.name, "Citadel", 7) )
+		else if ( !strncmp(map.name, "Citadel", 7) || !strncmp(map.name, "Sanctum", 7) )
 		{
 			if ( !playing )
 			{
@@ -1188,6 +1201,10 @@ void handleLevelMusic()
 		else if ( !strncmp(map.name, "Citadel", 7) )
 		{
 			playmusic(citadelmusic[0], true, true, true);
+		}
+		else if ( !strncmp(map.name, "Sanctum", 7) )
+		{
+			playmusic(sanctummusic, true, true, true);
 		}
 		else
 		{
