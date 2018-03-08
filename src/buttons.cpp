@@ -930,7 +930,7 @@ void buttonAttributes(button_t* my)
 	snprintf(skyboxtext, 4, "%d", map.skybox);
 	for ( int z = 0; z < MAPFLAGS; ++z )
 	{
-		if ( z < MAP_FLAG_GENBYTES1 && z > MAP_FLAG_GENBYTES6 )
+		if ( z < MAP_FLAG_GENBYTES1 || z > MAP_FLAG_GENBYTES6 )
 		{
 			snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
 		}
