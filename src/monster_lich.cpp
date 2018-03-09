@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 void initLich(Entity* my, Stat* myStats)
 {
@@ -223,7 +224,14 @@ void lichDie(Entity* my)
 	{
 		playSoundPlayer(c, 153, 128);
 		steamAchievementClient(c, "BARONY_ACH_LICH_HUNTER");
+		if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+		{
+			//messagePlayer(c, "completion time: %d", completionTime);
+			steamAchievementClient(c, "BARONY_ACH_BOOTS_OF_SPEED");
+		}
+
 	}
+
 	if ( multiplayer == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )

@@ -3686,6 +3686,10 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->yaw = PI / 2;
 				entity->behavior = &actPortal;
+				if ( !strcmp(map->name, "Mages Guild") )
+				{
+					entity->skill[3] = 1; // not secret portal, just aesthetic.
+				}
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
