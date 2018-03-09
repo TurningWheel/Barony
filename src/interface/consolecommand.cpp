@@ -866,6 +866,11 @@ void consoleCommand(char* command_str)
 			//messagePlayer(clientnum, language[299]);
 		}
 	}
+	else if ( !strncmp(command_str, "/jumplevel ", 11) )
+	{
+		skipLevelsOnLoad = atoi((char*)(command_str + 11));
+		consoleCommand("/nextlevel");
+	}
 	else if ( !strncmp(command_str, "/maxout3", 8) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -878,7 +883,7 @@ void consoleCommand(char* command_str)
 		{
 			int c;
 			Stat* myStats = stats[0];
-			skipLevelsOnLoad = 26;
+			skipLevelsOnLoad = 31;
 			for ( c = 0; c < 24; c++ )
 			{
 				consoleCommand("/levelup");

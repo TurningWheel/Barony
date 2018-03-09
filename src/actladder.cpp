@@ -236,6 +236,11 @@ void actPortal(Entity* my)
 							}
 							break;
 					}
+					if ( !strncmp(map.name, "Cockatrice Lair", 15)
+						|| !strncmp(map.name, "Bram's Castle", 13) )
+					{
+						skipLevelsOnLoad = -1; // don't skip a regular level.
+					}
 				}
 				if ( !my->portalNotSecret )
 				{

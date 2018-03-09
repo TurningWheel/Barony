@@ -679,6 +679,10 @@ void gameLogic(void)
 					}
 					else
 					{
+						if ( skipLevelsOnLoad < 0 )
+						{
+							currentlevel += skipLevelsOnLoad;
+						}
 						++currentlevel;
 					}
 					skipLevelsOnLoad = 0;
