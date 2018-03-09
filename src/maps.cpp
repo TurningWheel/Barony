@@ -24,6 +24,7 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 int startfloor = 0;
 
@@ -4865,4 +4866,99 @@ Entity* map_t::getEntityWithUID(Uint32 uid)
 	}
 
 	return nullptr;
+}
+
+int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
+{
+	bool foundVictory = false;
+	for ( node_t* node = topscores.first; node != nullptr && !foundVictory; node = node->next )
+	{
+		score_t* score = (score_t*)node->element;
+		if ( score && score->victory == 3 )
+		{
+			foundVictory = true;
+		}
+	}
+
+	if ( forceVictoryMap || (foundVictory && rand() % 5 == 0) )
+	{
+		loadMap("mainmenu9", &map, map.entities, map.creatures);
+		camera.x = 34.3;
+		camera.y = 15;
+		camera.z = -20;
+		camera.ang = 5.84;
+		return 1;
+	}
+	else if ( blessedAdditionMaps )
+	{
+		switch ( rand() % 4 )
+		{
+			case 0:
+				loadMap("mainmenu5", &map, map.entities, map.creatures);
+				camera.x = 30.8;
+				camera.y = 24.3;
+				camera.z = 0;
+				camera.ang = 2.76;
+				break;
+			case 1:
+				loadMap("mainmenu6", &map, map.entities, map.creatures);
+				camera.x = 11;
+				camera.y = 4;
+				camera.z = 0;
+				camera.ang = 2.4;
+				break;
+			case 2:
+				loadMap("mainmenu7", &map, map.entities, map.creatures);
+				camera.x = 8.7;
+				camera.y = 9.3;
+				camera.z = 0;
+				camera.ang = 5.8;
+				break;
+			case 3:
+				loadMap("mainmenu8", &map, map.entities, map.creatures);
+				camera.x = 3.31;
+				camera.y = 5.34;
+				camera.z = 0;
+				camera.ang = 0.96;
+				break;
+			default:
+				break;
+		}
+	}
+	else
+	{
+		switch ( rand() % 4 )
+		{
+			case 0:
+				loadMap("mainmenu1", &map, map.entities, map.creatures);
+				camera.x = 8;
+				camera.y = 4.5;
+				camera.z = 0;
+				camera.ang = 0.6;
+				break;
+			case 1:
+				loadMap("mainmenu2", &map, map.entities, map.creatures);
+				camera.x = 7;
+				camera.y = 4;
+				camera.z = -4;
+				camera.ang = 1.0;
+				break;
+			case 2:
+				loadMap("mainmenu3", &map, map.entities, map.creatures);
+				camera.x = 5;
+				camera.y = 3;
+				camera.z = 0;
+				camera.ang = 1.0;
+				break;
+			case 3:
+				loadMap("mainmenu4", &map, map.entities, map.creatures);
+				camera.x = 6;
+				camera.y = 14.5;
+				camera.z = -24;
+				camera.ang = 5.0;
+				break;
+		}
+	}
+
+	return 0;
 }

@@ -31,3 +31,4 @@ bool dataPathExists(const char *const);
 bool completePath(char *dest, const char * const path);
 std::vector<std::string> getLinesFromDataFile(std::string filename);
 extern char datadir[1024];
+int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);

@@ -4443,36 +4443,24 @@ void handleMainMenu(bool mode)
 			magicRightHand = NULL;
 
 			// load menu level
-			switch ( rand() % 4 )
+			int menuMapType = 0;
+			if ( victory == 3 )
 			{
-				case 0:
-					loadMap("mainmenu1", &map, map.entities, map.creatures);
-					camera.x = 8;
-					camera.y = 4.5;
-					camera.z = 0;
-					camera.ang = 0.6;
-					break;
-				case 1:
-					loadMap("mainmenu2", &map, map.entities, map.creatures);
-					camera.x = 7;
-					camera.y = 4;
-					camera.z = -4;
-					camera.ang = 1.0;
-					break;
-				case 2:
-					loadMap("mainmenu3", &map, map.entities, map.creatures);
-					camera.x = 5;
-					camera.y = 3;
-					camera.z = 0;
-					camera.ang = 1.0;
-					break;
-				case 3:
-					loadMap("mainmenu4", &map, map.entities, map.creatures);
-					camera.x = 6;
-					camera.y = 14.5;
-					camera.z = -24;
-					camera.ang = 5.0;
-					break;
+				menuMapType = loadMainMenuMap(true, true);
+			}
+			else
+			{
+				switch ( rand() % 2 )
+				{
+					case 0:
+						menuMapType = loadMainMenuMap(true, false);
+						break;
+					case 1:
+						menuMapType = loadMainMenuMap(false, false);
+						break;
+					default:
+						break;
+				}
 			}
 			camera.vang = 0;
 			numplayers = 0;
