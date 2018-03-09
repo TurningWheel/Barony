@@ -1174,7 +1174,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//}
 
 							// write the obituary
-							hit.entity->setObituary(language[1501]);
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
 							if ( hitstats )
 							{
 								hitstats->poisonKiller = my->parent;
@@ -1329,7 +1332,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							serverSpawnGibForClient(gib);
 
 							// write the obituary
-							hit.entity->setObituary(language[1502]);
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
 
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
