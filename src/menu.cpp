@@ -123,6 +123,7 @@ bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
 bool playing_random_char = false;
 bool colorblind = false;
+bool settings_lock_right_sidebar = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -2286,7 +2287,16 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2590]);
 			}
-			current_y += 64;
+			current_y += 16;
+			if ( settings_lock_right_sidebar )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2598]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2598]);
+			}
+			current_y += 48;
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
@@ -2367,6 +2377,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_hotbar_numkey_quick_add = (settings_hotbar_numkey_quick_add == false);
+					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_lock_right_sidebar = (settings_lock_right_sidebar == false);
 					}
 				}
 				else
@@ -5480,6 +5495,7 @@ void openSettingsWindow()
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
+	settings_lock_right_sidebar = lock_right_sidebar;
 
 	settings_gamepad_leftx_invert = gamepad_leftx_invert;
 	settings_gamepad_lefty_invert = gamepad_lefty_invert;
@@ -6977,6 +6993,7 @@ void applySettings()
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
+	lock_right_sidebar = settings_lock_right_sidebar;
 
 	gamepad_leftx_invert = settings_gamepad_leftx_invert;
 	gamepad_lefty_invert = settings_gamepad_lefty_invert;

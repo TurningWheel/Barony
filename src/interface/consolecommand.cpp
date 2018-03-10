@@ -1423,6 +1423,14 @@ void consoleCommand(char* command_str)
 	{
 		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
 	}
+	else if ( !strncmp(command_str, "/locksidebar", 12) )
+	{
+		lock_right_sidebar = (lock_right_sidebar == false);
+		if ( lock_right_sidebar )
+		{
+			proficienciesPage = 1;
+		}
+	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
 		command_str[8] = 0;

@@ -3078,6 +3078,18 @@ int main(int argc, char** argv)
 						{
 							SDL_SetRelativeMouseMode(SDL_TRUE);
 						}
+
+						if ( lock_right_sidebar )
+						{
+							if ( proficienciesPage == 1 )
+							{
+								drawPartySheet();
+							}
+							else
+							{
+								drawSkillsSheet();
+							}
+						}
 					}
 
 					// Draw the static HUD elements
