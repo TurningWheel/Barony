@@ -11,8 +11,8 @@
 
 #pragma once
 
-// for file browsing
-#include <dirent.h>
+#include <vector>
+#include <string>
 
 static const unsigned int MAXWIDTH = 2000;
 static const unsigned int MAXHEIGHT = 2000;
@@ -42,8 +42,7 @@ extern int openwindow, savewindow, newwindow;
 extern int slidery, slidersize;
 extern int menuDisappear;
 extern int selectedFile;
-extern char** d_names;
-extern unsigned long d_names_length;
+extern std::vector<std::string> mapNames;
 extern char filename[128];
 extern char oldfilename[128];
 extern char message[48];
