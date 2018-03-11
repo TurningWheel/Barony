@@ -50,6 +50,17 @@ void initLichFire(Entity* my, Stat* myStats)
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] )
+				{
+					myStats->MAXHP += 500;
+				}
+			}
+
+			myStats->HP = myStats->MAXHP;
+			myStats->OLDHP = myStats->HP;
+
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 

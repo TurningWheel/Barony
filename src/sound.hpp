@@ -52,9 +52,9 @@ extern bool olddarkmap;
 extern FMOD_SOUND** sounds;
 extern Uint32 numsounds;
 extern FMOD_SOUND** minesmusic;
-#define NUMMINESMUSIC 4
+#define NUMMINESMUSIC 5
 extern FMOD_SOUND** swampmusic;
-#define NUMSWAMPMUSIC 3
+#define NUMSWAMPMUSIC 4
 extern FMOD_SOUND** labyrinthmusic;
 #define NUMLABYRINTHMUSIC 3
 extern FMOD_SOUND** ruinsmusic;
@@ -63,15 +63,16 @@ extern FMOD_SOUND** underworldmusic;
 #define NUMUNDERWORLDMUSIC 3
 extern FMOD_SOUND** hellmusic;
 #define NUMHELLMUSIC 3
-extern FMOD_SOUND* intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
+extern FMOD_SOUND** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern FMOD_SOUND** minotaurmusic, *herxmusic, *templemusic;
-extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic;
+extern FMOD_SOUND* endgamemusic, *escapemusic, *devilmusic, *sanctummusic;
 extern FMOD_SOUND* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern FMOD_SOUND** cavesmusic;
 extern FMOD_SOUND** citadelmusic;
 #define NUMCAVESMUSIC 3
 #define NUMCITADELMUSIC 3
+#define NUMINTROMUSIC 3
 //TODO: Automatically scan the music folder for a mines subdirectory and use all the music for the mines or something like that. I'd prefer something neat like for that loading music for a level, anyway. And I can just reuse the code I had for ORR.
 
 extern FMOD_CHANNEL* music_channel, *music_channel2, *music_resume; //TODO: List of music, play first one, fade out all the others? Eh, maybe some other day. //music_resume is the music to resume after, say, combat or shops. //TODO: Clear music_resume every biome change. Or otherwise validate it for that level set.
@@ -143,9 +144,9 @@ extern OPENAL_BUFFER** underworldmusic;
 #define NUMUNDERWORLDMUSIC 3
 extern OPENAL_BUFFER** hellmusic;
 #define NUMHELLMUSIC 3
-extern OPENAL_BUFFER* intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
+extern OPENAL_BUFFER** intromusic, *intermissionmusic, *minetownmusic, *splashmusic, *librarymusic, *shopmusic, *storymusic;
 extern OPENAL_BUFFER** minotaurmusic, *herxmusic, *templemusic;
-extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic;
+extern OPENAL_BUFFER* endgamemusic, *escapemusic, *devilmusic, *sanctummusic;
 extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern OPENAL_BUFFER** cavesmusic;

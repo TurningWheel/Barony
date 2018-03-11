@@ -19,9 +19,7 @@
 #include "interface.hpp"
 #include "../sound.hpp"
 
-void drawSkillsSheet();
 void statsHoverText(Stat* tmpStat);
-void drawPartySheet();
 
 /*-------------------------------------------------------------------------------
 
@@ -243,6 +241,30 @@ void drawSkillsSheet()
 		drawImage(attributesrightunclicked_bmp, nullptr, &button);
 	}
 
+	SDL_Rect lockbtn = button;
+	lockbtn.h = 24;
+	lockbtn.w = 24;
+	lockbtn.x -= 32;
+	lockbtn.y += 2;
+	if ( lock_right_sidebar )
+	{
+		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
+	}
+	else
+	{
+		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
+	}
+
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
+			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
+		{
+			lock_right_sidebar = !lock_right_sidebar;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
+	}
+
 	pos.y += TTF12_HEIGHT * 2 + 8;
 
 	SDL_Rect initialSkillPos = pos;
@@ -348,6 +370,30 @@ void drawPartySheet()
 	else
 	{
 		drawImage(attributesrightunclicked_bmp, nullptr, &button);
+	}
+
+	SDL_Rect lockbtn = button;
+	lockbtn.h = 24;
+	lockbtn.w = 24;
+	lockbtn.x -= 32;
+	lockbtn.y += 2;
+	if ( lock_right_sidebar )
+	{
+		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
+	}
+	else
+	{
+		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
+	}
+
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
+			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
+		{
+			lock_right_sidebar = !lock_right_sidebar;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
 	}
 
 	pos.y += TTF12_HEIGHT * 2 + 4;

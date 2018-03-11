@@ -2730,7 +2730,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
-		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
+		spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && myStats->type == SHADOW )

@@ -1174,7 +1174,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//}
 
 							// write the obituary
-							hit.entity->setObituary(language[1501]);
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
 							if ( hitstats )
 							{
 								hitstats->poisonKiller = my->parent;
@@ -1329,7 +1332,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							serverSpawnGibForClient(gib);
 
 							// write the obituary
-							hit.entity->setObituary(language[1502]);
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
 
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
@@ -1414,34 +1420,57 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else
 							{
 								effectDuration = 600 + rand() % 300; // 12 seconds + 0 to 6 seconds.
+								if ( hitstats )
+								{
+									effectDuration = std::max(0, effectDuration - ((hitstats->CON % 10) * 50)); // reduce 1 sec every 10 CON.
+								}
 							}
 							effectDuration /= (1 + (int)resistance);
-							if ( hit.entity->setEffect(EFF_ASLEEP, true, effectDuration, false) )
+
+							bool magicTrapReapplySleep = true;
+
+							if ( parent && parent->behavior == &actMagicTrap )
 							{
-								hitstats->OLDHP = hitstats->HP;
-								if ( hit.entity->behavior == &actPlayer )
+								if ( hitstats && hitstats->EFFECTS[EFF_ASLEEP] )
 								{
-									serverUpdateEffects(hit.entity->skill[2]);
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], color, language[396]);
-								}
-								if ( parent )
-								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-									if ( parent->behavior == &actPlayer )
+									// check to see if we're reapplying the sleep effect.
+									if ( rand() % 4 - resistance <= 0 )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
+										magicTrapReapplySleep = false;
+										//messagePlayer(0, "Target already asleep!");
 									}
 								}
 							}
-							else
+
+							if ( magicTrapReapplySleep )
 							{
-								if ( parent )
+								if ( hit.entity->setEffect(EFF_ASLEEP, true, effectDuration, false) )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-									if ( parent->behavior == &actPlayer )
+									hitstats->OLDHP = hitstats->HP;
+									if ( hit.entity->behavior == &actPlayer )
 									{
-										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+										serverUpdateEffects(hit.entity->skill[2]);
+										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										messagePlayerColor(hit.entity->skill[2], color, language[396]);
+									}
+									if ( parent )
+									{
+										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
+										}
+									}
+								}
+								else
+								{
+									if ( parent )
+									{
+										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+										}
 									}
 								}
 							}
