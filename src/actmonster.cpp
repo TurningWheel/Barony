@@ -512,6 +512,11 @@ void summonManyMonster(Monster creature)
 
 bool monsterMoveAside(Entity* my, Entity* entity)
 {
+	if ( !my || !entity )
+	{
+		return false;
+	}
+
 	if ( my->monsterState != 0 )
 	{
 		return false;
