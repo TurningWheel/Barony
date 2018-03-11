@@ -231,26 +231,28 @@ void lichIceDie(Entity* my)
 	playSoundEntity(my, 94, 128);
 	my->removeLightField();
 	// kill all other monsters on the level
-	/*for ( node = map.entities->first; node != NULL; node = nextnode )
+	for ( node = map.creatures->first; my->monsterLichAllyStatus == LICH_ALLY_DEAD && node != NULL; node = nextnode )
 	{
-	nextnode = node->next;
-	Entity* entity = (Entity*)node->element;
-	if ( entity == my )
-	{
-	continue;
+		nextnode = node->next;
+		Entity* entity = (Entity*)node->element;
+		if ( entity == my || entity->sprite == 646 )
+		{
+			continue;
+		}
+		if ( entity->behavior == &actMonster )
+		{
+			spawnExplosion(entity->x, entity->y, entity->z);
+			Stat* stats = entity->getStats();
+			if ( stats )
+			{
+				if ( stats->type != HUMAN )
+				{
+					stats->HP = 0;
+				}
+			}
+		}
 	}
-	if ( entity->behavior == &actMonster )
-	{
-	spawnExplosion(entity->x, entity->y, entity->z);
-	Stat* stats = entity->getStats();
-	if ( stats )
-	if ( stats->type != HUMAN )
-	{
-	stats->HP = 0;
-	}
-	}
-	}
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	/*for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 	playSoundPlayer(c, 153, 128);
 	steamAchievementClient(c, "BARONY_ACH_LICH_HUNTER");
