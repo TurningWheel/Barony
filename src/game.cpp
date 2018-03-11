@@ -764,6 +764,10 @@ void gameLogic(void)
 							}
 						}
 						messagePlayer(clientnum, language[2599]);
+
+						// undo shopkeeper grudge
+						swornenemies[SHOPKEEPER][HUMAN] = false;
+						monsterally[SHOPKEEPER][HUMAN] = true;
 					}
 
 					// (special) unlock temple achievement
