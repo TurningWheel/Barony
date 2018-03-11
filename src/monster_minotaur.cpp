@@ -59,11 +59,13 @@ void initMinotaur(Entity* my, Stat* myStats)
 			}
 			else if ( currentlevel >= 25 )
 			{
-				myStats->HP += 200;
-				myStats->MAXHP += 200;
-				myStats->STR = 50;
+				myStats->HP += 400;
+				myStats->MAXHP += 400;
+				myStats->STR = 60;
 				myStats->DEX = 20;
 				myStats->CON = 20;
+				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
 			}
 
 
