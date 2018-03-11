@@ -823,7 +823,7 @@ void consoleCommand(char* command_str)
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
-			sendPacket(net_sock, -1, net_packet, 0);
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 			//messagePlayer(clientnum, language[299]);
 		}
 	}
