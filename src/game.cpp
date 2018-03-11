@@ -748,6 +748,24 @@ void gameLogic(void)
 					assignActions(&map);
 					generatePathMaps();
 
+					if ( !strncmp(map.name, "Mages Guild", 11) )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								players[c]->entity->modHP(999);
+								players[c]->entity->modMP(999);
+								if ( stats[c] && stats[c]->HUNGER < 1450 )
+								{
+									stats[c]->HUNGER = 1450;
+									serverUpdateHunger(c);
+								}
+							}
+						}
+						messagePlayer(clientnum, language[2599]);
+					}
+
 					// (special) unlock temple achievement
 					if ( secretlevel && currentlevel == 8 )
 					{

@@ -2244,6 +2244,10 @@ void clientHandlePacket()
 		{
 			messagePlayer(clientnum, language[2450]);
 		}
+		if ( !strncmp(map.name, "Mages Guild", 11) )
+		{
+			messagePlayer(clientnum, language[2599]);
+		}
 		loading = false;
 		fadeout = false;
 		fadealpha = 255;
