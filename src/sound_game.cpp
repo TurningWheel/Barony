@@ -952,6 +952,7 @@ bool minotaurmusicplaying = false;
 bool herxmusicplaying = false;
 bool devilmusicplaying = false;
 bool olddarkmap = false;
+bool sanctummusicplaying = false;
 
 int currenttrack = -1;
 
