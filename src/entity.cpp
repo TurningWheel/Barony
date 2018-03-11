@@ -2241,6 +2241,12 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		vampiricHunger = true;
 	}
+
+	if ( !strncmp(map.name, "Sanctum", 7) || !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 4) )
+	{
+		hungerring = 1; // slow down hunger on boss stages.
+	}
+
 	if ( (ticks % 30 == 0 && !hungerring)
 		|| (ticks % 15 == 0 && hungerring < 0)
 		|| (ticks % 120 == 0 && hungerring > 0)
