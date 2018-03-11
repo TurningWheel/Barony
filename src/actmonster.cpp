@@ -3098,7 +3098,7 @@ void actMonster(Entity* my)
 			my->monsterTargetY = entity->y;
 			hitstats = entity->getStats();
 
-			if (myStats->type == SHOPKEEPER)
+			if ( myStats->type == SHOPKEEPER && strncmp(map.name, "Mages Guild", 11) )
 			{
 				// shopkeepers hold a grudge against players
 				for ( c = 0; c < MAXPLAYERS; ++c )

@@ -2468,6 +2468,11 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 
+		if ( !strncmp(map.name, "Mages Guild", 11) && myStats->type == SHOPKEEPER )
+		{
+			healring = 25; // these guys like regenerating
+		}
+
 		if ( healring > 0 )
 		{
 			healthRegenInterval = HEAL_TIME / (healring * 8);

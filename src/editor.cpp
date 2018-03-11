@@ -3090,6 +3090,50 @@ int main(int argc, char** argv)
 										printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
 										// print left text
 										printText(font8x8_bmp, pad_x1 + pad_x2, pad_y1, spriteProperties[i + 12]);
+										if ( i == 13 && spriteStats->type == SHOPKEEPER )
+										{
+											char shopTypeText[32] = "";
+											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+											switch ( atoi(spriteProperties[25]) )
+											{
+												case 1:
+													strcpy(shopTypeText, "Arms and Armor");
+													break;
+												case 2:
+													strcpy(shopTypeText, "Hats and Helmets");
+													break;
+												case 3:
+													strcpy(shopTypeText, "Jewelry");
+													break;
+												case 4:
+													strcpy(shopTypeText, "Bookstore");
+													break;
+												case 5:
+													strcpy(shopTypeText, "Apothecary");
+													break;
+												case 6:
+													strcpy(shopTypeText, "Magistaffs");
+													break;
+												case 7:
+													strcpy(shopTypeText, "Food Store");
+													break;
+												case 8:
+													strcpy(shopTypeText, "Hardware Store");
+													break;
+												case 9:
+													strcpy(shopTypeText, "Lighting Store");
+													break;
+												case 10:
+													strcpy(shopTypeText, "General Store");
+													break;
+												default:
+													strcpy(shopTypeText, "Default Random Store");
+													color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+													break;
+											}
+											printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 + pad_x3 + 8, pad_y1, color, shopTypeText);
+											color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										}
 									}
 								}
 							}
