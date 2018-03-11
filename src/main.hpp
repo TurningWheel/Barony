@@ -42,11 +42,13 @@ extern bool showfirst;
 #include <fcntl.h>
 #ifndef WINDOWS
 #include <unistd.h>
+#include <limits.h>
 #endif
 #include <string.h>
 #include <ctype.h>
 #ifdef WINDOWS
 #define GL_GLEXT_PROTOTYPES
+#define PATH_MAX 1024
 #include <windows.h>
 #undef min
 #undef max
