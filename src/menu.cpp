@@ -123,6 +123,7 @@ bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
 bool playing_random_char = false;
 bool colorblind = false;
+bool settings_lock_right_sidebar = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -2286,7 +2287,16 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2590]);
 			}
-			current_y += 64;
+			current_y += 16;
+			if ( settings_lock_right_sidebar )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2598]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2598]);
+			}
+			current_y += 48;
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
@@ -2367,6 +2377,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_hotbar_numkey_quick_add = (settings_hotbar_numkey_quick_add == false);
+					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_lock_right_sidebar = (settings_lock_right_sidebar == false);
 					}
 				}
 				else
@@ -4270,7 +4285,7 @@ void handleMainMenu(bool mode)
 			if ( creditstage >= 15 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[2], true, false, false);
 #endif
 				introstage = 1;
 				credittime = 0;
@@ -4443,36 +4458,24 @@ void handleMainMenu(bool mode)
 			magicRightHand = NULL;
 
 			// load menu level
-			switch ( rand() % 4 )
+			int menuMapType = 0;
+			if ( victory == 3 )
 			{
-				case 0:
-					loadMap("mainmenu1", &map, map.entities, map.creatures);
-					camera.x = 8;
-					camera.y = 4.5;
-					camera.z = 0;
-					camera.ang = 0.6;
-					break;
-				case 1:
-					loadMap("mainmenu2", &map, map.entities, map.creatures);
-					camera.x = 7;
-					camera.y = 4;
-					camera.z = -4;
-					camera.ang = 1.0;
-					break;
-				case 2:
-					loadMap("mainmenu3", &map, map.entities, map.creatures);
-					camera.x = 5;
-					camera.y = 3;
-					camera.z = 0;
-					camera.ang = 1.0;
-					break;
-				case 3:
-					loadMap("mainmenu4", &map, map.entities, map.creatures);
-					camera.x = 6;
-					camera.y = 14.5;
-					camera.z = -24;
-					camera.ang = 5.0;
-					break;
+				menuMapType = loadMainMenuMap(true, true);
+			}
+			else
+			{
+				switch ( rand() % 2 )
+				{
+					case 0:
+						menuMapType = loadMainMenuMap(true, false);
+						break;
+					case 1:
+						menuMapType = loadMainMenuMap(false, false);
+						break;
+					default:
+						break;
+				}
 			}
 			camera.vang = 0;
 			numplayers = 0;
@@ -4484,7 +4487,7 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[rand() % 2], true, false, false);
 #endif
 			}
 			else
@@ -4542,7 +4545,7 @@ void handleMainMenu(bool mode)
 			if ( intromoviestage >= 9 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[1], true, false, false);
 #endif
 				introstage = 1;
 				intromovietime = 0;
@@ -5492,6 +5495,7 @@ void openSettingsWindow()
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
+	settings_lock_right_sidebar = lock_right_sidebar;
 
 	settings_gamepad_leftx_invert = gamepad_leftx_invert;
 	settings_gamepad_lefty_invert = gamepad_lefty_invert;
@@ -6989,6 +6993,7 @@ void applySettings()
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
+	lock_right_sidebar = settings_lock_right_sidebar;
 
 	gamepad_leftx_invert = settings_gamepad_leftx_invert;
 	gamepad_lefty_invert = settings_gamepad_lefty_invert;

@@ -390,7 +390,6 @@ int fmod_result;
 #endif
 
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intro.ogg", FMOD_SOFTWARE, NULL, &intromusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/introduction.ogg", FMOD_SOFTWARE, NULL, &introductionmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intermission.ogg", FMOD_SOFTWARE, NULL, &intermissionmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/minetown.ogg", FMOD_SOFTWARE, NULL, &minetownmusic);
@@ -402,6 +401,7 @@ int fmod_result;
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/endgame.ogg", FMOD_SOFTWARE, NULL, &endgamemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
+	fmod_result = FMOD_System_CreateStream(fmod_system, "music/sanctum.ogg", FMOD_SOFTWARE, NULL, &sanctummusic);
 	//fmod_result = FMOD_System_CreateStream(fmod_system, "music/story.ogg", FMOD_SOFTWARE, NULL, &storymusic);
 
 	if ( NUMMINESMUSIC > 0 )
@@ -483,6 +483,22 @@ int fmod_result;
 		{
 			snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &citadelmusic[c]);
+		}
+	}
+	if ( NUMINTROMUSIC > 0 )
+	{
+		intromusic = (FMOD_SOUND**)malloc(sizeof(FMOD_SOUND*)*NUMINTROMUSIC);
+		for ( c = 0; c < NUMINTROMUSIC; c++ )
+		{
+			if ( c == 0 )
+			{
+				strcpy(tempstr, "music/intro.ogg");
+			}
+			else
+			{
+				snprintf(tempstr, 1000, "music/intro%02d.ogg", c);
+			}
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &intromusic[c]);
 		}
 	}
 #ifdef HAVE_OPENAL
@@ -693,7 +709,6 @@ void deinitGame()
 #endif
 	FMOD_Channel_Stop(music_channel);
 	FMOD_Channel_Stop(music_channel2);
-	FMOD_Sound_Release(intromusic);
 	FMOD_Sound_Release(introductionmusic);
 	FMOD_Sound_Release(intermissionmusic);
 	FMOD_Sound_Release(minetownmusic);
@@ -705,6 +720,7 @@ void deinitGame()
 	FMOD_Sound_Release(endgamemusic);
 	FMOD_Sound_Release(escapemusic);
 	FMOD_Sound_Release(devilmusic);
+	FMOD_Sound_Release(sanctummusic);
 	for ( c = 0; c < NUMMINESMUSIC; c++ )
 	{
 		FMOD_Sound_Release(minesmusic[c]);
@@ -776,6 +792,14 @@ void deinitGame()
 	if ( citadelmusic )
 	{
 		free(citadelmusic);
+	}
+	for ( c = 0; c < NUMINTROMUSIC; c++ )
+	{
+		FMOD_Sound_Release(intromusic[c]);
+	}
+	if ( intromusic )
+	{
+		free(intromusic);
 	}
 #ifdef HAVE_OPENAL
 #undef FMOD_Channel_Stop

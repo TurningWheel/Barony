@@ -866,6 +866,11 @@ void consoleCommand(char* command_str)
 			//messagePlayer(clientnum, language[299]);
 		}
 	}
+	else if ( !strncmp(command_str, "/jumplevel ", 11) )
+	{
+		skipLevelsOnLoad = atoi((char*)(command_str + 11));
+		consoleCommand("/nextlevel");
+	}
 	else if ( !strncmp(command_str, "/maxout3", 8) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -878,7 +883,7 @@ void consoleCommand(char* command_str)
 		{
 			int c;
 			Stat* myStats = stats[0];
-			skipLevelsOnLoad = 26;
+			skipLevelsOnLoad = 31;
 			for ( c = 0; c < 24; c++ )
 			{
 				consoleCommand("/levelup");
@@ -1417,6 +1422,14 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/quickaddtohotbar", 17) )
 	{
 		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
+	}
+	else if ( !strncmp(command_str, "/locksidebar", 12) )
+	{
+		lock_right_sidebar = (lock_right_sidebar == false);
+		if ( lock_right_sidebar )
+		{
+			proficienciesPage = 1;
+		}
 	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{

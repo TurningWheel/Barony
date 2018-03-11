@@ -254,6 +254,8 @@ void warpMouseToSelectedRemoveCurseSlot();
 bool mouseInBounds(int x1, int x2, int y1, int y2);
 
 void updateCharacterSheet();
+void drawPartySheet();
+void drawSkillsSheet();
 
 //Right sidebar defines.
 #define RIGHTSIDEBAR_X (xres - rightsidebar_titlebar_img->w)
@@ -362,6 +364,8 @@ extern bool right_click_protect;
 
 extern bool auto_appraise_new_items;
 
+extern bool lock_right_sidebar;
+
 const char* getInputName(Uint32 scancode);
 Sint8* inputPressed(Uint32 scancode);
 
@@ -387,6 +391,9 @@ extern SDL_Surface *con_bmp64;
 extern SDL_Surface *int_bmp64;
 extern SDL_Surface *per_bmp64;
 extern SDL_Surface *chr_bmp64;
+
+extern SDL_Surface *sidebar_lock_bmp;
+extern SDL_Surface *sidebar_unlock_bmp;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
 void attackHoverText(Sint32 input[6]);
