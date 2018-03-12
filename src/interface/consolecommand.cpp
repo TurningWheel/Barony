@@ -1664,7 +1664,7 @@ void consoleCommand(char* command_str)
 				tmpEnt = (Entity*)tmpNode->element;
 				if ( tmpEnt->sprite == 37 )
 				{
-					tmpEnt->skill[0] += TICKS_PER_SECOND * 150;
+					tmpEnt->skill[0] += TICKS_PER_SECOND * 210;
 					return;
 				}
 			}

@@ -35,7 +35,7 @@ void initLichIce(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 377;
-		MONSTER_SPOTVAR = 3;
+		MONSTER_SPOTVAR = 4;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
