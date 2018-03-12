@@ -765,6 +765,13 @@ void updatePlayerInventory()
 		}
 	}
 
+	if ( keystatus[SDL_SCANCODE_R] )
+	{
+		autosortInventory();
+		//quickStackItems();
+		keystatus[SDL_SCANCODE_R] = 0;
+	}
+
 	// draw grid
 	pos.x = x;
 	pos.y = y;
@@ -1867,4 +1874,275 @@ bool autoAddHotbarFilter(const Item& item)
 		}
 	}
 	return false;
+}
+
+void quickStackItems()
+{
+	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* itemToStack = (Item*)node->element;
+		if ( itemToStack && itemToStack->shouldItemStack(clientnum) )
+		{
+			for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+			{
+				Item* item2 = (Item*)node->element;
+				// if items are the same, check to see if they should stack
+				if ( item2 && item2 != itemToStack && !itemCompare(itemToStack, item2, false) )
+				{
+					itemToStack->count += item2->count;
+					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, clientnum) )
+					{
+						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+						strcpy((char*)net_packet->data, "EQUI");
+						SDLNet_Write32((Uint32)itemToStack->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)itemToStack->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)itemToStack->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)itemToStack->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)itemToStack->appearance, &net_packet->data[20]);
+						net_packet->data[24] = itemToStack->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 26;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					if ( item2->node )
+					{
+						list_RemoveNode(item2->node);
+					}
+					else
+					{
+						free(item2);
+					}
+				}
+			}
+		}
+	}
+}
+
+void autosortInventory()
+{
+	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item && !itemIsEquipped(item, clientnum) && itemCategory(item) != SPELL_CAT )
+		{
+			item->x = -1;
+			item->y = 0;
+			// move all items away.
+		}
+	}
+
+	std::vector<std::pair<int, int>> autosortPairs;
+	for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+	{
+		autosortPairs.push_back(std::make_pair(autosort_inventory_categories[i], i));
+	}
+
+	std::sort(autosortPairs.begin(), autosortPairs.end());
+
+	// iterate and sort from highest to lowest priority, 1 to 9
+	for ( std::vector<std::pair<int, int>>::reverse_iterator it = autosortPairs.rbegin(); it != autosortPairs.rend(); ++it )
+	{
+		std::pair<int, int> tmpPair = *it;
+		if ( tmpPair.first > 0 )
+		{
+			//messagePlayer(0, "priority %d, category: %d", tmpPair.first, tmpPair.second);
+			bool invertSortDirection = false;
+			switch ( tmpPair.second )
+			{
+				case 0: // weapons
+					sortInventoryItemsOfType(WEAPON, invertSortDirection);
+					break;
+				case 1: // armor
+					sortInventoryItemsOfType(ARMOR, invertSortDirection);
+					break;
+				case 2: // jewelry
+					sortInventoryItemsOfType(RING, invertSortDirection);
+					sortInventoryItemsOfType(AMULET, invertSortDirection);
+					break;
+				case 3: // books/spellbooks
+					sortInventoryItemsOfType(SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(BOOK, invertSortDirection);
+					break;
+				case 4: // tools
+					sortInventoryItemsOfType(TOOL, invertSortDirection);
+					break;
+				case 5: // thrown
+					sortInventoryItemsOfType(THROWN, invertSortDirection);
+					break;
+				case 6: // gems
+					sortInventoryItemsOfType(GEM, invertSortDirection);
+					break;
+				case 7: // potions
+					sortInventoryItemsOfType(POTION, invertSortDirection);
+					break;
+				case 8: // scrolls
+					sortInventoryItemsOfType(SCROLL, invertSortDirection);
+					break;
+				case 9: // magicstaves
+					sortInventoryItemsOfType(MAGICSTAFF, invertSortDirection);
+					break;
+				case 10: // food
+					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	// iterate and sort from lowest to highest priority, -9 to -1
+	for ( std::vector<std::pair<int, int>>::iterator it = autosortPairs.begin(); it != autosortPairs.end(); ++it )
+	{
+		std::pair<int, int> tmpPair = *it;
+		if ( tmpPair.first < 0 )
+		{
+			//messagePlayer(0, "priority %d, category: %d", tmpPair.first, tmpPair.second);
+			bool invertSortDirection = true;
+			switch ( tmpPair.second )
+			{
+				case 0: // weapons
+					sortInventoryItemsOfType(WEAPON, invertSortDirection);
+					break;
+				case 1: // armor
+					sortInventoryItemsOfType(ARMOR, invertSortDirection);
+					break;
+				case 2: // jewelry
+					sortInventoryItemsOfType(RING, invertSortDirection);
+					sortInventoryItemsOfType(AMULET, invertSortDirection);
+					break;
+				case 3: // books/spellbooks
+					sortInventoryItemsOfType(SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(BOOK, invertSortDirection);
+					break;
+				case 4: // tools
+					sortInventoryItemsOfType(TOOL, invertSortDirection);
+					break;
+				case 5: // thrown
+					sortInventoryItemsOfType(THROWN, invertSortDirection);
+					break;
+				case 6: // gems
+					sortInventoryItemsOfType(GEM, invertSortDirection);
+					break;
+				case 7: // potions
+					sortInventoryItemsOfType(POTION, invertSortDirection);
+					break;
+				case 8: // scrolls
+					sortInventoryItemsOfType(SCROLL, invertSortDirection);
+					break;
+				case 9: // magicstaves
+					sortInventoryItemsOfType(MAGICSTAFF, invertSortDirection);
+					break;
+				case 10: // food
+					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+
+	sortInventoryItemsOfType(-1, true); // clean up the rest of the items.
+}
+
+void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
+{
+	node_t* node = nullptr;
+	Item* itemBeingSorted = nullptr;
+	Category cat = static_cast<Category>(categoryInt);
+
+	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		itemBeingSorted = (Item*)node->element;
+		if ( itemBeingSorted && itemBeingSorted->x == -1 )
+		{
+			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
+			{
+				continue;
+			}
+			if ( categoryInt != -1 && itemCategory(itemBeingSorted) != cat )
+			{
+				if ( (itemBeingSorted->type == GEM_ROCK && categoryInt == THROWN) )
+				{
+					// exception for rocks as they are part of the thrown sort category...
+				}
+				else
+				{
+					// if item is not in the category specified, continue on.
+					continue;
+				}
+			}
+
+			// find a place...
+			int x, y;
+			bool notfree = false, foundaspot = false;
+
+			bool is_spell = false;
+			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
+			{
+				is_spell = true;
+			}
+
+			if ( sortRightToLeft )
+			{
+				x = INVENTORY_SIZEX - 1; // fill rightmost first.
+			}
+			else
+			{
+				x = 0; // fill leftmost first.
+			}
+			while ( 1 )
+			{
+				for ( y = 0; y < INVENTORY_SIZEY; y++ )
+				{
+					node_t* node2 = nullptr;
+					for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+					{
+						Item* tempItem = (Item*)node2->element;
+						if ( tempItem == itemBeingSorted )
+						{
+							continue;
+						}
+						if ( tempItem )
+						{
+							if ( tempItem->x == x && tempItem->y == y )
+							{
+								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+								{
+									notfree = true;  //Both spells. Can't fit in the same slot.
+								}
+								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+								{
+									notfree = true;  //Both not spells. Can't fit in the same slot.
+								}
+							}
+						}
+					}
+					if ( notfree )
+					{
+						notfree = false;
+						continue;
+					}
+					itemBeingSorted->x = x;
+					itemBeingSorted->y = y;
+					foundaspot = true;
+					break;
+				}
+				if ( foundaspot )
+				{
+					break;
+				}
+				if ( sortRightToLeft )
+				{
+					--x; // fill rightmost first.
+				}
+				else
+				{
+					++x; // fill leftmost first.
+				}
+			}
+		}
+	}
 }

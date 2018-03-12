@@ -1419,6 +1419,13 @@ void consoleCommand(char* command_str)
 		auto_hotbar_categories[catIndex] = value;
 		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
 	}
+	else if ( !strncmp(command_str, "/autosortcategory ", 18) )
+	{
+		int catIndex = atoi(&command_str[18]);
+		int value = atoi(&command_str[20]);
+		autosort_inventory_categories[catIndex] = value;
+		printlog("Autosort inventory category %d, priority %d.", catIndex, value);
+	}
 	else if ( !strncmp(command_str, "/quickaddtohotbar", 17) )
 	{
 		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
