@@ -117,6 +117,9 @@ bool settings_auto_hotbar_new_items = true;
 bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
 																true, true, true, true,
 																true, true, true, true };
+int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																		0, 0, 0, 0,
+																		0, 0, 0 };
 bool settings_hotbar_numkey_quick_add = false;
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
@@ -2251,6 +2254,55 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1374]);
 			}
+
+			// autosort inventory categories
+			int autosort_options_x = subx1 + 72 + 256;
+			int autosort_options_y = current_y + 112;
+			int pad_x = autosort_options_x;
+			int pad_y = autosort_options_y;
+			drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+			ttfPrintTextFormatted(ttf12, pad_x, current_y - 16 + 112, "%s", language[2912]);
+
+			// draw the values for autosort
+			for ( int i = 0; i < (NUM_AUTOSORT_CATEGORIES); ++i )
+			{
+				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "<");
+				Uint32 autosortColor = uint32ColorGreen(*mainsurface);
+				int padValue_x = pad_x;
+				if ( settings_autosort_inventory_categories[i] < 0 )
+				{
+					autosortColor = uint32ColorRed(*mainsurface);
+					padValue_x += 4; // centre the negative numbers.
+				}
+				else if ( settings_autosort_inventory_categories[i] == 0 )
+				{
+					autosortColor = uint32ColorWhite(*mainsurface);
+				}
+				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
+				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+				pad_x += 128;
+				if ( i == 3 || i == 7 )
+				{
+					pad_x = autosort_options_x;
+					pad_y += 16;
+				}
+			}
+
+			pad_x = autosort_options_x + (strlen(language[2912]) - 3) * (TTF12_WIDTH) + 8; // 3 chars from the end of string.
+			pad_y = autosort_options_y;
+			// hover text for autosort title text
+			if ( mouseInBounds(pad_x - 4, pad_x + 3 * TTF12_WIDTH + 8, current_y - 16 + 112, current_y - 16 + 124) )
+			{
+				tooltip_box.x = omousex - TTF12_WIDTH * 32;
+				tooltip_box.y = omousey - (TTF12_HEIGHT * 3 + 16);
+				tooltip_box.w = strlen(language[2914]) * TTF12_WIDTH + 8;
+				tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+				drawTooltip(&tooltip_box);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[2913]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT, language[2914]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT * 2, language[2915]);
+			}
+
 			current_y += 16;
 			if ( settings_auto_appraise_new_items )
 			{
@@ -2403,6 +2455,38 @@ void handleMainMenu(bool mode)
 									hotbar_options_x -= (128 * 4);
 									hotbar_options_y += 16;
 								}
+							}
+						}
+					}
+
+					// autosort category toggles
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						for ( i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+						{
+							if ( mouseInBounds(autosort_options_x, autosort_options_x + 16, autosort_options_y, autosort_options_y + 12) )
+							{
+								--settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] < -9 )
+								{
+									settings_autosort_inventory_categories[i] = 9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							else if(mouseInBounds(autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12))
+							{
+								++settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] > 9 )
+								{
+									settings_autosort_inventory_categories[i] = -9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							autosort_options_x += 128;
+							if ( i == 3 || i == 7 )
+							{
+								autosort_options_x -= (128 * 4);
+								autosort_options_y += 16;
 							}
 						}
 					}
@@ -4487,7 +4571,14 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic[rand() % 2], true, false, false);
+				if ( victory != 3 && menuMapType )
+				{
+					playmusic(intromusic[2], true, false, false);
+				}
+				else
+				{
+					playmusic(intromusic[rand() % 2], true, false, false);
+				}
 #endif
 			}
 			else
@@ -5490,6 +5581,10 @@ void openSettingsWindow()
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
 		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		settings_autosort_inventory_categories[c] = autosort_inventory_categories[c];
 	}
 	settings_hotbar_numkey_quick_add = hotbar_numkey_quick_add;
 	settings_disable_messages = disable_messages;
@@ -6988,6 +7083,10 @@ void applySettings()
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
 		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		autosort_inventory_categories[c] = settings_autosort_inventory_categories[c];
 	}
 	hotbar_numkey_quick_add = settings_hotbar_numkey_quick_add;
 	disable_messages = settings_disable_messages;

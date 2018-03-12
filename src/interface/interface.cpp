@@ -140,6 +140,9 @@ bool auto_hotbar_new_items = true;
 bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
 														true, true, true, true,
 														true, true, true, true };
+int autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																0, 0, 0, 0,
+																0, 0, 0};
 bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
@@ -918,6 +921,10 @@ int saveConfig(char* filename)
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
 		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		fprintf(fp, "/autosortcategory %d %d\n", c, autosort_inventory_categories[c]);
 	}
 	if ( hotbar_numkey_quick_add )
 	{
