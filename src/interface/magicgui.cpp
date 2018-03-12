@@ -218,7 +218,8 @@ void drawSustainedSpells()
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
 		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
-		pos.y = 32 + (!shootmode? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); //Draw under the skills sheet.
+		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
+		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
 	}
 
 	int count = 0; //This is just for debugging purposes.
