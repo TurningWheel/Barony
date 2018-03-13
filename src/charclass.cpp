@@ -1018,8 +1018,8 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak (red)
-		item = newItem(CLOAK, WORN, 0, 1, 2, true, NULL);
+		// cloak (purple)
+		item = newItem(CLOAK, WORN, 0, 1, 3, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1031,8 +1031,8 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// hood (red)
-		item = newItem(HAT_HOOD, WORN, 0, 1, 1, true, NULL);
+		// hood (purple)
+		item = newItem(HAT_HOOD, WORN, 0, 1, 3, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1221,7 +1221,7 @@ void initClass(int player)
 		}
 
 		// purple hood
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 3, true, NULL);
+		item = newItem(HAT_FEZ, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1444,12 +1444,6 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// slingshot
-			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[1].item = item2->uid;
-			free(item);
-			
 			// light book
 			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, NULL);
 			item2 = itemPickup(player, item);
