@@ -119,7 +119,7 @@ bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true
 																true, true, true, true };
 int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
 																		0, 0, 0, 0,
-																		0, 0, 0 };
+																		0, 0, 0, 0 };
 bool settings_hotbar_numkey_quick_add = false;
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
@@ -2279,7 +2279,14 @@ void handleMainMenu(bool mode)
 					autosortColor = uint32ColorWhite(*mainsurface);
 				}
 				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
-				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+				if ( i == NUM_AUTOSORT_CATEGORIES - 1 )
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2916]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+				}
 				pad_x += 128;
 				if ( i == 3 || i == 7 )
 				{

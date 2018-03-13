@@ -1922,21 +1922,21 @@ void quickStackItems()
 
 void autosortInventory()
 {
+	std::vector<std::pair<int, int>> autosortPairs;
+	for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+	{
+		autosortPairs.push_back(std::make_pair(autosort_inventory_categories[i], i));
+	}
+
 	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
-		if ( item && !itemIsEquipped(item, clientnum) && itemCategory(item) != SPELL_CAT )
+		if ( item && (!itemIsEquipped(item, clientnum) || autosort_inventory_categories[11] != 0) && itemCategory(item) != SPELL_CAT )
 		{
 			item->x = -1;
 			item->y = 0;
 			// move all items away.
 		}
-	}
-
-	std::vector<std::pair<int, int>> autosortPairs;
-	for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
-	{
-		autosortPairs.push_back(std::make_pair(autosort_inventory_categories[i], i));
 	}
 
 	std::sort(autosortPairs.begin(), autosortPairs.end());
@@ -1985,6 +1985,9 @@ void autosortInventory()
 					break;
 				case 10: // food
 					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					break;
+				case 11: // equipped items
+					sortInventoryItemsOfType(-2, invertSortDirection);
 					break;
 				default:
 					break;
@@ -2037,6 +2040,9 @@ void autosortInventory()
 				case 10: // food
 					sortInventoryItemsOfType(FOOD, invertSortDirection);
 					break;
+				case 11: // equipped items
+					sortInventoryItemsOfType(-2, invertSortDirection);
+					break;
 				default:
 					break;
 			}
@@ -2062,7 +2068,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 			{
 				continue;
 			}
-			if ( categoryInt != -1 && itemCategory(itemBeingSorted) != cat )
+			if ( categoryInt != -1 && categoryInt != -2 && itemCategory(itemBeingSorted) != cat )
 			{
 				if ( (itemBeingSorted->type == GEM_ROCK && categoryInt == THROWN) )
 				{
@@ -2073,6 +2079,14 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 					// if item is not in the category specified, continue on.
 					continue;
 				}
+			}
+			if ( categoryInt == -2 && !itemIsEquipped(itemBeingSorted, clientnum) )
+			{
+				continue;
+			}
+			if ( categoryInt != -2 && itemIsEquipped(itemBeingSorted, clientnum) )
+			{
+				continue;
 			}
 
 			// find a place...

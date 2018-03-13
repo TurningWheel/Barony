@@ -120,7 +120,7 @@ damageIndicator_t* newDamageIndicator(double x, double y);
 void selectItemMenuSlot(const Item& item, int entry);
 bool autoAddHotbarFilter(const Item& item);
 void quickStackItems();
-void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft);
+void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
 void autosortInventory();
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
