@@ -142,7 +142,7 @@ bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true,
 														true, true, true, true };
 int autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
 																0, 0, 0, 0,
-																0, 0, 0};
+																0, 0, 0, 0 };
 bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
