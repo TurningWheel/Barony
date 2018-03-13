@@ -1681,6 +1681,7 @@ void useItem(Item* item, int player)
 		case STEEL_HELM:
 		case CRYSTAL_HELM:
 		case ARTIFACT_HELM:
+		case HAT_FEZ:
 			equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
