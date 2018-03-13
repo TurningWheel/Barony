@@ -3687,7 +3687,20 @@ bool Entity::isInvisible() const
 		}
 	}
 
-	if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+	if ( this->behavior == &actPlayer )
+	{
+		if ( this->skill[2] >= 0 && this->skill[2] < MAXPLAYERS )
+		{
+			if ( skillCapstoneUnlockedEntity(PRO_STEALTH) && (stats[this->skill[2]]->sneaking && !stats[this->skill[2]]->defending) )
+			{
+				if ( this->skill[9] == 0 ) // player attack variable.
+				{
+					return true;
+				}
+			}
+		}
+	}
+	else if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
 	{
 		return true;
 	}
@@ -4823,14 +4836,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( player >= 0 )
 					{
 						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
-						if ( hitAngle >= 0 && hitAngle <= 2 * PI / 3 ) // 120 degree arc
+						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 						{
+							int stealthCapstoneBonus = 1; 
+							if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+							{
+								stealthCapstoneBonus = 2;
+							}
+							
 							if ( hit.entity->monsterState == MONSTER_STATE_WAIT 
 								|| hit.entity->monsterState == MONSTER_STATE_PATH )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
-								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
+								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
 								if ( rand() % 4 > 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -4841,7 +4860,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// monster currently engaged in some form of combat maneuver
 								// 1 in 2 chance to flank defenses.
 								flanking = true;
-								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1;
+								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
 								if ( rand() % 20 == 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -7055,6 +7074,7 @@ int checkEquipType(const Item *item)
 		case HAT_JESTER:
 		case HAT_PHRYGIAN:
 		case HAT_WIZARD:
+		case HAT_FEZ:
 			return TYPE_HAT;
 			break;
 
@@ -10308,6 +10328,36 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				case SHADOW:
 					helm->focalx = limbs[monster][9][0];
 					helm->focaly = limbs[monster][9][1] - 5;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				default:
+					break;
+			}
+			helm->roll = PI / 2;
+		}
+		else if ( helm->sprite == items[HAT_FEZ].index )
+		{
+			switch ( monster )
+			{
+				case AUTOMATON:
+				case SKELETON:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.0;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				case VAMPIRE:
+				case SHOPKEEPER:
+				case HUMAN:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.35;
+					helm->focalz = limbs[monster][9][2] + 2.25;
+					break;
+				case GOATMAN:
+				case GOBLIN:
+				case INSECTOID:
+				case SHADOW:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.5;
 					helm->focalz = limbs[monster][9][2] + 2.5;
 					break;
 				default:
