@@ -1655,7 +1655,16 @@ void handleMainMenu(bool mode)
 						{
 							y += 12;
 							strcat(flagsBoxText, "\n");
-							strcat(flagsBoxText, language[153 + c]);
+							char flagStringBuffer[256] = "";
+							if ( c < 5 )
+							{
+								strcpy(flagStringBuffer, language[153 + c]);
+							}
+							else
+							{
+								strcpy(flagStringBuffer, language[2917 - 5 + c]);
+							}
+							strcat(flagsBoxText, flagStringBuffer);
 						}
 					}
 				}
@@ -2366,22 +2375,39 @@ void handleMainMenu(bool mode)
 			int i;
 			for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 			{
-				if ( svFlags & power(2, i) )
+				char flagStringBuffer[256] = "";
+				if ( i < 5 )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[153 + i], 255);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+				}
+				if ( svFlags & power(2, i) )
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", flagStringBuffer);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", flagStringBuffer);
 				}
 				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12))   //So many gosh dang magic numbers ._.
 				{
-					if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+					if ( i < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + i], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+					}
+					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 						tooltip_box.h = TTF12_HEIGHT + 8;
 					}
 				}
@@ -2392,7 +2418,16 @@ void handleMainMenu(bool mode)
 				drawTooltip(&tooltip_box);
 				if (hovering_selection < NUM_SERVER_FLAGS)
 				{
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+					char flagStringBuffer[256] = "";
+					if ( hovering_selection < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+					}
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 				}
 			}
 
@@ -3493,22 +3528,39 @@ void handleMainMenu(bool mode)
 		int i;
 		for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 		{
-			if ( svFlags & power(2, i) )
+			char flagStringBuffer[256] = "";
+			if ( i < 5 )
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[153 + i], 255);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+			}
+			if ( svFlags & power(2, i) )
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", flagStringBuffer);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", flagStringBuffer);
 			}
 			if (mouseInBounds((xres / 2) + 8 + 6, (xres / 2) + 8 + 30, suby1 + 80 + (i * 16), suby1 + 92 + (i * 16)))   //So many gosh dang magic numbers ._.
 			{
-				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+				if ( i < 5 )
+				{
+					strncpy(flagStringBuffer, language[1942 + i], 255);
+				}
+				else
+				{
+					strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+				}
+				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
-					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}
 			}
@@ -3684,9 +3736,18 @@ void handleMainMenu(bool mode)
 		if (hovering_selection > -1)
 		{
 			drawTooltip(&tooltip_box);
+			char flagStringBuffer[256] = "";
+			if ( hovering_selection < 5 )
+			{
+				strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+			}
+			else
+			{
+				strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+			}
 			if (hovering_selection < NUM_SERVER_FLAGS)
 			{
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 			}
 		}
 
