@@ -306,7 +306,14 @@ int totalScore(score_t* score)
 	}
 
 	amount += score->dungeonlevel * 500;
-	amount += score->victory * 10000;
+	if ( score->victory == 3 )
+	{
+		amount += score->victory * 20000;
+	}
+	else
+	{
+		amount += score->victory * 10000;
+	}
 	amount -= score->completionTime / TICKS_PER_SECOND;
 	if ( score->victory )
 	{
@@ -314,6 +321,11 @@ int totalScore(score_t* score)
 		amount += score->conductFoodless * 5000;
 		amount += score->conductVegetarian * 5000;
 		amount += score->conductIlliterate * 5000;
+		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
+			&& score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] == 0 )
+		{
+			amount *= 2;
+		}
 	}
 	if ( amount < 0 )
 	{
