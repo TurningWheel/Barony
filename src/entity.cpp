@@ -6975,6 +6975,32 @@ void setRandomMonsterStats(Stat* stats)
 		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
 	}
 
+	if ( (svFlags & SV_FLAG_HARDCORE) )
+	{
+		// spice up some stats...
+		stats->HP += rand() % ((abs(stats->HP) % 50 + 1) * 10); // each 50 HP add 10 random HP
+		stats->MAXHP = stats->HP;
+		stats->OLDHP = stats->HP;
+
+		int statIncrease = 0; 
+		statIncrease = (abs(stats->STR) % 5 + 1) * 3; // each 5 STR add 3 more STR.
+		stats->STR += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats->PER) % 5 + 1) * 3; // each 5 PER add 3 more PER.
+		stats->PER += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = std::min((abs(stats->DEX) % 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
+		stats->DEX += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats->CON) % 5 + 1) * 1; // each 5 CON add 1 more CON.
+		stats->CON += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats->INT) % 5 + 1) * 5; // each 5 INT add 5 more INT.
+		stats->INT += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		stats->LVL += 2;
+	}
+
 	// debug print out each monster spawned
 
 	/*messagePlayer(0, "Set stats to: ");
@@ -8830,9 +8856,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 			)
 		{
 			// check to see if holding ranged weapon, set hittime to be ready to attack.
-			if ( hasRangedWeapon() && monsterSpecialTimer <= 0 )
+			// set melee hittime close to max in hardcore mode...
+			if ( ((svFlags & SV_FLAG_HARDCORE) || hasRangedWeapon()) && monsterSpecialTimer <= 0 )
 			{
-				monsterHitTime = 2 * HITRATE;
+				if ( hasRangedWeapon() )
+				{
+					monsterHitTime = 2 * HITRATE;
+				}
+				else
+				{
+					monsterHitTime = HITRATE - 12;
+				}
 			}
 		}
 	}
