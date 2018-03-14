@@ -44,6 +44,13 @@ void initLich(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
+			if ( myStats->HP == 1000 )
+			{
+				myStats->HP = 1000 + 250 * numplayers;
+				myStats->MAXHP = myStats->HP;
+				myStats->OLDHP = myStats->HP;
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
