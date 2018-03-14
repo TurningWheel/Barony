@@ -529,13 +529,8 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
@@ -1250,13 +1245,8 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update
 			if ( ticks % 4 == 0 && list_Size(map.entities) )
@@ -2354,6 +2344,9 @@ int main(int argc, char** argv)
 		map.creatures = new list_t;
 		map.creatures->first = nullptr;
 		map.creatures->last = nullptr;
+
+		// initialize player conducts
+		setDefaultPlayerConducts();
 
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
