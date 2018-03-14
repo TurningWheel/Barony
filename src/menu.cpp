@@ -3938,7 +3938,7 @@ void handleMainMenu(bool mode)
 			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
-			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate )
+			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -3949,43 +3949,52 @@ void handleMainMenu(bool mode)
 				if ( conductPenniless )
 				{
 					strcat(tempstr, language[1408]);
-					b++;
+					++b;
 				}
 				if ( conductFoodless )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1409]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductVegetarian )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1410]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductIlliterate )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1411]);
-					b++;
+					++b;
 				}
-				if ( b == 2 )
+				for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 				{
-					strcat(tempstr, "\n ");
+					if ( conductGameChallenges[c] != 0 )
+					{
+						strcat(tempstr, ", ");
+						if ( b > 0 && b % 4 == 0 )
+						{
+							strcat(tempstr, "\n ");
+						}
+						strcat(tempstr, language[2925 + c]);
+						++b;
+					}
 				}
-				if ( b != 2 )
+				/*	if ( b > 0 )
 				{
 					tempstr[strlen(tempstr) - 2] = 0;
-				}
-				else
-				{
-					tempstr[strlen(tempstr) - 4] = 0;
-				}
+				}*/
 				ttfPrintTextFormatted(ttf12, subx1 + 20, suby2 - 64, tempstr);
 			}
 
@@ -4069,14 +4078,9 @@ void handleMainMenu(bool mode)
 			secretlevel = false;
 			victory = 0;
 			completionTime = 0;
-			conductPenniless = true;
-			conductFoodless = true;
-			conductVegetarian = true;
-			conductIlliterate = true;
-			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
-			{
-				conductGameChallenges[c] = 0;
-			}
+
+			setDefaultPlayerConducts(); // penniless, foodless etc.
+
 			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 			{
 				gameStatistics[c] = 0;
