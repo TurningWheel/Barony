@@ -28,6 +28,8 @@ bool conductPenniless = true;
 bool conductFoodless = true;
 bool conductVegetarian = true;
 bool conductIlliterate = true;
+Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES] = { 0 }; // additional 'conducts' to be stored in here.
+Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game statistics to be stored in here.
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
@@ -192,7 +194,14 @@ score_t* scoreConstructor()
 	score->conductFoodless = conductFoodless;
 	score->conductVegetarian = conductVegetarian;
 	score->conductIlliterate = conductIlliterate;
-
+	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		score->conductGameChallenges[c] = conductGameChallenges[c];
+	}
+	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		score->gameStatistics[c] = gameStatistics[c];
+	}
 	return score;
 }
 
@@ -446,6 +455,14 @@ void loadScore(int scorenum)
 			stats[0]->mask = item2;
 		}
 	}
+	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		conductGameChallenges[c] = score->conductGameChallenges[c];
+	}
+	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		gameStatistics[c] = score->gameStatistics[c];
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -532,6 +549,14 @@ void saveAllScores()
 		{
 			fwrite(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
 			fwrite(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		{
+			fwrite(&score->conductGameChallenges[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		{
+			fwrite(&score->gameStatistics[c], sizeof(Sint32), 1, fp);
 		}
 
 		// inventory
@@ -866,6 +891,24 @@ void loadAllScores()
 			}
 		}
 
+		if ( versionNumber >= 310 )
+		{
+			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			{
+				fread(&score->conductGameChallenges[c], sizeof(Sint32), 1, fp);
+			}
+			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			{
+				fread(&score->gameStatistics[c], sizeof(Sint32), 1, fp);
+			}
+		}
+		else
+		{
+			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			{
+				score->conductGameChallenges[c] = 0;
+			}
+		}
 		score->stats->leader_uid = 0;
 		score->stats->FOLLOWERS.first = NULL;
 		score->stats->FOLLOWERS.last = NULL;
@@ -1053,6 +1096,14 @@ int saveGame()
 	fwrite(&conductFoodless, sizeof(bool), 1, fp);
 	fwrite(&conductVegetarian, sizeof(bool), 1, fp);
 	fwrite(&conductIlliterate, sizeof(bool), 1, fp);
+	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		fwrite(&conductGameChallenges[c], sizeof(Sint32), 1, fp);
+	}
+	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		fwrite(&gameStatistics[c], sizeof(Sint32), 1, fp);
+	}
 
 	// write hotbar items
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
@@ -1666,13 +1717,15 @@ int loadGame(int player)
 		return 1;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("loadGame: '%s' version number %d", SAVEGAMEFILE, versionNumber);
+	if ( versionNumber == -1 )
 	{
+		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 1;
 	}
-
 	// read basic header info
 	fread(&uniqueGameKey, sizeof(Uint32), 1, fp);
 	fread(&mul, sizeof(Uint32), 1, fp);
@@ -1685,6 +1738,17 @@ int loadGame(int player)
 	fread(&conductFoodless, sizeof(bool), 1, fp);
 	fread(&conductVegetarian, sizeof(bool), 1, fp);
 	fread(&conductIlliterate, sizeof(bool), 1, fp);
+	if ( versionNumber >= 310 )
+	{
+		for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		{
+			fread(&conductGameChallenges[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		{
+			fread(&gameStatistics[c], sizeof(Sint32), 1, fp);
+		}
+	}
 
 	// read hotbar item offsets
 	Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
@@ -2082,11 +2146,14 @@ list_t* loadGameFollowers()
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("loadGameFollowers: '%s' version number %d", SAVEGAMEFILE2, versionNumber);
+	if ( versionNumber == -1 )
 	{
+		// if version number returned is invalid, abort
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE2);
 		fclose(fp);
-		return NULL;
+		return nullptr;
 	}
 
 	// create followers list
@@ -2309,8 +2376,10 @@ bool saveGameExists()
 			return false;
 		}
 		fread(checkstr, sizeof(char), strlen(VERSION), fp);
-		if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+		int versionNumber = getSavegameVersion(checkstr);
+		if ( versionNumber == -1 )
 		{
+			// if getSavegameVersion returned -1, abort.
 			fclose(fp);
 			return false;
 		}
@@ -2357,18 +2426,26 @@ char* getSaveGameName()
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("getSaveGameName: '%s' version number %d", SAVEGAMEFILE, versionNumber);
+	if ( versionNumber == -1 )
 	{
+		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		free(tempstr);
-		return NULL;
+		return nullptr;
 	}
 
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&mul, sizeof(Uint32), 1, fp);
 	fread(&plnum, sizeof(Uint32), 1, fp);
 	fseek(fp, sizeof(Uint32) + sizeof(Uint32) + sizeof(bool), SEEK_CUR);
+	if ( versionNumber >= 310 )
+	{
+		fseek(fp, sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, SEEK_CUR);
+		fseek(fp, sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, SEEK_CUR);
+	}
 	fseek(fp, sizeof(Uint32)*NUM_HOTBAR_SLOTS, SEEK_CUR);
 	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
 
@@ -2483,8 +2560,10 @@ Uint32 getSaveGameUniqueGameKey()
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
+		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
@@ -2527,8 +2606,10 @@ int getSaveGameType()
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
+		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
@@ -2572,8 +2653,10 @@ int getSaveGameClientnum()
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
+		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
@@ -2618,8 +2701,10 @@ Uint32 getSaveGameMapSeed()
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
+		// if getSavegameVersion returned -1, abort.
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
@@ -2633,4 +2718,31 @@ Uint32 getSaveGameMapSeed()
 	// close file
 	fclose(fp);
 	return seed;
+}
+
+int getSavegameVersion(char checkstr[64])
+{
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	int i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
+	{
+		if ( checkstr[j] >= '0' && checkstr[j] <= '9' )
+		{
+			versionStr[i] = checkstr[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+	if ( versionNumber < 200 || versionNumber > 999 )
+	{
+		// if version number less than v2.0.0, or more than 3 digits, abort.
+		return -1;
+	}
+	return versionNumber;
 }

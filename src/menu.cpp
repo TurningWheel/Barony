@@ -4012,6 +4012,14 @@ void handleMainMenu(bool mode)
 			conductFoodless = true;
 			conductVegetarian = true;
 			conductIlliterate = true;
+			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			{
+				conductGameChallenges[c] = 0;
+			}
+			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			{
+				gameStatistics[c] = 0;
+			}
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
