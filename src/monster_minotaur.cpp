@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "magic/magic.hpp"
 #include "player.hpp"
+#include "colors.hpp"
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
@@ -635,7 +636,10 @@ void actMinotaurTimer(Entity* my)
 	node_t* node;
 
 	MINOTAURTIMER_LIFE++;
-	if ( MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120 && rand() % 5 == 0 )   // two minutes
+	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
+			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
+		)
+		&& rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -673,7 +677,10 @@ void actMinotaurTimer(Entity* my)
 			}
 		}
 	}
-	else if ( MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150 && !MINOTAURTIMER_ACTIVE )     // two and a half minutes
+	else if (( (currentlevel < 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150)
+					|| (currentlevel >= 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 210)
+				)
+		&& !MINOTAURTIMER_ACTIVE )     // two and a half minutes if currentlevel < 25, else 3.5 minutes
 	{
 		Entity* monster = summonMonster(MINOTAUR, my->x, my->y);
 		if ( monster )
@@ -693,10 +700,21 @@ void actMinotaurTimer(Entity* my)
 		int c;
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
-			playSoundPlayer(c, 120 + rand() % 3, 128);
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-			messagePlayerColor(c, color, language[1116]);
-			messagePlayerColor(c, color, language[73]);
+			if ( currentlevel < 25 )
+			{
+				playSoundPlayer(c, 120 + rand() % 3, 128);
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(c, color, language[1116]);
+				messagePlayerColor(c, color, language[73]);
+			}
+			else
+			{
+				playSoundPlayer(c, 375, 128);
+				playSoundPlayer(c, 379, 128);
+				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[1116]);
+				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[73]);
+				messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[73]);
+			}
 		}
 		list_RemoveNode(my->mynode);
 		return;

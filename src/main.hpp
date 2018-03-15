@@ -42,11 +42,13 @@ extern bool showfirst;
 #include <fcntl.h>
 #ifndef WINDOWS
 #include <unistd.h>
+#include <limits.h>
 #endif
 #include <string.h>
 #include <ctype.h>
 #ifdef WINDOWS
 #define GL_GLEXT_PROTOTYPES
+#define PATH_MAX 1024
 #include <windows.h>
 #undef min
 #undef max
@@ -217,6 +219,8 @@ static const unsigned NUM_JOY_IMPULSES = 33;
 static const unsigned UNBOUND_JOYBINDING = 399;
 
 static const int NUM_HOTBAR_CATEGORIES = 12; // number of filters for auto add hotbar items
+
+static const int NUM_AUTOSORT_CATEGORIES = 12; // number of categories for autosort
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

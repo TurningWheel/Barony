@@ -1289,6 +1289,7 @@ void equipItem(Item* item, Item** slot, int player)
 
 	if ( itemCompare(*slot, item, true) )
 	{
+		// if items are different... (excluding the quantity of both item nodes)
 		if ( *slot != NULL )
 		{
 			if (!(*slot)->canUnequip())
@@ -1365,15 +1366,29 @@ void equipItem(Item* item, Item** slot, int player)
 	}
 	else
 	{
+		// if items are the same... (excluding the quantity of both item nodes)
 		if ( *slot != NULL )
 		{
-			if (!(*slot)->canUnequip())
+			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 			{
-				if ( player == clientnum )
+				if (!(*slot)->canUnequip())
 				{
-					messagePlayer(player, language[1089], (*slot)->getName());
+					if ( player == clientnum )
+					{
+						messagePlayer(player, language[1089], (*slot)->getName());
+					}
+					(*slot)->identified = true;
+					return;
 				}
-				(*slot)->identified = true;
+			}
+			else
+			{
+				// This lets the server know when a client "equipped" a new item in their slot but actually just updated the count.
+				// Otherwise if this count check were not here, server would think that equipping 2 rocks after only holding 1 rock is
+				// the same as unequipping the slot since they are the same item, barring the quantity. So the client would appear to
+				// the server as empty handed, while the client holds 2 rocks, and when thrown on client end, the server never sees the item
+				// and the client "throws" nothing, but actually loses their thrown items into nothingness. This fixes that issue.
+				(*slot)->count = item->count; // update quantity. 
 				return;
 			}
 		}
@@ -1666,6 +1681,7 @@ void useItem(Item* item, int player)
 		case STEEL_HELM:
 		case CRYSTAL_HELM:
 		case ARTIFACT_HELM:
+		case HAT_FEZ:
 			equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
@@ -2190,6 +2206,22 @@ Item* itemPickup(int player, Item* item)
 				if ( item2->shouldItemStack(player) )
 				{
 					item2->count += item->count;
+					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
+					{
+						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+						strcpy((char*)net_packet->data, "EQUI"); 
+						SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+						net_packet->data[24] = item2->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 26;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
 					return item2;
 				}
 			}

@@ -823,7 +823,7 @@ void consoleCommand(char* command_str)
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 5;
-			sendPacket(net_sock, -1, net_packet, 0);
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 			//messagePlayer(clientnum, language[299]);
 		}
 	}
@@ -1419,9 +1419,24 @@ void consoleCommand(char* command_str)
 		auto_hotbar_categories[catIndex] = value;
 		printlog("Hotbar auto add category %d, value %d.", catIndex, value);
 	}
+	else if ( !strncmp(command_str, "/autosortcategory ", 18) )
+	{
+		int catIndex = atoi(&command_str[18]);
+		int value = atoi(&command_str[20]);
+		autosort_inventory_categories[catIndex] = value;
+		printlog("Autosort inventory category %d, priority %d.", catIndex, value);
+	}
 	else if ( !strncmp(command_str, "/quickaddtohotbar", 17) )
 	{
 		hotbar_numkey_quick_add = !hotbar_numkey_quick_add;
+	}
+	else if ( !strncmp(command_str, "/locksidebar", 12) )
+	{
+		lock_right_sidebar = (lock_right_sidebar == false);
+		if ( lock_right_sidebar )
+		{
+			proficienciesPage = 1;
+		}
 	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
@@ -1656,7 +1671,7 @@ void consoleCommand(char* command_str)
 				tmpEnt = (Entity*)tmpNode->element;
 				if ( tmpEnt->sprite == 37 )
 				{
-					tmpEnt->skill[0] += TICKS_PER_SECOND * 150;
+					tmpEnt->skill[0] += TICKS_PER_SECOND * 210;
 					return;
 				}
 			}

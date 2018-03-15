@@ -498,7 +498,10 @@ void Entity::actChest()
 		}
 		playSoundEntity(this, 177, 64);
 
-		messagePlayer(chestOpener, language[671]); // "The chest is smashed into pieces!"
+		if ( chestStatus == 1 )
+		{
+			messagePlayer(chestOpener, language[671]); // "The chest is smashed into pieces!" only notify if chest is currently open.
+		}
 
 		this->closeChest();
 
