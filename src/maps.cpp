@@ -4932,6 +4932,14 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 			foundVictory = true;
 		}
 	}
+	for ( node_t* node = topscoresMultiplayer.first; node != nullptr && !foundVictory; node = node->next )
+	{
+		score_t* score = (score_t*)node->element;
+		if ( score && score->victory == 3 )
+		{
+			foundVictory = true;
+		}
+	}
 
 	if ( forceVictoryMap || (foundVictory && rand() % 5 == 0) )
 	{
