@@ -1467,8 +1467,10 @@ void actMonster(Entity* my)
 						if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] )
 						{
 							if ( (lichAlly && lichAlly->monsterState != MONSTER_STATE_LICH_CASTSPELLS)
-								|| my->monsterLichAllyStatus == LICH_ALLY_DEAD )
+								|| my->monsterLichAllyStatus == LICH_ALLY_DEAD
+								|| multiplayer != SINGLE )
 							{
+								// don't teleport if ally is casting spells. unless multiplayer, then go nuts!
 								my->monsterState = MONSTER_STATE_LICHFIRE_TELEPORT_STATIONARY;
 								my->lichFireTeleport();
 								my->monsterSpecialTimer = 80;
@@ -1479,8 +1481,10 @@ void actMonster(Entity* my)
 					else if ( myStats->type == LICH_ICE )
 					{
 						if ( (lichAlly && lichAlly->monsterState != MONSTER_STATE_LICH_CASTSPELLS)
-							|| my->monsterLichAllyStatus == LICH_ALLY_DEAD )
+							|| my->monsterLichAllyStatus == LICH_ALLY_DEAD
+							|| multiplayer != SINGLE )
 						{
+							// don't teleport if ally is casting spells. unless multiplayer, then go nuts!
 							my->monsterState = MONSTER_STATE_LICHICE_TELEPORT_STATIONARY;
 							my->lichIceTeleport();
 							my->monsterSpecialTimer = 80;
