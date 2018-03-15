@@ -15,7 +15,7 @@
 #define SCORESFILE_MULTIPLAYER "scores_multiplayer.dat"
 
 // game score structure
-#define MAXTOPSCORES 20
+#define MAXTOPSCORES 30
 #define NUM_CONDUCT_CHALLENGES 32
 #define NUM_GAMEPLAY_STATISTICS 64
 
