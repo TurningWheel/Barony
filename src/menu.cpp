@@ -1918,9 +1918,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1351 + c]);
 				}
-				else
+				else if ( c < 16 )
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1940 + (c - 14)]);
+				}
+				else
+				{
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1981 + (c - 16)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
 				{

@@ -538,6 +538,7 @@ void defaultImpulses()
 #endif
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
+	impulses[IN_AUTOSORT] = 286;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -623,6 +624,7 @@ void defaultConfig()
 #endif
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
+	consoleCommand("/bind 21 IN_AUTOSORT");
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
@@ -686,7 +688,8 @@ static char impulsenames[NUMIMPULSES][12] =
 	"CAST_SPELL",
 	"DEFEND",
 	"ATTACK",
-	"USE"
+	"USE",
+	"AUTOSORT"
 };
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =

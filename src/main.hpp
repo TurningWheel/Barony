@@ -165,7 +165,8 @@ extern bool stop;
 #define IN_DEFEND 13
 #define IN_ATTACK 14
 #define IN_USE 15
-#define NUMIMPULSES 16
+#define IN_AUTOSORT 16
+#define NUMIMPULSES 17
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
