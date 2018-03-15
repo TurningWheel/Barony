@@ -2823,7 +2823,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->cloak != nullptr )
 				{
 					// 1 in 10 chance of dealing damage to Entity's cloak
-					if ( rand() % 10 == 0 )
+					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK )
 					{
 						if ( player == clientnum )
 						{
