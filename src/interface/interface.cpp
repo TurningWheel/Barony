@@ -114,6 +114,8 @@ SDL_Surface *con_bmp64 = NULL;
 SDL_Surface *int_bmp64 = NULL;
 SDL_Surface *per_bmp64 = NULL;
 SDL_Surface *chr_bmp64 = NULL;
+SDL_Surface *sidebar_lock_bmp = nullptr;
+SDL_Surface *sidebar_unlock_bmp = nullptr;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
@@ -138,11 +140,14 @@ bool auto_hotbar_new_items = true;
 bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
 														true, true, true, true,
 														true, true, true, true };
+int autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																0, 0, 0, 0,
+																0, 0, 0, 0 };
 bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
-
+bool lock_right_sidebar = false;
 
 bool loadInterfaceResources()
 {
@@ -244,6 +249,8 @@ bool loadInterfaceResources()
 	per_bmp64 = loadImage("images/system/per64.png");
 	chr_bmp64 = loadImage("images/system/chr64.png");
 
+	sidebar_lock_bmp = loadImage("images/system/locksidebar.png");
+	sidebar_unlock_bmp = loadImage("images/system/unlocksidebar.png");
 	hotbar_img = loadImage("images/system/hotbar_slot.png");
 	hotbar_spell_img = loadImage("images/system/magic/hotbar_spell.png");
 	int i = 0;
@@ -488,6 +495,14 @@ void freeInterfaceResources()
 	if ( chr_bmp64 )
 	{
 		SDL_FreeSurface(chr_bmp64);
+	}
+	if ( sidebar_lock_bmp )
+	{
+		SDL_FreeSurface(sidebar_lock_bmp);
+	}
+	if ( sidebar_unlock_bmp )
+	{
+		SDL_FreeSurface(sidebar_unlock_bmp);
 	}
 	list_FreeAll(&damageIndicators);
 }
@@ -907,9 +922,17 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
 	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		fprintf(fp, "/autosortcategory %d %d\n", c, autosort_inventory_categories[c]);
+	}
 	if ( hotbar_numkey_quick_add )
 	{
 		fprintf(fp, "/quickaddtohotbar\n");
+	}
+	if ( lock_right_sidebar )
+	{
+		fprintf(fp, "/locksidebar\n");
 	}
 	if (disable_messages)
 	{

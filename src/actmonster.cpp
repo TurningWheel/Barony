@@ -1369,7 +1369,7 @@ void actMonster(Entity* my)
 					my->monsterLichAllyUID = 0;
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer(c, 380, 128);
+						playSoundPlayer(c, 392, 128);
 						messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[2647]);
 					}
 				}
@@ -1388,7 +1388,7 @@ void actMonster(Entity* my)
 					my->monsterLichAllyUID = 0;
 					for ( int c = 0; c < MAXPLAYERS; c++ )
 					{
-						playSoundPlayer(c, 375, 128);
+						playSoundPlayer(c, 391, 128);
 						messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[2649]);
 					}
 				}
@@ -3098,7 +3098,7 @@ void actMonster(Entity* my)
 			my->monsterTargetY = entity->y;
 			hitstats = entity->getStats();
 
-			if (myStats->type == SHOPKEEPER)
+			if ( myStats->type == SHOPKEEPER && strncmp(map.name, "Mages Guild", 11) )
 			{
 				// shopkeepers hold a grudge against players
 				for ( c = 0; c < MAXPLAYERS; ++c )

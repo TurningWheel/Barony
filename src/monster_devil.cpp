@@ -36,6 +36,12 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		if ( myStats->HP == 1250 )
+		{
+			myStats->HP = 1250 + 250 * numplayers;
+			myStats->MAXHP = myStats->HP;
+			myStats->OLDHP = myStats->HP;
+		}
 
 		if (players[0] && players[0]->entity)
 		{

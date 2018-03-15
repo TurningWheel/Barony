@@ -529,13 +529,8 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
@@ -747,6 +742,28 @@ void gameLogic(void)
 					fclose(fp);
 					assignActions(&map);
 					generatePathMaps();
+
+					if ( !strncmp(map.name, "Mages Guild", 11) )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								players[c]->entity->modHP(999);
+								players[c]->entity->modMP(999);
+								if ( stats[c] && stats[c]->HUNGER < 1450 )
+								{
+									stats[c]->HUNGER = 1450;
+									serverUpdateHunger(c);
+								}
+							}
+						}
+						messagePlayer(clientnum, language[2599]);
+
+						// undo shopkeeper grudge
+						swornenemies[SHOPKEEPER][HUMAN] = false;
+						monsterally[SHOPKEEPER][HUMAN] = true;
+					}
 
 					// (special) unlock temple achievement
 					if ( secretlevel && currentlevel == 8 )
@@ -1228,13 +1245,8 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update
 			if ( ticks % 4 == 0 && list_Size(map.entities) )
@@ -2208,7 +2220,9 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		strcpy(datadir, "./");
+		size_t datadirsz = std::min(sizeof(datadir) - 1, strlen(BASE_DATA_DIR));
+		strncpy(datadir, BASE_DATA_DIR, datadirsz);
+		datadir[datadirsz] = '\0';
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2248,7 +2262,9 @@ int main(int argc, char** argv)
 					}
 					else if (!strncmp(argv[c], "-datadir=", 9))
 					{
-						strcpy(datadir, argv[c] + 9);
+						datadirsz = std::min(sizeof(datadir) - 1, strlen(argv[c] + 9));
+						strncpy(datadir, argv[c] + 9, datadirsz);
+						datadir[datadirsz] = '\0';
 					}
 				}
 			}
@@ -2328,6 +2344,9 @@ int main(int argc, char** argv)
 		map.creatures = new list_t;
 		map.creatures->first = nullptr;
 		map.creatures->last = nullptr;
+
+		// initialize player conducts
+		setDefaultPlayerConducts();
 
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
@@ -3077,6 +3096,18 @@ int main(int argc, char** argv)
 						if (capture_mouse)
 						{
 							SDL_SetRelativeMouseMode(SDL_TRUE);
+						}
+
+						if ( lock_right_sidebar )
+						{
+							if ( proficienciesPage == 1 )
+							{
+								drawPartySheet();
+							}
+							else
+							{
+								drawSkillsSheet();
+							}
 						}
 					}
 

@@ -117,12 +117,16 @@ bool settings_auto_hotbar_new_items = true;
 bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
 																true, true, true, true,
 																true, true, true, true };
+int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																		0, 0, 0, 0,
+																		0, 0, 0, 0 };
 bool settings_hotbar_numkey_quick_add = false;
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
 bool playing_random_char = false;
 bool colorblind = false;
+bool settings_lock_right_sidebar = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -1651,7 +1655,16 @@ void handleMainMenu(bool mode)
 						{
 							y += 12;
 							strcat(flagsBoxText, "\n");
-							strcat(flagsBoxText, language[153 + c]);
+							char flagStringBuffer[256] = "";
+							if ( c < 5 )
+							{
+								strcpy(flagStringBuffer, language[153 + c]);
+							}
+							else
+							{
+								strcpy(flagStringBuffer, language[2917 - 5 + c]);
+							}
+							strcat(flagsBoxText, flagStringBuffer);
 						}
 					}
 				}
@@ -2250,6 +2263,62 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1374]);
 			}
+
+			// autosort inventory categories
+			int autosort_options_x = subx1 + 72 + 256;
+			int autosort_options_y = current_y + 112;
+			int pad_x = autosort_options_x;
+			int pad_y = autosort_options_y;
+			drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+			ttfPrintTextFormatted(ttf12, pad_x, current_y - 16 + 112, "%s", language[2912]);
+
+			// draw the values for autosort
+			for ( int i = 0; i < (NUM_AUTOSORT_CATEGORIES); ++i )
+			{
+				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "<");
+				Uint32 autosortColor = uint32ColorGreen(*mainsurface);
+				int padValue_x = pad_x;
+				if ( settings_autosort_inventory_categories[i] < 0 )
+				{
+					autosortColor = uint32ColorRed(*mainsurface);
+					padValue_x += 4; // centre the negative numbers.
+				}
+				else if ( settings_autosort_inventory_categories[i] == 0 )
+				{
+					autosortColor = uint32ColorWhite(*mainsurface);
+				}
+				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
+				if ( i == NUM_AUTOSORT_CATEGORIES - 1 )
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2916]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+				}
+				pad_x += 128;
+				if ( i == 3 || i == 7 )
+				{
+					pad_x = autosort_options_x;
+					pad_y += 16;
+				}
+			}
+
+			pad_x = autosort_options_x + (strlen(language[2912]) - 3) * (TTF12_WIDTH) + 8; // 3 chars from the end of string.
+			pad_y = autosort_options_y;
+			// hover text for autosort title text
+			if ( mouseInBounds(pad_x - 4, pad_x + 3 * TTF12_WIDTH + 8, current_y - 16 + 112, current_y - 16 + 124) )
+			{
+				tooltip_box.x = omousex - TTF12_WIDTH * 32;
+				tooltip_box.y = omousey - (TTF12_HEIGHT * 3 + 16);
+				tooltip_box.w = strlen(language[2914]) * TTF12_WIDTH + 8;
+				tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+				drawTooltip(&tooltip_box);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[2913]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT, language[2914]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT * 2, language[2915]);
+			}
+
 			current_y += 16;
 			if ( settings_auto_appraise_new_items )
 			{
@@ -2286,7 +2355,16 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2590]);
 			}
-			current_y += 64;
+			current_y += 16;
+			if ( settings_lock_right_sidebar )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2598]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2598]);
+			}
+			current_y += 48;
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
@@ -2297,22 +2375,39 @@ void handleMainMenu(bool mode)
 			int i;
 			for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 			{
-				if ( svFlags & power(2, i) )
+				char flagStringBuffer[256] = "";
+				if ( i < 5 )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[153 + i], 255);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+				}
+				if ( svFlags & power(2, i) )
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", flagStringBuffer);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", flagStringBuffer);
 				}
 				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12))   //So many gosh dang magic numbers ._.
 				{
-					if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+					if ( i < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + i], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+					}
+					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 						tooltip_box.h = TTF12_HEIGHT + 8;
 					}
 				}
@@ -2323,7 +2418,16 @@ void handleMainMenu(bool mode)
 				drawTooltip(&tooltip_box);
 				if (hovering_selection < NUM_SERVER_FLAGS)
 				{
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+					char flagStringBuffer[256] = "";
+					if ( hovering_selection < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+					}
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 				}
 			}
 
@@ -2368,6 +2472,11 @@ void handleMainMenu(bool mode)
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_hotbar_numkey_quick_add = (settings_hotbar_numkey_quick_add == false);
 					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_lock_right_sidebar = (settings_lock_right_sidebar == false);
+					}
 				}
 				else
 				{
@@ -2388,6 +2497,38 @@ void handleMainMenu(bool mode)
 									hotbar_options_x -= (128 * 4);
 									hotbar_options_y += 16;
 								}
+							}
+						}
+					}
+
+					// autosort category toggles
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						for ( i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+						{
+							if ( mouseInBounds(autosort_options_x, autosort_options_x + 16, autosort_options_y, autosort_options_y + 12) )
+							{
+								--settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] < -9 )
+								{
+									settings_autosort_inventory_categories[i] = 9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							else if(mouseInBounds(autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12))
+							{
+								++settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] > 9 )
+								{
+									settings_autosort_inventory_categories[i] = -9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							autosort_options_x += 128;
+							if ( i == 3 || i == 7 )
+							{
+								autosort_options_x -= (128 * 4);
+								autosort_options_y += 16;
 							}
 						}
 					}
@@ -3387,22 +3528,39 @@ void handleMainMenu(bool mode)
 		int i;
 		for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 		{
-			if ( svFlags & power(2, i) )
+			char flagStringBuffer[256] = "";
+			if ( i < 5 )
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[153 + i], 255);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+			}
+			if ( svFlags & power(2, i) )
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", flagStringBuffer);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", flagStringBuffer);
 			}
 			if (mouseInBounds((xres / 2) + 8 + 6, (xres / 2) + 8 + 30, suby1 + 80 + (i * 16), suby1 + 92 + (i * 16)))   //So many gosh dang magic numbers ._.
 			{
-				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+				if ( i < 5 )
+				{
+					strncpy(flagStringBuffer, language[1942 + i], 255);
+				}
+				else
+				{
+					strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+				}
+				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
-					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}
 			}
@@ -3578,9 +3736,18 @@ void handleMainMenu(bool mode)
 		if (hovering_selection > -1)
 		{
 			drawTooltip(&tooltip_box);
+			char flagStringBuffer[256] = "";
+			if ( hovering_selection < 5 )
+			{
+				strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+			}
+			else
+			{
+				strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+			}
 			if (hovering_selection < NUM_SERVER_FLAGS)
 			{
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 			}
 		}
 
@@ -3771,7 +3938,8 @@ void handleMainMenu(bool mode)
 			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
-			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate )
+			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
+				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -3782,43 +3950,52 @@ void handleMainMenu(bool mode)
 				if ( conductPenniless )
 				{
 					strcat(tempstr, language[1408]);
-					b++;
+					++b;
 				}
 				if ( conductFoodless )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1409]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductVegetarian )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1410]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductIlliterate )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1411]);
-					b++;
+					++b;
 				}
-				if ( b == 2 )
+				for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 				{
-					strcat(tempstr, "\n ");
+					if ( conductGameChallenges[c] != 0 )
+					{
+						strcat(tempstr, ", ");
+						if ( b > 0 && b % 4 == 0 )
+						{
+							strcat(tempstr, "\n ");
+						}
+						strcat(tempstr, language[2925 + c]);
+						++b;
+					}
 				}
-				if ( b != 2 )
+				/*	if ( b > 0 )
 				{
 					tempstr[strlen(tempstr) - 2] = 0;
-				}
-				else
-				{
-					tempstr[strlen(tempstr) - 4] = 0;
-				}
+				}*/
 				ttfPrintTextFormatted(ttf12, subx1 + 20, suby2 - 64, tempstr);
 			}
 
@@ -3902,10 +4079,13 @@ void handleMainMenu(bool mode)
 			secretlevel = false;
 			victory = 0;
 			completionTime = 0;
-			conductPenniless = true;
-			conductFoodless = true;
-			conductVegetarian = true;
-			conductIlliterate = true;
+
+			setDefaultPlayerConducts(); // penniless, foodless etc.
+
+			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			{
+				gameStatistics[c] = 0;
+			}
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -4472,7 +4652,14 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic[rand() % 2], true, false, false);
+				if ( victory != 3 && menuMapType )
+				{
+					playmusic(intromusic[2], true, false, false);
+				}
+				else
+				{
+					playmusic(intromusic[rand() % 2], true, false, false);
+				}
 #endif
 			}
 			else
@@ -5476,10 +5663,15 @@ void openSettingsWindow()
 	{
 		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
 	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		settings_autosort_inventory_categories[c] = autosort_inventory_categories[c];
+	}
 	settings_hotbar_numkey_quick_add = hotbar_numkey_quick_add;
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
+	settings_lock_right_sidebar = lock_right_sidebar;
 
 	settings_gamepad_leftx_invert = gamepad_leftx_invert;
 	settings_gamepad_lefty_invert = gamepad_lefty_invert;
@@ -6973,10 +7165,15 @@ void applySettings()
 	{
 		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
 	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		autosort_inventory_categories[c] = settings_autosort_inventory_categories[c];
+	}
 	hotbar_numkey_quick_add = settings_hotbar_numkey_quick_add;
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
+	lock_right_sidebar = settings_lock_right_sidebar;
 
 	gamepad_leftx_invert = settings_gamepad_leftx_invert;
 	gamepad_lefty_invert = settings_gamepad_lefty_invert;

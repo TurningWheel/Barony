@@ -14,7 +14,14 @@
 #define SCORESFILE "scores.dat"
 
 // game score structure
-#define MAXTOPSCORES 10
+#define MAXTOPSCORES 20
+#define NUM_CONDUCT_CHALLENGES 32
+#define NUM_GAMEPLAY_STATISTICS 64
+
+// indexes for new game conducts
+static const int CONDUCT_HARDCORE = 0; // 2 state, 1 = hardcore, 0 = not.
+static const int CONDUCT_CHEATS_ENABLED = 1; // 2 state, 1 = cheats enabled, 0 = not.
+
 typedef struct score_t
 {
 	Sint32 kills[NUMMONSTERS];
@@ -28,6 +35,8 @@ typedef struct score_t
 	bool conductFoodless;
 	bool conductVegetarian;
 	bool conductIlliterate;
+	Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
+	Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 } score_t;
 extern list_t topscores;
 extern int victory;
@@ -40,6 +49,8 @@ extern bool conductIlliterate;
 extern list_t booksRead;
 extern bool usedClass[NUMCLASSES];
 extern Uint32 loadingsavegame;
+extern Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
+extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 
 score_t* scoreConstructor();
 void scoreDeconstructor(void* data);
@@ -59,6 +70,10 @@ int getSaveGameType();
 int getSaveGameClientnum();
 Uint32 getSaveGameMapSeed();
 Uint32 getSaveGameUniqueGameKey();
+int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, otherwise converts to 3 digit int
+
+void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
+void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
 
 #define SAVEGAMEFILE "savegame.dat"
 #define SAVEGAMEFILE2 "savegame2.dat" // saves follower data

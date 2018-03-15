@@ -334,6 +334,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"artifact_orb_purple",
 	"artifact_orb_green",
 	"tunic",
+	"hat_fez",
 	""
 };
 
@@ -346,6 +347,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_hood",
 		"hat_wizard",
 		"hat_jester",
+		"hat_fez",
 		"leather_helm",
 		"iron_helm",
 		"steel_helm",
