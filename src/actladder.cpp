@@ -91,6 +91,10 @@ void actLadder(Entity* my)
 								}
 								break;
 						}
+						if ( strncmp(map.name, "Underworld", 10) )
+						{
+							skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
+						}
 					}
 					if (LADDER_SECRET)
 					{
@@ -236,10 +240,9 @@ void actPortal(Entity* my)
 							}
 							break;
 					}
-					if ( !strncmp(map.name, "Cockatrice Lair", 15)
-						|| !strncmp(map.name, "Bram's Castle", 13) )
+					if ( strncmp(map.name, "Underworld", 10) )
 					{
-						skipLevelsOnLoad = -1; // don't skip a regular level.
+						skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 					}
 				}
 				if ( !my->portalNotSecret )
