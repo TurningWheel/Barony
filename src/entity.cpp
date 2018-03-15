@@ -6421,13 +6421,35 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		if ( player == 0 )
 		{
-			kills[srcStats->type]++;
+			if ( srcStats->type == LICH )
+			{
+				kills[LICH] = 1;
+			}
+			else if ( srcStats->type == LICH_FIRE )
+			{
+				kills[LICH]++;
+			}
+			else if ( srcStats->type == LICH_ICE )
+			{
+				kills[LICH]++;
+			}
+			else
+			{
+				kills[srcStats->type]++;
+			}
 		}
 		else if ( multiplayer == SERVER && player > 0 )
 		{
 			// inform client of kill
 			strcpy((char*)net_packet->data, "MKIL");
-			net_packet->data[4] = srcStats->type;
+			if ( srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE )
+			{
+				net_packet->data[4] = LICH;
+			}
+			else
+			{
+				net_packet->data[4] = srcStats->type;
+			}
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 5;
