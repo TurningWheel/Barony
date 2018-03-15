@@ -125,6 +125,7 @@ void drawMinimap()
 		{
 			if ( entity->behavior == &actMonster )
 			{
+				bool warningEffect = false;
 				if ( stats[clientnum]->ring != NULL )
 				{
 					if ( stats[clientnum]->ring->type == RING_WARNING )
@@ -138,9 +139,10 @@ void drawMinimap()
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
 						//glEnd();
+						warningEffect = true;
 					}
 				}
-				else if ( stats[clientnum]->shoes != NULL )
+				if ( !warningEffect && stats[clientnum]->shoes != NULL )
 				{
 					if ( stats[clientnum]->shoes->type == ARTIFACT_BOOTS )
 					{
