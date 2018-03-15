@@ -2213,11 +2213,11 @@ list_t* loadGameFollowers()
 	char savefile[32] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE2);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
 	}
 
 	// open file
