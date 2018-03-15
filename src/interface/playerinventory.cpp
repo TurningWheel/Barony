@@ -765,11 +765,12 @@ void updatePlayerInventory()
 		}
 	}
 
-	if ( keystatus[SDL_SCANCODE_R] )
+	if ( *inputPressed(impulses[IN_AUTOSORT]) )
 	{
 		autosortInventory();
 		//quickStackItems();
-		keystatus[SDL_SCANCODE_R] = 0;
+		*inputPressed(impulses[IN_AUTOSORT]) = 0;
+		playSound(139, 64);
 	}
 
 	// draw grid
@@ -930,13 +931,49 @@ void updatePlayerInventory()
 			}
 		}
 	}
-
+	// autosort button
+	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE + inventory_mode_item_img->w;
+	mode_pos.y = y;
+	mode_pos.w = 24;
+	mode_pos.h = 24;
+	bool mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + mode_pos.w, mode_pos.y, mode_pos.y + mode_pos.h);
+	if ( !mouse_in_bounds )
+	{
+		drawWindow(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
+	}
+	else
+	{
+		drawDepressed(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
+	}
+	ttfPrintText(ttf12, mode_pos.x, mode_pos.y + 6, "||");
+	if ( mouse_in_bounds )
+	{
+		mode_pos.x += 2;
+		mode_pos.y += 2;
+		mode_pos.w -= 4;
+		mode_pos.h -= 4;
+		drawRect(&mode_pos, SDL_MapRGB(mainsurface->format, 192, 192, 192), 128);
+		// tooltip
+		SDL_Rect src;
+		src.x = mousex + 16;
+		src.y = mousey + 8;
+		src.h = TTF12_HEIGHT + 8;
+		src.w = longestline(language[2960]) * TTF12_WIDTH + 8;
+		drawTooltip(&src);
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], getInputName(impulses[IN_AUTOSORT]));
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			autosortInventory();
+			playSound(139, 64);
+		}
+	}
 	// do inventory mode buttons
 	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
 	mode_pos.y = y + 60;
 	mode_pos.w = 0;
 	mode_pos.h = 0;
-	bool mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
+	 mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
 	if (mouse_in_bounds)
 	{
 		drawImage(inventory_mode_spell_highlighted_img, NULL, &mode_pos);
@@ -954,6 +991,7 @@ void updatePlayerInventory()
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			inventory_mode = INVENTORY_MODE_SPELL;
+			playSound(139, 64);
 		}
 	}
 	else
@@ -982,6 +1020,7 @@ void updatePlayerInventory()
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			inventory_mode = INVENTORY_MODE_ITEM;
+			playSound(139, 64);
 		}
 	}
 	else

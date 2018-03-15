@@ -539,6 +539,11 @@ void consoleCommand(char* command_str)
 			impulses[IN_USE] = atoi(&command_str[6]);
 			printlog( "Bound IN_USE: %d\n", atoi(&command_str[6]));
 		}
+		else if ( strstr(command_str, "IN_AUTOSORT") )
+		{
+			impulses[IN_AUTOSORT] = atoi(&command_str[6]);
+			printlog("Bound IN_AUTOSORT: %d\n", atoi(&command_str[6]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");
