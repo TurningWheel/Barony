@@ -260,6 +260,7 @@ void drawSkillsSheet()
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
 		{
+			playSound(139, 64);
 			lock_right_sidebar = !lock_right_sidebar;
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 		}
@@ -391,6 +392,7 @@ void drawPartySheet()
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
 		{
+			playSound(139, 64);
 			lock_right_sidebar = !lock_right_sidebar;
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 		}

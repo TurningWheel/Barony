@@ -952,7 +952,7 @@ void updatePlayerInventory()
 		mode_pos.y += 2;
 		mode_pos.w -= 4;
 		mode_pos.h -= 4;
-		drawRect(&mode_pos, SDL_MapRGB(mainsurface->format, 192, 192, 192), 128);
+		drawRect(&mode_pos, SDL_MapRGB(mainsurface->format, 192, 192, 192), 64);
 		// tooltip
 		SDL_Rect src;
 		src.x = mousex + 16;
