@@ -65,8 +65,10 @@ void buttonJoinLobby(button_t* my);
 void buttonDisconnect(button_t* my);
 void buttonScoreNext(button_t* my);
 void buttonScorePrev(button_t* my);
+void buttonScoreToggle(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
-void buttonLoadGame(button_t* my);
+void buttonLoadSingleplayerGame(button_t* my);
+void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 void buttonRandomName(button_t* my);
 
@@ -96,6 +98,7 @@ extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;
 

@@ -88,6 +88,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
 typedef std::tuple<int, int> resolution;
@@ -615,7 +616,7 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 
 					// look for a save game
-					if ( saveGameExists() )
+					if ( saveGameExists(true) || saveGameExists(false) )
 					{
 						openLoadGameWindow(NULL);
 					}
@@ -689,7 +690,7 @@ void handleMainMenu(bool mode)
 					button = newButton();
 					strcpy(button->label, "x");
 					button->x = subx2 - 20;
-					button->y = suby1;
+					button->y = suby1 + 4;
 					button->sizex = 20;
 					button->sizey = 20;
 					button->action = &buttonCloseSubwindow;
@@ -723,6 +724,17 @@ void handleMainMenu(bool mode)
 					button->focused = 1;
 					button->key = SDL_SCANCODE_LEFT;
 					button->joykey = joyimpulses[INJOY_DPAD_LEFT];
+
+					// multiplayer scores toggle button
+					button = newButton();
+					strcpy(button->label, "");
+					button->sizex = strlen("show multiplayer") * 12 + 8;
+					button->sizey = 20;
+					button->x = subx2 - 44 - strlen("show multiplayer") * 12;
+					button->y = suby1 + 4;
+					button->action = &buttonScoreToggle;
+					button->visible = 1;
+					button->focused = 1;
 				}
 			}
 			else
@@ -2751,7 +2763,7 @@ void handleMainMenu(bool mode)
 					{
 						c = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
 					}
-					else if ( loadingsavegame && getSaveGameMapSeed() != clientms )
+					else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
 					{
 						c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
 					}
@@ -3825,14 +3837,38 @@ void handleMainMenu(bool mode)
 	// statistics window
 	if ( score_window )
 	{
-		if ( !list_Size(&topscores) )
+		// draw button label... shamelessly hacked together from "multiplayer scores toggle button" initialisation...
+		int toggleText_x = subx2 - 44 - strlen("show multiplayer") * 12;
+		int toggleText_y = suby1 + 4 ;
+		int w = 0;
+		int h = 0;
+		list_t* scoresPtr = &topscores;
+		if ( !scoreDisplayMultiplayer )
+		{
+			TTF_SizeUTF8(ttf12, "show multiplayer", &w, &h);
+			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show multiplayer");
+		}
+		else
+		{
+			scoresPtr = &topscoresMultiplayer;
+			TTF_SizeUTF8(ttf12, "show solo", &w, &h);
+			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show solo");
+		}
+		if ( !list_Size(scoresPtr) )
 		{
 #define NOSCORESSTR language[1389]
 			ttfPrintTextFormatted(ttf16, xres / 2 - strlen(NOSCORESSTR) * 9, yres / 2 - 9, NOSCORESSTR);
 		}
 		else
 		{
-			ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[1390], score_window);
+			if ( scoreDisplayMultiplayer )
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[2958], score_window);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[1390], score_window);
+			}
 
 			// draw character window
 			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
@@ -3913,7 +3949,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// print total score
-			node = list_Node(&topscores, score_window - 1);
+			node = list_Node(scoresPtr, score_window - 1);
 			if ( node )
 			{
 				score_t* score = (score_t*)node->element;
@@ -4038,6 +4074,10 @@ void handleMainMenu(bool mode)
 				ttfPrintText(ttf12, subx1 + 456, suby1 + 296, language[1413]);
 			}
 		}
+	}
+	else
+	{
+		scoreDisplayMultiplayer = false;
 	}
 
 	// handle fade actions
@@ -5466,15 +5506,20 @@ void openGameoverWindow()
 	scoreDeconstructor((void*)score);
 
 	bool madetop = false;
-	if ( !list_Size(&topscores) )
+	list_t* scoresPtr = &topscores;
+	if ( score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
+	{
+		scoresPtr = &topscoresMultiplayer;
+	}
+	if ( !list_Size(scoresPtr) )
 	{
 		madetop = true;
 	}
-	else if ( list_Size(&topscores) < MAXTOPSCORES )
+	else if ( list_Size(scoresPtr) < MAXTOPSCORES )
 	{
 		madetop = true;
 	}
-	else if ( totalScore((score_t*)topscores.last->element) < total )
+	else if ( totalScore((score_t*)scoresPtr->last->element) < total )
 	{
 		madetop = true;
 	}
@@ -6763,15 +6808,15 @@ void buttonJoinLobby(button_t* my)
 	connectingToLobbyWindow = temp2;
 #endif
 
+	multiplayer = CLIENT;
 	if ( loadingsavegame )
 	{
-		loadGame(getSaveGameClientnum());
+		loadGame(getSaveGameClientnum(false));
 	}
 
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	multiplayer = CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -6869,13 +6914,13 @@ void buttonJoinLobby(button_t* my)
 	strcpy((char*)net_packet->data, "BARONY_JOIN_REQUEST");
 	if ( loadingsavegame )
 	{
-		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum()]->name, 22);
-		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum()], &net_packet->data[42]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->appearance, &net_packet->data[50]);
+		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum(false)]->name, 22);
+		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[42]);
+		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[46]);
+		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->appearance, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
-		net_packet->data[63] = getSaveGameClientnum();
+		net_packet->data[63] = getSaveGameClientnum(false);
 	}
 	else
 	{
@@ -6890,7 +6935,7 @@ void buttonJoinLobby(button_t* my)
 	if ( loadingsavegame )
 	{
 		// send over the map seed being used
-		SDLNet_Write32(getSaveGameMapSeed(), &net_packet->data[64]);
+		SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[64]);
 	}
 	else
 	{
@@ -7304,7 +7349,14 @@ void buttonSettingsOK(button_t* my)
 // next score button (statistics window)
 void buttonScoreNext(button_t* my)
 {
-	score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+	if ( scoreDisplayMultiplayer )
+	{
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer)));
+	}
+	else
+	{
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+	}
 	loadScore(score_window - 1);
 }
 
@@ -7312,6 +7364,13 @@ void buttonScoreNext(button_t* my)
 void buttonScorePrev(button_t* my)
 {
 	score_window = std::max(score_window - 1, 1);
+	loadScore(score_window - 1);
+}
+
+void buttonScoreToggle(button_t* my)
+{
+	score_window = 1;
+	scoreDisplayMultiplayer = !scoreDisplayMultiplayer;
 	loadScore(score_window - 1);
 }
 
@@ -7414,9 +7473,26 @@ void openLoadGameWindow(button_t* my)
 	suby1 = yres / 2 - 128;
 	suby2 = yres / 2 + 128;
 	strcpy(subtext, language[1460]);
-	char* saveGameName = getSaveGameName();
+	bool singleplayerSave = saveGameExists(true);
+	bool multiplayerSave = saveGameExists(false);
+
+	char saveGameName[1024] = "";
+	if ( singleplayerSave && multiplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(true), 1024);
+		strcat(subtext, saveGameName);
+		strcat(subtext, "\n\n");
+		strncpy(saveGameName, getSaveGameName(false), 1024);
+	}
+	else if ( singleplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(true), 1024);
+	}
+	else if ( multiplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(false), 1024);
+	}
 	strcat(subtext, saveGameName);
-	free(saveGameName);
 	strcat(subtext, language[1461]);
 
 	// close button
@@ -7432,17 +7508,44 @@ void openLoadGameWindow(button_t* my)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	// yes button
+	// yes solo button
 	button = newButton();
-	strcpy(button->label, language[1462]);
-	button->sizex = strlen(language[1462]) * 12 + 8;
+	if ( multiplayerSave && !singleplayerSave )
+	{
+		strcpy(button->label, language[2959]);
+		button->action = &buttonLoadMultiplayerGame;
+	}
+	else
+	{
+		strcpy(button->label, language[1462]);
+		button->action = &buttonLoadSingleplayerGame;
+	}
+	button->sizex = strlen(language[2959]) * 9 + 16;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 52;
-	button->action = &buttonLoadGame;
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button->x -= 124;
+	}
 	button->visible = 1;
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
+
+	// yes multiplayer button
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2959]);
+		button->sizex = strlen(language[2959]) * 9 + 16;
+		button->sizey = 20;
+		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2 + 124;
+		button->y = suby2 - 52;
+		button->action = &buttonLoadMultiplayerGame;
+		button->visible = 1;
+		button->focused = 1;
+		//button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
+	}
 
 	// no button
 	button = newButton();
@@ -7558,10 +7661,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_NAME];
 }
 
-void buttonLoadGame(button_t* button)
+void buttonLoadSingleplayerGame(button_t* button)
 {
-	loadingsavegame = getSaveGameUniqueGameKey();
-	int mul = getSaveGameType();
+	loadingsavegame = getSaveGameUniqueGameKey(true);
+	int mul = getSaveGameType(true);
 
 	if ( mul == DIRECTSERVER )
 	{
@@ -7637,6 +7740,98 @@ void buttonLoadGame(button_t* button)
 				connectingToLobby = true;
 				connectingToLobbyWindow = true;
 				strncpy( currentLobbyName, "", 31 );
+				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
+				cpp_Free_CSteamID(lobbyToConnectTo);
+				lobbyToConnectTo = NULL;
+			}
+		}
+		else
+		{
+			buttonStartSingleplayer(button);
+		}
+#endif
+	}
+}
+
+void buttonLoadMultiplayerGame(button_t* button)
+{
+	loadingsavegame = getSaveGameUniqueGameKey(false);
+	int mul = getSaveGameType(false);
+
+	if ( mul == DIRECTSERVER )
+	{
+		directConnect = true;
+		buttonHostMultiplayer(button);
+	}
+	else if ( mul == DIRECTCLIENT )
+	{
+		directConnect = true;
+		buttonJoinMultiplayer(button);
+	}
+	else if ( mul == SINGLE )
+	{
+		buttonStartSingleplayer(button);
+	}
+	else
+	{
+		directConnect = false;
+#ifdef STEAMWORKS
+		if ( mul == SERVER )
+		{
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == CLIENT )
+		{
+			if ( !lobbyToConnectTo )
+			{
+				openSteamLobbyBrowserWindow(button);
+			}
+			else
+			{
+				// close current window
+				int temp1 = connectingToLobby;
+				int temp2 = connectingToLobbyWindow;
+				//buttonCloseSubwindow(button);
+				list_FreeAll(&button_l);
+				deleteallbuttons = true;
+				connectingToLobby = temp1;
+				connectingToLobbyWindow = temp2;
+
+				// create new window
+				subwindow = 1;
+				subx1 = xres / 2 - 256;
+				subx2 = xres / 2 + 256;
+				suby1 = yres / 2 - 64;
+				suby2 = yres / 2 + 64;
+				strcpy(subtext, language[1467]);
+
+				// close button
+				button = newButton();
+				strcpy(button->label, "x");
+				button->x = subx2 - 20;
+				button->y = suby1;
+				button->sizex = 20;
+				button->sizey = 20;
+				button->action = &openSteamLobbyWaitWindow;
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_ESCAPE;
+				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+				// cancel button
+				button = newButton();
+				strcpy(button->label, language[1316]);
+				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizey = 20;
+				button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+				button->y = suby2 - 28;
+				button->action = &openSteamLobbyWaitWindow;
+				button->visible = 1;
+				button->focused = 1;
+
+				connectingToLobby = true;
+				connectingToLobbyWindow = true;
+				strncpy(currentLobbyName, "", 31);
 				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
 				cpp_Free_CSteamID(lobbyToConnectTo);
 				lobbyToConnectTo = NULL;
