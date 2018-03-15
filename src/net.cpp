@@ -2327,6 +2327,7 @@ void clientHandlePacket()
 					}
 						break;
 					case PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY:
+					case PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY:
 					case PARTICLE_EFFECT_LICH_TELEPORT_ROAMING:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
