@@ -62,7 +62,7 @@ void packetDeconstructor(void* data)
 
 -------------------------------------------------------------------------------*/
 
-int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
+int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool tryReliable)
 {
 	if ( directConnect )
 	{
@@ -73,7 +73,7 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 #ifdef STEAMWORKS
 		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] )
 		{
-			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, k_EP2PSendUnreliable, 0);
+			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, tryReliable? k_EP2PSendReliable : k_EP2PSendUnreliable, 0);
 		}
 		else
 		{
@@ -2055,10 +2055,10 @@ void clientHandlePacket()
 		}
 
 		// hack to fix these things from breaking everything...
-		hudarm = NULL;
-		hudweapon = NULL;
-		magicLeftHand = NULL;
-		magicRightHand = NULL;
+		hudarm = nullptr;
+		hudweapon = nullptr;
+		magicLeftHand = nullptr;
+		magicRightHand = nullptr;
 
 		// stop all sounds
 #ifdef HAVE_FMOD
@@ -2140,32 +2140,46 @@ void clientHandlePacket()
 		{
 			fp = openDataFile(SECRETLEVELSFILE, "r");
 		}
-		for ( i = 0; i < currentlevel; i++ )
-			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		for ( i = 0; i < currentlevel; ++i )
+		{
+			while ( fgetc(fp) != '\n' )
+			{
+				if ( feof(fp) )
 				{
 					break;
 				}
+			}
+		}
 		fscanf(fp, "%s", tempstr);
-		while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+		while ( fgetc(fp) != ' ' )
+		{
+			if ( feof(fp) )
 			{
 				break;
 			}
+		}
 		if ( !strcmp(tempstr, "gen:") )
 		{
 			fscanf(fp, "%s", tempstr);
-			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			while ( fgetc(fp) != '\n' )
+			{
+				if ( feof(fp) )
 				{
 					break;
 				}
+			}
 			result = generateDungeon(tempstr, mapseed);
 		}
 		else if ( !strcmp(tempstr, "map:") )
 		{
 			fscanf(fp, "%s", tempstr);
-			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			while ( fgetc(fp) != '\n' )
+			{
+				if ( feof(fp) )
 				{
 					break;
 				}
+			}
 			result = loadMap(tempstr, &map, map.entities, map.creatures);
 		}
 		fclose(fp);

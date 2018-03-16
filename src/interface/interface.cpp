@@ -538,7 +538,7 @@ void defaultImpulses()
 #endif
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
-	impulses[IN_AUTOSORT] = 286;
+	impulses[IN_AUTOSORT] = 21;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
