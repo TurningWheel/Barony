@@ -2129,9 +2129,10 @@ void actPlayer(Entity* my)
 			SDLNet_Write16((Sint16)(PLAYER_VELY * 128), &net_packet->data[12]);
 			SDLNet_Write16((Sint16)(my->yaw * 128), &net_packet->data[14]);
 			SDLNet_Write16((Sint16)(my->pitch * 128), &net_packet->data[16]);
+			net_packet->data[18] = secretlevel;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 18;
+			net_packet->len = 19;
 			sendPacket(net_sock, -1, net_packet, 0);
 		}
 
