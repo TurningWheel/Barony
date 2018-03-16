@@ -954,6 +954,13 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 		stats->EFFECTS[EFF_FAST] = true;
 		stats->EFFECTS_TIMERS[EFF_FAST] = GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION;
 	}
+
+	//Bonus from CON, to scale up healing potions as the game progresses.
+	if ( stats->CON > 0 )
+	{
+		amount += 2 * stats->CON;
+	}
+
 	entity->modHP(amount);
 
 	// play drink sound
@@ -1042,6 +1049,13 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 		stats->EFFECTS[EFF_FAST] = true;
 		stats->EFFECTS_TIMERS[EFF_FAST] = GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION;
 	}
+
+	//Bonus from CON, to scale up healing potions as the game progresses.
+	if ( stats->CON > 0 )
+	{
+		amount += 4 * stats->CON;
+	}
+
 	entity->modHP(amount);
 
 	// play drink sound
