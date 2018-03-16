@@ -165,7 +165,8 @@ extern bool stop;
 #define IN_DEFEND 13
 #define IN_ATTACK 14
 #define IN_USE 15
-#define NUMIMPULSES 16
+#define IN_AUTOSORT 16
+#define NUMIMPULSES 17
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
@@ -219,6 +220,8 @@ static const unsigned NUM_JOY_IMPULSES = 33;
 static const unsigned UNBOUND_JOYBINDING = 399;
 
 static const int NUM_HOTBAR_CATEGORIES = 12; // number of filters for auto add hotbar items
+
+static const int NUM_AUTOSORT_CATEGORIES = 12; // number of categories for autosort
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

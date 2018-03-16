@@ -1403,6 +1403,55 @@ int generateDungeon(char* levelset, Uint32 seed)
 		//messagePlayerColor(0, 0xFFFF00FF, "found some junk tiles!");
 	}
 
+	for ( node = map.entities->first; node != nullptr; node = node->next )
+	{
+		// fix gate air-gap borders on citadel map next to perimeter gates.
+		if ( !strncmp(map.name, "Citadel", 7) )
+		{
+			Entity* gateEntity = (Entity*)node->element;
+			if ( gateEntity->sprite == 19 || gateEntity->sprite == 20 ) // N/S E/W gates take these sprite numbers in the editor.
+			{
+				int gatex = static_cast<int>(gateEntity->x) / 16;
+				int gatey = static_cast<int>(gateEntity->y) / 16;
+				for ( z = OBSTACLELAYER; z < MAPLAYERS; ++z )
+				{
+					if ( gateEntity->x / 16 == 1 ) // along leftmost edge
+					{
+						if ( !map.tiles[z + gatey * MAPLAYERS + (gatex + 1) * MAPLAYERS * map.height] )
+						{
+							map.tiles[z + gatey * MAPLAYERS + (gatex + 1) * MAPLAYERS * map.height] = 230;
+							//messagePlayer(0, "replaced at: %d, %d", gatex, gatey);
+						}
+					}
+					else if ( gateEntity->x / 16 == 51 ) // along rightmost edge
+					{
+						if ( !map.tiles[z + gatey * MAPLAYERS + (gatex - 1) * MAPLAYERS * map.height] )
+						{
+							map.tiles[z + gatey * MAPLAYERS + (gatex - 1) * MAPLAYERS * map.height] = 230;
+							//messagePlayer(0, "replaced at: %d, %d", gatex, gatey);
+						}
+					}
+					else if ( gateEntity->y / 16 == 1 ) // along top edge
+					{
+						if ( !map.tiles[z + (gatey + 1) * MAPLAYERS + gatex * MAPLAYERS * map.height] )
+						{
+							map.tiles[z + (gatey + 1) * MAPLAYERS + gatex * MAPLAYERS * map.height] = 230;
+							//messagePlayer(0, "replaced at: %d, %d", gatex, gatey);
+						}
+					}
+					else if ( gateEntity->y / 16 == 51 ) // along bottom edge
+					{
+						if ( !map.tiles[z + (gatey - 1) * MAPLAYERS + gatex * MAPLAYERS * map.height] )
+						{
+							map.tiles[z + (gatey - 1) * MAPLAYERS + gatex * MAPLAYERS * map.height] = 230;
+							//messagePlayer(0, "replaced at: %d, %d", gatex, gatey);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// boulder and arrow traps
 	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
 	{
@@ -3686,6 +3735,10 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->yaw = PI / 2;
 				entity->behavior = &actPortal;
+				if ( !strcmp(map->name, "Mages Guild") )
+				{
+					entity->skill[3] = 1; // not secret portal, just aesthetic.
+				}
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -4872,6 +4925,14 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 {
 	bool foundVictory = false;
 	for ( node_t* node = topscores.first; node != nullptr && !foundVictory; node = node->next )
+	{
+		score_t* score = (score_t*)node->element;
+		if ( score && score->victory == 3 )
+		{
+			foundVictory = true;
+		}
+	}
+	for ( node_t* node = topscoresMultiplayer.first; node != nullptr && !foundVictory; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
 		if ( score && score->victory == 3 )

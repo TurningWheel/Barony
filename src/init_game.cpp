@@ -334,6 +334,8 @@ int initGame()
 	}
 	topscores.first = NULL;
 	topscores.last = NULL;
+	topscoresMultiplayer.first = NULL;
+	topscoresMultiplayer.last = NULL;
 	messages.first = NULL;
 	messages.last = NULL;
 	chestInv.first = NULL;
@@ -524,7 +526,8 @@ int fmod_result;
 	cursor_bmp = loadImage("images/system/cursor.png");
 	cross_bmp = loadImage("images/system/cross.png");
 
-	loadAllScores();
+	loadAllScores(SCORESFILE);
+	loadAllScores(SCORESFILE_MULTIPLAYER);
 	if (!loadInterfaceResources())
 	{
 		printlog("Failed to load interface resources.\n");
@@ -614,8 +617,10 @@ void deinitGame()
 		}
 	}
 
-	saveAllScores();
+	saveAllScores(SCORESFILE);
+	saveAllScores(SCORESFILE_MULTIPLAYER);
 	list_FreeAll(&topscores);
+	list_FreeAll(&topscoresMultiplayer);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
 	if (title_bmp != NULL)

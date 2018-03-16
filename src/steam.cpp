@@ -899,11 +899,11 @@ void processLobbyInvite()
 	if ( loadingSaveGameChar && loadingSaveGameChar[0] )
 	{
 		Uint32 temp32 = atoi(loadingSaveGameChar);
-		Uint32 gameKey = getSaveGameUniqueGameKey();
+		Uint32 gameKey = getSaveGameUniqueGameKey(false);
 		if ( temp32 && temp32 == gameKey )
 		{
 			loadingsavegame = temp32;
-			buttonLoadGame(NULL);
+			buttonLoadMultiplayerGame(NULL);
 		}
 		else if ( !temp32 )
 		{

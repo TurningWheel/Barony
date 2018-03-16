@@ -803,25 +803,39 @@ void actPlayer(Entity* my)
 				appraisal_item = 0;
 				appraisal_timer = 0;
 
+				// update inventory by trying to stack the newly identified item.
 				for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
 				{
 					Item* item2 = (Item*)node->element;
-					if ( item2 != tempItem && !itemCompare(tempItem, item2, false) )
+					if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
 					{
 						// if items are the same, check to see if they should stack
 						if ( item2->shouldItemStack(PLAYER_NUM) )
 						{
 							item2->count += tempItem->count;
+							if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
+							{
+								// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+								strcpy((char*)net_packet->data, "EQUI");
+								SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
+								SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
+								SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
+								SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
+								SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+								net_packet->data[24] = item2->identified;
+								net_packet->data[25] = PLAYER_NUM;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 26;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
 							if ( tempItem->node )
 							{
 								list_RemoveNode(tempItem->node);
 							}
 							else
 							{
-								if ( multiplayer != CLIENT )
-								{
-									free(tempItem);
-								}
+								free(tempItem);
 							}
 							break;
 						}
@@ -856,6 +870,45 @@ void actPlayer(Entity* my)
 					{
 						tempItem->identified = true;
 						messagePlayer(clientnum, language[570], tempItem->description());
+
+						// update inventory by trying to stack the newly identified item.
+						for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
+						{
+							Item* item2 = (Item*)node->element;
+							if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
+							{
+								// if items are the same, check to see if they should stack
+								if ( item2->shouldItemStack(PLAYER_NUM) )
+								{
+									item2->count += tempItem->count;
+									if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
+									{
+										// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+										strcpy((char*)net_packet->data, "EQUI");
+										SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
+										SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
+										SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
+										SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+										net_packet->data[24] = item2->identified;
+										net_packet->data[25] = PLAYER_NUM;
+										net_packet->address.host = net_server.host;
+										net_packet->address.port = net_server.port;
+										net_packet->len = 26;
+										sendPacketSafe(net_sock, -1, net_packet, 0);
+									}
+									if ( tempItem->node )
+									{
+										list_RemoveNode(tempItem->node);
+									}
+									else
+									{
+										free(tempItem);
+									}
+									break;
+								}
+							}
+						}
 					}
 					else
 					{

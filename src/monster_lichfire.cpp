@@ -34,7 +34,7 @@ void initLichFire(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 372;
-		MONSTER_SPOTVAR = 3;
+		MONSTER_SPOTVAR = 4;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
@@ -230,11 +230,11 @@ void lichFireDie(Entity* my)
 	playSoundEntity(my, 94, 128);
 	my->removeLightField();
 	// kill all other monsters on the level
-	/*for ( node = map.entities->first; node != NULL; node = nextnode )
+	for ( node = map.creatures->first; my->monsterLichAllyStatus == LICH_ALLY_DEAD && node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
 		Entity* entity = (Entity*)node->element;
-		if ( entity == my )
+		if ( entity == my || entity->sprite == 650 )
 		{
 			continue;
 		}
@@ -243,13 +243,15 @@ void lichFireDie(Entity* my)
 			spawnExplosion(entity->x, entity->y, entity->z);
 			Stat* stats = entity->getStats();
 			if ( stats )
+			{
 				if ( stats->type != HUMAN )
 				{
 					stats->HP = 0;
 				}
+			}
 		}
 	}
-	for ( c = 0; c < MAXPLAYERS; c++ )
+	/*for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		playSoundPlayer(c, 153, 128);
 		steamAchievementClient(c, "BARONY_ACH_LICH_HUNTER");

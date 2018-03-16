@@ -2244,6 +2244,10 @@ void clientHandlePacket()
 		{
 			messagePlayer(clientnum, language[2450]);
 		}
+		if ( !strncmp(map.name, "Mages Guild", 11) )
+		{
+			messagePlayer(clientnum, language[2599]);
+		}
 		loading = false;
 		fadeout = false;
 		fadealpha = 255;
@@ -2323,6 +2327,7 @@ void clientHandlePacket()
 					}
 						break;
 					case PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY:
+					case PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY:
 					case PARTICLE_EFFECT_LICH_TELEPORT_ROAMING:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 40, sprite);

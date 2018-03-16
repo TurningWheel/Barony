@@ -529,13 +529,8 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
@@ -747,6 +742,28 @@ void gameLogic(void)
 					fclose(fp);
 					assignActions(&map);
 					generatePathMaps();
+
+					if ( !strncmp(map.name, "Mages Guild", 11) )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								players[c]->entity->modHP(999);
+								players[c]->entity->modMP(999);
+								if ( stats[c] && stats[c]->HUNGER < 1450 )
+								{
+									stats[c]->HUNGER = 1450;
+									serverUpdateHunger(c);
+								}
+							}
+						}
+						messagePlayer(clientnum, language[2599]);
+
+						// undo shopkeeper grudge
+						swornenemies[SHOPKEEPER][HUMAN] = false;
+						monsterally[SHOPKEEPER][HUMAN] = true;
+					}
 
 					// (special) unlock temple achievement
 					if ( secretlevel && currentlevel == 8 )
@@ -1228,13 +1245,8 @@ void gameLogic(void)
 					}
 				}
 			}
-			if ( conductPenniless )
-			{
-				if ( stats[clientnum]->GOLD > 0 )
-				{
-					conductPenniless = false;
-				}
-			}
+
+			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update
 			if ( ticks % 4 == 0 && list_Size(map.entities) )
@@ -2332,6 +2344,9 @@ int main(int argc, char** argv)
 		map.creatures = new list_t;
 		map.creatures->first = nullptr;
 		map.creatures->last = nullptr;
+
+		// initialize player conducts
+		setDefaultPlayerConducts();
 
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
