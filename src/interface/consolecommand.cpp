@@ -767,6 +767,25 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[299]);
 		}
 	}
+	else if ( !strncmp(command_str, "/damage ", 8) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int amount = atoi(&command_str[8]);
+
+		players[clientnum]->entity->modHP(-amount);
+
+		messagePlayer(clientnum, "Damaging you by %d. New health: %d", amount, stats[clientnum]->HP);
+	}
 	else if (!strncmp(command_str, "/ip ", 4))
 	{
 		if ( command_str[4] != 0 )
