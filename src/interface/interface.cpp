@@ -140,6 +140,9 @@ bool auto_hotbar_new_items = true;
 bool auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = {	true, true, true, true, 
 														true, true, true, true,
 														true, true, true, true };
+int autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																0, 0, 0, 0,
+																0, 0, 0, 0 };
 bool hotbar_numkey_quick_add = false;
 bool disable_messages = false;
 bool right_click_protect = false;
@@ -535,6 +538,7 @@ void defaultImpulses()
 #endif
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
+	impulses[IN_AUTOSORT] = 286;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -620,6 +624,7 @@ void defaultConfig()
 #endif
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
+	consoleCommand("/bind 21 IN_AUTOSORT");
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
@@ -683,7 +688,8 @@ static char impulsenames[NUMIMPULSES][12] =
 	"CAST_SPELL",
 	"DEFEND",
 	"ATTACK",
-	"USE"
+	"USE",
+	"AUTOSORT"
 };
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
@@ -918,6 +924,10 @@ int saveConfig(char* filename)
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
 		fprintf(fp, "/hotbarenablecategory %d %d\n", c, auto_hotbar_categories[c]);
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		fprintf(fp, "/autosortcategory %d %d\n", c, autosort_inventory_categories[c]);
 	}
 	if ( hotbar_numkey_quick_add )
 	{

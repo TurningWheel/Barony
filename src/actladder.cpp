@@ -91,6 +91,10 @@ void actLadder(Entity* my)
 								}
 								break;
 						}
+						if ( strncmp(map.name, "Underworld", 10) )
+						{
+							skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
+						}
 					}
 					if (LADDER_SECRET)
 					{
@@ -236,10 +240,9 @@ void actPortal(Entity* my)
 							}
 							break;
 					}
-					if ( !strncmp(map.name, "Cockatrice Lair", 15)
-						|| !strncmp(map.name, "Bram's Castle", 13) )
+					if ( strncmp(map.name, "Underworld", 10) )
 					{
-						skipLevelsOnLoad = -1; // don't skip a regular level.
+						skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 					}
 				}
 				if ( !my->portalNotSecret )
@@ -262,6 +265,13 @@ void actWinningPortal(Entity* my)
 	{
 		if ( my->flags[INVISIBLE] )
 		{
+			if ( !strncmp(map.name, "Boss", 4) )
+			{
+				if ( !(svFlags & SV_FLAG_CLASSIC) )
+				{
+					return; // classic mode disabled.
+				}
+			}
 			node_t* node;
 			for ( node = map.creatures->first; node != nullptr; node = node->next )
 			{
@@ -298,6 +308,18 @@ void actWinningPortal(Entity* my)
 			{
 				// hell map doesn't need signal.
 				my->flags[INVISIBLE] = false;
+			}
+		}
+		else
+		{
+			if ( !strncmp(map.name, "Boss", 4) )
+			{
+				if ( !(svFlags & SV_FLAG_CLASSIC) )
+				{
+					my->flags[INVISIBLE] = true; // classic mode disabled, hide.
+					serverUpdateEntityFlag(my, INVISIBLE);
+					my->portalFireAnimation = 0;
+				}
 			}
 		}
 	}
@@ -541,6 +563,13 @@ void Entity::actMidGamePortal()
 	{
 		if ( flags[INVISIBLE] )
 		{
+			if ( !strncmp(map.name, "Boss", 4) )
+			{
+				if ( (svFlags & SV_FLAG_CLASSIC) )
+				{
+					return; // classic mode enabled, don't process.
+				}
+			}
 			node_t* node;
 			for ( node = map.creatures->first; node != nullptr; node = node->next )
 			{
@@ -571,6 +600,18 @@ void Entity::actMidGamePortal()
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_PORTAL_SPAWN, 174);
 						portalFireAnimation = 1;
 					}
+				}
+			}
+		}
+		else
+		{
+			if ( !strncmp(map.name, "Boss", 4) )
+			{
+				if ( (svFlags & SV_FLAG_CLASSIC) )
+				{
+					flags[INVISIBLE] = true; // classic mode enabled, hide.
+					serverUpdateEntityFlag(this, INVISIBLE);
+					portalFireAnimation = 0;
 				}
 			}
 		}

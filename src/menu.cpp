@@ -88,6 +88,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
 typedef std::tuple<int, int> resolution;
@@ -117,6 +118,9 @@ bool settings_auto_hotbar_new_items = true;
 bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
 																true, true, true, true,
 																true, true, true, true };
+int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																		0, 0, 0, 0,
+																		0, 0, 0, 0 };
 bool settings_hotbar_numkey_quick_add = false;
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
@@ -612,7 +616,7 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 
 					// look for a save game
-					if ( saveGameExists() )
+					if ( saveGameExists(true) || saveGameExists(false) )
 					{
 						openLoadGameWindow(NULL);
 					}
@@ -686,7 +690,7 @@ void handleMainMenu(bool mode)
 					button = newButton();
 					strcpy(button->label, "x");
 					button->x = subx2 - 20;
-					button->y = suby1;
+					button->y = suby1 + 4;
 					button->sizex = 20;
 					button->sizey = 20;
 					button->action = &buttonCloseSubwindow;
@@ -720,6 +724,17 @@ void handleMainMenu(bool mode)
 					button->focused = 1;
 					button->key = SDL_SCANCODE_LEFT;
 					button->joykey = joyimpulses[INJOY_DPAD_LEFT];
+
+					// multiplayer scores toggle button
+					button = newButton();
+					strcpy(button->label, "");
+					button->sizex = strlen("show multiplayer") * 12 + 8;
+					button->sizey = 20;
+					button->x = subx2 - 44 - strlen("show multiplayer") * 12;
+					button->y = suby1 + 4;
+					button->action = &buttonScoreToggle;
+					button->visible = 1;
+					button->focused = 1;
 				}
 			}
 			else
@@ -1652,7 +1667,16 @@ void handleMainMenu(bool mode)
 						{
 							y += 12;
 							strcat(flagsBoxText, "\n");
-							strcat(flagsBoxText, language[153 + c]);
+							char flagStringBuffer[256] = "";
+							if ( c < 5 )
+							{
+								strcpy(flagStringBuffer, language[153 + c]);
+							}
+							else
+							{
+								strcpy(flagStringBuffer, language[2917 - 5 + c]);
+							}
+							strcat(flagsBoxText, flagStringBuffer);
 						}
 					}
 				}
@@ -1894,9 +1918,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1351 + c]);
 				}
-				else
+				else if ( c < 16 )
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1940 + (c - 14)]);
+				}
+				else
+				{
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1981 + (c - 16)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
 				{
@@ -2251,6 +2279,62 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1374]);
 			}
+
+			// autosort inventory categories
+			int autosort_options_x = subx1 + 72 + 256;
+			int autosort_options_y = current_y + 112;
+			int pad_x = autosort_options_x;
+			int pad_y = autosort_options_y;
+			drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+			ttfPrintTextFormatted(ttf12, pad_x, current_y - 16 + 112, "%s", language[2912]);
+
+			// draw the values for autosort
+			for ( int i = 0; i < (NUM_AUTOSORT_CATEGORIES); ++i )
+			{
+				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "<");
+				Uint32 autosortColor = uint32ColorGreen(*mainsurface);
+				int padValue_x = pad_x;
+				if ( settings_autosort_inventory_categories[i] < 0 )
+				{
+					autosortColor = uint32ColorRed(*mainsurface);
+					padValue_x += 4; // centre the negative numbers.
+				}
+				else if ( settings_autosort_inventory_categories[i] == 0 )
+				{
+					autosortColor = uint32ColorWhite(*mainsurface);
+				}
+				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
+				if ( i == NUM_AUTOSORT_CATEGORIES - 1 )
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2916]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+				}
+				pad_x += 128;
+				if ( i == 3 || i == 7 )
+				{
+					pad_x = autosort_options_x;
+					pad_y += 16;
+				}
+			}
+
+			pad_x = autosort_options_x + (strlen(language[2912]) - 3) * (TTF12_WIDTH) + 8; // 3 chars from the end of string.
+			pad_y = autosort_options_y;
+			// hover text for autosort title text
+			if ( mouseInBounds(pad_x - 4, pad_x + 3 * TTF12_WIDTH + 8, current_y - 16 + 112, current_y - 16 + 124) )
+			{
+				tooltip_box.x = omousex - TTF12_WIDTH * 32;
+				tooltip_box.y = omousey - (TTF12_HEIGHT * 3 + 16);
+				tooltip_box.w = strlen(language[2914]) * TTF12_WIDTH + 8;
+				tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+				drawTooltip(&tooltip_box);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[2913]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT, language[2914]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT * 2, language[2915]);
+			}
+
 			current_y += 16;
 			if ( settings_auto_appraise_new_items )
 			{
@@ -2307,22 +2391,39 @@ void handleMainMenu(bool mode)
 			int i;
 			for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 			{
-				if ( svFlags & power(2, i) )
+				char flagStringBuffer[256] = "";
+				if ( i < 5 )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[153 + i], 255);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+				}
+				if ( svFlags & power(2, i) )
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", flagStringBuffer);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", flagStringBuffer);
 				}
 				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12))   //So many gosh dang magic numbers ._.
 				{
-					if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+					if ( i < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + i], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+					}
+					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 						tooltip_box.h = TTF12_HEIGHT + 8;
 					}
 				}
@@ -2333,7 +2434,16 @@ void handleMainMenu(bool mode)
 				drawTooltip(&tooltip_box);
 				if (hovering_selection < NUM_SERVER_FLAGS)
 				{
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+					char flagStringBuffer[256] = "";
+					if ( hovering_selection < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+					}
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 				}
 			}
 
@@ -2403,6 +2513,38 @@ void handleMainMenu(bool mode)
 									hotbar_options_x -= (128 * 4);
 									hotbar_options_y += 16;
 								}
+							}
+						}
+					}
+
+					// autosort category toggles
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						for ( i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+						{
+							if ( mouseInBounds(autosort_options_x, autosort_options_x + 16, autosort_options_y, autosort_options_y + 12) )
+							{
+								--settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] < -9 )
+								{
+									settings_autosort_inventory_categories[i] = 9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							else if(mouseInBounds(autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12))
+							{
+								++settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] > 9 )
+								{
+									settings_autosort_inventory_categories[i] = -9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							autosort_options_x += 128;
+							if ( i == 3 || i == 7 )
+							{
+								autosort_options_x -= (128 * 4);
+								autosort_options_y += 16;
 							}
 						}
 					}
@@ -2625,7 +2767,7 @@ void handleMainMenu(bool mode)
 					{
 						c = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
 					}
-					else if ( loadingsavegame && getSaveGameMapSeed() != clientms )
+					else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
 					{
 						c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
 					}
@@ -3402,22 +3544,39 @@ void handleMainMenu(bool mode)
 		int i;
 		for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 		{
-			if ( svFlags & power(2, i) )
+			char flagStringBuffer[256] = "";
+			if ( i < 5 )
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[153 + i], 255);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+			}
+			if ( svFlags & power(2, i) )
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", flagStringBuffer);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", flagStringBuffer);
 			}
 			if (mouseInBounds((xres / 2) + 8 + 6, (xres / 2) + 8 + 30, suby1 + 80 + (i * 16), suby1 + 92 + (i * 16)))   //So many gosh dang magic numbers ._.
 			{
-				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+				if ( i < 5 )
+				{
+					strncpy(flagStringBuffer, language[1942 + i], 255);
+				}
+				else
+				{
+					strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+				}
+				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
-					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}
 			}
@@ -3593,9 +3752,18 @@ void handleMainMenu(bool mode)
 		if (hovering_selection > -1)
 		{
 			drawTooltip(&tooltip_box);
+			char flagStringBuffer[256] = "";
+			if ( hovering_selection < 5 )
+			{
+				strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+			}
+			else
+			{
+				strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+			}
 			if (hovering_selection < NUM_SERVER_FLAGS)
 			{
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 			}
 		}
 
@@ -3673,14 +3841,38 @@ void handleMainMenu(bool mode)
 	// statistics window
 	if ( score_window )
 	{
-		if ( !list_Size(&topscores) )
+		// draw button label... shamelessly hacked together from "multiplayer scores toggle button" initialisation...
+		int toggleText_x = subx2 - 44 - strlen("show multiplayer") * 12;
+		int toggleText_y = suby1 + 4 ;
+		int w = 0;
+		int h = 0;
+		list_t* scoresPtr = &topscores;
+		if ( !scoreDisplayMultiplayer )
+		{
+			TTF_SizeUTF8(ttf12, "show multiplayer", &w, &h);
+			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show multiplayer");
+		}
+		else
+		{
+			scoresPtr = &topscoresMultiplayer;
+			TTF_SizeUTF8(ttf12, "show solo", &w, &h);
+			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show solo");
+		}
+		if ( !list_Size(scoresPtr) )
 		{
 #define NOSCORESSTR language[1389]
 			ttfPrintTextFormatted(ttf16, xres / 2 - strlen(NOSCORESSTR) * 9, yres / 2 - 9, NOSCORESSTR);
 		}
 		else
 		{
-			ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[1390], score_window);
+			if ( scoreDisplayMultiplayer )
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[2958], score_window);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[1390], score_window);
+			}
 
 			// draw character window
 			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
@@ -3761,7 +3953,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// print total score
-			node = list_Node(&topscores, score_window - 1);
+			node = list_Node(scoresPtr, score_window - 1);
 			if ( node )
 			{
 				score_t* score = (score_t*)node->element;
@@ -3786,7 +3978,8 @@ void handleMainMenu(bool mode)
 			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
-			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate )
+			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
+				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -3797,43 +3990,52 @@ void handleMainMenu(bool mode)
 				if ( conductPenniless )
 				{
 					strcat(tempstr, language[1408]);
-					b++;
+					++b;
 				}
 				if ( conductFoodless )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1409]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductVegetarian )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1410]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductIlliterate )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1411]);
-					b++;
+					++b;
 				}
-				if ( b == 2 )
+				for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 				{
-					strcat(tempstr, "\n ");
+					if ( conductGameChallenges[c] != 0 )
+					{
+						strcat(tempstr, ", ");
+						if ( b > 0 && b % 4 == 0 )
+						{
+							strcat(tempstr, "\n ");
+						}
+						strcat(tempstr, language[2925 + c]);
+						++b;
+					}
 				}
-				if ( b != 2 )
+				/*	if ( b > 0 )
 				{
 					tempstr[strlen(tempstr) - 2] = 0;
-				}
-				else
-				{
-					tempstr[strlen(tempstr) - 4] = 0;
-				}
+				}*/
 				ttfPrintTextFormatted(ttf12, subx1 + 20, suby2 - 64, tempstr);
 			}
 
@@ -3877,6 +4079,10 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
+	else
+	{
+		scoreDisplayMultiplayer = false;
+	}
 
 	// handle fade actions
 	if ( fadefinished )
@@ -3917,10 +4123,13 @@ void handleMainMenu(bool mode)
 			secretlevel = false;
 			victory = 0;
 			completionTime = 0;
-			conductPenniless = true;
-			conductFoodless = true;
-			conductVegetarian = true;
-			conductIlliterate = true;
+
+			setDefaultPlayerConducts(); // penniless, foodless etc.
+
+			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			{
+				gameStatistics[c] = 0;
+			}
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -4487,7 +4696,14 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic[rand() % 2], true, false, false);
+				if ( victory != 3 && menuMapType )
+				{
+					playmusic(intromusic[2], true, false, false);
+				}
+				else
+				{
+					playmusic(intromusic[rand() % 2], true, false, false);
+				}
 #endif
 			}
 			else
@@ -5294,15 +5510,20 @@ void openGameoverWindow()
 	scoreDeconstructor((void*)score);
 
 	bool madetop = false;
-	if ( !list_Size(&topscores) )
+	list_t* scoresPtr = &topscores;
+	if ( score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
+	{
+		scoresPtr = &topscoresMultiplayer;
+	}
+	if ( !list_Size(scoresPtr) )
 	{
 		madetop = true;
 	}
-	else if ( list_Size(&topscores) < MAXTOPSCORES )
+	else if ( list_Size(scoresPtr) < MAXTOPSCORES )
 	{
 		madetop = true;
 	}
-	else if ( totalScore((score_t*)topscores.last->element) < total )
+	else if ( totalScore((score_t*)scoresPtr->last->element) < total )
 	{
 		madetop = true;
 	}
@@ -5490,6 +5711,10 @@ void openSettingsWindow()
 	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
 	{
 		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		settings_autosort_inventory_categories[c] = autosort_inventory_categories[c];
 	}
 	settings_hotbar_numkey_quick_add = hotbar_numkey_quick_add;
 	settings_disable_messages = disable_messages;
@@ -6587,15 +6812,15 @@ void buttonJoinLobby(button_t* my)
 	connectingToLobbyWindow = temp2;
 #endif
 
+	multiplayer = CLIENT;
 	if ( loadingsavegame )
 	{
-		loadGame(getSaveGameClientnum());
+		loadGame(getSaveGameClientnum(false));
 	}
 
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	multiplayer = CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -6693,13 +6918,13 @@ void buttonJoinLobby(button_t* my)
 	strcpy((char*)net_packet->data, "BARONY_JOIN_REQUEST");
 	if ( loadingsavegame )
 	{
-		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum()]->name, 22);
-		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum()], &net_packet->data[42]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->appearance, &net_packet->data[50]);
+		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum(false)]->name, 22);
+		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[42]);
+		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[46]);
+		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->appearance, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
-		net_packet->data[63] = getSaveGameClientnum();
+		net_packet->data[63] = getSaveGameClientnum(false);
 	}
 	else
 	{
@@ -6714,7 +6939,7 @@ void buttonJoinLobby(button_t* my)
 	if ( loadingsavegame )
 	{
 		// send over the map seed being used
-		SDLNet_Write32(getSaveGameMapSeed(), &net_packet->data[64]);
+		SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[64]);
 	}
 	else
 	{
@@ -6989,6 +7214,10 @@ void applySettings()
 	{
 		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
 	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		autosort_inventory_categories[c] = settings_autosort_inventory_categories[c];
+	}
 	hotbar_numkey_quick_add = settings_hotbar_numkey_quick_add;
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
@@ -7124,7 +7353,14 @@ void buttonSettingsOK(button_t* my)
 // next score button (statistics window)
 void buttonScoreNext(button_t* my)
 {
-	score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+	if ( scoreDisplayMultiplayer )
+	{
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer)));
+	}
+	else
+	{
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+	}
 	loadScore(score_window - 1);
 }
 
@@ -7132,6 +7368,13 @@ void buttonScoreNext(button_t* my)
 void buttonScorePrev(button_t* my)
 {
 	score_window = std::max(score_window - 1, 1);
+	loadScore(score_window - 1);
+}
+
+void buttonScoreToggle(button_t* my)
+{
+	score_window = 1;
+	scoreDisplayMultiplayer = !scoreDisplayMultiplayer;
 	loadScore(score_window - 1);
 }
 
@@ -7234,9 +7477,26 @@ void openLoadGameWindow(button_t* my)
 	suby1 = yres / 2 - 128;
 	suby2 = yres / 2 + 128;
 	strcpy(subtext, language[1460]);
-	char* saveGameName = getSaveGameName();
+	bool singleplayerSave = saveGameExists(true);
+	bool multiplayerSave = saveGameExists(false);
+
+	char saveGameName[1024] = "";
+	if ( singleplayerSave && multiplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(true), 1024);
+		strcat(subtext, saveGameName);
+		strcat(subtext, "\n\n");
+		strncpy(saveGameName, getSaveGameName(false), 1024);
+	}
+	else if ( singleplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(true), 1024);
+	}
+	else if ( multiplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(false), 1024);
+	}
 	strcat(subtext, saveGameName);
-	free(saveGameName);
 	strcat(subtext, language[1461]);
 
 	// close button
@@ -7252,17 +7512,44 @@ void openLoadGameWindow(button_t* my)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	// yes button
+	// yes solo button
 	button = newButton();
-	strcpy(button->label, language[1462]);
-	button->sizex = strlen(language[1462]) * 12 + 8;
+	if ( multiplayerSave && !singleplayerSave )
+	{
+		strcpy(button->label, language[2959]);
+		button->action = &buttonLoadMultiplayerGame;
+	}
+	else
+	{
+		strcpy(button->label, language[1462]);
+		button->action = &buttonLoadSingleplayerGame;
+	}
+	button->sizex = strlen(language[2959]) * 9 + 16;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 52;
-	button->action = &buttonLoadGame;
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button->x -= 124;
+	}
 	button->visible = 1;
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
+
+	// yes multiplayer button
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2959]);
+		button->sizex = strlen(language[2959]) * 9 + 16;
+		button->sizey = 20;
+		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2 + 124;
+		button->y = suby2 - 52;
+		button->action = &buttonLoadMultiplayerGame;
+		button->visible = 1;
+		button->focused = 1;
+		//button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
+	}
 
 	// no button
 	button = newButton();
@@ -7378,10 +7665,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_NAME];
 }
 
-void buttonLoadGame(button_t* button)
+void buttonLoadSingleplayerGame(button_t* button)
 {
-	loadingsavegame = getSaveGameUniqueGameKey();
-	int mul = getSaveGameType();
+	loadingsavegame = getSaveGameUniqueGameKey(true);
+	int mul = getSaveGameType(true);
 
 	if ( mul == DIRECTSERVER )
 	{
@@ -7457,6 +7744,98 @@ void buttonLoadGame(button_t* button)
 				connectingToLobby = true;
 				connectingToLobbyWindow = true;
 				strncpy( currentLobbyName, "", 31 );
+				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
+				cpp_Free_CSteamID(lobbyToConnectTo);
+				lobbyToConnectTo = NULL;
+			}
+		}
+		else
+		{
+			buttonStartSingleplayer(button);
+		}
+#endif
+	}
+}
+
+void buttonLoadMultiplayerGame(button_t* button)
+{
+	loadingsavegame = getSaveGameUniqueGameKey(false);
+	int mul = getSaveGameType(false);
+
+	if ( mul == DIRECTSERVER )
+	{
+		directConnect = true;
+		buttonHostMultiplayer(button);
+	}
+	else if ( mul == DIRECTCLIENT )
+	{
+		directConnect = true;
+		buttonJoinMultiplayer(button);
+	}
+	else if ( mul == SINGLE )
+	{
+		buttonStartSingleplayer(button);
+	}
+	else
+	{
+		directConnect = false;
+#ifdef STEAMWORKS
+		if ( mul == SERVER )
+		{
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == CLIENT )
+		{
+			if ( !lobbyToConnectTo )
+			{
+				openSteamLobbyBrowserWindow(button);
+			}
+			else
+			{
+				// close current window
+				int temp1 = connectingToLobby;
+				int temp2 = connectingToLobbyWindow;
+				//buttonCloseSubwindow(button);
+				list_FreeAll(&button_l);
+				deleteallbuttons = true;
+				connectingToLobby = temp1;
+				connectingToLobbyWindow = temp2;
+
+				// create new window
+				subwindow = 1;
+				subx1 = xres / 2 - 256;
+				subx2 = xres / 2 + 256;
+				suby1 = yres / 2 - 64;
+				suby2 = yres / 2 + 64;
+				strcpy(subtext, language[1467]);
+
+				// close button
+				button = newButton();
+				strcpy(button->label, "x");
+				button->x = subx2 - 20;
+				button->y = suby1;
+				button->sizex = 20;
+				button->sizey = 20;
+				button->action = &openSteamLobbyWaitWindow;
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_ESCAPE;
+				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+				// cancel button
+				button = newButton();
+				strcpy(button->label, language[1316]);
+				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizey = 20;
+				button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+				button->y = suby2 - 28;
+				button->action = &openSteamLobbyWaitWindow;
+				button->visible = 1;
+				button->focused = 1;
+
+				connectingToLobby = true;
+				connectingToLobbyWindow = true;
+				strncpy(currentLobbyName, "", 31);
 				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
 				cpp_Free_CSteamID(lobbyToConnectTo);
 				lobbyToConnectTo = NULL;

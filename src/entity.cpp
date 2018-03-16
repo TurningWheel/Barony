@@ -2241,6 +2241,12 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		vampiricHunger = true;
 	}
+
+	if ( !strncmp(map.name, "Sanctum", 7) || !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 4) )
+	{
+		hungerring = 1; // slow down hunger on boss stages.
+	}
+
 	if ( (ticks % 30 == 0 && !hungerring)
 		|| (ticks % 15 == 0 && hungerring < 0)
 		|| (ticks % 120 == 0 && hungerring > 0)
@@ -2460,6 +2466,11 @@ void Entity::handleEffects(Stat* myStats)
 					healring--;
 				}
 			}
+		}
+
+		if ( !strncmp(map.name, "Mages Guild", 11) && myStats->type == SHOPKEEPER )
+		{
+			healring = 25; // these guys like regenerating
 		}
 
 		if ( healring > 0 )
@@ -2812,7 +2823,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->cloak != nullptr )
 				{
 					// 1 in 10 chance of dealing damage to Entity's cloak
-					if ( rand() % 10 == 0 )
+					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK )
 					{
 						if ( player == clientnum )
 						{
@@ -3676,7 +3687,20 @@ bool Entity::isInvisible() const
 		}
 	}
 
-	if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+	if ( this->behavior == &actPlayer )
+	{
+		if ( this->skill[2] >= 0 && this->skill[2] < MAXPLAYERS )
+		{
+			if ( skillCapstoneUnlockedEntity(PRO_STEALTH) && (stats[this->skill[2]]->sneaking && !stats[this->skill[2]]->defending) )
+			{
+				if ( this->skill[9] == 0 ) // player attack variable.
+				{
+					return true;
+				}
+			}
+		}
+	}
+	else if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
 	{
 		return true;
 	}
@@ -4812,14 +4836,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( player >= 0 )
 					{
 						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
-						if ( hitAngle >= 0 && hitAngle <= 2 * PI / 3 ) // 120 degree arc
+						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
 						{
+							int stealthCapstoneBonus = 1; 
+							if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+							{
+								stealthCapstoneBonus = 2;
+							}
+							
 							if ( hit.entity->monsterState == MONSTER_STATE_WAIT 
 								|| hit.entity->monsterState == MONSTER_STATE_PATH )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
-								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2;
+								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
 								if ( rand() % 4 > 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -4830,7 +4860,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// monster currently engaged in some form of combat maneuver
 								// 1 in 2 chance to flank defenses.
 								flanking = true;
-								damage += stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1;
+								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
 								if ( rand() % 20 == 0 )
 								{
 									this->increaseSkill(PRO_STEALTH);
@@ -6391,13 +6421,35 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		if ( player == 0 )
 		{
-			kills[srcStats->type]++;
+			if ( srcStats->type == LICH )
+			{
+				kills[LICH] = 1;
+			}
+			else if ( srcStats->type == LICH_FIRE )
+			{
+				kills[LICH]++;
+			}
+			else if ( srcStats->type == LICH_ICE )
+			{
+				kills[LICH]++;
+			}
+			else
+			{
+				kills[srcStats->type]++;
+			}
 		}
 		else if ( multiplayer == SERVER && player > 0 )
 		{
 			// inform client of kill
 			strcpy((char*)net_packet->data, "MKIL");
-			net_packet->data[4] = srcStats->type;
+			if ( srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE )
+			{
+				net_packet->data[4] = LICH;
+			}
+			else
+			{
+				net_packet->data[4] = srcStats->type;
+			}
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 5;
@@ -6945,6 +6997,32 @@ void setRandomMonsterStats(Stat* stats)
 		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
 	}
 
+	if ( (svFlags & SV_FLAG_HARDCORE) )
+	{
+		// spice up some stats...
+		stats->HP += rand() % ((abs(stats->HP) % 50 + 1) * 10); // each 50 HP add 10 random HP
+		stats->MAXHP = stats->HP;
+		stats->OLDHP = stats->HP;
+
+		int statIncrease = 0; 
+		statIncrease = (abs(stats->STR) % 5 + 1) * 3; // each 5 STR add 3 more STR.
+		stats->STR += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats->PER) % 5 + 1) * 3; // each 5 PER add 3 more PER.
+		stats->PER += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = std::min((abs(stats->DEX) % 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
+		stats->DEX += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats->CON) % 5 + 1) * 1; // each 5 CON add 1 more CON.
+		stats->CON += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats->INT) % 5 + 1) * 5; // each 5 INT add 5 more INT.
+		stats->INT += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		stats->LVL += 2;
+	}
+
 	// debug print out each monster spawned
 
 	/*messagePlayer(0, "Set stats to: ");
@@ -7044,6 +7122,7 @@ int checkEquipType(const Item *item)
 		case HAT_JESTER:
 		case HAT_PHRYGIAN:
 		case HAT_WIZARD:
+		case HAT_FEZ:
 			return TYPE_HAT;
 			break;
 
@@ -8799,9 +8878,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 			)
 		{
 			// check to see if holding ranged weapon, set hittime to be ready to attack.
-			if ( hasRangedWeapon() && monsterSpecialTimer <= 0 )
+			// set melee hittime close to max in hardcore mode...
+			if ( ((svFlags & SV_FLAG_HARDCORE) || hasRangedWeapon()) && monsterSpecialTimer <= 0 )
 			{
-				monsterHitTime = 2 * HITRATE;
+				if ( hasRangedWeapon() )
+				{
+					monsterHitTime = 2 * HITRATE;
+				}
+				else
+				{
+					monsterHitTime = HITRATE - 12;
+				}
 			}
 		}
 	}
@@ -10297,6 +10384,36 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				case SHADOW:
 					helm->focalx = limbs[monster][9][0];
 					helm->focaly = limbs[monster][9][1] - 5;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				default:
+					break;
+			}
+			helm->roll = PI / 2;
+		}
+		else if ( helm->sprite == items[HAT_FEZ].index )
+		{
+			switch ( monster )
+			{
+				case AUTOMATON:
+				case SKELETON:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.0;
+					helm->focalz = limbs[monster][9][2] + 2.5;
+					break;
+				case VAMPIRE:
+				case SHOPKEEPER:
+				case HUMAN:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.35;
+					helm->focalz = limbs[monster][9][2] + 2.25;
+					break;
+				case GOATMAN:
+				case GOBLIN:
+				case INSECTOID:
+				case SHADOW:
+					helm->focalx = limbs[monster][9][0];
+					helm->focaly = limbs[monster][9][1] - 4.5;
 					helm->focalz = limbs[monster][9][2] + 2.5;
 					break;
 				default:

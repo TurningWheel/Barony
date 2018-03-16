@@ -65,8 +65,10 @@ void buttonJoinLobby(button_t* my);
 void buttonDisconnect(button_t* my);
 void buttonScoreNext(button_t* my);
 void buttonScorePrev(button_t* my);
+void buttonScoreToggle(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
-void buttonLoadGame(button_t* my);
+void buttonLoadSingleplayerGame(button_t* my);
+void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 void buttonRandomName(button_t* my);
 
@@ -96,6 +98,7 @@ extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;
 
@@ -127,6 +130,7 @@ extern bool colorblind;
 extern bool right_click_protect;
 extern bool settings_auto_hotbar_new_items;
 extern bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES];
+extern int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES];
 extern bool settings_hotbar_numkey_quick_add;
 extern bool settings_disable_messages;
 extern bool settings_right_click_protect;
