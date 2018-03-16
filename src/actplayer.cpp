@@ -904,6 +904,7 @@ void actPlayer(Entity* my)
 									else
 									{
 										free(tempItem);
+										tempItem = nullptr;
 									}
 									break;
 								}
@@ -916,7 +917,7 @@ void actPlayer(Entity* my)
 					}
 
 					//Attempt a level up.
-					if ( items[tempItem->type].value > 0 && stats[PLAYER_NUM] )
+					if ( multiplayer == SERVER && tempItem && items[tempItem->type].value > 0 && stats[PLAYER_NUM] )
 					{
 						if ( tempItem->identified )
 						{
