@@ -22,7 +22,7 @@ extern list_t lobbyChatboxMessages;
 
 // function prototypes for net.c:
 int power(int a, int b);
-int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
+int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool tryReliable = false);
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
 void messagePlayer(int player, char* message, ...);
 void messagePlayerColor(int player, Uint32 color, char* message, ...);
