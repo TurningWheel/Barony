@@ -2039,7 +2039,7 @@ void clientHandlePacket()
 	// current game level
 	else if (!strncmp((char*)net_packet->data, "LVLC", 4))
 	{
-		if ( currentlevel == net_packet->data[13] )
+		if ( currentlevel == net_packet->data[13] && secretlevel == net_packet->data[14])
 		{
 			// the server's just doing a routine check
 			return;
@@ -2107,6 +2107,7 @@ void clientHandlePacket()
 		// setup level change
 		printlog("Received order to change level.\n");
 		currentlevel = net_packet->data[13];
+		secretlevel = net_packet->data[14];
 		list_FreeAll(&removedEntities);
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
