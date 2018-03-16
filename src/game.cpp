@@ -229,12 +229,12 @@ void gameLogic(void)
 	if ( !(ticks % 4) )
 	{
 		j = 0;
-		for ( node = safePacketsSent.first; node != NULL; node = nextnode )
+		for ( node = safePacketsSent.first; node != nullptr; node = nextnode )
 		{
 			nextnode = node->next;
 
 			packetsend_t* packet = (packetsend_t*)node->element;
-			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
+			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum, true);
 			packet->tries++;
 			if ( packet->tries >= MAXTRIES )
 			{
@@ -585,10 +585,10 @@ void gameLogic(void)
 					}
 
 					// hack to fix these things from breaking everything...
-					hudarm = NULL;
-					hudweapon = NULL;
-					magicLeftHand = NULL;
-					magicRightHand = NULL;
+					hudarm = nullptr;
+					hudweapon = nullptr;
+					magicLeftHand = nullptr;
+					magicRightHand = nullptr;
 
 					// stop all sounds
 #ifdef HAVE_FMOD
@@ -619,13 +619,13 @@ void gameLogic(void)
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
-					for ( c = 0; c < MAXPLAYERS; c++ )
+					for ( c = 0; c < MAXPLAYERS; ++c )
 					{
-						tempFollowers[c].first = NULL;
-						tempFollowers[c].last = NULL;
+						tempFollowers[c].first = nullptr;
+						tempFollowers[c].last = nullptr;
 
 						node_t* node;
-						for ( node = stats[c]->FOLLOWERS.first; node != NULL; node = node->next )
+						for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
 						{
 							Entity* follower = uidToEntity(*((Uint32*)node->element));
 							if ( follower )
@@ -683,7 +683,7 @@ void gameLogic(void)
 					skipLevelsOnLoad = 0;
 					if ( multiplayer == SERVER )
 					{
-						for ( c = 1; c < MAXPLAYERS; c++ )
+						for ( c = 1; c < MAXPLAYERS; ++c )
 						{
 							if ( client_disconnected[c] == true )
 							{
