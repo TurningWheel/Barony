@@ -120,7 +120,7 @@ Difficulty: Extreme#
 # legalese
 
 66 Barony is a product of Turning Wheel LLC#
-67 Copyright (c) 2015, all rights reserved.#
+67 Copyright (c) 2018, all rights reserved.#
 68 For more information, please visit#
 69 http://www.baronygame.com/#
 
@@ -286,7 +286,8 @@ Difficulty: Extreme#
 
 # shopkeeper sells item at an unfair price
 
-197 Thou hast received a good price for that!#
+197 Thou hast received a 
+good price for that!#
 198 Excellent choice!#
 199 That was a real bargain!#
 
@@ -294,15 +295,19 @@ Difficulty: Extreme#
 # shopkeeper sells item at a fair price
 
 200 That is a fair trade.#
-201 I suppose that I can part with it.#
-202 Alright, but not for a penny less!#
+201 I suppose that I can part 
+with it.#
+202 Alright, but not for
+a penny less!#
 
 
 # shopkeeper refuses a purchase
 
 203 No money, no item!#
-204 I shall not sell it for anything less.#
-205 Thou dost not have enough money!#
+204 I shall not sell it 
+for anything less.#
+205 Thou dost not have 
+enough money!#
 
 
 # shopkeeper buys item at an unfair price
@@ -314,7 +319,7 @@ Difficulty: Extreme#
 
 # shopkeeper buys item at a fair price
 
-209 I suppose I shall mbuy it.#
+209 I suppose I shall buy it.#
 210 I shall trade thee for that.#
 211 I shall buy that from thee.#
 
@@ -336,33 +341,33 @@ Trade? (Right click)#
 # shopkeeper chit-chat
 
 216 They say rings of conflict
-create an aura of strife around a
-person.#
+create an aura of strife
+around a person.#
 
 217 Lamp oil? Rope? Bombs? Dost
 thou want it? It is thine my
-friend, so long as thou havest
-enough rubies!#
+friend, so long as thou
+havest enough rubies!#
 
 218 They say some items are
-enchanted with special magical
-effects.#
+enchanted with special
+magical effects.#
 
 219 Slimes may be found in two
-colors. It is said that the blue
-ones are stronger.#
+colors. It is said that the
+blue ones are stronger.#
 
-220 They say cursed items often do
-the opposite of what they were
-meant to do.#
+220 They say cursed items often
+do the opposite of what
+they were meant to do.#
 
 221 Trolls ignore thee if thou
 keepest thy distance!#
 
 222 Weapons come at different
-levels of effectiveness. Wood and
-bronze are weak, but steel is very
-strong.#
+levels of effectiveness. Wood
+and bronze are weak, but steel
+is very strong.#
 
 223 The effects of potions wear
 off over time.#
@@ -376,22 +381,22 @@ all alone on a tiny island.#
 thou makest use of them.#
 
 226 Goblins make good scavengers.
-Do not leave powerful items where
-they might find them!#
+Do not leave powerful items
+where they might find them!#
 
 227 I may look weak, but I'm
-actually a master of the mystic
-arts.#
+actually a master of the
+mystic arts.#
 
-228 Canned food can make thy hands
-greasy. Use a towel to keep
-thyself clean.#
+228 Canned food can make thy
+hands greasy. Use a towel to
+keep thyself clean.#
 
-229 Thou canst bind wounds with
-towels.#
+229 Thou canst bind wounds
+with towels.#
 
-230 Art thou hungry? Rat meat is a
-staple down here.#
+230 Art thou hungry? Rat meat 
+is a staple down here.#
 
 231 Scorpion stings can paralyze
 thee. Watch out for them.#
@@ -400,11 +405,11 @@ thee. Watch out for them.#
 to steal mens' clothes.#
 
 233 The older food is, the more
-likely it is to make one sick when
-eaten.#
+likely it is to make one
+sick when eaten.#
 
-234 Mirrors can do odd things at
-times.#
+234 Mirrors can do odd
+things at times.#
 
 235 Try to identify items before
 thou makest use of them.#
@@ -1679,7 +1684,7 @@ Press 'Okay' to return to the main menu.#
 #
 1135 Total score: #
 1136 Congratulations!
-You made the top ten.
+You made it into the high scores.
 
 #
 1137
@@ -1833,7 +1838,7 @@ None#
 1361 Character Status#
 1362 Spell List#
 1363 Cast Spell#
-1364 Raise Shield#
+1364 Block / Sneak#
 
 1365 Mouse Sensitivity#
 1366 reverse mouse#
@@ -1895,7 +1900,7 @@ Player list:
 # highscore window
 
 1389 You have no highscores yet!#
-1390 Highscores#
+1390 Solo Highscores#
 1391 Long Live#
 1392 the Triumphant!#
 1393 the Eternal!#
@@ -1915,10 +1920,10 @@ Player list:
 1405 Time#
 1406 Conduct#
 1407 Average#
-1408 Penniless, #
-1409 Foodless, #
-1410 Vegetarian, #
-1411 Illiterate, #
+1408 Penniless#
+1409 Foodless#
+1410 Vegetarian#
+1411 Illiterate#
 1412 Kills:#
 1413 none#
 
@@ -2235,21 +2240,21 @@ Connecting to server. Please wait...
 #
 
 1460
-We've found a save file for a character:
+We've found save file(s) for a character:
 
 #
 
 1461
 
 
-Would you like to start a new game or continue this
+Would you like to start a new game or continue a
 save game?
 
+NOTE: Starting a new solo or multiplayer game will
+erase the previous save file!#
 
-NOTE: Starting a new game will erase this save file!#
-
-1462 Continue my saved game#
-1463 Start a new game#
+1462 Continue solo game#
+1463 Start a new game (Enter)#
 1464 Continue#
 1465 Back#
 1466 Random Character#
@@ -2307,15 +2312,15 @@ Connecting to steam lobby...
 1538 Host a multiplayer game without Steamworks, using a direct IP connection.#
 1539 Join a multiplayer game without Steamworks, using a direct IP connection.#
 1540 %s, level %d %s
-singleplayer#
+dungeon level %d, singleplayer#
 1541 %s, level %d %s
-server#
+dungeon level %d, server#
 1542 %s, level %d %s
-client (player %d)#
+dungeon level %d, client (player %d)#
 1543 %s, level %d %s
-server (direct ip)#
+dungeon level %d, server (direct ip)#
 1544 %s, level %d %s
-client (player %d) (direct ip)#
+dungeon level %d, client (player %d) (direct ip)#
 
 
 # item names
@@ -2754,6 +2759,8 @@ client (player %d) (direct ip)#
 1978 Attack#
 1979 Cast Spell#
 1980 Activate Hotbar Slot#
+# Other bindings.
+1981 Autosort Inventory#
 
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
@@ -2777,8 +2784,8 @@ client (player %d) (direct ip)#
 2007 insectoid#
 2008 goatman#
 2009 automaton#
-2010 unknown1#
-2011 unknown2#
+2010 frosty lich#
+2011 fiery lich#
 
 # monster plurals
 
@@ -2792,8 +2799,8 @@ client (player %d) (direct ip)#
 2057 insectoids#
 2058 goatmen#
 2059 automatons#
-2060 unknown1#
-2061 unknown2#
+2060 frosty lich#
+2061 fiery lich#
 
 # injury types (2100-2149)
 
@@ -2811,27 +2818,27 @@ client (player %d) (direct ip)#
 2111 hits#
 
 # additional obituary messages (2150-2199)
-2150 is dispatched by a kobold.#
-2151 is dispatched by a scarab.#
-2152 is dispatched by a crystal golem.#
-2153 is dispatched by an incubus.#
-2154 is dispatched by a vampire.#
-2155 is dispatched by a shadow.#
-2156 is dispatched by a cockatrice.#
-2157 is dispatched by an insectoid.#
-2158 is dispatched by a goatman.#
-2159 is dispatched by an automaton.#
-2160 is dispatched by the unknown1.#
-2161 is dispatched by the unknown2.#
+2150 becomes a victim of kobold gang violence.#
+2151 underestimates the chewing power of scarab mandibles.#
+2152 gets stuck between a crystal golem and a hard place.#
+2153 forgot the safe word for an incubus.#
+2154 donates blood to the vampire.#
+2155 becomes a shadow of their former self.#
+2156 waits too long to fight back against the cockatrice.#
+2157 is assassinated by a crafty insectoid.#
+2158 gets beaten to death by a drunken goatman.#
+2159 gets terminated by an automaton.#
+2160 failed to foil Erudyce's plans.#
+2161 couldn't stand against Orpheus' power.#
 
-#items, reserve 2200-2349 for new items
-2200 artifact breastpiece#
+# items, reserve (2200-2349) for new items
+2200 Dragon's Mail#
 2201 artifact breastpiece#
-2202 artifact helm#
+2202 Sphinx's Veil#
 2203 artifact helm#
-2204 artifact boots#
+2204 Oracle's Treads#
 2205 artifact boots#
-2206 artifact cloak#
+2206 Wraith's Gown#
 2207 artifact cloak#
 2208 Djinni's Brace#
 2209 artifact gloves#
@@ -2921,6 +2928,8 @@ client (player %d) (direct ip)#
 2293 green mystic orb#
 2294 tunic#
 2295 tunic#
+2296 fez#
+2297 fez#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -3211,24 +3220,41 @@ Difficulty: Normal#
 2594 Dropped %d gold pieces.#
 2595 The spellbook deteriorates.#
 2596 The spellbook deteriorates and crumbles to ash!#
+2597 The doublet seems to tug your mind toward an ethereal force, and away from your mortal body.#
+2598 keep right sidebar active#
+2599 You feel refreshed!#
 
-2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.#
+2600 Having defeated the Baron and placed his violet orb on the pedestal, you 
+step into the portal. Powerful magic sends a tingle over your body, and you are 
+transported with a white flash.#
 
 2601
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.#
+
+
+
+
+
+You arrive outside the Hamlet mines and watch the cursed blackness peel away 
+from the land. Warm sunlight flows over the countryside. As the doors of the 
+mine open wide, people carefully spread into the streets, acclimating to 
+their freedom.#
 
 2602
 
 
 
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
-veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
+
+
+
+
+
+
+You march to the Magician's Guild for answers about Herx's power, but the 
+doorman there turns you away. 
+
+Seeing you haggard from your quest, he encourages you to take a rest. 
+"The answers you seek will still be here after you recover."#
 
 2603
 
@@ -3239,8 +3265,17 @@ veritatis et quasi architecto beatae vitae dicta sunt explicabo.#
 
 
 
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
-sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
+
+
+
+
+
+
+
+
+You turn back to the streets and find a hundred people waiting for you, their
+hero. You join them in well-earned revelry, but resolve to revisit the 
+Magicians' Guild once the merriment dies down.#
 
 2604
 
@@ -3256,9 +3291,27 @@ sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.#
 
 
 
-Now advance when your allies are ready!#
+
+
+
+
+
+
+
+
+
+Now advance when you and your allies are ready!#
 
 2605
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3276,53 +3329,241 @@ Now wait for your leader to advance onward...#
 
 2606 Click to continue.#
 
+2607 Through the portal, a weak magic tugs you from the Citadel. Your feet 
+hover over the floor as it shakes violently. Pipes and pistons crash down 
+in a muffled racket. You have a detached sense of peace, and a moment to 
+ponder what has occurred.#
+
+2608 
+
+
+
+
+
+
+
+The lich siblings join the Baron in death, voiding their deals done with 
+devils.#
+2609 
+
+
+
+
+
+
+
+
+
+
+
+
+Is it for the best that you escaped death here? Through your trials, you've
+earned power greater than they, their shattered remains proving it.#
+
+2610 You open your eyes, standing in The Magician's Guild with a wizard and bishop. 
+Their faces relax in relief.# 
+
+2611
+
+
+
+In the following days, you work with them in secrecy to prevent the realms of
+hell from stepping foot in Hamlet again using the artifacts underground.#
+
+2612 
+
+
+
+
+
+
+
+
+Hamlet begins its ascent toward its former glory. The guilds unite under your 
+banner to clear out the straggling monsters and rebuild the city. The citizens 
+beg you to take the Baron's court and rule.#
+
+
+2613
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You vow to keep the hellish source of the liches' power secret, to prevent 
+anyone seeking that power again, deep underground. #
+
+2614 Power you know will always be waiting.#
+
+# Orpheus and Erudyce chatter.
+2615 "Brother, I sense someone has arrived. Shall we greet them?"#
+2616 "No, we are too busy for formalities."#
+
+2617 "Sister, did you invite company?"#
+2618 "No, the Guild sent them."#
+2619 "Hm."#
+
+2620 "Sister, the Cave entrance is still sealed, is it not?"#
+2621 "It is. Why do you ask?"#
+2622 "Nevermind. It's nothing."#
+
+2623 "Is the Minotaur necessary, Brother?"#
+2624 "No, sister, but I do like the show."#
+
+2625 "Do you think, Sister, they'll flee from the Minotaur?"#
+2626 "I don't care, Brother. Send it anyway."#
+
+2627 "This Minotaur has been moping about ever since Herx died."#
+2628 "Send it away if it bothers you so much, Sister."#
+
+# Caves chatter.
+2629 "Brother, somebody's making their way through the Caves."#
+2630 "Are you concerned?"#
+2631 "Mmm. No."#
+
+2632 "The Kobolds guaranteed us better results in the Caves."#
+2633 "Don't worry, brother. There's still a ways to go, they may yet deliver."#
+
+2634 "Brother, I admit, I wish they'd hurry."#
+2635 "It would make things simpler, wouldn't it?"#
+
+# Caves transition.
+2636 "Herx couldn't handle the power he found. We tried to warn him."#
+2637 "His death was inevitable."#
+2652 "Our uninvited guests are nothing but commoners."#
+
+# Citadel chatter.
+2638 "This is all wrong. We created this place for immortals."#
+2639 "Immortals and their servants, Sister."#
+2653 "Let them come."#
+
+2640 "How much longer must I wait around?"#
+2641 "Go about your business, brother. There isn't much to prepare."#
+
+2642 "You were right to exclude the rest of the guild from our plans here, Brother."#
+2643 "Small minds always have small ambitions."#
+
+# Endgame.
+2644 "Our access to power has only increased since you removed Herx."#
+2645 "Allow us to thank you for giving his Barony over to us."#
+
+# Orpheus death.
+2646 "Impossible!!!"#
+2647 "Pest, I will use your soul to undo this offense!"#
+
+# Erudyce death.
+2648 "Curse you!!!"#
+2649 "Big mistake, cretin. Time to suffer."#
+
+# Orpheus giggles.
+2650 "Ah ha ha ha ha ha haah!!"#
+# Erudyce giggles.
+2651 "Ah ha ha ha ha ha ha hah haah!"#
+
+
 # NPC Chatter. Groups of 10 lines for each NPC type
 2700 type:seq#
-2701 %s Response 1, %s.#
-2702 %s Response 2.#
-2703 %s Response 3.#
-2704 %s Response 4.#
-2705 %s Response 5.#
+2701 The %s You are quite the party animal, %s. I couldn't keep up with you!#
+2702 The %s Are you sure you got enough rest, %s?#
+2703 The %s First you defeat the Baron, and you still out-party a joker like me!#
+2704 The %s You're going to take it easy now, though, right %s?#
 
 2710 type:rand#
-2711 %s Response 1.#
-2712 %s Response 2.#
+2711 The %s Everyone came back to their shops, like nothing happened.#
+2712 The %s Hamlet's Shopkeepers are tougher after surviving the Baron's dungeon.#
 
 2720 type:rand#
-2721 %s Response 1.#
+2721 The %s How could I ever thank you %s? *hic!*#
+2722 The %s I love you, man. Like, seriously, %s, I love you. *hic!*#
 
-2730 type:rand#
-2731 %s Response 1.#
+2730 type:seq#
+2731 %s It's a secret to everybody.#
+2732 %s This used to be the foyer to the Baron's mansion.#
+2733 %s We're remodeling the interior for our next ruler.#
+2734 %s We want to forget all about Herx.#
+2735 %s It's a secret to everybody.#
 
-2740 type:rand#
-2741 %s Response 1.#
+2740 type:seq#
+2741 The %s I tried to get into the Crystal Caves, but a barrier stopped me.#
+2742 The %s Perhaps the Magician's Guild erected that barrier.#
+2743 The %s I'm from a distant city, and a member of the Hunter's Guild.#
+2744 The %s Hamlet's Hunters' Guild isn't in this district.#
+2745 The %s I guess Magicians and Hunters don't get along so well.#
+2746 The %s Hunters kill bad guys. Sometimes they're Magicians.#
+2747 The %s No grudges, just don't be a bad guy!#
 
 2750 type:rand#
-2751 %s Response 1.#
+2751 The %s Is it strange that I am tempted to go back into the mine?#
+2752 The %s The sky out here is so large. I'm scared.#
+2753 The %s The mines, Herx's dungeon, is on the other side of this gate.#
+2754 The %s Maybe I'll just go back for a little while.#
 
-2760 type:rand#
-2761 %s Response 1.#
+2760 type:seq#
+2761 The %s The Magician's Guild must be up to something.#
+2762 The %s Guilds always have too many secrets.#
+2763 The %s I heard that Merlin and the Magician's Guild had a falling out.#
+2764 The %s I bet Herx is in tight with Archmagisters Orpheus and Erudyce.#
+2765 The %s Don't get me started on the Hunters' Guild.#
+2766 The %s I heard the Masons Guild works for the Church.#
+2767 The %s The Church has secrets, but they also help the poor.#
+2768 The %s Is the Church a Guild? Asking for a friend.#
 
-2770 type:rand#
-2771 %s Response 1.#
+2770 type:seq#
+2771 The %s Welcome back, %s. I hope you're rested.#
+2772 The %s The magicians inside can explain everything.#
+2773 The %s Me? No I'm just a doorman.#
+2774 The %s Many come and go, %s. No membership required.#
+2775 The %s Merlin used to come by a lot, but then he just stopped.#
+2776 The %s Come to think of it, Herx used to come by regularly.#
+2777 The %s Herx would always leave angry after every visit.#
+2778 The %s I wish I could've seen Herx's face when you showed up...#
 
-2780 type:rand#
-2781 %s Response 1.#
+2780 type:seq#
+2781 The %s The Baron wanted to set up the mine in the Crystal Caves.#
+2782 The %s The Archmagisters refused to allow Herx to mine there.#
+2783 The %s Herx offered a lot of grants to the Magicians' Guild.#
+2784 The %s I think Herx expected favors from the Archmagisters.#
+2785 The %s Eventually Herx gave up on getting the help of the Guild.#
+2786 The %s Things turned out bad, but they could've been worse.#
 
-2790 type:rand#
-2791 %s Response 1.#
+2790 type:seq#
+2791 The %s Merlin told us about the dangerous magic Herx found.#
+2792 The %s We never heard from Merlin again after he left to stop Herx.#
+2793 The %s I heard rumors about a new letter from Merlin, but I never saw it.#
+2794 The %s You know, Merlin was never an official member of the Magicians Guild.#
+2795 The %s Some people just need their independence. I respect that.#
 
-2800 type:rand#
-2801 %s Response 1.#
+2800 type:seq#
+2801 The %s After Herx was locked away, the Archmagisters went to the Crystal Caves.#
+2802 The %s I guess they wanted to see what all the fuss was about.#
+2803 The %s If it wasn't for the Archmagisters, Herx would've built an army here.#
+2804 The %s We never would've been able to figure out how to lock Herx away. #
+2805 The %s I think Erudyce and Orpheus knew sealing up Herx wouldn't be enough.#
 
-2810 type:rand#
-2811 %s Response 1.#
+2810 type:seq#
+2811 The %s Powerful monsters started coming from the Crystal Caves.#
+2812 The %s The Guild had to seal the Caves to keep Hamlet from being destroyed.#
+2813 The %s I hope that the Archmagisters inside are alright.#
+2814 The %s I really hope those monsters have nothing to do with their research.#
+2815 The %s Orpheus is so driven. Nothing can stop him.#
+2816 The %s Erudyce likes to influence things from behind the scenes.#
 
-2820 type:rand#
-2821 %s Response 1.#
-
-2830 type:rand#
-2831 %s Response 1.#
+2820 type:seq#
+2821 The %s I sensed power from the orb when you put it on that pedestal.#
+2822 The %s I wonder why Herx didn't use that power to escape the dungeon.#
+2823 The %s I was able to trap some of the power that Herx's orb released.#
+2824 The %s This portal pierces the seal to the Caves using the power of the orb.#
+2825 The %s Archmagisters Orpheus and Erudyce will help return things to normal.#
+2826 The %s They must have learned something about the power Herx found.#
 
 2840 type:rand#
 2841 %s Response 1.#
@@ -3338,8 +3579,58 @@ Now wait for your leader to advance onward...#
 2901 You feel heavier...#
 2902 You feel slower...#
 2903 There is an aftertaste of poison in your mouth.#
+2904 The shrine bestows fortitude and might!#
+2905 Your spell had no effect on the %s!#
+2906 Your spell had no effect on %s!#
+2907 "Do not be afraid to go slowly, be afraid of stopping."#
+2908 Your thoughts no longer reside in solitude as you wrap the blindfold.#
+2909 The shrine bestows marksmanship and haste!#
+2910 The shrine bestows arcane knowledge and resistance!#
+2911 The Baron!#
 
-# Idk
-2950 light flicker#
+# 2912-2916 Autosort text:
+2912 Item Categories for Inventory Autosort: (?)#
+2913 Use arrows to set priority for autosort. 0 has no priority.#
+2914 1 is lowest priority, 9 is highest priority to fill left to right.  #
+2915 -1 is lowest priority, -9 is highest priority to fill right to left.#
+2916 Equipped#
+
+# New server flags.
+2917 Hardcore#
+2918 Classic#
+2919 Reserved#
+2920 Reserved#
+# Hardcore.
+2921 NOTE: Experimental!#
+# CURRENTLY UNUSED
+2922 Cursed Edition levels only#
+# CURRENTLY UNUSED
+2923 #
+# CURRENTLY UNUSED
+2924 #
+
+# 2925 - 2957 New conducts.
+2925 Hardcore#
+2926 Discreet#
+2927 Allied#
+2928 Classic#
+2929 Unused#
+
+2958 Multiplayer Highscores#
+2959 Continue multiplayer game#
+2960 Autosort Inventory (%s)#
+2961 Delete file#
+2962 Cancel#
+2963 Are you sure you want to delete your singleplayer save file?
+
+#
+2964 Are you sure you want to delete your multiplayer save file?
+
+#
+2965 WARNING: CONTINUING WILL OVERWRITE YOUR EXISTING SINGLEPLAYER SAVEFILE!#
+2966 WARNING: CONTINUING WILL OVERWRITE YOUR EXISTING MULTIPLAYER SAVEFILE!#
+2967 light flicker#
+2968 press %s to drop gold#
+
 
 2999 end#
