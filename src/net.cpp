@@ -1779,7 +1779,7 @@ void clientHandlePacket()
 			entity->yaw = camera.ang;
 			entity->pitch = PI / 8;
 
-			deleteSaveGame(); // stops save scumming c:
+			deleteSaveGame(multiplayer); // stops save scumming c:
 
 			closeBookGUI();
 
@@ -3818,26 +3818,29 @@ void serverHandlePacket()
 	{
 		int player = net_packet->data[4];
 		int amount = SDLNet_Read32(&net_packet->data[5]);
-		stats[player]->GOLD -= amount;
-
-		//Drop gold.
-		int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
-		int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		if ( players[player] && players[player]->entity )
 		{
-			entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
-			entity->sizex = 4;
-			entity->sizey = 4;
-			entity->x = players[player]->entity->x;
-			entity->y = players[player]->entity->y;
-			entity->z = 6;
-			entity->yaw = (rand() % 360) * PI / 180.0;
-			entity->flags[PASSABLE] = true;
-			entity->flags[UPDATENEEDED] = true;
-			entity->behavior = &actGoldBag;
-			entity->skill[0] = amount; // amount
-		}
+			stats[player]->GOLD -= amount;
+			playSoundEntity(players[player]->entity, 242 + rand() % 4, 64);
+			//Drop gold.
+			int x = std::min<int>(std::max(0, (int)(players[player]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max(0, (int)(players[player]->entity->y / 16)), map.height - 1);
+			if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				entity = newEntity(130, 0, map.entities, nullptr); // 130 = goldbag model
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x = players[player]->entity->x;
+				entity->y = players[player]->entity->y;
+				entity->z = 6;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->behavior = &actGoldBag;
+				entity->skill[0] = amount; // amount
+			}
 
+		}
 		return;
 	}
 

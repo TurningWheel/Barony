@@ -1650,6 +1650,7 @@ void consoleCommand(char* command_str)
 				entity->behavior = &actGoldBag;
 				entity->skill[0] = amount; // amount
 			}
+			playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
 		}
 
 		messagePlayer(clientnum, language[2594], amount);

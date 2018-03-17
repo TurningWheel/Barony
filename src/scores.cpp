@@ -2404,10 +2404,10 @@ list_t* loadGameFollowers()
 
 -------------------------------------------------------------------------------*/
 
-int deleteSaveGame()
+int deleteSaveGame(int gametype)
 {
 	char savefile[32] = "";
-	if ( multiplayer == SINGLE )
+	if ( gametype == SINGLE )
 	{
 		strcpy(savefile, SAVEGAMEFILE);
 	}
@@ -2428,7 +2428,7 @@ int deleteSaveGame()
 		}
 	}
 
-	if ( multiplayer == SINGLE )
+	if ( gametype == SINGLE )
 	{
 		strcpy(savefile, SAVEGAMEFILE2);
 	}
