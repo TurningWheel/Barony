@@ -612,8 +612,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					else if ( parent && 
 							(	(hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
-								|| ( (hit.entity->getRace() == LICH_FIRE 
-								|| hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
+								|| ( (hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
+								|| (parent->getRace() == LICH_ICE) && !strncmp(hitstats->name, "corrupted automaton", 19)
 							)
 						)
 					{
