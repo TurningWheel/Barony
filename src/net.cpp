@@ -2039,7 +2039,7 @@ void clientHandlePacket()
 	// current game level
 	else if (!strncmp((char*)net_packet->data, "LVLC", 4))
 	{
-		if ( currentlevel == net_packet->data[13] )
+		if ( currentlevel == net_packet->data[13] && secretlevel == net_packet->data[4] )
 		{
 			// the server's just doing a routine check
 			return;
@@ -3268,7 +3268,7 @@ void serverHandlePacket()
 		}
 
 		// check if the info is outdated
-		if ( net_packet->data[5] != currentlevel )
+		if ( net_packet->data[5] != currentlevel || net_packet->data[18] != secretlevel )
 		{
 			return;
 		}

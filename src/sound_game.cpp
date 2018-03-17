@@ -381,7 +381,7 @@ void handleLevelMusic()
 	bool herxaround = false;
 	bool magisteraround = false;
 	node_t* node;
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 274 )   // herx head
@@ -985,7 +985,7 @@ void handleLevelMusic()
 	bool herxaround = false;
 	bool magisteraround = false;
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.creatures->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 274 )   // herx head
