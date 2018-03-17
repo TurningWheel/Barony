@@ -3202,7 +3202,7 @@ Sint32 Entity::getSTR()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3226,12 +3226,18 @@ Sint32 statGetSTR(Stat* entitystats)
 	{
 		STR--;
 	}
-	if ( entitystats->gloves != NULL )
+	if ( entitystats->gloves != nullptr )
+	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
 		{
-			STR++;
+			if ( entitystats->gloves->beatitude >= 0 )
+			{
+				STR++;
+			}
+			STR += entitystats->gloves->beatitude;
 		}
-	if ( entitystats->ring != NULL )
+	}
+	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_STRENGTH )
 		{
@@ -3239,10 +3245,7 @@ Sint32 statGetSTR(Stat* entitystats)
 			{
 				STR++;
 			}
-			else
-			{
-				STR--;
-			}
+			STR += entitystats->ring->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
@@ -3276,7 +3279,7 @@ Sint32 Entity::getDEX()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3334,14 +3337,22 @@ Sint32 statGetDEX(Stat* entitystats)
 	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
-			DEX++;
+			if ( entitystats->shoes->beatitude >= 0 )
+			{
+				DEX++;
+			}
+			DEX += entitystats->shoes->beatitude;
 		}
 	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
-			DEX++;
+			if ( entitystats->gloves->beatitude >= 0 )
+			{
+				DEX++;
+			}
+			DEX += entitystats->gloves->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
@@ -3372,7 +3383,7 @@ Sint32 Entity::getCON()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3384,7 +3395,7 @@ Sint32 statGetCON(Stat* entitystats)
 	Sint32 CON;
 
 	CON = entitystats->CON;
-	if ( entitystats->ring != NULL )
+	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_CONSTITUTION )
 		{
@@ -3392,13 +3403,10 @@ Sint32 statGetCON(Stat* entitystats)
 			{
 				CON++;
 			}
-			else
-			{
-				CON--;
-			}
+			CON += entitystats->ring->beatitude;
 		}
 	}
-	if ( entitystats->gloves != NULL )
+	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == BRACERS_CONSTITUTION )
 		{
@@ -3406,10 +3414,7 @@ Sint32 statGetCON(Stat* entitystats)
 			{
 				CON++;
 			}
-			else
-			{
-				CON--;
-			}
+			CON += entitystats->gloves->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
@@ -3431,7 +3436,7 @@ Sint32 Entity::getINT()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3447,15 +3452,23 @@ Sint32 statGetINT(Stat* entitystats)
 	{
 		INT--;
 	}
-	if ( entitystats->helmet != NULL )
+	if ( entitystats->helmet != nullptr )
 	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
-			INT++;
+			if ( entitystats->helmet->beatitude >= 0 )
+			{
+				INT++;
+			}
+			INT += entitystats->helmet->beatitude;
 		}
 		else if ( entitystats->helmet->type == ARTIFACT_HELM )
 		{
-			INT += 8;
+			if ( entitystats->helmet->beatitude >= 0 )
+			{
+				INT += 8;
+			}
+			INT += entitystats->helmet->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
@@ -3477,7 +3490,7 @@ Sint32 Entity::getPER()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3497,13 +3510,18 @@ Sint32 statGetPER(Stat* entitystats)
 	{
 		if ( entitystats->mask->type == TOOL_GLASSES )
 		{
-			PER++;
+			if ( entitystats->mask->beatitude >= 0 )
+			{
+				PER++;
+			}
+			PER += entitystats->mask->beatitude;
 		}
 		else if ( entitystats->mask->type == TOOL_BLINDFOLD
 					|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
 					|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			PER -= 10;
+			PER += entitystats->mask->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
@@ -3525,7 +3543,7 @@ Sint32 Entity::getCHR()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3537,23 +3555,28 @@ Sint32 statGetCHR(Stat* entitystats)
 	Sint32 CHR;
 
 	CHR = entitystats->CHR;
-	if ( entitystats->helmet != NULL )
+	if ( entitystats->helmet != nullptr )
+	{
 		if ( entitystats->helmet->type == HAT_JESTER )
 		{
-			CHR++;
+			if ( entitystats->helmet->beatitude >= 0 )
+			{
+				CHR++;
+			}
+			CHR += entitystats->helmet->beatitude;
 		}
-	if ( entitystats->ring != NULL )
+	}
+	if ( entitystats->ring != nullptr )
+	{
 		if ( entitystats->ring->type == RING_ADORNMENT )
 		{
 			if ( entitystats->ring->beatitude >= 0 )
 			{
 				CHR++;
 			}
-			else
-			{
-				CHR--;
-			}
+			CHR += entitystats->ring->beatitude;
 		}
+	}
 	return CHR;
 }
 
