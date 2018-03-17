@@ -2242,7 +2242,10 @@ void Entity::handleEffects(Stat* myStats)
 		vampiricHunger = true;
 	}
 
-	if ( !strncmp(map.name, "Sanctum", 7) || !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 4) )
+	if ( !strncmp(map.name, "Sanctum", 7) 
+		|| !strncmp(map.name, "Boss", 4) 
+		|| !strncmp(map.name, "Hell Boss", 4)
+		|| !strncmp(map.name, "Hamlet", 6) )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
 	}
