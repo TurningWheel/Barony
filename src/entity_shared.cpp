@@ -445,6 +445,10 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_spear",
 		"artifact_axe",
 		"artifact_bow",
+		"artifact_orb_blue",
+		"artifact_orb_red",
+		"artifact_orb_purple",
+		"artifact_orb_green"
 		""
 	},
 	{
@@ -535,11 +539,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_blindfold",
 		"tool_glasses",
 		"tool_blindfold_focus",
-		"tool_blindfold_telepathy",
-		"artifact_orb_blue",
-		"artifact_orb_red",
-		"artifact_orb_purple",
-		"artifact_orb_green",
+		"tool_blindfold_telepathy"
 		""
 	},
 	{

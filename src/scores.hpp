@@ -66,7 +66,7 @@ void loadAllScores(const std::string& scoresfilename);
 int saveGame();
 int loadGame(int player);
 list_t* loadGameFollowers();
-int deleteSaveGame();
+int deleteSaveGame(int gametype);
 bool saveGameExists(bool singleplayer);
 
 char* getSaveGameName(bool singleplayer);

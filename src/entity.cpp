@@ -2242,7 +2242,10 @@ void Entity::handleEffects(Stat* myStats)
 		vampiricHunger = true;
 	}
 
-	if ( !strncmp(map.name, "Sanctum", 7) || !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 4) )
+	if ( !strncmp(map.name, "Sanctum", 7) 
+		|| !strncmp(map.name, "Boss", 4) 
+		|| !strncmp(map.name, "Hell Boss", 4)
+		|| !strncmp(map.name, "Hamlet", 6) )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
 	}
@@ -2436,55 +2439,9 @@ void Entity::handleEffects(Stat* myStats)
 
 	// healing over time
 	int healring = 0;
-	int healthRegenInterval = 0;
-	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] && !(myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
+	int healthRegenInterval = getHealthRegenInterval(*myStats);
+	if ( healthRegenInterval >= 0 )
 	{
-		if ( myStats->ring != NULL )
-		{
-			if ( myStats->ring->type == RING_REGENERATION )
-			{
-				if ( myStats->ring->beatitude >= 0 )
-				{
-					healring++;
-				}
-				else
-				{
-					healring--;
-				}
-			}
-		}
-		if ( myStats->breastplate != NULL )
-		{
-			if ( myStats->breastplate->type == ARTIFACT_BREASTPIECE )
-			{
-				if ( myStats->breastplate->beatitude >= 0 )
-				{
-					healring++;
-				}
-				else
-				{
-					healring--;
-				}
-			}
-		}
-
-		if ( !strncmp(map.name, "Mages Guild", 11) && myStats->type == SHOPKEEPER )
-		{
-			healring = 25; // these guys like regenerating
-		}
-
-		if ( healring > 0 )
-		{
-			healthRegenInterval = HEAL_TIME / (healring * 8);
-		}
-		else if ( healring < 0 )
-		{
-			healthRegenInterval = abs(healring) * HEAL_TIME * 4;
-		}
-		else if ( healring == 0 )
-		{
-			healthRegenInterval = HEAL_TIME;
-		}
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
@@ -3245,7 +3202,7 @@ Sint32 Entity::getSTR()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3269,12 +3226,18 @@ Sint32 statGetSTR(Stat* entitystats)
 	{
 		STR--;
 	}
-	if ( entitystats->gloves != NULL )
+	if ( entitystats->gloves != nullptr )
+	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
 		{
-			STR++;
+			if ( entitystats->gloves->beatitude >= 0 )
+			{
+				STR++;
+			}
+			STR += entitystats->gloves->beatitude;
 		}
-	if ( entitystats->ring != NULL )
+	}
+	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_STRENGTH )
 		{
@@ -3282,10 +3245,7 @@ Sint32 statGetSTR(Stat* entitystats)
 			{
 				STR++;
 			}
-			else
-			{
-				STR--;
-			}
+			STR += entitystats->ring->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
@@ -3319,7 +3279,7 @@ Sint32 Entity::getDEX()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3377,14 +3337,22 @@ Sint32 statGetDEX(Stat* entitystats)
 	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
-			DEX++;
+			if ( entitystats->shoes->beatitude >= 0 )
+			{
+				DEX++;
+			}
+			DEX += entitystats->shoes->beatitude;
 		}
 	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
-			DEX++;
+			if ( entitystats->gloves->beatitude >= 0 )
+			{
+				DEX++;
+			}
+			DEX += entitystats->gloves->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
@@ -3415,7 +3383,7 @@ Sint32 Entity::getCON()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3427,7 +3395,7 @@ Sint32 statGetCON(Stat* entitystats)
 	Sint32 CON;
 
 	CON = entitystats->CON;
-	if ( entitystats->ring != NULL )
+	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_CONSTITUTION )
 		{
@@ -3435,13 +3403,10 @@ Sint32 statGetCON(Stat* entitystats)
 			{
 				CON++;
 			}
-			else
-			{
-				CON--;
-			}
+			CON += entitystats->ring->beatitude;
 		}
 	}
-	if ( entitystats->gloves != NULL )
+	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == BRACERS_CONSTITUTION )
 		{
@@ -3449,10 +3414,7 @@ Sint32 statGetCON(Stat* entitystats)
 			{
 				CON++;
 			}
-			else
-			{
-				CON--;
-			}
+			CON += entitystats->gloves->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
@@ -3474,7 +3436,7 @@ Sint32 Entity::getINT()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3490,15 +3452,23 @@ Sint32 statGetINT(Stat* entitystats)
 	{
 		INT--;
 	}
-	if ( entitystats->helmet != NULL )
+	if ( entitystats->helmet != nullptr )
 	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
-			INT++;
+			if ( entitystats->helmet->beatitude >= 0 )
+			{
+				INT++;
+			}
+			INT += entitystats->helmet->beatitude;
 		}
 		else if ( entitystats->helmet->type == ARTIFACT_HELM )
 		{
-			INT += 5;
+			if ( entitystats->helmet->beatitude >= 0 )
+			{
+				INT += 8;
+			}
+			INT += entitystats->helmet->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
@@ -3520,7 +3490,7 @@ Sint32 Entity::getPER()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3540,13 +3510,18 @@ Sint32 statGetPER(Stat* entitystats)
 	{
 		if ( entitystats->mask->type == TOOL_GLASSES )
 		{
-			PER++;
+			if ( entitystats->mask->beatitude >= 0 )
+			{
+				PER++;
+			}
+			PER += entitystats->mask->beatitude;
 		}
 		else if ( entitystats->mask->type == TOOL_BLINDFOLD
 					|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
 					|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			PER -= 10;
+			PER += entitystats->mask->beatitude;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
@@ -3568,7 +3543,7 @@ Sint32 Entity::getCHR()
 {
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
@@ -3580,23 +3555,28 @@ Sint32 statGetCHR(Stat* entitystats)
 	Sint32 CHR;
 
 	CHR = entitystats->CHR;
-	if ( entitystats->helmet != NULL )
+	if ( entitystats->helmet != nullptr )
+	{
 		if ( entitystats->helmet->type == HAT_JESTER )
 		{
-			CHR++;
+			if ( entitystats->helmet->beatitude >= 0 )
+			{
+				CHR++;
+			}
+			CHR += entitystats->helmet->beatitude;
 		}
-	if ( entitystats->ring != NULL )
+	}
+	if ( entitystats->ring != nullptr )
+	{
 		if ( entitystats->ring->type == RING_ADORNMENT )
 		{
 			if ( entitystats->ring->beatitude >= 0 )
 			{
 				CHR++;
 			}
-			else
-			{
-				CHR--;
-			}
+			CHR += entitystats->ring->beatitude;
 		}
+	}
 	return CHR;
 }
 
@@ -7462,6 +7442,13 @@ int Entity::getReflection() const
 		return 3;
 	}
 
+	if ( stats->shield )
+	{
+		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
+		{
+			return 3;
+		}
+	}
 	if ( stats->amulet )
 	{
 		if ( stats->amulet->type == AMULET_MAGICREFLECTION )
@@ -7474,13 +7461,6 @@ int Entity::getReflection() const
 		if ( stats->cloak->type == CLOAK_MAGICREFLECTION )
 		{
 			return 1;
-		}
-	}
-	if ( stats->shield )
-	{
-		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
-		{
-			return 3;
 		}
 	}
 	return 0;
@@ -9931,6 +9911,66 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		return regenTime;
 	}
 	return MAGIC_REGEN_TIME;
+}
+
+int Entity::getHealthRegenInterval(Stat& myStats)
+{
+	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
+	{
+		return -1;
+	}
+	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
+	{
+		return -1;
+	}
+	int healring = 0;
+	if ( myStats.ring != nullptr )
+	{
+		if ( myStats.ring->type == RING_REGENERATION )
+		{
+			if ( myStats.ring->beatitude >= 0 )
+			{
+				healring++;
+				healring += std::min(static_cast<int>(myStats.ring->beatitude), 1);
+			}
+			else
+			{
+				healring--;
+			}
+		}
+	}
+	if ( myStats.breastplate != nullptr )
+	{
+		if ( myStats.breastplate->type == ARTIFACT_BREASTPIECE )
+		{
+			if ( myStats.breastplate->beatitude >= 0 )
+			{
+				healring++;
+			}
+			else
+			{
+				healring--;
+			}
+		}
+	}
+
+	if ( !strncmp(map.name, "Mages Guild", 11) && myStats.type == SHOPKEEPER )
+	{
+		healring = 25; // these guys like regenerating
+	}
+
+	if ( healring > 0 )
+	{
+		return (HEAL_TIME / (healring * 6));
+	}
+	else if ( healring < 0 )
+	{
+		return (abs(healring) * HEAL_TIME * 4);
+	}
+	else if ( healring == 0 )
+	{
+		return HEAL_TIME;
+	}
 }
 
 int Entity::getBaseManaRegen(Stat& myStats)

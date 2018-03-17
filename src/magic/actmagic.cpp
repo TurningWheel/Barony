@@ -672,10 +672,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( hit.side == HORIZONTAL )
 					{
 						my->vel_x *= -1;
+						my->yaw = atan2(my->vel_y, my->vel_x);
 					}
 					else if ( hit.side == VERTICAL )
 					{
 						my->vel_y *= -1;
+						my->yaw = atan2(my->vel_y, my->vel_x);
+					}
+					else if ( hit.side == 0 )
+					{
+						my->vel_x *= -1;
+						my->vel_y *= -1;
+						my->yaw = atan2(my->vel_y, my->vel_x);
 					}
 					if ( hit.entity )
 					{

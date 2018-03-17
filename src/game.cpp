@@ -2582,7 +2582,6 @@ int main(int argc, char** argv)
 						//TODO: Replace all of this with centralized startGameRoutine().
 						// setup game
 						shootmode = true;
-
 						// make some messages
 						startMessages();
 

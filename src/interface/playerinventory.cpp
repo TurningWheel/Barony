@@ -765,7 +765,7 @@ void updatePlayerInventory()
 		}
 	}
 
-	if ( *inputPressed(impulses[IN_AUTOSORT]) )
+	if ( !command && *inputPressed(impulses[IN_AUTOSORT]) )
 	{
 		autosortInventory();
 		//quickStackItems();
