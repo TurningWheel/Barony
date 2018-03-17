@@ -61,11 +61,31 @@ void initGoatman(Entity* my, Stat* myStats)
 				minion = true;
 			}
 
+			if ( !strncmp(myStats->name, "lesser goatman", strlen("lesser goatman")) )
+			{
+				myStats->MAXHP = 150;
+				myStats->HP = myStats->MAXHP;
+				myStats->OLDHP = myStats->HP;
+				myStats->RANDOM_MAXHP = 20;
+				myStats->RANDOM_HP = myStats->RANDOM_MAXHP;
+				//stats->RANDOM_MAXMP = 20;
+				//stats->RANDOM_MP = stats->RANDOM_MAXMP;
+				myStats->STR = 15;
+				myStats->DEX = 5;
+				myStats->CON = 5;
+				myStats->INT = -1;
+				myStats->PER = 0;
+				myStats->RANDOM_PER = 5;
+				myStats->CHR = -1;
+				myStats->LVL = 20;
+			}
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
 
 			// boss variants
 			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )

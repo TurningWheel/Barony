@@ -2114,7 +2114,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 									if ( currentlevel > 15 )
 									{
 										entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
-										entity->monsterStoreType = 1; // weaker version
+										if ( currentlevel < 25 )
+										{
+											entity->monsterStoreType = 1; // weaker version
+										}
 									}
 									else
 									{
@@ -3163,6 +3166,13 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[GOATMAN][0][0]; // 0
 						entity->focaly = limbs[GOATMAN][0][1]; // 0
 						entity->focalz = limbs[GOATMAN][0][2]; // -1.75
+						if ( strstr(map->name, "Hell") )
+						{
+							if ( myStats )
+							{
+								strcpy(myStats->name, "lesser goatman");
+							}
+						}
 						break;
 					case AUTOMATON:
 						entity->z = -.5;
