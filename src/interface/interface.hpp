@@ -76,6 +76,7 @@ extern Item* invitemschest[4];
 extern int inventorycategory;
 extern int itemscroll;
 extern view_t camera_charsheet;
+extern real_t camera_charsheet_offsetyaw;
 
 extern int selected_inventory_slot_x;
 extern int selected_inventory_slot_y;

@@ -65,11 +65,11 @@ void updateCharacterSheet()
 		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[clientnum]->x/16.0+.5*cos(players[clientnum]->yaw)-.4*sin(players[clientnum]->yaw);
 		//camera.y=players[clientnum]->y/16.0+.5*sin(players[clientnum]->yaw)+.4*cos(players[clientnum]->yaw);
-		camera_charsheet.x = players[clientnum]->entity->x / 16.0 + .65;
-		camera_charsheet.y = players[clientnum]->entity->y / 16.0 + .65;
+		camera_charsheet.x = players[clientnum]->entity->x / 16.0 + (.92 * cos(camera_charsheet_offsetyaw));
+		camera_charsheet.y = players[clientnum]->entity->y / 16.0 + (.92 * sin(camera_charsheet_offsetyaw));
 		camera_charsheet.z = players[clientnum]->entity->z * 2;
 		//camera.ang=atan2(players[clientnum]->y/16.0-camera.y,players[clientnum]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
-		camera_charsheet.ang = 5 * PI / 4;
+		camera_charsheet.ang = (camera_charsheet_offsetyaw - PI); //5 * PI / 4;
 		camera_charsheet.vang = PI / 20;
 		camera_charsheet.winx = 8;
 		camera_charsheet.winy = 8;
@@ -132,6 +132,43 @@ void updateCharacterSheet()
 				}
 			}
 		}
+
+		SDL_Rect rotateBtn;
+		rotateBtn.w = 16;
+		rotateBtn.h = 16;
+		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
+		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+		if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+		{
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				camera_charsheet_offsetyaw += 0.05;
+				if ( camera_charsheet_offsetyaw > 2 * PI )
+				{
+					camera_charsheet_offsetyaw -= 2 * PI;
+				}
+				drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+			}
+		}
+		ttfPrintText(ttf12, rotateBtn.x + 2, rotateBtn.y + 2, ">");
+
+		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
+		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+		if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+		{
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				camera_charsheet_offsetyaw -= 0.05;
+				if ( camera_charsheet_offsetyaw < 0.f )
+				{
+					camera_charsheet_offsetyaw += 2 * PI;
+				}
+				drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+			}
+		}
+		ttfPrintText(ttf12, rotateBtn.x, rotateBtn.y + 2, "<");
 	}
 	fov = ofov;
 
