@@ -39,6 +39,7 @@ Item* invitemschest[4];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
+real_t camera_charsheet_offsetyaw = (330) * PI / 180;
 
 SDL_Surface* font12x12_small_bmp = NULL;
 SDL_Surface* inventoryChest_bmp = NULL;

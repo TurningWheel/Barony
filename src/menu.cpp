@@ -581,6 +581,7 @@ void handleMainMenu(bool mode)
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
 				multiplayerselect = SERVER;
 				charcreation_step = 6;
+				camera_charsheet_offsetyaw = (330) * PI / 180;
 				directConnect = true;
 				strcpy(portnumber_char, "12345");
 				buttonHostLobby(nullptr);
@@ -595,6 +596,7 @@ void handleMainMenu(bool mode)
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
 				multiplayerselect = CLIENT;
 				charcreation_step = 6;
+				camera_charsheet_offsetyaw = (330) * PI / 180;
 				directConnect = true;
 				strcpy(connectaddress, "localhost:12345");
 				buttonJoinLobby(nullptr);
@@ -674,6 +676,7 @@ void handleMainMenu(bool mode)
 					clientnum = 0;
 					subwindow = 1;
 					score_window = 1;
+					camera_charsheet_offsetyaw = (330) * PI / 180;
 					loadScore(0);
 					subx1 = xres / 2 - 400;
 					subx2 = xres / 2 + 400;
@@ -1214,8 +1217,8 @@ void handleMainMenu(bool mode)
 		// draw character window
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
-			camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1;
-			camera_charsheet.y = players[clientnum]->entity->y / 16.0 - .5;
+			camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1.118 * cos(camera_charsheet_offsetyaw); // + 1
+			camera_charsheet.y = players[clientnum]->entity->y / 16.0 + 1.118 * sin(camera_charsheet_offsetyaw); // -.5
 			camera_charsheet.z = players[clientnum]->entity->z * 2;
 			camera_charsheet.ang = atan2(players[clientnum]->entity->y / 16.0 - camera_charsheet.y, players[clientnum]->entity->x / 16.0 - camera_charsheet.x);
 			camera_charsheet.vang = PI / 24;
@@ -1261,6 +1264,42 @@ void handleMainMenu(bool mode)
 					c++;
 				}
 			}
+			SDL_Rect rotateBtn;
+			rotateBtn.w = 24;
+			rotateBtn.h = 24;
+			rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
+			rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+			drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					camera_charsheet_offsetyaw += 0.05;
+					if ( camera_charsheet_offsetyaw > 2 * PI )
+					{
+						camera_charsheet_offsetyaw -= 2 * PI;
+					}
+					drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				}
+			}
+			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, ">");
+
+			rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
+			rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+			drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					camera_charsheet_offsetyaw -= 0.05;
+					if ( camera_charsheet_offsetyaw < 0.f )
+					{
+						camera_charsheet_offsetyaw += 2 * PI;
+					}
+					drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				}
+			}
+			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 		}
 
 		// sexes
@@ -3877,8 +3916,8 @@ void handleMainMenu(bool mode)
 			// draw character window
 			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 			{
-				camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1;
-				camera_charsheet.y = players[clientnum]->entity->y / 16.0 - .5;
+				camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1.118 * cos(camera_charsheet_offsetyaw); // + 1
+				camera_charsheet.y = players[clientnum]->entity->y / 16.0 + 1.118 * sin(camera_charsheet_offsetyaw); // -.5
 				camera_charsheet.z = players[clientnum]->entity->z * 2;
 				camera_charsheet.ang = atan2(players[clientnum]->entity->y / 16.0 - camera_charsheet.y, players[clientnum]->entity->x / 16.0 - camera_charsheet.x);
 				camera_charsheet.vang = PI / 24;
@@ -3921,6 +3960,42 @@ void handleMainMenu(bool mode)
 					}
 					c++;
 				}
+				SDL_Rect rotateBtn;
+				rotateBtn.w = 24;
+				rotateBtn.h = 24;
+				rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
+				rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+				drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						camera_charsheet_offsetyaw += 0.05;
+						if ( camera_charsheet_offsetyaw > 2 * PI )
+						{
+							camera_charsheet_offsetyaw -= 2 * PI;
+						}
+						drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+					}
+				}
+				ttfPrintText(ttf12, rotateBtn.x + 6, rotateBtn.y + 6, ">");
+
+				rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
+				rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+				drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						camera_charsheet_offsetyaw -= 0.05;
+						if ( camera_charsheet_offsetyaw < 0.f )
+						{
+							camera_charsheet_offsetyaw += 2 * PI;
+						}
+						drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+					}
+				}
+				ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 			}
 
 			// print name and class
@@ -4108,6 +4183,7 @@ void handleMainMenu(bool mode)
 				deleteSaveGame();
 				loadingsavegame = 0;
 			}
+			camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
 
 			// undo shopkeeper grudge
 			swornenemies[SHOPKEEPER][HUMAN] = false;
@@ -7362,6 +7438,7 @@ void buttonScoreNext(button_t* my)
 		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
 	}
 	loadScore(score_window - 1);
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 }
 
 // previous score button (statistics window)
@@ -7369,11 +7446,13 @@ void buttonScorePrev(button_t* my)
 {
 	score_window = std::max(score_window - 1, 1);
 	loadScore(score_window - 1);
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 }
 
 void buttonScoreToggle(button_t* my)
 {
 	score_window = 1;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 	scoreDisplayMultiplayer = !scoreDisplayMultiplayer;
 	loadScore(score_window - 1);
 }
@@ -7592,6 +7671,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// create character creation window
 	charcreation_step = 1;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
 	subx2 = xres / 2 + 400;
@@ -7853,6 +7933,7 @@ void buttonRandomCharacter(button_t* my)
 {
 	playing_random_char = true;
 	charcreation_step = 4;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
 	client_classes[0] = rand() % NUMCLASSES;
 	stats[0]->clearStats();
