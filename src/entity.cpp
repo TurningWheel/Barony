@@ -2436,55 +2436,9 @@ void Entity::handleEffects(Stat* myStats)
 
 	// healing over time
 	int healring = 0;
-	int healthRegenInterval = 0;
-	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] && !(myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
+	int healthRegenInterval = getHealthRegenInterval(*myStats);
+	if ( healthRegenInterval >= 0 )
 	{
-		if ( myStats->ring != NULL )
-		{
-			if ( myStats->ring->type == RING_REGENERATION )
-			{
-				if ( myStats->ring->beatitude >= 0 )
-				{
-					healring++;
-				}
-				else
-				{
-					healring--;
-				}
-			}
-		}
-		if ( myStats->breastplate != NULL )
-		{
-			if ( myStats->breastplate->type == ARTIFACT_BREASTPIECE )
-			{
-				if ( myStats->breastplate->beatitude >= 0 )
-				{
-					healring++;
-				}
-				else
-				{
-					healring--;
-				}
-			}
-		}
-
-		if ( !strncmp(map.name, "Mages Guild", 11) && myStats->type == SHOPKEEPER )
-		{
-			healring = 25; // these guys like regenerating
-		}
-
-		if ( healring > 0 )
-		{
-			healthRegenInterval = HEAL_TIME / (healring * 8);
-		}
-		else if ( healring < 0 )
-		{
-			healthRegenInterval = abs(healring) * HEAL_TIME * 4;
-		}
-		else if ( healring == 0 )
-		{
-			healthRegenInterval = HEAL_TIME;
-		}
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
@@ -3498,7 +3452,7 @@ Sint32 statGetINT(Stat* entitystats)
 		}
 		else if ( entitystats->helmet->type == ARTIFACT_HELM )
 		{
-			INT += 5;
+			INT += 8;
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
@@ -9931,6 +9885,66 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		return regenTime;
 	}
 	return MAGIC_REGEN_TIME;
+}
+
+int Entity::getHealthRegenInterval(Stat& myStats)
+{
+	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
+	{
+		return -1;
+	}
+	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
+	{
+		return -1;
+	}
+	int healring = 0;
+	if ( myStats.ring != nullptr )
+	{
+		if ( myStats.ring->type == RING_REGENERATION )
+		{
+			if ( myStats.ring->beatitude >= 0 )
+			{
+				healring++;
+				healring += std::min(static_cast<int>(myStats.ring->beatitude), 1);
+			}
+			else
+			{
+				healring--;
+			}
+		}
+	}
+	if ( myStats.breastplate != nullptr )
+	{
+		if ( myStats.breastplate->type == ARTIFACT_BREASTPIECE )
+		{
+			if ( myStats.breastplate->beatitude >= 0 )
+			{
+				healring++;
+			}
+			else
+			{
+				healring--;
+			}
+		}
+	}
+
+	if ( !strncmp(map.name, "Mages Guild", 11) && myStats.type == SHOPKEEPER )
+	{
+		healring = 25; // these guys like regenerating
+	}
+
+	if ( healring > 0 )
+	{
+		return (HEAL_TIME / (healring * 6));
+	}
+	else if ( healring < 0 )
+	{
+		return (abs(healring) * HEAL_TIME * 4);
+	}
+	else if ( healring == 0 )
+	{
+		return HEAL_TIME;
+	}
 }
 
 int Entity::getBaseManaRegen(Stat& myStats)
