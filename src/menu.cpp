@@ -7640,6 +7640,11 @@ void openLoadGameWindow(button_t* my)
 	{
 		button->x -= 124;
 	}
+	else
+	{
+		button->sizex = strlen(language[1463]) * 12 + 8; // resize to be wider
+		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2; // resize to match new width
+	}
 	button->visible = 1;
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
@@ -7662,7 +7667,7 @@ void openLoadGameWindow(button_t* my)
 	// no button
 	button = newButton();
 	strcpy(button->label, language[1463]);
-	button->sizex = strlen(language[1463]) * 12 + 8;
+	button->sizex = strlen(language[1463]) * 10 + 8;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 28;
@@ -7822,6 +7827,7 @@ void buttonConfirmDeleteSoloFile(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
 	openLoadGameWindow(nullptr);
+	playSound(153, 128);
 }
 
 void buttonConfirmDeleteMultiplayerFile(button_t* my)
@@ -7833,6 +7839,7 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
 	openLoadGameWindow(nullptr);
+	playSound(153, 128);
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
