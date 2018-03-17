@@ -808,7 +808,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 //checks if a sprite falls in certain sprite ranges
 
 static const int NUM_ITEM_STRINGS = 220;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 94;
 static const int NUM_EDITOR_SPRITES = 130;
 static const int NUM_EDITOR_TILES = 234;
 
