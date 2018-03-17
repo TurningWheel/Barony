@@ -1779,7 +1779,7 @@ void clientHandlePacket()
 			entity->yaw = camera.ang;
 			entity->pitch = PI / 8;
 
-			deleteSaveGame(); // stops save scumming c:
+			deleteSaveGame(multiplayer); // stops save scumming c:
 
 			closeBookGUI();
 

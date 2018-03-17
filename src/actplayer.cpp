@@ -1622,7 +1622,7 @@ void actPlayer(Entity* my)
 						entity->pitch = PI / 8;
 						node_t* nextnode;
 
-						deleteSaveGame(); // stops save scumming c:
+						deleteSaveGame(multiplayer); // stops save scumming c:
 
 						closeBookGUI();
 

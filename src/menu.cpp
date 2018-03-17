@@ -66,6 +66,7 @@ bool lobby_window = false;
 bool settings_window = false;
 int connect_window = 0;
 int charcreation_step = 0;
+int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
 
 /*
  * settings_tab
@@ -1192,6 +1193,23 @@ void handleMainMenu(bool mode)
 		if ( subwindow )
 		{
 			drawWindowFancy(subx1, suby1, subx2, suby2);
+			if ( loadGameSaveShowRectangle > 0 )
+			{
+				SDL_Rect saveBox;
+				saveBox.x = subx1 + 4;
+				saveBox.y = suby1 + TTF12_HEIGHT * 2;
+				saveBox.w = subx2 - subx1 - 8;
+				saveBox.h = TTF12_HEIGHT * 3;
+				drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
+				drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+				if ( loadGameSaveShowRectangle == 2 )
+				{
+					saveBox.y = suby1 + TTF12_HEIGHT * 5 + 2;
+					//drawTooltip(&saveBox);
+					drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
+					drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+				}
+			}
 			if ( subtext != NULL )
 			{
 				if ( strncmp(subtext, language[740], 12) )
@@ -1203,6 +1221,10 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
 				}
 			}
+		}
+		else
+		{
+			loadGameSaveShowRectangle = 0;
 		}
 
 		// process button actions
@@ -4180,7 +4202,7 @@ void handleMainMenu(bool mode)
 			{
 				// restarting game, make a highscore
 				saveScore();
-				deleteSaveGame();
+				deleteSaveGame(multiplayer);
 				loadingsavegame = 0;
 			}
 			camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
@@ -4670,7 +4692,7 @@ void handleMainMenu(bool mode)
 			// delete save game
 			if ( !savethisgame )
 			{
-				deleteSaveGame();
+				deleteSaveGame(multiplayer);
 			}
 			else
 			{
@@ -6297,7 +6319,7 @@ void buttonQuitConfirm(button_t* my)
 void buttonQuitNoSaveConfirm(button_t* my)
 {
 	buttonQuitConfirm(my);
-	deleteSaveGame();
+	deleteSaveGame(multiplayer);
 
 	// make a highscore!
 	saveScore();
@@ -6346,6 +6368,7 @@ void buttonCloseSubwindow(button_t* my)
 	{
 		return;
 	}
+	loadGameSaveShowRectangle = 0;
 	if ( score_window )
 	{
 		// reset class loadout
@@ -7566,14 +7589,20 @@ void openLoadGameWindow(button_t* my)
 		strcat(subtext, saveGameName);
 		strcat(subtext, "\n\n");
 		strncpy(saveGameName, getSaveGameName(false), 1024);
+		loadGameSaveShowRectangle = 2;
+
+		suby1 = yres / 2 - 152;
+		suby2 = yres / 2 + 152;
 	}
 	else if ( singleplayerSave )
 	{
 		strncpy(saveGameName, getSaveGameName(true), 1024);
+		loadGameSaveShowRectangle = 1;
 	}
 	else if ( multiplayerSave )
 	{
 		strncpy(saveGameName, getSaveGameName(false), 1024);
+		loadGameSaveShowRectangle = 1;
 	}
 	strcat(subtext, saveGameName);
 	strcat(subtext, language[1461]);
@@ -7642,6 +7671,168 @@ void openLoadGameWindow(button_t* my)
 	button->focused = 1;
 	button->key = SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	// delete savegame button
+	if ( singleplayerSave || multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2961]);
+		button->sizex = strlen(language[2961]) * 12 + 8;
+		button->sizey = 20;
+		button->x = subx2 - button->sizex - 8;
+		button->y = suby1 + TTF12_HEIGHT * 2 + 4;
+		button->action = &buttonDeleteSavedSoloGame;
+		button->visible = 1;
+		button->focused = 1;
+	}
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2961]);
+		button->sizex = strlen(language[2961]) * 12 + 8;
+		button->sizey = 20;
+		button->x = subx2 - button->sizex - 8;
+		button->y = suby1 + TTF12_HEIGHT * 5 + 6;
+		button->action = &buttonDeleteSavedMultiplayerGame;
+		button->visible = 1;
+		button->focused = 1;
+	}
+}
+
+void buttonDeleteSavedSoloGame(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	loadGameSaveShowRectangle = 1;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 288;
+	subx2 = xres / 2 + 288;
+	suby1 = yres / 2 - 80;
+	suby2 = yres / 2 + 80;
+	char saveGameName[1024];
+	strcpy(subtext, language[2963]);
+	strncpy(saveGameName, getSaveGameName(true), 1024);
+	strcat(subtext, saveGameName);
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// delete button
+	button = newButton();
+	strcpy(button->label, language[2961]);
+	button->sizex = strlen(language[2961]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 56;
+	button->action = &buttonConfirmDeleteSoloFile;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	//button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	// close button
+	button = newButton();
+	strcpy(button->label, language[2962]);
+	button->sizex = strlen(language[2962]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void buttonDeleteSavedMultiplayerGame(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	loadGameSaveShowRectangle = 1;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 288;
+	subx2 = xres / 2 + 288;
+	suby1 = yres / 2 - 80;
+	suby2 = yres / 2 + 80;
+	char saveGameName[1024];
+	strcpy(subtext, language[2964]);
+	strncpy(saveGameName, getSaveGameName(false), 1024);
+	strcat(subtext, saveGameName);
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// delete button
+	button = newButton();
+	strcpy(button->label, language[2961]);
+	button->sizex = strlen(language[2961]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 56;
+	button->action = &buttonConfirmDeleteMultiplayerFile;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	//button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	// close button
+	button = newButton();
+	strcpy(button->label, language[2962]);
+	button->sizex = strlen(language[2962]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void buttonConfirmDeleteSoloFile(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	loadGameSaveShowRectangle = 0;
+	deleteSaveGame(SINGLE);
+	openLoadGameWindow(nullptr);
+}
+
+void buttonConfirmDeleteMultiplayerFile(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	loadGameSaveShowRectangle = 0;
+	deleteSaveGame(SINGLE);
+	openLoadGameWindow(nullptr);
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
@@ -7650,7 +7841,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	playing_random_char = false;
 	loadingsavegame = 0;
-
+	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;
 	stats[0]->sex = static_cast<sex_t>(0);
@@ -7747,6 +7938,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 void buttonLoadSingleplayerGame(button_t* button)
 {
+	loadGameSaveShowRectangle = 0;
 	loadingsavegame = getSaveGameUniqueGameKey(true);
 	int mul = getSaveGameType(true);
 
@@ -7839,6 +8031,7 @@ void buttonLoadSingleplayerGame(button_t* button)
 
 void buttonLoadMultiplayerGame(button_t* button)
 {
+	loadGameSaveShowRectangle = 0;
 	loadingsavegame = getSaveGameUniqueGameKey(false);
 	int mul = getSaveGameType(false);
 

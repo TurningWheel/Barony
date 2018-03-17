@@ -67,6 +67,10 @@ void buttonScoreNext(button_t* my);
 void buttonScorePrev(button_t* my);
 void buttonScoreToggle(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
+void buttonDeleteSavedSoloGame(button_t* my);
+void buttonDeleteSavedMultiplayerGame(button_t* my);
+void buttonConfirmDeleteSoloFile(button_t* my);
+void buttonConfirmDeleteMultiplayerFile(button_t* my);
 void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
@@ -92,6 +96,7 @@ void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t 
 // menu variables
 extern bool settings_window;
 extern int charcreation_step;
+extern int loadGameSaveShowRectangle;
 extern Uint32 charcreation_ticks;
 extern bool playing_random_char;
 extern int settings_tab;
