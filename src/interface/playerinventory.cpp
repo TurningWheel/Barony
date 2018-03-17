@@ -1952,6 +1952,7 @@ void quickStackItems()
 					else
 					{
 						free(item2);
+						item2 = nullptr;
 					}
 				}
 			}
