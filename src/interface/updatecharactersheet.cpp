@@ -255,7 +255,7 @@ void drawSkillsSheet()
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
@@ -387,7 +387,7 @@ void drawPartySheet()
 		drawImageScaled(sidebar_unlock_bmp, nullptr, &lockbtn);
 	}
 
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 	{
 		if ( omousex >= lockbtn.x && omousex <= lockbtn.x + lockbtn.w
 			&& omousey >= lockbtn.y && omousey <= lockbtn.y + lockbtn.h )
