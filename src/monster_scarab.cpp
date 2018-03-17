@@ -105,7 +105,7 @@ void initScarab(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 2 )
+					if ( rand() % 2 || numplayers > 1 )
 					{
 						if ( rand() % 3 > 0 )
 						{
@@ -139,6 +139,10 @@ void initScarab(Entity* my, Stat* myStats)
 									break;
 							}
 							newItem(gem, static_cast<Status>(DECREPIT + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
+						}
+						if ( numplayers > 2 )
+						{
+							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + rand() % 4), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
 						}
 					}
 					break;

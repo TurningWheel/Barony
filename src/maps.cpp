@@ -2266,6 +2266,16 @@ void assignActions(map_t* map)
 
 	prng_seed_bytes(&mapseed, sizeof(mapseed));
 
+	int balance = 0;
+	int i;
+	for ( i = 0; i < MAXPLAYERS; i++ )
+	{
+		if ( !client_disconnected[i] )
+		{
+			balance++;
+		}
+	}
+
 	// assign entity behaviors
 	for ( node = map->entities->first; node != nullptr; node = nextnode )
 	{
@@ -2531,15 +2541,6 @@ void assignActions(map_t* map)
 						}
 						else
 						{
-							int balance = 0;
-							int i;
-							for ( i = 0; i < MAXPLAYERS; i++ )
-							{
-								if ( !client_disconnected[i] )
-								{
-									balance++;
-								}
-							}
 							bool extrafood = false;
 							switch ( balance )
 							{
@@ -2550,13 +2551,13 @@ void assignActions(map_t* map)
 									}
 									break;
 								case 3:
-									if ( prng_get_uint() % 5 == 0 )
+									if ( prng_get_uint() % 6 == 0 )
 									{
 										extrafood = true;
 									}
 									break;
 								case 4:
-									if ( prng_get_uint() % 4 == 0 )
+									if ( prng_get_uint() % 5 == 0 )
 									{
 										extrafood = true;
 									}
@@ -2696,10 +2697,43 @@ void assignActions(map_t* map)
 				{
 					entity->skill[12] = 1;
 				}
-				if ( entity->sprite == 8 && entity->skill[13] == 0 )
+				if ( entity->sprite == 8 )
 				{
-					entity->skill[13] = 1; // count set by maps.cpp, otherwise set by editor
+					if ( entity->skill[13] == 0 )
+					{
+						entity->skill[13] = 1; // count set by maps.cpp, otherwise set by editor
+					}
+					else if ( entity->skill[13] == 1 )
+					{
+						if ( items[entity->skill[10]].category == FOOD )
+						{
+							switch ( balance )
+							{
+								case 2:
+									if ( prng_get_uint() % 3 == 0 )
+									{
+										entity->skill[13] += prng_get_uint() % 2;
+									}
+									break;
+								case 3:
+									if ( prng_get_uint() % 3 == 0 )
+									{
+										entity->skill[13] += prng_get_uint() % 3;
+									}
+									break;
+								case 4:
+									if ( prng_get_uint() % 2 == 0 )
+									{
+										entity->skill[13] += prng_get_uint() % 3;
+									}
+									break;
+								default:
+									break;
+							}
+						}
+					}
 				}
+
 				if ( !itemsdonebefore && !strcmp(map->name, "Start Map") )
 				{
 					entity->skill[14] = getBook("My Journal");
@@ -2769,7 +2803,7 @@ void assignActions(map_t* map)
 				entity->yaw = (prng_get_uint() % 360) * PI / 180.0;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = 10 + rand() % 100; // amount
+				entity->skill[0] = 10 + rand() % 100 + (currentlevel); // amount
 				entity->sprite = 130; // gold bag model
 				if ( !strcmp(map->name, "Sokoban") )
 				{
