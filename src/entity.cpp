@@ -8850,6 +8850,26 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	{
 		messagePlayer(clientnum, "Entity acquired new target!");
 	}*/
+
+	if ( myStats->type == LICH_ICE ) // make sure automatons don't attack the leader and vice versa...
+	{
+		Stat* targetStats = target.getStats();
+		if ( targetStats )
+		{
+			if ( targetStats->type == AUTOMATON && !strncmp(targetStats->name, "corrupted automaton", 19) )
+			{
+				return;
+			}
+		}
+	}
+	else if ( myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19) )
+	{
+		if ( target.getRace() == LICH_ICE )
+		{
+			return;
+		}
+	}
+
 	if ( monsterState != MONSTER_STATE_ATTACK && !hadOldTarget )
 	{
 		if ( myStats->type != LICH_FIRE 
@@ -8865,7 +8885,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 				{
 					monsterHitTime = 2 * HITRATE;
 				}
-				else
+				else if ( svFlags & SV_FLAG_HARDCORE )
 				{
 					monsterHitTime = HITRATE - 12;
 				}
