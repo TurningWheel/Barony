@@ -67,7 +67,8 @@ bool settings_window = false;
 int connect_window = 0;
 int charcreation_step = 0;
 int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
-
+bool singleplayerSavegameExists = false; // used on multiplayer/single player select window to store if savefile exists. 
+bool multiplayerSavegameExists = false; // used on multiplayer/single player select window to store if savefile exists. 
 /*
  * settings_tab
  * valid values:
@@ -1596,6 +1597,20 @@ void handleMainMenu(bool mode)
 						case 4:
 							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[ ] %s\n     %s", language[1332], language[1537]);
 							break;
+					}
+				}
+				if ( multiplayerselect == 0 )
+				{
+					if ( singleplayerSavegameExists )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2965]);
+					}
+				}
+				else if ( multiplayerselect > 0 )
+				{
+					if ( multiplayerSavegameExists )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2966]);
 					}
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -6369,6 +6384,8 @@ void buttonCloseSubwindow(button_t* my)
 		return;
 	}
 	loadGameSaveShowRectangle = 0;
+	singleplayerSavegameExists = false; // clear this value when closing window, user could delete savegame
+	multiplayerSavegameExists = false;  // clear this value when closing window, user could delete savegame
 	if ( score_window )
 	{
 		// reset class loadout
@@ -6457,6 +6474,8 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 5 )
 	{
+		singleplayerSavegameExists = saveGameExists(true); // load the savegames and see if they exist, once off operation.
+		multiplayerSavegameExists = saveGameExists(false); // load the savegames and see if they exist, once off operation.
 		if ( SDL_IsTextInputActive() )
 		{
 			lastname = (string)stats[0]->name;
@@ -7827,7 +7846,7 @@ void buttonConfirmDeleteSoloFile(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
 	openLoadGameWindow(nullptr);
-	playSound(153, 128);
+	playSound(153, 96);
 }
 
 void buttonConfirmDeleteMultiplayerFile(button_t* my)
@@ -7839,7 +7858,7 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
 	openLoadGameWindow(nullptr);
-	playSound(153, 128);
+	playSound(153, 96);
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
