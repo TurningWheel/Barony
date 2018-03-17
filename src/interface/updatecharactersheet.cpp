@@ -231,6 +231,28 @@ void updateCharacterSheet()
 	}
 	statsHoverText(stats[clientnum]);
 	attackHoverText(attackInfo);
+
+	// gold hover text.
+	SDL_Rect src;
+	src.x = mousex + 16;
+	src.y = mousey + 16;
+	src.h = TTF12_HEIGHT + 4;
+	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
+	if ( mouseInBounds(pos.x + 4, pos.x + pos.w, 370, 370 + TTF12_HEIGHT) )
+	{
+		drawTooltip(&src);
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2968], getInputName(impulses[IN_USE]));
+		if ( *inputPressed(impulses[IN_USE]) )
+		{
+			consoleCommand("/dropgold");
+			*inputPressed(impulses[IN_USE]) = 0;
+		}
+		else if ( *inputPressed(joyimpulses[INJOY_GAME_USE]) )
+		{
+			consoleCommand("/dropgold");
+			*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+		}
+	}
 }
 
 void drawSkillsSheet()
