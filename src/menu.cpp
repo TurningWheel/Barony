@@ -1905,11 +1905,11 @@ void handleMainMenu(bool mode)
 			}
 			if ( settings_light_flicker )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[x] %s", language[2950]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[x] %s", language[2967]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2950]);
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2967]);
 			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
