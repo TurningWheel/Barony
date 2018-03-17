@@ -7462,6 +7462,13 @@ int Entity::getReflection() const
 		return 3;
 	}
 
+	if ( stats->shield )
+	{
+		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
+		{
+			return 3;
+		}
+	}
 	if ( stats->amulet )
 	{
 		if ( stats->amulet->type == AMULET_MAGICREFLECTION )
@@ -7474,13 +7481,6 @@ int Entity::getReflection() const
 		if ( stats->cloak->type == CLOAK_MAGICREFLECTION )
 		{
 			return 1;
-		}
-	}
-	if ( stats->shield )
-	{
-		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
-		{
-			return 3;
 		}
 	}
 	return 0;
