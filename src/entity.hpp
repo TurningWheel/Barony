@@ -577,6 +577,8 @@ public:
 	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
 	// calc time required for a mana regen tick, uses equipped gear as modifiers.
 	int getManaRegenInterval(Stat& myStats); 
+	// calc time required for a hp regen tick, uses equipped gear as modifiers.
+	int getHealthRegenInterval(Stat& myStats);
 	// get mana regen from stats and proficiencies only.
 	int getBaseManaRegen(Stat& myStats);
 	// calc damage/effects for ranged weapons.

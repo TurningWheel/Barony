@@ -497,6 +497,7 @@ void statsHoverText(Stat* tmpStat)
 		{
 			"base:  %2d ",
 			"bonus: %2d ",
+			"HP regen rate: 1 / %2.1fs",
 			""
 		},
 		{
@@ -544,7 +545,7 @@ void statsHoverText(Stat* tmpStat)
 					statBonus = statGetDEX(tmpStat) - statBase;
 					break;
 				case 2:
-					numInfoLines = 2;
+					numInfoLines = 3;
 					tmp_bmp = con_bmp64;
 					statBase = tmpStat->CON;
 					statBonus = statGetCON(tmpStat) - statBase;
@@ -631,6 +632,33 @@ void statsHoverText(Stat* tmpStat)
 								if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
 								{
 									color = uint32ColorGreen(*mainsurface);
+								}
+							}
+							else
+							{
+								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], 0.f);
+							}
+						}
+						else if ( i == 2 )
+						{
+							Entity* tmp = nullptr;
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								tmp = players[clientnum]->entity;
+								real_t regen = (static_cast<real_t>(tmp->getHealthRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+								if ( regen < 0 )
+								{
+									regen = 0.f;
+									color = uint32ColorRed(*mainsurface);
+									snprintf(buf, longestline("HP regen rate: 0 / %2.1fs"), "HP regen rate: 0 / %2.1fs", (static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
+								}
+								else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
+								{
+									color = uint32ColorGreen(*mainsurface);
+								}
+								if ( regen > 0.f )
+								{
+									snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
 								}
 							}
 							else
