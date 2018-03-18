@@ -612,8 +612,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					else if ( parent && 
 							(	(hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
-								|| ( (hit.entity->getRace() == LICH_FIRE 
-								|| hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
+								|| ( (hit.entity->getRace() == LICH_FIRE || hitstats->leader_uid == parent->getUID()) && parent->getRace() == LICH_ICE) 
+								|| (parent->getRace() == LICH_ICE) && !strncmp(hitstats->name, "corrupted automaton", 19)
 							)
 						)
 					{
@@ -3415,15 +3415,18 @@ bool Entity::magicFallingCollision()
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
-			if ( entity == this )
+			if ( entity )
 			{
-				continue;
-			}
-			if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
-			{
-				hit.entity = entity;
-				//hit.side = HORIZONTAL;
-				return true;
+				if ( entity == this )
+				{
+					continue;
+				}
+				if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
+				{
+					hit.entity = entity;
+					//hit.side = HORIZONTAL;
+					return true;
+				}
 			}
 		}
 	}
