@@ -4371,12 +4371,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					return;
 				}
-				if ( (myStats->type == LICH_FIRE && entity->getRace() == LICH_ICE)
-					|| (myStats->type == LICH_ICE && entity->getRace() == LICH_FIRE) )
-				{
-					// friendship <3
-					return;
-				}
+			}
+			else if ( (myStats->type == LICH_FIRE && hit.entity->getRace() == LICH_ICE)
+				|| (myStats->type == LICH_ICE && hit.entity->getRace() == LICH_FIRE) )
+			{
+				// friendship <3
+				return;
 			}
 
 			if ( hit.entity->behavior == &actBoulder )
