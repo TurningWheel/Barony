@@ -135,7 +135,7 @@ void Entity::actChest()
 		}
 
 		int minimumQuality = 0;
-		if ( currentlevel >= 30 )
+		if ( currentlevel >= 32 )
 		{
 			minimumQuality = 10;
 		}
