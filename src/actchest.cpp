@@ -357,12 +357,13 @@ void Entity::actChest()
 				}
 				break;
 			case 5:
+			{
 				//Tools.
+				Status durability = static_cast<Status>(WORN + rand() % 3);
 				switch ( rand() % 3 )
 				{
 					case 0:
 						itemcount = rand() % 3;
-						Status durability = static_cast<Status>(WORN + rand() % 3);
 						for ( i = 0; i < itemcount; ++i )
 						{
 							newItem(TOOL_BEARTRAP, durability, 0, 1 + rand() % 3, rand(), false, inventory);
@@ -379,7 +380,6 @@ void Entity::actChest()
 						itemcount = 1 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Status durability = static_cast<Status>(WORN + rand() % 3);
 							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 						break;
@@ -387,6 +387,7 @@ void Entity::actChest()
 						break;
 				}
 				break;
+			}
 			case 6:
 				//Magic chest.
 				//So first choose what kind of magic chest it is.
