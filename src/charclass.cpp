@@ -1395,7 +1395,7 @@ void initClass(int player)
 		stats[player]->HP += 10;
 
 		// skills
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 60;
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 20;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;

@@ -3361,9 +3361,9 @@ Is it for the best that you escaped death here? Through your trials, you've
 earned power greater than they, their shattered remains proving it.#
 
 2610 You open your eyes, standing in The Magician's Guild with a wizard and bishop. 
-Their faces relax in relief.# 
+Their faces relax in relief.#
 
-2611
+2611 
 
 
 
