@@ -498,7 +498,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 
 #ifdef STEAMWORKS
-			TTF_SizeUTF8(ttf8, language[2584], &w, &h);
+			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
 				&& subwindow == 0
 				&& introstage == 1
@@ -508,15 +508,15 @@ void handleMainMenu(bool mode)
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					playSound(139, 64);
-					SteamFriends()->ActivateGameOverlayToWebPage(language[2570]);
+					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2584]);
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2549], steamOnlinePlayers);
 			}
-			else
+			else if ( SteamUser()->BLoggedOn() )
 			{
-				ttfPrintText(ttf8, xres - 8 - w, 8, language[2584]);
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[2549], steamOnlinePlayers);
 			}
-			h2 = h;
+			/*h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
 				&& subwindow == 0
@@ -534,7 +534,7 @@ void handleMainMenu(bool mode)
 			else if ( SteamUser()->BLoggedOn() )
 			{
 				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
-			}
+			}*/
 			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
