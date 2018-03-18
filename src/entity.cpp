@@ -6514,6 +6514,15 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( myStats->type == HUMAN && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
+	{
+		return true;
+	}
+	else if ( yourStats->type == HUMAN && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
+	{
+		return true;
+	}
+
 	// if you have a leader, check whether we are enemies instead
 	Entity* yourLeader = NULL;
 	if ( yourStats->leader_uid )
@@ -6628,6 +6637,15 @@ bool Entity::checkFriend(Entity* your)
 	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) )
 	{
 		return true;
+	}
+
+	if ( myStats->type == HUMAN && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
+	{
+		return false;
+	}
+	else if ( yourStats->type == HUMAN && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
+	{
+		return false;
 	}
 
 	// if you have a leader, check whether we are friends instead
