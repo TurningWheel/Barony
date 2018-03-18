@@ -139,9 +139,9 @@ void updateCharacterSheet()
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+		if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 		{
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
 				camera_charsheet_offsetyaw += 0.05;
 				if ( camera_charsheet_offsetyaw > 2 * PI )
@@ -156,9 +156,9 @@ void updateCharacterSheet()
 		rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
 		rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
 		drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
-		if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+		if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 		{
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
 			{
 				camera_charsheet_offsetyaw -= 0.05;
 				if ( camera_charsheet_offsetyaw < 0.f )
@@ -273,7 +273,7 @@ void drawSkillsSheet()
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
@@ -405,7 +405,7 @@ void drawPartySheet()
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
 
-	if ( mousestatus[SDL_BUTTON_LEFT] )
+	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 	{
 		if ( omousex >= button.x && omousex <= button.x + button.w
 			&& omousey >= button.y && omousey <= button.y + button.h )
