@@ -1467,6 +1467,10 @@ void consoleCommand(char* command_str)
 		command_str[8] = 0;
 		loadLanguage(command_str + 6);
 	}
+	else if ( !strncmp(command_str, "/mapseed", 8) )
+	{
+		messagePlayer(clientnum, "%d", mapseed);
+	}
 	else if (!strncmp(command_str, "/reloadlang", 11))
 	{
 		reloadLanguage();
