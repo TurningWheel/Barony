@@ -347,7 +347,7 @@ void Entity::actChest()
 						for ( i = 0; i < itemcount; ++i )
 						{
 							Status durability = static_cast<Status>(WORN + rand() % 3);
-							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 					}
 					break;
@@ -380,7 +380,7 @@ void Entity::actChest()
 						for ( i = 0; i < itemcount; ++i )
 						{
 							Status durability = static_cast<Status>(WORN + rand() % 3);
-							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 						break;
 					default:
@@ -460,7 +460,7 @@ void Entity::actChest()
 								break;
 							case 4:
 								//A phyregian's hat/fez hat. Item 38.
-								if ( rand() % 4 == 0 )
+								if ( rand() % 5 == 0 )
 								{
 									newItem(HAT_FEZ, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 								}
