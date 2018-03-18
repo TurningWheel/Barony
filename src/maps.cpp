@@ -1964,7 +1964,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 							if ( currentlevel > 15 )
 							{
 								entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
-								entity->monsterStoreType = 1; // weaker version
+								if ( currentlevel < 25 )
+								{
+									entity->monsterStoreType = 1; // weaker version
+								}
 							}
 							else
 							{
