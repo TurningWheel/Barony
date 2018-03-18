@@ -90,7 +90,7 @@ void actSummonTrap(Entity* my)
 				}
 				
 
-				if ( (SUMMONTRAP_FAILURERATE != 0) && (prng_get_uint() % 100 < SUMMONTRAP_FAILURERATE) )
+				if ( (SUMMONTRAP_FAILURERATE != 0) && (rand() % 100 < SUMMONTRAP_FAILURERATE) )
 				{
 					// trap breaks!
 					SUMMONTRAP_FIRED = 1;
