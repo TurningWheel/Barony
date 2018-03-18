@@ -160,7 +160,9 @@ void buyItemFromShop(Item* item)
 			shopspeech = language[197 + rand() % 3];
 		}
 		shoptimer = ticks - 1;
-		newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, &stats[clientnum]->inventory);
+		Item* itemToPickup = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
+		itemPickup(clientnum, itemToPickup);
+
 		stats[clientnum]->GOLD -= item->buyValue(clientnum);
 		playSound(89, 64);
 		int ocount = item->count;
