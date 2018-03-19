@@ -97,3 +97,27 @@ extern void (*cpp_SteamServerClientWrapper_OnLobbyEntered)(void* pCallback, bool
 extern void (*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(void* pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyMatchList_t.
 extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void* pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 extern void (*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)(void* steamID);
+
+class CSteamLeaderboards
+{
+private:
+	SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
+public:
+	int m_nLeaderboardEntries; // How many entries do we have?
+	LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+
+	CSteamLeaderboards();
+	~CSteamLeaderboards() {};
+
+	void FindLeaderboard(const char *pchLeaderboardName);
+	//bool UploadScore(int score);
+	bool DownloadScores();
+
+	void OnFindLeaderboard(LeaderboardFindResult_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardFindResult_t> m_callResultFindLeaderboard;
+	/*void OnUploadScore(LeaderboardScoreUploaded_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardScoreUploaded_t> m_callResultUploadScore;
+	*/
+	void OnDownloadScore(LeaderboardScoresDownloaded_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardScoresDownloaded_t> m_callResultDownloadScore;
+};
