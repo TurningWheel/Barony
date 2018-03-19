@@ -2061,12 +2061,12 @@ void clientHandlePacket()
 		magicRightHand = nullptr;
 
 		// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 		if ( sound_group )
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 		if ( sound_group )
 		{
 			OPENAL_ChannelGroup_Stop(sound_group);
