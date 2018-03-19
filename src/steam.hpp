@@ -105,6 +105,7 @@ private:
 public:
 	int m_nLeaderboardEntries; // How many entries do we have?
 	LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+	std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
 
 	CSteamLeaderboards();
 	~CSteamLeaderboards() {};
