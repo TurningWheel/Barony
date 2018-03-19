@@ -118,7 +118,7 @@ Stat::Stat(Sint32 sprite) :
 	this->amulet = NULL;
 	this->ring = NULL;
 	this->mask = NULL;
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
+#if defined(USE_FMOD) || defined(USE_OPENAL)
 	this->monster_sound = NULL;
 #endif
 	this->monster_idlevar = 1;
