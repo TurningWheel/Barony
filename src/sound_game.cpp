@@ -28,7 +28,7 @@
 
 -------------------------------------------------------------------------------*/
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 {
 	if (no_sound)
@@ -671,7 +671,7 @@ void handleLevelMusic()
 	}
 }
 
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol)
 {
 	if (no_sound)
