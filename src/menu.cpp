@@ -4275,12 +4275,12 @@ void handleMainMenu(bool mode)
 			if ( multiplayer != CLIENT )
 			{
 				// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 				if ( sound_group )
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
@@ -4474,12 +4474,12 @@ void handleMainMenu(bool mode)
 				}
 
 				// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 				if ( sound_group )
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
@@ -4652,12 +4652,12 @@ void handleMainMenu(bool mode)
 			}
 
 			// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 			if ( sound_group )
 			{
 				FMOD_ChannelGroup_Stop(sound_group);
 			}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 			if ( sound_group )
 			{
 				OPENAL_ChannelGroup_Stop(sound_group);
@@ -7300,10 +7300,10 @@ void applySettings()
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 #endif
