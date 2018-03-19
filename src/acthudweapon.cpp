@@ -152,10 +152,10 @@ void actHudArm(Entity* my)
 	//messagePlayer(0, "my y: %f, my z: %f", my->y, my->z);
 }
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 FMOD_CHANNEL* bowDrawingSound = NULL;
 FMOD_BOOL bowDrawingSoundPlaying = 0;
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 OPENAL_SOUND* bowDrawingSound = NULL;
 ALboolean bowDrawingSoundPlaying = 0;
 #else
@@ -346,7 +346,7 @@ void actHudWeapon(Entity* my)
 			{
 				unsigned int position = 0;
 				unsigned int length = 0;
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 				OPENAL_Channel_GetPosition(bowDrawingSound, &position);
 				OPENAL_Sound_GetLength(sounds[246], &length);
 
@@ -438,7 +438,7 @@ void actHudWeapon(Entity* my)
 #ifdef SOUND
 	if ( bowDrawingSound )
 	{
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 		ALboolean tempBool = bowDrawingSoundPlaying;
 		OPENAL_Channel_IsPlaying(bowDrawingSound, &bowDrawingSoundPlaying);
 #else
@@ -694,7 +694,7 @@ void actHudWeapon(Entity* my)
 #ifdef SOUND
 						if ( bowDrawingSoundPlaying && bowDrawingSound )
 						{
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 							OPENAL_Channel_Stop(bowDrawingSound);
 #else
 							FMOD_Channel_Stop(bowDrawingSound);
