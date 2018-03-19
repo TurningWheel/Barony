@@ -104,6 +104,7 @@ int initApp(char* title, int fullscreen)
 		return 1;
 	}
 	steam_init = true;
+	g_SteamLeaderboards = new CSteamLeaderboards();
 #endif
 
 	window_title = title;
@@ -2123,6 +2124,10 @@ int deinitApp()
 	{
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
+		if ( g_SteamLeaderboards )
+		{
+			delete g_SteamLeaderboards;
+		}
 		SteamAPI_Shutdown();
 	}
 #endif

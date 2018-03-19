@@ -21,7 +21,10 @@
 #include "../menu.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
-
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "../steam.hpp"
+#endif
 
 //Prototype helper functions for player inventory helper functions.
 void itemContextMenu();
@@ -687,7 +690,7 @@ void updatePlayerInventory()
 	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
 	drawRect(&pos, 0, 224);
 
-	if (game_controller)
+	if ( game_controller )
 	{
 		if ( gui_mode == GUI_MODE_SHOP )
 		{
@@ -773,6 +776,71 @@ void updatePlayerInventory()
 		playSound(139, 64);
 	}
 
+
+
+#ifdef STEAMWORKS
+if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
+{
+	if ( keystatus[SDL_SCANCODE_P] )
+	{
+		g_SteamLeaderboards->FindLeaderboard("Feet Traveled");
+		messagePlayer(0, "Grabbing leaderboard");
+		g_SteamLeaderboards->DownloadScores();
+		keystatus[SDL_SCANCODE_P] = 0;
+	}
+	if ( keystatus[SDL_SCANCODE_O] )
+	{
+		g_SteamLeaderboards->DownloadScores();
+		messagePlayer(0, "Downloading scores");
+		keystatus[SDL_SCANCODE_O] = 0;
+	}
+	if ( keystatus[SDL_SCANCODE_U] )
+	{
+		if ( g_SteamLeaderboards->m_nLeaderboardEntries > 0 )
+		{
+			messagePlayer(0, "current leaderboard rank: %d, score: %d, user: %s", g_SteamLeaderboards->m_leaderboardEntries[0].m_nGlobalRank,
+				g_SteamLeaderboards->m_leaderboardEntries[0].m_nScore, SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[0].m_steamIDUser));
+		}
+		else
+		{
+			messagePlayer(0, "no entries!");
+		}
+		keystatus[SDL_SCANCODE_U] = 0;
+	}
+}
+	/*bool bFailed = false;
+	if ( SteamUser()->BLoggedOn() )
+	{
+		SteamUtils()->GetAPICallResult(SteamAPICall_FindLeaderboard, &leaderboardFindResult, sizeof(LeaderboardFindResult_t), 1104, &bFailed);
+		if ( leaderboardFindResult.m_hSteamLeaderboard != 0 )
+		{
+			messagePlayer(0, "Leaderboard Find: %d", leaderboardFindResult.m_bLeaderboardFound);
+			currentSteamLeaderboard = leaderboardFindResult.m_hSteamLeaderboard;
+		}
+		SteamUtils()->GetAPICallResult(SteamAPICall_UploadLeaderboardScore, &leaderboardScoreUploaded, sizeof(LeaderboardScoreUploaded_t), 1106, &bFailed);
+		if ( leaderboardScoreUploaded.m_bSuccess )
+		{
+			messagePlayer(0, "Leaderboard score upload true, score %d, updated value %d", leaderboardScoreUploaded.m_nScore, leaderboardScoreUploaded.m_bScoreChanged);
+			messagePlayer(0, "Leaderboard score rank: %d, previous %d", leaderboardScoreUploaded.m_nGlobalRankNew, leaderboardScoreUploaded.m_nGlobalRankPrevious);
+		}
+		
+	}
+
+	if ( keystatus[SDL_SCANCODE_U] )
+	{
+		if ( SteamUser()->BLoggedOn() )
+		{
+			if ( currentSteamLeaderboard != 0 )
+			{
+				int score = rand() % 5;
+				int32 leaderboardParameters[10] = { 0 };
+				messagePlayer(0, "Leaderboard Upload: %d", score);
+				SteamAPICall_UploadLeaderboardScore = SteamUserStats()->UploadLeaderboardScore(currentSteamLeaderboard, k_ELeaderboardUploadScoreMethodKeepBest, score, leaderboardParameters, 10);
+			}
+		}
+		keystatus[SDL_SCANCODE_U] = 0;
+	}*/
+#endif // STEAMWORKS
 	// draw grid
 	pos.x = x;
 	pos.y = y;

@@ -13,6 +13,10 @@
 
 #include <vector>
 #include <random>
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+#endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #define VERSION "v3.1.0"
@@ -229,3 +233,8 @@ extern std::vector<std::string> randomPlayerNamesFemale;
 void loadRandomNames();
 
 void mapLevel(int player);
+
+#ifdef STEAMWORKS
+extern CSteamLeaderboards* g_SteamLeaderboards;
+#endif // STEAMWORKS
+
