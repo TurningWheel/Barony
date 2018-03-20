@@ -1792,7 +1792,7 @@ void handleMainMenu(bool mode)
 		}
 
 		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 && numSteamLobbies > 0 )
+		if ( hoveringSelection >= 0 && numSteamLobbies > 0 && hoveringSelection < numSteamLobbies )
 		{
 			drawTooltip(&flagsBox);
 			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 2, flagsBoxText);
