@@ -134,6 +134,16 @@ void Entity::actChest()
 			}
 		}
 
+		int minimumQuality = 0;
+		if ( currentlevel >= 32 )
+		{
+			minimumQuality = 10;
+		}
+		else if ( currentlevel >= 18 )
+		{
+			minimumQuality = 5;
+		}
+
 		switch (chesttype)   //Note that all of this needs to be properly balanced over time.
 		{
 			//TODO: Make all applicable item additions work on a category based search?
@@ -143,13 +153,15 @@ void Entity::actChest()
 				for (i = 0; i < itemcount; ++i)
 				{
 					//And add the current entity to it.
-					int itemnum = rand() % NUMITEMS;
-					while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 5 )
-					{
-						//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
-						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
-					}
-					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					//int itemnum = rand() % NUMITEMS;
+					//while (itemnum == SPELL_ITEM || (items[itemnum].level == -1) || items[itemnum].level > currentlevel + 5 )
+					//{
+					//	//messagePlayer(0, "Skipping item %d, level %d", itemnum, items[itemnum].level);
+					//	itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell or invalid item.
+					//}
+					//newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					int cat = rand() % (NUMCATEGORIES - 1); // exclude spell_cat
+					newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
 				break;
 			case 1:
@@ -161,7 +173,12 @@ void Entity::actChest()
 				else
 				{
 					//Some worthless garbage. Like a rock. //TODO: Sometimes spawn item 139, worthless piece of glass. Maybe go a step further and have a random amount of items, say 1 - 5, and they can be either rock or the worthless piece of glass or any other garbage.
-					newItem(GEM_ROCK, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					itemcount = (rand() % 3) + 1;
+					int itemStatus = WORN + rand() % 3;
+					for ( i = 0; i < itemcount; ++i )
+					{
+						newItem(GEM_ROCK, static_cast<Status>(itemStatus), 0, 1, rand(), false, inventory);
+					}
 				}
 				break;
 			case 2:
@@ -170,7 +187,8 @@ void Entity::actChest()
 				itemcount = (rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i)
 				{
-					newItem(static_cast<ItemType>(FOOD_BREAD + (rand() % 7)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					//newItem(static_cast<ItemType>(FOOD_BREAD + (rand() % 7)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					newItem(itemLevelCurve(FOOD, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
 				break;
 			case 3:
@@ -193,12 +211,14 @@ void Entity::actChest()
 					if (rand() % 2)
 					{
 						//Spawn a ring.
-						newItem(static_cast<ItemType>(RING_ADORNMENT + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//newItem(static_cast<ItemType>(RING_ADORNMENT + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						newItem(itemLevelCurve(RING, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					}
 					else
 					{
 						//Spawn an amulet.
-						newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rand() % 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rand() % 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						newItem(itemLevelCurve(AMULET, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					}
 				}
 				break;
@@ -211,18 +231,19 @@ void Entity::actChest()
 					case 0:
 						//Only a weapon. Items 0 - 16.
 					{
-						int item = rand() % 18;
-						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
-						if (item < 16)
-							//Almost every weapon.
-						{
-							newItem(static_cast<ItemType>(rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else
-							//Crossbow.
-						{
-							newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
+						//int item = rand() % 18;
+						////Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
+						//if (item < 16)
+						//	//Almost every weapon.
+						//{
+						//	newItem(static_cast<ItemType>(rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						//else
+						//	//Crossbow.
+						//{
+						//	newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					}
 					break;
 					case 1:
@@ -234,95 +255,99 @@ void Entity::actChest()
 						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						 * 16 - 19 are the hats & helmets, items 40 - 43
 						 */
-						int item = rand() % 15;
-						if (item <= 1)
-							//Steel shields. Items 17 & 18.
-						{
-							newItem(static_cast<ItemType>(17 + rand() % 2), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 5)
-							//Gauntlets. Items 20 - 23.
-						{
-							if ( rand() % 3 > 0 )
-							{
-								newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-							}
-							else
-							{
-								// new gauntlets
-								newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-							}
-						}
-						else if (item <= 10)
-							//Hats & helmets. Items 40 - 43.
-						{
-							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 15)
-							//Boots & shirts. Items 28 - 37.
-						{
-							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
+						//int item = rand() % 15;
+						//if (item <= 1)
+						//	//Steel shields. Items 17 & 18.
+						//{
+						//	newItem(static_cast<ItemType>(17 + rand() % 2), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						//else if (item <= 5)
+						//	//Gauntlets. Items 20 - 23.
+						//{
+						//	if ( rand() % 3 > 0 )
+						//	{
+						//		newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//	}
+						//	else
+						//	{
+						//		// new gauntlets
+						//		newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//	}
+						//}
+						//else if (item <= 10)
+						//	//Hats & helmets. Items 40 - 43.
+						//{
+						//	newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						//else if (item <= 15)
+						//	//Boots & shirts. Items 28 - 37.
+						//{
+						//	newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					}
 					break;
 					case 2:
 						//A weapon and an armor, chance of thrown.
 					{
-						int item = rand() % 18;
-						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
-						if (item < 16)
-							//Almost every weapon.
-						{
-							newItem(static_cast<ItemType>(rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else
-							//Crossbow.
-						{
-							newItem(static_cast<ItemType>(19), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
+						//int item = rand() % 18;
+						////Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
+						//if (item < 16)
+						//	//Almost every weapon.
+						//{
+						//	newItem(static_cast<ItemType>(rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						//else
+						//	//Crossbow.
+						//{
+						//	newItem(static_cast<ItemType>(19), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
 
-						/*
-						 * 0 - 1 are the steel shields, items 17 and 18.
-						 * 2 - 5 are the gauntlets, items 20 - 23.
-						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
-						 * 16 - 19 are the hats & helmets, items 40 - 43
-						 */
-						item = rand() % 20;
-						if (item <= 1)
-							//Steel shields. Items 17 & 18.
-						{
-							newItem(static_cast<ItemType>(17 + rand() % 2), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 5)
-							//Gauntlets. Items 20 - 23.
-						{
-							if ( rand() % 3 > 0 )
-							{
-								newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-							}
-							else
-							{
-								// new gauntlets
-								newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-							}
-						}
-						else if (item <= 10)
-							//Hats & helmets. Items 40 - 43.
-						{
-							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
-						else if (item <= 15)
-							//Boots & shirts. Items 28 - 37.
-						{
-							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						}
+						///*
+						// * 0 - 1 are the steel shields, items 17 and 18.
+						// * 2 - 5 are the gauntlets, items 20 - 23.
+						// * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
+						// * 16 - 19 are the hats & helmets, items 40 - 43
+						// */
+						//item = rand() % 20;
+						//if (item <= 1)
+						//	//Steel shields. Items 17 & 18.
+						//{
+						//	newItem(static_cast<ItemType>(17 + rand() % 2), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						//else if (item <= 5)
+						//	//Gauntlets. Items 20 - 23.
+						//{
+						//	if ( rand() % 3 > 0 )
+						//	{
+						//		newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//	}
+						//	else
+						//	{
+						//		// new gauntlets
+						//		newItem(static_cast<ItemType>(BRASS_KNUCKLES + rand() % 3), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//	}
+						//}
+						//else if (item <= 10)
+						//	//Hats & helmets. Items 40 - 43.
+						//{
+						//	newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
+						//else if (item <= 15)
+						//	//Boots & shirts. Items 28 - 37.
+						//{
+						//	newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//}
 
+						newItem(itemLevelCurve(WEAPON, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						newItem(itemLevelCurve(ARMOR, minimumQuality, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						
 						// try for thrown items.
 						itemcount = 0 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
-							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							Status durability = static_cast<Status>(WORN + rand() % 3);
+							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 					}
 					break;
@@ -332,14 +357,15 @@ void Entity::actChest()
 				}
 				break;
 			case 5:
+			{
 				//Tools.
+				Status durability = static_cast<Status>(WORN + rand() % 3);
 				switch ( rand() % 3 )
 				{
 					case 0:
-						itemcount = rand() % 2;
+						itemcount = rand() % 3;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
 							newItem(TOOL_BEARTRAP, durability, 0, 1 + rand() % 3, rand(), false, inventory);
 						}
 						// fall through
@@ -354,14 +380,14 @@ void Entity::actChest()
 						itemcount = 1 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Status durability = static_cast<Status>(DECREPIT + rand() % 4);
-							newItem(itemLevelCurve(THROWN, 0, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
 						}
 						break;
 					default:
 						break;
 				}
 				break;
+			}
 			case 6:
 				//Magic chest.
 				//So first choose what kind of magic chest it is.
@@ -382,7 +408,8 @@ void Entity::actChest()
 						itemcount = 3 + (rand() % 3);
 						for (i = 0; i < itemcount; ++i)
 						{
-							newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
 						break;
 					case 1:
@@ -390,12 +417,14 @@ void Entity::actChest()
 						itemcount = 1 + (rand() % 3);
 						for (i = 0; i < itemcount; ++i)
 						{
-							newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
 						break;
 					case 2:
 						//A staff.
-						newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						break;
 					case 3:
 						//So spawn several items at once. A wizard's chest!
@@ -404,13 +433,14 @@ void Entity::actChest()
 						itemcount = 1 + rand() % 2;
 						for (i = 0; i < itemcount; ++i)
 						{
-							newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
 
-						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-
-						newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-
+						//newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						switch (rand() % 6)
 						{
 							case 0:
@@ -430,8 +460,15 @@ void Entity::actChest()
 								newItem(CLOAK_PROTECTION, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 								break;
 							case 4:
-								//A phyregian's hat. Item 38.
-								newItem(HAT_PHRYGIAN, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+								//A phyregian's hat/fez hat. Item 38.
+								if ( rand() % 5 == 0 )
+								{
+									newItem(HAT_FEZ, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+								}
+								else
+								{
+									newItem(HAT_PHRYGIAN, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+								}
 								break;
 							case 5:
 								//A wizard's hat. Item 39.
@@ -448,7 +485,8 @@ void Entity::actChest()
 				itemcount = (rand() % 3) + 1;
 				for (i = 0; i < itemcount; ++i)
 				{
-					newItem(static_cast<ItemType>(POTION_WATER + (rand() % 15)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					//newItem(static_cast<ItemType>(POTION_WATER + (rand() % 15)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					newItem(itemLevelCurve(POTION, 0, currentlevel + 7), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
 				break;
 			default:

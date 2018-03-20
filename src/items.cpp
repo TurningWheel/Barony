@@ -2709,7 +2709,14 @@ int Item::buyValue(int player)
 	}
 
 	// cursed and status bonuses
-	value *= 1.f + beatitude / 20.f;
+	if ( beatitude > 0 )
+	{
+		value *= 1.f * beatitude * 3; // 3x multiplier for blessed gear.
+	}
+	else
+	{
+		value *= 1.f + beatitude / 2.f;
+	}
 	value *= ((int)status + 5) / 10.f;
 
 	// trading bonus

@@ -265,7 +265,16 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	}
 
 	//Abort if invalid creature (boss, shopkeep, etc).
-	if ( hitstats->type ==  MINOTAUR || hitstats->type == LICH || hitstats->type == DEVIL || hitstats->type == SHOPKEEPER || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE || hitstats->type == SHADOW )
+	if ( hitstats->type ==  MINOTAUR 
+		|| hitstats->type == LICH 
+		|| hitstats->type == DEVIL 
+		|| hitstats->type == SHOPKEEPER 
+		|| hitstats->type == LICH_ICE 
+		|| hitstats->type == LICH_FIRE 
+		|| hitstats->type == SHADOW
+		|| (hitstats->type == VAMPIRE && !strncmp(hitstats->name, "Bram Kindly", 11))
+		|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
+		)
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 		messagePlayerColor(parent->skill[2], color, language[2429]);
