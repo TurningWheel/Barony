@@ -1594,7 +1594,7 @@ void actPlayer(Entity* my)
 							continue;
 						}
 						char whatever[256];
-						snprintf(whatever, 255, "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary);
+						snprintf(whatever, 255, "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary); //Potential snprintf of 256 bytes into 255 byte destination
 						messagePlayer(c, whatever);
 					}
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1624,7 +1624,7 @@ void actPlayer(Entity* my)
 						entity->pitch = PI / 8;
 						node_t* nextnode;
 
-						deleteSaveGame(multiplayer); // stops save scumming c:
+						deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
 
 						closeBookGUI();
 
@@ -1797,6 +1797,8 @@ void actPlayer(Entity* my)
 							}
 						}
 						list_FreeAll(&stats[PLAYER_NUM]->inventory);
+
+						deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
 					}
 
 					if ( multiplayer != SINGLE )

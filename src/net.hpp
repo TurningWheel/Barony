@@ -104,3 +104,5 @@ public:
 } extern* net_handler;
 
 int steamPacketThread(void* data);
+
+void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.
