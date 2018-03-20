@@ -3308,7 +3308,7 @@ void assignActions(map_t* map)
 					case 0:
 						//10% chance
 						entity->skill[1] = 3; //Will bless all equipment.
-						if ( (prng_get_ulong()%4) != 0 )
+						if ( (rand() % 4) != 0 )
 						{
 							entity->skill[1] = 4; //Will bless only one piece of equipment.
 						}

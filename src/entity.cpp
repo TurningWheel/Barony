@@ -6998,11 +6998,11 @@ void setRandomMonsterStats(Stat* stats)
 	if ( (svFlags & SV_FLAG_HARDCORE) )
 	{
 		// spice up some stats...
-		stats->HP += rand() % ((abs(stats->HP) % 50 + 1) * 10); // each 50 HP add 10 random HP
+		int statIncrease = ((abs(stats->HP) / 20 + 1) * 10); // each 20 HP add 10 random HP
+		stats->HP += statIncrease - (rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
 		stats->MAXHP = stats->HP;
 		stats->OLDHP = stats->HP;
 
-		int statIncrease = 0; 
 		statIncrease = (abs(stats->STR) % 5 + 1) * 3; // each 5 STR add 3 more STR.
 		stats->STR += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 

@@ -212,8 +212,8 @@ void Entity::actFurniture()
 					serverSpawnGibForClient(entity);
 				}
 				playSoundEntity(this, 176, 128);
-				Entity* entity;
-				if ( (entity = uidToEntity(parent)) != NULL )
+				Entity* entity = uidToEntity(parent);
+				if ( entity != NULL )
 				{
 					entity->itemNotMoving = 0; // drop the item that was on the table
 					entity->itemNotMovingClient = 0; // clear the client item gravity flag
