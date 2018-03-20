@@ -219,7 +219,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}*/
 		if ( multiplayer == SINGLE )
 		{
-			magiccost = cast_animation.mana_left;
+			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			{
+				magiccost = 0;
+			}
+			else
+			{
+				magiccost = cast_animation.mana_left;
+			}
+
 			caster->drainMP(magiccost);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
