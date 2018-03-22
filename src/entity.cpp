@@ -115,6 +115,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
 	itemNotMovingClient(skill[19]),
+	itemSokobanReward(skill[20]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -200,7 +201,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitVerticalDirection(skill[9]),
 	actmagicOrbitLifetime(skill[10]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
-	actmagicOrbitStartZ(fskill[3])
+	actmagicOrbitStartZ(fskill[3]),
+	goldAmount(skill[0]),
+	goldAmbience(skill[1]),
+	goldSokoban(skill[2])
 {
 	int c;
 	// add the entity to the entity list
@@ -4448,7 +4452,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// on sokoban, destroying boulders spawns scorpions
 						if ( !strcmp(map.name, "Sokoban") )
 						{
-							Entity* monster = summonMonster(SCORPION, ox, oy);
+							Entity* monster = nullptr;
+							if ( rand() % 2 == 0 )
+							{
+								monster = summonMonster(INSECTOID, ox, oy);
+							}
+							else
+							{
+								monster = summonMonster(SCORPION, ox, oy);
+							}
 							if ( monster )
 							{
 								int c;
@@ -4458,6 +4470,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerColor(c, color, language[406]);
 								}
 							}
+							boulderSokobanOnDestroy(false);
 						}
 					}
 					else

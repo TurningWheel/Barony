@@ -425,6 +425,13 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalx = limbs[INSECTOID][0][0]; // 0
 				entity->focaly = limbs[INSECTOID][0][1]; // 0
 				entity->focalz = limbs[INSECTOID][0][2]; // -1.75
+				if ( multiplayer != CLIENT )
+				{
+					if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
+					{
+						strcpy(myStats->name, "lesser insectoid");
+					}
+				}
 				break;
 			case GOATMAN:
 				entity->z = 0;

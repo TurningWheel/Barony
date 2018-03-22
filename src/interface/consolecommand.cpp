@@ -1652,7 +1652,7 @@ void consoleCommand(char* command_str)
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = amount; // amount
+				entity->goldAmount = amount; // amount
 			}
 			playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
 		}
