@@ -1779,7 +1779,7 @@ void clientHandlePacket()
 			entity->yaw = camera.ang;
 			entity->pitch = PI / 8;
 
-			deleteSaveGame(multiplayer); // stops save scumming c:
+			//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
 
 			closeBookGUI();
 
@@ -3106,6 +3106,13 @@ void clientHandlePacket()
 		fadeout = true;
 		return;
 	}
+
+	// delete multiplayer save
+	if (!strncmp((char*)net_packet->data, "DSAV", 4))
+	{
+		deleteSaveGame(multiplayer);
+		return;
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -4219,3 +4226,37 @@ int steamPacketThread(void* data)
 }
 
 /* ***** END MULTITHREADED STEAM PACKET HANDLING ***** */
+
+void deleteMultiplayerSaveGames()
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+
+	//Only delete saves if no players are left alive.
+	bool lastAlive = true;
+	for ( int i = 0; i < numplayers; ++i )
+	{
+		Stat* stat = nullptr;
+		if ( players[i]->entity && (stat = players[i]->entity->getStats()) && stat->HP > 0)
+		{
+			lastAlive = false;
+		}
+	}
+	if ( !lastAlive )
+	{
+		return;
+	}
+
+	deleteSaveGame(multiplayer); // stops save scumming c:
+
+	for ( int i = 1; i < numplayers; ++i )
+	{
+		strcpy((char *)net_packet->data,"DSAV"); //Delete save game.
+		net_packet->address.host = net_clients[i - 1].host;
+		net_packet->address.port = net_clients[i - 1].port;
+		net_packet->len = 4;
+		sendPacketSafe(net_sock, -1, net_packet, i - 1);
+	}
+}

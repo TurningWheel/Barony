@@ -1706,6 +1706,8 @@ void handleMainMenu(bool mode)
 		// select/inspect lobbies
 		if ( omousex >= subx1 + 8 && omousex < subx2 - 32 && omousey >= suby1 + 26 && omousey < suby2 - 64 )
 		{
+			//Something is flawed somewhere in here, because commit 1bad2c5d9f67e0a503ca79f93b03101fbcc7c7ba had to fix the game using an inappropriate hoveringSelection.
+			//Perhaps it's as simple as setting hoveringSelection back to -1 if lobbyIDs[hoveringSelection] is in-fact null.
 			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), MAX_STEAM_LOBBIES);
 
 			// lobby info tooltip
@@ -1715,18 +1717,18 @@ void handleMainMenu(bool mode)
 				Uint32 lobbySvFlags = atoi(lobbySvFlagsChar);
 
 				int numSvFlags = 0, c;
-				for ( c = 0; c < NUM_SERVER_FLAGS; c++ )
+				for ( c = 0; c < NUM_SERVER_FLAGS; ++c )
 				{
 					if ( lobbySvFlags & power(2, c) )
 					{
-						numSvFlags++;
+						++numSvFlags;
 					}
 				}
 
 				flagsBox.x = mousex + 8;
 				flagsBox.y = mousey + 8;
 				flagsBox.w = strlen(language[1335]) * 12 + 4;
-				flagsBox.h = 16 + 12 * std::max(2, numSvFlags + 1);
+				flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
 				strcpy(flagsBoxText, language[1335]);
 				strcat(flagsBoxText, "\n");
 
@@ -1741,7 +1743,7 @@ void handleMainMenu(bool mode)
 					{
 						if ( lobbySvFlags & power(2, c) )
 						{
-							y += 12;
+							y += TTF_FontHeight(ttf12);
 							strcat(flagsBoxText, "\n");
 							char flagStringBuffer[256] = "";
 							if ( c < 5 )
@@ -1792,10 +1794,10 @@ void handleMainMenu(bool mode)
 		}
 
 		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 && numSteamLobbies > 0 )
+		if ( hoveringSelection >= 0 && numSteamLobbies > 0 && hoveringSelection < numSteamLobbies )
 		{
 			drawTooltip(&flagsBox);
-			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 2, flagsBoxText);
+			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
 		}
 	}
 #endif
