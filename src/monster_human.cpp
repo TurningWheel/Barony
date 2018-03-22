@@ -62,7 +62,14 @@ void initHuman(Entity* my, Stat* myStats)
 				if ( rand() % 25 == 0 )
 				{
 					specialMonsterVariant = 1;
-
+					int specialMonsterType = rand() % 10;
+					if ( !strncmp(map.name, "Hamlet", 6) )
+					{
+						while ( specialMonsterType == 6 ) // 2 spiders that spawn cause aggro issues in Hamlet.
+						{
+							specialMonsterType = rand() % 10;
+						}
+					}
 					switch ( rand() % 10 )
 					{
 						case 0:
