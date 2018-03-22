@@ -4387,8 +4387,6 @@ void handleMainMenu(bool mode)
 
 				if ( loadingsavegame )
 				{
-					loadingsavegame = 0;
-
 					list_t* followers = loadGameFollowers();
 					if ( followers )
 					{
@@ -4580,10 +4578,19 @@ void handleMainMenu(bool mode)
 				list_FreeAll(&safePacketsReceived[c]);
 			}
 			deleteAllNotificationMessages();
-			for (c = 0; c < MAXPLAYERS; c++)
+			if ( !loadingsavegame ) // don't delete the followers we just created!
 			{
-				list_FreeAll(&stats[c]->FOLLOWERS);
+				for (c = 0; c < MAXPLAYERS; c++)
+				{
+					list_FreeAll(&stats[c]->FOLLOWERS);
+				}
 			}
+
+			if ( loadingsavegame && multiplayer != CLIENT )
+			{
+				loadingsavegame = 0;
+			}
+
 			list_FreeAll(&removedEntities);
 			list_FreeAll(&chestInv);
 
