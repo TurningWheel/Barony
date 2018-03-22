@@ -235,19 +235,22 @@ void lichIceDie(Entity* my)
 	{
 		nextnode = node->next;
 		Entity* entity = (Entity*)node->element;
-		if ( entity == my || entity->sprite == 646 )
+		if ( entity )
 		{
-			continue;
-		}
-		if ( entity->behavior == &actMonster )
-		{
-			spawnExplosion(entity->x, entity->y, entity->z);
-			Stat* stats = entity->getStats();
-			if ( stats )
+			if ( entity == my || entity->sprite == 646 )
 			{
-				if ( stats->type != HUMAN )
+				continue;
+			}
+			if ( entity->behavior == &actMonster )
+			{
+				spawnExplosion(entity->x, entity->y, entity->z);
+				Stat* stats = entity->getStats();
+				if ( stats )
 				{
-					stats->HP = 0;
+					if ( stats->type != HUMAN )
+					{
+						stats->HP = 0;
+					}
 				}
 			}
 		}
