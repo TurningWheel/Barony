@@ -109,7 +109,10 @@ void actItem(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		my->flags[INVISIBLE] = false;
+		if ( my->itemSokobanReward != 1 )
+		{
+			my->flags[INVISIBLE] = false;
+		}
 		item = newItemFromEntity(my);
 		my->sprite = itemModel(item);
 		free(item);
