@@ -7705,7 +7705,18 @@ void openLoadGameWindow(button_t* my)
 		button->sizey = 20;
 		button->x = subx2 - button->sizex - 8;
 		button->y = suby1 + TTF12_HEIGHT * 2 + 4;
-		button->action = &buttonDeleteSavedSoloGame;
+		if ( singleplayerSave && multiplayerSave)
+		{
+			button->action = &buttonDeleteSavedSoloGame; // showing 2 entries, single player delete
+		}
+		if ( singleplayerSave && !multiplayerSave ) // showing 1 entry, single player delete
+		{
+			button->action = &buttonDeleteSavedSoloGame;
+		}
+		if ( !singleplayerSave && multiplayerSave ) // showing 1 entry, multi player delete
+		{
+			button->action = &buttonDeleteSavedMultiplayerGame;
+		}
 		button->visible = 1;
 		button->focused = 1;
 	}
@@ -7845,7 +7856,10 @@ void buttonConfirmDeleteSoloFile(button_t* my)
 	deleteallbuttons = true;
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
-	openLoadGameWindow(nullptr);
+	if ( saveGameExists(false) ) // check for multiplayer game to load up
+	{
+		openLoadGameWindow(nullptr);
+	}
 	playSound(153, 96);
 }
 
@@ -7856,8 +7870,11 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
 	loadGameSaveShowRectangle = 0;
-	deleteSaveGame(SINGLE);
-	openLoadGameWindow(nullptr);
+	deleteSaveGame(CLIENT);
+	if ( saveGameExists(true) ) // check for singleplayer game to load up
+	{
+		openLoadGameWindow(nullptr);
+	}
 	playSound(153, 96);
 }
 
