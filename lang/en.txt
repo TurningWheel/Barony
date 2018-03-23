@@ -108,7 +108,7 @@ Difficulty: Extreme#
 56 Lead Design & Programming#
 57 Audio#
 58 Programming#
-59 Character & Texture Art#
+59 Art#
 60 Additional Art#
 61 Writing#
 62 Testing#
@@ -1919,7 +1919,7 @@ Player list:
 1404 Total Score: %d#
 1405 Time#
 1406 Conduct#
-1407 Average#
+1407 No awards#
 1408 Penniless#
 1409 Foodless#
 1410 Vegetarian#
@@ -3634,5 +3634,10 @@ anyone seeking that power again, deep underground. #
 2969 The gods of Sokoban greatly reward your abilities!#
 2970 The gods of Sokoban were mildly entertained.#
 2971 The gods of Sokoban were less than impressed.#
+2972 The armor is warm against your heart.#
+2973 The helmet fills your mind with arcane whispers.#
+2974 Vibrations pulse through the earth from all around your feet when you wear the boots#
+2975 The cape carries you above the ground and you feel its power surging through your body.#
+2976 The gauntlets fill you with otherworldly defiance.#
 
 2999 end#
