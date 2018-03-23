@@ -5154,8 +5154,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
@@ -5249,8 +5249,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
@@ -5312,8 +5312,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
@@ -5389,9 +5389,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( thirdendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
@@ -5469,9 +5469,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_blessed_bmp->w) * backdrop_blessed_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
 
 		if ( fourthendmovietime >= 600 
 			|| (mousestatus[SDL_BUTTON_LEFT] 

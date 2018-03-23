@@ -26,10 +26,12 @@
 #include "../player.hpp"
 
 Uint32 svFlags = 30;
-SDL_Surface* backdrop_bmp = NULL;
-SDL_Surface* status_bmp = NULL;
-SDL_Surface* character_bmp = NULL;
-SDL_Surface* hunger_bmp = NULL;
+SDL_Surface* backdrop_minotaur_bmp = nullptr;
+SDL_Surface* backdrop_blessed_bmp = nullptr;
+SDL_Surface* backdrop_cursed_bmp = nullptr;
+SDL_Surface* status_bmp = nullptr;
+SDL_Surface* character_bmp = nullptr;
+SDL_Surface* hunger_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
@@ -154,7 +156,9 @@ bool loadInterfaceResources()
 {
 	//General GUI images.
 	font12x12_small_bmp = loadImage("images/system/font12x12_small.png");
-	backdrop_bmp = loadImage("images/system/backdrop.png");
+	backdrop_minotaur_bmp = loadImage("images/system/backdrop.png");
+	backdrop_blessed_bmp = loadImage("images/system/backdrop_blessed.png");
+	backdrop_cursed_bmp = loadImage("images/system/backdrop_cursed.png");
 	button_bmp = loadImage("images/system/ButtonHighlighted.png");
 	smallbutton_bmp = loadImage("images/system/SmallButtonHighlighted.png");
 	invup_bmp = loadImage("images/system/InventoryUpHighlighted.png");
@@ -274,9 +278,17 @@ void freeInterfaceResources()
 	{
 		SDL_FreeSurface(font12x12_small_bmp);
 	}
-	if (backdrop_bmp)
+	if (backdrop_minotaur_bmp)
 	{
-		SDL_FreeSurface(backdrop_bmp);
+		SDL_FreeSurface(backdrop_minotaur_bmp);
+	}
+	if ( backdrop_blessed_bmp )
+	{
+		SDL_FreeSurface(backdrop_blessed_bmp);
+	}
+	if ( backdrop_cursed_bmp )
+	{
+		SDL_FreeSurface(backdrop_cursed_bmp);
 	}
 	if (status_bmp)
 	{
