@@ -4819,6 +4819,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						damage++;
 					}
+					if ( myStats->type == LICH_FIRE && !hitstats->defending )
+					{
+						if ( damage <= 8 )
+						{
+							damage += (8 - damage) + rand() % 9; // 8 - 16 minimum damage.
+						}
+					}
 					if ( behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA] )
 					{
 						damage += 5; // 5 bonus damage after reductions.
