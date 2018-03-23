@@ -2565,58 +2565,88 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	// effects of being poisoned
+	// Process Poison Effect
 	if ( myStats->EFFECTS[EFF_POISONED] )
 	{
+		// Poison Resistance Amulet nullifies Poison
 		if ( myStats->amulet != NULL )
 		{
 			if ( myStats->amulet->type == AMULET_POISONRESISTANCE )
 			{
-				messagePlayer(player, language[639]);
-				messagePlayer(player, language[640]);
+				messagePlayer(player, language[639]); // "Your amulet glows a faint green."
+				messagePlayer(player, language[640]); // "The poison instantly subsides!"
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 				myStats->EFFECTS[EFF_POISONED] = false;
 				serverUpdateEffects(player);
 				this->char_poison = 0;
 			}
 		}
-		this->char_poison++;
-		if ( this->char_poison > 150 )   // three seconds
+		else
 		{
-			this->char_poison = 0;
-			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
-			this->modHP(-poisonhurt);
-			if ( myStats->HP <= 0 )
+			this->char_poison++; // Increase the Poison timer
+
+			// Deal damage every three seconds
+			if ( this->char_poison > 150 )
 			{
-				Entity* killer = uidToEntity(myStats->poisonKiller);
-				if ( killer )
+				this->char_poison = 0;
+				Sint32 poisonDamage = std::max(1 + rand() % 4 - myStats->CON, 3);
+
+				if ( buddhamode )
 				{
-					killer->awardXP(this, true, true);
+					if ( myStats->HP - poisonDamage > 0 )
+					{
+						this->modHP(-poisonDamage);
+					}
+					else
+					{
+						// Instead of killing the Buddha Player, set their HP to 1
+						this->setHP(1);
+					}
 				}
-			}
-			this->setObituary(language[1531]);
-			playSoundEntity(this, 28, 64);
-			if ( player == clientnum )
-			{
-				camera_shakex += .1;
-				camera_shakey += 10;
-			}
-			else if ( player > 0 && multiplayer == SERVER )
-			{
-				strcpy((char*)net_packet->data, "SHAK");
-				net_packet->data[4] = 10; // turns into .1
-				net_packet->data[5] = 10;
-				net_packet->address.host = net_clients[player - 1].host;
-				net_packet->address.port = net_clients[player - 1].port;
-				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player - 1);
-			}
-			if ( rand() % 5 == 0 )
-			{
-				messagePlayer(player, language[641]);
-				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
-				myStats->EFFECTS[EFF_POISONED] = false;
-				serverUpdateEffects(player);
+				else
+				{
+					this->modHP(-poisonDamage);
+
+					if ( myStats->HP <= 0 )
+					{
+						this->setObituary(language[1531]); // "is finished off by the poison."
+
+						Entity* killer = uidToEntity(myStats->poisonKiller);
+
+						if ( killer != nullptr )
+						{
+							killer->awardXP(this, true, true);
+						}
+					}
+				}
+
+				// Give the Player feedback on being hurt
+				playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+				if ( player == clientnum )
+				{
+					camera_shakex += .1;
+					camera_shakey += 10;
+				}
+				else if ( player > 0 && multiplayer == SERVER )
+				{
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = 10; // turns into .1
+					net_packet->data[5] = 10;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+
+				// Check to see if the Poison Effect ends
+				if ( rand() % 5 == 0 )
+				{
+					messagePlayer(player, language[641]); // "The poison seems to have subsided."
+					myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+					myStats->EFFECTS[EFF_POISONED] = false;
+					serverUpdateEffects(player);
+				}
 			}
 		}
 	}
