@@ -1699,22 +1699,25 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else if ( hit.entity->behavior == &actPowerCrystalBase )
 						{
-							Entity* childentity = static_cast<Entity*>((&hit.entity->children)->first->element);
-							if ( childentity != nullptr )
+							Entity* childentity = nullptr;
+							if ( hit.entity->children.first )
 							{
-
-								//Unlock crystal
-								if ( childentity->crystalSpellToActivate )
+								childentity = static_cast<Entity*>((&hit.entity->children)->first->element);
+								if ( childentity != nullptr )
 								{
-									playSoundEntity(hit.entity, 151, 128);
-									childentity->crystalSpellToActivate = 0;
-									// send the clients the updated skill.
-									serverUpdateEntitySkill(childentity, 10);
-									if ( parent )
+									//Unlock crystal
+									if ( childentity->crystalSpellToActivate )
 									{
-										if ( parent->behavior == &actPlayer )
+										playSoundEntity(hit.entity, 151, 128);
+										childentity->crystalSpellToActivate = 0;
+										// send the clients the updated skill.
+										serverUpdateEntitySkill(childentity, 10);
+										if ( parent )
 										{
-											messagePlayer(parent->skill[2], language[2358]);
+											if ( parent->behavior == &actPlayer )
+											{
+												messagePlayer(parent->skill[2], language[2358]);
+											}
 										}
 									}
 								}

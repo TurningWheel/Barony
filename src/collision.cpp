@@ -1075,21 +1075,6 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	{
 		if ( y >= 0 && y < map.height << 4 )
 		{
-			for ( node = map.entities->first; node != nullptr; node = node->next )
-			{
-				entity = (Entity*)node->element;
-				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
-				{
-					continue;
-				}
-				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
-				{
-					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
-					{
-						return 1;
-					}
-				}
-			}
 			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
 			if (map.tiles[OBSTACLELAYER + index])   // wall
 			{
@@ -1106,11 +1091,32 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 			if ( !levitating
 					&& (!map.tiles[index]
 								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
-								   && isMonster) ) )   // no floor
+										 && isMonster) ) )   // no floor
 			{
-				return 1;
+				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
+			}
+
+			for ( node = map.entities->first; node != nullptr; node = node->next )
+			{
+				entity = (Entity*)node->element;
+				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+				{
+					continue;
+				}
+				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
+				{
+					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+					{
+						return 1;
+					}
+				}
 			}
 		}
+	}
+
+	if ( logCheckObstacle )
+	{
+		++logCheckObstacleCount;
 	}
 
 	return 0;

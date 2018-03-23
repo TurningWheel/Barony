@@ -740,6 +740,17 @@ void handleMainMenu(bool mode)
 					button->action = &buttonScoreToggle;
 					button->visible = 1;
 					button->focused = 1;
+
+					// delete single score button
+					button = newButton();
+					strcpy(button->label, "delete score");
+					button->sizex = strlen("delete score") * 12 + 8;
+					button->sizey = 20;
+					button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
+					button->y = suby1 + 4;
+					button->action = &buttonDeleteCurrentScore;
+					button->visible = 1;
+					button->focused = 1;
 				}
 			}
 			else
@@ -3945,11 +3956,11 @@ void handleMainMenu(bool mode)
 		{
 			if ( scoreDisplayMultiplayer )
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[2958], score_window);
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[2958], score_window, list_Size(&topscoresMultiplayer));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[1390], score_window);
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[1390], score_window, list_Size(&topscores));
 			}
 
 			// draw character window
@@ -4137,7 +4148,10 @@ void handleMainMenu(bool mode)
 				{
 					if ( conductGameChallenges[c] != 0 )
 					{
-						strcat(tempstr, ", ");
+						if ( b > 0 )
+						{
+							strcat(tempstr, ", ");
+						}
 						if ( b > 0 && b % 4 == 0 )
 						{
 							strcat(tempstr, "\n ");
@@ -5062,7 +5076,7 @@ void handleMainMenu(bool mode)
 		}
 		else if ( creditstage == 4 )
 		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18 * 2, colorBlue, language[59]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18, colorBlue, language[59]);
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE39), yres / 2 + 9, CREDITSLINE39);
 		}
 		else if ( creditstage == 5 )
@@ -7505,6 +7519,30 @@ void buttonScoreToggle(button_t* my)
 	score_window = 1;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
 	scoreDisplayMultiplayer = !scoreDisplayMultiplayer;
+	loadScore(score_window - 1);
+}
+
+void buttonDeleteCurrentScore(button_t* my)
+{
+	node_t* node = nullptr;
+	if ( scoreDisplayMultiplayer )
+	{
+		node = list_Node(&topscoresMultiplayer, score_window - 1);
+		if ( node )
+		{
+			list_RemoveNode(node);
+			score_window = std::max(score_window - 1, 1);
+		}
+	}
+	else
+	{
+		node = list_Node(&topscores, score_window - 1);
+		if ( node )
+		{
+			list_RemoveNode(node);
+			score_window = std::max(score_window - 1, 1);
+		}
+	}
 	loadScore(score_window - 1);
 }
 
