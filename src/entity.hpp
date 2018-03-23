@@ -332,6 +332,7 @@ public:
 	//--PUBLIC ITEM SKILLS--
 	Sint32& itemNotMoving; // skill[18]
 	Sint32& itemNotMovingClient; // skill[19]
+	Sint32& itemSokobanReward; // skill[20]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
@@ -342,6 +343,11 @@ public:
 	real_t actmagicOrbitVerticalSpeed; //fskill[2]
 	real_t actmagicOrbitStartZ; //fskill[3]
 	
+	//--PUBLIC GOLD SKILLS--
+	Sint32& goldAmount; //skill[0]
+	Sint32& goldAmbience; //skill[1]
+	Sint32& goldSokoban; //skill[2]
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
@@ -860,3 +866,6 @@ Entity* summonChest(long x, long y);
 
 //Various settings variables regarding entities.
 extern bool flickerLights;
+
+//Boulder functions.
+void boulderSokobanOnDestroy(bool pushedOffLedge);

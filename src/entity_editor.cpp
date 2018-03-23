@@ -90,6 +90,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
 	itemNotMovingClient(skill[19]),
+	itemSokobanReward(skill[20]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -175,7 +176,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitVerticalDirection(skill[9]),
 	actmagicOrbitLifetime(skill[10]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
-	actmagicOrbitStartZ(fskill[3])
+	actmagicOrbitStartZ(fskill[3]),
+	goldAmount(skill[0]),
+	goldAmbience(skill[1]),
+	goldSokoban(skill[2])
 {
 	int c;
 	// add the entity to the entity list

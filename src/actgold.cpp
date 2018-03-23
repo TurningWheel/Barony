@@ -27,14 +27,11 @@
 
 -------------------------------------------------------------------------------*/
 
-#define GOLDBAG_AMOUNT my->skill[0]
-#define GOLDBAG_AMBIENCE my->skill[1]
-
 void actGoldBag(Entity* my)
 {
 	int i;
 
-	if ( my->flags[INVISIBLE] )
+	if ( my->flags[INVISIBLE] && my->goldSokoban == 1 )
 	{
 		if ( multiplayer != CLIENT )
 		{
@@ -63,10 +60,10 @@ void actGoldBag(Entity* my)
 		}
 	}
 
-	GOLDBAG_AMBIENCE--;
-	if ( GOLDBAG_AMBIENCE <= 0 )
+	my->goldAmbience--;
+	if ( my->goldAmbience <= 0 )
 	{
-		GOLDBAG_AMBIENCE = TICKS_PER_SECOND * 30;
+		my->goldAmbience = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 16 );
 	}
 
@@ -83,7 +80,7 @@ void actGoldBag(Entity* my)
 					{
 						playSoundEntity(players[i]->entity, 242 + rand() % 4, 64 );
 					}
-					stats[i]->GOLD += GOLDBAG_AMOUNT;
+					stats[i]->GOLD += my->goldAmount;
 					if ( i != 0 )
 					{
 						if ( multiplayer == SERVER )
@@ -99,13 +96,13 @@ void actGoldBag(Entity* my)
 					}
 
 					// message for item pickup
-					if ( GOLDBAG_AMOUNT == 1 )
+					if ( my->goldAmount == 1 )
 					{
 						messagePlayer(i, language[483]);
 					}
 					else
 					{
-						messagePlayer(i, language[484], GOLDBAG_AMOUNT);
+						messagePlayer(i, language[484], my->goldAmount);
 					}
 
 					// remove gold entity

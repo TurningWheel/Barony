@@ -4387,8 +4387,6 @@ void handleMainMenu(bool mode)
 
 				if ( loadingsavegame )
 				{
-					loadingsavegame = 0;
-
 					list_t* followers = loadGameFollowers();
 					if ( followers )
 					{
@@ -4580,10 +4578,19 @@ void handleMainMenu(bool mode)
 				list_FreeAll(&safePacketsReceived[c]);
 			}
 			deleteAllNotificationMessages();
-			for (c = 0; c < MAXPLAYERS; c++)
+			if ( !loadingsavegame ) // don't delete the followers we just created!
 			{
-				list_FreeAll(&stats[c]->FOLLOWERS);
+				for (c = 0; c < MAXPLAYERS; c++)
+				{
+					list_FreeAll(&stats[c]->FOLLOWERS);
+				}
 			}
+
+			if ( loadingsavegame && multiplayer != CLIENT )
+			{
+				loadingsavegame = 0;
+			}
+
 			list_FreeAll(&removedEntities);
 			list_FreeAll(&chestInv);
 
@@ -5147,8 +5154,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
@@ -5242,8 +5249,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
@@ -5305,8 +5312,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
@@ -5382,9 +5389,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( thirdendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
@@ -5462,9 +5469,9 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_blessed_bmp->w) * backdrop_blessed_bmp->h;
 		drawRect(&pos, 0, 255);
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
 
 		if ( fourthendmovietime >= 600 
 			|| (mousestatus[SDL_BUTTON_LEFT] 
@@ -7707,7 +7714,18 @@ void openLoadGameWindow(button_t* my)
 		button->sizey = 20;
 		button->x = subx2 - button->sizex - 8;
 		button->y = suby1 + TTF12_HEIGHT * 2 + 4;
-		button->action = &buttonDeleteSavedSoloGame;
+		if ( singleplayerSave && multiplayerSave)
+		{
+			button->action = &buttonDeleteSavedSoloGame; // showing 2 entries, single player delete
+		}
+		if ( singleplayerSave && !multiplayerSave ) // showing 1 entry, single player delete
+		{
+			button->action = &buttonDeleteSavedSoloGame;
+		}
+		if ( !singleplayerSave && multiplayerSave ) // showing 1 entry, multi player delete
+		{
+			button->action = &buttonDeleteSavedMultiplayerGame;
+		}
 		button->visible = 1;
 		button->focused = 1;
 	}
@@ -7847,7 +7865,10 @@ void buttonConfirmDeleteSoloFile(button_t* my)
 	deleteallbuttons = true;
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
-	openLoadGameWindow(nullptr);
+	if ( saveGameExists(false) ) // check for multiplayer game to load up
+	{
+		openLoadGameWindow(nullptr);
+	}
 	playSound(153, 96);
 }
 
@@ -7858,8 +7879,11 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
 	loadGameSaveShowRectangle = 0;
-	deleteSaveGame(SINGLE);
-	openLoadGameWindow(nullptr);
+	deleteSaveGame(CLIENT);
+	if ( saveGameExists(true) ) // check for singleplayer game to load up
+	{
+		openLoadGameWindow(nullptr);
+	}
 	playSound(153, 96);
 }
 

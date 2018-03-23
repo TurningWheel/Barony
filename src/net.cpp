@@ -3844,7 +3844,7 @@ void serverHandlePacket()
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = amount; // amount
+				entity->goldAmount = amount; // amount
 			}
 
 		}

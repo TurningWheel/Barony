@@ -487,10 +487,13 @@ void vampireDie(Entity* my)
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->behavior == &actPortal )
+			if ( entity )
 			{
-				entity->flags[INVISIBLE] = false;
-				serverUpdateEntityFlag(entity, INVISIBLE);
+				if ( entity->behavior == &actPortal )
+				{
+					entity->flags[INVISIBLE] = false;
+					serverUpdateEntityFlag(entity, INVISIBLE);
+				}
 			}
 		}
 	}

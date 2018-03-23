@@ -304,14 +304,17 @@ void cockatriceDie(Entity* my)
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->behavior == &actMagicTrap )
+			if ( entity )
 			{
-				list_RemoveNode(entity->mynode);
-			}
-			else if ( entity->behavior == &actPortal )
-			{
-				entity->flags[INVISIBLE] = false;
-				serverUpdateEntityFlag(entity, INVISIBLE);
+				if ( entity->behavior == &actMagicTrap )
+				{
+					list_RemoveNode(entity->mynode);
+				}
+				else if ( entity->behavior == &actPortal )
+				{
+					entity->flags[INVISIBLE] = false;
+					serverUpdateEntityFlag(entity, INVISIBLE);
+				}
 			}
 		}
 	}

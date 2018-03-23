@@ -1852,7 +1852,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// on sokoban, destroying boulders spawns scorpions
 							if ( !strcmp(map.name, "Sokoban") )
 							{
-								Entity* monster = summonMonster(SCORPION, ox, oy);
+								Entity* monster = nullptr;
+								if ( rand() % 2 == 0 )
+								{
+									monster = summonMonster(INSECTOID, ox, oy);
+								}
+								else
+								{
+									monster = summonMonster(SCORPION, ox, oy);
+								}
 								if ( monster )
 								{
 									int c;
@@ -1862,6 +1870,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										messagePlayerColor(c, color, language[406]);
 									}
 								}
+								boulderSokobanOnDestroy(false);
 							}
 						}
 						else

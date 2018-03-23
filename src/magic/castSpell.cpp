@@ -681,8 +681,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int c = 0;
 					for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 					{
-						stats[i]->EFFECTS[c] = false;
-						stats[i]->EFFECTS_TIMERS[c] = 0;
+						if ( c == EFF_LEVITATING && stats[i]->EFFECTS[EFF_LEVITATING] )
+						{
+							// don't unlevitate
+						}
+						else
+						{
+							stats[i]->EFFECTS[c] = false;
+							stats[i]->EFFECTS_TIMERS[c] = 0;
+						}
 					}
 					if ( players[i]->entity->flags[BURNING] )
 					{

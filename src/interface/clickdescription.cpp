@@ -176,13 +176,13 @@ void clickDescription(int player, Entity* entity)
 				}
 				else if ( entity->behavior == &actGoldBag )
 				{
-					if ( entity->skill[0] == 1 )
+					if ( entity->goldAmount == 1 )
 					{
 						messagePlayer(player, language[258]);
 					}
 					else
 					{
-						messagePlayer(player, language[259], entity->skill[0]);
+						messagePlayer(player, language[259], entity->goldAmount);
 					}
 				}
 				else if ( entity->behavior == &actCampfire)
