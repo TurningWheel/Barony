@@ -1091,9 +1091,9 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 			if ( !levitating
 					&& (!map.tiles[index]
 								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
-								   && isMonster) ) )   // no floor
+										 && isMonster) ) )   // no floor
 			{
-				return 1;
+				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
 			}
 
 			for ( node = map.entities->first; node != nullptr; node = node->next )
