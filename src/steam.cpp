@@ -28,7 +28,7 @@
 
 int numSteamLobbies = 0;
 int selectedSteamLobby = 0;
-char lobbyText[MAX_STEAM_LOBBIES][32];
+char lobbyText[MAX_STEAM_LOBBIES][48];
 void* lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 
@@ -770,12 +770,20 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 
 		// pull some info from the lobby metadata (name, players, etc)
 		const char* lobbyName = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "name"); //TODO: Again with the void pointers.
+		const char* lobbyVersion = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "ver"); //TODO: VOID.
 		int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(steamIDLobby)); //TODO MORE VOID POINTERS.
+
+		string versionText = lobbyVersion;
+		if ( versionText ==  "" )
+		{
+			//If the lobby version is null
+			versionText = "Unknown version";
+		}
 
 		if ( lobbyName && lobbyName[0] && numPlayers )
 		{
 			// set the lobby data
-			snprintf( lobbyText[iLobby], 31, "%s", lobbyName );
+			snprintf( lobbyText[iLobby], 47, "%s (%s)", lobbyName, versionText.c_str() ); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
 			lobbyPlayers[iLobby] = numPlayers;
 		}
 		else
@@ -784,7 +792,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			SteamMatchmaking()->RequestLobbyData(*static_cast<CSteamID*>(steamIDLobby));
 
 			// results will be returned via LobbyDataUpdate_t callback
-			snprintf( lobbyText[iLobby], 31, "Lobby %d", static_cast<CSteamID*>(steamIDLobby)->GetAccountID() ); //TODO: MORE VOID POINTER BUGGERY.
+			snprintf( lobbyText[iLobby], 47, "Lobby %d", static_cast<CSteamID*>(steamIDLobby)->GetAccountID() ); //TODO: MORE VOID POINTER BUGGERY.
 			lobbyPlayers[iLobby] = 0;
 		}
 	}
@@ -857,13 +865,16 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		{
 			SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
 			cpp_Free_CSteamID(currentLobby); //TODO: BUGGER THIS.
-			currentLobby = NULL;
+			currentLobby = nullptr;
 		}
 		currentLobby = cpp_LobbyCreated_Lobby(pCallback);
 
 		// set the name of the lobby
 		snprintf( currentLobbyName, 31, "%s's lobby", SteamFriends()->GetPersonaName() );
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName); //TODO: Bugger void pointer!
+
+		// set the game version of the lobby
+		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "ver", VERSION); //TODO: Bugger void pointer!
 
 		// set lobby server flags
 		char svFlagsChar[16];
