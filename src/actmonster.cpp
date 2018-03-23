@@ -427,10 +427,10 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[INSECTOID][0][2]; // -1.75
 				if ( multiplayer != CLIENT )
 				{
-					if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
-					{
-						strcpy(myStats->name, "lesser insectoid");
-					}
+				if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
+				{
+					strcpy(myStats->name, "lesser insectoid");
+				}
 				}
 				break;
 			case GOATMAN:
@@ -2967,17 +2967,28 @@ void actMonster(Entity* my)
 			}
 			if ( my->monsterMoveTime == 0 && uidToEntity(myStats->leader_uid) == NULL )
 			{
+				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
 				int goodspots = 0;
+				int centerX = static_cast<int>(my->x / 16); // grab the coordinates in small form.
+				int centerY = static_cast<int>(my->y / 16); // grab the coordinates in small form.
+				int lowerX = std::max<int>(0, centerX - (map.width / 2)); // assigned upper/lower x coords from entity start position.
+				int upperX = std::min<int>(centerX + (map.width / 2), map.width);
+
+				int lowerY = std::max<int>(0, centerY - (map.height / 2)); // assigned upper/lower y coords from entity start position.
+				int upperY = std::min<int>(centerY + (map.height / 2), map.height);
+				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
+
 				if ( myStats->type != SHOPKEEPER )
 				{
-					for ( x = 0; x < map.width; x++ )
+					for ( x = lowerX; x < upperX; x++ )
 					{
-						for ( y = 0; y < map.height; y++ )
+						for ( y = lowerY; y < upperY; y++ )
 						{
 							if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 							{
 								goodspots++;
+								possibleCoordinates.push_back(std::make_pair(x, y));
 							}
 						}
 					}
@@ -2993,6 +3004,7 @@ void actMonster(Entity* my)
 								if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 								{
 									goodspots++;
+									possibleCoordinates.push_back(std::make_pair(x, y));
 								}
 						}
 					}
@@ -3002,62 +3014,31 @@ void actMonster(Entity* my)
 					int chosenspot = rand() % goodspots;
 					int currentspot = 0;
 					bool foundit = false;
-					x = 0;
-					y = 0;
-					if ( myStats->type != SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+					x = possibleCoordinates.at(chosenspot).first;
+					y = possibleCoordinates.at(chosenspot).second;
+					//messagePlayer(0, "Chose distance: %.1fpercent", 100 * (sqrt(pow(my->x / 16 - (x), 2) + pow(my->y / 16 - (y), 2))) / sqrt(pow(map.height, 2) + pow(map.width, 2)));
+					/*for ( x = 0; x < map.width; x++ )
 					{
-						for ( x = 0; x < map.width; x++ )
+						for ( y = 0; y < map.height; y++ )
 						{
-							for ( y = 0; y < map.height; y++ )
+							if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 							{
-								if ( !checkObstacle(x << 4, y << 4, my, NULL) )
+								if ( currentspot == chosenspot )
 								{
-									if ( currentspot == chosenspot )
-									{
-										foundit = true;
-										break;
-									}
-									else
-									{
-										currentspot++;
-									}
+									foundit = true;
+									break;
+								}
+								else
+								{
+									currentspot++;
 								}
 							}
-							if ( foundit )
-							{
-								break;
-							}
 						}
-					}
-					else
-					{
-						for ( x = 0; x < map.width; x++ )
+						if ( foundit )
 						{
-							for ( y = 0; y < map.height; y++ )
-							{
-								if ( x << 4 >= my->monsterPathBoundaryXStart && x << 4 <= my->monsterPathBoundaryXEnd 
-									&& y << 4 >= my->monsterPathBoundaryYStart && y << 4 <= my->monsterPathBoundaryYEnd )
-								{
-									if ( !checkObstacle(x << 4, y << 4, my, NULL) )
-									{
-										if ( currentspot == chosenspot )
-										{
-											foundit = true;
-											break;
-										}
-										else
-										{
-											currentspot++;
-										}
-									}
-								}
-							}
-							if ( foundit )
-							{
-								break;
-							}
+							break;
 						}
-					}
+					}*/
 					path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, NULL );
 					if ( my->children.first != NULL )
 					{
