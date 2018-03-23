@@ -51,14 +51,14 @@ void actTorch(Entity* my)
 	entity->flags[GENIUS] = false;
 	entity->setUID(-3);
 
-	// check wall
-	if ( !checkObstacle( my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL ) )
+	// check wall behind me. (e.g mined or destroyed then remove torch)
+	int checkx = my->x - cos(my->yaw) * 8;
+	checkx = checkx >> 4;
+	int checky = my->y - sin(my->yaw) * 8;
+	checky = checky >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
 	{
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-		}
-		my->light = NULL;
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -135,8 +135,12 @@ void actCrystalShard(Entity* my)
 	entity->flags[GENIUS] = false;
 	entity->setUID(-3);
 
-	// check wall
-	if ( !checkObstacle(my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL) )
+	// check wall behind me. (e.g mined or destroyed then remove torch)
+	int checkx = my->x - cos(my->yaw) * 8;
+	checkx = checkx >> 4;
+	int checky = my->y - sin(my->yaw) * 8;
+	checky = checky >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
 	{
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
