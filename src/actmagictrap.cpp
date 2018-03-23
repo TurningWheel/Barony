@@ -208,7 +208,10 @@ void actMagicTrap(Entity* my)
 	}
 
 	// eliminate traps that have been destroyed.
-	if ( !checkObstacle(my->x, my->y, my, NULL) )
+	// check wall inside me.
+	int checkx = static_cast<int>(my->x) >> 4;
+	int checky = static_cast<int>(my->y) >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
 	{
 		my->removeLightField();
 		list_RemoveNode(my->mynode);

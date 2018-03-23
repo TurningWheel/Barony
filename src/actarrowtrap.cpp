@@ -15,6 +15,7 @@
 #include "entity.hpp"
 #include "sound.hpp"
 #include "collision.hpp"
+#include "net.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -34,7 +35,15 @@ void actArrowTrap(Entity* my)
 	int c;
 
 	// eliminate arrow traps that have been destroyed.
-	if ( !checkObstacle(my->x, my->y, my, NULL) )
+	// check wall inside me.
+	int checkx = static_cast<int>(my->x) >> 4;
+	int checky = static_cast<int>(my->y) >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	if ( ARROWTRAP_FIRED == 1 ) // shot my piece, time to die.
 	{
 		list_RemoveNode(my->mynode);
 		return;
