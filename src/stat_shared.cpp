@@ -185,7 +185,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			strcpy(stats->name, "Baphomet");
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 1250 + 250 * numplayers;
+			stats->HP = 1250;
 			stats->MAXHP = stats->HP;
 			stats->MP = 2000;
 			stats->MAXMP = 2000;
@@ -215,7 +215,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			strcpy(stats->name, "Baron Herx");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->HP = 1000 + 250 * numplayers;
+			stats->HP = 1000;
 			stats->MAXHP = stats->HP;
 			stats->MP = 1000;
 			stats->MAXMP = 1000;

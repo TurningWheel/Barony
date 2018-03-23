@@ -96,6 +96,15 @@ void initScarab(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			int playerCount = 0;
+			for ( c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] )
+				{
+					++playerCount;
+				}
+			}
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -105,7 +114,7 @@ void initScarab(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 2 || numplayers > 1 )
+					if ( rand() % 2 || playerCount > 1 )
 					{
 						if ( rand() % 3 > 0 )
 						{
@@ -140,7 +149,7 @@ void initScarab(Entity* my, Stat* myStats)
 							}
 							newItem(gem, static_cast<Status>(DECREPIT + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
 						}
-						if ( numplayers > 2 )
+						if ( playerCount > 2 )
 						{
 							newItem(FOOD_TOMALLEY, static_cast<Status>(DECREPIT + rand() % 4), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
 						}
