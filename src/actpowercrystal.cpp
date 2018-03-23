@@ -31,12 +31,9 @@ takes a pointer to the entity that uses it as an argument.
 
 void actPowerCrystalBase(Entity* my)
 {
-	Entity* entity;
-
-	// the rest of the function is server-side.
-	if ( multiplayer == CLIENT )
+	if ( my->flags[PASSABLE] ) // stop the compiler optimising into a different entity.
 	{
-		return;
+		my->flags[PASSABLE] = false;
 	}
 
 	return;

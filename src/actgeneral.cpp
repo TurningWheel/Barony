@@ -371,6 +371,10 @@ void actColumn(Entity* my)
 	{
 		return;
 	}
+	if ( my->flags[BLOCKSIGHT] ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
+	}
 	my->actColumn();
 }
 
