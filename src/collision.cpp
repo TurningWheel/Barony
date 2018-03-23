@@ -1075,21 +1075,6 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	{
 		if ( y >= 0 && y < map.height << 4 )
 		{
-			for ( node = map.entities->first; node != nullptr; node = node->next )
-			{
-				entity = (Entity*)node->element;
-				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
-				{
-					continue;
-				}
-				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
-				{
-					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
-					{
-						return 1;
-					}
-				}
-			}
 			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
 			if (map.tiles[OBSTACLELAYER + index])   // wall
 			{
@@ -1109,6 +1094,22 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 								   && isMonster) ) )   // no floor
 			{
 				return 1;
+			}
+
+			for ( node = map.entities->first; node != nullptr; node = node->next )
+			{
+				entity = (Entity*)node->element;
+				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+				{
+					continue;
+				}
+				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
+				{
+					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+					{
+						return 1;
+					}
+				}
 			}
 		}
 	}
