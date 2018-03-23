@@ -239,6 +239,8 @@ void actPortal(Entity* my)
 								steamAchievementClient(c, "BARONY_ACH_THESEUS_LEGACY");
 							}
 							break;
+						default:
+							break;
 					}
 					if ( strncmp(map.name, "Underworld", 10) )
 					{
@@ -430,14 +432,17 @@ void Entity::actExpansionEndGamePortal()
 			for ( node = map.creatures->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity->behavior == &actMonster )
+				if ( entity )
 				{
-					Stat* stats = entity->getStats();
-					if ( stats )
+					if ( entity->behavior == &actMonster )
 					{
-						if ( stats->type == LICH_FIRE || stats->type == LICH_ICE )
+						Stat* stats = entity->getStats();
+						if ( stats )
 						{
-							return;
+							if ( stats->type == LICH_FIRE || stats->type == LICH_ICE )
+							{
+								return;
+							}
 						}
 					}
 				}
@@ -574,14 +579,17 @@ void Entity::actMidGamePortal()
 			for ( node = map.creatures->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity->behavior == &actMonster )
+				if ( entity )
 				{
-					Stat* stats = entity->getStats();
-					if ( stats )
+					if ( entity->behavior == &actMonster )
 					{
-						if ( stats->type == LICH )
+						Stat* stats = entity->getStats();
+						if ( stats )
 						{
-							return;
+							if ( stats->type == LICH )
+							{
+								return;
+							}
 						}
 					}
 				}

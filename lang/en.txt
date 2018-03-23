@@ -3631,6 +3631,8 @@ anyone seeking that power again, deep underground. #
 2966 WARNING: CONTINUING WILL OVERWRITE YOUR EXISTING MULTIPLAYER SAVEFILE!#
 2967 light flicker#
 2968 press %s to drop gold#
-
+2969 The gods of Sokoban greatly reward your abilities!#
+2970 The gods of Sokoban were mildly entertained.#
+2971 The gods of Sokoban were less than impressed.#
 
 2999 end#

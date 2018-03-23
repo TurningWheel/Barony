@@ -1612,6 +1612,14 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/dropgold", 9) )
 	{
 		int amount = 100;
+		if ( !stats[clientnum] )
+		{
+			return;
+		}
+		else if ( stats[clientnum]->HP <= 0 )
+		{
+			return;
+		}
 		if ( stats[clientnum]->GOLD - amount < 0 )
 		{
 			amount = stats[clientnum]->GOLD;
@@ -1652,7 +1660,7 @@ void consoleCommand(char* command_str)
 				entity->flags[PASSABLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
-				entity->skill[0] = amount; // amount
+				entity->goldAmount = amount; // amount
 			}
 			playSoundEntity(players[clientnum]->entity, 242 + rand() % 4, 64);
 		}

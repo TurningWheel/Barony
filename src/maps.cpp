@@ -2793,6 +2793,11 @@ void assignActions(map_t* map)
 				entity->itemNotMoving = 1; // so the item retains its position
 				entity->itemNotMovingClient = 1; // so the item retains its position for clients
 				itemsdonebefore = true;
+				if ( !strcmp(map->name, "Sokoban") && item->type == ARTIFACT_GLOVES ) // artifact gloves.
+				{
+					entity->flags[INVISIBLE] = true;
+					entity->itemSokobanReward = 1;
+				}
 				free(item);
 				break;
 			}
@@ -2811,6 +2816,7 @@ void assignActions(map_t* map)
 				if ( !strcmp(map->name, "Sokoban") )
 				{
 					entity->flags[INVISIBLE] = true;
+					entity->goldSokoban = 1;
 				}
 				break;
 			// monster:
