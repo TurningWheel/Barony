@@ -1684,6 +1684,11 @@ void Entity::setHP(int amount)
 	entitystats->HP = std::min(std::max(0, amount), entitystats->MAXHP);
 	strncpy(entitystats->obituary, language[1500], 127);
 
+	if ( this->behavior == &actPlayer && buddhamode && entitystats->HP < 1 )
+	{
+		entitystats->HP = 1; //Buddhas never die!
+	}
+
 	int i = 0;
 	if ( multiplayer == SERVER )
 	{
