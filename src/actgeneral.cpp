@@ -156,6 +156,11 @@ void actFurniture(Entity* my)
 		return;
 	}
 
+	if ( !my->flags[BURNABLE] )
+	{
+		my->flags[BURNABLE] = true;
+	}
+
 	my->actFurniture();
 }
 
