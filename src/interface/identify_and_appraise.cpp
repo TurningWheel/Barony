@@ -405,10 +405,43 @@ int getAppraisalTime(Item* item)
 	if ( item->type != GEM_GLASS )
 	{
 		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
+		int playerCount = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				++playerCount;
+			}
+		}
+		if ( playerCount == 3 )
+		{
+			appraisal_time /= 1.25;
+		}
+		else if ( playerCount == 4 )
+		{
+			appraisal_time /= 1.5;
+		}
+		//messagePlayer(clientnum, "time: %d", appraisal_time);
 	}
 	else
 	{
 		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
+		int playerCount = 0;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( !client_disconnected[i] )
+			{
+				++playerCount;
+			}
+		}
+		if ( playerCount == 3 )
+		{
+			appraisal_time /= 1.15;
+		}
+		else if ( playerCount == 4 )
+		{
+			appraisal_time /= 1.25;
+		}
 	}
 	appraisal_time = std::min(std::max(1, appraisal_time), 36000);
 	return appraisal_time;
