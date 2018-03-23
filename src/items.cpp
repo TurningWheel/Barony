@@ -2036,6 +2036,21 @@ void useItem(Item* item, int player)
 	{
 		switch ( item->type )
 		{
+			case ARTIFACT_BREASTPIECE:
+				messagePlayer(player, language[2972]);
+				break;
+			case ARTIFACT_HELM:
+				messagePlayer(player, language[2973]);
+				break;
+			case ARTIFACT_BOOTS:
+				messagePlayer(player, language[2974]);
+				break;
+			case ARTIFACT_CLOAK:
+				messagePlayer(player, language[2975]);
+				break;
+			case ARTIFACT_GLOVES:
+				messagePlayer(player, language[2976]);
+				break;
 			case AMULET_LIFESAVING:
 				messagePlayer(player, language[2478]);
 				break;
