@@ -53,7 +53,9 @@ extern int gui_mode;
 extern int selectedItemFromHotbar;
 
 extern SDL_Surface* font12x12_small_bmp;
-extern SDL_Surface* backdrop_bmp;
+extern SDL_Surface* backdrop_minotaur_bmp;
+extern SDL_Surface* backdrop_blessed_bmp;
+extern SDL_Surface* backdrop_cursed_bmp;
 extern SDL_Surface* status_bmp;
 extern SDL_Surface* character_bmp;
 extern SDL_Surface* hunger_bmp;
