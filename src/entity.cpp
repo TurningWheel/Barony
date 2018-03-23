@@ -2254,12 +2254,44 @@ void Entity::handleEffects(Stat* myStats)
 		hungerring = 1; // slow down hunger on boss stages.
 	}
 
-	if ( (ticks % 30 == 0 && !hungerring)
-		|| (ticks % 15 == 0 && hungerring < 0)
-		|| (ticks % 120 == 0 && hungerring > 0)
-		|| (ticks % 5 == 0 && vampiricHunger)
-	)
+	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
+	if ( vampiricHunger )
 	{
+		hungerTickRate = 5;
+	}
+	else if ( hungerring > 0 )
+	{
+		hungerTickRate = 120;
+	}
+	else if ( hungerring < 0 )
+	{
+		hungerTickRate = 15;
+	}
+
+	int playerCount = 0;
+	for ( i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( !client_disconnected[i] )
+		{
+			++playerCount;
+		}
+	}
+
+	if ( !(svFlags & SV_FLAG_HARDCORE) )
+	{
+		if ( playerCount == 3 )
+		{
+			hungerTickRate *= 1.25;
+		}
+		else if ( playerCount == 4 )
+		{
+			hungerTickRate *= 1.5;
+		}
+	}
+
+	if ( ticks % hungerTickRate == 0 )
+	{
+		//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 		if ( myStats->HUNGER > 0 )
 		{
 			if ( svFlags & SV_FLAG_HUNGER )
