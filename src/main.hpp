@@ -33,6 +33,8 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 extern bool spamming;
 extern bool showfirst;
+extern bool logCheckObstacle;
+extern int logCheckObstacleCount;
 
 #include <dirent.h>
 #include <stdlib.h>

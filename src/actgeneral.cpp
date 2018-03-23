@@ -156,6 +156,11 @@ void actFurniture(Entity* my)
 		return;
 	}
 
+	if ( !my->flags[BURNABLE] )
+	{
+		my->flags[BURNABLE] = true;
+	}
+
 	my->actFurniture();
 }
 
@@ -370,6 +375,10 @@ void actColumn(Entity* my)
 	if ( !my )
 	{
 		return;
+	}
+	if ( my->flags[BLOCKSIGHT] ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
 	}
 	my->actColumn();
 }

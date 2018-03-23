@@ -187,7 +187,14 @@ void actPlayer(Entity* my)
 	{
 		return;
 	}
-
+	if ( logCheckObstacle )
+	{
+		if ( ticks % 50 == 0 )
+		{
+			messagePlayer(0, "checkObstacle() calls/sec: %d", logCheckObstacleCount);
+			logCheckObstacleCount = 0;
+		}
+	}
 	if ( spamming )
 	{
 		for (int i = 0; i < 1; ++i)

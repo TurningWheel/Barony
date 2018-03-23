@@ -38,8 +38,14 @@ void initDevil(Entity* my, Stat* myStats)
 	{
 		if ( myStats->HP == 1250 )
 		{
-			myStats->HP = 1250 + 250 * numplayers;
-			myStats->MAXHP = myStats->HP;
+			for ( c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] )
+				{
+					myStats->MAXHP += 250;
+				}
+			}
+			myStats->HP = myStats->MAXHP;
 			myStats->OLDHP = myStats->HP;
 		}
 

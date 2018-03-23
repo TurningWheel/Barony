@@ -427,10 +427,10 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[INSECTOID][0][2]; // -1.75
 				if ( multiplayer != CLIENT )
 				{
-					if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
-					{
-						strcpy(myStats->name, "lesser insectoid");
-					}
+				if ( !strncmp(map.name, "Sokoban", 7) || !strncmp(map.name, "The Labyrinth", 13) )
+				{
+					strcpy(myStats->name, "lesser insectoid");
+				}
 				}
 				break;
 			case GOATMAN:
@@ -2555,6 +2555,13 @@ void actMonster(Entity* my)
 							MONSTER_VELY = 0;
 						}
 					}
+					//messagePlayer(0, "path: %d", my->monsterPathCount);
+					++my->monsterPathCount;
+					if ( my->monsterPathCount > 50 )
+					{
+						my->monsterPathCount = 0;
+						monsterMoveAside(my, my);
+					}
 				}
 				entity->flags[PASSABLE] = true;
 				clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
@@ -2967,17 +2974,28 @@ void actMonster(Entity* my)
 			}
 			if ( my->monsterMoveTime == 0 && uidToEntity(myStats->leader_uid) == NULL )
 			{
+				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
 				int goodspots = 0;
+				int centerX = static_cast<int>(my->x / 16); // grab the coordinates in small form.
+				int centerY = static_cast<int>(my->y / 16); // grab the coordinates in small form.
+				int lowerX = std::max<int>(0, centerX - (map.width / 2)); // assigned upper/lower x coords from entity start position.
+				int upperX = std::min<int>(centerX + (map.width / 2), map.width);
+
+				int lowerY = std::max<int>(0, centerY - (map.height / 2)); // assigned upper/lower y coords from entity start position.
+				int upperY = std::min<int>(centerY + (map.height / 2), map.height);
+				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
+
 				if ( myStats->type != SHOPKEEPER )
 				{
-					for ( x = 0; x < map.width; x++ )
+					for ( x = lowerX; x < upperX; x++ )
 					{
-						for ( y = 0; y < map.height; y++ )
+						for ( y = lowerY; y < upperY; y++ )
 						{
 							if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 							{
 								goodspots++;
+								possibleCoordinates.push_back(std::make_pair(x, y));
 							}
 						}
 					}
@@ -2993,6 +3011,7 @@ void actMonster(Entity* my)
 								if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 								{
 									goodspots++;
+									possibleCoordinates.push_back(std::make_pair(x, y));
 								}
 						}
 					}
@@ -3002,62 +3021,31 @@ void actMonster(Entity* my)
 					int chosenspot = rand() % goodspots;
 					int currentspot = 0;
 					bool foundit = false;
-					x = 0;
-					y = 0;
-					if ( myStats->type != SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+					x = possibleCoordinates.at(chosenspot).first;
+					y = possibleCoordinates.at(chosenspot).second;
+					//messagePlayer(0, "Chose distance: %.1fpercent", 100 * (sqrt(pow(my->x / 16 - (x), 2) + pow(my->y / 16 - (y), 2))) / sqrt(pow(map.height, 2) + pow(map.width, 2)));
+					/*for ( x = 0; x < map.width; x++ )
 					{
-						for ( x = 0; x < map.width; x++ )
+						for ( y = 0; y < map.height; y++ )
 						{
-							for ( y = 0; y < map.height; y++ )
+							if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 							{
-								if ( !checkObstacle(x << 4, y << 4, my, NULL) )
+								if ( currentspot == chosenspot )
 								{
-									if ( currentspot == chosenspot )
-									{
-										foundit = true;
-										break;
-									}
-									else
-									{
-										currentspot++;
-									}
+									foundit = true;
+									break;
+								}
+								else
+								{
+									currentspot++;
 								}
 							}
-							if ( foundit )
-							{
-								break;
-							}
 						}
-					}
-					else
-					{
-						for ( x = 0; x < map.width; x++ )
+						if ( foundit )
 						{
-							for ( y = 0; y < map.height; y++ )
-							{
-								if ( x << 4 >= my->monsterPathBoundaryXStart && x << 4 <= my->monsterPathBoundaryXEnd 
-									&& y << 4 >= my->monsterPathBoundaryYStart && y << 4 <= my->monsterPathBoundaryYEnd )
-								{
-									if ( !checkObstacle(x << 4, y << 4, my, NULL) )
-									{
-										if ( currentspot == chosenspot )
-										{
-											foundit = true;
-											break;
-										}
-										else
-										{
-											currentspot++;
-										}
-									}
-								}
-							}
-							if ( foundit )
-							{
-								break;
-							}
+							break;
 						}
-					}
+					}*/
 					path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, NULL );
 					if ( my->children.first != NULL )
 					{
@@ -3295,16 +3283,16 @@ timeToGoAgain:
 									if ( hit.entity->behavior == &actDoor )
 									{
 										// opens the door if unlocked and monster can do it
-										if ( !hit.entity->skill[5] && my->getINT() > -2 )
+										if ( !hit.entity->doorLocked && my->getINT() > -2 )
 										{
-											if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
+											if ( !hit.entity->doorDir && !hit.entity->doorStatus )
 											{
-												hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
+												hit.entity->doorStatus = 1 + (my->x > hit.entity->x);
 												playSoundEntity(hit.entity, 21, 96);
 											}
-											else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
+											else if ( hit.entity->doorDir && !hit.entity->doorStatus )
 											{
-												hit.entity->skill[3] = 1 + (my->y < hit.entity->y);
+												hit.entity->doorStatus = 1 + (my->y < hit.entity->y);
 												playSoundEntity(hit.entity, 21, 96);
 											}
 										}
@@ -3316,30 +3304,51 @@ timeToGoAgain:
 											{
 												my->monsterAttack = my->getAttackPose(); // random attack motion
 												my->monsterHitTime = 0;
-												hit.entity->skill[4]--; // decrease door health
+												hit.entity->doorHealth--; // decrease door health
 												if ( myStats->STR > 20 )
 												{
-													hit.entity->skill[4] -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
-													hit.entity->skill[4] = std::max(hit.entity->skill[4], 0);
+													hit.entity->doorHealth -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
+													hit.entity->doorHealth = std::max(hit.entity->doorHealth, 0);
 												}
 												if ( myStats->type == MINOTAUR )
 												{
-													hit.entity->skill[4] = 0;    // minotaurs smash doors instantly
+													hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 												}
 												playSoundEntity(hit.entity, 28, 64);
-												if ( hit.entity->skill[4] <= 0 )
+												if ( hit.entity->doorHealth <= 0 )
 												{
 													// set direction of splinters
-													if ( !hit.entity->skill[0] )
+													if ( !hit.entity->doorDir )
 													{
-														hit.entity->skill[6] = (my->x > hit.entity->x);
+														hit.entity->doorSmacked = (my->x > hit.entity->x);
 													}
 													else
 													{
-														hit.entity->skill[6] = (my->y < hit.entity->y);
+														hit.entity->doorSmacked = (my->y < hit.entity->y);
 													}
 												}
 											}
+										}
+									}
+									else if ( hit.entity->behavior == &actFurniture )
+									{
+										// break it down!
+										my->monsterHitTime++;
+										if ( my->monsterHitTime >= HITRATE )
+										{
+											my->monsterAttack = my->getAttackPose(); // random attack motion
+											my->monsterHitTime = HITRATE / 4;
+											hit.entity->furnitureHealth--; // decrease door health
+											if ( myStats->STR > 20 )
+											{
+												hit.entity->furnitureHealth -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
+												hit.entity->furnitureHealth = std::max(hit.entity->furnitureHealth, 0);
+											}
+											if ( myStats->type == MINOTAUR )
+											{
+												hit.entity->furnitureHealth = 0;    // minotaurs smash furniture instantly
+											}
+											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
 									else
@@ -4063,16 +4072,16 @@ timeToGoAgain:
 								if ( hit.entity->behavior == &actDoor )
 								{
 									// opens the door if unlocked and monster can do it
-									if ( !hit.entity->skill[5] && my->getINT() > -2 )
+									if ( !hit.entity->doorLocked && my->getINT() > -2 )
 									{
-										if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
+										if ( !hit.entity->doorDir && !hit.entity->doorStatus )
 										{
-											hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
+											hit.entity->doorStatus = 1 + (my->x > hit.entity->x);
 											playSoundEntity(hit.entity, 21, 96);
 										}
-										else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
+										else if ( hit.entity->doorDir && !hit.entity->doorStatus )
 										{
-											hit.entity->skill[3] = 1 + (my->y < hit.entity->y);
+											hit.entity->doorStatus = 1 + (my->y < hit.entity->y);
 											playSoundEntity(hit.entity, 21, 96);
 										}
 									}
@@ -4084,30 +4093,51 @@ timeToGoAgain:
 										{
 											my->monsterAttack = my->getAttackPose(); // random attack motion
 											my->monsterHitTime = 0;
-											hit.entity->skill[4]--; // decrease door health
+											hit.entity->doorHealth--; // decrease door health
 											if ( myStats->STR > 20 )
 											{
-												hit.entity->skill[4] -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
-												hit.entity->skill[4] = std::max(hit.entity->skill[4], 0);
+												hit.entity->doorHealth -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
+												hit.entity->doorHealth = std::max(hit.entity->doorHealth, 0);
 											}
 											if ( myStats->type == MINOTAUR )
 											{
-												hit.entity->skill[4] = 0;    // minotaurs smash doors instantly
+												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
 											}
 											playSoundEntity(hit.entity, 28, 64);
-											if ( hit.entity->skill[4] <= 0 )
+											if ( hit.entity->doorHealth <= 0 )
 											{
 												// set direction of splinters
-												if ( !hit.entity->skill[0] )
+												if ( !hit.entity->doorDir )
 												{
-													hit.entity->skill[6] = (my->x > hit.entity->x);
+													hit.entity->doorSmacked = (my->x > hit.entity->x);
 												}
 												else
 												{
-													hit.entity->skill[6] = (my->y < hit.entity->y);
+													hit.entity->doorSmacked = (my->y < hit.entity->y);
 												}
 											}
 										}
+									}
+								}
+								else if ( hit.entity->behavior == &actFurniture )
+								{
+									// break it down!
+									my->monsterHitTime++;
+									if ( my->monsterHitTime >= HITRATE )
+									{
+										my->monsterAttack = my->getAttackPose(); // random attack motion
+										my->monsterHitTime = HITRATE / 4;
+										hit.entity->furnitureHealth--; // decrease door health
+										if ( myStats->STR > 20 )
+										{
+											hit.entity->furnitureHealth -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
+											hit.entity->furnitureHealth = std::max(hit.entity->furnitureHealth, 0);
+										}
+										if ( myStats->type == MINOTAUR )
+										{
+											hit.entity->furnitureHealth = 0;    // minotaurs smash furniture instantly
+										}
+										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
 								else if ( hit.entity->behavior == &actMonster )

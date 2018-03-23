@@ -66,6 +66,7 @@ void buttonDisconnect(button_t* my);
 void buttonScoreNext(button_t* my);
 void buttonScorePrev(button_t* my);
 void buttonScoreToggle(button_t* my);
+void buttonDeleteCurrentScore(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
 void buttonDeleteSavedSoloGame(button_t* my);
 void buttonDeleteSavedMultiplayerGame(button_t* my);
