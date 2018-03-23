@@ -15,7 +15,6 @@
 #include "entity.hpp"
 #include "sound.hpp"
 #include "collision.hpp"
-#include "net.hpp"
 
 /*-------------------------------------------------------------------------------
 
