@@ -26,6 +26,8 @@
 
 bool spamming = false;
 bool showfirst = false;
+bool logCheckObstacle = false;
+int logCheckObstacleCount = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -335,6 +337,10 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/spam", 5) )
 	{
 		spamming = !(spamming);
+	}
+	else if ( !strncmp(command_str, "/logobstacle", 12) )
+	{
+		logCheckObstacle = !(logCheckObstacle);
 	}
 	else if ( !strncmp(command_str, "/showfirst", 10) )
 	{

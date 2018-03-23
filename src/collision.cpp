@@ -1114,5 +1114,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 		}
 	}
 
+	if ( logCheckObstacle )
+	{
+		++logCheckObstacleCount;
+	}
+
 	return 0;
 }
