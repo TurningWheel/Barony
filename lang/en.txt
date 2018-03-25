@@ -3639,5 +3639,6 @@ anyone seeking that power again, deep underground. #
 2974 Vibrations pulse through the earth from all around your feet when you wear the boots#
 2975 The cape carries you above the ground and you feel its power surging through your body.#
 2976 The gauntlets fill you with otherworldly defiance.#
+2977 Cost: %d + ?? MP#
 
 2999 end#
