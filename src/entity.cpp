@@ -10765,10 +10765,10 @@ void Entity::setHardcoreStats(Stat& stats)
 		stats.MAXHP = stats.HP;
 		stats.OLDHP = stats.HP;
 
-		statIncrease = (abs(stats.STR) % 5 + 1) * 5; // each 5 STR add 4 more STR.
+		statIncrease = (abs(stats.STR) % 5 + 1) * 5; // each 5 STR add 5 more STR.
 		stats.STR += (statIncrease - (rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
-		statIncrease = (abs(stats.PER) % 5 + 1) * 5; // each 5 PER add 4 more PER.
+		statIncrease = (abs(stats.PER) % 5 + 1) * 5; // each 5 PER add 5 more PER.
 		stats.PER += (statIncrease - (rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
 		statIncrease = std::min((abs(stats.DEX) % 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
