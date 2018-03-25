@@ -7052,32 +7052,6 @@ void setRandomMonsterStats(Stat* stats)
 		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
 	}
 
-	if ( (svFlags & SV_FLAG_HARDCORE) )
-	{
-		// spice up some stats...
-		int statIncrease = ((abs(stats->HP) / 20 + 1) * 10); // each 20 HP add 10 random HP
-		stats->HP += statIncrease - (rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
-		stats->MAXHP = stats->HP;
-		stats->OLDHP = stats->HP;
-
-		statIncrease = (abs(stats->STR) % 5 + 1) * 3; // each 5 STR add 3 more STR.
-		stats->STR += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
-
-		statIncrease = (abs(stats->PER) % 5 + 1) * 3; // each 5 PER add 3 more PER.
-		stats->PER += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
-
-		statIncrease = std::min((abs(stats->DEX) % 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
-		stats->DEX += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
-
-		statIncrease = (abs(stats->CON) % 5 + 1) * 1; // each 5 CON add 1 more CON.
-		stats->CON += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
-
-		statIncrease = (abs(stats->INT) % 5 + 1) * 5; // each 5 INT add 5 more INT.
-		stats->INT += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
-
-		stats->LVL += 2;
-	}
-
 	// debug print out each monster spawned
 
 	/*messagePlayer(0, "Set stats to: ");
@@ -10781,4 +10755,44 @@ int Entity::getMagicResistance()
 	return resistance;
 }
 
+void Entity::setHardcoreStats(Stat& stats)
+{
+	if ( (svFlags & SV_FLAG_HARDCORE) )
+	{
+		// spice up some stats...
+		int statIncrease = ((abs(stats.HP) / 20 + 1) * 20); // each 20 HP add 20 random HP
+		stats.HP += statIncrease - (rand() % (std::max(statIncrease / 5, 1))); // 80%-100% of increased value
+		stats.MAXHP = stats.HP;
+		stats.OLDHP = stats.HP;
 
+		statIncrease = (abs(stats.STR) % 5 + 1) * 4; // each 5 STR add 4 more STR.
+		stats.STR += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats.PER) % 5 + 1) * 4; // each 5 PER add 4 more PER.
+		stats.PER += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = std::min((abs(stats.DEX) % 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
+		stats.DEX += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats.CON) % 5 + 1) * 1; // each 5 CON add 1 more CON.
+		stats.CON += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		statIncrease = (abs(stats.INT) % 5 + 1) * 5; // each 5 INT add 5 more INT.
+		stats.INT += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
+
+		stats.LVL += rand() % 2;
+	}
+	//messagePlayer(0, "Set stats to: ");
+	//messagePlayer(0, "MAXHP: %d", stats.MAXHP);
+	//messagePlayer(0, "HP: %d", stats.HP);
+	//messagePlayer(0, "MAXMP: %d", stats.MAXMP);
+	//messagePlayer(0, "MP: %d", stats.MP);
+	//messagePlayer(0, "Str: %d", stats.STR);
+	//messagePlayer(0, "Dex: %d", stats.DEX);
+	//messagePlayer(0, "Con: %d", stats.CON);
+	//messagePlayer(0, "Int: %d", stats.INT);
+	//messagePlayer(0, "Per: %d", stats.PER);
+	//messagePlayer(0, "Chr: %d", stats.CHR);
+	//messagePlayer(0, "LVL: %d", stats.LVL);
+	//messagePlayer(0, "GOLD: %d", stats.GOLD);
+}

@@ -78,6 +78,8 @@ void initCockatrice(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			my->setHardcoreStats(*myStats);
+
 			// always give special spell to cockatrice, undroppable.
 			newItem(SPELLBOOK_STONEBLOOD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 			// variables for potion drops below.
