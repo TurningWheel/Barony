@@ -113,9 +113,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			my->setHardcoreStats(*myStats);
+
 			// always give special spell to insectoid, undroppable.
 			newItem(SPELLBOOK_ACID_SPRAY, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
-
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )

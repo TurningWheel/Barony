@@ -120,17 +120,64 @@ void actFountain(Entity* my)
 							playSoundEntity(players[i]->entity, 52, 64);
 							//Spawn succubus.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-							if ( currentlevel < 10 )
+							Entity* spawnedMonster = nullptr;
+
+							if ( !strncmp(map.name, "Underworld", 10) )
+							{
+								Monster creature = SUCCUBUS;
+								if ( rand() % 2 )
+								{
+									creature = INCUBUS;
+								}
+								for ( int c = 0; spawnedMonster == nullptr && c < 5; ++c )
+								{
+									switch ( c )
+									{
+										case 0:
+											spawnedMonster = summonMonster(creature, my->x, my->y);
+											break;
+										case 1:
+											spawnedMonster = summonMonster(creature, my->x + 16, my->y);
+											break;
+										case 2:
+											spawnedMonster = summonMonster(creature, my->x - 16, my->y);
+											break;
+										case 3:
+											spawnedMonster = summonMonster(creature, my->x, my->y + 16);
+											break;
+										case 4:
+											spawnedMonster = summonMonster(creature, my->x, my->y - 16);
+											break;
+									}
+								}
+								if ( spawnedMonster )
+								{
+									if ( creature == INCUBUS )
+									{
+										messagePlayerColor(i, color, language[2519]);
+										Stat* tmpStats = spawnedMonster->getStats();
+										if ( tmpStats )
+										{
+											strcpy(tmpStats->name, "lesser incubus");
+										}
+									}
+									else
+									{
+										messagePlayerColor(i, color, language[469]);
+									}
+								}
+							}
+							else if ( currentlevel < 10 )
 							{
 								messagePlayerColor(i, color, language[469]);
-								summonMonster(SUCCUBUS, my->x, my->y);
+								spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
 							}
 							else if ( currentlevel < 20 )
 							{
 								if ( rand() % 2 )
 								{
-									Entity* incubus = summonMonster(INCUBUS, my->x, my->y);
-									Stat* tmpStats = incubus->getStats();
+									spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
+									Stat* tmpStats = spawnedMonster->getStats();
 									if ( tmpStats )
 									{
 										strcpy(tmpStats->name, "lesser incubus");
@@ -140,13 +187,13 @@ void actFountain(Entity* my)
 								else
 								{
 									messagePlayerColor(i, color, language[469]);
-									summonMonster(SUCCUBUS, my->x, my->y);
+									spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
 								}
 							}
 							else
 							{
 								messagePlayerColor(i, color, language[2519]);
-								Entity* incubus = summonMonster(INCUBUS, my->x, my->y);
+								spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
 							}
 							break;
 						}

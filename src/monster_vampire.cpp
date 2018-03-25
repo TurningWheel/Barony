@@ -154,6 +154,8 @@ void initVampire(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			my->setHardcoreStats(*myStats);
+
 			newItem(SPELLBOOK_VAMPIRIC_AURA, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 			newItem(SPELLBOOK_DRAIN_SOUL, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 

@@ -79,6 +79,8 @@ void initKobold(Entity* my, Stat* myStats)
 				cultist = 1 + rand() % 2;
 			}
 
+			my->setHardcoreStats(*myStats);
+
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
