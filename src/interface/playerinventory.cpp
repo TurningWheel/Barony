@@ -973,7 +973,7 @@ void updatePlayerInventory()
 	mode_pos.y = y + 60;
 	mode_pos.w = 0;
 	mode_pos.h = 0;
-	 mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
+	mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
 	if (mouse_in_bounds)
 	{
 		drawImage(inventory_mode_spell_highlighted_img, NULL, &mode_pos);
@@ -1060,8 +1060,15 @@ void updatePlayerInventory()
 							spell_t* spell = getSpellFromItem(item);
 							if (spell)
 							{
-								char tempstr[32];
-								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+								char tempstr[64];
+								if ( spell->ID == SPELL_DOMINATE )
+								{
+									snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
+								}
+								else
+								{
+									snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+								}
 								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 								src.h = TTF12_HEIGHT * 2 + 8;
 								drawTooltip(&src);

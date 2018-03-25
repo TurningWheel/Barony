@@ -301,9 +301,10 @@ void cockatriceDie(Entity* my)
 	Entity* entity = nullptr;
 	if ( multiplayer != CLIENT && !strncmp(map.name, "Cockatrice Lair", 15) )
 	{
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		for ( node = map.entities->first; node != nullptr; )
 		{
 			entity = (Entity*)node->element;
+			node = node->next;
 			if ( entity )
 			{
 				if ( entity->behavior == &actMagicTrap )
