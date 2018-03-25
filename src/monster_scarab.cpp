@@ -96,6 +96,8 @@ void initScarab(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			my->setHardcoreStats(*myStats);
+
 			int playerCount = 0;
 			for ( c = 0; c < MAXPLAYERS; ++c )
 			{

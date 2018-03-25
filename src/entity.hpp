@@ -702,6 +702,7 @@ public:
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
+	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

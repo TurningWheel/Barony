@@ -55,6 +55,8 @@ void initDevil(Entity* my, Stat* myStats)
 			my->monsterTargetX = players[0]->entity->x;
 			my->monsterTargetY = players[0]->entity->y;
 		}
+
+		my->setHardcoreStats(*myStats);
 	}
 
 	// head
