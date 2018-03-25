@@ -763,8 +763,15 @@ void drawStatus()
 						spell_t* spell = getSpellFromItem(item);
 						if ( spell )
 						{
-							char tempstr[32];
-							snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+							char tempstr[64];
+							if ( spell->ID == SPELL_DOMINATE )
+							{
+								snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
+							}
+							else
+							{
+								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+							}
 							src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 2 + 8;
 							drawTooltip(&src);
