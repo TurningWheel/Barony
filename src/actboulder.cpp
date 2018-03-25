@@ -30,6 +30,63 @@
 
 /*-------------------------------------------------------------------------------
 
+doesEntityStopBoulder
+
+checks which objects the boulder breaks when it hits.
+
+-------------------------------------------------------------------------------*/
+
+bool doesEntityStopBoulder(Entity* entity)
+{
+	if ( entity->behavior == &actGate )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actBoulder )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actChest )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actHeadstone )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actFountain )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actSink )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagCeiling )
+	{
+		if ( entity->z > -8 )
+		{
+			// not on ceiling layer
+			return true;
+		}
+	}
+	else if ( entity->behavior == &actStalagFloor )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagColumn )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPedestalBase )
+	{
+		return true;
+	}
+	return false;
+}
+
+/*-------------------------------------------------------------------------------
+
 	boulderCheckAgainstEntity
 
 	causes the boulder given in my to crush the object given in entity
@@ -89,7 +146,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					int c;
 					for ( c = 0; c < i; c++ )
 					{
-						Entity* entity = newEntity(-1, 1, map.entities);
+						Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
 						entity->flags[INVISIBLE] = true;
 						entity->flags[UPDATENEEDED] = true;
 						entity->x = my->x - 4 + rand() % 8;
@@ -119,10 +176,18 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					playSoundEntity(my, 67, 128);
 					list_RemoveNode(my->mynode);
 
-					// on sokoban, destroying boulders spawns scorpions
+					// on sokoban, destroying boulders spawns scorpions / insectoids
 					if ( !strcmp(map.name, "Sokoban") )
 					{
-						Entity* monster = summonMonster(SCORPION, ox, oy);
+						Entity* monster = nullptr;
+						if ( rand() % 2 == 0 )
+						{
+							monster = summonMonster(INSECTOID, ox, oy);
+						}
+						else
+						{
+							monster = summonMonster(SCORPION, ox, oy);
+						}
 						if ( monster )
 						{
 							int c;
@@ -132,6 +197,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 								messagePlayerColor(c, color, language[406]);
 							}
 						}
+						boulderSokobanOnDestroy(false);
 					}
 
 					return 1;
@@ -139,7 +205,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 			}
 		}
 	}
-	else if ( entity->behavior == &actGate || entity->behavior == &actBoulder || entity->behavior == &actChest || entity->behavior == &actHeadstone || entity->behavior == &actFountain || entity->behavior == &actSink )
+	else if ( doesEntityStopBoulder(entity) )
 	{
 		if ( !entity->flags[PASSABLE] )
 		{
@@ -202,7 +268,7 @@ void actBoulder(Entity* my)
 	int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width);
 	int y = std::min<int>(std::max(0, (int)(my->y / 16)), map.height);
 	Uint32 index = y * MAPLAYERS + x * MAPLAYERS * map.height;
-	if ( !map.tiles[index] || animatedtiles[map.tiles[index]] )
+	if ( !map.tiles[index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
 	{
 		noground = true;
 	}
@@ -223,6 +289,10 @@ void actBoulder(Entity* my)
 		if ( my->z >= 128 )
 		{
 			list_RemoveNode(my->mynode);
+			if ( multiplayer != CLIENT && !strncmp(map.name, "Sokoban", 7) )
+			{
+				boulderSokobanOnDestroy(true);
+			}
 			return;
 		}
 		if ( !BOULDER_NOGROUND )
@@ -230,7 +300,7 @@ void actBoulder(Entity* my)
 			if ( my->z >= -8 && fabs(my->vel_z) > 2 )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity == my )
@@ -333,7 +403,7 @@ void actBoulder(Entity* my)
 			if ( dist && !BOULDER_NOGROUND )
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity == my )
@@ -512,7 +582,7 @@ void actBoulder(Entity* my)
 				if ( dist && !BOULDER_NOGROUND )
 				{
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity == my )
@@ -571,7 +641,7 @@ void actBoulderTrap(Entity* my)
 	if ( BOULDERTRAP_AMBIENCE <= 0 )
 	{
 		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntity( my, 149, 64 );
+		playSoundEntity(my, 149, 64);
 	}
 
 	if ( !my->skill[28] )
@@ -580,7 +650,7 @@ void actBoulderTrap(Entity* my)
 	}
 
 	// received on signal
-	if ( my->skill[28] == 2)
+	if ( my->skill[28] == 2 )
 	{
 		if ( !BOULDERTRAP_FIRED )
 		{
@@ -617,7 +687,7 @@ void actBoulderTrap(Entity* my)
 				{
 					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 					{
-						Entity* entity = newEntity(245, 1, map.entities); // boulder
+						Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 						entity->parent = my->getUID();
 						entity->x = (x << 4) + 8;
 						entity->y = (y << 4) + 8;
@@ -625,7 +695,7 @@ void actBoulderTrap(Entity* my)
 						entity->yaw = c * (PI / 2.f);
 						entity->sizex = 7;
 						entity->sizey = 7;
-						if ( checkObstacle( entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL ) )
+						if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 						{
 							entity->yaw += PI * (rand() % 2) - PI / 2;
 							if ( entity->yaw >= PI * 2 )
@@ -643,6 +713,451 @@ void actBoulderTrap(Entity* my)
 					}
 				}
 			}
+		}
+	}
+}
+
+void actBoulderTrapEast(Entity* my)
+{
+	int x, y;
+	int c;
+
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
+	{
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !my->boulderTrapFired )
+		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			my->boulderTrapFired = 1;
+
+			c = 0; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}*/
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+		}
+	}
+}
+
+void actBoulderTrapSouth(Entity* my)
+{
+	int x, y;
+	int c;
+
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
+	{
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !my->boulderTrapFired )
+		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			my->boulderTrapFired = 1;
+
+			c = 1; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}*/
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+		}
+	}
+}
+
+void actBoulderTrapWest(Entity* my)
+{
+	int x, y;
+	int c;
+
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
+	{
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !my->boulderTrapFired )
+		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+
+			my->boulderTrapFired = 1;
+
+			c = 2; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				/*if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}*/
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+		}
+	}
+}
+
+void actBoulderTrapNorth(Entity* my)
+{
+	int x, y;
+	int c;
+
+	my->boulderTrapAmbience--;
+	if ( my->boulderTrapAmbience <= 0 )
+	{
+		my->boulderTrapAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( my->boulderTrapRefireCounter > 0 )
+	{
+		--my->boulderTrapRefireCounter;
+		if ( my->boulderTrapRefireCounter <= 0 )
+		{
+			my->boulderTrapFired = 0;
+			my->boulderTrapRefireCounter = 0;
+		}
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !my->boulderTrapFired )
+		{
+			if ( my->boulderTrapPreDelay > 0 )
+			{
+				--my->boulderTrapPreDelay;
+				return;
+			}
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			my->boulderTrapFired = 1;
+
+			c = 3; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+			/*	if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}*/
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+
+			if ( my->boulderTrapRefireAmount > 0 )
+			{
+				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+		}
+	}
+}
+
+void boulderSokobanOnDestroy(bool pushedOffLedge)
+{
+	if ( multiplayer == CLIENT || strcmp(map.name, "Sokoban") )
+	{
+		return; // return for client and if map not sokoban.
+	}
+
+	int goldToDestroy = 5 + rand() % 4; // 5-8 bags destroy
+	bool bouldersAround = false;
+	node_t* node = nullptr;
+
+	if ( !pushedOffLedge ) // destroy some gold
+	{
+		for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity )
+			{
+				if ( entity->behavior == &actGoldBag && entity->goldSokoban == 1 && goldToDestroy > 0 )
+				{
+					if ( entity->mynode )
+					{
+						list_RemoveNode(entity->mynode);
+					}
+					--goldToDestroy;
+				}
+			}
+		}
+	}
+
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity )
+		{
+			if ( !bouldersAround && entity->behavior == &actBoulder )
+			{
+				bouldersAround = true;
+				break;
+			}
+		}
+	}
+
+	if ( !bouldersAround )
+	{
+		int goldCount = 0;
+		Entity* sokobanItemReward = nullptr;
+		for ( node = map.entities->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity )
+			{
+				if ( entity->behavior == &actGoldBag && entity->goldSokoban == 1 )
+				{
+					++goldCount;
+				}
+				if ( entity->behavior == &actItem && entity->itemSokobanReward == 1 ) // artifact gloves.
+				{
+					sokobanItemReward = entity;
+				}
+			}
+		}
+		//messagePlayer(0, "Solved it!");
+		for ( int c = 0; c < MAXPLAYERS; c++ )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+			if ( goldCount >= 39 )
+			{
+				playSoundPlayer(c, 393, 128);
+				messagePlayerColor(c, color, language[2969]);
+			}
+			else
+			{
+				playSoundPlayer(c, 395, 128);
+				if ( goldCount < 25 )
+				{
+					messagePlayerColor(c, color, language[2971]); // less than impressed.
+				}
+				else
+				{
+					messagePlayerColor(c, color, language[2970]); // mildly entertained.
+				}
+			}
+		}
+		if ( goldCount >= 25 )
+		{
+			sokobanItemReward->flags[INVISIBLE] = false;
+			serverUpdateEntityFlag(sokobanItemReward, INVISIBLE);
 		}
 	}
 }

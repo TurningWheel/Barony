@@ -38,6 +38,16 @@
 void actBeartrap(Entity* my)
 {
 	int i;
+	if ( my->sprite == 667 )
+	{	
+		my->roll = 0;
+		my->z = 6.75;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
 
 	// undo beartrap
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -46,7 +56,7 @@ void actBeartrap(Entity* my)
 		{
 			if (inrange[i])
 			{
-				Entity* entity = newEntity(-1, 1, map.entities);
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 				entity->flags[INVISIBLE] = true;
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
@@ -57,7 +67,7 @@ void actBeartrap(Entity* my)
 				entity->sizey = my->sizey;
 				entity->yaw = my->yaw;
 				entity->pitch = my->pitch;
-				entity->roll = my->roll;
+				entity->roll = PI / 2;
 				entity->behavior = &actItem;
 				entity->skill[10] = TOOL_BEARTRAP;
 				entity->skill[11] = BEARTRAP_STATUS;
@@ -65,6 +75,8 @@ void actBeartrap(Entity* my)
 				entity->skill[13] = 1;
 				entity->skill[14] = BEARTRAP_APPEARANCE;
 				entity->skill[15] = BEARTRAP_IDENTIFIED;
+				entity->itemNotMoving = 1;
+				entity->itemNotMovingClient = 1;
 				messagePlayer(i, language[1300]);
 				list_RemoveNode(my->mynode);
 				return;
@@ -72,9 +84,14 @@ void actBeartrap(Entity* my)
 		}
 	}
 
+	if ( BEARTRAP_CAUGHT == 1 )
+	{
+		return;
+	}
+
 	// launch beartrap
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( my->parent == entity->getUID() )
@@ -86,20 +103,37 @@ void actBeartrap(Entity* my)
 			Stat* stat = entity->getStats();
 			if ( stat )
 			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( (parent && parent->checkFriend(entity)) )
+				{
+					continue;
+				}
 				if ( entityDist(my, entity) < 6.5 )
 				{
-					stat->EFFECTS[EFF_PARALYZED] = true;
-					stat->EFFECTS_TIMERS[EFF_PARALYZED] = 200;
-					stat->EFFECTS[EFF_BLEEDING] = true;
-					stat->EFFECTS_TIMERS[EFF_BLEEDING] = 300;
-					entity->modHP(-15 - rand() % 10);
-
+					entity->setEffect(EFF_PARALYZED, true, 200, false);
+					entity->setEffect(EFF_BLEEDING, true, 300, false);
+					int damage = 10 + 3 * (BEARTRAP_STATUS + BEARTRAP_BEATITUDE);
+					Stat* trapperStat = nullptr;
+					if ( parent && (trapperStat = parent->getStats()) )
+					{
+						damage += trapperStat->PROFICIENCIES[PRO_LOCKPICKING] / 5;
+					}
+					//messagePlayer(0, "dmg: %d", damage);
+					entity->modHP(-damage);
+					//// alert the monster! DOES NOT WORK DURING PARALYZE.
+					//if ( entity->behavior == &actMonster && entity->monsterState != MONSTER_STATE_ATTACK && (stat->type < LICH || stat->type >= SHOPKEEPER) )
+					//{
+					//	Entity* attackTarget = uidToEntity(my->parent);
+					//	if ( attackTarget )
+					//	{
+					//		entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+					//	}
+					//}
 					// set obituary
 					entity->setObituary(language[1504]);
 
 					if ( stat->HP <= 0 )
 					{
-						Entity* parent = uidToEntity(my->parent);
 						if ( parent )
 						{
 							parent->awardXP( entity, true, true );
@@ -130,37 +164,68 @@ void actBeartrap(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
+					else if ( parent && parent->behavior == &actPlayer )
+					{
+						int player = parent->skill[2];
+						if ( player >= 0 )
+						{
+							if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
+							{
+								messagePlayer(player, language[2521]);
+							}
+							else
+							{
+								messagePlayer(player, language[2522]);
+							}
+							if ( rand() % 2 == 0 )
+							{
+								parent->increaseSkill(PRO_LOCKPICKING);
+							}
+							if ( rand() % 2 == 0 )
+							{
+								parent->increaseSkill(PRO_RANGED);
+							}
+						}
+					}
 					playSoundEntity(my, 76, 64);
 					playSoundEntity(entity, 28, 64);
 					Entity* gib = spawnGib(entity);
 					serverSpawnGibForClient(gib);
 
-					// make first arm
-					entity = newEntity(98, 1, map.entities);
-					entity->behavior = &actBeartrapLaunched;
-					entity->flags[PASSABLE] = true;
-					entity->flags[UPDATENEEDED] = true;
-					entity->x = my->x;
-					entity->y = my->y;
-					entity->z = my->z + 1;
-					entity->yaw = my->yaw;
-					entity->pitch = my->pitch;
-					entity->roll = 0;
+					--BEARTRAP_STATUS;
+					if ( BEARTRAP_STATUS < DECREPIT )
+					{
+						// make first arm
+						entity = newEntity(668, 1, map.entities, nullptr); //Special effect entity.
+						entity->behavior = &actBeartrapLaunched;
+						entity->flags[PASSABLE] = true;
+						entity->flags[UPDATENEEDED] = true;
+						entity->x = my->x;
+						entity->y = my->y;
+						entity->z = my->z + 1;
+						entity->yaw = my->yaw;
+						entity->pitch = my->pitch;
+						entity->roll = 0;
 
-					// and then the second
-					entity = newEntity(98, 1, map.entities);
-					entity->behavior = &actBeartrapLaunched;
-					entity->flags[PASSABLE] = true;
-					entity->flags[UPDATENEEDED] = true;
-					entity->x = my->x;
-					entity->y = my->y;
-					entity->z = my->z + 1;
-					entity->yaw = my->yaw;
-					entity->pitch = my->pitch;
-					entity->roll = PI;
-
-					// remove me
-					list_RemoveNode(my->mynode);
+						// and then the second
+						entity = newEntity(668, 1, map.entities, nullptr); //Special effect entity.
+						entity->behavior = &actBeartrapLaunched;
+						entity->flags[PASSABLE] = true;
+						entity->flags[UPDATENEEDED] = true;
+						entity->x = my->x;
+						entity->y = my->y;
+						entity->z = my->z + 1;
+						entity->yaw = my->yaw;
+						entity->pitch = my->pitch;
+						entity->roll = PI;
+						list_RemoveNode(my->mynode);
+					}
+					else
+					{
+						BEARTRAP_CAUGHT = 1;
+						my->sprite = 667;
+						serverUpdateEntitySkill(my, 0);
+					}
 					return;
 				}
 			}

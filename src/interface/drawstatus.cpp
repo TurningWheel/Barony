@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../items.hpp"
@@ -274,7 +275,7 @@ void drawStatus()
 		// name
 		int x = xres / 2 - longestline(enemy_name) * TTF12_WIDTH / 2 + 2;
 		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, enemy_name );
+		ttfPrintText(ttf12, x, y, enemy_name);
 	}
 
 	// messages
@@ -289,7 +290,7 @@ void drawStatus()
 		{
 			continue;
 		}
-		string = (string_t*) node->element;
+		string = (string_t*)node->element;
 		y -= TTF12_HEIGHT * string->lines;
 		if ( y < yres - status_bmp->h + 4 )
 		{
@@ -310,7 +311,7 @@ void drawStatus()
 			{
 				if ( string->data[i] != 10 )
 				{
-					char* tempString = (char*) malloc(sizeof(char) * (strlen(string->data) + 2));
+					char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
 					strcpy(tempString, string->data);
 					strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
 					tempString[i] = 10;
@@ -391,6 +392,11 @@ void drawStatus()
 			}
 		}
 	}
+	if (showfirst)
+	{
+		textscroll = list_Size(&messages) - 3;
+	}
+
 
 	//Text scroll up button.
 	if ( buttonclick == 3 )
@@ -505,7 +511,7 @@ void drawStatus()
 
 	// Print out the amount of HP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
-	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr );
+	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
 	// PLAYER MAGIC BAR
 	// Display the Magic bar border
@@ -548,7 +554,7 @@ void drawStatus()
 
 	// Print out the amount of MP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
-	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr );
+	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
 	Item* item = nullptr;
 	//Now the hotbar.
@@ -556,7 +562,7 @@ void drawStatus()
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
 	pos.x = initial_position.x;
 	pos.y = initial_position.y - hotbar_img->h;
-	for (num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w)
+	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w )
 	{
 		Uint32 color;
 		if ( current_hotbar == num && !openedChest[clientnum] )
@@ -570,20 +576,54 @@ void drawStatus()
 		drawImageColor(hotbar_img, NULL, &pos, color);
 
 		item = uidToItem(hotbar[num].item);
-		if (item)
+		if ( item )
 		{
 			bool used = false;
 			pos.w = hotbar_img->w;
 			pos.h = hotbar_img->h;
+
+			SDL_Rect highlightBox;
+			highlightBox.x = pos.x + 2;
+			highlightBox.y = pos.y + 2;
+			highlightBox.w = 60;
+			highlightBox.h = 60;
+
+			if ( !item->identified )
+			{
+				// give it a yellow background if it is unidentified
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 128, 0), 64); //31875
+			}
+			else if ( item->beatitude < 0 )
+			{
+				// give it a red background if cursed
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 128, 0, 0), 64);
+			}
+			else if ( item->beatitude > 0 )
+			{
+				// give it a green background if blessed (light blue if colorblind mode)
+				if ( colorblind )
+				{
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 50, 128, 128), 64);
+				}
+				else
+				{
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 0, 128, 0), 64);
+				}
+			}
+			if ( item->status == BROKEN )
+			{
+				drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 125);
+			}
+
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if ( stats[clientnum]->HP > 0 )
 			{
-				if (!shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
 					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
 					{
 						toggleclick = false;
-						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
+						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
 							hotbar[num].item = 0;
 						}
@@ -615,11 +655,13 @@ void drawStatus()
 						bool badpotion = false;
 						if ( itemCategory(item) == POTION && item->identified )
 						{
-							if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
-							{
-								badpotion = true;
-							}
+							badpotion = isPotionBad(*item); //So that you wield empty potions be default.
 						}
+						if ( item->type == POTION_EMPTY )
+						{
+							badpotion = true;
+						}
+
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
 							identifygui_active = false;
@@ -664,23 +706,28 @@ void drawStatus()
 			// item count
 			if ( !used )
 			{
-				if (item->count > 1)
+				if ( item->count > 1 )
 				{
 					int digits = numdigits_sint16(item->count);
 					printTextFormatted(font12x12_bmp, pos.x + hotbar_img->w - (14 * digits), pos.y + hotbar_img->h - 14, "%d", item->count);
 				}
+
+				SDL_Rect src;
+				src.x = pos.x + 2;
+				src.y = pos.y + hotbar_img->h - 18;
+				src.w = 16;
+				src.h = 16;
 
 				// item equipped
 				if ( itemCategory(item) != SPELL_CAT )
 				{
 					if ( itemIsEquipped(item, clientnum) )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
+					}
+					else if ( item->status == BROKEN )
+					{
+						drawImage(itembroken_bmp, NULL, &src);
 					}
 				}
 				else
@@ -688,11 +735,6 @@ void drawStatus()
 					spell_t* spell = getSpellFromItem(item);
 					if ( selected_spell == spell )
 					{
-						SDL_Rect src;
-						src.x = pos.x + 2;
-						src.y = pos.y + hotbar_img->h - 18;
-						src.w = 16;
-						src.h = 16;
 						drawImage(equipped_bmp, NULL, &src);
 					}
 				}
@@ -701,39 +743,46 @@ void drawStatus()
 		printTextFormatted(font12x12_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
 	}
 
-	if (!shootmode)
+	if ( !shootmode )
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
-		for (num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w)
+		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w )
 		{
 			item = uidToItem(hotbar[num].item);
-			if (item)
+			if ( item )
 			{
-				if (mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if ( mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
 					//Tooltip
 					SDL_Rect src;
 					src.x = mousex + 16;
 					src.y = mousey + 8;
-					if (itemCategory(item) == SPELL_CAT)
+					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
-						if (spell)
+						if ( spell )
 						{
-							char tempstr[32];
-							snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+							char tempstr[64];
+							if ( spell->ID == SPELL_DOMINATE )
+							{
+								snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
+							}
+							else
+							{
+								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+							}
 							src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 2 + 8;
 							drawTooltip(&src);
-							ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
+							ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
 						}
 						else
 						{
 							src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT + 8;
 							drawTooltip(&src);
-							ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
+							ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
 						}
 					}
 					else
@@ -751,33 +800,33 @@ void drawStatus()
 						if ( !item->identified )
 						{
 							color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-							ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309] );
+							ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
 						}
 						else
 						{
 							if ( item->beatitude < 0 )
 							{
 								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310] );
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
 							}
 							else if ( item->beatitude == 0 )
 							{
 								color = 0xFFFFFFFF;
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311] );
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
 							}
 							else
 							{
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312] );
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 							}
 						}
 						if ( item->beatitude == 0 || !item->identified )
 						{
 							color = 0xFFFFFFFF;
 						}
-						ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
-						ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
-						ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
+						ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
 
 						if ( item->identified )
 						{
@@ -791,7 +840,7 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
 							}
 							else if ( itemCategory(item) == ARMOR )
 							{
@@ -803,8 +852,82 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
 							}
+						}
+					}
+					if ( hotbar_numkey_quick_add )
+					{
+						Uint32 swapItem = 0;
+						if ( keystatus[SDL_SCANCODE_1] )
+						{
+							keystatus[SDL_SCANCODE_1] = 0;
+							swapItem = hotbar[0].item;
+							hotbar[0].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_2] )
+						{
+							keystatus[SDL_SCANCODE_2] = 0;
+							swapItem = hotbar[1].item;
+							hotbar[1].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_3] )
+						{
+							keystatus[SDL_SCANCODE_3] = 0;
+							swapItem = hotbar[2].item;
+							hotbar[2].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_4] )
+						{
+							keystatus[SDL_SCANCODE_4] = 0;
+							swapItem = hotbar[3].item;
+							hotbar[3].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_5] )
+						{
+							keystatus[SDL_SCANCODE_5] = 0;
+							swapItem = hotbar[4].item;
+							hotbar[4].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_6] )
+						{
+							keystatus[SDL_SCANCODE_6] = 0;
+							swapItem = hotbar[5].item;
+							hotbar[5].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_7] )
+						{
+							keystatus[SDL_SCANCODE_7] = 0;
+							swapItem = hotbar[6].item;
+							hotbar[6].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_8] )
+						{
+							keystatus[SDL_SCANCODE_8] = 0;
+							swapItem = hotbar[7].item;
+							hotbar[7].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_9] )
+						{
+							keystatus[SDL_SCANCODE_9] = 0;
+							swapItem = hotbar[8].item;
+							hotbar[8].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
+						}
+						if ( keystatus[SDL_SCANCODE_0] )
+						{
+							keystatus[SDL_SCANCODE_0] = 0;
+							swapItem = hotbar[9].item;
+							hotbar[9].item = hotbar[num].item;
+							hotbar[num].item = swapItem;
 						}
 					}
 				}
@@ -816,65 +939,84 @@ void drawStatus()
 	if ( !command && stats[clientnum]->HP > 0 )
 	{
 		Item* item = NULL;
-		if ( keystatus[SDL_SCANCODE_1] )
+		if ( !(!shootmode && hotbar_numkey_quick_add &&
+				(
+					(omousex >= INVENTORY_STARTX
+						&& omousex <= INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE
+						&& omousey >= INVENTORY_STARTY 
+						&& omousey <= INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE
+					)
+					||
+					(omousex >= initial_position.x 
+						&& omousex <= initial_position.x + hotbar_img->w * 10
+						&& omousey >= initial_position.y - hotbar_img->h
+						&& omousey <= initial_position.y
+					)
+				)
+			) )
 		{
-			keystatus[SDL_SCANCODE_1] = 0;
-			item = uidToItem(hotbar[0].item);
-		}
-		if ( keystatus[SDL_SCANCODE_2] )
-		{
-			keystatus[SDL_SCANCODE_2] = 0;
-			item = uidToItem(hotbar[1].item);
-		}
-		if ( keystatus[SDL_SCANCODE_3] )
-		{
-			keystatus[SDL_SCANCODE_3] = 0;
-			item = uidToItem(hotbar[2].item);
-		}
-		if ( keystatus[SDL_SCANCODE_4] )
-		{
-			keystatus[SDL_SCANCODE_4] = 0;
-			item = uidToItem(hotbar[3].item);
-		}
-		if ( keystatus[SDL_SCANCODE_5] )
-		{
-			keystatus[SDL_SCANCODE_5] = 0;
-			item = uidToItem(hotbar[4].item);
-		}
-		if ( keystatus[SDL_SCANCODE_6] )
-		{
-			keystatus[SDL_SCANCODE_6] = 0;
-			item = uidToItem(hotbar[5].item);
-		}
-		if ( keystatus[SDL_SCANCODE_7] )
-		{
-			keystatus[SDL_SCANCODE_7] = 0;
-			item = uidToItem(hotbar[6].item);
-		}
-		if ( keystatus[SDL_SCANCODE_8] )
-		{
-			keystatus[SDL_SCANCODE_8] = 0;
-			item = uidToItem(hotbar[7].item);
-		}
-		if ( keystatus[SDL_SCANCODE_9] )
-		{
-			keystatus[SDL_SCANCODE_9] = 0;
-			item = uidToItem(hotbar[8].item);
-		}
-		if ( keystatus[SDL_SCANCODE_0] )
-		{
-			keystatus[SDL_SCANCODE_0] = 0;
-			item = uidToItem(hotbar[9].item);
+			// if hotbar_numkey_quick_add is enabled, then the number keys won't do the default equip function
+			// skips equipping items if the mouse is in the hotbar or inventory area. otherwise the below code runs.
+			if ( keystatus[SDL_SCANCODE_1] )
+			{
+				keystatus[SDL_SCANCODE_1] = 0;
+				item = uidToItem(hotbar[0].item);
+			}
+			if ( keystatus[SDL_SCANCODE_2] )
+			{
+				keystatus[SDL_SCANCODE_2] = 0;
+				item = uidToItem(hotbar[1].item);
+			}
+			if ( keystatus[SDL_SCANCODE_3] )
+			{
+				keystatus[SDL_SCANCODE_3] = 0;
+				item = uidToItem(hotbar[2].item);
+			}
+			if ( keystatus[SDL_SCANCODE_4] )
+			{
+				keystatus[SDL_SCANCODE_4] = 0;
+				item = uidToItem(hotbar[3].item);
+			}
+			if ( keystatus[SDL_SCANCODE_5] )
+			{
+				keystatus[SDL_SCANCODE_5] = 0;
+				item = uidToItem(hotbar[4].item);
+			}
+			if ( keystatus[SDL_SCANCODE_6] )
+			{
+				keystatus[SDL_SCANCODE_6] = 0;
+				item = uidToItem(hotbar[5].item);
+			}
+			if ( keystatus[SDL_SCANCODE_7] )
+			{
+				keystatus[SDL_SCANCODE_7] = 0;
+				item = uidToItem(hotbar[6].item);
+			}
+			if ( keystatus[SDL_SCANCODE_8] )
+			{
+				keystatus[SDL_SCANCODE_8] = 0;
+				item = uidToItem(hotbar[7].item);
+			}
+			if ( keystatus[SDL_SCANCODE_9] )
+			{
+				keystatus[SDL_SCANCODE_9] = 0;
+				item = uidToItem(hotbar[8].item);
+			}
+			if ( keystatus[SDL_SCANCODE_0] )
+			{
+				keystatus[SDL_SCANCODE_0] = 0;
+				item = uidToItem(hotbar[9].item);
+			}
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.
-		if ((mousexrel || mouseyrel) && !shootmode)
+		if ( (mousexrel || mouseyrel) && !shootmode )
 		{
 			pos.x = initial_position.x;
 			pos.y = initial_position.y - hotbar_img->h;
-			for (c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w)
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w )
 			{
-				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if ( mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
 					selectHotbarSlot(c);
 				}
@@ -896,14 +1038,14 @@ void drawStatus()
 			bumper_moved = true;
 		}
 
-		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active)
+		if ( bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
 		{
 			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open  && !identifygui_active && !removecursegui_active )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
@@ -937,11 +1079,13 @@ void drawStatus()
 			bool badpotion = false;
 			if ( itemCategory(item) == POTION && item->identified )
 			{
-				if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
-				{
-					badpotion = true;
-				}
+				badpotion = isPotionBad(*item);
 			}
+			if ( item->type == POTION_EMPTY )
+			{
+				badpotion = true; //So that you wield empty potions be default.
+			}
+
 			if ( !badpotion )
 			{
 				useItem(item, clientnum);
@@ -965,6 +1109,63 @@ void drawStatus()
 				}
 				equipItem(item, &stats[clientnum]->weapon, clientnum);
 			}
+		}
+	}
+
+	// stat increase icons
+	pos.w = 64;
+	pos.h = 64;
+	pos.x = xres - pos.w * 3 - 9;
+	pos.y = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) + (32 + 64 + 64 + 3); // 131px from end of prof window.
+
+	if ( pos.y + pos.h > (yres - map.height * 4) ) // check if overlapping minimap
+	{
+		pos.y = (yres - map.height * 4) - (64 + 3); // align above minimap
+	}
+	
+	SDL_Surface *tmp_bmp = NULL;
+
+	for ( i = 0; i < NUMSTATS; i++ )
+	{
+		if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
+		{
+			stats[clientnum]->PLAYER_LVL_STAT_TIMER[i]--;
+
+			switch ( i )
+			{
+				// prepare the stat image.
+				case STAT_STR:
+					tmp_bmp = str_bmp64u;
+					break;
+				case STAT_DEX:
+					tmp_bmp = dex_bmp64u;
+					break;
+				case STAT_CON:
+					tmp_bmp = con_bmp64u;
+					break;
+				case STAT_INT:
+					tmp_bmp = int_bmp64u;
+					break;
+				case STAT_PER:
+					tmp_bmp = per_bmp64u;
+					break;
+				case STAT_CHR:
+					tmp_bmp = chr_bmp64u;
+					break;
+				default:
+					break;
+			}
+			drawImageScaled(tmp_bmp, NULL, &pos);
+			if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
+			{
+				// bonus stat acheived, draw additional stat icon above.
+				pos.y -= 64 + 3;
+				drawImageScaled(tmp_bmp, NULL, &pos);
+				pos.y += 64 + 3;
+				stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS]--;
+			}
+
+			pos.x += pos.h + 3;
 		}
 	}
 }

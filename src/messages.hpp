@@ -64,15 +64,7 @@ typedef struct Message
 	 * To ensure everything always works right. I guess. Maybe not necessary. Whatever. There are much bigger problems to worry about.
 	 */
 	Sint16 alpha;
-
-	//Its neighbors.
-	//struct Message* next;
-	//struct Message* previous;
-	node_t* node; //Its node in the message list.
 } Message;
-
-//extern Message *notification_messages;
-extern list_t notification_messages;
 
 /*
  * Adds a message to the list of messages.

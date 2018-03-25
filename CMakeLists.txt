@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 project(barony)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules)
@@ -13,7 +13,7 @@ else()
   set (STEAMWORKS_ENABLED 0)
 endif()
 
-#FMOD can be disabled in one of two ways: 
+#FMOD can be disabled in one of two ways:
 # * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
 # * Running cmake with -DFMOD_ENABLED=OFF
 set(FMOD 0) #Acts as an alias to FMOD_FOUND
@@ -37,6 +37,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_OSX_ARCHITECTURES x86_64)
 
+set(EDITOR_EXE_NAME "editor" CACHE STRING "Editor executable name")
+option(DATA_DIR "Points to install data directory" FALSE)
+
 if (STEAMWORKS_ENABLED)
 message("------------------------")
 message("Building with steamworks")
@@ -59,6 +62,7 @@ if( NOT WIN32 )
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ffast-math -funroll-loops -fstrict-aliasing -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -g -fuse-ld=gold -fuse-linker-plugin -fsingle-precision-constant")
   else()
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing")
+  #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover -Wreturn-type -Werror=return-type")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg")
   set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -ffast-math -funroll-loops -fstrict-aliasing")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -300,9 +304,6 @@ if(WIN32)
     #target_link_libraries(barony -lsteamworks_cwrapper -lstdc++)
     target_link_libraries(barony -lsteam_api)
   endif()
-  if (APPLE)
-    target_link_libraries(barony ${GLUT_LIBRARIES})
-  endif()
 else()
   if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
     # 64 bit
@@ -312,6 +313,16 @@ else()
   if (STEAMWORKS_ENABLED)
     target_link_libraries(barony ${STEAMWORKS_LIBRARY})
     #target_link_libraries(barony ${STEAMWORKS_CWRAPPER_LIBRARIES} -lstdc++)
+  endif()
+  if (APPLE)
+    target_link_libraries(barony ${GLUT_LIBRARIES})
+  endif()
+  if (${CMAKE_SYSTEM_NAME} MATCHES "BSD")
+    # For backtrace
+    find_path(EXECINFO_INC NAMES execinfo.h)
+    find_library(EXECINFO_LIB NAMES execinfo)
+    include_directories(${EXECINFO_INC})
+    target_link_libraries(barony ${EXECINFO_LIB})
   endif()
 endif()
 target_link_libraries(barony ${OPENGL_LIBRARIES})
@@ -345,17 +356,26 @@ if (OPENAL)
   endif()
 endif()
 
+set(BASE_DATA_DIR "./" CACHE INTERNAL "Base data dir")
 
-if (NOT APPLE)
-#install(TARGETS barony
-#  RUNTIME DESTINATION bin
-#  COMPONENT Runtime
-#)
+if (NOT APPLE AND UNIX)
+  include(GNUInstallDirs)
+  if (DATA_DIR)
+    set(BASE_DATA_DIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}/barony")
+  endif()
+  message(STATUS "Base data directory ${BASE_DATA_DIR}")
+
+  install(TARGETS barony
+	 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   COMPONENT Runtime
+  )
 else()
-install(TARGETS barony
-  RUNTIME DESTINATION bin COMPONENT Runtime BUNDLE DESTINATION Resources
-)
+  install(TARGETS barony
+    RUNTIME DESTINATION bin COMPONENT Runtime BUNDLE DESTINATION Resources
+  )
 endif()
+
+add_definitions(-DBASE_DATA_DIR=\"${BASE_DATA_DIR}\")
 
 if (APPLE)
   #add_executable(editor OSX/SDLmain.m ${EDITOR_SOURCES})
@@ -363,73 +383,78 @@ if (APPLE)
   #add_executable(editor MACOSX_BUNDLE OSX/SDLmain.m ${EDITOR_SOURCES} ${COPY_FRAMEWORKS} libfmodex.dylib  /opt/local/lib/libpng16.16.dylib)
   #add_executable(editor MACOSX_BUNDLE OSX/SDLmain.m ${EDITOR_SOURCES} libfmodex.dylib  /opt/local/lib/libpng16.16.dylib)
   if (FMOD_ENABLED)
-    add_executable(editor MACOSX_BUNDLE ${EDITOR_SOURCES} libfmodex.dylib  /opt/local/lib/libpng16.16.dylib)
+	  add_executable(${EDITOR_EXE_NAME} MACOSX_BUNDLE ${EDITOR_SOURCES} libfmodex.dylib  /opt/local/lib/libpng16.16.dylib)
   else()
-    add_executable(editor MACOSX_BUNDLE ${EDITOR_SOURCES} /opt/local/lib/libpng16.16.dylib)
+	  add_executable(${EDITOR_EXE_NAME} MACOSX_BUNDLE ${EDITOR_SOURCES} /opt/local/lib/libpng16.16.dylib)
   endif()
   #SET_SOURCE_FILES_PROPERTIES(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   set_source_files_properties(${EDITOR_SOURCES} PROPERTIES COMPILE_FLAGS "-x objective-c++")
 else()
-  add_executable(editor ${EDITOR_SOURCES})
+	add_executable(${EDITOR_EXE_NAME} ${EDITOR_SOURCES})
 endif()
 
 if(WIN32)
-  target_link_libraries(editor -lmingw32)
-  target_link_libraries(editor -lSDL2main)
-  target_link_libraries(editor -lSDL2)
-  target_link_libraries(editor -lSDL2_net)
-  target_link_libraries(editor -lSDL2_image)
-  target_link_libraries(editor -lSDL2_ttf)
+	target_link_libraries(${EDITOR_EXE_NAME} -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lSDL2_image -lSDL2_ttf)
   if(STEAMWORKS_ENABLED)
     #target_link_libraries(editor -lsteamworks_cwrapper -lstdc++)
-    target_link_libraries(editor -lsteam_api)
+    target_link_libraries(${EDITOR_EXE_NAME} -lsteam_api)
   endif()
 else()
   if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
     # 64 bit
-    target_link_libraries(editor -L/usr/lib64 -lstdc++)
+    target_link_libraries(${EDITOR_EXE_NAME} -L/usr/lib64 -lstdc++)
   endif()
-  target_link_libraries(editor ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
+  target_link_libraries(${EDITOR_EXE_NAME} ${SDL2_LIBRARIES} ${SDL2_LIBRARY} ${SDL2IMAGE_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_NET_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2TTF_LIBRARY})
   if (STEAMWORKS_ENABLED)
-    target_link_libraries(editor ${STEAMWORKS_LIBRARY})
+	  target_link_libraries(${EDITOR_EXE_NAME} ${STEAMWORKS_LIBRARY})
     #target_link_libraries(editor ${STEAMWORKS_CWRAPPER_LIBRARIES} -lstdc++)
   endif()
 endif()
-target_link_libraries(editor ${OPENGL_LIBRARIES})
-target_link_libraries(editor ${THREADS_LIBRARIES})
-target_link_libraries(editor -lm)
+target_link_libraries(${EDITOR_EXE_NAME} ${OPENGL_LIBRARIES})
+target_link_libraries(${EDITOR_EXE_NAME} ${THREADS_LIBRARIES})
+target_link_libraries(${EDITOR_EXE_NAME} -lm)
 # We need to link to Winsock if we're on Windows
 if( NOT WIN32 AND NOT APPLE)
   #Remember, Windows and Mac aren't using find_package for FMOD and PNG.
-  target_link_libraries(editor ${PNG_LIBRARY})
+  target_link_libraries(${EDITOR_EXE_NAME} ${PNG_LIBRARY})
   if (FMOD_FOUND)
-    target_link_libraries(editor ${FMOD_LIBRARY})
+	  target_link_libraries(${EDITOR_EXE_NAME} ${FMOD_LIBRARY})
   endif()
 endif()
 if(WIN32)
-  target_link_libraries(editor wsock32 ws2_32)
-  target_link_libraries(editor -lfmodex)
+	target_link_libraries(${EDITOR_EXE_NAME} wsock32 ws2_32)
+	target_link_libraries(${EDITOR_EXE_NAME} -lfmodex)
 endif()
 if (APPLE)
   if (FMOD_ENABLED)
-    target_link_libraries(editor -lfmodex) #Finally manually link fmod for mac.
+	  target_link_libraries(${EDITOR_EXE_NAME} -lfmodex) #Finally manually link fmod for mac.
   endif()
 endif()
-target_link_libraries(editor ${EXTRA_LIBS}) #Apple needs this for OpenGL to work.
+target_link_libraries(${EDITOR_EXE_NAME} ${EXTRA_LIBS}) #Apple needs this for OpenGL to work.
 if (OPENAL)
-  target_link_libraries(editor ${OPENAL_LIBRARY})
+	target_link_libraries(${EDITOR_EXE_NAME} ${OPENAL_LIBRARY})
   if(TREMOR_ENABLED)
-    target_link_libraries(editor ${TREMOR_LIBRARY})
+	  target_link_libraries(${EDITOR_EXE_NAME} ${TREMOR_LIBRARY})
   else()
-    target_link_libraries(editor ${VORBISFILE_LIBRARY})
+	  target_link_libraries(${EDITOR_EXE_NAME} ${VORBISFILE_LIBRARY})
   endif()
 endif()
 
-#install(TARGETS editor
-#  RUNTIME DESTINATION bin COMPONENT Runtime
-#)
+if (NOT APPLE AND UNIX)
+  install(TARGETS ${EDITOR_EXE_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime
+  )
 
-#install(DIRECTORY data DESTINATION share/barony )
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lang DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony)
+
+  if (EXISTS books)
+    install(DIRECTORY 
+        ${CMAKE_CURRENT_BINARY_DIR}/books ${CMAKE_CURRENT_BINARY_DIR}/images ${CMAKE_CURRENT_BINARY_DIR}/items
+        ${CMAKE_CURRENT_BINARY_DIR}/maps ${CMAKE_CURRENT_BINARY_DIR}/models ${CMAKE_CURRENT_BINARY_DIR}/music
+        ${CMAKE_CURRENT_BINARY_DIR}/sound DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/barony
+    )
+  endif()
+endif()
 
 if (APPLE)
 #  SET_TARGET_PROPERTIES(

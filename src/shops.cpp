@@ -73,7 +73,7 @@ void startTradingServer(Entity* entity, int player)
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		Entity* entity = uidToEntity(shopkeeper);
-		shopkeepertype = entity->skill[18];
+		shopkeepertype = entity->monsterStoreType;
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
 		identifygui_active = false;
@@ -96,7 +96,7 @@ void startTradingServer(Entity* entity, int player)
 		Stat* entitystats = entity->getStats();
 		strcpy((char*)net_packet->data, "SHOP");
 		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
-		net_packet->data[8] = entity->skill[18];
+		net_packet->data[8] = entity->monsterStoreType;
 		strcpy((char*)(&net_packet->data[9]), entitystats->name);
 		net_packet->data[9 + strlen(entitystats->name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
@@ -160,7 +160,9 @@ void buyItemFromShop(Item* item)
 			shopspeech = language[197 + rand() % 3];
 		}
 		shoptimer = ticks - 1;
-		newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, &stats[clientnum]->inventory);
+		Item* itemToPickup = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
+		itemPickup(clientnum, itemToPickup);
+
 		stats[clientnum]->GOLD -= item->buyValue(clientnum);
 		playSound(89, 64);
 		int ocount = item->count;
@@ -175,7 +177,7 @@ void buyItemFromShop(Item* item)
 				Stat* shopstats = entity->getStats();
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
-			if ( rand() % 2 )
+			if ( rand() % 2 && item->type != GEM_GLASS )
 			{
 				players[clientnum]->entity->increaseSkill(PRO_TRADING);
 			}
@@ -236,59 +238,66 @@ void sellItemToShop(Item* item)
 	}
 
 	bool deal = true;
-	switch ( shopkeepertype )
+	if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
-		case 0: // arms & armor
-			if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
-			{
-				deal = false;
-			}
-			break;
-		case 1: // hats
-			if ( itemCategory(item) != ARMOR )
-			{
-				deal = false;
-			}
-			break;
-		case 2: // jewelry
-			if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
-			{
-				deal = false;
-			}
-			break;
-		case 3: // bookstore
-			if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
-			{
-				deal = false;
-			}
-			break;
-		case 4: // potion shop
-			if ( itemCategory(item) != POTION )
-			{
-				deal = false;
-			}
-			break;
-		case 5: // magicstaffs
-			if ( itemCategory(item) != MAGICSTAFF )
-			{
-				deal = false;
-			}
-			break;
-		case 6: // food
-			if ( itemCategory(item) != FOOD )
-			{
-				deal = false;
-			}
-			break;
-		case 7: // tools
-		case 8: // lights
-			if ( itemCategory(item) != TOOL )
-			{
-				deal = false;
-			}
-			break;
-		default:
-			break;
+		//Skill capstone: Can sell anything to any shop.
+	}
+	else
+	{
+		switch ( shopkeepertype )
+		{
+			case 0: // arms & armor
+				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
+				{
+					deal = false;
+				}
+				break;
+			case 1: // hats
+				if ( itemCategory(item) != ARMOR )
+				{
+					deal = false;
+				}
+				break;
+			case 2: // jewelry
+				if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
+				{
+					deal = false;
+				}
+				break;
+			case 3: // bookstore
+				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+				{
+					deal = false;
+				}
+				break;
+			case 4: // potion shop
+				if ( itemCategory(item) != POTION )
+				{
+					deal = false;
+				}
+				break;
+			case 5: // magicstaffs
+				if ( itemCategory(item) != MAGICSTAFF )
+				{
+					deal = false;
+				}
+				break;
+			case 6: // food
+				if ( itemCategory(item) != FOOD )
+				{
+					deal = false;
+				}
+				break;
+			case 7: // tools
+			case 8: // lights
+				if ( itemCategory(item) != TOOL && itemCategory(item) != THROWN )
+				{
+					deal = false;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 	if ( !deal )
 	{
@@ -316,7 +325,7 @@ void sellItemToShop(Item* item)
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{
-		if ( rand() % 2 )
+		if ( rand() % 2 && item->type != GEM_GLASS )
 		{
 			players[clientnum]->entity->increaseSkill(PRO_TRADING);
 		}

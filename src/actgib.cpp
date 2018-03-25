@@ -106,21 +106,25 @@ void actGib(Entity* my)
 
 Entity* spawnGib(Entity* parentent)
 {
-	Entity* entity;
-	Stat* parentstats;
+	Entity* entity = nullptr;
+	Stat* parentstats = nullptr;
 	double vel;
 	int gibsprite = 5;
 
-	if ( parentent == NULL )
+	if ( !parentent )
 	{
-		return NULL;
+		return nullptr;
 	}
-	if ( (parentstats = parentent->getStats()) != NULL )
+	if ( (parentstats = parentent->getStats()) != nullptr )
 	{
+		if ( multiplayer == CLIENT )
+		{
+			printlog("[%s:%d spawnGib()] spawnGib() called on client, got clientstats. Probably bad?", __FILE__, __LINE__);
+		}
 		switch ( gibtype[(int)parentstats->type] )
 		{
 			case 0:
-				return NULL;
+				return nullptr;
 			case 1:
 				gibsprite = 5;
 				break;
@@ -137,13 +141,21 @@ Entity* spawnGib(Entity* parentent)
 					gibsprite = 215;
 				}
 				break;
+			case 4:
+				gibsprite = 683;
+				break;
+			//TODO: Gear gibs for automatons, and crystal gibs for golem.
 			default:
 				gibsprite = 5;
 				break;
 		}
 	}
 
-	entity = newEntity(gibsprite, 1, map.entities);
+	entity = newEntity(gibsprite, 1, map.entities, nullptr); //Gib entity.
+	if ( !entity )
+	{
+		return nullptr;
+	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
@@ -179,7 +191,7 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 {
 	double vel;
 
-	Entity* entity = newEntity(sprite, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Gib entity.
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;

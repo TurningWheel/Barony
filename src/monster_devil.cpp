@@ -25,11 +25,7 @@ void initDevil(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 304;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(304);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,69 +36,31 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "Baphomet");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 1250 + 250 * numplayers;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 2000;
-		myStats->MAXMP = 2000;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = -50;
-		myStats->DEX = -20;
-		myStats->CON = 10;
-		myStats->INT = 50;
-		myStats->PER = 500;
-		myStats->CHR = 50;
-		myStats->EXP = 0;
-		myStats->LVL = 30;
-		myStats->HUNGER = 900;
-		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		if ( myStats->HP == 1250 )
 		{
-			if ( c < NUMPROFICIENCIES )
+			for ( c = 0; c < MAXPLAYERS; ++c )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				if ( !client_disconnected[c] )
+				{
+					myStats->MAXHP += 250;
+				}
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
+			myStats->HP = myStats->MAXHP;
+			myStats->OLDHP = myStats->HP;
 		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
-
-		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
-		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
 		if (players[0] && players[0]->entity)
 		{
-			MONSTER_TARGET = players[0]->entity->getUID();
-			MONSTER_TARGETX = players[0]->entity->x;
-			MONSTER_TARGETY = players[0]->entity->y;
+			my->monsterTarget = players[0]->entity->getUID();
+			my->monsterTargetX = players[0]->entity->x;
+			my->monsterTargetY = players[0]->entity->y;
 		}
+
+		my->setHardcoreStats(*myStats);
 	}
 
 	// head
-	Entity* entity = newEntity(303, 0, map.entities);
+	Entity* entity = newEntity(303, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -118,9 +76,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right bicep
-	entity = newEntity(305, 0, map.entities);
+	entity = newEntity(305, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -136,9 +95,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right forearm
-	entity = newEntity(306, 0, map.entities);
+	entity = newEntity(306, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -154,9 +114,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left bicep
-	entity = newEntity(307, 0, map.entities);
+	entity = newEntity(307, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -172,9 +133,10 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left forearm
-	entity = newEntity(308, 0, map.entities);
+	entity = newEntity(308, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -190,42 +152,17 @@ void initDevil(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actDevilLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void devilDie(Entity* my)
 {
-	node_t* node, *nextnode;
+	node_t* node;
 
 	int c;
 	for ( c = 0; c < 5; c++ )
@@ -234,19 +171,9 @@ void devilDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 	//playSoundEntity(my, 28, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	if ( multiplayer == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -324,7 +251,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* leftbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
@@ -373,6 +300,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -514,8 +442,8 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				entity->z -= 16;
 				node_t* tempNode;
-				Entity* playertotrack = NULL;
-				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
+				Entity* playertotrack = nullptr;
+				for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next ) //Searching for players only? Don't search full map.entities then.
 				{
 					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
@@ -679,4 +607,5 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 void actDevilTeleport(Entity* my)
 {
 	// dummy function
+	my->flags[PASSABLE] = true;
 }

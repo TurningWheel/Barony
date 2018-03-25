@@ -11,16 +11,19 @@
 
 #include <list>
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
@@ -46,6 +49,16 @@ void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
 	*id = SteamMatchmaking()->GetLobbyOwner(*static_cast<CSteamID*>(steamIDLobby));
 	return id; //Still don't like this method.
 }
+// get player names in a lobby
+void* cpp_SteamMatchmaking_GetLobbyMember(void* steamIDLobby, int index)
+{
+	CSteamID* id = new CSteamID();
+	*id = SteamMatchmaking()->GetLobbyMemberByIndex(*static_cast<CSteamID*>(currentLobby), index);
+	return id;
+}
+uint64 SteamAPICall_NumPlayersOnline = 0;
+NumberOfCurrentPlayers_t NumberOfCurrentPlayers;
+int steamOnlinePlayers = 0;
 #endif
 
 // menu variables
@@ -53,7 +66,9 @@ bool lobby_window = false;
 bool settings_window = false;
 int connect_window = 0;
 int charcreation_step = 0;
-
+int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
+bool singleplayerSavegameExists = false; // used on multiplayer/single player select window to store if savefile exists. 
+bool multiplayerSavegameExists = false; // used on multiplayer/single player select window to store if savefile exists. 
 /*
  * settings_tab
  * valid values:
@@ -75,11 +90,13 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
 typedef std::tuple<int, int> resolution;
 std::list<resolution> resolutions;
 Uint32 settings_fov;
+Uint32 settings_fps;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
 real_t settings_gamma;
@@ -92,6 +109,7 @@ bool settings_broadcast;
 bool settings_nohud;
 bool settings_colorblind;
 bool settings_spawn_blood;
+bool settings_light_flicker;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
@@ -99,11 +117,19 @@ bool spawn_blood = true;
 int multiplayerselect = SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
+bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES] = { true, true, true, true,
+																true, true, true, true,
+																true, true, true, true };
+int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES] = {	0, 0, 0, 0,
+																		0, 0, 0, 0,
+																		0, 0, 0, 0 };
+bool settings_hotbar_numkey_quick_add = false;
 bool settings_disable_messages = true;
 bool settings_right_click_protect = false;
 bool settings_auto_appraise_new_items = true;
 bool playing_random_char = false;
 bool colorblind = false;
+bool settings_lock_right_sidebar = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -124,6 +150,8 @@ Uint32 colorWhite = 0xFFFFFFFF;
 
 int firstendmoviealpha[30];
 int secondendmoviealpha[30];
+int thirdendmoviealpha[30];
+int fourthendmoviealpha[30];
 int intromoviealpha[30];
 int rebindkey = -1;
 int rebindaction = -1;
@@ -139,6 +167,12 @@ int firstendmovietime = 0;
 int firstendmoviestage = 0;
 int secondendmovietime = 0;
 int secondendmoviestage = 0;
+int thirdendmoviestage = 0;
+int thirdendmovietime = 0;
+int thirdEndNumLines = 6;
+int fourthendmoviestage = 0;
+int fourthendmovietime = 0;
+int fourthEndNumLines = 13;
 real_t drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
@@ -388,6 +422,9 @@ void handleMainMenu(bool mode)
 			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
 
+		// gray text color
+		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
+
 		// print game version
 		if ( mode || introstage != 5 )
 		{
@@ -459,16 +496,65 @@ void handleMainMenu(bool mode)
 			int h2 = h;
 			TTF_SizeUTF8(ttf8, VERSION, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
-		}
 
+#ifdef STEAMWORKS
+			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
+				&& subwindow == 0
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					playSound(139, 64);
+					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+				}
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[2549], steamOnlinePlayers);
+			}
+			else if ( SteamUser()->BLoggedOn() )
+			{
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[2549], steamOnlinePlayers);
+			}
+			/*h2 = h;
+			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
+			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
+				&& subwindow == 0
+				&& introstage == 1
+				&& SteamUser()->BLoggedOn() )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					playSound(139, 64);
+					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+				}
+				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8 + h2, colorGray, language[2549], steamOnlinePlayers);
+			}
+			else if ( SteamUser()->BLoggedOn() )
+			{
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
+			}*/
+			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			{
+				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
+			}
+			bool bFailed = false;
+			if ( SteamUser()->BLoggedOn() )
+			{
+				SteamUtils()->GetAPICallResult(SteamAPICall_NumPlayersOnline, &NumberOfCurrentPlayers, sizeof(NumberOfCurrentPlayers_t), 1107, &bFailed);
+				if ( NumberOfCurrentPlayers.m_bSuccess )
+				{
+					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				}
+			}
+#endif // STEAMWORKS
+		}
 		// navigate with arrow keys
 		if (!subwindow)
 		{
 			navigateMainMenuItems(mode);
 		}
-
-		// gray text color
-		Uint32 colorGray = SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255);
 
 		// draw menu
 		if ( mode )
@@ -489,6 +575,34 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
 				//...etc
 			 */
+			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			{
+				buttonOpenCharacterCreationWindow(nullptr);
+				keystatus[SDL_SCANCODE_L] = 0;
+				keystatus[SDL_SCANCODE_LCTRL] = 0;
+				keystatus[SDL_SCANCODE_RCTRL] = 0;
+				multiplayerselect = SERVER;
+				charcreation_step = 6;
+				camera_charsheet_offsetyaw = (330) * PI / 180;
+				directConnect = true;
+				strcpy(portnumber_char, "12345");
+				buttonHostLobby(nullptr);
+			}
+
+			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			{
+				buttonOpenCharacterCreationWindow(nullptr);
+
+				keystatus[SDL_SCANCODE_M] = 0;
+				keystatus[SDL_SCANCODE_LCTRL] = 0;
+				keystatus[SDL_SCANCODE_RCTRL] = 0;
+				multiplayerselect = CLIENT;
+				charcreation_step = 6;
+				camera_charsheet_offsetyaw = (330) * PI / 180;
+				directConnect = true;
+				strcpy(connectaddress, "localhost:12345");
+				buttonJoinLobby(nullptr);
+			}
 
 			//"Start Game" button.
 			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1303]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )
@@ -506,7 +620,7 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 
 					// look for a save game
-					if ( saveGameExists() )
+					if ( saveGameExists(true) || saveGameExists(false) )
 					{
 						openLoadGameWindow(NULL);
 					}
@@ -564,6 +678,7 @@ void handleMainMenu(bool mode)
 					clientnum = 0;
 					subwindow = 1;
 					score_window = 1;
+					camera_charsheet_offsetyaw = (330) * PI / 180;
 					loadScore(0);
 					subx1 = xres / 2 - 400;
 					subx2 = xres / 2 + 400;
@@ -580,7 +695,7 @@ void handleMainMenu(bool mode)
 					button = newButton();
 					strcpy(button->label, "x");
 					button->x = subx2 - 20;
-					button->y = suby1;
+					button->y = suby1 + 4;
 					button->sizex = 20;
 					button->sizey = 20;
 					button->action = &buttonCloseSubwindow;
@@ -614,6 +729,28 @@ void handleMainMenu(bool mode)
 					button->focused = 1;
 					button->key = SDL_SCANCODE_LEFT;
 					button->joykey = joyimpulses[INJOY_DPAD_LEFT];
+
+					// multiplayer scores toggle button
+					button = newButton();
+					strcpy(button->label, "");
+					button->sizex = strlen("show multiplayer") * 12 + 8;
+					button->sizey = 20;
+					button->x = subx2 - 44 - strlen("show multiplayer") * 12;
+					button->y = suby1 + 4;
+					button->action = &buttonScoreToggle;
+					button->visible = 1;
+					button->focused = 1;
+
+					// delete single score button
+					button = newButton();
+					strcpy(button->label, "delete score");
+					button->sizex = strlen("delete score") * 12 + 8;
+					button->sizey = 20;
+					button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
+					button->y = suby1 + 4;
+					button->action = &buttonDeleteCurrentScore;
+					button->visible = 1;
+					button->focused = 1;
 				}
 			}
 			else
@@ -1024,7 +1161,7 @@ void handleMainMenu(bool mode)
 				// get number of lobby members (capped to game limit)
 
 				// record CSteamID of lobby owner (and nobody else)
-				SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
+				int lobbyMembers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(currentLobby));
 				if ( steamIDRemote[0] )
 				{
 					cpp_Free_CSteamID(steamIDRemote[0]);
@@ -1039,7 +1176,10 @@ void handleMainMenu(bool mode)
 						steamIDRemote[c] = NULL;
 					}
 				}
-
+				for ( c = 1; c < lobbyMembers; ++c )
+				{
+					steamIDRemote[c] = cpp_SteamMatchmaking_GetLobbyMember(currentLobby, c);
+				}
 				buttonJoinLobby(NULL);
 			}
 		}
@@ -1065,6 +1205,23 @@ void handleMainMenu(bool mode)
 		if ( subwindow )
 		{
 			drawWindowFancy(subx1, suby1, subx2, suby2);
+			if ( loadGameSaveShowRectangle > 0 )
+			{
+				SDL_Rect saveBox;
+				saveBox.x = subx1 + 4;
+				saveBox.y = suby1 + TTF12_HEIGHT * 2;
+				saveBox.w = subx2 - subx1 - 8;
+				saveBox.h = TTF12_HEIGHT * 3;
+				drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
+				drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+				if ( loadGameSaveShowRectangle == 2 )
+				{
+					saveBox.y = suby1 + TTF12_HEIGHT * 5 + 2;
+					//drawTooltip(&saveBox);
+					drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
+					drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+				}
+			}
 			if ( subtext != NULL )
 			{
 				if ( strncmp(subtext, language[740], 12) )
@@ -1076,6 +1233,10 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
 				}
 			}
+		}
+		else
+		{
+			loadGameSaveShowRectangle = 0;
 		}
 
 		// process button actions
@@ -1090,8 +1251,8 @@ void handleMainMenu(bool mode)
 		// draw character window
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
-			camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1;
-			camera_charsheet.y = players[clientnum]->entity->y / 16.0 - .5;
+			camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1.118 * cos(camera_charsheet_offsetyaw); // + 1
+			camera_charsheet.y = players[clientnum]->entity->y / 16.0 + 1.118 * sin(camera_charsheet_offsetyaw); // -.5
 			camera_charsheet.z = players[clientnum]->entity->z * 2;
 			camera_charsheet.ang = atan2(players[clientnum]->entity->y / 16.0 - camera_charsheet.y, players[clientnum]->entity->x / 16.0 - camera_charsheet.x);
 			camera_charsheet.vang = PI / 24;
@@ -1137,6 +1298,42 @@ void handleMainMenu(bool mode)
 					c++;
 				}
 			}
+			SDL_Rect rotateBtn;
+			rotateBtn.w = 24;
+			rotateBtn.h = 24;
+			rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
+			rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+			drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					camera_charsheet_offsetyaw += 0.05;
+					if ( camera_charsheet_offsetyaw > 2 * PI )
+					{
+						camera_charsheet_offsetyaw -= 2 * PI;
+					}
+					drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				}
+			}
+			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, ">");
+
+			rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
+			rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+			drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+			if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+			{
+				if ( mousestatus[SDL_BUTTON_LEFT] )
+				{
+					camera_charsheet_offsetyaw -= 0.05;
+					if ( camera_charsheet_offsetyaw < 0.f )
+					{
+						camera_charsheet_offsetyaw += 2 * PI;
+					}
+					drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				}
+			}
+			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 		}
 
 		// sexes
@@ -1199,15 +1396,15 @@ void handleMainMenu(bool mode)
 		else if ( charcreation_step == 2 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
-			for ( c = 0; c < 10; c++ )
+			for ( c = 0; c < NUMCLASSES; c++ )
 			{
 				if ( c == client_classes[0] )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", language[1900 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", language[1900 + c]);
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c));
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -1236,7 +1433,7 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						client_classes[0] = 9;
+						client_classes[0] = NUMCLASSES - 1;
 					}
 
 					// reset class loadout
@@ -1252,7 +1449,7 @@ void handleMainMenu(bool mode)
 					}
 					draw_cursor = false;
 					client_classes[0]++;
-					if (client_classes[0] > 9)
+					if ( client_classes[0] > NUMCLASSES - 1 )
 					{
 						client_classes[0] = 0;
 					}
@@ -1264,7 +1461,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// class description
-			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[10 + client_classes[0]]);
+			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0]));
 		}
 
 		// faces
@@ -1413,6 +1610,20 @@ void handleMainMenu(bool mode)
 							break;
 					}
 				}
+				if ( multiplayerselect == 0 )
+				{
+					if ( singleplayerSavegameExists )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2965]);
+					}
+				}
+				else if ( multiplayerselect > 0 )
+				{
+					if ( multiplayerSavegameExists )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2966]);
+					}
+				}
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
 					if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
@@ -1506,6 +1717,8 @@ void handleMainMenu(bool mode)
 		// select/inspect lobbies
 		if ( omousex >= subx1 + 8 && omousex < subx2 - 32 && omousey >= suby1 + 26 && omousey < suby2 - 64 )
 		{
+			//Something is flawed somewhere in here, because commit 1bad2c5d9f67e0a503ca79f93b03101fbcc7c7ba had to fix the game using an inappropriate hoveringSelection.
+			//Perhaps it's as simple as setting hoveringSelection back to -1 if lobbyIDs[hoveringSelection] is in-fact null.
 			hoveringSelection = std::min(std::max(0, y2 + ((omousey - suby1 - 24) >> 4)), MAX_STEAM_LOBBIES);
 
 			// lobby info tooltip
@@ -1515,18 +1728,18 @@ void handleMainMenu(bool mode)
 				Uint32 lobbySvFlags = atoi(lobbySvFlagsChar);
 
 				int numSvFlags = 0, c;
-				for ( c = 0; c < NUM_SERVER_FLAGS; c++ )
+				for ( c = 0; c < NUM_SERVER_FLAGS; ++c )
 				{
 					if ( lobbySvFlags & power(2, c) )
 					{
-						numSvFlags++;
+						++numSvFlags;
 					}
 				}
 
 				flagsBox.x = mousex + 8;
 				flagsBox.y = mousey + 8;
 				flagsBox.w = strlen(language[1335]) * 12 + 4;
-				flagsBox.h = 16 + 12 * std::max(2, numSvFlags + 1);
+				flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
 				strcpy(flagsBoxText, language[1335]);
 				strcat(flagsBoxText, "\n");
 
@@ -1541,9 +1754,18 @@ void handleMainMenu(bool mode)
 					{
 						if ( lobbySvFlags & power(2, c) )
 						{
-							y += 12;
+							y += TTF_FontHeight(ttf12);
 							strcat(flagsBoxText, "\n");
-							strcat(flagsBoxText, language[153 + c]);
+							char flagStringBuffer[256] = "";
+							if ( c < 5 )
+							{
+								strcpy(flagStringBuffer, language[153 + c]);
+							}
+							else
+							{
+								strcpy(flagStringBuffer, language[2917 - 5 + c]);
+							}
+							strcat(flagsBoxText, flagStringBuffer);
 						}
 					}
 				}
@@ -1583,10 +1805,10 @@ void handleMainMenu(bool mode)
 		}
 
 		// draw server flags tooltip (if applicable)
-		if ( hoveringSelection >= 0 && numSteamLobbies > 0 )
+		if ( hoveringSelection >= 0 && numSteamLobbies > 0 && hoveringSelection < numSteamLobbies )
 		{
 			drawTooltip(&flagsBox);
-			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 2, flagsBoxText);
+			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
 		}
 	}
 #endif
@@ -1694,6 +1916,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 204, "[ ] %s", language[1345]);
 			}
+			if ( settings_light_flicker )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[x] %s", language[2967]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2967]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -1729,16 +1959,25 @@ void handleMainMenu(bool mode)
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_colorblind = (settings_colorblind == false);
 					}
+					else if ( omousey >= suby1 + 228 && omousey < suby1 + 228 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_light_flicker = (settings_light_flicker == false);
+					}
 				}
 			}
 
 			// fov slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, language[1346]);
-			doSlider(subx1 + 24, suby2 - 104, 14, 40, 100, 1, (int*)(&settings_fov));
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, language[1346]);
+			doSlider(subx1 + 24, suby2 - 148, 14, 40, 100, 1, (int*)(&settings_fov));
 
 			// gamma slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[1347]);
-			doSliderF(subx1 + 24, suby2 - 56, 14, 0.25, 2.f, 0.25, &settings_gamma);
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, language[1347]);
+			doSliderF(subx1 + 24, suby2 - 104, 14, 0.25, 2.f, 0.25, &settings_gamma);
+
+			// fps slider
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[2411]);
+			doSlider(subx1 + 24, suby2 - 56, 14, 60, 144, 1, (int*)(&settings_fps));
 		}
 
 		// audio tab
@@ -1768,9 +2007,13 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1351 + c]);
 				}
-				else
+				else if ( c < 16 )
 				{
 					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1940 + (c - 14)]);
+				}
+				else
+				{
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1981 + (c - 16)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
 				{
@@ -2094,14 +2337,93 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1373]);
 			}
 			current_y += 16;
+			int hotbar_options_x = subx1 + 72 + 256;
+			int hotbar_options_y = current_y;
 			if ( settings_auto_hotbar_new_items )
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[1374]);
+				int pad_x = hotbar_options_x;
+				int pad_y = hotbar_options_y;
+				drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+				ttfPrintTextFormatted(ttf12, pad_x, current_y - 16, "%s", language[2583]);
+				for ( int i = 0; i < (NUM_HOTBAR_CATEGORIES); ++i )
+				{
+					if ( settings_auto_hotbar_categories[i] == true )
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[x] %s", language[2571 + i]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf12, pad_x, pad_y, "[ ] %s", language[2571 + i]);
+					}
+					pad_x += 128;
+					if ( i == 3 || i == 7 )
+					{
+						pad_x = hotbar_options_x;
+						pad_y += 16;
+					}
+				}
 			}
 			else
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1374]);
 			}
+
+			// autosort inventory categories
+			int autosort_options_x = subx1 + 72 + 256;
+			int autosort_options_y = current_y + 112;
+			int pad_x = autosort_options_x;
+			int pad_y = autosort_options_y;
+			drawWindowFancy(pad_x - 16, pad_y - 32, pad_x + 4 * 128 + 16, pad_y + 48 + 16);
+			ttfPrintTextFormatted(ttf12, pad_x, current_y - 16 + 112, "%s", language[2912]);
+
+			// draw the values for autosort
+			for ( int i = 0; i < (NUM_AUTOSORT_CATEGORIES); ++i )
+			{
+				ttfPrintTextFormatted(ttf12, pad_x, pad_y, "<");
+				Uint32 autosortColor = uint32ColorGreen(*mainsurface);
+				int padValue_x = pad_x;
+				if ( settings_autosort_inventory_categories[i] < 0 )
+				{
+					autosortColor = uint32ColorRed(*mainsurface);
+					padValue_x += 4; // centre the negative numbers.
+				}
+				else if ( settings_autosort_inventory_categories[i] == 0 )
+				{
+					autosortColor = uint32ColorWhite(*mainsurface);
+				}
+				ttfPrintTextFormattedColor(ttf12, padValue_x, pad_y, autosortColor, " %2d", settings_autosort_inventory_categories[i]);
+				if ( i == NUM_AUTOSORT_CATEGORIES - 1 )
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2916]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, pad_x, pad_y, "    > %s", language[2571 + i]);
+				}
+				pad_x += 128;
+				if ( i == 3 || i == 7 )
+				{
+					pad_x = autosort_options_x;
+					pad_y += 16;
+				}
+			}
+
+			pad_x = autosort_options_x + (strlen(language[2912]) - 3) * (TTF12_WIDTH) + 8; // 3 chars from the end of string.
+			pad_y = autosort_options_y;
+			// hover text for autosort title text
+			if ( mouseInBounds(pad_x - 4, pad_x + 3 * TTF12_WIDTH + 8, current_y - 16 + 112, current_y - 16 + 124) )
+			{
+				tooltip_box.x = omousex - TTF12_WIDTH * 32;
+				tooltip_box.y = omousey - (TTF12_HEIGHT * 3 + 16);
+				tooltip_box.w = strlen(language[2914]) * TTF12_WIDTH + 8;
+				tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+				drawTooltip(&tooltip_box);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[2913]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT, language[2914]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4 + TTF12_HEIGHT * 2, language[2915]);
+			}
+
 			current_y += 16;
 			if ( settings_auto_appraise_new_items )
 			{
@@ -2129,7 +2451,25 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[1998]);
 			}
-			current_y += 32;
+			current_y += 16;
+			if ( settings_hotbar_numkey_quick_add )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2590]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2590]);
+			}
+			current_y += 16;
+			if ( settings_lock_right_sidebar )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2598]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2598]);
+			}
+			current_y += 48;
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
@@ -2140,22 +2480,39 @@ void handleMainMenu(bool mode)
 			int i;
 			for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 			{
-				if ( svFlags & power(2, i) )
+				char flagStringBuffer[256] = "";
+				if ( i < 5 )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[153 + i], 255);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[153 + i]);
+					strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+				}
+				if ( svFlags & power(2, i) )
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", flagStringBuffer);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", flagStringBuffer);
 				}
 				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12))   //So many gosh dang magic numbers ._.
 				{
-					if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+					if ( i < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + i], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+					}
+					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 						tooltip_box.h = TTF12_HEIGHT + 8;
 					}
 				}
@@ -2166,7 +2523,16 @@ void handleMainMenu(bool mode)
 				drawTooltip(&tooltip_box);
 				if (hovering_selection < NUM_SERVER_FLAGS)
 				{
-					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+					char flagStringBuffer[256] = "";
+					if ( hovering_selection < 5 )
+					{
+						strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+					}
+					else
+					{
+						strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+					}
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 				}
 			}
 
@@ -2205,6 +2571,71 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
+					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_hotbar_numkey_quick_add = (settings_hotbar_numkey_quick_add == false);
+					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_lock_right_sidebar = (settings_lock_right_sidebar == false);
+					}
+				}
+				else
+				{
+					if ( settings_auto_hotbar_new_items )
+					{
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+							{
+								if ( mouseInBounds(hotbar_options_x, hotbar_options_x + 24, hotbar_options_y, hotbar_options_y + 12) )
+								{
+									settings_auto_hotbar_categories[i] = !settings_auto_hotbar_categories[i];
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+								}
+								hotbar_options_x += 128;
+								if ( i == 3 || i == 7 )
+								{
+									hotbar_options_x -= (128 * 4);
+									hotbar_options_y += 16;
+								}
+							}
+						}
+					}
+
+					// autosort category toggles
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						for ( i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+						{
+							if ( mouseInBounds(autosort_options_x, autosort_options_x + 16, autosort_options_y, autosort_options_y + 12) )
+							{
+								--settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] < -9 )
+								{
+									settings_autosort_inventory_categories[i] = 9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							else if(mouseInBounds(autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12))
+							{
+								++settings_autosort_inventory_categories[i];
+								if ( settings_autosort_inventory_categories[i] > 9 )
+								{
+									settings_autosort_inventory_categories[i] = -9;
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							autosort_options_x += 128;
+							if ( i == 3 || i == 7 )
+							{
+								autosort_options_x -= (128 * 4);
+								autosort_options_y += 16;
+							}
+						}
 					}
 				}
 
@@ -2425,7 +2856,7 @@ void handleMainMenu(bool mode)
 					{
 						c = MAXPLAYERS + 4;  // client is trying to join the game with an incompatible save
 					}
-					else if ( loadingsavegame && getSaveGameMapSeed() != clientms )
+					else if ( loadingsavegame && getSaveGameMapSeed(false) != clientms )
 					{
 						c = MAXPLAYERS + 5;  // client is trying to join the game with a slightly incompatible save (wrong level)
 					}
@@ -2867,7 +3298,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) ) //TODO: Sometimes if a host closes a lobby, it can crash here for a client.
 					{
 						continue;
 					}
@@ -3049,27 +3480,36 @@ void handleMainMenu(bool mode)
 			charDisplayName = stats[c]->name;
 
 #ifdef STEAMWORKS
-			int remoteIDIndex = c;
-			if ( multiplayer == SERVER )
+			if ( !directConnect && c != clientnum )
 			{
-				remoteIDIndex--;
-			}
+				//printlog("\n\n/* ********* *\nc = %d", c);
+				int remoteIDIndex = c;
+				if ( multiplayer == SERVER && c != 0 ) //Skip the server, because that would be undefined behavior (array index of -1). //TODO: if c > clientnum instead?
+				{
+					remoteIDIndex--;
+				}
 
-			if ( !directConnect && steamIDRemote[remoteIDIndex] )
-			{
-				charDisplayName += " (";
-				charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
-				charDisplayName += ")";
+				if ( remoteIDIndex >= 0 && steamIDRemote[remoteIDIndex] )
+				{
+					//printlog("remoteIDIndex = %d. Name = \"%s\"", remoteIDIndex, SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex])));
+					charDisplayName += " (";
+					charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
+					charDisplayName += ")";
+				}
+				/*else
+				{
+					printlog("remoteIDIndex = %d. No name b/c remote ID is NULL", remoteIDIndex);
+				}*/
 			}
 #endif
 
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], language[1900 + client_classes[c]]);
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c]));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], language[1900 + client_classes[c]]);
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c]));
 			}
 		}
 
@@ -3193,22 +3633,39 @@ void handleMainMenu(bool mode)
 		int i;
 		for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 		{
-			if ( svFlags & power(2, i) )
+			char flagStringBuffer[256] = "";
+			if ( i < 5 )
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[153 + i], 255);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", language[153 + i]);
+				strncpy(flagStringBuffer, language[2917 - 5 + i], 255);
+			}
+			if ( svFlags & power(2, i) )
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[x] %s", flagStringBuffer);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 80 + 16 * i, "[ ] %s", flagStringBuffer);
 			}
 			if (mouseInBounds((xres / 2) + 8 + 6, (xres / 2) + 8 + 30, suby1 + 80 + (i * 16), suby1 + 92 + (i * 16)))   //So many gosh dang magic numbers ._.
 			{
-				if (strlen(language[1942 + i]) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
+				if ( i < 5 )
+				{
+					strncpy(flagStringBuffer, language[1942 + i], 255);
+				}
+				else
+				{
+					strncpy(flagStringBuffer, language[2921 - 5 + i], 255);
+				}
+				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
-					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}
 			}
@@ -3384,9 +3841,18 @@ void handleMainMenu(bool mode)
 		if (hovering_selection > -1)
 		{
 			drawTooltip(&tooltip_box);
+			char flagStringBuffer[256] = "";
+			if ( hovering_selection < 5 )
+			{
+				strncpy(flagStringBuffer, language[1942 + hovering_selection], 255);
+			}
+			else
+			{
+				strncpy(flagStringBuffer, language[2921 - 5 + hovering_selection], 255);
+			}
 			if (hovering_selection < NUM_SERVER_FLAGS)
 			{
-				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
+				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 			}
 		}
 
@@ -3464,20 +3930,44 @@ void handleMainMenu(bool mode)
 	// statistics window
 	if ( score_window )
 	{
-		if ( !list_Size(&topscores) )
+		// draw button label... shamelessly hacked together from "multiplayer scores toggle button" initialisation...
+		int toggleText_x = subx2 - 44 - strlen("show multiplayer") * 12;
+		int toggleText_y = suby1 + 4 ;
+		int w = 0;
+		int h = 0;
+		list_t* scoresPtr = &topscores;
+		if ( !scoreDisplayMultiplayer )
+		{
+			TTF_SizeUTF8(ttf12, "show multiplayer", &w, &h);
+			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show multiplayer");
+		}
+		else
+		{
+			scoresPtr = &topscoresMultiplayer;
+			TTF_SizeUTF8(ttf12, "show solo", &w, &h);
+			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show solo");
+		}
+		if ( !list_Size(scoresPtr) )
 		{
 #define NOSCORESSTR language[1389]
 			ttfPrintTextFormatted(ttf16, xres / 2 - strlen(NOSCORESSTR) * 9, yres / 2 - 9, NOSCORESSTR);
 		}
 		else
 		{
-			ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - #%d", language[1390], score_window);
+			if ( scoreDisplayMultiplayer )
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[2958], score_window, list_Size(&topscoresMultiplayer));
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[1390], score_window, list_Size(&topscores));
+			}
 
 			// draw character window
 			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 			{
-				camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1;
-				camera_charsheet.y = players[clientnum]->entity->y / 16.0 - .5;
+				camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1.118 * cos(camera_charsheet_offsetyaw); // + 1
+				camera_charsheet.y = players[clientnum]->entity->y / 16.0 + 1.118 * sin(camera_charsheet_offsetyaw); // -.5
 				camera_charsheet.z = players[clientnum]->entity->z * 2;
 				camera_charsheet.ang = atan2(players[clientnum]->entity->y / 16.0 - camera_charsheet.y, players[clientnum]->entity->x / 16.0 - camera_charsheet.x);
 				camera_charsheet.vang = PI / 24;
@@ -3520,6 +4010,42 @@ void handleMainMenu(bool mode)
 					}
 					c++;
 				}
+				SDL_Rect rotateBtn;
+				rotateBtn.w = 24;
+				rotateBtn.h = 24;
+				rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w;
+				rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+				drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						camera_charsheet_offsetyaw += 0.05;
+						if ( camera_charsheet_offsetyaw > 2 * PI )
+						{
+							camera_charsheet_offsetyaw -= 2 * PI;
+						}
+						drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+					}
+				}
+				ttfPrintText(ttf12, rotateBtn.x + 6, rotateBtn.y + 6, ">");
+
+				rotateBtn.x = camera_charsheet.winx + camera_charsheet.winw - rotateBtn.w * 2 - 4;
+				rotateBtn.y = camera_charsheet.winy + camera_charsheet.winh - rotateBtn.h;
+				drawWindow(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+				if ( mouseInBounds(rotateBtn.x, rotateBtn.x + rotateBtn.w, rotateBtn.y, rotateBtn.y + rotateBtn.h) )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						camera_charsheet_offsetyaw -= 0.05;
+						if ( camera_charsheet_offsetyaw < 0.f )
+						{
+							camera_charsheet_offsetyaw += 2 * PI;
+						}
+						drawDepressed(rotateBtn.x, rotateBtn.y, rotateBtn.x + rotateBtn.w, rotateBtn.y + rotateBtn.h);
+					}
+				}
+				ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 			}
 
 			// print name and class
@@ -3535,6 +4061,10 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
 				}
+				else if ( victory == 3 )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+				}
 			}
 			else
 			{
@@ -3542,13 +4072,13 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[32];
-				strcpy(classname, language[1900 + client_classes[0]]);
+				strcpy(classname, playerClassLangEntry(client_classes[0]));
 				classname[0] -= 32;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
 			}
 
 			// print total score
-			node = list_Node(&topscores, score_window - 1);
+			node = list_Node(scoresPtr, score_window - 1);
 			if ( node )
 			{
 				score_t* score = (score_t*)node->element;
@@ -3556,7 +4086,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// print character stats
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, language[1900 + client_classes[clientnum]]);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
@@ -3573,7 +4103,8 @@ void handleMainMenu(bool mode)
 			Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
 			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
-			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate )
+			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
+				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -3584,43 +4115,55 @@ void handleMainMenu(bool mode)
 				if ( conductPenniless )
 				{
 					strcat(tempstr, language[1408]);
-					b++;
+					++b;
 				}
 				if ( conductFoodless )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1409]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductVegetarian )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1410]);
-					b++;
-				}
-				if ( b == 2 )
-				{
-					strcat(tempstr, "\n ");
+					++b;
 				}
 				if ( conductIlliterate )
 				{
+					if ( b > 0 )
+					{
+						strcat(tempstr, ", ");
+					}
 					strcat(tempstr, language[1411]);
-					b++;
+					++b;
 				}
-				if ( b == 2 )
+				for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
 				{
-					strcat(tempstr, "\n ");
+					if ( conductGameChallenges[c] != 0 )
+					{
+						if ( b > 0 )
+						{
+							strcat(tempstr, ", ");
+						}
+						if ( b > 0 && b % 4 == 0 )
+						{
+							strcat(tempstr, "\n ");
+						}
+						strcat(tempstr, language[2925 + c]);
+						++b;
+					}
 				}
-				if ( b != 2 )
+				/*	if ( b > 0 )
 				{
 					tempstr[strlen(tempstr) - 2] = 0;
-				}
-				else
-				{
-					tempstr[strlen(tempstr) - 4] = 0;
-				}
+				}*/
 				ttfPrintTextFormatted(ttf12, subx1 + 20, suby2 - 64, tempstr);
 			}
 
@@ -3635,11 +4178,25 @@ void handleMainMenu(bool mode)
 					nokills = false;
 					if ( kills[x] > 1 )
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[111 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
+						}
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[90 + x]);
+						if ( x < KOBOLD )
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
+						}
+						else
+						{
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
+						}
 					}
 					y++;
 				}
@@ -3649,6 +4206,10 @@ void handleMainMenu(bool mode)
 				ttfPrintText(ttf12, subx1 + 456, suby1 + 296, language[1413]);
 			}
 		}
+	}
+	else
+	{
+		scoreDisplayMultiplayer = false;
 	}
 
 	// handle fade actions
@@ -3672,9 +4233,10 @@ void handleMainMenu(bool mode)
 			{
 				// restarting game, make a highscore
 				saveScore();
-				deleteSaveGame();
+				deleteSaveGame(multiplayer);
 				loadingsavegame = 0;
 			}
+			camera_charsheet_offsetyaw = (330) * PI / 180; // reset player camera view.
 
 			// undo shopkeeper grudge
 			swornenemies[SHOPKEEPER][HUMAN] = false;
@@ -3690,10 +4252,13 @@ void handleMainMenu(bool mode)
 			secretlevel = false;
 			victory = 0;
 			completionTime = 0;
-			conductPenniless = true;
-			conductFoodless = true;
-			conductVegetarian = true;
-			conductIlliterate = true;
+
+			setDefaultPlayerConducts(); // penniless, foodless etc.
+
+			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			{
+				gameStatistics[c] = 0;
+			}
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -3726,12 +4291,12 @@ void handleMainMenu(bool mode)
 			if ( multiplayer != CLIENT )
 			{
 				// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 				if ( sound_group )
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
@@ -3767,7 +4332,7 @@ void handleMainMenu(bool mode)
 				magicLeftHand = NULL;
 				magicRightHand = NULL;
 
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					entity = (Entity*)node->element;
 					entity->flags[NOUPDATE] = true;
@@ -3778,18 +4343,23 @@ void handleMainMenu(bool mode)
 				{
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					int i;
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+					for ( i = 0; i < currentlevel; ++i )
+					{
+						while ( fgetc(fp) != '\n' )
+						{
+							if ( feof(fp) )
 							{
 								break;
 							}
+						}
+					}
 					fscanf(fp, "%s", tempstr);
 					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
 						{
@@ -3811,7 +4381,7 @@ void handleMainMenu(bool mode)
 							{
 								break;
 							}
-						loadMap(tempstr, &map, map.entities);
+						loadMap(tempstr, &map, map.entities, map.creatures);
 					}
 					fclose(fp);
 				}
@@ -3819,7 +4389,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( genmap == false )
 					{
-						loadMap(maptoload, &map, map.entities);
+						loadMap(maptoload, &map, map.entities, map.creatures);
 					}
 					else
 					{
@@ -3831,8 +4401,6 @@ void handleMainMenu(bool mode)
 
 				if ( loadingsavegame )
 				{
-					loadingsavegame = 0;
-
 					list_t* followers = loadGameFollowers();
 					if ( followers )
 					{
@@ -3912,6 +4480,7 @@ void handleMainMenu(bool mode)
 				{
 					stats[clientnum]->clearStats();
 					initClass(clientnum);
+					mapseed = 0;
 				}
 				else
 				{
@@ -3919,19 +4488,18 @@ void handleMainMenu(bool mode)
 				}
 
 				// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 				if ( sound_group )
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 				if ( sound_group )
 				{
 					OPENAL_ChannelGroup_Stop(sound_group);
 				}
 #endif
 				// load next level
-				mapseed = 0;
 				entity_uids = 1;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
@@ -3939,11 +4507,11 @@ void handleMainMenu(bool mode)
 				{
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					int i;
 					for ( i = 0; i < currentlevel; i++ )
@@ -3972,7 +4540,7 @@ void handleMainMenu(bool mode)
 							{
 								break;
 							}
-						loadMap(tempstr, &map, map.entities);
+						loadMap(tempstr, &map, map.entities, map.creatures);
 					}
 					fclose(fp);
 				}
@@ -3980,7 +4548,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( genmap == false )
 					{
-						loadMap(maptoload, &map, map.entities);
+						loadMap(maptoload, &map, map.entities, map.creatures);
 					}
 					else
 					{
@@ -3989,7 +4557,7 @@ void handleMainMenu(bool mode)
 				}
 				assignActions(&map);
 				generatePathMaps();
-				for ( node = map.entities->first; node != NULL; node = nextnode )
+				for ( node = map.entities->first; node != nullptr; node = nextnode )
 				{
 					nextnode = node->next;
 					Entity* entity = (Entity*)node->element;
@@ -4005,7 +4573,7 @@ void handleMainMenu(bool mode)
 			// spice of life achievement
 			usedClass[client_classes[clientnum]] = true;
 			bool usedAllClasses = true;
-			for ( c = 0; c < 10; c++ )
+			for ( c = 0; c < NUMCLASSES; c++ )
 				if ( !usedClass[c] )
 				{
 					usedAllClasses = false;
@@ -4024,10 +4592,19 @@ void handleMainMenu(bool mode)
 				list_FreeAll(&safePacketsReceived[c]);
 			}
 			deleteAllNotificationMessages();
-			for (c = 0; c < MAXPLAYERS; c++)
+			if ( !loadingsavegame ) // don't delete the followers we just created!
 			{
-				list_FreeAll(&stats[c]->FOLLOWERS);
+				for (c = 0; c < MAXPLAYERS; c++)
+				{
+					list_FreeAll(&stats[c]->FOLLOWERS);
+				}
 			}
+
+			if ( loadingsavegame && multiplayer != CLIENT )
+			{
+				loadingsavegame = 0;
+			}
+
 			list_FreeAll(&removedEntities);
 			list_FreeAll(&chestInv);
 
@@ -4043,11 +4620,17 @@ void handleMainMenu(bool mode)
 		{
 			fadefinished = false;
 			fadeout = false;
-			creditstage++;
-			if ( creditstage >= 14 )
+			if ( creditstage == 0 && victory == 3 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+			playmusic(citadelmusic[0], true, false, false);
+#endif
+			}
+			creditstage++;
+			if ( creditstage >= 15 )
+			{
+#ifdef MUSIC
+				playmusic(intromusic[2], true, false, false);
 #endif
 				introstage = 1;
 				credittime = 0;
@@ -4092,12 +4675,12 @@ void handleMainMenu(bool mode)
 			}
 
 			// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 			if ( sound_group )
 			{
 				FMOD_ChannelGroup_Stop(sound_group);
 			}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 			if ( sound_group )
 			{
 				OPENAL_ChannelGroup_Stop(sound_group);
@@ -4147,7 +4730,7 @@ void handleMainMenu(bool mode)
 			// delete save game
 			if ( !savethisgame )
 			{
-				deleteSaveGame();
+				deleteSaveGame(multiplayer);
 			}
 			else
 			{
@@ -4220,36 +4803,24 @@ void handleMainMenu(bool mode)
 			magicRightHand = NULL;
 
 			// load menu level
-			switch ( rand() % 4 )
+			int menuMapType = 0;
+			if ( victory == 3 )
 			{
-				case 0:
-					loadMap("mainmenu1", &map, map.entities);
-					camera.x = 8;
-					camera.y = 4.5;
-					camera.z = 0;
-					camera.ang = 0.6;
-					break;
-				case 1:
-					loadMap("mainmenu2", &map, map.entities);
-					camera.x = 7;
-					camera.y = 4;
-					camera.z = -4;
-					camera.ang = 1.0;
-					break;
-				case 2:
-					loadMap("mainmenu3", &map, map.entities);
-					camera.x = 5;
-					camera.y = 3;
-					camera.z = 0;
-					camera.ang = 1.0;
-					break;
-				case 3:
-					loadMap("mainmenu4", &map, map.entities);
-					camera.x = 6;
-					camera.y = 14.5;
-					camera.z = -24;
-					camera.ang = 5.0;
-					break;
+				menuMapType = loadMainMenuMap(true, true);
+			}
+			else
+			{
+				switch ( rand() % 2 )
+				{
+					case 0:
+						menuMapType = loadMainMenuMap(true, false);
+						break;
+					case 1:
+						menuMapType = loadMainMenuMap(false, false);
+						break;
+					default:
+						break;
+				}
 			}
 			camera.vang = 0;
 			numplayers = 0;
@@ -4261,7 +4832,14 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				if ( victory != 3 && menuMapType )
+				{
+					playmusic(intromusic[2], true, false, false);
+				}
+				else
+				{
+					playmusic(intromusic[rand() % 2], true, false, false);
+				}
 #endif
 			}
 			else
@@ -4293,9 +4871,13 @@ void handleMainMenu(bool mode)
 				{
 					introstage = 7;
 				}
-				else
+				else if ( victory == 2 )
 				{
 					introstage = 8;
+				}
+				else if ( victory == 3 )
+				{
+					introstage = 10;
 				}
 			}
 
@@ -4315,7 +4897,7 @@ void handleMainMenu(bool mode)
 			if ( intromoviestage >= 9 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, true, false, false);
+				playmusic(intromusic[1], true, false, false);
 #endif
 				introstage = 1;
 				intromovietime = 0;
@@ -4391,13 +4973,79 @@ void handleMainMenu(bool mode)
 				movie = true;
 			}
 		}
+		else if ( introstage == 9 )     // mid game sequence
+		{
+#ifdef MUSIC
+			if ( thirdendmoviestage == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			thirdendmoviestage++;
+			if ( thirdendmoviestage >= thirdEndNumLines )
+			{
+				int c;
+				for ( c = 0; c < 30; c++ )
+				{
+					thirdendmoviealpha[c] = 0;
+				}
+				fadefinished = false;
+				fadeout = false;
+				if ( multiplayer != CLIENT )
+				{
+					movie = false; // allow normal pause screen.
+					thirdendmoviestage = 0;
+					thirdendmovietime = 0;
+					introstage = 1; // return to normal game functionality
+					skipLevelsOnLoad = 5;
+					loadnextlevel = true; // load the next level.
+					pauseGame(1, false); // unpause game
+				}
+			}
+			else
+			{
+				fadefinished = false;
+				fadeout = false;
+				thirdendmovietime = 0;
+				movie = true;
+			}
+		}
+		else if ( introstage == 10 )     // expansion end game sequence
+		{
+#ifdef MUSIC
+			if ( fourthendmoviestage == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			fourthendmoviestage++;
+			if ( fourthendmoviestage >= fourthEndNumLines )
+			{
+				int c;
+				for ( c = 0; c < 30; c++ )
+				{
+					fourthendmoviealpha[c] = 0;
+				}
+				introstage = 4;
+				fourthendmovietime = 0;
+				fourthendmoviestage = 0;
+				fadeout = true;
+			}
+			else
+			{
+				fadefinished = false;
+				fadeout = false;
+				fourthendmovietime = 0;
+				movie = true;
+			}
+		}
 	}
 
 	// credits sequence
 	if ( creditstage > 0 )
 	{
-		if ( (credittime >= 300 && (creditstage <= 10 || creditstage > 12)) || (credittime >= 180 && creditstage == 11) ||
-		        (credittime >= 480 && creditstage == 12) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+		if ( (credittime >= 300 && (creditstage <= 11 || creditstage > 13)) || (credittime >= 180 && creditstage == 12) ||
+		        (credittime >= 480 && creditstage == 13) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			if ( rebindaction == -1 )
@@ -4423,11 +5071,12 @@ void handleMainMenu(bool mode)
 		else if ( creditstage == 3 )
 		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[58]), yres / 2 - 9 - 18, colorBlue, language[58]);
-			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9 + 18, CREDITSLINE06);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE06), yres / 2 - 9, CREDITSLINE06);
+			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE40), yres / 2 - 9 + 18, CREDITSLINE40);
 		}
 		else if ( creditstage == 4 )
 		{
-			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18 * 2, colorBlue, language[59]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[59]), yres / 2 - 9 - 18, colorBlue, language[59]);
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE39), yres / 2 + 9, CREDITSLINE39);
 		}
 		else if ( creditstage == 5 )
@@ -4467,10 +5116,17 @@ void handleMainMenu(bool mode)
 		}
 		else if ( creditstage == 9 )
 		{
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2585]), yres / 2 - 9 - 18, colorBlue, language[2585]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2586]), yres / 2 - 9, colorBlue, language[2586]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2587]), yres / 2 - 9 + 18, colorBlue, language[2587]);
+			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[2588]), yres / 2 + 9 + 18, colorBlue, language[2588]);
+		}
+		else if ( creditstage == 10 )
+		{
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[64]), yres / 2 - 9 - 18, colorBlue, language[64]);
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[65]), yres / 2 - 9 + 18, language[65]);
 		}
-		else if ( creditstage == 10 )
+		else if ( creditstage == 11 )
 		{
 			// logo
 			src.x = 0;
@@ -4498,7 +5154,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[68]), yres / 2 + 136, language[68]);
 			ttfPrintTextFormattedColor(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(language[69]), yres / 2 + 156, colorBlue, language[69]);
 		}
-		else if ( creditstage == 12 )
+		else if ( creditstage == 13 )
 		{
 			ttfPrintTextFormatted(ttf16, xres / 2 - (TTF16_WIDTH / 2)*strlen(CREDITSLINE37), yres / 2 - 9, CREDITSLINE37);
 			//ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2+9,colorBlue,CREDITSLINE38);
@@ -4512,8 +5168,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_cursed_bmp->w) * backdrop_cursed_bmp->h;
+		drawImageScaled(backdrop_cursed_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
@@ -4607,8 +5263,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime >= 120 && firstendmoviestage == 1) )
@@ -4670,8 +5326,8 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
-		drawImageScaled(backdrop_bmp, NULL, &pos);
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
 		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime >= 120 && secondendmoviestage == 1) )
@@ -4739,6 +5395,227 @@ void handleMainMenu(bool mode)
 			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1432]);
 		}
 	}
+
+	// third end movie stage
+	if ( thirdendmoviestage > 0 )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+
+		if ( thirdendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (thirdendmovietime >= 120 && thirdendmoviestage == 1) )
+		{
+			thirdendmovietime = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( thirdendmoviestage < thirdEndNumLines )
+			{
+				thirdendmoviestage++;
+			}
+			else if ( thirdendmoviestage == thirdEndNumLines )
+			{
+				if ( multiplayer != CLIENT )
+				{
+					fadeout = true;
+					++thirdendmoviestage;
+				}
+			}
+		}
+		Uint32 color = 0x00FFFFFF;
+		if ( thirdendmoviestage >= 1 )
+		{
+			thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+		}
+		if ( thirdendmoviestage >= 2 )
+		{
+			thirdendmoviealpha[0] = std::min(thirdendmoviealpha[0] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[0]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2600]);
+		}
+		if ( thirdendmoviestage >= 3 )
+		{
+			thirdendmoviealpha[1] = std::min(thirdendmoviealpha[1] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[1]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2601]);
+		}
+		if ( thirdendmoviestage >= 4 )
+		{
+			thirdendmoviealpha[2] = std::min(thirdendmoviealpha[2] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[2]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2602]);
+		}
+		if ( thirdendmoviestage >= 5 )
+		{
+			thirdendmoviealpha[3] = std::min(thirdendmoviealpha[3] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[3]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
+		}
+		if ( thirdendmoviestage >= 6 )
+		{
+			thirdendmoviealpha[4] = std::min(thirdendmoviealpha[4] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, thirdendmoviealpha[4]), 255) << 24;
+			if ( multiplayer == CLIENT )
+			{
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
+			}
+			else
+			{
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
+			}
+		}
+	}
+	// fourth (expansion) end movie stage
+	if ( fourthendmoviestage > 0 )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_blessed_bmp->w) * backdrop_blessed_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
+
+		if ( fourthendmovietime >= 600 
+			|| (mousestatus[SDL_BUTTON_LEFT] 
+				&& fourthendmoviestage < 10 
+				&& fourthendmoviestage != 10 
+				&& fourthendmoviestage != 5
+				&& fourthendmoviestage != 1)
+			|| (fourthendmovietime >= 120 && fourthendmoviestage == 1)
+			|| (fourthendmovietime >= 60 && fourthendmoviestage == 5)
+			|| (fourthendmovietime >= 240 && fourthendmoviestage == 10)
+			|| (fourthendmovietime >= 200 && fourthendmoviestage == 11)
+			|| (fourthendmovietime >= 60 && fourthendmoviestage == 12)
+			|| (fourthendmovietime >= 400 && fourthendmoviestage == 13)
+			)
+		{
+			fourthendmovietime = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( fourthendmoviestage < fourthEndNumLines )
+			{
+				fourthendmoviestage++;
+			}
+			else if ( fourthendmoviestage == fourthEndNumLines )
+			{
+				fadeout = true;
+				introstage = 10;
+			}
+		}
+		Uint32 color = 0x00FFFFFF;
+		if ( fourthendmoviestage >= 1 )
+		{
+			fourthendmoviealpha[8] = std::min(fourthendmoviealpha[8] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+		}
+		if ( fourthendmoviestage >= 2 )
+		{
+			if ( fourthendmoviestage < 5 )
+			{
+				fourthendmoviealpha[0] = std::min(fourthendmoviealpha[0] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[0]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2607]);
+		}
+		if ( fourthendmoviestage >= 3 )
+		{
+			if ( fourthendmoviestage < 5 )
+			{
+				fourthendmoviealpha[1] = std::min(fourthendmoviealpha[1] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[1]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2608]);
+		}
+		if ( fourthendmoviestage >= 4 )
+		{
+			if ( fourthendmoviestage < 5 )
+			{
+				fourthendmoviealpha[2] = std::min(fourthendmoviealpha[2] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[2]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2609]);
+		}
+		if ( fourthendmoviestage >= 5 )
+		{
+			fourthendmoviealpha[0] = std::max(fourthendmoviealpha[2] - 2, 0);
+			fourthendmoviealpha[1] = std::max(fourthendmoviealpha[2] - 2, 0);
+			fourthendmoviealpha[2] = std::max(fourthendmoviealpha[2] - 2, 0);
+		}
+		if ( fourthendmoviestage >= 6 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[3] = std::min(fourthendmoviealpha[3] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[3]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2610]);
+		}
+		if ( fourthendmoviestage >= 7 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[4] = std::min(fourthendmoviealpha[4] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[4]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2611]);
+		}
+		if ( fourthendmoviestage >= 8 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[5] = std::min(fourthendmoviealpha[5] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[5]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2612]);
+		}
+		if ( fourthendmoviestage >= 9 )
+		{
+			if ( fourthendmoviestage < 10 )
+			{
+				fourthendmoviealpha[6] = std::min(fourthendmoviealpha[6] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[6]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2613]);
+		}
+		if ( fourthendmoviestage >= 10 )
+		{
+			fourthendmoviealpha[3] = std::max(fourthendmoviealpha[3] - 2, 0);
+			fourthendmoviealpha[4] = std::max(fourthendmoviealpha[4] - 2, 0);
+			fourthendmoviealpha[5] = std::max(fourthendmoviealpha[5] - 2, 0);
+			fourthendmoviealpha[6] = std::max(fourthendmoviealpha[6] - 2, 0);
+		}
+		if ( fourthendmoviestage >= 11 )
+		{
+			fourthendmoviealpha[7] = std::min(fourthendmoviealpha[7] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, fourthendmoviealpha[7]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres/ 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+		}
+		if ( fourthendmoviestage >= 13 )
+		{
+			fadealpha = std::min(fadealpha + 2, 255);
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -4769,15 +5646,20 @@ void openGameoverWindow()
 	scoreDeconstructor((void*)score);
 
 	bool madetop = false;
-	if ( !list_Size(&topscores) )
+	list_t* scoresPtr = &topscores;
+	if ( score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
+	{
+		scoresPtr = &topscoresMultiplayer;
+	}
+	if ( !list_Size(scoresPtr) )
 	{
 		madetop = true;
 	}
-	else if ( list_Size(&topscores) < MAXTOPSCORES )
+	else if ( list_Size(scoresPtr) < MAXTOPSCORES )
 	{
 		madetop = true;
 	}
-	else if ( totalScore((score_t*)topscores.last->element) < total )
+	else if ( totalScore((score_t*)scoresPtr->last->element) < total )
 	{
 		madetop = true;
 	}
@@ -4893,7 +5775,7 @@ void openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
-// get 
+// get
 void getResolutionList()
 {
 	// for now just use the resolution modes on the first
@@ -4902,10 +5784,10 @@ void getResolutionList()
 	int nummodes = SDL_GetNumDisplayModes(0);
 	int im;
 	int c;
-	
+
 	printlog("display count: %d.\n", numdisplays);
 	printlog("display mode count: %d.\n", nummodes);
-	
+
 	for (im = 0; im < nummodes; im++)
 	{
 		SDL_DisplayMode mode;
@@ -4917,7 +5799,7 @@ void getResolutionList()
 			resolutions.push_back(res);
 		}
 	}
-	
+
 	// Sort by total number of pixels
 	resolutions.sort([](resolution a, resolution b) {
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
@@ -4932,7 +5814,7 @@ void openSettingsWindow()
 	int c;
 
 	getResolutionList();
-	
+
 	// set the "settings" variables
 	settings_xres = xres;
 	settings_yres = yres;
@@ -4942,8 +5824,10 @@ void openSettingsWindow()
 	settings_shaking = shaking;
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
+	settings_light_flicker = flickerLights;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
+	settings_fps = fpsLimit;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
 	for (c = 0; c < NUMIMPULSES; c++)
@@ -4960,9 +5844,19 @@ void openSettingsWindow()
 	settings_broadcast = broadcast;
 	settings_nohud = nohud;
 	settings_auto_hotbar_new_items = auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		settings_auto_hotbar_categories[c] = auto_hotbar_categories[c];
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		settings_autosort_inventory_categories[c] = autosort_inventory_categories[c];
+	}
+	settings_hotbar_numkey_quick_add = hotbar_numkey_quick_add;
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
+	settings_lock_right_sidebar = lock_right_sidebar;
 
 	settings_gamepad_leftx_invert = gamepad_leftx_invert;
 	settings_gamepad_lefty_invert = gamepad_lefty_invert;
@@ -4981,9 +5875,9 @@ void openSettingsWindow()
 	settings_window = true;
 	subwindow = 1;
 	//subx1 = xres/2-256;
-	subx1 = xres / 2 - 352;
+	subx1 = xres / 2 - 448;
 	//subx2 = xres/2+256;
-	subx2 = xres / 2 + 352;
+	subx2 = xres / 2 + 448;
 	//suby1 = yres/2-192;
 	//suby2 = yres/2+192;
 #ifdef PANDORA
@@ -5463,7 +6357,7 @@ void buttonQuitConfirm(button_t* my)
 void buttonQuitNoSaveConfirm(button_t* my)
 {
 	buttonQuitConfirm(my);
-	deleteSaveGame();
+	deleteSaveGame(multiplayer);
 
 	// make a highscore!
 	saveScore();
@@ -5512,6 +6406,9 @@ void buttonCloseSubwindow(button_t* my)
 	{
 		return;
 	}
+	loadGameSaveShowRectangle = 0;
+	singleplayerSavegameExists = false; // clear this value when closing window, user could delete savegame
+	multiplayerSavegameExists = false;  // clear this value when closing window, user could delete savegame
 	if ( score_window )
 	{
 		// reset class loadout
@@ -5600,6 +6497,8 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 5 )
 	{
+		singleplayerSavegameExists = saveGameExists(true); // load the savegames and see if they exist, once off operation.
+		multiplayerSavegameExists = saveGameExists(false); // load the savegames and see if they exist, once off operation.
 		if ( SDL_IsTextInputActive() )
 		{
 			lastname = (string)stats[0]->name;
@@ -6054,15 +6953,15 @@ void buttonJoinLobby(button_t* my)
 	connectingToLobbyWindow = temp2;
 #endif
 
+	multiplayer = CLIENT;
 	if ( loadingsavegame )
 	{
-		loadGame(getSaveGameClientnum());
+		loadGame(getSaveGameClientnum(false));
 	}
 
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	multiplayer = CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -6160,13 +7059,13 @@ void buttonJoinLobby(button_t* my)
 	strcpy((char*)net_packet->data, "BARONY_JOIN_REQUEST");
 	if ( loadingsavegame )
 	{
-		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum()]->name, 22);
-		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum()], &net_packet->data[42]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->appearance, &net_packet->data[50]);
+		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum(false)]->name, 22);
+		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[42]);
+		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[46]);
+		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->appearance, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
-		net_packet->data[63] = getSaveGameClientnum();
+		net_packet->data[63] = getSaveGameClientnum(false);
 	}
 	else
 	{
@@ -6181,7 +7080,7 @@ void buttonJoinLobby(button_t* my)
 	if ( loadingsavegame )
 	{
 		// send over the map seed being used
-		SDLNet_Write32(getSaveGameMapSeed(), &net_packet->data[64]);
+		SDLNet_Write32(getSaveGameMapSeed(false), &net_packet->data[64]);
 	}
 	else
 	{
@@ -6389,9 +7288,11 @@ void applySettings()
 	shaking = settings_shaking;
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
+	flickerLights = settings_light_flicker;
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
+	fpsLimit = settings_fps;
 	oldXres = xres;
 	oldYres = yres;
 	xres = settings_xres;
@@ -6422,10 +7323,10 @@ void applySettings()
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 #endif
@@ -6450,9 +7351,19 @@ void applySettings()
 	nohud = settings_nohud;
 
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
+	for ( c = 0; c < NUM_HOTBAR_CATEGORIES; ++c )
+	{
+		auto_hotbar_categories[c] = settings_auto_hotbar_categories[c];
+	}
+	for ( c = 0; c < NUM_AUTOSORT_CATEGORIES; ++c )
+	{
+		autosort_inventory_categories[c] = settings_autosort_inventory_categories[c];
+	}
+	hotbar_numkey_quick_add = settings_hotbar_numkey_quick_add;
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
+	lock_right_sidebar = settings_lock_right_sidebar;
 
 	gamepad_leftx_invert = settings_gamepad_leftx_invert;
 	gamepad_lefty_invert = settings_gamepad_lefty_invert;
@@ -6583,14 +7494,55 @@ void buttonSettingsOK(button_t* my)
 // next score button (statistics window)
 void buttonScoreNext(button_t* my)
 {
-	score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+	if ( scoreDisplayMultiplayer )
+	{
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscoresMultiplayer)));
+	}
+	else
+	{
+		score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
+	}
 	loadScore(score_window - 1);
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 }
 
 // previous score button (statistics window)
 void buttonScorePrev(button_t* my)
 {
 	score_window = std::max(score_window - 1, 1);
+	loadScore(score_window - 1);
+	camera_charsheet_offsetyaw = (330) * PI / 180;
+}
+
+void buttonScoreToggle(button_t* my)
+{
+	score_window = 1;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
+	scoreDisplayMultiplayer = !scoreDisplayMultiplayer;
+	loadScore(score_window - 1);
+}
+
+void buttonDeleteCurrentScore(button_t* my)
+{
+	node_t* node = nullptr;
+	if ( scoreDisplayMultiplayer )
+	{
+		node = list_Node(&topscoresMultiplayer, score_window - 1);
+		if ( node )
+		{
+			list_RemoveNode(node);
+			score_window = std::max(score_window - 1, 1);
+		}
+	}
+	else
+	{
+		node = list_Node(&topscores, score_window - 1);
+		if ( node )
+		{
+			list_RemoveNode(node);
+			score_window = std::max(score_window - 1, 1);
+		}
+	}
 	loadScore(score_window - 1);
 }
 
@@ -6693,9 +7645,32 @@ void openLoadGameWindow(button_t* my)
 	suby1 = yres / 2 - 128;
 	suby2 = yres / 2 + 128;
 	strcpy(subtext, language[1460]);
-	char* saveGameName = getSaveGameName();
+	bool singleplayerSave = saveGameExists(true);
+	bool multiplayerSave = saveGameExists(false);
+
+	char saveGameName[1024] = "";
+	if ( singleplayerSave && multiplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(true), 1024);
+		strcat(subtext, saveGameName);
+		strcat(subtext, "\n\n");
+		strncpy(saveGameName, getSaveGameName(false), 1024);
+		loadGameSaveShowRectangle = 2;
+
+		suby1 = yres / 2 - 152;
+		suby2 = yres / 2 + 152;
+	}
+	else if ( singleplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(true), 1024);
+		loadGameSaveShowRectangle = 1;
+	}
+	else if ( multiplayerSave )
+	{
+		strncpy(saveGameName, getSaveGameName(false), 1024);
+		loadGameSaveShowRectangle = 1;
+	}
 	strcat(subtext, saveGameName);
-	free(saveGameName);
 	strcat(subtext, language[1461]);
 
 	// close button
@@ -6711,22 +7686,54 @@ void openLoadGameWindow(button_t* my)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	// yes button
+	// yes solo button
 	button = newButton();
-	strcpy(button->label, language[1462]);
-	button->sizex = strlen(language[1462]) * 12 + 8;
+	if ( multiplayerSave && !singleplayerSave )
+	{
+		strcpy(button->label, language[2959]);
+		button->action = &buttonLoadMultiplayerGame;
+	}
+	else
+	{
+		strcpy(button->label, language[1462]);
+		button->action = &buttonLoadSingleplayerGame;
+	}
+	button->sizex = strlen(language[2959]) * 9 + 16;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 52;
-	button->action = &buttonLoadGame;
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button->x -= 124;
+	}
+	else
+	{
+		button->sizex = strlen(language[1463]) * 12 + 8; // resize to be wider
+		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2; // resize to match new width
+	}
 	button->visible = 1;
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
 
+	// yes multiplayer button
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2959]);
+		button->sizex = strlen(language[2959]) * 9 + 16;
+		button->sizey = 20;
+		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2 + 124;
+		button->y = suby2 - 52;
+		button->action = &buttonLoadMultiplayerGame;
+		button->visible = 1;
+		button->focused = 1;
+		//button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
+	}
+
 	// no button
 	button = newButton();
 	strcpy(button->label, language[1463]);
-	button->sizex = strlen(language[1463]) * 12 + 8;
+	button->sizex = strlen(language[1463]) * 10 + 8;
 	button->sizey = 20;
 	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
 	button->y = suby2 - 28;
@@ -6735,6 +7742,187 @@ void openLoadGameWindow(button_t* my)
 	button->focused = 1;
 	button->key = SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	// delete savegame button
+	if ( singleplayerSave || multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2961]);
+		button->sizex = strlen(language[2961]) * 12 + 8;
+		button->sizey = 20;
+		button->x = subx2 - button->sizex - 8;
+		button->y = suby1 + TTF12_HEIGHT * 2 + 4;
+		if ( singleplayerSave && multiplayerSave)
+		{
+			button->action = &buttonDeleteSavedSoloGame; // showing 2 entries, single player delete
+		}
+		if ( singleplayerSave && !multiplayerSave ) // showing 1 entry, single player delete
+		{
+			button->action = &buttonDeleteSavedSoloGame;
+		}
+		if ( !singleplayerSave && multiplayerSave ) // showing 1 entry, multi player delete
+		{
+			button->action = &buttonDeleteSavedMultiplayerGame;
+		}
+		button->visible = 1;
+		button->focused = 1;
+	}
+	if ( singleplayerSave && multiplayerSave )
+	{
+		button = newButton();
+		strcpy(button->label, language[2961]);
+		button->sizex = strlen(language[2961]) * 12 + 8;
+		button->sizey = 20;
+		button->x = subx2 - button->sizex - 8;
+		button->y = suby1 + TTF12_HEIGHT * 5 + 6;
+		button->action = &buttonDeleteSavedMultiplayerGame;
+		button->visible = 1;
+		button->focused = 1;
+	}
+}
+
+void buttonDeleteSavedSoloGame(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	loadGameSaveShowRectangle = 1;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 288;
+	subx2 = xres / 2 + 288;
+	suby1 = yres / 2 - 80;
+	suby2 = yres / 2 + 80;
+	char saveGameName[1024];
+	strcpy(subtext, language[2963]);
+	strncpy(saveGameName, getSaveGameName(true), 1024);
+	strcat(subtext, saveGameName);
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// delete button
+	button = newButton();
+	strcpy(button->label, language[2961]);
+	button->sizex = strlen(language[2961]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 56;
+	button->action = &buttonConfirmDeleteSoloFile;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	//button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	// close button
+	button = newButton();
+	strcpy(button->label, language[2962]);
+	button->sizex = strlen(language[2962]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void buttonDeleteSavedMultiplayerGame(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	loadGameSaveShowRectangle = 1;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 288;
+	subx2 = xres / 2 + 288;
+	suby1 = yres / 2 - 80;
+	suby2 = yres / 2 + 80;
+	char saveGameName[1024];
+	strcpy(subtext, language[2964]);
+	strncpy(saveGameName, getSaveGameName(false), 1024);
+	strcat(subtext, saveGameName);
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// delete button
+	button = newButton();
+	strcpy(button->label, language[2961]);
+	button->sizex = strlen(language[2961]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 56;
+	button->action = &buttonConfirmDeleteMultiplayerFile;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	//button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	// close button
+	button = newButton();
+	strcpy(button->label, language[2962]);
+	button->sizex = strlen(language[2962]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void buttonConfirmDeleteSoloFile(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	loadGameSaveShowRectangle = 0;
+	deleteSaveGame(SINGLE);
+	if ( saveGameExists(false) ) // check for multiplayer game to load up
+	{
+		openLoadGameWindow(nullptr);
+	}
+	playSound(153, 96);
+}
+
+void buttonConfirmDeleteMultiplayerFile(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	loadGameSaveShowRectangle = 0;
+	deleteSaveGame(CLIENT);
+	if ( saveGameExists(true) ) // check for singleplayer game to load up
+	{
+		openLoadGameWindow(nullptr);
+	}
+	playSound(153, 96);
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
@@ -6743,7 +7931,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	playing_random_char = false;
 	loadingsavegame = 0;
-
+	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;
 	stats[0]->sex = static_cast<sex_t>(0);
@@ -6764,6 +7952,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// create character creation window
 	charcreation_step = 1;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
 	subx2 = xres / 2 + 400;
@@ -6826,10 +8015,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	//Random Name.
 	button = newButton();
-	strcpy(button->label, language[2450]);
+	strcpy(button->label, language[2498]);
 	button->x = button_back_x + button_back_width + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[2450]) * 12 + 8;
+	button->sizex = strlen(language[2498]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonRandomName;
 	button->visible = 1;
@@ -6837,10 +8026,11 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_NAME];
 }
 
-void buttonLoadGame(button_t* button)
+void buttonLoadSingleplayerGame(button_t* button)
 {
-	loadingsavegame = getSaveGameUniqueGameKey();
-	int mul = getSaveGameType();
+	loadGameSaveShowRectangle = 0;
+	loadingsavegame = getSaveGameUniqueGameKey(true);
+	int mul = getSaveGameType(true);
 
 	if ( mul == DIRECTSERVER )
 	{
@@ -6929,10 +8119,104 @@ void buttonLoadGame(button_t* button)
 	}
 }
 
+void buttonLoadMultiplayerGame(button_t* button)
+{
+	loadGameSaveShowRectangle = 0;
+	loadingsavegame = getSaveGameUniqueGameKey(false);
+	int mul = getSaveGameType(false);
+
+	if ( mul == DIRECTSERVER )
+	{
+		directConnect = true;
+		buttonHostMultiplayer(button);
+	}
+	else if ( mul == DIRECTCLIENT )
+	{
+		directConnect = true;
+		buttonJoinMultiplayer(button);
+	}
+	else if ( mul == SINGLE )
+	{
+		buttonStartSingleplayer(button);
+	}
+	else
+	{
+		directConnect = false;
+#ifdef STEAMWORKS
+		if ( mul == SERVER )
+		{
+			buttonHostMultiplayer(button);
+		}
+		else if ( mul == CLIENT )
+		{
+			if ( !lobbyToConnectTo )
+			{
+				openSteamLobbyBrowserWindow(button);
+			}
+			else
+			{
+				// close current window
+				int temp1 = connectingToLobby;
+				int temp2 = connectingToLobbyWindow;
+				//buttonCloseSubwindow(button);
+				list_FreeAll(&button_l);
+				deleteallbuttons = true;
+				connectingToLobby = temp1;
+				connectingToLobbyWindow = temp2;
+
+				// create new window
+				subwindow = 1;
+				subx1 = xres / 2 - 256;
+				subx2 = xres / 2 + 256;
+				suby1 = yres / 2 - 64;
+				suby2 = yres / 2 + 64;
+				strcpy(subtext, language[1467]);
+
+				// close button
+				button = newButton();
+				strcpy(button->label, "x");
+				button->x = subx2 - 20;
+				button->y = suby1;
+				button->sizex = 20;
+				button->sizey = 20;
+				button->action = &openSteamLobbyWaitWindow;
+				button->visible = 1;
+				button->focused = 1;
+				button->key = SDL_SCANCODE_ESCAPE;
+				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+				// cancel button
+				button = newButton();
+				strcpy(button->label, language[1316]);
+				button->sizex = strlen(language[1316]) * 12 + 8;
+				button->sizey = 20;
+				button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+				button->y = suby2 - 28;
+				button->action = &openSteamLobbyWaitWindow;
+				button->visible = 1;
+				button->focused = 1;
+
+				connectingToLobby = true;
+				connectingToLobbyWindow = true;
+				strncpy(currentLobbyName, "", 31);
+				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
+				cpp_Free_CSteamID(lobbyToConnectTo);
+				lobbyToConnectTo = NULL;
+			}
+		}
+		else
+		{
+			buttonStartSingleplayer(button);
+		}
+#endif
+	}
+}
+
 void buttonRandomCharacter(button_t* my)
 {
 	playing_random_char = true;
 	charcreation_step = 4;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
 	client_classes[0] = rand() % NUMCLASSES;
 	stats[0]->clearStats();

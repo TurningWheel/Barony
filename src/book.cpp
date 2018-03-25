@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "files.hpp"
 #include "game.hpp"
 #include "interface/interface.hpp"
 #include "book.hpp"
@@ -23,7 +24,6 @@
 
 book_t** books = NULL;
 int numbooks = 0;
-list_t* discoveredbooks = NULL;
 
 //book_t *book_space_ninjas = NULL;
 
@@ -42,71 +42,43 @@ int getBook(char* booktitle)
 
 void createBooks()
 {
-	node_t* node;
 	string_t* name = NULL;
-	bool unsorted;
 	int i = 0;
 
 	//TODO: Read the books/ inventory for all *.txt files.
 	//TODO: Then create a book for each file there and add it to a books array.
-	discoveredbooks = directoryContents("books/");
-	if (discoveredbooks)
+	auto discoveredbooks = directoryContents("books/");
+	if (!discoveredbooks.empty())
 	{
 		printlog("compiling books...\n");
-		if (discoveredbooks->first && discoveredbooks->last)
-		{
-			// allocate memory for books
-			numbooks = list_Size(discoveredbooks);
-			books = (book_t**) malloc(sizeof(book_t*) * numbooks);   //Allocate memory for all of the books.
 
-			// sort books alphabetically (bubblesort)
-			do
-			{
-				unsorted = false;
-				for (node = discoveredbooks->first; node != NULL; node = node->next)
-				{
-					if ( node->next != NULL )
-					{
-						string_t* firststring = (string_t*)node->element;
-						string_t* secondstring = (string_t*)node->next->element;
-						if ( strcmp(firststring->data, secondstring->data) > 0 )
-						{
-							unsorted = true;
-							node->element = secondstring;
-							node->next->element = firststring;
-							firststring->node = node->next;
-							secondstring->node = node;
-						}
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
-			while ( unsorted );
+		// Allocate memory for books
+		numbooks = discoveredbooks.size();
+		books = (book_t**) malloc(sizeof(book_t*) * numbooks);
 
-			// create books
-			for (node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i)
-			{
-				books[i] = (book_t*) malloc(sizeof(book_t));
-				books[i]->text = NULL;
-				name = (string_t*)node->element;
-				books[i]->name = name->data;
-				//printlog("compiling book: \"%s\"\n",books[i]->name);
-				books[i]->bookgui_render_title = NULL;
-				books[i]->bookgui_render_title_numlines = 0;
-				books[i]->pages.first = NULL;
-				books[i]->pages.last = NULL;
-				//formatTitle(books[i]);
-				createBook(books[i]);
-				books[i]->name[strlen(books[i]->name) - 4] = 0;
-			}
-		}
-		else
+		// sort books alphabetically
+		discoveredbooks.sort();
+
+		// create books
+		for (auto filename : discoveredbooks)
 		{
-			printlog( "Warning: discoveredbooks->first and last do not exist. No books in /books/ directory?\n");
+			books[i] = (book_t*) malloc(sizeof(book_t));
+			books[i]->text = NULL;
+			books[i]->name = strdup(filename.c_str());
+			printlog("compiling book: \"%s\"\n",books[i]->name);
+			books[i]->bookgui_render_title = NULL;
+			books[i]->bookgui_render_title_numlines = 0;
+			books[i]->pages.first = NULL;
+			books[i]->pages.last = NULL;
+			//formatTitle(books[i]);
+			createBook(books[i]);
+			books[i]->name[strlen(books[i]->name) - 4] = 0;
+			++i;
 		}
+	}
+	else
+	{
+		printlog( "Warning: discoveredbooks is empty. No books in /books/ directory?\n");
 	}
 }
 

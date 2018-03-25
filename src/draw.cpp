@@ -10,9 +10,13 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#include "editor.hpp"
+#include "items.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1067,12 +1071,12 @@ void drawEntities3D(view_t* camera, int mode)
 	Entity* entity;
 	long x, y;
 
-	if ( map.entities->first == NULL )
+	if ( map.entities->first == nullptr )
 	{
 		return;
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		if ( entity->flags[INVISIBLE] )
@@ -1096,7 +1100,7 @@ void drawEntities3D(view_t* camera, int mode)
 		y = entity->y / 16;
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 		{
-			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] )
+			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] || entity->monsterEntityRenderAsTelepath == 1 )
 			{
 				if ( entity->flags[SPRITE] == false )
 				{
@@ -1136,14 +1140,16 @@ void drawEntities2D(long camx, long camy)
 	node_t* node;
 	Entity* entity;
 	SDL_Rect pos, box;
+	int offsetx = 0;
+	int offsety = 0;
 
-	if ( map.entities->first == NULL )
+	if ( map.entities->first == nullptr )
 	{
 		return;
 	}
 
 	// draw entities
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		if ( entity->flags[INVISIBLE] )
@@ -1154,9 +1160,11 @@ void drawEntities2D(long camx, long camy)
 		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
 		pos.w = TEXTURESIZE;
 		pos.h = TEXTURESIZE;
+		//ttfPrintText(ttf8, 100, 100, inputstr); debug any errant text input in editor
+
 		if ( entity->sprite >= 0 && entity->sprite < numsprites )
 		{
-			if ( sprites[entity->sprite] != NULL )
+			if ( sprites[entity->sprite] != nullptr )
 			{
 				if ( entity == selectedEntity )
 				{
@@ -1172,7 +1180,20 @@ void drawEntities2D(long camx, long camy)
 					box.y = pos.y + 1;
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
 				}
-				drawImageScaled(sprites[entity->sprite], NULL, &pos);
+				
+				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
+				if ( entity->sprite == 8 && entity->skill[10] > 1 )
+				{
+					// draw the item sprite in the editor layout
+					Item* tmpItem = newItem(static_cast<ItemType>(entity->skill[10] - 2), static_cast<Status>(0), 0, 0, 0, 0, nullptr);
+					drawImageScaled(itemSprite(tmpItem), nullptr, &pos);
+					free(tmpItem);
+				}
+				else
+				{
+					// draw sprite normally from sprites list
+					drawImageScaled(sprites[entity->sprite], nullptr, &pos);
+				}
 			}
 			else
 			{
@@ -1190,7 +1211,7 @@ void drawEntities2D(long camx, long camy)
 					box.y = pos.y + 1;
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
 				}
-				drawImageScaled(sprites[0], NULL, &pos);
+				drawImageScaled(sprites[0], nullptr, &pos);
 			}
 		}
 		else
@@ -1209,7 +1230,372 @@ void drawEntities2D(long camx, long camy)
 				box.y = pos.y + 1;
 				drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
 			}
-			drawImageScaled(sprites[0], NULL, &pos);
+			drawImageScaled(sprites[0], nullptr, &pos);
+		}
+	}
+
+	// draw hover text for entities over the top of sprites.
+	for ( node = map.entities->first; node != nullptr; node = node->next )
+	{
+		entity = (Entity*)node->element;
+		if ( entity->flags[INVISIBLE] )
+		{
+			continue;
+		}
+		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
+		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
+		pos.w = TEXTURESIZE;
+		pos.h = TEXTURESIZE;
+		//ttfPrintText(ttf8, 100, 100, inputstr); debug any errant text input in editor
+
+		if ( entity->sprite >= 0 && entity->sprite < numsprites )
+		{
+			if ( sprites[entity->sprite] != nullptr )
+			{
+				if ( entity == selectedEntity )
+				{
+					int spriteType = checkSpriteType(selectedEntity->sprite);
+					char tmpStr[1024] = "";
+					char tmpStr2[1024] = "";
+					int padx = pos.x + 10;
+					int pady = pos.y - 40;
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					Uint32 colorWhite = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					switch ( spriteType )
+					{
+						case 1: //monsters
+							pady += 10;
+							if ( entity->getStats() != nullptr ) {
+								strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+								ttfPrintText(ttf8, padx, pady - 10, tmpStr);
+								snprintf(tmpStr, sizeof(entity->getStats()->name), "Name: %s", entity->getStats()->name);
+								ttfPrintText(ttf8, padx, pady, tmpStr);
+								snprintf(tmpStr, 10, "HP: %d", entity->getStats()->MAXHP);
+								ttfPrintText(ttf8, padx, pady + 10, tmpStr);
+								snprintf(tmpStr, 10, "Level: %d", entity->getStats()->LVL);
+								ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+							}
+
+
+							break;
+						case 2: //chest
+							pady += 5;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady, tmpStr);
+							switch ( (int)entity->yaw )
+							{
+								case 0:
+									strcpy(tmpStr, "Facing: EAST");
+									break;
+								case 1:
+									strcpy(tmpStr, "Facing: SOUTH");
+									break;
+								case 2:
+									strcpy(tmpStr, "Facing: WEST");
+									break;
+								case 3:
+									strcpy(tmpStr, "Facing: NORTH");
+									break;
+								default:
+									strcpy(tmpStr, "Facing: Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx, pady + 10, tmpStr);
+
+							switch ( entity->skill[9] )
+							{
+								case 0:
+									strcpy(tmpStr, "Type: Random");
+									break;
+								case 1:
+									strcpy(tmpStr, "Type: Garbage");
+									break;
+								case 2:
+									strcpy(tmpStr, "Type: Food");
+									break;
+								case 3:
+									strcpy(tmpStr, "Type: Jewelry");
+									break;
+								case 4:
+									strcpy(tmpStr, "Type: Equipment");
+									break;
+								case 5:
+									strcpy(tmpStr, "Type: Tools");
+									break;
+								case 6:
+									strcpy(tmpStr, "Type: Magical");
+									break;
+								case 7:
+									strcpy(tmpStr, "Type: Potions");
+									break;
+								default:
+									strcpy(tmpStr, "Type: Random");
+									break;
+							}
+							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+							break;
+
+						case 3: //Items
+							pady += 5;
+							strcpy(tmpStr, itemNameStrings[selectedEntity->skill[10]]);
+							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
+							color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							pady += 2;
+
+							strcpy(tmpStr, "Status: ");
+							ttfPrintTextColor(ttf8, padx, pady - 10, colorWhite, 1, tmpStr);
+							switch ( (int)selectedEntity->skill[11] )
+							{
+								case 1:
+									strcpy(tmpStr, "Broken");
+									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									break;
+								case 2:
+									strcpy(tmpStr, "Decrepit");
+									color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+									break;
+								case 3:
+									strcpy(tmpStr, "Worn");
+									color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+									break;
+								case 4:
+									strcpy(tmpStr, "Servicable");
+									color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+									break;
+								case 5:
+									strcpy(tmpStr, "Excellent");
+									color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									break;
+								default:
+									strcpy(tmpStr, "?");
+									color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+									break;
+							}
+							ttfPrintTextColor(ttf8, padx + 56, pady - 10, color, 1, tmpStr);
+
+							strcpy(tmpStr, "Bless: ");
+							ttfPrintTextColor(ttf8, padx, pady, colorWhite, 1, tmpStr);
+							if ( selectedEntity->skill[12] < 0 )
+							{
+								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
+								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							}
+							else if ( selectedEntity->skill[12] == 0 )
+							{
+								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
+								color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							}
+							else if ( selectedEntity->skill[12] == 10 )
+							{
+								strcpy(tmpStr2, "?");
+								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+							}
+							else
+							{
+								snprintf(tmpStr2, 10, "+%d", selectedEntity->skill[12]);
+								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							}
+							ttfPrintTextColor(ttf8, padx + 48, pady, color, 1, tmpStr2);
+
+							strcpy(tmpStr, "Qty: ");
+							ttfPrintTextColor(ttf8, padx, pady + 10, colorWhite, 1, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[13]);
+							ttfPrintTextColor(ttf8, padx + 32, pady + 10, colorWhite, 1, tmpStr2);
+
+							pady += 2;
+							strcpy(tmpStr, "Identified: ");
+							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 1, tmpStr);
+							if ( (int)selectedEntity->skill[15] == 0 )
+							{
+								strcpy(tmpStr2, "No");
+								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							}
+							else if ( (int)selectedEntity->skill[15] == 1 )
+							{
+								strcpy(tmpStr2, "Yes");
+								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							}
+							else
+							{
+								strcpy(tmpStr2, "?");
+								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+							}
+							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 1, tmpStr2);
+							break;
+						case 4: //summoning trap
+							pady += 5;
+							offsety = -40;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
+
+							offsety += 10;
+							strcpy(tmpStr, "Type: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							strcpy(tmpStr2, monsterEditorNameStrings[entity->skill[0]]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Qty: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[1]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Time: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[2]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Amount: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[3]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Power to: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							if ( selectedEntity->skill[4] == 1 )
+							{
+								strcpy(tmpStr2, "Spawn");
+							}
+							else
+							{
+								strcpy(tmpStr2, "Disable");
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Stop Chance: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[5]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+							break;
+						case 5: //power crystal
+							pady += 5;
+							offsety = -20;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
+
+							offsety += 10;
+							strcpy(tmpStr, "Facing: ");
+							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
+							offsetx = strlen(tmpStr) * 8 - 8;
+							switch ( (int)entity->yaw )
+							{
+								case 0:
+									strcpy(tmpStr2, "EAST");
+									break;
+								case 1:
+									strcpy(tmpStr2, "SOUTH");
+									break;
+								case 2:
+									strcpy(tmpStr2, "WEST");
+									break;
+								case 3:
+									strcpy(tmpStr2, "NORTH");
+									break;
+								default:
+									strcpy(tmpStr2, "Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Nodes: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->crystalNumElectricityNodes);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Rotation: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							switch ( (int)entity->crystalTurnReverse )
+							{
+								case 0:
+									strcpy(tmpStr2, "Clockwise");
+									break;
+								case 1:
+									strcpy(tmpStr2, "Anti-Clockwise");
+									break;
+								default:
+									strcpy(tmpStr2, "Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Spell to Activate: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							switch ( (int)entity->crystalSpellToActivate )
+							{
+								case 0:
+									strcpy(tmpStr2, "No");
+									break;
+								case 1:
+									strcpy(tmpStr2, "Yes");
+									break;
+								default:
+									strcpy(tmpStr2, "Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+							break;
+						default:
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+							break;
+
+					}
+				}
+				else if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y &&
+					selectedEntity == NULL && hovertext )
+				{
+					// handle mouseover sprite name tooltip in main editor screen
+					int padx = pos.x + 10;
+					int pady = pos.y - 20;
+					int spriteType = checkSpriteType(entity->sprite);
+					//offsety = 0;
+					Stat* tmpStats = nullptr;
+					if ( spriteType == 1 )
+					{
+						tmpStats = entity->getStats();
+						if ( tmpStats != nullptr )
+						{
+							if ( strcmp(tmpStats->name, "") != 0 )
+							{
+								ttfPrintText(ttf8, padx, pady - offsety, tmpStats->name);
+								offsety += 10;
+							}
+							ttfPrintText(ttf8, padx, pady - offsety, spriteEditorNameStrings[entity->sprite]);
+							offsety += 10;
+						}
+					}
+					else if ( spriteType == 3 )
+					{
+						ttfPrintText(ttf8, padx, pady - offsety, itemNameStrings[entity->skill[10]]);
+						offsety += 10;
+					}
+					else
+					{
+						ttfPrintText(ttf8, padx, pady - offsety, spriteEditorNameStrings[entity->sprite]);
+						offsety += 10;
+					}
+				}
+			}
 		}
 	}
 }
@@ -1445,6 +1831,18 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		}
 	}
 
+	Uint32 cacheLimit = 8096;
+	if ( imgref > cacheLimit )
+	{
+		// time to flush the cache.
+		imgref -= 6144;
+		for ( int i = 0; i < HASH_SIZE; ++i )
+		{
+			list_FreeAll(&ttfTextHash[i]);
+		}
+		printlog("notice: stored hash limit exceeded, clearing ttfTextHash...");
+	}
+
 	// retrieve text surface
 	if ( (surf = ttfTextHashRetrieve(ttfTextHash, newStr, font, outline)) == NULL )
 	{
@@ -1510,7 +1908,6 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		allsurfaces[imgref]->refcount = imgref;
 		glLoadTexture(allsurfaces[imgref], imgref);
 		imgref++;
-
 		// store the surface in the text surface cache
 		if ( !ttfTextHashStore(ttfTextHash, newStr, font, outline, surf) )
 		{
@@ -1602,7 +1999,7 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... )
 
 -------------------------------------------------------------------------------*/
 
-void printText( SDL_Surface* font_bmp, int x, int y, char* str )
+void printText( SDL_Surface* font_bmp, int x, int y, const char* str )
 {
 	int c;
 	int numbytes;

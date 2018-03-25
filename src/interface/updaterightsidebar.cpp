@@ -12,6 +12,7 @@
 // note: as of some prealpha version I've since forgotten, this module is totally deprecated
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "interface.hpp"
@@ -105,6 +106,7 @@ void updateRightSidebar()
 			{
 				shootmode = false;
 				attributespage = 0;
+				proficienciesPage = 0;
 			}
 		}
 	}

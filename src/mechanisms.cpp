@@ -183,20 +183,137 @@ void actSwitch(Entity* my)
 			my->roll = PI / 4;
 		}
 	}
+}
 
-	/*
-	 * TODO:
-	if (SWITCH_TYPE == pressure_plate) {
-		if (playerOrMonsterOnTile()) {
-			toggleSwitch(my);
-		} else {
-			if (on) {
-				toggleSwitch(my);
+void actSwitchWithTimer(Entity* my)
+{
+	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
+
+	if ( multiplayer != CLIENT )
+	{
+		int i = 0;
+		for ( i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			{
+				// server/client has clicked on the entity.
+				if ( inrange[i] )   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
+				{
+					switch ( my->leverStatus )
+					{
+						case 0:
+							messagePlayer(i, language[2360]);
+							break;
+						case 1:
+							messagePlayer(i, language[2361]);
+							break;
+						case 2:
+							messagePlayer(i, language[2362]);
+							break;
+						default:
+							messagePlayer(i, language[2363]);
+							break;
+					}
+
+					if ( my->leverStatus < 3 )
+					{
+						++my->leverStatus;
+						playSoundEntity(my, 248, 64);
+						serverUpdateEntitySkill(my, 1);
+						if ( my->leverStatus == 3 )
+						{
+							playSoundEntity(my, 56, 64);
+							my->toggleSwitch();
+						}
+					}
+				}
+			}
+		}
+
+		if ( my->leverStatus == 4 )
+		{
+			//Power on any neighbors that don't have power.
+			my->switchUpdateNeighbors();
+			//TODO: Alternatively, instead of using CPU cycles on this, have the recursive network shutdown alert any switches connected to it that are powered on that it's shutting down, so that they can repower the network come next frame.
+		}
+	}
+	else
+	{
+		my->flags[NOUPDATE] = true;
+	}
+
+	// Rotate the switch when it is on/off.
+	if ( my->leverStatus == 0 )
+	{
+		if ( my->roll > -PI / 4 )
+		{
+			my->roll -= std::max<real_t>((my->roll + PI / 4) / 2, .05);
+		}
+		else
+		{
+			my->roll = -PI / 4;
+		}
+	}
+	else if (my->leverStatus == 1 ) // 1/3 of the way up
+	{
+		if ( my->roll < -PI / 12 )
+		{
+			my->roll += std::max<real_t>(-(my->roll + PI / 12) / 8, .02);
+		}
+		else
+		{
+			my->roll = -PI / 12;
+		}
+	}
+	else if ( my->leverStatus == 2 ) // 2/3 of the way up
+	{
+		if ( my->roll < PI / 12 )
+		{
+			my->roll += std::max<real_t>(-(my->roll - PI / 12) / 8, .02);
+		}
+		else
+		{
+			my->roll = PI / 12;
+		}
+	}
+	else if ( my->leverStatus == 3 ) // all the way up
+	{
+		if ( my->roll < PI / 4 )
+		{
+			my->roll += std::max<real_t>(-(my->roll - PI / 4) / 4, .02);
+		}
+		else
+		{
+			my->roll = PI / 4;
+			if ( multiplayer != CLIENT )
+			{
+				my->leverStatus = 4;
+				serverUpdateEntitySkill(my, 1);
 			}
 		}
 	}
-	 */
-
+	else if ( my->leverStatus == 4 ) // ticking down
+	{
+		if ( my->roll > -PI / 12 )
+		{
+			my->roll -= (PI / 3) / static_cast<real_t>(my->leverTimerTicks); // move slowly towards 2/3rds of the resting point
+			if ( my->ticks % 10 == 0 )
+			{
+				playSoundEntityLocal(my, 247, 32);
+			}
+		}
+		else
+		{
+			my->roll = -PI / 12;
+			if ( multiplayer != CLIENT )
+			{
+				playSoundEntity(my, 56, 64);
+				my->leverStatus = 0;
+				serverUpdateEntitySkill(my, 1);
+				my->toggleSwitch();
+			}
+		}
+	}
 }
 
 #define TRAP_ON my->skill[0]
@@ -213,7 +330,7 @@ void actTrap(Entity* my)
 		my->switchUpdateNeighbors();
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		entity = (Entity*)node->element;
 		if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
@@ -250,7 +367,7 @@ void actTrapPermanent(Entity* my)
 
 	if ( !strcmp(map.name, "Boss") )
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only looking at players? Don't search full map.entities.
 		{
 			entity = (Entity*)node->element;
 			if ( entity->behavior == &actPlayer )
@@ -262,6 +379,46 @@ void actTrapPermanent(Entity* my)
 			}
 		}
 	}
+	else if ( !strcmp(map.name, "Sanctum") ) //TODO!!
+	{
+		if ( my->x > 50 * 16 )
+		{
+			// exit gate, act abnormal!
+			bool monsterAlive = false;
+			for ( node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				entity = (Entity*)node->element;
+				if ( entity->behavior == &actMonster && (entity->getRace() == LICH_FIRE || entity->getRace() == LICH_ICE) )
+				{
+					monsterAlive = true;
+				}
+			}
+			if ( !monsterAlive )
+			{
+				// turn on when safe.
+				TRAPPERMANENT_ON = 1;
+			}
+		}
+		else if ( my->x < 27 * 16 )
+		{
+			// entry gates, act normal!
+		}
+		else
+		{
+			// fight trigger plates, wait for players to assemble.
+			for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only looking at players? Don't search full map.entities.
+			{
+				entity = (Entity*)node->element;
+				if ( entity->behavior == &actPlayer )
+				{
+					if ( entity->x < 29 * 16 )   // hardcoded, I know...
+					{
+						return;
+					}
+				}
+			}
+		}
+	}
 
 	if ( TRAPPERMANENT_ON )
 	{
@@ -269,7 +426,7 @@ void actTrapPermanent(Entity* my)
 	}
 	else
 	{
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
 			if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
