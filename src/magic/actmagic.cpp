@@ -1384,7 +1384,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							playSoundEntity(hit.entity, 172, 64); //TODO: Slow spell sound.
+							playSoundEntity(hit.entity, 396 + rand() % 3, 64); //TODO: Slow spell sound.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
