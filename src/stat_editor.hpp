@@ -11,7 +11,7 @@
 
 #pragma once
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 #include "fmod.h"
 #endif
 
@@ -148,7 +148,7 @@ public:
 	Item* mask;
 
 	// misc
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	FMOD_CHANNEL* monster_sound; //TODO: Do?
 #else
 	void* monster_sound;

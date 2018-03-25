@@ -1293,12 +1293,12 @@ void actMonster(Entity* my)
 			}
 			if ( foundlights )
 			{
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 				if ( MONSTER_SOUND )
 				{
 					FMOD_Channel_Stop(MONSTER_SOUND);
 				}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 				if ( MONSTER_SOUND )
 				{
 					OPENAL_Channel_Stop(MONSTER_SOUND);
@@ -1985,12 +1985,12 @@ void actMonster(Entity* my)
 		}
 
 		// die
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 		if ( MONSTER_SOUND )
 		{
 			FMOD_Channel_Stop(MONSTER_SOUND);
 		}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 		if ( MONSTER_SOUND )
 		{
 			OPENAL_Channel_Stop(MONSTER_SOUND);
@@ -2133,7 +2133,7 @@ void actMonster(Entity* my)
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
 	{
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 		FMOD_BOOL playing;
 		FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
 		if (!playing)
@@ -2157,7 +2157,7 @@ void actMonster(Entity* my)
 				}
 			}
 		}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 		ALboolean playing;
 		OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
 		if (!playing)
