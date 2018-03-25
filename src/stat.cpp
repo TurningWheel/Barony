@@ -624,7 +624,7 @@ Stat* Stat::copyStats()
 		newStat->mask = NULL;
 	}
 
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
+#if defined(USE_FMOD) || defined(USE_OPENAL)
 	newStat->monster_sound = NULL;
 #endif
 	newStat->monster_idlevar = this->monster_idlevar;

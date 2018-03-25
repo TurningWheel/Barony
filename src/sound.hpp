@@ -13,10 +13,10 @@
 
 
 #include <stdio.h>
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 #include "fmod.h"
 #endif
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #ifdef APPLE
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
@@ -28,7 +28,7 @@
 
 
 //Pointer to the FMOD system.
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 
 #define SOUND
 #define MUSIC
@@ -102,7 +102,7 @@ void handleLevelMusic(); //Manages and updates the level music.
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
 
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 
 #define SOUND
 #define MUSIC
