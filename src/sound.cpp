@@ -14,9 +14,9 @@
 //#include "game.hpp"
 #include "sound.hpp"
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 #include <fmod_errors.h>
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 #ifdef USE_TREMOR
 #include <tremor/ivorbisfile.h>
 #else
@@ -26,7 +26,7 @@
 #endif
 #endif
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 FMOD_SYSTEM* fmod_system = NULL;
 
 FMOD_RESULT fmod_result;
@@ -188,7 +188,7 @@ void sound_update()
 }
 #define SOUND
 
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 
 struct OPENAL_BUFFER {
 	ALuint id;

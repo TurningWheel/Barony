@@ -318,9 +318,9 @@ int initGame()
 
 	GO_SwapBuffers(screen);
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 #endif
 	removedEntities.first = NULL;
@@ -382,7 +382,7 @@ int initGame()
 
 	// load music
 #ifdef SOUND
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #define FMOD_ChannelGroup_SetVolume OPENAL_ChannelGroup_SetVolume
 #define fmod_system 0
 #define FMOD_SOFTWARE 0
@@ -503,7 +503,7 @@ int fmod_result;
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &intromusic[c]);
 		}
 	}
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #undef FMOD_ChannelGroup_SetVolume
 #undef fmod_system
 #undef FMOD_SOFTWARE
@@ -708,7 +708,7 @@ void deinitGame()
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #define FMOD_Channel_Stop OPENAL_Channel_Stop
 #define FMOD_Sound_Release OPENAL_Sound_Release
 #endif
@@ -806,7 +806,7 @@ void deinitGame()
 	{
 		free(intromusic);
 	}
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 #undef FMOD_Channel_Stop
 #undef FMOD_Sound_Release
 #endif
