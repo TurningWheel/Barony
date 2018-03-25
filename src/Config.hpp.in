@@ -16,11 +16,11 @@
 #endif
 
 #if @FMOD@
-	#define HAVE_FMOD
+	#define USE_FMOD
 #endif
 
 #if @OPENAL@
-	#define HAVE_OPENAL
+	#define USE_OPENAL
 #endif
 
 #if @TREMOR@

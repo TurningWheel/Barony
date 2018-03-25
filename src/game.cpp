@@ -591,12 +591,12 @@ void gameLogic(void)
 					magicRightHand = nullptr;
 
 					// stop all sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 					if ( sound_group )
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 					if ( sound_group )
 					{
 						OPENAL_ChannelGroup_Stop(sound_group);
@@ -2441,7 +2441,7 @@ int main(int argc, char** argv)
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
 							introstage = 6;
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
+#if defined(USE_FMOD) || defined(USE_OPENAL)
 							playmusic(introductionmusic, true, false, false);
 #endif
 						}
@@ -2450,7 +2450,7 @@ int main(int argc, char** argv)
 							introstage = 1;
 							fadeout = false;
 							fadefinished = false;
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
+#if defined(USE_FMOD) || defined(USE_OPENAL)
 							if ( menuMapType == 1 )
 							{
 								playmusic(intromusic[2], true, false, false);

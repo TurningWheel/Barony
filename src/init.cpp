@@ -28,7 +28,7 @@
 #include "items.hpp"
 #include "cppfuncs.hpp"
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 #include "fmod.h"
 //#include <fmod_errors.h>
 #endif
@@ -120,7 +120,7 @@ int initApp(char* title, int fullscreen)
 		return 2;
 	}*/
 
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	printlog("initializing FMOD...\n");
 	fmod_result = FMOD_System_Create(&fmod_system);
 	if (FMODErrorCheck())
@@ -156,7 +156,7 @@ int initApp(char* title, int fullscreen)
 			}
 		}
 	}
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	if (!no_sound)
 	{
 		initOPENAL();
@@ -484,7 +484,7 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load sound effects
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	printlog("loading sounds...\n");
 	fp = openDataFile("sound/sounds.txt", "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
@@ -520,7 +520,7 @@ int initApp(char* title, int fullscreen)
 	fclose(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined HAVE_OPENAL
+#elif defined USE_OPENAL
 	printlog("loading sounds...\n");
 	fp = openDataFile("sound/sounds.txt", "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
@@ -1867,7 +1867,7 @@ void generateVBOs(int start, int end)
 int deinitApp()
 {
 	Uint32 c;
-#ifdef HAVE_OPENAL
+#ifdef USE_OPENAL
 	closeOPENAL();
 #endif
 	// close engine
@@ -2030,7 +2030,7 @@ int deinitApp()
 	}
 
 	// free sounds
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	printlog("freeing sounds...\n");
 	if ( sounds != NULL )
 	{
@@ -2077,7 +2077,7 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-#ifdef HAVE_FMOD
+#ifdef USE_FMOD
 	if ( fmod_system )
 	{
 		FMOD_System_Close(fmod_system);
