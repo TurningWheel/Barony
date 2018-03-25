@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <list>
 #include "main.hpp"
 
 //TODO: The book name will need to be replaced with books[item->appearnce%numbooks]->name as opposed to item->name in the inventory.
@@ -27,7 +28,6 @@ typedef struct book_t
 
 extern book_t** books;
 extern int numbooks;
-extern list_t* discoveredbooks;
 
 void createBooks();
 void createBook(book_t* book); //Take's a book and generates all of its pages.

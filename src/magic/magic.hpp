@@ -13,33 +13,47 @@
 
 #pragma once
 
-#define SPELLCASTING_BEGINNER 40 //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
+static const int SPELLCASTING_BEGINNER = 40; //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
 
-#define SPELL_NONE 0 //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
-#define SPELL_FORCEBOLT 1
-#define SPELL_MAGICMISSILE 2
-#define SPELL_COLD 3
-#define SPELL_FIREBALL 4
-#define SPELL_LIGHTNING 5
-#define SPELL_REMOVECURSE 6
-#define SPELL_LIGHT 7
-#define SPELL_IDENTIFY 8
-#define SPELL_MAGICMAPPING 9
-#define SPELL_SLEEP 10
-#define SPELL_CONFUSE 11
-#define SPELL_SLOW 12
-#define SPELL_OPENING 13
-#define SPELL_LOCKING 14
-#define SPELL_LEVITATION 15
-#define SPELL_INVISIBILITY 16
-#define SPELL_TELEPORTATION 17
-#define SPELL_HEALING 18
-#define SPELL_EXTRAHEALING 19
+static const int SPELL_NONE = 0; //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
+static const int SPELL_FORCEBOLT = 1;
+static const int SPELL_MAGICMISSILE = 2;
+static const int SPELL_COLD = 3;
+static const int SPELL_FIREBALL = 4;
+static const int SPELL_LIGHTNING = 5;
+static const int SPELL_REMOVECURSE = 6;
+static const int SPELL_LIGHT = 7;
+static const int SPELL_IDENTIFY = 8;
+static const int SPELL_MAGICMAPPING = 9;
+static const int SPELL_SLEEP = 10;
+static const int SPELL_CONFUSE = 11;
+static const int SPELL_SLOW = 12;
+static const int SPELL_OPENING = 13;
+static const int SPELL_LOCKING = 14;
+static const int SPELL_LEVITATION = 15;
+static const int SPELL_INVISIBILITY = 16;
+static const int SPELL_TELEPORTATION = 17;
+static const int SPELL_HEALING = 18;
+static const int SPELL_EXTRAHEALING = 19;
 //#define SPELL_RESTOREABILITY 20
-#define SPELL_CUREAILMENT 20
-#define SPELL_DIG 21
+static const int SPELL_CUREAILMENT = 20;
+static const int SPELL_DIG = 21;
+static const int SPELL_SUMMON = 22;
+static const int SPELL_STONEBLOOD = 23;
+static const int SPELL_BLEED = 24;
+static const int SPELL_DOMINATE = 25;
+static const int SPELL_REFLECT_MAGIC = 26;
+static const int SPELL_ACID_SPRAY = 27;
+static const int SPELL_STEAL_WEAPON = 28;
+static const int SPELL_DRAIN_SOUL = 29;
+static const int SPELL_VAMPIRIC_AURA = 30;
+static const int NUM_SPELLS = 31;
+
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
+#define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
+#define SPELLELEMENT_STONEBLOOD_BASE_DURATION 5//In seconds.
+static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 5;
 
 //Definitions for actMagic(note that other functions may use this)
 #define MAGIC_TYPE (Item)my->skill[10] //TODO: OLD.
@@ -78,7 +92,34 @@
 
 #define HEAL_RADIUS 128
 
-void addSpell(int spell, int player); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
+/*** misc effect particles ***/
+static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
+static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
+static const int PARTICLE_EFFECT_SAP = 3;
+static const int PARTICLE_EFFECT_SHADOW_INVIS = 4;
+static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL = 5;
+static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET = 6;
+static const int PARTICLE_EFFECT_ERUPT = 7;
+static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
+static const int PARTICLE_EFFECT_RISING_DROP = 9;
+static const int PARTICLE_EFFECT_PORTAL_SPAWN = 10;
+static const int PARTICLE_EFFECT_SHADOW_TELEPORT = 11;
+static const int PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY = 12;
+static const int PARTICLE_EFFECT_LICH_TELEPORT_ROAMING = 13;
+static const int PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY = 14;
+static const int PARTICLE_EFFECT_SUMMON_MONSTER = 15;
+
+// actmagicIsVertical constants
+static const int MAGIC_ISVERTICAL_NONE = 0;
+static const int MAGIC_ISVERTICAL_Z = 1;
+static const int MAGIC_ISVERTICAL_XYZ = 2;
+
+// misc particle timer actions
+static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
+static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
+static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
+
+bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
 
@@ -267,7 +308,43 @@ extern spellElement_t spellElement_magicmissile;
  */
 extern spellElement_t spellElement_removecurse;
 
+/*
+* Summons familiars.
+*/
+extern spellElement_t spellElement_summon;
+/*
+* Paralysis effect.
+*/
+extern spellElement_t spellElement_stoneblood;
+/*
+* Damage and bleed effect.
+*/
+extern spellElement_t spellElement_bleed;
 
+/*Dmg/Poison and degrade armor*/
+extern spellElement_t spellElement_acidSpray;
+
+/*
+* The missile element gives propulsion to a spell; it makes a spell a projectile.
+* Base cost: 1 mana.
+* Shoots 3 projectiles.
+* Overload: Every additional mana put into this spell increases speed & lifetime. //TODO: Separately control speed & lifetime? E.g. put mana into each separately, must have at least one in each
+*/
+extern spellElement_t spellElement_missile_trio;
+
+/*
+ * Turns a non-boss non-player creature into one of your followers.
+ */
+extern spellElement_t spellElement_dominate;
+
+extern spellElement_t spellElement_reflectMagic;
+
+/* Steal Weapon */
+extern spellElement_t spellElement_stealWeapon;
+/* Drain Soul */
+extern spellElement_t spellElement_drainSoul;
+/* Vampiric Aura */
+extern spellElement_t spellElement_vampiricAura;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -328,6 +405,15 @@ extern spell_t spell_extrahealing; //Done. //TODO: AoE heal? Or target modes (se
 //extern spell_t spell_restoreability; //--CUT--
 extern spell_t spell_cureailment; //Done. //TODO: Generalize for NPCs?
 extern spell_t spell_dig; //Done.
+extern spell_t spell_summon;
+extern spell_t spell_stoneblood;
+extern spell_t spell_bleed;
+extern spell_t spell_dominate;
+extern spell_t spell_reflectMagic;
+extern spell_t spell_acidSpray;
+extern spell_t spell_stealWeapon;
+extern spell_t spell_drainSoul;
+extern spell_t spell_vampiricAura;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -338,13 +424,33 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 void castSpellInit(Uint32 caster_uid, spell_t* spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 
 void actMagicTrap(Entity* my);
-void actMagicStatuseffect(Entity* my);
+void actMagicStatusEffect(Entity* my);
 void actMagicMissile(Entity* my);
 void actMagicClient(Entity* my);
 void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
+void createParticle1(Entity* caster, int player);
+void createParticleCircling(Entity* parent, int duration, int sprite);
+void actParticleCircle(Entity* my);
+void actParticleDot(Entity* my);
+void actParticleRock(Entity* my);
+void actParticleTest(Entity* my);
+void actParticleErupt(Entity* my);
+void actParticleTimer(Entity* my);
+void actParticleSap(Entity* my);
+void actParticleSapCenter(Entity* my);
+void actParticleExplosionCharge(Entity* my);
+
+void createParticleDropRising(Entity* parent, int sprite, double scale);
+void createParticleDot(Entity* parent);
+void createParticleRock(Entity* parent);
+void createParticleErupt(Entity* parent, int sprite);
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
+Entity* createParticleTimer(Entity* parent, int duration, int sprite);
+void createParticleSap(Entity* parent);
+void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
@@ -361,12 +467,13 @@ bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
 
 spell_t* getSpellFromID(int ID);
+Item* getSpellbookFromSpellID(int spellID);
 
 bool spellInList(list_t* list, spell_t* spell);
 
 //-----Implementations of spell effects-----
 void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
-
+void spell_summonFamiliar(int player); // summons some familiars.
 void spell_changeHealth(Entity* entity, int amount); //This function changes an entity's health.
 
 //-----Spell Casting Animation-----
@@ -389,6 +496,7 @@ typedef struct spellcastingAnimationManager
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.
 	int mana_left; //How much mana is left to consume.
+	bool consumeMana; //If false, goes through the motions, even casts the spell -- just doesn't consume any mana.
 
 	float lefthand_movex;
 	float lefthand_movey;
@@ -405,3 +513,13 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 class Item;
 
 spell_t* getSpellFromItem(Item* item);
+int getSpellIDFromSpellbook(int spellbookType);
+
+//Spell implementation stuff.
+bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
+
+void freeSpells();

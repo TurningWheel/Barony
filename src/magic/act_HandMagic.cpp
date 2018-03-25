@@ -18,6 +18,7 @@
 #include "../items.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../net.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle
@@ -82,6 +83,12 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->circle_count = 0;
 	animation_manager->times_to_circle = (getCostOfSpell(spell) / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = getCostOfSpell(spell);
+	animation_manager->consumeMana = true;
+	if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	{
+		animation_manager->consumeMana = false;
+	}
+
 	if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)   //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
 	{
 		int chance = rand() % 10;
@@ -159,9 +166,13 @@ void actLeftHandMagic(Entity* my)
 	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	double defaultpitch = (0 - 6.f) / PI;
+	double defaultpitch = (0 - 2.2);
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
+	my->scalex = 0.5f;
+	my->scaley = 0.5f;
+	my->scalez = 0.5f;
+	my->z -= 0.75;
 
 	//Sprite
 	bool noGloves = false;
@@ -173,55 +184,50 @@ void actLeftHandMagic(Entity* my)
 	{
 		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
 		{
-			my->sprite = 136 + stats[clientnum]->sex;
+			my->sprite = 659;
 		}
 		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
 		{
-			my->sprite = 327 + stats[clientnum]->sex;
+			my->sprite = 660;
 		}
 		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
 		{
-			my->sprite = 144 + stats[clientnum]->sex;
+			my->sprite = 661;
 		}
-		else
+		else if ( stats[clientnum]->gloves->type == BRASS_KNUCKLES )
 		{
-			noGloves = true;
+			my->sprite = 662;
+		}
+		else if ( stats[clientnum]->gloves->type == IRON_KNUCKLES )
+		{
+			my->sprite = 663;
+		}
+		else if ( stats[clientnum]->gloves->type == SPIKED_GAUNTLETS )
+		{
+			my->sprite = 664;
+		}
+		else if ( stats[clientnum]->gloves->type == CRYSTAL_GLOVES )
+		{
+			my->sprite = 666;
+		}
+		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
+		{
+			my->sprite = 665;
 		}
 	}
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->appearance / 6 == 0 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 122;
-			}
-			else
-			{
-				my->sprite = 110;
-			}
+			my->sprite = 656;
 		}
 		else if ( stats[clientnum]->appearance / 6 == 1 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 351;
-			}
-			else
-			{
-				my->sprite = 338;
-			}
+			my->sprite = 657;
 		}
 		else
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 377;
-			}
-			else
-			{
-				my->sprite = 364;
-			}
+			my->sprite = 658;
 		}
 	}
 
@@ -229,16 +235,20 @@ void actLeftHandMagic(Entity* my)
 
 	//Select model
 	if (stats[clientnum]->ring != NULL)
+	{
 		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 		{
 			wearingring = true;
 		}
+	}
 	if (stats[clientnum]->cloak != NULL)
+	{
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
+	}
+	if (players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -270,15 +280,15 @@ void actLeftHandMagic(Entity* my)
 					entity->fskill[3] = 0.01;
 				}
 				cast_animation.consume_timer--;
-				if (cast_animation.consume_timer < 0 && cast_animation.mana_left > 0)
+				if ( cast_animation.consume_timer < 0 && cast_animation.mana_left > 0 )
 				{
 					//Time to consume mana and reset the ticker!
 					cast_animation.consume_timer = cast_animation.consume_interval;
-					if (multiplayer == SINGLE)
+					if ( multiplayer == SINGLE && cast_animation.consumeMana )
 					{
 						players[clientnum]->entity->drainMP(1);
 					}
-					cast_animation.mana_left--;
+					--cast_animation.mana_left;
 				}
 
 				cast_animation.lefthand_angle += HANDMAGIC_CIRCLE_SPEED;
@@ -315,7 +325,7 @@ void actLeftHandMagic(Entity* my)
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
-	defaultpitch = (0 - 6.f) / PI;
+	//defaultpitch = (0 - 2.8);
 	//my->x = 6 + HUDWEAPON_MOVEX;
 	my->x += cast_animation.lefthand_movex;
 	//my->y = 3 + HUDWEAPON_MOVEY;
@@ -356,9 +366,13 @@ void actRightHandMagic(Entity* my)
 	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	double defaultpitch = (0 - 6.f) / PI;
+	double defaultpitch = (0 - 2.2);
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
+	my->scalex = 0.5f;
+	my->scaley = 0.5f;
+	my->scalez = 0.5f;
+	my->z -= 0.75;
 
 	//Sprite
 	bool noGloves = false;
@@ -370,55 +384,50 @@ void actRightHandMagic(Entity* my)
 	{
 		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
 		{
-			my->sprite = 132 + stats[clientnum]->sex;
+			my->sprite = 637;
 		}
 		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
 		{
-			my->sprite = 323 + stats[clientnum]->sex;
+			my->sprite = 638;
 		}
 		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
 		{
-			my->sprite = 140 + stats[clientnum]->sex;
+			my->sprite = 639;
 		}
-		else
+		else if ( stats[clientnum]->gloves->type == BRASS_KNUCKLES )
 		{
-			noGloves = true;
+			my->sprite = 640;
+		}
+		else if ( stats[clientnum]->gloves->type == IRON_KNUCKLES )
+		{
+			my->sprite = 641;
+		}
+		else if ( stats[clientnum]->gloves->type == SPIKED_GAUNTLETS )
+		{
+			my->sprite = 642;
+		}
+		else if ( stats[clientnum]->gloves->type == CRYSTAL_GLOVES )
+		{
+			my->sprite = 591;
+		}
+		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
+		{
+			my->sprite = 590;
 		}
 	}
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->appearance / 6 == 0 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 121;
-			}
-			else
-			{
-				my->sprite = 109;
-			}
+			my->sprite = 634;
 		}
 		else if ( stats[clientnum]->appearance / 6 == 1 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 350;
-			}
-			else
-			{
-				my->sprite = 337;
-			}
+			my->sprite = 635;
 		}
 		else
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 376;
-			}
-			else
-			{
-				my->sprite = 363;
-			}
+			my->sprite = 636;
 		}
 	}
 
@@ -426,16 +435,20 @@ void actRightHandMagic(Entity* my)
 
 	//Select model
 	if (stats[clientnum]->ring != NULL)
+	{
 		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 		{
 			wearingring = true;
 		}
+	}
 	if (stats[clientnum]->cloak != NULL)
+	{
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
+	}
+	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -485,7 +498,7 @@ void actRightHandMagic(Entity* my)
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
-	defaultpitch = (0 - 6.f) / PI;
+	//defaultpitch = (0 - 6.f) / PI;
 	//my->x = 6 + HUDWEAPON_MOVEX;
 	my->x = 8;
 	my->x += cast_animation.lefthand_movex;

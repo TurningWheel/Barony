@@ -31,6 +31,10 @@ extern int firstendmovietime;
 extern int firstendmoviestage;
 extern int secondendmovietime;
 extern int secondendmoviestage;
+extern int thirdendmoviestage;
+extern int thirdendmovietime;
+extern int fourthendmoviestage;
+extern int fourthendmovietime;
 extern real_t drunkextend;
 extern bool losingConnection[4];
 extern int rebindaction;
@@ -61,8 +65,15 @@ void buttonJoinLobby(button_t* my);
 void buttonDisconnect(button_t* my);
 void buttonScoreNext(button_t* my);
 void buttonScorePrev(button_t* my);
+void buttonScoreToggle(button_t* my);
+void buttonDeleteCurrentScore(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
-void buttonLoadGame(button_t* my);
+void buttonDeleteSavedSoloGame(button_t* my);
+void buttonDeleteSavedMultiplayerGame(button_t* my);
+void buttonConfirmDeleteSoloFile(button_t* my);
+void buttonConfirmDeleteMultiplayerFile(button_t* my);
+void buttonLoadSingleplayerGame(button_t* my);
+void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 void buttonRandomName(button_t* my);
 
@@ -86,17 +97,20 @@ void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t 
 // menu variables
 extern bool settings_window;
 extern int charcreation_step;
+extern int loadGameSaveShowRectangle;
 extern Uint32 charcreation_ticks;
 extern bool playing_random_char;
 extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;
 
 // settings window
 extern Uint32 settings_fov;
+extern Uint32 settings_fps;
 extern int settings_xres, settings_yres;
 extern bool settings_smoothlighting;
 extern int settings_fullscreen, settings_shaking, settings_bobbing;
@@ -110,6 +124,7 @@ extern bool settings_broadcast;
 extern bool settings_nohud;
 extern bool settings_colorblind;
 extern bool settings_spawn_blood;
+extern bool settings_light_flicker;
 extern char portnumber_char[6];
 extern char connectaddress[64];
 extern int multiplayerselect;
@@ -120,9 +135,13 @@ extern int menuselect;
 extern bool colorblind;
 extern bool right_click_protect;
 extern bool settings_auto_hotbar_new_items;
+extern bool settings_auto_hotbar_categories[NUM_HOTBAR_CATEGORIES];
+extern int settings_autosort_inventory_categories[NUM_AUTOSORT_CATEGORIES];
+extern bool settings_hotbar_numkey_quick_add;
 extern bool settings_disable_messages;
 extern bool settings_right_click_protect;
 extern bool settings_auto_appraise_new_items;
+extern bool settings_lock_right_sidebar;
 
 static const int NUM_SETTINGS_TABS = 7;
 
@@ -133,6 +152,7 @@ static const int SETTINGS_MOUSE_TAB = 3;
 static const int SETTINGS_GAMEPAD_BINDINGS_TAB = 4;
 static const int SETTINGS_GAMEPAD_SETTINGS_TAB = 5;
 static const int SETTINGS_MISC_TAB = 6;
+
 
 //Confirm resolution window stuff.
 extern bool resolutionChanged;

@@ -12,13 +12,13 @@
 #pragma once
 
 #include <vector>
+#include <random>
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v2.0.7"
+#define VERSION "v3.1.1"
 #define GAME_CODE
 
-#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
-
+//#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 class Entity;
 
 extern list_t steamAchievements;
@@ -79,6 +79,8 @@ extern bool everybodyfriendly;
 extern bool combat, combattoggle;
 extern bool assailant[MAXPLAYERS];
 extern bool oassailant[MAXPLAYERS];
+extern int assailantTimer[MAXPLAYERS];
+static const int COMBAT_MUSIC_COOLDOWN = 200; // 200 ticks of combat music before it fades away.
 extern list_t removedEntities;
 extern list_t entitiesToDelete[MAXPLAYERS];
 extern bool gamepaused;
@@ -95,10 +97,10 @@ extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
-#define NUMCLASSES 10
-extern char classnames[10][10];
+#define NUMCLASSES 13
 extern char address[64];
 extern bool loadnextlevel;
+extern int skipLevelsOnLoad;
 extern int currentlevel;
 extern bool secretlevel;
 extern bool darkmap;
@@ -129,15 +131,14 @@ void actFurniture(Entity* my);
 void actMCaxe(Entity* my);
 void actDoorFrame(Entity* my);
 void actDeathCam(Entity* my);
-void actPlayer(Entity* my);
 void actPlayerLimb(Entity* my);
 void actTorch(Entity* my);
+void actCrystalShard(Entity* my);
 void actDoor(Entity* my);
 void actHudWeapon(Entity* my);
 void actHudShield(Entity* my);
 void actItem(Entity* my);
 void actGoldBag(Entity* my);
-void actMonster(Entity* my);
 void actGib(Entity* my);
 Entity* spawnGib(Entity* parentent);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
@@ -148,7 +149,7 @@ void actPortal(Entity* my);
 void actWinningPortal(Entity* my);
 void actFlame(Entity* my);
 void actCampfire(Entity* my);
-Entity* spawnFlame(Entity* parentent);
+Entity* spawnFlame(Entity* parentent, Sint32 sprite);
 void actMagic(Entity* my);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
@@ -159,6 +160,10 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
 void actArrow(Entity* my);
 void actBoulder(Entity* my);
 void actBoulderTrap(Entity* my);
+void actBoulderTrapEast(Entity* my);
+void actBoulderTrapWest(Entity* my);
+void actBoulderTrapSouth(Entity* my);
+void actBoulderTrapNorth(Entity* my);
 void actHeadstone(Entity* my);
 void actThrown(Entity* my);
 void actBeartrap(Entity* my);
@@ -166,6 +171,15 @@ void actBeartrapLaunched(Entity* my);
 void actSpearTrap(Entity* my);
 void actWallBuster(Entity* my);
 void actWallBuilder(Entity* my);
+void actPowerCrystalBase(Entity* my);
+void actPowerCrystal(Entity* my);
+void actPowerCrystalParticleIdle(Entity* my);
+void actPedestalBase(Entity* my);
+void actPedestalOrb(Entity* my);
+void actMidGamePortal(Entity* my);
+void actTeleporter(Entity* my);
+void actMagicTrapCeiling(Entity* my);
+void actExpansionEndGamePortal(Entity* my);
 
 void startMessages();
 
@@ -189,7 +203,14 @@ extern char last_port[64];
 #define HP_MOD 5
 #define MP_MOD 5
 
+#define SPRITE_FLAME 13
+#define SPRITE_CRYSTALFLAME 96
+
 #define MAXCHARGE 30 // charging up weapons
+
+static const int BASE_MELEE_DAMAGE = 8;
+static const int BASE_RANGED_DAMAGE = 7;
+static const int BASE_THROWN_DAMAGE = 9;
 
 extern bool spawn_blood;
 extern bool capture_mouse; //Useful for debugging when the game refuses to release the mouse when it's crashed.
@@ -199,9 +220,12 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 #define LENGTH_OF_LEVEL_REGION 5
 
 #define TICKS_PER_SECOND 50
+static const Uint8 TICKS_TO_PROCESS_FIRE = 30; // The amount of ticks needed until the 'BURNING' Status Effect is processed (char_fire % TICKS_TO_PROCESS_FIRE == 0)
 
 static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
 void loadRandomNames();
+
+void mapLevel(int player);

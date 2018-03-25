@@ -42,15 +42,20 @@ void actHeadstone(Entity* my)
 		{
 			node_t* node;
 			int goldbags = 0;
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			bool artifact = false;
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
 				if ( entity->sprite == 130 )   // gold bag
 				{
-					goldbags++;
+					++goldbags;
+				}
+				if ( entity->sprite == 508 )
+				{
+					artifact = true;
 				}
 			}
-			if ( goldbags >= 11 )
+			if ( goldbags >= 9 && artifact )
 			{
 				return;
 			}
@@ -120,6 +125,14 @@ void actHeadstone(Entity* my)
 			if ( monster )
 			{
 				monster->z = 13;
+				if ( currentlevel >= 15 || !strncmp(map.name, "The Haunted Castle", 18) )
+				{
+					Stat* tmpStats = monster->getStats();
+					if ( tmpStats )
+					{
+						strcpy(tmpStats->name, "enslaved ghoul");
+					}
+				}
 			}
 		}
 	}

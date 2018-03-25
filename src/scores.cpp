@@ -13,6 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "menu.hpp"
+#include "monster.hpp"
 #include "scores.hpp"
 #include "items.hpp"
 #include "interface/interface.hpp"
@@ -21,14 +22,17 @@
 
 // definitions
 list_t topscores;
+list_t topscoresMultiplayer;
 int victory = false;
 Uint32 completionTime = 0;
 bool conductPenniless = true;
 bool conductFoodless = true;
 bool conductVegetarian = true;
 bool conductIlliterate = true;
+Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES] = { 0 }; // additional 'conducts' to be stored in here.
+Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game statistics to be stored in here.
 list_t booksRead;
-bool usedClass[10] = {0};
+bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
 
 /*-------------------------------------------------------------------------------
@@ -49,7 +53,8 @@ score_t* scoreConstructor()
 		printlog( "failed to allocate memory for new score!\n" );
 		exit(1);
 	}
-	score->stats = new Stat();
+	// Stat set to 0 as monster type not needed, values will be overwritten by the player data
+	score->stats = new Stat(0);
 	if ( !score->stats )
 	{
 		printlog( "failed to allocate memory for new stat!\n" );
@@ -190,7 +195,14 @@ score_t* scoreConstructor()
 	score->conductFoodless = conductFoodless;
 	score->conductVegetarian = conductVegetarian;
 	score->conductIlliterate = conductIlliterate;
-
+	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		score->conductGameChallenges[c] = conductGameChallenges[c];
+	}
+	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		score->gameStatistics[c] = gameStatistics[c];
+	}
 	return score;
 }
 
@@ -227,18 +239,24 @@ int saveScore()
 	int c;
 
 	score_t* currentscore = scoreConstructor();
-	for ( c = 0, node = topscores.first; node != NULL; node = node->next, c++ )
+	list_t* scoresPtr = &topscores;
+	if ( conductGameChallenges[CONDUCT_MULTIPLAYER] )
+	{
+		scoresPtr = &topscoresMultiplayer;
+	}
+
+	for ( c = 0, node = scoresPtr->first; node != NULL; node = node->next, c++ )
 	{
 		score_t* score = (score_t*)node->element;
 		if ( totalScore(score) <= totalScore(currentscore) )
 		{
-			node_t* newNode = list_AddNode(&topscores, c);
+			node_t* newNode = list_AddNode(scoresPtr, c);
 			newNode->element = currentscore;
 			newNode->deconstructor = &scoreDeconstructor;
 			newNode->size = sizeof(score_t);
-			while ( list_Size(&topscores) > MAXTOPSCORES )
+			while ( list_Size(scoresPtr) > MAXTOPSCORES )
 			{
-				list_RemoveNode(topscores.last);
+				list_RemoveNode(scoresPtr->last);
 			}
 			return c;
 		}
@@ -248,7 +266,7 @@ int saveScore()
 		scoreDeconstructor((void*)currentscore);
 		return -1; // do not save the score
 	}
-	node = list_AddNodeLast(&topscores);
+	node = list_AddNodeLast(scoresPtr);
 	node->element = currentscore;
 	node->deconstructor = &scoreDeconstructor;
 	node->size = sizeof(score_t);
@@ -295,7 +313,14 @@ int totalScore(score_t* score)
 	}
 
 	amount += score->dungeonlevel * 500;
-	amount += score->victory * 10000;
+	if ( score->victory == 3 )
+	{
+		amount += score->victory * 20000;
+	}
+	else
+	{
+		amount += score->victory * 10000;
+	}
 	amount -= score->completionTime / TICKS_PER_SECOND;
 	if ( score->victory )
 	{
@@ -303,6 +328,11 @@ int totalScore(score_t* score)
 		amount += score->conductFoodless * 5000;
 		amount += score->conductVegetarian * 5000;
 		amount += score->conductIlliterate * 5000;
+		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
+			&& score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] == 0 )
+		{
+			amount *= 2;
+		}
 	}
 	if ( amount < 0 )
 	{
@@ -323,7 +353,15 @@ int totalScore(score_t* score)
 
 void loadScore(int scorenum)
 {
-	node_t* node = list_Node(&topscores, scorenum);
+	node_t* node = nullptr;
+	if ( scoreDisplayMultiplayer )
+	{
+		node = list_Node(&topscoresMultiplayer, scorenum);
+	}
+	else
+	{
+		node = list_Node(&topscores, scorenum);
+	}
 	if ( !node )
 	{
 		return;
@@ -444,6 +482,14 @@ void loadScore(int scorenum)
 			stats[0]->mask = item2;
 		}
 	}
+	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		conductGameChallenges[c] = score->conductGameChallenges[c];
+	}
+	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		gameStatistics[c] = score->gameStatistics[c];
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -454,16 +500,16 @@ void loadScore(int scorenum)
 
 -------------------------------------------------------------------------------*/
 
-void saveAllScores()
+void saveAllScores(const std::string& scoresfilename)
 {
 	node_t* node;
 	FILE* fp;
 	int c;
 
 	// open file
-	if ( (fp = fopen(SCORESFILE, "wb")) == NULL )
+	if ( (fp = fopen(scoresfilename.c_str(), "wb")) == NULL )
 	{
-		printlog("error: failed to save '%s!'\n", SCORESFILE);
+		printlog("error: failed to save '%s!'\n", scoresfilename.c_str());
 		return;
 	}
 
@@ -481,15 +527,24 @@ void saveAllScores()
 		fwrite(&c, sizeof(Uint32), 1, fp);
 		fputs(book, fp);
 	}
-	for ( c = 0; c < 10; c++ )
+	for ( c = 0; c < NUMCLASSES; c++ )
 	{
 		fwrite(&usedClass[c], sizeof(bool), 1, fp);
 	}
 
 	// score list
-	c = list_Size(&topscores);
+	if ( scoresfilename.compare(SCORESFILE) == 0 )
+	{
+		c = list_Size(&topscores);
+		node = topscores.first;
+	}
+	else
+	{
+		c = list_Size(&topscoresMultiplayer);
+		node = topscoresMultiplayer.first;
+	}
 	fwrite(&c, sizeof(Uint32), 1, fp);
-	for ( node = topscores.first; node != NULL; node = node->next )
+	for (; node != NULL; node = node->next )
 	{
 		score_t* score = (score_t*)node->element;
 		for ( c = 0; c < NUMMONSTERS; c++ )
@@ -530,6 +585,14 @@ void saveAllScores()
 		{
 			fwrite(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
 			fwrite(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		{
+			fwrite(&score->conductGameChallenges[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		{
+			fwrite(&score->gameStatistics[c], sizeof(Sint32), 1, fp);
 		}
 
 		// inventory
@@ -659,16 +722,23 @@ void saveAllScores()
 
 -------------------------------------------------------------------------------*/
 
-void loadAllScores()
+void loadAllScores(const std::string& scoresfilename)
 {
 	FILE* fp;
 	Uint32 c, i;
 
 	// clear top scores
-	list_FreeAll(&topscores);
+	if ( scoresfilename.compare(SCORESFILE) == 0 )
+	{
+		list_FreeAll(&topscores);
+	}
+	else
+	{
+		list_FreeAll(&topscoresMultiplayer);
+	}
 
 	// open file
-	if ( (fp = fopen(SCORESFILE, "rb")) == NULL )
+	if ( (fp = fopen(scoresfilename.c_str(), "rb")) == NULL )
 	{
 		return;
 	}
@@ -678,14 +748,35 @@ void loadAllScores()
 	fread(checkstr, sizeof(char), strlen("BARONYSCORES"), fp);
 	if ( strncmp(checkstr, "BARONYSCORES", strlen("BARONYSCORES")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SCORESFILE);
+		printlog("error: '%s' is corrupt!\n", scoresfilename.c_str());
 		fclose(fp);
 		return;
 	}
+
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
 	{
-		printlog("error: '%s' is corrupt!\n", SCORESFILE);
+		if ( checkstr[j] >= '0' && checkstr[j] <= '9' )
+		{
+			versionStr[i] = checkstr[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+	printlog("notice: '%s' version number %d", scoresfilename.c_str(), versionNumber);
+	if ( versionNumber < 200 || versionNumber > 999 )
+	{
+		// if version number less than v2.0.0, or more than 3 digits, abort and rebuild scores file.
+		printlog("error: '%s' is corrupt!\n", scoresfilename.c_str());
 		fclose(fp);
 		return;
 	}
@@ -707,9 +798,23 @@ void loadAllScores()
 		node->size = sizeof(char) * (strlen(tempstr) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-	for ( c = 0; c < 10; c++ )
+	for ( c = 0; c < NUMCLASSES; c++ )
 	{
-		fread(&usedClass[c], sizeof(bool), 1, fp);
+		if ( versionNumber < 300 )
+		{
+			if ( c < 10 )
+			{
+				fread(&usedClass[c], sizeof(bool), 1, fp);
+			}
+			else
+			{
+				usedClass[c] = false;
+			}
+		}
+		else
+		{
+			fread(&usedClass[c], sizeof(bool), 1, fp);
+		}
 	}
 
 	// read scores
@@ -717,14 +822,23 @@ void loadAllScores()
 	fread(&numscores, sizeof(Uint32), 1, fp);
 	for ( i = 0; i < numscores; i++ )
 	{
-		node_t* node = list_AddNodeLast(&topscores);
+		node_t* node = nullptr;
+		if ( scoresfilename.compare(SCORESFILE) == 0 )
+		{
+			node = list_AddNodeLast(&topscores);
+		}
+		else
+		{
+			node = list_AddNodeLast(&topscoresMultiplayer);
+		}
 		score_t* score = (score_t*) malloc(sizeof(score_t));
 		if ( !score )
 		{
 			printlog( "failed to allocate memory for new score!\n" );
 			exit(1);
 		}
-		score->stats = new Stat();
+		// Stat set to 0 as monster type not needed, values will be overwritten by the savegame data
+		score->stats = new Stat(0);
 		if ( !score->stats )
 		{
 			printlog( "failed to allocate memory for new stat!\n" );
@@ -734,9 +848,27 @@ void loadAllScores()
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
-		for ( c = 0; c < NUMMONSTERS; c++ )
+		if ( versionNumber < 300 )
 		{
-			fread(&score->kills[c], sizeof(Sint32), 1, fp);
+			// legacy nummonsters
+			for ( c = 0; c < NUMMONSTERS; c++ )
+			{
+				if ( c < 21 )
+				{
+					fread(&score->kills[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->kills[c] = 0;
+				}
+			}
+		}
+		else
+		{
+			for ( c = 0; c < NUMMONSTERS; c++ )
+			{
+				fread(&score->kills[c], sizeof(Sint32), 1, fp);
+			}
 		}
 		fread(&score->completionTime, sizeof(Uint32), 1, fp);
 		fread(&score->conductPenniless, sizeof(bool), 1, fp);
@@ -768,12 +900,66 @@ void loadAllScores()
 		{
 			fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
 		}
-		for ( c = 0; c < NUMEFFECTS; c++ )
+		if ( versionNumber < 300 )
 		{
-			fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
-			fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+			// legacy effects
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				if ( c < 16 )
+				{
+					fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+					fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->stats->EFFECTS[c] = false;
+					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
+		else if ( versionNumber < 302 )
+		{
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				if ( c < 19 )
+				{
+					fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+					fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->stats->EFFECTS[c] = false;
+					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
+		else
+		{
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+				fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+			}
 		}
 
+		if ( versionNumber >= 310 )
+		{
+			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			{
+				fread(&score->conductGameChallenges[c], sizeof(Sint32), 1, fp);
+			}
+			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+			{
+				fread(&score->gameStatistics[c], sizeof(Sint32), 1, fp);
+			}
+		}
+		else
+		{
+			for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+			{
+				score->conductGameChallenges[c] = 0;
+			}
+		}
 		score->stats->leader_uid = 0;
 		score->stats->FOLLOWERS.first = NULL;
 		score->stats->FOLLOWERS.last = NULL;
@@ -926,15 +1112,26 @@ int saveGame()
 	node_t* node;
 	FILE* fp;
 	Sint32 c;
+	char savefile[32] = "";
 
 	// open file
 	if ( !intro )
 	{
 		messagePlayer(clientnum, language[1121]);
 	}
-	if ( (fp = fopen(SAVEGAMEFILE, "wb")) == NULL )
+
+	if ( multiplayer == SINGLE )
 	{
-		printlog("warning: failed to save '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+
+	if ( (fp = fopen(savefile, "wb")) == NULL )
+	{
+		printlog("warning: failed to save '%s'!\n", savefile);
 		return 1;
 	}
 
@@ -961,6 +1158,14 @@ int saveGame()
 	fwrite(&conductFoodless, sizeof(bool), 1, fp);
 	fwrite(&conductVegetarian, sizeof(bool), 1, fp);
 	fwrite(&conductIlliterate, sizeof(bool), 1, fp);
+	for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		fwrite(&conductGameChallenges[c], sizeof(Sint32), 1, fp);
+	}
+	for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		fwrite(&gameStatistics[c], sizeof(Sint32), 1, fp);
+	}
 
 	// write hotbar items
 	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
@@ -1307,10 +1512,19 @@ int saveGame()
 		return 0;
 	}
 
-	// now we save the follower information
-	if ( (fp = fopen(SAVEGAMEFILE2, "wb")) == NULL )
+	if ( multiplayer == SINGLE )
 	{
-		printlog("warning: failed to save '%s'!\n", SAVEGAMEFILE2);
+		strcpy(savefile, SAVEGAMEFILE2);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+	}
+
+	// now we save the follower information
+	if ( (fp = fopen(savefile, "wb")) == NULL )
+	{
+		printlog("warning: failed to save '%s'!\n", savefile);
 		return 1;
 	}
 	fprintf(fp, "BARONYSAVEGAMEFOLLOWERS");
@@ -1557,10 +1771,20 @@ int loadGame(int player)
 	FILE* fp;
 	int c;
 
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( multiplayer == SINGLE )
 	{
-		printlog("error: failed to load '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to load '%s'!\n", savefile);
 		return 1;
 	}
 
@@ -1569,18 +1793,20 @@ int loadGame(int player)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 1;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("loadGame: '%s' version number %d", savefile, versionNumber);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 1;
 	}
-
 	// read basic header info
 	fread(&uniqueGameKey, sizeof(Uint32), 1, fp);
 	fread(&mul, sizeof(Uint32), 1, fp);
@@ -1593,6 +1819,17 @@ int loadGame(int player)
 	fread(&conductFoodless, sizeof(bool), 1, fp);
 	fread(&conductVegetarian, sizeof(bool), 1, fp);
 	fread(&conductIlliterate, sizeof(bool), 1, fp);
+	if ( versionNumber >= 310 )
+	{
+		for ( c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+		{
+			fread(&conductGameChallenges[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+		{
+			fread(&gameStatistics[c], sizeof(Sint32), 1, fp);
+		}
+	}
 
 	// read hotbar item offsets
 	Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
@@ -1973,10 +2210,20 @@ list_t* loadGameFollowers()
 	FILE* fp;
 	int c;
 
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE2, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( multiplayer == SINGLE )
 	{
-		printlog("error: failed to load '%s'!\n", SAVEGAMEFILE2);
+		strcpy(savefile, SAVEGAMEFILE2);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+	}
+
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to load '%s'!\n", savefile);
 		return NULL;
 	}
 
@@ -1985,16 +2232,19 @@ list_t* loadGameFollowers()
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAMEFOLLOWERS"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAMEFOLLOWERS", strlen("BARONYSAVEGAMEFOLLOWERS")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE2);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("loadGameFollowers: '%s' version number %d", savefile, versionNumber);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE2);
+		// if version number returned is invalid, abort
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
-		return NULL;
+		return nullptr;
 	}
 
 	// create followers list
@@ -2020,7 +2270,8 @@ list_t* loadGameFollowers()
 		int i;
 		for ( i = 0; i < numFollowers; i++ )
 		{
-			Stat* followerStats = new Stat();
+			// Stat set to 0 as monster type not needed, values will be overwritten by the saved follower data
+			Stat* followerStats = new Stat(0);
 
 			node_t* node = list_AddNodeLast(followerList);
 			node->element = followerStats;
@@ -2153,28 +2404,45 @@ list_t* loadGameFollowers()
 
 -------------------------------------------------------------------------------*/
 
-int deleteSaveGame()
+int deleteSaveGame(int gametype)
 {
-	if (access(SAVEGAMEFILE, F_OK) != -1)
+	char savefile[32] = "";
+	if ( gametype == SINGLE )
 	{
-		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE);
-		int result = remove(SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	if (access(savefile, F_OK) != -1)
+	{
+		printlog("deleting savegame in '%s'...\n", savefile);
+		int result = remove(savefile);
 		if (result)
 		{
-			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE);
+			printlog("warning: failed to delete savegame in '%s'!\n", savefile);
 #ifdef _MSC_VER
 			printlog(strerror(errno));
 #endif
 		}
 	}
 
-	if (access(SAVEGAMEFILE2, F_OK) != -1)
+	if ( gametype == SINGLE )
 	{
-		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE2);
-		int result = remove(SAVEGAMEFILE2);
+		strcpy(savefile, SAVEGAMEFILE2);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+	}
+	if (access(savefile, F_OK) != -1)
+	{
+		printlog("deleting savegame in '%s'...\n", savefile);
+		int result = remove(savefile);
 		if (result)
 		{
-			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE2);
+			printlog("warning: failed to delete savegame in '%s'!\n", savefile);
 #ifdef _MSC_VER
 			printlog(strerror(errno));
 #endif
@@ -2195,16 +2463,25 @@ int deleteSaveGame()
 
 -------------------------------------------------------------------------------*/
 
-bool saveGameExists()
+bool saveGameExists(bool singleplayer)
 {
-	if ( access( SAVEGAMEFILE, F_OK ) == -1 )
+	char savefile[32] = "";
+	if ( singleplayer )
+	{
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	if ( access(savefile, F_OK ) == -1 )
 	{
 		return false;
 	}
 	else
 	{
 		FILE* fp;
-		if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+		if ( (fp = fopen(savefile, "rb")) == NULL )
 		{
 			return false;
 		}
@@ -2216,8 +2493,10 @@ bool saveGameExists()
 			return false;
 		}
 		fread(checkstr, sizeof(char), strlen(VERSION), fp);
-		if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+		int versionNumber = getSavegameVersion(checkstr);
+		if ( versionNumber == -1 )
 		{
+			// if getSavegameVersion returned -1, abort.
 			fclose(fp);
 			return false;
 		}
@@ -2234,21 +2513,30 @@ bool saveGameExists()
 
 -------------------------------------------------------------------------------*/
 
-char* getSaveGameName()
+char* getSaveGameName(bool singleplayer)
 {
 	char name[128];
 	FILE* fp;
 	int c;
 
 	int level, class_;
-	int mul, plnum;
+	int mul, plnum, dungeonlevel;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
-
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( singleplayer )
 	{
-		printlog("error: failed to check name in '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to check name in '%s'!\n", savefile);
+		free(tempstr);
 		return NULL;
 	}
 
@@ -2257,22 +2545,34 @@ char* getSaveGameName()
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
+		free(tempstr);
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	printlog("getSaveGameName: '%s' version number %d", savefile, versionNumber);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
-		return NULL;
+		free(tempstr);
+		return nullptr;
 	}
 
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&mul, sizeof(Uint32), 1, fp);
 	fread(&plnum, sizeof(Uint32), 1, fp);
-	fseek(fp, sizeof(Uint32) + sizeof(Uint32) + sizeof(bool), SEEK_CUR);
+	fseek(fp, sizeof(Uint32), SEEK_CUR);
+	fread(&dungeonlevel, sizeof(Uint32), 1, fp);
+	fseek(fp,  sizeof(bool), SEEK_CUR);
+	if ( versionNumber >= 310 )
+	{
+		fseek(fp, sizeof(Sint32) * NUM_CONDUCT_CHALLENGES, SEEK_CUR);
+		fseek(fp, sizeof(Sint32) * NUM_GAMEPLAY_STATISTICS, SEEK_CUR);
+	}
 	fseek(fp, sizeof(Uint32)*NUM_HOTBAR_SLOTS, SEEK_CUR);
 	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
 
@@ -2349,7 +2649,7 @@ char* getSaveGameName()
 	fread(&level, sizeof(Sint32), 1, fp);
 
 	// assemble string
-	snprintf(tempstr, 1024, language[1540 + mul], name, level, language[1900 + class_], plnum);
+	snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, plnum);
 
 	// close file
 	fclose(fp);
@@ -2365,15 +2665,23 @@ char* getSaveGameName()
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getSaveGameUniqueGameKey()
+Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 {
 	FILE* fp;
 	Uint32 gameKey;
-
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( singleplayer )
 	{
-		printlog("error: failed to get map seed out of '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to get map seed out of '%s'!\n", savefile);
 		return 0;
 	}
 
@@ -2382,14 +2690,16 @@ Uint32 getSaveGameUniqueGameKey()
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
@@ -2409,15 +2719,23 @@ Uint32 getSaveGameUniqueGameKey()
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameType()
+int getSaveGameType(bool singleplayer)
 {
 	FILE* fp;
 	int mul;
-
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( singleplayer )
 	{
-		printlog("error: failed to get game type out of '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to get game type out of '%s'!\n", savefile);
 		return 0;
 	}
 
@@ -2426,14 +2744,16 @@ int getSaveGameType()
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
@@ -2454,15 +2774,23 @@ int getSaveGameType()
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameClientnum()
+int getSaveGameClientnum(bool singleplayer)
 {
 	FILE* fp;
 	int clientnum;
-
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( singleplayer )
 	{
-		printlog("error: failed to get clientnum out of '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to get clientnum out of '%s'!\n", savefile);
 		return 0;
 	}
 
@@ -2471,14 +2799,16 @@ int getSaveGameClientnum()
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
@@ -2500,15 +2830,23 @@ int getSaveGameClientnum()
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getSaveGameMapSeed()
+Uint32 getSaveGameMapSeed(bool singleplayer)
 {
 	FILE* fp;
 	Uint32 seed;
-
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	char savefile[32] = "";
+	if ( singleplayer )
 	{
-		printlog("error: failed to get map seed out of '%s'!\n", SAVEGAMEFILE);
+		strcpy(savefile, SAVEGAMEFILE);
+	}
+	else
+	{
+		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+	}
+	// open file
+	if ( (fp = fopen(savefile, "rb")) == NULL )
+	{
+		printlog("error: failed to get map seed out of '%s'!\n", savefile);
 		return 0;
 	}
 
@@ -2517,14 +2855,16 @@ Uint32 getSaveGameMapSeed()
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
+	int versionNumber = getSavegameVersion(checkstr);
+	if ( versionNumber == -1 )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
+		// if getSavegameVersion returned -1, abort.
+		printlog("error: '%s' is corrupt!\n", savefile);
 		fclose(fp);
 		return 0;
 	}
@@ -2537,4 +2877,87 @@ Uint32 getSaveGameMapSeed()
 	// close file
 	fclose(fp);
 	return seed;
+}
+
+int getSavegameVersion(char checkstr[64])
+{
+	int versionNumber = 300;
+	char versionStr[4] = "000";
+	int i = 0;
+	for ( int j = 0; j < strlen(VERSION); ++j )
+	{
+		if ( checkstr[j] >= '0' && checkstr[j] <= '9' )
+		{
+			versionStr[i] = checkstr[j]; // copy all integers into versionStr.
+			++i;
+			if ( i == 3 )
+			{
+				versionStr[i] = '\0';
+				break; // written 3 characters, add termination and break loop.
+			}
+		}
+	}
+	versionNumber = atoi(versionStr); // convert from string to int.
+	if ( versionNumber < 200 || versionNumber > 999 )
+	{
+		// if version number less than v2.0.0, or more than 3 digits, abort.
+		return -1;
+	}
+	return versionNumber;
+}
+
+void setDefaultPlayerConducts()
+{
+	conductPenniless = true;
+	conductFoodless = true;
+	conductVegetarian = true;
+	conductIlliterate = true;
+
+	for ( int c = 0; c < NUM_CONDUCT_CHALLENGES; ++c )
+	{
+		conductGameChallenges[c] = 0;
+	}
+	conductGameChallenges[CONDUCT_HARDCORE] = 1;
+	conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 0;
+	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
+}
+
+void updatePlayerConductsInMainLoop()
+{
+	if ( conductPenniless )
+	{
+		if ( stats[clientnum]->GOLD > 0 )
+		{
+			conductPenniless = false;
+		}
+	}
+
+	if ( conductGameChallenges[CONDUCT_HARDCORE] )
+	{
+		if ( !(svFlags & SV_FLAG_HARDCORE) )
+		{
+			conductGameChallenges[CONDUCT_HARDCORE] = 0;
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	{
+		if ( (svFlags & SV_FLAG_CHEATS) )
+		{
+			conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_MULTIPLAYER] )
+	{
+		if ( multiplayer != SINGLE )
+		{
+			conductGameChallenges[CONDUCT_MULTIPLAYER] = 1;
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_CLASSIC_MODE] )
+	{
+		if ( (svFlags & SV_FLAG_CLASSIC) )
+		{
+			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
+		}
+	}
 }

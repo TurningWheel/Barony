@@ -40,7 +40,6 @@
 #define ITEM_IDENTIFIED my->skill[15]
 #define ITEM_LIFE my->skill[16]
 #define ITEM_AMBIENCE my->skill[17]
-#define ITEM_NOTMOVING my->skill[18]
 
 void actItem(Entity* my)
 {
@@ -62,7 +61,7 @@ void actItem(Entity* my)
 				else
 				{
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.creatures->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -79,7 +78,7 @@ void actItem(Entity* my)
 			else
 			{
 				node_t* node;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.creatures->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -110,7 +109,10 @@ void actItem(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		my->flags[INVISIBLE] = false;
+		if ( my->itemSokobanReward != 1 )
+		{
+			my->flags[INVISIBLE] = false;
+		}
 		item = newItemFromEntity(my);
 		my->sprite = itemModel(item);
 		free(item);
@@ -155,6 +157,7 @@ void actItem(Entity* my)
 							{
 								free(item);
 							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -164,9 +167,35 @@ void actItem(Entity* my)
 		}
 	}
 
-	if (ITEM_NOTMOVING)
+	if ( my->itemNotMoving )
 	{
-		return;
+		switch ( my->sprite )
+		{
+			case 610:
+			case 611:
+			case 612:
+			case 613:
+				my->spawnAmbientParticles(80, my->sprite - 4, 10 + rand() % 40, 1.0, false);
+				if ( !my->light )
+				{
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
+				}
+				break;
+			default:
+				break;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			// let the client process some more gravity and make sure it isn't stopping early at an awkward angle.
+			if ( my->itemNotMovingClient == 1 )
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	// gravity
@@ -174,23 +203,53 @@ void actItem(Entity* my)
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
-		ITEM_VELZ += 0.04;
-		my->z += ITEM_VELZ;
-		my->roll += 0.04;
+		// chakram and shuriken lie flat, needs to use sprites for client
+		if ( my->sprite == 567 || my->sprite == 569 )
+		{
+			// todo: adjust falling rates for thrown items if need be
+			ITEM_VELZ += 0.04;
+			my->z += ITEM_VELZ;
+			my->roll += 0.08;
+		}
+		else
+		{
+			ITEM_VELZ += 0.04;
+			my->z += ITEM_VELZ;
+			my->roll += 0.04;
+		}
 	}
 	else
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
-			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
+			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] 
+				|| (my->sprite >= 610 && my->sprite <= 613) )
 			{
 				// land
 				ITEM_VELZ *= -.7;
 				if ( ITEM_VELZ > -.35 )
 				{
-					my->roll = PI / 2.0;
-					my->z = 7.5 - models[my->sprite]->sizey * .25;
+					// chakram and shuriken lie flat, needs to use sprites for client
+					if ( my->sprite == 567 || my->sprite == 569 )
+					{
+						my->roll = PI;
+						my->pitch = 0;
+						if ( my->sprite == 569 )
+						{
+							my->z = 8.5 - models[my->sprite]->sizey * .25;
+						}
+						else
+						{
+							my->z = 8.75 - models[my->sprite]->sizey * .25;
+						}
+					}
+					else
+					{
+						my->roll = PI / 2.0;
+						my->z = 7.5 - models[my->sprite]->sizey * .25;
+					}
 					ITEM_VELZ = 0;
+					onground = true;
 				}
 				else
 				{
@@ -223,11 +282,32 @@ void actItem(Entity* my)
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
-	double groundheight = 7.5 - models[my->sprite]->sizey * .25;
+	double groundheight;
+	if ( my->sprite == 569 )
+	{
+		groundheight = 8.5 - models[my->sprite]->sizey * .25;
+	}
+	else if ( my->sprite == 567 )
+	{
+		groundheight = 8.75 - models[my->sprite]->sizey * .25;
+	}
+	else
+	{
+		groundheight = 7.5 - models[my->sprite]->sizey * .25;
+	}
+
 	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
 	{
-		ITEM_NOTMOVING = 1;
+		my->itemNotMoving = 1;
 		my->flags[UPDATENEEDED] = false;
+		if ( multiplayer != CLIENT )
+		{
+			serverUpdateEntitySkill(my, 18); //update itemNotMoving flag
+		}
+		else
+		{
+			my->itemNotMovingClient = 1;
+		}
 		return;
 	}
 

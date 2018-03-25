@@ -34,7 +34,15 @@ void actArrowTrap(Entity* my)
 	int c;
 
 	// eliminate arrow traps that have been destroyed.
-	if ( !checkObstacle(my->x, my->y, my, NULL) )
+	// check wall inside me.
+	int checkx = static_cast<int>(my->x) >> 4;
+	int checky = static_cast<int>(my->y) >> 4;
+	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	if ( ARROWTRAP_FIRED == 1 ) // shot my piece, time to die.
 	{
 		list_RemoveNode(my->mynode);
 		return;
@@ -81,7 +89,7 @@ void actArrowTrap(Entity* my)
 				}
 				if ( !checkObstacle(my->x + x, my->y + y, my, NULL) )
 				{
-					Entity* entity = newEntity(166, 1, map.entities); // arrow
+					Entity* entity = newEntity(166, 1, map.entities, nullptr); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
 					entity->parent = my->getUID();
 					entity->x = my->x + x;

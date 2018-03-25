@@ -149,51 +149,61 @@ void actEmpty(Entity* my)
 	// used on clients to permit dead reckoning and other interpolation
 }
 
-#define FURNITURE_TYPE my->skill[0]
-#define FURNITURE_INIT my->skill[1]
-#define FURNITURE_HEALTH my->skill[4]
-#define FURNITURE_MAXHEALTH my->skill[9]
-
 void actFurniture(Entity* my)
 {
-	if ( !FURNITURE_INIT )
+	if ( !my )
 	{
-		FURNITURE_INIT = 1;
-		if ( !FURNITURE_TYPE )
+		return;
+	}
+
+	if ( !my->flags[BURNABLE] )
+	{
+		my->flags[BURNABLE] = true;
+	}
+
+	my->actFurniture();
+}
+
+void Entity::actFurniture()
+{
+	if ( !furnitureInit )
+	{
+		furnitureInit = 1;
+		if ( furnitureType == FURNITURE_TABLE || FURNITURE_BUNKBED || FURNITURE_BED || FURNITURE_PODIUM )
 		{
-			FURNITURE_HEALTH = 15 + rand() % 5;
+			furnitureHealth = 15 + rand() % 5;
 		}
 		else
 		{
-			FURNITURE_HEALTH = 4 + rand() % 4;
+			furnitureHealth = 4 + rand() % 4;
 		}
-		FURNITURE_MAXHEALTH = FURNITURE_HEALTH;
-		my->flags[BURNABLE] = true;
+		furnitureMaxHealth = furnitureHealth;
+		flags[BURNABLE] = true;
 	}
 	else
 	{
 		if ( multiplayer != CLIENT )
 		{
 			// burning
-			if ( my->flags[BURNING] )
+			if ( flags[BURNING] )
 			{
 				if ( ticks % 15 == 0 )
 				{
-					FURNITURE_HEALTH--;
+					furnitureHealth--;
 				}
 			}
 
 			// furniture mortality :p
-			if ( FURNITURE_HEALTH <= 0 )
+			if ( furnitureHealth <= 0 )
 			{
 				int c;
 				for ( c = 0; c < 5; c++ )
 				{
-					Entity* entity = spawnGib(my);
+					Entity* entity = spawnGib(this);
 					entity->flags[INVISIBLE] = false;
 					entity->sprite = 187; // Splinter.vox
-					entity->x = floor(my->x / 16) * 16 + 8;
-					entity->y = floor(my->y / 16) * 16 + 8;
+					entity->x = floor(x / 16) * 16 + 8;
+					entity->y = floor(y / 16) * 16 + 8;
 					entity->y += -3 + rand() % 6;
 					entity->x += -3 + rand() % 6;
 					entity->z = -5 + rand() % 10;
@@ -206,14 +216,16 @@ void actFurniture(Entity* my)
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
 				}
-				playSoundEntity(my, 176, 128);
-				Entity* entity;
-				if ( (entity = uidToEntity(my->parent)) != NULL )
+				playSoundEntity(this, 176, 128);
+				Entity* entity = uidToEntity(parent);
+				if ( entity != NULL )
 				{
-					entity->skill[18] = 0; // drop the item that was on the table
-					serverUpdateEntitySkill(entity, 18);
+					entity->itemNotMoving = 0; // drop the item that was on the table
+					entity->itemNotMovingClient = 0; // clear the client item gravity flag
+					serverUpdateEntitySkill(entity, 18); //update both the above flags.
+					serverUpdateEntitySkill(entity, 19);
 				}
-				list_RemoveNode(my->mynode);
+				list_RemoveNode(mynode);
 				return;
 			}
 
@@ -221,17 +233,37 @@ void actFurniture(Entity* my)
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+				if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
 				{
 					if (inrange[i])
 					{
-						if ( FURNITURE_TYPE )
+						switch ( furnitureType )
 						{
-							messagePlayer(i, language[476]);
-						}
-						else
-						{
-							messagePlayer(i, language[477]);
+							case FURNITURE_CHAIR:
+								messagePlayer(i, language[476]);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(i, language[477]);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(i, language[2493]);
+								break;
+							case FURNITURE_BUNKBED:
+								if ( i == 0 || i == 2 )
+								{
+									messagePlayer(i, language[2494]);
+								}
+								else
+								{
+									messagePlayer(i, language[2495]);
+								}
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(i, language[2496]);
+								break;
+							default:
+								messagePlayer(i, language[477]);
+								break;
 						}
 					}
 				}
@@ -287,5 +319,177 @@ void actMCaxe(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+	}
+}
+
+void actStalagFloor(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actStalagFloor();
+}
+
+void Entity::actStalagFloor()
+{
+
+}
+
+void actStalagCeiling(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+	my->actStalagCeiling();
+}
+
+void Entity::actStalagCeiling()
+{
+
+}
+
+void actStalagColumn(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actStalagColumn();
+}
+
+void Entity::actStalagColumn()
+{
+
+}
+
+void actColumn(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+	if ( my->flags[BLOCKSIGHT] ) // stop the compiler optimising into a different entity.
+	{
+		my->flags[BLOCKSIGHT] = false;
+	}
+	my->actColumn();
+}
+
+void Entity::actColumn()
+{
+
+}
+
+void actCeilingTile(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	if ( !my->flags[PASSABLE] )
+	{
+		my->flags[PASSABLE] = true;
+	}
+	if ( my->flags[BLOCKSIGHT] )
+	{
+		my->flags[BLOCKSIGHT] = false;
+	}
+}
+
+void actPistonBase(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+}
+
+void actPistonCam(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	my->actPistonCam();
+}
+
+void Entity::actPistonCam()
+{
+	yaw += pistonCamRotateSpeed;
+	while ( yaw > 2 * PI )
+	{
+		yaw -= 2 * PI;
+	}
+	while ( yaw < 0 )
+	{
+		yaw += 2 * PI;
+	}
+	if ( (pistonCamDir == 0 || pistonCamDir == 2) && pistonCamRotateSpeed > 0 )
+	{
+		if ( yaw <= PI && yaw >= -pistonCamRotateSpeed + PI )
+		{
+			yaw = PI;
+			pistonCamRotateSpeed = 0;
+		}
+	}
+	--pistonCamTimer;
+
+	if ( pistonCamDir == 0 ) // bottom
+	{
+		if ( pistonCamTimer <= 0 )
+		{
+			pistonCamDir = 1; // up
+			pistonCamRotateSpeed = 0.2;
+			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+		}
+	}
+	if ( pistonCamDir == 1 ) // up
+	{
+		z -= 0.1;
+		if ( z < -1.75 )
+		{
+			z = -1.75;
+			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamDir = 2; // top
+		}
+	}
+	else if ( pistonCamDir == 2 ) // top
+	{
+		if ( pistonCamTimer <= 0 )
+		{
+			pistonCamDir = 3; // down
+			pistonCamRotateSpeed = -0.2;
+			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+		}
+	}
+	else if ( pistonCamDir == 3 ) // down
+	{
+		z += 0.1;
+		if ( z > 1.75 )
+		{
+			z = 1.75;
+			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamDir = 0; // down
+		}
+	}
+}
+
+void actFloorDecoration(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	if ( !my->flags[PASSABLE] )
+	{
+		my->flags[PASSABLE] = true;
 	}
 }

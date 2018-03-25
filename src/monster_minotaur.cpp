@@ -20,18 +20,14 @@
 #include "collision.hpp"
 #include "magic/magic.hpp"
 #include "player.hpp"
+#include "colors.hpp"
 
 void initMinotaur(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 239;
-
-	//my->flags[GENIUS]=true;
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(239);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -42,92 +38,94 @@ void initMinotaur(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = MALE;
-		myStats->appearance = rand();
-		strcpy(myStats->name, "");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 400;
-		myStats->MAXHP = 400;
-		myStats->MP = 100;
-		myStats->MAXMP = 100;
-		myStats->OLDHP = myStats->HP;
-		if ( strcmp(map.name, "Hell Boss") )
+		if ( myStats != NULL )
 		{
-			myStats->STR = 35;
-			myStats->DEX = 15;
-			myStats->CON = 15;
-		}
-		else
-		{
-			myStats->STR = 50;
-			myStats->DEX = 20;
-			myStats->CON = 20;
-		}
-		myStats->INT = 5;
-		myStats->PER = 5;
-		myStats->CHR = -5;
-		myStats->EXP = 0;
-		myStats->LVL = 20;
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
-		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 
-		// minotaurs can traverse waters and pits (pits with magic :))
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
 
-		ItemType gemtype = GEM_RUBY;
-		switch ( rand() % 4 )
-		{
-			case 0:
-				gemtype = GEM_RUBY;
-				break;
-			case 1:
-				gemtype = GEM_EMERALD;
-				break;
-			case 2:
-				gemtype = GEM_SAPPHIRE;
-				break;
-			case 3:
-				gemtype = GEM_DIAMOND;
-				break;
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( strcmp(map.name, "Hell Boss") == 0 )
+			{
+				myStats->STR = 50;
+				myStats->DEX = 20;
+				myStats->CON = 20;
+			}
+			else if ( currentlevel >= 25 )
+			{
+				myStats->HP += 400;
+				myStats->MAXHP += 400;
+				myStats->STR = 60;
+				myStats->DEX = 20;
+				myStats->CON = 20;
+				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+			}
+
+
+			// random effects
+			// minotaurs can traverse waters and pits (pits with magic :))
+			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+														 // count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			my->setHardcoreStats(*myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+
+			ItemType gemtype = GEM_RUBY;
+
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					switch ( rand() % 4 )
+					{
+						case 0:
+							gemtype = GEM_RUBY;
+							break;
+						case 1:
+							gemtype = GEM_EMERALD;
+							break;
+						case 2:
+							gemtype = GEM_SAPPHIRE;
+							break;
+						case 3:
+							gemtype = GEM_DIAMOND;
+							break;
+					}
+					newItem(gemtype, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+					break;
+				default:
+					break;
+			}
 		}
-		newItem( gemtype, EXCELLENT, 0, 1, rand(), true, &myStats->inventory );
 	}
 
 	// head
-	Entity* entity = newEntity(237, 0, map.entities);
+	Entity* entity = newEntity(237, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -143,9 +141,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// chest
-	entity = newEntity(238, 0, map.entities);
+	entity = newEntity(238, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -161,9 +160,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right leg
-	entity = newEntity(243, 0, map.entities);
+	entity = newEntity(243, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -179,9 +179,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left leg
-	entity = newEntity(242, 0, map.entities);
+	entity = newEntity(242, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -197,9 +198,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(241, 0, map.entities);
+	entity = newEntity(241, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -215,9 +217,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 
 	// left arm
-	entity = newEntity(240, 0, map.entities);
+	entity = newEntity(240, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -233,88 +236,32 @@ void initMinotaur(Entity* my, Stat* myStats)
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actMinotaurLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void minotaurDie(Entity* my)
 {
-	node_t* node, *nextnode;
-
 	int c;
 	for ( c = 0; c < 5; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood)
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(160, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 8.0 + (rand() % 20) / 100.0;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
+
+	my->spawnBlood();
+
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		playSoundPlayer(c, 114, 128);
 	}
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -330,7 +277,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* chest = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
@@ -379,6 +326,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -462,89 +410,79 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			if ( bodypart == 6 )
 			{
-				if ( MONSTER_ATTACK == 1 )
+				if ( my->monsterAttack > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// vertical chop windup
+					if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( my->monsterAttackTime == 0 )
 						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
+							// init rotations
+							entity->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
 							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							entity->skill[1] = 0;
 						}
-						else
+
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
-							entity->pitch += .25;
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(1, 0, nullptr);
+							}
 						}
 					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// ceiling buster chop windup
+					if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
+						if ( my->monsterAttackTime == 0 )
 						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
+							// init rotations
+							entity->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
 							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							entity->skill[1] = 0;
 						}
-						else
+
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
-							MONSTER_WEAPONYAW += .25;
+							my->monsterAttack = 1;
 						}
 					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
+					// vertical chop attack
+					else if ( my->monsterAttack == 1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( MONSTER_ATTACKTIME >= 5 )
+						if ( entity->pitch >= 3 * PI / 2 )
 						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
+							my->monsterArmbended = 1;
 						}
-						if ( MONSTER_ATTACKTIME >= 10 )
+
+						if ( entity->skill[1] == 0 )
 						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							// chop forwards
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								entity->skill[1] = 1;
+							}
+						}
+						else if ( entity->skill[1] == 1 )
+						{
+							// return to neutral
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								my->monsterWeaponYaw = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+							}
 						}
 					}
 				}
@@ -700,7 +638,10 @@ void actMinotaurTimer(Entity* my)
 	node_t* node;
 
 	MINOTAURTIMER_LIFE++;
-	if ( MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120 && rand() % 5 == 0 )   // two minutes
+	if (( (currentlevel < 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120)
+			|| (currentlevel >= 25 && MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 180)
+		)
+		&& rand() % 5 == 0 )   // two minutes if currentlevel < 25, else 3 minutes.
 	{
 		int c;
 		bool spawnedsomebody = false;
@@ -738,7 +679,10 @@ void actMinotaurTimer(Entity* my)
 			}
 		}
 	}
-	else if ( MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150 && !MINOTAURTIMER_ACTIVE )     // two and a half minutes
+	else if (( (currentlevel < 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150)
+					|| (currentlevel >= 25 && MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 210)
+				)
+		&& !MINOTAURTIMER_ACTIVE )     // two and a half minutes if currentlevel < 25, else 3.5 minutes
 	{
 		Entity* monster = summonMonster(MINOTAUR, my->x, my->y);
 		if ( monster )
@@ -758,10 +702,21 @@ void actMinotaurTimer(Entity* my)
 		int c;
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
-			playSoundPlayer(c, 120 + rand() % 3, 128);
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-			messagePlayerColor(c, color, language[1116]);
-			messagePlayerColor(c, color, language[73]);
+			if ( currentlevel < 25 )
+			{
+				playSoundPlayer(c, 120 + rand() % 3, 128);
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(c, color, language[1116]);
+				messagePlayerColor(c, color, language[73]);
+			}
+			else
+			{
+				playSoundPlayer(c, 375, 128);
+				playSoundPlayer(c, 379, 128);
+				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[1116]);
+				messagePlayerColor(c, uint32ColorOrange(*mainsurface), language[73]);
+				messagePlayerColor(c, uint32ColorBaronyBlue(*mainsurface), language[73]);
+			}
 		}
 		list_RemoveNode(my->mynode);
 		return;
@@ -780,7 +735,7 @@ void actMinotaurCeilingBuster(Entity* my)
 		int c;
 		for ( c = 0; c < 2; c++ )
 		{
-			Entity* entity = newEntity(171, 1, map.entities);
+			Entity* entity = newEntity(171, 1, map.entities, nullptr); //Particle entity.
 			entity->x = my->x - 8 + rand() % 17;
 			entity->y = my->y - 8 + rand() % 17;
 			entity->z = 10 + rand() % 3;
@@ -813,11 +768,23 @@ void actMinotaurCeilingBuster(Entity* my)
 				int index = (MAPLAYERS - 1) + ((int)floor(y / 16)) * MAPLAYERS + ((int)floor(x / 16)) * MAPLAYERS * map.height;
 				if ( map.tiles[index] )
 				{
+					if ( my->monsterAttack == 0 )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(MONSTER_POSE_MELEE_WINDUP2, 0, nullptr);
+						}
+						return;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
+					{
+						return;
+					}
 					map.tiles[index] = 0;
 					if ( multiplayer != CLIENT )
 					{
 						playSoundEntity(my, 67, 128);
-						MONSTER_ATTACK = 1;
+						//MONSTER_ATTACK = 1;
 						Stat* myStats = my->getStats();
 						if ( myStats )
 						{
@@ -831,26 +798,37 @@ void actMinotaurCeilingBuster(Entity* my)
 					int c, i = 6 + rand() % 4;
 					for ( c = 0; c < i; c++ )
 					{
-						Entity* entity = spawnGib(my);
-						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-						entity->z = -8;
-						entity->flags[PASSABLE] = true;
-						entity->flags[INVISIBLE] = false;
-						entity->flags[NOUPDATE] = true;
-						entity->flags[UPDATENEEDED] = false;
-						entity->sprite = items[GEM_ROCK].index;
-						entity->yaw = rand() % 360 * PI / 180;
-						entity->pitch = rand() % 360 * PI / 180;
-						entity->roll = rand() % 360 * PI / 180;
-						entity->vel_x = (rand() % 20 - 10) / 10.0;
-						entity->vel_y = (rand() % 20 - 10) / 10.0;
-						entity->vel_z = -.25;
-						entity->fskill[3] = 0.03;
+						Entity *entity = nullptr;
+						if ( multiplayer == SERVER )
+						{
+							entity = spawnGib(my);
+						}
+						else
+						{
+							entity = spawnGibClient(my->x, my->y, my->z, 5);
+						}
+						if ( entity )
+						{
+							entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+							entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+							entity->z = -8;
+							entity->flags[PASSABLE] = true;
+							entity->flags[INVISIBLE] = false;
+							entity->flags[NOUPDATE] = true;
+							entity->flags[UPDATENEEDED] = false;
+							entity->sprite = items[GEM_ROCK].index;
+							entity->yaw = rand() % 360 * PI / 180;
+							entity->pitch = rand() % 360 * PI / 180;
+							entity->roll = rand() % 360 * PI / 180;
+							entity->vel_x = (rand() % 20 - 10) / 10.0;
+							entity->vel_y = (rand() % 20 - 10) / 10.0;
+							entity->vel_z = -.25;
+							entity->fskill[3] = 0.03;
+						}
 					}
 				}
 				node_t* node, *nextnode;
-				for ( node = map.entities->first; node != NULL; node = nextnode )
+				for ( node = map.entities->first; node != nullptr; node = nextnode )
 				{
 					nextnode = node->next;
 					Entity* entity = (Entity*)node->element;
@@ -862,22 +840,33 @@ void actMinotaurCeilingBuster(Entity* my)
 							int c, i = 8 + rand() % 4;
 							for ( c = 0; c < i; c++ )
 							{
-								Entity* childEntity = spawnGib(my);
-								childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-								childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-								childEntity->z = -8;
-								childEntity->flags[PASSABLE] = true;
-								childEntity->flags[INVISIBLE] = false;
-								childEntity->flags[NOUPDATE] = true;
-								childEntity->flags[UPDATENEEDED] = false;
-								childEntity->sprite = items[GEM_ROCK].index;
-								childEntity->yaw = rand() % 360 * PI / 180;
-								childEntity->pitch = rand() % 360 * PI / 180;
-								childEntity->roll = rand() % 360 * PI / 180;
-								childEntity->vel_x = (rand() % 20 - 10) / 10.0;
-								childEntity->vel_y = (rand() % 20 - 10) / 10.0;
-								childEntity->vel_z = -.25;
-								childEntity->fskill[3] = 0.03;
+								Entity *entity = nullptr;
+								if ( multiplayer == SERVER )
+								{
+									entity = spawnGib(my);
+								}
+								else
+								{
+									entity = spawnGibClient(my->x, my->y, my->z, 5);
+								}
+								if ( entity )
+								{
+									entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+									entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+									entity->z = -8;
+									entity->flags[PASSABLE] = true;
+									entity->flags[INVISIBLE] = false;
+									entity->flags[NOUPDATE] = true;
+									entity->flags[UPDATENEEDED] = false;
+									entity->sprite = items[GEM_ROCK].index;
+									entity->yaw = rand() % 360 * PI / 180;
+									entity->pitch = rand() % 360 * PI / 180;
+									entity->roll = rand() % 360 * PI / 180;
+									entity->vel_x = (rand() % 20 - 10) / 10.0;
+									entity->vel_y = (rand() % 20 - 10) / 10.0;
+									entity->vel_z = -.25;
+									entity->fskill[3] = 0.03;
+								}
 							}
 							list_RemoveNode(entity->mynode);
 						}
@@ -896,6 +885,46 @@ void actMinotaurCeilingBuster(Entity* my)
 								list_RemoveNode(entity->mynode);
 							}
 						}
+						else if (	entity->behavior == &actStalagCeiling	||
+									entity->behavior == &actStalagFloor		||
+									entity->behavior == &actStalagColumn
+								)
+						{
+							// spawn several rock items
+							int c, i = rand() % 4;
+							for ( c = 0; c < i; ++c )
+							{
+								//Entity* childEntity = spawnGib(my);
+								Entity *childEntity = nullptr;
+								if ( multiplayer == SERVER )
+								{
+									childEntity = spawnGib(my);
+								}
+								else
+								{
+									childEntity = spawnGibClient(my->x, my->y, my->z, 5);
+								}
+								if ( entity )
+								{
+									childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+									childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+									childEntity->z = -8;
+									childEntity->flags[PASSABLE] = true;
+									childEntity->flags[INVISIBLE] = false;
+									childEntity->flags[NOUPDATE] = true;
+									childEntity->flags[UPDATENEEDED] = false;
+									childEntity->sprite = items[GEM_ROCK].index;
+									childEntity->yaw = rand() % 360 * PI / 180;
+									childEntity->pitch = rand() % 360 * PI / 180;
+									childEntity->roll = rand() % 360 * PI / 180;
+									childEntity->vel_x = (rand() % 20 - 10) / 10.0;
+									childEntity->vel_y = (rand() % 20 - 10) / 10.0;
+									childEntity->vel_z = -.25;
+									childEntity->fskill[3] = 0.03;
+								}
+							}
+							list_RemoveNode(entity->mynode);
+						}
 					}
 				}
 			}
@@ -905,7 +934,7 @@ void actMinotaurCeilingBuster(Entity* my)
 
 void createMinotaurTimer(Entity* entity, map_t* map)
 {
-	Entity* childEntity = newEntity(37, 0, map->entities);
+	Entity* childEntity = newEntity(37, 0, map->entities, nullptr); //Timer entity.
 	childEntity->sizex = 2;
 	childEntity->sizey = 2;
 	childEntity->x = entity->x;

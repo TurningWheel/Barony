@@ -28,7 +28,7 @@ void steam_OnP2PSessionConnectFail(void* pCallback);
 
 extern int numSteamLobbies;
 extern int selectedSteamLobby;
-extern char lobbyText[MAX_STEAM_LOBBIES][32];
+extern char lobbyText[MAX_STEAM_LOBBIES][48];
 extern void* lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
 

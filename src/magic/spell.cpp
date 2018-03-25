@@ -26,6 +26,7 @@ spell_t* selected_spell = NULL;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
+spellElement_t spellElement_missile_trio;
 spellElement_t spellElement_force;
 spellElement_t spellElement_fire;
 spellElement_t spellElement_lightning;
@@ -46,6 +47,15 @@ spellElement_t spellElement_levitation;
 spellElement_t spellElement_teleportation;
 spellElement_t spellElement_magicmissile;
 spellElement_t spellElement_removecurse;
+spellElement_t spellElement_summon;
+spellElement_t spellElement_stoneblood;
+spellElement_t spellElement_bleed;
+spellElement_t spellElement_dominate;
+spellElement_t spellElement_reflectMagic;
+spellElement_t spellElement_acidSpray;
+spellElement_t spellElement_stealWeapon;
+spellElement_t spellElement_drainSoul;
+spellElement_t spellElement_vampiricAura;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -69,18 +79,27 @@ spell_t spell_extrahealing;
 //spell_t spell_restoreability;
 spell_t spell_cureailment;
 spell_t spell_dig;
+spell_t spell_summon;
+spell_t spell_stoneblood;
+spell_t spell_bleed;
+spell_t spell_dominate;
+spell_t spell_reflectMagic;
+spell_t spell_acidSpray;
+spell_t spell_stealWeapon;
+spell_t spell_drainSoul;
+spell_t spell_vampiricAura;
 
-void addSpell(int spell, int player)
+bool addSpell(int spell, int player, bool ignoreSkill)
 {
-	node_t* node = NULL;
+	node_t* node = nullptr;
 
 	// this is a local function
 	if ( player != clientnum )
 	{
-		return;
+		return false;
 	}
 
-	spell_t* new_spell = NULL;
+	spell_t* new_spell = nullptr;
 
 	switch ( spell )
 	{
@@ -147,20 +166,47 @@ void addSpell(int spell, int player)
 		case SPELL_DIG:
 			new_spell = copySpell(&spell_dig);
 			break;
+		case SPELL_STONEBLOOD:
+			new_spell = copySpell(&spell_stoneblood);
+			break;
+		case SPELL_BLEED:
+			new_spell = copySpell(&spell_bleed);
+			break;
+		case SPELL_SUMMON:
+			new_spell = copySpell(&spell_summon);
+			break;
+		case SPELL_DOMINATE:
+			new_spell = copySpell(&spell_dominate);
+			break;
+		case SPELL_REFLECT_MAGIC:
+			new_spell = copySpell(&spell_reflectMagic);
+			break;
+		case SPELL_ACID_SPRAY:
+			new_spell = copySpell(&spell_acidSpray);
+			break;
+		case SPELL_STEAL_WEAPON:
+			new_spell = copySpell(&spell_stealWeapon);
+			break;
+		case SPELL_DRAIN_SOUL:
+			new_spell = copySpell(&spell_drainSoul);
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			new_spell = copySpell(&spell_vampiricAura);
+			break;
 		default:
-			return;
+			return false;
 	}
 	if ( spellInList(&spellList, new_spell) )
 	{
 		messagePlayer(player, language[439], new_spell->name);
 		spellDeconstructor((void*)new_spell);
-		return;
+		return false;
 	}
-	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
+	if ( !ignoreSkill && stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
 	{
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void*)new_spell);
-		return;
+		return false;
 	}
 	messagePlayer(player, language[441], new_spell->name);
 	node = list_AddNodeLast(&spellList);
@@ -170,9 +216,11 @@ void addSpell(int spell, int player)
 
 	players[player]->entity->increaseSkill(PRO_MAGIC);
 
-	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, NULL);
+	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
 	itemPickup(player, item);
 	free(item);
+
+	return true;
 }
 
 spell_t* newSpell()
@@ -382,7 +430,7 @@ void equipSpell(spell_t* spell, int playernum)
 
 spell_t* getSpellFromID(int ID)
 {
-	spell_t* spell = NULL;
+	spell_t* spell = nullptr;
 
 	switch (ID)
 	{
@@ -452,9 +500,214 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_DIG:
 			spell = &spell_dig;
 			break;
+		case SPELL_SUMMON:
+			spell = &spell_summon;
+			break;
+		case SPELL_STONEBLOOD:
+			spell = &spell_stoneblood;
+			break;
+		case SPELL_BLEED:
+			spell = &spell_bleed;
+			break;
+		case SPELL_DOMINATE:
+			spell = &spell_dominate;
+			break;
+		case SPELL_REFLECT_MAGIC:
+			spell = &spell_reflectMagic;
+			break;
+		case SPELL_ACID_SPRAY:
+			spell = &spell_acidSpray;
+			break;
+		case SPELL_STEAL_WEAPON:
+			spell = &spell_stealWeapon;
+			break;
+		case SPELL_DRAIN_SOUL:
+			spell = &spell_drainSoul;
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			spell = &spell_vampiricAura;
+			break;
+		default:
+			break;
 	}
 
 	return spell;
+}
+
+Item* getSpellbookFromSpellID(int spellID)
+{
+	Item *spellbook = nullptr;
+
+	int itemType = -1;
+	switch (spellID)
+	{
+		case SPELL_FORCEBOLT:
+			itemType = SPELLBOOK_FORCEBOLT;
+			break;
+		case SPELL_MAGICMISSILE:
+			itemType = SPELLBOOK_MAGICMISSILE;
+			break;
+		case SPELL_COLD:
+			itemType = SPELLBOOK_COLD;
+			break;
+		case SPELL_FIREBALL:
+			itemType = SPELLBOOK_FIREBALL;
+			break;
+		case SPELL_LIGHTNING:
+			itemType = SPELLBOOK_LIGHTNING;
+			break;
+		case SPELL_REMOVECURSE:
+			itemType = SPELLBOOK_REMOVECURSE;
+			break;
+		case SPELL_LIGHT:
+			itemType = SPELLBOOK_LIGHT;
+			break;
+		case SPELL_IDENTIFY:
+			itemType = SPELLBOOK_IDENTIFY;
+			break;
+		case SPELL_MAGICMAPPING:
+			itemType = SPELLBOOK_MAGICMAPPING;
+			break;
+		case SPELL_SLEEP:
+			itemType = SPELLBOOK_SLEEP;
+			break;
+		case SPELL_CONFUSE:
+			itemType = SPELLBOOK_CONFUSE;
+			break;
+		case SPELL_SLOW:
+			itemType = SPELLBOOK_SLOW;
+			break;
+		case SPELL_OPENING:
+			itemType = SPELLBOOK_OPENING;
+			break;
+		case SPELL_LOCKING:
+			itemType = SPELLBOOK_LOCKING;
+			break;
+		case SPELL_LEVITATION:
+			itemType = SPELLBOOK_LEVITATION;
+			break;
+		case SPELL_INVISIBILITY:
+			itemType = SPELLBOOK_INVISIBILITY;
+			break;
+		case SPELL_TELEPORTATION:
+			itemType = SPELLBOOK_TELEPORTATION;
+			break;
+		case SPELL_HEALING:
+			itemType = SPELLBOOK_HEALING;
+			break;
+		case SPELL_EXTRAHEALING:
+			itemType = SPELLBOOK_EXTRAHEALING;
+			break;
+		case SPELL_CUREAILMENT:
+			itemType = SPELLBOOK_CUREAILMENT;
+			break;
+		case SPELL_DIG:
+			itemType = SPELLBOOK_DIG;
+			break;
+		case SPELL_SUMMON:
+			itemType = SPELLBOOK_SUMMON;
+			break;
+		case SPELL_STONEBLOOD:
+			itemType = SPELLBOOK_STONEBLOOD;
+			break;
+		case SPELL_BLEED:
+			itemType = SPELLBOOK_BLEED;
+			break;
+		/*case SPELL_DOMINATE:
+			itemType = SPELLBOOK_DOMINATE;
+			break;*/
+		case SPELL_REFLECT_MAGIC:
+			itemType = SPELLBOOK_REFLECT_MAGIC;
+			break;
+		case SPELL_ACID_SPRAY:
+			itemType = SPELLBOOK_ACID_SPRAY;
+			break;
+		case SPELL_STEAL_WEAPON:
+			itemType = SPELLBOOK_STEAL_WEAPON;
+			break;
+		case SPELL_DRAIN_SOUL:
+			itemType = SPELLBOOK_DRAIN_SOUL;
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			itemType = SPELLBOOK_VAMPIRIC_AURA;
+			break;
+		default:
+			break;
+	}
+
+	if ( itemType > 0 )
+	{
+		spellbook = newItem(static_cast<ItemType>(itemType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+	}
+
+	return spellbook;
+}
+
+int getSpellIDFromSpellbook(int spellbookType)
+{
+	switch (spellbookType )
+	{
+		case SPELLBOOK_FORCEBOLT:
+			return spell_forcebolt.ID;
+		case SPELLBOOK_MAGICMISSILE:
+			return spell_magicmissile.ID;
+		case SPELLBOOK_COLD:
+			return spell_cold.ID;
+		case SPELLBOOK_FIREBALL:
+			return spell_fireball.ID;
+		case SPELLBOOK_LIGHTNING:
+			return spell_lightning.ID;
+		case SPELLBOOK_REMOVECURSE:
+			return spell_removecurse.ID;
+		case SPELLBOOK_LIGHT:
+			return spell_light.ID;
+		case SPELLBOOK_IDENTIFY:
+			return spell_identify.ID;
+		case SPELLBOOK_MAGICMAPPING:
+			return spell_magicmapping.ID;
+		case SPELLBOOK_SLEEP:
+			return spell_sleep.ID;
+		case SPELLBOOK_CONFUSE:
+			return spell_confuse.ID;
+		case SPELLBOOK_SLOW:
+			return spell_slow.ID;
+		case SPELLBOOK_OPENING:
+			return spell_opening.ID;
+		case SPELLBOOK_LOCKING:
+			return spell_locking.ID;
+		case SPELLBOOK_LEVITATION:
+			return spell_levitation.ID;
+		case SPELLBOOK_INVISIBILITY:
+			return spell_invisibility.ID;
+		case SPELLBOOK_TELEPORTATION:
+			return spell_teleportation.ID;
+		case SPELLBOOK_HEALING:
+			return spell_healing.ID;
+		case SPELLBOOK_EXTRAHEALING:
+			return spell_extrahealing.ID;
+		case SPELLBOOK_CUREAILMENT:
+			return spell_cureailment.ID;
+		case SPELLBOOK_DIG:
+			return spell_dig.ID;
+		case SPELLBOOK_SUMMON:
+			return spell_summon.ID;
+		case SPELLBOOK_STONEBLOOD:
+			return spell_stoneblood.ID;
+		case SPELLBOOK_BLEED:
+			return spell_bleed.ID;
+		case SPELLBOOK_REFLECT_MAGIC:
+			return spell_reflectMagic.ID;
+		case SPELLBOOK_ACID_SPRAY:
+			return spell_acidSpray.ID;
+		case SPELLBOOK_STEAL_WEAPON:
+			return spell_stealWeapon.ID;
+		case SPELLBOOK_DRAIN_SOUL:
+			return spell_drainSoul.ID;
+		case SPELLBOOK_VAMPIRIC_AURA:
+			return spell_vampiricAura.ID;
+		default:
+			return SPELL_NONE;
+	}
 }
 
 bool spellInList(list_t* list, spell_t* spell)
@@ -486,7 +739,7 @@ void spell_changeHealth(Entity* entity, int amount)
 
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < 4; ++i)
+	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (entity == players[i]->entity)
 		{
@@ -494,7 +747,7 @@ void spell_changeHealth(Entity* entity, int amount)
 		}
 	}
 
-	if (player > -1 && player <= 4)
+	if (player > -1 && player < MAXPLAYERS)
 	{
 		if (amount > 0)
 		{

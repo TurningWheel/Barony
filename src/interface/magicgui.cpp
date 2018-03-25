@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "interface.hpp"
@@ -205,6 +206,7 @@ void drawSustainedSpells()
 
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
+	pos.y = SUST_SPELLS_Y;
 	if (SUST_SPELLS_RIGHT_ALIGN)
 	{
 		//Alright, so, the list should be right-aligned.
@@ -216,8 +218,9 @@ void drawSustainedSpells()
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
 		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
+		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
+		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
 	}
-	pos.y = SUST_SPELLS_Y;
 
 	int count = 0; //This is just for debugging purposes.
 	node_t* node = channeledSpells[clientnum].first;

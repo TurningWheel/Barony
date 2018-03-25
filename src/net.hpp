@@ -22,7 +22,7 @@ extern list_t lobbyChatboxMessages;
 
 // function prototypes for net.c:
 int power(int a, int b);
-int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
+int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum, bool tryReliable = false);
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
 void messagePlayer(int player, char* message, ...);
 void messagePlayerColor(int player, Uint32 color, char* message, ...);
@@ -32,11 +32,16 @@ void sendMapSeedTCP(int c);
 void sendMapTCP(int c);
 void serverUpdateEntitySprite(Entity* entity);
 void serverUpdateEntitySkill(Entity* entity, int skill);
+void serverUpdateEntityFSkill(Entity* entity, int fskill);
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite);
+void serverSpawnMiscParticlesAtLocation(Sint16 x, Sint16 y, Sint16 z, int particleType, int particleSprite);
 void serverUpdateEntityFlag(Entity* entity, int flag);
 void serverUpdateBodypartIDs(Entity* entity);
 void serverUpdateEntityBodypart(Entity* entity, int bodypart);
 void serverUpdateEffects(int player);
 void serverUpdateHunger(int player);
+void serverUpdatePlayerStats();
+void serverUpdatePlayerLVL();
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
 void clientHandleMessages();
@@ -47,12 +52,14 @@ void closeNetworkInterfaces();
 
 // server/game flags
 extern Uint32 svFlags;
-const Uint32 NUM_SERVER_FLAGS =  5;
+const Uint32 NUM_SERVER_FLAGS =  7;
 const Uint32 SV_FLAG_CHEATS  = 1;
 const Uint32 SV_FLAG_FRIENDLYFIRE = 2;
 const Uint32 SV_FLAG_MINOTAURS = 4;
 const Uint32 SV_FLAG_HUNGER  = 8;
 const Uint32 SV_FLAG_TRAPS = 16;
+const Uint32 SV_FLAG_HARDCORE = 32;
+const Uint32 SV_FLAG_CLASSIC = 64;
 
 class SteamPacketWrapper
 {
@@ -97,3 +104,5 @@ public:
 } extern* net_handler;
 
 int steamPacketThread(void* data);
+
+void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.

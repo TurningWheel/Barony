@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "../main.hpp"
+#include "../draw.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../items.hpp"
@@ -70,6 +71,8 @@ char* itemUseString(const Item* item)
 			case IRON_SHIELD:
 			case STEEL_SHIELD:
 			case STEEL_SHIELD_RESISTANCE:
+			case CRYSTAL_SHIELD:
+			case MIRROR_SHIELD:
 				if ( itemIsEquipped(item, clientnum) )
 				{
 					return language[325];
@@ -146,6 +149,17 @@ char* itemUseString(const Item* item)
 			return language[324];
 		}
 	}
+	else if ( itemCategory(item) == THROWN )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
+			return language[323];
+		}
+		else
+		{
+			return language[324];
+		}
+	}
 	else if ( itemCategory(item) == TOOL )
 	{
 		switch ( item->type )
@@ -175,6 +189,7 @@ char* itemUseString(const Item* item)
 				}
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
+			case TOOL_CRYSTALSHARD:
 				if ( itemIsEquipped(item, clientnum) )
 				{
 					return language[335];
@@ -750,6 +765,14 @@ void updatePlayerInventory()
 		}
 	}
 
+	if ( !command && *inputPressed(impulses[IN_AUTOSORT]) )
+	{
+		autosortInventory();
+		//quickStackItems();
+		*inputPressed(impulses[IN_AUTOSORT]) = 0;
+		playSound(139, 64);
+	}
+
 	// draw grid
 	pos.x = x;
 	pos.y = y;
@@ -822,39 +845,35 @@ void updatePlayerInventory()
 			continue;
 		}
 
+		pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+		pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
+		pos.w = 38;
+		pos.h = 38;
 		if (!item->identified)
 		{
 			// give it a yellow background if it is unidentified
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
-			drawRect(&pos, 31875, 125);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 128, 0), 125); //31875
 		}
 		else if (item->beatitude < 0)
 		{
 			// give it a red background if cursed
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
-			drawRect(&pos, 125, 125);
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 125);
 		}
 		else if (item->beatitude > 0)
 		{
 			// give it a green background if blessed (light blue if colorblind mode)
-			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
-			pos.w = 38;
-			pos.h = 38;
 			if (colorblind)
 			{
 				drawRect(&pos, SDL_MapRGB(mainsurface->format, 100, 245, 255), 65);
 			}
 			else
 			{
-				drawRect(&pos, 65280, 65);
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0), 65);
 			}
+		}
+		if ( item->status == BROKEN )
+		{
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 160, 160, 160), 64);
 		}
 
 		if ( itemMenuOpen && item == uidToItem(itemMenuItem) )
@@ -890,6 +909,14 @@ void updatePlayerInventory()
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
 			}
+			else if ( item->status == BROKEN )
+			{
+				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
+				pos.w = 16;
+				pos.h = 16;
+				drawImage(itembroken_bmp, NULL, &pos);
+			}
 		}
 		else
 		{
@@ -904,13 +931,49 @@ void updatePlayerInventory()
 			}
 		}
 	}
-
+	// autosort button
+	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE + inventory_mode_item_img->w;
+	mode_pos.y = y;
+	mode_pos.w = 24;
+	mode_pos.h = 24;
+	bool mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + mode_pos.w, mode_pos.y, mode_pos.y + mode_pos.h);
+	if ( !mouse_in_bounds )
+	{
+		drawWindow(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
+	}
+	else
+	{
+		drawDepressed(mode_pos.x, mode_pos.y, mode_pos.x + mode_pos.w, mode_pos.y + mode_pos.h);
+	}
+	ttfPrintText(ttf12, mode_pos.x, mode_pos.y + 6, "||");
+	if ( mouse_in_bounds )
+	{
+		mode_pos.x += 2;
+		mode_pos.y += 2;
+		mode_pos.w -= 4;
+		mode_pos.h -= 4;
+		drawRect(&mode_pos, SDL_MapRGB(mainsurface->format, 192, 192, 192), 64);
+		// tooltip
+		SDL_Rect src;
+		src.x = mousex + 16;
+		src.y = mousey + 8;
+		src.h = TTF12_HEIGHT + 8;
+		src.w = longestline(language[2960]) * TTF12_WIDTH + 8;
+		drawTooltip(&src);
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2960], getInputName(impulses[IN_AUTOSORT]));
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			autosortInventory();
+			playSound(139, 64);
+		}
+	}
 	// do inventory mode buttons
 	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
 	mode_pos.y = y + 60;
 	mode_pos.w = 0;
 	mode_pos.h = 0;
-	bool mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
+	mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
 	if (mouse_in_bounds)
 	{
 		drawImage(inventory_mode_spell_highlighted_img, NULL, &mode_pos);
@@ -928,6 +991,7 @@ void updatePlayerInventory()
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			inventory_mode = INVENTORY_MODE_SPELL;
+			playSound(139, 64);
 		}
 	}
 	else
@@ -956,6 +1020,7 @@ void updatePlayerInventory()
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			inventory_mode = INVENTORY_MODE_ITEM;
+			playSound(139, 64);
 		}
 	}
 	else
@@ -995,8 +1060,15 @@ void updatePlayerInventory()
 							spell_t* spell = getSpellFromItem(item);
 							if (spell)
 							{
-								char tempstr[32];
-								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+								char tempstr[64];
+								if ( spell->ID == SPELL_DOMINATE )
+								{
+									snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
+								}
+								else
+								{
+									snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+								}
 								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 								src.h = TTF12_HEIGHT * 2 + 8;
 								drawTooltip(&src);
@@ -1159,6 +1231,59 @@ void updatePlayerInventory()
 								*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 								toggleclick = true;
 							}
+						}
+					}
+					if ( hotbar_numkey_quick_add )
+					{
+						if ( keystatus[SDL_SCANCODE_1] )
+						{
+							keystatus[SDL_SCANCODE_1] = 0;
+							hotbar[0].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_2] )
+						{
+							keystatus[SDL_SCANCODE_2] = 0;
+							hotbar[1].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_3] )
+						{
+							keystatus[SDL_SCANCODE_3] = 0;
+							hotbar[2].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_4] )
+						{
+							keystatus[SDL_SCANCODE_4] = 0;
+							hotbar[3].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_5] )
+						{
+							keystatus[SDL_SCANCODE_5] = 0;
+							hotbar[4].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_6] )
+						{
+							keystatus[SDL_SCANCODE_6] = 0;
+							hotbar[5].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_7] )
+						{
+							keystatus[SDL_SCANCODE_7] = 0;
+							hotbar[6].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_8] )
+						{
+							keystatus[SDL_SCANCODE_8] = 0;
+							hotbar[7].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_9] )
+						{
+							keystatus[SDL_SCANCODE_9] = 0;
+							hotbar[8].item = item->uid;
+						}
+						if ( keystatus[SDL_SCANCODE_0] )
+						{
+							keystatus[SDL_SCANCODE_0] = 0;
+							hotbar[9].item = item->uid;
 						}
 					}
 					break;
@@ -1603,6 +1728,10 @@ void itemContextMenu()
 	{
 		is_potion_bad = isPotionBad(*current_item);
 	}
+	if ( current_item->type == POTION_EMPTY )
+	{
+		is_potion_bad = true; //So that you wield empty potions by default.
+	}
 
 	const int slot_width = 100;
 	const int slot_height = 20;
@@ -1701,4 +1830,380 @@ void selectItemMenuSlot(const Item& item, int entry)
 	}
 
 	itemMenuSelected = entry;
+}
+
+// filters out items excluded by auto_hotbar_categories
+bool autoAddHotbarFilter(const Item& item)
+{
+	Category cat = itemCategory(&item);
+	for ( int i = 0; i < NUM_HOTBAR_CATEGORIES; ++i )
+	{
+		if ( auto_hotbar_categories[i] )
+		{
+			switch ( i )
+			{
+				case 0: // weapons
+					if ( cat == WEAPON )
+					{
+						return true;
+					}
+					break;
+				case 1: // armor
+					if ( cat == ARMOR )
+					{
+						return true;
+					}
+					break;
+				case 2: // jewelry
+					if ( cat == RING || cat == AMULET )
+					{
+						return true;
+					}
+					break;
+				case 3: // books/spellbooks
+					if ( cat == BOOK || cat == SPELLBOOK )
+					{
+						return true;
+					}
+					break;
+				case 4: // tools
+					if ( cat == TOOL )
+					{
+						return true;
+					}
+					break;
+				case 5: // thrown
+					if ( cat == THROWN || item.type == GEM_ROCK )
+					{
+						return true;
+					}
+					break;
+				case 6: // gems
+					if ( cat == GEM )
+					{
+						return true;
+					}
+					break;
+				case 7: // potions
+					if ( cat == POTION )
+					{
+						return true;
+					}
+					break;
+				case 8: // scrolls
+					if ( cat == SCROLL )
+					{
+						return true;
+					}
+					break;
+				case 9: // magicstaves
+					if ( cat == MAGICSTAFF )
+					{
+						return true;
+					}
+					break;
+				case 10: // food
+					if ( cat == FOOD )
+					{
+						return true;
+					}
+					break;
+				case 11: // spells
+					if ( cat == SPELL_CAT )
+					{
+						return true;
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	return false;
+}
+
+void quickStackItems()
+{
+	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* itemToStack = (Item*)node->element;
+		if ( itemToStack && itemToStack->shouldItemStack(clientnum) )
+		{
+			for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+			{
+				Item* item2 = (Item*)node->element;
+				// if items are the same, check to see if they should stack
+				if ( item2 && item2 != itemToStack && !itemCompare(itemToStack, item2, false) )
+				{
+					itemToStack->count += item2->count;
+					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, clientnum) )
+					{
+						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+						strcpy((char*)net_packet->data, "EQUI");
+						SDLNet_Write32((Uint32)itemToStack->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)itemToStack->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)itemToStack->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)itemToStack->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)itemToStack->appearance, &net_packet->data[20]);
+						net_packet->data[24] = itemToStack->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 26;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					if ( item2->node )
+					{
+						list_RemoveNode(item2->node);
+					}
+					else
+					{
+						free(item2);
+						item2 = nullptr;
+					}
+				}
+			}
+		}
+	}
+}
+
+void autosortInventory()
+{
+	std::vector<std::pair<int, int>> autosortPairs;
+	for ( int i = 0; i < NUM_AUTOSORT_CATEGORIES; ++i )
+	{
+		autosortPairs.push_back(std::make_pair(autosort_inventory_categories[i], i));
+	}
+
+	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item && (!itemIsEquipped(item, clientnum) || autosort_inventory_categories[11] != 0) && itemCategory(item) != SPELL_CAT )
+		{
+			item->x = -1;
+			item->y = 0;
+			// move all items away.
+		}
+	}
+
+	std::sort(autosortPairs.begin(), autosortPairs.end());
+
+	// iterate and sort from highest to lowest priority, 1 to 9
+	for ( std::vector<std::pair<int, int>>::reverse_iterator it = autosortPairs.rbegin(); it != autosortPairs.rend(); ++it )
+	{
+		std::pair<int, int> tmpPair = *it;
+		if ( tmpPair.first > 0 )
+		{
+			//messagePlayer(0, "priority %d, category: %d", tmpPair.first, tmpPair.second);
+			bool invertSortDirection = false;
+			switch ( tmpPair.second )
+			{
+				case 0: // weapons
+					sortInventoryItemsOfType(WEAPON, invertSortDirection);
+					break;
+				case 1: // armor
+					sortInventoryItemsOfType(ARMOR, invertSortDirection);
+					break;
+				case 2: // jewelry
+					sortInventoryItemsOfType(RING, invertSortDirection);
+					sortInventoryItemsOfType(AMULET, invertSortDirection);
+					break;
+				case 3: // books/spellbooks
+					sortInventoryItemsOfType(SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(BOOK, invertSortDirection);
+					break;
+				case 4: // tools
+					sortInventoryItemsOfType(TOOL, invertSortDirection);
+					break;
+				case 5: // thrown
+					sortInventoryItemsOfType(THROWN, invertSortDirection);
+					break;
+				case 6: // gems
+					sortInventoryItemsOfType(GEM, invertSortDirection);
+					break;
+				case 7: // potions
+					sortInventoryItemsOfType(POTION, invertSortDirection);
+					break;
+				case 8: // scrolls
+					sortInventoryItemsOfType(SCROLL, invertSortDirection);
+					break;
+				case 9: // magicstaves
+					sortInventoryItemsOfType(MAGICSTAFF, invertSortDirection);
+					break;
+				case 10: // food
+					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					break;
+				case 11: // equipped items
+					sortInventoryItemsOfType(-2, invertSortDirection);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	// iterate and sort from lowest to highest priority, -9 to -1
+	for ( std::vector<std::pair<int, int>>::iterator it = autosortPairs.begin(); it != autosortPairs.end(); ++it )
+	{
+		std::pair<int, int> tmpPair = *it;
+		if ( tmpPair.first < 0 )
+		{
+			//messagePlayer(0, "priority %d, category: %d", tmpPair.first, tmpPair.second);
+			bool invertSortDirection = true;
+			switch ( tmpPair.second )
+			{
+				case 0: // weapons
+					sortInventoryItemsOfType(WEAPON, invertSortDirection);
+					break;
+				case 1: // armor
+					sortInventoryItemsOfType(ARMOR, invertSortDirection);
+					break;
+				case 2: // jewelry
+					sortInventoryItemsOfType(RING, invertSortDirection);
+					sortInventoryItemsOfType(AMULET, invertSortDirection);
+					break;
+				case 3: // books/spellbooks
+					sortInventoryItemsOfType(SPELLBOOK, invertSortDirection);
+					sortInventoryItemsOfType(BOOK, invertSortDirection);
+					break;
+				case 4: // tools
+					sortInventoryItemsOfType(TOOL, invertSortDirection);
+					break;
+				case 5: // thrown
+					sortInventoryItemsOfType(THROWN, invertSortDirection);
+					break;
+				case 6: // gems
+					sortInventoryItemsOfType(GEM, invertSortDirection);
+					break;
+				case 7: // potions
+					sortInventoryItemsOfType(POTION, invertSortDirection);
+					break;
+				case 8: // scrolls
+					sortInventoryItemsOfType(SCROLL, invertSortDirection);
+					break;
+				case 9: // magicstaves
+					sortInventoryItemsOfType(MAGICSTAFF, invertSortDirection);
+					break;
+				case 10: // food
+					sortInventoryItemsOfType(FOOD, invertSortDirection);
+					break;
+				case 11: // equipped items
+					sortInventoryItemsOfType(-2, invertSortDirection);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+
+	sortInventoryItemsOfType(-1, true); // clean up the rest of the items.
+}
+
+void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
+{
+	node_t* node = nullptr;
+	Item* itemBeingSorted = nullptr;
+	Category cat = static_cast<Category>(categoryInt);
+
+	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		itemBeingSorted = (Item*)node->element;
+		if ( itemBeingSorted && itemBeingSorted->x == -1 )
+		{
+			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
+			{
+				continue;
+			}
+			if ( categoryInt != -1 && categoryInt != -2 && itemCategory(itemBeingSorted) != cat )
+			{
+				if ( (itemBeingSorted->type == GEM_ROCK && categoryInt == THROWN) )
+				{
+					// exception for rocks as they are part of the thrown sort category...
+				}
+				else
+				{
+					// if item is not in the category specified, continue on.
+					continue;
+				}
+			}
+			if ( categoryInt == -2 && !itemIsEquipped(itemBeingSorted, clientnum) )
+			{
+				continue;
+			}
+			if ( categoryInt != -2 && itemIsEquipped(itemBeingSorted, clientnum) )
+			{
+				continue;
+			}
+
+			// find a place...
+			int x, y;
+			bool notfree = false, foundaspot = false;
+
+			bool is_spell = false;
+			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
+			{
+				is_spell = true;
+			}
+
+			if ( sortRightToLeft )
+			{
+				x = INVENTORY_SIZEX - 1; // fill rightmost first.
+			}
+			else
+			{
+				x = 0; // fill leftmost first.
+			}
+			while ( 1 )
+			{
+				for ( y = 0; y < INVENTORY_SIZEY; y++ )
+				{
+					node_t* node2 = nullptr;
+					for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+					{
+						Item* tempItem = (Item*)node2->element;
+						if ( tempItem == itemBeingSorted )
+						{
+							continue;
+						}
+						if ( tempItem )
+						{
+							if ( tempItem->x == x && tempItem->y == y )
+							{
+								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+								{
+									notfree = true;  //Both spells. Can't fit in the same slot.
+								}
+								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+								{
+									notfree = true;  //Both not spells. Can't fit in the same slot.
+								}
+							}
+						}
+					}
+					if ( notfree )
+					{
+						notfree = false;
+						continue;
+					}
+					itemBeingSorted->x = x;
+					itemBeingSorted->y = y;
+					foundaspot = true;
+					break;
+				}
+				if ( foundaspot )
+				{
+					break;
+				}
+				if ( sortRightToLeft )
+				{
+					--x; // fill rightmost first.
+				}
+				else
+				{
+					++x; // fill leftmost first.
+				}
+			}
+		}
+	}
 }

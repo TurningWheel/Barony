@@ -9,6 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <utility>
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -117,18 +118,91 @@ void actFountain(Entity* my)
 						case 0:
 						{
 							playSoundEntity(players[i]->entity, 52, 64);
-
 							//Spawn succubus.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-							messagePlayerColor(i, color, language[469]);
-							summonMonster(SUCCUBUS, my->x, my->y);
+							Entity* spawnedMonster = nullptr;
+
+							if ( !strncmp(map.name, "Underworld", 10) )
+							{
+								Monster creature = SUCCUBUS;
+								if ( rand() % 2 )
+								{
+									creature = INCUBUS;
+								}
+								for ( int c = 0; spawnedMonster == nullptr && c < 5; ++c )
+								{
+									switch ( c )
+									{
+										case 0:
+											spawnedMonster = summonMonster(creature, my->x, my->y);
+											break;
+										case 1:
+											spawnedMonster = summonMonster(creature, my->x + 16, my->y);
+											break;
+										case 2:
+											spawnedMonster = summonMonster(creature, my->x - 16, my->y);
+											break;
+										case 3:
+											spawnedMonster = summonMonster(creature, my->x, my->y + 16);
+											break;
+										case 4:
+											spawnedMonster = summonMonster(creature, my->x, my->y - 16);
+											break;
+									}
+								}
+								if ( spawnedMonster )
+								{
+									if ( creature == INCUBUS )
+									{
+										messagePlayerColor(i, color, language[2519]);
+										Stat* tmpStats = spawnedMonster->getStats();
+										if ( tmpStats )
+										{
+											strcpy(tmpStats->name, "lesser incubus");
+										}
+									}
+									else
+									{
+										messagePlayerColor(i, color, language[469]);
+									}
+								}
+							}
+							else if ( currentlevel < 10 )
+							{
+								messagePlayerColor(i, color, language[469]);
+								spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
+							}
+							else if ( currentlevel < 20 )
+							{
+								if ( rand() % 2 )
+								{
+									spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
+									Stat* tmpStats = spawnedMonster->getStats();
+									if ( tmpStats )
+									{
+										strcpy(tmpStats->name, "lesser incubus");
+									}
+									messagePlayerColor(i, color, language[2519]);
+								}
+								else
+								{
+									messagePlayerColor(i, color, language[469]);
+									spawnedMonster = summonMonster(SUCCUBUS, my->x, my->y);
+								}
+							}
+							else
+							{
+								messagePlayerColor(i, color, language[2519]);
+								spawnedMonster = summonMonster(INCUBUS, my->x, my->y);
+							}
 							break;
 						}
 						case 1:
 							messagePlayer(i, language[470]);
 							messagePlayer(i, language[471]);
 							playSoundEntity(players[i]->entity, 52, 64);
-							stats[i]->HUNGER += 50;
+							stats[i]->HUNGER += 100;
+							players[i]->entity->modHP(5);
 							break;
 						case 2:
 						{
@@ -141,7 +215,7 @@ void actFountain(Entity* my)
 						}
 						case 3:
 						{
-							// bless equipment
+							// bless all equipment
 							playSoundEntity(players[i]->entity, 52, 64);
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
@@ -194,6 +268,77 @@ void actFountain(Entity* my)
 								net_packet->len = 4;
 								sendPacketSafe(net_sock, -1, net_packet, i - 1);
 							}
+							break;
+						}
+						case 4:
+						{
+							// bless one piece of equipment
+							playSoundEntity(players[i]->entity, 52, 64);
+							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+							messagePlayerColor(i, textcolor, language[471]);
+							//Choose only one piece of equipment to bless.
+
+							//First, Figure out what equipment is available.
+							std::vector<std::pair<Item*, Uint32>> items;
+							if ( stats[i]->helmet )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->helmet, 0));
+							}
+							if ( stats[i]->breastplate )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->breastplate, 1));
+							}
+							if ( stats[i]->gloves )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->gloves, 2));
+							}
+							if ( stats[i]->shoes )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->shoes, 3));
+							}
+							if ( stats[i]->shield )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->shield, 4));
+							}
+							if ( stats[i]->weapon )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->weapon, 5));
+							}
+							if ( stats[i]->cloak )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->cloak, 6));
+							}
+							if ( stats[i]->amulet )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->amulet, 7));
+							}
+							if ( stats[i]->ring )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->ring, 8));
+							}
+							if ( stats[i]->mask )
+							{
+								items.push_back(std::pair<Item*,int>(stats[i]->mask, 9));
+							}
+
+							if ( items.size() )
+							{
+								messagePlayer(i, language[2592]); //"The fountain blesses a piece of equipment"
+								//Randomly choose a piece of equipment.
+								std::pair<Item*, Uint32> chosen = items[rand()%items.size()];
+								chosen.first->beatitude++;
+
+								if ( multiplayer == SERVER && i > 0 )
+								{
+									strcpy((char*)net_packet->data, "BLE1");
+									SDLNet_Write32(chosen.second, &net_packet->data[4]);
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 8;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
+							//Does nothing if no valid items.
 							break;
 						}
 						default:

@@ -218,7 +218,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 							{
 								isMonster = true;
 							}
-						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster )
+						if ( (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+							&& isMonster )
 						{
 							return true;
 						}
@@ -278,14 +279,16 @@ bool entityInsideSomething(Entity* entity)
 	y = (long)floor(entity->y / 16);
 	#endif
 	// test against the map
-	for ( z = 0; z < MAPLAYERS; z++ )
+	for ( z = 0; z < MAPLAYERS; ++z )
+	{
 		if ( entityInsideTile(entity, x, y, z) )
 		{
 			return true;
 		}
+	}
 
 	// test against entities
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* testEntity = (Entity*)node->element;
 		if ( testEntity == entity || testEntity->flags[PASSABLE] )
@@ -330,20 +333,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	// moved static stuff outside of the loop
 	if ( stats )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats->ring != NULL )
-			if ( stats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( stats->shoes != NULL )
-			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stats);
 	}
 	bool isMonster = false;
 	if ( my )
@@ -352,7 +342,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			isMonster = true;
 		}
 	if ( isMonster && multiplayer == CLIENT )
-		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
+		if ( my->sprite == 289 || my->sprite == 274 || my->sprite == 413 )   // imp and lich and cockatrice
 		{
 			levitating = true;
 		}
@@ -383,7 +373,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					return 0;
 				}
 	
-				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
+				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
+					|| ((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+						&& isMonster)) )
 				{
 					// no floor
 					hit.x = x * 16 + 8;
@@ -396,7 +388,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 		}
 	}
-	for (node = map.entities->first; node != NULL; node = node->next)
+	for (node = map.entities->first; node != nullptr; node = node->next)
 	{
 		entity = (Entity*)node->element;
 		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
@@ -467,21 +459,26 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						bool dyrnwyn = false;
 						Stat* stats = hit.entity->getStats();
 						if ( stats )
+						{
 							if ( stats->weapon )
+							{
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
 									dyrnwyn = true;
 								}
+							}
+						}
 						if ( !dyrnwyn )
 						{
-							hit.entity->flags[BURNING] = true;
-							if ( hit.entity->behavior == &actPlayer)
+							bool previouslyOnFire = hit.entity->flags[BURNING];
+
+							// Attempt to set the Entity on fire
+							hit.entity->SetEntityOnFire();
+
+							// If the Entity is now on fire, tell them
+							if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 							{
-								messagePlayer(hit.entity->skill[2], language[590]);
-								if ( hit.entity->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(hit.entity, BURNING);
-								}
+								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
 							}
 						}
 					}
@@ -490,21 +487,26 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						bool dyrnwyn = false;
 						Stat* stats = my->getStats();
 						if ( stats )
+						{
 							if ( stats->weapon )
+							{
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
 									dyrnwyn = true;
 								}
+							}
+						}
 						if ( !dyrnwyn )
 						{
-							my->flags[BURNING] = true;
-							if ( my->behavior == &actPlayer)
+							bool previouslyOnFire = hit.entity->flags[BURNING];
+
+							// Attempt to set the Entity on fire
+							hit.entity->SetEntityOnFire();
+
+							// If the Entity is now on fire, tell them
+							if ( hit.entity->flags[BURNING] && !previouslyOnFire )
 							{
-								messagePlayer(my->skill[2], language[590]);
-								if ( my->skill[2] > 0 )
-								{
-									serverUpdateEntityFlag(my, BURNING);
-								}
+								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
 							}
 						}
 					}
@@ -627,10 +629,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		}
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( (entity != target && target != NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
+		if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
 		{
 			continue;
 		}
@@ -859,7 +861,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -1000,7 +1003,8 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -1054,26 +1058,9 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	bool levitating = false;
 
 	// get levitation status
-	if ( (my && (stats = my->getStats())) != NULL )
+	if ( my != NULL && (stats = my->getStats()) != NULL )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats->ring != NULL )
-		{
-			if ( stats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		}
-		if ( stats->shoes != NULL )
-		{
-			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
-		}
+		levitating = isLevitating(stats);
 	}
 	if ( my )
 	{
@@ -1088,7 +1075,28 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	{
 		if ( y >= 0 && y < map.height << 4 )
 		{
-			for ( node = map.entities->first; node != NULL; node = node->next )
+			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
+			if (map.tiles[OBSTACLELAYER + index])   // wall
+			{
+				return 1;
+			}
+			bool isMonster = false;
+			if ( my )
+			{
+				if ( my->behavior == &actMonster )
+				{
+					isMonster = true;
+				}
+			}
+			if ( !levitating
+					&& (!map.tiles[index]
+								   || ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+										 && isMonster) ) )   // no floor
+			{
+				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
+			}
+
+			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				entity = (Entity*)node->element;
 				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
@@ -1103,24 +1111,12 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 					}
 				}
 			}
-			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
-			if (map.tiles[OBSTACLELAYER + index])   // wall
-			{
-				return 1;
-			}
-			bool isMonster = false;
-			if ( my )
-			{
-				if ( my->behavior == &actMonster )
-				{
-					isMonster = true;
-				}
-			}
-			if ( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) )   // no floor
-			{
-				return 1;
-			}
 		}
+	}
+
+	if ( logCheckObstacle )
+	{
+		++logCheckObstacleCount;
 	}
 
 	return 0;

@@ -25,26 +25,26 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 {
 	Entity* caster = uidToEntity(caster_uid);
 	node_t* node = NULL;
-	if (!caster || !spell)
+	if ( !caster || !spell )
 	{
 		//Need a spell and caster to cast a spell.
 		return;
 	}
 
-	if (!spell->elements.first)
+	if ( !spell->elements.first )
 	{
 		return;
 	}
 
-	if (hudweapon)
+	if ( hudweapon )
 	{
-		if (hudweapon->skill[0] != 0)   //HUDWEAPON_CHOP.
+		if ( hudweapon->skill[0] != 0 )   //HUDWEAPON_CHOP.
 		{
 			return; //Can't cast spells while attacking.
 		}
 	}
 
-	if (cast_animation.active)
+	if ( cast_animation.active )
 	{
 		//Already casting spell.
 		return;
@@ -52,15 +52,15 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < numplayers; ++i)
+	for ( i = 0; i < numplayers; ++i )
 	{
-		if (caster == players[i]->entity)
+		if ( caster == players[i]->entity )
 		{
 			player = i; //Set the player.
 		}
 	}
 
-	if (player > -1)
+	if ( player > -1 )
 	{
 		if ( stats[player]->defending )
 		{
@@ -116,8 +116,18 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
-	magiccost = getCostOfSpell(spell);
-	if (magiccost > stat->MP)
+	// Calculate the cost of the Spell for Singleplayer
+	if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+	{
+		// Reaching Spellcasting capstone makes forcebolt free
+		magiccost = 0;
+	}
+	else
+	{
+		magiccost = getCostOfSpell(spell);
+	}
+
+	if ( magiccost > stat->MP )
 	{
 		if (player >= 0)
 		{
@@ -173,6 +183,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//node_t *node = spell->types->first;
 
 #define PROPULSION_MISSILE 1
+#define PROPULSION_MISSILE_TRIO 2
 	int i = 0;
 	int chance = 0;
 	int propulsion = 0;
@@ -198,10 +209,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool newbie = false;
 	if ( !using_magicstaff && !trap)
 	{
-		if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)
-		{
-			newbie = true; //The caster has lower spellcasting skill. Cue happy fun times.
-		}
+		newbie = caster->isSpellcasterBeginner();
 
 		/*magiccost = getCostOfSpell(spell);
 		if (magiccost < 0) {
@@ -209,15 +217,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				messagePlayer(player, "Error: Invalid spell. Mana cost is negative?");
 			return NULL;
 		}*/
-		if (multiplayer == SINGLE)
+		if ( multiplayer == SINGLE )
 		{
-			magiccost = cast_animation.mana_left;
+			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			{
+				magiccost = 0;
+			}
+			else
+			{
+				magiccost = cast_animation.mana_left;
+			}
+
 			caster->drainMP(magiccost);
 		}
-		else
+		else // Calculate the cost of the Spell for Multiplayer
 		{
-			magiccost = getCostOfSpell(spell);
-			caster->drainMP(magiccost);
+			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+			{
+				// Reaching Spellcasting capstone makes Forcebolt free
+				magiccost = 0;
+			}
+			else
+			{
+				magiccost = getCostOfSpell(spell);
+				caster->drainMP(magiccost);
+			}
 		}
 	}
 
@@ -256,31 +280,24 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool levitating = false;
 	if (!trap)
 	{
-		if (stat->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if (stat->ring != NULL )
-			if (stat->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if (stat->shoes != NULL)
-			if (stat->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stat);
 	}
 
 	//Water walking boots
 	bool waterwalkingboots = false;
 	if (!trap)
 	{
-		if (stat->shoes != NULL)
+		if ( player >= 0 && skillCapstoneUnlocked(player, PRO_SWIMMING) )
+		{
+			waterwalkingboots = true;
+		}
+		if ( stat->shoes != NULL )
+		{
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
 			{
 				waterwalkingboots = true;
 			}
+		}
 	}
 
 	node_t* node2; //For traversing the map looking for...liquids?
@@ -292,7 +309,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				swimming = true;
 			}
@@ -351,11 +368,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					traveltime = 30;    //Range checking.
 				}
 			}
-			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+		}
+		else if ( !strcmp(element->name, spellElement_missile_trio.name) )
+		{
+			//Set the propulsion to missile.
+			propulsion = PROPULSION_MISSILE_TRIO;
+			traveltime = element->duration;
+			if ( newbie )
+			{
+				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				chance = rand() % 10;
+				if ( chance >= spellcasting / 10 )
+				{
+					traveltime -= rand() % (1000 / (spellcasting + 1));
+				}
+				if ( traveltime < 30 )
+				{
+					traveltime = 30;    //Range checking.
+				}
+			}
+			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 		}
 		else if (!strcmp(element->name, spellElement_light.name))
 		{
-			entity = newEntity(175, 1, map.entities); // black magic ball
+			entity = newEntity(175, 1, map.entities, nullptr); // black magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
@@ -370,7 +407,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->behavior = &actMagiclightBall;
 			entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 			entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
-			entity->skill[12] = (element->duration * (((element->mana + extramagic_to_use) / element->base_mana) * element->overload_multiplier)); //How long this thing lives.
+			entity->skill[12] = (element->duration * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier)); //How long this thing lives.
 			node_t* spellnode = list_AddNodeLast(&entity->children);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -412,7 +449,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->name, spellElement_invisible.name))
 		{
 			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -435,8 +472,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_INVISIBLE] = true;
-			stat->EFFECTS_TIMERS[EFF_INVISIBLE] = duration;
+			caster->setEffect(EFF_INVISIBLE, true, duration, false);
 			for (i = 0; i < numplayers; ++i)
 			{
 				if (caster == players[i]->entity)
@@ -451,7 +487,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->name, spellElement_levitation.name))
 		{
 			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -474,8 +510,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_LEVITATING] = true;
-			stat->EFFECTS_TIMERS[EFF_LEVITATING] = duration;
+			caster->setEffect(EFF_LEVITATING, true, duration, false);
 			for (i = 0; i < numplayers; ++i)
 			{
 				if (caster == players[i]->entity)
@@ -542,7 +577,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if (i != 0)
 					{
 						//Tell the client to uncurse an item.
-						strcpy((char*)net_packet->data, "RCUR"); //TODO: Send a different packet, to pop open the remove curse GUI.
+						strcpy((char*)net_packet->data, "CRCU");
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
 						net_packet->len = 4;
@@ -555,6 +590,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						removecursegui_active = true;
 						identifygui_active = false;
+
+						if ( identifygui_active )
+						{
+							CloseIdentifyGUI();
+						}
+
 						if ( openedChest[i] )
 						{
 							openedChest[i]->closeChest();
@@ -586,7 +627,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if (caster == players[i]->entity)
 				{
-					int amount = element->damage * (((element->mana + extramagic_to_use) / element->base_mana) * element->overload_multiplier); //Amount to heal.
+					int amount = element->damage * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier); //Amount to heal.
 					if (newbie)
 					{
 						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
@@ -603,7 +644,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spell_changeHealth(players[i]->entity, amount);
 					playSoundEntity(caster, 168, 128);
 
-					for (node = map.entities->first; node->next; node = node->next)
+					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
 						if ( !entity ||  entity == caster )
@@ -615,7 +656,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							continue;
 						}
 
-						if (entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster))
+						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
 							spell_changeHealth(entity, amount);
 							playSoundEntity(entity, 168, 128);
@@ -640,8 +681,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int c = 0;
 					for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 					{
-						stats[i]->EFFECTS[c] = false;
-						stats[i]->EFFECTS_TIMERS[c] = 0;
+						if ( c == EFF_LEVITATING && stats[i]->EFFECTS[EFF_LEVITATING] )
+						{
+							// don't unlevitate
+						}
+						else
+						{
+							stats[i]->EFFECTS[c] = false;
+							stats[i]->EFFECTS_TIMERS[c] = 0;
+						}
 					}
 					if ( players[i]->entity->flags[BURNING] )
 					{
@@ -651,7 +699,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
 
-					for (node = map.entities->first; node->next; node = node->next)
+					for ( node = map.creatures->first; node->next; node = node->next )
 					{
 						entity = (Entity*)(node->element);
 						if ( !entity || entity == caster )
@@ -693,10 +741,74 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			playSoundEntity(caster, 168, 128 );
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
-
-		if (propulsion == PROPULSION_MISSILE)
+		else if ( !strcmp(element->name, spellElement_summon.name) )
 		{
-			entity = newEntity(168, 1, map.entities); // red magic ball
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					//caster->lichIceCreateCannon();
+					//caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
+					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					//createParticle1(caster, i);
+					//createParticleDropRising(caster);
+				}
+			}
+			//createParticleDropRising(caster, 593, 1.0);
+			//serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
+
+			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
+			playSoundEntity(caster, 167, 128);
+		}
+		else if ( !strcmp(element->name, spellElement_reflectMagic.name) )
+		{
+			//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
+			//Also refactor the duration determining code.
+			int duration = element->duration;
+			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+			channeled_spell = (spell_t*)(spellnode->element);
+			channeled_spell->magic_effects_node = spellnode;
+			spellnode->size = sizeof(spell_t);
+			((spell_t*)spellnode->element)->caster = caster->getUID();
+			spellnode->deconstructor = &spellDeconstructor;
+			if ( newbie )
+			{
+				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				chance = rand() % 10;
+				if ( chance >= spellcasting / 10 )
+				{
+					duration -= rand() % (1000 / (spellcasting + 1));
+				}
+				if ( duration < 180 )
+				{
+					duration = 180;    //Range checking.
+				}
+			}
+			duration /= getCostOfSpell((spell_t*)spellnode->element);
+			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+			caster->setEffect(EFF_MAGICREFLECT, true, duration, true);
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					serverUpdateEffects(i);
+				}
+			}
+
+			playSoundEntity(caster, 166, 128 );
+			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+		}
+		else if ( !strcmp(element->name, spellElement_vampiricAura.name) )
+		{
+			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
+			//Also refactor the duration determining code.
+		}
+
+		if ( propulsion == PROPULSION_MISSILE )
+		{
+			entity = newEntity(168, 1, map.entities, nullptr); // red magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
@@ -708,8 +820,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->flags[PASSABLE] = true;
 			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagicMissile;
-
-			double missile_speed = 4 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			double missile_speed = 4 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 
@@ -721,23 +832,161 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
+			int volume = 128;
+			if ( trap )
+			{
+				volume = 96;
+			}
 			if ( !strcmp(spell->name, spell_fireball.name) )
 			{
-				playSoundEntity(entity, 164, 128 );
+				playSoundEntity(entity, 164, volume);
 			}
 			else if ( !strcmp(spell->name, spell_lightning.name) )
 			{
-				playSoundEntity(entity, 171, 128 );
+				playSoundEntity(entity, 171, volume);
 			}
 			else if ( !strcmp(spell->name, spell_cold.name) )
 			{
-				playSoundEntity(entity, 172, 128 );
+				playSoundEntity(entity, 172, 64);
+			}
+			else if ( !strcmp(spell->name, spell_bleed.name) )
+			{
+				playSoundEntity(entity, 171, volume);
+			}
+			else if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				playSoundEntity(entity, 171, volume);
+			}
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			{
+				playSoundEntity(entity, 164, volume);
+				traveltime = 15;
+				entity->skill[5] = traveltime;
 			}
 			else
 			{
-				playSoundEntity(entity, 169, 128 );
+				playSoundEntity(entity, 169, volume);
 			}
 			result = entity;
+
+			if ( trap )
+			{
+				if ( caster->behavior == &actMagicTrapCeiling )
+				{
+					node_t* node = caster->children.first;
+					Entity* ceilingModel = (Entity*)(node->element);
+					entity->z = ceilingModel->z;
+				}
+			}
+		}
+		else if ( propulsion == PROPULSION_MISSILE_TRIO )
+		{
+			real_t angle = PI / 6;
+			real_t baseSpeed = 2;
+			real_t baseSideSpeed = 1;
+			int sprite = 170;
+			if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				angle = PI / 6;
+				baseSpeed = 2;
+			}
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			{
+				sprite = 597;
+				angle = PI / 16;
+				baseSpeed = 3;
+				baseSideSpeed = 2;
+				traveltime = 20;
+			}
+
+			entity = newEntity(168, 1, map.entities, nullptr); // red magic ball
+			entity->parent = caster->getUID();
+			entity->x = caster->x;
+			entity->y = caster->y;
+			entity->z = -1;
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->yaw = caster->yaw;
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[PASSABLE] = true;
+			entity->flags[BRIGHT] = true;
+			entity->behavior = &actMagicMissile;
+			entity->sprite = sprite;
+
+			double missile_speed = baseSpeed * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
+			entity->vel_x = cos(entity->yaw) * (missile_speed);
+			entity->vel_y = sin(entity->yaw) * (missile_speed);
+
+			entity->skill[4] = 0;
+			entity->skill[5] = traveltime;
+			node = list_AddNodeFirst(&entity->children);
+			node->element = copySpell(spell);
+			((spell_t*)node->element)->caster = caster->getUID();
+			node->deconstructor = &spellDeconstructor;
+			node->size = sizeof(spell_t);
+
+			if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				playSoundEntity(entity, 171, 128);
+			}
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			{
+				playSoundEntity(entity, 164, 128);
+			}
+
+			result = entity;
+
+			Entity* entity1 = newEntity(168, 1, map.entities, nullptr); // red magic ball
+			entity1->parent = caster->getUID();
+			entity1->x = caster->x;
+			entity1->y = caster->y;
+			entity1->z = -1;
+			entity1->sizex = 1;
+			entity1->sizey = 1;
+			entity1->yaw = caster->yaw - angle;
+			entity1->flags[UPDATENEEDED] = true;
+			entity1->flags[PASSABLE] = true;
+			entity1->flags[BRIGHT] = true;
+			entity1->behavior = &actMagicMissile;
+			entity1->sprite = sprite;
+
+			missile_speed = baseSideSpeed * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
+			entity1->vel_x = cos(entity1->yaw) * (missile_speed);
+			entity1->vel_y = sin(entity1->yaw) * (missile_speed);
+
+			entity1->skill[4] = 0;
+			entity1->skill[5] = traveltime;
+			node = list_AddNodeFirst(&entity1->children);
+			node->element = copySpell(spell);
+			((spell_t*)node->element)->caster = caster->getUID();
+			node->deconstructor = &spellDeconstructor;
+			node->size = sizeof(spell_t);
+
+			Entity* entity2 = newEntity(168, 1, map.entities, nullptr); // red magic ball
+			entity2->parent = caster->getUID();
+			entity2->x = caster->x;
+			entity2->y = caster->y;
+			entity2->z = -1;
+			entity2->sizex = 1;
+			entity2->sizey = 1;
+			entity2->yaw = caster->yaw + angle;
+			entity2->flags[UPDATENEEDED] = true;
+			entity2->flags[PASSABLE] = true;
+			entity2->flags[BRIGHT] = true;
+			entity2->behavior = &actMagicMissile;
+			entity2->sprite = sprite;
+
+			missile_speed = baseSideSpeed * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
+			entity2->vel_x = cos(entity2->yaw) * (missile_speed);
+			entity2->vel_y = sin(entity2->yaw) * (missile_speed);
+
+			entity2->skill[4] = 0;
+			entity2->skill[5] = traveltime;
+			node = list_AddNodeFirst(&entity2->children);
+			node->element = copySpell(spell);
+			((spell_t*)node->element)->caster = caster->getUID();
+			node->deconstructor = &spellDeconstructor;
+			node->size = sizeof(spell_t);
 		}
 
 		extramagic_to_use = 0;
@@ -805,24 +1054,38 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
-			else if (!strcmp(element->name, spellElement_lightning.name))
+			else if ( !strcmp(element->name, spellElement_lightning.name) )
 			{
-				if (propulsion == PROPULSION_MISSILE)
+				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 170;
 				}
-				if (newbie)
+				if ( newbie )
 				{
 					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
 					chance = rand() % 10;
-					if (chance >= spellcasting / 10)
+					if ( chance >= spellcasting / 10 )
 					{
 						element->damage -= rand() % (100 / (spellcasting + 1));
 					}
-					if (element->damage < 10)
+					if ( element->damage < 10 )
 					{
 						element->damage = 10;    //Range checking.
 					}
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_stoneblood.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 170;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_bleed.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 643;
 				}
 			}
 			else if (!strcmp(element->name, spellElement_confuse.name))
@@ -881,17 +1144,154 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					entity->sprite = 173;
 				}
 			}
+			else if ( !strcmp(spell->name, spell_dominate.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 168;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_acidSpray.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 171;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 175;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 598;
+				}
+			}
 		}
 	}
 
 	//Random chance to level up spellcasting skill.
-	if (rand() % 4 == 0)
+	if ( !trap )
 	{
-		caster->increaseSkill(PRO_SPELLCASTING);
-	}
-	if (rand() % 5 == 0)
-	{
-		caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+		if ( using_magicstaff )
+		{
+			if ( stat )
+			{
+				// spellcasting increase chances.
+				if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 60 )
+				{
+					if ( rand() % 6 == 0 ) //16.67%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+				else if ( stat->PROFICIENCIES[PRO_SPELLCASTING] < 80 )
+				{
+					if ( rand() % 9 == 0 ) //11.11%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+				else // greater than 80
+				{
+					if ( rand() % 12 == 0 ) //8.33%
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+				}
+
+				// magic increase chances.
+				if ( stat->PROFICIENCIES[PRO_MAGIC] < 60 )
+				{
+					if ( rand() % 7 == 0 ) //14.2%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+				else if ( stat->PROFICIENCIES[PRO_MAGIC] < 80 )
+				{
+					if ( rand() % 10 == 0 ) //10.00%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+				else // greater than 80
+				{
+					if ( rand() % 13 == 0 ) //7.69%
+					{
+						caster->increaseSkill(PRO_MAGIC);
+					}
+				}
+			}
+		}
+		else
+		{
+			if ( stat )
+			{
+				int spellCastChance = 5; // 20%
+				int magicChance = 6; // 16.67%
+				int castDifficulty = stat->PROFICIENCIES[PRO_SPELLCASTING] / 20 - spell->difficulty / 20;
+				if ( castDifficulty <= -1 )
+				{
+					// spell was harder.
+					spellCastChance = 3; // 33%
+					magicChance = 3; // 33%
+				}
+				else if ( castDifficulty == 0 )
+				{
+					// spell was same level
+					spellCastChance = 3; // 33%
+					magicChance = 4; // 25%
+				}
+				else if ( castDifficulty == 1 )
+				{
+					// spell was easy.
+					spellCastChance = 4; // 25%
+					magicChance = 5; // 20%
+				}
+				else if ( castDifficulty > 1 )
+				{
+					// piece of cake!
+					spellCastChance = 6; // 16.67%
+					magicChance = 7; // 14.2%
+				}
+				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
+				if ( !strcmp(element->name, spellElement_light.name)
+					&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
+					&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
+				{
+					// light provides no levelling past 40 in both spellcasting and magic.
+					if ( rand() % 20 == 0 )
+					{
+						for ( i = 0; i < numplayers; ++i )
+						{
+							if ( caster == players[i]->entity )
+							{
+								messagePlayer(i, language[2591]);
+							}
+						}
+					}
+				}
+				else
+				{
+					if ( rand() % spellCastChance == 0 )
+					{
+						caster->increaseSkill(PRO_SPELLCASTING);
+					}
+
+					if ( rand() % magicChance == 0 )
+					{
+						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+					}
+				}
+			}
+		}
+		
 	}
 
 	if (spell_isChanneled(spell) && !using_magicstaff)   //TODO: What about magic traps and channeled spells?
