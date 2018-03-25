@@ -146,6 +146,8 @@ void initGoatman(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			my->setHardcoreStats(*myStats);
+
 			bool isShaman = false;
 			if ( rand() % 2 && boss == 0 && !minion )
 			{
