@@ -570,7 +570,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 		nummonsters = 0;
 		minotaurlevel = 0;
 
-#if defined (HAVE_FMOD) || defined(HAVE_OPENAL)
+#if defined (USE_FMOD) || defined(USE_OPENAL)
 		if ( strcmp(oldmapname, map.name) )
 		{
 			levelmusicplaying = false;

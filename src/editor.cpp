@@ -5045,11 +5045,11 @@ int main(int argc, char** argv)
 										char tmpStr[32] = "";
 										if ( propertyInt == 0 )
 										{
-											strcpy(tmpStr, "false - must re-trigger power to fire");
+											strcpy(tmpStr, "must re-trigger power to fire");
 										}
 										else if ( propertyInt == 1 )
 										{
-											strcpy(tmpStr, "true - continous fire on first power up");
+											strcpy(tmpStr, "continous fire first power up");
 										}
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 									}
