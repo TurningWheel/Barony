@@ -4341,49 +4341,7 @@ void handleMainMenu(bool mode)
 				numplayers = 0;
 				if ( loadingmap == false )
 				{
-					if ( !secretlevel )
-					{
-						fp = openDataFile(LEVELSFILE, "r");
-					}
-					else
-					{
-						fp = openDataFile(SECRETLEVELSFILE, "r");
-					}
-					int i;
-					for ( i = 0; i < currentlevel; ++i )
-					{
-						while ( fgetc(fp) != '\n' )
-						{
-							if ( feof(fp) )
-							{
-								break;
-							}
-						}
-					}
-					fscanf(fp, "%s", tempstr);
-					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-						{
-							break;
-						}
-					if ( !strcmp(tempstr, "gen:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						generateDungeon(tempstr, mapseed);
-					}
-					else if ( !strcmp(tempstr, "map:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						loadMap(tempstr, &map, map.entities, map.creatures);
-					}
-					fclose(fp);
+					physfsLoadMapFile(currentlevel, mapseed, false);
 				}
 				else
 				{
@@ -4505,44 +4463,7 @@ void handleMainMenu(bool mode)
 				numplayers = 0;
 				if ( loadingmap == false )
 				{
-					if ( !secretlevel )
-					{
-						fp = openDataFile(LEVELSFILE, "r");
-					}
-					else
-					{
-						fp = openDataFile(SECRETLEVELSFILE, "r");
-					}
-					int i;
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-					fscanf(fp, "%s", tempstr);
-					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-						{
-							break;
-						}
-					if ( !strcmp(tempstr, "gen:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						generateDungeon(tempstr, mapseed);
-					}
-					else if ( !strcmp(tempstr, "map:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						loadMap(tempstr, &map, map.entities, map.creatures);
-					}
-					fclose(fp);
+					physfsLoadMapFile(currentlevel, mapseed, false);
 				}
 				else
 				{

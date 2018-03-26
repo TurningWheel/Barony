@@ -553,7 +553,21 @@ int initApp(char* title, int fullscreen)
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
-
+	PHYSFS_init("/");
+	if ( !PHYSFS_isInit() )
+	{
+		printlog("[PhysFS]: failed to initialize!");
+		return 13;
+	}
+	if ( PHYSFS_mount("maps", NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted /maps folder");
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted /maps folder");
+		return 13;
+	}
 	return 0;
 }
 

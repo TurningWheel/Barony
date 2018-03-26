@@ -939,3 +939,62 @@ std::vector<std::string> getLinesFromDataFile(std::string filename)
 
 	return lines;
 }
+
+int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
+{
+	std::string mapsDirectory; // store the full file path here.
+	if ( !secretlevel )
+	{
+		mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+		mapsDirectory.append("//").append(LEVELSFILE);
+	}
+	else
+	{
+		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+		mapsDirectory.append("//").append(SECRETLEVELSFILE);
+	}
+	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+	std::string line = levelsList.front();
+	int levelsCounted = 0;
+	if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
+	{
+		for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
+		{
+			// process i, iterate through all the map levels until currentlevel.
+			line = *i;
+			if ( line[0] == '\n' )
+			{
+				continue;
+			}
+			++levelsCounted;
+		}
+	}
+	std::size_t found = line.find(' ');
+	char tempstr[1024];
+	if ( found != std::string::npos )
+	{
+		std::string mapType = line.substr(0, found);
+		std::string mapName = line.substr(found + 1, line.find('\n'));
+		if ( mapType.compare("map:") == 0 )
+		{
+			strncpy(tempstr, mapName.c_str(), mapName.length());
+			tempstr[mapName.length()] = '\0';
+			return loadMap(tempstr, &map, map.entities, map.creatures);
+		}
+		else if ( mapType.compare("gen:") == 0 )
+		{
+			strncpy(tempstr, mapName.c_str(), mapName.length());
+			tempstr[mapName.length()] = '\0';
+			if ( useRandSeed )
+			{
+				return generateDungeon(tempstr, rand());
+			}
+			else
+			{
+				return generateDungeon(tempstr, seed);
+			}
+		}
+		//printlog("%s", mapName.c_str());
+	}
+	return 0;
+}

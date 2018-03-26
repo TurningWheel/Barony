@@ -26,6 +26,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <unordered_map>
 
 #include "Config.hpp"
+#include "physfs.h"
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
