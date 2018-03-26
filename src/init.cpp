@@ -568,6 +568,26 @@ int initApp(char* title, int fullscreen)
 		printlog("[PhysFS]: unsuccessfully mounted /maps folder");
 		return 13;
 	}
+	if ( PHYSFS_mount("mods/mymod/maps", NULL, 0) )
+	{
+		printlog("[PhysFS]: successfully mounted mods/mymod/maps folder");
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted mods/mymods/maps folder");
+	}
+	if ( PHYSFS_mount("mods/test.zip", NULL, 0) )
+	{
+		printlog("[PhysFS]: successfully mounted mods/test.zip folder");
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted mods/test.zip folder");
+	}
+	/*if ( PHYSFS_exists("test/maps/levels.txt") )
+	{
+		printlog("Exists.");
+	}*/
 	return 0;
 }
 
@@ -2140,6 +2160,12 @@ int deinitApp()
 		SteamAPI_Shutdown();
 	}
 #endif
+
+	if ( PHYSFS_isInit() )
+	{
+		PHYSFS_deinit();
+		printlog("[PhysFS]: De-initializing...\n");
+	}
 
 	// free currently loaded language if any
 	freeLanguages();

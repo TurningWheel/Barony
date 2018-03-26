@@ -226,6 +226,8 @@ static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
+extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
+
 
 void mapLevel(int player);

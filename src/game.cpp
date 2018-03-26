@@ -70,6 +70,7 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
+std::vector<std::string> physFSFilesInDirectory;
 
 // recommended for valgrind debugging:
 // res of 480x270
@@ -2572,7 +2573,8 @@ int main(int argc, char** argv)
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities, map.creatures);
+								std::string fullMapName = physfsFormatMapName(maptoload);
+								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 							}
 							else
 							{
