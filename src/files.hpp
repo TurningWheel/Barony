@@ -32,3 +32,4 @@ bool completePath(char *dest, const char * const path);
 std::vector<std::string> getLinesFromDataFile(std::string filename);
 extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);
+int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed);

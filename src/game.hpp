@@ -215,8 +215,8 @@ static const int BASE_THROWN_DAMAGE = 9;
 extern bool spawn_blood;
 extern bool capture_mouse; //Useful for debugging when the game refuses to release the mouse when it's crashed.
 
-#define LEVELSFILE "maps/levels.txt"
-#define SECRETLEVELSFILE "maps/secretlevels.txt"
+#define LEVELSFILE "levels.txt"
+#define SECRETLEVELSFILE "secretlevels.txt"
 #define LENGTH_OF_LEVEL_REGION 5
 
 #define TICKS_PER_SECOND 50
