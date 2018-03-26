@@ -37,6 +37,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include <limits>
+#include "physfs.h"
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -2595,59 +2596,90 @@ int main(int argc, char** argv)
 						}
 						if ( loadingmap == false )
 						{
+							PHYSFS_File* pfsFile = nullptr;
 							if ( !secretlevel )
 							{
-								fp = openDataFile(LEVELSFILE, "r");
+								PHYSFS_init("/");
+								messagePlayer(0, "%s", PHYSFS_getBaseDir());
+								if ( PHYSFS_mount("mods/maps", NULL, 1) )
+								{
+									messagePlayer(0, "mount mods");
+								}
+								else
+								{
+									messagePlayer(0, "no mount");
+								}
+								if ( PHYSFS_mount("maps", NULL, 1) )
+								{
+									messagePlayer(0, "mount maps");
+								}
+								else
+								{
+									messagePlayer(0, "no mount");
+								}
+								if ( PHYSFS_isInit() )
+								{
+									char **rc = PHYSFS_enumerateFiles("/");
+									char **i;
+									for ( i = rc; *i != NULL; i++ )
+									{
+										messagePlayer(0, " * We've got [%s].", *i);
+									}
+									PHYSFS_freeList(rc);
+
+									for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
+									{
+										messagePlayer(0, "[%s] is in the search path.", *i);
+									}
+									//pfsFile = PHYSFS_openRead("levels.txt");
+								}
+								//fp = openDataFile(LEVELSFILE, "r");
 							}
 							else
 							{
 								fp = openDataFile(SECRETLEVELSFILE, "r");
 							}
 							currentlevel = startfloor;
+
+							std::string directory = PHYSFS_getRealDir("levels.txt");
+							directory.append("//levels.txt");
+							std::vector<std::string> levelsList = getLinesFromDataFile(directory);
+							std::string line = levelsList.front();
+							int levelsCounted = 0;
+
 							if ( startfloor )
 							{
-								for ( int i = 0; i < currentlevel; ++i )
+								for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= currentlevel; ++i )
 								{
-									while ( fgetc(fp) != '\n' )
+									// process i
+									line = *i;
+									if ( line[0] == '\n' )
 									{
-										if ( feof(fp) )
-										{
-											break;
-										}
+										continue;
 									}
+									++levelsCounted;
 								}
 							}
-							fscanf(fp, "%s", tempstr);
-							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+							std::size_t found = line.find(' ');
+							if ( found != std::string::npos )
 							{
+								std::string sub = line.substr(0, found);
+								std::size_t mapfound = line.find('\n');
+								std::string mapname = line.substr(found + 1, mapfound);
+								if ( sub.compare("map:") == 0 )
 								{
-									break;
+									strncpy(tempstr, mapname.c_str(), mapname.length());
+									tempstr[mapname.length()] = '\0';
+									loadMap(tempstr, &map, map.entities, map.creatures);
 								}
-							}
-							if ( !strcmp(tempstr, "gen:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+								else if ( sub.compare("gen:") == 0 )
 								{
-									{
-										break;
-									}
+									strncpy(tempstr, mapname.c_str(), mapname.length());
+									tempstr[mapname.length()] = '\0';
+									generateDungeon(tempstr, rand());
 								}
-								generateDungeon(tempstr, rand());
+								printlog("%s", mapname.c_str());
 							}
-							else if ( !strcmp(tempstr, "map:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' )
-								{
-									if ( feof(fp) )
-									{
-										break;
-									}
-								}
-								loadMap(tempstr, &map, map.entities, map.creatures);
-							}
-							fclose(fp);
 						}
 						else
 						{
