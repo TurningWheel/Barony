@@ -329,7 +329,7 @@ int monsterCurve(int level)
 
 int generateDungeon(char* levelset, Uint32 seed)
 {
-	char* sublevelname, *fullname, *subRoomName;
+	char* sublevelname, *subRoomName;
 	char sublevelnum[3];
 	map_t* tempMap, *subRoomMap;
 	list_t mapList, *newList, *subRoomList, subRoomMapList;
@@ -355,7 +355,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 	bool *lootexcludelocations;
 
 	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
-	if ( loadMap(levelset, &map, map.entities, map.creatures) == -1 )
+	std::string fullMapPath;
+	fullMapPath = physfsFormatMapName(levelset);
+
+	if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures) == -1 )
 	{
 		printlog("error: no level of set '%s' could be found.\n", levelset);
 		return -1;
@@ -429,14 +432,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 	if ( shoplevel )
 	{
 		sublevelname = (char*) malloc(sizeof(char) * 128);
-		fullname = (char*) malloc(sizeof(char) * 128);
 		for ( numlevels = 0; numlevels < 100; numlevels++ )
 		{
 			strcpy(sublevelname, "shop");
 			snprintf(sublevelnum, 3, "%02d", numlevels);
 			strcat(sublevelname, sublevelnum);
-			snprintf(fullname, strlen(levelset) + 13, "maps/%s.lmp", sublevelname);
-			if ( !dataPathExists(fullname) )
+
+			fullMapPath = physfsFormatMapName(sublevelname);
+
+			if ( fullMapPath.empty() )
 			{
 				break;    // no more levels to load
 			}
@@ -455,6 +459,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 				strcat(sublevelname, sublevelnum);
 			}
 
+			fullMapPath = physfsFormatMapName(sublevelname);
+
 			shopmap.tiles = nullptr;
 			shopmap.entities = (list_t*) malloc(sizeof(list_t));
 			shopmap.entities->first = nullptr;
@@ -462,7 +468,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			shopmap.creatures = new list_t;
 			shopmap.creatures->first = nullptr;
 			shopmap.creatures->last = nullptr;
-			if ( loadMap(sublevelname, &shopmap, shopmap.entities, shopmap.creatures) == -1 )
+			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &shopmap, shopmap.entities, shopmap.creatures) == -1 )
 			{
 				list_FreeAll(shopmap.entities);
 				free(shopmap.entities);
@@ -479,12 +485,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 			shoplevel = false;
 		}
 		free( sublevelname );
-		free( fullname );
-
 	}
 
-	sublevelname = (char*) malloc(sizeof(char) * 128);
-	fullname = (char*) malloc(sizeof(char) * 128);
+	sublevelname = (char*)malloc(sizeof(char) * 128);
 
 	// a maximum of 100 (0-99 inclusive) sublevels can be added to the pool
 	for ( numlevels = 0; numlevels < 100; ++numlevels )
@@ -493,9 +496,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 		snprintf(sublevelnum, 3, "%02d", numlevels);
 		strcat(sublevelname, sublevelnum);
 
-		// check if there is another sublevel to load
-		snprintf(fullname, strlen(levelset) + 13, "maps/%s.lmp", sublevelname);
-		if ( !dataPathExists(fullname) )
+		fullMapPath = physfsFormatMapName(sublevelname);
+		if ( fullMapPath.empty() )
 		{
 			break;    // no more levels to load
 		}
@@ -509,7 +511,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		tempMap->creatures = new list_t;
 		tempMap->creatures->first = nullptr;
 		tempMap->creatures->last = nullptr;
-		if ( loadMap(sublevelname, tempMap, tempMap->entities, tempMap->creatures) == -1 )
+		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), tempMap, tempMap->entities, tempMap->creatures) == -1 )
 		{
 			mapDeconstructor((void*)tempMap);
 			continue; // failed to load level
@@ -583,12 +585,18 @@ int generateDungeon(char* levelset, Uint32 seed)
 			strcat(subRoomName, sublevelnum);
 			strcat(subRoomName, letterString);
 
-			// check if there is another subroom to load
-			snprintf(fullname, strlen(levelset) + 14, "maps/%s.lmp", subRoomName);
-			if ( access(fullname, F_OK) == -1 )
+			fullMapPath = physfsFormatMapName(subRoomName);
+
+			if ( fullMapPath.empty() )
 			{
 				break;    // no more levels to load
 			}
+
+			// check if there is another subroom to load
+			//if ( !dataPathExists(fullMapPath.c_str()) )
+			//{
+			//	break;    // no more levels to load
+			//}
 
 			printlog("[SUBMAP GENERATOR] Found map lv %s, count: %d", subRoomName, subroomCount[subRoomNumLevels]);
 			++subroomCount[subRoomNumLevels];
@@ -602,7 +610,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			subRoomMap->creatures = new list_t;
 			subRoomMap->creatures->first = nullptr;
 			subRoomMap->creatures->last = nullptr;
-			if ( loadMap(subRoomName, subRoomMap, subRoomMap->entities, subRoomMap->creatures) == -1 )
+			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
 				continue; // failed to load level
@@ -761,7 +769,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 					default:
 						break;
 				}
-				if ( loadMap(secretmapname, &secretlevelmap, secretlevelmap.entities, secretlevelmap.creatures) == -1 )
+				fullMapPath = physfsFormatMapName(secretmapname);
+				if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &secretlevelmap, secretlevelmap.entities, secretlevelmap.creatures) == -1 )
 				{
 					list_FreeAll(secretlevelmap.entities);
 					free(secretlevelmap.entities);
@@ -858,7 +867,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 					free(lootexcludelocations);
 					free(firstroomtile);
 					free(sublevelname);
-					free(fullname);
 					free(subRoomName);
 					list_FreeAll(&subRoomMapList);
 					list_FreeAll(&mapList);
@@ -1233,7 +1241,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 	{
 		free(subRoomName);
 		free(sublevelname);
-		free(fullname);
 		list_FreeAll(&subRoomMapList);
 		list_FreeAll(&mapList);
 		list_FreeAll(&doorList);
@@ -2222,7 +2229,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 	free(firstroomtile);
 	free(subRoomName);
 	free(sublevelname);
-	free(fullname);
 	list_FreeAll(&subRoomMapList);
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
@@ -4994,9 +5000,12 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 		}
 	}
 
+	std::string fullMapName;
+
 	if ( forceVictoryMap || (foundVictory && rand() % 5 == 0) )
 	{
-		loadMap("mainmenu9", &map, map.entities, map.creatures);
+		fullMapName = physfsFormatMapName("mainmenu9");
+		loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 		camera.x = 34.3;
 		camera.y = 15;
 		camera.z = -20;
@@ -5008,28 +5017,32 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 		switch ( rand() % 4 )
 		{
 			case 0:
-				loadMap("mainmenu5", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu5");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 30.8;
 				camera.y = 24.3;
 				camera.z = 0;
 				camera.ang = 2.76;
 				break;
 			case 1:
-				loadMap("mainmenu6", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu6");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 11;
 				camera.y = 4;
 				camera.z = 0;
 				camera.ang = 2.4;
 				break;
 			case 2:
-				loadMap("mainmenu7", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu7");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 8.7;
 				camera.y = 9.3;
 				camera.z = 0;
 				camera.ang = 5.8;
 				break;
 			case 3:
-				loadMap("mainmenu8", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu8");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 3.31;
 				camera.y = 5.34;
 				camera.z = 0;
@@ -5044,28 +5057,32 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 		switch ( rand() % 4 )
 		{
 			case 0:
-				loadMap("mainmenu1", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu1");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 8;
 				camera.y = 4.5;
 				camera.z = 0;
 				camera.ang = 0.6;
 				break;
 			case 1:
-				loadMap("mainmenu2", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu2");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 7;
 				camera.y = 4;
 				camera.z = -4;
 				camera.ang = 1.0;
 				break;
 			case 2:
-				loadMap("mainmenu3", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu3");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 5;
 				camera.y = 3;
 				camera.z = 0;
 				camera.ang = 1.0;
 				break;
 			case 3:
-				loadMap("mainmenu4", &map, map.entities, map.creatures);
+				fullMapName = physfsFormatMapName("mainmenu4");
+				loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 				camera.x = 6;
 				camera.y = 14.5;
 				camera.z = -24;

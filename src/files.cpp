@@ -197,7 +197,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
+int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -210,7 +210,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 	Stat* dummyStats;
 	sex_t s;
 	int editorVersion = 0;
-	char filename[256];
+	char filename[1024];
 
 	char oldmapname[64];
 	strcpy(oldmapname, map.name);
@@ -223,8 +223,16 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 		return -1;
 	}
 
-	strcpy(filename, "maps/");
-	strcat(filename, filename2);
+	if ( !PHYSFS_isInit() )
+	{
+		strcpy(filename, "maps/");
+		strcat(filename, filename2);
+	}
+	else
+	{
+		strcpy(filename, filename2);
+	}
+
 
 	// add extension if missing
 	if ( strstr(filename, ".lmp") == nullptr )
@@ -946,13 +954,14 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 	if ( !secretlevel )
 	{
 		mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
-		mapsDirectory.append("//").append(LEVELSFILE);
+		mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
 	}
 	else
 	{
 		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
-		mapsDirectory.append("//").append(SECRETLEVELSFILE);
+		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
 	}
+	printlog("mapsDirectory: %s", mapsDirectory.c_str());
 	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
 	std::string line = levelsList.front();
 	int levelsCounted = 0;
@@ -979,7 +988,8 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 		{
 			strncpy(tempstr, mapName.c_str(), mapName.length());
 			tempstr[mapName.length()] = '\0';
-			return loadMap(tempstr, &map, map.entities, map.creatures);
+			mapName = physfsFormatMapName(tempstr);
+			return loadMap(mapName.c_str(), &map, map.entities, map.creatures);
 		}
 		else if ( mapType.compare("gen:") == 0 )
 		{
@@ -997,4 +1007,41 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 		//printlog("%s", mapName.c_str());
 	}
 	return 0;
+}
+
+std::vector<std::string> physfsGetFileNamesInDirectory(char* dir)
+{
+	std::vector<std::string> filenames;
+	char **rc = PHYSFS_enumerateFiles(dir);
+	if ( *rc == NULL )
+	{
+		printlog("[PhysFS]: Error: Failed to enumerate filenames in directory '%s'", dir);
+		return filenames;
+	}
+	char **i;
+	char buf[1024];
+	std::string file;
+	for ( i = rc; *i != NULL; i++ )
+	{
+		file = *i;
+		printlog(" * We've got [%s].\n", file.c_str());
+		filenames.push_back(file);
+	}
+	PHYSFS_freeList(rc);
+	return filenames;
+}
+
+std::string physfsFormatMapName(char* levelfilename)
+{
+	std::string fullMapPath;
+	std::string mapFileName;
+	mapFileName = levelfilename;
+	mapFileName.append(".lmp");
+
+	if ( PHYSFS_getRealDir(mapFileName.c_str()) != NULL )
+	{
+		fullMapPath = PHYSFS_getRealDir(mapFileName.c_str());
+		fullMapPath.append(PHYSFS_getDirSeparator()).append(mapFileName);
+	}
+	return fullMapPath;
 }

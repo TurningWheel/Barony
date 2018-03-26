@@ -979,6 +979,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 			initClass(0);
 		}
 		score_window = 0;
+		gamemods_window = 0;
 		lobby_window = false;
 		settings_window = false;
 		charcreation_step = 0;

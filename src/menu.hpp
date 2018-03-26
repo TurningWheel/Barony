@@ -104,6 +104,7 @@ extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+extern int gamemods_window;
 extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;

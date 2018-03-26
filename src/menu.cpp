@@ -90,6 +90,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+int gamemods_window = 0;
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
@@ -290,7 +291,7 @@ void navigateMainMenuItems(bool mode)
 			{
 				if (mode)
 				{
-					menuselect = 6;
+					menuselect = 7;
 				}
 				else
 				{
@@ -313,7 +314,7 @@ void navigateMainMenuItems(bool mode)
 			menuselect++;
 			if (mode)
 			{
-				if (menuselect > 6)
+				if (menuselect > 7)
 				{
 					menuselect = 1;
 				}
@@ -800,11 +801,77 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintText(ttf16, 50, yres / 4 + 176, language[1307]);
 			}
-			//"Quit" button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1308]) * 18 && omousey >= yres / 4 + 200 && omousey < yres / 4 + 200 + 18) || (menuselect == 6)) && subwindow == 0 && introstage == 1 )
+			//"Custom Levels" button.
+			if ( ((omousex >= 50 && omousex < 50 + strlen(language[2978]) * 18 && omousey >= yres / 4 + 200 && omousey < yres / 4 + 200 + 18) || (menuselect == 6)) && subwindow == 0 && introstage == 1 )
 			{
 				menuselect = 6;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 200, colorGray, language[1308]);
+				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 200, colorGray, language[2978]);
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
+					playSound(139, 64);
+					gamemods_window = 1;
+					physFSFilesInDirectory = physfsGetFileNamesInDirectory("maps");
+					// create confirmation window
+					subwindow = 1;
+					subx1 = xres / 2 - 200;
+					subx2 = xres / 2 + 200;
+					suby1 = yres / 2 - 100;
+					suby2 = yres / 2 + 100;
+					strcpy(subtext, language[1128]);
+
+					// close button
+					button = newButton();
+					strcpy(button->label, "x");
+					button->x = subx2 - 20;
+					button->y = suby1;
+					button->sizex = 20;
+					button->sizey = 20;
+					button->action = &buttonCloseSubwindow;
+					button->visible = 1;
+					button->focused = 1;
+					button->key = SDL_SCANCODE_ESCAPE;
+					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+					//// yes button
+					//button = newButton();
+					//strcpy(button->label, language[1314]);
+					//button->x = subx1 + 8;
+					//button->y = suby2 - 28;
+					//button->sizex = strlen(language[1314]) * 12 + 8;
+					//button->sizey = 20;
+					//button->action = &buttonQuitConfirm;
+					//button->visible = 1;
+					//button->focused = 1;
+					//button->key = SDL_SCANCODE_RETURN;
+					//button->joykey = joyimpulses[INJOY_MENU_NEXT];
+
+					//// no button
+					//button = newButton();
+					//strcpy(button->label, language[1315]);
+					//button->x = subx2 - strlen(language[1315]) * 12 - 16;
+					//button->y = suby2 - 28;
+					//button->sizex = strlen(language[1315]) * 12 + 8;
+					//button->sizey = 20;
+					//button->action = &buttonCloseSubwindow;
+					//button->visible = 1;
+					//button->focused = 1;
+				}
+			}
+			else
+			{
+				ttfPrintText(ttf16, 50, yres / 4 + 200, language[2978]);
+			}
+			//"Quit" button.
+			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1308]) * 18 && omousey >= yres / 4 + 224 && omousey < yres / 4 + 224 + 18) || (menuselect == 7)) && subwindow == 0 && introstage == 1 )
+			{
+				menuselect = 7;
+				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 224, colorGray, language[1308]);
 				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -863,7 +930,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 200, language[1308]);
+				ttfPrintText(ttf16, 50, yres / 4 + 224, language[1308]);
 			}
 		}
 		else
@@ -4212,6 +4279,24 @@ void handleMainMenu(bool mode)
 		scoreDisplayMultiplayer = false;
 	}
 
+	if ( gamemods_window != 0 )
+	{
+		if ( gamemods_window == 1 )
+		{
+			if ( !physFSFilesInDirectory.empty() )
+			{
+				int lineNumber = 0;
+				std::string line;
+				for ( std::vector<std::string>::const_iterator i = physFSFilesInDirectory.begin(); i != physFSFilesInDirectory.end(); ++i )
+				{
+					line = *i;
+					ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188 + lineNumber * 16, "%s", line.c_str());
+					++lineNumber;
+				}
+			}
+		}
+	}
+
 	// handle fade actions
 	if ( fadefinished )
 	{
@@ -4347,7 +4432,8 @@ void handleMainMenu(bool mode)
 				{
 					if ( genmap == false )
 					{
-						loadMap(maptoload, &map, map.entities, map.creatures);
+						std::string fullMapName = physfsFormatMapName(maptoload);
+						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 					}
 					else
 					{
@@ -4469,7 +4555,8 @@ void handleMainMenu(bool mode)
 				{
 					if ( genmap == false )
 					{
-						loadMap(maptoload, &map, map.entities, map.creatures);
+						std::string fullMapName = physfsFormatMapName(maptoload);
+						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 					}
 					else
 					{
@@ -6346,6 +6433,7 @@ void buttonCloseSubwindow(button_t* my)
 	requestingLobbies = false;
 #endif
 	score_window = 0;
+	gamemods_window = 0;
 	lobby_window = false;
 	settings_window = false;
 	connect_window = 0;
