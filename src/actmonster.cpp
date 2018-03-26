@@ -2986,7 +2986,7 @@ void actMonster(Entity* my)
 				int upperY = std::min<int>(centerY + (map.height / 2), map.height);
 				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
 
-				if ( myStats->type != SHOPKEEPER )
+				if ( myStats->type != SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 				{
 					for ( x = lowerX; x < upperX; x++ )
 					{
