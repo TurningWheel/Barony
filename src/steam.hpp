@@ -122,3 +122,29 @@ public:
 	void OnDownloadScore(LeaderboardScoresDownloaded_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardScoresDownloaded_t> m_callResultDownloadScore;
 };
+
+class CSteamWorkshop
+{
+private:
+	//SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
+public:
+	//int m_nLeaderboardEntries; // How many entries do we have?
+	//LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+	//std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
+
+	CSteamWorkshop();
+	~CSteamWorkshop() {};
+
+	CreateItemResult_t createItemResult;
+	UGCUpdateHandle_t UGCUpdateHandle;
+	SubmitItemUpdateResult_t SubmitItemUpdateResult;
+	void CreateItem();
+	void StartItemUpdate();
+	void SubmitItemUpdate(char* changeNote);
+
+	CCallResult<CSteamWorkshop, CreateItemResult_t> m_callResultCreateItem;
+	CCallResult<CSteamWorkshop, SubmitItemUpdateResult_t> m_callResultSubmitItemUpdateResult;
+	void OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure);
+	void OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool bIOFailure);
+	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
+};

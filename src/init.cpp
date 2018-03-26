@@ -105,6 +105,7 @@ int initApp(char* title, int fullscreen)
 	}
 	steam_init = true;
 	g_SteamLeaderboards = new CSteamLeaderboards();
+	g_SteamWorkshop = new CSteamWorkshop();
 #endif
 
 	window_title = title;
