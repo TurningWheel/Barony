@@ -87,7 +87,8 @@ list_t steamAchievements;
 //SteamLeaderboard_t steamLeaderboard;
 //LeaderboardScoreUploaded_t leaderboardScoreUploaded;
 //int currentSteamLeaderboard = 0;
-//CSteamLeaderboards* g_SteamLeaderboards = NULL;
+CSteamLeaderboards* g_SteamLeaderboards = NULL;
+CSteamWorkshop* g_SteamWorkshop = NULL;
 #endif
 
 /*-------------------------------------------------------------------------------

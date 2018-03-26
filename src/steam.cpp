@@ -1099,6 +1099,14 @@ CSteamLeaderboards::CSteamLeaderboards() :
 
 }
 
+CSteamWorkshop::CSteamWorkshop() :
+	createItemResult(),
+	SubmitItemUpdateResult(),
+	UGCUpdateHandle(0)
+{
+
+}
+
 void CSteamLeaderboards::FindLeaderboard(const char *pchLeaderboardName)
 {
 	m_CurrentLeaderboard = NULL;
@@ -1151,4 +1159,44 @@ void CSteamLeaderboards::OnDownloadScore(LeaderboardScoresDownloaded_t *pCallbac
 	}
 }
 
+void CSteamWorkshop::CreateItem()
+{
+	SteamAPICall_t hSteamAPICall = SteamUGC()->CreateItem(STEAM_APPID, k_EWorkshopFileTypeCommunity);
+	m_callResultCreateItem.Set(hSteamAPICall, this,
+		&CSteamWorkshop::OnCreateItem);
+}
+
+void CSteamWorkshop::OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure)
+{
+	if ( !bIOFailure )
+	{
+		createItemResult = *pResult;
+	}
+}
+
+void CSteamWorkshop::StartItemUpdate()
+{
+	if ( g_SteamWorkshop->createItemResult.m_nPublishedFileId != 0 )
+	{
+		UGCUpdateHandle = SteamUGC()->StartItemUpdate(STEAM_APPID, g_SteamWorkshop->createItemResult.m_nPublishedFileId);
+	}
+}
+
+void CSteamWorkshop::SubmitItemUpdate(char* changeNote)
+{
+	if ( UGCUpdateHandle != 0 )
+	{
+		SteamAPICall_t hSteamAPICall = SteamUGC()->SubmitItemUpdate(UGCUpdateHandle, changeNote);
+		m_callResultSubmitItemUpdateResult.Set(hSteamAPICall, this,
+			&CSteamWorkshop::OnSubmitItemUpdate);
+	}
+}
+
+void CSteamWorkshop::OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool bIOFailure)
+{
+	if ( !bIOFailure )
+	{
+		SubmitItemUpdateResult = *pResult;
+	}
+}
 #endif
