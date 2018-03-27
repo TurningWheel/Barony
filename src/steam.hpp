@@ -97,3 +97,54 @@ extern void (*cpp_SteamServerClientWrapper_OnLobbyEntered)(void* pCallback, bool
 extern void (*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(void* pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyMatchList_t.
 extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void* pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 extern void (*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)(void* steamID);
+
+class CSteamLeaderboards
+{
+private:
+	SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
+public:
+	int m_nLeaderboardEntries; // How many entries do we have?
+	LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+	std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
+
+	CSteamLeaderboards();
+	~CSteamLeaderboards() {};
+
+	void FindLeaderboard(const char *pchLeaderboardName);
+	//bool UploadScore(int score);
+	bool DownloadScores();
+
+	void OnFindLeaderboard(LeaderboardFindResult_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardFindResult_t> m_callResultFindLeaderboard;
+	/*void OnUploadScore(LeaderboardScoreUploaded_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardScoreUploaded_t> m_callResultUploadScore;
+	*/
+	void OnDownloadScore(LeaderboardScoresDownloaded_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardScoresDownloaded_t> m_callResultDownloadScore;
+};
+
+class CSteamWorkshop
+{
+private:
+	//SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
+public:
+	//int m_nLeaderboardEntries; // How many entries do we have?
+	//LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+	//std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
+
+	CSteamWorkshop();
+	~CSteamWorkshop() {};
+
+	CreateItemResult_t createItemResult;
+	UGCUpdateHandle_t UGCUpdateHandle;
+	SubmitItemUpdateResult_t SubmitItemUpdateResult;
+	void CreateItem();
+	void StartItemUpdate();
+	void SubmitItemUpdate(char* changeNote);
+
+	CCallResult<CSteamWorkshop, CreateItemResult_t> m_callResultCreateItem;
+	CCallResult<CSteamWorkshop, SubmitItemUpdateResult_t> m_callResultSubmitItemUpdateResult;
+	void OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure);
+	void OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool bIOFailure);
+	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
+};
