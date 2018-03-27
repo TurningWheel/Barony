@@ -76,6 +76,9 @@ void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 void buttonRandomName(button_t* my);
+void buttonGamemodsOpenDirectory(button_t* my);
+void buttonGamemodsPrevDirectory(button_t* my);
+void buttonGamemodsBaseDirectory(button_t* my);
 
 #ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my);
@@ -104,7 +107,14 @@ extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+
+// gamemods window stuff
 extern int gamemods_window;
+extern int gamemods_window_scroll;
+extern int gamemods_window_fileSelect;
+extern std::list<std::string> currentDirectoryFiles;
+extern std::string directoryPath;
+
 extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;

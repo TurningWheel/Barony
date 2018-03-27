@@ -24,7 +24,7 @@ int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creat
 int loadConfig(char* filename);
 int saveMap(char* filename);
 char* readFile(char* filename);
-std::list<std::string> directoryContents(const char* directory);
+std::list<std::string> directoryContents(const char* directory, bool subdirectoryOnly);
 FILE *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
@@ -33,5 +33,5 @@ std::vector<std::string> getLinesFromDataFile(std::string filename);
 extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed);
-std::vector<std::string> physfsGetFileNamesInDirectory(char* dir);
+std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir);
 std::string physfsFormatMapName(char* levelfilename);

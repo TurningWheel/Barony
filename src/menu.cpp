@@ -90,7 +90,14 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+
+// gamemods window stuff.
 int gamemods_window = 0;
+std::list<std::string> currentDirectoryFiles;
+std::string directoryPath;
+int gamemods_window_scroll = 0;
+int gamemods_window_fileSelect = 0;
+
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
 
@@ -816,14 +823,15 @@ void handleMainMenu(bool mode)
 					}
 					playSound(139, 64);
 					gamemods_window = 1;
-					physFSFilesInDirectory = physfsGetFileNamesInDirectory("maps");
+					//physFSFilesInDirectory = physfsGetFileNamesInDirectory("/");
+					currentDirectoryFiles = directoryContents(datadir, true);
 					// create confirmation window
 					subwindow = 1;
-					subx1 = xres / 2 - 200;
-					subx2 = xres / 2 + 200;
-					suby1 = yres / 2 - 100;
-					suby2 = yres / 2 + 100;
-					strcpy(subtext, language[1128]);
+					subx1 = xres / 2 - 300;
+					subx2 = xres / 2 + 300;
+					suby1 = yres / 2 - 300;
+					suby2 = yres / 2 + 300;
+					strcpy(subtext, "Upload to workshop");
 
 					// close button
 					button = newButton();
@@ -838,18 +846,38 @@ void handleMainMenu(bool mode)
 					button->key = SDL_SCANCODE_ESCAPE;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-					//// yes button
-					//button = newButton();
-					//strcpy(button->label, language[1314]);
-					//button->x = subx1 + 8;
-					//button->y = suby2 - 28;
-					//button->sizex = strlen(language[1314]) * 12 + 8;
-					//button->sizey = 20;
-					//button->action = &buttonQuitConfirm;
-					//button->visible = 1;
-					//button->focused = 1;
-					//button->key = SDL_SCANCODE_RETURN;
-					//button->joykey = joyimpulses[INJOY_MENU_NEXT];
+					// previous directory button
+					button = newButton();
+					strcpy(button->label, "home directory");
+					button->x = subx1 + 250;
+					button->y = suby1 + 32;
+					button->sizex = strlen("home directory") * 12 + 8;
+					button->sizey = 20;
+					button->action = &buttonGamemodsBaseDirectory;
+					button->visible = 1;
+					button->focused = 1;
+
+					// open directory button
+					button = newButton();
+					strcpy(button->label, "open");
+					button->x = subx1 + 250;
+					button->y = suby1 + 56;
+					button->sizex = strlen("home directory") * 12 + 8;
+					button->sizey = 20;
+					button->action = &buttonGamemodsOpenDirectory;
+					button->visible = 1;
+					button->focused = 1;
+
+					// previous directory button
+					button = newButton();
+					strcpy(button->label, "previous folder");
+					button->x = subx1 + 250;
+					button->y = suby1 + 80;
+					button->sizex = strlen("home directory") * 12 + 8;
+					button->sizey = 20;
+					button->action = &buttonGamemodsPrevDirectory;
+					button->visible = 1;
+					button->focused = 1;
 
 					//// no button
 					//button = newButton();
@@ -4283,16 +4311,70 @@ void handleMainMenu(bool mode)
 	{
 		if ( gamemods_window == 1 )
 		{
-			if ( !physFSFilesInDirectory.empty() )
+			if ( !currentDirectoryFiles.empty() )
 			{
 				int lineNumber = 0;
 				std::string line;
-				for ( std::vector<std::string>::const_iterator i = physFSFilesInDirectory.begin(); i != physFSFilesInDirectory.end(); ++i )
+				std::list<std::string>::const_iterator it = currentDirectoryFiles.begin();
+				std::advance(it, gamemods_window_scroll);
+				int filenameMaxLength = 24;
+				int numFileEntries = 10;
+
+				int filename_padx = subx1 + 16;
+				int filename_pady = suby1 + 32;
+				int filename_padx2 = filename_padx + filenameMaxLength * TTF12_WIDTH + 8;
+				int filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+
+				drawWindow(filename_padx, filename_pady - 2,
+					filename_padx2, filename_pady2);
+
+				SDL_Rect pos;
+				pos.x = filename_padx;
+				pos.y = filename_pady - 2 + std::max(gamemods_window_fileSelect - 1, 0) * TTF12_HEIGHT;
+				pos.w = filenameMaxLength * TTF12_WIDTH + 8;
+				pos.h = TTF12_HEIGHT;
+				if ( gamemods_window_fileSelect != 0 )
 				{
-					line = *i;
-					ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188 + lineNumber * 16, "%s", line.c_str());
+					drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				}
+
+				for ( ; it != currentDirectoryFiles.end() && lineNumber < numFileEntries; ++it )
+				{
+					line = *it;
+					line = line.substr(0, filenameMaxLength);
+					ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + lineNumber * TTF12_HEIGHT, "%s", line.c_str());
 					++lineNumber;
 				}
+				int entriesToScroll = std::max(static_cast<int>((currentDirectoryFiles.size() / numFileEntries) - 1), 0);
+				entriesToScroll = entriesToScroll * numFileEntries + (currentDirectoryFiles.size() % numFileEntries);
+
+				if ( mouseInBounds(filename_padx - 4, filename_padx2, 
+					filename_pady, filename_pady2) && currentDirectoryFiles.size() > numFileEntries )
+				{
+					if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					}
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					{
+						gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					}
+				}
+				for ( int i = 1; i <= numFileEntries; ++i )
+				{
+					if ( mouseInBounds(filename_padx - 4, filename_padx2,
+						filename_pady - 2, filename_pady - 2 + i * TTF12_HEIGHT) )
+					{
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							gamemods_window_fileSelect = i;
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+					}
+				}
+				ttfPrintTextFormatted(ttf12, filename_padx, filename_pady - 64, "path: %s", directoryPath.c_str());
 			}
 		}
 	}
@@ -6417,6 +6499,7 @@ void buttonCloseSubwindow(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	singleplayerSavegameExists = false; // clear this value when closing window, user could delete savegame
 	multiplayerSavegameExists = false;  // clear this value when closing window, user could delete savegame
+	directoryPath = "";
 	if ( score_window )
 	{
 		// reset class loadout
@@ -8274,4 +8357,45 @@ void buttonRandomName(button_t* my)
 
 	strncpy(inputstr, name.c_str(), std::min<size_t>(name.length(), inputlen));
 	inputstr[std::min<size_t>(name.length(), inputlen)] = '\0';
+}
+
+void buttonGamemodsOpenDirectory(button_t* my)
+{
+	if ( gamemods_window_fileSelect != 0 && !currentDirectoryFiles.empty() )
+	{
+		std::list<std::string>::const_iterator it = currentDirectoryFiles.begin();
+		std::advance(it, std::max(gamemods_window_scroll + gamemods_window_fileSelect - 1, 0));
+		std::string directoryName = *it;
+
+		if ( directoryName.compare("..") == 0 || directoryName.compare(".") == 0 )
+		{
+			directoryPath = directoryName;
+			directoryPath.append(PHYSFS_getDirSeparator());
+		}
+		else
+		{
+			directoryPath.append(directoryName);
+			directoryPath.append(PHYSFS_getDirSeparator());
+		}
+		gamemods_window_fileSelect = 0;
+		gamemods_window_scroll = 0;
+		currentDirectoryFiles = directoryContents(directoryPath.c_str(), true);
+	}
+}
+
+void buttonGamemodsPrevDirectory(button_t* my)
+{
+	gamemods_window_fileSelect = 0;
+	gamemods_window_scroll = 0;
+	directoryPath.append("..");
+	directoryPath.append(PHYSFS_getDirSeparator());
+	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true);
+}
+
+void buttonGamemodsBaseDirectory(button_t* my)
+{
+	gamemods_window_fileSelect = 0;
+	gamemods_window_scroll = 0;
+	directoryPath = datadir;
+	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true);
 }

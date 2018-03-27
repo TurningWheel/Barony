@@ -887,7 +887,7 @@ out_input_file:
 
 -------------------------------------------------------------------------------*/
 
-std::list<std::string> directoryContents(const char* directory)
+std::list<std::string> directoryContents(const char* directory, bool subdirectoryOnly)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
@@ -912,9 +912,19 @@ std::list<std::string> directoryContents(const char* directory)
 		{
 			continue;
 		}
-		if ((cur.st_mode & S_IFMT) == S_IFREG)
+		if ( !subdirectoryOnly )
 		{
-			list.push_back(entry->d_name);
+			if ((cur.st_mode & S_IFMT) == S_IFREG)
+			{
+				list.push_back(entry->d_name);
+			}
+		}
+		else
+		{
+			if ((cur.st_mode & S_IFMT) == S_IFDIR)
+			{
+				list.push_back(entry->d_name);
+			}
 		}
 	}
 
@@ -1009,7 +1019,7 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 	return 0;
 }
 
-std::vector<std::string> physfsGetFileNamesInDirectory(char* dir)
+std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
 {
 	std::vector<std::string> filenames;
 	char **rc = PHYSFS_enumerateFiles(dir);
