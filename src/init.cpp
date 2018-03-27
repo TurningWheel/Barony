@@ -2163,6 +2163,10 @@ int deinitApp()
 		{
 			delete g_SteamLeaderboards;
 		}
+		if ( g_SteamWorkshop )
+		{
+			delete g_SteamWorkshop;
+		}
 		SteamAPI_Shutdown();
 	}
 #endif

@@ -6287,3 +6287,7 @@ void reselectEntityGroup()
 	}
 }
 
+int generateDungeon(char* levelset, Uint32 seed)
+{
+	return 0; // dummy function
+}
