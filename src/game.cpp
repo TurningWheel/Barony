@@ -80,17 +80,6 @@ int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
 
-#ifdef STEAMWORKS
-//uint64 SteamAPICall_FindLeaderboard = 0;
-//uint64 SteamAPICall_UploadLeaderboardScore = 0;
-//LeaderboardFindResult_t steamLeaderboardFindResult;
-//SteamLeaderboard_t steamLeaderboard;
-//LeaderboardScoreUploaded_t leaderboardScoreUploaded;
-//int currentSteamLeaderboard = 0;
-CSteamLeaderboards* g_SteamLeaderboards = NULL;
-CSteamWorkshop* g_SteamWorkshop = NULL;
-#endif
-
 /*-------------------------------------------------------------------------------
 
 	gameLogic

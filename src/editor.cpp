@@ -21,6 +21,12 @@
 
 #define EDITOR
 
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+#endif // STEAMWORKS
+
+
 //#include "player.hpp"
 
 Entity* selectedEntity = nullptr;
