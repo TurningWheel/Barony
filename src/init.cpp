@@ -570,7 +570,7 @@ int initApp(char* title, int fullscreen)
 		printlog("[PhysFS]: unsuccessfully mounted /maps folder");
 		return 13;
 	}
-	if ( PHYSFS_mount("mods/mymod/maps", NULL, 0) )
+	/*if ( PHYSFS_mount("mods/mymod/maps", NULL, 0) )
 	{
 		printlog("[PhysFS]: successfully mounted mods/mymod/maps folder");
 	}
@@ -585,7 +585,7 @@ int initApp(char* title, int fullscreen)
 	else
 	{
 		printlog("[PhysFS]: unsuccessfully mounted mods/test.zip folder");
-	}
+	}*/
 	/*if ( PHYSFS_exists("test/maps/levels.txt") )
 	{
 		printlog("Exists.");
