@@ -1102,5 +1102,4 @@ void steam_OnP2PSessionConnectFail( void* pCallback )
 		openFailedConnectionWindow(multiplayer);
 	}
 }
-
 #endif

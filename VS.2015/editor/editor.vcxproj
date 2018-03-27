@@ -89,6 +89,7 @@
     <ClInclude Include="..\..\src\savepng.hpp" />
     <ClInclude Include="..\..\src\sound.hpp" />
     <ClInclude Include="..\..\src\stat_editor.hpp" />
+    <ClInclude Include="..\..\src\steam.hpp" />
     <ClInclude Include="..\..\VS-includes\Config.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -110,6 +111,7 @@
     <ClCompile Include="..\..\src\sound.cpp" />
     <ClCompile Include="..\..\src\stat_editor.cpp" />
     <ClCompile Include="..\..\src\stat_shared.cpp" />
+    <ClCompile Include="..\..\src\steam_shared.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\wineditoricon.rc" />
