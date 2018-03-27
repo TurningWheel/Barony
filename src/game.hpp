@@ -234,8 +234,3 @@ void loadRandomNames();
 
 void mapLevel(int player);
 
-#ifdef STEAMWORKS
-extern CSteamLeaderboards* g_SteamLeaderboards;
-extern CSteamWorkshop* g_SteamWorkshop;
-#endif // STEAMWORKS
-

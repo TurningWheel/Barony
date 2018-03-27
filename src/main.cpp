@@ -50,6 +50,8 @@ int clientnum = 0;
 int multiplayer = -1;
 #ifdef STEAMWORKS
 bool directConnect = false;
+CSteamLeaderboards* g_SteamLeaderboards = NULL;
+CSteamWorkshop* g_SteamWorkshop = NULL;
 #else
 bool directConnect = true;
 #endif
