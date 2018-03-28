@@ -79,6 +79,10 @@ void buttonRandomName(button_t* my);
 void buttonGamemodsOpenDirectory(button_t* my);
 void buttonGamemodsPrevDirectory(button_t* my);
 void buttonGamemodsBaseDirectory(button_t* my);
+void buttonGamemodsSelectDirectoryForUpload(button_t* my);
+void buttonGamemodsPrepareWorkshopItemUpload(button_t* my);
+void buttonGamemodsSetWorkshopItemFields(button_t* my);
+void buttonGamemodsStartUploadItem(button_t* my);
 
 #ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my);
@@ -112,8 +116,11 @@ extern int score_window;
 extern int gamemods_window;
 extern int gamemods_window_scroll;
 extern int gamemods_window_fileSelect;
+extern int gamemods_uploadStatus;
 extern std::list<std::string> currentDirectoryFiles;
 extern std::string directoryPath;
+void gamemodsWindowClearVariables();
+void gamemodsWindowInit();
 
 extern bool scoreDisplayMultiplayer;
 
