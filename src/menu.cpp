@@ -95,6 +95,7 @@ int score_window = 0;
 int gamemods_window = 0;
 std::list<std::string> currentDirectoryFiles;
 std::list<std::string> directoryFilesListToUpload;
+std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::string directoryToUpload;
 std::string directoryPath;
 int gamemods_window_scroll = 0;
@@ -105,6 +106,7 @@ char gamemods_uploadDescription[32] = "Description";
 int gamemods_currentEditField = 0;
 bool gamemods_workshopSetPropertyReturn[3] = { false, false, false };
 Uint32 gamemods_uploadSuccessTicks = 0;
+int gamemods_subscribedItemsStatus = 0;
 
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
@@ -830,7 +832,8 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 					}
 					playSound(139, 64);
-					gamemodsWindowInit();
+					//gamemodsWindowInit();
+					gamemodsSubscribedItemsInit();
 				}
 			}
 			else
@@ -4264,7 +4267,7 @@ void handleMainMenu(bool mode)
 
 		int filename_padx2 = filename_padx + filenameMaxLength * TTF12_WIDTH + 8;
 		int filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
-		if ( gamemods_window >= 1 )
+		if ( gamemods_window == 1 || gamemods_window == 2 )
 		{
 			if ( !currentDirectoryFiles.empty() )
 			{
@@ -4561,6 +4564,116 @@ void handleMainMenu(bool mode)
 						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorOrange(*mainsurface), "bytes processed: %d", bytesProc);
 					}
 				}
+			}
+		}
+		if ( gamemods_window == 3 )
+		{
+			numFileEntries = 10;
+			filenameMaxLength = 32;
+			filename_padx = subx1 + 16;
+			filename_pady = suby1 + 32;
+			filename_padx2 = subx2 - 16;
+			filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+
+			if ( gamemods_subscribedItemsStatus == 0 )
+			{
+				if ( g_SteamWorkshop->SteamUGCQueryCompleted.m_eResult == k_EResultOK )
+				{
+					gamemods_subscribedItemsStatus = 1;
+					g_SteamWorkshop->ReadSubscribedItems();
+				}
+			}
+			else
+			{
+				filename_pady += 3 * TTF12_HEIGHT;
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved subscribed items!");
+				filename_pady += 2 * TTF12_HEIGHT;
+				for ( int i = 0; i < g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned; ++i )
+				{
+					filename_padx = subx1 + 16;
+					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[i];
+					char fullpath[MAX_PATH];
+					if ( itemDetails.m_eResult == k_EResultOK )
+					{
+						drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + 2 * TTF12_HEIGHT + 8);
+						std::string line = itemDetails.m_rgchTitle;
+						if ( line.length() >= filenameMaxLength )
+						{
+							line.substr(0, 30);
+							line.append("..");
+						}
+						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady, "Title: %s", line.c_str());
+						line = itemDetails.m_rgchDescription;
+						if ( line.length() >= filenameMaxLength )
+						{
+							line.substr(0, 30);
+							line.append("..");
+						}
+						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + TTF12_HEIGHT, "Description: %s", line.c_str());
+						filename_padx += TTF12_WIDTH * 26;
+						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, MAX_PATH, NULL);
+						if ( mouseInBounds(filename_padx, filename_padx + 12 * TTF12_WIDTH + 8, filename_pady - 4, filename_pady + 2 * TTF12_HEIGHT) )
+						{
+							drawDepressed(filename_padx, filename_pady - 4, filename_padx + 12 * TTF12_WIDTH + 8, filename_pady + 2 * TTF12_HEIGHT);
+							if ( mousestatus[SDL_BUTTON_LEFT] )
+							{
+								playSound(139, 64);
+								if ( itemDownloaded )
+								{
+									SteamUGC()->UnsubscribeItem(itemDetails.m_nPublishedFileId); //todo callback
+								}
+								else
+								{
+									SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
+								}
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+						}
+						else
+						{
+							drawWindow(filename_padx, filename_pady - 4, filename_padx + 12 * TTF12_WIDTH + 8, filename_pady + 2 * TTF12_HEIGHT);
+						}
+						SDL_Rect pos;
+						pos.x = filename_padx;
+						pos.y = filename_pady - 4;
+						pos.w = 12 * TTF12_WIDTH + 8;
+						pos.h = 2 * TTF12_HEIGHT;
+						if ( itemDownloaded )
+						{
+							drawRect(&pos, uint32ColorRed(*mainsurface), 64);
+							ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady - 8 + TTF12_HEIGHT, "Unsubscribe");
+						}
+						else
+						{
+							drawRect(&pos, uint32ColorBaronyBlue(*mainsurface), 64);
+							ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady - 8 + TTF12_HEIGHT, " Download ");
+						}
+					}
+					filename_pady += 2 * TTF12_HEIGHT + 16;
+				}
+				/*if ( gamemods_subscribedItemsStatus == k_EResultOK )
+				{
+					ttfPrintTextFormatted(ttf12, filename_padx, filename_pady - TTF12_HEIGHT, "file preview in folder:");
+					drawWindow(filename_padx, filename_pady - 2,
+						filename_padx2, filename_pady2);
+					int lineNumber = 0;
+					std::string line;
+					for ( std::list<std::string>::const_iterator it = directoryFilesListToUpload.begin(); it != directoryFilesListToUpload.end() && lineNumber < 20; ++it )
+					{
+						line = *it;
+						if ( line.size() >= filenameMaxLength )
+						{
+							line = line.substr(0, filenameMaxLength - 3);
+							line.append("..");
+						}
+						else
+						{
+							line = line.substr(0, filenameMaxLength);
+						}
+						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + lineNumber * TTF12_HEIGHT, "%s", line.c_str());
+						++lineNumber;
+					}
+				}*/
 			}
 		}
 	}
@@ -8633,7 +8746,15 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 	{
 		if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
 		{
+			if ( !strcmp(gamemods_uploadTitle, "") )
+			{
+				strcpy(gamemods_uploadTitle, "Title");
+			}
 			gamemods_workshopSetPropertyReturn[0] = SteamUGC()->SetItemTitle(g_SteamWorkshop->UGCUpdateHandle, gamemods_uploadTitle);
+			if ( !strcmp(gamemods_uploadDescription, "") )
+			{
+				strcpy(gamemods_uploadDescription, "Description");
+			}
 			gamemods_workshopSetPropertyReturn[1] = SteamUGC()->SetItemDescription(g_SteamWorkshop->UGCUpdateHandle, gamemods_uploadDescription);
 #ifdef WINDOWS
 			char pathbuffer[MAX_PATH];
@@ -8780,4 +8901,51 @@ void gamemodsWindowInit()
 	button2->action = &buttonGamemodsPrepareWorkshopItemUpload;
 	button2->visible = 1;
 	button2->focused = 1;
+}
+
+void gamemodsSubscribedItemsInit()
+{
+	gamemods_window = 3;
+	currentDirectoryFiles = directoryContents(datadir, true);
+	directoryToUpload = datadir;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 300;
+	subx2 = xres / 2 + 300;
+	suby1 = yres / 2 - 300;
+	suby2 = yres / 2 + 300;
+	strcpy(subtext, "Subscribed workshop items");
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// fetch subscribed items button
+	button = newButton();
+	strcpy(button->label, "get subscribed item list");
+	button->x = subx1 + 16;
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->action = &buttonGamemodsGetSubscribedItems;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void buttonGamemodsGetSubscribedItems(button_t* my)
+{
+	if ( g_SteamWorkshop )
+	{
+		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+	}
 }

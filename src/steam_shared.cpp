@@ -121,4 +121,42 @@ void CSteamWorkshop::OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool 
 		SubmitItemUpdateResult = *pResult;
 	}
 }
+
+void CSteamWorkshop::CreateQuerySubscribedItems(EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder)
+{
+	// searchType can look for all results, items only, guides only etc.
+	// sortOrder will sort results by creation date, subscribed date etc.
+	CSteamID steamID = SteamUser()->GetSteamID();
+	UGCQueryHandle = SteamUGC()->CreateQueryUserUGCRequest(steamID.GetAccountID(), k_EUserUGCList_Subscribed,
+		searchType, sortOrder, STEAM_APPID, STEAM_APPID, 1);
+	if ( UGCQueryHandle != k_UGCQueryHandleInvalid )
+	{
+		SteamAPICall_t hSteamAPICall = SteamUGC()->SendQueryUGCRequest(UGCQueryHandle);
+		m_callResultSendQueryUGCRequest.Set(hSteamAPICall, this,
+			&CSteamWorkshop::OnSendQueryUGCRequest);
+	}
+	SteamUGC()->ReleaseQueryUGCRequest(UGCQueryHandle);
+}
+
+void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure)
+{
+	if ( !bIOFailure )
+	{
+		SteamUGCQueryCompleted = *pResult;
+	}
+}
+
+void CSteamWorkshop::ReadSubscribedItems()
+{
+	if ( SteamUGCQueryCompleted.m_eResult == k_EResultOK )
+	{
+		for ( int i = 0; i < SteamUGCQueryCompleted.m_unNumResultsReturned; ++i )
+		{
+				SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
+					i, &m_subscribedItemListDetails[i]);
+		}
+		SteamUGC()->ReleaseQueryUGCRequest(SteamUGCQueryCompleted.m_handle);
+	}
+}
+
 #endif // STEAMWORKS

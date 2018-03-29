@@ -83,6 +83,7 @@ void buttonGamemodsSelectDirectoryForUpload(button_t* my);
 void buttonGamemodsPrepareWorkshopItemUpload(button_t* my);
 void buttonGamemodsSetWorkshopItemFields(button_t* my);
 void buttonGamemodsStartUploadItem(button_t* my);
+void buttonGamemodsGetSubscribedItems(button_t* my);
 
 #ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my);
@@ -121,6 +122,7 @@ extern std::list<std::string> currentDirectoryFiles;
 extern std::string directoryPath;
 void gamemodsWindowClearVariables();
 void gamemodsWindowInit();
+void gamemodsSubscribedItemsInit();
 
 extern bool scoreDisplayMultiplayer;
 
