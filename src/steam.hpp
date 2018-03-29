@@ -129,7 +129,7 @@ private:
 	//SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
 public:
 	//int m_nLeaderboardEntries; // How many entries do we have?
-	//LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+	SteamUGCDetails_t m_subscribedItemListDetails[50]; // The entries
 	//std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
 
 	CSteamWorkshop();
@@ -138,13 +138,19 @@ public:
 	CreateItemResult_t createItemResult;
 	UGCUpdateHandle_t UGCUpdateHandle;
 	SubmitItemUpdateResult_t SubmitItemUpdateResult;
+	UGCQueryHandle_t UGCQueryHandle;
+	SteamUGCQueryCompleted_t SteamUGCQueryCompleted;
 	void CreateItem();
 	void StartItemUpdate();
 	void SubmitItemUpdate(char* changeNote);
+	void CreateQuerySubscribedItems(EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder);
+	void ReadSubscribedItems();
 
 	CCallResult<CSteamWorkshop, CreateItemResult_t> m_callResultCreateItem;
 	CCallResult<CSteamWorkshop, SubmitItemUpdateResult_t> m_callResultSubmitItemUpdateResult;
+	CCallResult<CSteamWorkshop, SteamUGCQueryCompleted_t> m_callResultSendQueryUGCRequest;
 	void OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure);
 	void OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool bIOFailure);
+	void OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure);
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
 };
