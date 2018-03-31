@@ -561,35 +561,15 @@ int initApp(char* title, int fullscreen)
 		printlog("[PhysFS]: failed to initialize!");
 		return 13;
 	}
-	if ( PHYSFS_mount("maps", NULL, 1) )
+	if ( PHYSFS_mount("./", NULL, 1) )
 	{
-		printlog("[PhysFS]: successfully mounted /maps folder");
+		printlog("[PhysFS]: successfully mounted base ./ folder");
 	}
 	else
 	{
-		printlog("[PhysFS]: unsuccessfully mounted /maps folder");
+		printlog("[PhysFS]: unsuccessfully mounted base ./ folder");
 		return 13;
 	}
-	/*if ( PHYSFS_mount("mods/mymod/maps", NULL, 0) )
-	{
-		printlog("[PhysFS]: successfully mounted mods/mymod/maps folder");
-	}
-	else
-	{
-		printlog("[PhysFS]: unsuccessfully mounted mods/mymods/maps folder");
-	}
-	if ( PHYSFS_mount("mods/test.zip", NULL, 0) )
-	{
-		printlog("[PhysFS]: successfully mounted mods/test.zip folder");
-	}
-	else
-	{
-		printlog("[PhysFS]: unsuccessfully mounted mods/test.zip folder");
-	}*/
-	/*if ( PHYSFS_exists("test/maps/levels.txt") )
-	{
-		printlog("Exists.");
-	}*/
 	return 0;
 }
 

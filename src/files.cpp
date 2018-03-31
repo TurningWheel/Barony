@@ -61,6 +61,14 @@ bool completePath(char *dest, const char * const filename) {
 		return true;
 	}
 
+#ifdef WINDOWS
+	// Already absolute (drive letter in path)
+	if ( filename[1] == ':' ) {
+		strncpy(dest, filename, 1024);
+		return true;
+	}
+#endif
+
 	snprintf(dest, 1024, "%s/%s", datadir, filename);
 	return true;
 }
@@ -942,18 +950,37 @@ std::vector<std::string> getLinesFromDataFile(std::string filename)
 	std::ifstream file(filepath);
 	if ( !file )
 	{
-		printlog("Error: Failed to open file \"%s\"", filename.c_str());
-		return lines;
-	}
-	std::string line;
-	while ( std::getline(file, line) )
-	{
-		if ( !line.empty() )
+		std::ifstream file(filename); // check absolute path.
+		if ( !file)
 		{
-			lines.push_back(line);
+			printlog("Error: Failed to open file \"%s\"", filename.c_str());
+			return lines;
+		}
+		else
+		{
+			std::string line;
+			while ( std::getline(file, line) )
+			{
+				if ( !line.empty() )
+				{
+					lines.push_back(line);
+				}
+			}
+			file.close();
 		}
 	}
-	file.close();
+	else
+	{
+		std::string line;
+		while ( std::getline(file, line) )
+		{
+			if ( !line.empty() )
+			{
+				lines.push_back(line);
+			}
+		}
+		file.close();
+	}
 
 	return lines;
 }
@@ -1044,8 +1071,8 @@ std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
 std::string physfsFormatMapName(char* levelfilename)
 {
 	std::string fullMapPath;
-	std::string mapFileName;
-	mapFileName = levelfilename;
+	std::string mapFileName = "maps/";
+	mapFileName.append(levelfilename);
 	mapFileName.append(".lmp");
 
 	if ( PHYSFS_getRealDir(mapFileName.c_str()) != NULL )

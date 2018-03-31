@@ -123,6 +123,7 @@ extern std::string directoryPath;
 void gamemodsWindowClearVariables();
 void gamemodsWindowInit();
 void gamemodsSubscribedItemsInit();
+bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action);
 
 extern bool scoreDisplayMultiplayer;
 
