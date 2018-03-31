@@ -4569,7 +4569,7 @@ void handleMainMenu(bool mode)
 		if ( gamemods_window == 3 )
 		{
 			numFileEntries = 10;
-			filenameMaxLength = 32;
+			filenameMaxLength = 48;
 			filename_padx = subx1 + 16;
 			filename_pady = suby1 + 32;
 			filename_padx2 = subx2 - 16;
@@ -4599,54 +4599,55 @@ void handleMainMenu(bool mode)
 						std::string line = itemDetails.m_rgchTitle;
 						if ( line.length() >= filenameMaxLength )
 						{
-							line.substr(0, 30);
+							line = line.substr(0, 46);
 							line.append("..");
 						}
 						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady, "Title: %s", line.c_str());
 						line = itemDetails.m_rgchDescription;
 						if ( line.length() >= filenameMaxLength )
 						{
-							line.substr(0, 30);
+							line = line.substr(0, 46);
 							line.append("..");
 						}
-						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + TTF12_HEIGHT, "Description: %s", line.c_str());
-						filename_padx += TTF12_WIDTH * 26;
+						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + TTF12_HEIGHT, "Desc: %s", line.c_str());
 						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, MAX_PATH, NULL);
-						if ( mouseInBounds(filename_padx, filename_padx + 12 * TTF12_WIDTH + 8, filename_pady - 4, filename_pady + 2 * TTF12_HEIGHT) )
+						filename_padx = filename_padx2 - (12 * TTF12_WIDTH + 16) * 2;
+						// download button
+						if ( !itemDownloaded )
 						{
-							drawDepressed(filename_padx, filename_pady - 4, filename_padx + 12 * TTF12_WIDTH + 8, filename_pady + 2 * TTF12_HEIGHT);
-							if ( mousestatus[SDL_BUTTON_LEFT] )
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), " Download ", 0) )
 							{
-								playSound(139, 64);
-								if ( itemDownloaded )
-								{
-									SteamUGC()->UnsubscribeItem(itemDetails.m_nPublishedFileId); //todo callback
-								}
-								else
-								{
-									SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
-								}
-								mousestatus[SDL_BUTTON_LEFT] = 0;
+								SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
 							}
 						}
-						else
-						{
-							drawWindow(filename_padx, filename_pady - 4, filename_padx + 12 * TTF12_WIDTH + 8, filename_pady + 2 * TTF12_HEIGHT);
-						}
-						SDL_Rect pos;
-						pos.x = filename_padx;
-						pos.y = filename_pady - 4;
-						pos.w = 12 * TTF12_WIDTH + 8;
-						pos.h = 2 * TTF12_HEIGHT;
+						filename_padx += (12 * TTF12_WIDTH + 16);
+						// mount button
 						if ( itemDownloaded )
 						{
-							drawRect(&pos, uint32ColorRed(*mainsurface), 64);
-							ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady - 8 + TTF12_HEIGHT, "Unsubscribe");
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, " Load Item ", 0) )
+							{
+								if ( PHYSFS_mount(fullpath, NULL, 0) )
+								{
+									printlog("[%s] is in the search path.\n", fullpath);
+								}
+								//SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
+							}
 						}
-						else
+						filename_padx -= (12 * TTF12_WIDTH + 16);
+						filename_pady += TTF12_HEIGHT + 4;
+						// unsubscribe button
+						if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorRed(*mainsurface), "Unsubscribe", 0) )
 						{
-							drawRect(&pos, uint32ColorBaronyBlue(*mainsurface), 64);
-							ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady - 8 + TTF12_HEIGHT, " Download ");
+							SteamUGC()->UnsubscribeItem(itemDetails.m_nPublishedFileId); //todo callback
+						}
+						filename_padx += (12 * TTF12_WIDTH + 16);
+						// unmount button
+						if ( itemDownloaded )
+						{
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, "Unload Item", 0) )
+							{
+								SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
+							}
 						}
 					}
 					filename_pady += 2 * TTF12_HEIGHT + 16;
@@ -8911,8 +8912,8 @@ void gamemodsSubscribedItemsInit()
 
 	// create confirmation window
 	subwindow = 1;
-	subx1 = xres / 2 - 300;
-	subx2 = xres / 2 + 300;
+	subx1 = xres / 2 - 400;
+	subx2 = xres / 2 + 400;
 	suby1 = yres / 2 - 300;
 	suby2 = yres / 2 + 300;
 	strcpy(subtext, "Subscribed workshop items");
@@ -8948,4 +8949,30 @@ void buttonGamemodsGetSubscribedItems(button_t* my)
 	{
 		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
 	}
+}
+
+bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action)
+{
+	if ( mouseInBounds(padx, padx + padw, pady - 4, pady + padh) )
+	{
+		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			playSound(139, 64);
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			return true;
+		}
+	}
+	else
+	{
+		drawWindow(padx, pady - 4, padx + padw, pady + padh);
+	}
+	SDL_Rect pos;
+	pos.x = padx;
+	pos.y = pady - 4;
+	pos.w = padw;
+	pos.h = padh + 4;
+	drawRect(&pos, btnColor, 64);
+	ttfPrintTextFormatted(ttf12, padx + 8, pady, "%s", btnText.c_str());
+	return false;
 }
