@@ -4646,7 +4646,10 @@ void handleMainMenu(bool mode)
 						{
 							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, "Unload Item", 0) )
 							{
-								SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
+								if ( PHYSFS_unmount(fullpath) )
+								{
+									printlog("[%s] is removed from the search path.\n", fullpath);
+								}
 							}
 						}
 					}
