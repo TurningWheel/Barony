@@ -895,7 +895,7 @@ out_input_file:
 
 -------------------------------------------------------------------------------*/
 
-std::list<std::string> directoryContents(const char* directory, bool subdirectoryOnly)
+std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
@@ -920,14 +920,14 @@ std::list<std::string> directoryContents(const char* directory, bool subdirector
 		{
 			continue;
 		}
-		if ( !subdirectoryOnly )
+		if ( includeFiles )
 		{
 			if ((cur.st_mode & S_IFMT) == S_IFREG)
 			{
 				list.push_back(entry->d_name);
 			}
 		}
-		else
+		if ( includeSubdirectory )
 		{
 			if ((cur.st_mode & S_IFMT) == S_IFDIR)
 			{

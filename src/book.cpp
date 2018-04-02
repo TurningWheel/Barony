@@ -47,7 +47,7 @@ void createBooks()
 
 	//TODO: Read the books/ inventory for all *.txt files.
 	//TODO: Then create a book for each file there and add it to a books array.
-	auto discoveredbooks = directoryContents("books/", false);
+	auto discoveredbooks = directoryContents("books/", false, true);
 	if (!discoveredbooks.empty())
 	{
 		printlog("compiling books...\n");

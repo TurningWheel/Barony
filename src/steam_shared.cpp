@@ -25,7 +25,14 @@ CSteamLeaderboards::CSteamLeaderboards() :
 CSteamWorkshop::CSteamWorkshop() :
 	createItemResult(),
 	SubmitItemUpdateResult(),
-	UGCUpdateHandle(0)
+	UGCUpdateHandle(0),
+	UGCQueryHandle(0),
+	SteamUGCQueryCompleted(),
+	UnsubscribePublishedFileResult(),
+	LastActionResult(),
+	workshopItemTags(),
+	uploadSuccessTicks(0),
+	m_myWorkshopItemToModify()
 {
 
 }
@@ -93,15 +100,32 @@ void CSteamWorkshop::OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure)
 	if ( !bIOFailure )
 	{
 		createItemResult = *pResult;
+		StoreResultMessage("Item Create: OK", createItemResult.m_eResult);
+		return;
 	}
+	StoreResultMessage("Item Create: ERROR", createItemResult.m_eResult);
 }
 
 void CSteamWorkshop::StartItemUpdate()
 {
-	if ( g_SteamWorkshop->createItemResult.m_nPublishedFileId != 0 )
+	if ( createItemResult.m_nPublishedFileId != 0 )
 	{
-		UGCUpdateHandle = SteamUGC()->StartItemUpdate(STEAM_APPID, g_SteamWorkshop->createItemResult.m_nPublishedFileId);
+		UGCUpdateHandle = SteamUGC()->StartItemUpdate(STEAM_APPID, createItemResult.m_nPublishedFileId);
+		StoreResultMessage("Item Update Initialise: OK", createItemResult.m_eResult);
+		return;
 	}
+	StoreResultMessage("Item Update Initialise: ERROR", createItemResult.m_eResult);
+}
+
+void CSteamWorkshop::StartItemExistingUpdate(PublishedFileId_t fileId)
+{
+	if ( fileId != 0 )
+	{
+		UGCUpdateHandle = SteamUGC()->StartItemUpdate(STEAM_APPID, fileId);
+		StoreResultMessage("Item Update Initialise: OK", static_cast<EResult>(1));
+		return;
+	}
+	StoreResultMessage("Item Update Initialise: ERROR", static_cast<EResult>(0));
 }
 
 void CSteamWorkshop::SubmitItemUpdate(char* changeNote)
@@ -119,15 +143,18 @@ void CSteamWorkshop::OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool 
 	if ( !bIOFailure )
 	{
 		SubmitItemUpdateResult = *pResult;
+		StoreResultMessage("Item Update: OK", SubmitItemUpdateResult.m_eResult);
+		return;
 	}
+	StoreResultMessage("Item Update: ERROR", SubmitItemUpdateResult.m_eResult);
 }
 
-void CSteamWorkshop::CreateQuerySubscribedItems(EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder)
+void CSteamWorkshop::CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder)
 {
 	// searchType can look for all results, items only, guides only etc.
 	// sortOrder will sort results by creation date, subscribed date etc.
 	CSteamID steamID = SteamUser()->GetSteamID();
-	UGCQueryHandle = SteamUGC()->CreateQueryUserUGCRequest(steamID.GetAccountID(), k_EUserUGCList_Subscribed,
+	UGCQueryHandle = SteamUGC()->CreateQueryUserUGCRequest(steamID.GetAccountID(), itemListType,
 		searchType, sortOrder, STEAM_APPID, STEAM_APPID, 1);
 	if ( UGCQueryHandle != k_UGCQueryHandleInvalid )
 	{
@@ -143,7 +170,14 @@ void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bo
 	if ( !bIOFailure )
 	{
 		SteamUGCQueryCompleted = *pResult;
+		if ( SteamUGCQueryCompleted.m_eResult == k_EResultOK )
+		{
+			ReadSubscribedItems();
+			StoreResultMessage("Load Subscribed Items: OK", k_EResultOK);
+			return;
+		}
 	}
+	StoreResultMessage("Load Subscribed Items: ERROR", SteamUGCQueryCompleted.m_eResult);
 }
 
 void CSteamWorkshop::ReadSubscribedItems()
@@ -157,6 +191,35 @@ void CSteamWorkshop::ReadSubscribedItems()
 		}
 		SteamUGC()->ReleaseQueryUGCRequest(SteamUGCQueryCompleted.m_handle);
 	}
+}
+
+void CSteamWorkshop::UnsubscribeItemFileID(PublishedFileId_t fileId)
+{
+	SteamAPICall_t hSteamAPICall = SteamUGC()->UnsubscribeItem(fileId);
+	m_callResultUnsubscribeItemRequest.Set(hSteamAPICall, this,
+		&CSteamWorkshop::OnUnsubscribeItemRequest);
+}
+
+void CSteamWorkshop::OnUnsubscribeItemRequest(RemoteStorageUnsubscribePublishedFileResult_t *pResult, bool bIOFailure)
+{
+	if ( !bIOFailure )
+	{
+		UnsubscribePublishedFileResult = *pResult;
+		if ( UnsubscribePublishedFileResult.m_eResult == k_EResultOK )
+		{
+			CreateQuerySubscribedItems(k_EUserUGCList_Subscribed, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+			StoreResultMessage("Unsubscribe Item: OK", k_EResultOK);
+			return;
+		}
+	}
+	StoreResultMessage("Unsubscribe Item: ERROR", UnsubscribePublishedFileResult.m_eResult);
+}
+
+void CSteamWorkshop::StoreResultMessage(std::string message, EResult result)
+{
+	LastActionResult.actionMsg = message;
+	LastActionResult.lastResult = result;
+	LastActionResult.creationTick = ticks;
 }
 
 #endif // STEAMWORKS

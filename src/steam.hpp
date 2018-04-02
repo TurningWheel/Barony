@@ -126,11 +126,9 @@ public:
 class CSteamWorkshop
 {
 private:
-	//SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
 public:
-	//int m_nLeaderboardEntries; // How many entries do we have?
 	SteamUGCDetails_t m_subscribedItemListDetails[50]; // The entries
-	//std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
+	SteamUGCDetails_t m_myWorkshopItemToModify;
 
 	CSteamWorkshop();
 	~CSteamWorkshop() {};
@@ -140,17 +138,38 @@ public:
 	SubmitItemUpdateResult_t SubmitItemUpdateResult;
 	UGCQueryHandle_t UGCQueryHandle;
 	SteamUGCQueryCompleted_t SteamUGCQueryCompleted;
+	RemoteStorageUnsubscribePublishedFileResult_t UnsubscribePublishedFileResult;
+	class LastActionResult_t {
+		public:
+			EResult lastResult;
+			Uint32 creationTick;
+			std::string actionMsg;
+
+			LastActionResult_t() :
+				lastResult(static_cast<EResult>(0)),
+				creationTick(0),
+				actionMsg("")
+			{}
+	} LastActionResult;
+	std::list<std::string> workshopItemTags;
+	Uint32 uploadSuccessTicks;
+
+	void StoreResultMessage(std::string message, EResult result);
 	void CreateItem();
 	void StartItemUpdate();
 	void SubmitItemUpdate(char* changeNote);
-	void CreateQuerySubscribedItems(EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder);
+	void StartItemExistingUpdate(PublishedFileId_t fileId);
+	void CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder);
 	void ReadSubscribedItems();
+	void UnsubscribeItemFileID(PublishedFileId_t fileId);
 
 	CCallResult<CSteamWorkshop, CreateItemResult_t> m_callResultCreateItem;
 	CCallResult<CSteamWorkshop, SubmitItemUpdateResult_t> m_callResultSubmitItemUpdateResult;
 	CCallResult<CSteamWorkshop, SteamUGCQueryCompleted_t> m_callResultSendQueryUGCRequest;
+	CCallResult<CSteamWorkshop, RemoteStorageUnsubscribePublishedFileResult_t> m_callResultUnsubscribeItemRequest;
 	void OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure);
 	void OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool bIOFailure);
 	void OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure);
+	void OnUnsubscribeItemRequest(RemoteStorageUnsubscribePublishedFileResult_t *pResult, bool bIOFailure);
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
 };
