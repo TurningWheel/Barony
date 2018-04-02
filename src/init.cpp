@@ -564,6 +564,18 @@ int initApp(char* title, int fullscreen)
 	if ( PHYSFS_mount("./", NULL, 1) )
 	{
 		printlog("[PhysFS]: successfully mounted base ./ folder");
+		if ( PHYSFS_setWriteDir("./") )
+		{
+			if ( PHYSFS_mkdir("mods") )
+			{
+				PHYSFS_setWriteDir("./mods/");
+			}
+			else
+			{
+				printlog("[PhysFS]: unsuccessfully created mods/ folder");
+				return 13;
+			}
+		}
 	}
 	else
 	{

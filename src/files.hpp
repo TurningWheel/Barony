@@ -24,7 +24,7 @@ int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creat
 int loadConfig(char* filename);
 int saveMap(char* filename);
 char* readFile(char* filename);
-std::list<std::string> directoryContents(const char* directory, bool subdirectoryOnly);
+std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
 FILE *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);

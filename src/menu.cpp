@@ -105,8 +105,12 @@ char gamemods_uploadTitle[32] = "Title";
 char gamemods_uploadDescription[32] = "Description";
 int gamemods_currentEditField = 0;
 bool gamemods_workshopSetPropertyReturn[3] = { false, false, false };
-Uint32 gamemods_uploadSuccessTicks = 0;
 int gamemods_subscribedItemsStatus = 0;
+char gamemods_newBlankDirectory[32] = "";
+char gamemods_newBlankDirectoryOldName[32] = "";
+int gamemods_newBlankDirectoryStatus = 0;
+const int gamemods_maxTags = 10;
+std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
@@ -832,7 +836,6 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 					}
 					playSound(139, 64);
-					//gamemodsWindowInit();
 					gamemodsSubscribedItemsInit();
 				}
 			}
@@ -1262,7 +1265,7 @@ void handleMainMenu(bool mode)
 					drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
 				}
 			}
-			if ( gamemods_window >= 1 )
+			if ( gamemods_window == 1 || gamemods_window == 2 || gamemods_window == 5 )
 			{
 				drawWindowFancy(subx1 + 4, suby1 + 44 + 10 * TTF12_HEIGHT,
 					subx2 - 4, suby2 - 4);
@@ -4267,7 +4270,7 @@ void handleMainMenu(bool mode)
 
 		int filename_padx2 = filename_padx + filenameMaxLength * TTF12_WIDTH + 8;
 		int filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
-		if ( gamemods_window == 1 || gamemods_window == 2 )
+		if ( gamemods_window == 1 || gamemods_window == 2 || gamemods_window == 5 )
 		{
 			if ( !currentDirectoryFiles.empty() )
 			{
@@ -4331,7 +4334,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		if ( gamemods_window == 2 )
+		if ( gamemods_window == 2 || gamemods_window == 5 )
 		{
 			numFileEntries = 20;
 			filename_padx = subx2 - (filenameMaxLength * TTF12_WIDTH + 16);
@@ -4367,152 +4370,222 @@ void handleMainMenu(bool mode)
 			if ( gamemods_uploadStatus != 0 && g_SteamWorkshop )
 			{
 				status_pady += 3 * TTF12_HEIGHT;
-				if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == 0
-					&& gamemods_uploadStatus < 5 )
+				if ( gamemods_window == 2 )
 				{
-					switch ( g_SteamWorkshop->createItemResult.m_eResult )
+					if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == 0
+						&& gamemods_uploadStatus < 5 )
 					{
-						case 0:
-							ttfPrintTextFormatted(ttf12, status_padx, status_pady, "creating item...");
-							break;
-						case k_EResultOK:
-							if ( gamemods_uploadStatus < 2 )
-							{
-								for ( node = button_l.first; node != NULL; node = nextnode )
+						switch ( g_SteamWorkshop->createItemResult.m_eResult )
+						{
+							case 0:
+								ttfPrintTextFormatted(ttf12, status_padx, status_pady, "creating item...");
+								break;
+							case k_EResultOK:
+								if ( gamemods_uploadStatus < 2 )
 								{
-									nextnode = node->next;
-									button = (button_t*)node->element;
-									if ( button->action == &buttonGamemodsPrepareWorkshopItemUpload )
+									for ( node = button_l.first; node != NULL; node = nextnode )
 									{
-										button->visible = false;
+										nextnode = node->next;
+										button = (button_t*)node->element;
+										if ( button->action == &buttonGamemodsPrepareWorkshopItemUpload )
+										{
+											button->visible = false;
+										}
 									}
-								}
-								gamemods_uploadStatus = 2;
-								g_SteamWorkshop->StartItemUpdate();
-							}
-							else
-							{
-								if ( g_SteamWorkshop->UGCUpdateHandle == 0 )
-								{
-									ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "item created! awaiting file handle...");
+									gamemods_uploadStatus = 2;
+									g_SteamWorkshop->StartItemUpdate();
 								}
 								else
 								{
-									if ( gamemods_uploadStatus == 2 )
+									if ( g_SteamWorkshop->UGCUpdateHandle == 0 )
 									{
-										gamemods_uploadStatus = 3;
-										// set item fields button
-										button = newButton();
-										strcpy(button->label, "set item fields");
-										button->x = subx1 + 16;
-										button->y = suby1 + TTF12_HEIGHT * 27;
-										button->sizex = 16 * TTF12_WIDTH + 8;
-										button->sizey = 32;
-										button->action = &buttonGamemodsSetWorkshopItemFields;
-										button->visible = 1;
-										button->focused = 1;
-										gamemods_currentEditField = 0;
+										ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "item created! awaiting file handle...");
 									}
-									ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "item and file handle create success!");
+									else
+									{
+										if ( gamemods_uploadStatus == 2 )
+										{
+											gamemods_uploadStatus = 3;
+											// set item fields button
+											button = newButton();
+											strcpy(button->label, "set item fields");
+											button->x = subx1 + 16;
+											button->y = suby1 + TTF12_HEIGHT * 34;
+											button->sizex = 16 * TTF12_WIDTH + 8;
+											button->sizey = 32;
+											button->action = &buttonGamemodsSetWorkshopItemFields;
+											button->visible = 1;
+											button->focused = 1;
+											gamemods_currentEditField = 0;
+										}
+										ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "item and file handle create success!");
+									}
 								}
-							}
-							break;
-						default:
-							// error in createItem!
-							ttfPrintTextFormatted(ttf12, status_padx, status_pady, "error in creating item!");
-							break;
-					}
-					status_pady += 2 * TTF12_HEIGHT;
-					if ( gamemods_uploadStatus >= 3 && g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == 0 )
-					{
-						for ( int fields = 0; fields < 2; ++fields )
+								break;
+							default:
+								// error in createItem!
+								ttfPrintTextFormatted(ttf12, status_padx, status_pady, "error in creating item!");
+								break;
+						}
+						status_pady += 2 * TTF12_HEIGHT;
+						if ( gamemods_uploadStatus >= 3 && g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == 0 )
 						{
-							status_pady += TTF12_HEIGHT;
-							drawDepressed(status_padx, status_pady - 4, status_padx + 32 * TTF12_WIDTH, status_pady + TTF12_HEIGHT);
-							switch ( fields )
+							for ( int fields = 0; fields < 2; ++fields )
 							{
-								case 0:
-									ttfPrintText(ttf12, status_padx + 8, status_pady - TTF12_HEIGHT, "Enter a title:");
-									if ( gamemods_uploadStatus == 3 && gamemods_workshopSetPropertyReturn[0] )
+								status_pady += TTF12_HEIGHT;
+								drawDepressed(status_padx, status_pady - 4, status_padx + 32 * TTF12_WIDTH, status_pady + TTF12_HEIGHT);
+								switch ( fields )
+								{
+									case 0:
+										ttfPrintText(ttf12, status_padx + 8, status_pady - TTF12_HEIGHT, "Enter a title:");
+										if ( gamemods_uploadStatus == 3 && gamemods_workshopSetPropertyReturn[0] )
+										{
+											ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen(*mainsurface), true, "success set");
+										}
+										ttfPrintText(ttf12, status_padx + 8, status_pady, gamemods_uploadTitle);
+										break;
+									case 1:
+										ttfPrintText(ttf12, status_padx + 8, status_pady - TTF12_HEIGHT, "Enter description:");
+										if ( gamemods_uploadStatus == 3 && gamemods_workshopSetPropertyReturn[1] )
+										{
+
+										}
+										ttfPrintText(ttf12, status_padx + 8, status_pady, gamemods_uploadDescription);
+										break;
+									default:
+										break;
+								}
+								if ( gamemods_uploadStatus == 4 )
+								{
+									if ( gamemods_workshopSetPropertyReturn[fields] )
 									{
 										ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen(*mainsurface), true, "success set");
 									}
-									ttfPrintText(ttf12, status_padx + 8, status_pady, gamemods_uploadTitle);
-									break;
-								case 1:
-									ttfPrintText(ttf12, status_padx + 8, status_pady - TTF12_HEIGHT, "Enter description:");
-									if ( gamemods_uploadStatus == 3 && gamemods_workshopSetPropertyReturn[1] )
+									else
 									{
-
+										ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorRed(*mainsurface), true, "error!");
 									}
-									ttfPrintText(ttf12, status_padx + 8, status_pady, gamemods_uploadDescription);
-									break;
-								default:
-									break;
-							}
-							if ( gamemods_uploadStatus == 4 )
-							{
-								if ( gamemods_workshopSetPropertyReturn[fields] )
+								}
+
+								if ( mouseInBounds(status_padx, status_padx + 32 * TTF12_WIDTH, status_pady - 4, status_pady + TTF12_HEIGHT) )
 								{
-									ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorGreen(*mainsurface), true, "success set");
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										switch ( fields )
+										{
+											case 0:
+												inputstr = gamemods_uploadTitle;
+												gamemods_currentEditField = 0;
+												break;
+											case 1:
+												inputstr = gamemods_uploadDescription;
+												gamemods_currentEditField = 1;
+												break;
+											default:
+												break;
+										}
+										mousestatus[SDL_BUTTON_LEFT] = 0;
+									}
+								}
+
+								if ( gamemods_uploadStatus == 3 && !SDL_IsTextInputActive() )
+								{
+									inputstr = gamemods_uploadTitle;
+									SDL_StartTextInput();
+								}
+								inputlen = 30;
+								if ( SDL_IsTextInputActive() && gamemods_currentEditField == fields
+									&& (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+								{
+									int x;
+									TTF_SizeUTF8(ttf12, inputstr, &x, NULL);
+									ttfPrintText(ttf12, status_padx + x, status_pady, "_");
+								}
+								status_pady += 2 * TTF12_HEIGHT;
+							}
+							if ( gamemods_uploadStatus >= 4 )
+							{
+								if ( gamemods_workshopSetPropertyReturn[2] )
+								{
+									ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), true, "folder path success set");
 								}
 								else
 								{
-									ttfPrintTextColor(ttf12, status_padx + 20 * TTF12_WIDTH, status_pady - TTF12_HEIGHT, uint32ColorRed(*mainsurface), true, "error!");
+									ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorRed(*mainsurface), true, "error in folder path!");
 								}
 							}
 
-							if ( mouseInBounds(status_padx, status_padx + 32 * TTF12_WIDTH, status_pady - 4, status_pady + TTF12_HEIGHT) )
-							{
-								if ( mousestatus[SDL_BUTTON_LEFT] )
-								{
-									switch ( fields )
-									{
-										case 0:
-											inputstr = gamemods_uploadTitle;
-											gamemods_currentEditField = 0;
-											break;
-										case 1:
-											inputstr = gamemods_uploadDescription;
-											gamemods_currentEditField = 1;
-											break;
-										default:
-											break;
-									}
-									mousestatus[SDL_BUTTON_LEFT] = 0;
-								}
-							}
-
-							if ( gamemods_uploadStatus == 3 && !SDL_IsTextInputActive() )
-							{
-								inputstr = gamemods_uploadTitle;
-								SDL_StartTextInput();
-							}
-							inputlen = 30;
-							if ( SDL_IsTextInputActive() && gamemods_currentEditField == fields
-								&& (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
-							{
-								int x;
-								TTF_SizeUTF8(ttf12, inputstr, &x, NULL);
-								ttfPrintText(ttf12, status_padx + 8 + x, status_pady, "_");
-							}
 							status_pady += 2 * TTF12_HEIGHT;
-						}
-
-					}
-					if ( gamemods_uploadStatus >= 4 )
-					{
-						if ( gamemods_workshopSetPropertyReturn[2] )
-						{
-							ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), true, "folder path success set");
-						}
-						else
-						{
-							ttfPrintTextColor(ttf12, status_padx, status_pady, uint32ColorRed(*mainsurface), true, "error in folder path!");
+							// set some workshop item tags
+							ttfPrintText(ttf12, status_padx, status_pady, "Select workshop tags");
+							int tag_padx = status_padx;
+							int tag_pady = status_pady + TTF12_HEIGHT;
+							int tag_padx1 = tag_padx + 20 * TTF12_WIDTH;
+							gamemodsDrawWorkshopItemTagToggle("dungeons", tag_padx, tag_pady);
+							gamemodsDrawWorkshopItemTagToggle("textures", tag_padx1, tag_pady);
+							tag_pady += TTF12_HEIGHT + 4;
+							gamemodsDrawWorkshopItemTagToggle("models", tag_padx, tag_pady);
+							gamemodsDrawWorkshopItemTagToggle("gameplay", tag_padx1, tag_pady);
+							tag_pady += TTF12_HEIGHT + 4;
+							gamemodsDrawWorkshopItemTagToggle("audio", tag_padx, tag_pady);
+							gamemodsDrawWorkshopItemTagToggle("translations", tag_padx1, tag_pady);
+							tag_pady += TTF12_HEIGHT + 4;
+							gamemodsDrawWorkshopItemTagToggle("misc", tag_padx, tag_pady);
 						}
 					}
 				}
-				status_pady += 4 * TTF12_HEIGHT;
+				else if ( gamemods_window == 5 && g_SteamWorkshop->m_myWorkshopItemToModify.m_nPublishedFileId != 0 && gamemods_uploadStatus < 5 )
+				{
+					std::string line = g_SteamWorkshop->m_myWorkshopItemToModify.m_rgchTitle;
+					if ( line.size() > filenameMaxLength )
+					{
+						line = line.substr(0, filenameMaxLength - 2);
+						line.append("..");
+					}
+					status_pady += 2 * TTF12_HEIGHT;
+					ttfPrintTextFormattedColor(ttf12, status_padx + 8, status_pady, uint32ColorBaronyBlue(*mainsurface), "Title:");
+					status_pady += TTF12_HEIGHT;
+					ttfPrintTextFormatted(ttf12, status_padx + 8, status_pady, "%s", line.c_str());
+
+					line = g_SteamWorkshop->m_myWorkshopItemToModify.m_rgchDescription;
+					if ( line.size() > filenameMaxLength )
+					{
+						line = line.substr(0, filenameMaxLength - 2);
+						line.append("..");
+					}
+					status_pady += TTF12_HEIGHT;
+					ttfPrintTextFormattedColor(ttf12, status_padx + 8, status_pady, uint32ColorBaronyBlue(*mainsurface), "Description:");
+					status_pady += TTF12_HEIGHT;
+					ttfPrintTextFormatted(ttf12, status_padx + 8, status_pady, "%s", line.c_str());
+
+					status_pady += 2 * TTF12_HEIGHT;
+					// set some workshop item tags
+					ttfPrintText(ttf12, status_padx, status_pady, "Modify workshop tags");
+					int tag_padx = status_padx;
+					int tag_pady = status_pady + TTF12_HEIGHT;
+					int tag_padx1 = tag_padx + 20 * TTF12_WIDTH;
+					gamemodsDrawWorkshopItemTagToggle("dungeons", tag_padx, tag_pady);
+					gamemodsDrawWorkshopItemTagToggle("textures", tag_padx1, tag_pady);
+					tag_pady += TTF12_HEIGHT + 4;
+					gamemodsDrawWorkshopItemTagToggle("models", tag_padx, tag_pady);
+					gamemodsDrawWorkshopItemTagToggle("gameplay", tag_padx1, tag_pady);
+					tag_pady += TTF12_HEIGHT + 4;
+					gamemodsDrawWorkshopItemTagToggle("audio", tag_padx, tag_pady);
+					gamemodsDrawWorkshopItemTagToggle("translations", tag_padx1, tag_pady);
+					tag_pady += TTF12_HEIGHT + 4;
+					gamemodsDrawWorkshopItemTagToggle("misc", tag_padx, tag_pady);
+
+					status_pady += 6 * TTF12_HEIGHT;
+					if ( directoryFilesListToUpload.empty() )
+					{
+						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "Only Workshop tags will be updated.");
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorOrange(*mainsurface), "Workshop file contents will be updated.");
+					}
+				}
+				status_pady += 5 * TTF12_HEIGHT;
 				if ( gamemods_uploadStatus >= 5 )
 				{
 					Uint64 bytesProc;
@@ -4527,30 +4600,32 @@ void handleMainMenu(bool mode)
 							if ( button->action == &buttonGamemodsPrepareWorkshopItemUpload
 								|| button->action == &buttonGamemodsStartUploadItem
 								|| button->action == &buttonGamemodsSetWorkshopItemFields
-								|| button->action == &buttonGamemodsSelectDirectoryForUpload )
+								|| button->action == &buttonGamemodsSelectDirectoryForUpload
+								|| button->action == &buttonGamemodsModifyExistingWorkshopItemFields
+								|| button->action == &buttonGamemodsCancelModifyFileContents )
 							{
 								button->visible = false;
 							}
 						}
 						if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == k_EResultOK )
 						{
-							if ( gamemods_uploadSuccessTicks == 0 )
+							if ( g_SteamWorkshop->uploadSuccessTicks == 0 )
 							{
-								gamemods_uploadSuccessTicks = ticks;
+								g_SteamWorkshop->uploadSuccessTicks = ticks;
 							}
 							else
 							{
-								if ( ticks - gamemods_uploadSuccessTicks > TICKS_PER_SECOND * 5 )
+								if ( ticks - g_SteamWorkshop->uploadSuccessTicks > TICKS_PER_SECOND * 5 )
 								{
 									//cleanup the interface.
 									buttonCloseSubwindow(NULL);
 									list_FreeAll(&button_l);
 									deleteallbuttons = true;
-									gamemodsWindowInit();
+									gamemodsSubscribedItemsInit();
 								}
 							}
 							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady, uint32ColorGreen(*mainsurface), "successfully uploaded!");
-							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorGreen(*mainsurface), "reloading window in %d...!", 5 - ((ticks - gamemods_uploadSuccessTicks) / TICKS_PER_SECOND));
+							ttfPrintTextFormattedColor(ttf12, status_padx, status_pady + TTF12_HEIGHT, uint32ColorGreen(*mainsurface), "reloading window in %d...!", 5 - ((ticks - g_SteamWorkshop->uploadSuccessTicks) / TICKS_PER_SECOND));
 						}
 						else
 						{
@@ -4566,118 +4641,349 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		if ( gamemods_window == 3 )
+		if ( gamemods_window == 3 || gamemods_window == 4 )
 		{
-			numFileEntries = 10;
+			numFileEntries = 8;
 			filenameMaxLength = 48;
 			filename_padx = subx1 + 16;
 			filename_pady = suby1 + 32;
-			filename_padx2 = subx2 - 16;
+			filename_padx2 = subx2 - 16 - 40;
 			filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+			int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
+
 
 			if ( gamemods_subscribedItemsStatus == 0 )
 			{
 				if ( g_SteamWorkshop->SteamUGCQueryCompleted.m_eResult == k_EResultOK )
 				{
 					gamemods_subscribedItemsStatus = 1;
-					g_SteamWorkshop->ReadSubscribedItems();
 				}
 			}
 			else
 			{
-				filename_pady += 3 * TTF12_HEIGHT;
-				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved subscribed items!");
+				filename_pady += 1 * TTF12_HEIGHT;
+
+
 				filename_pady += 2 * TTF12_HEIGHT;
-				for ( int i = 0; i < g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned; ++i )
+				if ( gamemods_window == 3 )
+				{
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved subscribed items!");
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved my workshop items!");
+				}
+
+				std::string modInfoStr = "current loaded mods (hover for info): ";
+				SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
+				bool drawModLoadOrder = false;
+				int drawExtendedInformationForMod = -1; // value of 0 or greater will draw.
+				int maxDescriptionLines = 10;
+
+				tooltip.x = omousex - 256;
+				tooltip.y = omousey + 16;
+				tooltip.w = 32 + TTF12_WIDTH * 64;
+				tooltip.h = (gamemods_mountedFilepaths.size() + 1) * TTF12_HEIGHT + 8;
+
+				if ( gamemods_mountedFilepaths.size() > 0 && gamemods_window == 3 )
+				{
+					ttfPrintTextFormatted(ttf12, filename_padx2 - modInfoStr.length() * TTF12_WIDTH - 16, filename_pady, "%s %2d", modInfoStr.c_str(), gamemods_mountedFilepaths.size());
+					if ( mouseInBounds(filename_padx2 - modInfoStr.length() * TTF12_WIDTH - 16, filename_padx2, filename_pady, filename_pady + TTF12_HEIGHT) )
+					{
+						drawModLoadOrder = true;
+					}
+					else
+					{
+						drawModLoadOrder = false;
+					}
+				}
+
+				filename_pady += 2 * TTF12_HEIGHT;
+
+				// do slider
+				SDL_Rect slider;
+				slider.x = filename_padx2 + 8;
+				slider.y = filename_pady - 8;
+				slider.h = suby2 - (filename_pady + 20);
+				slider.w = 32;
+
+				int numSubscribedItemsReturned = g_SteamWorkshop->SteamUGCQueryCompleted.m_unNumResultsReturned;
+				int entriesToScroll = std::max(static_cast<int>((numSubscribedItemsReturned / numFileEntries) - 1), 0);
+				entriesToScroll = entriesToScroll * numFileEntries + (numSubscribedItemsReturned % numFileEntries);
+
+				// handle slider movement.
+				if ( numSubscribedItemsReturned > numFileEntries )
+				{
+					drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+					if ( mouseInBounds(filename_padx, slider.x + slider.w,
+						slider.y, slider.y + slider.h) )
+					{
+						if ( mousestatus[SDL_BUTTON_WHEELUP] )
+						{
+							gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
+							mousestatus[SDL_BUTTON_WHEELUP] = 0;
+						}
+						if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+						{
+							gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
+							mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+						}
+					}
+				
+					if ( keystatus[SDL_SCANCODE_UP] )
+					{
+						gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
+						keystatus[SDL_SCANCODE_UP] = 0;
+					}
+					if ( keystatus[SDL_SCANCODE_DOWN] )
+					{
+						gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
+						keystatus[SDL_SCANCODE_DOWN] = 0;
+					}
+					slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
+					slider.y += slider.h * gamemods_window_scroll;
+					if ( gamemods_window_scroll == entriesToScroll ) // reached end.
+					{
+						slider.y += (suby2 - 28) - (slider.y + slider.h); // bottom of slider is (suby2 - 28), so move the y level to imitate hitting the bottom in case of rounding error.
+					}
+					drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h); // draw shortened list relative slider.
+				}
+
+				// draw last message results
+				if ( ticks - g_SteamWorkshop->LastActionResult.creationTick < TICKS_PER_SECOND * 5 )
+				{
+					ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - TTF12_HEIGHT - 4, uint32ColorOrange(*mainsurface), "%s returned status %d", 
+						g_SteamWorkshop->LastActionResult.actionMsg, static_cast<int>(g_SteamWorkshop->LastActionResult.lastResult));
+				}
+
+				// draw the content
+				for ( int i = gamemods_window_scroll; i < numSubscribedItemsReturned && i < numFileEntries + gamemods_window_scroll; ++i )
 				{
 					filename_padx = subx1 + 16;
 					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[i];
 					char fullpath[MAX_PATH];
 					if ( itemDetails.m_eResult == k_EResultOK )
 					{
-						drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + 2 * TTF12_HEIGHT + 8);
+						drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+						SDL_Rect highlightEntry;
+						highlightEntry.x = filename_padx;
+						highlightEntry.y = filename_pady - 8;
+						highlightEntry.w = filename_padx2 - filename_padx;
+						highlightEntry.h = filename_rowHeight + 8;
+						drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+
+						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, MAX_PATH, NULL);
+						bool pathIsMounted = gamemodsIsPathInMountedFiles(fullpath);
+
+						if ( pathIsMounted && gamemods_window == 3 )
+						{
+							SDL_Rect pos;
+							pos.x = filename_padx + 2;
+							pos.y = filename_pady - 6;
+							pos.w = filename_padx2 - filename_padx - 4;
+							pos.h = filename_rowHeight + 4;
+							drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
+						}
+
 						std::string line = itemDetails.m_rgchTitle;
 						if ( line.length() >= filenameMaxLength )
 						{
 							line = line.substr(0, 46);
 							line.append("..");
 						}
-						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady, "Title: %s", line.c_str());
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "Title: %s", line.c_str());
 						line = itemDetails.m_rgchDescription;
 						if ( line.length() >= filenameMaxLength )
 						{
 							line = line.substr(0, 46);
 							line.append("..");
 						}
-						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + TTF12_HEIGHT, "Desc: %s", line.c_str());
-						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, MAX_PATH, NULL);
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + TTF12_HEIGHT, "Desc: %s", line.c_str());
+
+						// if hovering over title or description, provide more info...
+						if ( mouseInBounds(filename_padx + 8, filename_padx + 8 + 52 * TTF12_WIDTH, filename_pady + TTF12_HEIGHT, filename_pady + 2 * TTF12_HEIGHT) )
+						{
+							line = itemDetails.m_rgchDescription;
+							tooltip.h = (6 + std::min(static_cast<int>((line.size() / 64)), maxDescriptionLines)) * TTF12_HEIGHT + 8;
+							drawExtendedInformationForMod = i;
+						}
+
 						filename_padx = filename_padx2 - (12 * TTF12_WIDTH + 16) * 2;
 						// download button
-						if ( !itemDownloaded )
+						if ( gamemods_window == 3 )
 						{
-							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), " Download ", 0) )
+							if ( !itemDownloaded )
 							{
-								SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
-							}
-						}
-						filename_padx += (12 * TTF12_WIDTH + 16);
-						// mount button
-						if ( itemDownloaded )
-						{
-							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, " Load Item ", 0) )
-							{
-								if ( PHYSFS_mount(fullpath, NULL, 0) )
+								if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), " Download ", 0) )
 								{
-									printlog("[%s] is in the search path.\n", fullpath);
+									SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
 								}
-								//SteamUGC()->DownloadItem(itemDetails.m_nPublishedFileId, true);
+							}
+							filename_padx += (12 * TTF12_WIDTH + 16);
+							// mount button
+							if ( itemDownloaded && !pathIsMounted )
+							{
+								if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, " Load Item ", 0) )
+								{
+									if ( PHYSFS_mount(fullpath, NULL, 0) )
+									{
+										gamemods_mountedFilepaths.push_back(std::make_pair<std::string, std::string>(fullpath, itemDetails.m_rgchTitle));
+										//printlog("[%s] is in the search path.\n", fullpath);
+									}
+								}
+							}
+							filename_padx -= (12 * TTF12_WIDTH + 16);
+						}
+						if ( gamemods_window == 4 )
+						{
+							filename_padx += (12 * TTF12_WIDTH + 16);
+							// edit content button
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady + filename_rowHeight / 4, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), "  Update  ", 0) )
+							{
+								buttonGamemodsOpenModifyExistingWindow(nullptr);
+								gamemods_window = 5;
+								gamemods_uploadStatus = 1;
+								g_SteamWorkshop->m_myWorkshopItemToModify = itemDetails;
+
+								// grab the current item tags and store them for modification.
+								std::string workshopItemTagString = g_SteamWorkshop->m_myWorkshopItemToModify.m_rgchTags;
+								std::size_t found = workshopItemTagString.find(",");
+								g_SteamWorkshop->workshopItemTags.clear();
+								while ( found != std::string::npos )
+								{
+									std::string line = workshopItemTagString.substr(0, found);
+									workshopItemTagString = workshopItemTagString.substr(found + 1); // skip the "," character.
+									g_SteamWorkshop->workshopItemTags.push_back(line); // store the comma separated value.
+									found = workshopItemTagString.find(",");
+								}
+								// add the final string.
+								g_SteamWorkshop->workshopItemTags.push_back(workshopItemTagString); 
 							}
 						}
-						filename_padx -= (12 * TTF12_WIDTH + 16);
-						filename_pady += TTF12_HEIGHT + 4;
-						// unsubscribe button
-						if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorRed(*mainsurface), "Unsubscribe", 0) )
+						filename_pady += filename_rowHeight / 2;
+						if ( gamemods_window == 3 )
 						{
-							SteamUGC()->UnsubscribeItem(itemDetails.m_nPublishedFileId); //todo callback
-						}
-						filename_padx += (12 * TTF12_WIDTH + 16);
-						// unmount button
-						if ( itemDownloaded )
-						{
-							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, "Unload Item", 0) )
+							// unsubscribe button
+							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorRed(*mainsurface), "Unsubscribe", 0) )
 							{
-								if ( PHYSFS_unmount(fullpath) )
+								g_SteamWorkshop->UnsubscribeItemFileID(itemDetails.m_nPublishedFileId);
+								gamemods_window_scroll = 0;
+							}
+							filename_padx += (12 * TTF12_WIDTH + 16);
+							// unmount button
+							if ( itemDownloaded && pathIsMounted )
+							{
+								if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, "Unload Item", 0) )
 								{
-									printlog("[%s] is removed from the search path.\n", fullpath);
+									if ( PHYSFS_unmount(fullpath) )
+									{
+										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
+										{
+											printlog("[%s] is removed from the search path.\n", fullpath);
+										}
+									}
 								}
 							}
 						}
 					}
-					filename_pady += 2 * TTF12_HEIGHT + 16;
+					filename_pady += filename_rowHeight;
 				}
-				/*if ( gamemods_subscribedItemsStatus == k_EResultOK )
+
+				// draw the tooltip we initialised earlier.
+				if ( drawModLoadOrder )
 				{
-					ttfPrintTextFormatted(ttf12, filename_padx, filename_pady - TTF12_HEIGHT, "file preview in folder:");
-					drawWindow(filename_padx, filename_pady - 2,
-						filename_padx2, filename_pady2);
-					int lineNumber = 0;
-					std::string line;
-					for ( std::list<std::string>::const_iterator it = directoryFilesListToUpload.begin(); it != directoryFilesListToUpload.end() && lineNumber < 20; ++it )
+					drawTooltip(&tooltip);
+					int numLoadedModLine = 1;
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface), 
+						"Current load list: (first is highest priority)");
+					for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
 					{
-						line = *it;
-						if ( line.size() >= filenameMaxLength )
+						std::pair<std::string, std::string> line = *it;
+						modInfoStr = line.second;
+						if ( modInfoStr.length() > 64 )
 						{
-							line = line.substr(0, filenameMaxLength - 3);
-							line.append("..");
+							modInfoStr = modInfoStr.substr(0, 64 - 2).append("..");
 						}
-						else
-						{
-							line = line.substr(0, filenameMaxLength);
-						}
-						ttfPrintTextFormatted(ttf12, filename_padx, filename_pady + lineNumber * TTF12_HEIGHT, "%s", line.c_str());
-						++lineNumber;
+						ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr);
+						++numLoadedModLine;
 					}
-				}*/
+				}
+				else if ( drawExtendedInformationForMod >= 0 )
+				{
+					int tooltip_pady = 8;
+					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[drawExtendedInformationForMod];
+					drawTooltip(&tooltip);
+					// draw the information.
+					std::string line = itemDetails.m_rgchTitle;
+					if ( line.length() >= 64 )
+					{
+						line = line.substr(0, 62);
+						line.append("..");
+					}
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "%s", line.c_str());
+					tooltip_pady += 2 * TTF12_HEIGHT;
+
+					line = itemDetails.m_rgchDescription;
+					std::string subString;
+					while ( line.size() >= 62 && maxDescriptionLines > 0 )
+					{
+						subString = line.substr(0, 62);
+						line = line.substr(62);
+						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
+						tooltip_pady += TTF12_HEIGHT;
+						--maxDescriptionLines;
+					}
+					subString = line.substr(0, 62);
+					ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
+					tooltip_pady += TTF12_HEIGHT;
+
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "tags:");
+					tooltip_pady += TTF12_HEIGHT;
+					line = itemDetails.m_rgchTags;
+
+					maxDescriptionLines = 3;
+					int tooltip_padx = 0;
+					if ( !line.empty() )
+					{
+						subString = line;
+						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "%s", subString.c_str());
+					}
+				}
+			}
+		}
+		if ( gamemods_window == 6 )
+		{
+			// create blank file structure for a mod.
+			filename_padx = subx1 + 16;
+			filename_pady = suby1 + 32;
+			ttfPrintTextFormatted(ttf12, filename_padx, filename_pady, "Enter base folder name for template directory");
+			filename_pady += TTF12_HEIGHT + 8;
+			drawDepressed(filename_padx - 4, filename_pady - 4, filename_padx + 32 * TTF12_WIDTH + 8, filename_pady + TTF12_HEIGHT);
+			ttfPrintTextFormatted(ttf12, filename_padx, filename_pady, "%s", gamemods_newBlankDirectory);
+			if ( !SDL_IsTextInputActive() )
+			{
+				inputstr = gamemods_newBlankDirectory;
+				SDL_StartTextInput();
+			}
+			inputlen = 30;
+			if ( SDL_IsTextInputActive()
+				&& (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+			{
+				int x;
+				TTF_SizeUTF8(ttf12, inputstr, &x, NULL);
+				ttfPrintText(ttf12, filename_padx + x, filename_pady, "_");
+			}
+			filename_pady += TTF12_HEIGHT + 8;
+			if ( strcmp(gamemods_newBlankDirectoryOldName, gamemods_newBlankDirectory) == 0 )
+			{
+				if ( gamemods_newBlankDirectoryStatus == -1 )
+				{
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorRed(*mainsurface), "Error: could not create directory %s/, already exists in mods/ folder", gamemods_newBlankDirectory);
+				}
+				else if ( gamemods_newBlankDirectoryStatus == 1 )
+				{
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "Successfully created directory %s/ in mods/ folder", gamemods_newBlankDirectory);
+				}
 			}
 		}
 	}
@@ -8683,7 +8989,7 @@ void buttonGamemodsOpenDirectory(button_t* my)
 		}
 		gamemods_window_fileSelect = 0;
 		gamemods_window_scroll = 0;
-		currentDirectoryFiles = directoryContents(directoryPath.c_str(), true);
+		currentDirectoryFiles = directoryContents(directoryPath.c_str(), true, false);
 	}
 }
 
@@ -8693,8 +8999,112 @@ void buttonGamemodsPrevDirectory(button_t* my)
 	gamemods_window_scroll = 0;
 	directoryPath.append("..");
 	directoryPath.append(PHYSFS_getDirSeparator());
-	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true);
+	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true, false);
 }
+
+void buttonGamemodsCreateModDirectory(button_t* my)
+{
+	std::string baseDir = PHYSFS_getBaseDir();
+	baseDir.append("mods").append(PHYSFS_getDirSeparator()).append(gamemods_newBlankDirectory);
+
+	if ( access(baseDir.c_str(), F_OK) == 0 )
+	{
+		// folder already exists!
+		gamemods_newBlankDirectoryStatus = -1;
+	}
+	else
+	{
+		if ( PHYSFS_mkdir(gamemods_newBlankDirectory) )
+		{
+			gamemods_newBlankDirectoryStatus = 1;
+			std::string dir = gamemods_newBlankDirectory;
+			std::string folder = "/books";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/editor";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/images";
+			PHYSFS_mkdir((dir + folder).c_str());
+			std::string subfolder = "/sprites";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/system";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/tiles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/items";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/images";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/lang";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/maps";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/models";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/creatures";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/decorations";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/doors";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/items";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/particles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/music";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/sound";
+			PHYSFS_mkdir((dir + folder).c_str());
+		}
+	}
+	strcpy(gamemods_newBlankDirectoryOldName, gamemods_newBlankDirectory);
+}
+
+void buttonGamemodsCreateNewModTemplate(button_t* my)
+{
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	gamemods_window = 6;
+
+	// create window
+	subwindow = 1;
+	subx1 = xres / 2 - 400;
+	subx2 = xres / 2 + 400;
+	suby1 = yres / 2 - 70;
+	suby2 = yres / 2 + 70;
+	strcpy(subtext, "Create new blank mod template");
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// create button
+	button = newButton();
+	strcpy(button->label, "create");
+	button->x = subx2 - (strlen(button->label) * TTF12_WIDTH + 8);
+	button->y = suby2 - TTF12_HEIGHT - 8;
+	button->sizex = strlen(button->label) * TTF12_WIDTH + 8;
+	button->sizey = 20;
+	button->action = &buttonGamemodsCreateModDirectory;
+	button->visible = 1;
+	button->focused = 1;
+}
+
 
 void buttonGamemodsBaseDirectory(button_t* my)
 {
@@ -8702,16 +9112,11 @@ void buttonGamemodsBaseDirectory(button_t* my)
 	gamemods_window_scroll = 0;
 	directoryPath = datadir;
 	directoryToUpload = directoryPath;
-	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true);
+	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true, false);
 }
 
 void buttonGamemodsSelectDirectoryForUpload(button_t* my)
 {
-	if ( g_SteamWorkshop )
-	{
-		g_SteamWorkshop->createItemResult = {};
-	}
-	gamemods_uploadStatus = 0;
 	if ( !currentDirectoryFiles.empty() )
 	{
 		std::list<std::string>::const_iterator it = currentDirectoryFiles.begin();
@@ -8730,12 +9135,33 @@ void buttonGamemodsSelectDirectoryForUpload(button_t* my)
 			directoryToUpload.append(PHYSFS_getDirSeparator());
 		}
 	}
-
-	gamemods_window = 2;
-	directoryFilesListToUpload = directoryContents(directoryToUpload.c_str(), false);
+	if ( gamemods_window != 5 )
+	{
+		if ( g_SteamWorkshop )
+		{
+			g_SteamWorkshop->createItemResult = {};
+		}
+		gamemods_uploadStatus = 0;
+		gamemods_window = 2;
+	}
+	directoryFilesListToUpload = directoryContents(directoryToUpload.c_str(), true, true);
 }
 
 void buttonGamemodsPrepareWorkshopItemUpload(button_t* my)
+{
+	if ( SteamUser()->BLoggedOn() && g_SteamWorkshop )
+	{
+		g_SteamWorkshop->CreateItem();
+		gamemods_uploadStatus = 1;
+	}
+}
+
+void buttonGamemodsCancelModifyFileContents(button_t* my)
+{
+	directoryFilesListToUpload.clear();
+}
+
+void buttonGamemodsPrepareWorkshopItemUpdate(button_t* my)
 {
 	if ( SteamUser()->BLoggedOn() && g_SteamWorkshop )
 	{
@@ -8748,6 +9174,7 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 {
 	if ( SteamUser()->BLoggedOn() && g_SteamWorkshop )
 	{
+		bool itemTagSetSuccess = false;
 		if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
 		{
 			if ( !strcmp(gamemods_uploadTitle, "") )
@@ -8772,17 +9199,68 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 			if ( access(fullpath.c_str(), F_OK) == 0 )
 			{
 				gamemods_workshopSetPropertyReturn[2] = SteamUGC()->SetItemContent(g_SteamWorkshop->UGCUpdateHandle, fullpath.c_str());
+				// set preview image.
+				bool imagePreviewFound = false;
+				std::string imgPath = fullpath.append("preview.jpg");
+				if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+				{
+					imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+				}
+				imgPath = fullpath.append("preview.png");
+				if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+				{
+					imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+				}
+				imgPath = fullpath.append("preview.gif");
+				if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+				{
+					imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+				}
 			}
+
+			// some mumbo jumbo to work with the steam API needing const char[][]
+			SteamParamStringArray_t SteamParamStringArray;
+			SteamParamStringArray.m_nNumStrings = g_SteamWorkshop->workshopItemTags.size();
+
+			// construct new char[][]
+			char **tagArray = new char*[gamemods_maxTags];
+			int i = 0;
+			for ( i = 0; i < gamemods_maxTags; ++i )
+			{
+				tagArray[i] = new char[32];
+			}
+
+			// copy all the items into this new char[][].
+			std::string line;
+			i = 0;
+			for ( std::list<std::string>::iterator it = g_SteamWorkshop->workshopItemTags.begin(); it != g_SteamWorkshop->workshopItemTags.end(); ++it )
+			{
+				line = *it;
+				strcpy(tagArray[i], line.c_str());
+				++i;
+			}
+			strcpy(tagArray[i], VERSION); // copy the version number as a tag.
+
+			// set the tags in the API call.
+			SteamParamStringArray.m_ppStrings = const_cast<const char**>(tagArray);
+			itemTagSetSuccess = SteamUGC()->SetItemTags(g_SteamWorkshop->UGCUpdateHandle, &SteamParamStringArray);
+
+			// delete the allocated char[][]
+			for ( i = 0; i < gamemods_maxTags; ++i )
+			{
+				delete[] tagArray[i];
+			}
+			delete[] tagArray;
 		}
 		gamemods_uploadStatus = 4;
-		if ( gamemods_workshopSetPropertyReturn[0] && gamemods_workshopSetPropertyReturn[1] && gamemods_workshopSetPropertyReturn[2] )
+		if ( itemTagSetSuccess && gamemods_workshopSetPropertyReturn[0] && gamemods_workshopSetPropertyReturn[1] && gamemods_workshopSetPropertyReturn[2] )
 		{
 			my->visible = false;
 			// set item fields button
 			button_t* button = newButton();
 			strcpy(button->label, "upload!");
 			button->x = subx1 + 16;
-			button->y = suby1 + TTF12_HEIGHT * 27;
+			button->y = suby1 + TTF12_HEIGHT * 34;
 			button->sizex = 16 * TTF12_WIDTH + 8;
 			button->sizey = 32;
 			button->action = &buttonGamemodsStartUploadItem;
@@ -8793,11 +9271,114 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 	}
 }
 
+void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
+{
+	if ( SteamUser()->BLoggedOn() && g_SteamWorkshop && g_SteamWorkshop->m_myWorkshopItemToModify.m_nPublishedFileId != 0 )
+	{
+		g_SteamWorkshop->StartItemExistingUpdate(g_SteamWorkshop->m_myWorkshopItemToModify.m_nPublishedFileId);
+		if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
+		{
+			bool itemTagSetSuccess = false;
+			bool itemContentSetSuccess = false;
+			if ( !directoryFilesListToUpload.empty() )
+			{
+#ifdef WINDOWS
+				char pathbuffer[MAX_PATH];
+				GetFullPathName(directoryToUpload.c_str(), MAX_PATH, pathbuffer, NULL);
+				std::string fullpath = pathbuffer;
+#else
+				char pathbuffer[MAX_PATH];
+				char path = realpath(directoryToUpload, pathbuffer);
+				std::string fullpath = path;
+#endif
+				if ( access(fullpath.c_str(), F_OK) == 0 )
+				{
+					itemContentSetSuccess = SteamUGC()->SetItemContent(g_SteamWorkshop->UGCUpdateHandle, fullpath.c_str());
+					// set preview image.
+					bool imagePreviewFound = false;
+					std::string imgPath = fullpath.append("preview.jpg");
+					if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+					{
+						imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+					}
+					imgPath = fullpath.append("preview.png");
+					if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+					{
+						imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+					}
+					imgPath = fullpath.append("preview.gif");
+					if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
+					{
+						imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+					}
+				}
+			}
+
+			// some mumbo jumbo to work with the steam API needing const char[][]
+			SteamParamStringArray_t SteamParamStringArray;
+			SteamParamStringArray.m_nNumStrings = g_SteamWorkshop->workshopItemTags.size();
+
+			// construct new char[][]
+			char **tagArray = new char*[gamemods_maxTags];
+			int i = 0;
+			for ( i = 0; i < gamemods_maxTags; ++i )
+			{
+				tagArray[i] = new char[32];
+			}
+
+			// copy all the items into this new char[][].
+			std::string line;
+			i = 0;
+			for ( std::list<std::string>::iterator it = g_SteamWorkshop->workshopItemTags.begin(); it != g_SteamWorkshop->workshopItemTags.end(); ++it )
+			{
+				line = *it;
+				strcpy(tagArray[i], line.c_str());
+				++i;
+			}
+			strcpy(tagArray[i], VERSION); // copy the version number as a tag.
+
+			// set the tags in the API call.
+			SteamParamStringArray.m_ppStrings = const_cast<const char**>(tagArray);
+			itemTagSetSuccess = SteamUGC()->SetItemTags(g_SteamWorkshop->UGCUpdateHandle, &SteamParamStringArray);
+
+			// delete the allocated char[][]
+			for ( i = 0; i < gamemods_maxTags; ++i )
+			{
+				delete[] tagArray[i];
+			}
+			delete[] tagArray;
+
+			if ( itemTagSetSuccess && (directoryFilesListToUpload.empty() || (!directoryFilesListToUpload.empty() && itemContentSetSuccess)) )
+			{
+				my->visible = false;
+				// set item fields button
+				button_t* button = newButton();
+				strcpy(button->label, "upload!");
+				button->x = subx1 + 16;
+				button->y = suby1 + TTF12_HEIGHT * 34;
+				button->sizex = 16 * TTF12_WIDTH + 8;
+				button->sizey = 32;
+				button->action = &buttonGamemodsStartUploadItem;
+				button->visible = 1;
+				button->focused = 1;
+				gamemods_currentEditField = 0;
+			}
+		}
+	}
+}
+
 void buttonGamemodsStartUploadItem(button_t* my)
 {
 	if ( SteamUser()->BLoggedOn() && g_SteamWorkshop && g_SteamWorkshop->UGCUpdateHandle != 0 )
 	{
-		g_SteamWorkshop->SubmitItemUpdate("First upload.");
+		if ( gamemods_window == 5 )
+		{
+			g_SteamWorkshop->SubmitItemUpdate("Item updated.");
+		}
+		else
+		{
+			g_SteamWorkshop->SubmitItemUpdate("First upload.");
+		}
 		gamemods_uploadStatus = 5;
 		my->visible = false;
 	}
@@ -8810,30 +9391,48 @@ void gamemodsWindowClearVariables()
 		g_SteamWorkshop->createItemResult = {};
 		g_SteamWorkshop->UGCUpdateHandle = {};
 		g_SteamWorkshop->SubmitItemUpdateResult = {};
+		SteamUGC()->ReleaseQueryUGCRequest(g_SteamWorkshop->UGCQueryHandle);
+		g_SteamWorkshop->UGCQueryHandle = {};
+		g_SteamWorkshop->SteamUGCQueryCompleted = {};
+		g_SteamWorkshop->UnsubscribePublishedFileResult = {};
+		g_SteamWorkshop->LastActionResult.creationTick = 0;
+		g_SteamWorkshop->LastActionResult.actionMsg = "";
+		g_SteamWorkshop->LastActionResult.lastResult = static_cast<EResult>(0);
+		g_SteamWorkshop->workshopItemTags.clear();
+		for ( int i = 0; i < 50; ++i )
+		{
+			g_SteamWorkshop->m_subscribedItemListDetails[i] = {};
+		}
+		g_SteamWorkshop->uploadSuccessTicks = 0;
+		g_SteamWorkshop->m_myWorkshopItemToModify = {};
 	}
-	directoryToUpload = "";
-	directoryPath = "";
+	directoryToUpload.clear();
+	directoryPath.clear();
+	directoryFilesListToUpload.clear();
 	gamemods_window_scroll = 0;
 	gamemods_uploadStatus = 0;
-	strcpy(gamemods_uploadTitle, "");
-	strcpy(gamemods_uploadDescription, "");
+	strcpy(gamemods_uploadTitle, "Title");
+	strcpy(gamemods_uploadDescription, "Description");
+	strcpy(gamemods_newBlankDirectory, "");
+	strcpy(gamemods_newBlankDirectoryOldName, "");
+	gamemods_newBlankDirectoryStatus = 0;
 	gamemods_currentEditField = 0;
-	gamemods_uploadSuccessTicks = 0;
 	gamemods_workshopSetPropertyReturn[0] = false;
 	gamemods_workshopSetPropertyReturn[1] = false;
 	gamemods_workshopSetPropertyReturn[2] = false;
+	gamemods_subscribedItemsStatus = 0;
 }
 
-void gamemodsWindowInit()
+void gamemodsWindowUploadInit(bool creatingNewItem)
 {
 	gamemods_window = 1;
-	currentDirectoryFiles = directoryContents(datadir, true);
+	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
 
-	// create confirmation window
+	// create window
 	subwindow = 1;
-	subx1 = xres / 2 - 300;
-	subx2 = xres / 2 + 300;
+	subx1 = xres / 2 - 320;
+	subx2 = xres / 2 + 320;
 	suby1 = yres / 2 - 300;
 	suby2 = yres / 2 + 300;
 	strcpy(subtext, "Upload to workshop");
@@ -8851,6 +9450,17 @@ void gamemodsWindowInit()
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
+	// subscribed items window button
+	button = newButton();
+	strcpy(button->label, "view workshop items");
+	button->x = subx2 - 40 - strlen(button->label) * TTF12_WIDTH;
+	button->y = suby1;
+	button->sizex = strlen(button->label) * TTF12_WIDTH + 16;
+	button->sizey = 20;
+	button->action = &buttonGamemodsOpenSubscribedWindow;
+	button->visible = 1;
+	button->focused = 1;
+
 	// previous directory button
 	button = newButton();
 	strcpy(button->label, "home directory");
@@ -8861,6 +9471,7 @@ void gamemodsWindowInit()
 	button->action = &buttonGamemodsBaseDirectory;
 	button->visible = 1;
 	button->focused = 1;
+
 
 	// open directory button
 	button = newButton();
@@ -8884,6 +9495,17 @@ void gamemodsWindowInit()
 	button->visible = 1;
 	button->focused = 1;
 
+	// previous directory button
+	button = newButton();
+	strcpy(button->label, "new mod folder");
+	button->x = subx1 + 250;
+	button->y = suby1 + 128;
+	button->sizex = strlen("new mod folder") * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonGamemodsCreateNewModTemplate;
+	button->visible = 1;
+	button->focused = 1;
+
 	// select directory button
 	button = newButton();
 	strcpy(button->label, "select folder to upload");
@@ -8897,29 +9519,51 @@ void gamemodsWindowInit()
 
 	// prepare directory button
 	button_t* button2 = newButton();
-	strcpy(button2->label, "prepare");
+	if ( creatingNewItem )
+	{
+		strcpy(button2->label, "prepare");
+		button2->action = &buttonGamemodsPrepareWorkshopItemUpload;
+	}
+	else
+	{
+		strcpy(button2->label, "deselect folder");
+		button2->action = &buttonGamemodsCancelModifyFileContents;
+	}
 	button2->x = button->x + button->sizex + 4;
 	button2->y = button->y;
-	button2->sizex = 8 * TTF12_WIDTH + 8;
+	button2->sizex = 16 * TTF12_WIDTH + 8;
 	button2->sizey = 32;
-	button2->action = &buttonGamemodsPrepareWorkshopItemUpload;
 	button2->visible = 1;
 	button2->focused = 1;
+
+	if ( !creatingNewItem )
+	{
+		// modify item fields button
+		button = newButton();
+		strcpy(button->label, "modify tags/content");
+		button->x = subx1 + 16;
+		button->y = suby1 + TTF12_HEIGHT * 34;
+		button->sizex = 22 * TTF12_WIDTH + 8;
+		button->sizey = 32;
+		button->action = &buttonGamemodsModifyExistingWorkshopItemFields;
+		button->visible = 1;
+		button->focused = 1;
+	}
 }
 
 void gamemodsSubscribedItemsInit()
 {
 	gamemods_window = 3;
-	currentDirectoryFiles = directoryContents(datadir, true);
+	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
 
 	// create confirmation window
 	subwindow = 1;
-	subx1 = xres / 2 - 400;
-	subx2 = xres / 2 + 400;
+	subx1 = xres / 2 - 420;
+	subx2 = xres / 2 + 420;
 	suby1 = yres / 2 - 300;
 	suby2 = yres / 2 + 300;
-	strcpy(subtext, "Subscribed workshop items");
+	strcpy(subtext, "Workshop items");
 
 	// close button
 	button_t* button = newButton();
@@ -8934,6 +9578,17 @@ void gamemodsSubscribedItemsInit()
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
+	// upload window button
+	button = newButton();
+	strcpy(button->label, "upload workshop content");
+	button->x = subx2 - 40 - strlen(button->label) * TTF12_WIDTH;
+	button->y = suby1;
+	button->sizex = strlen(button->label) * TTF12_WIDTH + 16;
+	button->sizey = 20;
+	button->action = &buttonGamemodsOpenUploadWindow;
+	button->visible = 1;
+	button->focused = 1;
+
 	// fetch subscribed items button
 	button = newButton();
 	strcpy(button->label, "get subscribed item list");
@@ -8944,18 +9599,66 @@ void gamemodsSubscribedItemsInit()
 	button->action = &buttonGamemodsGetSubscribedItems;
 	button->visible = 1;
 	button->focused = 1;
+
+	// fetch my workshop items
+	button_t* button2 = newButton();
+	strcpy(button2->label, "my workshop items");
+	button2->x = button->x + button->sizex + 16;
+	button2->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button2->sizex = 25 * TTF12_WIDTH + 8;
+	button2->sizey = 32;
+	button2->action = &buttonGamemodsGetMyWorkshopItems;
+	button2->visible = 1;
+	button2->focused = 1;
+}
+
+void buttonGamemodsOpenUploadWindow(button_t* my)
+{
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	gamemodsWindowUploadInit(true);
+}
+
+void buttonGamemodsOpenModifyExistingWindow(button_t* my)
+{
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	gamemodsWindowUploadInit(false);
+}
+
+void buttonGamemodsOpenSubscribedWindow(button_t* my)
+{
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+	gamemodsSubscribedItemsInit();
 }
 
 void buttonGamemodsGetSubscribedItems(button_t* my)
 {
 	if ( g_SteamWorkshop )
 	{
-		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Subscribed, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+		gamemods_window_scroll = 0;
+		gamemods_window = 3;
+	}
+}
+
+void buttonGamemodsGetMyWorkshopItems(button_t* my)
+{
+	if ( g_SteamWorkshop )
+	{
+		g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Published, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+		gamemods_window_scroll = 0;
+		gamemods_window = 4;
 	}
 }
 
 bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action)
 {
+	bool clicked = false;
 	if ( mouseInBounds(padx, padx + padw, pady - 4, pady + padh) )
 	{
 		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
@@ -8963,7 +9666,7 @@ bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 		{
 			playSound(139, 64);
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			return true;
+			clicked = true;
 		}
 	}
 	else
@@ -8977,5 +9680,100 @@ bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 	pos.h = padh + 4;
 	drawRect(&pos, btnColor, 64);
 	ttfPrintTextFormatted(ttf12, padx + 8, pady, "%s", btnText.c_str());
+	return clicked;
+}
+
+bool gamemodsRemovePathFromMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry, remove from list.
+			gamemods_mountedFilepaths.erase(it);
+			return true;
+		}
+	}
 	return false;
+}
+
+bool gamemodsIsPathInMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry
+			return true;
+		}
+	}
+	return false;
+}
+
+void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
+{
+	if ( !g_SteamWorkshop )
+	{
+		return;
+	}
+	std::string printText = tagname;
+	std::string line;
+	bool foundTag = false;
+	std::list<std::string>::iterator it;
+	if ( !g_SteamWorkshop->workshopItemTags.empty() )
+	{
+		for ( it = g_SteamWorkshop->workshopItemTags.begin(); it != g_SteamWorkshop->workshopItemTags.end(); ++it )
+		{
+			line = *it;
+			std::size_t found = line.find_first_of(' '); // trim any trailing spaces.
+			if ( found != std::string::npos )
+			{
+				line = line.substr(0, found);
+			}
+			if ( line.compare(tagname) == 0 )
+			{
+				foundTag = true;
+				break;
+			}
+		}
+	}
+	while ( printText.length() < 12 )
+	{
+		printText.append(" ");
+	}
+	if ( foundTag )
+	{
+		printText.append(": [x]");
+	}
+	else
+	{
+		printText.append(": [ ]");
+	}
+	if ( mouseInBounds(x, x + printText.size() * TTF12_WIDTH, y, y + TTF12_HEIGHT) )
+	{
+		ttfPrintTextColor(ttf12, x, y, SDL_MapRGBA(mainsurface->format, 128, 128, 128, 255), true, printText.c_str());
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			playSound(139, 64);
+			if ( foundTag )
+			{
+				g_SteamWorkshop->workshopItemTags.erase(it);
+			}
+			else
+			{
+				g_SteamWorkshop->workshopItemTags.push_back(tagname);
+			}
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
+	}
+	else
+	{
+		ttfPrintText(ttf12, x, y, printText.c_str());
+	}
 }
