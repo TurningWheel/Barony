@@ -4588,8 +4588,8 @@ void handleMainMenu(bool mode)
 				status_pady += 5 * TTF12_HEIGHT;
 				if ( gamemods_uploadStatus >= 5 )
 				{
-					Uint64 bytesProc;
-					Uint64 bytesTotal;
+					uint64 bytesProc;
+					uint64 bytesTotal;
 					int status = SteamUGC()->GetItemUpdateProgress(g_SteamWorkshop->UGCUpdateHandle, &bytesProc, &bytesTotal);
 					if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult != 0 )
 					{
@@ -4761,7 +4761,7 @@ void handleMainMenu(bool mode)
 				{
 					filename_padx = subx1 + 16;
 					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[i];
-					char fullpath[MAX_PATH];
+					char fullpath[PATH_MAX];
 					if ( itemDetails.m_eResult == k_EResultOK )
 					{
 						drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
@@ -4772,7 +4772,7 @@ void handleMainMenu(bool mode)
 						highlightEntry.h = filename_rowHeight + 8;
 						drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
 
-						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, MAX_PATH, NULL);
+						bool itemDownloaded = SteamUGC()->GetItemInstallInfo(itemDetails.m_nPublishedFileId, NULL, fullpath, PATH_MAX, NULL);
 						bool pathIsMounted = gamemodsIsPathInMountedFiles(fullpath);
 
 						if ( pathIsMounted && gamemods_window == 3 )
@@ -9188,13 +9188,13 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 			}
 			gamemods_workshopSetPropertyReturn[1] = SteamUGC()->SetItemDescription(g_SteamWorkshop->UGCUpdateHandle, gamemods_uploadDescription);
 #ifdef WINDOWS
-			char pathbuffer[MAX_PATH];
-			GetFullPathName(directoryToUpload.c_str(), MAX_PATH, pathbuffer, NULL);
+			char pathbuffer[PATH_MAX];
+			GetFullPathName(directoryToUpload.c_str(), PATH_MAX, pathbuffer, NULL);
 			std::string fullpath = pathbuffer;
 #else
-			char pathbuffer[MAX_PATH];
-			char path = realpath(directoryToUpload, pathbuffer);
-			std::string fullpath = path;
+			char pathbuffer[PATH_MAX];
+			realpath(directoryToUpload.c_str(), pathbuffer);
+			std::string fullpath = pathbuffer;
 #endif
 			if ( access(fullpath.c_str(), F_OK) == 0 )
 			{
@@ -9283,13 +9283,13 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 			if ( !directoryFilesListToUpload.empty() )
 			{
 #ifdef WINDOWS
-				char pathbuffer[MAX_PATH];
-				GetFullPathName(directoryToUpload.c_str(), MAX_PATH, pathbuffer, NULL);
+				char pathbuffer[PATH_MAX];
+				GetFullPathName(directoryToUpload.c_str(), PATH_MAX, pathbuffer, NULL);
 				std::string fullpath = pathbuffer;
 #else
-				char pathbuffer[MAX_PATH];
-				char path = realpath(directoryToUpload, pathbuffer);
-				std::string fullpath = path;
+				char pathbuffer[PATH_MAX];
+				realpath(directoryToUpload.c_str(), pathbuffer);
+				std::string fullpath = pathbuffer;
 #endif
 				if ( access(fullpath.c_str(), F_OK) == 0 )
 				{

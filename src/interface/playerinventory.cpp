@@ -855,8 +855,8 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		else
 		{
 			messagePlayer(0, "Error in submit item!");
-			Uint64 bytesProcessed = 0;
-			Uint64 bytesTotal = 0;
+			uint64 bytesProcessed = 0;
+			uint64 bytesTotal = 0;
 			messagePlayer(0, "status: %d, proc: %d, total: %d", SteamUGC()->GetItemUpdateProgress(g_SteamWorkshop->UGCUpdateHandle, &bytesProcessed, &bytesTotal), bytesProcessed, bytesTotal);
 		}
 		keystatus[SDL_SCANCODE_J] = 0;
