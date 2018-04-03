@@ -111,6 +111,7 @@ char gamemods_newBlankDirectoryOldName[32] = "";
 int gamemods_newBlankDirectoryStatus = 0;
 const int gamemods_maxTags = 10;
 std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
+std::list<std::string> gamemods_localModFoldernames;
 
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
@@ -4895,7 +4896,7 @@ void handleMainMenu(bool mode)
 					drawTooltip(&tooltip);
 					int numLoadedModLine = 1;
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface), 
-						"Current load list: (first is highest priority)");
+						"Current load list: (first is lowest priority)");
 					for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
 					{
 						std::pair<std::string, std::string> line = *it;
@@ -4983,6 +4984,183 @@ void handleMainMenu(bool mode)
 				else if ( gamemods_newBlankDirectoryStatus == 1 )
 				{
 					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "Successfully created directory %s/ in mods/ folder", gamemods_newBlankDirectory);
+				}
+			}
+		}
+		if ( gamemods_window == 7 )
+		{
+			numFileEntries = 8;
+			filenameMaxLength = 48;
+			filename_padx = subx1 + 16;
+			filename_pady = suby1 + 32;
+			filename_padx2 = subx2 - 16 - 40;
+			filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+			int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
+			filename_pady += 3 * TTF12_HEIGHT;
+
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved local items!");
+
+			std::string modInfoStr = "current loaded mods (hover for info): ";
+			SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
+			bool drawModLoadOrder = false;
+			int drawExtendedInformationForMod = -1; // value of 0 or greater will draw.
+			int maxDescriptionLines = 10;
+
+			tooltip.x = omousex - 256;
+			tooltip.y = omousey + 16;
+			tooltip.w = 32 + TTF12_WIDTH * 64;
+			tooltip.h = (gamemods_mountedFilepaths.size() + 1) * TTF12_HEIGHT + 8;
+
+			if ( gamemods_mountedFilepaths.size() > 0 )
+			{
+				ttfPrintTextFormatted(ttf12, filename_padx2 - modInfoStr.length() * TTF12_WIDTH - 16, filename_pady, "%s %2d", modInfoStr.c_str(), gamemods_mountedFilepaths.size());
+				if ( mouseInBounds(filename_padx2 - modInfoStr.length() * TTF12_WIDTH - 16, filename_padx2, filename_pady, filename_pady + TTF12_HEIGHT) )
+				{
+					drawModLoadOrder = true;
+				}
+				else
+				{
+					drawModLoadOrder = false;
+				}
+			}
+
+			filename_pady += 2 * TTF12_HEIGHT;
+
+			// do slider
+			SDL_Rect slider;
+			slider.x = filename_padx2 + 8;
+			slider.y = filename_pady - 8;
+			slider.h = suby2 - (filename_pady + 20);
+			slider.w = 32;
+
+			int numLocalFolders = std::max(static_cast<int>(gamemods_localModFoldernames.size() - 2), 0);
+			int entriesToScroll = std::max(static_cast<int>((numLocalFolders / numFileEntries) - 1), 0);
+			entriesToScroll = entriesToScroll * numFileEntries + (numLocalFolders % numFileEntries);
+
+			// handle slider movement.
+			if ( numLocalFolders > numFileEntries )
+			{
+				drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				if ( mouseInBounds(filename_padx, slider.x + slider.w,
+					slider.y, slider.y + slider.h) )
+				{
+					if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					}
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					{
+						gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					}
+				}
+
+				if ( keystatus[SDL_SCANCODE_UP] )
+				{
+					gamemods_window_scroll = std::max(gamemods_window_scroll - 1, 0);
+					keystatus[SDL_SCANCODE_UP] = 0;
+				}
+				if ( keystatus[SDL_SCANCODE_DOWN] )
+				{
+					gamemods_window_scroll = std::min(gamemods_window_scroll + 1, entriesToScroll);
+					keystatus[SDL_SCANCODE_DOWN] = 0;
+				}
+				slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
+				slider.y += slider.h * gamemods_window_scroll;
+				if ( gamemods_window_scroll == entriesToScroll ) // reached end.
+				{
+					slider.y += (suby2 - 28) - (slider.y + slider.h); // bottom of slider is (suby2 - 28), so move the y level to imitate hitting the bottom in case of rounding error.
+				}
+				drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h); // draw shortened list relative slider.
+			}
+
+			// draw the content
+			for ( int i = gamemods_window_scroll; i < numLocalFolders && i < numFileEntries + gamemods_window_scroll; ++i )
+			{
+				filename_padx = subx1 + 16;
+
+				std::list<std::string>::iterator it = gamemods_localModFoldernames.begin();
+				std::advance(it, 2); // skip the "." and ".." directories.
+				std::advance(it, i);
+				std::string folderName = *it;
+
+				drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+				SDL_Rect highlightEntry;
+				highlightEntry.x = filename_padx;
+				highlightEntry.y = filename_pady - 8;
+				highlightEntry.w = filename_padx2 - filename_padx;
+				highlightEntry.h = filename_rowHeight + 8;
+				drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+
+				std::string path = "./mods/" + folderName;
+				bool pathIsMounted = gamemodsIsPathInMountedFiles(path);
+
+				if ( pathIsMounted )
+				{
+					SDL_Rect pos;
+					pos.x = filename_padx + 2;
+					pos.y = filename_pady - 6;
+					pos.w = filename_padx2 - filename_padx - 4;
+					pos.h = filename_rowHeight + 4;
+					drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
+				}
+
+				if ( folderName.length() >= filenameMaxLength )
+				{
+					folderName = folderName.substr(0, 46);
+					folderName.append("..");
+				}
+				ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + TTF12_HEIGHT / 2, "Folder Name: %s", folderName.c_str());
+
+				filename_padx = filename_padx2 - (12 * TTF12_WIDTH + 16);
+				// mount button
+				if ( !pathIsMounted )
+				{
+					if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, " Load Item ", 0) )
+					{
+						if ( PHYSFS_mount(path.c_str(), NULL, 0) )
+						{
+							gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
+							printlog("[%s] is in the search path.\n", path.c_str());
+						}
+					}
+				}
+				filename_pady += filename_rowHeight / 2;
+				// unmount button
+				if ( pathIsMounted )
+				{
+					if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0, "Unload Item", 0) )
+					{
+						if ( PHYSFS_unmount(path.c_str()) )
+						{
+							if ( gamemodsRemovePathFromMountedFiles(path) )
+							{
+								printlog("[%s] is removed from the search path.\n", path.c_str());
+							}
+						}
+					}
+				}
+				filename_pady += filename_rowHeight;
+			}
+
+			// draw the tooltip we initialised earlier.
+			if ( drawModLoadOrder )
+			{
+				drawTooltip(&tooltip);
+				int numLoadedModLine = 1;
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorBaronyBlue(*mainsurface),
+					"Current load list: (first is lowest priority)");
+				for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+				{
+					std::pair<std::string, std::string> line = *it;
+					modInfoStr = line.second;
+					if ( modInfoStr.length() > 64 )
+					{
+						modInfoStr = modInfoStr.substr(0, 64 - 2).append("..");
+					}
+					ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr);
+					++numLoadedModLine;
 				}
 			}
 		}
@@ -9220,7 +9398,7 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 
 			// some mumbo jumbo to work with the steam API needing const char[][]
 			SteamParamStringArray_t SteamParamStringArray;
-			SteamParamStringArray.m_nNumStrings = g_SteamWorkshop->workshopItemTags.size();
+			SteamParamStringArray.m_nNumStrings = g_SteamWorkshop->workshopItemTags.size() + 1;
 
 			// construct new char[][]
 			char **tagArray = new char*[gamemods_maxTags];
@@ -9316,7 +9494,7 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 
 			// some mumbo jumbo to work with the steam API needing const char[][]
 			SteamParamStringArray_t SteamParamStringArray;
-			SteamParamStringArray.m_nNumStrings = g_SteamWorkshop->workshopItemTags.size();
+			SteamParamStringArray.m_nNumStrings = g_SteamWorkshop->workshopItemTags.size() + 1;
 
 			// construct new char[][]
 			char **tagArray = new char*[gamemods_maxTags];
@@ -9551,6 +9729,14 @@ void gamemodsWindowUploadInit(bool creatingNewItem)
 	}
 }
 
+void buttonGamemodsGetLocalMods(button_t* my)
+{
+	gamemods_window_scroll = 0;
+	gamemods_window = 7;
+	gamemods_localModFoldernames.clear();
+	gamemods_localModFoldernames = directoryContents("./mods/", true, false);
+}
+
 void gamemodsSubscribedItemsInit()
 {
 	gamemods_window = 3;
@@ -9610,6 +9796,17 @@ void gamemodsSubscribedItemsInit()
 	button2->action = &buttonGamemodsGetMyWorkshopItems;
 	button2->visible = 1;
 	button2->focused = 1;
+
+	// fetch my workshop items
+	button = newButton();
+	strcpy(button->label, "local mods");
+	button->x = button2->x + button2->sizex + 16;
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->action = &buttonGamemodsGetLocalMods;
+	button->visible = 1;
+	button->focused = 1;
 }
 
 void buttonGamemodsOpenUploadWindow(button_t* my)
@@ -9645,6 +9842,7 @@ void buttonGamemodsGetSubscribedItems(button_t* my)
 		gamemods_window = 3;
 	}
 }
+
 
 void buttonGamemodsGetMyWorkshopItems(button_t* my)
 {
