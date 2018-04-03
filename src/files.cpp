@@ -1020,7 +1020,14 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 	if ( found != std::string::npos )
 	{
 		std::string mapType = line.substr(0, found);
-		std::string mapName = line.substr(found + 1, line.find('\n'));
+		std::string mapName;
+		mapName = line.substr(found + 1, line.find('\n'));
+		std::size_t carriageReturn = mapName.find('\r');
+		if ( carriageReturn != std::string::npos )
+		{
+			mapName.erase(carriageReturn);
+			printlog("%s", mapName.c_str());
+		}
 		if ( mapType.compare("map:") == 0 )
 		{
 			strncpy(tempstr, mapName.c_str(), mapName.length());
@@ -1074,9 +1081,10 @@ std::string physfsFormatMapName(char* levelfilename)
 	std::string mapFileName = "maps/";
 	mapFileName.append(levelfilename);
 	mapFileName.append(".lmp");
-
+	//printlog("format map name: %s", mapFileName.c_str());
 	if ( PHYSFS_getRealDir(mapFileName.c_str()) != NULL )
 	{
+		//printlog("format map name: %s", mapFileName.c_str());
 		fullMapPath = PHYSFS_getRealDir(mapFileName.c_str());
 		fullMapPath.append(PHYSFS_getDirSeparator()).append(mapFileName);
 	}
