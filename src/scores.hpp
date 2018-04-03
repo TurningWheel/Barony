@@ -78,8 +78,13 @@ int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, oth
 
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
+void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile);
 
 #define SAVEGAMEFILE "savegame.dat"
 #define SAVEGAMEFILE2 "savegame2.dat" // saves follower data
 #define SAVEGAMEFILE_MULTIPLAYER "savegame_multiplayer.dat"
 #define SAVEGAMEFILE2_MULTIPLAYER "savegame2_multiplayer.dat" // saves follower data
+#define SAVEGAMEFILE_MODDED "savegame_modded.dat"
+#define SAVEGAMEFILE2_MODDED "savegame2_modded.dat"
+#define SAVEGAMEFILE_MODDED_MULTIPLAYER "savegame_modded_multiplayer.dat"
+#define SAVEGAMEFILE2_MODDED_MULTIPLAYER "savegame2_modded_multiplayer.dat"

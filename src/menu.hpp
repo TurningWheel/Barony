@@ -133,6 +133,7 @@ bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 bool gamemodsRemovePathFromMountedFiles(std::string findStr);
 bool gamemodsIsPathInMountedFiles(std::string findStr);
 void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y);
+extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 
 extern bool scoreDisplayMultiplayer;
 
