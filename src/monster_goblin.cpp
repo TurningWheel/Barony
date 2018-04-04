@@ -61,7 +61,7 @@ void initGoblin(Entity* my, Stat* myStats)
 				myStats->OLDHP = myStats->HP;
 				strcpy(myStats->name, "The Potato King");
 				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, nullptr);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, 0, false, nullptr);
+				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, rand(), false, nullptr);
 
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -199,18 +199,18 @@ void initGoblin(Entity* my, Stat* myStats)
 						break;
 					case 3:
 					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 6:
 					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 8:
 					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 				}
 			}

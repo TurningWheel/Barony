@@ -88,9 +88,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = -2;
 							myStats->PER = -2;
 							myStats->CHR = 4;
-							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, 0, false, nullptr);
+							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, nullptr);
-							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, 0, false, nullptr);
+							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
 						case 1:
 							// king arthur
@@ -431,18 +431,18 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, nullptr);
 							break;
 						case 4:
-							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, 0, false, nullptr);
+							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 5:
-							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, 0, false, nullptr);
+							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 6:
 						case 7:
-							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, 0, false, nullptr);
+							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, 0, false, nullptr);
+							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
