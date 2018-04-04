@@ -340,11 +340,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					{
 						if ( currentlevel >= 18 )
 						{
-							tmpItem = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel), static_cast<Status>(WORN + rand() % 3), 0, 1, 1, true, &myStats->inventory);
+							tmpItem = newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
 						}
 						else
 						{
-							tmpItem = newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, 1, true, &myStats->inventory);
+							tmpItem = newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
 						}
 						// post-processing
 						if ( rand() % blessedShopkeeper > 0 )
@@ -388,7 +388,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					// lighting store
 					for ( c = 0; c < numitems; c++ )
 					{
-						tmpItem = newItem(static_cast<ItemType>(TOOL_TORCH + rand() % 2), EXCELLENT, 0, 1, 7, false, &myStats->inventory);
+						tmpItem = newItem(static_cast<ItemType>(TOOL_TORCH + rand() % 2), EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
 						// post-processing
 						if ( rand() % blessedShopkeeper > 0 )
 						{
