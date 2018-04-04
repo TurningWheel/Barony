@@ -1669,9 +1669,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( hit.entity->behavior == &actGate )
 						{
 							// Open the Gate
-							if ( hit.entity->skill[28] != 2 )
+							if ( (hit.entity->skill[28] != 2 && hit.entity->gateInverted == 0)
+								|| (hit.entity->skill[28] != 1 && hit.entity->gateInverted == 1) )
 							{
-								hit.entity->skill[28] = 2; // Powers the Gate
+								if ( hit.entity->gateInverted == 1 )
+								{
+									hit.entity->skill[28] = 1; // Depowers the Gate
+								}
+								else
+								{
+									hit.entity->skill[28] = 2; // Powers the Gate
+								}
 								if ( parent )
 								{
 									if ( parent->behavior == &actPlayer )
