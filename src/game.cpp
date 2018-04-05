@@ -3054,10 +3054,6 @@ int main(int argc, char** argv)
 							updateBookGUI();
 							//updateRightSidebar();
 
-							Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-							Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-							Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-							printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 						}
 						else if (gui_mode == GUI_MODE_MAGIC)
 						{
@@ -3070,6 +3066,13 @@ int main(int argc, char** argv)
 							updatePlayerInventory();
 							updateShopWindow();
 						}
+					}
+					if ( (shootmode == false && gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
+					{
+						Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+						Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+						Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 					}
 
 					// pointer in inventory screen

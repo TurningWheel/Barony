@@ -204,7 +204,7 @@ static const unsigned INJOY_MENU_CYCLE_SHOP_RIGHT = 23;
 static const unsigned INJOY_MENU_BOOK_PREV = 24;
 static const unsigned INJOY_MENU_BOOK_NEXT = 25;
 
-static const unsigned INDEX_JOYBINDINGS_START_MENU = 9;
+static const unsigned INDEX_JOYBINDINGS_START_MENU = 7;
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
@@ -216,7 +216,7 @@ static const unsigned INJOY_GAME_HOTBAR_ACTIVATE = 30; //Activates hotbar slot i
 static const unsigned INJOY_GAME_HOTBAR_PREV = 31;
 static const unsigned INJOY_GAME_HOTBAR_NEXT = 32;
 
-static const unsigned INDEX_JOYBINDINGS_START_GAME = 28;
+static const unsigned INDEX_JOYBINDINGS_START_GAME = 26;
 
 static const unsigned NUM_JOY_IMPULSES = 33;
 
