@@ -772,7 +772,8 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		const char* lobbyName = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "name"); //TODO: Again with the void pointers.
 		const char* lobbyVersion = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "ver"); //TODO: VOID.
 		int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(steamIDLobby)); //TODO MORE VOID POINTERS.
-
+		const char* lobbyNumMods = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "svNumMods"); //TODO: VOID.
+		int numMods = atoi(lobbyNumMods);
 		string versionText = lobbyVersion;
 		if ( versionText ==  "" )
 		{
@@ -783,7 +784,14 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		if ( lobbyName && lobbyName[0] && numPlayers )
 		{
 			// set the lobby data
-			snprintf( lobbyText[iLobby], 47, "%s (%s)", lobbyName, versionText.c_str() ); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
+			if ( numMods > 0 )
+			{
+				snprintf(lobbyText[iLobby], 47, "%s (%s) [MODDED]", lobbyName, versionText.c_str()); //TODO: shorten?
+			}
+			else
+			{
+				snprintf( lobbyText[iLobby], 47, "%s (%s)", lobbyName, versionText.c_str()); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
+			}
 			lobbyPlayers[iLobby] = numPlayers;
 		}
 		else
@@ -885,6 +893,10 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		char loadingsavegameChar[16];
 		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "loadingsavegame", loadingsavegameChar); //TODO: Bugger void pointer!
+
+		char svNumMods[16];
+		snprintf(svNumMods, 15, "%d", gamemods_numCurrentModsLoaded);
+		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods", svNumMods); //TODO: Bugger void pointer!
 	}
 	else
 	{
