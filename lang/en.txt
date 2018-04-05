@@ -2729,36 +2729,36 @@ dungeon level %d, client (player %d) (direct ip)#
 1952 D-Pad Right#
 1953 D-Pad Up#
 1954 D-Pad Down#
-1955 Next Hotbar Slot#
-1956 Previous Hotbar Slot#
 
 # Menu exclusive bindings.
-1957 "Left Click" (in MENUs)#
-1958 Next (in MENUs)#
-1959 Cancel#
-1960 Next Settings Tab#
-1961 Previous Settings Tab#
-1962 Refresh Lobby#
-1963 Don't Load Save (New Game)#
-1964 Random Name#
-1965 Random Character#
-1966 Previous Inventory Tab#
-1967 Next Inventory Tab#
-1968 Item Context Menu#
-1969 Drop Item#
-1970 Clear Hotbar Slot#
-1971 Grab All From Chest#
-1972 Previous Shop Category#
-1973 Next Shop Category#
-1974 Previous Book Page#
-1975 Next Book Page#
+1955 "Left Click" (in MENUs)#
+1956 Next (in MENUs)#
+1957 Cancel#
+1958 Next Settings Tab#
+1959 Previous Settings Tab#
+1960 Refresh Lobby#
+1961 Don't Load Save (New Game)#
+1962 Random Name#
+1963 Random Character#
+1964 Previous Inventory Tab#
+1965 Next Inventory Tab#
+1966 Item Context Menu#
+1967 Drop Item#
+1968 Clear Hotbar Slot#
+1969 Grab All From Chest#
+1970 Previous Shop Category#
+1971 Next Shop Category#
+1972 Previous Book Page#
+1973 Next Book Page#
 
 # Game exclusive bindings.
-1976 Use#
-1977 Raise Shield#
-1978 Attack#
-1979 Cast Spell#
-1980 Activate Hotbar Slot#
+1974 Use#
+1975 Raise Shield#
+1976 Attack#
+1977 Cast Spell#
+1978 Activate Hotbar Slot#
+1979 Next Hotbar Slot#
+1980 Previous Hotbar Slot#
 # Other bindings.
 1981 Autosort Inventory#
 
@@ -3640,5 +3640,6 @@ anyone seeking that power again, deep underground. #
 2975 The cape carries you above the ground and you feel its power surging through your body.#
 2976 The gauntlets fill you with otherworldly defiance.#
 2977 Cost: %d + ?? MP#
+2978 Custom levels#
 
 2999 end#
