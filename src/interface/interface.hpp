@@ -374,6 +374,8 @@ extern bool auto_appraise_new_items;
 
 extern bool lock_right_sidebar;
 
+extern bool show_game_timer_always;
+
 const char* getInputName(Uint32 scancode);
 Sint8* inputPressed(Uint32 scancode);
 
