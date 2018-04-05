@@ -125,6 +125,7 @@ extern int gamemods_window;
 extern int gamemods_window_scroll;
 extern int gamemods_window_fileSelect;
 extern int gamemods_uploadStatus;
+extern int gamemods_numCurrentModsLoaded;
 extern std::list<std::string> currentDirectoryFiles;
 extern std::string directoryPath;
 void gamemodsWindowClearVariables();

@@ -4248,7 +4248,8 @@ void handleMainMenu(bool mode)
 			Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
 			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
-				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+				&& !conductGameChallenges[CONDUCT_MODDED] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
