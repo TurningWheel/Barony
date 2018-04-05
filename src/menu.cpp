@@ -95,7 +95,6 @@ int score_window = 0;
 int gamemods_window = 0;
 std::list<std::string> currentDirectoryFiles;
 std::list<std::string> directoryFilesListToUpload;
-std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::string directoryToUpload;
 std::string directoryPath;
 int gamemods_window_scroll = 0;
@@ -109,9 +108,14 @@ int gamemods_subscribedItemsStatus = 0;
 char gamemods_newBlankDirectory[32] = "";
 char gamemods_newBlankDirectoryOldName[32] = "";
 int gamemods_newBlankDirectoryStatus = 0;
+int gamemods_numCurrentModsLoaded = 0;
 const int gamemods_maxTags = 10;
 std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
+#ifdef STEAMWORKS
+std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
+#endif // STEAMWORKS
+
 
 bool scoreDisplayMultiplayer = false;
 int settings_xres, settings_yres;
@@ -313,7 +317,11 @@ void navigateMainMenuItems(bool mode)
 			{
 				if (mode)
 				{
+#ifdef STEAMWORKS
+					menuselect = 8;
+#else
 					menuselect = 7;
+#endif
 				}
 				else
 				{
@@ -336,10 +344,18 @@ void navigateMainMenuItems(bool mode)
 			menuselect++;
 			if (mode)
 			{
-				if (menuselect > 7)
+#ifdef STEAMWORKS
+				if (menuselect > 8 )
 				{
 					menuselect = 1;
 				}
+#else
+				if ( menuselect > 7 )
+				{
+					menuselect = 1;
+				}
+#endif // STEAMWORKS
+
 			}
 			else
 			{
@@ -519,6 +535,10 @@ void handleMainMenu(bool mode)
 			int h2 = h;
 			TTF_SizeUTF8(ttf8, VERSION, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
+			if ( gamemods_numCurrentModsLoaded > 0 )
+			{
+				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 8 - h - h2 * 2, "%2d Mod(s) loaded", gamemods_numCurrentModsLoaded);
+			}
 
 #ifdef STEAMWORKS
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
@@ -643,6 +663,7 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 
 					// look for a save game
+					gamemodsClearAllMountedPaths();
 					if ( saveGameExists(true) || saveGameExists(false) )
 					{
 						openLoadGameWindow(NULL);
@@ -823,11 +844,34 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintText(ttf16, 50, yres / 4 + 176, language[1307]);
 			}
-			//"Custom Levels" button.
+			//"Custom content" button.
+			int customContent_pady = 0;
+			int customContentMenuSelectOffset = 0;
 			if ( ((omousex >= 50 && omousex < 50 + strlen(language[2978]) * 18 && omousey >= yres / 4 + 200 && omousey < yres / 4 + 200 + 18) || (menuselect == 6)) && subwindow == 0 && introstage == 1 )
 			{
 				menuselect = 6;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 200, colorGray, language[2978]);
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
+					playSound(139, 64);
+					gamemodsCustomContentInit();
+				}
+			}
+			else
+			{
+				ttfPrintText(ttf16, 50, yres / 4 + 200, language[2978]);
+			}
+#ifdef STEAMWORKS
+			if ( ((omousex >= 50 && omousex < 50 + strlen(language[2979]) * 18 && omousey >= yres / 4 + 224 && omousey < yres / 4 + 224 + 18) || (menuselect == 7)) && subwindow == 0 && introstage == 1 )
+			{
+				menuselect = 7;
+				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 224, colorGray, language[2979]);
 				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -842,13 +886,16 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 200, language[2978]);
+				ttfPrintText(ttf16, 50, yres / 4 + 224, language[2979]);
 			}
+			customContent_pady = 24;
+			customContentMenuSelectOffset = 1;
+#endif
 			//"Quit" button.
-			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1308]) * 18 && omousey >= yres / 4 + 224 && omousey < yres / 4 + 224 + 18) || (menuselect == 7)) && subwindow == 0 && introstage == 1 )
+			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1308]) * 18 && omousey >= yres / 4 + 224 + customContent_pady && omousey < yres / 4 + 224 + customContent_pady + 18) || (menuselect == 7 + customContentMenuSelectOffset)) && subwindow == 0 && introstage == 1 )
 			{
-				menuselect = 7;
-				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 224, colorGray, language[1308]);
+				menuselect = 7 + customContentMenuSelectOffset;
+				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 224 + customContent_pady, colorGray, language[1308]);
 				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -907,7 +954,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintText(ttf16, 50, yres / 4 + 224, language[1308]);
+				ttfPrintText(ttf16, 50, yres / 4 + 224 + customContent_pady, language[1308]);
 			}
 		}
 		else
@@ -1257,13 +1304,27 @@ void handleMainMenu(bool mode)
 				saveBox.w = subx2 - subx1 - 8;
 				saveBox.h = TTF12_HEIGHT * 3;
 				drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
-				drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+				if ( gamemods_numCurrentModsLoaded > 0 )
+				{
+					drawRect(&saveBox, uint32ColorGreen(*mainsurface), 32);
+				}
+				else
+				{
+					drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+				}
 				if ( loadGameSaveShowRectangle == 2 )
 				{
 					saveBox.y = suby1 + TTF12_HEIGHT * 5 + 2;
 					//drawTooltip(&saveBox);
 					drawWindowFancy(saveBox.x, saveBox.y, saveBox.x + saveBox.w, saveBox.y + saveBox.h);
-					drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+					if ( gamemods_numCurrentModsLoaded > 0 )
+					{
+						drawRect(&saveBox, uint32ColorGreen(*mainsurface), 32);
+					}
+					else
+					{
+						drawRect(&saveBox, uint32ColorBaronyBlue(*mainsurface), 32);
+					}
 				}
 			}
 			if ( gamemods_window == 1 || gamemods_window == 2 || gamemods_window == 5 )
@@ -1282,7 +1343,10 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, subtext);
 				}
 			}
-
+			if ( loadGameSaveShowRectangle > 0 && gamemods_numCurrentModsLoaded > 0 )
+			{
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - TTF12_HEIGHT * 5, uint32ColorBaronyBlue(*mainsurface), "%s", language[2982]);
+			}
 		}
 		else
 		{
@@ -1296,7 +1360,14 @@ void handleMainMenu(bool mode)
 	// character creation screen
 	if ( charcreation_step >= 1 && charcreation_step < 6 )
 	{
-		ttfPrintText(ttf16, subx1 + 8, suby1 + 8, language[1318]);
+		if ( gamemods_numCurrentModsLoaded > 0 )
+		{
+			ttfPrintText(ttf16, subx1 + 8, suby1 + 8, language[2980]);
+		}
+		else
+		{
+			ttfPrintText(ttf16, subx1 + 8, suby1 + 8, language[1318]);
+		}
 
 		// draw character window
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
@@ -1673,6 +1744,14 @@ void handleMainMenu(bool mode)
 					{
 						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2966]);
 					}
+					if ( gamemods_numCurrentModsLoaded > 0 )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 - TTF12_HEIGHT * 6, uint32ColorOrange(*mainsurface), true, language[2981]);
+					}
+				}
+				if ( gamemods_numCurrentModsLoaded > 0 )
+				{
+					ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60 + TTF12_HEIGHT, uint32ColorBaronyBlue(*mainsurface), true, language[2982]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -4271,6 +4350,7 @@ void handleMainMenu(bool mode)
 
 		int filename_padx2 = filename_padx + filenameMaxLength * TTF12_WIDTH + 8;
 		int filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
+#ifdef STEAMWORKS
 		if ( gamemods_window == 1 || gamemods_window == 2 || gamemods_window == 5 )
 		{
 			if ( !currentDirectoryFiles.empty() )
@@ -4952,6 +5032,8 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
+#endif //STEAMWORKS
+
 		if ( gamemods_window == 6 )
 		{
 			// create blank file structure for a mod.
@@ -4997,8 +5079,16 @@ void handleMainMenu(bool mode)
 			filename_pady2 = filename_pady + numFileEntries * TTF12_HEIGHT + 8;
 			int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
 			filename_pady += 3 * TTF12_HEIGHT;
-
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved local items!");
+			int numLocalFolders = std::max(static_cast<int>(gamemods_localModFoldernames.size() - 2), 0);
+			if ( numLocalFolders > 0 )
+			{
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved local items!");
+			}
+			else
+			{
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "no folders found!");
+				ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + TTF12_HEIGHT + 8, uint32ColorOrange(*mainsurface), "to get started create a new folder, or copy shared custom content to the mods/ folder");
+			}
 
 			std::string modInfoStr = "current loaded mods (hover for info): ";
 			SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
@@ -5033,7 +5123,6 @@ void handleMainMenu(bool mode)
 			slider.h = suby2 - (filename_pady + 20);
 			slider.w = 32;
 
-			int numLocalFolders = std::max(static_cast<int>(gamemods_localModFoldernames.size() - 2), 0);
 			int entriesToScroll = std::max(static_cast<int>((numLocalFolders / numFileEntries) - 1), 0);
 			entriesToScroll = entriesToScroll * numFileEntries + (numLocalFolders % numFileEntries);
 
@@ -5123,6 +5212,18 @@ void handleMainMenu(bool mode)
 						{
 							gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
 							printlog("[%s] is in the search path.\n", path.c_str());
+							if ( gamemods_mountedFilepaths.size() > 0 )
+							{
+								for ( node = button_l.first; node != NULL; node = nextnode )
+								{
+									nextnode = node->next;
+									button = (button_t*)node->element;
+									if ( button->action == &buttonGamemodsStartModdedGame )
+									{
+										button->visible = 1;
+									}
+								}
+							}
 						}
 					}
 				}
@@ -5137,6 +5238,18 @@ void handleMainMenu(bool mode)
 							if ( gamemodsRemovePathFromMountedFiles(path) )
 							{
 								printlog("[%s] is removed from the search path.\n", path.c_str());
+								if ( gamemods_mountedFilepaths.size() <= 0 )
+								{
+									for ( node = button_l.first; node != NULL; node = nextnode )
+									{
+										nextnode = node->next;
+										button = (button_t*)node->element;
+										if ( button->action == &buttonGamemodsStartModdedGame )
+										{
+											button->visible = 0;
+										}
+									}
+								}
 							}
 						}
 					}
@@ -8522,8 +8635,8 @@ void openLoadGameWindow(button_t* my)
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 128;
-	suby2 = yres / 2 + 128;
+	suby1 = yres / 2 - 124;
+	suby2 = yres / 2 + 124;
 	strcpy(subtext, language[1460]);
 	bool singleplayerSave = saveGameExists(true);
 	bool multiplayerSave = saveGameExists(false);
@@ -8552,6 +8665,12 @@ void openLoadGameWindow(button_t* my)
 	}
 	strcat(subtext, saveGameName);
 	strcat(subtext, language[1461]);
+
+	if ( gamemods_numCurrentModsLoaded > 0 )
+	{
+		suby1 -= 24;
+		suby2 += 24;
+	}
 
 	// close button
 	button = newButton();
@@ -9293,6 +9412,7 @@ void buttonGamemodsBaseDirectory(button_t* my)
 	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true, false);
 }
 
+#ifdef STEAMWORKS
 void buttonGamemodsSelectDirectoryForUpload(button_t* my)
 {
 	if ( !currentDirectoryFiles.empty() )
@@ -9562,45 +9682,6 @@ void buttonGamemodsStartUploadItem(button_t* my)
 	}
 }
 
-void gamemodsWindowClearVariables()
-{
-	if ( g_SteamWorkshop )
-	{
-		g_SteamWorkshop->createItemResult = {};
-		g_SteamWorkshop->UGCUpdateHandle = {};
-		g_SteamWorkshop->SubmitItemUpdateResult = {};
-		SteamUGC()->ReleaseQueryUGCRequest(g_SteamWorkshop->UGCQueryHandle);
-		g_SteamWorkshop->UGCQueryHandle = {};
-		g_SteamWorkshop->SteamUGCQueryCompleted = {};
-		g_SteamWorkshop->UnsubscribePublishedFileResult = {};
-		g_SteamWorkshop->LastActionResult.creationTick = 0;
-		g_SteamWorkshop->LastActionResult.actionMsg = "";
-		g_SteamWorkshop->LastActionResult.lastResult = static_cast<EResult>(0);
-		g_SteamWorkshop->workshopItemTags.clear();
-		for ( int i = 0; i < 50; ++i )
-		{
-			g_SteamWorkshop->m_subscribedItemListDetails[i] = {};
-		}
-		g_SteamWorkshop->uploadSuccessTicks = 0;
-		g_SteamWorkshop->m_myWorkshopItemToModify = {};
-	}
-	directoryToUpload.clear();
-	directoryPath.clear();
-	directoryFilesListToUpload.clear();
-	gamemods_window_scroll = 0;
-	gamemods_uploadStatus = 0;
-	strcpy(gamemods_uploadTitle, "Title");
-	strcpy(gamemods_uploadDescription, "Description");
-	strcpy(gamemods_newBlankDirectory, "");
-	strcpy(gamemods_newBlankDirectoryOldName, "");
-	gamemods_newBlankDirectoryStatus = 0;
-	gamemods_currentEditField = 0;
-	gamemods_workshopSetPropertyReturn[0] = false;
-	gamemods_workshopSetPropertyReturn[1] = false;
-	gamemods_workshopSetPropertyReturn[2] = false;
-	gamemods_subscribedItemsStatus = 0;
-}
-
 void gamemodsWindowUploadInit(bool creatingNewItem)
 {
 	gamemods_window = 1;
@@ -9729,14 +9810,6 @@ void gamemodsWindowUploadInit(bool creatingNewItem)
 	}
 }
 
-void buttonGamemodsGetLocalMods(button_t* my)
-{
-	gamemods_window_scroll = 0;
-	gamemods_window = 7;
-	gamemods_localModFoldernames.clear();
-	gamemods_localModFoldernames = directoryContents("./mods/", true, false);
-}
-
 void gamemodsSubscribedItemsInit()
 {
 	gamemods_window = 3;
@@ -9796,18 +9869,8 @@ void gamemodsSubscribedItemsInit()
 	button2->action = &buttonGamemodsGetMyWorkshopItems;
 	button2->visible = 1;
 	button2->focused = 1;
-
-	// fetch my workshop items
-	button = newButton();
-	strcpy(button->label, "local mods");
-	button->x = button2->x + button2->sizex + 16;
-	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
-	button->sizex = 25 * TTF12_WIDTH + 8;
-	button->sizey = 32;
-	button->action = &buttonGamemodsGetLocalMods;
-	button->visible = 1;
-	button->focused = 1;
 }
+
 
 void buttonGamemodsOpenUploadWindow(button_t* my)
 {
@@ -9852,66 +9915,6 @@ void buttonGamemodsGetMyWorkshopItems(button_t* my)
 		gamemods_window_scroll = 0;
 		gamemods_window = 4;
 	}
-}
-
-bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action)
-{
-	bool clicked = false;
-	if ( mouseInBounds(padx, padx + padw, pady - 4, pady + padh) )
-	{
-		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
-		if ( mousestatus[SDL_BUTTON_LEFT] )
-		{
-			playSound(139, 64);
-			mousestatus[SDL_BUTTON_LEFT] = 0;
-			clicked = true;
-		}
-	}
-	else
-	{
-		drawWindow(padx, pady - 4, padx + padw, pady + padh);
-	}
-	SDL_Rect pos;
-	pos.x = padx;
-	pos.y = pady - 4;
-	pos.w = padw;
-	pos.h = padh + 4;
-	drawRect(&pos, btnColor, 64);
-	ttfPrintTextFormatted(ttf12, padx + 8, pady, "%s", btnText.c_str());
-	return clicked;
-}
-
-bool gamemodsRemovePathFromMountedFiles(std::string findStr)
-{
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	std::pair<std::string, std::string> line;
-	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
-	{
-		line = *it;
-		if ( line.first.compare(findStr) == 0 )
-		{
-			// found entry, remove from list.
-			gamemods_mountedFilepaths.erase(it);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool gamemodsIsPathInMountedFiles(std::string findStr)
-{
-	std::vector<std::pair<std::string, std::string>>::iterator it;
-	std::pair<std::string, std::string> line;
-	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
-	{
-		line = *it;
-		if ( line.first.compare(findStr) == 0 )
-		{
-			// found entry
-			return true;
-		}
-	}
-	return false;
 }
 
 void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
@@ -9974,4 +9977,244 @@ void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
 	{
 		ttfPrintText(ttf12, x, y, printText.c_str());
 	}
+}
+#endif //STEAMWORKS
+
+bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action)
+{
+	bool clicked = false;
+	if ( mouseInBounds(padx, padx + padw, pady - 4, pady + padh) )
+	{
+		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			playSound(139, 64);
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			clicked = true;
+		}
+	}
+	else
+	{
+		drawWindow(padx, pady - 4, padx + padw, pady + padh);
+	}
+	SDL_Rect pos;
+	pos.x = padx;
+	pos.y = pady - 4;
+	pos.w = padw;
+	pos.h = padh + 4;
+	drawRect(&pos, btnColor, 64);
+	ttfPrintTextFormatted(ttf12, padx + 8, pady, "%s", btnText.c_str());
+	return clicked;
+}
+
+bool gamemodsRemovePathFromMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry, remove from list.
+			gamemods_mountedFilepaths.erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool gamemodsIsPathInMountedFiles(std::string findStr)
+{
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	std::pair<std::string, std::string> line;
+	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+	{
+		line = *it;
+		if ( line.first.compare(findStr) == 0 )
+		{
+			// found entry
+			return true;
+		}
+	}
+	return false;
+}
+
+void buttonGamemodsGetLocalMods(button_t* my)
+{
+	gamemods_window_scroll = 0;
+	gamemods_window = 7;
+	gamemods_localModFoldernames.clear();
+	gamemods_localModFoldernames = directoryContents("./mods/", true, false);
+	gamemodsMountAllExistingPaths();
+}
+
+void buttonGamemodsStartModdedGame(button_t* my)
+{
+	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+	// look for a save game
+	if ( saveGameExists(true) || saveGameExists(false) )
+	{
+		openLoadGameWindow(NULL);
+	}
+	else
+	{
+		buttonOpenCharacterCreationWindow(NULL);
+	}
+}
+
+void gamemodsCustomContentInit()
+{
+	gamemods_window = 3;
+	currentDirectoryFiles = directoryContents(datadir, true, false);
+	directoryToUpload = datadir;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 420;
+	subx2 = xres / 2 + 420;
+	suby1 = yres / 2 - 300;
+	suby2 = yres / 2 + 300;
+	strcpy(subtext, "Custom Content");
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// fetch local mods button
+	button = newButton();
+	strcpy(button->label, "local mods");
+	button->x = subx1 + 16;
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->action = &buttonGamemodsGetLocalMods;
+	button->visible = 1;
+	button->focused = 1;
+
+	// fetch my workshop items
+	button_t* button2 = newButton();
+	strcpy(button2->label, "new mod folder");
+	button2->x = button->x + button->sizex + 16;
+	button2->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button2->sizex = 25 * TTF12_WIDTH + 8;
+	button2->sizey = 32;
+	button2->action = &buttonGamemodsCreateNewModTemplate;
+	button2->visible = 1;
+	button2->focused = 1;
+
+	// start modded game
+	button = newButton();
+	strcpy(button->label, "start modded game");
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->x = subx2 - (button->sizex + 16);
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->action = &buttonGamemodsStartModdedGame;
+	if ( gamemods_mountedFilepaths.size() > 0 )
+	{
+		button->visible = 1;
+	}
+	else
+	{
+		button->visible = 0;
+	}
+	button->focused = 1;
+
+}
+
+bool gamemodsClearAllMountedPaths()
+{
+	bool success = true;
+	char **i;
+	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
+	{
+		std::string line = *i;
+		if ( line.compare("./") != 0 )
+		{
+			if ( PHYSFS_unmount(*i) == NULL )
+			{
+				success = false;
+				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
+			}
+			else
+			{
+				printlog("[%s] is removed from the search path.\n", line.c_str());
+			}
+		}
+	}
+	gamemods_numCurrentModsLoaded = 0;
+	PHYSFS_freeList(*i);
+	return success;
+}
+
+bool gamemodsMountAllExistingPaths()
+{
+	bool success = true;
+	std::vector<std::pair<std::string, std::string>>::iterator it;
+	for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+	{
+		std::pair<std::string, std::string> itpair = *it;
+		if ( PHYSFS_mount(itpair.first.c_str(), NULL, 1) )
+		{
+			printlog("[%s] is in the search path.\n", itpair.first.c_str());
+		}
+		else
+		{
+			printlog("[%s] unsuccessfully added to search path.\n", itpair.first.c_str());
+			success = false;
+		}
+	}
+	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+	return success;
+}
+
+void gamemodsWindowClearVariables()
+{
+#ifdef STEAMWORKS
+	if ( g_SteamWorkshop )
+	{
+		g_SteamWorkshop->createItemResult = {};
+		g_SteamWorkshop->UGCUpdateHandle = {};
+		g_SteamWorkshop->SubmitItemUpdateResult = {};
+		SteamUGC()->ReleaseQueryUGCRequest(g_SteamWorkshop->UGCQueryHandle);
+		g_SteamWorkshop->UGCQueryHandle = {};
+		g_SteamWorkshop->SteamUGCQueryCompleted = {};
+		g_SteamWorkshop->UnsubscribePublishedFileResult = {};
+		g_SteamWorkshop->LastActionResult.creationTick = 0;
+		g_SteamWorkshop->LastActionResult.actionMsg = "";
+		g_SteamWorkshop->LastActionResult.lastResult = static_cast<EResult>(0);
+		g_SteamWorkshop->workshopItemTags.clear();
+		for ( int i = 0; i < 50; ++i )
+		{
+			g_SteamWorkshop->m_subscribedItemListDetails[i] = {};
+		}
+		g_SteamWorkshop->uploadSuccessTicks = 0;
+		g_SteamWorkshop->m_myWorkshopItemToModify = {};
+	}
+#endif // STEAMWORKS
+	directoryToUpload.clear();
+	directoryPath.clear();
+	directoryFilesListToUpload.clear();
+	gamemods_window_scroll = 0;
+	gamemods_uploadStatus = 0;
+	strcpy(gamemods_uploadTitle, "Title");
+	strcpy(gamemods_uploadDescription, "Description");
+	strcpy(gamemods_newBlankDirectory, "");
+	strcpy(gamemods_newBlankDirectoryOldName, "");
+	gamemods_newBlankDirectoryStatus = 0;
+	gamemods_currentEditField = 0;
+	gamemods_workshopSetPropertyReturn[0] = false;
+	gamemods_workshopSetPropertyReturn[1] = false;
+	gamemods_workshopSetPropertyReturn[2] = false;
+	gamemods_subscribedItemsStatus = 0;
 }

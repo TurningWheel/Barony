@@ -779,6 +779,7 @@ void updatePlayerInventory()
 
 
 #ifdef STEAMWORKS
+/* Some testing code...
 if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 {
 	if ( keystatus[SDL_SCANCODE_P] )
@@ -862,7 +863,7 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		keystatus[SDL_SCANCODE_J] = 0;
 	}
 }
-	/*bool bFailed = false;
+	bool bFailed = false;
 	if ( SteamUser()->BLoggedOn() )
 	{
 		SteamUtils()->GetAPICallResult(SteamAPICall_FindLeaderboard, &leaderboardFindResult, sizeof(LeaderboardFindResult_t), 1104, &bFailed);
