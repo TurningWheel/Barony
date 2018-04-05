@@ -2878,6 +2878,7 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_HARDCORE] = 1;
 	conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 0;
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
+	conductGameChallenges[CONDUCT_MODDED] = 0;
 }
 
 void updatePlayerConductsInMainLoop()
@@ -2916,6 +2917,13 @@ void updatePlayerConductsInMainLoop()
 		if ( (svFlags & SV_FLAG_CLASSIC) )
 		{
 			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_MODDED] )
+	{
+		if ( gamemods_numCurrentModsLoaded > 0 )
+		{
+			conductGameChallenges[CONDUCT_MODDED] = 1;
 		}
 	}
 }
