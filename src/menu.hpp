@@ -80,6 +80,10 @@ void buttonGamemodsOpenDirectory(button_t* my);
 void buttonGamemodsPrevDirectory(button_t* my);
 void buttonGamemodsBaseDirectory(button_t* my);
 void buttonGamemodsSelectDirectoryForUpload(button_t* my);
+void buttonGamemodsOpenModifyExistingWindow(button_t* my);
+void buttonGamemodsStartModdedGame(button_t* my);
+
+#ifdef STEAMWORKS
 void buttonGamemodsPrepareWorkshopItemUpload(button_t* my);
 void buttonGamemodsSetWorkshopItemFields(button_t* my);
 void buttonGamemodsStartUploadItem(button_t* my);
@@ -87,11 +91,8 @@ void buttonGamemodsGetSubscribedItems(button_t* my);
 void buttonGamemodsOpenSubscribedWindow(button_t* my);
 void buttonGamemodsOpenUploadWindow(button_t* my);
 void buttonGamemodsGetMyWorkshopItems(button_t* my);
-void buttonGamemodsOpenModifyExistingWindow(button_t* my);
 void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my);
 void buttonGamemodsCancelModifyFileContents(button_t* my);
-
-#ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my);
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
@@ -127,13 +128,18 @@ extern int gamemods_uploadStatus;
 extern std::list<std::string> currentDirectoryFiles;
 extern std::string directoryPath;
 void gamemodsWindowClearVariables();
-void gamemodsWindowUploadInit(bool creatingNewItem);
-void gamemodsSubscribedItemsInit();
+void gamemodsCustomContentInit();
 bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action);
 bool gamemodsRemovePathFromMountedFiles(std::string findStr);
 bool gamemodsIsPathInMountedFiles(std::string findStr);
-void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y);
+bool gamemodsClearAllMountedPaths();
+bool gamemodsMountAllExistingPaths();
 extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
+#ifdef STEAMWORKS
+void gamemodsWindowUploadInit(bool creatingNewItem);
+void gamemodsSubscribedItemsInit();
+void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y);
+#endif // STEAMWORKS
 
 extern bool scoreDisplayMultiplayer;
 
