@@ -538,7 +538,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 			if ( gamemods_numCurrentModsLoaded > 0 )
 			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 8 - h - h2 * 2, "%2d Mod(s) loaded", gamemods_numCurrentModsLoaded);
+				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 8 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
 			}
 
 #ifdef STEAMWORKS
@@ -1866,10 +1866,18 @@ void handleMainMenu(bool mode)
 					}
 				}
 
+				const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svNumMods");
+				int serverNumModsLoaded = atoi(serverNumModsChar);
+
 				flagsBox.x = mousex + 8;
 				flagsBox.y = mousey + 8;
 				flagsBox.w = strlen(language[1335]) * 12 + 4;
 				flagsBox.h = 4 + (TTF_FontHeight(ttf12) * (std::max(2, numSvFlags + 2)));
+				if ( serverNumModsLoaded > 0 )
+				{
+					flagsBox.h += TTF12_HEIGHT;
+					flagsBox.w += 16;
+				}
 				strcpy(flagsBoxText, language[1335]);
 				strcat(flagsBoxText, "\n");
 
@@ -1898,6 +1906,13 @@ void handleMainMenu(bool mode)
 							strcat(flagsBoxText, flagStringBuffer);
 						}
 					}
+				}
+				if ( serverNumModsLoaded > 0 )
+				{
+					strcat(flagsBoxText, "\n");
+					char numModsBuffer[32];
+					snprintf(numModsBuffer, 32, "%2d mod(s) loaded", serverNumModsLoaded);
+					strcat(flagsBoxText, numModsBuffer);
 				}
 			}
 
