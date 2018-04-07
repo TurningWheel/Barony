@@ -10449,7 +10449,9 @@ bool gamemodsRemovePathFromMountedFiles(std::string findStr)
 		if ( line.first.compare(findStr) == 0 )
 		{
 			// found entry, remove from list.
+#ifdef STEAMWORKS
 			gamemods_workshopLoadedFileIDMap.erase(line.second);
+#endif // STEAMWORKS
 			gamemods_mountedFilepaths.erase(it);
 			return true;
 		}
