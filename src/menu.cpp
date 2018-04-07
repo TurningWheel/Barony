@@ -114,6 +114,7 @@ std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
+std::unordered_map<std::string, uint64> gamemods_workshopLoadedFileIDMap;
 #endif // STEAMWORKS
 
 
@@ -3429,6 +3430,23 @@ void handleMainMenu(bool mode)
 					button->visible = 1;
 					button->focused = 1;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+#ifdef STEAMWORKS
+					const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
+					int serverNumModsLoaded = atoi(serverNumModsChar);
+					if ( serverNumModsLoaded > 0 )
+					{
+						// fetch server loaded mods button
+						button = newButton();
+						strcpy(button->label, language[2984]);
+						button->sizex = strlen(language[2984]) * 12 + 8;
+						button->sizey = 20;
+						button->x = subx2 - 4 - button->sizex;
+						button->y = suby2 - 24;
+						button->action = &buttonGamemodsSubscribeToHostsModFiles;
+						button->visible = 1;
+						button->focused = 1;
+					}
+#endif // STEAMWORKS
 				}
 			}
 		}
@@ -3745,7 +3763,7 @@ void handleMainMenu(bool mode)
 			{
 				if ( multiplayer == SERVER )
 				{
-					for ( i = 0; i < 3; i++ )
+					for ( i = 0; i < 2; i++ )
 					{
 						if ( mouseInBounds(xres / 2 + 8 + 6, xres / 2 + 8 + 30, suby1 + 256 + i * 16, suby1 + 268 + i * 16) )
 						{
@@ -3756,11 +3774,12 @@ void handleMainMenu(bool mode)
 									currentLobbyType = k_ELobbyTypePrivate;
 									break;
 								case 1:
-									currentLobbyType = k_ELobbyTypeFriendsOnly;
-									break;
-								case 2:
 									currentLobbyType = k_ELobbyTypePublic;
 									break;
+								/*case 2:
+									currentLobbyType = k_ELobbyTypeFriendsOnly;
+									// deprecated by steam, doesn't return in getLobbyList.
+									break;*/
 							}
 							SteamMatchmaking()->SetLobbyType(*static_cast<CSteamID*>(currentLobby), currentLobbyType);
 						}
@@ -3836,9 +3855,10 @@ void handleMainMenu(bool mode)
 		{
 			if ( multiplayer == SERVER )
 			{
-				for ( i = 0; i < 3; i++ )
+				for ( i = 0; i < 2; i++ )
 				{
-					if ( currentLobbyType == static_cast<ELobbyType>(i) )
+					if ( (i == 0 && currentLobbyType == k_ELobbyTypePrivate)
+						|| (i == 1 && currentLobbyType == k_ELobbyTypePublic) )
 					{
 						ttfPrintTextFormatted(ttf12, xres / 2 + 8, suby1 + 256 + 16 * i, "[o] %s", language[250 + i]);
 					}
@@ -4014,6 +4034,175 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, flagStringBuffer);
 			}
 		}
+#ifdef STEAMWORKS
+		// draw server workshop mod list
+		if ( !directConnect && currentLobby )
+		{
+			const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
+			int serverNumModsLoaded = atoi(serverNumModsChar);
+			if ( serverNumModsLoaded > 0 )
+			{
+				char tagName[32];
+				std::vector<std::string> serverFileIdsLoaded;
+				std::string modList = "Clients can click '";
+				modList.append(language[2984]).append("' and \n'").append(language[2985]);
+				modList.append("' to automatically subscribe and \n");
+				modList.append("mount workshop items loaded in the host's lobby.\n\n");
+				modList.append("All clients should be running the same mod load order\n");
+				modList.append("to prevent any crashes or undefined behavior.\n");
+				int numToolboxLines = 6;
+				bool itemNeedsSubscribing = false;
+				bool itemNeedsMounting = false;
+				Uint32 modsStatusColor = uint32ColorBaronyBlue(*mainsurface);
+				bool modListOutOfOrder = false;
+				for ( int lines = 0; lines < serverNumModsLoaded; ++lines )
+				{
+					snprintf(tagName, 32, "svMod%d", lines);
+					const char* serverModFileID = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName);
+					if ( strcmp(serverModFileID, "") )
+					{
+						if ( gamemodsCheckIfSubscribedAndDownloadedFileID(atoi(serverModFileID)) == false )
+						{
+							modList.append("Workshop item not subscribed or installed: ");
+							modList.append(serverModFileID);
+							modList.append("\n");
+							itemNeedsSubscribing = true;
+							++numToolboxLines;
+						}
+						else if ( gamemodsCheckFileIDInLoadedPaths(atoi(serverModFileID)) == false )
+						{
+							modList.append("Workshop item downloaded but not loaded: ");
+							modList.append(serverModFileID);
+							modList.append("\n");
+							itemNeedsMounting = true;
+							++numToolboxLines;
+						}
+						serverFileIdsLoaded.push_back(serverModFileID);
+					}
+				}
+				if ( itemNeedsSubscribing )
+				{
+					for ( node = button_l.first; node != NULL; node = nextnode )
+					{
+						nextnode = node->next;
+						button = (button_t*)node->element;
+						if ( button->action == &buttonGamemodsMountHostsModFiles )
+						{
+							button->visible = 0;
+						}
+						if ( button->action == &buttonGamemodsSubscribeToHostsModFiles )
+						{
+							button->visible = 1;
+						}
+					}
+				}
+				else
+				{
+					if ( itemNeedsMounting )
+					{
+						modsStatusColor = uint32ColorOrange(*mainsurface);
+						for ( node = button_l.first; node != NULL; node = nextnode )
+						{
+							nextnode = node->next;
+							button = (button_t*)node->element;
+							if ( button->action == &buttonGamemodsMountHostsModFiles )
+							{
+								button->visible = 1;
+							}
+							if ( button->action == &buttonGamemodsSubscribeToHostsModFiles )
+							{
+								button->visible = 0;
+							}
+						}
+					}
+					else if ( gamemodsIsClientLoadOrderMatchingHost(serverFileIdsLoaded)
+						&& serverFileIdsLoaded.size() == gamemods_workshopLoadedFileIDMap.size() )
+					{
+						modsStatusColor = uint32ColorGreen(*mainsurface);
+						for ( node = button_l.first; node != NULL; node = nextnode )
+						{
+							nextnode = node->next;
+							button = (button_t*)node->element;
+							if ( button->action == &buttonGamemodsMountHostsModFiles )
+							{
+								button->visible = 0;
+							}
+							if ( button->action == &buttonGamemodsSubscribeToHostsModFiles )
+							{
+								button->visible = 0;
+							}
+						}
+					}
+					else
+					{
+						modsStatusColor = uint32ColorOrange(*mainsurface);
+						modListOutOfOrder = true;
+						for ( node = button_l.first; node != NULL; node = nextnode )
+						{
+							nextnode = node->next;
+							button = (button_t*)node->element;
+							if ( button->action == &buttonGamemodsMountHostsModFiles )
+							{
+								button->visible = 1;
+							}
+							if ( button->action == &buttonGamemodsSubscribeToHostsModFiles )
+							{
+								button->visible = 0;
+							}
+						}
+					}
+				}
+				ttfPrintTextFormattedColor(ttf12, xres / 2 + 8, suby1 + 304, modsStatusColor, "%2d mod(s) loaded by host (?)", serverNumModsLoaded);
+				std::string modStatusString;
+				if ( itemNeedsSubscribing )
+				{
+					modStatusString = "Client missing mods in subscriptions";
+				}
+				else if ( itemNeedsMounting )
+				{
+					modStatusString = "Client missing mods in load order";
+				}
+				else if ( modListOutOfOrder )
+				{
+					modStatusString = "Client mod list out of order";
+				}
+				else
+				{
+					modStatusString = "Client has complete mod list";
+				}
+
+				int lineStartListLoadedMods = numToolboxLines;
+				numToolboxLines += gamemods_workshopLoadedFileIDMap.size() + 2;
+				std::string clientModString = "Client mod list:\n";
+				for ( std::unordered_map<std::string, uint64>::iterator it = gamemods_workshopLoadedFileIDMap.begin(); it != gamemods_workshopLoadedFileIDMap.end(); ++it )
+				{
+					clientModString.append(std::to_string(it->second));
+					clientModString.append("\n");
+				}
+				std::string serverModString = "Server mod list:\n";
+				for ( std::vector<std::string>::iterator it = serverFileIdsLoaded.begin(); it != serverFileIdsLoaded.end(); ++it )
+				{
+					serverModString.append(*it);
+					serverModString.append("\n");
+				}
+
+				ttfPrintTextFormattedColor(ttf12, xres / 2 + 8, suby1 + 320, modsStatusColor, "%s", modStatusString.c_str());
+				if ( mouseInBounds(xres / 2 + 8, xres / 2 + 8 + 31 * TTF12_WIDTH, suby1 + 304, suby1 + 320 + TTF12_HEIGHT) )
+				{
+					tooltip_box.w = 60 * TTF12_WIDTH + 8;
+					tooltip_box.x = mousex - 16 - tooltip_box.w;
+					tooltip_box.y = mousey + 8;
+					tooltip_box.h = numToolboxLines * TTF12_HEIGHT + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 8, "%s", modList.c_str());
+					ttfPrintTextFormattedColor(ttf12, tooltip_box.x + 4, tooltip_box.y + lineStartListLoadedMods * TTF12_HEIGHT + 12,
+						modsStatusColor, "%s", clientModString.c_str());
+					ttfPrintTextFormattedColor(ttf12, tooltip_box.x + 4 + 24 * TTF12_WIDTH, tooltip_box.y + lineStartListLoadedMods * TTF12_HEIGHT + 12, 
+						modsStatusColor, "%s", serverModString.c_str());
+				}
+			}
+		}
+#endif // STEAMWORKS
 
 		// handle keepalive timeouts (lobby)
 		if ( multiplayer == SERVER )
@@ -4939,8 +5128,21 @@ void handleMainMenu(bool mode)
 								{
 									if ( PHYSFS_mount(fullpath, NULL, 0) )
 									{
-										gamemods_mountedFilepaths.push_back(std::make_pair<std::string, std::string>(fullpath, itemDetails.m_rgchTitle));
+										gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
+										gamemods_workshopLoadedFileIDMap.insert(std::make_pair(itemDetails.m_rgchTitle, itemDetails.m_nPublishedFileId));
 										//printlog("[%s] is in the search path.\n", fullpath);
+										if ( gamemods_mountedFilepaths.size() > 0 )
+										{
+											for ( node = button_l.first; node != NULL; node = nextnode )
+											{
+												nextnode = node->next;
+												button = (button_t*)node->element;
+												if ( button->action == &buttonGamemodsStartModdedGame )
+												{
+													button->visible = 1;
+												}
+											}
+										}
 									}
 								}
 							}
@@ -4992,6 +5194,18 @@ void handleMainMenu(bool mode)
 										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
 										{
 											printlog("[%s] is removed from the search path.\n", fullpath);
+											if ( gamemods_mountedFilepaths.size() <= 0 )
+											{
+												for ( node = button_l.first; node != NULL; node = nextnode )
+												{
+													nextnode = node->next;
+													button = (button_t*)node->element;
+													if ( button->action == &buttonGamemodsStartModdedGame )
+													{
+														button->visible = 0;
+													}
+												}
+											}
 										}
 									}
 								}
@@ -7725,7 +7939,6 @@ void buttonHostMultiplayer(button_t* my)
 		button->action = &buttonCloseSubwindow;
 		button->visible = 1;
 		button->focused = 1;
-
 		strcpy(portnumber_char, last_port); //Copy the last used port.
 	}
 }
@@ -7927,6 +8140,30 @@ void buttonHostLobby(button_t* my)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	c = button->x + button->sizex + 4;
+
+	// subsribe to server loaded mods button
+	button = newButton();
+	strcpy(button->label, language[2984]);
+	button->sizex = strlen(language[2984]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 4 - button->sizex;
+	button->y = suby2 - 24;
+	button->action = &buttonGamemodsSubscribeToHostsModFiles;
+	button->visible = 1;
+	button->focused = 1;
+
+	// mount server mods button
+	button = newButton();
+	strcpy(button->label, language[2985]);
+	button->sizex = strlen(language[2985]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 4 - button->sizex;
+	button->y = suby2 - 24;
+	button->action = &buttonGamemodsMountHostsModFiles;
+	button->visible = 0;
+	button->focused = 1;
+
+
 
 	// invite friends button
 	if ( !directConnect )
@@ -9902,6 +10139,24 @@ void gamemodsSubscribedItemsInit()
 	button2->action = &buttonGamemodsGetMyWorkshopItems;
 	button2->visible = 1;
 	button2->focused = 1;
+
+	// start modded game
+	button = newButton();
+	strcpy(button->label, "start modded game");
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->x = subx2 - (button->sizex + 16);
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->action = &buttonGamemodsStartModdedGame;
+	if ( gamemods_mountedFilepaths.size() > 0 )
+	{
+		button->visible = 1;
+	}
+	else
+	{
+		button->visible = 0;
+	}
+	button->focused = 1;
 }
 
 
@@ -9938,7 +10193,6 @@ void buttonGamemodsGetSubscribedItems(button_t* my)
 		gamemods_window = 3;
 	}
 }
-
 
 void buttonGamemodsGetMyWorkshopItems(button_t* my)
 {
@@ -10011,6 +10265,161 @@ void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y)
 		ttfPrintText(ttf12, x, y, printText.c_str());
 	}
 }
+
+bool gamemodsCheckIfSubscribedAndDownloadedFileID(uint64 fileID)
+{
+	if ( directConnect || !currentLobby )
+	{
+		return false;
+	}
+
+	uint64 itemState = SteamUGC()->GetItemState(fileID);
+	if ( (itemState & k_EItemStateSubscribed) && (itemState & k_EItemStateInstalled) )
+	{
+		return true; // client has downloaded and subscribed to content.
+	}
+
+	return false; // client does not have item subscribed or downloaded.
+}
+
+bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID)
+{
+	if ( directConnect || !currentLobby )
+	{
+		return false;
+	}
+
+	bool found = false;
+	for ( std::unordered_map<std::string, uint64>::iterator it = gamemods_workshopLoadedFileIDMap.begin();
+		it != gamemods_workshopLoadedFileIDMap.end(); ++it )
+	{
+		if ( it->second == fileID )
+		{
+			return true; // client has fileID in mod load path.
+		}
+	}
+
+	return false; // client does not have fileID in mod load path.
+}
+
+void buttonGamemodsSubscribeToHostsModFiles(button_t* my)
+{
+	if ( !directConnect && currentLobby && g_SteamWorkshop )
+	{
+		const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
+		int serverNumModsLoaded = atoi(serverNumModsChar);
+		if ( serverNumModsLoaded > 0 )
+		{
+			char tagName[32];
+			char fullpath[PATH_MAX];
+			std::vector<uint64> fileIdsToDownload;
+			for ( int lines = 0; lines < serverNumModsLoaded; ++lines )
+			{
+				snprintf(tagName, 32, "svMod%d", lines);
+				const char* serverModFileID = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName);
+				if ( strcmp(serverModFileID, "") )
+				{
+					if ( gamemodsCheckIfSubscribedAndDownloadedFileID(atoi(serverModFileID)) == false )
+					{
+						SteamUGC()->SubscribeItem(atoi(serverModFileID));
+					}
+					fileIdsToDownload.push_back(atoi(serverModFileID));
+				}
+			}
+			g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Published, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+			for ( std::vector<uint64>::iterator it = fileIdsToDownload.begin(); it != fileIdsToDownload.end(); ++it )
+			{
+				SteamUGC()->DownloadItem(*it, true); // download all the newly subscribed items.
+				// hopefully enough time elapses for this to complete
+			}
+		}
+	}
+}
+
+void buttonGamemodsMountHostsModFiles(button_t* my)
+{
+	if ( !directConnect && currentLobby && g_SteamWorkshop )
+	{
+		const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
+		int serverNumModsLoaded = atoi(serverNumModsChar);
+		if ( serverNumModsLoaded > 0 )
+		{
+			char tagName[32];
+			char fullpath[PATH_MAX];
+			// prepare to mount only the hosts workshop files.
+			gamemodsClearAllMountedPaths();
+			gamemods_mountedFilepaths.clear();
+			gamemods_workshopLoadedFileIDMap.clear();
+			for ( int lines = 0; lines < serverNumModsLoaded; ++lines )
+			{
+				snprintf(tagName, 32, "svMod%d", lines);
+				const char* serverModFileID = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName);
+				if ( strcmp(serverModFileID, "") )
+				{
+					if ( gamemodsCheckFileIDInLoadedPaths(atoi(serverModFileID)) == false )
+					{
+						if ( SteamUGC()->GetItemInstallInfo(atoi(serverModFileID), NULL, fullpath, PATH_MAX, NULL) )
+						{
+							for ( int i = 0; i < g_SteamWorkshop->numSubcribedItemResults; ++i )
+							{
+								if ( g_SteamWorkshop->m_subscribedItemListDetails[i].m_nPublishedFileId == atoi(serverModFileID) )
+								{
+									gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle));
+									gamemods_workshopLoadedFileIDMap.insert(std::make_pair(g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle, 
+										g_SteamWorkshop->m_subscribedItemListDetails[i].m_nPublishedFileId));
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+			g_SteamWorkshop->CreateQuerySubscribedItems(k_EUserUGCList_Published, k_EUGCMatchingUGCType_All, k_EUserUGCListSortOrder_LastUpdatedDesc);
+			gamemodsMountAllExistingPaths(); // mount all the new filepaths, update gamemods_numCurrentModsLoaded.
+		}
+	}
+}
+
+bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList)
+{
+	std::unordered_map<std::string, uint64>::iterator found = gamemods_workshopLoadedFileIDMap.begin();
+	std::unordered_map<std::string, uint64>::iterator previousFound = gamemods_workshopLoadedFileIDMap.begin();
+	std::vector<std::string>::iterator itServerList;
+	if ( serverModList.empty() || (serverModList.size() > gamemods_mountedFilepaths.size()) )
+	{
+		return false;
+	}
+
+	for ( itServerList = serverModList.begin(); itServerList != serverModList.end(); ++itServerList )
+	{
+		for ( found = previousFound; found != gamemods_workshopLoadedFileIDMap.end(); ++found )
+		{
+			if ( std::to_string(found->second) == *itServerList )
+			{
+				break;
+			}
+		}
+		if ( found != gamemods_workshopLoadedFileIDMap.end() )
+		{
+			// look for the server's modID in my loaded paths.
+			// check the distance along the vector our found result is.
+			// if the distance is negative, then our mod order is out of sync with the server's mod list
+			// and requires rearranging.
+			if ( std::distance(previousFound, found) < 0 )
+			{
+				return false;
+			}
+			previousFound = found;
+		}
+		else
+		{
+			// server's mod doesn't exist in our filepath, so our mod lists are not in sync.
+			return false;
+		}
+	}
+	return true;
+}
+
 #endif //STEAMWORKS
 
 bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action)
@@ -10050,6 +10459,7 @@ bool gamemodsRemovePathFromMountedFiles(std::string findStr)
 		if ( line.first.compare(findStr) == 0 )
 		{
 			// found entry, remove from list.
+			gamemods_workshopLoadedFileIDMap.erase(line.second);
 			gamemods_mountedFilepaths.erase(it);
 			return true;
 		}
@@ -10098,6 +10508,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 
 void gamemodsCustomContentInit()
 {
+
 	gamemods_window = 3;
 	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
@@ -10162,7 +10573,6 @@ void gamemodsCustomContentInit()
 		button->visible = 0;
 	}
 	button->focused = 1;
-
 }
 
 bool gamemodsClearAllMountedPaths()
@@ -10172,7 +10582,7 @@ bool gamemodsClearAllMountedPaths()
 	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
 	{
 		std::string line = *i;
-		if ( line.compare("./") != 0 )
+		if ( line.compare("./") != 0 ) // don't unmount the base ./ directory
 		{
 			if ( PHYSFS_unmount(*i) == NULL )
 			{

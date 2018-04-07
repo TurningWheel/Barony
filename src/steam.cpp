@@ -897,6 +897,24 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		char svNumMods[16];
 		snprintf(svNumMods, 15, "%d", gamemods_numCurrentModsLoaded);
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods", svNumMods); //TODO: Bugger void pointer!
+
+		if ( gamemods_numCurrentModsLoaded )
+		{
+			int count = 0;
+			for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+			{
+				std::unordered_map<std::string, uint64>::iterator itMap = gamemods_workshopLoadedFileIDMap.find(it->second);
+				if ( itMap != gamemods_workshopLoadedFileIDMap.end() )
+				{
+					char svModFileID[64];
+					snprintf(svModFileID, 64, "%d", static_cast<int>(itMap->second));
+					char tagName[32] = "";
+					snprintf(tagName, 32, "svMod%d", count);
+					SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName, svModFileID); //TODO: Bugger void pointer!
+					++count;
+				}
+			}
+		}
 	}
 	else
 	{

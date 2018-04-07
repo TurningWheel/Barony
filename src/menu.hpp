@@ -96,6 +96,8 @@ void buttonGamemodsCancelModifyFileContents(button_t* my);
 void buttonInviteFriends(button_t* my);
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
+void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
+void buttonGamemodsMountHostsModFiles(button_t* my);
 #endif
 
 #define SLIDERFONT font12x12_bmp
@@ -140,6 +142,10 @@ extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepath
 void gamemodsWindowUploadInit(bool creatingNewItem);
 void gamemodsSubscribedItemsInit();
 void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y);
+bool gamemodsCheckIfSubscribedAndDownloadedFileID(uint64 fileID);
+bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID);
+bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList);
+extern std::unordered_map<std::string, uint64> gamemods_workshopLoadedFileIDMap;
 #endif // STEAMWORKS
 
 extern bool scoreDisplayMultiplayer;
