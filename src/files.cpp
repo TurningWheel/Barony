@@ -1080,7 +1080,10 @@ std::string physfsFormatMapName(char* levelfilename)
 	std::string fullMapPath;
 	std::string mapFileName = "maps/";
 	mapFileName.append(levelfilename);
-	mapFileName.append(".lmp");
+	if ( mapFileName.find(".lmp") == std::string::npos )
+	{
+		mapFileName.append(".lmp");
+	}
 	//printlog("format map name: %s", mapFileName.c_str());
 	if ( PHYSFS_getRealDir(mapFileName.c_str()) != NULL )
 	{
