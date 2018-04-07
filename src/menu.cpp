@@ -3431,20 +3431,34 @@ void handleMainMenu(bool mode)
 					button->focused = 1;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 #ifdef STEAMWORKS
-					const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
-					int serverNumModsLoaded = atoi(serverNumModsChar);
-					if ( serverNumModsLoaded > 0 )
+					if ( !directConnect )
 					{
-						// fetch server loaded mods button
-						button = newButton();
-						strcpy(button->label, language[2984]);
-						button->sizex = strlen(language[2984]) * 12 + 8;
-						button->sizey = 20;
-						button->x = subx2 - 4 - button->sizex;
-						button->y = suby2 - 24;
-						button->action = &buttonGamemodsSubscribeToHostsModFiles;
-						button->visible = 1;
-						button->focused = 1;
+						const char* serverNumModsChar = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods");
+						int serverNumModsLoaded = atoi(serverNumModsChar);
+						if ( serverNumModsLoaded > 0 )
+						{
+							// subscribe to server loaded mods button
+							button = newButton();
+							strcpy(button->label, language[2984]);
+							button->sizex = strlen(language[2984]) * 12 + 8;
+							button->sizey = 20;
+							button->x = subx2 - 4 - button->sizex;
+							button->y = suby2 - 24;
+							button->action = &buttonGamemodsSubscribeToHostsModFiles;
+							button->visible = 1;
+							button->focused = 1;
+
+							// mount server mods button
+							button = newButton();
+							strcpy(button->label, language[2985]);
+							button->sizex = strlen(language[2985]) * 12 + 8;
+							button->sizey = 20;
+							button->x = subx2 - 4 - button->sizex;
+							button->y = suby2 - 24;
+							button->action = &buttonGamemodsMountHostsModFiles;
+							button->visible = 0;
+							button->focused = 1;
+						}
 					}
 #endif // STEAMWORKS
 				}
@@ -8140,30 +8154,6 @@ void buttonHostLobby(button_t* my)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	c = button->x + button->sizex + 4;
-
-	// subsribe to server loaded mods button
-	button = newButton();
-	strcpy(button->label, language[2984]);
-	button->sizex = strlen(language[2984]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - 4 - button->sizex;
-	button->y = suby2 - 24;
-	button->action = &buttonGamemodsSubscribeToHostsModFiles;
-	button->visible = 1;
-	button->focused = 1;
-
-	// mount server mods button
-	button = newButton();
-	strcpy(button->label, language[2985]);
-	button->sizex = strlen(language[2985]) * 12 + 8;
-	button->sizey = 20;
-	button->x = subx2 - 4 - button->sizex;
-	button->y = suby2 - 24;
-	button->action = &buttonGamemodsMountHostsModFiles;
-	button->visible = 0;
-	button->focused = 1;
-
-
 
 	// invite friends button
 	if ( !directConnect )
