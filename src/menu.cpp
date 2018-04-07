@@ -5244,7 +5244,7 @@ void handleMainMenu(bool mode)
 						{
 							modInfoStr = modInfoStr.substr(0, 64 - 2).append("..");
 						}
-						ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr);
+						ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr.c_str());
 						++numLoadedModLine;
 					}
 				}
@@ -5531,7 +5531,7 @@ void handleMainMenu(bool mode)
 					{
 						modInfoStr = modInfoStr.substr(0, 64 - 2).append("..");
 					}
-					ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr);
+					ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 4 + numLoadedModLine * TTF12_HEIGHT, "%2d) %s", numLoadedModLine, modInfoStr.c_str());
 					++numLoadedModLine;
 				}
 			}
