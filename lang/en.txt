@@ -436,8 +436,8 @@ thou makest use of them.#
 # steam lobby type
 
 250 Private lobby#
-251 Friends-only lobby#
-252 Public lobby#
+251 Public lobby#
+252 Friends-only lobby#
 
 
 # Left-click (entity spotting) messages
@@ -3614,7 +3614,7 @@ anyone seeking that power again, deep underground. #
 2926 Discreet#
 2927 Allied#
 2928 Classic#
-2929 Unused#
+2929 Modded#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#
@@ -3640,6 +3640,13 @@ anyone seeking that power again, deep underground. #
 2975 The cape carries you above the ground and you feel its power surging through your body.#
 2976 The gauntlets fill you with otherworldly defiance.#
 2977 Cost: %d + ?? MP#
-2978 Custom levels#
-
+2978 Custom Content#
+2979 Workshop#
+2980 Character Creation (Modded)#
+2981 WARNING: MAKE SURE ALL LOBBY MEMBERS HAVE
+IDENTICAL MOD LISTS LOADED!#
+2982 NOTE: Modded sessions use their own savegame files.#
+2983 keep game timer on HUD#
+2984 Subscribe to host mod list#
+2985 Mount host mod list#
 2999 end#
