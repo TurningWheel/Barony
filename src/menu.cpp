@@ -5068,7 +5068,7 @@ void handleMainMenu(bool mode)
 				if ( ticks - g_SteamWorkshop->LastActionResult.creationTick < TICKS_PER_SECOND * 5 )
 				{
 					ttfPrintTextFormattedColor(ttf12, filename_padx + 8, suby2 - TTF12_HEIGHT - 4, uint32ColorOrange(*mainsurface), "%s returned status %d", 
-						g_SteamWorkshop->LastActionResult.actionMsg, static_cast<int>(g_SteamWorkshop->LastActionResult.lastResult));
+						g_SteamWorkshop->LastActionResult.actionMsg.c_str(), static_cast<int>(g_SteamWorkshop->LastActionResult.lastResult));
 				}
 
 				// draw the content
