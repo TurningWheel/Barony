@@ -145,7 +145,7 @@ void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y);
 bool gamemodsCheckIfSubscribedAndDownloadedFileID(uint64 fileID);
 bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID);
 bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList);
-extern std::unordered_map<std::string, uint64> gamemods_workshopLoadedFileIDMap;
+extern std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
 #endif // STEAMWORKS
 
 extern bool scoreDisplayMultiplayer;

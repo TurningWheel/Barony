@@ -114,7 +114,7 @@ std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
-std::unordered_map<std::string, uint64> gamemods_workshopLoadedFileIDMap;
+std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
 #endif // STEAMWORKS
 
 
@@ -4188,7 +4188,8 @@ void handleMainMenu(bool mode)
 				int lineStartListLoadedMods = numToolboxLines;
 				numToolboxLines += gamemods_workshopLoadedFileIDMap.size() + 2;
 				std::string clientModString = "Client mod list:\n";
-				for ( std::unordered_map<std::string, uint64>::iterator it = gamemods_workshopLoadedFileIDMap.begin(); it != gamemods_workshopLoadedFileIDMap.end(); ++it )
+				for ( std::vector<std::pair<std::string, uint64>>::iterator it = gamemods_workshopLoadedFileIDMap.begin(); 
+					it != gamemods_workshopLoadedFileIDMap.end(); ++it )
 				{
 					clientModString.append(std::to_string(it->second));
 					clientModString.append("\n");
@@ -5143,20 +5144,8 @@ void handleMainMenu(bool mode)
 									if ( PHYSFS_mount(fullpath, NULL, 0) )
 									{
 										gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
-										gamemods_workshopLoadedFileIDMap.insert(std::make_pair(itemDetails.m_rgchTitle, itemDetails.m_nPublishedFileId));
+										gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(itemDetails.m_rgchTitle, itemDetails.m_nPublishedFileId));
 										//printlog("[%s] is in the search path.\n", fullpath);
-										if ( gamemods_mountedFilepaths.size() > 0 )
-										{
-											for ( node = button_l.first; node != NULL; node = nextnode )
-											{
-												nextnode = node->next;
-												button = (button_t*)node->element;
-												if ( button->action == &buttonGamemodsStartModdedGame )
-												{
-													button->visible = 1;
-												}
-											}
-										}
 									}
 								}
 							}
@@ -5194,6 +5183,16 @@ void handleMainMenu(bool mode)
 							// unsubscribe button
 							if ( gamemodsDrawClickableButton(filename_padx, filename_pady, 12 * TTF12_WIDTH + 8, TTF12_HEIGHT, uint32ColorRed(*mainsurface), "Unsubscribe", 0) )
 							{
+								if ( pathIsMounted )
+								{
+									if ( PHYSFS_unmount(fullpath) )
+									{
+										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
+										{
+											printlog("[%s] is removed from the search path.\n", fullpath);
+										}
+									}
+								}
 								g_SteamWorkshop->UnsubscribeItemFileID(itemDetails.m_nPublishedFileId);
 								gamemods_window_scroll = 0;
 							}
@@ -5208,18 +5207,6 @@ void handleMainMenu(bool mode)
 										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
 										{
 											printlog("[%s] is removed from the search path.\n", fullpath);
-											if ( gamemods_mountedFilepaths.size() <= 0 )
-											{
-												for ( node = button_l.first; node != NULL; node = nextnode )
-												{
-													nextnode = node->next;
-													button = (button_t*)node->element;
-													if ( button->action == &buttonGamemodsStartModdedGame )
-													{
-														button->visible = 0;
-													}
-												}
-											}
 										}
 									}
 								}
@@ -5471,18 +5458,6 @@ void handleMainMenu(bool mode)
 						{
 							gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
 							printlog("[%s] is in the search path.\n", path.c_str());
-							if ( gamemods_mountedFilepaths.size() > 0 )
-							{
-								for ( node = button_l.first; node != NULL; node = nextnode )
-								{
-									nextnode = node->next;
-									button = (button_t*)node->element;
-									if ( button->action == &buttonGamemodsStartModdedGame )
-									{
-										button->visible = 1;
-									}
-								}
-							}
 						}
 					}
 				}
@@ -5497,18 +5472,6 @@ void handleMainMenu(bool mode)
 							if ( gamemodsRemovePathFromMountedFiles(path) )
 							{
 								printlog("[%s] is removed from the search path.\n", path.c_str());
-								if ( gamemods_mountedFilepaths.size() <= 0 )
-								{
-									for ( node = button_l.first; node != NULL; node = nextnode )
-									{
-										nextnode = node->next;
-										button = (button_t*)node->element;
-										if ( button->action == &buttonGamemodsStartModdedGame )
-										{
-											button->visible = 0;
-										}
-									}
-								}
 							}
 						}
 					}
@@ -10138,17 +10101,9 @@ void gamemodsSubscribedItemsInit()
 	button->x = subx2 - (button->sizex + 16);
 	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
 	button->action = &buttonGamemodsStartModdedGame;
-	if ( gamemods_mountedFilepaths.size() > 0 )
-	{
-		button->visible = 1;
-	}
-	else
-	{
-		button->visible = 0;
-	}
+	button->visible = 1;
 	button->focused = 1;
 }
-
 
 void buttonGamemodsOpenUploadWindow(button_t* my)
 {
@@ -10280,7 +10235,7 @@ bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID)
 	}
 
 	bool found = false;
-	for ( std::unordered_map<std::string, uint64>::iterator it = gamemods_workshopLoadedFileIDMap.begin();
+	for ( std::vector<std::pair<std::string, uint64>>::iterator it = gamemods_workshopLoadedFileIDMap.begin();
 		it != gamemods_workshopLoadedFileIDMap.end(); ++it )
 	{
 		if ( it->second == fileID )
@@ -10355,7 +10310,7 @@ void buttonGamemodsMountHostsModFiles(button_t* my)
 								if ( g_SteamWorkshop->m_subscribedItemListDetails[i].m_nPublishedFileId == atoi(serverModFileID) )
 								{
 									gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle));
-									gamemods_workshopLoadedFileIDMap.insert(std::make_pair(g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle, 
+									gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(g_SteamWorkshop->m_subscribedItemListDetails[i].m_rgchTitle, 
 										g_SteamWorkshop->m_subscribedItemListDetails[i].m_nPublishedFileId));
 									break;
 								}
@@ -10372,8 +10327,8 @@ void buttonGamemodsMountHostsModFiles(button_t* my)
 
 bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList)
 {
-	std::unordered_map<std::string, uint64>::iterator found = gamemods_workshopLoadedFileIDMap.begin();
-	std::unordered_map<std::string, uint64>::iterator previousFound = gamemods_workshopLoadedFileIDMap.begin();
+	std::vector<std::pair<std::string, uint64>>::iterator found = gamemods_workshopLoadedFileIDMap.begin();
+	std::vector<std::pair<std::string, uint64>>::iterator previousFound = gamemods_workshopLoadedFileIDMap.begin();
 	std::vector<std::string>::iterator itServerList;
 	if ( serverModList.empty() || (serverModList.size() > gamemods_mountedFilepaths.size()) )
 	{
@@ -10450,7 +10405,15 @@ bool gamemodsRemovePathFromMountedFiles(std::string findStr)
 		{
 			// found entry, remove from list.
 #ifdef STEAMWORKS
-			gamemods_workshopLoadedFileIDMap.erase(line.second);
+			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = gamemods_workshopLoadedFileIDMap.begin();
+				itId != gamemods_workshopLoadedFileIDMap.end(); ++itId )
+			{
+				if ( itId->first.compare(line.second) == 0 )
+				{
+					gamemods_workshopLoadedFileIDMap.erase(itId);
+					break;
+				}
+			}
 #endif // STEAMWORKS
 			gamemods_mountedFilepaths.erase(it);
 			return true;
@@ -10556,14 +10519,7 @@ void gamemodsCustomContentInit()
 	button->x = subx2 - (button->sizex + 16);
 	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
 	button->action = &buttonGamemodsStartModdedGame;
-	if ( gamemods_mountedFilepaths.size() > 0 )
-	{
-		button->visible = 1;
-	}
-	else
-	{
-		button->visible = 0;
-	}
+	button->visible = 1;
 	button->focused = 1;
 }
 
