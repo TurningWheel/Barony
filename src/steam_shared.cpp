@@ -32,7 +32,8 @@ CSteamWorkshop::CSteamWorkshop() :
 	LastActionResult(),
 	workshopItemTags(),
 	uploadSuccessTicks(0),
-	m_myWorkshopItemToModify()
+	m_myWorkshopItemToModify(),
+	subscribedCallStatus(0)
 {
 
 }
@@ -154,6 +155,14 @@ void CSteamWorkshop::CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCM
 	// searchType can look for all results, items only, guides only etc.
 	// sortOrder will sort results by creation date, subscribed date etc.
 	CSteamID steamID = SteamUser()->GetSteamID();
+	if ( itemListType == k_EUserUGCList_Subscribed )
+	{
+		subscribedCallStatus = 1;
+	}
+	else
+	{
+		subscribedCallStatus = 0;
+	}
 	UGCQueryHandle = SteamUGC()->CreateQueryUserUGCRequest(steamID.GetAccountID(), itemListType,
 		searchType, sortOrder, STEAM_APPID, STEAM_APPID, 1);
 	if ( UGCQueryHandle != k_UGCQueryHandleInvalid )
@@ -174,6 +183,10 @@ void CSteamWorkshop::OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bo
 		{
 			ReadSubscribedItems();
 			StoreResultMessage("Load Subscribed Items: OK", k_EResultOK);
+			if ( subscribedCallStatus == 1 )
+			{
+				subscribedCallStatus = 2;
+			}
 			return;
 		}
 	}
@@ -189,6 +202,7 @@ void CSteamWorkshop::ReadSubscribedItems()
 				SteamUGC()->GetQueryUGCResult(SteamUGCQueryCompleted.m_handle,
 					i, &m_subscribedItemListDetails[i]);
 		}
+		
 		SteamUGC()->ReleaseQueryUGCRequest(SteamUGCQueryCompleted.m_handle);
 	}
 }
