@@ -2934,7 +2934,7 @@ void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
 	{
 		if ( singleplayer )
 		{
-			if ( gamemods_mountedFilepaths.empty() )
+			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
 				strcpy(nameToSet, SAVEGAMEFILE);
 			}
@@ -2945,7 +2945,7 @@ void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
 		}
 		else
 		{
-			if ( gamemods_mountedFilepaths.empty() )
+			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
 				strcpy(nameToSet, SAVEGAMEFILE_MULTIPLAYER);
 			}
@@ -2959,7 +2959,7 @@ void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
 	{
 		if ( singleplayer )
 		{
-			if ( gamemods_mountedFilepaths.empty() )
+			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
 				strcpy(nameToSet, SAVEGAMEFILE2);
 			}
@@ -2970,7 +2970,7 @@ void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
 		}
 		else
 		{
-			if ( gamemods_mountedFilepaths.empty() )
+			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
 				strcpy(nameToSet, SAVEGAMEFILE2_MULTIPLAYER);
 			}

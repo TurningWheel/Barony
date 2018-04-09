@@ -130,6 +130,7 @@ public:
 	SteamUGCDetails_t m_subscribedItemListDetails[50]; // The entries
 	SteamUGCDetails_t m_myWorkshopItemToModify;
 	int numSubcribedItemResults = 50;
+	int subscribedCallStatus;
 
 	CSteamWorkshop();
 	~CSteamWorkshop() {};
