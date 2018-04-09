@@ -160,13 +160,13 @@ void initSkeleton(Entity* my, Stat* myStats)
 					case 4:
 						break;
 					case 5:
-						myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, nullptr);
+						myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
 						break;
 					case 6:
 					case 7:
 					case 8:
 					case 9:
-						myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, nullptr);
+						myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
 						break;
 				}
 			}
