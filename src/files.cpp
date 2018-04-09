@@ -679,7 +679,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char* filename2)
+int saveMap(const char* filename2)
 {
 	FILE* fp;
 	Uint32 numentities = 0;
@@ -691,13 +691,21 @@ int saveMap(char* filename2)
 
 	if ( filename2 != NULL && strcmp(filename2, "") )
 	{
-		strcpy(filename, "maps/");
-		strcat(filename, filename2);
+		if ( !PHYSFS_isInit() )
+		{
+			strcpy(filename, "maps/");
+			strcat(filename, filename2);
+		}
+		else
+		{
+			strcpy(filename, filename2);
+		}
 
 		if ( strstr(filename, ".lmp") == NULL )
 		{
 			strcat(filename, ".lmp");
 		}
+
 		if ((fp = openDataFile(filename, "wb")) == NULL)
 		{
 			printlog("warning: failed to open file '%s' for map saving!\n", filename);
