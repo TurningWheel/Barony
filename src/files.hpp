@@ -22,7 +22,7 @@ SDL_Surface* loadImage(char* filename);
 voxel_t* loadVoxel(char* filename2);
 int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creatureList);
 int loadConfig(char* filename);
-int saveMap(char* filename);
+int saveMap(const char* filename);
 char* readFile(char* filename);
 std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
 FILE *openDataFile(const char *const filename, const char * const mode);

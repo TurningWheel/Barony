@@ -73,6 +73,7 @@
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
       <AdditionalOptions>
       </AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
