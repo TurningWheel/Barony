@@ -151,6 +151,7 @@ bool disable_messages = false;
 bool right_click_protect = false;
 bool auto_appraise_new_items = false;
 bool lock_right_sidebar = false;
+bool show_game_timer_always = false;
 
 bool loadInterfaceResources()
 {
@@ -949,6 +950,10 @@ int saveConfig(char* filename)
 	if ( lock_right_sidebar )
 	{
 		fprintf(fp, "/locksidebar\n");
+	}
+	if ( show_game_timer_always )
+	{
+		fprintf(fp, "/showgametimer\n");
 	}
 	if (disable_messages)
 	{
