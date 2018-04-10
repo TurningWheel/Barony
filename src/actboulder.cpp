@@ -1083,9 +1083,10 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 
 	if ( !pushedOffLedge ) // destroy some gold
 	{
-		for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+		for ( node_t* node = map.entities->first; node != nullptr; )
 		{
 			Entity* entity = (Entity*)node->element;
+			node = node->next;
 			if ( entity )
 			{
 				if ( entity->behavior == &actGoldBag && entity->goldSokoban == 1 && goldToDestroy > 0 )
