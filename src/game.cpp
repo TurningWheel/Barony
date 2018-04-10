@@ -70,6 +70,7 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
+std::vector<std::string> physFSFilesInDirectory;
 
 // recommended for valgrind debugging:
 // res of 480x270
@@ -702,44 +703,7 @@ void gameLogic(void)
 					}
 					darkmap = false;
 					numplayers = 0;
-					if ( !secretlevel )
-					{
-						fp = openDataFile(LEVELSFILE, "r");
-					}
-					else
-					{
-						fp = openDataFile(SECRETLEVELSFILE, "r");
-					}
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-					fscanf(fp, "%s", tempstr);
-					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-						{
-							break;
-						}
-					int result = 0;
-					if ( !strcmp(tempstr, "gen:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = generateDungeon(tempstr, mapseed);
-					}
-					else if ( !strcmp(tempstr, "map:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = loadMap(tempstr, &map, map.entities, map.creatures);
-					}
-					fclose(fp);
+					int result = physfsLoadMapFile(currentlevel, mapseed, false);
 					assignActions(&map);
 					generatePathMaps();
 
@@ -2595,65 +2559,22 @@ int main(int argc, char** argv)
 						}
 						if ( loadingmap == false )
 						{
-							if ( !secretlevel )
-							{
-								fp = openDataFile(LEVELSFILE, "r");
-							}
-							else
-							{
-								fp = openDataFile(SECRETLEVELSFILE, "r");
-							}
 							currentlevel = startfloor;
 							if ( startfloor )
 							{
-								for ( int i = 0; i < currentlevel; ++i )
-								{
-									while ( fgetc(fp) != '\n' )
-									{
-										if ( feof(fp) )
-										{
-											break;
-										}
-									}
-								}
+								physfsLoadMapFile(currentlevel, 0, true);
 							}
-							fscanf(fp, "%s", tempstr);
-							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+							else
 							{
-								{
-									break;
-								}
+								physfsLoadMapFile(0, 0, true);
 							}
-							if ( !strcmp(tempstr, "gen:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-								{
-									{
-										break;
-									}
-								}
-								generateDungeon(tempstr, rand());
-							}
-							else if ( !strcmp(tempstr, "map:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' )
-								{
-									if ( feof(fp) )
-									{
-										break;
-									}
-								}
-								loadMap(tempstr, &map, map.entities, map.creatures);
-							}
-							fclose(fp);
 						}
 						else
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities, map.creatures);
+								std::string fullMapName = physfsFormatMapName(maptoload);
+								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 							}
 							else
 							{
@@ -3133,10 +3054,6 @@ int main(int argc, char** argv)
 							updateBookGUI();
 							//updateRightSidebar();
 
-							Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
-							Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
-							Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
-							printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 						}
 						else if (gui_mode == GUI_MODE_MAGIC)
 						{
@@ -3149,6 +3066,13 @@ int main(int argc, char** argv)
 							updatePlayerInventory();
 							updateShopWindow();
 						}
+					}
+					if ( (shootmode == false && gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
+					{
+						Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
+						Uint32 min = ((completionTime / TICKS_PER_SECOND) / 60) % 60;
+						Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
+						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 					}
 
 					// pointer in inventory screen
