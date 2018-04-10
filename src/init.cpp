@@ -94,6 +94,35 @@ int initApp(char* title, int fullscreen)
 	map.creatures = nullptr;
 	map.tiles = NULL;
 
+	// init PHYSFS
+	PHYSFS_init("/");
+	if ( !PHYSFS_isInit() )
+	{
+		printlog("[PhysFS]: failed to initialize!");
+		return 13;
+	}
+	if ( PHYSFS_mount("./", NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted base ./ folder");
+		if ( PHYSFS_setWriteDir("./") )
+		{
+			if ( PHYSFS_mkdir("mods") )
+			{
+				PHYSFS_setWriteDir("./mods/");
+			}
+			else
+			{
+				printlog("[PhysFS]: unsuccessfully created mods/ folder");
+				return 13;
+			}
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base ./ folder");
+		return 13;
+	}
+
 	// init steamworks
 #ifdef STEAMWORKS
 	SteamAPI_RestartAppIfNecessary(STEAM_APPID);
@@ -104,6 +133,8 @@ int initApp(char* title, int fullscreen)
 		return 1;
 	}
 	steam_init = true;
+	g_SteamLeaderboards = new CSteamLeaderboards();
+	g_SteamWorkshop = new CSteamWorkshop();
 #endif
 
 	window_title = title;
@@ -553,7 +584,6 @@ int initApp(char* title, int fullscreen)
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
-
 	return 0;
 }
 
@@ -2123,9 +2153,23 @@ int deinitApp()
 	{
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
+		if ( g_SteamLeaderboards )
+		{
+			delete g_SteamLeaderboards;
+		}
+		if ( g_SteamWorkshop )
+		{
+			delete g_SteamWorkshop;
+		}
 		SteamAPI_Shutdown();
 	}
 #endif
+
+	if ( PHYSFS_isInit() )
+	{
+		PHYSFS_deinit();
+		printlog("[PhysFS]: De-initializing...\n");
+	}
 
 	// free currently loaded language if any
 	freeLanguages();

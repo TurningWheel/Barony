@@ -24,6 +24,7 @@ static const int CONDUCT_HARDCORE = 0; // 2 state, 1 = hardcore, 0 = not.
 static const int CONDUCT_CHEATS_ENABLED = 1; // 2 state, 1 = cheats enabled, 0 = not.
 static const int CONDUCT_MULTIPLAYER = 2; // 2 state, 1 = multiplayer, 0 = not.
 static const int CONDUCT_CLASSIC_MODE = 3; // 2 state, 1 = classic maps, 0 = not.
+static const int CONDUCT_MODDED = 4; // 2 state, 1 = modded, 0 = not.
 
 typedef struct score_t
 {
@@ -78,8 +79,13 @@ int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, oth
 
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
+void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile);
 
 #define SAVEGAMEFILE "savegame.dat"
 #define SAVEGAMEFILE2 "savegame2.dat" // saves follower data
 #define SAVEGAMEFILE_MULTIPLAYER "savegame_multiplayer.dat"
 #define SAVEGAMEFILE2_MULTIPLAYER "savegame2_multiplayer.dat" // saves follower data
+#define SAVEGAMEFILE_MODDED "savegame_modded.dat"
+#define SAVEGAMEFILE2_MODDED "savegame2_modded.dat"
+#define SAVEGAMEFILE_MODDED_MULTIPLAYER "savegame_modded_multiplayer.dat"
+#define SAVEGAMEFILE2_MODDED_MULTIPLAYER "savegame2_modded_multiplayer.dat"

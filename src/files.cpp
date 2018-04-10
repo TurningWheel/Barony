@@ -61,6 +61,14 @@ bool completePath(char *dest, const char * const filename) {
 		return true;
 	}
 
+#ifdef WINDOWS
+	// Already absolute (drive letter in path)
+	if ( filename[1] == ':' ) {
+		strncpy(dest, filename, 1024);
+		return true;
+	}
+#endif
+
 	snprintf(dest, 1024, "%s/%s", datadir, filename);
 	return true;
 }
@@ -197,7 +205,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
+int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -210,7 +218,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 	Stat* dummyStats;
 	sex_t s;
 	int editorVersion = 0;
-	char filename[256];
+	char filename[1024];
 
 	char oldmapname[64];
 	strcpy(oldmapname, map.name);
@@ -223,8 +231,16 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 		return -1;
 	}
 
-	strcpy(filename, "maps/");
-	strcat(filename, filename2);
+	if ( !PHYSFS_isInit() )
+	{
+		strcpy(filename, "maps/");
+		strcat(filename, filename2);
+	}
+	else
+	{
+		strcpy(filename, filename2);
+	}
+
 
 	// add extension if missing
 	if ( strstr(filename, ".lmp") == nullptr )
@@ -663,7 +679,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char* filename2)
+int saveMap(const char* filename2)
 {
 	FILE* fp;
 	Uint32 numentities = 0;
@@ -675,13 +691,21 @@ int saveMap(char* filename2)
 
 	if ( filename2 != NULL && strcmp(filename2, "") )
 	{
-		strcpy(filename, "maps/");
-		strcat(filename, filename2);
+		if ( !PHYSFS_isInit() )
+		{
+			strcpy(filename, "maps/");
+			strcat(filename, filename2);
+		}
+		else
+		{
+			strcpy(filename, filename2);
+		}
 
 		if ( strstr(filename, ".lmp") == NULL )
 		{
 			strcat(filename, ".lmp");
 		}
+
 		if ((fp = openDataFile(filename, "wb")) == NULL)
 		{
 			printlog("warning: failed to open file '%s' for map saving!\n", filename);
@@ -879,7 +903,7 @@ out_input_file:
 
 -------------------------------------------------------------------------------*/
 
-std::list<std::string> directoryContents(const char* directory)
+std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
@@ -904,9 +928,19 @@ std::list<std::string> directoryContents(const char* directory)
 		{
 			continue;
 		}
-		if ((cur.st_mode & S_IFMT) == S_IFREG)
+		if ( includeFiles )
 		{
-			list.push_back(entry->d_name);
+			if ((cur.st_mode & S_IFMT) == S_IFREG)
+			{
+				list.push_back(entry->d_name);
+			}
+		}
+		if ( includeSubdirectory )
+		{
+			if ((cur.st_mode & S_IFMT) == S_IFDIR)
+			{
+				list.push_back(entry->d_name);
+			}
 		}
 	}
 
@@ -924,18 +958,146 @@ std::vector<std::string> getLinesFromDataFile(std::string filename)
 	std::ifstream file(filepath);
 	if ( !file )
 	{
-		printlog("Error: Failed to open file \"%s\"", filename.c_str());
-		return lines;
-	}
-	std::string line;
-	while ( std::getline(file, line) )
-	{
-		if ( !line.empty() )
+		std::ifstream file(filename); // check absolute path.
+		if ( !file)
 		{
-			lines.push_back(line);
+			printlog("Error: Failed to open file \"%s\"", filename.c_str());
+			return lines;
+		}
+		else
+		{
+			std::string line;
+			while ( std::getline(file, line) )
+			{
+				if ( !line.empty() )
+				{
+					lines.push_back(line);
+				}
+			}
+			file.close();
 		}
 	}
-	file.close();
+	else
+	{
+		std::string line;
+		while ( std::getline(file, line) )
+		{
+			if ( !line.empty() )
+			{
+				lines.push_back(line);
+			}
+		}
+		file.close();
+	}
 
 	return lines;
+}
+
+int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
+{
+	std::string mapsDirectory; // store the full file path here.
+	if ( !secretlevel )
+	{
+		mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+		mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+	}
+	else
+	{
+		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
+	}
+	printlog("mapsDirectory: %s", mapsDirectory.c_str());
+	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+	std::string line = levelsList.front();
+	int levelsCounted = 0;
+	if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
+	{
+		for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
+		{
+			// process i, iterate through all the map levels until currentlevel.
+			line = *i;
+			if ( line[0] == '\n' )
+			{
+				continue;
+			}
+			++levelsCounted;
+		}
+	}
+	std::size_t found = line.find(' ');
+	char tempstr[1024];
+	if ( found != std::string::npos )
+	{
+		std::string mapType = line.substr(0, found);
+		std::string mapName;
+		mapName = line.substr(found + 1, line.find('\n'));
+		std::size_t carriageReturn = mapName.find('\r');
+		if ( carriageReturn != std::string::npos )
+		{
+			mapName.erase(carriageReturn);
+			printlog("%s", mapName.c_str());
+		}
+		if ( mapType.compare("map:") == 0 )
+		{
+			strncpy(tempstr, mapName.c_str(), mapName.length());
+			tempstr[mapName.length()] = '\0';
+			mapName = physfsFormatMapName(tempstr);
+			return loadMap(mapName.c_str(), &map, map.entities, map.creatures);
+		}
+		else if ( mapType.compare("gen:") == 0 )
+		{
+			strncpy(tempstr, mapName.c_str(), mapName.length());
+			tempstr[mapName.length()] = '\0';
+			if ( useRandSeed )
+			{
+				return generateDungeon(tempstr, rand());
+			}
+			else
+			{
+				return generateDungeon(tempstr, seed);
+			}
+		}
+		//printlog("%s", mapName.c_str());
+	}
+	return 0;
+}
+
+std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
+{
+	std::vector<std::string> filenames;
+	char **rc = PHYSFS_enumerateFiles(dir);
+	if ( *rc == NULL )
+	{
+		printlog("[PhysFS]: Error: Failed to enumerate filenames in directory '%s'", dir);
+		return filenames;
+	}
+	char **i;
+	char buf[1024];
+	std::string file;
+	for ( i = rc; *i != NULL; i++ )
+	{
+		file = *i;
+		printlog(" * We've got [%s].\n", file.c_str());
+		filenames.push_back(file);
+	}
+	PHYSFS_freeList(rc);
+	return filenames;
+}
+
+std::string physfsFormatMapName(char* levelfilename)
+{
+	std::string fullMapPath;
+	std::string mapFileName = "maps/";
+	mapFileName.append(levelfilename);
+	if ( mapFileName.find(".lmp") == std::string::npos )
+	{
+		mapFileName.append(".lmp");
+	}
+	//printlog("format map name: %s", mapFileName.c_str());
+	if ( PHYSFS_getRealDir(mapFileName.c_str()) != NULL )
+	{
+		//printlog("format map name: %s", mapFileName.c_str());
+		fullMapPath = PHYSFS_getRealDir(mapFileName.c_str());
+		fullMapPath.append(PHYSFS_getDirSeparator()).append(mapFileName);
+	}
+	return fullMapPath;
 }

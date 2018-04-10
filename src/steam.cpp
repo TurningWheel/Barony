@@ -772,7 +772,8 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		const char* lobbyName = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "name"); //TODO: Again with the void pointers.
 		const char* lobbyVersion = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "ver"); //TODO: VOID.
 		int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(steamIDLobby)); //TODO MORE VOID POINTERS.
-
+		const char* lobbyNumMods = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "svNumMods"); //TODO: VOID.
+		int numMods = atoi(lobbyNumMods);
 		string versionText = lobbyVersion;
 		if ( versionText ==  "" )
 		{
@@ -783,7 +784,14 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 		if ( lobbyName && lobbyName[0] && numPlayers )
 		{
 			// set the lobby data
-			snprintf( lobbyText[iLobby], 47, "%s (%s)", lobbyName, versionText.c_str() ); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
+			if ( numMods > 0 )
+			{
+				snprintf(lobbyText[iLobby], 47, "%s (%s) [MODDED]", lobbyName, versionText.c_str()); //TODO: shorten?
+			}
+			else
+			{
+				snprintf( lobbyText[iLobby], 47, "%s (%s)", lobbyName, versionText.c_str()); //TODO: Perhaps a better method would be to print the name and the version as two separate strings ( because some steam names are ridiculously long).
+			}
 			lobbyPlayers[iLobby] = numPlayers;
 		}
 		else
@@ -885,6 +893,32 @@ void steam_OnLobbyCreated( void* pCallback, bool bIOFailure )
 		char loadingsavegameChar[16];
 		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "loadingsavegame", loadingsavegameChar); //TODO: Bugger void pointer!
+
+		char svNumMods[16];
+		snprintf(svNumMods, 15, "%d", gamemods_numCurrentModsLoaded);
+		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svNumMods", svNumMods); //TODO: Bugger void pointer!
+
+		if ( gamemods_numCurrentModsLoaded > 0 )
+		{
+			int count = 0;
+			for ( std::vector<std::pair<std::string, std::string>>::iterator it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+			{
+				for ( std::vector<std::pair<std::string, uint64>>::iterator itMap = gamemods_workshopLoadedFileIDMap.begin();
+					itMap != gamemods_workshopLoadedFileIDMap.end(); ++itMap )
+				{
+					if ( (itMap->first).compare(it->second) == 0 )
+					{
+						char svModFileID[64];
+						snprintf(svModFileID, 64, "%d", static_cast<int>(itMap->second));
+						char tagName[32] = "";
+						snprintf(tagName, 32, "svMod%d", count);
+						SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), tagName, svModFileID); //TODO: Bugger void pointer!
+						++count;
+						break;
+					}
+				}
+			}
+		}
 	}
 	else
 	{
@@ -979,6 +1013,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 			initClass(0);
 		}
 		score_window = 0;
+		gamemods_window = 0;
 		lobby_window = false;
 		settings_window = false;
 		charcreation_step = 0;
@@ -1101,5 +1136,4 @@ void steam_OnP2PSessionConnectFail( void* pCallback )
 		openFailedConnectionWindow(multiplayer);
 	}
 }
-
 #endif

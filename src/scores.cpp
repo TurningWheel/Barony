@@ -1122,11 +1122,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		setSaveGameFileName(true, savefile, false);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, false);
 	}
 
 	if ( (fp = fopen(savefile, "wb")) == NULL )
@@ -1514,11 +1514,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE2);
+		setSaveGameFileName(true, savefile, true);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, true);
 	}
 
 	// now we save the follower information
@@ -1774,11 +1774,11 @@ int loadGame(int player)
 	char savefile[32] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		setSaveGameFileName(true, savefile, false);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, false);
 	}
 
 	// open file
@@ -2213,11 +2213,11 @@ list_t* loadGameFollowers()
 	char savefile[32] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE2);
+		setSaveGameFileName(true, savefile, true);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, true);
 	}
 
 	// open file
@@ -2409,11 +2409,11 @@ int deleteSaveGame(int gametype)
 	char savefile[32] = "";
 	if ( gametype == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		setSaveGameFileName(true, savefile, false);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, false);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2430,11 +2430,11 @@ int deleteSaveGame(int gametype)
 
 	if ( gametype == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE2);
+		setSaveGameFileName(true, savefile, true);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, true);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2466,14 +2466,7 @@ int deleteSaveGame(int gametype)
 bool saveGameExists(bool singleplayer)
 {
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( access(savefile, F_OK ) == -1 )
 	{
 		return false;
@@ -2524,14 +2517,7 @@ char* getSaveGameName(bool singleplayer)
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2670,14 +2656,7 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 	FILE* fp;
 	Uint32 gameKey;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2724,14 +2703,7 @@ int getSaveGameType(bool singleplayer)
 	FILE* fp;
 	int mul;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2779,14 +2751,7 @@ int getSaveGameClientnum(bool singleplayer)
 	FILE* fp;
 	int clientnum;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2835,14 +2800,7 @@ Uint32 getSaveGameMapSeed(bool singleplayer)
 	FILE* fp;
 	Uint32 seed;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2920,6 +2878,7 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_HARDCORE] = 1;
 	conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 0;
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
+	conductGameChallenges[CONDUCT_MODDED] = 0;
 }
 
 void updatePlayerConductsInMainLoop()
@@ -2958,6 +2917,67 @@ void updatePlayerConductsInMainLoop()
 		if ( (svFlags & SV_FLAG_CLASSIC) )
 		{
 			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_MODDED] )
+	{
+		if ( gamemods_numCurrentModsLoaded > 0 )
+		{
+			conductGameChallenges[CONDUCT_MODDED] = 1;
+		}
+	}
+}
+
+void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
+{
+	if ( !followersFile )
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE_MODDED);
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE_MULTIPLAYER);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE_MODDED_MULTIPLAYER);
+			}
+		}
+	}
+	else
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2_MODDED);
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2_MULTIPLAYER);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2_MODDED_MULTIPLAYER);
+			}
 		}
 	}
 }
