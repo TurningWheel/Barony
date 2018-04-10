@@ -4837,7 +4837,7 @@ void handleMainMenu(bool mode)
 								{
 									int x;
 									TTF_SizeUTF8(ttf12, inputstr, &x, NULL);
-									ttfPrintText(ttf12, status_padx + x, status_pady, "_");
+									ttfPrintText(ttf12, status_padx + x + 8, status_pady, "_");
 								}
 								status_pady += 2 * TTF12_HEIGHT;
 							}
@@ -5261,8 +5261,8 @@ void handleMainMenu(bool mode)
 				{
 					int tooltip_pady = 8;
 					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[drawExtendedInformationForMod];
-					drawTooltip(&tooltip);
 					// draw the information.
+					drawTooltip(&tooltip);
 					std::string line = itemDetails.m_rgchTitle;
 					if ( line.length() >= 64 )
 					{
@@ -5273,9 +5273,15 @@ void handleMainMenu(bool mode)
 					tooltip_pady += 2 * TTF12_HEIGHT;
 
 					line = itemDetails.m_rgchDescription;
+					line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+					line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
 					std::string subString;
-					while ( line.size() >= 62 && maxDescriptionLines > 0 )
+					while ( line.length() >= 62 )
 					{
+						if ( maxDescriptionLines <= 0 )
+						{
+							break;
+						}
 						subString = line.substr(0, 62);
 						line = line.substr(62);
 						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
@@ -9544,6 +9550,36 @@ void buttonGamemodsPrevDirectory(button_t* my)
 	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true, false);
 }
 
+
+void writeLevelsTxt(std::string modFolder)
+{
+	std::string path = BASE_DATA_DIR;
+	path.append("mods/").append(modFolder);
+	if ( access(path.c_str(), F_OK) == 0 )
+	{
+		std::string writeFile = modFolder + "/maps/levels.txt";
+		PHYSFS_File *physfp = PHYSFS_openWrite(writeFile.c_str());
+		if ( physfp != NULL )
+		{
+			PHYSFS_writeBytes(physfp, "map: start\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "map: boss\n", 10);			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+			PHYSFS_close(physfp);
+		}
+		else
+		{
+			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
+	}
+}
+
 void buttonGamemodsCreateModDirectory(button_t* my)
 {
 	std::string baseDir = PHYSFS_getBaseDir();
@@ -9583,6 +9619,7 @@ void buttonGamemodsCreateModDirectory(button_t* my)
 			PHYSFS_mkdir((dir + folder).c_str());
 			folder = "/maps";
 			PHYSFS_mkdir((dir + folder).c_str());
+			writeLevelsTxt(gamemods_newBlankDirectory);
 
 			folder = "/models";
 			PHYSFS_mkdir((dir + folder).c_str());
@@ -9744,20 +9781,27 @@ void buttonGamemodsSetWorkshopItemFields(button_t* my)
 				gamemods_workshopSetPropertyReturn[2] = SteamUGC()->SetItemContent(g_SteamWorkshop->UGCUpdateHandle, fullpath.c_str());
 				// set preview image.
 				bool imagePreviewFound = false;
-				std::string imgPath = fullpath.append("preview.jpg");
+				std::string imgPath = fullpath;
+				imgPath.append("preview.jpg");
 				if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
 				{
 					imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
 				}
-				imgPath = fullpath.append("preview.png");
+				imgPath = fullpath;
+				imgPath.append("preview.png");
 				if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
 				{
 					imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
 				}
-				imgPath = fullpath.append("preview.gif");
+				imgPath = fullpath;
+				imgPath.append("preview.jpg");
 				if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
 				{
 					imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+				}
+				if ( !imagePreviewFound )
+				{
+					printlog("Failed to upload image for workshop item!");
 				}
 			}
 
@@ -9839,20 +9883,27 @@ void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my)
 					itemContentSetSuccess = SteamUGC()->SetItemContent(g_SteamWorkshop->UGCUpdateHandle, fullpath.c_str());
 					// set preview image.
 					bool imagePreviewFound = false;
-					std::string imgPath = fullpath.append("preview.jpg");
+					std::string imgPath = fullpath;
+					imgPath.append("preview.jpg");
 					if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
 					{
 						imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
 					}
-					imgPath = fullpath.append("preview.png");
+					imgPath = fullpath;
+					imgPath.append("preview.png");
 					if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
 					{
 						imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
 					}
-					imgPath = fullpath.append("preview.gif");
+					imgPath = fullpath;
+					imgPath.append("preview.jpg");
 					if ( !imagePreviewFound && access((imgPath).c_str(), F_OK) == 0 )
 					{
 						imagePreviewFound = SteamUGC()->SetItemPreview(g_SteamWorkshop->UGCUpdateHandle, imgPath.c_str());
+					}
+					if ( !imagePreviewFound )
+					{
+						printlog("Failed to upload image for workshop item!");
 					}
 				}
 			}
