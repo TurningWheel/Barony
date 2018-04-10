@@ -514,7 +514,14 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 
 					// store weapon data
 					spellEntity->skill[10] = hitstats->weapon->type;
-					spellEntity->skill[11] = hitstats->weapon->status;
+					if ( itemCategory(hitstats->weapon) == SPELLBOOK )
+					{
+						spellEntity->skill[11] = DECREPIT;
+					}
+					else
+					{
+						spellEntity->skill[11] = hitstats->weapon->status;
+					}
 					spellEntity->skill[12] = hitstats->weapon->beatitude;
 					spellEntity->skill[13] = hitstats->weapon->count;
 					spellEntity->skill[14] = hitstats->weapon->appearance;
@@ -536,7 +543,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						}
 					}
 
-					if ( hit.entity->behavior == &actMonster )
+					if ( hit.entity->behavior == &actMonster && itemCategory(hitstats->weapon) != SPELLBOOK )
 					{
 						free(hitstats->weapon);
 						hitstats->weapon = nullptr;
