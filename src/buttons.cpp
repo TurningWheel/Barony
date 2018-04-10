@@ -99,7 +99,7 @@ static void updateMapNames()
 	{
 		while ( (ent = readdir(dir)) != NULL )
 		{
-			if ( strstr(ent->d_name, ".lmp") != NULL || strcmp(ent->d_name, "..") || strcmp(ent->d_name, ".") )
+			if ( strstr(ent->d_name, ".lmp") != NULL && (strcmp(ent->d_name, "..") && strcmp(ent->d_name, ".")) )
 			{
 				mapNames.push_back(ent->d_name);
 			}
@@ -126,6 +126,35 @@ static void updateModFolderNames()
 		std::list<std::string>::iterator it = std::find(modFolderNames.begin(), modFolderNames.end(), "..");
 		modFolderNames.erase(it);
 		std::sort(mapNames.begin(), mapNames.end());
+	}
+}
+
+void writeLevelsTxt(std::string modFolder)
+{
+	std::string path = BASE_DATA_DIR;
+	path.append("mods/").append(modFolder);
+	if ( access(path.c_str(), F_OK) == 0 )
+	{
+		std::string writeFile = modFolder + "/maps/levels.txt";
+		PHYSFS_File *physfp = PHYSFS_openWrite(writeFile.c_str());
+		if ( physfp != NULL )
+		{
+			PHYSFS_writeBytes(physfp, "map: start\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
+			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);						PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);						PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);						PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);						PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);						PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);						PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "map: boss\n", 10);						PHYSFS_writeBytes(physfp, "gen: hell\n", 10);						PHYSFS_writeBytes(physfp, "gen: hell\n", 10);						PHYSFS_writeBytes(physfp, "gen: hell\n", 10);						PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);						PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+			PHYSFS_close(physfp);
+		}
+		else
+		{
+			printlog("[PhysFS]: Failed to open %s/maps/levels.txt for writing.", path.c_str());
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: Failed to write levels.txt in %s", path.c_str());
 	}
 }
 
@@ -525,6 +554,7 @@ void buttonOpen(button_t* my)
 void buttonSetSaveDirectoryFolder(button_t* my)
 {
 	std::string filepath = BASE_DATA_DIR;
+	bool inModFolder = false;
 	if ( strcmp(foldername, ".") == 0 || strcmp(foldername, "") == 0 )
 	{
 		physfs_saveDirectory = BASE_DATA_DIR;
@@ -533,12 +563,76 @@ void buttonSetSaveDirectoryFolder(button_t* my)
 	{
 		filepath.append("mods/").append(foldername);
 		physfs_saveDirectory = filepath + PHYSFS_getDirSeparator();
+		inModFolder = true;
 	}
 	else
 	{
 		physfs_saveDirectory = BASE_DATA_DIR;
 	}
-	printlog("[PhysFS]: Changed save directory folder to %s", filepath.c_str());
+	if ( access(physfs_saveDirectory.c_str(), F_OK) == 0 )
+	{
+		printlog("[PhysFS]: Changed save directory folder to %s", physfs_saveDirectory.c_str());
+	}
+	else if ( inModFolder )
+	{
+		printlog("[PhysFS]: Directory %s does not exist. Creating new mod folder...", physfs_saveDirectory.c_str());
+		
+		if ( PHYSFS_mkdir(foldername) )
+		{
+			std::string dir = foldername;
+			std::string folder = "/books";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/editor";
+			PHYSFS_mkdir((dir + folder).c_str());
+
+			folder = "/images";
+			PHYSFS_mkdir((dir + folder).c_str());
+			std::string subfolder = "/sprites";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/system";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/tiles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/items";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/images";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/lang";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/maps";
+			PHYSFS_mkdir((dir + folder).c_str());
+			writeLevelsTxt(foldername);
+
+			folder = "/models";
+			PHYSFS_mkdir((dir + folder).c_str());
+			subfolder = "/creatures";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/decorations";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/doors";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/items";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+			subfolder = "/particles";
+			PHYSFS_mkdir((dir + folder + subfolder).c_str());
+
+			folder = "/music";
+			PHYSFS_mkdir((dir + folder).c_str());
+			folder = "/sound";
+			PHYSFS_mkdir((dir + folder).c_str());
+			printlog("[PhysFS]: New folder %s created.", physfs_saveDirectory.c_str());
+			strcpy(message, "                      Created a new mod folder.");
+			messagetime = 60;
+		}
+		else
+		{
+			physfs_saveDirectory = BASE_DATA_DIR;
+			printlog("[PhysFS]: Unable to create mods/ folder %s.", physfs_saveDirectory.c_str());
+		}
+	}
+	updateModFolderNames();
 }
 
 void buttonSetOpenDirectoryFolder(button_t* my)
@@ -574,6 +668,14 @@ void buttonSetOpenDirectoryFolder(button_t* my)
 	{
 		printlog("[PhysFS]: Failed to change open directory folder.");
 	}
+	updateModFolderNames();
+}
+
+void buttonPHYSFSDirDefault(button_t* my)
+{
+	strcpy(foldername, BASE_DATA_DIR);
+	buttonSetSaveDirectoryFolder(nullptr);
+	buttonSetOpenDirectoryFolder(nullptr);
 }
 
 void buttonOpenDirectory(button_t* my)
@@ -595,8 +697,8 @@ void buttonOpenDirectory(button_t* my)
 
 	button = newButton();
 	strcpy(button->label, "Set as save directory");
-	button->x = subx2 - 24 - strlen(button->label) * TTF12_WIDTH;
-	button->y = suby2 - 48;
+	button->x = subx2 - 16 - strlen(button->label) * TTF12_WIDTH;
+	button->y = suby2 - 90;
 	button->sizex = strlen(button->label) * TTF12_WIDTH + 8;
 	button->sizey = 16;
 	button->action = &buttonSetSaveDirectoryFolder;
@@ -604,9 +706,19 @@ void buttonOpenDirectory(button_t* my)
 	button->focused = 1;
 
 	button = newButton();
+	strcpy(button->label, "Reset to default");
+	button->x = subx2 - 16 - strlen(button->label) * TTF12_WIDTH;
+	button->y = suby2 - 54;
+	button->sizex = strlen(button->label) * TTF12_WIDTH + 8;
+	button->sizey = 16;
+	button->action = &buttonPHYSFSDirDefault;
+	button->visible = 1;
+	button->focused = 1;
+
+	button = newButton();
 	strcpy(button->label, "Set as load directory");
-	button->x = subx2 - 24 - strlen(button->label) * TTF12_WIDTH;
-	button->y = suby2 - 24;
+	button->x = subx2 - 16 - strlen(button->label) * TTF12_WIDTH;
+	button->y = suby2 - 72;
 	button->sizex = strlen(button->label) * TTF12_WIDTH + 8;
 	button->sizey = 16;
 	button->action = &buttonSetOpenDirectoryFolder;
@@ -652,7 +764,7 @@ void buttonOpenConfirm(button_t* my)
 	}
 	else
 	{
-		strcat(message, "      Opened '");
+		strcat(message, "Opened '");
 		strcat(message, filename);
 		strcat(message, "'");
 	}
@@ -695,7 +807,7 @@ void buttonSave(button_t* my)
 		}
 		else
 		{
-			strcat(message, "       Saved '");
+			strcat(message, "Saved '");
 			strcat(message, path.c_str());
 			strcat(message, "'");
 		}
