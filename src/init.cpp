@@ -109,6 +109,7 @@ int initApp(char* title, int fullscreen)
 			if ( PHYSFS_mkdir("mods") )
 			{
 				PHYSFS_setWriteDir("./mods/");
+				printlog("[PhysFS]: successfully set write folder ./mods/");
 			}
 			else
 			{
