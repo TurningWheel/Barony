@@ -2805,12 +2805,19 @@ void item_FoodTin(Item*& item, int player)
 	oldcount = item->count;
 	item->count = 1;
 
+	bool hpBuff = false;
+	bool mpBuff = false;
+
 	// first word
 	int word = rand() % 16;
 	strcpy(tempstr, language[918 + word]);
 	if ( word == 6 || word == 15 )
 	{
 		slippery = true;
+	}
+	if ( word < 8 )
+	{
+		hpBuff = true;
 	}
 
 	// second word
@@ -2820,6 +2827,10 @@ void item_FoodTin(Item*& item, int player)
 	{
 		slippery = true;
 	}
+	if ( word >= 8 )
+	{
+		mpBuff = true;
+	}
 
 	// third word
 	word = rand() % 16;
@@ -2827,6 +2838,11 @@ void item_FoodTin(Item*& item, int player)
 	if ( word == 1 || word == 8 )
 	{
 		slippery = true;
+	}
+	if ( word == 8 )
+	{
+		hpBuff = true;
+		mpBuff = true;
 	}
 
 	messagePlayer(player, language[764], tempstr);
@@ -2866,10 +2882,24 @@ void item_FoodTin(Item*& item, int player)
 		return;
 	}
 
+	int buffDuration = item->status * TICKS_PER_SECOND * 4; // (4 - 16 seconds)
+	if ( item->status > WORN )
+	{
+		buffDuration -= rand() % ((buffDuration / 2) + 1); // 50-100% duration
+	}
+	else
+	{
+		buffDuration -= rand() % ((buffDuration / 4) + 1); // 75-100% duration
+	}
+
 	// replenish nutrition points
 	if (svFlags & SV_FLAG_HUNGER)
 	{
 		stats[player]->HUNGER += 600;
+		stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
+		stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
+		stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
+		stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN] = buffDuration;
 	}
 	else
 	{
@@ -2924,6 +2954,12 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
+
+	if ( hpBuff || mpBuff )
+	{
+		messagePlayer(player, language[911]);
+	}
+
 	serverUpdateHunger(player);
 	consumeItem(item);
 }
