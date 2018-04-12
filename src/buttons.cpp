@@ -99,7 +99,7 @@ static void updateMapNames()
 	{
 		while ( (ent = readdir(dir)) != NULL )
 		{
-			if ( strstr(ent->d_name, ".lmp") != NULL && (strcmp(ent->d_name, "..") && strcmp(ent->d_name, ".")) )
+			if ( strstr(ent->d_name, ".lmp") != NULL || (!strcmp(ent->d_name, "..") || !strcmp(ent->d_name, ".")) )
 			{
 				mapNames.push_back(ent->d_name);
 			}
