@@ -2425,12 +2425,12 @@ int main(int argc, char** argv)
 						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
 
 						// directory list offset from slider
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
 						if ( scroll )
 						{
 							slidery -= 8 * scroll;
 							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
 							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 							strcpy(filename, mapNames[selectedFile].c_str());
 							inputstr = filename;
@@ -2440,7 +2440,7 @@ int main(int argc, char** argv)
 						{
 							slidery = oslidery + mousey - omousey;
 							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
 							mclick = 1;
 							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 							strcpy(filename, mapNames[selectedFile].c_str());
@@ -2463,7 +2463,7 @@ int main(int argc, char** argv)
 							}
 						}
 						pos.x = subx1 + 8;
-						pos.y = suby1 + 24 + (selectedFile - y2) * 8;
+						pos.y = suby1 + 24 + (std::max(selectedFile - y2, 0)) * 8;
 						pos.w = subx2 - subx1 - 32;
 						pos.h = 8;
 						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
