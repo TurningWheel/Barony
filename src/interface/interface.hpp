@@ -32,6 +32,7 @@ extern list_t damageIndicators;
 extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp;
 extern Uint32 enemy_timer;
+extern Uint32 enemy_bar_color[MAXPLAYERS];
 
 #ifndef SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZE
