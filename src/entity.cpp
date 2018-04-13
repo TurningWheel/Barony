@@ -10059,6 +10059,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	{
 		return HEAL_TIME;
 	}
+	return HEAL_TIME;
 }
 
 int Entity::getBaseManaRegen(Stat& myStats)
