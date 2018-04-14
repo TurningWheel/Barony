@@ -69,7 +69,7 @@ extern bool inrange[MAXPLAYERS];
 extern bool deleteallbuttons;
 extern Sint32 client_classes[MAXPLAYERS];
 extern Uint32 client_keepalive[MAXPLAYERS];
-extern Uint32 portnumber;
+extern Uint16 portnumber;
 extern list_t messages;
 extern list_t command_history;
 extern node_t* chosen_command;
@@ -191,7 +191,7 @@ void startMessages();
 void initClass(int player);
 
 extern char last_ip[64];
-extern char last_port[64];
+extern char last_port[6];
 
 //TODO: Maybe increase with level or something?
 //TODO: Pause health regen during combat?
