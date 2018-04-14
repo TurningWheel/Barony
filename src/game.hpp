@@ -19,7 +19,7 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.1.3"
+#define VERSION "v3.1.4"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -73,7 +73,7 @@ extern bool inrange[MAXPLAYERS];
 extern bool deleteallbuttons;
 extern Sint32 client_classes[MAXPLAYERS];
 extern Uint32 client_keepalive[MAXPLAYERS];
-extern Uint32 portnumber;
+extern Uint16 portnumber;
 extern list_t messages;
 extern list_t command_history;
 extern node_t* chosen_command;
@@ -195,7 +195,7 @@ void startMessages();
 void initClass(int player);
 
 extern char last_ip[64];
-extern char last_port[64];
+extern char last_port[6];
 
 //TODO: Maybe increase with level or something?
 //TODO: Pause health regen during combat?

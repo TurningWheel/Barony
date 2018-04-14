@@ -135,24 +135,6 @@ void actArrow(Entity* my)
 						}
 					}
 
-					// update enemy bar for attacker
-					if ( !strcmp(hitstats->name, "") )
-					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-						}
-						
-					}
-					else
-					{
-						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
-					}
-
 					if ( damage > 0 )
 					{
 						Entity* gib = spawnGib(hit.entity);
@@ -324,6 +306,7 @@ void actArrow(Entity* my)
 							messagePlayerColor(hit.entity->skill[2], color, language[2515]);
 						}
 					}
+
 					if ( my->arrowPoisonTime > 0 && damage > 0 )
 					{
 						hitstats->poisonKiller = my->parent;
@@ -336,6 +319,25 @@ void actArrow(Entity* my)
 							serverUpdateEffects(hit.entity->skill[2]);
 						}
 					}
+
+					// update enemy bar for attacker
+					if ( !strcmp(hitstats->name, "") )
+					{
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						}
+
+					}
+					else
+					{
+						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+					}
+
 				}
 				list_RemoveNode(my->mynode);
 			}
