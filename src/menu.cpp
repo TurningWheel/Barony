@@ -6784,23 +6784,14 @@ void buttonJoinMultiplayer(button_t* my)
 void buttonHostLobby(button_t* my)
 {
 	button_t* button;
-	char *portnumbererr;
 	int c;
 
 	// close current window
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
-	portnumber = (Uint16)strtol(portnumber_char, &portnumbererr, 10); // get the port number from the text field
+	portnumber = atoi(portnumber_char); // get the port number from the text field
 	list_FreeAll(&lobbyChatboxMessages);
-
-	if (*portnumbererr != '\0' || portnumber < 1024)
-	{
-		printlog( "warning: invalid port number: %d\n", portnumber);
-		openFailedConnectionWindow(SERVER);
-		return;
-	}
-
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
 	if ( loadingsavegame )
 	{
@@ -7027,15 +7018,8 @@ void buttonJoinLobby(button_t* my)
 				break;
 			}
 		}
-		char *portnumbererr;
 		strncpy(address, connectaddress, c); // get the address from the text field
-		portnumber = (Uint16)strtol(&connectaddress[c + 1], &portnumbererr, 10); // get the port number from the text field
-		if (*portnumbererr != '\0' || portnumber < 1024)
-		{
-			printlog( "warning: invalid port number %d.\n", portnumber);
-			openFailedConnectionWindow(CLIENT);
-			return;
-		}
+		portnumber = atoi(&connectaddress[c + 1]); // get the port number from the text field
 		strcpy(last_ip, connectaddress);
 		saveConfig("default.cfg");
 	}
