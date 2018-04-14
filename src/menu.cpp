@@ -517,6 +517,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[2549], steamOnlinePlayers);
 			}
+			if ( intro == false )
+			{
+				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+				{
+					TTF_SizeUTF8(ttf8, language[2986], &w, &h);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
+				}
+			}
 			/*h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
@@ -2520,6 +2528,12 @@ void handleMainMenu(bool mode)
 					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
+#ifndef STEAMWORKS
+						if ( hovering_selection == 0 )
+						{
+							hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
+						}
+#endif // STEAMWORKS
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
 						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
@@ -3678,6 +3692,12 @@ void handleMainMenu(bool mode)
 				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
+#ifndef STEAMWORKS
+					if ( hovering_selection == 0 )
+					{
+						hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
+					}
+#endif // STEAMWORKS
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
 					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
