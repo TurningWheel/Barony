@@ -2046,6 +2046,11 @@ void actMonster(Entity* my)
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			case CREATURE_IMP:
 				impDie(my);
@@ -2063,6 +2068,11 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			case AUTOMATON:
 				automatonDie(my);
@@ -2103,6 +2113,11 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 0);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			case LICH_ICE:
 				my->flags[PASSABLE] = true; // so I can't take any more hits
@@ -2113,6 +2128,11 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 0);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			default:
 				break; //This should never be reached.
