@@ -130,6 +130,7 @@ bool settings_auto_appraise_new_items = true;
 bool playing_random_char = false;
 bool colorblind = false;
 bool settings_lock_right_sidebar = false;
+bool settings_show_game_timer_always = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -515,6 +516,14 @@ void handleMainMenu(bool mode)
 			else if ( SteamUser()->BLoggedOn() )
 			{
 				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[2549], steamOnlinePlayers);
+			}
+			if ( intro == false )
+			{
+				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+				{
+					TTF_SizeUTF8(ttf8, language[2986], &w, &h);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
+				}
 			}
 			/*h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
@@ -2469,7 +2478,16 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2598]);
 			}
-			current_y += 48;
+			current_y += 16;
+			if ( settings_show_game_timer_always )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[2983]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[2983]);
+			}
+			current_y += 32;
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[1375]);
@@ -2510,6 +2528,12 @@ void handleMainMenu(bool mode)
 					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
+#ifndef STEAMWORKS
+						if ( hovering_selection == 0 )
+						{
+							hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
+						}
+#endif // STEAMWORKS
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
 						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
@@ -2581,6 +2605,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_lock_right_sidebar = (settings_lock_right_sidebar == false);
+					}
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_show_game_timer_always = (settings_show_game_timer_always == false);
 					}
 				}
 				else
@@ -3663,6 +3692,12 @@ void handleMainMenu(bool mode)
 				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
+#ifndef STEAMWORKS
+					if ( hovering_selection == 0 )
+					{
+						hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
+					}
+#endif // STEAMWORKS
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
 					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
@@ -5857,6 +5892,7 @@ void openSettingsWindow()
 	settings_right_click_protect = right_click_protect;
 	settings_auto_appraise_new_items = auto_appraise_new_items;
 	settings_lock_right_sidebar = lock_right_sidebar;
+	settings_show_game_timer_always = show_game_timer_always;
 
 	settings_gamepad_leftx_invert = gamepad_leftx_invert;
 	settings_gamepad_lefty_invert = gamepad_lefty_invert;
@@ -6768,14 +6804,23 @@ void buttonJoinMultiplayer(button_t* my)
 void buttonHostLobby(button_t* my)
 {
 	button_t* button;
+	char *portnumbererr;
 	int c;
 
 	// close current window
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
-	portnumber = atoi(portnumber_char); // get the port number from the text field
+	portnumber = (Uint16)strtol(portnumber_char, &portnumbererr, 10); // get the port number from the text field
 	list_FreeAll(&lobbyChatboxMessages);
+
+	if (*portnumbererr != '\0' || portnumber < 1024)
+	{
+		printlog( "warning: invalid port number: %d\n", portnumber);
+		openFailedConnectionWindow(SERVER);
+		return;
+	}
+
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
 	if ( loadingsavegame )
 	{
@@ -7002,8 +7047,15 @@ void buttonJoinLobby(button_t* my)
 				break;
 			}
 		}
+		char *portnumbererr;
 		strncpy(address, connectaddress, c); // get the address from the text field
-		portnumber = atoi(&connectaddress[c + 1]); // get the port number from the text field
+		portnumber = (Uint16)strtol(&connectaddress[c + 1], &portnumbererr, 10); // get the port number from the text field
+		if (*portnumbererr != '\0' || portnumber < 1024)
+		{
+			printlog( "warning: invalid port number %d.\n", portnumber);
+			openFailedConnectionWindow(CLIENT);
+			return;
+		}
 		strcpy(last_ip, connectaddress);
 		saveConfig("default.cfg");
 	}
@@ -7364,6 +7416,7 @@ void applySettings()
 	right_click_protect = settings_right_click_protect;
 	auto_appraise_new_items = settings_auto_appraise_new_items;
 	lock_right_sidebar = settings_lock_right_sidebar;
+	show_game_timer_always = settings_show_game_timer_always;
 
 	gamepad_leftx_invert = settings_gamepad_leftx_invert;
 	gamepad_lefty_invert = settings_gamepad_lefty_invert;

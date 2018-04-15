@@ -2046,6 +2046,11 @@ void actMonster(Entity* my)
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			case CREATURE_IMP:
 				impDie(my);
@@ -2063,6 +2068,11 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			case AUTOMATON:
 				automatonDie(my);
@@ -2103,6 +2113,11 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 0);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			case LICH_ICE:
 				my->flags[PASSABLE] = true; // so I can't take any more hits
@@ -2113,6 +2128,11 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 0);
+				for ( c = 0; c < NUMEFFECTS; ++c )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
 				break;
 			default:
 				break; //This should never be reached.
@@ -2563,9 +2583,23 @@ void actMonster(Entity* my)
 						monsterMoveAside(my, my);
 					}
 				}
-				entity->flags[PASSABLE] = true;
-				clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
-				entity->flags[PASSABLE] = false;
+
+
+				if ( (entity->sprite == 274 || entity->sprite == 646 
+					|| entity->sprite == 650 || entity->sprite == 304) 
+					&& entity->flags[PASSABLE] == true )
+				{
+					// LICH/LICH_FIRE/LICH_ICE/DEVIL
+					// If these guys are PASSABLE then they're either dying or some other animation
+					// Move the monster inside the boss, but don't set PASSABLE to false again.
+					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+				}
+				else
+				{
+					entity->flags[PASSABLE] = true;
+					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+					entity->flags[PASSABLE] = false;
+				}
 			}
 		}
 

@@ -1468,6 +1468,10 @@ void consoleCommand(char* command_str)
 			proficienciesPage = 1;
 		}
 	}
+	else if ( !strncmp(command_str, "/showgametimer", 14) )
+	{
+		show_game_timer_always = (show_game_timer_always == false);
+	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
 		command_str[8] = 0;

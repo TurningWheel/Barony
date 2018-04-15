@@ -142,6 +142,7 @@ extern bool settings_disable_messages;
 extern bool settings_right_click_protect;
 extern bool settings_auto_appraise_new_items;
 extern bool settings_lock_right_sidebar;
+extern bool settings_show_game_timer_always;
 
 static const int NUM_SETTINGS_TABS = 7;
 

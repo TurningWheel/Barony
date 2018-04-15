@@ -82,7 +82,7 @@ void actSink(Entity* my)
 				if (my->skill[0] == 0)
 				{
 					messagePlayer(i, language[580]);
-					playSoundEntity(my, 140 + rand(), 64);
+					playSoundEntity(my, 140 + rand() % 2, 64);
 				}
 				else
 				{

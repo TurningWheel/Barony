@@ -24,6 +24,7 @@
 char enemy_name[128];
 Sint32 enemy_hp = 0, enemy_maxhp = 0;
 Uint32 enemy_timer = 0;
+Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
 
 /*-------------------------------------------------------------------------------
 
@@ -117,6 +118,41 @@ damageIndicator_t* newDamageIndicator(double x, double y)
 
 /*-------------------------------------------------------------------------------
 
+	updateEnemyBarColor
+
+	updates the enemy hp bar color depending on an entities status effects
+
+-------------------------------------------------------------------------------*/
+
+void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Stat &targetStats)
+{
+	if ( targetStats.EFFECTS[EFF_POISONED] )
+	{
+		if ( colorblind )
+		{
+			enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 0, 0, 64); // Display blue
+		}
+		else
+		{
+			enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 0, 64, 0); // Display green
+		}
+	}
+	else if ( targetStats.EFFECTS[EFF_PARALYZED] )
+	{
+		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 112, 112, 0);
+	}
+	else if ( targetStats.EFFECTS[EFF_CONFUSED] )
+	{
+		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
+	}
+	else
+	{
+		enemy_bar_color[player] = 0;
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	updateEnemyBar
 
 	updates the enemy hp bar for the given player
@@ -171,6 +207,10 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 				net_packet->len = 12;
 				sendPacketSafe(net_sock, -1, net_packet, playertarget - 1);
 			}
+			if ( player >= 0 )
+			{
+				updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
+			}
 		}
 	}
 
@@ -186,11 +226,12 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);
 		SDLNet_Write32(maxhp, &net_packet->data[8]);
-		strcpy((char*)(&net_packet->data[12]), name);
-		net_packet->data[12 + strlen(name)] = 0;
+		SDLNet_Write32(enemy_bar_color[player], &net_packet->data[12]);
+		strcpy((char*)(&net_packet->data[16]), name);
+		net_packet->data[16 + strlen(name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 12 + strlen(name) + 1;
+		net_packet->len = 16 + strlen(name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
@@ -270,6 +311,10 @@ void drawStatus()
 		{
 			pos.w = 506 * ((double)enemy_hp / enemy_maxhp);
 			drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+			if ( enemy_bar_color[clientnum] > 0 )
+			{
+				drawRect(&pos, enemy_bar_color[clientnum], 224);
+			}
 		}
 
 		// name

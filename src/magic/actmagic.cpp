@@ -3302,6 +3302,28 @@ void actParticleSapCenter(Entity* my)
 	}
 	else
 	{
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = my->yaw;
+		entity->vel_x = (rand() % 20 - 10) / 10.0;
+		entity->vel_y = (rand() % 20 - 10) / 10.0;
+		entity->vel_z = -.5;
+		entity->flags[PASSABLE] = true;
+		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+		entity->behavior = &actItem;
+		entity->skill[10] = my->skill[10];
+		entity->skill[11] = my->skill[11];
+		entity->skill[12] = my->skill[12];
+		entity->skill[13] = my->skill[13];
+		entity->skill[14] = my->skill[14];
+		entity->skill[15] = my->skill[15];
+		entity->parent = 0;
+
 		// no parent, no target to travel to.
 		list_RemoveNode(my->mynode);
 		return;

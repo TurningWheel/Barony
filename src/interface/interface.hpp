@@ -32,6 +32,7 @@ extern list_t damageIndicators;
 extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp;
 extern Uint32 enemy_timer;
+extern Uint32 enemy_bar_color[MAXPLAYERS];
 
 #ifndef SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZE
@@ -373,6 +374,8 @@ extern bool right_click_protect;
 extern bool auto_appraise_new_items;
 
 extern bool lock_right_sidebar;
+
+extern bool show_game_timer_always;
 
 const char* getInputName(Uint32 scancode);
 Sint8* inputPressed(Uint32 scancode);

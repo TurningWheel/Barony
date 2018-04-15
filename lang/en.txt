@@ -2708,7 +2708,7 @@ dungeon level %d, client (player %d) (direct ip)#
 # game/server flags tooltips
 
 # Cheats. CURRENTLY UNUSED
-1942 #
+1942 NOTE: Enabling cheats will disable Steam Achievements on your save files!#
 # Friendly fire. CURRENTLY UNUSED
 1943 #
 # Minotaurs. CURRENTLY UNUSED
@@ -3642,4 +3642,12 @@ anyone seeking that power again, deep underground. #
 2977 Cost: %d + ?? MP#
 2978 Custom levels#
 
+
+
+
+
+
+
+
+2986 Savefile has cheats enabled#
 2999 end#
