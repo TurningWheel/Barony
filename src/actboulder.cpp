@@ -1155,7 +1155,7 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 				}
 			}
 		}
-		if ( goldCount >= 25 )
+		if ( goldCount >= 25 && sokobanItemReward )
 		{
 			sokobanItemReward->flags[INVISIBLE] = false;
 			serverUpdateEntityFlag(sokobanItemReward, INVISIBLE);

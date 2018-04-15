@@ -9967,6 +9967,16 @@ int Entity::getManaRegenInterval(Stat& myStats)
 			}
 		}
 	}
+
+	if ( myStats.EFFECTS[EFF_MP_REGEN] )
+	{
+		manaring += 2;
+		if ( manaring > 3 )
+		{
+			manaring = 3;
+		}
+	}
+
 	if ( manaring > 0 )
 	{
 		return regenTime / (manaring * 2);
@@ -10022,6 +10032,15 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 			}
 		}
 	}
+	
+	if ( myStats.EFFECTS[EFF_HP_REGEN] )
+	{
+		healring += 2;
+		if ( healring > 3 )
+		{
+			healring = 3;
+		}
+	}
 
 	if ( !strncmp(map.name, "Mages Guild", 11) && myStats.type == SHOPKEEPER )
 	{
@@ -10040,6 +10059,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	{
 		return HEAL_TIME;
 	}
+	return HEAL_TIME;
 }
 
 int Entity::getBaseManaRegen(Stat& myStats)

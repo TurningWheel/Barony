@@ -36,7 +36,7 @@
 NetHandler* net_handler = nullptr;
 
 char last_ip[64] = "";
-char last_port[64] = "";
+char last_port[6] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
 
@@ -1530,8 +1530,9 @@ void clientHandlePacket()
 	{
 		enemy_hp = SDLNet_Read32(&net_packet->data[4]);
 		enemy_maxhp = SDLNet_Read32(&net_packet->data[8]);
+		enemy_bar_color[clientnum] = SDLNet_Read32(&net_packet->data[12]); // receive color enemy bar data for my client.
 		enemy_timer = ticks;
-		strcpy(enemy_name, (char*)(&net_packet->data[12]));
+		strcpy(enemy_name, (char*)(&net_packet->data[16]));
 		return;
 	}
 
