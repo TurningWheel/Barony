@@ -36,7 +36,7 @@
 NetHandler* net_handler = nullptr;
 
 char last_ip[64] = "";
-char last_port[6] = "";
+char last_port[64] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
 
