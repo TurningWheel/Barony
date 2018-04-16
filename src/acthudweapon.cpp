@@ -506,17 +506,18 @@ void actHudWeapon(Entity* my)
 					{
 						if ( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW )
 						{
-							if ( !stats[clientnum]->defending && !throwGimpTimer )
+							if ( throwGimpTimer == 0 )
 							{
-								// bows need to be drawn back
-								if (!bowDrawingSoundPlaying)
+								// Bows need to be drawn back
+								if ( !bowDrawingSoundPlaying )
 								{
-									if (bowFire)
+									if ( bowFire )
 									{
 										bowFire = false;
+										bowDrawingSound = nullptr;
 										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
-										throwGimpTimer = TICKS_PER_SECOND / 4;
+										throwGimpTimer = 12; // Was TICKS_PER_SECOND / 4
 									}
 									else
 									{
