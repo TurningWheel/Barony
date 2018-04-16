@@ -191,7 +191,7 @@ void startMessages();
 void initClass(int player);
 
 extern char last_ip[64];
-extern char last_port[6];
+extern char last_port[64];
 
 //TODO: Maybe increase with level or something?
 //TODO: Pause health regen during combat?
