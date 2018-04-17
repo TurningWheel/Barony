@@ -479,6 +479,11 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				return;
 			}
 
+			if ( hitstats->type == LICH || hitstats->type == LICH_FIRE || hitstats->type == LICH_ICE || hitstats->type == DEVIL )
+			{
+				return;
+			}
+
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{

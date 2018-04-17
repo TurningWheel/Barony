@@ -561,6 +561,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[2549], steamOnlinePlayers);
 			}
+			if ( intro == false )
+			{
+				if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+				{
+					TTF_SizeUTF8(ttf8, language[2986], &w, &h);
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
+				}
+			}
 			/*h2 = h;
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
 			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
@@ -2665,6 +2673,12 @@ void handleMainMenu(bool mode)
 					if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
 						hovering_selection = i;
+#ifndef STEAMWORKS
+						if ( hovering_selection == 0 )
+						{
+							hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
+						}
+#endif // STEAMWORKS
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
 						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
@@ -3858,6 +3872,12 @@ void handleMainMenu(bool mode)
 				if (strlen(flagStringBuffer) > 0)   //Don't bother drawing a tooltip if the file doesn't say anything.
 				{
 					hovering_selection = i;
+#ifndef STEAMWORKS
+					if ( hovering_selection == 0 )
+					{
+						hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
+					}
+#endif // STEAMWORKS
 					tooltip_box.x = mousex + 16;
 					tooltip_box.y = mousey + 8;
 					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
@@ -8011,14 +8031,23 @@ void buttonJoinMultiplayer(button_t* my)
 void buttonHostLobby(button_t* my)
 {
 	button_t* button;
+	char *portnumbererr;
 	int c;
 
 	// close current window
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
-	portnumber = atoi(portnumber_char); // get the port number from the text field
+	portnumber = (Uint16)strtol(portnumber_char, &portnumbererr, 10); // get the port number from the text field
 	list_FreeAll(&lobbyChatboxMessages);
+
+	if ( *portnumbererr != '\0' || portnumber < 1024 )
+	{
+		printlog("warning: invalid port number: %d\n", portnumber);
+		openFailedConnectionWindow(SERVER);
+		return;
+	}
+
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
 	if ( loadingsavegame )
 	{
@@ -8244,9 +8273,16 @@ void buttonJoinLobby(button_t* my)
 			{
 				break;
 			}
-		}
+		}		
+		char *portnumbererr;
 		strncpy(address, connectaddress, c); // get the address from the text field
-		portnumber = atoi(&connectaddress[c + 1]); // get the port number from the text field
+		portnumber = (Uint16)strtol(&connectaddress[c + 1], &portnumbererr, 10); // get the port number from the text field
+		if ( *portnumbererr != '\0' || portnumber < 1024 )
+		{
+			printlog("warning: invalid port number %d.\n", portnumber);
+			openFailedConnectionWindow(CLIENT);
+			return;
+		}
 		strcpy(last_ip, connectaddress);
 		saveConfig("default.cfg");
 	}
@@ -8886,8 +8922,8 @@ void openLoadGameWindow(button_t* my)
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
-	suby1 = yres / 2 - 124;
-	suby2 = yres / 2 + 124;
+	suby1 = yres / 2 - 128;
+	suby2 = yres / 2 + 128;
 	strcpy(subtext, language[1460]);
 	bool singleplayerSave = saveGameExists(true);
 	bool multiplayerSave = saveGameExists(false);
