@@ -1763,7 +1763,7 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 1 )
 			{
-				if ((omousex > 16 + butNew->sizex || omousey > 96 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 16 + butNew->sizex || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
