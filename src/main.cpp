@@ -85,7 +85,7 @@ Entity* client_selected[MAXPLAYERS] = {nullptr, nullptr, nullptr, nullptr};
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
 Uint32 client_keepalive[MAXPLAYERS];
-Uint32 portnumber;
+Uint16 portnumber;
 bool client_disconnected[MAXPLAYERS];
 list_t entitiesdeleted;
 

@@ -637,6 +637,12 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	{
+		// cheats have been enabled on savefile, disallow achievements.
+		return;
+	}
+
 	if ( !achievementUnlocked(achName) )
 	{
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
