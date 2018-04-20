@@ -114,6 +114,7 @@ extern SDL_Surface* cross_bmp;
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);
 void steamAchievementClient(int player, const char* achName);
+void steamAchievementEntity(Entity* my, const char* achName); // give steam achievement to an entity, and check for valid player info.
 void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
