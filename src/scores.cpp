@@ -2920,6 +2920,7 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_HARDCORE] = 1;
 	conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 0;
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
+	conductGameChallenges[CONDUCT_BRAWLER] = 1;
 }
 
 void updatePlayerConductsInMainLoop()
