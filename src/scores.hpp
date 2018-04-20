@@ -24,6 +24,7 @@ static const int CONDUCT_HARDCORE = 0; // 2 state, 1 = hardcore, 0 = not.
 static const int CONDUCT_CHEATS_ENABLED = 1; // 2 state, 1 = cheats enabled, 0 = not.
 static const int CONDUCT_MULTIPLAYER = 2; // 2 state, 1 = multiplayer, 0 = not.
 static const int CONDUCT_CLASSIC_MODE = 3; // 2 state, 1 = classic maps, 0 = not.
+static const int CONDUCT_BRAWLER = 4; // 2 state, 1 = brawler, no weapons used, 0 = not brawler, weapons used.
 
 typedef struct score_t
 {

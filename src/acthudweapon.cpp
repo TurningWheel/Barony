@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 Entity* hudweapon = NULL;
 Entity* hudarm = NULL;
@@ -496,6 +497,20 @@ void actHudWeapon(Entity* my)
 			}
 			else
 			{
+				if ( conductGameChallenges[CONDUCT_BRAWLER] )
+				{
+					if ( itemCategory(stats[clientnum]->weapon) == WEAPON 
+						|| rangedweapon 
+						|| itemCategory(stats[clientnum]->weapon) == THROWN
+						|| itemCategory(stats[clientnum]->weapon) == MAGICSTAFF
+						|| itemCategory(stats[clientnum]->weapon) == GEM
+						|| stats[clientnum]->weapon->type == TOOL_PICKAXE )
+					{
+						messagePlayer(clientnum, "no longer eligible for brawler!");
+						conductGameChallenges[CONDUCT_BRAWLER] = 0;
+					}
+				}
+
 				if ( itemCategory(stats[clientnum]->weapon) == WEAPON || stats[clientnum]->weapon->type == TOOL_PICKAXE )
 				{
 					if ( stats[clientnum]->weapon->type == IRON_SPEAR || stats[clientnum]->weapon->type == ARTIFACT_SPEAR )
