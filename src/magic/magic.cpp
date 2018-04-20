@@ -531,7 +531,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					spellEntity->skill[13] = hitstats->weapon->count;
 					spellEntity->skill[14] = hitstats->weapon->appearance;
 					spellEntity->skill[15] = hitstats->weapon->identified;
-
+					spellEntity->itemOriginalOwner = hit.entity->getUID();
 					// hit messages
 					if ( player >= 0 )
 					{

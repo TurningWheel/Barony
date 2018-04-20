@@ -140,6 +140,12 @@ void actItem(Entity* my)
 						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
 					}
 					Item* item2 = newItemFromEntity(my);
+					if ( item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID())
+						&& (item2->ownerUid != my->parent) )
+					{
+						steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
+					}
+					messagePlayer(0, "old owner: %d", item2->ownerUid);
 					if (item2)
 					{
 						item = itemPickup(i, item2);

@@ -1618,7 +1618,8 @@ void clientHandlePacket()
 	// get item
 	else if (!strncmp((char*)net_packet->data, "ITEM", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
+		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
 		itemPickup(clientnum, item);
 		free(item);
 		return;
@@ -3483,8 +3484,9 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "DROP", 4))
 	{
 		client_keepalive[net_packet->data[25]] = ticks;
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
-		dropItem(item, net_packet->data[25]);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], &stats[net_packet->data[29]]->inventory);
+		item->ownerUid = net_packet->data[24];
+		dropItem(item, net_packet->data[29]);
 		return;
 	}
 
