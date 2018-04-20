@@ -333,6 +333,7 @@ public:
 	Sint32& itemNotMoving; // skill[18]
 	Sint32& itemNotMovingClient; // skill[19]
 	Sint32& itemSokobanReward; // skill[20]
+	Sint32& itemStolenFromOwner; // skill [21]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
@@ -340,6 +341,8 @@ public:
 	Sint32& actmagicOrbitDist; //skill[8]
 	Sint32&	actmagicOrbitVerticalDirection; //skill[9]
 	Sint32&	actmagicOrbitLifetime; //skill[10]
+	Sint32& actmagicMirrorReflected; //skill[11]
+	Sint32& actmagicMirrorReflectedCaster; //skill[12]
 	real_t actmagicOrbitVerticalSpeed; //fskill[2]
 	real_t actmagicOrbitStartZ; //fskill[3]
 	

@@ -527,6 +527,44 @@ void gameLogic(void)
 					{
 						steamAchievementClient(c, "BARONY_ACH_FILTHY_RICH");
 					}
+					if ( stats[c]->GOLD >= 100000 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_GILDED");
+					}
+
+					if ( stats[c]->helmet && stats[c]->helmet->type == ARTIFACT_HELM
+						&& stats[c]->breastplate && stats[c]->breastplate->type == ARTIFACT_BREASTPIECE
+						&& stats[c]->gloves && stats[c]->gloves->type == ARTIFACT_GLOVES
+						&& stats[c]->cloak && stats[c]->cloak->type == ARTIFACT_CLOAK
+						&& stats[c]->shoes && stats[c]->shoes->type == ARTIFACT_BOOTS )
+					{
+						steamAchievementClient(c, "BARONY_ACH_GIFTS_ETERNALS");
+					}
+
+					if ( stats[c]->EFFECTS[EFF_SHRINE_RED_BUFF]
+						&& stats[c]->EFFECTS[EFF_SHRINE_GREEN_BUFF]
+						&& stats[c]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
+					}
+
+					int bodyguards = 0;
+					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = uidToEntity(*((Uint32*)node->element));
+						if ( follower )
+						{
+							Stat* followerStats = follower->getStats();
+							if ( followerStats && followerStats->type == CRYSTALGOLEM )
+							{
+								++bodyguards;
+							}
+						}
+					}
+					if ( bodyguards >= 2 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_BODYGUARDS");
+					}
 				}
 			}
 
@@ -1042,6 +1080,14 @@ void gameLogic(void)
 						break;
 				}
 
+				if ( itemCategory(item) == WEAPON )
+				{
+					if ( item->beatitude >= 10 )
+					{
+						steamAchievement("BARONY_ACH_BLESSED");
+					}
+				}
+
 				// drop any inventory items you don't have room for
 				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
 				{
@@ -1438,6 +1484,14 @@ void gameLogic(void)
 						break;
 					default:
 						break;
+				}
+
+				if ( itemCategory(item) == WEAPON )
+				{
+					if ( item->beatitude >= 10 )
+					{
+						steamAchievement("BARONY_ACH_BLESSED");
+					}
 				}
 
 				// drop any inventory items you don't have room for

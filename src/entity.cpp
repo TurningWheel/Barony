@@ -116,6 +116,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemNotMoving(skill[18]),
 	itemNotMovingClient(skill[19]),
 	itemSokobanReward(skill[20]),
+	itemStolenFromOwner(skill[21]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -200,6 +201,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitDist(skill[8]),
 	actmagicOrbitVerticalDirection(skill[9]),
 	actmagicOrbitLifetime(skill[10]),
+	actmagicMirrorReflected(skill[11]),
+	actmagicMirrorReflectedCaster(skill[12]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3]),
 	goldAmount(skill[0]),
@@ -4091,6 +4094,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
+							if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+							{
+								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
+							}
 							messagePlayer(player, language[660]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
@@ -4457,6 +4464,63 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						double ox = hit.entity->x;
 						double oy = hit.entity->y;
+
+						if ( player >= 0 && (abs(hit.entity->vel_x) > 0.01 || abs(hit.entity->vel_y) > 0.01) )
+						{
+							// boulder rolling, check if rolling towards player.
+							bool lastResort = false;
+							int boulderDirection = 0;
+							if ( abs(hit.entity->yaw - (PI / 2)) < 0.1 )
+							{
+								boulderDirection = 1;
+							}
+							else if ( abs(hit.entity->yaw - (PI)) < 0.1 )
+							{
+								boulderDirection = 2;
+							}
+							else if ( abs(hit.entity->yaw - (3 * PI / 2)) < 0.1 )
+							{
+								boulderDirection = 3;
+							}
+
+							switch ( boulderDirection )
+							{
+								case 0: // east
+									if ( static_cast<int>(oy / 16) == static_cast<int>(y / 16)
+										&& static_cast<int>(ox / 16) <= static_cast<int>(x / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								case 1: // south
+									if ( static_cast<int>(ox / 16) == static_cast<int>(x / 16)
+										&& static_cast<int>(oy / 16) <= static_cast<int>(y / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								case 2: // west
+									if ( static_cast<int>(oy / 16) == static_cast<int>(y / 16)
+										&& static_cast<int>(ox / 16) >= static_cast<int>(x / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								case 3: // north
+									if ( static_cast<int>(ox / 16) == static_cast<int>(x / 16)
+										&& static_cast<int>(oy / 16) >= static_cast<int>(y / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								default:
+									break;
+							}
+							if ( lastResort )
+							{
+								steamAchievementClient(player, "BARONY_ACH_LAST_RESORT");
+							}
+						}
 
 						// destroy the boulder
 						playSoundEntity(hit.entity, 67, 128);
@@ -5320,7 +5384,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									armor->count = 1;
 									messagePlayer(playerhit, language[688], armor->getName());
-									newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+									stolenArmor->ownerUid = hit.entity->getUID();
 									Item** slot = itemSlot(hitstats, armor);
 									if ( slot )
 									{
@@ -5425,6 +5490,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// assassinate monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2547], MSG_COMBAT);
+								if ( hitstats->type == COCKATRICE )
+								{
+									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
+								}
 							}
 							else
 							{
@@ -5906,6 +5975,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 									entity->skill[13] = 1;           // count
 									entity->skill[14] = 0;           // appearance
 									entity->skill[15] = false;       // identified
+								}
+
+								if ( map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] >= 41
+									&& map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] <= 49 )
+								{
+									steamAchievementClient(player, "BARONY_ACH_BAD_REVIEW");
 								}
 
 								map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
@@ -6456,6 +6531,23 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	// award bonus XP and update kill counters
 	if ( player >= 0 )
 	{
+		if ( currentlevel >= 25 && srcStats->type == MINOTAUR )
+		{
+			for ( int c = 0; c < MAXPLAYERS; c++ )
+			{
+				steamAchievementClient(c, "BARONY_ACH_REUNITED");
+			}
+		}
+		if ( srcStats->type == SHADOW && root )
+		{
+			std::string name = "Shadow of ";
+			name += stats[player]->name;
+			if ( name.compare(srcStats->name) == 0 )
+			{
+				steamAchievementClient(player, "BARONY_ACH_KNOW_THYSELF");
+			}
+		}
+
 		if ( player == 0 )
 		{
 			if ( srcStats->type == LICH )
@@ -9968,6 +10060,11 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		}
 	}
 
+	if ( manaring >= 2 && ticks % TICKS_PER_SECOND == 0 )
+	{
+		steamAchievementEntity(this, "BARONY_ACH_ARCANE_LINK");
+	}
+
 	if ( myStats.EFFECTS[EFF_MP_REGEN] )
 	{
 		manaring += 2;
@@ -10031,6 +10128,11 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 				healring--;
 			}
 		}
+	}
+
+	if ( healring >= 2 && ticks % TICKS_PER_SECOND == 0 )
+	{
+		steamAchievementEntity(this, "BARONY_ACH_TROLLS_BLOOD");
 	}
 	
 	if ( myStats.EFFECTS[EFF_HP_REGEN] )
