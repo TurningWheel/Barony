@@ -38,6 +38,7 @@
 #define THROWN_APPEARANCE my->skill[14]
 #define THROWN_IDENTIFIED my->skill[15]
 #define THROWN_LIFE my->skill[16]
+#define THROWN_BOUNCES my->skill[17]
 
 void actThrown(Entity* my)
 {
@@ -275,7 +276,7 @@ void actThrown(Entity* my)
 		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
-			real_t bouncePenalty = 0.7;
+			real_t bouncePenalty = 0.85;
 			// shurikens and chakrams bounce off walls.
 			if ( hit.side == HORIZONTAL )
 			{
@@ -290,6 +291,7 @@ void actThrown(Entity* my)
 				THROWN_VELY = -THROWN_VELY * bouncePenalty;
 				THROWN_VELX = -THROWN_VELX * bouncePenalty;
 			}
+			++THROWN_BOUNCES;
 		}
 
 		cat = itemCategory(item);
@@ -376,6 +378,10 @@ void actThrown(Entity* my)
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity);
+								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
+								{
+									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
+								}
 								usedpotion = true;
 								break;
 							case POTION_JUICE:
@@ -392,10 +398,24 @@ void actThrown(Entity* my)
 								break;
 							case POTION_EXTRAHEALING:
 								item_PotionExtraHealing(item, hit.entity);
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									if ( parent->checkFriend(hit.entity) )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
+									}
+								}
 								usedpotion = true;
 								break;
 							case POTION_HEALING:
 								item_PotionHealing(item, hit.entity);
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									if ( parent->checkFriend(hit.entity) )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
+									}
+								}
 								usedpotion = true;
 								break;
 							case POTION_CUREAILMENT:
@@ -432,6 +452,13 @@ void actThrown(Entity* my)
 								break;
 							default:
 								break;
+						}
+					}
+					if ( THROWN_BOUNCES >= 3 && hitstats->HP <= 0 )
+					{
+						if ( parent->checkEnemy(hit.entity) )
+						{
+							steamAchievementEntity(parent, "BARONY_ACH_SEE_THAT");
 						}
 					}
 				}
