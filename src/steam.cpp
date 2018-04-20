@@ -16,6 +16,7 @@
 #include "menu.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
+#include "entity.hpp"
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
 #ifdef STEAMWORKS
@@ -640,8 +641,10 @@ void steamAchievement(const char* achName)
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 	{
 		// cheats have been enabled on savefile, disallow achievements.
-		return;
+		// return;
 	}
+
+	messagePlayer(clientnum, "%s", achName);
 
 	if ( !achievementUnlocked(achName) )
 	{
@@ -695,6 +698,19 @@ void steamAchievementClient(int player, const char* achName)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 4 + strlen(achName) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void steamAchievementEntity(Entity* my, const char* achName)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( my->behavior == &actPlayer )
+	{
+		steamAchievementClient(my->skill[2], achName);
 	}
 }
 
