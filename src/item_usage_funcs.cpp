@@ -2364,6 +2364,12 @@ void item_ToolTowel(Item*& item, int player)
 	}
 	if ( multiplayer != CLIENT )
 	{
+		if ( stats[player]->EFFECTS[EFF_GREASY]
+			|| stats[player]->EFFECTS[EFF_MESSY]
+			|| stats[player]->EFFECTS[EFF_BLEEDING] )
+		{
+			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
+		}
 		stats[player]->EFFECTS[EFF_GREASY] = false;
 		stats[player]->EFFECTS[EFF_MESSY] = false;
 	}
@@ -2955,7 +2961,7 @@ void item_FoodTin(Item*& item, int player)
 
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
 
-	if ( hpBuff || mpBuff )
+	if ( (hpBuff || mpBuff) && (svFlags & SV_FLAG_HUNGER) )
 	{
 		messagePlayer(player, language[911]);
 	}
@@ -3163,6 +3169,11 @@ void item_Spellbook(Item*& item, int player)
 			{
 				messagePlayer(player, language[2596]);
 				consumeItem(item);
+			}
+
+			if ( list_Size(&spellList) >= 20 )
+			{
+				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
 			}
 		}
 	}
