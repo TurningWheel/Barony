@@ -1014,12 +1014,11 @@ void dropItem(Item* item, int player)
 		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
 		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
-		net_packet->data[28] = item->identified;
-		net_packet->data[29] = clientnum;
+		net_packet->data[24] = item->identified;
+		net_packet->data[25] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 30;
+		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		if (item == open_book_item)
 		{
@@ -1071,8 +1070,8 @@ void dropItem(Item* item, int player)
 		entity->skill[13] = 1;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
-		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = players[player]->entity->getUID();
+		entity->itemOriginalOwner = entity->parent;
 
 		// play sound
 		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
@@ -1204,6 +1203,21 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		entity->skill[15] = item->identified;
 		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
+		if ( monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS )
+		{
+			// check if item was stolen.
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					if ( entity->itemOriginalOwner == players[c]->entity->getUID() )
+					{
+						entity->itemStolen = 1;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	item->count -= count;

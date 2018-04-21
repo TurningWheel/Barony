@@ -333,7 +333,8 @@ public:
 	Sint32& itemNotMoving; // skill[18]
 	Sint32& itemNotMovingClient; // skill[19]
 	Sint32& itemSokobanReward; // skill[20]
-	Sint32& itemOriginalOwner; // skill [21]
+	Sint32& itemOriginalOwner; // skill[21]
+	Sint32& itemStolen; // skill[22]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]

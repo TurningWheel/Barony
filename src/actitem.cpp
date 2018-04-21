@@ -141,11 +141,11 @@ void actItem(Entity* my)
 					}
 					Item* item2 = newItemFromEntity(my);
 					if ( item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID())
-						&& (item2->ownerUid != my->parent) )
+						&& my->itemStolen == 1 )
 					{
 						steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
 					}
-					messagePlayer(0, "old owner: %d", item2->ownerUid);
+					messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
 					{
 						item = itemPickup(i, item2);
