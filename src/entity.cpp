@@ -2973,6 +2973,11 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					messagePlayer(player, language[654]);
 					messagePlayer(player, language[655]);
+
+					playSoundEntity(this, 167, 128);
+					createParticleDropRising(this, 174, 1.0);
+					serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 174);
+
 					steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
 					myStats->HUNGER = 800;
 					if ( myStats->MAXHP < 10 )
