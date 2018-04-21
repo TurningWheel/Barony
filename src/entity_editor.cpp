@@ -92,6 +92,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemNotMovingClient(skill[19]),
 	itemSokobanReward(skill[20]),
 	itemOriginalOwner(skill[21]),
+	itemStolen(skill[22]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
