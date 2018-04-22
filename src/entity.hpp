@@ -395,6 +395,7 @@ public:
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
+	int getHP();
 
 	void setMP(int amount);
 	void modMP(int amount); //Adds amount to MP.

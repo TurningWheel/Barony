@@ -18,6 +18,7 @@
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "scores.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -397,6 +398,8 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							case POTION_EXTRAHEALING:
+							{
+								int oldHP = hit.entity->getHP();
 								item_PotionExtraHealing(item, hit.entity);
 								if ( parent && parent->behavior == &actPlayer )
 								{
@@ -404,10 +407,18 @@ void actThrown(Entity* my)
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
 									}
+									int heal = std::max(hit.entity->getHP() - oldHP, 0);
+									if ( heal > 0 )
+									{
+										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
+									}
 								}
 								usedpotion = true;
+							}
 								break;
 							case POTION_HEALING:
+							{
+								int oldHP = hit.entity->getHP();
 								item_PotionHealing(item, hit.entity);
 								if ( parent && parent->behavior == &actPlayer )
 								{
@@ -415,8 +426,14 @@ void actThrown(Entity* my)
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
 									}
+									int heal = std::max(hit.entity->getHP() - oldHP, 0);
+									if ( heal > 0 )
+									{
+										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
+									}
 								}
 								usedpotion = true;
+							}
 								break;
 							case POTION_CUREAILMENT:
 								item_PotionCureAilment(item, hit.entity);

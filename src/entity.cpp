@@ -26,6 +26,7 @@ See LICENSE for details.
 #include <steam/steam_api.h>
 #endif
 #include "player.hpp"
+#include "scores.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -1819,6 +1820,18 @@ int Entity::getMP()
 	return myStats->MP;
 }
 
+int Entity::getHP()
+{
+	Stat* myStats = getStats();
+
+	if ( !myStats )
+	{
+		return 0;
+	}
+
+	return myStats->HP;
+}
+
 /*-------------------------------------------------------------------------------
 
 Entity::drainMP
@@ -2452,6 +2465,7 @@ void Entity::handleEffects(Stat* myStats)
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
 			playSoundEntity(this, 78, 96);
+			serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 5);
 		}
 	}
 
@@ -5454,6 +5468,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					if ( player >= 0 && hit.entity->behavior == &actMonster )
+					{
+						if ( damage > 0 )
+						{
+							updateAchievementRhythmOfTheKnight(player, hit.entity, false);
+						}
+						else
+						{
+							if ( !achievementStatusRhythmOfTheKnight[player] )
+							{
+								achievementRhythmOfTheKnightVec[player].clear(); // didn't inflict damage.
+							}
+						}
+					}
+
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
 					{
@@ -5647,6 +5676,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 						serverSpawnGibForClient(gib);
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerMonsterEvent(playerhit, color, *myStats, language[698], language[699], MSG_ATTACKS);
+						if ( playerhit >= 0 )
+						{
+							if ( !achievementStatusRhythmOfTheKnight[playerhit] )
+							{
+								achievementRhythmOfTheKnightVec[playerhit].clear();
+							}
+							if ( !achievementStatusThankTheTank[playerhit] )
+							{
+								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
+							}
+							//messagePlayer(0, "took damage!");
+						}
 					}
 					else
 					{
@@ -5655,6 +5696,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( !statusInflicted )
 						{
 							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT);
+						}
+						if ( myStats->type == COCKATRICE && hitstats->defending )
+						{
+							steamAchievementClient(playerhit, "BARONY_ACH_COCK_BLOCK");
+						}
+						else if ( myStats->type == MINOTAUR && !hitstats->defending )
+						{
+							steamAchievementClient(playerhit, "BARONY_ACH_ONE_WHO_KNOCKS");
+						}
+						if ( playerhit >= 0 )
+						{
+							if ( hitstats->defending )
+							{
+								updateAchievementRhythmOfTheKnight(playerhit, this, true);
+								updateAchievementThankTheTank(playerhit, this, false);
+							}
+							else if ( !achievementStatusRhythmOfTheKnight[player] )
+							{
+								achievementRhythmOfTheKnightVec[playerhit].clear();
+								//messagePlayer(0, "used AC!");
+							}
 						}
 					}
 
@@ -6534,9 +6596,29 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	// award XP to main victor
 	destStats->EXP += xpGain;
 
+	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root )
+	{
+		if ( destStats->type == CREATURE_IMP 
+			|| destStats->type == DEMON
+			|| (destStats->type == AUTOMATON && !strcmp(destStats->name, "corrupted automaton")) )
+		{
+			if ( !flags[USERFLAG2] )
+			{
+				for ( int c = 0; c < MAXPLAYERS; c++ )
+				{
+					steamAchievementClient(c, "BARONY_ACH_OWN_WORST_ENEMY");
+				}
+			}
+		}
+	}
+
 	// award bonus XP and update kill counters
 	if ( player >= 0 )
 	{
+		if ( root == false )
+		{
+			updateAchievementThankTheTank(player, src, true);
+		}
 		if ( currentlevel >= 25 && srcStats->type == MINOTAUR )
 		{
 			for ( int c = 0; c < MAXPLAYERS; c++ )
@@ -6552,6 +6634,15 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				steamAchievementClient(player, "BARONY_ACH_KNOW_THYSELF");
 			}
+		}
+		if ( srcStats->LVL >= 25 && root 
+			&& destStats->HP <= 5 && checkEnemy(src) )
+		{
+			steamAchievementClient(player, "BARONY_ACH_BUT_A_SCRATCH");
+		}
+		if ( srcStats->EFFECTS[EFF_PARALYZED] )
+		{
+			serverUpdatePlayerGameplayStats(player, STATISTICS_SITTING_DUCK, 1);
 		}
 
 		if ( player == 0 )
@@ -9254,9 +9345,9 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					continue;
 				}
 
+				int playerOwned = -1;
 				if ( entity->itemOriginalOwner != 0 )
 				{
-					bool playerOwned = false;
 					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
 						if ( players[c] && players[c]->entity )
@@ -9266,13 +9357,13 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 								if ( players[c]->entity->checkFriend(this) )
 								{
 									// player owned.
-									playerOwned = true;
+									playerOwned = c;
 								}
 								break;
 							}
 						}
 					}
-					if ( playerOwned && entity->ticks < 5 * TICKS_PER_SECOND )
+					if ( playerOwned >= 0 && entity->ticks < 5 * TICKS_PER_SECOND )
 					{
 						messagePlayer(0, "item too new");
 						continue;
@@ -9297,6 +9388,12 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					else
 					{
 						dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+					}
+
+					if ( playerOwned >= 0 && checkFriend(players[playerOwned]->entity)
+						&& (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES) )
+					{
+						steamAchievementClient(playerOwned, "BARONY_ACH_EARN_THIS");
 					}
 
 					(*shouldWield) = item;
