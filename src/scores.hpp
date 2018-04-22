@@ -26,6 +26,14 @@ static const int CONDUCT_MULTIPLAYER = 2; // 2 state, 1 = multiplayer, 0 = not.
 static const int CONDUCT_CLASSIC_MODE = 3; // 2 state, 1 = classic maps, 0 = not.
 static const int CONDUCT_BRAWLER = 4; // 2 state, 1 = brawler, no weapons used, 0 = not brawler, weapons used.
 
+static const int STATISTICS_BOMB_SQUAD = 0;
+static const int STATISTICS_SITTING_DUCK = 1;
+static const int STATISTICS_YES_WE_CAN = 2;
+static const int STATISTICS_FIRE_MAYBE_DIFFERENT = 3;
+static const int STATISTICS_HOT_TUB_TIME_MACHINE = 4;
+static const int STATISTICS_HEAL_BOT = 5;
+static const int STATISTICS_TEMPT_FATE = 6;
+
 typedef struct score_t
 {
 	Sint32 kills[NUMMONSTERS];
@@ -56,6 +64,10 @@ extern bool usedClass[NUMCLASSES];
 extern Uint32 loadingsavegame;
 extern Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
 extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
+extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS];
+extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
+extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
+extern bool achievementStatusThankTheTank[MAXPLAYERS];
 
 score_t* scoreConstructor();
 void scoreDeconstructor(void* data);
@@ -79,6 +91,9 @@ int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, oth
 
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
+void updateGameplayStatisticsInMainLoop(); // check for achievement values for gameplay statistics.
+void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
+void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
 
 #define SAVEGAMEFILE "savegame.dat"
 #define SAVEGAMEFILE2 "savegame2.dat" // saves follower data

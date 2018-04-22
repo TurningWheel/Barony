@@ -32,6 +32,7 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+#include "scores.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -874,6 +875,61 @@ void serverUpdatePlayerStats()
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
+}
+
+/*-------------------------------------------------------------------------------
+
+serverUpdatePlayerGameplayStats
+
+Updates given players gameplayStatistics value by given increment.
+
+-------------------------------------------------------------------------------*/
+void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( client_disconnected[player] )
+	{
+		return;
+	}
+	if ( player == 0 )
+	{
+		if ( gameplayStat == STATISTICS_TEMPT_FATE )
+		{
+			if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
+			{
+				// don't change, completed task.
+			}
+			else
+			{
+				if ( changeval == 5 )
+				{
+					gameStatistics[gameplayStat] = changeval;
+				}
+				else if ( changeval == 1 && gameStatistics[gameplayStat] > 0 )
+				{
+					gameStatistics[gameplayStat] = -1;
+				}
+			}
+		}
+		else
+		{
+			gameStatistics[gameplayStat] += changeval;
+		}
+	}
+	else
+	{
+		strcpy((char*)net_packet->data, "GPST");
+		SDLNet_Write32(gameplayStat, &net_packet->data[4]);
+		SDLNet_Write32(changeval, &net_packet->data[8]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+	messagePlayer(clientnum, "sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2028,6 +2084,36 @@ void clientHandlePacket()
 		}
 	}
 
+	// update player statistics
+	else if ( !strncmp((char*)net_packet->data, "GPST", 4) )
+	{
+		int gameplayStat = SDLNet_Read32(&net_packet->data[4]);
+		int changeval = SDLNet_Read32(&net_packet->data[8]);
+		if ( gameplayStat == STATISTICS_TEMPT_FATE )
+		{
+			if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
+			{
+				// don't change, completed task.
+			}
+			else
+			{
+				if ( changeval == 5 )
+				{
+					gameStatistics[gameplayStat] = changeval;
+				}
+				else if ( changeval == 1 && gameStatistics[gameplayStat] > 0 )
+				{
+					gameStatistics[gameplayStat] = -1;
+				}
+			}
+		}
+		else
+		{
+			gameStatistics[gameplayStat] += changeval;
+		}
+		messagePlayer(clientnum, "received: %d, %d, val: %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	}
+
 	// update player levels
 	else if ( !strncmp((char*)net_packet->data, "UPLV", 4) )
 	{
@@ -2102,7 +2188,11 @@ void clientHandlePacket()
 				case 14:
 					steamAchievement("BARONY_ACH_SANDMAN");
 					break;
-
+				case 29:
+					steamAchievement("BARONY_ACH_SPELUNKY");
+					break;
+				default:
+					break;
 			}
 		}
 
