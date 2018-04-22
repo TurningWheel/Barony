@@ -1651,6 +1651,13 @@ void actPlayer(Entity* my)
 							{
 								continue;    // don't drop spells on death, stupid!
 							}
+							if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
+							{
+								if ( itemIsEquipped(item, clientnum) )
+								{
+									steamAchievement("BARONY_ACH_CHOSEN_ONE");
+								}
+							}
 							int c = item->count;
 							for (c = item->count; c > 0; c--)
 							{

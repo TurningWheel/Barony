@@ -1173,6 +1173,23 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 				default:
 					break;
 			}
+			if ( monster->behavior == &actPlayer )
+			{
+				if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
+				{
+					for ( int c = 1; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == monster )
+						{
+							if ( itemIsEquipped(item, c) )
+							{
+								steamAchievementClient(c, "BARONY_ACH_CHOSEN_ONE");
+							}
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 
