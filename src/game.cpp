@@ -548,6 +548,15 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
 					}
 
+					if ( achievementStatusRhythmOfTheKnight[c] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+					}
+					if ( achievementStatusThankTheTank[c] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_THANK_THE_TANK");
+					}
+
 					int bodyguards = 0;
 					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
@@ -566,6 +575,7 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_BODYGUARDS");
 					}
 				}
+				updateGameplayStatisticsInMainLoop();
 			}
 
 			updatePlayerConductsInMainLoop();
@@ -699,7 +709,11 @@ void gameLogic(void)
 							case 14:
 								steamAchievement("BARONY_ACH_SANDMAN");
 								break;
-
+							case 29:
+								steamAchievement("BARONY_ACH_SPELUNKY");
+								break;
+							default:
+								break;
 						}
 					}
 
@@ -1290,6 +1304,11 @@ void gameLogic(void)
 						}
 					}
 				}
+			}
+
+			if ( ticks % TICKS_PER_SECOND == 0 )
+			{
+				updateGameplayStatisticsInMainLoop();
 			}
 
 			updatePlayerConductsInMainLoop();
