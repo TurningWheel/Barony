@@ -6121,6 +6121,10 @@ void handleMainMenu(bool mode)
 				{
 					steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
 				}
+				if ( conductGameChallenges[CONDUCT_BRAWLER] )
+				{
+					steamAchievement("BARONY_ACH_BRAWLER");
+				}
 
 				if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 				{
@@ -6130,14 +6134,30 @@ void handleMainMenu(bool mode)
 				if ( victory == 1 )
 				{
 					introstage = 7;
+					if ( conductGameChallenges[CONDUCT_HARDCORE] )
+					{
+						steamAchievement("BARONY_ACH_HARDCORE");
+					}
 				}
 				else if ( victory == 2 )
 				{
 					introstage = 8;
+					if ( conductGameChallenges[CONDUCT_HARDCORE] )
+					{
+						steamAchievement("BARONY_ACH_HARDCORE");
+					}
 				}
 				else if ( victory == 3 )
 				{
 					introstage = 10;
+					if ( completionTime < 45 * 60 * TICKS_PER_SECOND )
+					{
+						steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
+					}
+					if ( conductGameChallenges[CONDUCT_HARDCORE] )
+					{
+						steamAchievement("BARONY_ACH_POST_HARDCORE");
+					}
 				}
 			}
 
@@ -6870,6 +6890,10 @@ void handleMainMenu(bool mode)
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[7]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16 + (xres/ 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+			if ( fourthendmovietime % 50 == 0 )
+			{
+				steamAchievement("BARONY_ACH_ALWAYS_WAITING");
+			}
 		}
 		if ( fourthendmoviestage >= 13 )
 		{
