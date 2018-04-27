@@ -1235,7 +1235,7 @@ void drawEntities2D(long camx, long camy)
 	}
 
 	// draw hover text for entities over the top of sprites.
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	for ( node = map.entities->first; node != nullptr && (openwindow == 0 && savewindow == 0); node = node->next )
 	{
 		entity = (Entity*)node->element;
 		if ( entity->flags[INVISIBLE] )

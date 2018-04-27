@@ -822,7 +822,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 static const int NUM_ITEM_STRINGS = 220;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 94;
 static const int NUM_EDITOR_SPRITES = 130;
-static const int NUM_EDITOR_TILES = 234;
+static const int NUM_EDITOR_TILES = 300;
 
 // furniture types.
 static const int FURNITURE_TABLE = 0;

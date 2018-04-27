@@ -21,6 +21,12 @@
 
 #define EDITOR
 
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+#endif // STEAMWORKS
+
+
 //#include "player.hpp"
 
 Entity* selectedEntity = nullptr;
@@ -44,6 +50,9 @@ std::vector<Entity*> groupedEntities;
 bool moveSelectionNegativeX = false;
 bool moveSelectionNegativeY = false;
 std::vector<std::string> mapNames;
+std::list<std::string> modFolderNames;
+std::string physfs_saveDirectory = BASE_DATA_DIR;
+std::string physfs_openDirectory = BASE_DATA_DIR;
 
 map_t copymap;
 
@@ -1291,6 +1300,7 @@ int main(int argc, char** argv)
 		deinitApp();
 		exit(x);
 	}
+
 	copymap.tiles = nullptr;
 	copymap.entities = nullptr;
 	copymap.creatures = nullptr;
@@ -1506,10 +1516,19 @@ int main(int argc, char** argv)
 	button->action = &buttonOpen;
 	button->visible = 0;
 
+	butDir = button = newButton();
+	strcpy(button->label, "Directory... Ctrl+D");
+	button->x = 16;
+	button->y = 48;
+	button->sizex = 160;
+	button->sizey = 16;
+	button->action = &buttonOpenDirectory;
+	button->visible = 0;
+
 	butSave = button = newButton();
 	strcpy(button->label, "Save         Ctrl+S");
 	button->x = 16;
-	button->y = 48;
+	button->y = 64;
 	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonSave;
@@ -1518,7 +1537,7 @@ int main(int argc, char** argv)
 	butSaveAs = button = newButton();
 	strcpy(button->label, "Save As ...        ");
 	button->x = 16;
-	button->y = 64;
+	button->y = 80;
 	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonSaveAs;
@@ -1527,7 +1546,7 @@ int main(int argc, char** argv)
 	butExit = button = newButton();
 	strcpy(button->label, "Exit         Alt+F4");
 	button->x = 16;
-	button->y = 80;
+	button->y = 96;
 	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonExit;
@@ -1692,7 +1711,7 @@ int main(int argc, char** argv)
 
 	if ( loadingmap )
 	{
-		if ( loadMap(maptoload, &map, map.entities, map.creatures) == -1 )
+		if ( loadMap(physfsFormatMapName(maptoload).c_str(), &map, map.entities, map.creatures) == -1 )
 		{
 			strcat(message, "Failed to open ");
 			strcat(message, maptoload);
@@ -1744,7 +1763,7 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 1 )
 			{
-				if ((omousex > 16 + butNew->sizex || omousey > 96 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 16 + butNew->sizex || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
@@ -2263,16 +2282,24 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 4, yres - 12, "X: %4d Y: %4d Z: %d %s", drawx, drawy, drawlayer + 1, layerstatus);
 				if ( messagetime )
 				{
-					printText(font8x8_bmp, xres - 384, yres - 12, message);
+					if ( strlen(message) > 48 )
+					{
+						printText(font8x8_bmp, xres - 384 - 4 * (strlen(message)), yres - 12, message);
+					}
+					else
+					{
+						printText(font8x8_bmp, xres - 384, yres - 12, message);
+					}
 				}
 			}
 
 			// handle main menus
 			if ( menuVisible == 1 )
 			{
-				drawWindowFancy(0, 16, 16, 96);
+				drawWindowFancy(0, 16, 16, 112);
 				butNew->visible = 1;
 				butOpen->visible = 1;
+				butDir->visible = 1;
 				butSave->visible = 1;
 				butSaveAs->visible = 1;
 				butExit->visible = 1;
@@ -2281,6 +2308,7 @@ int main(int argc, char** argv)
 			{
 				butNew->visible = 0;
 				butOpen->visible = 0;
+				butDir->visible = 0;
 				butSave->visible = 0;
 				butSaveAs->visible = 0;
 				butExit->visible = 0;
@@ -2386,66 +2414,69 @@ int main(int argc, char** argv)
 				}
 
 				// open and save windows
-				if ( (openwindow || savewindow) && !mapNames.empty() )
+				if ( (openwindow == 1 || savewindow) )
 				{
 					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 52);
 					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 52);
-					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)mapNames.size() / 20)); //TODO: Why are int and real_t being compared?
-					slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-					drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
-
-					// directory list offset from slider
-					y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
-					if ( scroll )
+					if ( !mapNames.empty() )
 					{
-						slidery -= 8 * scroll;
+						slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)mapNames.size() / 20)); //TODO: Why are int and real_t being compared?
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
-						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-						strcpy(filename, mapNames[selectedFile].c_str());
-						inputstr = filename;
-						scroll = 0;
-					}
-					if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 52 )
-					{
-						slidery = oslidery + mousey - omousey;
-						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
-						mclick = 1;
-						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-						strcpy(filename, mapNames[selectedFile].c_str());
-						inputstr = filename;
-					}
-					else
-					{
-						oslidery = slidery;
-					}
+						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
 
-					// select a file
-					if ( mousestatus[SDL_BUTTON_LEFT] )
-					{
-						if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 )
+						// directory list offset from slider
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
+						if ( scroll )
 						{
-							selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
+							slidery -= 8 * scroll;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							strcpy(filename, mapNames[selectedFile].c_str());
+							inputstr = filename;
+							scroll = 0;
+						}
+						if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 52 )
+						{
+							slidery = oslidery + mousey - omousey;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
+							mclick = 1;
 							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 							strcpy(filename, mapNames[selectedFile].c_str());
 							inputstr = filename;
 						}
-					}
-					pos.x = subx1 + 8;
-					pos.y = suby1 + 24 + (selectedFile - y2) * 8;
-					pos.w = subx2 - subx1 - 32;
-					pos.h = 8;
-					drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						else
+						{
+							oslidery = slidery;
+						}
 
-					// print all the files within the directory
-					x = subx1 + 8;
-					y = suby1 + 24;
-					c = std::min<long unsigned int>(mapNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
-					for (z = y2; z < c; z++)
-					{
-						printText(font8x8_bmp, x, y, mapNames[z].c_str());
-						y += 8;
+						// select a file
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 )
+							{
+								selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
+								selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+								strcpy(filename, mapNames[selectedFile].c_str());
+								inputstr = filename;
+							}
+						}
+						pos.x = subx1 + 8;
+						pos.y = suby1 + 24 + (std::max(selectedFile - y2, 0)) * 8;
+						pos.w = subx2 - subx1 - 32;
+						pos.h = 8;
+						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+
+						// print all the files within the directory
+						x = subx1 + 8;
+						y = suby1 + 24;
+						c = std::min<long unsigned int>(mapNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
+						for (z = y2; z < c; z++)
+						{
+							printText(font8x8_bmp, x, y, mapNames[z].c_str());
+							y += 8;
+						}
 					}
 
 					// text box to enter file
@@ -2463,6 +2494,99 @@ int main(int argc, char** argv)
 					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 					{
 						printText(font8x8_bmp, subx1 + 8 + strlen(filename) * 8, suby2 - 44, "\26");
+					}
+				}
+				else if ( openwindow == 2 )
+				{
+					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 112);
+					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 112);
+					if ( !modFolderNames.empty() )
+					{
+						slidersize = std::min<int>(((suby2 - 113) - (suby1 + 21)), ((suby2 - 113) - (suby1 + 21)) / ((real_t)modFolderNames.size() / 20)); //TODO: Why are int and real_t being compared?
+						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 113 - slidersize);
+						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
+
+						// directory list offset from slider
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * modFolderNames.size();
+						if ( scroll )
+						{
+							slidery -= 8 * scroll;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 113 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 112) - (suby1 + 20))) * modFolderNames.size();
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(modFolderNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							std::list<std::string>::iterator it = modFolderNames.begin();
+							std::advance(it, selectedFile);
+							strcpy(foldername, it->c_str());
+							inputstr = foldername;
+							scroll = 0;
+						}
+						if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 113 )
+						{
+							slidery = oslidery + mousey - omousey;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 113 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 112) - (suby1 + 20))) * modFolderNames.size();
+							mclick = 1;
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(modFolderNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							std::list<std::string>::iterator it = modFolderNames.begin();
+							std::advance(it, selectedFile);
+							strcpy(foldername, it->c_str());
+							inputstr = foldername;
+						}
+						else
+						{
+							oslidery = slidery;
+						}
+
+						// select a file
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 116 )
+							{
+								selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
+								selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(modFolderNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+								std::list<std::string>::iterator it = modFolderNames.begin();
+								std::advance(it, selectedFile);
+								strcpy(foldername, it->c_str());
+								inputstr = foldername;
+							}
+						}
+						pos.x = subx1 + 8;
+						pos.y = suby1 + 24 + (selectedFile - y2) * 8;
+						pos.w = subx2 - subx1 - 32;
+						pos.h = 8;
+						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+
+						// print all the files within the directory
+						x = subx1 + 8;
+						y = suby1 + 24;
+						c = std::min<long unsigned int>(modFolderNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
+						for ( z = y2; z < c; z++ )
+						{
+							std::list<std::string>::iterator it = modFolderNames.begin();
+							std::advance(it, z);
+							printText(font8x8_bmp, x, y, it->c_str());
+							y += 8;
+						}
+					}
+
+					// text box to enter file
+					drawDepressed(subx1 + 4, suby2 - 108, subx2 - 4, suby2 - 92);
+					printText(font8x8_bmp, subx1 + 8, suby2 - 104, foldername);
+
+					printTextFormatted(font8x8_bmp, subx1 + 8, suby2 - 32, "Save Dir: %smaps/", physfs_saveDirectory.c_str());
+					printTextFormatted(font8x8_bmp, subx1 + 8, suby2 - 16, "Load Dir: %smaps/", physfs_openDirectory.c_str());
+
+					// enter filename
+					if ( !SDL_IsTextInputActive() )
+					{
+						SDL_StartTextInput();
+						inputstr = foldername;
+					}
+					//strncpy(filename,inputstr,28);
+					inputlen = 28;
+					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+					{
+						printText(font8x8_bmp, subx1 + 8 + strlen(foldername) * 8, suby2 - 104, "\26");
 					}
 				}
 
@@ -5359,7 +5483,7 @@ int main(int argc, char** argv)
 					{
 						//buttonCloseSpriteSubwindow(NULL);
 					}
-					else if ( openwindow == 1 || savewindow == 1 )
+					else if ( openwindow > 0 || savewindow == 1 )
 					{
 						buttonCloseSubwindow(NULL);
 					}
@@ -5447,6 +5571,11 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_G] = 0;
 						buttonGrid(NULL);
+					}
+					if ( keystatus[SDL_SCANCODE_D] )
+					{
+						keystatus[SDL_SCANCODE_D] = 0;
+						buttonOpenDirectory(NULL);
 					}
 					if ( keystatus[SDL_SCANCODE_T] )
 					{
@@ -6281,3 +6410,7 @@ void reselectEntityGroup()
 	}
 }
 
+int generateDungeon(char* levelset, Uint32 seed)
+{
+	return 0; // dummy function
+}

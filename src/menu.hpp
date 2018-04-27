@@ -76,11 +76,28 @@ void buttonLoadSingleplayerGame(button_t* my);
 void buttonLoadMultiplayerGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
 void buttonRandomName(button_t* my);
+void buttonGamemodsOpenDirectory(button_t* my);
+void buttonGamemodsPrevDirectory(button_t* my);
+void buttonGamemodsBaseDirectory(button_t* my);
+void buttonGamemodsSelectDirectoryForUpload(button_t* my);
+void buttonGamemodsOpenModifyExistingWindow(button_t* my);
+void buttonGamemodsStartModdedGame(button_t* my);
 
 #ifdef STEAMWORKS
+void buttonGamemodsPrepareWorkshopItemUpload(button_t* my);
+void buttonGamemodsSetWorkshopItemFields(button_t* my);
+void buttonGamemodsStartUploadItem(button_t* my);
+void buttonGamemodsGetSubscribedItems(button_t* my);
+void buttonGamemodsOpenSubscribedWindow(button_t* my);
+void buttonGamemodsOpenUploadWindow(button_t* my);
+void buttonGamemodsGetMyWorkshopItems(button_t* my);
+void buttonGamemodsModifyExistingWorkshopItemFields(button_t* my);
+void buttonGamemodsCancelModifyFileContents(button_t* my);
 void buttonInviteFriends(button_t* my);
 void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
+void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
+void buttonGamemodsMountHostsModFiles(button_t* my);
 #endif
 
 #define SLIDERFONT font12x12_bmp
@@ -104,6 +121,33 @@ extern int settings_tab;
 extern int connect_window;
 extern bool lobby_window;
 extern int score_window;
+
+// gamemods window stuff
+extern int gamemods_window;
+extern int gamemods_window_scroll;
+extern int gamemods_window_fileSelect;
+extern int gamemods_uploadStatus;
+extern int gamemods_numCurrentModsLoaded;
+extern std::list<std::string> currentDirectoryFiles;
+extern std::string directoryPath;
+void gamemodsWindowClearVariables();
+void gamemodsCustomContentInit();
+bool gamemodsDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor, std::string btnText, int action);
+bool gamemodsRemovePathFromMountedFiles(std::string findStr);
+bool gamemodsIsPathInMountedFiles(std::string findStr);
+bool gamemodsClearAllMountedPaths();
+bool gamemodsMountAllExistingPaths();
+extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
+#ifdef STEAMWORKS
+void gamemodsWindowUploadInit(bool creatingNewItem);
+void gamemodsSubscribedItemsInit();
+void gamemodsDrawWorkshopItemTagToggle(std::string tagname, int x, int y);
+bool gamemodsCheckIfSubscribedAndDownloadedFileID(uint64 fileID);
+bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID);
+bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList);
+extern std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
+#endif // STEAMWORKS
+
 extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;

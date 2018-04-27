@@ -26,6 +26,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <unordered_map>
 
 #include "Config.hpp"
+#include "physfs.h"
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
@@ -631,3 +632,10 @@ extern GLuint fbo_ren;
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y);
 static const Uint32 cacheLimit = 8096;
+
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+extern CSteamLeaderboards* g_SteamLeaderboards;
+extern CSteamWorkshop* g_SteamWorkshop;
+#endif // STEAMWORKS
