@@ -2224,57 +2224,9 @@ void clientHandlePacket()
 		numplayers = 0;
 		entity_uids = (Uint32)SDLNet_Read32(&net_packet->data[9]);
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
-		if ( !secretlevel )
-		{
-			fp = openDataFile(LEVELSFILE, "r");
-		}
-		else
-		{
-			fp = openDataFile(SECRETLEVELSFILE, "r");
-		}
-		for ( i = 0; i < currentlevel; ++i )
-		{
-			while ( fgetc(fp) != '\n' )
-			{
-				if ( feof(fp) )
-				{
-					break;
-				}
-			}
-		}
-		fscanf(fp, "%s", tempstr);
-		while ( fgetc(fp) != ' ' )
-		{
-			if ( feof(fp) )
-			{
-				break;
-			}
-		}
-		if ( !strcmp(tempstr, "gen:") )
-		{
-			fscanf(fp, "%s", tempstr);
-			while ( fgetc(fp) != '\n' )
-			{
-				if ( feof(fp) )
-				{
-					break;
-				}
-			}
-			result = generateDungeon(tempstr, mapseed);
-		}
-		else if ( !strcmp(tempstr, "map:") )
-		{
-			fscanf(fp, "%s", tempstr);
-			while ( fgetc(fp) != '\n' )
-			{
-				if ( feof(fp) )
-				{
-					break;
-				}
-			}
-			result = loadMap(tempstr, &map, map.entities, map.creatures);
-		}
-		fclose(fp);
+
+		physfsLoadMapFile(currentlevel, mapseed, false);
+
 		numplayers = 0;
 		assignActions(&map);
 		generatePathMaps();

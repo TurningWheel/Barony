@@ -70,6 +70,7 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
+std::vector<std::string> physFSFilesInDirectory;
 
 // recommended for valgrind debugging:
 // res of 480x270
@@ -754,44 +755,7 @@ void gameLogic(void)
 					}
 					darkmap = false;
 					numplayers = 0;
-					if ( !secretlevel )
-					{
-						fp = openDataFile(LEVELSFILE, "r");
-					}
-					else
-					{
-						fp = openDataFile(SECRETLEVELSFILE, "r");
-					}
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-					fscanf(fp, "%s", tempstr);
-					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-						{
-							break;
-						}
-					int result = 0;
-					if ( !strcmp(tempstr, "gen:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = generateDungeon(tempstr, mapseed);
-					}
-					else if ( !strcmp(tempstr, "map:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = loadMap(tempstr, &map, map.entities, map.creatures);
-					}
-					fclose(fp);
+					int result = physfsLoadMapFile(currentlevel, mapseed, false);
 					assignActions(&map);
 					generatePathMaps();
 
@@ -2668,65 +2632,22 @@ int main(int argc, char** argv)
 						}
 						if ( loadingmap == false )
 						{
-							if ( !secretlevel )
-							{
-								fp = openDataFile(LEVELSFILE, "r");
-							}
-							else
-							{
-								fp = openDataFile(SECRETLEVELSFILE, "r");
-							}
 							currentlevel = startfloor;
 							if ( startfloor )
 							{
-								for ( int i = 0; i < currentlevel; ++i )
-								{
-									while ( fgetc(fp) != '\n' )
-									{
-										if ( feof(fp) )
-										{
-											break;
-										}
-									}
-								}
+								physfsLoadMapFile(currentlevel, 0, true);
 							}
-							fscanf(fp, "%s", tempstr);
-							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+							else
 							{
-								{
-									break;
-								}
+								physfsLoadMapFile(0, 0, true);
 							}
-							if ( !strcmp(tempstr, "gen:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-								{
-									{
-										break;
-									}
-								}
-								generateDungeon(tempstr, rand());
-							}
-							else if ( !strcmp(tempstr, "map:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' )
-								{
-									if ( feof(fp) )
-									{
-										break;
-									}
-								}
-								loadMap(tempstr, &map, map.entities, map.creatures);
-							}
-							fclose(fp);
 						}
 						else
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities, map.creatures);
+								std::string fullMapName = physfsFormatMapName(maptoload);
+								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 							}
 							else
 							{

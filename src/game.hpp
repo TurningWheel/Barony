@@ -13,9 +13,13 @@
 
 #include <vector>
 #include <random>
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+#endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.1.4"
+#define VERSION "v3.1.5"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -227,6 +231,9 @@ static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
+extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 
+
 void mapLevel(int player);
+
