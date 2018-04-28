@@ -714,6 +714,48 @@ void steamAchievementEntity(Entity* my, const char* achName)
 	}
 }
 
+void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
+{
+#ifndef STEAMWORKS
+	return;
+#else
+	bool result = false;
+	switch ( type )
+	{
+		case STEAM_STAT_INT:
+			g_SteamStats[statisticNum].m_iValue += value;
+			break;
+		case STEAM_STAT_FLOAT:
+			break;
+		default:
+			break;
+	}
+	g_SteamStatistics->StoreStats(); // update server's stat counter.
+	steamIndicateStatisticProgress(statisticNum, type);
+#endif
+}
+
+void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
+{
+	int iVal = g_SteamStats[statisticNum].m_iValue;
+	float fVal = g_SteamStats[statisticNum].m_flValue;
+	if ( type == STEAM_STAT_INT )
+	{
+		switch ( statisticNum )
+		{
+			case STEAM_STATISTIC_RHINESTONE_COWBOY:
+				if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+				{
+					SteamUserStats()->IndicateAchievementProgress(g_SteamStats[statisticNum].m_pchStatName, iVal, 300);
+					printlog("%s: %d, %d", g_SteamStats[statisticNum].m_pchStatName, iVal, 300);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+}
+
 #ifdef STEAMWORKS
 //#define STEAMDEBUG
 

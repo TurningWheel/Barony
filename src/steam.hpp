@@ -175,3 +175,41 @@ public:
 	void OnUnsubscribeItemRequest(RemoteStorageUnsubscribePublishedFileResult_t *pResult, bool bIOFailure);
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
 };
+
+
+enum ESteamStatTypes
+{
+	STEAM_STAT_INT = 0,
+	STEAM_STAT_FLOAT = 1,
+	STEAM_STAT_AVGRATE = 2,
+};
+
+struct SteamStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
+
+class CSteamStatistics
+{
+private:
+	SteamStat_t *m_pStats; // Stats data
+	int m_iNumStats; // The number of Stats
+	bool m_bInitialized; // Have we called Request stats and received the callback?
+public:
+
+	CSteamStatistics(SteamStat_t* gStats, int numStatistics);
+	~CSteamStatistics() {};
+
+	bool RequestStats();
+	bool StoreStats();
+	bool ClearAllStats();
+
+	STEAM_CALLBACK(CSteamStatistics, OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived);
+	STEAM_CALLBACK(CSteamStatistics, OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored);
+};

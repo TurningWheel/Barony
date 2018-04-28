@@ -52,6 +52,12 @@ int multiplayer = -1;
 bool directConnect = false;
 CSteamLeaderboards* g_SteamLeaderboards = NULL;
 CSteamWorkshop* g_SteamWorkshop = NULL;
+SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
+{
+	{1, STEAM_STAT_INT, "stat_boulders"},
+	{2, STEAM_STAT_INT, "stat_identified_worthless_glass"}
+};
+CSteamStatistics* g_SteamStatistics = NULL;
 #else
 bool directConnect = true;
 #endif

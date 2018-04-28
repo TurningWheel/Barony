@@ -880,6 +880,10 @@ void actPlayer(Entity* my)
 					{
 						tempItem->identified = true;
 						messagePlayer(clientnum, language[570], tempItem->description());
+						if ( tempItem->type == GEM_GLASS )
+						{
+							steamStatisticUpdate(STEAM_STATISTIC_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+						}
 					}
 					else
 					{

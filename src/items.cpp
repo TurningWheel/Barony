@@ -2228,6 +2228,10 @@ Item* itemPickup(int player, Item* item)
 	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		item->identified = true;
+		if ( item->type == GEM_GLASS )
+		{
+			steamStatisticUpdate(STEAM_STATISTIC_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+		}
 	}
 
 	if ( multiplayer != CLIENT && players[player] && players[player]->entity )
