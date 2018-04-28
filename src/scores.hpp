@@ -35,6 +35,8 @@ static const int STATISTICS_HOT_TUB_TIME_MACHINE = 4;
 static const int STATISTICS_HEAL_BOT = 5;
 static const int STATISTICS_TEMPT_FATE = 6;
 
+static const int STEAM_STATISTIC_RHINESTONE_COWBOY = 1;
+
 typedef struct score_t
 {
 	Sint32 kills[NUMMONSTERS];

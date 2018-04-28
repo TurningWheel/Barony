@@ -813,15 +813,18 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		g_SteamWorkshop->CreateItem();
 		keystatus[SDL_SCANCODE_Y] = 0;
 	}
+	*/
 	if ( keystatus[SDL_SCANCODE_T] )
 	{
-		if ( g_SteamWorkshop->createItemResult.m_eResult == k_EResultOK )
-		{
-			messagePlayer(0, "success createItem");
-			g_SteamWorkshop->StartItemUpdate();
-		}
+		steamStatisticUpdate(1, STEAM_STAT_INT, 1);
 		keystatus[SDL_SCANCODE_T] = 0;
 	}
+	if ( keystatus[SDL_SCANCODE_U] )
+	{
+		g_SteamStatistics->ClearAllStats();
+		keystatus[SDL_SCANCODE_U] = 0;
+	}
+	/*
 	if ( keystatus[SDL_SCANCODE_H] )
 	{
 		if ( g_SteamWorkshop->UGCUpdateHandle != 0 )

@@ -136,6 +136,7 @@ int initApp(char* title, int fullscreen)
 	steam_init = true;
 	g_SteamLeaderboards = new CSteamLeaderboards();
 	g_SteamWorkshop = new CSteamWorkshop();
+	g_SteamStatistics = new CSteamStatistics(g_SteamStats, NUM_STEAM_STATISTICS);
 #endif
 
 	window_title = title;
@@ -2161,6 +2162,10 @@ int deinitApp()
 		if ( g_SteamWorkshop )
 		{
 			delete g_SteamWorkshop;
+		}
+		if ( g_SteamStatistics )
+		{
+			delete g_SteamStatistics;
 		}
 		SteamAPI_Shutdown();
 	}
