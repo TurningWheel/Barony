@@ -2907,14 +2907,28 @@ int main(int argc, char** argv)
 					}
 					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))
 					{
-						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
-						if ( shootmode )
+						bool allowCasting = true;
+						if ( *inputPressed(impulses[IN_CAST_SPELL]) )
 						{
-							*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+							if ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE 
+								&& gui_mode >= GUI_MODE_INVENTORY
+								&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar()) 
+								))
+							{
+								allowCasting = false;
+							}
 						}
-						if (players[clientnum] && players[clientnum]->entity)
+						if ( allowCasting )
 						{
-							castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+							*inputPressed(impulses[IN_CAST_SPELL]) = 0;
+							if ( shootmode )
+							{
+								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+							}
+							if (players[clientnum] && players[clientnum]->entity)
+							{
+								castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+							}
 						}
 					}
 
