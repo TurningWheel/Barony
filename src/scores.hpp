@@ -77,6 +77,8 @@ extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MA
 extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
 extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
+extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
+extern bool achievementStatusStrobe[MAXPLAYERS];
 
 score_t* scoreConstructor();
 void scoreDeconstructor(void* data);
