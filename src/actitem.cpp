@@ -140,10 +140,12 @@ void actItem(Entity* my)
 						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
 					}
 					Item* item2 = newItemFromEntity(my);
-					if ( item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID())
-						&& my->itemStolen == 1 )
+					if ( players[i] && players[i]->entity )
 					{
-						steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
+						if ( my->itemStolen == 1 && item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID()) )
+						{
+							steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
+						}
 					}
 					messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
