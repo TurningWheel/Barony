@@ -36,6 +36,8 @@ std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYER
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
 std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
+std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
+bool achievementStatusStrobe[MAXPLAYERS] = { false };
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
@@ -2889,6 +2891,16 @@ void setDefaultPlayerConducts()
 	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 	{
 		gameStatistics[c] = 0;
+	}
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		achievementStatusRhythmOfTheKnight[c] = false;
+		achievementStatusStrobe[c] = false;
+		achievementStatusThankTheTank[c] = false;
+		achievementRhythmOfTheKnightVec[c].clear();
+		achievementThankTheTankPair[c].first = 0;
+		achievementThankTheTankPair[c].second = 0;
+		achievementStrobeVec[c].clear();
 	}
 }
 

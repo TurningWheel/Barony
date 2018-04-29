@@ -5592,10 +5592,6 @@ void handleMainMenu(bool mode)
 
 			setDefaultPlayerConducts(); // penniless, foodless etc.
 
-			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
-			{
-				gameStatistics[c] = 0;
-			}
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
