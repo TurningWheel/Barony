@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "scores.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -254,6 +255,50 @@ void actThrown(Entity* my)
 				THROWN_VELZ += 0.04;
 				my->z += THROWN_VELZ;
 				my->roll += 0.04;
+			}
+		}
+	}
+
+	// pick up item
+	if ( multiplayer != CLIENT && cat == THROWN )
+	{
+		for ( int i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			{
+				if ( inrange[i] )
+				{
+					if ( players[i] != nullptr && players[i]->entity != nullptr )
+					{
+						playSoundEntity(players[i]->entity, 66, 64);
+					}
+					Item* item2 = newItemFromEntity(my);
+					if ( item2 )
+					{
+						item = itemPickup(i, item2);
+						if ( item )
+						{
+							if ( parent && (parent->getRace() == GOATMAN || parent->getRace() == INSECTOID) )
+							{
+								steamAchievementClient(i, "BARONY_ACH_ALL_IN_REFLEXES");
+							}
+							if ( i == 0 )
+							{
+								free(item2);
+							}
+							int oldcount = item->count;
+							item->count = 1;
+							messagePlayer(i, language[504], item->description());
+							item->count = oldcount;
+							if ( i != 0 )
+							{
+								free(item);
+							}
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
 			}
 		}
 	}
