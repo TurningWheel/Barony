@@ -719,6 +719,12 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 #ifndef STEAMWORKS
 	return;
 #else
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	{
+		// cheats have been enabled on savefile, disallow statistics update.
+		// return;
+	}
+
 	bool result = false;
 	switch ( type )
 	{
@@ -735,6 +741,45 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 #endif
 }
 
+void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value)
+{
+#ifndef STEAMWORKS
+	return;
+#else
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	{
+		// cheats have been enabled on savefile, disallow statistics update.
+		// return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( player <= 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	else
+	{
+		if ( client_disconnected[player] || multiplayer == SINGLE )
+		{
+			return;
+		}
+		strcpy((char*)net_packet->data, "SSTA");
+		net_packet->data[4] = static_cast<Uint8>(statisticNum);
+		net_packet->data[5] = static_cast<Uint8>(type);
+		net_packet->data[6] = static_cast<Uint8>(value);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+#endif
+}
+
+
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 {
 	int iVal = g_SteamStats[statisticNum].m_iValue;
@@ -743,12 +788,35 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 	{
 		switch ( statisticNum )
 		{
-			case STEAM_STATISTIC_RHINESTONE_COWBOY:
-				if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+			case STEAM_STAT_RHINESTONE_COWBOY:
+				if ( !achievementUnlocked("BARONY_ACH_RHINESTONE_COWBOY") )
 				{
-					SteamUserStats()->IndicateAchievementProgress(g_SteamStats[statisticNum].m_pchStatName, iVal, 300);
-					printlog("%s: %d, %d", g_SteamStats[statisticNum].m_pchStatName, iVal, 300);
+					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
+					}
 				}
+				messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
+				break;
+			case STEAM_STAT_TOUGH_AS_NAILS:
+				if ( !achievementUnlocked("BARONY_ACH_TOUGH_AS_NAILS") )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
+					}
+				}
+				messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
+				break;
+			case STEAM_STAT_UNSTOPPABLE_FORCE:
+				if ( !achievementUnlocked("BARONY_ACH_UNSTOPPABLE_FORCE") )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
+					}
+				}
+				messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
 				break;
 			default:
 				break;

@@ -2961,6 +2961,11 @@ void updateGameplayStatisticsInMainLoop()
 	{
 		steamAchievement("BARONY_ACH_HEAL_BOT");
 	}
+	if ( gameStatistics[STATISTICS_HOT_TUB_TIME_MACHINE] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_HOT_TUB");
+	}
+
 	if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
 	{
 		steamAchievement("BARONY_ACH_TEMPT_FATE");

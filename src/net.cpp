@@ -1305,6 +1305,14 @@ void clientHandlePacket()
 		return;
 	}
 
+	// update steam statistic
+	else if ( !strncmp((char*)net_packet->data, "SSTA", 4) )
+	{
+		steamStatisticUpdate(static_cast<int>(net_packet->data[4]), 
+			static_cast<ESteamStatTypes>(net_packet->data[5]), static_cast<int>(net_packet->data[6]));
+		return;
+	}
+
 	// pause game
 	else if (!strncmp((char*)net_packet->data, "PAUS", 4))
 	{

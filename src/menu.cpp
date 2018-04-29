@@ -10583,6 +10583,10 @@ void buttonGamemodsGetLocalMods(button_t* my)
 void buttonGamemodsStartModdedGame(button_t* my)
 {
 	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+	if ( gamemods_numCurrentModsLoaded > 0 )
+	{
+		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
+	}
 	// look for a save game
 	if ( saveGameExists(true) || saveGameExists(false) )
 	{
