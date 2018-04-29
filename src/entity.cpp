@@ -5347,6 +5347,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
+						if ( damage >= 150 && playerhit >= 0 )
+						{
+							if ( hitstats && hitstats->HP > 0 )
+							{
+								steamAchievementClient(playerhit, "BARONY_ACH_SPONGE");
+							}
+						}
 						if ( multiplayer != CLIENT )
 						{
 							createParticleRock(hit.entity);
@@ -5565,6 +5572,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// kill monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
+								{
+									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+									if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+									{
+										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
+											&& hit.entity->monsterTarget != getUID() )
+										{
+											// monster is attacking another entity.
+											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+										}
+									}
+								}
 							}
 							awardXP(hit.entity, true, true);
 						}
@@ -5617,11 +5637,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// assassinate monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2548], MSG_COMBAT);
+								if ( hitstats->type == COCKATRICE )
+								{
+									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
+								}
 							}
 							else
 							{
 								// kill monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[697], MSG_COMBAT);
+								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
+								{
+									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+									if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+									{
+										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
+											&& hit.entity->monsterTarget != getUID() )
+										{
+											// monster is attacking another entity.
+											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+										}
+									}
+								}
 							}
 							awardXP(hit.entity, true, true);
 						}

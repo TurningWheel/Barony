@@ -877,6 +877,11 @@ void gameLogic(void)
 									newNode->element = myuid;
 									*myuid = monster->getUID();
 
+									if ( monsterStats->type == HUMAN && currentlevel == 25 && !strncmp(map.name, "Mages Guild", 11) )
+									{
+										steamAchievementClient(c, "BARONY_ACH_ESCORT");
+									}
+
 									if ( c > 0 && multiplayer == SERVER )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
