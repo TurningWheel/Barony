@@ -396,8 +396,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load models
-	printlog("loading models...\n");
-	fp = openDataFile("models/models.txt", "r");
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	printlog("loading models from directory %s...\n", modelsDirectory.c_str());
+
+	fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( nummodels = 0; !feof(fp); nummodels++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -412,7 +415,7 @@ int initApp(char* title, int fullscreen)
 		return 11;
 	}
 	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-	fp = openDataFile("models/models.txt", "r");
+	fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);

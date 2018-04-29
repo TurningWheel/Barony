@@ -1176,7 +1176,9 @@ void consoleCommand(char* command_str)
 			}
 		}
 
-		FILE *fp = openDataFile("models/models.txt", "r");
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
 		for ( c = 0; !feof(fp); c++ )
 		{
 			fscanf(fp, "%s", name2);
