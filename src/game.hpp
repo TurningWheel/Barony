@@ -120,6 +120,7 @@ void steamAchievement(const char* achName);
 void steamAchievementClient(int player, const char* achName);
 void steamAchievementEntity(Entity* my, const char* achName); // give steam achievement to an entity, and check for valid player info.
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value);
+void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value);
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type);
 void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);

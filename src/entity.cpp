@@ -1205,6 +1205,12 @@ void Entity::increaseSkill(int skill)
 			}
 		}
 
+		if ( skill == PRO_SWIMMING && !(svFlags & SV_FLAG_HUNGER) )
+		{
+			// hunger off and swimming is raised.
+			serverUpdatePlayerGameplayStats(player, STATISTICS_HOT_TUB_TIME_MACHINE, 1);
+		}
+
 		if ( skill == PRO_MAGIC && skillCapstoneUnlockedEntity(PRO_MAGIC) )
 		{
 			//magic capstone = bonus spell: Dominate.
@@ -5117,6 +5123,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 									net_packet->len = 6;
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
+								if ( myStats->weapon->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
+								{
+									if ( playerhit > 0 )
+									{
+										steamStatisticUpdateClient(playerhit, STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
+									}
+									else
+									{
+										steamStatisticUpdate(STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
+									}
+								}
 							}
 						}
 					}
@@ -5285,6 +5302,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( armor != NULL )
 					{
 						hit.entity->degradeArmor(*hitstats, *armor, armornum);
+						if ( armor->status == BROKEN )
+						{
+							if ( player >= 0 && hit.entity->behavior == &actMonster )
+							{
+								if ( player > 0 )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+								}
+								else
+								{
+									steamStatisticUpdate(STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+								}
+							}
+						}
 					}
 
 					// special weapon effects

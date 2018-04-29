@@ -54,8 +54,10 @@ CSteamLeaderboards* g_SteamLeaderboards = NULL;
 CSteamWorkshop* g_SteamWorkshop = NULL;
 SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 {
-	{1, STEAM_STAT_INT, "stat_boulders"},
-	{2, STEAM_STAT_INT, "stat_identified_worthless_glass"}
+	{1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS"},
+	{2, STEAM_STAT_INT, "STAT_WORTHLESS_GLASS"},
+	{3, STEAM_STAT_INT, "STAT_TOUGH_AS_NAILS"},
+	{4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE"}
 };
 CSteamStatistics* g_SteamStatistics = NULL;
 #else

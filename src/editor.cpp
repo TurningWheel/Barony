@@ -1300,6 +1300,10 @@ int main(int argc, char** argv)
 		deinitApp();
 		exit(x);
 	}
+#ifdef STEAMWORKS
+	g_SteamStatistics->RequestStats();
+#endif // STEAMWORKS
+
 
 	copymap.tiles = nullptr;
 	copymap.entities = nullptr;
@@ -1724,6 +1728,15 @@ int main(int argc, char** argv)
 
 	loadItems();
 	loadTilePalettes();
+
+#ifdef STEAMWORKS
+	if ( SteamUserStats()->SetAchievement("BARONY_ACH_CARTOGRAPHER") )
+	{
+		//printlog("STEAM ACHIEVEMENT\n");
+		SteamUserStats()->StoreStats();
+	}
+	SteamAPI_RunCallbacks();
+#endif
 
 	// main loop
 	printlog( "running main loop.\n");
