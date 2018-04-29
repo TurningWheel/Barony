@@ -814,16 +814,6 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		keystatus[SDL_SCANCODE_Y] = 0;
 	}
 	*/
-	if ( keystatus[SDL_SCANCODE_T] )
-	{
-		steamStatisticUpdate(1, STEAM_STAT_INT, 1);
-		keystatus[SDL_SCANCODE_T] = 0;
-	}
-	if ( keystatus[SDL_SCANCODE_U] )
-	{
-		g_SteamStatistics->ClearAllStats();
-		keystatus[SDL_SCANCODE_U] = 0;
-	}
 	/*
 	if ( keystatus[SDL_SCANCODE_H] )
 	{
