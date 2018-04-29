@@ -164,8 +164,10 @@ voxel_t* loadVoxel(char* filename)
 	{
 		//bool has_ext = strstr(filename, ".vox") == NULL;
 		//snprintf(filename2, 1024, "%s%s", filename, has_ext ? "" : ".vox");
+		std::string filenamePath = PHYSFS_getRealDir(filename);
+		filenamePath.append(PHYSFS_getDirSeparator()).append(filename);
 
-		if ((file = openDataFile(filename, "rb")) == NULL)
+		if ((file = openDataFile(filenamePath.c_str(), "rb")) == NULL)
 		{
 			return NULL;
 		}
@@ -1006,7 +1008,7 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
 		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
 	}
-	printlog("mapsDirectory: %s", mapsDirectory.c_str());
+	printlog("Maps directory: %s", mapsDirectory.c_str());
 	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
 	std::string line = levelsList.front();
 	int levelsCounted = 0;

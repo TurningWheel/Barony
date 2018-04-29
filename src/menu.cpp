@@ -5187,7 +5187,45 @@ void handleMainMenu(bool mode)
 									{
 										gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
 										gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(itemDetails.m_rgchTitle, itemDetails.m_nPublishedFileId));
-										//printlog("[%s] is in the search path.\n", fullpath);
+										std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+										if ( modelsDirectory.compare("./") != 0 )
+										{
+											printlog("[PhysFS]: Models file not in default directory... reloading models.\n");
+											// models.txt was not in default directory, we should reload the models list.
+											char modelName[128];
+											int firstnum = 1;
+											int endnum = nummodels;
+											modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+											FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
+											for ( c = 0; !feof(fp); c++ )
+											{
+												fscanf(fp, "%s", modelName);
+												while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+												{
+													break;
+												}
+												models[c] = loadVoxel(modelName);
+												std::string modelPath = PHYSFS_getRealDir(modelName);
+												if ( modelPath.compare("./") != 0 )
+												{
+													// this index is not found in the normal models folder.
+													if ( firstnum == 1 || c < firstnum )
+													{
+														firstnum = c;
+													}
+
+													if ( endnum == nummodels )
+													{
+														endnum = c;
+													}
+													else if ( c > endnum )
+													{
+														endnum = c;
+													}
+												}
+											}
+											generatePolyModels(firstnum, endnum, false);
+										}
 									}
 								}
 							}
@@ -5505,7 +5543,52 @@ void handleMainMenu(bool mode)
 						if ( PHYSFS_mount(path.c_str(), NULL, 0) )
 						{
 							gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
-							printlog("[%s] is in the search path.\n", path.c_str());
+							printlog("[PhysFS]: [%s] is in the search path.\n", path.c_str());
+							std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+							if ( modelsDirectory.compare("./") != 0 )
+							{
+								printlog("[PhysFS]: Models file not in default directory... reloading models.\n");
+								// models.txt was not in default directory, we should reload the models list.
+								char modelName[128];
+								int firstnum = 1;
+								int endnum = nummodels;
+								modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+								FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
+								for ( c = 0; !feof(fp); c++ )
+								{
+									fscanf(fp, "%s", modelName);
+									while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+									{
+										break;
+									}
+									models[c] = loadVoxel(modelName);
+									std::string modelPath = PHYSFS_getRealDir(modelName);
+									if ( modelPath.compare("./") != 0 )
+									{
+										// this index is not found in the normal models folder.
+										if ( firstnum == 1 || c < firstnum )
+										{
+											firstnum = c;
+										}
+
+										if ( endnum == nummodels )
+										{
+											endnum = c + 1;
+										}
+										else if ( c + 1 > endnum )
+										{
+											endnum = c + 1;
+										}
+									}
+								}
+								if ( firstnum == endnum )
+								{
+									endnum += 1;
+								}
+								generatePolyModels(firstnum, endnum, false);
+								printlog("%d, %d\n", firstnum, endnum);
+								fclose(fp);
+							}
 						}
 					}
 				}
@@ -5519,7 +5602,7 @@ void handleMainMenu(bool mode)
 						{
 							if ( gamemodsRemovePathFromMountedFiles(path) )
 							{
-								printlog("[%s] is removed from the search path.\n", path.c_str());
+								printlog("[PhysFS]: [%s] is removed from the search path.\n", path.c_str());
 							}
 						}
 					}
