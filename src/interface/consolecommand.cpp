@@ -1189,7 +1189,7 @@ void consoleCommand(char* command_str)
 			models[c] = loadVoxel(name2);
 		}
 		fclose(fp);
-		messagePlayer(clientnum, language[2354]);
+		//messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
 		generatePolyModels(startIndex, endIndex, true);
 	}
