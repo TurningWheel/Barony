@@ -1103,3 +1103,56 @@ std::string physfsFormatMapName(char* levelfilename)
 	}
 	return fullMapPath;
 }
+
+bool physfsSearchModelsToUpdate(int &start, int &end)
+{
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	if ( modelsDirectory.compare("./") != 0 )
+	{
+		// models.txt was not in default directory, we should reload the models list.
+		char modelName[128];
+		int startnum = 1;
+		int endnum = nummodels;
+		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
+		for ( int c = 0; !feof(fp); c++ )
+		{
+			fscanf(fp, "%s", modelName);
+			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+			models[c] = loadVoxel(modelName);
+			std::string modelPath = PHYSFS_getRealDir(modelName);
+			if ( modelPath.compare("./") != 0 )
+			{
+				// this index is not found in the normal models folder.
+				// store the lowest found model number inside startnum.
+				if ( startnum == 1 || c < startnum )
+				{
+					startnum = c;
+				}
+
+				// store the higher end model num in endnum.
+				if ( endnum == nummodels )
+				{
+					endnum = c + 1;
+				}
+				else if ( c + 1 > endnum )
+				{
+					endnum = c + 1;
+				}
+			}
+		}
+		if ( startnum == endnum )
+		{
+			endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
+		}
+		printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
+		start = startnum;
+		end = endnum;
+		fclose(fp);
+		return true;
+	}
+	return false;
+}
