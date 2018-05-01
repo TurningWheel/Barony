@@ -112,6 +112,8 @@ int gamemods_numCurrentModsLoaded = -1;
 const int gamemods_maxTags = 10;
 std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
+bool gamemods_modelsListRequiresReload = false;
+bool gamemods_modelsListLastStartedUnmodded = false; // if starting regular game that had to reset model list, use this to reinit custom models.
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -569,25 +571,6 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
 				}
 			}
-			/*h2 = h;
-			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
-			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
-				&& subwindow == 0
-				&& introstage == 1
-				&& SteamUser()->BLoggedOn() )
-			{
-				if ( mousestatus[SDL_BUTTON_LEFT] )
-				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					playSound(139, 64);
-					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
-				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8 + h2, colorGray, language[2549], steamOnlinePlayers);
-			}
-			else if ( SteamUser()->BLoggedOn() )
-			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
-			}*/
 			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
@@ -673,7 +656,31 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 
 					// look for a save game
+					bool reloadModels = false;
+					int modelsIndexUpdateStart = 1;
+					int modelsIndexUpdateEnd = nummodels;
+					std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+					if ( modelsDirectory.compare("./") != 0 )
+					{
+						reloadModels = true; // we had some models already loaded which should be reset
+						physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd); // grab the indices to use later.
+					}
+
 					gamemodsClearAllMountedPaths();
+
+					if ( reloadModels )
+					{
+						int tmpStart;
+						int tmpEnd;
+						physfsSearchModelsToUpdate(tmpStart, tmpEnd);
+						char cmdString[32] = "/loadmodels ";
+						char buf[32];
+						snprintf(buf, 32, "%d %d", modelsIndexUpdateStart, modelsIndexUpdateEnd);
+						strcat(cmdString, buf);
+						consoleCommand(cmdString);
+						gamemods_modelsListLastStartedUnmodded = true;
+					}
+
 					if ( saveGameExists(true) || saveGameExists(false) )
 					{
 						openLoadGameWindow(NULL);
@@ -5187,45 +5194,7 @@ void handleMainMenu(bool mode)
 									{
 										gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
 										gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(itemDetails.m_rgchTitle, itemDetails.m_nPublishedFileId));
-										std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-										if ( modelsDirectory.compare("./") != 0 )
-										{
-											printlog("[PhysFS]: Models file not in default directory... reloading models.\n");
-											// models.txt was not in default directory, we should reload the models list.
-											char modelName[128];
-											int firstnum = 1;
-											int endnum = nummodels;
-											modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-											FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
-											for ( c = 0; !feof(fp); c++ )
-											{
-												fscanf(fp, "%s", modelName);
-												while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-												{
-													break;
-												}
-												models[c] = loadVoxel(modelName);
-												std::string modelPath = PHYSFS_getRealDir(modelName);
-												if ( modelPath.compare("./") != 0 )
-												{
-													// this index is not found in the normal models folder.
-													if ( firstnum == 1 || c < firstnum )
-													{
-														firstnum = c;
-													}
-
-													if ( endnum == nummodels )
-													{
-														endnum = c;
-													}
-													else if ( c > endnum )
-													{
-														endnum = c;
-													}
-												}
-											}
-											generatePolyModels(firstnum, endnum, false);
-										}
+										gamemods_modelsListRequiresReload = true;
 									}
 								}
 							}
@@ -5270,6 +5239,7 @@ void handleMainMenu(bool mode)
 										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
 										{
 											printlog("[%s] is removed from the search path.\n", fullpath);
+											gamemods_modelsListRequiresReload = true;
 										}
 									}
 								}
@@ -5287,6 +5257,7 @@ void handleMainMenu(bool mode)
 										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
 										{
 											printlog("[%s] is removed from the search path.\n", fullpath);
+											gamemods_modelsListRequiresReload = true;
 										}
 									}
 								}
@@ -5544,51 +5515,7 @@ void handleMainMenu(bool mode)
 						{
 							gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
 							printlog("[PhysFS]: [%s] is in the search path.\n", path.c_str());
-							std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-							if ( modelsDirectory.compare("./") != 0 )
-							{
-								printlog("[PhysFS]: Models file not in default directory... reloading models.\n");
-								// models.txt was not in default directory, we should reload the models list.
-								char modelName[128];
-								int firstnum = 1;
-								int endnum = nummodels;
-								modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-								FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
-								for ( c = 0; !feof(fp); c++ )
-								{
-									fscanf(fp, "%s", modelName);
-									while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-									{
-										break;
-									}
-									models[c] = loadVoxel(modelName);
-									std::string modelPath = PHYSFS_getRealDir(modelName);
-									if ( modelPath.compare("./") != 0 )
-									{
-										// this index is not found in the normal models folder.
-										if ( firstnum == 1 || c < firstnum )
-										{
-											firstnum = c;
-										}
-
-										if ( endnum == nummodels )
-										{
-											endnum = c + 1;
-										}
-										else if ( c + 1 > endnum )
-										{
-											endnum = c + 1;
-										}
-									}
-								}
-								if ( firstnum == endnum )
-								{
-									endnum += 1;
-								}
-								generatePolyModels(firstnum, endnum, false);
-								printlog("%d, %d\n", firstnum, endnum);
-								fclose(fp);
-							}
+							gamemods_modelsListRequiresReload = true;
 						}
 					}
 				}
@@ -5603,6 +5530,7 @@ void handleMainMenu(bool mode)
 							if ( gamemodsRemovePathFromMountedFiles(path) )
 							{
 								printlog("[PhysFS]: [%s] is removed from the search path.\n", path.c_str());
+								gamemods_modelsListRequiresReload = true;
 							}
 						}
 					}
@@ -10251,6 +10179,8 @@ void gamemodsSubscribedItemsInit()
 	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
 
+	gamemodsMountAllExistingPaths();
+
 	// create confirmation window
 	subwindow = 1;
 	subx1 = xres / 2 - 420;
@@ -10656,7 +10586,6 @@ void buttonGamemodsGetLocalMods(button_t* my)
 	gamemods_window = 7;
 	gamemods_localModFoldernames.clear();
 	gamemods_localModFoldernames = directoryContents("./mods/", true, false);
-	gamemodsMountAllExistingPaths();
 }
 
 void buttonGamemodsStartModdedGame(button_t* my)
@@ -10666,6 +10595,25 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
 	}
+
+	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
+	{
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+		if ( modelsDirectory.compare("./") != 0 )
+		{
+			gamemods_modelsListRequiresReload = true;
+		}
+	}
+
+	// process any new model files encountered in the mod load list.
+	int modelsIndexUpdateStart = 1;
+	int modelsIndexUpdateEnd = nummodels;
+	if ( gamemods_modelsListRequiresReload && physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd) )
+	{
+		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+		gamemods_modelsListRequiresReload = false;
+	}
+
 	// look for a save game
 	if ( saveGameExists(true) || saveGameExists(false) )
 	{
@@ -10683,6 +10631,8 @@ void gamemodsCustomContentInit()
 	gamemods_window = 3;
 	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
+
+	gamemodsMountAllExistingPaths();
 
 	// create confirmation window
 	subwindow = 1;
