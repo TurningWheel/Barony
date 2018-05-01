@@ -35,3 +35,4 @@ int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed);
 std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir);
 std::string physfsFormatMapName(char* levelfilename);
+bool physfsSearchModelsToUpdate(int &start, int &end);
