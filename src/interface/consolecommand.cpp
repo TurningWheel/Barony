@@ -1186,7 +1186,38 @@ void consoleCommand(char* command_str)
 			{
 				break;
 			}
-			models[c] = loadVoxel(name2);
+			if ( c >= startIndex && c < endIndex )
+			{
+				if ( models[c] != NULL )
+				{
+					if ( models[c]->data )
+					{
+						free(models[c]->data);
+					}
+					free(models[c]);
+					if ( polymodels[c].faces )
+					{
+						free(polymodels[c].faces);
+					}
+					if ( polymodels[c].vbo )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+					}
+					if ( polymodels[c].colors )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].colors);
+					}
+					if ( polymodels[c].va )
+					{
+						SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+					}
+					if ( polymodels[c].colors_shifted )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+					}
+				}
+				models[c] = loadVoxel(name2);
+			}
 		}
 		fclose(fp);
 		//messagePlayer(clientnum, language[2354]);
