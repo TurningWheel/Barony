@@ -47,7 +47,8 @@ void createBooks()
 
 	//TODO: Read the books/ inventory for all *.txt files.
 	//TODO: Then create a book for each file there and add it to a books array.
-	auto discoveredbooks = directoryContents("books/", false, true);
+	//auto discoveredbooks = directoryContents("books/", false, true);
+	std::list<std::string> discoveredbooks = physfsGetFileNamesInDirectory("books/");
 	if (!discoveredbooks.empty())
 	{
 		printlog("compiling books...\n");
@@ -251,9 +252,17 @@ void createBook(book_t* book)
 	}
 
 	//Load in the text from a file.
-	strcpy(tempstr, "books/");
-	strcat(tempstr, book->name);
-	book->text = readFile(tempstr);
+	std::string tempstr = "books/";
+	tempstr.append(book->name);
+	if ( PHYSFS_getRealDir(tempstr.c_str()) != NULL )
+	{
+		std::string path = PHYSFS_getRealDir(tempstr.c_str());
+		path.append(PHYSFS_getDirSeparator());
+		tempstr = path + tempstr;
+	}
+	char bookChar[256];
+	strncpy(bookChar, tempstr.c_str(), 255);
+	book->text = readFile(bookChar);
 	if (!book->text)
 	{
 		printlog( "error opening book \"%s\".\n", tempstr);

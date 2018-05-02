@@ -33,7 +33,10 @@ std::vector<std::string> getLinesFromDataFile(std::string filename);
 extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed);
-std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir);
+std::list<std::string> physfsGetFileNamesInDirectory(const char* dir);
 std::string physfsFormatMapName(char* levelfilename);
 bool physfsSearchModelsToUpdate(int &start, int &end);
-bool physfsReloadSounds(bool reloadAll);
+bool physfsSearchSoundsToUpdate();
+void physfsReloadSounds(bool reloadAll);
+bool physfsSearchBooksToUpdate();
+void physfsReloadBooks();
