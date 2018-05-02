@@ -1303,3 +1303,488 @@ void physfsReloadBooks()
 		createBooks();
 	}
 }
+
+bool physfsSearchMusicToUpdate()
+{
+#ifdef SOUND
+	std::vector<std::string> themeMusic;
+	themeMusic.push_back("music/splash.ogg");
+	themeMusic.push_back("music/introduction.ogg");
+	themeMusic.push_back("music/intermission.ogg");
+	themeMusic.push_back("music/minetown.ogg");
+	themeMusic.push_back("music/splash.ogg");
+	themeMusic.push_back("music/library.ogg");
+	themeMusic.push_back("music/shop.ogg");
+	themeMusic.push_back("music/herxboss.ogg");
+	themeMusic.push_back("music/temple.ogg");
+	themeMusic.push_back("music/endgame.ogg");
+	themeMusic.push_back("music/escape.ogg");
+	themeMusic.push_back("music/devil.ogg");
+	themeMusic.push_back("music/sanctum.ogg");
+
+	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
+	{
+		std::string filename = *it;
+		if ( PHYSFS_getRealDir(filename.c_str()) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(filename.c_str());
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+
+	int c;
+
+	for ( c = 0; c < NUMMINESMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMRUINSMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMHELLMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMCAVESMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMCITADELMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+	for ( c = 0; c < NUMINTROMUSIC; c++ )
+	{
+		if ( c == 0 )
+		{
+			strcpy(tempstr, "music/intro.ogg");
+		}
+		else
+		{
+			snprintf(tempstr, 1000, "music/intro%02d.ogg", c);
+		}
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified music in music/ directory, reloading music files...");
+				return true;
+			}
+		}
+	}
+#endif // SOUND
+	return false;
+}
+
+void physfsReloadMusic()
+{
+#ifdef SOUND
+
+	std::vector<std::string> themeMusic;
+	themeMusic.push_back("music/splash.ogg");
+	themeMusic.push_back("music/introduction.ogg");
+	themeMusic.push_back("music/intermission.ogg");
+	themeMusic.push_back("music/minetown.ogg");
+	themeMusic.push_back("music/splash.ogg");
+	themeMusic.push_back("music/library.ogg");
+	themeMusic.push_back("music/shop.ogg");
+	themeMusic.push_back("music/herxboss.ogg");
+	themeMusic.push_back("music/temple.ogg");
+	themeMusic.push_back("music/endgame.ogg");
+	themeMusic.push_back("music/escape.ogg");
+	themeMusic.push_back("music/devil.ogg");
+	themeMusic.push_back("music/sanctum.ogg");
+
+	int index = 0;
+#ifdef USE_OPENAL
+#define FMOD_System_CreateStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E)
+#define FMOD_SOUND OPENAL_BUFFER
+#define fmod_system 0
+#define FMOD_SOFTWARE 0
+#define FMOD_Sound_Release OPENAL_Sound_Release
+int fmod_result;
+#endif
+	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
+	{
+		std::string filename = *it;
+		if ( PHYSFS_getRealDir(filename.c_str()) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(filename.c_str());
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir += PHYSFS_getDirSeparator() + filename;
+				printlog("[PhysFS]: Reloading music file %s...", filename.c_str());
+				FMOD_SOUND* music = NULL;
+				switch ( index )
+				{
+					case 0:
+						music = introductionmusic;
+						break;
+					case 1:
+						music = intermissionmusic;
+						break;
+					case 2:
+						music = minetownmusic;
+						break;
+					case 3:
+						music = splashmusic;
+						break;
+					case 4:
+						music = librarymusic;
+						break;
+					case 5:
+						music = shopmusic;
+						break;
+					case 6:
+						music = herxmusic;
+						break;
+					case 7:
+						music = templemusic;
+						break;
+					case 8:
+						music = endgamemusic;
+						break;
+					case 9:
+						music = escapemusic;
+						break;
+					case 10:
+						music = devilmusic;
+						break;
+					case 11:
+						music = sanctummusic;
+						break;
+					default:
+						break;
+				}
+				if ( music )
+				{
+					FMOD_Sound_Release(music);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music);
+				}
+			}
+		}
+		++index;
+	}
+
+	int c;
+	FMOD_SOUND** music = NULL;
+
+	for ( c = 0; c < NUMMINESMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = minesmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = swampmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = labyrinthmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMRUINSMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = ruinsmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = underworldmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMHELLMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = hellmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = minotaurmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMCAVESMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = cavesmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+	for ( c = 0; c < NUMCITADELMUSIC; c++ )
+	{
+		snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = citadelmusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+				}
+			}
+		}
+	}
+
+	bool introChanged = false;
+
+	for ( c = 0; c < NUMINTROMUSIC; c++ )
+	{
+		if ( c == 0 )
+		{
+			strcpy(tempstr, "music/intro.ogg");
+		}
+		else
+		{
+			snprintf(tempstr, 1000, "music/intro%02d.ogg", c);
+		}
+		if ( PHYSFS_getRealDir(tempstr) != NULL )
+		{
+			std::string musicDir = PHYSFS_getRealDir(tempstr);
+			if ( musicDir.compare("./") != 0 )
+			{
+				musicDir.append(PHYSFS_getDirSeparator()).append(tempstr);
+				printlog("[PhysFS]: Reloading music file %s...", tempstr);
+				music = intromusic;
+				if ( music )
+				{
+					FMOD_Sound_Release(music[c]);
+					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music[c]);
+					introChanged = true;
+				}
+			}
+		}
+	}
+
+	if ( introChanged )
+	{
+		playmusic(intromusic[rand() % NUMINTROMUSIC], false, true, true);
+	}
+#ifdef USE_OPENAL
+#undef FMOD_System_CreateStream
+#undef FMOD_SOUND
+#undef fmod_system
+#undef FMOD_SOFTWARE
+#undef FMOD_Sound_Release
+#endif
+
+#endif
+}

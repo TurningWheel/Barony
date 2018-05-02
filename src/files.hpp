@@ -40,3 +40,5 @@ bool physfsSearchSoundsToUpdate();
 void physfsReloadSounds(bool reloadAll);
 bool physfsSearchBooksToUpdate();
 void physfsReloadBooks();
+bool physfsSearchMusicToUpdate();
+void physfsReloadMusic();
