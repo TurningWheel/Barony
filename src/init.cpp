@@ -520,9 +520,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load sound effects
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 #ifdef USE_FMOD
 	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -537,7 +539,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -558,7 +560,7 @@ int initApp(char* title, int fullscreen)
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -573,7 +575,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
