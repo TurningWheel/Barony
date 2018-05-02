@@ -2707,7 +2707,7 @@ dungeon level %d, client (player %d) (direct ip)#
 
 # game/server flags tooltips
 
-# Cheats. CURRENTLY UNUSED
+# Cheats.
 1942 NOTE: Enabling cheats will disable Steam Achievements on your save files!#
 # Friendly fire. CURRENTLY UNUSED
 1943 #
@@ -3650,4 +3650,13 @@ IDENTICAL MOD LISTS LOADED!#
 2984 Subscribe to host mod list#
 2985 Mount host mod list#
 2986 Savefile has cheats enabled#
+2987 Loading modded sound files...#
+2988 Unloading modded sound files...#
+2989 Loading modded model files...#
+2990 Unloading modded model files...#
+2991 Loading modded book files...#
+2992 Unloading modded book files...#
+2993 Loading modded music files...#
+2994 Unloading modded music files...#
+
 2999 end#

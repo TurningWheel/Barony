@@ -683,8 +683,8 @@ void handleMainMenu(bool mode)
 						// print a loading message
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2989], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
+						TTF_SizeUTF8(ttf16, language[2990], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
 						GO_SwapBuffers(screen);
 
 						int tmpStart;
@@ -702,8 +702,8 @@ void handleMainMenu(bool mode)
 						// print a loading message
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2987], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
+						TTF_SizeUTF8(ttf16, language[2988], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2988]);
 						GO_SwapBuffers(screen);
 						physfsReloadSounds(true);
 						gamemods_soundsListLastStartedUnmodded = true;
@@ -713,8 +713,8 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2991], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
+						TTF_SizeUTF8(ttf16, language[2992], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
 						GO_SwapBuffers(screen);
 						physfsReloadBooks();
 						gamemods_booksRequireReloadUnmodded = false;
@@ -724,8 +724,8 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[2993], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
+						TTF_SizeUTF8(ttf16, language[2994], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2994]);
 						GO_SwapBuffers(screen);
 						physfsSearchMusicToUpdate();
 						gamemods_musicRequireReloadUnmodded = false;
@@ -10679,8 +10679,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2988], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2988]);
+		TTF_SizeUTF8(ttf16, language[2989], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
 		GO_SwapBuffers(screen);
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
 		gamemods_modelsListRequiresReload = false;
@@ -10689,8 +10689,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2986], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2986]);
+		TTF_SizeUTF8(ttf16, language[2987], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
 		GO_SwapBuffers(screen);
 		physfsReloadSounds(false);
 		gamemods_soundListRequiresReload = false;
@@ -10700,8 +10700,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2990], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
+		TTF_SizeUTF8(ttf16, language[2991], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
 		GO_SwapBuffers(screen);
 		physfsReloadBooks();
 		gamemods_booksRequireReloadUnmodded = true;
@@ -10711,8 +10711,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2992], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
+		TTF_SizeUTF8(ttf16, language[2993], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
 		GO_SwapBuffers(screen);
 		physfsReloadMusic();
 		gamemods_musicRequireReloadUnmodded = true;
