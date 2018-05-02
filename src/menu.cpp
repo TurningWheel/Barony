@@ -117,6 +117,7 @@ bool gamemods_modelsListLastStartedUnmodded = false; // if starting regular game
 bool gamemods_soundListRequiresReload = false;
 bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
 bool gamemods_booksRequireReloadUnmodded = false;
+bool gamemods_musicRequireReloadUnmodded = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -716,6 +717,18 @@ void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
 						GO_SwapBuffers(screen);
 						physfsReloadBooks();
+						gamemods_booksRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_musicRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[2993], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
+						GO_SwapBuffers(screen);
+						physfsSearchMusicToUpdate();
+						gamemods_musicRequireReloadUnmodded = false;
 					}
 
 					if ( saveGameExists(true) || saveGameExists(false) )
@@ -10692,6 +10705,17 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		GO_SwapBuffers(screen);
 		physfsReloadBooks();
 		gamemods_booksRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchMusicToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[2992], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
+		GO_SwapBuffers(screen);
+		physfsReloadMusic();
+		gamemods_musicRequireReloadUnmodded = true;
 	}
 
 	// look for a save game
