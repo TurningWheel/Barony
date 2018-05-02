@@ -1156,3 +1156,68 @@ bool physfsSearchModelsToUpdate(int &start, int &end)
 	}
 	return false;
 }
+
+bool physfsReloadSounds(bool reloadAll)
+{
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	char name[128];
+
+	printlog("freeing sounds and loading modded sounds...\n");
+	if ( reloadAll )
+	{
+		if ( sounds != NULL )
+		{
+			for ( int c = 0; c < numsounds; c++ )
+			{
+				if ( sounds[c] != NULL )
+				{
+#ifdef USE_FMOD
+					FMOD_Sound_Release(sounds[c]);    //Free the sound in FMOD
+#elif USE_OPENAL
+					OPENAL_Sound_Release(sounds[c]); //Free the sound in OPENAL
+#endif
+				}
+			}
+		}
+	}
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string soundRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || soundRealDir.compare("./") != 0 )
+			{
+				std::string soundFile = soundRealDir;
+				soundFile.append(PHYSFS_getDirSeparator()).append(name);
+#ifdef USE_FMOD
+				if ( !reloadAll )
+				{
+					FMOD_Sound_Release(sounds[c]);
+				}
+				fmod_result = FMOD_System_CreateSound(fmod_system, soundFile.c_str(), (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
+				if ( FMODErrorCheck() )
+				{
+					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
+				}
+#elif USE_OPENAL
+				if ( !reloadAll )
+				{
+					OPENAL_Sound_Release(sounds[c]);
+				}
+				OPENAL_CreateSound(name, true, &sounds[c]);
+#endif 
+			}
+		}
+	}
+	fclose(fp);
+	return true;
+}
