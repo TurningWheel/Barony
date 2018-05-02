@@ -21,6 +21,7 @@
 #include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
+#include "book.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1063,9 +1064,9 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 	return 0;
 }
 
-std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
+std::list<std::string> physfsGetFileNamesInDirectory(const char* dir)
 {
-	std::vector<std::string> filenames;
+	std::list<std::string> filenames;
 	char **rc = PHYSFS_enumerateFiles(dir);
 	if ( *rc == NULL )
 	{
@@ -1078,7 +1079,7 @@ std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
 	for ( i = rc; *i != NULL; i++ )
 	{
 		file = *i;
-		printlog(" * We've got [%s].\n", file.c_str());
+		//printlog(" * We've got [%s].\n", file.c_str());
 		filenames.push_back(file);
 	}
 	PHYSFS_freeList(rc);
@@ -1157,7 +1158,36 @@ bool physfsSearchModelsToUpdate(int &start, int &end)
 	return false;
 }
 
-bool physfsReloadSounds(bool reloadAll)
+bool physfsSearchSoundsToUpdate()
+{
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string soundRealDir = PHYSFS_getRealDir(name);
+			if ( soundRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadSounds(bool reloadAll)
 {
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
@@ -1219,5 +1249,57 @@ bool physfsReloadSounds(bool reloadAll)
 		}
 	}
 	fclose(fp);
-	return true;
+}
+
+bool physfsSearchBooksToUpdate()
+{
+	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	if ( !booklist.empty() )
+	{
+		for ( std::list<std::string>::iterator it = booklist.begin(); it != booklist.end(); ++it )
+		{
+			std::string bookFilename = "books/" + *it;
+			if ( PHYSFS_getRealDir(bookFilename.c_str()) != NULL )
+			{
+				std::string bookDir = PHYSFS_getRealDir(bookFilename.c_str());
+				if ( bookDir.compare("./") != 0 )
+				{
+					// found a book not belonging in the base path.
+					printlog("[PhysFS]: Found modified book in books/ directory, reloading all books...");
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void physfsReloadBooks()
+{
+	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	if ( !booklist.empty() )
+	{
+		// clear the previous book memory..
+		if ( books )
+		{
+			for ( int c = 0; c < numbooks; c++ )
+			{
+				if ( books[c] )
+				{
+					if ( books[c]->text )
+					{
+						free(books[c]->text);
+					}
+					if ( books[c]->bookgui_render_title )
+					{
+						free(books[c]->bookgui_render_title);
+					}
+					list_FreeAll(&books[c]->pages);
+					free(books[c]);
+				}
+			}
+			free(books);
+		}
+		createBooks();
+	}
 }
