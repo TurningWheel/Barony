@@ -23,6 +23,7 @@
 #include "../paths.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "../scores.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -1954,6 +1955,18 @@ void consoleCommand(char* command_str)
 		int speed = atoi(&command_str[10]);
 		monsterGlobalAttackTimeMultiplier = speed;
 		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
+	}
+	else if ( !strncmp(command_str, "/brawlermode", 12) )
+	{
+		achievementBrawlerMode = !achievementBrawlerMode;
+		if ( achievementBrawlerMode )
+		{
+			messagePlayer(clientnum, language[2995]);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[2996]);
+		}
 	}
 	else
 	{

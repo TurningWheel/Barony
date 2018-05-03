@@ -497,7 +497,7 @@ void actHudWeapon(Entity* my)
 			}
 			else
 			{
-				if ( conductGameChallenges[CONDUCT_BRAWLER] )
+				if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
 				{
 					if ( itemCategory(stats[clientnum]->weapon) == WEAPON 
 						|| rangedweapon 
@@ -506,7 +506,15 @@ void actHudWeapon(Entity* my)
 						|| itemCategory(stats[clientnum]->weapon) == GEM
 						|| stats[clientnum]->weapon->type == TOOL_PICKAXE )
 					{
-						messagePlayer(clientnum, "no longer eligible for brawler!");
+						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+						{
+							messagePlayer(clientnum, language[2997]); // prevent attack.
+							return;
+						}
+						if ( achievementBrawlerMode )
+						{
+							messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still atk.
+						}
 						conductGameChallenges[CONDUCT_BRAWLER] = 0;
 					}
 				}

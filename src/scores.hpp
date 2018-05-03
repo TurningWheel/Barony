@@ -24,8 +24,8 @@ static const int CONDUCT_HARDCORE = 0; // 2 state, 1 = hardcore, 0 = not.
 static const int CONDUCT_CHEATS_ENABLED = 1; // 2 state, 1 = cheats enabled, 0 = not.
 static const int CONDUCT_MULTIPLAYER = 2; // 2 state, 1 = multiplayer, 0 = not.
 static const int CONDUCT_CLASSIC_MODE = 3; // 2 state, 1 = classic maps, 0 = not.
-static const int CONDUCT_BRAWLER = 4; // 2 state, 1 = brawler, no weapons used, 0 = not brawler, weapons used.
-static const int CONDUCT_MODDED = 5; // 2 state, 1 = modded, 0 = not.
+static const int CONDUCT_MODDED = 4; // 2 state, 1 = modded, 0 = not.
+static const int CONDUCT_BRAWLER = 5; // 2 state, 1 = brawler, no weapons used, 0 = not brawler, weapons used.
 
 static const int STATISTICS_BOMB_SQUAD = 0;
 static const int STATISTICS_SITTING_DUCK = 1;
@@ -79,6 +79,7 @@ extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];
+extern bool achievementBrawlerMode;
 
 score_t* scoreConstructor();
 void scoreDeconstructor(void* data);
