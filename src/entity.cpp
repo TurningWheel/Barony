@@ -9433,7 +9433,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					}
 					if ( playerOwned >= 0 && entity->ticks < 5 * TICKS_PER_SECOND )
 					{
-						messagePlayer(0, "item too new");
+						//messagePlayer(0, "item too new");
 						continue;
 					}
 				}
