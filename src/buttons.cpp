@@ -144,7 +144,37 @@ void writeLevelsTxt(std::string modFolder)
 			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
 			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
 			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);						PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);						PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);						PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);						PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);						PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);						PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);						PHYSFS_writeBytes(physfp, "map: boss\n", 10);						PHYSFS_writeBytes(physfp, "gen: hell\n", 10);						PHYSFS_writeBytes(physfp, "gen: hell\n", 10);						PHYSFS_writeBytes(physfp, "gen: hell\n", 10);						PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);						PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "gen: caves\n", 11);						PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);						PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);			
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			
+			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);			
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			
+			PHYSFS_writeBytes(physfp, "map: boss\n", 10);			
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			
+			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);			
+			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);			
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			
+			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);			
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			
+			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
 			PHYSFS_close(physfp);
 		}
 		else
@@ -756,7 +786,7 @@ void buttonOpenConfirm(button_t* my)
 		strcat(message, " ");
 	}
 	std::string fullMapName = physfsFormatMapName(filename);
-	printlog("opening map file '%s'...\n", fullMapName);
+	printlog("opening map file '%s'...\n", fullMapName.c_str());
 	if (loadMap(fullMapName.c_str(), &map, map.entities, map.creatures) == -1)
 	{
 		strcat(message, "Failed to open ");
