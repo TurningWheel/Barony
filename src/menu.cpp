@@ -716,7 +716,6 @@ void handleMainMenu(bool mode)
 						TTF_SizeUTF8(ttf16, language[2992], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
 						GO_SwapBuffers(screen);
-						physfsReloadBooks();
 						gamemods_booksRequireReloadUnmodded = false;
 					}
 
@@ -10714,7 +10713,12 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		TTF_SizeUTF8(ttf16, language[2993], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
 		GO_SwapBuffers(screen);
-		physfsReloadMusic();
+		bool reloadIntroMusic = false;
+		physfsReloadMusic(reloadIntroMusic);
+		if ( reloadIntroMusic )
+		{
+			playmusic(intromusic[rand() % NUMINTROMUSIC], false, true, true);
+		}
 		gamemods_musicRequireReloadUnmodded = true;
 	}
 
