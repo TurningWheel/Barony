@@ -1537,7 +1537,7 @@ void Entity::automatonRecycleItem()
 				}
 			}
 		}
-		messagePlayer(0, "%d, %d", item1->ownerUid, item2->ownerUid);
+		//messagePlayer(0, "%d, %d", item1->ownerUid, item2->ownerUid);
 	}
 
 	return;

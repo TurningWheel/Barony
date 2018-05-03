@@ -277,7 +277,7 @@ void CSteamStatistics::OnUserStatsReceived(UserStatsReceived_t *pCallback)
 				{
 					case STEAM_STAT_INT:
 						SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_iValue);
-						printlog("%s: %d", stat.m_pchStatName, stat.m_iValue);
+						//printlog("%s: %d", stat.m_pchStatName, stat.m_iValue);
 						break;
 					case STEAM_STAT_FLOAT:
 					case STEAM_STAT_AVGRATE:

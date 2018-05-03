@@ -1729,14 +1729,7 @@ int main(int argc, char** argv)
 	loadItems();
 	loadTilePalettes();
 
-#ifdef STEAMWORKS
-	if ( SteamUserStats()->SetAchievement("BARONY_ACH_CARTOGRAPHER") )
-	{
-		//printlog("STEAM ACHIEVEMENT\n");
-		SteamUserStats()->StoreStats();
-	}
-	SteamAPI_RunCallbacks();
-#endif
+	bool achievementCartographer = false;
 
 	// main loop
 	printlog( "running main loop.\n");
@@ -1744,6 +1737,17 @@ int main(int argc, char** argv)
 	{
 		// game logic
 		handleEvents();
+
+#ifdef STEAMWORKS
+		SteamAPI_RunCallbacks();
+		if ( SteamUser()->BLoggedOn() && !achievementCartographer )
+		{
+			SteamUserStats()->SetAchievement("BARONY_ACH_CARTOGRAPHER");
+			achievementCartographer = true;
+			SteamUserStats()->StoreStats();
+			//printlog("STEAM ACHIEVEMENT\n");
+		}
+#endif
 
 		// move buttons
 		/*if( !fullscreen ) {
