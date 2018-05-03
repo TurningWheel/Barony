@@ -6182,10 +6182,6 @@ void handleMainMenu(bool mode)
 				{
 					steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
 				}
-				if ( conductGameChallenges[CONDUCT_BRAWLER] )
-				{
-					steamAchievement("BARONY_ACH_BRAWLER");
-				}
 
 				if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 				{
@@ -6211,6 +6207,10 @@ void handleMainMenu(bool mode)
 				else if ( victory == 3 )
 				{
 					introstage = 10;
+					if ( conductGameChallenges[CONDUCT_BRAWLER] )
+					{
+						steamAchievement("BARONY_ACH_BRAWLER");
+					}
 					if ( completionTime < 45 * 60 * TICKS_PER_SECOND )
 					{
 						steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
