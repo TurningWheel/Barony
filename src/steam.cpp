@@ -730,6 +730,27 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	{
 		case STEAM_STAT_INT:
 			g_SteamStats[statisticNum].m_iValue += value;
+			switch ( statisticNum )
+			{
+				case STEAM_STAT_RHINESTONE_COWBOY:
+					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_RHINESTONE_COWBOY_MAX )
+					{
+						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_RHINESTONE_COWBOY_MAX;
+					}
+				case STEAM_STAT_TOUGH_AS_NAILS:
+					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_TOUGH_AS_NAILS_MAX )
+					{
+						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_TOUGH_AS_NAILS_MAX;
+					}
+				case STEAM_STAT_UNSTOPPABLE_FORCE:
+					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_UNSTOPPABLE_FORCE_MAX )
+					{
+						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_UNSTOPPABLE_FORCE_MAX;
+					}
+					break;
+				default:
+					break;
+			}
 			break;
 		case STEAM_STAT_FLOAT:
 			break;
@@ -794,9 +815,13 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
 					{
 						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
+						if ( iVal == STEAM_STAT_RHINESTONE_COWBOY_MAX )
+						{
+							steamAchievement("BARONY_ACH_RHINESTONE_COWBOY");
+						}
 					}
 				}
-				messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
+				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
 				break;
 			case STEAM_STAT_TOUGH_AS_NAILS:
 				if ( !achievementUnlocked("BARONY_ACH_TOUGH_AS_NAILS") )
@@ -804,9 +829,13 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
 					{
 						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
+						if ( iVal == STEAM_STAT_TOUGH_AS_NAILS_MAX )
+						{
+							steamAchievement("BARONY_ACH_TOUGH_AS_NAILS");
+						}
 					}
 				}
-				messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
+				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
 				break;
 			case STEAM_STAT_UNSTOPPABLE_FORCE:
 				if ( !achievementUnlocked("BARONY_ACH_UNSTOPPABLE_FORCE") )
@@ -814,9 +843,13 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
 					{
 						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
+						if ( iVal == STEAM_STAT_UNSTOPPABLE_FORCE_MAX )
+						{
+							steamAchievement("BARONY_ACH_UNSTOPPABLE_FORCE");
+						}
 					}
 				}
-				messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
+				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
 				break;
 			default:
 				break;

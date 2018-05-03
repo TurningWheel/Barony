@@ -147,7 +147,7 @@ void actItem(Entity* my)
 							steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
 						}
 					}
-					messagePlayer(i, "old owner: %d", item2->ownerUid);
+					//messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
 					{
 						item = itemPickup(i, item2);
