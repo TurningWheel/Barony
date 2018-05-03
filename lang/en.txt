@@ -3615,6 +3615,7 @@ anyone seeking that power again, deep underground. #
 2927 Allied#
 2928 Classic#
 2929 Modded#
+2930 Brawler#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#
@@ -3658,5 +3659,9 @@ IDENTICAL MOD LISTS LOADED!#
 2992 Unloading modded book files...#
 2993 Loading modded music files...#
 2994 Unloading modded music files...#
-
-2999 end#
+2995 Brawler-mode active, only punches and potions allowed!#
+2996 Brawler-mode deactivated, all weapons permitted.#
+2997 This tool is disabled in Brawler-mode!#
+2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#
+2999 Spells are disabled in Brawler-mode!#
+3099 end#
