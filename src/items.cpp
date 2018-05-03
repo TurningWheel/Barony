@@ -2239,7 +2239,7 @@ Item* itemPickup(int player, Item* item)
 		item->ownerUid = players[player]->entity->getUID();
 	}
 
-	messagePlayer(0, "id: %d", item->ownerUid);
+	//messagePlayer(0, "id: %d", item->ownerUid);
 
 	if ( player != 0 && multiplayer == SERVER )
 	{

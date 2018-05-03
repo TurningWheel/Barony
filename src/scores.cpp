@@ -3067,7 +3067,7 @@ void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerI
 			{
 				// check first uid entry, if not matching the monster, we swapped targets and should reset.
 				achievementRhythmOfTheKnightVec[player].clear();
-				messagePlayer(0, "cleared, not attacking same target");
+				//messagePlayer(0, "cleared, not attacking same target");
 				return;
 			}
 			else
@@ -3137,7 +3137,7 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 	if ( !targetKilled )
 	{
 		achievementThankTheTankPair[player] = std::make_pair(ticks, target->getUID()); // track the monster UID defending against
-		messagePlayer(0, "pair: %d, %d", achievementThankTheTankPair[player].first, achievementThankTheTankPair[player].second);
+		//messagePlayer(0, "pair: %d, %d", achievementThankTheTankPair[player].first, achievementThankTheTankPair[player].second);
 	}
 	else if ( achievementThankTheTankPair[player].first != 0
 		&& achievementThankTheTankPair[player].second != 0 ) // check there is a ticks/UID entry.
