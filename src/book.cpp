@@ -461,3 +461,57 @@ void createBook(book_t* book)
 		newline = false;
 	}
 }
+
+
+bool physfsSearchBooksToUpdate()
+{
+	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	if ( !booklist.empty() )
+	{
+		for ( std::list<std::string>::iterator it = booklist.begin(); it != booklist.end(); ++it )
+		{
+			std::string bookFilename = "books/" + *it;
+			if ( PHYSFS_getRealDir(bookFilename.c_str()) != NULL )
+			{
+				std::string bookDir = PHYSFS_getRealDir(bookFilename.c_str());
+				if ( bookDir.compare("./") != 0 )
+				{
+					// found a book not belonging in the base path.
+					printlog("[PhysFS]: Found modified book in books/ directory, reloading all books...");
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void physfsReloadBooks()
+{
+	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	if ( !booklist.empty() )
+	{
+		// clear the previous book memory..
+		if ( books )
+		{
+			for ( int c = 0; c < numbooks; c++ )
+			{
+				if ( books[c] )
+				{
+					if ( books[c]->text )
+					{
+						free(books[c]->text);
+					}
+					if ( books[c]->bookgui_render_title )
+					{
+						free(books[c]->bookgui_render_title);
+					}
+					list_FreeAll(&books[c]->pages);
+					free(books[c]);
+				}
+			}
+			free(books);
+		}
+		createBooks();
+	}
+}
