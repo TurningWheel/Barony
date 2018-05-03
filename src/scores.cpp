@@ -41,6 +41,7 @@ bool achievementStatusStrobe[MAXPLAYERS] = { false };
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
+bool achievementBrawlerMode = false;
 
 /*-------------------------------------------------------------------------------
 

@@ -3659,7 +3659,7 @@ IDENTICAL MOD LISTS LOADED!#
 2992 Unloading modded book files...#
 2993 Loading modded music files...#
 2994 Unloading modded music files...#
-2995 Brawler-mode active, only punches and potions allowed!#
+2995 Brawler-mode active, only punches and throwing potions are allowed to attack!#
 2996 Brawler-mode deactivated, all weapons permitted.#
 2997 This tool is disabled in Brawler-mode!#
 2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#

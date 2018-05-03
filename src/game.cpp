@@ -2927,7 +2927,26 @@ int main(int argc, char** argv)
 							}
 							if (players[clientnum] && players[clientnum]->entity)
 							{
-								castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+								if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+								{
+									if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+									{
+										messagePlayer(clientnum, language[2999]); // prevent casting of spell.
+									}
+									else
+									{
+										if ( achievementBrawlerMode )
+										{
+											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
+										}
+										castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+										conductGameChallenges[CONDUCT_BRAWLER] = 0;
+									}
+								}
+								else
+								{
+									castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+								}
 							}
 						}
 					}
