@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <string.h>
 #include <execinfo.h>
+#include <sys/stat.h>
 
 const unsigned STACK_SIZE = 10;
 
@@ -2290,6 +2291,14 @@ int main(int argc, char** argv)
 		size_t datadirsz = std::min(sizeof(datadir) - 1, strlen(BASE_DATA_DIR));
 		strncpy(datadir, BASE_DATA_DIR, datadirsz);
 		datadir[datadirsz] = '\0';
+#ifdef WINDOWS
+		outputdir = "./";
+#else
+		char *basepath = getenv("HOME");
+		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+		if (access(outputdir, F_OK) == -1)
+			mkdir(outputdir, 0777);
+#endif
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2337,6 +2346,7 @@ int main(int argc, char** argv)
 			}
 		}
 		printlog("Data path is %s", datadir);
+		printlog("Output path is %s", outputdir);
 
 
 		// load default language file (english)
@@ -2354,7 +2364,7 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			loadConfig("default.cfg");
+			loadDefaultConfig();
 		}
 
 		// initialize engine
