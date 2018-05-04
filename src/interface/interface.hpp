@@ -122,6 +122,7 @@ void drawStatus();
 void saveCommand(char* content);
 int loadConfig(char* filename);
 int saveConfig(char* filename);
+int saveDefaultConfig();
 void defaultConfig();
 void updateChestInventory();
 void updateAppraisalItemBox();
