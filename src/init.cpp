@@ -66,7 +66,7 @@ int initApp(char* title, int fullscreen)
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	for (c = 0; c < NUM_JOY_STATUS; ++c)
@@ -614,7 +614,7 @@ int loadLanguage(char* lang)
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
@@ -2535,7 +2535,7 @@ bool loadItemLists()
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
