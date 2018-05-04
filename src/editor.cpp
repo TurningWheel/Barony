@@ -989,7 +989,7 @@ int loadTilePalettes()
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
@@ -1093,7 +1093,7 @@ int saveTilePalettes()
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
