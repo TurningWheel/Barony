@@ -1533,19 +1533,13 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-<<<<<<< HEAD
 		setSaveGameFileName(true, savefile, true);
-	}
-	else
-	{
-		setSaveGameFileName(false, savefile, true);
-=======
 		completePath(savefile, SAVEGAMEFILE2, outputdir);
 	}
 	else
 	{
+		setSaveGameFileName(false, savefile, true);
 		completePath(savefile, SAVEGAMEFILE2_MULTIPLAYER, outputdir);
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	}
 
 	// now we save the follower information
@@ -1801,19 +1795,13 @@ int loadGame(int player)
 	char savefile[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-<<<<<<< HEAD
 		setSaveGameFileName(true, savefile, false);
-	}
-	else
-	{
-		setSaveGameFileName(false, savefile, false);
-=======
 		completePath(savefile, SAVEGAMEFILE, outputdir);
 	}
 	else
 	{
+		setSaveGameFileName(false, savefile, false);
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	}
 
 	// open file
@@ -2248,19 +2236,13 @@ list_t* loadGameFollowers()
 	char savefile[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-<<<<<<< HEAD
 		setSaveGameFileName(true, savefile, true);
-	}
-	else
-	{
-		setSaveGameFileName(false, savefile, true);
-=======
 		completePath(savefile, SAVEGAMEFILE2, outputdir);
 	}
 	else
 	{
+		setSaveGameFileName(false, savefile, true);
 		completePath(savefile, SAVEGAMEFILE2_MULTIPLAYER, outputdir);
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	}
 
 	// open file
@@ -2452,19 +2434,13 @@ int deleteSaveGame(int gametype)
 	char savefile[PATH_MAX] = "";
 	if ( gametype == SINGLE )
 	{
-<<<<<<< HEAD
 		setSaveGameFileName(true, savefile, false);
-	}
-	else
-	{
-		setSaveGameFileName(false, savefile, false);
-=======
 		completePath(savefile, SAVEGAMEFILE, outputdir);
 	}
 	else
 	{
+		setSaveGameFileName(false, savefile, false);
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2481,19 +2457,13 @@ int deleteSaveGame(int gametype)
 
 	if ( gametype == SINGLE )
 	{
-<<<<<<< HEAD
 		setSaveGameFileName(true, savefile, true);
-	}
-	else
-	{
-		setSaveGameFileName(false, savefile, true);
-=======
 		completePath(savefile, SAVEGAMEFILE2, outputdir);
 	}
 	else
 	{
+		setSaveGameFileName(false, savefile, true);
 		completePath(savefile, SAVEGAMEFILE2_MULTIPLAYER, outputdir);
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2524,11 +2494,8 @@ int deleteSaveGame(int gametype)
 
 bool saveGameExists(bool singleplayer)
 {
-<<<<<<< HEAD
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
-=======
 	char savefile[PATH_MAX] = "";
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( singleplayer )
 	{
 		completePath(savefile, SAVEGAMEFILE, outputdir);
@@ -2537,7 +2504,6 @@ bool saveGameExists(bool singleplayer)
 	{
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
 	}
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	if ( access(savefile, F_OK ) == -1 )
 	{
 		return false;
@@ -2587,11 +2553,8 @@ char* getSaveGameName(bool singleplayer)
 	int mul, plnum, dungeonlevel;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
-<<<<<<< HEAD
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
-=======
 	char savefile[PATH_MAX] = "";
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( singleplayer )
 	{
 		completePath(savefile, SAVEGAMEFILE, outputdir);
@@ -2600,7 +2563,6 @@ char* getSaveGameName(bool singleplayer)
 	{
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
 	}
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2738,11 +2700,8 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 {
 	FILE* fp;
 	Uint32 gameKey;
-<<<<<<< HEAD
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
-=======
 	char savefile[PATH_MAX] = "";
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( singleplayer )
 	{
 		completePath(savefile, SAVEGAMEFILE, outputdir);
@@ -2751,7 +2710,6 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 	{
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
 	}
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2797,11 +2755,8 @@ int getSaveGameType(bool singleplayer)
 {
 	FILE* fp;
 	int mul;
-<<<<<<< HEAD
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
-=======
 	char savefile[PATH_MAX] = "";
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( singleplayer )
 	{
 		completePath(savefile, SAVEGAMEFILE, outputdir);
@@ -2810,7 +2765,6 @@ int getSaveGameType(bool singleplayer)
 	{
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
 	}
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2857,11 +2811,8 @@ int getSaveGameClientnum(bool singleplayer)
 {
 	FILE* fp;
 	int clientnum;
-<<<<<<< HEAD
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
-=======
 	char savefile[PATH_MAX] = "";
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( singleplayer )
 	{
 		completePath(savefile, SAVEGAMEFILE, outputdir);
@@ -2870,7 +2821,6 @@ int getSaveGameClientnum(bool singleplayer)
 	{
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
 	}
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2918,11 +2868,8 @@ Uint32 getSaveGameMapSeed(bool singleplayer)
 {
 	FILE* fp;
 	Uint32 seed;
-<<<<<<< HEAD
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
-=======
 	char savefile[PATH_MAX] = "";
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( singleplayer )
 	{
 		completePath(savefile, SAVEGAMEFILE, outputdir);
@@ -2931,7 +2878,6 @@ Uint32 getSaveGameMapSeed(bool singleplayer)
 	{
 		completePath(savefile, SAVEGAMEFILE_MULTIPLAYER, outputdir);
 	}
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -3066,7 +3012,6 @@ void updatePlayerConductsInMainLoop()
 			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
 		}
 	}
-<<<<<<< HEAD
 	if ( !conductGameChallenges[CONDUCT_MODDED] )
 	{
 		if ( gamemods_numCurrentModsLoaded > 0 )
@@ -3281,6 +3226,4 @@ void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled
 			}
 		}
 	}
-=======
->>>>>>> Load/Storing single/multiplayer data into the base folder.
 }

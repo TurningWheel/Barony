@@ -915,6 +915,13 @@ int loadConfig(char* filename)
 	return 0;
 }
 
+int loadDefaultConfig()
+{
+	char path[PATH_MAX];
+	completePath(path, "default.cfg", outputdir);
+	return loadConfig(path);
+}
+
 /*-------------------------------------------------------------------------------
 
 	saveConfig
@@ -1164,6 +1171,13 @@ int saveConfig(char* filename)
 		free(filename);
 	}
 	return 0;
+}
+
+int saveDefaultConfig()
+{
+	char path[PATH_MAX];
+	completePath(path, "default.cfg", outputdir);
+	return saveConfig(path);
 }
 
 /*-------------------------------------------------------------------------------

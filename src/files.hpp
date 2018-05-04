@@ -26,8 +26,6 @@ int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creat
 int saveMap(const char* filename);
 int loadConfig(char* filename);
 int loadDefaultConfig();
-int saveMap(char* filename);
->>>>>>> Handling base folder to build various paths.
 char* readFile(char* filename);
 std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
 FILE *openDataFile(const char *const filename, const char * const mode);
