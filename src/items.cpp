@@ -1220,7 +1220,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		entity->skill[15] = item->identified;
 		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
-		if ( monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS )
+		if ( monsterStats && (monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS) )
 		{
 			// check if item was stolen.
 			for ( int c = 0; c < MAXPLAYERS; ++c )
