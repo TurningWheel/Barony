@@ -961,7 +961,15 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 		amount += 2 * stats->CON;
 	}
 
+	int oldHP = entity->getHP();
+
 	entity->modHP(amount);
+
+	int heal = std::max(entity->getHP() - oldHP, 0);
+	if ( heal > 0 )
+	{
+		serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, heal);
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -1056,7 +1064,15 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 		amount += 4 * stats->CON;
 	}
 
+	int oldHP = entity->getHP();
+
 	entity->modHP(amount);
+
+	int heal = std::max(entity->getHP() - oldHP, 0);
+	if ( heal > 0 )
+	{
+		serverUpdatePlayerGameplayStats(player, STATISTICS_HEAL_BOT, heal);
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -1709,6 +1725,9 @@ void item_ScrollFire(Item* item, int player)
 	{
 		conductIlliterate = false;
 	}
+
+	serverUpdatePlayerGameplayStats(player, STATISTICS_FIRE_MAYBE_DIFFERENT, 1);
+
 	item->identified = 1;
 	if (item->beatitude < 0)
 	{
@@ -2364,6 +2383,12 @@ void item_ToolTowel(Item*& item, int player)
 	}
 	if ( multiplayer != CLIENT )
 	{
+		if ( stats[player]->EFFECTS[EFF_GREASY]
+			|| stats[player]->EFFECTS[EFF_MESSY]
+			|| stats[player]->EFFECTS[EFF_BLEEDING] )
+		{
+			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
+		}
 		stats[player]->EFFECTS[EFF_GREASY] = false;
 		stats[player]->EFFECTS[EFF_MESSY] = false;
 	}
@@ -2720,6 +2745,11 @@ void item_Food(Item*& item, int player)
 		messagePlayer(player, language[911]);
 	}
 
+	if ( item->type == FOOD_TOMALLEY )
+	{
+		serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 1);
+	}
+
 	// results of eating
 	if ( stats[player]->HUNGER <= 250 )
 	{
@@ -2851,6 +2881,8 @@ void item_FoodTin(Item*& item, int player)
 	// eating sound
 	playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
 
+	serverUpdatePlayerGameplayStats(player, STATISTICS_YES_WE_CAN, 1);
+
 	// chance of rottenness
 	switch ( item->status )
 	{
@@ -2955,7 +2987,7 @@ void item_FoodTin(Item*& item, int player)
 
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
 
-	if ( hpBuff || mpBuff )
+	if ( (hpBuff || mpBuff) && (svFlags & SV_FLAG_HUNGER) )
 	{
 		messagePlayer(player, language[911]);
 	}
@@ -3163,6 +3195,11 @@ void item_Spellbook(Item*& item, int player)
 			{
 				messagePlayer(player, language[2596]);
 				consumeItem(item);
+			}
+
+			if ( list_Size(&spellList) >= 20 )
+			{
+				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
 			}
 		}
 	}

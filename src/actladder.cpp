@@ -239,6 +239,18 @@ void actPortal(Entity* my)
 								steamAchievementClient(c, "BARONY_ACH_THESEUS_LEGACY");
 							}
 							break;
+						case 29:
+							for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								steamAchievementClient(c, "BARONY_ACH_CULT_FOLLOWING");
+							}
+							break;
+						case 34:
+							for ( c = 0; c < MAXPLAYERS; c++ )
+							{
+								steamAchievementClient(c, "BARONY_ACH_DESPAIR_CALMS");
+							}
+							break;
 						default:
 							break;
 					}

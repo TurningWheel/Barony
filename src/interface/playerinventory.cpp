@@ -813,15 +813,8 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		g_SteamWorkshop->CreateItem();
 		keystatus[SDL_SCANCODE_Y] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_T] )
-	{
-		if ( g_SteamWorkshop->createItemResult.m_eResult == k_EResultOK )
-		{
-			messagePlayer(0, "success createItem");
-			g_SteamWorkshop->StartItemUpdate();
-		}
-		keystatus[SDL_SCANCODE_T] = 0;
-	}
+	*/
+	/*
 	if ( keystatus[SDL_SCANCODE_H] )
 	{
 		if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
@@ -2329,4 +2322,24 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 			}
 		}
 	}
+}
+
+bool mouseInsidePlayerInventory()
+{
+	SDL_Rect pos;
+	pos.x = INVENTORY_STARTX;
+	pos.y = INVENTORY_STARTY;
+	pos.w = INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
+	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
+	return mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h);
+}
+
+bool mouseInsidePlayerHotbar()
+{
+	SDL_Rect pos;
+	pos.x = STATUS_X;
+	pos.y = STATUS_Y - hotbar_img->h;
+	pos.w = NUM_HOTBAR_SLOTS * hotbar_img->w;
+	pos.h = hotbar_img->h;
+	return mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h);
 }

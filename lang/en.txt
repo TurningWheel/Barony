@@ -2707,7 +2707,7 @@ dungeon level %d, client (player %d) (direct ip)#
 
 # game/server flags tooltips
 
-# Cheats. CURRENTLY UNUSED
+# Cheats.
 1942 NOTE: Enabling cheats will disable Steam Achievements on your save files!#
 # Friendly fire. CURRENTLY UNUSED
 1943 #
@@ -3615,6 +3615,9 @@ anyone seeking that power again, deep underground. #
 2927 Allied#
 2928 Classic#
 2929 Modded#
+2930 Brawler#
+2931 Ultra Speedrunner#
+2932 Speedrunner#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#
@@ -3650,4 +3653,23 @@ IDENTICAL MOD LISTS LOADED!#
 2984 Subscribe to host mod list#
 2985 Mount host mod list#
 2986 Savefile has cheats enabled#
-2999 end#
+2987 Loading modded sound files...#
+2988 Unloading modded sound files...#
+2989 Loading modded model files...#
+2990 Unloading modded model files...#
+2991 Loading modded book files...#
+2992 Unloading modded book files...#
+2993 Loading modded music files...#
+2994 Unloading modded music files...#
+2995 Brawler-mode active, only punches and throwing potions are allowed to attack!#
+2996 Brawler-mode deactivated, all weapons permitted.#
+2997 This tool is disabled in Brawler-mode!#
+2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#
+2999 Spells are disabled in Brawler-mode!#
+3000 Use Previous Character#
+3001 Delete score#
+3002 Are you sure you want to delete this high score?
+
+#
+
+3099 end#

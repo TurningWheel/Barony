@@ -401,7 +401,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			secretlevelexit = 1;
 		}
-		else if ( (currentlevel == 7 && prng_get_uint() % 2) || currentlevel == 8 )
+		else if ( currentlevel == 7 || currentlevel == 8 )
 		{
 			secretlevelexit = 2;
 		}

@@ -312,6 +312,7 @@ public:
 	bool identified;   // if the item is identified or not
 	Uint32 uid;        // item uid
 	Sint32 x, y;       // slot coordinates in item grid
+	Uint32 ownerUid;   // original owner
 
 	// weight, category and other generic info reported by function calls
 

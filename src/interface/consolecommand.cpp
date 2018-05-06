@@ -23,6 +23,7 @@
 #include "../paths.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "../scores.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -122,6 +123,31 @@ void consoleCommand(char* command_str)
 		strcpy(name, command_str + 10);
 		lastname = (string)name;
 		lastname = lastname.substr(0, lastname.size() - 1);
+	}
+	else if ( !strncmp(command_str, "/lastcharacter ", 15) )
+	{
+		int loadedValues = 0;
+		for ( c = 0; c < strlen(command_str); ++c )
+		{
+			if ( command_str[c] == ' ' )
+			{
+				switch ( loadedValues )
+				{
+					case 0:
+						lastCreatedCharacterSex = atoi(&command_str[c + 1]);
+						break;
+					case 1:
+						lastCreatedCharacterClass = atoi(&command_str[c + 1]);
+						break;
+					case 2:
+						lastCreatedCharacterAppearance = atoi(&command_str[c + 1]);
+						break;
+					default:
+						break;
+				}
+				++loadedValues;
+			}
+		}
 	}
 	else if ( !strncmp(command_str, "/spawnitem ", 11) )
 	{
@@ -1176,7 +1202,9 @@ void consoleCommand(char* command_str)
 			}
 		}
 
-		FILE *fp = openDataFile("models/models.txt", "r");
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
 		for ( c = 0; !feof(fp); c++ )
 		{
 			fscanf(fp, "%s", name2);
@@ -1184,10 +1212,41 @@ void consoleCommand(char* command_str)
 			{
 				break;
 			}
-			models[c] = loadVoxel(name2);
+			if ( c >= startIndex && c < endIndex )
+			{
+				if ( models[c] != NULL )
+				{
+					if ( models[c]->data )
+					{
+						free(models[c]->data);
+					}
+					free(models[c]);
+					if ( polymodels[c].faces )
+					{
+						free(polymodels[c].faces);
+					}
+					if ( polymodels[c].vbo )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+					}
+					if ( polymodels[c].colors )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].colors);
+					}
+					if ( polymodels[c].va )
+					{
+						SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+					}
+					if ( polymodels[c].colors_shifted )
+					{
+						SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+					}
+				}
+				models[c] = loadVoxel(name2);
+			}
 		}
 		fclose(fp);
-		messagePlayer(clientnum, language[2354]);
+		//messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
 		generatePolyModels(startIndex, endIndex, true);
 	}
@@ -1921,6 +1980,18 @@ void consoleCommand(char* command_str)
 		int speed = atoi(&command_str[10]);
 		monsterGlobalAttackTimeMultiplier = speed;
 		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
+	}
+	else if ( !strncmp(command_str, "/brawlermode", 12) )
+	{
+		achievementBrawlerMode = !achievementBrawlerMode;
+		if ( achievementBrawlerMode )
+		{
+			messagePlayer(clientnum, language[2995]);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[2996]);
+		}
 	}
 	else
 	{

@@ -26,6 +26,7 @@ See LICENSE for details.
 #include <steam/steam_api.h>
 #endif
 #include "player.hpp"
+#include "scores.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -116,6 +117,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemNotMoving(skill[18]),
 	itemNotMovingClient(skill[19]),
 	itemSokobanReward(skill[20]),
+	itemOriginalOwner(skill[21]),
+	itemStolen(skill[22]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -200,6 +203,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitDist(skill[8]),
 	actmagicOrbitVerticalDirection(skill[9]),
 	actmagicOrbitLifetime(skill[10]),
+	actmagicMirrorReflected(skill[11]),
+	actmagicMirrorReflectedCaster(skill[12]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3]),
 	goldAmount(skill[0]),
@@ -1200,6 +1205,12 @@ void Entity::increaseSkill(int skill)
 			}
 		}
 
+		if ( skill == PRO_SWIMMING && !(svFlags & SV_FLAG_HUNGER) )
+		{
+			// hunger off and swimming is raised.
+			serverUpdatePlayerGameplayStats(player, STATISTICS_HOT_TUB_TIME_MACHINE, 1);
+		}
+
 		if ( skill == PRO_MAGIC && skillCapstoneUnlockedEntity(PRO_MAGIC) )
 		{
 			//magic capstone = bonus spell: Dominate.
@@ -1813,6 +1824,18 @@ int Entity::getMP()
 	}
 
 	return myStats->MP;
+}
+
+int Entity::getHP()
+{
+	Stat* myStats = getStats();
+
+	if ( !myStats )
+	{
+		return 0;
+	}
+
+	return myStats->HP;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2448,6 +2471,7 @@ void Entity::handleEffects(Stat* myStats)
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
 			playSoundEntity(this, 78, 96);
+			serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 5);
 		}
 	}
 
@@ -2969,6 +2993,11 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					messagePlayer(player, language[654]);
 					messagePlayer(player, language[655]);
+
+					playSoundEntity(this, 167, 128);
+					createParticleDropRising(this, 174, 1.0);
+					serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 174);
+
 					steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
 					myStats->HUNGER = 800;
 					if ( myStats->MAXHP < 10 )
@@ -4091,6 +4120,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
+							if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+							{
+								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
+							}
 							messagePlayer(player, language[660]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
@@ -4457,6 +4490,63 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						double ox = hit.entity->x;
 						double oy = hit.entity->y;
+
+						if ( player >= 0 && (abs(hit.entity->vel_x) > 0.01 || abs(hit.entity->vel_y) > 0.01) )
+						{
+							// boulder rolling, check if rolling towards player.
+							bool lastResort = false;
+							int boulderDirection = 0;
+							if ( abs(hit.entity->yaw - (PI / 2)) < 0.1 )
+							{
+								boulderDirection = 1;
+							}
+							else if ( abs(hit.entity->yaw - (PI)) < 0.1 )
+							{
+								boulderDirection = 2;
+							}
+							else if ( abs(hit.entity->yaw - (3 * PI / 2)) < 0.1 )
+							{
+								boulderDirection = 3;
+							}
+
+							switch ( boulderDirection )
+							{
+								case 0: // east
+									if ( static_cast<int>(oy / 16) == static_cast<int>(y / 16)
+										&& static_cast<int>(ox / 16) <= static_cast<int>(x / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								case 1: // south
+									if ( static_cast<int>(ox / 16) == static_cast<int>(x / 16)
+										&& static_cast<int>(oy / 16) <= static_cast<int>(y / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								case 2: // west
+									if ( static_cast<int>(oy / 16) == static_cast<int>(y / 16)
+										&& static_cast<int>(ox / 16) >= static_cast<int>(x / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								case 3: // north
+									if ( static_cast<int>(ox / 16) == static_cast<int>(x / 16)
+										&& static_cast<int>(oy / 16) >= static_cast<int>(y / 16) )
+									{
+										lastResort = true;
+									}
+									break;
+								default:
+									break;
+							}
+							if ( lastResort )
+							{
+								steamAchievementClient(player, "BARONY_ACH_LAST_RESORT");
+							}
+						}
 
 						// destroy the boulder
 						playSoundEntity(hit.entity, 67, 128);
@@ -5033,6 +5123,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 									net_packet->len = 6;
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
+								if ( myStats->weapon->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
+								{
+									if ( playerhit > 0 )
+									{
+										steamStatisticUpdateClient(playerhit, STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
+									}
+									else
+									{
+										steamStatisticUpdate(STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
+									}
+								}
 							}
 						}
 					}
@@ -5201,6 +5302,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( armor != NULL )
 					{
 						hit.entity->degradeArmor(*hitstats, *armor, armornum);
+						if ( armor->status == BROKEN )
+						{
+							if ( player >= 0 && hit.entity->behavior == &actMonster )
+							{
+								if ( player > 0 )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+								}
+								else
+								{
+									steamStatisticUpdate(STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
+								}
+							}
+						}
 					}
 
 					// special weapon effects
@@ -5232,6 +5347,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
+						if ( damage >= 150 && playerhit >= 0 )
+						{
+							if ( hitstats && hitstats->HP > 0 )
+							{
+								steamAchievementClient(playerhit, "BARONY_ACH_SPONGE");
+							}
+						}
 						if ( multiplayer != CLIENT )
 						{
 							createParticleRock(hit.entity);
@@ -5320,7 +5442,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 									armor->count = 1;
 									messagePlayer(playerhit, language[688], armor->getName());
-									newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+									stolenArmor->ownerUid = hit.entity->getUID();
 									Item** slot = itemSlot(hitstats, armor);
 									if ( slot )
 									{
@@ -5383,6 +5506,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					if ( player >= 0 && hit.entity->behavior == &actMonster )
+					{
+						if ( damage > 0 )
+						{
+							updateAchievementRhythmOfTheKnight(player, hit.entity, false);
+						}
+						else
+						{
+							if ( !achievementStatusRhythmOfTheKnight[player] )
+							{
+								achievementRhythmOfTheKnightVec[player].clear(); // didn't inflict damage.
+							}
+						}
+					}
+
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
 					{
@@ -5425,11 +5563,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// assassinate monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2547], MSG_COMBAT);
+								if ( hitstats->type == COCKATRICE )
+								{
+									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
+								}
 							}
 							else
 							{
 								// kill monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[692], MSG_COMBAT);
+								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
+								{
+									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+									if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+									{
+										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
+											&& hit.entity->monsterTarget != getUID() )
+										{
+											// monster is attacking another entity.
+											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+										}
+									}
+								}
 							}
 							awardXP(hit.entity, true, true);
 						}
@@ -5482,11 +5637,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								// assassinate monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[2547], language[2548], MSG_COMBAT);
+								if ( hitstats->type == COCKATRICE )
+								{
+									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
+								}
 							}
 							else
 							{
 								// kill monster
 								messagePlayerMonsterEvent(player, color, *hitstats, language[692], language[697], MSG_COMBAT);
+								if ( player >= 0 && hit.entity && hit.entity->behavior == &actMonster )
+								{
+									real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
+									if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
+									{
+										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
+											&& hit.entity->monsterTarget != getUID() )
+										{
+											// monster is attacking another entity.
+											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+										}
+									}
+								}
 							}
 							awardXP(hit.entity, true, true);
 						}
@@ -5572,6 +5744,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 						serverSpawnGibForClient(gib);
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerMonsterEvent(playerhit, color, *myStats, language[698], language[699], MSG_ATTACKS);
+						if ( playerhit >= 0 )
+						{
+							if ( !achievementStatusRhythmOfTheKnight[playerhit] )
+							{
+								achievementRhythmOfTheKnightVec[playerhit].clear();
+							}
+							if ( !achievementStatusThankTheTank[playerhit] )
+							{
+								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
+							}
+							//messagePlayer(0, "took damage!");
+						}
 					}
 					else
 					{
@@ -5580,6 +5764,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( !statusInflicted )
 						{
 							messagePlayerMonsterEvent(playerhit, 0xFFFFFFFF, *myStats, language[2457], language[2458], MSG_COMBAT);
+						}
+						if ( myStats->type == COCKATRICE && hitstats->defending )
+						{
+							steamAchievementClient(playerhit, "BARONY_ACH_COCK_BLOCK");
+						}
+						else if ( myStats->type == MINOTAUR && !hitstats->defending )
+						{
+							steamAchievementClient(playerhit, "BARONY_ACH_ONE_WHO_KNOCKS");
+						}
+						if ( playerhit >= 0 )
+						{
+							if ( hitstats->defending )
+							{
+								updateAchievementRhythmOfTheKnight(playerhit, this, true);
+								updateAchievementThankTheTank(playerhit, this, false);
+							}
+							else if ( !achievementStatusRhythmOfTheKnight[player] )
+							{
+								achievementRhythmOfTheKnightVec[playerhit].clear();
+								//messagePlayer(0, "used AC!");
+							}
 						}
 					}
 
@@ -5906,6 +6111,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 									entity->skill[13] = 1;           // count
 									entity->skill[14] = 0;           // appearance
 									entity->skill[15] = false;       // identified
+								}
+
+								if ( map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] >= 41
+									&& map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] <= 49 )
+								{
+									steamAchievementClient(player, "BARONY_ACH_BAD_REVIEW");
 								}
 
 								map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
@@ -6453,9 +6664,55 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	// award XP to main victor
 	destStats->EXP += xpGain;
 
+	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root )
+	{
+		if ( destStats->type == CREATURE_IMP 
+			|| destStats->type == DEMON
+			|| (destStats->type == AUTOMATON && !strcmp(destStats->name, "corrupted automaton")) )
+		{
+			if ( !flags[USERFLAG2] )
+			{
+				for ( int c = 0; c < MAXPLAYERS; c++ )
+				{
+					steamAchievementClient(c, "BARONY_ACH_OWN_WORST_ENEMY");
+				}
+			}
+		}
+	}
+
 	// award bonus XP and update kill counters
 	if ( player >= 0 )
 	{
+		if ( root == false )
+		{
+			updateAchievementThankTheTank(player, src, true);
+		}
+		if ( currentlevel >= 25 && srcStats->type == MINOTAUR )
+		{
+			for ( int c = 0; c < MAXPLAYERS; c++ )
+			{
+				steamAchievementClient(c, "BARONY_ACH_REUNITED");
+			}
+		}
+		if ( srcStats->type == SHADOW && root )
+		{
+			std::string name = "Shadow of ";
+			name += stats[player]->name;
+			if ( name.compare(srcStats->name) == 0 )
+			{
+				steamAchievementClient(player, "BARONY_ACH_KNOW_THYSELF");
+			}
+		}
+		if ( srcStats->LVL >= 25 && root 
+			&& destStats->HP <= 5 && checkEnemy(src) )
+		{
+			steamAchievementClient(player, "BARONY_ACH_BUT_A_SCRATCH");
+		}
+		if ( srcStats->EFFECTS[EFF_PARALYZED] )
+		{
+			serverUpdatePlayerGameplayStats(player, STATISTICS_SITTING_DUCK, 1);
+		}
+
 		if ( player == 0 )
 		{
 			if ( srcStats->type == LICH )
@@ -8338,22 +8595,24 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 						limb->pitch = -PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							limb->skill[0] = 1;
-
 							if ( dist > distForFootstepSound )
 							{
-								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( limb->skill[0] == 0 ) // fix for waking up on sleep to reduce repeated sound bytes in race condition.
 								{
-									node_t* tempNode = list_Node(&this->children, 3);
-									if ( tempNode )
+									if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 									{
-										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										node_t* tempNode = list_Node(&this->children, 3);
+										if ( tempNode )
+										{
+											Entity* foot = (Entity*)tempNode->element;
+											playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										}
 									}
-								}
-								else
-								{
-									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									else
+									{
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									}
+									limb->skill[0] = 1;
 								}
 							}
 						}
@@ -8367,21 +8626,24 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 						limb->pitch = PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							limb->skill[0] = 0;
 							if ( dist > distForFootstepSound )
 							{
-								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( limb->skill[0] == 1 ) // fix for waking up on sleep to reduce repeated sound bytes in race condition.
 								{
-									node_t* tempNode = list_Node(&this->children, 3);
-									if ( tempNode )
+									if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 									{
-										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										node_t* tempNode = list_Node(&this->children, 3);
+										if ( tempNode )
+										{
+											Entity* foot = (Entity*)tempNode->element;
+											playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										}
 									}
-								}
-								else
-								{
-									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									else
+									{
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									}
+									limb->skill[0] = 0;
 								}
 							}
 						}
@@ -9156,6 +9418,31 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					continue;
 				}
 
+				int playerOwned = -1;
+				if ( entity->itemOriginalOwner != 0 )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity )
+						{
+							if ( players[c]->entity->getUID() == entity->itemOriginalOwner )
+							{
+								if ( players[c]->entity->checkFriend(this) )
+								{
+									// player owned.
+									playerOwned = c;
+								}
+								break;
+							}
+						}
+					}
+					if ( playerOwned >= 0 && entity->ticks < 5 * TICKS_PER_SECOND )
+					{
+						//messagePlayer(0, "item too new");
+						continue;
+					}
+				}
+
 				if ( shouldWield )
 				{
 					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 )
@@ -9174,6 +9461,12 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					else
 					{
 						dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+					}
+
+					if ( playerOwned >= 0 && checkFriend(players[playerOwned]->entity)
+						&& (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES) )
+					{
+						steamAchievementClient(playerOwned, "BARONY_ACH_EARN_THIS");
 					}
 
 					(*shouldWield) = item;
@@ -9968,6 +10261,11 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		}
 	}
 
+	if ( manaring >= 2 && ticks % TICKS_PER_SECOND == 0 )
+	{
+		steamAchievementEntity(this, "BARONY_ACH_ARCANE_LINK");
+	}
+
 	if ( myStats.EFFECTS[EFF_MP_REGEN] )
 	{
 		manaring += 2;
@@ -10031,6 +10329,11 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 				healring--;
 			}
 		}
+	}
+
+	if ( healring >= 2 && ticks % TICKS_PER_SECOND == 0 )
+	{
+		steamAchievementEntity(this, "BARONY_ACH_TROLLS_BLOOD");
 	}
 	
 	if ( myStats.EFFECTS[EFF_HP_REGEN] )

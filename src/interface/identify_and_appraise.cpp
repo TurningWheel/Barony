@@ -17,6 +17,7 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "../scores.hpp"
 
 //Identify GUI definitions.
 bool identifygui_active = false;
@@ -377,6 +378,10 @@ void identifyGUIIdentify(Item* item)
 			{
 				appraisal_timer = 0;
 				appraisal_item = 0;
+			}
+			if ( item->type == GEM_GLASS )
+			{
+				steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
 			}
 		}
 		else

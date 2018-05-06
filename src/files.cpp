@@ -21,6 +21,7 @@
 #include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
+#include "book.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -164,8 +165,10 @@ voxel_t* loadVoxel(char* filename)
 	{
 		//bool has_ext = strstr(filename, ".vox") == NULL;
 		//snprintf(filename2, 1024, "%s%s", filename, has_ext ? "" : ".vox");
+		std::string filenamePath = PHYSFS_getRealDir(filename);
+		filenamePath.append(PHYSFS_getDirSeparator()).append(filename);
 
-		if ((file = openDataFile(filename, "rb")) == NULL)
+		if ((file = openDataFile(filenamePath.c_str(), "rb")) == NULL)
 		{
 			return NULL;
 		}
@@ -1006,7 +1009,7 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
 		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
 	}
-	printlog("mapsDirectory: %s", mapsDirectory.c_str());
+	printlog("Maps directory: %s", mapsDirectory.c_str());
 	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
 	std::string line = levelsList.front();
 	int levelsCounted = 0;
@@ -1061,9 +1064,9 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
 	return 0;
 }
 
-std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
+std::list<std::string> physfsGetFileNamesInDirectory(const char* dir)
 {
-	std::vector<std::string> filenames;
+	std::list<std::string> filenames;
 	char **rc = PHYSFS_enumerateFiles(dir);
 	if ( *rc == NULL )
 	{
@@ -1076,7 +1079,7 @@ std::vector<std::string> physfsGetFileNamesInDirectory(const char* dir)
 	for ( i = rc; *i != NULL; i++ )
 	{
 		file = *i;
-		printlog(" * We've got [%s].\n", file.c_str());
+		//printlog(" * We've got [%s].\n", file.c_str());
 		filenames.push_back(file);
 	}
 	PHYSFS_freeList(rc);
@@ -1100,4 +1103,247 @@ std::string physfsFormatMapName(char* levelfilename)
 		fullMapPath.append(PHYSFS_getDirSeparator()).append(mapFileName);
 	}
 	return fullMapPath;
+}
+
+bool physfsSearchModelsToUpdate(int &start, int &end)
+{
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	if ( modelsDirectory.compare("./") != 0 )
+	{
+		// models.txt was not in default directory, we should reload the models list.
+		char modelName[128];
+		int startnum = 1;
+		int endnum = nummodels;
+		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
+		for ( int c = 0; !feof(fp); c++ )
+		{
+			fscanf(fp, "%s", modelName);
+			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+			models[c] = loadVoxel(modelName);
+			std::string modelPath = PHYSFS_getRealDir(modelName);
+			if ( modelPath.compare("./") != 0 )
+			{
+				// this index is not found in the normal models folder.
+				// store the lowest found model number inside startnum.
+				if ( startnum == 1 || c < startnum )
+				{
+					startnum = c;
+				}
+
+				// store the higher end model num in endnum.
+				if ( endnum == nummodels )
+				{
+					endnum = c + 1;
+				}
+				else if ( c + 1 > endnum )
+				{
+					endnum = c + 1;
+				}
+			}
+		}
+		if ( startnum == endnum )
+		{
+			endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
+		}
+		printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
+		start = startnum;
+		end = endnum;
+		fclose(fp);
+		return true;
+	}
+	return false;
+}
+
+bool physfsSearchSoundsToUpdate()
+{
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string soundRealDir = PHYSFS_getRealDir(name);
+			if ( soundRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadSounds(bool reloadAll)
+{
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	char name[128];
+
+	printlog("freeing sounds and loading modded sounds...\n");
+	if ( reloadAll )
+	{
+		if ( sounds != NULL )
+		{
+			for ( int c = 0; c < numsounds; c++ )
+			{
+				if ( sounds[c] != NULL )
+				{
+#ifdef USE_FMOD
+					FMOD_Sound_Release(sounds[c]);    //Free the sound in FMOD
+#elif USE_OPENAL
+					OPENAL_Sound_Release(sounds[c]); //Free the sound in OPENAL
+#endif
+				}
+			}
+		}
+	}
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string soundRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || soundRealDir.compare("./") != 0 )
+			{
+				std::string soundFile = soundRealDir;
+				soundFile.append(PHYSFS_getDirSeparator()).append(name);
+#ifdef USE_FMOD
+				if ( !reloadAll )
+				{
+					FMOD_Sound_Release(sounds[c]);
+				}
+				fmod_result = FMOD_System_CreateSound(fmod_system, soundFile.c_str(), (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
+				if ( FMODErrorCheck() )
+				{
+					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
+				}
+#elif USE_OPENAL
+				if ( !reloadAll )
+				{
+					OPENAL_Sound_Release(sounds[c]);
+				}
+				OPENAL_CreateSound(name, true, &sounds[c]);
+#endif 
+			}
+		}
+	}
+	fclose(fp);
+}
+
+bool physfsSearchTilesToUpdate()
+{
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string tileRealDir = PHYSFS_getRealDir(name);
+			if ( tileRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				printlog("[PhysFS]: Found modified tile in tiles/ directory, reloading all tiles...");
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadTiles(bool reloadAll)
+{
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
+	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string tileRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || tileRealDir.compare("./") != 0 )
+			{
+				std::string tileFile = tileRealDir;
+				tileFile.append(PHYSFS_getDirSeparator()).append(name);
+				if ( tiles[c] )
+				{
+					SDL_FreeSurface(tiles[c]);
+				}
+				strncpy(name, tileFile.c_str(), 127);
+				tiles[c] = loadImage(name);
+				animatedtiles[c] = false;
+				lavatiles[c] = false;
+				swimmingtiles[c] = false;
+				if ( tiles[c] != NULL )
+				{
+					for ( int x = 0; x < strlen(name); x++ )
+					{
+						if ( name[x] >= '0' && name[x] < '9' )
+						{
+							// animated tiles if the tile name ends in a number 0-9.
+							animatedtiles[c] = true;
+							break;
+						}
+					}
+					if ( strstr(name, "Lava") || strstr(name, "lava") )
+					{
+						lavatiles[c] = true;
+					}
+					if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+					{
+						swimmingtiles[c] = true;
+					}
+				}
+				else
+				{
+					printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, tilesDirectory.c_str());
+					if ( c == 0 )
+					{
+						printlog("tile 0 cannot be NULL!\n");
+						fclose(fp);
+						return;
+					}
+				}
+			}
+		}
+	}
+	fclose(fp);
 }

@@ -226,6 +226,8 @@ static const int NUM_HOTBAR_CATEGORIES = 12; // number of filters for auto add h
 
 static const int NUM_AUTOSORT_CATEGORIES = 12; // number of categories for autosort
 
+static const int RIGHT_CLICK_IMPULSE = 285; // right click
+
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
 #define SDL_BUTTON_WHEELDOWN 5
@@ -450,6 +452,9 @@ extern Sint8 keystatus[512];
 extern char* inputstr;
 extern int inputlen;
 extern string lastname;
+extern int lastCreatedCharacterClass;
+extern int lastCreatedCharacterAppearance;
+extern int lastCreatedCharacterSex;
 static const unsigned NUM_MOUSE_STATUS = 6;
 extern Sint8 mousestatus[NUM_MOUSE_STATUS];
 //extern Sint8 omousestatus[NUM_MOUSE_STATUS];
@@ -482,7 +487,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 3000
+#define NUMLANGENTRIES 3100
 extern char languageCode[32];
 extern char** language;
 
@@ -636,6 +641,9 @@ static const Uint32 cacheLimit = 8096;
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
+static const int NUM_STEAM_STATISTICS = 4;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
+extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS

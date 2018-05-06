@@ -27,6 +27,7 @@
 #define BOULDER_ROLLDIR my->skill[5]
 #define BOULDER_DESTX my->skill[6]
 #define BOULDER_DESTY my->skill[7]
+#define BOULDER_PLAYERPUSHED my->skill[8]
 
 /*-------------------------------------------------------------------------------
 
@@ -134,10 +135,16 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 				entity->modHP(-80);
 				entity->setObituary(language[1505]);
 				if ( entity->behavior == &actPlayer )
+				{
 					if ( stats->HP <= 0 )
 					{
 						steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
+						if ( BOULDER_PLAYERPUSHED >= 0 && entity->skill[2] != BOULDER_PLAYERPUSHED )
+						{
+							steamAchievementClient(entity->skill[2], "BARONY_ACH_MOVED_ITSELF");
+						}
 					}
+				}
 				if ( stats->HP > 0 )
 				{
 					// spawn several rock items
@@ -424,6 +431,7 @@ void actBoulder(Entity* my)
 	{
 		if ( !BOULDER_ROLLING )
 		{
+			BOULDER_PLAYERPUSHED = -1;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
@@ -475,6 +483,7 @@ void actBoulder(Entity* my)
 										BOULDER_DESTY -= 16;
 										break;
 								}
+								BOULDER_PLAYERPUSHED = i;
 							}
 						}
 					}

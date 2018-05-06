@@ -29,10 +29,6 @@ void initCockatrice(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		/*MONSTER_SPOTSND = 79;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;*/
 		MONSTER_SPOTSND = 385;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 382;

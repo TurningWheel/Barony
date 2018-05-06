@@ -32,9 +32,9 @@ void initKobold(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 302;
-		MONSTER_SPOTVAR = 4;
+		MONSTER_SPOTVAR = 2;
 		MONSTER_IDLESND = 295;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{

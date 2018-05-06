@@ -41,6 +41,7 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart);
 void serverUpdateEffects(int player);
 void serverUpdateHunger(int player);
 void serverUpdatePlayerStats();
+void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval);
 void serverUpdatePlayerLVL();
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);

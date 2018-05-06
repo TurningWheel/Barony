@@ -90,6 +90,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+int score_window_to_delete = 0;
 
 // gamemods window stuff.
 int gamemods_window = 0;
@@ -112,6 +113,13 @@ int gamemods_numCurrentModsLoaded = -1;
 const int gamemods_maxTags = 10;
 std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 std::list<std::string> gamemods_localModFoldernames;
+bool gamemods_modelsListRequiresReload = false;
+bool gamemods_modelsListLastStartedUnmodded = false; // if starting regular game that had to reset model list, use this to reinit custom models.
+bool gamemods_soundListRequiresReload = false;
+bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game that had to reset sounds list, use this to reinit custom sounds.
+bool gamemods_tileListRequireReloadUnmodded = false;
+bool gamemods_booksRequireReloadUnmodded = false;
+bool gamemods_musicRequireReloadUnmodded = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -569,25 +577,6 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
 				}
 			}
-			/*h2 = h;
-			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
-			if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 + h2 && omousey < 8 + h + h2)
-				&& subwindow == 0
-				&& introstage == 1
-				&& SteamUser()->BLoggedOn() )
-			{
-				if ( mousestatus[SDL_BUTTON_LEFT] )
-				{
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					playSound(139, 64);
-					SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
-				}
-				ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8 + h2, colorGray, language[2549], steamOnlinePlayers);
-			}
-			else if ( SteamUser()->BLoggedOn() )
-			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h2, language[2549], steamOnlinePlayers);
-			}*/
 			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
@@ -673,7 +662,88 @@ void handleMainMenu(bool mode)
 					playSound(139, 64);
 
 					// look for a save game
+					bool reloadModels = false;
+					int modelsIndexUpdateStart = 1;
+					int modelsIndexUpdateEnd = nummodels;
+					std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+					if ( modelsDirectory.compare("./") != 0 )
+					{
+						reloadModels = true; // we had some models already loaded which should be reset
+						physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd); // grab the indices to use later.
+					}
+					bool reloadSounds = false;
+					std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+					if ( soundsDirectory.compare("./") != 0 )
+					{
+						reloadSounds = true;
+					}
+
 					gamemodsClearAllMountedPaths();
+
+					if ( reloadModels )
+					{
+						// print a loading message
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[2990], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
+						GO_SwapBuffers(screen);
+
+						int tmpStart;
+						int tmpEnd;
+						physfsSearchModelsToUpdate(tmpStart, tmpEnd);
+						char cmdString[32] = "/loadmodels ";
+						char buf[32];
+						snprintf(buf, 32, "%d %d", modelsIndexUpdateStart, modelsIndexUpdateEnd);
+						strcat(cmdString, buf);
+						consoleCommand(cmdString);
+						gamemods_modelsListLastStartedUnmodded = true;
+					}
+					if ( reloadSounds )
+					{
+						// print a loading message
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[2988], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2988]);
+						GO_SwapBuffers(screen);
+						physfsReloadSounds(true);
+						gamemods_soundsListLastStartedUnmodded = true;
+					}
+
+					if ( gamemods_tileListRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3004], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
+						GO_SwapBuffers(screen);
+						physfsReloadTiles(true);
+						gamemods_tileListRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_booksRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[2992], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2992]);
+						GO_SwapBuffers(screen);
+						physfsReloadBooks();
+						gamemods_booksRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_musicRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[2994], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2994]);
+						GO_SwapBuffers(screen);
+						physfsSearchMusicToUpdate();
+						gamemods_musicRequireReloadUnmodded = false;
+					}
+
 					if ( saveGameExists(true) || saveGameExists(false) )
 					{
 						openLoadGameWindow(NULL);
@@ -728,83 +798,7 @@ void handleMainMenu(bool mode)
 					}
 					playSound(139, 64);
 
-					// create statistics window
-					clientnum = 0;
-					subwindow = 1;
-					score_window = 1;
-					camera_charsheet_offsetyaw = (330) * PI / 180;
-					loadScore(0);
-					subx1 = xres / 2 - 400;
-					subx2 = xres / 2 + 400;
-#ifdef PANDORA
-					suby1 = yres / 2 - ((yres==480)?200:240);
-					suby2 = yres / 2 + ((yres==480)?200:240);
-#else
-					suby1 = yres / 2 - 240;
-					suby2 = yres / 2 + 240;
-#endif
-					strcpy(subtext, "");
-
-					// close button
-					button = newButton();
-					strcpy(button->label, "x");
-					button->x = subx2 - 20;
-					button->y = suby1 + 4;
-					button->sizex = 20;
-					button->sizey = 20;
-					button->action = &buttonCloseSubwindow;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_ESCAPE;
-					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-					// next button
-					button = newButton();
-					strcpy(button->label, ">");
-					button->sizex = strlen(">") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx2 - button->sizex - 4;
-					button->y = suby2 - 24;
-					button->action = &buttonScoreNext;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_RIGHT;
-					button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
-
-					// previous button
-					button = newButton();
-					strcpy(button->label, "<");
-					button->sizex = strlen("<") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx1 + 4;
-					button->y = suby2 - 24;
-					button->action = &buttonScorePrev;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_LEFT;
-					button->joykey = joyimpulses[INJOY_DPAD_LEFT];
-
-					// multiplayer scores toggle button
-					button = newButton();
-					strcpy(button->label, "");
-					button->sizex = strlen("show multiplayer") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx2 - 44 - strlen("show multiplayer") * 12;
-					button->y = suby1 + 4;
-					button->action = &buttonScoreToggle;
-					button->visible = 1;
-					button->focused = 1;
-
-					// delete single score button
-					button = newButton();
-					strcpy(button->label, "delete score");
-					button->sizex = strlen("delete score") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
-					button->y = suby1 + 4;
-					button->action = &buttonDeleteCurrentScore;
-					button->visible = 1;
-					button->focused = 1;
+					buttonOpenScoresWindow(nullptr);
 				}
 			}
 			else
@@ -4510,7 +4504,10 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
 			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
 				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-				&& !conductGameChallenges[CONDUCT_MODDED] )
+				&& !conductGameChallenges[CONDUCT_MODDED]
+				&& !conductGameChallenges[CONDUCT_BRAWLER]
+				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
+				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -5187,7 +5184,8 @@ void handleMainMenu(bool mode)
 									{
 										gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, itemDetails.m_rgchTitle));
 										gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(itemDetails.m_rgchTitle, itemDetails.m_nPublishedFileId));
-										//printlog("[%s] is in the search path.\n", fullpath);
+										gamemods_modelsListRequiresReload = true;
+										gamemods_soundListRequiresReload = true;
 									}
 								}
 							}
@@ -5232,6 +5230,8 @@ void handleMainMenu(bool mode)
 										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
 										{
 											printlog("[%s] is removed from the search path.\n", fullpath);
+											gamemods_modelsListRequiresReload = true;
+											gamemods_soundListRequiresReload = true;
 										}
 									}
 								}
@@ -5249,6 +5249,8 @@ void handleMainMenu(bool mode)
 										if ( gamemodsRemovePathFromMountedFiles(fullpath) )
 										{
 											printlog("[%s] is removed from the search path.\n", fullpath);
+											gamemods_modelsListRequiresReload = true;
+											gamemods_soundListRequiresReload = true;
 										}
 									}
 								}
@@ -5505,7 +5507,9 @@ void handleMainMenu(bool mode)
 						if ( PHYSFS_mount(path.c_str(), NULL, 0) )
 						{
 							gamemods_mountedFilepaths.push_back(std::make_pair(path, folderName));
-							printlog("[%s] is in the search path.\n", path.c_str());
+							printlog("[PhysFS]: [%s] is in the search path.\n", path.c_str());
+							gamemods_modelsListRequiresReload = true;
+							gamemods_soundListRequiresReload = true;
 						}
 					}
 				}
@@ -5519,7 +5523,9 @@ void handleMainMenu(bool mode)
 						{
 							if ( gamemodsRemovePathFromMountedFiles(path) )
 							{
-								printlog("[%s] is removed from the search path.\n", path.c_str());
+								printlog("[PhysFS]: [%s] is removed from the search path.\n", path.c_str());
+								gamemods_modelsListRequiresReload = true;
+								gamemods_soundListRequiresReload = true;
 							}
 						}
 					}
@@ -5592,10 +5598,6 @@ void handleMainMenu(bool mode)
 
 			setDefaultPlayerConducts(); // penniless, foodless etc.
 
-			for ( c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
-			{
-				gameStatistics[c] = 0;
-			}
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -6125,19 +6127,40 @@ void handleMainMenu(bool mode)
 				if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 				{
 					steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
+					conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 				}
 
 				if ( victory == 1 )
 				{
 					introstage = 7;
+					if ( conductGameChallenges[CONDUCT_HARDCORE] )
+					{
+						steamAchievement("BARONY_ACH_HARDCORE");
+					}
 				}
 				else if ( victory == 2 )
 				{
 					introstage = 8;
+					if ( conductGameChallenges[CONDUCT_HARDCORE] )
+					{
+						steamAchievement("BARONY_ACH_HARDCORE");
+					}
 				}
 				else if ( victory == 3 )
 				{
 					introstage = 10;
+					if ( conductGameChallenges[CONDUCT_BRAWLER] )
+					{
+						steamAchievement("BARONY_ACH_BRAWLER");
+					}
+					if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
+					{
+						steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
+					}
+					if ( conductGameChallenges[CONDUCT_HARDCORE] )
+					{
+						steamAchievement("BARONY_ACH_POST_HARDCORE");
+					}
 				}
 			}
 
@@ -6870,6 +6893,10 @@ void handleMainMenu(bool mode)
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[7]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16 + (xres/ 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+			if ( fourthendmovietime % 50 == 0 )
+			{
+				steamAchievement("BARONY_ACH_ALWAYS_WAITING");
+			}
 		}
 		if ( fourthendmoviestage >= 13 )
 		{
@@ -7825,6 +7852,11 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 6 )
 	{
+		// store this character into previous character.
+		lastCreatedCharacterSex = stats[0]->sex;
+		lastCreatedCharacterClass = client_classes[0];
+		lastCreatedCharacterAppearance = stats[0]->appearance;
+		
 		if ( multiplayerselect == SINGLE )
 		{
 			buttonStartSingleplayer(my);
@@ -8802,28 +8834,108 @@ void buttonScoreToggle(button_t* my)
 	loadScore(score_window - 1);
 }
 
+void buttonOpenScoresWindow(button_t* my)
+{
+	// create statistics window
+	clientnum = 0;
+	subwindow = 1;
+	score_window = 1;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
+	loadScore(0);
+	subx1 = xres / 2 - 400;
+	subx2 = xres / 2 + 400;
+#ifdef PANDORA
+	suby1 = yres / 2 - ((yres == 480) ? 200 : 240);
+	suby2 = yres / 2 + ((yres == 480) ? 200 : 240);
+#else
+	suby1 = yres / 2 - 240;
+	suby2 = yres / 2 + 240;
+#endif
+	strcpy(subtext, "");
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1 + 4;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// next button
+	button = newButton();
+	strcpy(button->label, ">");
+	button->sizex = strlen(">") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - button->sizex - 4;
+	button->y = suby2 - 24;
+	button->action = &buttonScoreNext;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RIGHT;
+	button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
+
+	// previous button
+	button = newButton();
+	strcpy(button->label, "<");
+	button->sizex = strlen("<") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + 4;
+	button->y = suby2 - 24;
+	button->action = &buttonScorePrev;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_LEFT;
+	button->joykey = joyimpulses[INJOY_DPAD_LEFT];
+
+	// multiplayer scores toggle button
+	button = newButton();
+	strcpy(button->label, "");
+	button->sizex = strlen("show multiplayer") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 44 - strlen("show multiplayer") * 12;
+	button->y = suby1 + 4;
+	button->action = &buttonScoreToggle;
+	button->visible = 1;
+	button->focused = 1;
+
+	// delete single score button
+	button = newButton();
+	strcpy(button->label, "delete score");
+	button->sizex = strlen("delete score") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
+	button->y = suby1 + 4;
+	button->action = &buttonDeleteScoreWindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
 void buttonDeleteCurrentScore(button_t* my)
 {
 	node_t* node = nullptr;
 	if ( scoreDisplayMultiplayer )
 	{
-		node = list_Node(&topscoresMultiplayer, score_window - 1);
+		node = list_Node(&topscoresMultiplayer, score_window_to_delete - 1);
 		if ( node )
 		{
 			list_RemoveNode(node);
-			score_window = std::max(score_window - 1, 1);
+			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
 		}
 	}
 	else
 	{
-		node = list_Node(&topscores, score_window - 1);
+		node = list_Node(&topscores, score_window_to_delete - 1);
 		if ( node )
 		{
 			list_RemoveNode(node);
-			score_window = std::max(score_window - 1, 1);
+			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
 		}
 	}
-	loadScore(score_window - 1);
 }
 
 // handles slider
@@ -9211,6 +9323,81 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 	playSound(153, 96);
 }
 
+
+void buttonDeleteScoreCancel(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	buttonOpenScoresWindow(nullptr);
+	score_window = score_window_to_delete;
+	score_window_to_delete = 0;
+
+	loadScore(score_window - 1);
+}
+
+void buttonDeleteScoreConfirm(button_t* my)
+{
+	buttonDeleteCurrentScore(nullptr);
+	buttonDeleteScoreCancel(nullptr);
+}
+
+void buttonDeleteScoreWindow(button_t* my)
+{
+	score_window_to_delete = score_window;
+
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 244;
+	subx2 = xres / 2 + 244;
+	suby1 = yres / 2 - 60;
+	suby2 = yres / 2 + 60;
+	strcpy(subtext, language[3002]);
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonDeleteScoreCancel;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// delete button
+	button = newButton();
+	strcpy(button->label, language[3001]);
+	button->sizex = strlen(language[3001]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 56;
+	button->action = &buttonDeleteScoreConfirm;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+
+	// close button
+	button = newButton();
+	strcpy(button->label, language[2962]);
+	button->sizex = strlen(language[2962]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonDeleteScoreCancel;
+	button->visible = 1;
+	button->focused = 1;
+}
+
 void buttonOpenCharacterCreationWindow(button_t* my)
 {
 	button_t* button;
@@ -9257,6 +9444,21 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+
+	if ( lastCreatedCharacterClass >= 0
+		&& lastCreatedCharacterAppearance >= 0 
+		&& lastCreatedCharacterSex >= 0 )
+	{
+		button_t* replayCharacterBtn = newButton();
+		strcpy(replayCharacterBtn->label, language[3000]);
+		replayCharacterBtn->sizex = strlen(language[3000]) * 12 + 8;
+		replayCharacterBtn->sizey = 20;
+		replayCharacterBtn->x = button->x - (replayCharacterBtn->sizex + 4); // take position of button attributes above.
+		replayCharacterBtn->y = button->y;
+		replayCharacterBtn->action = &buttonReplayLastCharacter;
+		replayCharacterBtn->visible = 1;
+		replayCharacterBtn->focused = 1;
+	}
 
 	// Continue ...
 	button = newButton();
@@ -9508,6 +9710,22 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
+}
+
+void buttonReplayLastCharacter(button_t* my)
+{
+	if ( lastCreatedCharacterClass >= 0 )
+	{
+		playing_random_char = false;
+		charcreation_step = 5;
+		camera_charsheet_offsetyaw = (330) * PI / 180;
+		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
+		client_classes[0] = lastCreatedCharacterClass;
+		stats[0]->clearStats();
+		initClass(0);
+		stats[0]->appearance = lastCreatedCharacterAppearance;
+		strcpy(stats[0]->name, lastname.c_str());
+	}
 }
 
 void buttonRandomName(button_t* my)
@@ -10148,6 +10366,8 @@ void gamemodsSubscribedItemsInit()
 	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
 
+	gamemodsMountAllExistingPaths();
+
 	// create confirmation window
 	subwindow = 1;
 	subx1 = xres / 2 - 420;
@@ -10553,12 +10773,99 @@ void buttonGamemodsGetLocalMods(button_t* my)
 	gamemods_window = 7;
 	gamemods_localModFoldernames.clear();
 	gamemods_localModFoldernames = directoryContents("./mods/", true, false);
-	gamemodsMountAllExistingPaths();
 }
 
 void buttonGamemodsStartModdedGame(button_t* my)
 {
 	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+	if ( gamemods_numCurrentModsLoaded > 0 )
+	{
+		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
+	}
+
+	int w, h;
+
+	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
+	{
+		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+		if ( modelsDirectory.compare("./") != 0 )
+		{
+			gamemods_modelsListRequiresReload = true;
+		}
+		gamemods_modelsListLastStartedUnmodded = false;
+	}
+	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
+	{
+		std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+		if ( soundsDirectory.compare("./") != 0 )
+		{
+			gamemods_soundListRequiresReload = true;
+		}
+		gamemods_soundsListLastStartedUnmodded = false;
+	}
+
+	// process any new model files encountered in the mod load list.
+	int modelsIndexUpdateStart = 1;
+	int modelsIndexUpdateEnd = nummodels;
+	if ( gamemods_modelsListRequiresReload && physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd) )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[2989], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
+		GO_SwapBuffers(screen);
+		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+		gamemods_modelsListRequiresReload = false;
+	}
+	if ( gamemods_soundListRequiresReload && physfsSearchSoundsToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[2987], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
+		GO_SwapBuffers(screen);
+		physfsReloadSounds(false);
+		gamemods_soundListRequiresReload = false;
+	}
+
+	if ( physfsSearchTilesToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3003], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3003]);
+		GO_SwapBuffers(screen);
+		physfsReloadTiles(false);
+		gamemods_tileListRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchBooksToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[2991], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
+		GO_SwapBuffers(screen);
+		physfsReloadBooks();
+		gamemods_booksRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchMusicToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[2993], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
+		GO_SwapBuffers(screen);
+		bool reloadIntroMusic = false;
+		physfsReloadMusic(reloadIntroMusic);
+		if ( reloadIntroMusic )
+		{
+			playmusic(intromusic[rand() % NUMINTROMUSIC], false, true, true);
+		}
+		gamemods_musicRequireReloadUnmodded = true;
+	}
+
 	// look for a save game
 	if ( saveGameExists(true) || saveGameExists(false) )
 	{
@@ -10576,6 +10883,8 @@ void gamemodsCustomContentInit()
 	gamemods_window = 3;
 	currentDirectoryFiles = directoryContents(datadir, true, false);
 	directoryToUpload = datadir;
+
+	gamemodsMountAllExistingPaths();
 
 	// create confirmation window
 	subwindow = 1;
