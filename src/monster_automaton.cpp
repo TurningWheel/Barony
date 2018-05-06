@@ -523,7 +523,7 @@ void automatonDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	playSoundEntity(my, 260 + rand() % 3, 128);
+	playSoundEntity(my, 260 + rand() % 2, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }

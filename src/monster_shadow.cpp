@@ -37,7 +37,7 @@ void initShadow(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 318;
-		MONSTER_SPOTVAR = 3;
+		MONSTER_SPOTVAR = 2;
 		MONSTER_IDLESND = 313;
 		MONSTER_IDLEVAR = 3;
 	}
