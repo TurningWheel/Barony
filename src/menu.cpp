@@ -4566,7 +4566,10 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf12, subx1 + 32, suby2 - 80, "%s: %02d:%02d:%02d. %s:", language[1405], hour, min, sec, language[1406]);
 			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
 				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
-				&& !conductGameChallenges[CONDUCT_MODDED] )
+				&& !conductGameChallenges[CONDUCT_MODDED]
+				&& !conductGameChallenges[CONDUCT_BRAWLER]
+				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
+				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED] )
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -6186,6 +6189,7 @@ void handleMainMenu(bool mode)
 				if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 				{
 					steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
+					conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 				}
 
 				if ( victory == 1 )
@@ -6211,7 +6215,7 @@ void handleMainMenu(bool mode)
 					{
 						steamAchievement("BARONY_ACH_BRAWLER");
 					}
-					if ( completionTime < 45 * 60 * TICKS_PER_SECOND )
+					if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
 					{
 						steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
 					}
