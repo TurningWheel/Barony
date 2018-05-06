@@ -1250,3 +1250,100 @@ void physfsReloadSounds(bool reloadAll)
 	}
 	fclose(fp);
 }
+
+bool physfsSearchTilesToUpdate()
+{
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string tileRealDir = PHYSFS_getRealDir(name);
+			if ( tileRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				printlog("[PhysFS]: Found modified tile in tiles/ directory, reloading all tiles...");
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadTiles(bool reloadAll)
+{
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
+	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string tileRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || tileRealDir.compare("./") != 0 )
+			{
+				std::string tileFile = tileRealDir;
+				tileFile.append(PHYSFS_getDirSeparator()).append(name);
+				if ( tiles[c] )
+				{
+					SDL_FreeSurface(tiles[c]);
+				}
+				strncpy(name, tileFile.c_str(), 127);
+				tiles[c] = loadImage(name);
+				animatedtiles[c] = false;
+				lavatiles[c] = false;
+				swimmingtiles[c] = false;
+				if ( tiles[c] != NULL )
+				{
+					for ( int x = 0; x < strlen(name); x++ )
+					{
+						if ( name[x] >= '0' && name[x] < '9' )
+						{
+							// animated tiles if the tile name ends in a number 0-9.
+							animatedtiles[c] = true;
+							break;
+						}
+					}
+					if ( strstr(name, "Lava") || strstr(name, "lava") )
+					{
+						lavatiles[c] = true;
+					}
+					if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+					{
+						swimmingtiles[c] = true;
+					}
+				}
+				else
+				{
+					printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, tilesDirectory.c_str());
+					if ( c == 0 )
+					{
+						printlog("tile 0 cannot be NULL!\n");
+						fclose(fp);
+						return;
+					}
+				}
+			}
+		}
+	}
+	fclose(fp);
+}
