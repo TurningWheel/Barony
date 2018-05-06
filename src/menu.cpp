@@ -7914,6 +7914,11 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 6 )
 	{
+		// store this character into previous character.
+		lastCreatedCharacterSex = stats[0]->sex;
+		lastCreatedCharacterClass = client_classes[0];
+		lastCreatedCharacterAppearance = stats[0]->appearance;
+		
 		if ( multiplayerselect == SINGLE )
 		{
 			buttonStartSingleplayer(my);
@@ -9347,6 +9352,21 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->focused = 1;
 	button->joykey = joyimpulses[INJOY_PAUSE_MENU];
 
+	if ( lastCreatedCharacterClass >= 0
+		&& lastCreatedCharacterAppearance >= 0 
+		&& lastCreatedCharacterSex >= 0 )
+	{
+		button_t* replayCharacterBtn = newButton();
+		strcpy(replayCharacterBtn->label, language[3000]);
+		replayCharacterBtn->sizex = strlen(language[3000]) * 12 + 8;
+		replayCharacterBtn->sizey = 20;
+		replayCharacterBtn->x = button->x - (replayCharacterBtn->sizex + 4); // take position of button attributes above.
+		replayCharacterBtn->y = button->y;
+		replayCharacterBtn->action = &buttonReplayLastCharacter;
+		replayCharacterBtn->visible = 1;
+		replayCharacterBtn->focused = 1;
+	}
+
 	// Continue ...
 	button = newButton();
 	strcpy(button->label, language[1464]);
@@ -9597,6 +9617,22 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
+}
+
+void buttonReplayLastCharacter(button_t* my)
+{
+	if ( lastCreatedCharacterClass >= 0 )
+	{
+		playing_random_char = false;
+		charcreation_step = 5;
+		camera_charsheet_offsetyaw = (330) * PI / 180;
+		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
+		client_classes[0] = lastCreatedCharacterClass;
+		stats[0]->clearStats();
+		initClass(0);
+		stats[0]->appearance = lastCreatedCharacterAppearance;
+		strcpy(stats[0]->name, lastname.c_str());
+	}
 }
 
 void buttonRandomName(button_t* my)
