@@ -3667,5 +3667,9 @@ IDENTICAL MOD LISTS LOADED!#
 2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#
 2999 Spells are disabled in Brawler-mode!#
 3000 Use Previous Character#
+3001 Delete score#
+3002 Are you sure you want to delete this high score?
+
+#
 
 3099 end#

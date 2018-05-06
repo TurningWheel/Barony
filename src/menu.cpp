@@ -90,6 +90,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+int score_window_to_delete = 0;
 
 // gamemods window stuff.
 int gamemods_window = 0;
@@ -784,83 +785,7 @@ void handleMainMenu(bool mode)
 					}
 					playSound(139, 64);
 
-					// create statistics window
-					clientnum = 0;
-					subwindow = 1;
-					score_window = 1;
-					camera_charsheet_offsetyaw = (330) * PI / 180;
-					loadScore(0);
-					subx1 = xres / 2 - 400;
-					subx2 = xres / 2 + 400;
-#ifdef PANDORA
-					suby1 = yres / 2 - ((yres==480)?200:240);
-					suby2 = yres / 2 + ((yres==480)?200:240);
-#else
-					suby1 = yres / 2 - 240;
-					suby2 = yres / 2 + 240;
-#endif
-					strcpy(subtext, "");
-
-					// close button
-					button = newButton();
-					strcpy(button->label, "x");
-					button->x = subx2 - 20;
-					button->y = suby1 + 4;
-					button->sizex = 20;
-					button->sizey = 20;
-					button->action = &buttonCloseSubwindow;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_ESCAPE;
-					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-					// next button
-					button = newButton();
-					strcpy(button->label, ">");
-					button->sizex = strlen(">") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx2 - button->sizex - 4;
-					button->y = suby2 - 24;
-					button->action = &buttonScoreNext;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_RIGHT;
-					button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
-
-					// previous button
-					button = newButton();
-					strcpy(button->label, "<");
-					button->sizex = strlen("<") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx1 + 4;
-					button->y = suby2 - 24;
-					button->action = &buttonScorePrev;
-					button->visible = 1;
-					button->focused = 1;
-					button->key = SDL_SCANCODE_LEFT;
-					button->joykey = joyimpulses[INJOY_DPAD_LEFT];
-
-					// multiplayer scores toggle button
-					button = newButton();
-					strcpy(button->label, "");
-					button->sizex = strlen("show multiplayer") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx2 - 44 - strlen("show multiplayer") * 12;
-					button->y = suby1 + 4;
-					button->action = &buttonScoreToggle;
-					button->visible = 1;
-					button->focused = 1;
-
-					// delete single score button
-					button = newButton();
-					strcpy(button->label, "delete score");
-					button->sizex = strlen("delete score") * 12 + 8;
-					button->sizey = 20;
-					button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
-					button->y = suby1 + 4;
-					button->action = &buttonDeleteCurrentScore;
-					button->visible = 1;
-					button->focused = 1;
+					buttonOpenScoresWindow(nullptr);
 				}
 			}
 			else
@@ -8896,28 +8821,108 @@ void buttonScoreToggle(button_t* my)
 	loadScore(score_window - 1);
 }
 
+void buttonOpenScoresWindow(button_t* my)
+{
+	// create statistics window
+	clientnum = 0;
+	subwindow = 1;
+	score_window = 1;
+	camera_charsheet_offsetyaw = (330) * PI / 180;
+	loadScore(0);
+	subx1 = xres / 2 - 400;
+	subx2 = xres / 2 + 400;
+#ifdef PANDORA
+	suby1 = yres / 2 - ((yres == 480) ? 200 : 240);
+	suby2 = yres / 2 + ((yres == 480) ? 200 : 240);
+#else
+	suby1 = yres / 2 - 240;
+	suby2 = yres / 2 + 240;
+#endif
+	strcpy(subtext, "");
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1 + 4;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// next button
+	button = newButton();
+	strcpy(button->label, ">");
+	button->sizex = strlen(">") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - button->sizex - 4;
+	button->y = suby2 - 24;
+	button->action = &buttonScoreNext;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RIGHT;
+	button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
+
+	// previous button
+	button = newButton();
+	strcpy(button->label, "<");
+	button->sizex = strlen("<") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + 4;
+	button->y = suby2 - 24;
+	button->action = &buttonScorePrev;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_LEFT;
+	button->joykey = joyimpulses[INJOY_DPAD_LEFT];
+
+	// multiplayer scores toggle button
+	button = newButton();
+	strcpy(button->label, "");
+	button->sizex = strlen("show multiplayer") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 44 - strlen("show multiplayer") * 12;
+	button->y = suby1 + 4;
+	button->action = &buttonScoreToggle;
+	button->visible = 1;
+	button->focused = 1;
+
+	// delete single score button
+	button = newButton();
+	strcpy(button->label, "delete score");
+	button->sizex = strlen("delete score") * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 44 - (strlen("delete score") + strlen("show multiplayer") + 1) * 12;
+	button->y = suby1 + 4;
+	button->action = &buttonDeleteScoreWindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
 void buttonDeleteCurrentScore(button_t* my)
 {
 	node_t* node = nullptr;
 	if ( scoreDisplayMultiplayer )
 	{
-		node = list_Node(&topscoresMultiplayer, score_window - 1);
+		node = list_Node(&topscoresMultiplayer, score_window_to_delete - 1);
 		if ( node )
 		{
 			list_RemoveNode(node);
-			score_window = std::max(score_window - 1, 1);
+			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
 		}
 	}
 	else
 	{
-		node = list_Node(&topscores, score_window - 1);
+		node = list_Node(&topscores, score_window_to_delete - 1);
 		if ( node )
 		{
 			list_RemoveNode(node);
-			score_window = std::max(score_window - 1, 1);
+			score_window_to_delete = std::max(score_window_to_delete - 1, 1);
 		}
 	}
-	loadScore(score_window - 1);
 }
 
 // handles slider
@@ -9303,6 +9308,81 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 		openLoadGameWindow(nullptr);
 	}
 	playSound(153, 96);
+}
+
+
+void buttonDeleteScoreCancel(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	buttonOpenScoresWindow(nullptr);
+	score_window = score_window_to_delete;
+	score_window_to_delete = 0;
+
+	loadScore(score_window - 1);
+}
+
+void buttonDeleteScoreConfirm(button_t* my)
+{
+	buttonDeleteCurrentScore(nullptr);
+	buttonDeleteScoreCancel(nullptr);
+}
+
+void buttonDeleteScoreWindow(button_t* my)
+{
+	score_window_to_delete = score_window;
+
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 244;
+	subx2 = xres / 2 + 244;
+	suby1 = yres / 2 - 60;
+	suby2 = yres / 2 + 60;
+	strcpy(subtext, language[3002]);
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonDeleteScoreCancel;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// delete button
+	button = newButton();
+	strcpy(button->label, language[3001]);
+	button->sizex = strlen(language[3001]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 56;
+	button->action = &buttonDeleteScoreConfirm;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+
+	// close button
+	button = newButton();
+	strcpy(button->label, language[2962]);
+	button->sizex = strlen(language[2962]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
+	button->y = suby2 - 28;
+	button->action = &buttonDeleteScoreCancel;
+	button->visible = 1;
+	button->focused = 1;
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
