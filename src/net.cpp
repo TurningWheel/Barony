@@ -2199,6 +2199,12 @@ void clientHandlePacket()
 				case 29:
 					steamAchievement("BARONY_ACH_SPELUNKY");
 					break;
+				case 34:
+					if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
+					{
+						conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
+					}
+					break;
 				default:
 					break;
 			}

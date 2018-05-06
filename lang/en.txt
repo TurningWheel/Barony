@@ -3616,6 +3616,8 @@ anyone seeking that power again, deep underground. #
 2928 Classic#
 2929 Modded#
 2930 Brawler#
+2931 Ultra Speedrunner#
+2932 Speedrunner#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#
