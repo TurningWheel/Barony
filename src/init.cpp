@@ -448,8 +448,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load tiles
-	printlog("loading tiles...\n");
-	fp = openDataFile("images/tiles.txt", "r");
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
+
+	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( numtiles = 0; !feof(fp); numtiles++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -467,7 +470,7 @@ int initApp(char* title, int fullscreen)
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
-	fp = openDataFile("images/tiles.txt", "r");
+	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
