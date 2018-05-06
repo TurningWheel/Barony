@@ -8595,22 +8595,24 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 						limb->pitch = -PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							limb->skill[0] = 1;
-
 							if ( dist > distForFootstepSound )
 							{
-								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( limb->skill[0] == 0 ) // fix for waking up on sleep to reduce repeated sound bytes in race condition.
 								{
-									node_t* tempNode = list_Node(&this->children, 3);
-									if ( tempNode )
+									if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 									{
-										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										node_t* tempNode = list_Node(&this->children, 3);
+										if ( tempNode )
+										{
+											Entity* foot = (Entity*)tempNode->element;
+											playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										}
 									}
-								}
-								else
-								{
-									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									else
+									{
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									}
+									limb->skill[0] = 1;
 								}
 							}
 						}
@@ -8624,21 +8626,24 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 						limb->pitch = PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							limb->skill[0] = 0;
 							if ( dist > distForFootstepSound )
 							{
-								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( limb->skill[0] == 1 ) // fix for waking up on sleep to reduce repeated sound bytes in race condition.
 								{
-									node_t* tempNode = list_Node(&this->children, 3);
-									if ( tempNode )
+									if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 									{
-										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										node_t* tempNode = list_Node(&this->children, 3);
+										if ( tempNode )
+										{
+											Entity* foot = (Entity*)tempNode->element;
+											playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
+										}
 									}
-								}
-								else
-								{
-									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									else
+									{
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
+									}
+									limb->skill[0] = 0;
 								}
 							}
 						}

@@ -653,6 +653,10 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
@@ -687,6 +691,10 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
+				}
+				else if ( entity->pitch <= -PI / 3 )
+				{
+					entity->pitch = 0;
 				}
 				break;
 			// right arm
