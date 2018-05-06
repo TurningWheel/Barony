@@ -42,6 +42,9 @@ Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
 Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;
+int lastCreatedCharacterClass = -1;
+int lastCreatedCharacterAppearance = -1;
+int lastCreatedCharacterSex = -1;
 
 // net stuff
 Uint32 clientplayer = 0;

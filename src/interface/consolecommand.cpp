@@ -124,6 +124,31 @@ void consoleCommand(char* command_str)
 		lastname = (string)name;
 		lastname = lastname.substr(0, lastname.size() - 1);
 	}
+	else if ( !strncmp(command_str, "/lastcharacter ", 15) )
+	{
+		int loadedValues = 0;
+		for ( c = 0; c < strlen(command_str); ++c )
+		{
+			if ( command_str[c] == ' ' )
+			{
+				switch ( loadedValues )
+				{
+					case 0:
+						lastCreatedCharacterSex = atoi(&command_str[c + 1]);
+						break;
+					case 1:
+						lastCreatedCharacterClass = atoi(&command_str[c + 1]);
+						break;
+					case 2:
+						lastCreatedCharacterAppearance = atoi(&command_str[c + 1]);
+						break;
+					default:
+						break;
+				}
+				++loadedValues;
+			}
+		}
+	}
 	else if ( !strncmp(command_str, "/spawnitem ", 11) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )

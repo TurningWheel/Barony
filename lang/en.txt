@@ -3666,4 +3666,6 @@ IDENTICAL MOD LISTS LOADED!#
 2997 This tool is disabled in Brawler-mode!#
 2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#
 2999 Spells are disabled in Brawler-mode!#
+3000 Use Previous Character#
+
 3099 end#
