@@ -1494,15 +1494,63 @@ void buttonAbout(button_t* my)
 
 	menuVisible = 0;
 	subwindow = 1;
-	subx1 = xres / 2 - 160;
-	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 56;
-	suby2 = yres / 2 + 56;
-	strcpy(subtext, "Barony: Map Editor v1.2"
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 300;
+	suby2 = yres / 2 + 300;
+	strcpy(subtext, "Barony: Map Editor v2.4"
 	       "\n\nSee EDITING for full documentation."
 	       "\n\nThis software is copyright 2013 (c)"
 	       "\nSheridan Rathbun, all rights reserved."
-	       "\n\nSee LICENSE for details.\n");
+	       "\n\nSee LICENSE for details.\n\n");
+	strcat(subtext, "Editor File Shortcuts:\n");
+	strcat(subtext, "New Map:                  CTRL + N\n");
+	strcat(subtext, "Open:                     CTRL + O\n");
+	strcat(subtext, "Save:                     CTRL + S\n");
+	strcat(subtext, "Change Load/Save Directory:   CTRL + D\n");
+	strcat(subtext, "Close Window/Dialogue:         CTRL + M\n");
+	strcat(subtext, "Delete Text:               Backspace or Grave (`)\n");
+
+	strcat(subtext, "\nEditor Functions:\n");
+	strcat(subtext, "Open Sprite Window:         S\n");
+	strcat(subtext, "Open Tile Window:            T\n");
+	strcat(subtext, "Sprite Properties:            F2\n");
+	strcat(subtext, "Map Properties:            CTRL + M\n");
+	strcat(subtext, "Delete Selected Sprite:      DEL\n");
+	strcat(subtext, "Cycle Stacked Sprites:         C\n");
+
+	strcat(subtext, "\nNavigation:\n");
+	strcat(subtext, "Move Camera/View:            Arrow Keys\n");
+	strcat(subtext, "Change Current Wall Layer:      SHIFT + Scrollwheel\n");
+	strcat(subtext, "Change Current Wall Layer:      CTRL + U, CTRL + P\n");
+	strcat(subtext, "Toggle First Person Camera:   F\n");
+
+	strcat(subtext, "\nTile Palette (Last Used Tiles):\n");
+	strcat(subtext, "Cycle Through Current Tile Palette:   Scrollwheel\n");
+	strcat(subtext, "Cycle Through All Palettes:         CTRL + Scrollwheel\n");
+	strcat(subtext, "Choose Specific Tile In Palette:      Numpad 0-9\n");
+	strcat(subtext, "Choose Specific Tile In Palette:      Left Click Tile\n");
+	strcat(subtext, "Lock Changes to Current Palette:      Numpad *\n");
+	strcat(subtext, "Go To Next Palette:               Numpad +\n");
+	strcat(subtext, "Go To Previous Palette:            Numpad -\n");
+	strcat(subtext, "Clear Tile in Palette:               Right Click Tile\n");
+
+	strcat(subtext, "Editing Tools:\n");
+	strcat(subtext, "Pencil: Draws currently selected tile on current wall layer.\n");
+	strcat(subtext, "   Does not select sprites. Right click sets the selected tile\n");
+	strcat(subtext, "   under the cursor to selected.\n");
+	strcat(subtext, "Point: Selects sprites only. Sprites can be moved or deleted once\n");
+	strcat(subtext, "   placed and selected with this tool. Left click selects, right\n");
+	strcat(subtext, "   clicking duplicates a sprite and places it the cursor.\n");
+	strcat(subtext, "   When sprites are stacked, only the lowest listed sprite is selected.\n");
+	strcat(subtext, "   Hovering over multiple sprites and cycling with C allows\n");
+	strcat(subtext, "   you to change the order that sprites are drawn in the editor.\n");
+	strcat(subtext, "Brush: Same as pencil, but draws a larger area at once.\n");
+	strcat(subtext, "Select: Selects area of tiles or sprites. Tiles can be copied/\n");
+	strcat(subtext, "   pasted/deleted in groups. Sprites can be moved in groups\n");
+	strcat(subtext, "   with ALT + Arrow Keys. Selection can be moved with CTRL + \n");
+	strcat(subtext, "   Arrow Keys, and resized with SHIFT + Arrow Keys.\n");
+	strcat(subtext, "Fill: Fills in left-clicked area with currently selected tile.\n");
 
 	button = newButton();
 	strcpy(button->label, "OK");
