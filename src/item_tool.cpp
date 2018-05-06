@@ -18,6 +18,7 @@
 #include "colors.hpp"
 #include "items.hpp"
 #include "magic/magic.hpp"
+#include "scores.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -217,22 +218,8 @@ void Item::applyLockpick(int player, Entity& entity)
 						{
 							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						}
-						//spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
-						//TODO: change color?
-						/*entity.flags[USERFLAG2] = true;
-						int bodypart = 0;
-						for ( node_t* node = entity.children.first; node != nullptr; node = node->next )
-						{
-						if ( bodypart >= LIMB_HUMANOID_TORSO )
-						{
-						Entity* tmp = (Entity*)node->element;
-						if ( tmp )
-						{
-						tmp->flags[USERFLAG2] = true;
-						}
-						}
-						++bodypart;
-						}*/
+						serverUpdatePlayerGameplayStats(player, STATISTICS_BOMB_SQUAD, 1);
+						players[player]->entity->awardXP(&entity, true, true);
 					}
 					else
 					{

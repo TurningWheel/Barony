@@ -640,6 +640,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							else
 							{
 								reflection = 3;
+								if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) )
+								{
+									my->actmagicMirrorReflected = 1;
+									my->actmagicMirrorReflectedCaster = parent->getUID();
+								}
 							}
 						}
 					}
@@ -1795,6 +1800,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										entity->skill[15] = false;       // identified
 									}
 
+									if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] >= 41
+										&& map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] <= 49 )
+									{
+										steamAchievementEntity(parent, "BARONY_ACH_BAD_REVIEW");
+									}
+
 									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
 									// send wall destroy info to clients
 									for ( c = 1; c < MAXPLAYERS; c++ )
@@ -2062,26 +2073,48 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spellEffectDrainSoul(*my, *element, parent, resistance);
 				}
 
-				if ( hitstats && player >= 0 )
+				if ( hitstats )
 				{
-					entityHealth -= hitstats->HP;
-					if ( entityHealth > 0 )
+					if ( player >= 0 )
 					{
-						// entity took damage, shake screen.
-						if ( multiplayer == SERVER && player > 0 )
+						entityHealth -= hitstats->HP;
+						if ( entityHealth > 0 )
 						{
-							strcpy((char*)net_packet->data, "SHAK");
-							net_packet->data[4] = 10; // turns into .1
-							net_packet->data[5] = 10;
-							net_packet->address.host = net_clients[player - 1].host;
-							net_packet->address.port = net_clients[player - 1].port;
-							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							// entity took damage, shake screen.
+							if ( multiplayer == SERVER && player > 0 )
+							{
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+							else if ( player == 0 )
+							{
+								camera_shakex += .1;
+								camera_shakey += 10;
+							}
 						}
-						else if ( player == 0 )
+					}
+					else
+					{
+						if ( parent && parent->behavior == &actPlayer )
 						{
-							camera_shakex += .1;
-							camera_shakey += 10;
+							if ( hitstats->HP <= 0 )
+							{
+								if ( hitstats->type == SCARAB )
+								{
+									// killed a scarab with magic.
+									steamAchievementEntity(parent, "BARONY_ACH_THICK_SKULL");
+								}
+								if ( my->actmagicMirrorReflected == 1 && static_cast<Uint32>(my->actmagicMirrorReflectedCaster) == hit.entity->getUID() )
+								{
+									// killed a monster with it's own spell with mirror reflection.
+									steamAchievementEntity(parent, "BARONY_ACH_NARCISSIST");
+								}
+							}
 						}
 					}
 				}
@@ -3322,6 +3355,7 @@ void actParticleSapCenter(Entity* my)
 		entity->skill[13] = my->skill[13];
 		entity->skill[14] = my->skill[14];
 		entity->skill[15] = my->skill[15];
+		entity->itemOriginalOwner = my->itemOriginalOwner;
 		entity->parent = 0;
 
 		// no parent, no target to travel to.

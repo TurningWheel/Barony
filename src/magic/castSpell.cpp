@@ -20,6 +20,7 @@
 #include "../collision.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../scores.hpp"
 
 void castSpellInit(Uint32 caster_uid, spell_t* spell)
 {
@@ -445,6 +446,26 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			result = entity;
 
 			playSoundEntity(entity, 165, 128 );
+			if ( player >= 0 )
+			{
+				if ( !achievementStatusStrobe[player] )
+				{
+					achievementStrobeVec[player].push_back(ticks);
+					if ( achievementStrobeVec[player].size() > 20 )
+					{
+						achievementStrobeVec[player].erase(achievementStrobeVec[player].begin());
+					}
+					Uint32 timeDiff = achievementStrobeVec[player].back() - achievementStrobeVec[player].front();
+					if ( achievementStrobeVec[player].size() == 20 )
+					{
+						if ( timeDiff < 60 * TICKS_PER_SECOND )
+						{
+							achievementStatusStrobe[player] = true;
+							steamAchievementClient(player, "BARONY_ACH_STROBE");
+						}
+					}
+				}
+			}
 		}
 		else if (!strcmp(element->name, spellElement_invisible.name))
 		{
@@ -641,7 +662,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							amount = 8;    //Range checking.
 						}
 					}
+
+					int totalHeal = 0;
+					int oldHP = players[i]->entity->getHP();
 					spell_changeHealth(players[i]->entity, amount);
+					totalHeal += std::max(players[i]->entity->getHP() - oldHP, 0);
+
 					playSoundEntity(caster, 168, 128);
 
 					for ( node = map.creatures->first; node; node = node->next )
@@ -658,10 +684,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
+							oldHP = entity->getHP();
 							spell_changeHealth(entity, amount);
+							totalHeal += std::max(entity->getHP() - oldHP, 0);
+
 							playSoundEntity(entity, 168, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 						}
+					}
+					if ( totalHeal > 0 )
+					{
+						serverUpdatePlayerGameplayStats(i, STATISTICS_HEAL_BOT, totalHeal);
 					}
 					break;
 				}

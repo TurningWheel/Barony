@@ -16,6 +16,7 @@
 #include "menu.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
+#include "entity.hpp"
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
 #ifdef STEAMWORKS
@@ -643,6 +644,8 @@ void steamAchievement(const char* achName)
 		return;
 	}
 
+	//messagePlayer(clientnum, "%s", achName);
+
 	if ( !achievementUnlocked(achName) )
 	{
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
@@ -695,6 +698,162 @@ void steamAchievementClient(int player, const char* achName)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 4 + strlen(achName) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void steamAchievementEntity(Entity* my, const char* achName)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( my->behavior == &actPlayer )
+	{
+		steamAchievementClient(my->skill[2], achName);
+	}
+}
+
+void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
+{
+#ifndef STEAMWORKS
+	return;
+#else
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	{
+		// cheats have been enabled on savefile, disallow statistics update.
+		return;
+	}
+
+	bool result = false;
+	switch ( type )
+	{
+		case STEAM_STAT_INT:
+			g_SteamStats[statisticNum].m_iValue += value;
+			switch ( statisticNum )
+			{
+				case STEAM_STAT_RHINESTONE_COWBOY:
+					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_RHINESTONE_COWBOY_MAX )
+					{
+						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_RHINESTONE_COWBOY_MAX;
+					}
+				case STEAM_STAT_TOUGH_AS_NAILS:
+					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_TOUGH_AS_NAILS_MAX )
+					{
+						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_TOUGH_AS_NAILS_MAX;
+					}
+				case STEAM_STAT_UNSTOPPABLE_FORCE:
+					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_UNSTOPPABLE_FORCE_MAX )
+					{
+						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_UNSTOPPABLE_FORCE_MAX;
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case STEAM_STAT_FLOAT:
+			break;
+		default:
+			break;
+	}
+	g_SteamStatistics->StoreStats(); // update server's stat counter.
+	steamIndicateStatisticProgress(statisticNum, type);
+#endif
+}
+
+void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value)
+{
+#ifndef STEAMWORKS
+	return;
+#else
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	{
+		// cheats have been enabled on savefile, disallow statistics update.
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( player <= 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	else
+	{
+		if ( client_disconnected[player] || multiplayer == SINGLE )
+		{
+			return;
+		}
+		strcpy((char*)net_packet->data, "SSTA");
+		net_packet->data[4] = static_cast<Uint8>(statisticNum);
+		net_packet->data[5] = static_cast<Uint8>(type);
+		net_packet->data[6] = static_cast<Uint8>(value);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+#endif
+}
+
+
+void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
+{
+	int iVal = g_SteamStats[statisticNum].m_iValue;
+	float fVal = g_SteamStats[statisticNum].m_flValue;
+	if ( type == STEAM_STAT_INT )
+	{
+		switch ( statisticNum )
+		{
+			case STEAM_STAT_RHINESTONE_COWBOY:
+				if ( !achievementUnlocked("BARONY_ACH_RHINESTONE_COWBOY") )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
+						if ( iVal == STEAM_STAT_RHINESTONE_COWBOY_MAX )
+						{
+							steamAchievement("BARONY_ACH_RHINESTONE_COWBOY");
+						}
+					}
+				}
+				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
+				break;
+			case STEAM_STAT_TOUGH_AS_NAILS:
+				if ( !achievementUnlocked("BARONY_ACH_TOUGH_AS_NAILS") )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
+						if ( iVal == STEAM_STAT_TOUGH_AS_NAILS_MAX )
+						{
+							steamAchievement("BARONY_ACH_TOUGH_AS_NAILS");
+						}
+					}
+				}
+				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
+				break;
+			case STEAM_STAT_UNSTOPPABLE_FORCE:
+				if ( !achievementUnlocked("BARONY_ACH_UNSTOPPABLE_FORCE") )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
+						if ( iVal == STEAM_STAT_UNSTOPPABLE_FORCE_MAX )
+						{
+							steamAchievement("BARONY_ACH_UNSTOPPABLE_FORCE");
+						}
+					}
+				}
+				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
+				break;
+			default:
+				break;
+		}
 	}
 }
 

@@ -42,6 +42,9 @@ Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
 Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;
+int lastCreatedCharacterClass = -1;
+int lastCreatedCharacterAppearance = -1;
+int lastCreatedCharacterSex = -1;
 
 // net stuff
 Uint32 clientplayer = 0;
@@ -52,6 +55,14 @@ int multiplayer = -1;
 bool directConnect = false;
 CSteamLeaderboards* g_SteamLeaderboards = NULL;
 CSteamWorkshop* g_SteamWorkshop = NULL;
+SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
+{
+	{1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS"},
+	{2, STEAM_STAT_INT, "STAT_WORTHLESS_GLASS"},
+	{3, STEAM_STAT_INT, "STAT_TOUGH_AS_NAILS"},
+	{4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE"}
+};
+CSteamStatistics* g_SteamStatistics = NULL;
 #else
 bool directConnect = true;
 #endif

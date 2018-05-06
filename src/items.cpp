@@ -70,6 +70,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	item->appearance = appearance;
 	item->identified = identified;
 	item->uid = itemuids;
+	item->ownerUid = 0;
 	if ( inventory )
 	{
 		int x, y;
@@ -1070,6 +1071,7 @@ void dropItem(Item* item, int player)
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
 		entity->parent = players[player]->entity->getUID();
+		entity->itemOriginalOwner = entity->parent;
 
 		// play sound
 		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
@@ -1171,6 +1173,23 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 				default:
 					break;
 			}
+			if ( monster->behavior == &actPlayer )
+			{
+				if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
+				{
+					for ( int c = 1; c < MAXPLAYERS; ++c )
+					{
+						if ( players[c] && players[c]->entity && players[c]->entity == monster )
+						{
+							if ( itemIsEquipped(item, c) )
+							{
+								steamAchievementClient(c, "BARONY_ACH_CHOSEN_ONE");
+							}
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1199,7 +1218,23 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		entity->skill[13] = count;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
+		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
+		if ( monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS )
+		{
+			// check if item was stolen.
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					if ( entity->itemOriginalOwner == players[c]->entity->getUID() )
+					{
+						entity->itemStolen = 1;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	item->count -= count;
@@ -2193,7 +2228,18 @@ Item* itemPickup(int player, Item* item)
 	if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 	{
 		item->identified = true;
+		if ( item->type == GEM_GLASS )
+		{
+			steamStatisticUpdate(STEAM_STAT_RHINESTONE_COWBOY, STEAM_STAT_INT, 1);
+		}
 	}
+
+	if ( multiplayer != CLIENT && players[player] && players[player]->entity )
+	{
+		item->ownerUid = players[player]->entity->getUID();
+	}
+
+	//messagePlayer(0, "id: %d", item->ownerUid);
 
 	if ( player != 0 && multiplayer == SERVER )
 	{
@@ -2204,10 +2250,11 @@ Item* itemPickup(int player, Item* item)
 		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
 		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		net_packet->data[24] = item->identified;
+		SDLNet_Write32((Uint32)item->ownerUid, &net_packet->data[24]);
+		net_packet->data[28] = item->identified;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 25;
+		net_packet->len = 29;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 	else
@@ -2237,11 +2284,13 @@ Item* itemPickup(int player, Item* item)
 						net_packet->len = 26;
 						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
+					item2->ownerUid = item->ownerUid;
 					return item2;
 				}
 			}
 		}
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
+		item2->ownerUid = item->ownerUid;
 		return item2;
 	}
 
@@ -2263,7 +2312,9 @@ Item* newItemFromEntity(Entity* entity)
 	{
 		return nullptr;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
+	Item* item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
+	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
+	return item;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3290,7 +3341,7 @@ void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use refe
 	itemToSet->appearance = itemToCopy->appearance;
 	itemToSet->identified = itemToCopy->identified;
 	itemToSet->uid = itemToCopy->uid;
-
+	itemToSet->ownerUid = itemToCopy->ownerUid;
 	return;
 }
 

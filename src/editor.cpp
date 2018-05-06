@@ -1300,6 +1300,10 @@ int main(int argc, char** argv)
 		deinitApp();
 		exit(x);
 	}
+#ifdef STEAMWORKS
+	g_SteamStatistics->RequestStats();
+#endif // STEAMWORKS
+
 
 	copymap.tiles = nullptr;
 	copymap.entities = nullptr;
@@ -1725,12 +1729,25 @@ int main(int argc, char** argv)
 	loadItems();
 	loadTilePalettes();
 
+	bool achievementCartographer = false;
+
 	// main loop
 	printlog( "running main loop.\n");
 	while (mainloop)
 	{
 		// game logic
 		handleEvents();
+
+#ifdef STEAMWORKS
+		SteamAPI_RunCallbacks();
+		if ( SteamUser()->BLoggedOn() && !achievementCartographer )
+		{
+			SteamUserStats()->SetAchievement("BARONY_ACH_CARTOGRAPHER");
+			achievementCartographer = true;
+			SteamUserStats()->StoreStats();
+			//printlog("STEAM ACHIEVEMENT\n");
+		}
+#endif
 
 		// move buttons
 		/*if( !fullscreen ) {
@@ -1763,7 +1780,7 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 1 )
 			{
-				if ((omousex > 16 + butNew->sizex || omousey > 96 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 16 + butNew->sizex || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;

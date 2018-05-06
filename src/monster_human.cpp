@@ -1600,7 +1600,7 @@ bool Entity::humanCanWieldItem(const Item& item) const
 		case ARMOR:
 			return true;
 		case MAGICSTAFF:
-			return true;
+			return false;
 		case THROWN:
 			return false;
 		default:

@@ -38,6 +38,16 @@ CSteamWorkshop::CSteamWorkshop() :
 
 }
 
+CSteamStatistics::CSteamStatistics(SteamStat_t* gStats, int numStatistics) :
+	m_CallbackUserStatsReceived(this, &CSteamStatistics::OnUserStatsReceived),
+	m_CallbackUserStatsStored(this, &CSteamStatistics::OnUserStatsStored),
+	m_bInitialized(false)
+{
+	m_iNumStats = numStatistics;
+	m_pStats = gStats;
+	RequestStats();
+}
+
 void CSteamLeaderboards::FindLeaderboard(const char *pchLeaderboardName)
 {
 	m_CurrentLeaderboard = NULL;
@@ -234,6 +244,136 @@ void CSteamWorkshop::StoreResultMessage(std::string message, EResult result)
 	LastActionResult.actionMsg = message;
 	LastActionResult.lastResult = result;
 	LastActionResult.creationTick = ticks;
+}
+
+bool CSteamStatistics::RequestStats()
+{
+	// Is Steam loaded? If not we can't get stats.
+	if ( NULL == SteamUserStats() || NULL == SteamUser() )
+	{
+		return false;
+	}
+	// Is the user logged on?  If not we can't get stats.
+	if ( !SteamUser()->BLoggedOn() )
+	{
+		return false;
+	}
+	// Request user stats.
+	return SteamUserStats()->RequestCurrentStats();
+}
+
+void CSteamStatistics::OnUserStatsReceived(UserStatsReceived_t *pCallback)
+{
+	// we may get callbacks for other games' stats arriving, ignore them
+	if ( pCallback->m_nGameID == STEAM_APPID )
+	{
+		if ( pCallback->m_eResult == k_EResultOK )
+		{
+			// load stats
+			for ( int iStat = 0; iStat < m_iNumStats; ++iStat )
+			{
+				SteamStat_t &stat = m_pStats[iStat];
+				switch ( stat.m_eStatType )
+				{
+					case STEAM_STAT_INT:
+						SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_iValue);
+						//printlog("%s: %d", stat.m_pchStatName, stat.m_iValue);
+						break;
+					case STEAM_STAT_FLOAT:
+					case STEAM_STAT_AVGRATE:
+						SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_flValue);
+						break;
+					default:
+						break;
+				}
+			}
+			m_bInitialized = true;
+			printlog("[STEAM]: successfully received Steam user statistics.");
+		}
+		else
+		{
+			printlog("[STEAM]: unsuccessfully received Steam user statistics!");
+		}
+	}
+	else
+	{
+		printlog("[STEAM]: unsuccessfully received Steam user statistics, appID (%d) was invalid!", pCallback->m_nGameID);
+	}
+}
+
+bool CSteamStatistics::StoreStats()
+{
+	if ( m_bInitialized )
+	{
+		// load stats
+		for ( int iStat = 0; iStat < m_iNumStats; ++iStat )
+		{
+			SteamStat_t &stat = m_pStats[iStat];
+			switch ( stat.m_eStatType )
+			{
+				case STEAM_STAT_INT:
+					SteamUserStats()->SetStat(stat.m_pchStatName, stat.m_iValue);
+					break;
+				case STEAM_STAT_FLOAT:
+					SteamUserStats()->SetStat(stat.m_pchStatName, stat.m_flValue);
+					break;
+				case STEAM_STAT_AVGRATE:
+					SteamUserStats()->UpdateAvgRateStat(stat.m_pchStatName, stat.m_flAvgNumerator, stat.m_flAvgDenominator);
+					// The averaged result is calculated for us
+					SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_flValue);
+					break;
+				default:
+					break;
+			}
+		}
+		return SteamUserStats()->StoreStats();
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void CSteamStatistics::OnUserStatsStored(UserStatsStored_t *pCallback)
+{
+	// we may get callbacks for other games' stats arriving, ignore them
+	if ( pCallback->m_nGameID == STEAM_APPID )
+	{
+		if ( k_EResultOK == pCallback->m_eResult )
+		{
+			printlog("[STEAM]: successfully stored Steam user statistics.");
+		}
+		else if ( k_EResultInvalidParam == pCallback->m_eResult )
+		{
+			// One or more stats we set broke a constraint. They've been reverted,
+			// and we should re-iterate the values now to keep in sync.
+			printlog("[STEAM]: some Steam user statistics failed to validate, refreshing request!");
+			// Fake up a callback here so that we re-load the values.
+			UserStatsReceived_t callback;
+			callback.m_eResult = k_EResultOK;
+			callback.m_nGameID = STEAM_APPID;
+			OnUserStatsReceived(&callback);
+		}
+		else
+		{
+			printlog("[STEAM]: unsuccessfully stored Steam user statistics!");
+		}
+	}
+}
+
+bool CSteamStatistics::ClearAllStats()
+{
+	if ( m_bInitialized )
+	{
+		if ( SteamUserStats()->ResetAllStats(false) )
+		{
+			RequestStats();
+		}
+	}
+	else
+	{
+		return false;
+	}
 }
 
 #endif // STEAMWORKS

@@ -6180,6 +6180,12 @@ bool forceFollower(Entity& leader, Entity& follower)
 			Stat* oldLeaderStats = oldLeader->getStats();
 			if ( oldLeaderStats )
 			{
+				if ( leader.behavior == &actPlayer 
+					&& oldLeader == &leader
+					&& follower.flags[USERFLAG2] == false )
+				{
+					steamAchievementClient(leader.skill[2], "BARONY_ACH_CONFESSOR");
+				}
 				list_RemoveNodeWithElement<Uint32>(oldLeaderStats->FOLLOWERS, *myuid);
 			}
 		}

@@ -256,26 +256,7 @@ void lichFireDie(Entity* my)
 			}
 		}
 	}
-	/*for ( c = 0; c < MAXPLAYERS; c++ )
-	{
-		playSoundPlayer(c, 153, 128);
-		steamAchievementClient(c, "BARONY_ACH_LICH_HUNTER");
-	}
-	if ( multiplayer == SERVER )
-	{
-		for ( c = 1; c < MAXPLAYERS; c++ )
-		{
-			if ( client_disconnected[c] )
-			{
-				continue;
-			}
-			strcpy((char*)net_packet->data, "BDTH");
-			net_packet->address.host = net_clients[c - 1].host;
-			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 4;
-			sendPacketSafe(net_sock, -1, net_packet, c - 1);
-		}
-	}*/
+
 	spawnExplosion(my->x, my->y, my->z);
 	list_RemoveNode(my->mynode);
 	return;
