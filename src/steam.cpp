@@ -641,10 +641,10 @@ void steamAchievement(const char* achName)
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 	{
 		// cheats have been enabled on savefile, disallow achievements.
-		// return;
+		return;
 	}
 
-	messagePlayer(clientnum, "%s", achName);
+	//messagePlayer(clientnum, "%s", achName);
 
 	if ( !achievementUnlocked(achName) )
 	{
@@ -722,7 +722,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 	{
 		// cheats have been enabled on savefile, disallow statistics update.
-		// return;
+		return;
 	}
 
 	bool result = false;
@@ -770,7 +770,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
 	{
 		// cheats have been enabled on savefile, disallow statistics update.
-		// return;
+		return;
 	}
 
 	if ( multiplayer == CLIENT )
