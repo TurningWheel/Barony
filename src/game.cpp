@@ -701,24 +701,6 @@ void gameLogic(void)
 							case 0:
 								steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
 								break;
-							case 4:
-								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
-								break;
-							case 9:
-								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
-								break;
-							case 14:
-								steamAchievement("BARONY_ACH_SANDMAN");
-								break;
-							case 29:
-								steamAchievement("BARONY_ACH_SPELUNKY");
-								break;
-							case 34:
-								if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
-								{
-									conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
-								}
-								break;
 							default:
 								break;
 						}
@@ -740,6 +722,34 @@ void gameLogic(void)
 						++currentlevel;
 					}
 					skipLevelsOnLoad = 0;
+
+					if ( !secretlevel )
+					{
+						switch ( currentlevel )
+						{
+							case 5:
+								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+								break;
+							case 10:
+								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
+								break;
+							case 15:
+								steamAchievement("BARONY_ACH_SANDMAN");
+								break;
+							case 30:
+								steamAchievement("BARONY_ACH_SPELUNKY");
+								break;
+							case 35:
+								if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
+								{
+									conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
+								}
+								break;
+							default:
+								break;
+						}
+					}
+
 					if ( multiplayer == SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; ++c )
