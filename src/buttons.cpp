@@ -52,6 +52,7 @@ button_t* butAttributes;
 button_t* butClearMap;
 button_t* butHelp;
 button_t* butAbout;
+button_t* butEditorControls;
 button_t* butMonsterHelm;
 button_t* butMonsterWeapon;
 button_t* butMonsterShield;
@@ -1498,11 +1499,11 @@ void buttonAbout(button_t* my)
 	subx2 = xres / 2 + 160;
 	suby1 = yres / 2 - 56;
 	suby2 = yres / 2 + 56;
-	strcpy(subtext, "Barony: Map Editor v1.2"
-	       "\n\nSee EDITING for full documentation."
-	       "\n\nThis software is copyright 2013 (c)"
-	       "\nSheridan Rathbun, all rights reserved."
-	       "\n\nSee LICENSE for details.\n");
+	strcpy(subtext, "Barony: Map Editor v2.4"
+		"\n\nSee EDITING for full documentation."
+		"\n\nThis software is copyright 2018 (c)"
+		"\nSheridan Rathbun, all rights reserved."
+		"\n\nSee LICENSE for details.\n");
 
 	button = newButton();
 	strcpy(button->label, "OK");
@@ -1511,6 +1512,109 @@ void buttonAbout(button_t* my)
 	button->sizex = 24;
 	button->sizey = 16;
 	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+
+	button = newButton();
+	strcpy(button->label, "X");
+	button->x = subx2 - 16;
+	button->y = suby1;
+	button->sizex = 16;
+	button->sizey = 16;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+}
+
+void buttonEditorToolsHelp(button_t* my)
+{
+	node_t* node;
+	node_t* nextnode;
+	button_t* button;
+	for ( node = button_l.first; node != NULL; node = nextnode )
+	{
+		nextnode = node->next;
+		button = (button_t*)node->element;
+		if ( button->focused )
+		{
+			list_RemoveNode(button->node);
+			continue;
+		}
+	}
+	subwindow = 1;
+	if ( newwindow == 16 )
+	{
+		newwindow = 17;
+		subx1 = xres / 2 - 280;
+		subx2 = xres / 2 + 280;
+		suby1 = yres / 2 - 180;
+		suby2 = yres / 2 + 180;
+
+		button = newButton();
+		strcpy(button->label, "OK");
+		button->sizex = 9 * 12 + 8;
+		button->x = xres / 2 - button->sizex - 4;
+		button->y = suby2 - 24;
+		button->sizey = 16;
+		button->action = &buttonCloseSubwindow;
+		button->visible = 1;
+		button->focused = 1;
+
+		button = newButton();
+		strcpy(button->label, "Next Page");
+		button->x = xres / 2 + 4;
+		button->y = suby2 - 24;
+		button->sizex = strlen(button->label) * 12 + 8;
+		button->sizey = 16;
+		button->action = &buttonEditorToolsHelp;
+		button->visible = 1;
+		button->focused = 1;
+
+		button = newButton();
+		strcpy(button->label, "X");
+		button->x = subx2 - 16;
+		button->y = suby1;
+		button->sizex = 16;
+		button->sizey = 16;
+		button->action = &buttonCloseSubwindow;
+		button->visible = 1;
+		button->focused = 1;
+	}
+	else
+	{
+		buttonEditorControls(nullptr);
+	}
+}
+
+void buttonEditorControls(button_t* my)
+{
+	button_t* button;
+
+	menuVisible = 0;
+	subwindow = 1;
+	newwindow = 16;
+	subx1 = xres / 2 - 250;
+	subx2 = xres / 2 + 250;
+	suby1 = yres / 2 - 250;
+	suby2 = yres / 2 + 250;
+
+	button = newButton();
+	strcpy(button->label, "OK");
+	button->sizex = 9 * 12 + 8;
+	button->x = xres / 2 - button->sizex - 4;
+	button->y = suby2 - 24;
+	button->sizey = 16;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+
+	button = newButton();
+	strcpy(button->label, "Next Page");
+	button->x = xres / 2 + 4;
+	button->y = suby2 - 24;
+	button->sizex = strlen(button->label) * 12 + 8;
+	button->sizey = 16;
+	button->action = &buttonEditorToolsHelp;
 	button->visible = 1;
 	button->focused = 1;
 
