@@ -120,6 +120,7 @@ bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game
 bool gamemods_tileListRequireReloadUnmodded = false;
 bool gamemods_booksRequireReloadUnmodded = false;
 bool gamemods_musicRequireReloadUnmodded = false;
+bool gamemods_disableSteamAchievements = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -547,8 +548,19 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 			if ( gamemods_numCurrentModsLoaded >= 0 )
 			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 8 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
+				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 12 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
 			}
+#ifdef STEAMWORKS
+			if ( gamemods_disableSteamAchievements || (intro == false && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) )
+			{
+				TTF_SizeUTF8(ttf8, language[3003], &w, &h);
+				if ( gamemods_numCurrentModsLoaded < 0 )
+				{
+					h = -4;
+				}
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
+			}
+#endif // STEAMWORKS
 
 #ifdef STEAMWORKS
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
@@ -665,11 +677,9 @@ void handleMainMenu(bool mode)
 					bool reloadModels = false;
 					int modelsIndexUpdateStart = 1;
 					int modelsIndexUpdateEnd = nummodels;
-					std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-					if ( modelsDirectory.compare("./") != 0 )
+					if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
 					{
 						reloadModels = true; // we had some models already loaded which should be reset
-						physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd); // grab the indices to use later.
 					}
 					bool reloadSounds = false;
 					std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
@@ -689,14 +699,8 @@ void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
 						GO_SwapBuffers(screen);
 
-						int tmpStart;
-						int tmpEnd;
-						physfsSearchModelsToUpdate(tmpStart, tmpEnd);
-						char cmdString[32] = "/loadmodels ";
-						char buf[32];
-						snprintf(buf, 32, "%d %d", modelsIndexUpdateStart, modelsIndexUpdateEnd);
-						strcat(cmdString, buf);
-						consoleCommand(cmdString);
+						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+						generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
 						gamemods_modelsListLastStartedUnmodded = true;
 					}
 					if ( reloadSounds )
@@ -743,6 +747,8 @@ void handleMainMenu(bool mode)
 						physfsSearchMusicToUpdate();
 						gamemods_musicRequireReloadUnmodded = false;
 					}
+
+					gamemods_disableSteamAchievements = false;
 
 					if ( saveGameExists(true) || saveGameExists(false) )
 					{
@@ -10783,12 +10789,20 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
 	}
 
+	if ( physfsIsMapLevelListModded() )
+	{
+		gamemods_disableSteamAchievements = true;
+	}
+	else
+	{
+		gamemods_disableSteamAchievements = false;
+	}
+
 	int w, h;
 
 	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
 	{
-		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-		if ( modelsDirectory.compare("./") != 0 )
+		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
 		{
 			gamemods_modelsListRequiresReload = true;
 		}
@@ -10807,13 +10821,14 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	// process any new model files encountered in the mod load list.
 	int modelsIndexUpdateStart = 1;
 	int modelsIndexUpdateEnd = nummodels;
-	if ( gamemods_modelsListRequiresReload && physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd) )
+	if ( gamemods_modelsListRequiresReload )
 	{
 		// print a loading message
 		drawClearBuffers();
 		TTF_SizeUTF8(ttf16, language[2989], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
 		GO_SwapBuffers(screen);
+		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
 		gamemods_modelsListRequiresReload = false;
 	}
