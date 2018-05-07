@@ -1705,12 +1705,22 @@ int main(int argc, char** argv)
 
 	// help menu
 	butAbout = button = newButton();
-	strcpy(button->label, "About  F1");
+	strcpy(button->label, "About            F1");
 	button->x = 168;
 	button->y = 16;
-	button->sizex = 80;
+	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonAbout;
+	button->visible = 0;
+
+	// controls menu
+	butEditorControls = button = newButton();
+	strcpy(button->label, "Editor Help       H");
+	button->x = 168;
+	button->y = 32;
+	button->sizex = 160;
+	button->sizey = 16;
+	button->action = &buttonEditorControls;
 	button->visible = 0;
 
 	if ( loadingmap )
@@ -1812,7 +1822,7 @@ int main(int argc, char** argv)
 			}
 			else if ( menuVisible == 5 )
 			{
-				if ((omousex > 168 + butAbout->sizex || omousex < 152 || omousey > 32 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 168 + butAbout->sizex || omousex < 152 || omousey > 48 || (omousey < 32 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
@@ -2413,12 +2423,14 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 5 )
 			{
-				drawWindowFancy(152, 16, 168, 32);
+				drawWindowFancy(152, 16, 168, 48);
 				butAbout->visible = 1;
+				butEditorControls->visible = 1;
 			}
 			else
 			{
 				butAbout->visible = 0;
+				butEditorControls->visible = 0;
 			}
 
 			// subwindows
@@ -5492,6 +5504,163 @@ int main(int argc, char** argv)
 						}
 					}
 				}
+				else if ( newwindow == 16 || newwindow == 17 )
+				{
+					int textColumnLeft = subx1 + 16;
+					int textColumnRight = (subx2 - subx1) / 2 + 300;
+					int pady = suby1 + 16;
+					int spacing = 0;
+					Uint32 colorHeader = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					char helptext[128];
+
+					if ( newwindow == 16 )
+					{
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Editor File Shortcuts:");
+						spacing += 12;
+						strcpy(helptext, "New Map:                            CTRL + N");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Open:                               CTRL + O");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Save:                               CTRL + S");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Change Load/Save Directory:         CTRL + D");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Close Window/Dialogue:              CTRL + M");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Delete Text:                        Backspace or Grave (`)");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 16;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Editor Functions:");
+						spacing += 12;
+						strcpy(helptext, "Open Sprite Window:                 S");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Open Tile Window:                   T");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Sprite Properties:                  F2");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Map Properties:                     CTRL + M");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Delete Selected Sprite:             DEL");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Cycle Stacked Sprites:              C");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 16;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Navigation:");
+						spacing += 12;
+						strcpy(helptext, "Move Camera/View:                   Arrow Keys");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Change Current Wall Layer:          SHIFT + Scrollwheel");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Change Current Wall Layer:          CTRL + U, CTRL + P");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Toggle First Person Camera:         F");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 16;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Tile Palette (Last Used Tiles):");
+						spacing += 12;
+						strcpy(helptext, "Cycle Through Current Tile Palette: Scrollwheel");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Cycle Through All Palettes:         CTRL + Scrollwheel");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Choose Specific Tile In Palette:    Numpad 0-9");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Choose Specific Tile In Palette:    Left Click Tile");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Lock Changes to Current Palette:    Numpad *");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Go To Next Palette:                 Numpad +");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Go To Previous Palette:             Numpad -");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Clear Tile in Palette:              Right Click Tile");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+					}
+					else if ( newwindow == 17 )
+					{
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Editing Tools:");
+						spacing += 20;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Pencil:");
+						strcpy(helptext, "        Draws currently selected tile on current wall layer.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   Does not select sprites. Right click sets the selected tile");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   under the cursor to selected.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Point:");
+						strcpy(helptext, "       Selects sprites only. Sprites can be moved or deleted once");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   placed and selected with this tool. Left click selects, right");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   clicking duplicates a sprite and places it the cursor.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   When sprites are stacked, only the lowest listed sprite is");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   selected. Hovering over multiple sprites and cycling with C");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   allows you to change the order that sprites are drawn in");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   the editor.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Brush:");
+						strcpy(helptext, "       Same as pencil, but draws a larger area at once.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Select:");
+						strcpy(helptext, "        Selects area of tiles or sprites. Tiles can be copied/");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   pasted/deleted in groups. Sprites can be moved in groups");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   with ALT + Arrow Keys. Selection can be moved with CTRL + ");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   Arrow Keys, and resized with SHIFT + Arrow Keys.\n");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Fill:");
+						strcpy(helptext, "      Fills in left-clicked area with currently selected tile.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+					}
+				}
 
 				if ( keystatus[SDL_SCANCODE_ESCAPE] )
 				{
@@ -5501,6 +5670,10 @@ int main(int argc, char** argv)
 						//buttonCloseSpriteSubwindow(NULL);
 					}
 					else if ( openwindow > 0 || savewindow == 1 )
+					{
+						buttonCloseSubwindow(NULL);
+					}
+					if ( newwindow == 16 || newwindow == 17 )
 					{
 						buttonCloseSubwindow(NULL);
 					}
@@ -5519,6 +5692,14 @@ int main(int argc, char** argv)
 					else if ( savewindow == 1 )
 					{
 						//buttonSaveConfirm(NULL);
+					}
+					if ( newwindow == 16 )
+					{
+						buttonEditorToolsHelp(nullptr);
+					}
+					else if ( newwindow == 17 )
+					{
+						buttonCloseSubwindow(nullptr);
 					}
 				}
 			}
@@ -5947,6 +6128,11 @@ int main(int argc, char** argv)
 				{
 					keystatus[SDL_SCANCODE_F1] = 0;
 					buttonAbout(NULL);
+				}
+				if ( keystatus[SDL_SCANCODE_H] )
+				{
+					keystatus[SDL_SCANCODE_H] = 0;
+					buttonEditorControls(NULL);
 				}
 				if ( keystatus[SDL_SCANCODE_1] ) // Switch to Pencil Tool
 				{
