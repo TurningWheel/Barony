@@ -1254,6 +1254,10 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 bool physfsSearchSoundsToUpdate()
 {
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	if ( soundsDirectory.compare("./") != 0 )
+	{
+		return true;
+	}
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
 	char name[128];
