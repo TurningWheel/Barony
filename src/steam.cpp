@@ -638,13 +638,13 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
-	//if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
-	//{
-	//	// cheats/mods have been enabled on savefile, disallow achievements.
-	//	return;
-	//}
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
+	{
+		// cheats/mods have been enabled on savefile, disallow achievements.
+		return;
+	}
 
-	messagePlayer(clientnum, "%s", achName);
+	//messagePlayer(clientnum, "%s", achName);
 
 	if ( !achievementUnlocked(achName) )
 	{
