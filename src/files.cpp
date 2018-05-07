@@ -22,6 +22,9 @@
 #include "sound.hpp"
 #include "entity.hpp"
 #include "book.hpp"
+#include "menu.hpp"
+
+std::vector<int> gamemods_modelsListModifiedIndexes;
 
 /*-------------------------------------------------------------------------------
 
@@ -1105,57 +1108,147 @@ std::string physfsFormatMapName(char* levelfilename)
 	return fullMapPath;
 }
 
-bool physfsSearchModelsToUpdate(int &start, int &end)
+bool physfsSearchModelsToUpdate()
 {
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-	if ( modelsDirectory.compare("./") != 0 )
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	FILE* fp = openDataFile(modelsDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
 	{
-		// models.txt was not in default directory, we should reload the models list.
-		char modelName[128];
-		int startnum = 1;
-		int endnum = nummodels;
-		modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
-		FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
-		for ( int c = 0; !feof(fp); c++ )
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
 		{
-			fscanf(fp, "%s", modelName);
-			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string modelRealDir = PHYSFS_getRealDir(name);
+			if ( modelRealDir.compare("./") != 0 )
 			{
-				break;
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
+{
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	char modelName[128];
+	int startnum = 1;
+	int endnum = nummodels;
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", modelName);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		bool modelHasBeenModified = false;
+		// has this model index been modified?
+		std::vector<int>::iterator it = gamemods_modelsListModifiedIndexes.end();
+		if ( !gamemods_modelsListModifiedIndexes.empty() )
+		{
+			it = std::find(gamemods_modelsListModifiedIndexes.begin(), 
+				gamemods_modelsListModifiedIndexes.end(), c);
+			if ( it != gamemods_modelsListModifiedIndexes.end() )
+			{
+				modelHasBeenModified = true; // found the model in the vector.
+			}
+		}
+
+		std::string modelPath = PHYSFS_getRealDir(modelName);
+		if ( modelHasBeenModified || modelPath.compare("./") != 0 )
+		{
+			if ( !modelHasBeenModified )
+			{
+				// add this model index to say we've modified it as the base dir is not default.
+				gamemods_modelsListModifiedIndexes.push_back(c);
+			}
+			else
+			{
+				if ( modelPath.compare("./") == 0 )
+				{
+					// model returned to base directory, remove from the modified index list.
+					gamemods_modelsListModifiedIndexes.erase(it);
+				}
+			}
+
+			if ( models[c] != NULL )
+			{
+				if ( models[c]->data )
+				{
+					free(models[c]->data);
+				}
+				free(models[c]);
 			}
 			models[c] = loadVoxel(modelName);
-			std::string modelPath = PHYSFS_getRealDir(modelName);
-			if ( modelPath.compare("./") != 0 )
-			{
-				// this index is not found in the normal models folder.
-				// store the lowest found model number inside startnum.
-				if ( startnum == 1 || c < startnum )
-				{
-					startnum = c;
-				}
 
-				// store the higher end model num in endnum.
-				if ( endnum == nummodels )
-				{
-					endnum = c + 1;
-				}
-				else if ( c + 1 > endnum )
-				{
-					endnum = c + 1;
-				}
+			// this index is not found in the normal models folder.
+			// store the lowest found model number inside startnum.
+			if ( startnum == 1 || c < startnum )
+			{
+				startnum = c;
+			}
+
+			// store the higher end model num in endnum.
+			if ( endnum == nummodels )
+			{
+				endnum = c + 1;
+			}
+			else if ( c + 1 > endnum )
+			{
+				endnum = c + 1;
 			}
 		}
-		if ( startnum == endnum )
-		{
-			endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
-		}
-		printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
-		start = startnum;
-		end = endnum;
-		fclose(fp);
-		return true;
 	}
-	return false;
+	if ( startnum == endnum )
+	{
+		endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
+	}
+	printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
+	start = startnum;
+	end = endnum;
+
+	// now free polymodels as we'll be loading them up later.
+	if ( freePreviousModels )
+	{
+		for ( int c = start; c < end; ++c )
+		{
+			if ( polymodels[c].faces )
+			{
+				free(polymodels[c].faces);
+			}
+			if ( polymodels[c].vbo )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+			}
+			if ( polymodels[c].colors )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].colors);
+			}
+			if ( polymodels[c].va )
+			{
+				SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+			}
+			if ( polymodels[c].colors_shifted )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+			}
+		}
+	}
+
+	fclose(fp);
+	return true;
 }
 
 bool physfsSearchSoundsToUpdate()
@@ -1346,4 +1439,104 @@ void physfsReloadTiles(bool reloadAll)
 		}
 	}
 	fclose(fp);
+}
+
+bool physfsIsMapLevelListModded()
+{
+	std::string mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+	if ( mapsDirectory.compare("./") != 0 )
+	{
+		return true;
+	}
+	mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+
+	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+	if ( levelsList.empty() )
+	{
+		return false;
+	}
+	std::string line = levelsList.front();
+	int levelsCounted = 0;
+	for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end(); ++i )
+	{
+		// process i, iterate through all the map levels until currentlevel.
+		line = *i;
+		if ( line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find(' ');
+		char tempstr[1024];
+		if ( found != std::string::npos )
+		{
+			std::string mapType = line.substr(0, found);
+			std::string mapName;
+			mapName = line.substr(found + 1, line.find('\n'));
+			std::size_t carriageReturn = mapName.find('\r');
+			if ( carriageReturn != std::string::npos )
+			{
+				mapName.erase(carriageReturn);
+			}
+			mapName = "maps/" + mapName + ".lmp";
+			//printlog("%s", mapName.c_str());
+			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
+			{
+				mapsDirectory = PHYSFS_getRealDir(mapName.c_str());
+				if ( mapsDirectory.compare("./") != 0 )
+				{
+					return true;
+				}
+			}
+		}
+		++levelsCounted;
+	}
+
+	mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+	if ( mapsDirectory.compare("./") != 0 )
+	{
+		return true;
+	}
+	mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
+
+	levelsList = getLinesFromDataFile(mapsDirectory);
+	if ( levelsList.empty() )
+	{
+		return false;
+	}
+	line = levelsList.front();
+	levelsCounted = 0;
+	for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end(); ++i )
+	{
+		// process i, iterate through all the map levels until currentlevel.
+		line = *i;
+		if ( line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find(' ');
+		char tempstr[1024];
+		if ( found != std::string::npos )
+		{
+			std::string mapType = line.substr(0, found);
+			std::string mapName;
+			mapName = line.substr(found + 1, line.find('\n'));
+			std::size_t carriageReturn = mapName.find('\r');
+			if ( carriageReturn != std::string::npos )
+			{
+				mapName.erase(carriageReturn);
+			}
+			mapName = "maps/" + mapName + ".lmp";
+			//printlog("%s", mapName.c_str());
+			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
+			{
+				mapsDirectory = PHYSFS_getRealDir(mapName.c_str());
+				if ( mapsDirectory.compare("./") != 0 )
+				{
+					return true;
+				}
+			}
+		}
+		++levelsCounted;
+	}
+	return false;
 }
