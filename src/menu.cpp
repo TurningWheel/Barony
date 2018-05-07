@@ -682,10 +682,9 @@ void handleMainMenu(bool mode)
 						reloadModels = true; // we had some models already loaded which should be reset
 					}
 					bool reloadSounds = false;
-					std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-					if ( soundsDirectory.compare("./") != 0 )
+					if ( physfsSearchSoundsToUpdate() )
 					{
-						reloadSounds = true;
+						reloadSounds = true; // we had some sounds already loaded which should be reset
 					}
 
 					gamemodsClearAllMountedPaths();
@@ -10810,8 +10809,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	}
 	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
 	{
-		std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-		if ( soundsDirectory.compare("./") != 0 )
+		if ( physfsSearchSoundsToUpdate() )
 		{
 			gamemods_soundListRequiresReload = true;
 		}
@@ -10823,23 +10821,26 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	int modelsIndexUpdateEnd = nummodels;
 	if ( gamemods_modelsListRequiresReload )
 	{
-		// print a loading message
-		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2989], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
-		GO_SwapBuffers(screen);
-		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
-		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+		{
+			// print a loading message
+			drawClearBuffers();
+			TTF_SizeUTF8(ttf16, language[2989], &w, &h);
+			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
+			GO_SwapBuffers(screen);
+			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+		}
 		gamemods_modelsListRequiresReload = false;
 	}
-	if ( gamemods_soundListRequiresReload && physfsSearchSoundsToUpdate() )
+	if ( gamemods_soundListRequiresReload )
 	{
 		// print a loading message
 		drawClearBuffers();
 		TTF_SizeUTF8(ttf16, language[2987], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
 		GO_SwapBuffers(screen);
-		physfsReloadSounds(false);
+		physfsReloadSounds(true);
 		gamemods_soundListRequiresReload = false;
 	}
 
