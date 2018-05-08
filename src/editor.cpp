@@ -5625,7 +5625,7 @@ int main(int argc, char** argv)
 						spacing += 12;
 						strcpy(helptext, "   clicking duplicates a sprite and places it the cursor.");
 						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
-						spacing += 12;
+						spacing += 20;
 						strcpy(helptext, "   When sprites are stacked, only the lowest listed sprite is");
 						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
 						spacing += 12;
@@ -5638,9 +5638,26 @@ int main(int argc, char** argv)
 						strcpy(helptext, "   the editor.");
 						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
 						spacing += 20;
+						strcpy(helptext, "   Certain sprites like monsters, chests, boulder traps, and most");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   Blessed Addition sprites (sprite 75 and onwards) have extra");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   customisable properties when F2 is pressed while the sprite");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   is selected using this tool. If no sprite is selected, F2");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   will show properties of the last sprite selected.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 20;
 						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Brush:");
 						strcpy(helptext, "       Same as pencil, but draws a larger area at once.");
 						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
 						spacing += 20;
 						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Select:");
 						strcpy(helptext, "        Selects area of tiles or sprites. Tiles can be copied/");
@@ -5654,6 +5671,7 @@ int main(int argc, char** argv)
 						spacing += 12;
 						strcpy(helptext, "   Arrow Keys, and resized with SHIFT + Arrow Keys.\n");
 						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
 						spacing += 20;
 						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Fill:");
 						strcpy(helptext, "      Fills in left-clicked area with currently selected tile.");

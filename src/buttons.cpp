@@ -1547,8 +1547,8 @@ void buttonEditorToolsHelp(button_t* my)
 		newwindow = 17;
 		subx1 = xres / 2 - 280;
 		subx2 = xres / 2 + 280;
-		suby1 = yres / 2 - 180;
-		suby2 = yres / 2 + 180;
+		suby1 = yres / 2 - 190;
+		suby2 = yres / 2 + 190;
 
 		button = newButton();
 		strcpy(button->label, "OK");
@@ -1595,8 +1595,8 @@ void buttonEditorControls(button_t* my)
 	newwindow = 16;
 	subx1 = xres / 2 - 250;
 	subx2 = xres / 2 + 250;
-	suby1 = yres / 2 - 250;
-	suby2 = yres / 2 + 250;
+	suby1 = yres / 2 - 210;
+	suby2 = yres / 2 + 210;
 
 	button = newButton();
 	strcpy(button->label, "OK");
