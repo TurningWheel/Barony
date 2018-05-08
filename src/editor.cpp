@@ -6261,10 +6261,24 @@ int main(int argc, char** argv)
 					pos.y = y;
 					pos.w = sprites[c]->w;
 					pos.h = sprites[c]->h;
-					drawImageScaled(sprites[c], NULL, &pos);
-					for ( x2 = x; x2 < x + sprites[c]->w; x2++ )
+					int scale = 1;
+					if ( pos.w < 16 && pos.h < 16 )
 					{
-						for ( y2 = y; y2 < y + sprites[c]->h; y2++ )
+						scale = 4;
+						pos.w *= scale;
+						pos.h *= scale;
+					}
+					else if ( pos.w < 32 && pos.h < 32 )
+					{
+						scale = 2;
+						pos.w *= scale;
+						pos.h *= scale;
+					}
+
+					drawImageScaled(sprites[c], NULL, &pos);
+					for ( x2 = x; x2 < x + sprites[c]->w * scale; x2++ )
+					{
+						for ( y2 = y; y2 < y + sprites[c]->h * scale; y2++ )
 						{
 							if ( x2 < xres && y2 < yres )
 							{
@@ -6272,13 +6286,13 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					x += sprites[c]->w;
-					z = std::max(z, sprites[c]->h);
+					x += sprites[c]->w * scale;
+					z = std::max(z, sprites[c]->h * scale);
 					if ( c < numsprites - 1 )
 					{
 						if ( sprites[c + 1] != NULL )
 						{
-							if ( x + sprites[c + 1]->w > xres )
+							if ( x + sprites[c + 1]->w * scale > xres )
 							{
 								x = 0;
 								y += z;
@@ -6286,7 +6300,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( x + sprites[0]->w > xres )
+							if ( x + sprites[0]->w * scale > xres )
 							{
 								x = 0;
 								y += z;
