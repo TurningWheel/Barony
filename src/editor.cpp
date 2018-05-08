@@ -6259,12 +6259,12 @@ int main(int argc, char** argv)
 				{
 					pos.x = x;
 					pos.y = y;
-					pos.w = sprites[c]->w * 2;
-					pos.h = sprites[c]->h * 2;
+					pos.w = sprites[c]->w;
+					pos.h = sprites[c]->h;
 					drawImageScaled(sprites[c], NULL, &pos);
-					for ( x2 = x; x2 < x + sprites[c]->w * 2; x2++ )
+					for ( x2 = x; x2 < x + sprites[c]->w; x2++ )
 					{
-						for ( y2 = y; y2 < y + sprites[c]->h * 2; y2++ )
+						for ( y2 = y; y2 < y + sprites[c]->h; y2++ )
 						{
 							if ( x2 < xres && y2 < yres )
 							{
@@ -6272,13 +6272,13 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					x += sprites[c]->w * 2;
-					z = std::max(z, sprites[c]->h * 2);
+					x += sprites[c]->w;
+					z = std::max(z, sprites[c]->h);
 					if ( c < numsprites - 1 )
 					{
 						if ( sprites[c + 1] != NULL )
 						{
-							if ( x + sprites[c + 1]->w * 2 > xres )
+							if ( x + sprites[c + 1]->w > xres )
 							{
 								x = 0;
 								y += z;
@@ -6286,7 +6286,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( x + sprites[0]->w * 2 > xres )
+							if ( x + sprites[0]->w > xres )
 							{
 								x = 0;
 								y += z;
@@ -6301,13 +6301,13 @@ int main(int argc, char** argv)
 					pos.w = TEXTURESIZE;
 					pos.h = TEXTURESIZE;
 					drawImageScaled(sprites[0], NULL, &pos);
-					x += sprites[0]->w * 2;
-					z = std::max(z, sprites[0]->h * 2);
+					x += sprites[0]->w;
+					z = std::max(z, sprites[0]->h);
 					if ( c < numsprites - 1 )
 					{
 						if ( sprites[c + 1] != NULL )
 						{
-							if ( x + sprites[c + 1]->w * 2 > xres )
+							if ( x + sprites[c + 1]->w > xres )
 							{
 								x = 0;
 								y += z;
@@ -6315,7 +6315,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( x + sprites[0]->w * 2 > xres )
+							if ( x + sprites[0]->w > xres )
 							{
 								x = 0;
 								y += z;
