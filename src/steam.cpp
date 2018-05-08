@@ -644,6 +644,10 @@ void steamAchievement(const char* achName)
 		return;
 	}
 
+	if ( !strcmp(achName, "BARONY_ACH_BOOTS_OF_SPEED") )
+	{
+		conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1; // to cover bases when lich or devil dies as we can't remotely update this for clients.
+	}
 	//messagePlayer(clientnum, "%s", achName);
 
 	if ( !achievementUnlocked(achName) )

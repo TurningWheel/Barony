@@ -6004,6 +6004,77 @@ void handleMainMenu(bool mode)
 				savethisgame = false;
 			}
 
+			if ( victory )
+			{
+				// conduct achievements
+				if ( (victory == 1 && currentlevel >= 20)
+					|| (victory == 2 && currentlevel >= 24)
+					|| (victory == 3 && currentlevel >= 35) )
+				{
+					if ( conductPenniless )
+					{
+						steamAchievement("BARONY_ACH_PENNILESS_CONDUCT");
+					}
+					if ( conductFoodless )
+					{
+						steamAchievement("BARONY_ACH_FOODLESS_CONDUCT");
+					}
+					if ( conductVegetarian )
+					{
+						steamAchievement("BARONY_ACH_VEGETARIAN_CONDUCT");
+					}
+					if ( conductIlliterate )
+					{
+						steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
+					}
+
+					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+					{
+						steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
+						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
+					}
+				}
+
+				if ( victory == 1 )
+				{
+					if ( currentlevel >= 20 )
+					{
+						if ( conductGameChallenges[CONDUCT_HARDCORE] )
+						{
+							steamAchievement("BARONY_ACH_HARDCORE");
+						}
+					}
+				}
+				else if ( victory == 2 )
+				{
+					if ( currentlevel >= 24 )
+					{
+						if ( conductGameChallenges[CONDUCT_HARDCORE] )
+						{
+							steamAchievement("BARONY_ACH_HARDCORE");
+						}
+					}
+				}
+				else if ( victory == 3 )
+				{
+					if ( currentlevel >= 35 )
+					{
+						if ( conductGameChallenges[CONDUCT_BRAWLER] )
+						{
+							steamAchievement("BARONY_ACH_BRAWLER");
+						}
+						if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
+						{
+							steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
+						}
+						if ( conductGameChallenges[CONDUCT_HARDCORE] )
+						{
+							steamAchievement("BARONY_ACH_POST_HARDCORE");
+						}
+					}
+				}
+			}
+
 			// reset game
 			darkmap = false;
 			appraisal_timer = 0;
@@ -6111,61 +6182,17 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				// conduct achievements
-				if ( conductPenniless )
-				{
-					steamAchievement("BARONY_ACH_PENNILESS_CONDUCT");
-				}
-				if ( conductFoodless )
-				{
-					steamAchievement("BARONY_ACH_FOODLESS_CONDUCT");
-				}
-				if ( conductVegetarian )
-				{
-					steamAchievement("BARONY_ACH_VEGETARIAN_CONDUCT");
-				}
-				if ( conductIlliterate )
-				{
-					steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
-				}
-
-				if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
-				{
-					steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
-					conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
-				}
-
 				if ( victory == 1 )
 				{
 					introstage = 7;
-					if ( conductGameChallenges[CONDUCT_HARDCORE] )
-					{
-						steamAchievement("BARONY_ACH_HARDCORE");
-					}
 				}
 				else if ( victory == 2 )
 				{
 					introstage = 8;
-					if ( conductGameChallenges[CONDUCT_HARDCORE] )
-					{
-						steamAchievement("BARONY_ACH_HARDCORE");
-					}
 				}
 				else if ( victory == 3 )
 				{
 					introstage = 10;
-					if ( conductGameChallenges[CONDUCT_BRAWLER] )
-					{
-						steamAchievement("BARONY_ACH_BRAWLER");
-					}
-					if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
-					{
-						steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
-					}
-					if ( conductGameChallenges[CONDUCT_HARDCORE] )
-					{
-						steamAchievement("BARONY_ACH_POST_HARDCORE");
-					}
 				}
 			}
 
