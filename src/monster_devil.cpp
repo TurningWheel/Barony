@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 void initDevil(Entity* my, Stat* myStats)
 {
@@ -212,6 +213,12 @@ void devilDie(Entity* my)
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
 		steamAchievementClient(c, "BARONY_ACH_EVIL_INCARNATE");
+		if ( completionTime < 20 * 60 * TICKS_PER_SECOND
+			&& currentlevel >= 24 )
+		{
+			//messagePlayer(c, "completion time: %d", completionTime);
+			steamAchievementClient(c, "BARONY_ACH_BOOTS_OF_SPEED");
+		}
 		messagePlayer(c, language[1112]);
 		playSoundPlayer(c, 97, 128);
 		stats[c]->STR += 20;
