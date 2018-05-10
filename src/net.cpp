@@ -32,6 +32,7 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+#include "scores.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -878,6 +879,61 @@ void serverUpdatePlayerStats()
 
 /*-------------------------------------------------------------------------------
 
+serverUpdatePlayerGameplayStats
+
+Updates given players gameplayStatistics value by given increment.
+
+-------------------------------------------------------------------------------*/
+void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( client_disconnected[player] )
+	{
+		return;
+	}
+	if ( player == 0 )
+	{
+		if ( gameplayStat == STATISTICS_TEMPT_FATE )
+		{
+			if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
+			{
+				// don't change, completed task.
+			}
+			else
+			{
+				if ( changeval == 5 )
+				{
+					gameStatistics[gameplayStat] = changeval;
+				}
+				else if ( changeval == 1 && gameStatistics[gameplayStat] > 0 )
+				{
+					gameStatistics[gameplayStat] = -1;
+				}
+			}
+		}
+		else
+		{
+			gameStatistics[gameplayStat] += changeval;
+		}
+	}
+	else
+	{
+		strcpy((char*)net_packet->data, "GPST");
+		SDLNet_Write32(gameplayStat, &net_packet->data[4]);
+		SDLNet_Write32(changeval, &net_packet->data[8]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+	//messagePlayer(clientnum, "sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+}
+
+/*-------------------------------------------------------------------------------
+
 serverUpdatePlayerLVL
 
 Updates all player current LVL for clients
@@ -1246,6 +1302,14 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SACH", 4))
 	{
 		steamAchievement((char*)(&net_packet->data[4]));
+		return;
+	}
+
+	// update steam statistic
+	else if ( !strncmp((char*)net_packet->data, "SSTA", 4) )
+	{
+		steamStatisticUpdate(static_cast<int>(net_packet->data[4]), 
+			static_cast<ESteamStatTypes>(net_packet->data[5]), static_cast<int>(net_packet->data[6]));
 		return;
 	}
 
@@ -1618,7 +1682,8 @@ void clientHandlePacket()
 	// get item
 	else if (!strncmp((char*)net_packet->data, "ITEM", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
+		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
 		itemPickup(clientnum, item);
 		free(item);
 		return;
@@ -2027,6 +2092,36 @@ void clientHandlePacket()
 		}
 	}
 
+	// update player statistics
+	else if ( !strncmp((char*)net_packet->data, "GPST", 4) )
+	{
+		int gameplayStat = SDLNet_Read32(&net_packet->data[4]);
+		int changeval = SDLNet_Read32(&net_packet->data[8]);
+		if ( gameplayStat == STATISTICS_TEMPT_FATE )
+		{
+			if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
+			{
+				// don't change, completed task.
+			}
+			else
+			{
+				if ( changeval == 5 )
+				{
+					gameStatistics[gameplayStat] = changeval;
+				}
+				else if ( changeval == 1 && gameStatistics[gameplayStat] > 0 )
+				{
+					gameStatistics[gameplayStat] = -1;
+				}
+			}
+		}
+		else
+		{
+			gameStatistics[gameplayStat] += changeval;
+		}
+		//messagePlayer(clientnum, "received: %d, %d, val: %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	}
+
 	// update player levels
 	else if ( !strncmp((char*)net_packet->data, "UPLV", 4) )
 	{
@@ -2089,25 +2184,45 @@ void clientHandlePacket()
 		{
 			switch ( currentlevel )
 			{
-				case 0:
-					steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
-					break;
-				case 4:
-					steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
-					break;
-				case 9:
-					steamAchievement("BARONY_ACH_JUNGLE_FEVER");
-					break;
-				case 14:
-					steamAchievement("BARONY_ACH_SANDMAN");
-					break;
-
+			case 0:
+				steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
+				break;
+			default:
+				break;
 			}
 		}
 
 		// setup level change
 		printlog("Received order to change level.\n");
 		currentlevel = net_packet->data[13];
+		
+		if ( !secretlevel )
+		{
+			switch ( currentlevel )
+			{
+				case 5:
+					steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+					break;
+				case 10:
+					steamAchievement("BARONY_ACH_JUNGLE_FEVER");
+					break;
+				case 15:
+					steamAchievement("BARONY_ACH_SANDMAN");
+					break;
+				case 30:
+					steamAchievement("BARONY_ACH_SPELUNKY");
+					break;
+				case 35:
+					if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
+					{
+						conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
+					}
+					break;
+				default:
+					break;
+			}
+		}
+
 		list_FreeAll(&removedEntities);
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
@@ -2133,57 +2248,9 @@ void clientHandlePacket()
 		numplayers = 0;
 		entity_uids = (Uint32)SDLNet_Read32(&net_packet->data[9]);
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
-		if ( !secretlevel )
-		{
-			fp = openDataFile(LEVELSFILE, "r");
-		}
-		else
-		{
-			fp = openDataFile(SECRETLEVELSFILE, "r");
-		}
-		for ( i = 0; i < currentlevel; ++i )
-		{
-			while ( fgetc(fp) != '\n' )
-			{
-				if ( feof(fp) )
-				{
-					break;
-				}
-			}
-		}
-		fscanf(fp, "%s", tempstr);
-		while ( fgetc(fp) != ' ' )
-		{
-			if ( feof(fp) )
-			{
-				break;
-			}
-		}
-		if ( !strcmp(tempstr, "gen:") )
-		{
-			fscanf(fp, "%s", tempstr);
-			while ( fgetc(fp) != '\n' )
-			{
-				if ( feof(fp) )
-				{
-					break;
-				}
-			}
-			result = generateDungeon(tempstr, mapseed);
-		}
-		else if ( !strcmp(tempstr, "map:") )
-		{
-			fscanf(fp, "%s", tempstr);
-			while ( fgetc(fp) != '\n' )
-			{
-				if ( feof(fp) )
-				{
-					break;
-				}
-			}
-			result = loadMap(tempstr, &map, map.entities, map.creatures);
-		}
-		fclose(fp);
+
+		physfsLoadMapFile(currentlevel, mapseed, false);
+
 		numplayers = 0;
 		assignActions(&map);
 		generatePathMaps();

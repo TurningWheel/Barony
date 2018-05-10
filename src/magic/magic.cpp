@@ -277,7 +277,10 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		)
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-		messagePlayerColor(parent->skill[2], color, language[2429]);
+		if ( parent )
+		{
+			messagePlayerColor(parent->skill[2], color, language[2429]);
+		}
 		return false;
 	}
 
@@ -313,6 +316,16 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		}
 
 		caster.drainMP(hitstats->HP); //Drain additional MP equal to health of monster.
+		Stat* casterStats = caster.getStats();
+		if ( casterStats && casterStats->HP <= 0 )
+		{
+			// uh oh..
+			if ( casterStats->amulet && casterStats->amulet->type == AMULET_LIFESAVING && casterStats->amulet->beatitude >= 0 )
+			{
+				// we're good!
+				steamAchievementEntity(&caster, "BARONY_ACH_LIFE_FOR_A_LIFE");
+			}
+		}
 	}
 
 	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
@@ -531,7 +544,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					spellEntity->skill[13] = hitstats->weapon->count;
 					spellEntity->skill[14] = hitstats->weapon->appearance;
 					spellEntity->skill[15] = hitstats->weapon->identified;
-
+					spellEntity->itemOriginalOwner = hit.entity->getUID();
 					// hit messages
 					if ( player >= 0 )
 					{

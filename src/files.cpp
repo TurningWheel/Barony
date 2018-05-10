@@ -21,6 +21,10 @@
 #include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
+#include "book.hpp"
+#include "menu.hpp"
+
+std::vector<int> gamemods_modelsListModifiedIndexes;
 
 /*-------------------------------------------------------------------------------
 
@@ -60,6 +64,14 @@ bool completePath(char *dest, const char * const filename) {
 		strncpy(dest, filename, 1024);
 		return true;
 	}
+
+#ifdef WINDOWS
+	// Already absolute (drive letter in path)
+	if ( filename[1] == ':' ) {
+		strncpy(dest, filename, 1024);
+		return true;
+	}
+#endif
 
 	snprintf(dest, 1024, "%s/%s", datadir, filename);
 	return true;
@@ -156,8 +168,10 @@ voxel_t* loadVoxel(char* filename)
 	{
 		//bool has_ext = strstr(filename, ".vox") == NULL;
 		//snprintf(filename2, 1024, "%s%s", filename, has_ext ? "" : ".vox");
+		std::string filenamePath = PHYSFS_getRealDir(filename);
+		filenamePath.append(PHYSFS_getDirSeparator()).append(filename);
 
-		if ((file = openDataFile(filename, "rb")) == NULL)
+		if ((file = openDataFile(filenamePath.c_str(), "rb")) == NULL)
 		{
 			return NULL;
 		}
@@ -197,7 +211,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
+int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* creatureList)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -210,7 +224,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 	Stat* dummyStats;
 	sex_t s;
 	int editorVersion = 0;
-	char filename[256];
+	char filename[1024];
 
 	char oldmapname[64];
 	strcpy(oldmapname, map.name);
@@ -223,8 +237,16 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 		return -1;
 	}
 
-	strcpy(filename, "maps/");
-	strcat(filename, filename2);
+	if ( !PHYSFS_isInit() )
+	{
+		strcpy(filename, "maps/");
+		strcat(filename, filename2);
+	}
+	else
+	{
+		strcpy(filename, filename2);
+	}
+
 
 	// add extension if missing
 	if ( strstr(filename, ".lmp") == nullptr )
@@ -663,7 +685,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist, list_t* creatureLi
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char* filename2)
+int saveMap(const char* filename2)
 {
 	FILE* fp;
 	Uint32 numentities = 0;
@@ -675,13 +697,21 @@ int saveMap(char* filename2)
 
 	if ( filename2 != NULL && strcmp(filename2, "") )
 	{
-		strcpy(filename, "maps/");
-		strcat(filename, filename2);
+		if ( !PHYSFS_isInit() )
+		{
+			strcpy(filename, "maps/");
+			strcat(filename, filename2);
+		}
+		else
+		{
+			strcpy(filename, filename2);
+		}
 
 		if ( strstr(filename, ".lmp") == NULL )
 		{
 			strcat(filename, ".lmp");
 		}
+
 		if ((fp = openDataFile(filename, "wb")) == NULL)
 		{
 			printlog("warning: failed to open file '%s' for map saving!\n", filename);
@@ -879,7 +909,7 @@ out_input_file:
 
 -------------------------------------------------------------------------------*/
 
-std::list<std::string> directoryContents(const char* directory)
+std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
@@ -904,9 +934,19 @@ std::list<std::string> directoryContents(const char* directory)
 		{
 			continue;
 		}
-		if ((cur.st_mode & S_IFMT) == S_IFREG)
+		if ( includeFiles )
 		{
-			list.push_back(entry->d_name);
+			if ((cur.st_mode & S_IFMT) == S_IFREG)
+			{
+				list.push_back(entry->d_name);
+			}
+		}
+		if ( includeSubdirectory )
+		{
+			if ((cur.st_mode & S_IFMT) == S_IFDIR)
+			{
+				list.push_back(entry->d_name);
+			}
 		}
 	}
 
@@ -924,18 +964,583 @@ std::vector<std::string> getLinesFromDataFile(std::string filename)
 	std::ifstream file(filepath);
 	if ( !file )
 	{
-		printlog("Error: Failed to open file \"%s\"", filename.c_str());
-		return lines;
-	}
-	std::string line;
-	while ( std::getline(file, line) )
-	{
-		if ( !line.empty() )
+		std::ifstream file(filename); // check absolute path.
+		if ( !file)
 		{
-			lines.push_back(line);
+			printlog("Error: Failed to open file \"%s\"", filename.c_str());
+			return lines;
+		}
+		else
+		{
+			std::string line;
+			while ( std::getline(file, line) )
+			{
+				if ( !line.empty() )
+				{
+					lines.push_back(line);
+				}
+			}
+			file.close();
 		}
 	}
-	file.close();
+	else
+	{
+		std::string line;
+		while ( std::getline(file, line) )
+		{
+			if ( !line.empty() )
+			{
+				lines.push_back(line);
+			}
+		}
+		file.close();
+	}
 
 	return lines;
+}
+
+int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed)
+{
+	std::string mapsDirectory; // store the full file path here.
+	if ( !secretlevel )
+	{
+		mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+		mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+	}
+	else
+	{
+		mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+		mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
+	}
+	printlog("Maps directory: %s", mapsDirectory.c_str());
+	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+	std::string line = levelsList.front();
+	int levelsCounted = 0;
+	if ( levelToLoad > 0 ) // if level == 0, then load up the first map.
+	{
+		for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end() && levelsCounted <= levelToLoad; ++i )
+		{
+			// process i, iterate through all the map levels until currentlevel.
+			line = *i;
+			if ( line[0] == '\n' )
+			{
+				continue;
+			}
+			++levelsCounted;
+		}
+	}
+	std::size_t found = line.find(' ');
+	char tempstr[1024];
+	if ( found != std::string::npos )
+	{
+		std::string mapType = line.substr(0, found);
+		std::string mapName;
+		mapName = line.substr(found + 1, line.find('\n'));
+		std::size_t carriageReturn = mapName.find('\r');
+		if ( carriageReturn != std::string::npos )
+		{
+			mapName.erase(carriageReturn);
+			printlog("%s", mapName.c_str());
+		}
+		if ( mapType.compare("map:") == 0 )
+		{
+			strncpy(tempstr, mapName.c_str(), mapName.length());
+			tempstr[mapName.length()] = '\0';
+			mapName = physfsFormatMapName(tempstr);
+			return loadMap(mapName.c_str(), &map, map.entities, map.creatures);
+		}
+		else if ( mapType.compare("gen:") == 0 )
+		{
+			strncpy(tempstr, mapName.c_str(), mapName.length());
+			tempstr[mapName.length()] = '\0';
+			if ( useRandSeed )
+			{
+				return generateDungeon(tempstr, rand());
+			}
+			else
+			{
+				return generateDungeon(tempstr, seed);
+			}
+		}
+		//printlog("%s", mapName.c_str());
+	}
+	return 0;
+}
+
+std::list<std::string> physfsGetFileNamesInDirectory(const char* dir)
+{
+	std::list<std::string> filenames;
+	char **rc = PHYSFS_enumerateFiles(dir);
+	if ( *rc == NULL )
+	{
+		printlog("[PhysFS]: Error: Failed to enumerate filenames in directory '%s'", dir);
+		return filenames;
+	}
+	char **i;
+	char buf[1024];
+	std::string file;
+	for ( i = rc; *i != NULL; i++ )
+	{
+		file = *i;
+		//printlog(" * We've got [%s].\n", file.c_str());
+		filenames.push_back(file);
+	}
+	PHYSFS_freeList(rc);
+	return filenames;
+}
+
+std::string physfsFormatMapName(char* levelfilename)
+{
+	std::string fullMapPath;
+	std::string mapFileName = "maps/";
+	mapFileName.append(levelfilename);
+	if ( mapFileName.find(".lmp") == std::string::npos )
+	{
+		mapFileName.append(".lmp");
+	}
+	//printlog("format map name: %s", mapFileName.c_str());
+	if ( PHYSFS_getRealDir(mapFileName.c_str()) != NULL )
+	{
+		//printlog("format map name: %s", mapFileName.c_str());
+		fullMapPath = PHYSFS_getRealDir(mapFileName.c_str());
+		fullMapPath.append(PHYSFS_getDirSeparator()).append(mapFileName);
+	}
+	return fullMapPath;
+}
+
+bool physfsSearchModelsToUpdate()
+{
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	FILE* fp = openDataFile(modelsDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string modelRealDir = PHYSFS_getRealDir(name);
+			if ( modelRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
+{
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	char modelName[128];
+	int startnum = 1;
+	int endnum = nummodels;
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", modelName);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		bool modelHasBeenModified = false;
+		// has this model index been modified?
+		std::vector<int>::iterator it = gamemods_modelsListModifiedIndexes.end();
+		if ( !gamemods_modelsListModifiedIndexes.empty() )
+		{
+			it = std::find(gamemods_modelsListModifiedIndexes.begin(), 
+				gamemods_modelsListModifiedIndexes.end(), c);
+			if ( it != gamemods_modelsListModifiedIndexes.end() )
+			{
+				modelHasBeenModified = true; // found the model in the vector.
+			}
+		}
+
+		std::string modelPath = PHYSFS_getRealDir(modelName);
+		if ( modelHasBeenModified || modelPath.compare("./") != 0 )
+		{
+			if ( !modelHasBeenModified )
+			{
+				// add this model index to say we've modified it as the base dir is not default.
+				gamemods_modelsListModifiedIndexes.push_back(c);
+			}
+			else
+			{
+				if ( modelPath.compare("./") == 0 )
+				{
+					// model returned to base directory, remove from the modified index list.
+					gamemods_modelsListModifiedIndexes.erase(it);
+				}
+			}
+
+			if ( models[c] != NULL )
+			{
+				if ( models[c]->data )
+				{
+					free(models[c]->data);
+				}
+				free(models[c]);
+			}
+			models[c] = loadVoxel(modelName);
+
+			// this index is not found in the normal models folder.
+			// store the lowest found model number inside startnum.
+			if ( startnum == 1 || c < startnum )
+			{
+				startnum = c;
+			}
+
+			// store the higher end model num in endnum.
+			if ( endnum == nummodels )
+			{
+				endnum = c + 1;
+			}
+			else if ( c + 1 > endnum )
+			{
+				endnum = c + 1;
+			}
+		}
+	}
+	if ( startnum == endnum )
+	{
+		endnum = std::min(static_cast<int>(nummodels), endnum + 1); // if both indices are the same, then models won't load.
+	}
+	printlog("[PhysFS]: Models file not in default directory... reloading models from index %d to %d\n", startnum, endnum);
+	start = startnum;
+	end = endnum;
+
+	// now free polymodels as we'll be loading them up later.
+	if ( freePreviousModels )
+	{
+		for ( int c = start; c < end; ++c )
+		{
+			if ( polymodels[c].faces )
+			{
+				free(polymodels[c].faces);
+			}
+			if ( polymodels[c].vbo )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].vbo);
+			}
+			if ( polymodels[c].colors )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].colors);
+			}
+			if ( polymodels[c].va )
+			{
+				SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+			}
+			if ( polymodels[c].colors_shifted )
+			{
+				SDL_glDeleteBuffers(1, &polymodels[c].colors_shifted);
+			}
+		}
+	}
+
+	fclose(fp);
+	return true;
+}
+
+bool physfsSearchSoundsToUpdate()
+{
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	if ( soundsDirectory.compare("./") != 0 )
+	{
+		return true;
+	}
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string soundRealDir = PHYSFS_getRealDir(name);
+			if ( soundRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadSounds(bool reloadAll)
+{
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	FILE* fp = openDataFile(soundsDirectory.c_str(), "r");
+	char name[128];
+
+	printlog("freeing sounds and loading modded sounds...\n");
+	if ( reloadAll )
+	{
+		if ( sounds != NULL )
+		{
+			for ( int c = 0; c < numsounds; c++ )
+			{
+				if ( sounds[c] != NULL )
+				{
+#ifdef USE_FMOD
+					FMOD_Sound_Release(sounds[c]);    //Free the sound in FMOD
+#elif USE_OPENAL
+					OPENAL_Sound_Release(sounds[c]); //Free the sound in OPENAL
+#endif
+				}
+			}
+		}
+	}
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string soundRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || soundRealDir.compare("./") != 0 )
+			{
+				std::string soundFile = soundRealDir;
+				soundFile.append(PHYSFS_getDirSeparator()).append(name);
+#ifdef USE_FMOD
+				if ( !reloadAll )
+				{
+					FMOD_Sound_Release(sounds[c]);
+				}
+				fmod_result = FMOD_System_CreateSound(fmod_system, soundFile.c_str(), (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
+				if ( FMODErrorCheck() )
+				{
+					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
+				}
+#elif USE_OPENAL
+				if ( !reloadAll )
+				{
+					OPENAL_Sound_Release(sounds[c]);
+				}
+				OPENAL_CreateSound(name, true, &sounds[c]);
+#endif 
+			}
+		}
+	}
+	fclose(fp);
+}
+
+bool physfsSearchTilesToUpdate()
+{
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string tileRealDir = PHYSFS_getRealDir(name);
+			if ( tileRealDir.compare("./") != 0 )
+			{
+				fclose(fp);
+				printlog("[PhysFS]: Found modified tile in tiles/ directory, reloading all tiles...");
+				return true;
+			}
+		}
+	}
+	fclose(fp);
+	return false;
+}
+
+void physfsReloadTiles(bool reloadAll)
+{
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	printlog("[PhysFS]: Loading tiles from directory %s...\n", tilesDirectory.c_str());
+	FILE* fp = openDataFile(tilesDirectory.c_str(), "r");
+	char name[128];
+
+	for ( int c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		if ( PHYSFS_getRealDir(name) != NULL )
+		{
+			std::string tileRealDir = PHYSFS_getRealDir(name);
+			if ( reloadAll || tileRealDir.compare("./") != 0 )
+			{
+				std::string tileFile = tileRealDir;
+				tileFile.append(PHYSFS_getDirSeparator()).append(name);
+				if ( tiles[c] )
+				{
+					SDL_FreeSurface(tiles[c]);
+				}
+				strncpy(name, tileFile.c_str(), 127);
+				tiles[c] = loadImage(name);
+				animatedtiles[c] = false;
+				lavatiles[c] = false;
+				swimmingtiles[c] = false;
+				if ( tiles[c] != NULL )
+				{
+					for ( int x = 0; x < strlen(name); x++ )
+					{
+						if ( name[x] >= '0' && name[x] < '9' )
+						{
+							// animated tiles if the tile name ends in a number 0-9.
+							animatedtiles[c] = true;
+							break;
+						}
+					}
+					if ( strstr(name, "Lava") || strstr(name, "lava") )
+					{
+						lavatiles[c] = true;
+					}
+					if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+					{
+						swimmingtiles[c] = true;
+					}
+				}
+				else
+				{
+					printlog("warning: failed to load '%s' listed at line %d in %s\n", name, c + 1, tilesDirectory.c_str());
+					if ( c == 0 )
+					{
+						printlog("tile 0 cannot be NULL!\n");
+						fclose(fp);
+						return;
+					}
+				}
+			}
+		}
+	}
+	fclose(fp);
+}
+
+bool physfsIsMapLevelListModded()
+{
+	std::string mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
+	if ( mapsDirectory.compare("./") != 0 )
+	{
+		return true;
+	}
+	mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
+
+	std::vector<std::string> levelsList = getLinesFromDataFile(mapsDirectory);
+	if ( levelsList.empty() )
+	{
+		return false;
+	}
+	std::string line = levelsList.front();
+	int levelsCounted = 0;
+	for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end(); ++i )
+	{
+		// process i, iterate through all the map levels until currentlevel.
+		line = *i;
+		if ( line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find(' ');
+		char tempstr[1024];
+		if ( found != std::string::npos )
+		{
+			std::string mapType = line.substr(0, found);
+			std::string mapName;
+			mapName = line.substr(found + 1, line.find('\n'));
+			std::size_t carriageReturn = mapName.find('\r');
+			if ( carriageReturn != std::string::npos )
+			{
+				mapName.erase(carriageReturn);
+			}
+			mapName = "maps/" + mapName + ".lmp";
+			//printlog("%s", mapName.c_str());
+			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
+			{
+				mapsDirectory = PHYSFS_getRealDir(mapName.c_str());
+				if ( mapsDirectory.compare("./") != 0 )
+				{
+					return true;
+				}
+			}
+		}
+		++levelsCounted;
+	}
+
+	mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
+	if ( mapsDirectory.compare("./") != 0 )
+	{
+		return true;
+	}
+	mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
+
+	levelsList = getLinesFromDataFile(mapsDirectory);
+	if ( levelsList.empty() )
+	{
+		return false;
+	}
+	line = levelsList.front();
+	levelsCounted = 0;
+	for ( std::vector<std::string>::const_iterator i = levelsList.begin(); i != levelsList.end(); ++i )
+	{
+		// process i, iterate through all the map levels until currentlevel.
+		line = *i;
+		if ( line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find(' ');
+		char tempstr[1024];
+		if ( found != std::string::npos )
+		{
+			std::string mapType = line.substr(0, found);
+			std::string mapName;
+			mapName = line.substr(found + 1, line.find('\n'));
+			std::size_t carriageReturn = mapName.find('\r');
+			if ( carriageReturn != std::string::npos )
+			{
+				mapName.erase(carriageReturn);
+			}
+			mapName = "maps/" + mapName + ".lmp";
+			//printlog("%s", mapName.c_str());
+			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
+			{
+				mapsDirectory = PHYSFS_getRealDir(mapName.c_str());
+				if ( mapsDirectory.compare("./") != 0 )
+				{
+					return true;
+				}
+			}
+		}
+		++levelsCounted;
+	}
+	return false;
 }

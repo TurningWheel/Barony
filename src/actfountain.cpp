@@ -112,6 +112,7 @@ void actFountain(Entity* my)
 						messagePlayer(i, language[468]);
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
+						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
 					switch (my->skill[1])
 					{

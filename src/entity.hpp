@@ -333,6 +333,8 @@ public:
 	Sint32& itemNotMoving; // skill[18]
 	Sint32& itemNotMovingClient; // skill[19]
 	Sint32& itemSokobanReward; // skill[20]
+	Sint32& itemOriginalOwner; // skill[21]
+	Sint32& itemStolen; // skill[22]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]
@@ -340,6 +342,8 @@ public:
 	Sint32& actmagicOrbitDist; //skill[8]
 	Sint32&	actmagicOrbitVerticalDirection; //skill[9]
 	Sint32&	actmagicOrbitLifetime; //skill[10]
+	Sint32& actmagicMirrorReflected; //skill[11]
+	Sint32& actmagicMirrorReflectedCaster; //skill[12]
 	real_t actmagicOrbitVerticalSpeed; //fskill[2]
 	real_t actmagicOrbitStartZ; //fskill[3]
 	
@@ -391,6 +395,7 @@ public:
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
+	int getHP();
 
 	void setMP(int amount);
 	void modMP(int amount); //Adds amount to MP.
@@ -817,7 +822,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 static const int NUM_ITEM_STRINGS = 220;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 94;
 static const int NUM_EDITOR_SPRITES = 130;
-static const int NUM_EDITOR_TILES = 234;
+static const int NUM_EDITOR_TILES = 300;
 
 // furniture types.
 static const int FURNITURE_TABLE = 0;

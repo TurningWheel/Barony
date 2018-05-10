@@ -70,6 +70,7 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
+std::vector<std::string> physFSFilesInDirectory;
 
 // recommended for valgrind debugging:
 // res of 480x270
@@ -527,7 +528,55 @@ void gameLogic(void)
 					{
 						steamAchievementClient(c, "BARONY_ACH_FILTHY_RICH");
 					}
+					if ( stats[c]->GOLD >= 100000 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_GILDED");
+					}
+
+					if ( stats[c]->helmet && stats[c]->helmet->type == ARTIFACT_HELM
+						&& stats[c]->breastplate && stats[c]->breastplate->type == ARTIFACT_BREASTPIECE
+						&& stats[c]->gloves && stats[c]->gloves->type == ARTIFACT_GLOVES
+						&& stats[c]->cloak && stats[c]->cloak->type == ARTIFACT_CLOAK
+						&& stats[c]->shoes && stats[c]->shoes->type == ARTIFACT_BOOTS )
+					{
+						steamAchievementClient(c, "BARONY_ACH_GIFTS_ETERNALS");
+					}
+
+					if ( stats[c]->EFFECTS[EFF_SHRINE_RED_BUFF]
+						&& stats[c]->EFFECTS[EFF_SHRINE_GREEN_BUFF]
+						&& stats[c]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_WELL_PREPARED");
+					}
+
+					if ( achievementStatusRhythmOfTheKnight[c] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+					}
+					if ( achievementStatusThankTheTank[c] )
+					{
+						steamAchievementClient(c, "BARONY_ACH_THANK_THE_TANK");
+					}
+
+					int bodyguards = 0;
+					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = uidToEntity(*((Uint32*)node->element));
+						if ( follower )
+						{
+							Stat* followerStats = follower->getStats();
+							if ( followerStats && followerStats->type == CRYSTALGOLEM )
+							{
+								++bodyguards;
+							}
+						}
+					}
+					if ( bodyguards >= 2 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_BODYGUARDS");
+					}
 				}
+				updateGameplayStatisticsInMainLoop();
 			}
 
 			updatePlayerConductsInMainLoop();
@@ -652,16 +701,8 @@ void gameLogic(void)
 							case 0:
 								steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
 								break;
-							case 4:
-								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+							default:
 								break;
-							case 9:
-								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
-								break;
-							case 14:
-								steamAchievement("BARONY_ACH_SANDMAN");
-								break;
-
 						}
 					}
 
@@ -681,6 +722,34 @@ void gameLogic(void)
 						++currentlevel;
 					}
 					skipLevelsOnLoad = 0;
+
+					if ( !secretlevel )
+					{
+						switch ( currentlevel )
+						{
+							case 5:
+								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+								break;
+							case 10:
+								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
+								break;
+							case 15:
+								steamAchievement("BARONY_ACH_SANDMAN");
+								break;
+							case 30:
+								steamAchievement("BARONY_ACH_SPELUNKY");
+								break;
+							case 35:
+								if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
+								{
+									conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
+								}
+								break;
+							default:
+								break;
+						}
+					}
+
 					if ( multiplayer == SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; ++c )
@@ -702,44 +771,7 @@ void gameLogic(void)
 					}
 					darkmap = false;
 					numplayers = 0;
-					if ( !secretlevel )
-					{
-						fp = openDataFile(LEVELSFILE, "r");
-					}
-					else
-					{
-						fp = openDataFile(SECRETLEVELSFILE, "r");
-					}
-					for ( i = 0; i < currentlevel; i++ )
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-					fscanf(fp, "%s", tempstr);
-					while ( fgetc(fp) != ' ' ) if ( feof(fp) )
-						{
-							break;
-						}
-					int result = 0;
-					if ( !strcmp(tempstr, "gen:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = generateDungeon(tempstr, mapseed);
-					}
-					else if ( !strcmp(tempstr, "map:") )
-					{
-						fscanf(fp, "%s", tempstr);
-						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-							{
-								break;
-							}
-						result = loadMap(tempstr, &map, map.entities, map.creatures);
-					}
-					fclose(fp);
+					int result = physfsLoadMapFile(currentlevel, mapseed, false);
 					assignActions(&map);
 					generatePathMaps();
 
@@ -860,6 +892,11 @@ void gameLogic(void)
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
 									*myuid = monster->getUID();
+
+									if ( monsterStats->type == HUMAN && currentlevel == 25 && !strncmp(map.name, "Mages Guild", 11) )
+									{
+										steamAchievementClient(c, "BARONY_ACH_ESCORT");
+									}
 
 									if ( c > 0 && multiplayer == SERVER )
 									{
@@ -1040,6 +1077,14 @@ void gameLogic(void)
 						break;
 					default:
 						break;
+				}
+
+				if ( itemCategory(item) == WEAPON )
+				{
+					if ( item->beatitude >= 10 )
+					{
+						steamAchievement("BARONY_ACH_BLESSED");
+					}
 				}
 
 				// drop any inventory items you don't have room for
@@ -1246,6 +1291,11 @@ void gameLogic(void)
 				}
 			}
 
+			if ( ticks % TICKS_PER_SECOND == 0 )
+			{
+				updateGameplayStatisticsInMainLoop();
+			}
+
 			updatePlayerConductsInMainLoop();
 
 			// ask for entity delete update
@@ -1438,6 +1488,14 @@ void gameLogic(void)
 						break;
 					default:
 						break;
+				}
+
+				if ( itemCategory(item) == WEAPON )
+				{
+					if ( item->beatitude >= 10 )
+					{
+						steamAchievement("BARONY_ACH_BLESSED");
+					}
 				}
 
 				// drop any inventory items you don't have room for
@@ -2595,65 +2653,22 @@ int main(int argc, char** argv)
 						}
 						if ( loadingmap == false )
 						{
-							if ( !secretlevel )
-							{
-								fp = openDataFile(LEVELSFILE, "r");
-							}
-							else
-							{
-								fp = openDataFile(SECRETLEVELSFILE, "r");
-							}
 							currentlevel = startfloor;
 							if ( startfloor )
 							{
-								for ( int i = 0; i < currentlevel; ++i )
-								{
-									while ( fgetc(fp) != '\n' )
-									{
-										if ( feof(fp) )
-										{
-											break;
-										}
-									}
-								}
+								physfsLoadMapFile(currentlevel, 0, true);
 							}
-							fscanf(fp, "%s", tempstr);
-							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
+							else
 							{
-								{
-									break;
-								}
+								physfsLoadMapFile(0, 0, true);
 							}
-							if ( !strcmp(tempstr, "gen:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-								{
-									{
-										break;
-									}
-								}
-								generateDungeon(tempstr, rand());
-							}
-							else if ( !strcmp(tempstr, "map:") )
-							{
-								fscanf(fp, "%s", tempstr);
-								while ( fgetc(fp) != '\n' )
-								{
-									if ( feof(fp) )
-									{
-										break;
-									}
-								}
-								loadMap(tempstr, &map, map.entities, map.creatures);
-							}
-							fclose(fp);
 						}
 						else
 						{
 							if ( genmap == false )
 							{
-								loadMap(maptoload, &map, map.entities, map.creatures);
+								std::string fullMapName = physfsFormatMapName(maptoload);
+								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
 							}
 							else
 							{
@@ -2908,14 +2923,47 @@ int main(int argc, char** argv)
 					}
 					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))
 					{
-						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
-						if ( shootmode )
+						bool allowCasting = true;
+						if ( *inputPressed(impulses[IN_CAST_SPELL]) )
 						{
-							*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+							if ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE 
+								&& gui_mode >= GUI_MODE_INVENTORY
+								&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar()) 
+								))
+							{
+								allowCasting = false;
+							}
 						}
-						if (players[clientnum] && players[clientnum]->entity)
+						if ( allowCasting )
 						{
-							castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+							*inputPressed(impulses[IN_CAST_SPELL]) = 0;
+							if ( shootmode )
+							{
+								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+							}
+							if (players[clientnum] && players[clientnum]->entity)
+							{
+								if ( conductGameChallenges[CONDUCT_BRAWLER] || achievementBrawlerMode )
+								{
+									if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+									{
+										messagePlayer(clientnum, language[2999]); // prevent casting of spell.
+									}
+									else
+									{
+										if ( achievementBrawlerMode )
+										{
+											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
+										}
+										castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+										conductGameChallenges[CONDUCT_BRAWLER] = 0;
+									}
+								}
+								else
+								{
+									castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+								}
+							}
 						}
 					}
 

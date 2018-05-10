@@ -239,7 +239,8 @@ void lichDie(Entity* my)
 	{
 		playSoundPlayer(c, 153, 128);
 		steamAchievementClient(c, "BARONY_ACH_LICH_HUNTER");
-		if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+		if ( completionTime < 20 * 60 * TICKS_PER_SECOND
+			&& currentlevel >= 20 )
 		{
 			//messagePlayer(c, "completion time: %d", completionTime);
 			steamAchievementClient(c, "BARONY_ACH_BOOTS_OF_SPEED");

@@ -126,6 +126,8 @@ bool autoAddHotbarFilter(const Item& item);
 void quickStackItems();
 void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft); // sort inventory items matching category. -1 is everything, -2 is only equipped items.
 void autosortInventory();
+bool mouseInsidePlayerInventory();
+bool mouseInsidePlayerHotbar();
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
 extern int itemMenuSelected;

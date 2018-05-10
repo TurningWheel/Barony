@@ -94,6 +94,36 @@ int initApp(char* title, int fullscreen)
 	map.creatures = nullptr;
 	map.tiles = NULL;
 
+	// init PHYSFS
+	PHYSFS_init("/");
+	if ( !PHYSFS_isInit() )
+	{
+		printlog("[PhysFS]: failed to initialize!");
+		return 13;
+	}
+	if ( PHYSFS_mount("./", NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted base ./ folder");
+		if ( PHYSFS_setWriteDir("./") )
+		{
+			if ( PHYSFS_mkdir("mods") )
+			{
+				PHYSFS_setWriteDir("./mods/");
+				printlog("[PhysFS]: successfully set write folder ./mods/");
+			}
+			else
+			{
+				printlog("[PhysFS]: unsuccessfully created mods/ folder");
+				return 13;
+			}
+		}
+	}
+	else
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base ./ folder");
+		return 13;
+	}
+
 	// init steamworks
 #ifdef STEAMWORKS
 	SteamAPI_RestartAppIfNecessary(STEAM_APPID);
@@ -104,6 +134,9 @@ int initApp(char* title, int fullscreen)
 		return 1;
 	}
 	steam_init = true;
+	g_SteamLeaderboards = new CSteamLeaderboards();
+	g_SteamWorkshop = new CSteamWorkshop();
+	g_SteamStatistics = new CSteamStatistics(g_SteamStats, NUM_STEAM_STATISTICS);
 #endif
 
 	window_title = title;
@@ -363,8 +396,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load models
-	printlog("loading models...\n");
-	fp = openDataFile("models/models.txt", "r");
+	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
+	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+	printlog("loading models from directory %s...\n", modelsDirectory.c_str());
+
+	fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( nummodels = 0; !feof(fp); nummodels++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -379,7 +415,7 @@ int initApp(char* title, int fullscreen)
 		return 11;
 	}
 	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-	fp = openDataFile("models/models.txt", "r");
+	fp = openDataFile(modelsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -412,8 +448,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load tiles
-	printlog("loading tiles...\n");
-	fp = openDataFile("images/tiles.txt", "r");
+	std::string tilesDirectory = PHYSFS_getRealDir("images/tiles.txt");
+	tilesDirectory.append(PHYSFS_getDirSeparator()).append("images/tiles.txt");
+	printlog("loading tiles from directory %s...\n", tilesDirectory.c_str());
+
+	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( numtiles = 0; !feof(fp); numtiles++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -431,7 +470,7 @@ int initApp(char* title, int fullscreen)
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
-	fp = openDataFile("images/tiles.txt", "r");
+	fp = openDataFile(tilesDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -484,9 +523,11 @@ int initApp(char* title, int fullscreen)
 	GO_SwapBuffers(screen);
 
 	// load sound effects
+	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
+	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
 #ifdef USE_FMOD
 	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -501,7 +542,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -522,7 +563,7 @@ int initApp(char* title, int fullscreen)
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
 #elif defined USE_OPENAL
 	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -537,7 +578,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = openDataFile("sound/sounds.txt", "r");
+	fp = openDataFile(soundsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -553,7 +594,6 @@ int initApp(char* title, int fullscreen)
 	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
-
 	return 0;
 }
 
@@ -2123,9 +2163,27 @@ int deinitApp()
 	{
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
+		if ( g_SteamLeaderboards )
+		{
+			delete g_SteamLeaderboards;
+		}
+		if ( g_SteamWorkshop )
+		{
+			delete g_SteamWorkshop;
+		}
+		if ( g_SteamStatistics )
+		{
+			delete g_SteamStatistics;
+		}
 		SteamAPI_Shutdown();
 	}
 #endif
+
+	if ( PHYSFS_isInit() )
+	{
+		PHYSFS_deinit();
+		printlog("[PhysFS]: De-initializing...\n");
+	}
 
 	// free currently loaded language if any
 	freeLanguages();
