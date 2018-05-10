@@ -924,6 +924,11 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/jumplevel ", 11) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		skipLevelsOnLoad = atoi((char*)(command_str + 11));
 		consoleCommand("/nextlevel");
 	}
