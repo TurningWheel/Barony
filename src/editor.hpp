@@ -94,6 +94,7 @@ extern button_t* butAttributes;
 extern button_t* butClearMap;
 extern button_t* butHelp;
 extern button_t* butAbout;
+extern button_t* butEditorControls;
 extern button_t* but3DMode;
 
 extern int menuVisible;
@@ -187,6 +188,8 @@ void buttonClearMap(button_t* my);
 void buttonClearMapConfirm(button_t* my);
 void buttonHelp(button_t* my);
 void buttonAbout(button_t* my);
+void buttonEditorToolsHelp(button_t* my);
+void buttonEditorControls(button_t* my);
 void buttonCloseSubwindow(button_t* my);
 void buttonSpriteProperties(button_t* my);
 void buttonSpritePropertiesConfirm(button_t* my);

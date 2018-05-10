@@ -638,12 +638,16 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
 	{
-		// cheats have been enabled on savefile, disallow achievements.
+		// cheats/mods have been enabled on savefile, disallow achievements.
 		return;
 	}
 
+	if ( !strcmp(achName, "BARONY_ACH_BOOTS_OF_SPEED") )
+	{
+		conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1; // to cover bases when lich or devil dies as we can't remotely update this for clients.
+	}
 	//messagePlayer(clientnum, "%s", achName);
 
 	if ( !achievementUnlocked(achName) )
@@ -719,9 +723,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 #ifndef STEAMWORKS
 	return;
 #else
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
 	{
-		// cheats have been enabled on savefile, disallow statistics update.
+		// cheats/mods have been enabled on savefile, disallow statistics update.
 		return;
 	}
 
@@ -767,9 +771,9 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 #ifndef STEAMWORKS
 	return;
 #else
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] )
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
 	{
-		// cheats have been enabled on savefile, disallow statistics update.
+		// cheats/mods have been enabled on savefile, disallow statistics update.
 		return;
 	}
 
