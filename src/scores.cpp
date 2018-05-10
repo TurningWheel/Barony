@@ -19,6 +19,7 @@
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 // definitions
 list_t topscores;
@@ -31,9 +32,16 @@ bool conductVegetarian = true;
 bool conductIlliterate = true;
 Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES] = { 0 }; // additional 'conducts' to be stored in here.
 Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game statistics to be stored in here.
+std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
+bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
+std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
+std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
+bool achievementStatusStrobe[MAXPLAYERS] = { false };
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
+bool achievementBrawlerMode = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -328,6 +336,9 @@ int totalScore(score_t* score)
 		amount += score->conductFoodless * 5000;
 		amount += score->conductVegetarian * 5000;
 		amount += score->conductIlliterate * 5000;
+		amount += conductGameChallenges[CONDUCT_BOOTS_SPEED] * 20000;
+		amount += conductGameChallenges[CONDUCT_BRAWLER] * 20000;
+		amount += conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
 		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
 			&& score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] == 0 )
 		{
@@ -1122,11 +1133,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		setSaveGameFileName(true, savefile, false);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, false);
 	}
 
 	if ( (fp = fopen(savefile, "wb")) == NULL )
@@ -1514,11 +1525,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE2);
+		setSaveGameFileName(true, savefile, true);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, true);
 	}
 
 	// now we save the follower information
@@ -1774,11 +1785,11 @@ int loadGame(int player)
 	char savefile[32] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		setSaveGameFileName(true, savefile, false);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, false);
 	}
 
 	// open file
@@ -2213,11 +2224,11 @@ list_t* loadGameFollowers()
 	char savefile[32] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE2);
+		setSaveGameFileName(true, savefile, true);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, true);
 	}
 
 	// open file
@@ -2409,11 +2420,11 @@ int deleteSaveGame(int gametype)
 	char savefile[32] = "";
 	if ( gametype == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE);
+		setSaveGameFileName(true, savefile, false);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, false);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2430,11 +2441,11 @@ int deleteSaveGame(int gametype)
 
 	if ( gametype == SINGLE )
 	{
-		strcpy(savefile, SAVEGAMEFILE2);
+		setSaveGameFileName(true, savefile, true);
 	}
 	else
 	{
-		strcpy(savefile, SAVEGAMEFILE2_MULTIPLAYER);
+		setSaveGameFileName(false, savefile, true);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2466,14 +2477,7 @@ int deleteSaveGame(int gametype)
 bool saveGameExists(bool singleplayer)
 {
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	if ( access(savefile, F_OK ) == -1 )
 	{
 		return false;
@@ -2524,14 +2528,7 @@ char* getSaveGameName(bool singleplayer)
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2670,14 +2667,7 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 	FILE* fp;
 	Uint32 gameKey;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2724,14 +2714,7 @@ int getSaveGameType(bool singleplayer)
 	FILE* fp;
 	int mul;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2779,14 +2762,7 @@ int getSaveGameClientnum(bool singleplayer)
 	FILE* fp;
 	int clientnum;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2835,14 +2811,7 @@ Uint32 getSaveGameMapSeed(bool singleplayer)
 	FILE* fp;
 	Uint32 seed;
 	char savefile[32] = "";
-	if ( singleplayer )
-	{
-		strcpy(savefile, SAVEGAMEFILE);
-	}
-	else
-	{
-		strcpy(savefile, SAVEGAMEFILE_MULTIPLAYER);
-	}
+	setSaveGameFileName(singleplayer, savefile, false);
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2920,6 +2889,23 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_HARDCORE] = 1;
 	conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 0;
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
+	conductGameChallenges[CONDUCT_BRAWLER] = 1;
+	conductGameChallenges[CONDUCT_MODDED] = 0;
+
+	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
+	{
+		gameStatistics[c] = 0;
+	}
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		achievementStatusRhythmOfTheKnight[c] = false;
+		achievementStatusStrobe[c] = false;
+		achievementStatusThankTheTank[c] = false;
+		achievementRhythmOfTheKnightVec[c].clear();
+		achievementThankTheTankPair[c].first = 0;
+		achievementThankTheTankPair[c].second = 0;
+		achievementStrobeVec[c].clear();
+	}
 }
 
 void updatePlayerConductsInMainLoop()
@@ -2958,6 +2944,220 @@ void updatePlayerConductsInMainLoop()
 		if ( (svFlags & SV_FLAG_CLASSIC) )
 		{
 			conductGameChallenges[CONDUCT_CLASSIC_MODE] = 1;
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_MODDED] )
+	{
+		if ( gamemods_numCurrentModsLoaded > 0 )
+		{
+			conductGameChallenges[CONDUCT_MODDED] = 1;
+		}
+	}
+}
+
+void updateGameplayStatisticsInMainLoop()
+{
+	if ( gameStatistics[STATISTICS_BOMB_SQUAD] >= 5 )
+	{
+		steamAchievement("BARONY_ACH_BOMB_SQUAD");
+	}
+	if ( gameStatistics[STATISTICS_SITTING_DUCK] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_SITTING_DUCK");
+	}
+	if ( gameStatistics[STATISTICS_YES_WE_CAN] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_YES_WE_CAN");
+	}
+	if ( gameStatistics[STATISTICS_FIRE_MAYBE_DIFFERENT] >= 2 )
+	{
+		steamAchievement("BARONY_ACH_FIRE_MAYBE_DIFFERENT");
+	}
+	if ( gameStatistics[STATISTICS_HEAL_BOT] >= 1000 )
+	{
+		steamAchievement("BARONY_ACH_HEAL_BOT");
+	}
+	if ( gameStatistics[STATISTICS_HOT_TUB_TIME_MACHINE] >= 50 )
+	{
+		steamAchievement("BARONY_ACH_HOT_TUB");
+	}
+
+	if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
+	{
+		steamAchievement("BARONY_ACH_TEMPT_FATE");
+	}
+	else if ( gameStatistics[STATISTICS_TEMPT_FATE] > 0 )
+	{
+		// tick down 5 sec counter for achievement, this function called once per second.
+		--gameStatistics[STATISTICS_TEMPT_FATE];
+		if ( gameStatistics[STATISTICS_TEMPT_FATE] < 0 )
+		{
+			gameStatistics[STATISTICS_TEMPT_FATE] = 0;
+		}
+	}
+}
+
+void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
+{
+	if ( !followersFile )
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE_MODDED);
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE_MULTIPLAYER);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE_MODDED_MULTIPLAYER);
+			}
+		}
+	}
+	else
+	{
+		if ( singleplayer )
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2_MODDED);
+			}
+		}
+		else
+		{
+			if ( gamemods_numCurrentModsLoaded == -1 )
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2_MULTIPLAYER);
+			}
+			else
+			{
+				strcpy(nameToSet, SAVEGAMEFILE2_MODDED_MULTIPLAYER);
+			}
+		}
+	}
+}
+
+void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)
+{
+	if ( achievementStatusRhythmOfTheKnight[player] || multiplayer == CLIENT
+		|| player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	Uint32 targetUid = target->getUID();
+
+	if ( !playerIsHit )
+	{
+		// player attacking a monster, needs to be after a block (vec size 1, 3 or 5)
+		if ( !achievementRhythmOfTheKnightVec[player].empty() )
+		{
+			if ( achievementRhythmOfTheKnightVec[player].at(0).second != targetUid ) 
+			{
+				// check first uid entry, if not matching the monster, we swapped targets and should reset.
+				achievementRhythmOfTheKnightVec[player].clear();
+				//messagePlayer(0, "cleared, not attacking same target");
+				return;
+			}
+			else
+			{
+				int size = achievementRhythmOfTheKnightVec[player].size();
+				if ( size % 2 == 1 ) // 1, 3, 5
+				{
+					// we're on correct sequence and same monster, add entry to vector.
+					achievementRhythmOfTheKnightVec[player].push_back(std::make_pair(target->ticks, targetUid));
+					if ( size == 5 )
+					{
+						// we pushed back to a total of 6 entries, get achievement.
+						real_t timeTaken = (achievementRhythmOfTheKnightVec[player].at(5).first - achievementRhythmOfTheKnightVec[player].at(0).first) / 50.f;
+						if ( timeTaken <= 3 )
+						{
+							//messagePlayer(0, "achievement get!, time taken %f", timeTaken);
+							achievementStatusRhythmOfTheKnight[player] = true;
+							steamAchievementClient(player, "BARONY_ACH_RHYTHM_OF_THE_KNIGHT");
+						}
+						achievementRhythmOfTheKnightVec[player].clear();
+					}
+				}
+				else
+				{
+					// we attacked twice and we're out of sequence.
+					achievementRhythmOfTheKnightVec[player].clear();
+					//messagePlayer(0, "cleared, out of sequence");
+					return;
+				}
+			}
+		}
+	}
+	else
+	{
+		// rhythm is initiated on first successful block
+		if ( achievementRhythmOfTheKnightVec[player].empty() )
+		{
+			achievementRhythmOfTheKnightVec[player].push_back(std::make_pair(target->ticks, targetUid));
+		}
+		else
+		{
+			if ( achievementRhythmOfTheKnightVec[player].at(0).second != targetUid )
+			{
+				// check first uid entry, if not matching the monster, we swapped targets and should reset.
+				achievementRhythmOfTheKnightVec[player].clear();
+				//messagePlayer(0, "cleared, not blocking same target");
+			}
+			int size = achievementRhythmOfTheKnightVec[player].size();
+			if ( size == 1 || size == 3 || size == 5 )
+			{
+				achievementRhythmOfTheKnightVec[player].clear();
+				//messagePlayer(0, "cleared, out of sequence");
+			}
+			achievementRhythmOfTheKnightVec[player].push_back(std::make_pair(target->ticks, targetUid));
+		}
+	}
+}
+
+void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled)
+{
+	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT
+		|| player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+
+	if ( !targetKilled )
+	{
+		achievementThankTheTankPair[player] = std::make_pair(ticks, target->getUID()); // track the monster UID defending against
+		//messagePlayer(0, "pair: %d, %d", achievementThankTheTankPair[player].first, achievementThankTheTankPair[player].second);
+	}
+	else if ( achievementThankTheTankPair[player].first != 0
+		&& achievementThankTheTankPair[player].second != 0 ) // check there is a ticks/UID entry.
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			if ( players[player]->entity->checkEnemy(target) )
+			{
+				if ( target->getUID() == achievementThankTheTankPair[player].second )
+				{
+					// same target dying, check timestamp within 3 seconds.
+					if ( (ticks - achievementThankTheTankPair[player].first) / 50.f < 3.f )
+					{
+						achievementStatusThankTheTank[player] = true;
+					}
+				}
+			}
 		}
 	}
 }

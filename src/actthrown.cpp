@@ -18,6 +18,8 @@
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "scores.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -38,6 +40,7 @@
 #define THROWN_APPEARANCE my->skill[14]
 #define THROWN_IDENTIFIED my->skill[15]
 #define THROWN_LIFE my->skill[16]
+#define THROWN_BOUNCES my->skill[17]
 
 void actThrown(Entity* my)
 {
@@ -256,6 +259,50 @@ void actThrown(Entity* my)
 		}
 	}
 
+	// pick up item
+	if ( multiplayer != CLIENT && cat == THROWN )
+	{
+		for ( int i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			{
+				if ( inrange[i] )
+				{
+					if ( players[i] != nullptr && players[i]->entity != nullptr )
+					{
+						playSoundEntity(players[i]->entity, 66, 64);
+					}
+					Item* item2 = newItemFromEntity(my);
+					if ( item2 )
+					{
+						item = itemPickup(i, item2);
+						if ( item )
+						{
+							if ( parent && (parent->getRace() == GOATMAN || parent->getRace() == INSECTOID) )
+							{
+								steamAchievementClient(i, "BARONY_ACH_ALL_IN_REFLEXES");
+							}
+							if ( i == 0 )
+							{
+								free(item2);
+							}
+							int oldcount = item->count;
+							item->count = 1;
+							messagePlayer(i, language[504], item->description());
+							item->count = oldcount;
+							if ( i != 0 )
+							{
+								free(item);
+							}
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// falling out of the map
 	if ( my->z > 128 )
 	{
@@ -275,7 +322,7 @@ void actThrown(Entity* my)
 		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
-			real_t bouncePenalty = 0.7;
+			real_t bouncePenalty = 0.85;
 			// shurikens and chakrams bounce off walls.
 			if ( hit.side == HORIZONTAL )
 			{
@@ -290,6 +337,7 @@ void actThrown(Entity* my)
 				THROWN_VELY = -THROWN_VELY * bouncePenalty;
 				THROWN_VELX = -THROWN_VELX * bouncePenalty;
 			}
+			++THROWN_BOUNCES;
 		}
 
 		cat = itemCategory(item);
@@ -376,6 +424,10 @@ void actThrown(Entity* my)
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity);
+								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
+								{
+									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
+								}
 								usedpotion = true;
 								break;
 							case POTION_JUICE:
@@ -391,12 +443,42 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							case POTION_EXTRAHEALING:
+							{
+								int oldHP = hit.entity->getHP();
 								item_PotionExtraHealing(item, hit.entity);
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									if ( parent->checkFriend(hit.entity) )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
+									}
+									int heal = std::max(hit.entity->getHP() - oldHP, 0);
+									if ( heal > 0 )
+									{
+										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
+									}
+								}
 								usedpotion = true;
+							}
 								break;
 							case POTION_HEALING:
+							{
+								int oldHP = hit.entity->getHP();
 								item_PotionHealing(item, hit.entity);
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									if ( parent->checkFriend(hit.entity) )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
+									}
+									int heal = std::max(hit.entity->getHP() - oldHP, 0);
+									if ( heal > 0 )
+									{
+										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
+									}
+								}
 								usedpotion = true;
+							}
 								break;
 							case POTION_CUREAILMENT:
 								item_PotionCureAilment(item, hit.entity);
@@ -432,6 +514,13 @@ void actThrown(Entity* my)
 								break;
 							default:
 								break;
+						}
+					}
+					if ( THROWN_BOUNCES >= 3 && hitstats->HP <= 0 )
+					{
+						if ( parent->checkEnemy(hit.entity) )
+						{
+							steamAchievementEntity(parent, "BARONY_ACH_SEE_THAT");
 						}
 					}
 				}

@@ -97,3 +97,119 @@ extern void (*cpp_SteamServerClientWrapper_OnLobbyEntered)(void* pCallback, bool
 extern void (*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(void* pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyMatchList_t.
 extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void* pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 extern void (*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)(void* steamID);
+
+class CSteamLeaderboards
+{
+private:
+	SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
+public:
+	int m_nLeaderboardEntries; // How many entries do we have?
+	LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
+	std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
+
+	CSteamLeaderboards();
+	~CSteamLeaderboards() {};
+
+	void FindLeaderboard(const char *pchLeaderboardName);
+	//bool UploadScore(int score);
+	bool DownloadScores();
+
+	void OnFindLeaderboard(LeaderboardFindResult_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardFindResult_t> m_callResultFindLeaderboard;
+	/*void OnUploadScore(LeaderboardScoreUploaded_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardScoreUploaded_t> m_callResultUploadScore;
+	*/
+	void OnDownloadScore(LeaderboardScoresDownloaded_t *pResult, bool bIOFailure);
+	CCallResult<CSteamLeaderboards, LeaderboardScoresDownloaded_t> m_callResultDownloadScore;
+};
+
+class CSteamWorkshop
+{
+private:
+public:
+	SteamUGCDetails_t m_subscribedItemListDetails[50]; // The entries
+	SteamUGCDetails_t m_myWorkshopItemToModify;
+	int numSubcribedItemResults = 50;
+	int subscribedCallStatus;
+
+	CSteamWorkshop();
+	~CSteamWorkshop() {};
+
+	CreateItemResult_t createItemResult;
+	UGCUpdateHandle_t UGCUpdateHandle;
+	SubmitItemUpdateResult_t SubmitItemUpdateResult;
+	UGCQueryHandle_t UGCQueryHandle;
+	SteamUGCQueryCompleted_t SteamUGCQueryCompleted;
+	RemoteStorageUnsubscribePublishedFileResult_t UnsubscribePublishedFileResult;
+	class LastActionResult_t {
+		public:
+			EResult lastResult;
+			Uint32 creationTick;
+			std::string actionMsg;
+
+			LastActionResult_t() :
+				lastResult(static_cast<EResult>(0)),
+				creationTick(0),
+				actionMsg("")
+			{}
+	} LastActionResult;
+	std::list<std::string> workshopItemTags;
+	Uint32 uploadSuccessTicks;
+
+	void StoreResultMessage(std::string message, EResult result);
+	void CreateItem();
+	void StartItemUpdate();
+	void SubmitItemUpdate(char* changeNote);
+	void StartItemExistingUpdate(PublishedFileId_t fileId);
+	void CreateQuerySubscribedItems(EUserUGCList itemListType, EUGCMatchingUGCType searchType, EUserUGCListSortOrder sortOrder);
+	void ReadSubscribedItems();
+	void UnsubscribeItemFileID(PublishedFileId_t fileId);
+
+	CCallResult<CSteamWorkshop, CreateItemResult_t> m_callResultCreateItem;
+	CCallResult<CSteamWorkshop, SubmitItemUpdateResult_t> m_callResultSubmitItemUpdateResult;
+	CCallResult<CSteamWorkshop, SteamUGCQueryCompleted_t> m_callResultSendQueryUGCRequest;
+	CCallResult<CSteamWorkshop, RemoteStorageUnsubscribePublishedFileResult_t> m_callResultUnsubscribeItemRequest;
+	void OnCreateItem(CreateItemResult_t *pResult, bool bIOFailure);
+	void OnSubmitItemUpdate(SubmitItemUpdateResult_t *pResult, bool bIOFailure);
+	void OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure);
+	void OnUnsubscribeItemRequest(RemoteStorageUnsubscribePublishedFileResult_t *pResult, bool bIOFailure);
+	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
+};
+
+
+enum ESteamStatTypes
+{
+	STEAM_STAT_INT = 0,
+	STEAM_STAT_FLOAT = 1,
+	STEAM_STAT_AVGRATE = 2,
+};
+
+struct SteamStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
+
+class CSteamStatistics
+{
+private:
+	SteamStat_t *m_pStats; // Stats data
+	int m_iNumStats; // The number of Stats
+	bool m_bInitialized; // Have we called Request stats and received the callback?
+public:
+
+	CSteamStatistics(SteamStat_t* gStats, int numStatistics);
+	~CSteamStatistics() {};
+
+	bool RequestStats();
+	bool StoreStats();
+	bool ClearAllStats();
+
+	STEAM_CALLBACK(CSteamStatistics, OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived);
+	STEAM_CALLBACK(CSteamStatistics, OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored);
+};

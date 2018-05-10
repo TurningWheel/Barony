@@ -436,8 +436,8 @@ thou makest use of them.#
 # steam lobby type
 
 250 Private lobby#
-251 Friends-only lobby#
-252 Public lobby#
+251 Public lobby#
+252 Friends-only lobby#
 
 
 # Left-click (entity spotting) messages
@@ -2707,7 +2707,7 @@ dungeon level %d, client (player %d) (direct ip)#
 
 # game/server flags tooltips
 
-# Cheats. CURRENTLY UNUSED
+# Cheats.
 1942 NOTE: Enabling cheats will disable Steam Achievements on your save files!#
 # Friendly fire. CURRENTLY UNUSED
 1943 #
@@ -3614,7 +3614,10 @@ anyone seeking that power again, deep underground. #
 2926 Discreet#
 2927 Allied#
 2928 Classic#
-2929 Unused#
+2929 Modded#
+2930 Brawler#
+2931 Ultra Speedrunner#
+2932 Speedrunner#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#
@@ -3640,14 +3643,34 @@ anyone seeking that power again, deep underground. #
 2975 The cape carries you above the ground and you feel its power surging through your body.#
 2976 The gauntlets fill you with otherworldly defiance.#
 2977 Cost: %d + ?? MP#
-2978 Custom levels#
-
-
-
-
-
+2978 Custom Content#
+2979 Workshop#
+2980 Character Creation (Modded)#
+2981 WARNING: MAKE SURE ALL LOBBY MEMBERS HAVE
+IDENTICAL MOD LISTS LOADED!#
+2982 NOTE: Modded sessions use their own savegame files.#
 2983 keep game timer on HUD#
-
-
+2984 Subscribe to host mod list#
+2985 Mount host mod list#
 2986 Savefile has cheats enabled#
-2999 end#
+2987 Loading modded sound files...#
+2988 Unloading modded sound files...#
+2989 Loading modded model files...#
+2990 Unloading modded model files...#
+2991 Loading modded book files...#
+2992 Unloading modded book files...#
+2993 Loading modded music files...#
+2994 Unloading modded music files...#
+2995 Brawler-mode active, only punches and throwing potions are allowed to attack!#
+2996 Brawler-mode deactivated, all weapons permitted.#
+2997 This tool is disabled in Brawler-mode!#
+2998 Player savefile is not eligible for Brawler Achievement. Restart game to reset.#
+2999 Spells are disabled in Brawler-mode!#
+3000 Use Previous Character#
+3001 Delete score#
+3002 Are you sure you want to delete this high score?
+
+#
+3003 Steam Achievements are disabled#
+
+3099 end#

@@ -523,7 +523,7 @@ void automatonDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	playSoundEntity(my, 260 + rand() % 3, 128);
+	playSoundEntity(my, 260 + rand() % 2, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -1521,6 +1521,23 @@ void Entity::automatonRecycleItem()
 		// drop newly created item. To pickup if possible or leave behind if overburdened.
 		dropItemMonster(item, this, myStats);
 		//messagePlayer(0, "Generated %d!", type);
+		if ( myStats->leader_uid != 0 )
+		{
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					Uint32 playerUid = players[c]->entity->getUID();
+					if ( playerUid == myStats->leader_uid
+						&& (item1->ownerUid == playerUid || item2->ownerUid == playerUid) )
+					{
+						steamAchievementClient(c, "BARONY_ACH_RECYCLER");
+						break;
+					}
+				}
+			}
+		}
+		//messagePlayer(0, "%d, %d", item1->ownerUid, item2->ownerUid);
 	}
 
 	return;

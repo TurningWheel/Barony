@@ -21,6 +21,12 @@
 
 #define EDITOR
 
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+#endif // STEAMWORKS
+
+
 //#include "player.hpp"
 
 Entity* selectedEntity = nullptr;
@@ -44,6 +50,9 @@ std::vector<Entity*> groupedEntities;
 bool moveSelectionNegativeX = false;
 bool moveSelectionNegativeY = false;
 std::vector<std::string> mapNames;
+std::list<std::string> modFolderNames;
+std::string physfs_saveDirectory = BASE_DATA_DIR;
+std::string physfs_openDirectory = BASE_DATA_DIR;
 
 map_t copymap;
 
@@ -1291,6 +1300,11 @@ int main(int argc, char** argv)
 		deinitApp();
 		exit(x);
 	}
+#ifdef STEAMWORKS
+	g_SteamStatistics->RequestStats();
+#endif // STEAMWORKS
+
+
 	copymap.tiles = nullptr;
 	copymap.entities = nullptr;
 	copymap.creatures = nullptr;
@@ -1506,10 +1520,19 @@ int main(int argc, char** argv)
 	button->action = &buttonOpen;
 	button->visible = 0;
 
+	butDir = button = newButton();
+	strcpy(button->label, "Directory... Ctrl+D");
+	button->x = 16;
+	button->y = 48;
+	button->sizex = 160;
+	button->sizey = 16;
+	button->action = &buttonOpenDirectory;
+	button->visible = 0;
+
 	butSave = button = newButton();
 	strcpy(button->label, "Save         Ctrl+S");
 	button->x = 16;
-	button->y = 48;
+	button->y = 64;
 	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonSave;
@@ -1518,7 +1541,7 @@ int main(int argc, char** argv)
 	butSaveAs = button = newButton();
 	strcpy(button->label, "Save As ...        ");
 	button->x = 16;
-	button->y = 64;
+	button->y = 80;
 	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonSaveAs;
@@ -1527,7 +1550,7 @@ int main(int argc, char** argv)
 	butExit = button = newButton();
 	strcpy(button->label, "Exit         Alt+F4");
 	button->x = 16;
-	button->y = 80;
+	button->y = 96;
 	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonExit;
@@ -1682,17 +1705,27 @@ int main(int argc, char** argv)
 
 	// help menu
 	butAbout = button = newButton();
-	strcpy(button->label, "About  F1");
+	strcpy(button->label, "About            F1");
 	button->x = 168;
 	button->y = 16;
-	button->sizex = 80;
+	button->sizex = 160;
 	button->sizey = 16;
 	button->action = &buttonAbout;
 	button->visible = 0;
 
+	// controls menu
+	butEditorControls = button = newButton();
+	strcpy(button->label, "Editor Help       H");
+	button->x = 168;
+	button->y = 32;
+	button->sizex = 160;
+	button->sizey = 16;
+	button->action = &buttonEditorControls;
+	button->visible = 0;
+
 	if ( loadingmap )
 	{
-		if ( loadMap(maptoload, &map, map.entities, map.creatures) == -1 )
+		if ( loadMap(physfsFormatMapName(maptoload).c_str(), &map, map.entities, map.creatures) == -1 )
 		{
 			strcat(message, "Failed to open ");
 			strcat(message, maptoload);
@@ -1706,12 +1739,25 @@ int main(int argc, char** argv)
 	loadItems();
 	loadTilePalettes();
 
+	bool achievementCartographer = false;
+
 	// main loop
 	printlog( "running main loop.\n");
 	while (mainloop)
 	{
 		// game logic
 		handleEvents();
+
+#ifdef STEAMWORKS
+		SteamAPI_RunCallbacks();
+		if ( SteamUser()->BLoggedOn() && !achievementCartographer )
+		{
+			SteamUserStats()->SetAchievement("BARONY_ACH_CARTOGRAPHER");
+			achievementCartographer = true;
+			SteamUserStats()->StoreStats();
+			//printlog("STEAM ACHIEVEMENT\n");
+		}
+#endif
 
 		// move buttons
 		/*if( !fullscreen ) {
@@ -1744,7 +1790,7 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 1 )
 			{
-				if ((omousex > 16 + butNew->sizex || omousey > 96 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 16 + butNew->sizex || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
@@ -1776,7 +1822,7 @@ int main(int argc, char** argv)
 			}
 			else if ( menuVisible == 5 )
 			{
-				if ((omousex > 168 + butAbout->sizex || omousex < 152 || omousey > 32 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 168 + butAbout->sizex || omousex < 152 || omousey > 48 || (omousey < 32 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
@@ -2263,16 +2309,24 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 4, yres - 12, "X: %4d Y: %4d Z: %d %s", drawx, drawy, drawlayer + 1, layerstatus);
 				if ( messagetime )
 				{
-					printText(font8x8_bmp, xres - 384, yres - 12, message);
+					if ( strlen(message) > 48 )
+					{
+						printText(font8x8_bmp, xres - 384 - 4 * (strlen(message)), yres - 12, message);
+					}
+					else
+					{
+						printText(font8x8_bmp, xres - 384, yres - 12, message);
+					}
 				}
 			}
 
 			// handle main menus
 			if ( menuVisible == 1 )
 			{
-				drawWindowFancy(0, 16, 16, 96);
+				drawWindowFancy(0, 16, 16, 112);
 				butNew->visible = 1;
 				butOpen->visible = 1;
+				butDir->visible = 1;
 				butSave->visible = 1;
 				butSaveAs->visible = 1;
 				butExit->visible = 1;
@@ -2281,6 +2335,7 @@ int main(int argc, char** argv)
 			{
 				butNew->visible = 0;
 				butOpen->visible = 0;
+				butDir->visible = 0;
 				butSave->visible = 0;
 				butSaveAs->visible = 0;
 				butExit->visible = 0;
@@ -2368,12 +2423,14 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 5 )
 			{
-				drawWindowFancy(152, 16, 168, 32);
+				drawWindowFancy(152, 16, 168, 48);
 				butAbout->visible = 1;
+				butEditorControls->visible = 1;
 			}
 			else
 			{
 				butAbout->visible = 0;
+				butEditorControls->visible = 0;
 			}
 
 			// subwindows
@@ -2386,66 +2443,69 @@ int main(int argc, char** argv)
 				}
 
 				// open and save windows
-				if ( (openwindow || savewindow) && !mapNames.empty() )
+				if ( (openwindow == 1 || savewindow) )
 				{
 					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 52);
 					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 52);
-					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)mapNames.size() / 20)); //TODO: Why are int and real_t being compared?
-					slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-					drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
-
-					// directory list offset from slider
-					y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
-					if ( scroll )
+					if ( !mapNames.empty() )
 					{
-						slidery -= 8 * scroll;
+						slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)mapNames.size() / 20)); //TODO: Why are int and real_t being compared?
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
-						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-						strcpy(filename, mapNames[selectedFile].c_str());
-						inputstr = filename;
-						scroll = 0;
-					}
-					if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 52 )
-					{
-						slidery = oslidery + mousey - omousey;
-						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
-						mclick = 1;
-						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-						strcpy(filename, mapNames[selectedFile].c_str());
-						inputstr = filename;
-					}
-					else
-					{
-						oslidery = slidery;
-					}
+						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
 
-					// select a file
-					if ( mousestatus[SDL_BUTTON_LEFT] )
-					{
-						if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 )
+						// directory list offset from slider
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
+						if ( scroll )
 						{
-							selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
+							slidery -= 8 * scroll;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							strcpy(filename, mapNames[selectedFile].c_str());
+							inputstr = filename;
+							scroll = 0;
+						}
+						if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 52 )
+						{
+							slidery = oslidery + mousey - omousey;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (mapNames.size() + 1);
+							mclick = 1;
 							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 							strcpy(filename, mapNames[selectedFile].c_str());
 							inputstr = filename;
 						}
-					}
-					pos.x = subx1 + 8;
-					pos.y = suby1 + 24 + (selectedFile - y2) * 8;
-					pos.w = subx2 - subx1 - 32;
-					pos.h = 8;
-					drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+						else
+						{
+							oslidery = slidery;
+						}
 
-					// print all the files within the directory
-					x = subx1 + 8;
-					y = suby1 + 24;
-					c = std::min<long unsigned int>(mapNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
-					for (z = y2; z < c; z++)
-					{
-						printText(font8x8_bmp, x, y, mapNames[z].c_str());
-						y += 8;
+						// select a file
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 )
+							{
+								selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
+								selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+								strcpy(filename, mapNames[selectedFile].c_str());
+								inputstr = filename;
+							}
+						}
+						pos.x = subx1 + 8;
+						pos.y = suby1 + 24 + (std::max(selectedFile - y2, 0)) * 8;
+						pos.w = subx2 - subx1 - 32;
+						pos.h = 8;
+						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+
+						// print all the files within the directory
+						x = subx1 + 8;
+						y = suby1 + 24;
+						c = std::min<long unsigned int>(mapNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
+						for (z = y2; z < c; z++)
+						{
+							printText(font8x8_bmp, x, y, mapNames[z].c_str());
+							y += 8;
+						}
 					}
 
 					// text box to enter file
@@ -2463,6 +2523,99 @@ int main(int argc, char** argv)
 					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 					{
 						printText(font8x8_bmp, subx1 + 8 + strlen(filename) * 8, suby2 - 44, "\26");
+					}
+				}
+				else if ( openwindow == 2 )
+				{
+					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 112);
+					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 112);
+					if ( !modFolderNames.empty() )
+					{
+						slidersize = std::min<int>(((suby2 - 113) - (suby1 + 21)), ((suby2 - 113) - (suby1 + 21)) / ((real_t)modFolderNames.size() / 20)); //TODO: Why are int and real_t being compared?
+						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 113 - slidersize);
+						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
+
+						// directory list offset from slider
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * modFolderNames.size();
+						if ( scroll )
+						{
+							slidery -= 8 * scroll;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 113 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 112) - (suby1 + 20))) * modFolderNames.size();
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(modFolderNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							std::list<std::string>::iterator it = modFolderNames.begin();
+							std::advance(it, selectedFile);
+							strcpy(foldername, it->c_str());
+							inputstr = foldername;
+							scroll = 0;
+						}
+						if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 113 )
+						{
+							slidery = oslidery + mousey - omousey;
+							slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 113 - slidersize);
+							y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 112) - (suby1 + 20))) * modFolderNames.size();
+							mclick = 1;
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(modFolderNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							std::list<std::string>::iterator it = modFolderNames.begin();
+							std::advance(it, selectedFile);
+							strcpy(foldername, it->c_str());
+							inputstr = foldername;
+						}
+						else
+						{
+							oslidery = slidery;
+						}
+
+						// select a file
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 116 )
+							{
+								selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
+								selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(modFolderNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+								std::list<std::string>::iterator it = modFolderNames.begin();
+								std::advance(it, selectedFile);
+								strcpy(foldername, it->c_str());
+								inputstr = foldername;
+							}
+						}
+						pos.x = subx1 + 8;
+						pos.y = suby1 + 24 + (selectedFile - y2) * 8;
+						pos.w = subx2 - subx1 - 32;
+						pos.h = 8;
+						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+
+						// print all the files within the directory
+						x = subx1 + 8;
+						y = suby1 + 24;
+						c = std::min<long unsigned int>(modFolderNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
+						for ( z = y2; z < c; z++ )
+						{
+							std::list<std::string>::iterator it = modFolderNames.begin();
+							std::advance(it, z);
+							printText(font8x8_bmp, x, y, it->c_str());
+							y += 8;
+						}
+					}
+
+					// text box to enter file
+					drawDepressed(subx1 + 4, suby2 - 108, subx2 - 4, suby2 - 92);
+					printText(font8x8_bmp, subx1 + 8, suby2 - 104, foldername);
+
+					printTextFormatted(font8x8_bmp, subx1 + 8, suby2 - 32, "Save Dir: %smaps/", physfs_saveDirectory.c_str());
+					printTextFormatted(font8x8_bmp, subx1 + 8, suby2 - 16, "Load Dir: %smaps/", physfs_openDirectory.c_str());
+
+					// enter filename
+					if ( !SDL_IsTextInputActive() )
+					{
+						SDL_StartTextInput();
+						inputstr = foldername;
+					}
+					//strncpy(filename,inputstr,28);
+					inputlen = 28;
+					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+					{
+						printText(font8x8_bmp, subx1 + 8 + strlen(foldername) * 8, suby2 - 104, "\26");
 					}
 				}
 
@@ -5351,6 +5504,181 @@ int main(int argc, char** argv)
 						}
 					}
 				}
+				else if ( newwindow == 16 || newwindow == 17 )
+				{
+					int textColumnLeft = subx1 + 16;
+					int textColumnRight = (subx2 - subx1) / 2 + 300;
+					int pady = suby1 + 16;
+					int spacing = 0;
+					Uint32 colorHeader = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					char helptext[128];
+
+					if ( newwindow == 16 )
+					{
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Editor File Shortcuts:");
+						spacing += 12;
+						strcpy(helptext, "New Map:                            CTRL + N");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Open:                               CTRL + O");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Save:                               CTRL + S");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Change Load/Save Directory:         CTRL + D");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Close Window/Dialogue:              CTRL + M");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Delete Text:                        Backspace or Grave (`)");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 16;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Editor Functions:");
+						spacing += 12;
+						strcpy(helptext, "Open Sprite Window:                 S");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Open Tile Window:                   T");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Sprite Properties:                  F2");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Map Properties:                     CTRL + M");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Delete Selected Sprite:             DEL");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Cycle Stacked Sprites:              C");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 16;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Navigation:");
+						spacing += 12;
+						strcpy(helptext, "Move Camera/View:                   Arrow Keys");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Change Current Wall Layer:          SHIFT + Scrollwheel");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Change Current Wall Layer:          CTRL + U, CTRL + P");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Toggle First Person Camera:         F");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 16;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Tile Palette (Last Used Tiles):");
+						spacing += 12;
+						strcpy(helptext, "Cycle Through Current Tile Palette: Scrollwheel");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Cycle Through All Palettes:         CTRL + Scrollwheel");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Choose Specific Tile In Palette:    Numpad 0-9");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Choose Specific Tile In Palette:    Left Click Tile");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Lock Changes to Current Palette:    Numpad *");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Go To Next Palette:                 Numpad +");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Go To Previous Palette:             Numpad -");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "Clear Tile in Palette:              Right Click Tile");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+					}
+					else if ( newwindow == 17 )
+					{
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Editing Tools:");
+						spacing += 20;
+
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Pencil:");
+						strcpy(helptext, "        Draws currently selected tile on current wall layer.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   Does not select sprites. Right click sets the selected tile");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   under the cursor to selected.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Point:");
+						strcpy(helptext, "       Selects sprites only. Sprites can be moved or deleted once");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   placed and selected with this tool. Left click selects, right");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   clicking duplicates a sprite and places it the cursor.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						strcpy(helptext, "   When sprites are stacked, only the lowest listed sprite is");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   selected. Hovering over multiple sprites and cycling with C");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   allows you to change the order that sprites are drawn in");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   the editor.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 20;
+						strcpy(helptext, "   Certain sprites like monsters, chests, boulder traps, and most");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   Blessed Addition sprites (sprite 75 and onwards) have extra");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   customisable properties when F2 is pressed while the sprite");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   is selected using this tool. If no sprite is selected, F2");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   will show properties of the last sprite selected.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Brush:");
+						strcpy(helptext, "       Same as pencil, but draws a larger area at once.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Select:");
+						strcpy(helptext, "        Selects area of tiles or sprites. Tiles can be copied/");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   pasted/deleted in groups. Sprites can be moved in groups");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   with ALT + Arrow Keys. Selection can be moved with CTRL + ");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+						strcpy(helptext, "   Arrow Keys, and resized with SHIFT + Arrow Keys.\n");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+
+						spacing += 20;
+						printTextFormattedColor(font8x8_bmp, textColumnLeft, pady + spacing, colorHeader, "Fill:");
+						strcpy(helptext, "      Fills in left-clicked area with currently selected tile.");
+						printTextFormatted(font8x8_bmp, textColumnLeft, pady + spacing, helptext);
+						spacing += 12;
+					}
+				}
 
 				if ( keystatus[SDL_SCANCODE_ESCAPE] )
 				{
@@ -5359,7 +5687,11 @@ int main(int argc, char** argv)
 					{
 						//buttonCloseSpriteSubwindow(NULL);
 					}
-					else if ( openwindow == 1 || savewindow == 1 )
+					else if ( openwindow > 0 || savewindow == 1 )
+					{
+						buttonCloseSubwindow(NULL);
+					}
+					if ( newwindow == 16 || newwindow == 17 )
 					{
 						buttonCloseSubwindow(NULL);
 					}
@@ -5378,6 +5710,14 @@ int main(int argc, char** argv)
 					else if ( savewindow == 1 )
 					{
 						//buttonSaveConfirm(NULL);
+					}
+					if ( newwindow == 16 )
+					{
+						buttonEditorToolsHelp(nullptr);
+					}
+					else if ( newwindow == 17 )
+					{
+						buttonCloseSubwindow(nullptr);
 					}
 				}
 			}
@@ -5447,6 +5787,11 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_G] = 0;
 						buttonGrid(NULL);
+					}
+					if ( keystatus[SDL_SCANCODE_D] )
+					{
+						keystatus[SDL_SCANCODE_D] = 0;
+						buttonOpenDirectory(NULL);
 					}
 					if ( keystatus[SDL_SCANCODE_T] )
 					{
@@ -5802,6 +6147,11 @@ int main(int argc, char** argv)
 					keystatus[SDL_SCANCODE_F1] = 0;
 					buttonAbout(NULL);
 				}
+				if ( keystatus[SDL_SCANCODE_H] )
+				{
+					keystatus[SDL_SCANCODE_H] = 0;
+					buttonEditorControls(NULL);
+				}
 				if ( keystatus[SDL_SCANCODE_1] ) // Switch to Pencil Tool
 				{
 					keystatus[SDL_SCANCODE_1] = 0;
@@ -5927,12 +6277,26 @@ int main(int argc, char** argv)
 				{
 					pos.x = x;
 					pos.y = y;
-					pos.w = sprites[c]->w * 2;
-					pos.h = sprites[c]->h * 2;
-					drawImageScaled(sprites[c], NULL, &pos);
-					for ( x2 = x; x2 < x + sprites[c]->w * 2; x2++ )
+					pos.w = sprites[c]->w;
+					pos.h = sprites[c]->h;
+					int scale = 1;
+					if ( pos.w < 16 && pos.h < 16 )
 					{
-						for ( y2 = y; y2 < y + sprites[c]->h * 2; y2++ )
+						scale = 4;
+						pos.w *= scale;
+						pos.h *= scale;
+					}
+					else if ( pos.w < 32 && pos.h < 32 )
+					{
+						scale = 2;
+						pos.w *= scale;
+						pos.h *= scale;
+					}
+
+					drawImageScaled(sprites[c], NULL, &pos);
+					for ( x2 = x; x2 < x + sprites[c]->w * scale; x2++ )
+					{
+						for ( y2 = y; y2 < y + sprites[c]->h * scale; y2++ )
 						{
 							if ( x2 < xres && y2 < yres )
 							{
@@ -5940,13 +6304,13 @@ int main(int argc, char** argv)
 							}
 						}
 					}
-					x += sprites[c]->w * 2;
-					z = std::max(z, sprites[c]->h * 2);
+					x += sprites[c]->w * scale;
+					z = std::max(z, sprites[c]->h * scale);
 					if ( c < numsprites - 1 )
 					{
 						if ( sprites[c + 1] != NULL )
 						{
-							if ( x + sprites[c + 1]->w * 2 > xres )
+							if ( x + sprites[c + 1]->w * scale > xres )
 							{
 								x = 0;
 								y += z;
@@ -5954,7 +6318,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( x + sprites[0]->w * 2 > xres )
+							if ( x + sprites[0]->w * scale > xres )
 							{
 								x = 0;
 								y += z;
@@ -5969,13 +6333,13 @@ int main(int argc, char** argv)
 					pos.w = TEXTURESIZE;
 					pos.h = TEXTURESIZE;
 					drawImageScaled(sprites[0], NULL, &pos);
-					x += sprites[0]->w * 2;
-					z = std::max(z, sprites[0]->h * 2);
+					x += sprites[0]->w;
+					z = std::max(z, sprites[0]->h);
 					if ( c < numsprites - 1 )
 					{
 						if ( sprites[c + 1] != NULL )
 						{
-							if ( x + sprites[c + 1]->w * 2 > xres )
+							if ( x + sprites[c + 1]->w > xres )
 							{
 								x = 0;
 								y += z;
@@ -5983,7 +6347,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( x + sprites[0]->w * 2 > xres )
+							if ( x + sprites[0]->w > xres )
 							{
 								x = 0;
 								y += z;
@@ -6281,3 +6645,7 @@ void reselectEntityGroup()
 	}
 }
 
+int generateDungeon(char* levelset, Uint32 seed)
+{
+	return 0; // dummy function
+}

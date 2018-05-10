@@ -86,6 +86,13 @@ void actSink(Entity* my)
 				}
 				else
 				{
+					if ( players[i]->entity->flags[BURNING] )
+					{
+						messagePlayer(i, language[468]);
+						players[i]->entity->flags[BURNING] = false;
+						serverUpdateEntityFlag(players[i]->entity, BURNING);
+						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
+					}
 					switch (my->skill[3])
 					{
 						case 0:

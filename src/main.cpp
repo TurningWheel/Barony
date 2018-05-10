@@ -42,6 +42,9 @@ Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
 Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;
+int lastCreatedCharacterClass = -1;
+int lastCreatedCharacterAppearance = -1;
+int lastCreatedCharacterSex = -1;
 
 // net stuff
 Uint32 clientplayer = 0;
@@ -50,6 +53,16 @@ int clientnum = 0;
 int multiplayer = -1;
 #ifdef STEAMWORKS
 bool directConnect = false;
+CSteamLeaderboards* g_SteamLeaderboards = NULL;
+CSteamWorkshop* g_SteamWorkshop = NULL;
+SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
+{
+	{1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS"},
+	{2, STEAM_STAT_INT, "STAT_WORTHLESS_GLASS"},
+	{3, STEAM_STAT_INT, "STAT_TOUGH_AS_NAILS"},
+	{4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE"}
+};
+CSteamStatistics* g_SteamStatistics = NULL;
 #else
 bool directConnect = true;
 #endif
@@ -166,8 +179,9 @@ int selectedFile = 0;
 char** d_names = nullptr;
 unsigned long d_names_length = 0;
 char filename[128];
+char foldername[128];
 char oldfilename[128];
-char message[48];
+char message[256];
 int messagetime = 0;
 char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[32];
 char mapflagtext[MAPFLAGS][32];

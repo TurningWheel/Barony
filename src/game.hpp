@@ -13,9 +13,13 @@
 
 #include <vector>
 #include <random>
+#ifdef STEAMWORKS
+#include <steam/steam_api.h>
+#include "steam.hpp"
+#endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.1.4"
+#define VERSION "v3.1.6"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -114,6 +118,10 @@ extern SDL_Surface* cross_bmp;
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);
 void steamAchievementClient(int player, const char* achName);
+void steamAchievementEntity(Entity* my, const char* achName); // give steam achievement to an entity, and check for valid player info.
+void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value);
+void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes type, int value);
+void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type);
 void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
@@ -226,6 +234,9 @@ static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
 static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
+extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 
+
 void mapLevel(int player);
+

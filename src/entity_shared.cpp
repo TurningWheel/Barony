@@ -967,7 +967,13 @@ char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 	"Arcane Pipes Gold Plating.png",
 	"Arcane Pipes Gold Plating Decor.png",
 	"Arcane Pipes Gold V.png",
-	"Bronze Column Pipe.png"
+	"Bronze Column Pipe.png",
+	"Sky.png",
+	"SkyCrackle.png",
+	"SkyCrackle_B.png",
+	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", ""
 };
 
 int canWearEquip(Entity* entity, int category)

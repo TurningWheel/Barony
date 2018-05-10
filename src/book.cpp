@@ -47,7 +47,8 @@ void createBooks()
 
 	//TODO: Read the books/ inventory for all *.txt files.
 	//TODO: Then create a book for each file there and add it to a books array.
-	auto discoveredbooks = directoryContents("books/");
+	//auto discoveredbooks = directoryContents("books/", false, true);
+	std::list<std::string> discoveredbooks = physfsGetFileNamesInDirectory("books/");
 	if (!discoveredbooks.empty())
 	{
 		printlog("compiling books...\n");
@@ -251,12 +252,20 @@ void createBook(book_t* book)
 	}
 
 	//Load in the text from a file.
-	strcpy(tempstr, "books/");
-	strcat(tempstr, book->name);
-	book->text = readFile(tempstr);
+	std::string tempstr = "books/";
+	tempstr.append(book->name);
+	if ( PHYSFS_getRealDir(tempstr.c_str()) != NULL )
+	{
+		std::string path = PHYSFS_getRealDir(tempstr.c_str());
+		path.append(PHYSFS_getDirSeparator());
+		tempstr = path + tempstr;
+	}
+	char bookChar[256];
+	strncpy(bookChar, tempstr.c_str(), 255);
+	book->text = readFile(bookChar);
 	if (!book->text)
 	{
-		printlog( "error opening book \"%s\".\n", tempstr);
+		printlog( "error opening book \"%s\".\n", tempstr.c_str());
 		return; //Failed to open the file.
 	}
 
@@ -450,5 +459,59 @@ void createBook(book_t* book)
 		}
 
 		newline = false;
+	}
+}
+
+
+bool physfsSearchBooksToUpdate()
+{
+	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	if ( !booklist.empty() )
+	{
+		for ( std::list<std::string>::iterator it = booklist.begin(); it != booklist.end(); ++it )
+		{
+			std::string bookFilename = "books/" + *it;
+			if ( PHYSFS_getRealDir(bookFilename.c_str()) != NULL )
+			{
+				std::string bookDir = PHYSFS_getRealDir(bookFilename.c_str());
+				if ( bookDir.compare("./") != 0 )
+				{
+					// found a book not belonging in the base path.
+					printlog("[PhysFS]: Found modified book in books/ directory, reloading all books...");
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void physfsReloadBooks()
+{
+	std::list<std::string> booklist = physfsGetFileNamesInDirectory("books/");
+	if ( !booklist.empty() )
+	{
+		// clear the previous book memory..
+		if ( books )
+		{
+			for ( int c = 0; c < numbooks; c++ )
+			{
+				if ( books[c] )
+				{
+					if ( books[c]->text )
+					{
+						free(books[c]->text);
+					}
+					if ( books[c]->bookgui_render_title )
+					{
+						free(books[c]->bookgui_render_title);
+					}
+					list_FreeAll(&books[c]->pages);
+					free(books[c]);
+				}
+			}
+			free(books);
+		}
+		createBooks();
 	}
 }

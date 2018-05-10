@@ -32,7 +32,7 @@
 #define ITEM_VELY my->vel_y
 #define ITEM_VELZ my->vel_z
 #define ITEM_NOCOLLISION my->flags[USERFLAG1]
-#define ITEM_TYPE (Item)my->skill[10]
+#define ITEM_TYPE my->skill[10]
 #define ITEM_STATUS (Status)my->skill[11]
 #define ITEM_BEATITUDE my->skill[12]
 #define ITEM_COUNT my->skill[13]
@@ -140,6 +140,14 @@ void actItem(Entity* my)
 						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
 					}
 					Item* item2 = newItemFromEntity(my);
+					if ( players[i] && players[i]->entity )
+					{
+						if ( my->itemStolen == 1 && item2 && (static_cast<Uint32>(item2->ownerUid) == players[i]->entity->getUID()) )
+						{
+							steamAchievementClient(i, "BARONY_ACH_REPOSSESSION");
+						}
+					}
+					//messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
 					{
 						item = itemPickup(i, item2);
@@ -277,6 +285,10 @@ void actItem(Entity* my)
 	// falling out of the map
 	if ( my->z > 128 )
 	{
+		if ( ITEM_TYPE == ARTIFACT_MACE && my->parent != 0 )
+		{
+			steamAchievementEntity(uidToEntity(my->parent), "BARONY_ACH_STFU");
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}

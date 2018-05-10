@@ -99,7 +99,8 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/monster_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actpedestal.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actteleporter.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/actmagictrap.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/actmagictrap.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/steam_shared.cpp"
 )
 
 if( WIN32 )
@@ -126,6 +127,7 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/items_editor.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/steam_shared.cpp"
 )
 
 add_subdirectory(magic)
