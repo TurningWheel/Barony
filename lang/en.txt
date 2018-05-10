@@ -3671,5 +3671,6 @@ IDENTICAL MOD LISTS LOADED!#
 3002 Are you sure you want to delete this high score?
 
 #
+3003 Steam Achievements are disabled#
 
 3099 end#

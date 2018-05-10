@@ -2184,22 +2184,35 @@ void clientHandlePacket()
 		{
 			switch ( currentlevel )
 			{
-				case 0:
-					steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
-					break;
-				case 4:
+			case 0:
+				steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
+				break;
+			default:
+				break;
+			}
+		}
+
+		// setup level change
+		printlog("Received order to change level.\n");
+		currentlevel = net_packet->data[13];
+		
+		if ( !secretlevel )
+		{
+			switch ( currentlevel )
+			{
+				case 5:
 					steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
 					break;
-				case 9:
+				case 10:
 					steamAchievement("BARONY_ACH_JUNGLE_FEVER");
 					break;
-				case 14:
+				case 15:
 					steamAchievement("BARONY_ACH_SANDMAN");
 					break;
-				case 29:
+				case 30:
 					steamAchievement("BARONY_ACH_SPELUNKY");
 					break;
-				case 34:
+				case 35:
 					if ( ((completionTime / TICKS_PER_SECOND) / 60) <= 45 )
 					{
 						conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] = 1;
@@ -2210,9 +2223,6 @@ void clientHandlePacket()
 			}
 		}
 
-		// setup level change
-		printlog("Received order to change level.\n");
-		currentlevel = net_packet->data[13];
 		list_FreeAll(&removedEntities);
 		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{

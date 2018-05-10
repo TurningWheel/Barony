@@ -120,6 +120,7 @@ bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game
 bool gamemods_tileListRequireReloadUnmodded = false;
 bool gamemods_booksRequireReloadUnmodded = false;
 bool gamemods_musicRequireReloadUnmodded = false;
+bool gamemods_disableSteamAchievements = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -547,8 +548,19 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
 			if ( gamemods_numCurrentModsLoaded >= 0 )
 			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 8 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
+				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 12 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
 			}
+#ifdef STEAMWORKS
+			if ( gamemods_disableSteamAchievements || (intro == false && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) )
+			{
+				TTF_SizeUTF8(ttf8, language[3003], &w, &h);
+				if ( gamemods_numCurrentModsLoaded < 0 )
+				{
+					h = -4;
+				}
+				ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 16 - h - h2 * 3, language[3003]);
+			}
+#endif // STEAMWORKS
 
 #ifdef STEAMWORKS
 			TTF_SizeUTF8(ttf8, language[2549], &w, &h);
@@ -665,17 +677,14 @@ void handleMainMenu(bool mode)
 					bool reloadModels = false;
 					int modelsIndexUpdateStart = 1;
 					int modelsIndexUpdateEnd = nummodels;
-					std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-					if ( modelsDirectory.compare("./") != 0 )
+					if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
 					{
 						reloadModels = true; // we had some models already loaded which should be reset
-						physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd); // grab the indices to use later.
 					}
 					bool reloadSounds = false;
-					std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-					if ( soundsDirectory.compare("./") != 0 )
+					if ( physfsSearchSoundsToUpdate() )
 					{
-						reloadSounds = true;
+						reloadSounds = true; // we had some sounds already loaded which should be reset
 					}
 
 					gamemodsClearAllMountedPaths();
@@ -689,14 +698,8 @@ void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2990]);
 						GO_SwapBuffers(screen);
 
-						int tmpStart;
-						int tmpEnd;
-						physfsSearchModelsToUpdate(tmpStart, tmpEnd);
-						char cmdString[32] = "/loadmodels ";
-						char buf[32];
-						snprintf(buf, 32, "%d %d", modelsIndexUpdateStart, modelsIndexUpdateEnd);
-						strcat(cmdString, buf);
-						consoleCommand(cmdString);
+						physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+						generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
 						gamemods_modelsListLastStartedUnmodded = true;
 					}
 					if ( reloadSounds )
@@ -743,6 +746,8 @@ void handleMainMenu(bool mode)
 						physfsSearchMusicToUpdate();
 						gamemods_musicRequireReloadUnmodded = false;
 					}
+
+					gamemods_disableSteamAchievements = false;
 
 					if ( saveGameExists(true) || saveGameExists(false) )
 					{
@@ -5999,6 +6004,77 @@ void handleMainMenu(bool mode)
 				savethisgame = false;
 			}
 
+			if ( victory )
+			{
+				// conduct achievements
+				if ( (victory == 1 && currentlevel >= 20)
+					|| (victory == 2 && currentlevel >= 24)
+					|| (victory == 3 && currentlevel >= 35) )
+				{
+					if ( conductPenniless )
+					{
+						steamAchievement("BARONY_ACH_PENNILESS_CONDUCT");
+					}
+					if ( conductFoodless )
+					{
+						steamAchievement("BARONY_ACH_FOODLESS_CONDUCT");
+					}
+					if ( conductVegetarian )
+					{
+						steamAchievement("BARONY_ACH_VEGETARIAN_CONDUCT");
+					}
+					if ( conductIlliterate )
+					{
+						steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
+					}
+
+					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+					{
+						steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
+						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
+					}
+				}
+
+				if ( victory == 1 )
+				{
+					if ( currentlevel >= 20 )
+					{
+						if ( conductGameChallenges[CONDUCT_HARDCORE] )
+						{
+							steamAchievement("BARONY_ACH_HARDCORE");
+						}
+					}
+				}
+				else if ( victory == 2 )
+				{
+					if ( currentlevel >= 24 )
+					{
+						if ( conductGameChallenges[CONDUCT_HARDCORE] )
+						{
+							steamAchievement("BARONY_ACH_HARDCORE");
+						}
+					}
+				}
+				else if ( victory == 3 )
+				{
+					if ( currentlevel >= 35 )
+					{
+						if ( conductGameChallenges[CONDUCT_BRAWLER] )
+						{
+							steamAchievement("BARONY_ACH_BRAWLER");
+						}
+						if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
+						{
+							steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
+						}
+						if ( conductGameChallenges[CONDUCT_HARDCORE] )
+						{
+							steamAchievement("BARONY_ACH_POST_HARDCORE");
+						}
+					}
+				}
+			}
+
 			// reset game
 			darkmap = false;
 			appraisal_timer = 0;
@@ -6106,61 +6182,17 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				// conduct achievements
-				if ( conductPenniless )
-				{
-					steamAchievement("BARONY_ACH_PENNILESS_CONDUCT");
-				}
-				if ( conductFoodless )
-				{
-					steamAchievement("BARONY_ACH_FOODLESS_CONDUCT");
-				}
-				if ( conductVegetarian )
-				{
-					steamAchievement("BARONY_ACH_VEGETARIAN_CONDUCT");
-				}
-				if ( conductIlliterate )
-				{
-					steamAchievement("BARONY_ACH_ILLITERATE_CONDUCT");
-				}
-
-				if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
-				{
-					steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
-					conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
-				}
-
 				if ( victory == 1 )
 				{
 					introstage = 7;
-					if ( conductGameChallenges[CONDUCT_HARDCORE] )
-					{
-						steamAchievement("BARONY_ACH_HARDCORE");
-					}
 				}
 				else if ( victory == 2 )
 				{
 					introstage = 8;
-					if ( conductGameChallenges[CONDUCT_HARDCORE] )
-					{
-						steamAchievement("BARONY_ACH_HARDCORE");
-					}
 				}
 				else if ( victory == 3 )
 				{
 					introstage = 10;
-					if ( conductGameChallenges[CONDUCT_BRAWLER] )
-					{
-						steamAchievement("BARONY_ACH_BRAWLER");
-					}
-					if ( conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] )
-					{
-						steamAchievement("BARONY_ACH_PLUS_BOOTS_OF_SPEED");
-					}
-					if ( conductGameChallenges[CONDUCT_HARDCORE] )
-					{
-						steamAchievement("BARONY_ACH_POST_HARDCORE");
-					}
 				}
 			}
 
@@ -10783,12 +10815,20 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		steamAchievement("BARONY_ACH_LOCAL_CUSTOMS");
 	}
 
+	if ( physfsIsMapLevelListModded() )
+	{
+		gamemods_disableSteamAchievements = true;
+	}
+	else
+	{
+		gamemods_disableSteamAchievements = false;
+	}
+
 	int w, h;
 
 	if ( !gamemods_modelsListRequiresReload && gamemods_modelsListLastStartedUnmodded )
 	{
-		std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
-		if ( modelsDirectory.compare("./") != 0 )
+		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
 		{
 			gamemods_modelsListRequiresReload = true;
 		}
@@ -10796,8 +10836,7 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	}
 	if ( !gamemods_soundListRequiresReload && gamemods_soundsListLastStartedUnmodded )
 	{
-		std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
-		if ( soundsDirectory.compare("./") != 0 )
+		if ( physfsSearchSoundsToUpdate() )
 		{
 			gamemods_soundListRequiresReload = true;
 		}
@@ -10807,24 +10846,28 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	// process any new model files encountered in the mod load list.
 	int modelsIndexUpdateStart = 1;
 	int modelsIndexUpdateEnd = nummodels;
-	if ( gamemods_modelsListRequiresReload && physfsSearchModelsToUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd) )
+	if ( gamemods_modelsListRequiresReload )
 	{
-		// print a loading message
-		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2989], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
-		GO_SwapBuffers(screen);
-		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+		if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+		{
+			// print a loading message
+			drawClearBuffers();
+			TTF_SizeUTF8(ttf16, language[2989], &w, &h);
+			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2989]);
+			GO_SwapBuffers(screen);
+			physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+			generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, false);
+		}
 		gamemods_modelsListRequiresReload = false;
 	}
-	if ( gamemods_soundListRequiresReload && physfsSearchSoundsToUpdate() )
+	if ( gamemods_soundListRequiresReload )
 	{
 		// print a loading message
 		drawClearBuffers();
 		TTF_SizeUTF8(ttf16, language[2987], &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
 		GO_SwapBuffers(screen);
-		physfsReloadSounds(false);
+		physfsReloadSounds(true);
 		gamemods_soundListRequiresReload = false;
 	}
 

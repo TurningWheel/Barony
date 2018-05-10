@@ -140,6 +140,7 @@ bool gamemodsRemovePathFromMountedFiles(std::string findStr);
 bool gamemodsIsPathInMountedFiles(std::string findStr);
 bool gamemodsClearAllMountedPaths();
 bool gamemodsMountAllExistingPaths();
+extern bool gamemods_disableSteamAchievements;
 extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
 #ifdef STEAMWORKS
 void gamemodsWindowUploadInit(bool creatingNewItem);
