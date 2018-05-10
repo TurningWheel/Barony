@@ -10862,12 +10862,15 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	}
 	if ( gamemods_soundListRequiresReload )
 	{
-		// print a loading message
-		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[2987], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
-		GO_SwapBuffers(screen);
-		physfsReloadSounds(true);
+		if ( physfsSearchSoundsToUpdate() )
+		{
+			// print a loading message
+			drawClearBuffers();
+			TTF_SizeUTF8(ttf16, language[2987], &w, &h);
+			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2987]);
+			GO_SwapBuffers(screen);
+			physfsReloadSounds(true);
+		}
 		gamemods_soundListRequiresReload = false;
 	}
 
