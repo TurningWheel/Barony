@@ -265,7 +265,7 @@ void createBook(book_t* book)
 	book->text = readFile(bookChar);
 	if (!book->text)
 	{
-		printlog( "error opening book \"%s\".\n", tempstr);
+		printlog( "error opening book \"%s\".\n", tempstr.c_str());
 		return; //Failed to open the file.
 	}
 
