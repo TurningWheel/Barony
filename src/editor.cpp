@@ -1727,7 +1727,7 @@ int main(int argc, char** argv)
 	{
 		if ( loadMap(physfsFormatMapName(maptoload).c_str(), &map, map.entities, map.creatures) == -1 )
 		{
-			strcat(message, "Failed to open ");
+			strcpy(message, "Failed to open ");
 			strcat(message, maptoload);
 		}
 		else
@@ -2309,14 +2309,7 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 4, yres - 12, "X: %4d Y: %4d Z: %d %s", drawx, drawy, drawlayer + 1, layerstatus);
 				if ( messagetime )
 				{
-					if ( strlen(message) > 48 )
-					{
-						printText(font8x8_bmp, xres - 384 - 4 * (strlen(message)), yres - 12, message);
-					}
-					else
-					{
-						printText(font8x8_bmp, xres - 384, yres - 12, message);
-					}
+					printText(font8x8_bmp, xres - 8 * (strlen(message)) - 12, yres - 12, message);
 				}
 			}
 
