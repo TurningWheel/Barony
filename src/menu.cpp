@@ -5145,17 +5145,32 @@ void handleMainMenu(bool mode)
 							drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
 						}
 
+						// draw preview title
 						std::string line = itemDetails.m_rgchTitle;
-						if ( line.length() >= filenameMaxLength )
+						std::size_t found = line.find_first_of('\n');
+						if ( found != std::string::npos && found < filenameMaxLength - 2 )
 						{
-							line = line.substr(0, 46);
+							line = line.substr(0, found); // don't print out newlines.
+							line.append("..");
+						}
+						else if ( line.length() >= filenameMaxLength )
+						{
+							line = line.substr(0, filenameMaxLength - 2);
 							line.append("..");
 						}
 						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "Title: %s", line.c_str());
+
+						// draw preview description
 						line = itemDetails.m_rgchDescription;
-						if ( line.length() >= filenameMaxLength )
+						found = line.find_first_of('\n');
+						if ( found != std::string::npos && found < filenameMaxLength - 2 )
 						{
-							line = line.substr(0, 46);
+							line = line.substr(0, found);
+							line.append("..");
+						}
+						else if ( line.length() >= filenameMaxLength )
+						{
+							line = line.substr(0, filenameMaxLength - 2);
 							line.append("..");
 						}
 						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + TTF12_HEIGHT, "Desc: %s", line.c_str());
@@ -5163,8 +5178,6 @@ void handleMainMenu(bool mode)
 						// if hovering over title or description, provide more info...
 						if ( mouseInBounds(filename_padx + 8, filename_padx + 8 + 52 * TTF12_WIDTH, filename_pady + TTF12_HEIGHT, filename_pady + 2 * TTF12_HEIGHT) )
 						{
-							line = itemDetails.m_rgchDescription;
-							tooltip.h = (6 + std::min(static_cast<int>((line.size() / 64)), maxDescriptionLines)) * TTF12_HEIGHT + 8;
 							drawExtendedInformationForMod = i;
 						}
 
@@ -5289,46 +5302,93 @@ void handleMainMenu(bool mode)
 					int tooltip_pady = 8;
 					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[drawExtendedInformationForMod];
 					// draw the information.
+					std::string line;
+
+					line = itemDetails.m_rgchDescription;
+					line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+					//line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+					std::string subString;
+					std::string outputStr;
+					std::size_t found = line.find('\n');
+					int numlines = 0;
+					while ( line.length() >= 62 || (found != std::string::npos && found < 62) )
+					{
+						if ( numlines >= maxDescriptionLines )
+						{
+							break;
+						}
+						if ( found != std::string::npos && found < 62 )
+						{
+							// found newline.
+							subString = line.substr(0, found);
+							line = line.substr(found + 1);
+						}
+						else
+						{
+							subString = line.substr(0, 62);
+							if ( subString.at(subString.length() - 1) != ' ' || line.at(62) != ' ' )
+							{
+								// handle word wrapping.
+								std::size_t lastSpace = subString.find_last_of(' ');
+								if ( lastSpace != std::string::npos )
+								{
+									subString = subString.substr(0, lastSpace);
+									line = line.substr(lastSpace, line.length());
+								}
+								else
+								{
+									line = line.substr(62);
+								}
+							}
+							else
+							{
+								line = line.substr(62);
+							}
+						}
+						outputStr.append(subString);
+						outputStr += '\n';
+						outputStr.append("  ");
+						found = line.find('\n');
+						++numlines;
+					}
+
+					subString = line;
+					outputStr.append(subString);
+
+					tooltip.h = (6 + std::min(maxDescriptionLines, numlines)) * TTF12_HEIGHT + 12;
 					drawTooltip(&tooltip);
-					std::string line = itemDetails.m_rgchTitle;
-					if ( line.length() >= 64 )
+
+					// draw description title.
+					line = itemDetails.m_rgchTitle;
+					found = line.find_first_of('\n');
+					if ( found != std::string::npos && found < 62 )
+					{
+						line = line.substr(0, found);
+						line.append("..");
+					}
+					else if ( line.length() >= 64 )
 					{
 						line = line.substr(0, 62);
 						line.append("..");
 					}
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "%s", line.c_str());
-					tooltip_pady += 2 * TTF12_HEIGHT;
+					tooltip_pady += TTF12_HEIGHT * 2;
 
-					line = itemDetails.m_rgchDescription;
-					line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
-					line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-					std::string subString;
-					while ( line.length() >= 62 )
-					{
-						if ( maxDescriptionLines <= 0 )
-						{
-							break;
-						}
-						subString = line.substr(0, 62);
-						line = line.substr(62);
-						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
-						tooltip_pady += TTF12_HEIGHT;
-						--maxDescriptionLines;
-					}
-					subString = line.substr(0, 62);
-					ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
-					tooltip_pady += TTF12_HEIGHT;
+					// draw description body.
+					ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", outputStr.c_str());
 
+					tooltip_pady += TTF12_HEIGHT * (numlines + 2);
+					
+					// draw tags.
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "tags:");
 					tooltip_pady += TTF12_HEIGHT;
 					line = itemDetails.m_rgchTags;
 
-					maxDescriptionLines = 3;
 					int tooltip_padx = 0;
 					if ( !line.empty() )
 					{
 						subString = line;
-						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "%s", subString.c_str());
+						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
 					}
 				}
 			}
