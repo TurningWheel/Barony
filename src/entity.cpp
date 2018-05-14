@@ -9429,6 +9429,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				}
 
 				Entity* entity = (Entity*)node->element;
+				if ( entity->flags[INVISIBLE] )
+				{
+					continue; // ignore invisible items like Sokoban gloves or other scripted events.
+				}
+
 				Item* item = nullptr;
 				if ( entity != nullptr )
 				{
