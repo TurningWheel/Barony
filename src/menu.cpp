@@ -120,6 +120,7 @@ bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game
 bool gamemods_tileListRequireReloadUnmodded = false;
 bool gamemods_booksRequireReloadUnmodded = false;
 bool gamemods_musicRequireReloadUnmodded = false;
+bool gamemods_langRequireReloadUnmodded = false;
 bool gamemods_disableSteamAchievements = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -745,6 +746,17 @@ void handleMainMenu(bool mode)
 						GO_SwapBuffers(screen);
 						physfsSearchMusicToUpdate();
 						gamemods_musicRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_langRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3005], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3005]);
+						GO_SwapBuffers(screen);
+						reloadLanguage();
+						gamemods_langRequireReloadUnmodded = false;
 					}
 
 					gamemods_disableSteamAchievements = false;
@@ -10970,6 +10982,25 @@ void buttonGamemodsStartModdedGame(button_t* my)
 			playmusic(intromusic[rand() % NUMINTROMUSIC], false, true, true);
 		}
 		gamemods_musicRequireReloadUnmodded = true;
+	}
+
+	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+	if ( langDirectory.compare("./") != 0 )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3004], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2991]);
+		GO_SwapBuffers(screen);
+		if ( reloadLanguage() != 0 )
+		{
+			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+		}
+		else
+		{
+			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+		}
+		gamemods_langRequireReloadUnmodded = true;
 	}
 
 	// look for a save game
