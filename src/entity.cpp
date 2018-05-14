@@ -5580,8 +5580,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
 											&& hit.entity->monsterTarget != getUID() )
 										{
+											bool angelOfDeath = false;
 											// monster is attacking another entity.
-											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											for ( int i = 0; i < MAXPLAYERS; ++i )
+											{
+												if ( players[i] && players[i]->entity )
+												{
+													if ( players[i]->entity->getUID() == hit.entity->monsterTarget )
+													{
+														// monster is attacking another player.
+														angelOfDeath = true;
+														break;
+													}
+													Entity* tmpEnt = uidToEntity(hit.entity->monsterTarget);
+													if ( tmpEnt )
+													{
+														Stat* tmpStats = tmpEnt->getStats();
+														if ( tmpStats )
+														{
+															if ( tmpStats->leader_uid == players[i]->entity->getUID() )
+															{
+																// monster is attacking an allied NPC of a player.
+																angelOfDeath = true;
+																break;
+															}
+														}
+													}
+												}
+											}
+											if ( angelOfDeath )
+											{
+												steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											}
 										}
 									}
 								}
@@ -5654,8 +5684,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
 											&& hit.entity->monsterTarget != getUID() )
 										{
+											bool angelOfDeath = false;
 											// monster is attacking another entity.
-											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											for ( int i = 0; i < MAXPLAYERS; ++i )
+											{
+												if ( players[i] && players[i]->entity )
+												{
+													if ( players[i]->entity->getUID() == hit.entity->monsterTarget )
+													{
+														// monster is attacking another player.
+														angelOfDeath = true;
+														break;
+													}
+													Entity* tmpEnt = uidToEntity(hit.entity->monsterTarget);
+													if ( tmpEnt )
+													{
+														Stat* tmpStats = tmpEnt->getStats();
+														if ( tmpStats )
+														{
+															if ( tmpStats->leader_uid == players[i]->entity->getUID() )
+															{
+																// monster is attacking an allied NPC of a player.
+																angelOfDeath = true;
+																break;
+															}
+														}
+													}
+												}
+											}
+											if ( angelOfDeath )
+											{
+												steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											}
 										}
 									}
 								}
