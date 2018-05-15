@@ -153,7 +153,9 @@ int initGame()
 
 	// load item types
 	printlog( "loading items...\n");
-	fp = openDataFile("items/items.txt", "r");
+	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
+	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+	fp = openDataFile(itemsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); ++c )
 	{
 		if ( c > ARTIFACT_BOW )
