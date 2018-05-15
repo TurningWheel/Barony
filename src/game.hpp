@@ -115,6 +115,13 @@ extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
 
+enum ESteamStatTypes
+{
+	STEAM_STAT_INT = 0,
+	STEAM_STAT_FLOAT = 1,
+	STEAM_STAT_AVGRATE = 2,
+};
+
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);
 void steamAchievementClient(int player, const char* achName);
