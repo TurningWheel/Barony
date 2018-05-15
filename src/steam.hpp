@@ -176,14 +176,6 @@ public:
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
 };
 
-
-enum ESteamStatTypes
-{
-	STEAM_STAT_INT = 0,
-	STEAM_STAT_FLOAT = 1,
-	STEAM_STAT_AVGRATE = 2,
-};
-
 struct SteamStat_t
 {
 	int m_ID;

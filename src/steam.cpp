@@ -807,6 +807,10 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 
 void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 {
+#ifndef STEAMWORKS
+	return;
+#else
+
 	int iVal = g_SteamStats[statisticNum].m_iValue;
 	float fVal = g_SteamStats[statisticNum].m_flValue;
 	if ( type == STEAM_STAT_INT )
@@ -859,6 +863,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 		}
 	}
+#endif // !STEAMWORKS
 }
 
 #ifdef STEAMWORKS
