@@ -23,6 +23,7 @@
 #include "entity.hpp"
 #include "book.hpp"
 #include "menu.hpp"
+#include "items.hpp"
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
 
@@ -1302,7 +1303,7 @@ void physfsReloadSounds(bool reloadAll)
 				{
 #ifdef USE_FMOD
 					FMOD_Sound_Release(sounds[c]);    //Free the sound in FMOD
-#elif USE_OPENAL
+#elifdef USE_OPENAL
 					OPENAL_Sound_Release(sounds[c]); //Free the sound in OPENAL
 #endif
 				}
@@ -1335,7 +1336,7 @@ void physfsReloadSounds(bool reloadAll)
 				{
 					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
 				}
-#elif USE_OPENAL
+#elifdef USE_OPENAL
 				if ( !reloadAll )
 				{
 					OPENAL_Sound_Release(sounds[c]);
@@ -1543,4 +1544,97 @@ bool physfsIsMapLevelListModded()
 		++levelsCounted;
 	}
 	return false;
+}
+
+bool physfsSearchItemSpritesToUpdate()
+{
+	for ( int c = 0; c < NUMITEMS; ++c )
+	{
+		for ( int x = 0; x < list_Size(&items[c].images); x++ )
+		{
+			node_t* node = list_Node(&items[c].images, x);
+			string_t* string = (string_t*)node->element;
+			std::string itemImgDir;
+			if ( PHYSFS_getRealDir(string->data) != NULL )
+			{
+				itemImgDir = PHYSFS_getRealDir(string->data);
+				if ( itemImgDir.compare("./") != 0 )
+				{
+					printlog("[PhysFS]: Found modified item sprite in items/item.txt file, reloading all item sprites...");
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void physfsReloadItemSprites(bool reloadAll)
+{
+	for ( int c = 0; c < NUMITEMS; ++c )
+	{
+		bool reloadImg = reloadAll;
+		if ( !reloadAll )
+		{
+			for ( int x = 0; x < list_Size(&items[c].images); x++ )
+			{
+				node_t* node = list_Node(&items[c].images, x);
+				string_t* string = (string_t*)node->element;
+				std::string itemImgDir;
+				if ( PHYSFS_getRealDir(string->data) != NULL )
+				{
+					itemImgDir = PHYSFS_getRealDir(string->data);
+					if ( itemImgDir.compare("./") != 0 )
+					{
+						reloadImg = true;
+					}
+				}
+			}
+		}
+		if ( reloadImg )
+		{
+			// free the image data.
+			//list_FreeAll(&items[c].images);
+			node_t* node, *nextnode;
+			for ( node = items[c].surfaces.first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				SDL_Surface** surface = (SDL_Surface**)node->element;
+				if ( surface )
+				{
+					if ( *surface )
+					{
+						SDL_FreeSurface(*surface);
+					}
+				}
+			}
+			list_FreeAll(&items[c].surfaces);
+
+			// now reload the image data.
+			for ( int x = 0; x < list_Size(&items[c].images); x++ )
+			{
+				SDL_Surface** surface = (SDL_Surface**)malloc(sizeof(SDL_Surface*));
+				node_t* node = list_AddNodeLast(&items[c].surfaces);
+				node->element = surface;
+				node->deconstructor = &defaultDeconstructor;
+				node->size = sizeof(SDL_Surface*);
+
+				node_t* node2 = list_Node(&items[c].images, x);
+				string_t* string = (string_t*)node2->element;
+				std::string itemImgDir;
+				if ( PHYSFS_getRealDir(string->data) != NULL )
+				{
+					itemImgDir = PHYSFS_getRealDir(string->data);
+					itemImgDir.append(PHYSFS_getDirSeparator()).append(string->data);
+				}
+				else
+				{
+					itemImgDir = string->data;
+				}
+				char imgFileChar[256];
+				strncpy(imgFileChar, itemImgDir.c_str(), 255);
+				*surface = loadImage(imgFileChar);
+			}
+		}
+	}
 }
