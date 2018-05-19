@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "game.hpp"
+
 //TODO: Bugger all void pointers and helper funcs on these.
 void steam_OnP2PSessionRequest(void* p_Callback); //TODO: Finalize porting.
 //void steam_OnGameOverlayActivated(void *callback);
