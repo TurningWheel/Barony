@@ -1562,7 +1562,7 @@ bool physfsSearchItemSpritesToUpdate()
 				itemImgDir = PHYSFS_getRealDir(string->data);
 				if ( itemImgDir.compare("./") != 0 )
 				{
-					printlog("[PhysFS]: Found modified item sprite in items/item.txt file, reloading all item sprites...");
+					printlog("[PhysFS]: Found modified item sprite in items/items.txt file, reloading all item sprites...");
 					return true;
 				}
 			}
@@ -1639,4 +1639,159 @@ void physfsReloadItemSprites(bool reloadAll)
 			}
 		}
 	}
+}
+
+bool physfsSearchItemsTxtToUpdate()
+{
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
+	if ( itemsTxtDirectory.compare("./") != 0 )
+	{
+		printlog("[PhysFS]: Found modified items/items.txt file, reloading all item information...");
+		return true;
+	}
+	return false;
+}
+
+void physfsReloadItemsTxt()
+{
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
+	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+	FILE* fp = openDataFile(itemsTxtDirectory.c_str(), "r");
+	char buffer[128];
+
+	for ( int c = 0; !feof(fp) && c < NUMITEMS; ++c )
+	{
+		//if ( c > ARTIFACT_BOW )
+		//{
+		//	int newItems = c - ARTIFACT_BOW - 1;
+		//	items[c].name_identified = language[2200 + newItems * 2];
+		//	items[c].name_unidentified = language[2201 + newItems * 2];
+		//}
+		//else
+		//{
+		//	items[c].name_identified = language[1545 + c * 2];
+		//	items[c].name_unidentified = language[1546 + c * 2];
+		//}
+		fscanf(fp, "%d", &items[c].index);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%d", &items[c].fpindex);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%d", &items[c].variations);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%s", buffer);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		if ( !strcmp(buffer, "WEAPON") )
+		{
+			items[c].category = WEAPON;
+		}
+		else if ( !strcmp(buffer, "ARMOR") )
+		{
+			items[c].category = ARMOR;
+		}
+		else if ( !strcmp(buffer, "AMULET") )
+		{
+			items[c].category = AMULET;
+		}
+		else if ( !strcmp(buffer, "POTION") )
+		{
+			items[c].category = POTION;
+		}
+		else if ( !strcmp(buffer, "SCROLL") )
+		{
+			items[c].category = SCROLL;
+		}
+		else if ( !strcmp(buffer, "MAGICSTAFF") )
+		{
+			items[c].category = MAGICSTAFF;
+		}
+		else if ( !strcmp(buffer, "RING") )
+		{
+			items[c].category = RING;
+		}
+		else if ( !strcmp(buffer, "SPELLBOOK") )
+		{
+			items[c].category = SPELLBOOK;
+		}
+		else if ( !strcmp(buffer, "TOOL") )
+		{
+			items[c].category = TOOL;
+		}
+		else if ( !strcmp(buffer, "FOOD") )
+		{
+			items[c].category = FOOD;
+		}
+		else if ( !strcmp(buffer, "BOOK") )
+		{
+			items[c].category = BOOK;
+		}
+		else if ( !strcmp(buffer, "THROWN") )
+		{
+			items[c].category = THROWN;
+		}
+		else if ( !strcmp(buffer, "SPELL_CAT") )
+		{
+			items[c].category = SPELL_CAT;
+		}
+		else
+		{
+			items[c].category = GEM;
+		}
+		fscanf(fp, "%d", &items[c].weight);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%d", &items[c].value);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		list_FreeAll(&items[c].images);
+
+		while ( 1 )
+		{
+			string_t* string = (string_t*)malloc(sizeof(string_t));
+			string->data = (char*)malloc(sizeof(char) * 64);
+			string->lines = 1;
+
+			node_t* node = list_AddNodeLast(&items[c].images);
+			node->element = string;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			string->node = node;
+
+			int x = 0;
+			bool fileend = false;
+			while ( (string->data[x] = fgetc(fp)) != '\n' )
+			{
+				if ( feof(fp) )
+				{
+					fileend = true;
+					break;
+				}
+				x++;
+			}
+			if ( x == 0 || fileend )
+			{
+				list_RemoveNode(node);
+				break;
+			}
+			string->data[x] = 0;
+		}
+	}
+
+	fclose(fp);
 }

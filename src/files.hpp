@@ -49,3 +49,5 @@ extern std::vector<int> gamemods_modelsListModifiedIndexes;
 bool physfsIsMapLevelListModded();
 bool physfsSearchItemSpritesToUpdate();
 void physfsReloadItemSprites(bool reloadAll);
+bool physfsSearchItemsTxtToUpdate();
+void physfsReloadItemsTxt();
