@@ -3672,5 +3672,11 @@ IDENTICAL MOD LISTS LOADED!#
 
 #
 3003 Steam Achievements are disabled#
+3004 Loading modded language file...#
+3005 Unloading modded language file...#
+3006 Loading modded item sprites...#
+3007 Unloading modded item sprites...#
+3008 Loading modded items.txt properties...#
+3009 Unloading modded items.txt properties...#
 
 3099 end#
