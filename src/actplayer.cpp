@@ -1165,7 +1165,8 @@ void actPlayer(Entity* my)
 				{
 					if ( entityInsideTile(my, u, v, 0) )   // no floor
 					{
-						messagePlayer(PLAYER_NUM, language[572]);
+						//messagePlayer(PLAYER_NUM, language[572]);
+						my->setObituary(language[3010]); // fell to their death.
 						stats[PLAYER_NUM]->HP = 0; // kill me instantly
 						break;
 					}
