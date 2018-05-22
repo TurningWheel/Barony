@@ -2557,7 +2557,7 @@ void Entity::handleEffects(Stat* myStats)
 	// effects of greasy fingers
 	if ( myStats->EFFECTS[EFF_GREASY] == true )
 	{
-		if ( myStats->weapon != NULL )
+		if ( myStats->weapon != NULL && myStats->weapon->beatitude >= 0 )
 		{
 			messagePlayer(player, language[636]);
 			if ( player >= 0 )
