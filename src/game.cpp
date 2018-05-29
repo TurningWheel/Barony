@@ -2951,12 +2951,15 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										if ( achievementBrawlerMode )
+										if ( achievementBrawlerMode && selected_spell != nullptr )
 										{
 											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
 										}
 										castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
-										conductGameChallenges[CONDUCT_BRAWLER] = 0;
+										if ( selected_spell != nullptr )
+										{
+											conductGameChallenges[CONDUCT_BRAWLER] = 0;
+										}
 									}
 								}
 								else
