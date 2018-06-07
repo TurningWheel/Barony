@@ -1533,7 +1533,18 @@ void clientHandlePacket()
 				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
 				item->count = 1;
 			}
-			item->status = static_cast<Status>(net_packet->data[5]);
+			if ( static_cast<int>(net_packet->data[5]) > EXCELLENT )
+			{
+				item->status = EXCELLENT;
+			}
+			else if ( static_cast<int>(net_packet->data[5]) < BROKEN )
+			{
+				item->status = BROKEN;
+			}
+			else
+			{
+				item->status = static_cast<Status>(net_packet->data[5]);
+			}
 		}
 		return;
 	}
