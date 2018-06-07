@@ -4555,6 +4555,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( rand() % 2 )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+							if ( myStats->weapon->status < BROKEN )
+							{
+								myStats->weapon->status = BROKEN; // bounds checking.
+							}
 							if ( myStats->weapon->status == BROKEN )
 							{
 								messagePlayer(player, language[664]);
