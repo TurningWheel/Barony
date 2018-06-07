@@ -27,6 +27,9 @@ bool weaponSwitch = false;
 bool shieldSwitch = false;
 
 Sint32 throwGimpTimer = 0; // player cannot throw objects unless zero
+Sint32 pickaxeGimpTimer = 0; // player cannot swap weapons immediately after using pickaxe 
+							 // due to multiplayer weapon degrade lag... equipping new weapon before degrade
+							// message hits can degrade the wrong weapon.
 
 /*-------------------------------------------------------------------------------
 
@@ -238,6 +241,11 @@ void actHudWeapon(Entity* my)
 	if ( throwGimpTimer > 0 )
 	{
 		--throwGimpTimer;
+	}
+	if ( pickaxeGimpTimer > 0 )
+	{
+		//messagePlayer(clientnum, "%d", pickaxeGimpTimer);
+		--pickaxeGimpTimer;
 	}
 
 	// check levitating value
@@ -521,6 +529,10 @@ void actHudWeapon(Entity* my)
 
 				if ( itemCategory(stats[clientnum]->weapon) == WEAPON || stats[clientnum]->weapon->type == TOOL_PICKAXE )
 				{
+					if ( stats[clientnum]->weapon->type == TOOL_PICKAXE )
+					{
+						pickaxeGimpTimer = 40;
+					}
 					if ( stats[clientnum]->weapon->type == IRON_SPEAR || stats[clientnum]->weapon->type == ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 7; // spear lunges
@@ -951,6 +963,15 @@ void actHudWeapon(Entity* my)
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
+					if ( stats[clientnum]->weapon
+						&& stats[clientnum]->weapon->type == TOOL_PICKAXE )
+					{
+						if ( pickaxeGimpTimer < 20 )
+						{
+							pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+						}
+					}
+
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -1006,7 +1027,14 @@ void actHudWeapon(Entity* my)
 					}
 					else
 					{
-						HUDWEAPON_CHOP = 1;
+						if ( pickaxeGimpTimer <= 0 )
+						{
+							HUDWEAPON_CHOP = 1; // allow another swing of pickaxe
+						}
+						else
+						{
+							HUDWEAPON_CHOP = 0;
+						}
 					}
 				}
 			}
