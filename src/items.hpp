@@ -17,6 +17,7 @@
 // variables
 extern bool weaponSwitch;
 extern bool shieldSwitch;
+extern Sint32 pickaxeGimpTimer;
 
 // items
 typedef enum ItemType

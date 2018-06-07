@@ -1317,6 +1317,11 @@ void equipItem(Item* item, Item** slot, int player)
 {
 	int oldcount;
 
+	if ( pickaxeGimpTimer > 0 )
+	{
+		return;
+	}
+
 	if (!item)   // needs "|| !slot " ?
 	{
 		return;
