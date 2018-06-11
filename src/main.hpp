@@ -470,6 +470,7 @@ extern int subx1, subx2, suby1, suby2;
 extern char subtext[1024];
 extern int rscale;
 extern real_t vidgamma;
+extern bool verticalSync;
 extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;

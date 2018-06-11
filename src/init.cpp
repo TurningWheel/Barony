@@ -2419,6 +2419,15 @@ bool initVideo()
 		glLoadIdentity();
 		glClearColor( 0, 0, 0, 0 );
 	}
+
+	if ( verticalSync )
+	{
+		SDL_GL_SetSwapInterval(1);
+	}
+	else
+	{
+		SDL_GL_SetSwapInterval(0);
+	}
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
