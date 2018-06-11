@@ -150,6 +150,7 @@ bool settings_nohud;
 bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
+bool settings_vsync;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
@@ -227,6 +228,7 @@ Sint32 oldXres;
 Sint32 oldYres;
 Sint32 oldFullscreen;
 real_t oldGamma;
+bool oldVerticalSync = false;
 button_t* revertResolutionButton = nullptr;
 
 void buttonCloseSettingsSubwindow(button_t* my);
@@ -2113,6 +2115,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2967]);
 			}
+			if ( settings_vsync )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[x] %s", language[3011]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[ ] %s", language[3011]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -2152,6 +2162,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_light_flicker = (settings_light_flicker == false);
+					}
+					else if ( omousey >= suby1 + 252 && omousey < suby1 + 252 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_vsync = (settings_vsync == false);
 					}
 				}
 			}
@@ -7240,6 +7255,7 @@ void openSettingsWindow()
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
 	settings_light_flicker = flickerLights;
+	settings_vsync = verticalSync;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
@@ -8728,6 +8744,8 @@ void applySettings()
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
 	flickerLights = settings_light_flicker;
+	oldVerticalSync = verticalSync;
+	verticalSync = settings_vsync;
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
@@ -8740,7 +8758,8 @@ void applySettings()
 	camera.winy = 0;
 	camera.winw = std::min(camera.winw, xres);
 	camera.winh = std::min(camera.winh, yres);
-	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma)
+	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma
+		|| oldVerticalSync != verticalSync )
 	{
 		if ( !changeVideoMode() )
 		{

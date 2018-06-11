@@ -842,6 +842,10 @@ void consoleCommand(char* command_str)
 	{
 		flickerLights = (flickerLights == false);
 	}
+	else if ( !strncmp(command_str, "/vsync", 6) )
+	{
+		verticalSync = (verticalSync == false);
+	}
 	else if (!strncmp(command_str, "/colorblind", 11))
 	{
 		colorblind = (colorblind == false);

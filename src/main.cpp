@@ -221,6 +221,7 @@ real_t* zbuffer = nullptr;
 Sint32* lightmap = nullptr;
 bool* vismap = nullptr;
 bool mode3d = false;
+bool verticalSync = false;
 
 // audio definitions
 int audio_rate = 22050;

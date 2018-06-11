@@ -915,6 +915,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/nolightflicker\n");
 	}
+	if ( verticalSync )
+	{
+		fprintf(fp, "/vsync\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");
