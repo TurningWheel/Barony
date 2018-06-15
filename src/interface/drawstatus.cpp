@@ -978,6 +978,30 @@ void drawStatus()
 				}
 			}
 		}
+
+		// minimap pinging.
+		if ( mouseInBounds(xres - map.width * 4, xres, yres - map.height * 4, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+		{
+			if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE])) )
+			{
+				mousestatus[SDL_BUTTON_RIGHT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				if ( minimapPingGimpTimer == -1 )
+				{
+					MinimapPing newPing(ticks, clientnum, (omousex - (xres - map.width * 4)) / 4, (omousey - (yres - map.height * 4)) / 4);
+					minimapPingGimpTimer = TICKS_PER_SECOND / 4;
+					if ( multiplayer != CLIENT )
+					{
+						minimapPingAdd(newPing);
+					}
+					sendMinimapPing(clientnum, newPing.x, newPing.y);
+				}
+			}
+		}
+	}
+	if ( minimapPingGimpTimer >= 0 )
+	{
+		--minimapPingGimpTimer;
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.

@@ -412,3 +412,20 @@ void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers,
 void attackHoverText(Sint32 input[6]);
 Sint32 displayAttackPower(Sint32 output[6]);
 
+class MinimapPing
+{
+public:
+	Sint32 tickStart;
+	Uint8 player;
+	Uint8 x;
+	Uint8 y;
+	MinimapPing::MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
+		tickStart(tickStart),
+		player(player),
+		x(x),
+		y(y) {}
+};
+
+extern std::vector<MinimapPing> minimapPings;
+void minimapPingAdd(MinimapPing newPing);
+extern int minimapPingGimpTimer;
