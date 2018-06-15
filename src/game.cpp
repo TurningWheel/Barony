@@ -772,6 +772,9 @@ void gameLogic(void)
 					darkmap = false;
 					numplayers = 0;
 					int result = physfsLoadMapFile(currentlevel, mapseed, false);
+
+					minimapPings.clear(); // clear minimap pings
+
 					assignActions(&map);
 					generatePathMaps();
 

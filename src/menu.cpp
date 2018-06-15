@@ -5745,6 +5745,8 @@ void handleMainMenu(bool mode)
 
 			setDefaultPlayerConducts(); // penniless, foodless etc.
 
+			minimapPings.clear(); // clear minimap pings
+
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
