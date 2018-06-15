@@ -2304,6 +2304,8 @@ void clientHandlePacket()
 
 		physfsLoadMapFile(currentlevel, mapseed, false);
 
+		minimapPings.clear(); // clear minimap pings
+
 		numplayers = 0;
 		assignActions(&map);
 		generatePathMaps();
