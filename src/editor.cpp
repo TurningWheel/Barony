@@ -53,6 +53,7 @@ std::vector<std::string> mapNames;
 std::list<std::string> modFolderNames;
 std::string physfs_saveDirectory = BASE_DATA_DIR;
 std::string physfs_openDirectory = BASE_DATA_DIR;
+float limbs[NUMMONSTERS][20][3]; // dummy variable for files.cpp limbs reloading in Barony.
 
 map_t copymap;
 
