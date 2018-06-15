@@ -51,3 +51,5 @@ bool physfsSearchItemSpritesToUpdate();
 void physfsReloadItemSprites(bool reloadAll);
 bool physfsSearchItemsTxtToUpdate();
 void physfsReloadItemsTxt();
+bool physfsSearchMonsterLimbFilesToUpdate();
+void physfsReloadMonsterLimbFiles();

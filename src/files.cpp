@@ -1795,3 +1795,90 @@ void physfsReloadItemsTxt()
 
 	fclose(fp);
 }
+
+bool physfsSearchMonsterLimbFilesToUpdate()
+{
+	bool requiresUpdate = false;
+	for ( int c = 1; c < NUMMONSTERS; c++ )
+	{
+		char filename[256];
+		strcpy(filename, "models/creatures/");
+		strcat(filename, monstertypename[c]);
+		strcat(filename, "/limbs.txt");
+		if ( PHYSFS_getRealDir(filename) == NULL ) // some monsters don't have limbs.
+		{
+			continue;
+		}
+		std::string limbsDir = PHYSFS_getRealDir(filename);
+		if ( limbsDir.compare("./") != 0 )
+		{
+			printlog("[PhysFS]: Found modified limbs.txt file for monster %s, reloading all limb information...", monstertypename[c]);
+			requiresUpdate = true;
+		}
+	}
+	return requiresUpdate;
+}
+
+void physfsReloadMonsterLimbFiles()
+{
+	int x;
+	FILE* fp;
+	for ( int c = 1; c < NUMMONSTERS; c++ )
+	{
+		// initialize all offsets to zero
+		for ( x = 0; x < 20; x++ )
+		{
+			limbs[c][x][0] = 0;
+			limbs[c][x][1] = 0;
+			limbs[c][x][2] = 0;
+		}
+
+		// open file
+		char filename[256];
+		strcpy(filename, "models/creatures/");
+		strcat(filename, monstertypename[c]);
+		strcat(filename, "/limbs.txt");
+		if ( PHYSFS_getRealDir(filename) == NULL ) // some monsters don't have limbs
+		{
+			continue;
+		}
+		std::string limbsDir = PHYSFS_getRealDir(filename);
+		limbsDir.append(PHYSFS_getDirSeparator()).append(filename);
+		if ( (fp = openDataFile(limbsDir.c_str(), "r")) == NULL )
+		{
+			continue;
+		}
+
+		// read file
+		int line;
+		for ( line = 1; feof(fp) == 0; line++ )
+		{
+			char data[256];
+			int limb = 20;
+			int dummy;
+
+			// read line from file
+			fgets(data, 256, fp);
+
+			// skip blank and comment lines
+			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
+			{
+				continue;
+			}
+
+			// process line
+			if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
+			{
+				printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", limbsDir.c_str(), line);
+				continue;
+			}
+			if ( sscanf(data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2]) != 4 )
+			{
+				printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", limbsDir.c_str(), line);
+				continue;
+			}
+		}
+		// close file
+		fclose(fp);
+	}
+}
