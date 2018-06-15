@@ -3680,5 +3680,8 @@ IDENTICAL MOD LISTS LOADED!#
 3009 Unloading modded items.txt properties...#
 3010 fell to their death.#
 3011 vertical sync#
+3012 mute minimap pings#
+3013 Loading modded monster limbs.txt files...#
+3014 Unloading modded monster limbs.txt files...#
 
 3099 end#
