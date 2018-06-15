@@ -919,6 +919,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/vsync\n");
 	}
+	if ( minimapPingMute )
+	{
+		fprintf(fp, "/muteping\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");

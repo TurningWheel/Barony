@@ -174,6 +174,7 @@ extern bool settings_colorblind;
 extern bool settings_spawn_blood;
 extern bool settings_light_flicker;
 extern bool settings_vsync;
+extern bool settings_minimap_ping_mute;
 extern char portnumber_char[6];
 extern char connectaddress[64];
 extern int multiplayerselect;

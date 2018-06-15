@@ -151,6 +151,7 @@ bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
 bool settings_vsync;
+bool settings_minimap_ping_mute;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
@@ -2191,6 +2192,24 @@ void handleMainMenu(bool mode)
 			doSlider(subx1 + 24, suby1 + 84, 15, 0, 128, 0, &settings_sfxvolume);
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[1349]);
 			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_musvolume);
+
+			if ( settings_minimap_ping_mute )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[x] %s", language[3012]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[ ] %s", language[3012]);
+			}
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
+				{
+					if ( omousey >= suby1 + 168 && omousey < suby1 + 168 + 12 )
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
+				}
+			}
 		}
 
 		// keyboard tab
@@ -7261,6 +7280,7 @@ void openSettingsWindow()
 	settings_fps = fpsLimit;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
+	settings_minimap_ping_mute = minimapPingMute;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -8780,6 +8800,7 @@ void applySettings()
 	// set audio options
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
+	minimapPingMute = settings_minimap_ping_mute;
 
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);

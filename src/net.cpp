@@ -969,6 +969,48 @@ void serverUpdatePlayerLVL()
 	}
 }
 
+
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
+{
+	if ( multiplayer == SINGLE )
+	{
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		// send to host to relay info.
+		strcpy((char*)net_packet->data, "PMAP"); 
+		net_packet->data[4] = player;
+		net_packet->data[5] = x;
+		net_packet->data[6] = y;
+
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 7;
+		sendPacket(net_sock, -1, net_packet, 0);
+	}
+	else
+	{
+		for ( int c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( !client_disconnected[c] )
+			{
+				// send to all clients.
+				strcpy((char*)net_packet->data, "PMAP");
+				net_packet->data[4] = player;
+				net_packet->data[5] = x;
+				net_packet->data[6] = y;
+
+				net_packet->address.host = net_clients[c - 1].host;
+				net_packet->address.port = net_clients[c - 1].port;
+				net_packet->len = 7;
+				sendPacket(net_sock, -1, net_packet, c - 1);
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	receiveEntity
@@ -3171,6 +3213,11 @@ void clientHandlePacket()
 
 		return;
 	}
+	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
+	{
+		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+		minimapPingAdd(newPing);
+	}
 
 	// game restart
 	if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17))
@@ -3938,6 +3985,14 @@ void serverHandlePacket()
 		{
 			players[player]->entity->getStats()->EXP += 100;
 		}
+	}
+
+	// the client sent a minimap ping packet.
+	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )
+	{
+		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+		minimapPingAdd(newPing);
+		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay to other clients.
 	}
 }
 

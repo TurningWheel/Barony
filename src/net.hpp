@@ -43,6 +43,7 @@ void serverUpdateHunger(int player);
 void serverUpdatePlayerStats();
 void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval);
 void serverUpdatePlayerLVL();
+void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
 void clientHandleMessages();

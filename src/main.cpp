@@ -222,6 +222,7 @@ Sint32* lightmap = nullptr;
 bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;
+bool minimapPingMute = false;
 
 // audio definitions
 int audio_rate = 22050;

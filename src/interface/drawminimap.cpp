@@ -28,6 +28,8 @@
 -------------------------------------------------------------------------------*/
 
 Uint32 minotaur_timer = 0;
+std::vector<MinimapPing> minimapPings;
+int minimapPingGimpTimer = -1;
 
 #define MINIMAPSCALE 4
 void drawMinimap()
@@ -177,20 +179,81 @@ void drawMinimap()
 	}
 	glEnd();
 
+	// draw player pings
+	if ( !minimapPings.empty() )
+	{
+		for ( std::vector<MinimapPing>::const_iterator it = minimapPings.begin(); it != minimapPings.end();)
+		{
+			MinimapPing ping = *it;
+			switch ( ping.player )
+			{
+				case 0:
+					color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+					break;
+				case 1:
+					color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+					break;
+				case 2:
+					color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+					break;
+				case 3:
+					color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+					break;
+				default:
+					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+					break;
+			}
+
+			int aliveTime = ticks - ping.tickStart;
+			if ( aliveTime < TICKS_PER_SECOND * 2.5 ) // 2.5 second duration.
+			{
+				if ( (aliveTime < TICKS_PER_SECOND && (aliveTime % 10 < 5)) || aliveTime >= TICKS_PER_SECOND )
+				{
+					// draw the ping blinking every 5 ticks if less than 1 second lifetime, otherwise constantly draw.
+					x = xres - map.width * MINIMAPSCALE + ping.x * MINIMAPSCALE;
+					y = yres - map.height * MINIMAPSCALE + ping.y * MINIMAPSCALE;
+					int alpha = 255;
+					if ( aliveTime >= TICKS_PER_SECOND * 2 )
+					{
+						// start fading ping after 2 seconds, lasting 0.5 seconds.
+						real_t alphafade = 1 - (aliveTime - TICKS_PER_SECOND * 2) / static_cast<real_t>(TICKS_PER_SECOND * 0.5);
+						alpha = std::max(static_cast<int>(alphafade * alpha), 0);
+					}
+					// draw a circle
+					drawCircle(x - 1, y - 1, 3, color, alpha);
+				}
+			}
+
+
+			// prune old pings > 2.5 seconds
+			if ( aliveTime > TICKS_PER_SECOND * 2.5 )
+			{
+				if ( ping.player == clientnum )
+				{
+					if ( minimapPingGimpTimer > TICKS_PER_SECOND / 4 )
+					{
+						minimapPingGimpTimer = TICKS_PER_SECOND / 4; // reduce the gimp timer when one of the player's own pings fades.
+					}
+				}
+				it = minimapPings.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
 	// draw players and allies
 	
 	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		bool drawchar = false;
-		bool foundme = false;
+		int drawchar = false;
+		int foundplayer = -1;
 		if ( entity->behavior == &actPlayer )
 		{
-			drawchar = true;
-			if ( entity->skill[2] == clientnum )
-			{
-				foundme = true;
-			}
+			foundplayer = entity->skill[2];
 		}
 		else if ( entity->behavior == &actMonster )
 		{
@@ -204,16 +267,52 @@ void drawMinimap()
 				}
 			}
 		}
-		if ( drawchar )
+		if ( drawchar || foundplayer >= 0 )
 		{
 			// my player = green, other players = blue
-			if ( foundme )
+			if ( foundplayer >= 0 )
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 192, 0);
+				switch ( foundplayer )
+				{
+					case 0:
+						color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+						break;
+					case 1:
+						color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+						break;
+					case 2:
+						color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+						break;
+					case 3:
+						color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+						break;
+					default:
+						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+						break;
+				}
+				//color = SDL_MapRGB(mainsurface->format, 0, 192, 0);
 			}
 			else
 			{
-				color = SDL_MapRGB(mainsurface->format, 0, 0, 192);
+				switch ( clientnum )
+				{
+					case 0:
+						color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+						break;
+					case 1:
+						color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+						break;
+					case 2:
+						color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+						break;
+					case 3:
+						color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+						break;
+					default:
+						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+						break;
+				}
+				//color = SDL_MapRGB(mainsurface->format, 0, 0, 192);
 			}
 
 			// draw the first pixel
@@ -257,14 +356,14 @@ void drawMinimap()
 				}
 
 				// get brighter color shade
-				if ( foundme )
+				/*if ( foundplayer )
 				{
 					color = SDL_MapRGB(mainsurface->format, 64, 255, 64);
 				}
 				else
 				{
 					color = SDL_MapRGB(mainsurface->format, 64, 64, 255);
-				}
+				}*/
 
 				// draw the pixel
 				if ( softwaremode )
@@ -378,4 +477,37 @@ void drawMinimap()
 			}
 		}
 	}
+}
+
+void minimapPingAdd(MinimapPing newPing)
+{
+	int numPlayerPings = 0;
+	if ( !minimapPings.empty() )
+	{
+		for ( std::vector<MinimapPing>::const_iterator it = minimapPings.begin(); it != minimapPings.end();)
+		{
+			MinimapPing ping = *it;
+			if ( ping.player == newPing.player )
+			{
+				++numPlayerPings;
+				// prune pings if too many by same player.
+				if ( numPlayerPings > 3 )
+				{
+					if ( ping.player == clientnum )
+					{
+						// this is the player creating the sound source.
+						minimapPingGimpTimer = TICKS_PER_SECOND * 3; // 3 second penalty for spam.
+					}
+					it = minimapPings.erase(it);
+					continue;
+				}
+			}
+			++it;
+		}
+	}
+	if ( !minimapPingMute )
+	{
+		playSound(399, 64);
+	}
+	minimapPings.insert(minimapPings.begin(), newPing);
 }
