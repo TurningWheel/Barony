@@ -53,3 +53,6 @@ bool physfsSearchItemsTxtToUpdate();
 void physfsReloadItemsTxt();
 bool physfsSearchMonsterLimbFilesToUpdate();
 void physfsReloadMonsterLimbFiles();
+void physfsReloadSystemImages();
+bool physfsSearchSystemImagesToUpdate();
+extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;

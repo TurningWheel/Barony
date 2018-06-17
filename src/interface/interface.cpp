@@ -153,6 +153,90 @@ bool auto_appraise_new_items = false;
 bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
 
+std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
+{
+	std::make_pair(&title_bmp, "images/system/title.png"),
+	std::make_pair(&logo_bmp, "images/system/logo.png"),
+	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
+	std::make_pair(&cross_bmp, "images/system/cross.png"),
+
+	std::make_pair(&fancyWindow_bmp, "images/system/fancyWindow.png"),
+	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
+	std::make_pair(&font12x12_bmp, "images/system/font12x12.png"),
+	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),
+
+	std::make_pair(&font12x12_small_bmp, "images/system/font12x12_small.png"),
+	std::make_pair(&backdrop_minotaur_bmp, "images/system/backdrop.png"),
+	std::make_pair(&backdrop_blessed_bmp, "images/system/backdrop_blessed.png"),
+	std::make_pair(&backdrop_cursed_bmp, "images/system/backdrop_cursed.png"),
+	std::make_pair(&button_bmp, "images/system/ButtonHighlighted.png"),
+	std::make_pair(&smallbutton_bmp, "images/system/SmallButtonHighlighted.png"),
+	std::make_pair(&invup_bmp, "images/system/InventoryUpHighlighted.png"),
+	std::make_pair(&invdown_bmp, "images/system/InventoryDownHighlighted.png"),
+	std::make_pair(&status_bmp, "images/system/StatusBar.png"),
+	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
+	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
+	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
+	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
+	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
+
+	//General GUI images.
+	std::make_pair(&attributesleftunclicked_bmp, "images/system/AttributesLeft.png"),
+	std::make_pair(&attributesrightunclicked_bmp, "images/system/AttributesRight.png"),
+	std::make_pair(&shopkeeper_bmp, "images/system/shopkeeper.png"),
+	std::make_pair(&damage_bmp, "images/system/damage.png"),
+
+	//Magic GUI images.
+	std::make_pair(&magicspellList_bmp, "images/system/spellList.png"),
+	std::make_pair(&spell_list_titlebar_bmp, "images/system/spellListTitlebar.png"),
+	std::make_pair(&spell_list_gui_slot_bmp, "images/system/spellListSlot.png"),
+	std::make_pair(&spell_list_gui_slot_highlighted_bmp, "images/system/spellListSlotHighlighted.png"),
+	std::make_pair(&sustained_spell_generic_icon, "images/system/magic/channeled_spell.png"),
+
+	// inventory GUI images.
+	std::make_pair(&inventory_bmp, "images/system/Inventory.png"),
+	std::make_pair(&inventoryoption_bmp, "images/system/InventoryOption.png"),
+	std::make_pair(&inventory_mode_item_img, "images/system/inventory_mode_item.png"),
+	std::make_pair(&inventory_mode_item_highlighted_img, "images/system/inventory_mode_item_highlighted.png"),
+	std::make_pair(&inventory_mode_spell_img, "images/system/inventory_mode_spell.png"),
+	std::make_pair(&inventory_mode_spell_highlighted_img, "images/system/inventory_mode_spell_highlighted.png"),
+	std::make_pair(&equipped_bmp, "images/system/Equipped.png"),
+	std::make_pair(&itembroken_bmp, "images/system/Broken.png"),
+
+	//Chest images..
+	std::make_pair(&inventoryChest_bmp, "images/system/InventoryChest.png"),
+	std::make_pair(&inventoryoptionChest_bmp, "images/system/InventoryOptionChest.png"),
+	std::make_pair(&invclose_bmp, "images/system/InventoryCloseHighlighted.png"),
+	std::make_pair(&invgraball_bmp, "images/system/InventoryChestGraballHighlighted.png"),
+
+	//Identify GUI images...
+	std::make_pair(&identifyGUI_img, "images/system/identifyGUI.png"),
+	std::make_pair(&rightsidebar_slot_grayedout_img, "images/system/rightSidebarSlotGrayedOut.png"),
+	std::make_pair(&bookgui_img, "images/system/book.png"),
+	std::make_pair(&book_highlighted_left_img, "images/system/bookpageleft-highlighted.png"),
+	std::make_pair(&book_highlighted_right_img, "images/system/bookpageright-highlighted.png"),
+
+	//Levelup images.
+	std::make_pair(&str_bmp64u, "images/system/str64u.png"),
+	std::make_pair(&dex_bmp64u, "images/system/dex64u.png"),
+	std::make_pair(&con_bmp64u, "images/system/con64u.png"),
+	std::make_pair(&int_bmp64u, "images/system/int64u.png"),
+	std::make_pair(&per_bmp64u, "images/system/per64u.png"),
+	std::make_pair(&chr_bmp64u, "images/system/chr64u.png"),
+	std::make_pair(&str_bmp64, "images/system/str64.png"),
+	std::make_pair(&dex_bmp64, "images/system/dex64.png"),
+	std::make_pair(&con_bmp64, "images/system/con64.png"),
+	std::make_pair(&int_bmp64, "images/system/int64.png"),
+	std::make_pair(&per_bmp64, "images/system/per64.png"),
+	std::make_pair(&chr_bmp64, "images/system/chr64.png"),
+
+	//Misc GUI images.
+	std::make_pair(&sidebar_lock_bmp, "images/system/locksidebar.png"),
+	std::make_pair(&sidebar_unlock_bmp, "images/system/unlocksidebar.png"),
+	std::make_pair(&hotbar_img, "images/system/hotbar_slot.png"),
+	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png")
+};
+
 bool loadInterfaceResources()
 {
 	//General GUI images.
@@ -1021,6 +1105,25 @@ int saveConfig(char* filename)
 		fprintf(fp, "/gamepad_menuy_invert\n");
 	}
 	fprintf(fp, "/skipintro\n");
+	if ( !gamemods_mountedFilepaths.empty() )
+	{
+		std::vector<std::pair<std::string, std::string>>::iterator it;
+		for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+		{
+			fprintf(fp, "/loadmod dir:%s name:%s", (*it).first.c_str(), (*it).second.c_str());
+#ifdef STEAMWORKS
+			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = gamemods_workshopLoadedFileIDMap.begin();
+				itId != gamemods_workshopLoadedFileIDMap.end(); ++itId )
+			{
+				if ( itId->first.compare((*it).second) == 0 )
+				{
+					fprintf(fp, " fileid:%lld", (*itId).second);
+				}
+			}
+#endif // STEAMWORKS
+			fprintf(fp, "\n");
+		}
+	}
 
 	fclose(fp);
 	if ( mallocd )

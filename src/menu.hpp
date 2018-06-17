@@ -142,6 +142,8 @@ bool gamemodsClearAllMountedPaths();
 bool gamemodsMountAllExistingPaths();
 extern bool gamemods_disableSteamAchievements;
 extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
+extern bool gamemods_modelsListRequiresReload;
+extern bool gamemods_soundListRequiresReload;
 #ifdef STEAMWORKS
 void gamemodsWindowUploadInit(bool creatingNewItem);
 void gamemodsSubscribedItemsInit();

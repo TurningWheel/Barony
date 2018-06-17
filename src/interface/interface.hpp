@@ -429,3 +429,5 @@ public:
 extern std::vector<MinimapPing> minimapPings;
 void minimapPingAdd(MinimapPing newPing);
 extern int minimapPingGimpTimer;
+
+extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages;

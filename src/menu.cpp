@@ -124,6 +124,8 @@ bool gamemods_langRequireReloadUnmodded = false;
 bool gamemods_itemSpritesRequireReloadUnmodded = false;
 bool gamemods_itemsTxtRequireReloadUnmodded = false;
 bool gamemods_monsterLimbsRequireReloadUnmodded = false;
+bool gamemods_systemImagesReloadUnmodded = false;
+
 bool gamemods_disableSteamAchievements = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -725,8 +727,8 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3004], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
+						TTF_SizeUTF8(ttf16, language[3018], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3018]);
 						GO_SwapBuffers(screen);
 						physfsReloadTiles(true);
 						gamemods_tileListRequireReloadUnmodded = false;
@@ -796,6 +798,23 @@ void handleMainMenu(bool mode)
 						GO_SwapBuffers(screen);
 						physfsReloadMonsterLimbFiles();
 						gamemods_monsterLimbsRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_systemImagesReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3016], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
+						GO_SwapBuffers(screen);
+						physfsReloadSystemImages();
+						gamemods_systemImagesReloadUnmodded = false;
+						systemResourceImagesToReload.clear();
+
+						// tidy up some other resource files.
+						rightsidebar_titlebar_img = spell_list_titlebar_bmp;
+						rightsidebar_slot_img = spell_list_gui_slot_bmp;
+						rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 					}
 
 					gamemods_disableSteamAchievements = false;
@@ -11028,8 +11047,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3003], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3003]);
+		TTF_SizeUTF8(ttf16, language[3017], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
 		GO_SwapBuffers(screen);
 		physfsReloadTiles(false);
 		gamemods_tileListRequireReloadUnmodded = true;
@@ -11112,6 +11131,22 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		GO_SwapBuffers(screen);
 		physfsReloadMonsterLimbFiles();
 		gamemods_monsterLimbsRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchSystemImagesToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3015], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+		GO_SwapBuffers(screen);
+		physfsReloadSystemImages();
+		gamemods_systemImagesReloadUnmodded = true;
+
+		// tidy up some other resource files.
+		rightsidebar_titlebar_img = spell_list_titlebar_bmp;
+		rightsidebar_slot_img = spell_list_gui_slot_bmp;
+		rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 	}
 
 	// look for a save game
