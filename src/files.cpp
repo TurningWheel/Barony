@@ -24,8 +24,10 @@
 #include "book.hpp"
 #include "menu.hpp"
 #include "items.hpp"
+#include "interface\interface.hpp"
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
+std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 
 /*-------------------------------------------------------------------------------
 
@@ -1880,5 +1882,56 @@ void physfsReloadMonsterLimbFiles()
 		}
 		// close file
 		fclose(fp);
+	}
+}
+
+bool physfsSearchSystemImagesToUpdate()
+{
+	bool requireReload = false;
+	systemResourceImagesToReload.clear();
+
+	for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = systemResourceImages.begin(); it != systemResourceImages.end(); ++it )
+	{
+		std::pair<SDL_Surface**, std::string> line = *it;
+		std::string imgFile = line.second;
+		if ( PHYSFS_getRealDir(imgFile.c_str()) != NULL)
+		{
+			std::string imgDir = PHYSFS_getRealDir(imgFile.c_str());
+			if ( imgDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified %s file, reloading system image...", imgFile.c_str());
+				requireReload = true;
+				systemResourceImagesToReload.push_back(line);
+			}
+		}
+	}
+	return requireReload;
+}
+
+void physfsReloadSystemImages()
+{
+	if ( !systemResourceImagesToReload.empty() )
+	{
+		for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = systemResourceImagesToReload.begin(); it != systemResourceImagesToReload.end(); ++it )
+		{
+			std::pair<SDL_Surface**, std::string> line = *it;
+			if ( *(line.first) ) // SDL_Surface* pointer exists
+			{
+				// load a new image, getting the VFS system location.
+				std::string filepath = PHYSFS_getRealDir(line.second.c_str());
+				filepath.append(PHYSFS_getDirSeparator()).append(line.second);
+
+				char filepathChar[1024];
+				strncpy(filepathChar, filepath.c_str(), 1023);
+
+				SDL_FreeSurface(*(line.first));
+				*(line.first) = loadImage(filepathChar);
+
+				if ( !(*(line.first)))
+				{
+					printlog("[PhysFS]: Error: Failed to reload %s!", filepath.c_str());
+				}
+			}
+		}
 	}
 }

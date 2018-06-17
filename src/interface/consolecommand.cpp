@@ -2006,6 +2006,39 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[2996]);
 		}
 	}
+	else if ( !strncmp(command_str, "/loadmod ", 9) )
+	{
+		std::string cmd = command_str;
+		std::size_t dirfind = cmd.find("dir:");
+		std::size_t namefind = cmd.find("name:");
+		std::string modname;
+		std::size_t fileidFind = cmd.find("fileid:");
+		if ( dirfind != std::string::npos && namefind != std::string::npos && fileidFind == std::string::npos )
+		{
+			std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
+			modname = cmd.substr(namefind + 5);
+			modname = modname.substr(0, modname.length() - 1);
+			printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
+			gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
+			gamemods_modelsListRequiresReload = true;
+			gamemods_soundListRequiresReload = true;
+		}
+		if ( dirfind != std::string::npos && namefind != std::string::npos && fileidFind != std::string::npos )
+		{
+#ifdef STEAMWORKS
+			std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
+			modname = cmd.substr(namefind + 5, fileidFind - (namefind + 6));
+			printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
+			gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
+			gamemods_modelsListRequiresReload = true;
+			gamemods_soundListRequiresReload = true;
+
+			uint64 id = atoi(cmd.substr(fileidFind + 7).c_str());
+			gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
+			printlog("[Mods]: Steam Workshop mod file ID added for previous entry:%lld", id);
+#endif
+		}
+	}
 	else
 	{
 		messagePlayer(clientnum, language[305], command_str);
