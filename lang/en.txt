@@ -3683,5 +3683,9 @@ IDENTICAL MOD LISTS LOADED!#
 3012 mute minimap pings#
 3013 Loading modded monster limbs.txt files...#
 3014 Unloading modded monster limbs.txt files...#
+3015 Loading modded system resource image files...#
+3016 Unloading modded system resource image files...#
+3017 Loading modded game tiles...#
+3018 Unloading modded game tiles...#
 
 3099 end#
