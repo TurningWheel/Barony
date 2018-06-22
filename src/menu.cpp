@@ -5931,6 +5931,11 @@ void handleMainMenu(bool mode)
 											{
 												monster->flags[USERFLAG2] = true;
 											}
+											monster->monsterPlayerAllyIndex = c;
+											if ( multiplayer == SERVER )
+											{
+												serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
+											}
 
 											newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 											newNode->deconstructor = &defaultDeconstructor;

@@ -125,7 +125,7 @@ void drawMinimap()
 		}
 		else
 		{
-			if ( entity->behavior == &actMonster )
+			if ( entity->behavior == &actMonster && entity->monsterPlayerAllyIndex < 0 )
 			{
 				bool warningEffect = false;
 				if ( stats[clientnum]->ring != NULL )
@@ -249,7 +249,7 @@ void drawMinimap()
 	for ( node = map.creatures->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		int drawchar = false;
+		int drawMonsterAlly = -1;
 		int foundplayer = -1;
 		if ( entity->behavior == &actPlayer )
 		{
@@ -257,7 +257,11 @@ void drawMinimap()
 		}
 		else if ( entity->behavior == &actMonster )
 		{
-			node_t* node2;
+			if ( entity->monsterPlayerAllyIndex >= 0 )
+			{
+				drawMonsterAlly = entity->monsterPlayerAllyIndex;
+			}
+			/*node_t* node2;
 			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != nullptr; node2 = node2->next )
 			{
 				if ( *((Uint32*)node2->element) == entity->getUID() )
@@ -265,9 +269,9 @@ void drawMinimap()
 					drawchar = true;
 					break;
 				}
-			}
+			}*/
 		}
-		if ( drawchar || foundplayer >= 0 )
+		if ( drawMonsterAlly >= 0 || foundplayer >= 0 )
 		{
 			// my player = green, other players = blue
 			if ( foundplayer >= 0 )
@@ -294,7 +298,7 @@ void drawMinimap()
 			}
 			else
 			{
-				switch ( clientnum )
+				switch ( drawMonsterAlly )
 				{
 					case 0:
 						color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
@@ -318,54 +322,8 @@ void drawMinimap()
 			// draw the first pixel
 			x = xres - map.width * MINIMAPSCALE + (int)(entity->x / (16.f / MINIMAPSCALE));
 			y = map.height * MINIMAPSCALE - (int)(entity->y / (16.f / MINIMAPSCALE));
-			if ( softwaremode )
+			if ( foundplayer >= 0 )
 			{
-				//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
-			}
-			else
-			{
-				glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, 1);
-				glBegin(GL_POINTS);
-				glVertex2f( x, y );
-				glEnd();
-			}
-
-			// draw a circle
-			drawCircle(x - 1, yres - y - 1, 3, color, 255);
-
-			x = 0;
-			y = 0;
-			for ( i = 0; i < 4; ++i )
-			{
-				// move forward
-				if ( cos(entity->yaw) > .4 )
-				{
-					x++;
-				}
-				else if ( cos(entity->yaw) < -.4 )
-				{
-					x--;
-				}
-				if ( sin(entity->yaw) > .4 )
-				{
-					y++;
-				}
-				else if ( sin(entity->yaw) < -.4 )
-				{
-					y--;
-				}
-
-				// get brighter color shade
-				/*if ( foundplayer )
-				{
-					color = SDL_MapRGB(mainsurface->format, 64, 255, 64);
-				}
-				else
-				{
-					color = SDL_MapRGB(mainsurface->format, 64, 64, 255);
-				}*/
-
-				// draw the pixel
 				if ( softwaremode )
 				{
 					//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
@@ -374,8 +332,67 @@ void drawMinimap()
 				{
 					glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, 1);
 					glBegin(GL_POINTS);
-					glVertex2f( xres - map.width * MINIMAPSCALE + (int)(entity->x / (16.f / MINIMAPSCALE)) + x, map.height * MINIMAPSCALE - (int)(entity->y / (16.f / MINIMAPSCALE)) - y );
+					glVertex2f( x, y );
 					glEnd();
+				}
+			}
+
+			// draw a circle
+			if ( foundplayer >= 0 )
+			{
+				drawCircle(x - 1, yres - y - 1, 3, color, 255);
+			}
+			else
+			{
+				drawCircle(x - 1, yres - y - 1, 2, color, 200);
+			}
+
+			x = 0;
+			y = 0;
+			if ( foundplayer >= 0 )
+			{
+				for ( i = 0; i < 4; ++i )
+				{
+					// move forward
+					if ( cos(entity->yaw) > .4 )
+					{
+						x++;
+					}
+					else if ( cos(entity->yaw) < -.4 )
+					{
+						x--;
+					}
+					if ( sin(entity->yaw) > .4 )
+					{
+						y++;
+					}
+					else if ( sin(entity->yaw) < -.4 )
+					{
+						y--;
+					}
+
+					// get brighter color shade
+					/*if ( foundplayer )
+					{
+						color = SDL_MapRGB(mainsurface->format, 64, 255, 64);
+					}
+					else
+					{
+						color = SDL_MapRGB(mainsurface->format, 64, 64, 255);
+					}*/
+
+					// draw the pixel
+					if ( softwaremode )
+					{
+						//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
+					}
+					else
+					{
+						glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, 1);
+						glBegin(GL_POINTS);
+						glVertex2f( xres - map.width * MINIMAPSCALE + (int)(entity->x / (16.f / MINIMAPSCALE)) + x, map.height * MINIMAPSCALE - (int)(entity->y / (16.f / MINIMAPSCALE)) - y );
+						glEnd();
+					}
 				}
 			}
 		}

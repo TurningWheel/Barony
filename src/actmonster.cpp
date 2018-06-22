@@ -725,7 +725,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 	my->monsterState = MONSTER_STATE_WAIT; // be ready to follow
 	myStats->leader_uid = players[monsterclicked]->entity->getUID();
-
+	my->monsterPlayerAllyIndex = monsterclicked;
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntitySkill(my, 42); // update monsterPlayerAllyIndex for clients.
+	}
 	if ( monsterclicked > 0 && multiplayer == SERVER )
 	{
 		//Tell the client he suckered somebody into his cult.

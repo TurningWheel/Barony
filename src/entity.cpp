@@ -111,6 +111,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterStoreType(skill[18]),
 	monsterStrafeDirection(skill[39]),
 	monsterPathCount(skill[38]),
+	monsterPlayerAllyIndex(skill[42]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -299,7 +300,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	ranbehavior = false;
 	parent = 0;
 	path = nullptr;
-
+	monsterPlayerAllyIndex = -1; // set to -1 to not reference player indices 0-3.
 	if ( checkSpriteType(this->sprite) > 1 )
 	{
 		setSpriteAttributes(this, nullptr, nullptr);
