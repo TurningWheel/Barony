@@ -177,9 +177,27 @@ void buyItemFromShop(Item* item)
 				Stat* shopstats = entity->getStats();
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
-			if ( rand() % 2 && item->type != GEM_GLASS )
+			if ( rand() % 2 )
 			{
-				players[clientnum]->entity->increaseSkill(PRO_TRADING);
+				if ( item->buyValue(clientnum) <= 1 )
+				{
+					// buying cheap items does not increase trading past basic
+					if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_TRADING);
+					}
+				}
+				else
+				{
+					players[clientnum]->entity->increaseSkill(PRO_TRADING);
+				}
+			}
+			else if ( item->buyValue(clientnum) >= 150 )
+			{
+				if ( item->buyValue(clientnum) >= 300 || rand() % 2 )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_TRADING);
+				}
 			}
 		}
 		else
@@ -325,9 +343,20 @@ void sellItemToShop(Item* item)
 	item->count = ocount;
 	if ( multiplayer != CLIENT )
 	{
-		if ( rand() % 2 && item->type != GEM_GLASS )
+		if ( rand() % 2 )
 		{
-			players[clientnum]->entity->increaseSkill(PRO_TRADING);
+			if ( item->sellValue(clientnum) <= 1 )
+			{
+				// selling cheap items does not increase trading past basic
+				if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_TRADING);
+				}
+			}
+			else
+			{
+				players[clientnum]->entity->increaseSkill(PRO_TRADING);
+			}
 		}
 	}
 	else
