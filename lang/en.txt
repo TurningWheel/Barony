@@ -335,7 +335,8 @@ enough money!#
 
 215 I would buy it for %dG.
 
-Trade? (Right click)#
+Trade? (Right click from
+inventory)#
 
 
 # shopkeeper chit-chat
