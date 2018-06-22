@@ -2765,6 +2765,7 @@ dungeon level %d, client (player %d) (direct ip)#
 1980 Previous Hotbar Slot#
 # Other bindings.
 1981 Autosort Inventory#
+1982 Minimap Scale Toggle#
 
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
@@ -3714,4 +3715,9 @@ IDENTICAL MOD LISTS LOADED!#
  NOTE: 
    This will disconnect all party members and
           save their current progress.#
+3022 Minimap Options#
+3023 Foreground Transparency (%)#
+3024 Background Transparency (%)#
+3025 Map Scale#
+3026 Player/Ally Icon Zoom#
 3099 end#

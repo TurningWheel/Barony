@@ -155,6 +155,10 @@ bool settings_spawn_blood;
 bool settings_light_flicker;
 bool settings_vsync;
 bool settings_minimap_ping_mute;
+int settings_minimap_transparency_foreground = 0;
+int settings_minimap_transparency_background = 0;
+int settings_minimap_scale = 4;
+int settings_minimap_object_zoom = 0;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
@@ -2233,6 +2237,26 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
+
+			// minimap options
+			ttfPrintText(ttf12, subx1 + 450, suby1 + 60, language[3022]);
+
+			// total scale
+			ttfPrintText(ttf12, subx1 + 450, suby1 + 84, language[3025]);
+			doSlider(subx1 + 448, suby1 + 84 + 24, 10, 2, 16, 1, (int*)(&settings_minimap_scale));
+
+			// objects (players/allies/minotaur) scale
+			ttfPrintText(ttf12, subx1 + 450, suby1 + 130, language[3026]);
+			doSlider(subx1 + 448, suby1 + 130 + 24, 10, 0, 4, 1, (int*)(&settings_minimap_object_zoom));
+
+			// foreground transparency
+			ttfPrintText(ttf12, subx1 + 450, suby1 + 176, language[3023]);
+			doSlider(subx1 + 448, suby1 + 176 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_foreground));
+
+			// background transparency
+			ttfPrintText(ttf12, subx1 + 450, suby1 + 222, language[3024]);
+			doSlider(subx1 + 448, suby1 + 222 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_background));
+
 
 			// fov slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, language[1346]);
@@ -7350,6 +7374,10 @@ void openSettingsWindow()
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
+	settings_minimap_transparency_foreground = minimapTransparencyForeground;
+	settings_minimap_transparency_background = minimapTransparencyBackground;
+	settings_minimap_scale = minimapScale;
+	settings_minimap_object_zoom = minimapObjectZoom;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -8843,6 +8871,12 @@ void applySettings()
 	oldYres = yres;
 	xres = settings_xres;
 	yres = settings_yres;
+
+	minimapTransparencyForeground = settings_minimap_transparency_foreground;
+	minimapTransparencyBackground = settings_minimap_transparency_background;
+	minimapScale = settings_minimap_scale;
+	minimapObjectZoom = settings_minimap_object_zoom;
+
 	camera.winx = 0;
 	camera.winy = 0;
 	camera.winw = std::min(camera.winw, xres);
