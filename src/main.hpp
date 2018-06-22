@@ -169,7 +169,8 @@ extern bool stop;
 #define IN_ATTACK 14
 #define IN_USE 15
 #define IN_AUTOSORT 16
-#define NUMIMPULSES 17
+#define IN_MINIMAPSCALE 17
+#define NUMIMPULSES 18
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
@@ -472,6 +473,11 @@ extern int rscale;
 extern real_t vidgamma;
 extern bool verticalSync;
 extern bool minimapPingMute;
+extern int minimapTransparencyForeground;
+extern int minimapTransparencyBackground;
+extern int minimapScale;
+extern int minimapObjectZoom;
+extern int minimapScaleQuickToggle;
 extern bool softwaremode;
 extern real_t* zbuffer;
 extern Sint32* lightmap;

@@ -44,6 +44,7 @@ void consoleCommand(char* command_str)
 	Entity* entity;
 	char name[64];
 	int c;
+	bool invalidcommand = false;
 
 	if ( !command_str )
 	{
@@ -575,6 +576,11 @@ void consoleCommand(char* command_str)
 		{
 			impulses[IN_AUTOSORT] = atoi(&command_str[6]);
 			printlog("Bound IN_AUTOSORT: %d\n", atoi(&command_str[6]));
+		}
+		else if ( strstr(command_str, "IN_MINIMAPSCALE") )
+		{
+			impulses[IN_MINIMAPSCALE] = atoi(&command_str[6]);
+			printlog("Bound IN_MINIMAPSCALE: %d\n", atoi(&command_str[6]));
 		}
 		else
 		{
@@ -2041,6 +2047,36 @@ void consoleCommand(char* command_str)
 	}
 	else
 	{
-		messagePlayer(clientnum, language[305], command_str);
+		invalidcommand = true;
+	}
+
+	if ( invalidcommand ) // starting new if else block to get around compiler >128 statement limit.
+	{
+		if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
+		{
+			minimapTransparencyForeground = atoi(&command_str[23]);
+			minimapTransparencyForeground = std::min(std::max<int>(0, minimapTransparencyForeground), 100);
+
+		}
+		else if ( !strncmp(command_str, "/minimaptransparencybg", 22) )
+		{
+			minimapTransparencyBackground = atoi(&command_str[23]);
+			minimapTransparencyBackground = std::min(std::max<int>(0, minimapTransparencyBackground), 100);
+
+		}
+		else if ( !strncmp(command_str, "/minimapscale", 13) )
+		{
+			minimapScale = atoi(&command_str[14]);
+			minimapScale = std::min(std::max<int>(2, minimapScale), 16);
+		}
+		else if ( !strncmp(command_str, "/minimapobjectzoom", 18) )
+		{
+			minimapObjectZoom = atoi(&command_str[19]);
+			minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[305], command_str);
+		}
 	}
 }

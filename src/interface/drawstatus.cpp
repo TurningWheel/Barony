@@ -980,7 +980,8 @@ void drawStatus()
 		}
 
 		// minimap pinging.
-		if ( mouseInBounds(xres - map.width * 4, xres, yres - map.height * 4, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+		if ( mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 		{
 			if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE])) )
 			{
@@ -988,7 +989,7 @@ void drawStatus()
 				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 				if ( minimapPingGimpTimer == -1 )
 				{
-					MinimapPing newPing(ticks, clientnum, (omousex - (xres - map.width * 4)) / 4, (omousey - (yres - map.height * 4)) / 4);
+					MinimapPing newPing(ticks, clientnum, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 					minimapPingGimpTimer = TICKS_PER_SECOND / 4;
 					if ( multiplayer != CLIENT )
 					{

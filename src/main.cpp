@@ -223,6 +223,11 @@ bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;
 bool minimapPingMute = false;
+int minimapTransparencyForeground = 0;
+int minimapTransparencyBackground = 0;
+int minimapScale = 4;
+int minimapObjectZoom = 0;
+int minimapScaleQuickToggle = 0;
 
 // audio definitions
 int audio_rate = 22050;
