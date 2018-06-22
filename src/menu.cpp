@@ -125,7 +125,7 @@ bool gamemods_itemSpritesRequireReloadUnmodded = false;
 bool gamemods_itemsTxtRequireReloadUnmodded = false;
 bool gamemods_monsterLimbsRequireReloadUnmodded = false;
 bool gamemods_systemImagesReloadUnmodded = false;
-
+bool gamemods_customContentLoadedFirstTime = false;
 bool gamemods_disableSteamAchievements = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -686,14 +686,18 @@ void handleMainMenu(bool mode)
 					bool reloadModels = false;
 					int modelsIndexUpdateStart = 1;
 					int modelsIndexUpdateEnd = nummodels;
-					if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
-					{
-						reloadModels = true; // we had some models already loaded which should be reset
-					}
+
 					bool reloadSounds = false;
-					if ( physfsSearchSoundsToUpdate() )
+					if ( gamemods_customContentLoadedFirstTime )
 					{
-						reloadSounds = true; // we had some sounds already loaded which should be reset
+						if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+						{
+							reloadModels = true; // we had some models already loaded which should be reset
+						}
+						if ( physfsSearchSoundsToUpdate() )
+						{
+							reloadSounds = true; // we had some sounds already loaded which should be reset
+						}
 					}
 
 					gamemodsClearAllMountedPaths();
@@ -1087,7 +1091,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					endgameText = language[1311];
+					endgameText = language[3019];
 				}
 				if ( ((omousex >= 50 && omousex < 50 + strlen(endgameText) * 18 && omousey >= yres / 4 + 128 && omousey < yres / 4 + 128 + 18) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
 				{
@@ -1105,11 +1109,31 @@ void handleMainMenu(bool mode)
 
 						// create confirmation window
 						subwindow = 1;
-						subx1 = xres / 2 - 140;
-						subx2 = xres / 2 + 140;
-						suby1 = yres / 2 - 48;
-						suby2 = yres / 2 + 48;
-						strcpy(subtext, language[1129]);
+						if ( multiplayer == SINGLE )
+						{
+							subx1 = xres / 2 - 144;
+							subx2 = xres / 2 + 144;
+							suby1 = yres / 2 - 64;
+							suby2 = yres / 2 + 64;
+							strcpy(subtext, language[1129]);
+						}
+						else
+						{
+							subx1 = xres / 2 - 224;
+							subx2 = xres / 2 + 224;
+							if ( multiplayer == SERVER )
+							{
+								suby1 = yres / 2 - 100;
+								suby2 = yres / 2 + 100;
+								strcpy(subtext, language[3021]);
+							}
+							else if ( multiplayer == CLIENT )
+							{
+								suby1 = yres / 2 - 112;
+								suby2 = yres / 2 + 112;
+								strcpy(subtext, language[3020]);
+							}
+						}
 
 						// close button
 						button = newButton();
@@ -1131,7 +1155,14 @@ void handleMainMenu(bool mode)
 						button->y = suby2 - 28;
 						button->sizex = strlen(language[1314]) * 12 + 8;
 						button->sizey = 20;
-						button->action = &buttonEndGameConfirm;
+						if ( multiplayer == SINGLE )
+						{
+							button->action = &buttonEndGameConfirm;
+						}
+						else
+						{
+							button->action = &buttonCloseAndEndGameConfirm;
+						}
 						button->visible = 1;
 						button->focused = 1;
 						button->key = SDL_SCANCODE_RETURN;
@@ -11267,6 +11298,7 @@ bool gamemodsMountAllExistingPaths()
 		}
 	}
 	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+	gamemods_customContentLoadedFirstTime = true;
 	return success;
 }
 

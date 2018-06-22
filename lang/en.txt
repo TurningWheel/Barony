@@ -1667,7 +1667,10 @@ Press 'Okay' to return to the main menu.#
        want to quit?#
 1129
       Are you sure you
-   want to end this game?#
+    want to end this game?
+    
+ Your singleplayer save file 
+       will be deleted.#
 1130
           Are you sure you
      want to restart this game?#
@@ -3687,5 +3690,27 @@ IDENTICAL MOD LISTS LOADED!#
 3016 Unloading modded system resource image files...#
 3017 Loading modded game tiles...#
 3018 Unloading modded game tiles...#
-
+3019 Save & Disconnect#
+3020
+      Are you sure you want to disconnect
+          and return to the main menu?
+    
+    Your multiplayer progress will be saved
+           up to the last checkpoint.
+    
+ NOTE: 
+    If your current party members advance to 
+ the next dungeon floor without your character, 
+    your savefile will no longer be able to 
+              rejoin the session.#
+3021
+      Are you sure you want to disconnect
+          and return to the main menu?
+    
+    Your multiplayer progress will be saved
+           up to the last checkpoint.
+    
+ NOTE: 
+   This will disconnect all party members and
+          save their current progress.#
 3099 end#
