@@ -419,7 +419,7 @@ public:
 	Uint8 player;
 	Uint8 x;
 	Uint8 y;
-	MinimapPing::MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
+	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
 		tickStart(tickStart),
 		player(player),
 		x(x),
