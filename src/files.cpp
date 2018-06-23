@@ -24,7 +24,7 @@
 #include "book.hpp"
 #include "menu.hpp"
 #include "items.hpp"
-#include "interface\interface.hpp"
+#include "interface/interface.hpp"
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
@@ -1297,6 +1297,7 @@ void physfsReloadSounds(bool reloadAll)
 	printlog("freeing sounds and loading modded sounds...\n");
 	if ( reloadAll )
 	{
+#ifdef SOUND
 		if ( sounds != NULL )
 		{
 			for ( int c = 0; c < numsounds; c++ )
@@ -1312,6 +1313,7 @@ void physfsReloadSounds(bool reloadAll)
 				}
 			}
 		}
+#endif
 	}
 
 	for ( int c = 0; !feof(fp); c++ )
