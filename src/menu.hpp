@@ -199,6 +199,13 @@ extern bool settings_right_click_protect;
 extern bool settings_auto_appraise_new_items;
 extern bool settings_lock_right_sidebar;
 extern bool settings_show_game_timer_always;
+extern bool settings_uiscale_charactersheet;
+extern bool settings_uiscale_skillspage;
+extern real_t settings_uiscale_hotbar;
+extern real_t settings_uiscale_playerbars;
+extern real_t settings_uiscale_chatlog;
+extern real_t settings_uiscale_inventory;
+extern bool settings_hide_statusbar;
 
 static const int NUM_SETTINGS_TABS = 7;
 

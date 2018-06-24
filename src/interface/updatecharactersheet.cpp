@@ -51,7 +51,7 @@ void updateCharacterSheet()
 	//drawTooltip(&pos);
 	int statWindowY = 196;
 	int statWindowY2 = 404;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_charactersheet )
 	{
 		pos.h = 236;
 		pos.w = 276;
@@ -186,7 +186,7 @@ void updateCharacterSheet()
 	int text_y = 0;
 	int pad_y = 12;
 	int fontWidth = TTF12_WIDTH;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_charactersheet )
 	{
 		fontStat = ttf16;
 		pad_y = 18;
@@ -298,7 +298,7 @@ void drawSkillsSheet()
 	TTF_Font* fontSkill = ttf12;
 	int fontHeight = TTF12_HEIGHT;
 	int fontWidth = TTF12_WIDTH;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_skillspage )
 	{
 		fontSkill = ttf16;
 		fontHeight = TTF16_HEIGHT;
@@ -319,7 +319,7 @@ void drawSkillsSheet()
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
 		button.x = xres - button.w - 8;
@@ -358,7 +358,7 @@ void drawSkillsSheet()
 	lockbtn.h = 24;
 	lockbtn.w = 24;
 	lockbtn.y += 2;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_skillspage )
 	{
 		lockbtn.h = 24 * 1.3;
 		lockbtn.w = 24 * 1.3;
@@ -450,7 +450,7 @@ void drawPartySheet()
 	TTF_Font* fontPlayer = ttf12;
 	int fontHeight = TTF12_HEIGHT;
 	int fontWidth = TTF12_WIDTH;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_skillspage )
 	{
 		fontPlayer = ttf16;
 		fontHeight = TTF16_HEIGHT;
@@ -478,7 +478,7 @@ void drawPartySheet()
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_skillspage )
 	{
 		button.w = attributesright_bmp->w * 1.3;
 		button.x = xres - button.w - 8;
@@ -518,7 +518,7 @@ void drawPartySheet()
 	lockbtn.h = 24;
 	lockbtn.w = 24;
 	lockbtn.y += 2;
-	if ( inventory_scale != 1.f )
+	if ( uiscale_skillspage )
 	{
 		lockbtn.h = 24 * 1.3;
 		lockbtn.w = 24 * 1.3;
@@ -566,7 +566,7 @@ void drawPartySheet()
 
 			playerBar.x = pos.x + 64;
 			playerBar.w = 10 * 11;
-			if ( inventory_scale != 1.f )
+			if ( uiscale_skillspage )
 			{
 				playerBar.x += 10;
 				playerBar.w += 48;
@@ -588,7 +588,7 @@ void drawPartySheet()
 
 			playerBar.x = pos.x + 64;
 			playerBar.w = 10 * 11;
-			if ( inventory_scale != 1.f )
+			if ( uiscale_skillspage )
 			{
 				playerBar.x += 10;
 				playerBar.w += 48;
@@ -626,7 +626,7 @@ void statsHoverText(Stat* tmpStat)
 	SDL_Rect src;
 	SDL_Rect pos;
 
-	if ( inventory_scale > 1.f )
+	if ( uiscale_charactersheet )
 	{
 		pad_y += 86;
 		off_h = TTF16_HEIGHT - 4;
@@ -989,7 +989,7 @@ void attackHoverText(Sint32 input[6])
 	int numInfoLines = 3;
 	char buf[128] = "";
 
-	if ( inventory_scale != 1.f )
+	if ( uiscale_charactersheet )
 	{
 		off_h = TTF16_HEIGHT - 4;
 		pad_y += 126;

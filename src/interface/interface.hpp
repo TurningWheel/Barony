@@ -25,15 +25,17 @@ typedef struct damageIndicator_t
 } damageIndicator_t;
 extern list_t damageIndicators;
 
-#define STATUS_BAR_Y_OFFSET status_bmp->h * inventory_scale
-#define STATUS_X (xres / 2 - status_bmp->w * inventory_scale / 2)
+#define STATUS_BAR_Y_OFFSET (status_bmp->h * uiscale_chatlog)
+#define INVENTORY_SLOTSIZE (40 * uiscale_inventory)
+#define STATUS_X (xres / 2 - status_bmp->w * uiscale_chatlog / 2)
 #define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
 extern bool hide_statusbar;
 extern real_t uiscale_chatlog;
 extern real_t uiscale_playerbars;
-extern int uiscale_charactersheet;
-extern int uiscale_skillspage;
+extern bool uiscale_charactersheet;
+extern bool uiscale_skillspage;
 extern real_t uiscale_hotbar;
+extern real_t uiscale_inventory;
 
 extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp;
@@ -154,7 +156,6 @@ extern SDL_Surface* inventory_mode_item_highlighted_img;
 extern SDL_Surface* inventory_mode_spell_img;
 extern SDL_Surface* inventory_mode_spell_highlighted_img;
 extern int inventory_mode;
-extern real_t inventory_scale;
 
 /*
  * Determines how item select (pick up, release) mechanic works.
