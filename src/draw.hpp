@@ -27,6 +27,7 @@ void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alph
 void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
 void drawImageFancy(SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos);
 void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha);
+void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
 SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height);
 void drawSky3D(view_t* camera, SDL_Surface* tex);
 void drawLayer(long camx, long camy, int z, map_t* map);

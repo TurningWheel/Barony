@@ -152,6 +152,12 @@ bool right_click_protect = false;
 bool auto_appraise_new_items = false;
 bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
+bool hide_statusbar = false;
+real_t uiscale_chatlog = 1.f;
+real_t uiscale_playerbars = 1.f;
+int uiscale_charactersheet = 1;
+int uiscale_skillspage = 1;
+real_t uiscale_hotbar = 1.f;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
