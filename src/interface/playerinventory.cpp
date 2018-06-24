@@ -35,7 +35,6 @@ SDL_Surface* inventory_mode_item_highlighted_img = NULL;
 SDL_Surface* inventory_mode_spell_img = NULL;
 SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 int inventory_mode = INVENTORY_MODE_ITEM;
-real_t inventory_scale = 1.5;
 
 selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
 
@@ -1000,10 +999,10 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		}
 
 		// draw item
-		pos.x = x + item->x * INVENTORY_SLOTSIZE + 4 * inventory_scale;
-		pos.y = y + item->y * INVENTORY_SLOTSIZE + 4 * inventory_scale;
-		pos.w = 32 * inventory_scale;
-		pos.h = 32 * inventory_scale;
+		pos.x = x + item->x * INVENTORY_SLOTSIZE + 4 * uiscale_inventory;
+		pos.y = y + item->y * INVENTORY_SLOTSIZE + 4 * uiscale_inventory;
+		pos.w = 32 * uiscale_inventory;
+		pos.h = 32 * uiscale_inventory;
 		if ( itemSprite(item) )
 		{
 			drawImageScaled(itemSprite(item), NULL, &pos);
@@ -1012,9 +1011,9 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		// item count
 		if ( item->count > 1 )
 		{
-			if ( inventory_scale == 1.f )
+			if ( uiscale_inventory == 1.f )
 			{
-				printTextFormatted(font8x8_bmp, pos.x + pos.w - 8 * inventory_scale, pos.y + pos.h - 8 * inventory_scale, "%d", item->count);
+				printTextFormatted(font8x8_bmp, pos.x + pos.w - 8 * uiscale_inventory, pos.y + pos.h - 8 * uiscale_inventory, "%d", item->count);
 			}
 			else
 			{
@@ -1056,7 +1055,7 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		}
 	}
 	// autosort button
-	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE + inventory_mode_item_img->w * inventory_scale + 2;
+	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE + inventory_mode_item_img->w * uiscale_inventory + 2;
 	mode_pos.y = y;
 	mode_pos.w = 24;
 	mode_pos.h = 24;
@@ -1094,9 +1093,9 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 	}
 	// do inventory mode buttons
 	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE + 1;
-	mode_pos.y = y + inventory_mode_spell_img->h * inventory_scale;
-	mode_pos.w = inventory_mode_spell_img->w * inventory_scale;
-	mode_pos.h = inventory_mode_spell_img->h * inventory_scale + 1;
+	mode_pos.y = y + inventory_mode_spell_img->h * uiscale_inventory;
+	mode_pos.w = inventory_mode_spell_img->w * uiscale_inventory;
+	mode_pos.h = inventory_mode_spell_img->h * uiscale_inventory + 1;
 	mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + mode_pos.w,
 		mode_pos.y, mode_pos.y + mode_pos.h);
 	if (mouse_in_bounds)
@@ -1125,8 +1124,8 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 	}
 	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE + 1;
 	mode_pos.y = y - 1;
-	mode_pos.w = inventory_mode_item_img->w * inventory_scale;
-	mode_pos.h = inventory_mode_item_img->h * inventory_scale + 2;
+	mode_pos.w = inventory_mode_item_img->w * uiscale_inventory;
+	mode_pos.h = inventory_mode_item_img->h * uiscale_inventory + 2;
 	mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + mode_pos.w,
 		mode_pos.y, mode_pos.y + mode_pos.h);
 	if (mouse_in_bounds)

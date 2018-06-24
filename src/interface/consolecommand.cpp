@@ -2074,23 +2074,37 @@ void consoleCommand(char* command_str)
 			minimapObjectZoom = atoi(&command_str[19]);
 			minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
 		}
-		else if ( !strncmp(command_str, "/iscale", 7) )
+		else if ( !strncmp(command_str, "/uiscale_inv", 12) )
 		{
-			if ( inventory_scale == 1.f )
-			{
-				inventory_scale = 1.5;
-				INVENTORY_SLOTSIZE = 60;
-			}
-			else if ( inventory_scale == 1.5 )
-			{
-				inventory_scale = 2.f;
-				INVENTORY_SLOTSIZE = 80;
-			}
-			else
-			{
-				inventory_scale = 1.f;
-				INVENTORY_SLOTSIZE = 40;
-			}
+			std::stringstream ss;
+			ss << command_str + 13;
+			ss >> uiscale_inventory;
+		}
+		else if ( !strncmp(command_str, "/uiscale_hotbar", 15) )
+		{
+			std::stringstream ss;
+			ss << command_str + 16;
+			ss >> uiscale_hotbar;
+		}
+		else if ( !strncmp(command_str, "/uiscale_chatbox", 16) )
+		{
+			std::stringstream ss;
+			ss << command_str + 17;
+			ss >> uiscale_chatlog;
+		}
+		else if ( !strncmp(command_str, "/uiscale_playerbars", 19) )
+		{
+			std::stringstream ss;
+			ss << command_str + 20;
+			ss >> uiscale_playerbars;
+		}
+		else if ( !strncmp(command_str, "/uiscale_charsheet", 18) )
+		{
+			uiscale_charactersheet = !uiscale_charactersheet;
+		}
+		else if ( !strncmp(command_str, "/uiscale_skillsheet", 19) )
+		{
+			uiscale_skillspage = !uiscale_skillspage;
 		}
 		else if ( !strncmp(command_str, "/hidestatusbar", 14) )
 		{

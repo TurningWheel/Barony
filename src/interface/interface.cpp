@@ -155,9 +155,10 @@ bool show_game_timer_always = false;
 bool hide_statusbar = false;
 real_t uiscale_chatlog = 1.f;
 real_t uiscale_playerbars = 1.f;
-int uiscale_charactersheet = 1;
-int uiscale_skillspage = 1;
 real_t uiscale_hotbar = 1.f;
+real_t uiscale_inventory = 1.f;
+bool uiscale_charactersheet = false;
+bool uiscale_skillspage = false;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
@@ -1117,6 +1118,18 @@ int saveConfig(char* filename)
 	fprintf(fp, "/minimaptransparencybg %d\n", minimapTransparencyBackground);
 	fprintf(fp, "/minimapscale %d\n", minimapScale);
 	fprintf(fp, "/minimapobjectzoom %d\n", minimapObjectZoom);
+	if ( uiscale_charactersheet )
+	{
+		fprintf(fp, "/uiscale_charsheet\n");
+	}
+	if ( uiscale_skillspage )
+	{
+		fprintf(fp, "/uiscale_skillsheet\n");
+	}
+	fprintf(fp, "/uiscale_inv %f\n", uiscale_inventory);
+	fprintf(fp, "/uiscale_hotbar %f\n", uiscale_hotbar);
+	fprintf(fp, "/uiscale_chatbox %f\n", uiscale_chatlog);
+	fprintf(fp, "/uiscale_playerbars %f\n", uiscale_playerbars);
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;

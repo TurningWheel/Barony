@@ -180,6 +180,13 @@ bool playing_random_char = false;
 bool colorblind = false;
 bool settings_lock_right_sidebar = false;
 bool settings_show_game_timer_always = false;
+bool settings_uiscale_charactersheet = false;
+bool settings_uiscale_skillspage = false;
+real_t settings_uiscale_hotbar = 1.f;
+real_t settings_uiscale_playerbars = 1.f;
+real_t settings_uiscale_chatlog = 1.f;
+real_t settings_uiscale_inventory = 1.f;
+bool settings_hide_statusbar = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -2239,24 +2246,82 @@ void handleMainMenu(bool mode)
 			}
 
 			// minimap options
-			ttfPrintText(ttf12, subx1 + 450, suby1 + 60, language[3022]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 60, language[3022]);
 
 			// total scale
-			ttfPrintText(ttf12, subx1 + 450, suby1 + 84, language[3025]);
-			doSlider(subx1 + 448, suby1 + 84 + 24, 10, 2, 16, 1, (int*)(&settings_minimap_scale));
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 84, language[3025]);
+			doSlider(subx1 + 498, suby1 + 84 + 24, 10, 2, 16, 1, (int*)(&settings_minimap_scale));
 
 			// objects (players/allies/minotaur) scale
-			ttfPrintText(ttf12, subx1 + 450, suby1 + 130, language[3026]);
-			doSlider(subx1 + 448, suby1 + 130 + 24, 10, 0, 4, 1, (int*)(&settings_minimap_object_zoom));
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 130, language[3026]);
+			doSlider(subx1 + 498, suby1 + 130 + 24, 10, 0, 4, 1, (int*)(&settings_minimap_object_zoom));
 
 			// foreground transparency
-			ttfPrintText(ttf12, subx1 + 450, suby1 + 176, language[3023]);
-			doSlider(subx1 + 448, suby1 + 176 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_foreground));
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 176, language[3023]);
+			doSlider(subx1 + 498, suby1 + 176 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_foreground));
 
 			// background transparency
-			ttfPrintText(ttf12, subx1 + 450, suby1 + 222, language[3024]);
-			doSlider(subx1 + 448, suby1 + 222 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_background));
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 222, language[3024]);
+			doSlider(subx1 + 498, suby1 + 222 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_background));
 
+			// UI options
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 282, language[3034]);
+
+			if ( settings_uiscale_charactersheet )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 306, "[x] %s", language[3027]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 306, "[ ] %s", language[3027]);
+			}
+			if ( settings_uiscale_skillspage )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 330, "[x] %s", language[3028]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 330, "[ ] %s", language[3028]);
+			}
+			if ( settings_hide_statusbar )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[x] %s", language[3033]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[ ] %s", language[3033]);
+			}
+
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				if ( omousex >= subx1 + 498 && omousex < subx1 + 522 )
+				{
+					if ( omousey >= suby1 + 306 && omousey < suby1 + 306 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_uiscale_charactersheet = (settings_uiscale_charactersheet == 0);
+					}
+					else if ( omousey >= suby1 + 330 && omousey < suby1 + 330 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_uiscale_skillspage = (settings_uiscale_skillspage == 0);
+					}
+					else if ( omousey >= suby1 + 354 && omousey < suby1 + 354 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_hide_statusbar = (settings_hide_statusbar == 0);
+					}
+				}
+			}
+			// UI scale sliders
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 220, language[3029]);
+			doSliderF(subx1 + 498, suby2 - 220 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_hotbar);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 174, language[3030]);
+			doSliderF(subx1 + 498, suby2 - 174 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_chatlog);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 128, language[3031]);
+			doSliderF(subx1 + 498, suby2 - 128 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_playerbars);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 80, language[3032]);
+			doSliderF(subx1 + 498, suby2 - 80 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_inventory);
 
 			// fov slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, language[1346]);
@@ -7378,6 +7443,13 @@ void openSettingsWindow()
 	settings_minimap_transparency_background = minimapTransparencyBackground;
 	settings_minimap_scale = minimapScale;
 	settings_minimap_object_zoom = minimapObjectZoom;
+	settings_uiscale_charactersheet = uiscale_charactersheet;
+	settings_uiscale_skillspage = uiscale_skillspage;
+	settings_uiscale_inventory = uiscale_inventory;
+	settings_uiscale_hotbar = uiscale_hotbar;
+	settings_uiscale_chatlog = uiscale_chatlog;
+	settings_uiscale_playerbars = uiscale_playerbars;
+	settings_hide_statusbar = hide_statusbar;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -7433,8 +7505,8 @@ void openSettingsWindow()
 	suby1 = yres / 2 - ((yres==480)?210:278);
 	suby2 = yres / 2 + ((yres==480)?210:278);
 #else
-	suby1 = yres / 2 - 288;
-	suby2 = yres / 2 + 288;
+	suby1 = yres / 2 - 312;
+	suby2 = yres / 2 + 312;
 #endif
 	strcpy(subtext, language[1306]);
 
@@ -8961,6 +9033,14 @@ void applySettings()
 	gamepad_righty_sensitivity = settings_gamepad_righty_sensitivity;
 	gamepad_menux_sensitivity = settings_gamepad_menux_sensitivity;
 	gamepad_menuy_sensitivity = settings_gamepad_menuy_sensitivity;
+
+	uiscale_charactersheet = settings_uiscale_charactersheet;
+	uiscale_skillspage = settings_uiscale_skillspage;
+	uiscale_inventory = settings_uiscale_inventory;
+	uiscale_hotbar = settings_uiscale_hotbar;
+	uiscale_chatlog = settings_uiscale_chatlog;
+	uiscale_playerbars = settings_uiscale_playerbars;
+	hide_statusbar = settings_hide_statusbar;
 
 	saveConfig("default.cfg");
 }
