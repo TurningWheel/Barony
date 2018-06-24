@@ -582,6 +582,11 @@ void consoleCommand(char* command_str)
 			impulses[IN_MINIMAPSCALE] = atoi(&command_str[6]);
 			printlog("Bound IN_MINIMAPSCALE: %d\n", atoi(&command_str[6]));
 		}
+		else if ( strstr(command_str, "IN_TOGGLECHATLOG") )
+		{
+			impulses[IN_TOGGLECHATLOG] = atoi(&command_str[6]);
+			printlog("Bound IN_TOGGLECHATLOG: %d\n", atoi(&command_str[6]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");

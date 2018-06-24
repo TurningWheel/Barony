@@ -2978,6 +2978,13 @@ int main(int argc, char** argv)
 							}
 						}
 					}
+					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
+					{
+						hide_statusbar = !hide_statusbar;
+						*inputPressed(impulses[IN_TOGGLECHATLOG]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG]) = 0;
+						playSound(139, 64);
+					}
 
 					// commands
 					if ( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command )
@@ -3221,12 +3228,12 @@ int main(int argc, char** argv)
 						{
 							pos.x = mousex - 15;
 							pos.y = mousey - 15;
-							pos.w = 32;
-							pos.h = 32;
+							pos.w = 32 * uiscale_inventory;
+							pos.h = 32 * uiscale_inventory;
 							drawImageScaled(itemSprite(selectedItem), NULL, &pos);
 							if ( selectedItem->count > 1 )
 							{
-								ttfPrintTextFormatted(ttf8, pos.x + 24, pos.y + 24, "%d", selectedItem->count);
+								ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
 							}
 							if ( itemCategory(selectedItem) != SPELL_CAT )
 							{

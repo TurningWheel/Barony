@@ -250,8 +250,8 @@ bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinvento
 void warpMouseToSelectedHotbarSlot()
 {
 	SDL_Rect pos;
-	pos.x = STATUS_X + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
-	pos.y = STATUS_Y - (hotbar_img->h / 2);
+	pos.x = ((xres / 2) - 5 * hotbar_img->w * uiscale_hotbar) + (current_hotbar * hotbar_img->w * uiscale_hotbar) + (hotbar_img->w * uiscale_hotbar / 2);
+	pos.y = STATUS_Y - (hotbar_img->h * uiscale_hotbar / 2);
 	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 }
 
@@ -271,7 +271,7 @@ void drawStatus()
 		pos.y = yres - 16;
 	}
 	//To garner the position of the hotbar.
-	initial_position.x = pos.x;
+	initial_position.x = HOTBAR_START_X;
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
@@ -348,10 +348,18 @@ void drawStatus()
 				continue;
 			}
 			string = (string_t*)node->element;
-			if ( uiscale_chatlog != 1.f )
+			if ( uiscale_chatlog >= 1.5 )
 			{
 				y -= TTF16_HEIGHT * string->lines;
 				if ( y < yres - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
+				{
+					break;
+				}
+			}
+			else if ( uiscale_chatlog != 1.f )
+			{
+				y -= TTF12_HEIGHT * string->lines;
+				if ( y < yres - status_bmp->h * 1.1 + 4 )
 				{
 					break;
 				}
@@ -391,7 +399,7 @@ void drawStatus()
 				}
 			}
 			Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255); // black color
-			if ( uiscale_chatlog != 1.f )
+			if ( uiscale_chatlog >= 1.5 )
 			{
 				ttfPrintTextColor(ttf16, x, y, color, false, string->data);
 			}
@@ -447,7 +455,7 @@ void drawStatus()
 		}
 
 		// mouse wheel
-		if ( mousex >= initial_position.x && mousex < initial_position.x + status_bmp->w * uiscale_chatlog )
+		if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
 		{
 			if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
 			{
@@ -590,7 +598,7 @@ void drawStatus()
 
 	// Print out the amount of HP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
-	if ( uiscale_playerbars > 1.f )
+	if ( uiscale_playerbars >= 1.5 )
 	{
 		pos.x += uiscale_playerbars * 2;
 	}
@@ -615,7 +623,7 @@ void drawStatus()
 	drawTooltip(&pos);
 
 	// Display the actual Magic bar's faint background
-	if ( uiscale_playerbars == 1.f )
+	if ( uiscale_playerbars < 1.5 )
 	{
 		pos.x = 16;
 	}
@@ -807,7 +815,7 @@ void drawStatus()
 				{
 					int digits = numdigits_sint16(item->count);
 					SDL_Surface* digitFont = font12x12_bmp;
-					if ( uiscale_hotbar != 1.f )
+					if ( uiscale_hotbar >= 1.5 )
 					{
 						digitFont = font16x16_bmp;
 						printTextFormatted(digitFont, pos.x + hotbar_img->w * uiscale_hotbar - (24 * digits), pos.y + hotbar_img->h * uiscale_hotbar - 24, "%d", item->count);
@@ -846,7 +854,7 @@ void drawStatus()
 				}
 			}
 		}
-		if ( uiscale_hotbar != 1.f )
+		if ( uiscale_hotbar >= 1.5 )
 		{
 			printTextFormatted(font16x16_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
 		}

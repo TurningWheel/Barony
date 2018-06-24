@@ -462,7 +462,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
 		{
 			//Warp cursor back into hotbar, for gamepad convenience.
-			SDL_WarpMouseInWindow(screen, (STATUS_X) + (selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2), (STATUS_Y) - (hotbar_img->h / 2));
+			SDL_WarpMouseInWindow(screen, (HOTBAR_START_X) + (selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2), (STATUS_Y) - (hotbar_img->h / 2));
 			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
 		}
 		else
@@ -1011,7 +1011,7 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		// item count
 		if ( item->count > 1 )
 		{
-			if ( uiscale_inventory == 1.f )
+			if ( uiscale_inventory < 1.5 )
 			{
 				printTextFormatted(font8x8_bmp, pos.x + pos.w - 8 * uiscale_inventory, pos.y + pos.h - 8 * uiscale_inventory, "%d", item->count);
 			}
@@ -2346,9 +2346,9 @@ bool mouseInsidePlayerInventory()
 bool mouseInsidePlayerHotbar()
 {
 	SDL_Rect pos;
-	pos.x = STATUS_X;
-	pos.y = STATUS_Y - hotbar_img->h;
-	pos.w = NUM_HOTBAR_SLOTS * hotbar_img->w;
-	pos.h = hotbar_img->h;
+	pos.x = HOTBAR_START_X;
+	pos.y = STATUS_Y - hotbar_img->h * uiscale_hotbar;
+	pos.w = NUM_HOTBAR_SLOTS * hotbar_img->w * uiscale_hotbar;
+	pos.h = hotbar_img->h * uiscale_hotbar;
 	return mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h);
 }
