@@ -2092,6 +2092,10 @@ void consoleCommand(char* command_str)
 				INVENTORY_SLOTSIZE = 40;
 			}
 		}
+		else if ( !strncmp(command_str, "/hidestatusbar", 14) )
+		{
+			hide_statusbar = !hide_statusbar;
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

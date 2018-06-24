@@ -626,6 +626,60 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 
 /*-------------------------------------------------------------------------------
 
+drawImageScaledColor
+
+blits an image in either an opengl or SDL context while colorizing and scaling it
+
+-------------------------------------------------------------------------------*/
+
+void drawImageScaledColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color)
+{
+	SDL_Rect secondsrc;
+
+	// update projection
+	glPushMatrix();
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_BLEND);
+
+	// for the use of a whole image
+	if ( src == NULL )
+	{
+		secondsrc.x = 0;
+		secondsrc.y = 0;
+		secondsrc.w = image->w;
+		secondsrc.h = image->h;
+		src = &secondsrc;
+	}
+
+	// draw a textured quad
+	glBindTexture(GL_TEXTURE_2D, texid[image->refcount]);
+	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
+	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
+	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
+	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
+	glColor4f(r, g, b, a);
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.f, 0.f);
+	glVertex2f(pos->x, yres - pos->y);
+	glTexCoord2f(0.f, 1.f);
+	glVertex2f(pos->x, yres - pos->y - pos->h);
+	glTexCoord2f(1.f, 1.f);
+	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
+	glTexCoord2f(1.f, 0.f);
+	glVertex2f(pos->x + pos->w, yres - pos->y);
+	glEnd();
+	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
+}
+
+/*-------------------------------------------------------------------------------
+
 	scaleSurface
 
 	Scales an SDL_Surface to the given width and height.

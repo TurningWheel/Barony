@@ -25,9 +25,15 @@ typedef struct damageIndicator_t
 } damageIndicator_t;
 extern list_t damageIndicators;
 
-#define STATUS_BAR_Y_OFFSET status_bmp->h
-#define STATUS_X (xres / 2 - status_bmp->w / 2)
+#define STATUS_BAR_Y_OFFSET status_bmp->h * inventory_scale
+#define STATUS_X (xres / 2 - status_bmp->w * inventory_scale / 2)
 #define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
+extern bool hide_statusbar;
+extern real_t uiscale_chatlog;
+extern real_t uiscale_playerbars;
+extern int uiscale_charactersheet;
+extern int uiscale_skillspage;
+extern real_t uiscale_hotbar;
 
 extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp;
