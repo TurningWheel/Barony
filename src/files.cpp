@@ -1347,7 +1347,7 @@ void physfsReloadSounds(bool reloadAll)
 				{
 					OPENAL_Sound_Release(sounds[c]);
 				}
-				OPENAL_CreateSound(name, true, &sounds[c]);
+				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
 #endif 
 			}
 		}
