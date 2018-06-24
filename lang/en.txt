@@ -2763,9 +2763,12 @@ dungeon level %d, client (player %d) (direct ip)#
 1978 Activate Hotbar Slot#
 1979 Next Hotbar Slot#
 1980 Previous Hotbar Slot#
+1981 Minimap Scale Toggle#
+1982 Toggle Chatlog#
 # Other bindings.
-1981 Autosort Inventory#
-1982 Minimap Scale Toggle#
+1983 Autosort Inventory#
+1984 Minimap Scale Toggle#
+1985 Toggle Chatlog#
 
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
@@ -3720,4 +3723,12 @@ IDENTICAL MOD LISTS LOADED!#
 3024 Background Transparency (%)#
 3025 Map Scale#
 3026 Player/Ally Icon Zoom#
+3027 Character Sheet Zoom#
+3028 Skills/Party Sidebar Zoom#
+3029 Hotbar Zoom#
+3030 Chatlog Zoom#
+3031 Player HP/MP Zoom#
+3032 Inventory Zoom#
+3033 Hide Chatlog#
+3034 User Interface Options#
 3099 end#
