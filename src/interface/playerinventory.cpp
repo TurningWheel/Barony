@@ -962,10 +962,10 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 			continue;
 		}
 
-		pos.x = x + item->x * (INVENTORY_SLOTSIZE * inventory_scale) + 2;
-		pos.y = y + item->y * (INVENTORY_SLOTSIZE * inventory_scale) + 1;
-		pos.w = (INVENTORY_SLOTSIZE * inventory_scale) - 2;
-		pos.h = (INVENTORY_SLOTSIZE * inventory_scale) - 2;
+		pos.x = x + item->x * (INVENTORY_SLOTSIZE) + 2;
+		pos.y = y + item->y * (INVENTORY_SLOTSIZE) + 1;
+		pos.w = (INVENTORY_SLOTSIZE) - 2;
+		pos.h = (INVENTORY_SLOTSIZE) - 2;
 		if (!item->identified)
 		{
 			// give it a yellow background if it is unidentified
