@@ -481,28 +481,31 @@ void drawStatus()
 		//drawImage(textdown_bmp, NULL, &pos);
 	}*/
 
+	int playerStatusBarWidth = 38 * inventory_scale;
+	int playerStatusBarHeight = 156 * inventory_scale;
+
 	// PLAYER HEALTH BAR
 	// Display Health bar border
-	pos.x = 76;
-	pos.w = 38;
-	pos.h = 156;
-	pos.y = yres - 168;
+	pos.x = 38 + 38 * inventory_scale;
+	pos.w = playerStatusBarWidth;
+	pos.h = playerStatusBarHeight;
+	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
 
 	// Display "HP" at top of Health bar
-	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[306]);
+	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[306]);
 
 	// Display border between actual Health bar and "HP"
-	pos.x = 76;
-	pos.w = 38;
+	//pos.x = 76;
+	pos.w = playerStatusBarWidth;
 	pos.h = 0;
-	pos.y = yres - 147;
+	pos.y = yres - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
 
 	// Display the actual Health bar's faint background
-	pos.x = 80;
-	pos.w = 33;
-	pos.h = 129;
+	pos.x = 42 + 38 * inventory_scale;
+	pos.w = playerStatusBarWidth - 5;
+	pos.h = playerStatusBarHeight - 27;
 	pos.y = yres - 15 - pos.h;
 
 	// Change the color depending on if you are poisoned
@@ -529,9 +532,9 @@ void drawStatus()
 	// If the Player is alive, base the size of the actual Health bar off remaining HP
 	if ( stats[clientnum]->HP > 0 )
 	{
-		pos.x = 80;
-		pos.w = 33;
-		pos.h = 129 * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
+		//pos.x = 80;
+		pos.w = playerStatusBarWidth - 5;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
 		pos.y = yres - 15 - pos.h;
 
 		if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
@@ -556,30 +559,45 @@ void drawStatus()
 
 	// Print out the amount of HP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
-	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
+	if ( inventory_scale > 1.f )
+	{
+		pos.x += inventory_scale * 2;
+	}
+	printTextFormatted(font12x12_bmp, pos.x + 16 * inventory_scale - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	// PLAYER MAGIC BAR
 	// Display the Magic bar border
-	pos.x = 12;
-	pos.w = 39;
-	pos.h = 156;
-	pos.y = yres - 168;
+	pos.x = 12 * inventory_scale;
+	pos.w = playerStatusBarWidth;
+	pos.h = playerStatusBarHeight;
+	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
 
 	// Display "MP" at the top of Magic bar
-	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[307]);
+	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
 
 	// Display border between actual Magic bar and "MP"
-	pos.x = 12;
-	pos.w = 39;
+	//pos.x = 12;
+	pos.w = playerStatusBarWidth;
 	pos.h = 0;
-	pos.y = yres - 147;
+	pos.y = yres - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
 
 	// Display the actual Magic bar's faint background
-	pos.x = 16;
-	pos.w = 33;
-	pos.h = 129;
+	if ( inventory_scale == 1.f )
+	{
+		pos.x = 16;
+	}
+	else if ( inventory_scale == 1.5 )
+	{
+		pos.x = 16 * inventory_scale - 2;
+	}
+	else
+	{
+		pos.x = 16 * inventory_scale - 4;
+	}
+	pos.w = playerStatusBarWidth - 5;
+	pos.h = playerStatusBarHeight - 27;
 	pos.y = yres - 15 - pos.h;
 
 	// Draw the actual Magic bar's faint background
@@ -588,9 +606,9 @@ void drawStatus()
 	// If the Player has MP, base the size of the actual Magic bar off remaining MP
 	if ( stats[clientnum]->MP > 0 )
 	{
-		pos.x = 16;
-		pos.w = 33;
-		pos.h = 129 * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
+		//pos.x = 16;
+		pos.w = playerStatusBarWidth - 5;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
 		pos.y = yres - 15 - pos.h;
 
 		// Only draw the actual Magic bar if the Player has MP
@@ -599,7 +617,7 @@ void drawStatus()
 
 	// Print out the amount of MP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
-	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
+	printTextFormatted(font12x12_bmp, 32 * inventory_scale - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	Item* item = nullptr;
 	//Now the hotbar.
