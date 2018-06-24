@@ -29,6 +29,7 @@ extern list_t damageIndicators;
 #define INVENTORY_SLOTSIZE (40 * uiscale_inventory)
 #define STATUS_X (xres / 2 - status_bmp->w * uiscale_chatlog / 2)
 #define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
+#define HOTBAR_START_X ((xres / 2) - (5 * hotbar_img->w * uiscale_hotbar))
 extern bool hide_statusbar;
 extern real_t uiscale_chatlog;
 extern real_t uiscale_playerbars;

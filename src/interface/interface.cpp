@@ -645,6 +645,7 @@ void defaultImpulses()
 	impulses[IN_USE] = 285;
 	impulses[IN_AUTOSORT] = 21;
 	impulses[IN_MINIMAPSCALE] = 27;
+	impulses[IN_TOGGLECHATLOG] = 15;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -679,6 +680,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
 	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
 	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
+	joyimpulses[INJOY_GAME_TOGGLECHATLOG] = 399;
+	joyimpulses[INJOY_GAME_MINIMAPSCALE] = 399;
 }
 
 void defaultConfig()
@@ -731,7 +734,8 @@ void defaultConfig()
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/bind 21 IN_AUTOSORT");
-	consoleCommand("/bind 27 IN_AUTOSORT");
+	consoleCommand("/bind 27 IN_MINIMAPSCALE");
+	consoleCommand("/bind 15 IN_TOGGLECHATLOG");
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
@@ -766,6 +770,8 @@ void defaultConfig()
 	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
 	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
+	consoleCommand("/joybind 399 INJOY_GAME_MINIMAPSCALE"); //SCANCODE_UNASSIGNED_BINDING
+	consoleCommand("/joybind 399 INJOY_GAME_TOGGLECHATLOG"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -838,7 +844,9 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"GAME_CAST_SPELL",
 	"GAME_HOTBAR_ACTIVATE",
 	"GAME_HOTBAR_PREV",
-	"GAME_HOTBAR_NEXT"
+	"GAME_HOTBAR_NEXT",
+	"GAME_MINIMAPSCALE",
+	"GAME_TOGGLECHATLOG"
 };
 
 /*-------------------------------------------------------------------------------
@@ -1180,10 +1188,10 @@ bool mouseInBounds(int x1, int x2, int y1, int y2)
 
 hotbar_slot_t* getHotbar(int x, int y)
 {
-	if (x >= STATUS_X && x < STATUS_X + status_bmp->w && y >= STATUS_Y - hotbar_img->h && y < STATUS_Y)
+	if (x >= HOTBAR_START_X && x < HOTBAR_START_X + (10 * hotbar_img->w * uiscale_hotbar) && y >= STATUS_Y - hotbar_img->h * uiscale_hotbar && y < STATUS_Y)
 	{
-		int relx = x - STATUS_X; //X relative to the start of the hotbar.
-		return &hotbar[relx / hotbar_img->w]; //The slot will clearly be the x divided by the width of a slot
+		int relx = x - HOTBAR_START_X; //X relative to the start of the hotbar.
+		return &hotbar[static_cast<int>(relx / (hotbar_img->w * uiscale_hotbar))]; //The slot will clearly be the x divided by the width of a slot
 	}
 
 	return NULL;

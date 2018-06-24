@@ -2387,7 +2387,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1981 + (c - 16)]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1983 + (c - 16)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
 				{

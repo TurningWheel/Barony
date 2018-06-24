@@ -170,7 +170,8 @@ extern bool stop;
 #define IN_USE 15
 #define IN_AUTOSORT 16
 #define IN_MINIMAPSCALE 17
-#define NUMIMPULSES 18
+#define IN_TOGGLECHATLOG 18
+#define NUMIMPULSES 19
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
@@ -216,10 +217,12 @@ static const unsigned INJOY_GAME_CAST_SPELL = 29;
 static const unsigned INJOY_GAME_HOTBAR_ACTIVATE = 30; //Activates hotbar slot in-game.
 static const unsigned INJOY_GAME_HOTBAR_PREV = 31;
 static const unsigned INJOY_GAME_HOTBAR_NEXT = 32;
+static const unsigned INJOY_GAME_MINIMAPSCALE = 33;
+static const unsigned INJOY_GAME_TOGGLECHATLOG = 34;
 
 static const unsigned INDEX_JOYBINDINGS_START_GAME = 26;
 
-static const unsigned NUM_JOY_IMPULSES = 33;
+static const unsigned NUM_JOY_IMPULSES = 35;
 
 static const unsigned UNBOUND_JOYBINDING = 399;
 
