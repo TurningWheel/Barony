@@ -3,7 +3,7 @@
 
 #define STEAMWORKS
 
-//#define USE_OPENAL//USE_FMOD
+#define USE_FMOD
 
 #define EDITOR_EXE_NAME "editor"
 
