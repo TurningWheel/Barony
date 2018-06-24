@@ -27,6 +27,7 @@
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
+int INVENTORY_SLOTSIZE = 60;
 
 /*-------------------------------------------------------------------------------
 

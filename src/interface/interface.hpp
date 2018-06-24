@@ -148,6 +148,7 @@ extern SDL_Surface* inventory_mode_item_highlighted_img;
 extern SDL_Surface* inventory_mode_spell_img;
 extern SDL_Surface* inventory_mode_spell_highlighted_img;
 extern int inventory_mode;
+extern real_t inventory_scale;
 
 /*
  * Determines how item select (pick up, release) mechanic works.

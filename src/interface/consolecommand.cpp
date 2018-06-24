@@ -2074,6 +2074,24 @@ void consoleCommand(char* command_str)
 			minimapObjectZoom = atoi(&command_str[19]);
 			minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
 		}
+		else if ( !strncmp(command_str, "/iscale", 7) )
+		{
+			if ( inventory_scale == 1.f )
+			{
+				inventory_scale = 1.5;
+				INVENTORY_SLOTSIZE = 60;
+			}
+			else if ( inventory_scale == 1.5 )
+			{
+				inventory_scale = 2.f;
+				INVENTORY_SLOTSIZE = 80;
+			}
+			else
+			{
+				inventory_scale = 1.f;
+				INVENTORY_SLOTSIZE = 40;
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
