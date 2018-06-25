@@ -152,6 +152,97 @@ bool right_click_protect = false;
 bool auto_appraise_new_items = false;
 bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
+bool hide_statusbar = false;
+real_t uiscale_chatlog = 1.f;
+real_t uiscale_playerbars = 1.f;
+real_t uiscale_hotbar = 1.f;
+real_t uiscale_inventory = 1.f;
+bool uiscale_charactersheet = false;
+bool uiscale_skillspage = false;
+
+std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
+{
+	std::make_pair(&title_bmp, "images/system/title.png"),
+	std::make_pair(&logo_bmp, "images/system/logo.png"),
+	std::make_pair(&cursor_bmp, "images/system/cursor.png"),
+	std::make_pair(&cross_bmp, "images/system/cross.png"),
+
+	std::make_pair(&fancyWindow_bmp, "images/system/fancyWindow.png"),
+	std::make_pair(&font8x8_bmp, "images/system/font8x8.png"),
+	std::make_pair(&font12x12_bmp, "images/system/font12x12.png"),
+	std::make_pair(&font16x16_bmp, "images/system/font16x16.png"),
+
+	std::make_pair(&font12x12_small_bmp, "images/system/font12x12_small.png"),
+	std::make_pair(&backdrop_minotaur_bmp, "images/system/backdrop.png"),
+	std::make_pair(&backdrop_blessed_bmp, "images/system/backdrop_blessed.png"),
+	std::make_pair(&backdrop_cursed_bmp, "images/system/backdrop_cursed.png"),
+	std::make_pair(&button_bmp, "images/system/ButtonHighlighted.png"),
+	std::make_pair(&smallbutton_bmp, "images/system/SmallButtonHighlighted.png"),
+	std::make_pair(&invup_bmp, "images/system/InventoryUpHighlighted.png"),
+	std::make_pair(&invdown_bmp, "images/system/InventoryDownHighlighted.png"),
+	std::make_pair(&status_bmp, "images/system/StatusBar.png"),
+	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
+	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
+	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
+	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
+	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
+
+	//General GUI images.
+	std::make_pair(&attributesleftunclicked_bmp, "images/system/AttributesLeft.png"),
+	std::make_pair(&attributesrightunclicked_bmp, "images/system/AttributesRight.png"),
+	std::make_pair(&shopkeeper_bmp, "images/system/shopkeeper.png"),
+	std::make_pair(&damage_bmp, "images/system/damage.png"),
+
+	//Magic GUI images.
+	std::make_pair(&magicspellList_bmp, "images/system/spellList.png"),
+	std::make_pair(&spell_list_titlebar_bmp, "images/system/spellListTitlebar.png"),
+	std::make_pair(&spell_list_gui_slot_bmp, "images/system/spellListSlot.png"),
+	std::make_pair(&spell_list_gui_slot_highlighted_bmp, "images/system/spellListSlotHighlighted.png"),
+	std::make_pair(&sustained_spell_generic_icon, "images/system/magic/channeled_spell.png"),
+
+	// inventory GUI images.
+	std::make_pair(&inventory_bmp, "images/system/Inventory.png"),
+	std::make_pair(&inventoryoption_bmp, "images/system/InventoryOption.png"),
+	std::make_pair(&inventory_mode_item_img, "images/system/inventory_mode_item.png"),
+	std::make_pair(&inventory_mode_item_highlighted_img, "images/system/inventory_mode_item_highlighted.png"),
+	std::make_pair(&inventory_mode_spell_img, "images/system/inventory_mode_spell.png"),
+	std::make_pair(&inventory_mode_spell_highlighted_img, "images/system/inventory_mode_spell_highlighted.png"),
+	std::make_pair(&equipped_bmp, "images/system/Equipped.png"),
+	std::make_pair(&itembroken_bmp, "images/system/Broken.png"),
+
+	//Chest images..
+	std::make_pair(&inventoryChest_bmp, "images/system/InventoryChest.png"),
+	std::make_pair(&inventoryoptionChest_bmp, "images/system/InventoryOptionChest.png"),
+	std::make_pair(&invclose_bmp, "images/system/InventoryCloseHighlighted.png"),
+	std::make_pair(&invgraball_bmp, "images/system/InventoryChestGraballHighlighted.png"),
+
+	//Identify GUI images...
+	std::make_pair(&identifyGUI_img, "images/system/identifyGUI.png"),
+	std::make_pair(&rightsidebar_slot_grayedout_img, "images/system/rightSidebarSlotGrayedOut.png"),
+	std::make_pair(&bookgui_img, "images/system/book.png"),
+	std::make_pair(&book_highlighted_left_img, "images/system/bookpageleft-highlighted.png"),
+	std::make_pair(&book_highlighted_right_img, "images/system/bookpageright-highlighted.png"),
+
+	//Levelup images.
+	std::make_pair(&str_bmp64u, "images/system/str64u.png"),
+	std::make_pair(&dex_bmp64u, "images/system/dex64u.png"),
+	std::make_pair(&con_bmp64u, "images/system/con64u.png"),
+	std::make_pair(&int_bmp64u, "images/system/int64u.png"),
+	std::make_pair(&per_bmp64u, "images/system/per64u.png"),
+	std::make_pair(&chr_bmp64u, "images/system/chr64u.png"),
+	std::make_pair(&str_bmp64, "images/system/str64.png"),
+	std::make_pair(&dex_bmp64, "images/system/dex64.png"),
+	std::make_pair(&con_bmp64, "images/system/con64.png"),
+	std::make_pair(&int_bmp64, "images/system/int64.png"),
+	std::make_pair(&per_bmp64, "images/system/per64.png"),
+	std::make_pair(&chr_bmp64, "images/system/chr64.png"),
+
+	//Misc GUI images.
+	std::make_pair(&sidebar_lock_bmp, "images/system/locksidebar.png"),
+	std::make_pair(&sidebar_unlock_bmp, "images/system/unlocksidebar.png"),
+	std::make_pair(&hotbar_img, "images/system/hotbar_slot.png"),
+	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png")
+};
 
 bool loadInterfaceResources()
 {
@@ -553,6 +644,8 @@ void defaultImpulses()
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
 	impulses[IN_AUTOSORT] = 21;
+	impulses[IN_MINIMAPSCALE] = 27;
+	impulses[IN_TOGGLECHATLOG] = 15;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -587,6 +680,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
 	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
 	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
+	joyimpulses[INJOY_GAME_TOGGLECHATLOG] = 399;
+	joyimpulses[INJOY_GAME_MINIMAPSCALE] = 399;
 }
 
 void defaultConfig()
@@ -639,6 +734,8 @@ void defaultConfig()
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/bind 21 IN_AUTOSORT");
+	consoleCommand("/bind 27 IN_MINIMAPSCALE");
+	consoleCommand("/bind 15 IN_TOGGLECHATLOG");
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
@@ -673,6 +770,8 @@ void defaultConfig()
 	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
 	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
+	consoleCommand("/joybind 399 INJOY_GAME_MINIMAPSCALE"); //SCANCODE_UNASSIGNED_BINDING
+	consoleCommand("/joybind 399 INJOY_GAME_TOGGLECHATLOG"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -745,7 +844,9 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"GAME_CAST_SPELL",
 	"GAME_HOTBAR_ACTIVATE",
 	"GAME_HOTBAR_PREV",
-	"GAME_HOTBAR_NEXT"
+	"GAME_HOTBAR_NEXT",
+	"GAME_MINIMAPSCALE",
+	"GAME_TOGGLECHATLOG"
 };
 
 /*-------------------------------------------------------------------------------
@@ -915,6 +1016,14 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/nolightflicker\n");
 	}
+	if ( verticalSync )
+	{
+		fprintf(fp, "/vsync\n");
+	}
+	if ( minimapPingMute )
+	{
+		fprintf(fp, "/muteping\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");
@@ -1013,6 +1122,41 @@ int saveConfig(char* filename)
 		fprintf(fp, "/gamepad_menuy_invert\n");
 	}
 	fprintf(fp, "/skipintro\n");
+	fprintf(fp, "/minimaptransparencyfg %d\n", minimapTransparencyForeground);
+	fprintf(fp, "/minimaptransparencybg %d\n", minimapTransparencyBackground);
+	fprintf(fp, "/minimapscale %d\n", minimapScale);
+	fprintf(fp, "/minimapobjectzoom %d\n", minimapObjectZoom);
+	if ( uiscale_charactersheet )
+	{
+		fprintf(fp, "/uiscale_charsheet\n");
+	}
+	if ( uiscale_skillspage )
+	{
+		fprintf(fp, "/uiscale_skillsheet\n");
+	}
+	fprintf(fp, "/uiscale_inv %f\n", uiscale_inventory);
+	fprintf(fp, "/uiscale_hotbar %f\n", uiscale_hotbar);
+	fprintf(fp, "/uiscale_chatbox %f\n", uiscale_chatlog);
+	fprintf(fp, "/uiscale_playerbars %f\n", uiscale_playerbars);
+	if ( !gamemods_mountedFilepaths.empty() )
+	{
+		std::vector<std::pair<std::string, std::string>>::iterator it;
+		for ( it = gamemods_mountedFilepaths.begin(); it != gamemods_mountedFilepaths.end(); ++it )
+		{
+			fprintf(fp, "/loadmod dir:%s name:%s", (*it).first.c_str(), (*it).second.c_str());
+#ifdef STEAMWORKS
+			for ( std::vector<std::pair<std::string, uint64>>::iterator itId = gamemods_workshopLoadedFileIDMap.begin();
+				itId != gamemods_workshopLoadedFileIDMap.end(); ++itId )
+			{
+				if ( itId->first.compare((*it).second) == 0 )
+				{
+					fprintf(fp, " fileid:%lld", (*itId).second);
+				}
+			}
+#endif // STEAMWORKS
+			fprintf(fp, "\n");
+		}
+	}
 
 	fclose(fp);
 	if ( mallocd )
@@ -1044,10 +1188,10 @@ bool mouseInBounds(int x1, int x2, int y1, int y2)
 
 hotbar_slot_t* getHotbar(int x, int y)
 {
-	if (x >= STATUS_X && x < STATUS_X + status_bmp->w && y >= STATUS_Y - hotbar_img->h && y < STATUS_Y)
+	if (x >= HOTBAR_START_X && x < HOTBAR_START_X + (10 * hotbar_img->w * uiscale_hotbar) && y >= STATUS_Y - hotbar_img->h * uiscale_hotbar && y < STATUS_Y)
 	{
-		int relx = x - STATUS_X; //X relative to the start of the hotbar.
-		return &hotbar[relx / hotbar_img->w]; //The slot will clearly be the x divided by the width of a slot
+		int relx = x - HOTBAR_START_X; //X relative to the start of the hotbar.
+		return &hotbar[static_cast<int>(relx / (hotbar_img->w * uiscale_hotbar))]; //The slot will clearly be the x divided by the width of a slot
 	}
 
 	return NULL;

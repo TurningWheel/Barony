@@ -19,7 +19,7 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.1.6"
+#define VERSION "v3.1.7"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -114,6 +114,13 @@ extern SDL_Surface* title_bmp;
 extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
+
+enum ESteamStatTypes
+{
+	STEAM_STAT_INT = 0,
+	STEAM_STAT_FLOAT = 1,
+	STEAM_STAT_AVGRATE = 2,
+};
 
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);

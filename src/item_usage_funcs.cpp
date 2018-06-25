@@ -22,6 +22,7 @@
 #include "net.hpp"
 #include "monster.hpp"
 #include "player.hpp"
+#include "collision.hpp"
 
 void item_PotionWater(Item*& item, Entity* entity)
 {
@@ -2287,6 +2288,11 @@ void item_ScrollSummon(Item* item, int player)
 				{
 					monster->flags[USERFLAG2] = true;
 				}
+				monster->monsterPlayerAllyIndex = player;
+				if ( multiplayer == SERVER )
+				{
+					serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
+				}
 
 				// update followers for this player
 				node_t* newNode = list_AddNodeLast(&stats[player]->FOLLOWERS);
@@ -2545,6 +2551,27 @@ void item_ToolMirror(Item*& item, int player)
 void item_ToolBeartrap(Item*& item, int player)
 {
 	Entity* entity;
+
+	int u, v;
+	if ( players[player] && players[player]->entity )
+	{
+		int x = std::min(std::max<unsigned int>(1, players[player]->entity->x / 16), map.width - 2);
+		int y = std::min(std::max<unsigned int>(1, players[player]->entity->y / 16), map.height - 2);
+		for ( u = x - 1; u <= x + 1; u++ )
+		{
+			for ( v = y - 1; v <= y + 1; v++ )
+			{
+				if ( entityInsideTile(players[player]->entity, u, v, 0) )   // no floor
+				{
+					if ( multiplayer != CLIENT )
+					{
+						messagePlayer(player, language[3011]);
+					}
+					return;
+				}
+			}
+		}
+	}
 
 	if ( multiplayer == CLIENT )
 	{

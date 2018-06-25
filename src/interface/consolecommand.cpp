@@ -44,6 +44,7 @@ void consoleCommand(char* command_str)
 	Entity* entity;
 	char name[64];
 	int c;
+	bool invalidcommand = false;
 
 	if ( !command_str )
 	{
@@ -576,6 +577,16 @@ void consoleCommand(char* command_str)
 			impulses[IN_AUTOSORT] = atoi(&command_str[6]);
 			printlog("Bound IN_AUTOSORT: %d\n", atoi(&command_str[6]));
 		}
+		else if ( strstr(command_str, "IN_MINIMAPSCALE") )
+		{
+			impulses[IN_MINIMAPSCALE] = atoi(&command_str[6]);
+			printlog("Bound IN_MINIMAPSCALE: %d\n", atoi(&command_str[6]));
+		}
+		else if ( strstr(command_str, "IN_TOGGLECHATLOG") )
+		{
+			impulses[IN_TOGGLECHATLOG] = atoi(&command_str[6]);
+			printlog("Bound IN_TOGGLECHATLOG: %d\n", atoi(&command_str[6]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");
@@ -841,6 +852,14 @@ void consoleCommand(char* command_str)
 	else if (!strncmp(command_str, "/nolightflicker", 15))
 	{
 		flickerLights = (flickerLights == false);
+	}
+	else if ( !strncmp(command_str, "/vsync", 6) )
+	{
+		verticalSync = (verticalSync == false);
+	}
+	else if ( !strncmp(command_str, "/muteping", 9) )
+	{
+		minimapPingMute = (minimapPingMute == false);
 	}
 	else if (!strncmp(command_str, "/colorblind", 11))
 	{
@@ -1998,8 +2017,107 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[2996]);
 		}
 	}
+	else if ( !strncmp(command_str, "/loadmod ", 9) )
+	{
+		std::string cmd = command_str;
+		std::size_t dirfind = cmd.find("dir:");
+		std::size_t namefind = cmd.find("name:");
+		std::string modname;
+		std::size_t fileidFind = cmd.find("fileid:");
+		if ( dirfind != std::string::npos && namefind != std::string::npos && fileidFind == std::string::npos )
+		{
+			std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
+			modname = cmd.substr(namefind + 5);
+			modname = modname.substr(0, modname.length() - 1);
+			printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
+			gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
+			gamemods_modelsListRequiresReload = true;
+			gamemods_soundListRequiresReload = true;
+		}
+		if ( dirfind != std::string::npos && namefind != std::string::npos && fileidFind != std::string::npos )
+		{
+#ifdef STEAMWORKS
+			std::string directory = cmd.substr(dirfind + 4, namefind - (dirfind + 5));
+			modname = cmd.substr(namefind + 5, fileidFind - (namefind + 6));
+			printlog("[Mods]: Adding mod \"%s\" in path \"%s\"", directory.c_str(), modname.c_str());
+			gamemods_mountedFilepaths.push_back(std::make_pair(directory, modname));
+			gamemods_modelsListRequiresReload = true;
+			gamemods_soundListRequiresReload = true;
+
+			uint64 id = atoi(cmd.substr(fileidFind + 7).c_str());
+			gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modname, id));
+			printlog("[Mods]: Steam Workshop mod file ID added for previous entry:%lld", id);
+#endif
+		}
+	}
 	else
 	{
-		messagePlayer(clientnum, language[305], command_str);
+		invalidcommand = true;
+	}
+
+	if ( invalidcommand ) // starting new if else block to get around compiler >128 statement limit.
+	{
+		if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
+		{
+			minimapTransparencyForeground = atoi(&command_str[23]);
+			minimapTransparencyForeground = std::min(std::max<int>(0, minimapTransparencyForeground), 100);
+
+		}
+		else if ( !strncmp(command_str, "/minimaptransparencybg", 22) )
+		{
+			minimapTransparencyBackground = atoi(&command_str[23]);
+			minimapTransparencyBackground = std::min(std::max<int>(0, minimapTransparencyBackground), 100);
+
+		}
+		else if ( !strncmp(command_str, "/minimapscale", 13) )
+		{
+			minimapScale = atoi(&command_str[14]);
+			minimapScale = std::min(std::max<int>(2, minimapScale), 16);
+		}
+		else if ( !strncmp(command_str, "/minimapobjectzoom", 18) )
+		{
+			minimapObjectZoom = atoi(&command_str[19]);
+			minimapObjectZoom = std::min(std::max<int>(0, minimapObjectZoom), 4);
+		}
+		else if ( !strncmp(command_str, "/uiscale_inv", 12) )
+		{
+			std::stringstream ss;
+			ss << command_str + 13;
+			ss >> uiscale_inventory;
+		}
+		else if ( !strncmp(command_str, "/uiscale_hotbar", 15) )
+		{
+			std::stringstream ss;
+			ss << command_str + 16;
+			ss >> uiscale_hotbar;
+		}
+		else if ( !strncmp(command_str, "/uiscale_chatbox", 16) )
+		{
+			std::stringstream ss;
+			ss << command_str + 17;
+			ss >> uiscale_chatlog;
+		}
+		else if ( !strncmp(command_str, "/uiscale_playerbars", 19) )
+		{
+			std::stringstream ss;
+			ss << command_str + 20;
+			ss >> uiscale_playerbars;
+		}
+		else if ( !strncmp(command_str, "/uiscale_charsheet", 18) )
+		{
+			uiscale_charactersheet = !uiscale_charactersheet;
+		}
+		else if ( !strncmp(command_str, "/uiscale_skillsheet", 19) )
+		{
+			uiscale_skillspage = !uiscale_skillspage;
+		}
+		else if ( !strncmp(command_str, "/hidestatusbar", 14) )
+		{
+			hide_statusbar = !hide_statusbar;
+		}
+		else
+		{
+			messagePlayer(clientnum, language[305], command_str);
+		}
 	}
 }

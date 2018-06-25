@@ -142,6 +142,8 @@ bool gamemodsClearAllMountedPaths();
 bool gamemodsMountAllExistingPaths();
 extern bool gamemods_disableSteamAchievements;
 extern std::vector<std::pair<std::string, std::string>> gamemods_mountedFilepaths;
+extern bool gamemods_modelsListRequiresReload;
+extern bool gamemods_soundListRequiresReload;
 #ifdef STEAMWORKS
 void gamemodsWindowUploadInit(bool creatingNewItem);
 void gamemodsSubscribedItemsInit();
@@ -173,6 +175,12 @@ extern bool settings_nohud;
 extern bool settings_colorblind;
 extern bool settings_spawn_blood;
 extern bool settings_light_flicker;
+extern bool settings_vsync;
+extern bool settings_minimap_ping_mute;
+extern int settings_minimap_transparency_foreground;
+extern int settings_minimap_transparency_background;
+extern int settings_minimap_scale;
+extern int settings_minimap_object_zoom;
 extern char portnumber_char[6];
 extern char connectaddress[64];
 extern int multiplayerselect;
@@ -191,6 +199,13 @@ extern bool settings_right_click_protect;
 extern bool settings_auto_appraise_new_items;
 extern bool settings_lock_right_sidebar;
 extern bool settings_show_game_timer_always;
+extern bool settings_uiscale_charactersheet;
+extern bool settings_uiscale_skillspage;
+extern real_t settings_uiscale_hotbar;
+extern real_t settings_uiscale_playerbars;
+extern real_t settings_uiscale_chatlog;
+extern real_t settings_uiscale_inventory;
+extern bool settings_hide_statusbar;
 
 static const int NUM_SETTINGS_TABS = 7;
 

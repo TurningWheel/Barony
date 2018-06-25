@@ -120,6 +120,12 @@ bool gamemods_soundsListLastStartedUnmodded = false; // if starting regular game
 bool gamemods_tileListRequireReloadUnmodded = false;
 bool gamemods_booksRequireReloadUnmodded = false;
 bool gamemods_musicRequireReloadUnmodded = false;
+bool gamemods_langRequireReloadUnmodded = false;
+bool gamemods_itemSpritesRequireReloadUnmodded = false;
+bool gamemods_itemsTxtRequireReloadUnmodded = false;
+bool gamemods_monsterLimbsRequireReloadUnmodded = false;
+bool gamemods_systemImagesReloadUnmodded = false;
+bool gamemods_customContentLoadedFirstTime = false;
 bool gamemods_disableSteamAchievements = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
@@ -147,6 +153,12 @@ bool settings_nohud;
 bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
+bool settings_vsync;
+bool settings_minimap_ping_mute;
+int settings_minimap_transparency_foreground = 0;
+int settings_minimap_transparency_background = 0;
+int settings_minimap_scale = 4;
+int settings_minimap_object_zoom = 0;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
@@ -168,6 +180,13 @@ bool playing_random_char = false;
 bool colorblind = false;
 bool settings_lock_right_sidebar = false;
 bool settings_show_game_timer_always = false;
+bool settings_uiscale_charactersheet = false;
+bool settings_uiscale_skillspage = false;
+real_t settings_uiscale_hotbar = 1.f;
+real_t settings_uiscale_playerbars = 1.f;
+real_t settings_uiscale_chatlog = 1.f;
+real_t settings_uiscale_inventory = 1.f;
+bool settings_hide_statusbar = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -224,6 +243,7 @@ Sint32 oldXres;
 Sint32 oldYres;
 Sint32 oldFullscreen;
 real_t oldGamma;
+bool oldVerticalSync = false;
 button_t* revertResolutionButton = nullptr;
 
 void buttonCloseSettingsSubwindow(button_t* my);
@@ -677,14 +697,18 @@ void handleMainMenu(bool mode)
 					bool reloadModels = false;
 					int modelsIndexUpdateStart = 1;
 					int modelsIndexUpdateEnd = nummodels;
-					if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
-					{
-						reloadModels = true; // we had some models already loaded which should be reset
-					}
+
 					bool reloadSounds = false;
-					if ( physfsSearchSoundsToUpdate() )
+					if ( gamemods_customContentLoadedFirstTime )
 					{
-						reloadSounds = true; // we had some sounds already loaded which should be reset
+						if ( physfsSearchModelsToUpdate() || !gamemods_modelsListModifiedIndexes.empty() )
+						{
+							reloadModels = true; // we had some models already loaded which should be reset
+						}
+						if ( physfsSearchSoundsToUpdate() )
+						{
+							reloadSounds = true; // we had some sounds already loaded which should be reset
+						}
 					}
 
 					gamemodsClearAllMountedPaths();
@@ -718,8 +742,8 @@ void handleMainMenu(bool mode)
 					{
 						drawClearBuffers();
 						int w, h;
-						TTF_SizeUTF8(ttf16, language[3004], &w, &h);
-						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
+						TTF_SizeUTF8(ttf16, language[3018], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3018]);
 						GO_SwapBuffers(screen);
 						physfsReloadTiles(true);
 						gamemods_tileListRequireReloadUnmodded = false;
@@ -745,6 +769,67 @@ void handleMainMenu(bool mode)
 						GO_SwapBuffers(screen);
 						physfsSearchMusicToUpdate();
 						gamemods_musicRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_langRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3005], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3005]);
+						GO_SwapBuffers(screen);
+						reloadLanguage();
+						gamemods_langRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_itemsTxtRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3009], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3009]);
+						GO_SwapBuffers(screen);
+						physfsReloadItemsTxt();
+						gamemods_itemsTxtRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_itemSpritesRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3007], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3007]);
+						GO_SwapBuffers(screen);
+						physfsReloadItemSprites(true);
+						gamemods_itemSpritesRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_monsterLimbsRequireReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3014], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3014]);
+						GO_SwapBuffers(screen);
+						physfsReloadMonsterLimbFiles();
+						gamemods_monsterLimbsRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_systemImagesReloadUnmodded )
+					{
+						drawClearBuffers();
+						int w, h;
+						TTF_SizeUTF8(ttf16, language[3016], &w, &h);
+						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3016]);
+						GO_SwapBuffers(screen);
+						physfsReloadSystemImages();
+						gamemods_systemImagesReloadUnmodded = false;
+						systemResourceImagesToReload.clear();
+
+						// tidy up some other resource files.
+						rightsidebar_titlebar_img = spell_list_titlebar_bmp;
+						rightsidebar_slot_img = spell_list_gui_slot_bmp;
+						rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 					}
 
 					gamemods_disableSteamAchievements = false;
@@ -1017,7 +1102,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					endgameText = language[1311];
+					endgameText = language[3019];
 				}
 				if ( ((omousex >= 50 && omousex < 50 + strlen(endgameText) * 18 && omousey >= yres / 4 + 128 && omousey < yres / 4 + 128 + 18) || (menuselect == 3)) && subwindow == 0 && introstage == 1 )
 				{
@@ -1035,11 +1120,31 @@ void handleMainMenu(bool mode)
 
 						// create confirmation window
 						subwindow = 1;
-						subx1 = xres / 2 - 140;
-						subx2 = xres / 2 + 140;
-						suby1 = yres / 2 - 48;
-						suby2 = yres / 2 + 48;
-						strcpy(subtext, language[1129]);
+						if ( multiplayer == SINGLE )
+						{
+							subx1 = xres / 2 - 144;
+							subx2 = xres / 2 + 144;
+							suby1 = yres / 2 - 64;
+							suby2 = yres / 2 + 64;
+							strcpy(subtext, language[1129]);
+						}
+						else
+						{
+							subx1 = xres / 2 - 224;
+							subx2 = xres / 2 + 224;
+							if ( multiplayer == SERVER )
+							{
+								suby1 = yres / 2 - 100;
+								suby2 = yres / 2 + 100;
+								strcpy(subtext, language[3021]);
+							}
+							else if ( multiplayer == CLIENT )
+							{
+								suby1 = yres / 2 - 112;
+								suby2 = yres / 2 + 112;
+								strcpy(subtext, language[3020]);
+							}
+						}
 
 						// close button
 						button = newButton();
@@ -1061,7 +1166,14 @@ void handleMainMenu(bool mode)
 						button->y = suby2 - 28;
 						button->sizex = strlen(language[1314]) * 12 + 8;
 						button->sizey = 20;
-						button->action = &buttonEndGameConfirm;
+						if ( multiplayer == SINGLE )
+						{
+							button->action = &buttonEndGameConfirm;
+						}
+						else
+						{
+							button->action = &buttonCloseAndEndGameConfirm;
+						}
 						button->visible = 1;
 						button->focused = 1;
 						button->key = SDL_SCANCODE_RETURN;
@@ -2077,6 +2189,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 228, "[ ] %s", language[2967]);
 			}
+			if ( settings_vsync )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[x] %s", language[3011]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[ ] %s", language[3011]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -2117,8 +2237,91 @@ void handleMainMenu(bool mode)
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_light_flicker = (settings_light_flicker == false);
 					}
+					else if ( omousey >= suby1 + 252 && omousey < suby1 + 252 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_vsync = (settings_vsync == false);
+					}
 				}
 			}
+
+			// minimap options
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 60, language[3022]);
+
+			// total scale
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 84, language[3025]);
+			doSlider(subx1 + 498, suby1 + 84 + 24, 10, 2, 16, 1, (int*)(&settings_minimap_scale));
+
+			// objects (players/allies/minotaur) scale
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 130, language[3026]);
+			doSlider(subx1 + 498, suby1 + 130 + 24, 10, 0, 4, 1, (int*)(&settings_minimap_object_zoom));
+
+			// foreground transparency
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 176, language[3023]);
+			doSlider(subx1 + 498, suby1 + 176 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_foreground));
+
+			// background transparency
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 222, language[3024]);
+			doSlider(subx1 + 498, suby1 + 222 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_background));
+
+			// UI options
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 282, language[3034]);
+
+			if ( settings_uiscale_charactersheet )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 306, "[x] %s", language[3027]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 306, "[ ] %s", language[3027]);
+			}
+			if ( settings_uiscale_skillspage )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 330, "[x] %s", language[3028]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 330, "[ ] %s", language[3028]);
+			}
+			if ( settings_hide_statusbar )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[x] %s", language[3033]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[ ] %s", language[3033]);
+			}
+
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				if ( omousex >= subx1 + 498 && omousex < subx1 + 522 )
+				{
+					if ( omousey >= suby1 + 306 && omousey < suby1 + 306 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_uiscale_charactersheet = (settings_uiscale_charactersheet == 0);
+					}
+					else if ( omousey >= suby1 + 330 && omousey < suby1 + 330 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_uiscale_skillspage = (settings_uiscale_skillspage == 0);
+					}
+					else if ( omousey >= suby1 + 354 && omousey < suby1 + 354 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_hide_statusbar = (settings_hide_statusbar == 0);
+					}
+				}
+			}
+			// UI scale sliders
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 220, language[3029]);
+			doSliderF(subx1 + 498, suby2 - 220 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_hotbar);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 174, language[3030]);
+			doSliderF(subx1 + 498, suby2 - 174 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_chatlog);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 128, language[3031]);
+			doSliderF(subx1 + 498, suby2 - 128 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_playerbars);
+			ttfPrintText(ttf12, subx1 + 498, suby2 - 80, language[3032]);
+			doSliderF(subx1 + 498, suby2 - 80 + 24, 10, 1.f, 2.f, 0.25, &settings_uiscale_inventory);
 
 			// fov slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, language[1346]);
@@ -2140,6 +2343,24 @@ void handleMainMenu(bool mode)
 			doSlider(subx1 + 24, suby1 + 84, 15, 0, 128, 0, &settings_sfxvolume);
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 108, language[1349]);
 			doSlider(subx1 + 24, suby1 + 132, 15, 0, 128, 0, &settings_musvolume);
+
+			if ( settings_minimap_ping_mute )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[x] %s", language[3012]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[ ] %s", language[3012]);
+			}
+			if ( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
+				{
+					if ( omousey >= suby1 + 168 && omousey < suby1 + 168 + 12 )
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
+				}
+			}
 		}
 
 		// keyboard tab
@@ -2166,7 +2387,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1981 + (c - 16)]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1983 + (c - 16)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
 				{
@@ -5145,17 +5366,32 @@ void handleMainMenu(bool mode)
 							drawRect(&pos, uint32ColorGreen(*mainsurface), 64);
 						}
 
+						// draw preview title
 						std::string line = itemDetails.m_rgchTitle;
-						if ( line.length() >= filenameMaxLength )
+						std::size_t found = line.find_first_of('\n');
+						if ( found != std::string::npos && found < filenameMaxLength - 2 )
 						{
-							line = line.substr(0, 46);
+							line = line.substr(0, found); // don't print out newlines.
+							line.append("..");
+						}
+						else if ( line.length() >= filenameMaxLength )
+						{
+							line = line.substr(0, filenameMaxLength - 2);
 							line.append("..");
 						}
 						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "Title: %s", line.c_str());
+
+						// draw preview description
 						line = itemDetails.m_rgchDescription;
-						if ( line.length() >= filenameMaxLength )
+						found = line.find_first_of('\n');
+						if ( found != std::string::npos && found < filenameMaxLength - 2 )
 						{
-							line = line.substr(0, 46);
+							line = line.substr(0, found);
+							line.append("..");
+						}
+						else if ( line.length() >= filenameMaxLength )
+						{
+							line = line.substr(0, filenameMaxLength - 2);
 							line.append("..");
 						}
 						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady + TTF12_HEIGHT, "Desc: %s", line.c_str());
@@ -5163,8 +5399,6 @@ void handleMainMenu(bool mode)
 						// if hovering over title or description, provide more info...
 						if ( mouseInBounds(filename_padx + 8, filename_padx + 8 + 52 * TTF12_WIDTH, filename_pady + TTF12_HEIGHT, filename_pady + 2 * TTF12_HEIGHT) )
 						{
-							line = itemDetails.m_rgchDescription;
-							tooltip.h = (6 + std::min(static_cast<int>((line.size() / 64)), maxDescriptionLines)) * TTF12_HEIGHT + 8;
 							drawExtendedInformationForMod = i;
 						}
 
@@ -5289,46 +5523,93 @@ void handleMainMenu(bool mode)
 					int tooltip_pady = 8;
 					SteamUGCDetails_t itemDetails = g_SteamWorkshop->m_subscribedItemListDetails[drawExtendedInformationForMod];
 					// draw the information.
+					std::string line;
+
+					line = itemDetails.m_rgchDescription;
+					line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+					//line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+					std::string subString;
+					std::string outputStr;
+					std::size_t found = line.find('\n');
+					int numlines = 0;
+					while ( line.length() >= 62 || (found != std::string::npos && found < 62) )
+					{
+						if ( numlines >= maxDescriptionLines )
+						{
+							break;
+						}
+						if ( found != std::string::npos && found < 62 )
+						{
+							// found newline.
+							subString = line.substr(0, found);
+							line = line.substr(found + 1);
+						}
+						else
+						{
+							subString = line.substr(0, 62);
+							if ( subString.at(subString.length() - 1) != ' ' || line.at(62) != ' ' )
+							{
+								// handle word wrapping.
+								std::size_t lastSpace = subString.find_last_of(' ');
+								if ( lastSpace != std::string::npos )
+								{
+									subString = subString.substr(0, lastSpace);
+									line = line.substr(lastSpace, line.length());
+								}
+								else
+								{
+									line = line.substr(62);
+								}
+							}
+							else
+							{
+								line = line.substr(62);
+							}
+						}
+						outputStr.append(subString);
+						outputStr += '\n';
+						outputStr.append("  ");
+						found = line.find('\n');
+						++numlines;
+					}
+
+					subString = line;
+					outputStr.append(subString);
+
+					tooltip.h = (6 + std::min(maxDescriptionLines, numlines)) * TTF12_HEIGHT + 12;
 					drawTooltip(&tooltip);
-					std::string line = itemDetails.m_rgchTitle;
-					if ( line.length() >= 64 )
+
+					// draw description title.
+					line = itemDetails.m_rgchTitle;
+					found = line.find_first_of('\n');
+					if ( found != std::string::npos && found < 62 )
+					{
+						line = line.substr(0, found);
+						line.append("..");
+					}
+					else if ( line.length() >= 64 )
 					{
 						line = line.substr(0, 62);
 						line.append("..");
 					}
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "%s", line.c_str());
-					tooltip_pady += 2 * TTF12_HEIGHT;
+					tooltip_pady += TTF12_HEIGHT * 2;
 
-					line = itemDetails.m_rgchDescription;
-					line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
-					line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
-					std::string subString;
-					while ( line.length() >= 62 )
-					{
-						if ( maxDescriptionLines <= 0 )
-						{
-							break;
-						}
-						subString = line.substr(0, 62);
-						line = line.substr(62);
-						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
-						tooltip_pady += TTF12_HEIGHT;
-						--maxDescriptionLines;
-					}
-					subString = line.substr(0, 62);
-					ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
-					tooltip_pady += TTF12_HEIGHT;
+					// draw description body.
+					ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", outputStr.c_str());
 
+					tooltip_pady += TTF12_HEIGHT * (numlines + 2);
+					
+					// draw tags.
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, uint32ColorBaronyBlue(*mainsurface), "tags:");
 					tooltip_pady += TTF12_HEIGHT;
 					line = itemDetails.m_rgchTags;
 
-					maxDescriptionLines = 3;
 					int tooltip_padx = 0;
 					if ( !line.empty() )
 					{
 						subString = line;
-						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "%s", subString.c_str());
+						ttfPrintTextFormatted(ttf12, tooltip.x + 8, tooltip.y + tooltip_pady, "  %s", subString.c_str());
 					}
 				}
 			}
@@ -5603,6 +5884,8 @@ void handleMainMenu(bool mode)
 
 			setDefaultPlayerConducts(); // penniless, foodless etc.
 
+			minimapPings.clear(); // clear minimap pings
+
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -5736,6 +6019,11 @@ void handleMainMenu(bool mode)
 											if ( !monsterally[HUMAN][monsterStats->type] )
 											{
 												monster->flags[USERFLAG2] = true;
+											}
+											monster->monsterPlayerAllyIndex = c;
+											if ( multiplayer == SERVER )
+											{
+												serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
 											}
 
 											newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -7144,11 +7432,24 @@ void openSettingsWindow()
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
 	settings_light_flicker = flickerLights;
+	settings_vsync = verticalSync;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
+	settings_minimap_ping_mute = minimapPingMute;
+	settings_minimap_transparency_foreground = minimapTransparencyForeground;
+	settings_minimap_transparency_background = minimapTransparencyBackground;
+	settings_minimap_scale = minimapScale;
+	settings_minimap_object_zoom = minimapObjectZoom;
+	settings_uiscale_charactersheet = uiscale_charactersheet;
+	settings_uiscale_skillspage = uiscale_skillspage;
+	settings_uiscale_inventory = uiscale_inventory;
+	settings_uiscale_hotbar = uiscale_hotbar;
+	settings_uiscale_chatlog = uiscale_chatlog;
+	settings_uiscale_playerbars = uiscale_playerbars;
+	settings_hide_statusbar = hide_statusbar;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -7204,8 +7505,8 @@ void openSettingsWindow()
 	suby1 = yres / 2 - ((yres==480)?210:278);
 	suby2 = yres / 2 + ((yres==480)?210:278);
 #else
-	suby1 = yres / 2 - 288;
-	suby2 = yres / 2 + 288;
+	suby1 = yres / 2 - 312;
+	suby2 = yres / 2 + 312;
 #endif
 	strcpy(subtext, language[1306]);
 
@@ -8632,6 +8933,8 @@ void applySettings()
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
 	flickerLights = settings_light_flicker;
+	oldVerticalSync = verticalSync;
+	verticalSync = settings_vsync;
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
@@ -8640,11 +8943,18 @@ void applySettings()
 	oldYres = yres;
 	xres = settings_xres;
 	yres = settings_yres;
+
+	minimapTransparencyForeground = settings_minimap_transparency_foreground;
+	minimapTransparencyBackground = settings_minimap_transparency_background;
+	minimapScale = settings_minimap_scale;
+	minimapObjectZoom = settings_minimap_object_zoom;
+
 	camera.winx = 0;
 	camera.winy = 0;
 	camera.winw = std::min(camera.winw, xres);
 	camera.winh = std::min(camera.winh, yres);
-	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma)
+	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma
+		|| oldVerticalSync != verticalSync )
 	{
 		if ( !changeVideoMode() )
 		{
@@ -8665,6 +8975,7 @@ void applySettings()
 	// set audio options
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
+	minimapPingMute = settings_minimap_ping_mute;
 
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
@@ -8722,6 +9033,14 @@ void applySettings()
 	gamepad_righty_sensitivity = settings_gamepad_righty_sensitivity;
 	gamepad_menux_sensitivity = settings_gamepad_menux_sensitivity;
 	gamepad_menuy_sensitivity = settings_gamepad_menuy_sensitivity;
+
+	uiscale_charactersheet = settings_uiscale_charactersheet;
+	uiscale_skillspage = settings_uiscale_skillspage;
+	uiscale_inventory = settings_uiscale_inventory;
+	uiscale_hotbar = settings_uiscale_hotbar;
+	uiscale_chatlog = settings_uiscale_chatlog;
+	uiscale_playerbars = settings_uiscale_playerbars;
+	hide_statusbar = settings_hide_statusbar;
 
 	saveConfig("default.cfg");
 }
@@ -9852,7 +10171,37 @@ void writeLevelsTxt(std::string modFolder)
 			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
 			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
 			PHYSFS_writeBytes(physfp, "gen: mine\n", 10);
-			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);			PHYSFS_writeBytes(physfp, "map: boss\n", 10);			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
+			PHYSFS_writeBytes(physfp, "map: minetoswamp\n", 17);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: swamp\n", 11);
+			PHYSFS_writeBytes(physfp, "map: swamptolabyrinth\n", 22);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "gen: labyrinth\n", 15);
+			PHYSFS_writeBytes(physfp, "map: labyrinthtoruins\n", 22);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: ruins\n", 11);
+			PHYSFS_writeBytes(physfp, "map: boss\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "gen: hell\n", 10);
+			PHYSFS_writeBytes(physfp, "map: hellboss\n", 14);
+			PHYSFS_writeBytes(physfp, "map: hamlet\n", 12);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "gen: caves\n", 11);
+			PHYSFS_writeBytes(physfp, "map: cavestocitadel\n", 20);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "gen: citadel\n", 13);
+			PHYSFS_writeBytes(physfp, "map: sanctum", 12);
 			PHYSFS_close(physfp);
 		}
 		else
@@ -10878,8 +11227,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	{
 		// print a loading message
 		drawClearBuffers();
-		TTF_SizeUTF8(ttf16, language[3003], &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3003]);
+		TTF_SizeUTF8(ttf16, language[3017], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3017]);
 		GO_SwapBuffers(screen);
 		physfsReloadTiles(false);
 		gamemods_tileListRequireReloadUnmodded = true;
@@ -10907,9 +11256,79 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		physfsReloadMusic(reloadIntroMusic);
 		if ( reloadIntroMusic )
 		{
+#ifdef SOUND
 			playmusic(intromusic[rand() % NUMINTROMUSIC], false, true, true);
+#endif			
 		}
 		gamemods_musicRequireReloadUnmodded = true;
+	}
+
+	std::string langDirectory = PHYSFS_getRealDir("lang/en.txt");
+	if ( langDirectory.compare("./") != 0 )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3004], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3004]);
+		GO_SwapBuffers(screen);
+		if ( reloadLanguage() != 0 )
+		{
+			printlog("[PhysFS]: Error reloading modified language file in lang/ directory!");
+		}
+		else
+		{
+			printlog("[PhysFS]: Found modified language file in lang/ directory, reloading en.txt...");
+		}
+		gamemods_langRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchItemsTxtToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3008], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3008]);
+		GO_SwapBuffers(screen);
+		physfsReloadItemsTxt();
+		gamemods_itemsTxtRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchItemSpritesToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3006], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3006]);
+		GO_SwapBuffers(screen);
+		physfsReloadItemSprites(false);
+		gamemods_itemSpritesRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchMonsterLimbFilesToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3013], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3013]);
+		GO_SwapBuffers(screen);
+		physfsReloadMonsterLimbFiles();
+		gamemods_monsterLimbsRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchSystemImagesToUpdate() )
+	{
+		// print a loading message
+		drawClearBuffers();
+		TTF_SizeUTF8(ttf16, language[3015], &w, &h);
+		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[3015]);
+		GO_SwapBuffers(screen);
+		physfsReloadSystemImages();
+		gamemods_systemImagesReloadUnmodded = true;
+
+		// tidy up some other resource files.
+		rightsidebar_titlebar_img = spell_list_titlebar_bmp;
+		rightsidebar_slot_img = spell_list_gui_slot_bmp;
+		rightsidebar_slot_highlighted_img = spell_list_gui_slot_highlighted_bmp;
 	}
 
 	// look for a save game
@@ -11030,6 +11449,7 @@ bool gamemodsMountAllExistingPaths()
 		}
 	}
 	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
+	gamemods_customContentLoadedFirstTime = true;
 	return success;
 }
 

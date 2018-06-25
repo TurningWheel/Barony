@@ -111,6 +111,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterStoreType(skill[18]),
 	monsterStrafeDirection(skill[39]),
 	monsterPathCount(skill[38]),
+	monsterPlayerAllyIndex(skill[42]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -299,7 +300,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	ranbehavior = false;
 	parent = 0;
 	path = nullptr;
-
+	monsterPlayerAllyIndex = -1; // set to -1 to not reference player indices 0-3.
 	if ( checkSpriteType(this->sprite) > 1 )
 	{
 		setSpriteAttributes(this, nullptr, nullptr);
@@ -2557,7 +2558,7 @@ void Entity::handleEffects(Stat* myStats)
 	// effects of greasy fingers
 	if ( myStats->EFFECTS[EFF_GREASY] == true )
 	{
-		if ( myStats->weapon != NULL )
+		if ( myStats->weapon != NULL && myStats->weapon->beatitude >= 0 )
 		{
 			messagePlayer(player, language[636]);
 			if ( player >= 0 )
@@ -4555,6 +4556,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( rand() % 2 )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+							if ( myStats->weapon->status < BROKEN )
+							{
+								myStats->weapon->status = BROKEN; // bounds checking.
+							}
 							if ( myStats->weapon->status == BROKEN )
 							{
 								messagePlayer(player, language[664]);
@@ -5580,8 +5585,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
 											&& hit.entity->monsterTarget != getUID() )
 										{
+											bool angelOfDeath = false;
 											// monster is attacking another entity.
-											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											for ( int i = 0; i < MAXPLAYERS; ++i )
+											{
+												if ( players[i] && players[i]->entity )
+												{
+													if ( players[i]->entity->getUID() == hit.entity->monsterTarget )
+													{
+														// monster is attacking another player.
+														angelOfDeath = true;
+														break;
+													}
+													Entity* tmpEnt = uidToEntity(hit.entity->monsterTarget);
+													if ( tmpEnt )
+													{
+														Stat* tmpStats = tmpEnt->getStats();
+														if ( tmpStats )
+														{
+															if ( tmpStats->leader_uid == players[i]->entity->getUID() )
+															{
+																// monster is attacking an allied NPC of a player.
+																angelOfDeath = true;
+																break;
+															}
+														}
+													}
+												}
+											}
+											if ( angelOfDeath )
+											{
+												steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											}
 										}
 									}
 								}
@@ -5654,8 +5689,38 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( hit.entity->monsterState == MONSTER_STATE_ATTACK && hit.entity->monsterTarget != 0
 											&& hit.entity->monsterTarget != getUID() )
 										{
+											bool angelOfDeath = false;
 											// monster is attacking another entity.
-											steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											for ( int i = 0; i < MAXPLAYERS; ++i )
+											{
+												if ( players[i] && players[i]->entity )
+												{
+													if ( players[i]->entity->getUID() == hit.entity->monsterTarget )
+													{
+														// monster is attacking another player.
+														angelOfDeath = true;
+														break;
+													}
+													Entity* tmpEnt = uidToEntity(hit.entity->monsterTarget);
+													if ( tmpEnt )
+													{
+														Stat* tmpStats = tmpEnt->getStats();
+														if ( tmpStats )
+														{
+															if ( tmpStats->leader_uid == players[i]->entity->getUID() )
+															{
+																// monster is attacking an allied NPC of a player.
+																angelOfDeath = true;
+																break;
+															}
+														}
+													}
+												}
+											}
+											if ( angelOfDeath )
+											{
+												steamAchievementClient(player, "BARONY_ACH_ANGEL_OF_DEATH");
+											}
 										}
 									}
 								}
@@ -9369,6 +9434,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				}
 
 				Entity* entity = (Entity*)node->element;
+				if ( entity->flags[INVISIBLE] )
+				{
+					continue; // ignore invisible items like Sokoban gloves or other scripted events.
+				}
+
 				Item* item = nullptr;
 				if ( entity != nullptr )
 				{

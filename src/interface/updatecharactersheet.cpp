@@ -41,17 +41,27 @@ void updateCharacterSheet()
 	int c;
 
 	// draw window
-	drawWindowFancy(0, 0, 224, 196);
 	pos.x = 8;
 	pos.y = 8;
 	pos.w = 208;
 	pos.h = 180;
-	drawRect(&pos, 0, 255);
 	//drawImage(character_bmp, NULL, &pos);
 	//pos.x=0; pos.y=196;
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
-	drawWindowFancy(0, 196, 224, 404);
+	int statWindowY = 196;
+	int statWindowY2 = 404;
+	if ( uiscale_charactersheet )
+	{
+		pos.h = 236;
+		pos.w = 276;
+		statWindowY = pos.h + 16;
+		statWindowY2 = 554;
+	}
+
+	drawWindowFancy(0, 0, pos.w + 16, pos.h + 16);
+	drawRect(&pos, 0, 255);
+	drawWindowFancy(0, pos.h + 16, pos.w + 16, statWindowY2);
 
 	// character sheet
 	double ofov = fov;
@@ -73,8 +83,8 @@ void updateCharacterSheet()
 		camera_charsheet.vang = PI / 20;
 		camera_charsheet.winx = 8;
 		camera_charsheet.winy = 8;
-		camera_charsheet.winw = 208;
-		camera_charsheet.winh = 180;
+		camera_charsheet.winw = pos.w;
+		camera_charsheet.winh = pos.h;
 		b = players[clientnum]->entity->flags[BRIGHT];
 		players[clientnum]->entity->flags[BRIGHT] = true;
 		if ( !players[clientnum]->entity->flags[INVISIBLE] )
@@ -172,46 +182,69 @@ void updateCharacterSheet()
 	}
 	fov = ofov;
 
-	ttfPrintTextFormatted(ttf12, 8, 202, "%s", stats[clientnum]->name);
-	ttfPrintTextFormatted(ttf12, 8, 214, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
-	ttfPrintTextFormatted(ttf12, 8, 226, language[360], stats[clientnum]->EXP);
-	ttfPrintTextFormatted(ttf12, 8, 238, language[361], currentlevel);
+	TTF_Font* fontStat = ttf12;
+	int text_y = 0;
+	int pad_y = 12;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_charactersheet )
+	{
+		fontStat = ttf16;
+		pad_y = 18;
+		fontWidth = TTF16_WIDTH;
+	}
+	text_y = statWindowY + 6;
+	ttfPrintTextFormatted(fontStat, 8, text_y, "%s", stats[clientnum]->name);
+	text_y += pad_y;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
+	text_y += pad_y;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[360], stats[clientnum]->EXP);
+	text_y += pad_y;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[361], currentlevel);
 
 	// attributes
 	Sint32 statModifier = 0;
 	char statText[64] = "";
 	//Uint32 statColor = uint32ColorWhite(*mainsurface);
-	//,
+	text_y += pad_y * 2;
 	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
-	ttfPrintTextFormatted(ttf12, 8, 262, statText);
-	printStatBonus(ttf12, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 262);
+	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
+	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
 
+	text_y += pad_y;
 	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
-	ttfPrintTextFormatted(ttf12, 8, 274, statText);
-	printStatBonus(ttf12, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 274);
+	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
+	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
 
+	text_y += pad_y;
 	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
-	ttfPrintTextFormatted(ttf12, 8, 286, statText);
-	printStatBonus(ttf12, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 286);
+	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
+	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
 
+	text_y += pad_y;
 	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
-	ttfPrintTextFormatted(ttf12, 8, 298, statText);
-	printStatBonus(ttf12, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 298);
+	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
+	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
 
+	text_y += pad_y;
 	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
-	ttfPrintTextFormatted(ttf12, 8, 310, statText);
-	printStatBonus(ttf12, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 310);
+	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
+	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
 
+	text_y += pad_y;
 	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
-	ttfPrintTextFormatted(ttf12, 8, 322, statText);
-	printStatBonus(ttf12, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 322);
+	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
+	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
 
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
-	ttfPrintTextFormatted(ttf12, 8, 346, language[2542], displayAttackPower(attackInfo));
-	ttfPrintTextFormatted(ttf12, 8, 358, language[371], AC(stats[clientnum]));
+	text_y += pad_y * 2;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[2542], displayAttackPower(attackInfo));
 
-	ttfPrintTextFormatted(ttf12, 8, 370, language[370], stats[clientnum]->GOLD);
+	text_y += pad_y;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[371], AC(stats[clientnum]));
+
+	text_y += pad_y;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[370], stats[clientnum]->GOLD);
 	Uint32 weight = 0;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
@@ -219,7 +252,8 @@ void updateCharacterSheet()
 		weight += items[item->type].weight * item->count;
 	}
 	weight += stats[clientnum]->GOLD / 100;
-	ttfPrintTextFormatted(ttf12, 8, 382, language[372], weight);
+	text_y += pad_y;
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[372], weight);
 
 	if ( proficienciesPage == 1 )
 	{
@@ -238,7 +272,7 @@ void updateCharacterSheet()
 	src.y = mousey + 16;
 	src.h = TTF12_HEIGHT + 4;
 	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
-	if ( mouseInBounds(pos.x + 4, pos.x + pos.w, 370, 370 + TTF12_HEIGHT) )
+	if ( mouseInBounds(pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2968], getInputName(impulses[IN_USE]));
@@ -258,20 +292,40 @@ void updateCharacterSheet()
 void drawSkillsSheet()
 {
 	SDL_Rect pos;
-	pos.x = xres - 208;
 	pos.w = 208;
 	pos.y = 32;
-	pos.h = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3);
+
+	TTF_Font* fontSkill = ttf12;
+	int fontHeight = TTF12_HEIGHT;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_skillspage )
+	{
+		fontSkill = ttf16;
+		fontHeight = TTF16_HEIGHT;
+		fontWidth = TTF16_WIDTH;
+		pos.w = 276;
+	}
+	pos.x = xres - pos.w;
+
+
+	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
-	ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 8, language[1883]);
+	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
 
 	SDL_Rect button;
 	button.x = xres - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
+	if ( uiscale_skillspage )
+	{
+		button.w = attributesright_bmp->w * 1.3;
+		button.x = xres - button.w - 8;
+		button.y = pos.y;
+		button.h = attributesright_bmp->h * 1.3;
+	}
 
 	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 	{
@@ -293,18 +347,27 @@ void drawSkillsSheet()
 	}
 	if ( buttonclick == 14 )
 	{
-		drawImage(attributesright_bmp, nullptr, &button);
+		drawImageScaled(attributesright_bmp, nullptr, &button);
 	}
 	else
 	{
-		drawImage(attributesrightunclicked_bmp, nullptr, &button);
+		drawImageScaled(attributesrightunclicked_bmp, nullptr, &button);
 	}
 
 	SDL_Rect lockbtn = button;
 	lockbtn.h = 24;
 	lockbtn.w = 24;
-	lockbtn.x -= 32;
 	lockbtn.y += 2;
+	if ( uiscale_skillspage )
+	{
+		lockbtn.h = 24 * 1.3;
+		lockbtn.w = 24 * 1.3;
+		lockbtn.x -= 32 * 1.3;
+	}
+	else
+	{
+		lockbtn.x -= 32;
+	}
 	if ( lock_right_sidebar )
 	{
 		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
@@ -325,19 +388,19 @@ void drawSkillsSheet()
 		}
 	}
 
-	pos.y += TTF12_HEIGHT * 2 + 8;
+	pos.y += fontHeight * 2 + 8;
 
 	SDL_Rect initialSkillPos = pos;
 	//Draw skill names.
-	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (TTF12_HEIGHT /** 2*/) )
+	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (fontHeight /** 2*/) )
 	{
-		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, "%s:", language[236 + c]);
+		ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y, "%s:", language[236 + c]);
 	}
 
 	//Draw skill levels.
 	pos = initialSkillPos;
 	Uint32 color;
-	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (TTF12_HEIGHT /** 2*/) )
+	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
 	{
 		if ( skillCapstoneUnlocked(clientnum, i) )
 		{
@@ -350,31 +413,31 @@ void drawSkillsSheet()
 
 		if ( stats[clientnum]->PROFICIENCIES[i] == 0 )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[363]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[363]);
 		}
 		else if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[364]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[364]);
 		}
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[365]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[365]);
 		}
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[366]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[366]);
 		}
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[367]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[367]);
 		}
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[368]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[368]);
 		}
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[369]);
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[369]);
 		}
 	}
 }
@@ -382,6 +445,18 @@ void drawSkillsSheet()
 void drawPartySheet()
 {
 	SDL_Rect pos;
+	pos.w = 208;
+
+	TTF_Font* fontPlayer = ttf12;
+	int fontHeight = TTF12_HEIGHT;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_skillspage )
+	{
+		fontPlayer = ttf16;
+		fontHeight = TTF16_HEIGHT;
+		fontWidth = TTF16_WIDTH;
+		pos.w = 276;
+	}
 	int playerCnt = 0;
 	for ( playerCnt = MAXPLAYERS - 1; playerCnt > 0; --playerCnt )
 	{
@@ -390,20 +465,27 @@ void drawPartySheet()
 			break;
 		}
 	}
-	pos.x = xres - 208;
-	pos.w = 208;
+	pos.x = xres - pos.w;
 	pos.y = 32;
-	pos.h = (TTF12_HEIGHT * 2 + 12) + ((TTF12_HEIGHT * 4) + 6) * (std::max(playerCnt + 1, 1));
+	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
-	ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 8, "Party Stats");
+	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
 	SDL_Rect button;
 	button.x = xres - attributesright_bmp->w - 8;
 	button.w = attributesright_bmp->w;
 	button.y = pos.y;
 	button.h = attributesright_bmp->h;
+	if ( uiscale_skillspage )
+	{
+		button.w = attributesright_bmp->w * 1.3;
+		button.x = xres - button.w - 8;
+		button.y = pos.y;
+		button.h = attributesright_bmp->h * 1.3;
+	}
+
 
 	if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode )
 	{
@@ -425,18 +507,27 @@ void drawPartySheet()
 	}
 	if ( buttonclick == 14 )
 	{
-		drawImage(attributesright_bmp, nullptr, &button);
+		drawImageScaled(attributesright_bmp, nullptr, &button);
 	}
 	else
 	{
-		drawImage(attributesrightunclicked_bmp, nullptr, &button);
+		drawImageScaled(attributesrightunclicked_bmp, nullptr, &button);
 	}
 
 	SDL_Rect lockbtn = button;
 	lockbtn.h = 24;
 	lockbtn.w = 24;
-	lockbtn.x -= 32;
 	lockbtn.y += 2;
+	if ( uiscale_skillspage )
+	{
+		lockbtn.h = 24 * 1.3;
+		lockbtn.w = 24 * 1.3;
+		lockbtn.x -= 32 * 1.3;
+	}
+	else
+	{
+		lockbtn.x -= 32;
+	}
 	if ( lock_right_sidebar )
 	{
 		drawImageScaled(sidebar_lock_bmp, nullptr, &lockbtn);
@@ -457,26 +548,31 @@ void drawPartySheet()
 		}
 	}
 
-	pos.y += TTF12_HEIGHT * 2 + 4;
+	pos.y += fontHeight * 2 + 4;
 
 	SDL_Rect initialSkillPos = pos;
 	SDL_Rect playerBar;
 
 	//Draw party stats
 	Uint32 color = uint32ColorWhite(*mainsurface);
-	for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (TTF12_HEIGHT * 4) + 6 )
+	for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (fontHeight * 4) + 6 )
 	{
 		if ( !client_disconnected[i] && stats[i] )
 		{
-			ttfPrintTextFormattedColor(ttf12, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+			ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
 
-			ttfPrintTextFormattedColor(ttf12, pos.x + 12, pos.y + TTF12_HEIGHT, color, "%s", playerClassLangEntry(client_classes[i]));
-			ttfPrintTextFormattedColor(ttf12, xres - 8 * 12, pos.y + TTF12_HEIGHT, color, "LVL %2d", stats[i]->LVL);
+			ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i]));
+			ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
 
 			playerBar.x = pos.x + 64;
 			playerBar.w = 10 * 11;
-			playerBar.y = pos.y + TTF12_HEIGHT * 2 + 1;
-			playerBar.h = TTF12_HEIGHT;
+			if ( uiscale_skillspage )
+			{
+				playerBar.x += 10;
+				playerBar.w += 48;
+			}
+			playerBar.y = pos.y + fontHeight * 2 + 1;
+			playerBar.h = fontHeight;
 			// draw tooltip with blue outline
 			drawTooltip(&playerBar);
 			// draw faint red bar underneath
@@ -488,11 +584,16 @@ void drawPartySheet()
 			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
 
 			// draw HP values
-			ttfPrintTextFormattedColor(ttf12, pos.x + 32, pos.y + TTF12_HEIGHT * 2 + 4, color, "HP:  %3d / %3d", stats[i]->HP, stats[i]->MAXHP);
+			ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight * 2 + 4, color, "HP:  %3d / %3d", stats[i]->HP, stats[i]->MAXHP);
 
 			playerBar.x = pos.x + 64;
 			playerBar.w = 10 * 11;
-			playerBar.y = pos.y + TTF12_HEIGHT * 3 + 1;
+			if ( uiscale_skillspage )
+			{
+				playerBar.x += 10;
+				playerBar.w += 48;
+			}
+			playerBar.y = pos.y + fontHeight * 3 + 1;
 			// draw tooltip with blue outline
 			drawTooltip(&playerBar);
 			playerBar.x += 1;
@@ -504,7 +605,7 @@ void drawPartySheet()
 			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255);
 
 			// draw MP values
-			ttfPrintTextFormattedColor(ttf12, pos.x + 32 , pos.y + TTF12_HEIGHT * 3 + 4, color, "MP:  %3d / %3d", stats[i]->MP, stats[i]->MAXMP);
+			ttfPrintTextFormattedColor(fontPlayer, pos.x + 32 , pos.y + fontHeight * 3 + 4, color, "MP:  %3d / %3d", stats[i]->MP, stats[i]->MAXMP);
 		}
 	}
 }
@@ -524,6 +625,13 @@ void statsHoverText(Stat* tmpStat)
 	int j = 0;
 	SDL_Rect src;
 	SDL_Rect pos;
+
+	if ( uiscale_charactersheet )
+	{
+		pad_y += 86;
+		off_h = TTF16_HEIGHT - 4;
+		off_w = 280;
+	}
 
 	int tooltip_offset_x = 16; // 16px.
 	int tooltip_offset_y = 16; // 16px.
@@ -752,7 +860,7 @@ void statsHoverText(Stat* tmpStat)
 				}
 			}
 			numInfoLines = 0;
-			pad_y += 12;
+			pad_y += off_h;
 		}
 	}
 }
@@ -880,6 +988,13 @@ void attackHoverText(Sint32 input[6])
 	int tooltip_text_pad_x = 16;
 	int numInfoLines = 3;
 	char buf[128] = "";
+
+	if ( uiscale_charactersheet )
+	{
+		off_h = TTF16_HEIGHT - 4;
+		pad_y += 126;
+		off_w = 280;
+	}
 
 	if ( attributespage == 0 )
 	{

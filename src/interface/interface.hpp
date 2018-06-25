@@ -25,9 +25,18 @@ typedef struct damageIndicator_t
 } damageIndicator_t;
 extern list_t damageIndicators;
 
-#define STATUS_BAR_Y_OFFSET status_bmp->h
-#define STATUS_X (xres / 2 - status_bmp->w / 2)
+#define STATUS_BAR_Y_OFFSET (status_bmp->h * uiscale_chatlog)
+#define INVENTORY_SLOTSIZE (40 * uiscale_inventory)
+#define STATUS_X (xres / 2 - status_bmp->w * uiscale_chatlog / 2)
 #define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
+#define HOTBAR_START_X ((xres / 2) - (5 * hotbar_img->w * uiscale_hotbar))
+extern bool hide_statusbar;
+extern real_t uiscale_chatlog;
+extern real_t uiscale_playerbars;
+extern bool uiscale_charactersheet;
+extern bool uiscale_skillspage;
+extern real_t uiscale_hotbar;
+extern real_t uiscale_inventory;
 
 extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp;
@@ -412,3 +421,22 @@ void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers,
 void attackHoverText(Sint32 input[6]);
 Sint32 displayAttackPower(Sint32 output[6]);
 
+class MinimapPing
+{
+public:
+	Sint32 tickStart;
+	Uint8 player;
+	Uint8 x;
+	Uint8 y;
+	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
+		tickStart(tickStart),
+		player(player),
+		x(x),
+		y(y) {}
+};
+
+extern std::vector<MinimapPing> minimapPings;
+void minimapPingAdd(MinimapPing newPing);
+extern int minimapPingGimpTimer;
+
+extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages;

@@ -85,6 +85,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterStoreType(skill[18]),
 	monsterStrafeDirection(skill[39]),
 	monsterPathCount(skill[38]),
+	monsterPlayerAllyIndex(skill[42]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),

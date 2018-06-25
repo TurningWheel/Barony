@@ -23,8 +23,11 @@
 #include "entity.hpp"
 #include "book.hpp"
 #include "menu.hpp"
+#include "items.hpp"
+#include "interface/interface.hpp"
 
 std::vector<int> gamemods_modelsListModifiedIndexes;
+std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 
 /*-------------------------------------------------------------------------------
 
@@ -1294,6 +1297,7 @@ void physfsReloadSounds(bool reloadAll)
 	printlog("freeing sounds and loading modded sounds...\n");
 	if ( reloadAll )
 	{
+#ifdef SOUND
 		if ( sounds != NULL )
 		{
 			for ( int c = 0; c < numsounds; c++ )
@@ -1302,12 +1306,14 @@ void physfsReloadSounds(bool reloadAll)
 				{
 #ifdef USE_FMOD
 					FMOD_Sound_Release(sounds[c]);    //Free the sound in FMOD
-#elif USE_OPENAL
+#endif
+#ifdef USE_OPENAL
 					OPENAL_Sound_Release(sounds[c]); //Free the sound in OPENAL
 #endif
 				}
 			}
 		}
+#endif
 	}
 
 	for ( int c = 0; !feof(fp); c++ )
@@ -1335,12 +1341,13 @@ void physfsReloadSounds(bool reloadAll)
 				{
 					printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
 				}
-#elif USE_OPENAL
+#endif
+#ifdef USE_OPENAL
 				if ( !reloadAll )
 				{
 					OPENAL_Sound_Release(sounds[c]);
 				}
-				OPENAL_CreateSound(name, true, &sounds[c]);
+				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
 #endif 
 			}
 		}
@@ -1543,4 +1550,390 @@ bool physfsIsMapLevelListModded()
 		++levelsCounted;
 	}
 	return false;
+}
+
+bool physfsSearchItemSpritesToUpdate()
+{
+	for ( int c = 0; c < NUMITEMS; ++c )
+	{
+		for ( int x = 0; x < list_Size(&items[c].images); x++ )
+		{
+			node_t* node = list_Node(&items[c].images, x);
+			string_t* string = (string_t*)node->element;
+			std::string itemImgDir;
+			if ( PHYSFS_getRealDir(string->data) != NULL )
+			{
+				itemImgDir = PHYSFS_getRealDir(string->data);
+				if ( itemImgDir.compare("./") != 0 )
+				{
+					printlog("[PhysFS]: Found modified item sprite in items/items.txt file, reloading all item sprites...");
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void physfsReloadItemSprites(bool reloadAll)
+{
+	for ( int c = 0; c < NUMITEMS; ++c )
+	{
+		bool reloadImg = reloadAll;
+		if ( !reloadAll )
+		{
+			for ( int x = 0; x < list_Size(&items[c].images); x++ )
+			{
+				node_t* node = list_Node(&items[c].images, x);
+				string_t* string = (string_t*)node->element;
+				std::string itemImgDir;
+				if ( PHYSFS_getRealDir(string->data) != NULL )
+				{
+					itemImgDir = PHYSFS_getRealDir(string->data);
+					if ( itemImgDir.compare("./") != 0 )
+					{
+						reloadImg = true;
+					}
+				}
+			}
+		}
+		if ( reloadImg )
+		{
+			// free the image data.
+			//list_FreeAll(&items[c].images);
+			node_t* node, *nextnode;
+			for ( node = items[c].surfaces.first; node != NULL; node = nextnode )
+			{
+				nextnode = node->next;
+				SDL_Surface** surface = (SDL_Surface**)node->element;
+				if ( surface )
+				{
+					if ( *surface )
+					{
+						SDL_FreeSurface(*surface);
+					}
+				}
+			}
+			list_FreeAll(&items[c].surfaces);
+
+			// now reload the image data.
+			for ( int x = 0; x < list_Size(&items[c].images); x++ )
+			{
+				SDL_Surface** surface = (SDL_Surface**)malloc(sizeof(SDL_Surface*));
+				node_t* node = list_AddNodeLast(&items[c].surfaces);
+				node->element = surface;
+				node->deconstructor = &defaultDeconstructor;
+				node->size = sizeof(SDL_Surface*);
+
+				node_t* node2 = list_Node(&items[c].images, x);
+				string_t* string = (string_t*)node2->element;
+				std::string itemImgDir;
+				if ( PHYSFS_getRealDir(string->data) != NULL )
+				{
+					itemImgDir = PHYSFS_getRealDir(string->data);
+					itemImgDir.append(PHYSFS_getDirSeparator()).append(string->data);
+				}
+				else
+				{
+					itemImgDir = string->data;
+				}
+				char imgFileChar[256];
+				strncpy(imgFileChar, itemImgDir.c_str(), 255);
+				*surface = loadImage(imgFileChar);
+			}
+		}
+	}
+}
+
+bool physfsSearchItemsTxtToUpdate()
+{
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
+	if ( itemsTxtDirectory.compare("./") != 0 )
+	{
+		printlog("[PhysFS]: Found modified items/items.txt file, reloading all item information...");
+		return true;
+	}
+	return false;
+}
+
+void physfsReloadItemsTxt()
+{
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
+	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
+	FILE* fp = openDataFile(itemsTxtDirectory.c_str(), "r");
+	char buffer[128];
+
+	for ( int c = 0; !feof(fp) && c < NUMITEMS; ++c )
+	{
+		//if ( c > ARTIFACT_BOW )
+		//{
+		//	int newItems = c - ARTIFACT_BOW - 1;
+		//	items[c].name_identified = language[2200 + newItems * 2];
+		//	items[c].name_unidentified = language[2201 + newItems * 2];
+		//}
+		//else
+		//{
+		//	items[c].name_identified = language[1545 + c * 2];
+		//	items[c].name_unidentified = language[1546 + c * 2];
+		//}
+		fscanf(fp, "%d", &items[c].index);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%d", &items[c].fpindex);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%d", &items[c].variations);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%s", buffer);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		if ( !strcmp(buffer, "WEAPON") )
+		{
+			items[c].category = WEAPON;
+		}
+		else if ( !strcmp(buffer, "ARMOR") )
+		{
+			items[c].category = ARMOR;
+		}
+		else if ( !strcmp(buffer, "AMULET") )
+		{
+			items[c].category = AMULET;
+		}
+		else if ( !strcmp(buffer, "POTION") )
+		{
+			items[c].category = POTION;
+		}
+		else if ( !strcmp(buffer, "SCROLL") )
+		{
+			items[c].category = SCROLL;
+		}
+		else if ( !strcmp(buffer, "MAGICSTAFF") )
+		{
+			items[c].category = MAGICSTAFF;
+		}
+		else if ( !strcmp(buffer, "RING") )
+		{
+			items[c].category = RING;
+		}
+		else if ( !strcmp(buffer, "SPELLBOOK") )
+		{
+			items[c].category = SPELLBOOK;
+		}
+		else if ( !strcmp(buffer, "TOOL") )
+		{
+			items[c].category = TOOL;
+		}
+		else if ( !strcmp(buffer, "FOOD") )
+		{
+			items[c].category = FOOD;
+		}
+		else if ( !strcmp(buffer, "BOOK") )
+		{
+			items[c].category = BOOK;
+		}
+		else if ( !strcmp(buffer, "THROWN") )
+		{
+			items[c].category = THROWN;
+		}
+		else if ( !strcmp(buffer, "SPELL_CAT") )
+		{
+			items[c].category = SPELL_CAT;
+		}
+		else
+		{
+			items[c].category = GEM;
+		}
+		fscanf(fp, "%d", &items[c].weight);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+		fscanf(fp, "%d", &items[c].value);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
+
+		list_FreeAll(&items[c].images);
+
+		while ( 1 )
+		{
+			string_t* string = (string_t*)malloc(sizeof(string_t));
+			string->data = (char*)malloc(sizeof(char) * 64);
+			string->lines = 1;
+
+			node_t* node = list_AddNodeLast(&items[c].images);
+			node->element = string;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			string->node = node;
+
+			int x = 0;
+			bool fileend = false;
+			while ( (string->data[x] = fgetc(fp)) != '\n' )
+			{
+				if ( feof(fp) )
+				{
+					fileend = true;
+					break;
+				}
+				x++;
+			}
+			if ( x == 0 || fileend )
+			{
+				list_RemoveNode(node);
+				break;
+			}
+			string->data[x] = 0;
+		}
+	}
+
+	fclose(fp);
+}
+
+bool physfsSearchMonsterLimbFilesToUpdate()
+{
+	bool requiresUpdate = false;
+	for ( int c = 1; c < NUMMONSTERS; c++ )
+	{
+		char filename[256];
+		strcpy(filename, "models/creatures/");
+		strcat(filename, monstertypename[c]);
+		strcat(filename, "/limbs.txt");
+		if ( PHYSFS_getRealDir(filename) == NULL ) // some monsters don't have limbs.
+		{
+			continue;
+		}
+		std::string limbsDir = PHYSFS_getRealDir(filename);
+		if ( limbsDir.compare("./") != 0 )
+		{
+			printlog("[PhysFS]: Found modified limbs.txt file for monster %s, reloading all limb information...", monstertypename[c]);
+			requiresUpdate = true;
+		}
+	}
+	return requiresUpdate;
+}
+
+void physfsReloadMonsterLimbFiles()
+{
+	int x;
+	FILE* fp;
+	for ( int c = 1; c < NUMMONSTERS; c++ )
+	{
+		// initialize all offsets to zero
+		for ( x = 0; x < 20; x++ )
+		{
+			limbs[c][x][0] = 0;
+			limbs[c][x][1] = 0;
+			limbs[c][x][2] = 0;
+		}
+
+		// open file
+		char filename[256];
+		strcpy(filename, "models/creatures/");
+		strcat(filename, monstertypename[c]);
+		strcat(filename, "/limbs.txt");
+		if ( PHYSFS_getRealDir(filename) == NULL ) // some monsters don't have limbs
+		{
+			continue;
+		}
+		std::string limbsDir = PHYSFS_getRealDir(filename);
+		limbsDir.append(PHYSFS_getDirSeparator()).append(filename);
+		if ( (fp = openDataFile(limbsDir.c_str(), "r")) == NULL )
+		{
+			continue;
+		}
+
+		// read file
+		int line;
+		for ( line = 1; feof(fp) == 0; line++ )
+		{
+			char data[256];
+			int limb = 20;
+			int dummy;
+
+			// read line from file
+			fgets(data, 256, fp);
+
+			// skip blank and comment lines
+			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
+			{
+				continue;
+			}
+
+			// process line
+			if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
+			{
+				printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", limbsDir.c_str(), line);
+				continue;
+			}
+			if ( sscanf(data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2]) != 4 )
+			{
+				printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", limbsDir.c_str(), line);
+				continue;
+			}
+		}
+		// close file
+		fclose(fp);
+	}
+}
+
+bool physfsSearchSystemImagesToUpdate()
+{
+	bool requireReload = false;
+	systemResourceImagesToReload.clear();
+
+	for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = systemResourceImages.begin(); it != systemResourceImages.end(); ++it )
+	{
+		std::pair<SDL_Surface**, std::string> line = *it;
+		std::string imgFile = line.second;
+		if ( PHYSFS_getRealDir(imgFile.c_str()) != NULL)
+		{
+			std::string imgDir = PHYSFS_getRealDir(imgFile.c_str());
+			if ( imgDir.compare("./") != 0 )
+			{
+				printlog("[PhysFS]: Found modified %s file, reloading system image...", imgFile.c_str());
+				requireReload = true;
+				systemResourceImagesToReload.push_back(line);
+			}
+		}
+	}
+	return requireReload;
+}
+
+void physfsReloadSystemImages()
+{
+	if ( !systemResourceImagesToReload.empty() )
+	{
+		for ( std::vector<std::pair<SDL_Surface**, std::string>>::const_iterator it = systemResourceImagesToReload.begin(); it != systemResourceImagesToReload.end(); ++it )
+		{
+			std::pair<SDL_Surface**, std::string> line = *it;
+			if ( *(line.first) ) // SDL_Surface* pointer exists
+			{
+				// load a new image, getting the VFS system location.
+				std::string filepath = PHYSFS_getRealDir(line.second.c_str());
+				filepath.append(PHYSFS_getDirSeparator()).append(line.second);
+
+				char filepathChar[1024];
+				strncpy(filepathChar, filepath.c_str(), 1023);
+
+				SDL_FreeSurface(*(line.first));
+				*(line.first) = loadImage(filepathChar);
+
+				if ( !(*(line.first)))
+				{
+					printlog("[PhysFS]: Error: Failed to reload %s!", filepath.c_str());
+				}
+			}
+		}
+	}
 }
