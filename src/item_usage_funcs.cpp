@@ -2565,7 +2565,7 @@ void item_ToolBeartrap(Item*& item, int player)
 				{
 					if ( multiplayer != CLIENT )
 					{
-						messagePlayer(player, language[3011]);
+						messagePlayer(player, language[3035]);
 					}
 					return;
 				}
