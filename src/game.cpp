@@ -772,6 +772,9 @@ void gameLogic(void)
 					darkmap = false;
 					numplayers = 0;
 					int result = physfsLoadMapFile(currentlevel, mapseed, false);
+
+					minimapPings.clear(); // clear minimap pings
+
 					assignActions(&map);
 					generatePathMaps();
 
@@ -885,6 +888,12 @@ void gameLogic(void)
 									if (!monsterally[HUMAN][monsterStats->type])
 									{
 										monster->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(monster, USERFLAG2);
+									}
+									monster->monsterPlayerAllyIndex = c;
+									if ( multiplayer == SERVER )
+									{
+										serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
 									}
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -2951,12 +2960,15 @@ int main(int argc, char** argv)
 									}
 									else
 									{
-										if ( achievementBrawlerMode )
+										if ( achievementBrawlerMode && selected_spell != nullptr )
 										{
 											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
 										}
 										castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
-										conductGameChallenges[CONDUCT_BRAWLER] = 0;
+										if ( selected_spell != nullptr )
+										{
+											conductGameChallenges[CONDUCT_BRAWLER] = 0;
+										}
 									}
 								}
 								else
@@ -2965,6 +2977,13 @@ int main(int argc, char** argv)
 								}
 							}
 						}
+					}
+					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )
+					{
+						hide_statusbar = !hide_statusbar;
+						*inputPressed(impulses[IN_TOGGLECHATLOG]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG]) = 0;
+						playSound(139, 64);
 					}
 
 					// commands
@@ -3209,12 +3228,12 @@ int main(int argc, char** argv)
 						{
 							pos.x = mousex - 15;
 							pos.y = mousey - 15;
-							pos.w = 32;
-							pos.h = 32;
+							pos.w = 32 * uiscale_inventory;
+							pos.h = 32 * uiscale_inventory;
 							drawImageScaled(itemSprite(selectedItem), NULL, &pos);
 							if ( selectedItem->count > 1 )
 							{
-								ttfPrintTextFormatted(ttf8, pos.x + 24, pos.y + 24, "%d", selectedItem->count);
+								ttfPrintTextFormatted(ttf8, pos.x + 24 * uiscale_inventory, pos.y + 24 * uiscale_inventory, "%d", selectedItem->count);
 							}
 							if ( itemCategory(selectedItem) != SPELL_CAT )
 							{

@@ -782,10 +782,10 @@ void buttonOpenConfirm(button_t* my)
 			break;
 		}
 	}
-	for ( c2 = 0; c2 < 32 - c; c2++ )
+	/*for ( c2 = 0; c2 < 32 - c; c2++ )
 	{
 		strcat(message, " ");
-	}
+	}*/
 	std::string fullMapName = physfsFormatMapName(filename);
 	printlog("opening map file '%s'...\n", fullMapName.c_str());
 	if (loadMap(fullMapName.c_str(), &map, map.entities, map.creatures) == -1)
@@ -823,10 +823,10 @@ void buttonSave(button_t* my)
 				break;
 			}
 		}
-		for ( c2 = 0; c2 < 32 - c; c2++ )
+		/*for ( c2 = 0; c2 < 32 - c; c2++ )
 		{
 			strcat(message, " ");
-		}
+		}*/
 		printlog("saving map file '%s'...\n", filename);
 
 		std::string path = physfs_saveDirectory;

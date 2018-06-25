@@ -335,7 +335,8 @@ enough money!#
 
 215 I would buy it for %dG.
 
-Trade? (Right click)#
+Trade? (Right click from
+inventory)#
 
 
 # shopkeeper chit-chat
@@ -1667,7 +1668,10 @@ Press 'Okay' to return to the main menu.#
        want to quit?#
 1129
       Are you sure you
-   want to end this game?#
+    want to end this game?
+    
+ Your singleplayer save file 
+       will be deleted.#
 1130
           Are you sure you
      want to restart this game?#
@@ -2759,8 +2763,12 @@ dungeon level %d, client (player %d) (direct ip)#
 1978 Activate Hotbar Slot#
 1979 Next Hotbar Slot#
 1980 Previous Hotbar Slot#
+1981 Minimap Scale Toggle#
+1982 Toggle Chatlog#
 # Other bindings.
-1981 Autosort Inventory#
+1983 Autosort Inventory#
+1984 Minimap Scale Toggle#
+1985 Toggle Chatlog#
 
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
@@ -3672,5 +3680,55 @@ IDENTICAL MOD LISTS LOADED!#
 
 #
 3003 Steam Achievements are disabled#
-
+3004 Loading modded language file...#
+3005 Unloading modded language file...#
+3006 Loading modded item sprites...#
+3007 Unloading modded item sprites...#
+3008 Loading modded items.txt properties...#
+3009 Unloading modded items.txt properties...#
+3010 fell to their death.#
+3011 vertical sync#
+3012 mute minimap pings#
+3013 Loading modded monster limbs.txt files...#
+3014 Unloading modded monster limbs.txt files...#
+3015 Loading modded system resource image files...#
+3016 Unloading modded system resource image files...#
+3017 Loading modded game tiles...#
+3018 Unloading modded game tiles...#
+3019 Save & Disconnect#
+3020
+      Are you sure you want to disconnect
+          and return to the main menu?
+    
+    Your multiplayer progress will be saved
+           up to the last checkpoint.
+    
+ NOTE: 
+    If your current party members advance to 
+ the next dungeon floor without your character, 
+    your savefile will no longer be able to 
+              rejoin the session.#
+3021
+      Are you sure you want to disconnect
+          and return to the main menu?
+    
+    Your multiplayer progress will be saved
+           up to the last checkpoint.
+    
+ NOTE: 
+   This will disconnect all party members and
+          save their current progress.#
+3022 Minimap Options#
+3023 Foreground Transparency (%)#
+3024 Background Transparency (%)#
+3025 Map Scale#
+3026 Player/Ally Icon Zoom#
+3027 Character Sheet Zoom#
+3028 Skills/Party Sidebar Zoom#
+3029 Hotbar Zoom#
+3030 Chatlog Zoom#
+3031 Player HP/MP Zoom#
+3032 Inventory Zoom#
+3033 Hide Chatlog#
+3034 User Interface Options#
 3099 end#

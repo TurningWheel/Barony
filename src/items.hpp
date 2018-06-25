@@ -17,6 +17,7 @@
 // variables
 extern bool weaponSwitch;
 extern bool shieldSwitch;
+extern Sint32 pickaxeGimpTimer;
 
 // items
 typedef enum ItemType
@@ -359,7 +360,6 @@ extern Uint32 itemuids;
 static const int INVENTORY_SIZEX = 12;
 static const int INVENTORY_SIZEY = 3;
 #define INVENTORY_SIZE ((INVENTORY_SIZEX)*(INVENTORY_SIZEY))
-static const int INVENTORY_SLOTSIZE = 40;
 #define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
 static const int INVENTORY_STARTY = 10;
 

@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "game.hpp"
+
 //TODO: Bugger all void pointers and helper funcs on these.
 void steam_OnP2PSessionRequest(void* p_Callback); //TODO: Finalize porting.
 //void steam_OnGameOverlayActivated(void *callback);
@@ -174,14 +176,6 @@ public:
 	void OnSendQueryUGCRequest(SteamUGCQueryCompleted_t *pResult, bool bIOFailure);
 	void OnUnsubscribeItemRequest(RemoteStorageUnsubscribePublishedFileResult_t *pResult, bool bIOFailure);
 	//void OnStartItemUpdate(UGCUpdateHandle_t pResult, bool bIOFailure);
-};
-
-
-enum ESteamStatTypes
-{
-	STEAM_STAT_INT = 0,
-	STEAM_STAT_FLOAT = 1,
-	STEAM_STAT_AVGRATE = 2,
 };
 
 struct SteamStat_t

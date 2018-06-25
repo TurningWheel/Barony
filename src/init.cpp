@@ -619,12 +619,22 @@ int loadLanguage(char* lang)
 
 	// compose filename
 	snprintf(filename, 127, "lang/%s.txt", lang);
+	std::string langFilepath;
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(filename) != NULL )
+	{
+		std::string langRealDir = PHYSFS_getRealDir(filename);
+		langFilepath = langRealDir + PHYSFS_getDirSeparator() + filename;
+	}
+	else
+	{
+		langFilepath = filename;
+	}
 
 	// check if language file is valid
-	if ( !dataPathExists(filename) )
+	if ( !dataPathExists(langFilepath.c_str()) )
 	{
 		// language file doesn't exist
-		printlog("error: unable to locate language file: '%s'", filename);
+		printlog("error: unable to locate language file: '%s'", langFilepath.c_str());
 		return 1;
 	}
 
@@ -649,16 +659,36 @@ int loadLanguage(char* lang)
 	char fontName[64] = { 0 };
 	char fontPath[1024];
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
-	if ( !dataPathExists(fontName) )
+	std::string fontFilepath;
+	if ( PHYSFS_isInit() && PHYSFS_getRealDir(fontName) != NULL )
+	{
+		std::string fontRealDir = PHYSFS_getRealDir(fontName);
+		fontFilepath = fontRealDir + PHYSFS_getDirSeparator() + fontName;
+	}
+	else
+	{
+		fontFilepath = fontName;
+	}
+
+	if ( !dataPathExists(fontFilepath.c_str()) )
 	{
 		strncpy(fontName, "lang/en.ttf", 63);
+		if ( PHYSFS_isInit() && PHYSFS_getRealDir(fontName) != NULL )
+		{
+			std::string fontRealDir = PHYSFS_getRealDir(fontName);
+			fontFilepath = fontRealDir + PHYSFS_getDirSeparator() + fontName;
+		}
+		else
+		{
+			fontFilepath = fontName;
+		}
 	}
-	if ( !dataPathExists(fontName) )
+	if ( !dataPathExists(fontFilepath.c_str()) )
 	{
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
-	completePath(fontPath, fontName);
+	completePath(fontPath, fontFilepath.c_str());
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
@@ -694,9 +724,9 @@ int loadLanguage(char* lang)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = openDataFile(filename, "r")) == NULL )
+	if ( (fp = openDataFile(langFilepath.c_str(), "r")) == NULL )
 	{
-		printlog("error: unable to load language file: '%s'", filename);
+		printlog("error: unable to load language file: '%s'", langFilepath.c_str());
 		return 1;
 	}
 
@@ -769,12 +799,12 @@ int loadLanguage(char* lang)
 		// process line
 		if ( (entry = atoi(data)) == 0 )
 		{
-			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", filename, line);
+			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", langFilepath.c_str(), line);
 			continue;
 		}
 		else if ( entry >= NUMLANGENTRIES || entry < 0 )
 		{
-			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", filename, line);
+			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", langFilepath.c_str(), line);
 			continue;
 		}
 		//printlog( "loading entry %d...\n", entry);
@@ -782,7 +812,7 @@ int loadLanguage(char* lang)
 		snprintf(entryText, 15, "%d", entry);
 		if ( language[entry][0] )
 		{
-			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, filename, line);
+			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, langFilepath.c_str(), line);
 			free(language[entry]);
 		}
 		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
@@ -791,7 +821,23 @@ int loadLanguage(char* lang)
 
 	// close file
 	fclose(fp);
-	printlog( "successfully loaded language file '%s'\n", filename);
+	printlog( "successfully loaded language file '%s'\n", langFilepath.c_str());
+
+	// update item internal language entries.
+	for ( int c = 0; c < NUMITEMS; ++c )
+	{
+		if ( c > ARTIFACT_BOW )
+		{
+			int newItems = c - ARTIFACT_BOW - 1;
+			items[c].name_identified = language[2200 + newItems * 2];
+			items[c].name_unidentified = language[2201 + newItems * 2];
+		}
+		else
+		{
+			items[c].name_identified = language[1545 + c * 2];
+			items[c].name_unidentified = language[1546 + c * 2];
+		}
+	}
 	return 0;
 }
 
@@ -2372,6 +2418,15 @@ bool initVideo()
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glClearColor( 0, 0, 0, 0 );
+	}
+
+	if ( verticalSync )
+	{
+		SDL_GL_SetSwapInterval(1);
+	}
+	else
+	{
+		SDL_GL_SetSwapInterval(0);
 	}
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{

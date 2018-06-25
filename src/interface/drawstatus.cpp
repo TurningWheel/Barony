@@ -250,8 +250,8 @@ bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinvento
 void warpMouseToSelectedHotbarSlot()
 {
 	SDL_Rect pos;
-	pos.x = STATUS_X + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
-	pos.y = STATUS_Y - (hotbar_img->h / 2);
+	pos.x = ((xres / 2) - 5 * hotbar_img->w * uiscale_hotbar) + (current_hotbar * hotbar_img->w * uiscale_hotbar) + (hotbar_img->w * uiscale_hotbar / 2);
+	pos.y = STATUS_Y - (hotbar_img->h * uiscale_hotbar / 2);
 	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 }
 
@@ -262,15 +262,25 @@ void drawStatus()
 	node_t* node;
 	string_t* string;
 	pos.x = STATUS_X;
-	pos.y = STATUS_Y;
+	if ( !hide_statusbar )
+	{
+		pos.y = STATUS_Y;
+	}
+	else
+	{
+		pos.y = yres - 16;
+	}
 	//To garner the position of the hotbar.
-	initial_position.x = pos.x;
+	initial_position.x = HOTBAR_START_X;
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
-	pos.w = 0;
-	pos.h = 0;
-	drawImage(status_bmp, NULL, &pos);
+	pos.w = status_bmp->w * uiscale_chatlog;
+	pos.h = status_bmp->h * uiscale_chatlog;
+	if ( !hide_statusbar )
+	{
+		drawImageScaled(status_bmp, NULL, &pos);
+	}
 
 	// hunger icon
 	if ( stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
@@ -324,185 +334,217 @@ void drawStatus()
 	}
 
 	// messages
-	x = xres / 2 - (status_bmp->w / 2) + 24;
-	y = yres;
-	textscroll = std::max(std::min<Uint32>(list_Size(&messages) - 3, textscroll), 0u);
-	c = 0;
-	for ( node = messages.last; node != NULL; node = node->prev )
+	if ( !hide_statusbar )
 	{
-		c++;
-		if ( c <= textscroll )
+		x = xres / 2 - (status_bmp->w * uiscale_chatlog / 2) + 24 * uiscale_chatlog;
+		y = yres;
+		textscroll = std::max(std::min<Uint32>(list_Size(&messages) - 3, textscroll), 0u);
+		c = 0;
+		for ( node = messages.last; node != NULL; node = node->prev )
 		{
-			continue;
-		}
-		string = (string_t*)node->element;
-		y -= TTF12_HEIGHT * string->lines;
-		if ( y < yres - status_bmp->h + 4 )
-		{
-			break;
-		}
-		z = 0;
-		for ( i = 0; i < strlen(string->data); i++ )
-		{
-			if ( string->data[i] != 10 )   // newline
+			c++;
+			if ( c <= textscroll )
 			{
-				z++;
+				continue;
+			}
+			string = (string_t*)node->element;
+			if ( uiscale_chatlog >= 1.5 )
+			{
+				y -= TTF16_HEIGHT * string->lines;
+				if ( y < yres - (status_bmp->h * uiscale_chatlog) + 8 * uiscale_chatlog )
+				{
+					break;
+				}
+			}
+			else if ( uiscale_chatlog != 1.f )
+			{
+				y -= TTF12_HEIGHT * string->lines;
+				if ( y < yres - status_bmp->h * 1.1 + 4 )
+				{
+					break;
+				}
 			}
 			else
 			{
-				z = 0;
-			}
-			if ( z == 65 )
-			{
-				if ( string->data[i] != 10 )
+				y -= TTF12_HEIGHT * string->lines;
+				if ( y < yres - status_bmp->h + 4 )
 				{
-					char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
-					strcpy(tempString, string->data);
-					strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
-					tempString[i] = 10;
-					free(string->data);
-					string->data = tempString;
-					string->lines++;
+					break;
 				}
-				z = 0;
 			}
-		}
-		Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255); // black color
-		ttfPrintTextColor(ttf12, x, y, color, false, string->data);
-	}
-	if ( mousestatus[SDL_BUTTON_LEFT] )
-	{
-		if ( omousey >= yres - status_bmp->h + 7 && omousey < yres - status_bmp->h + 7 + 27 )
-		{
-			if ( omousex >= xres / 2 - status_bmp->w / 2 + 618 && omousex < xres / 2 - status_bmp->w / 2 + 618 + 11 )
+			z = 0;
+			for ( i = 0; i < strlen(string->data); i++ )
 			{
-				// text scroll up
-				buttonclick = 3;
-				textscroll++;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-			}
-		}
-		else if ( omousey >= yres - status_bmp->h + 34 && omousey < yres - status_bmp->h + 34 + 28 )
-		{
-			if ( omousex >= xres / 2 - status_bmp->w / 2 + 618 && omousex < xres / 2 - status_bmp->w / 2 + 618 + 11 )
-			{
-				// text scroll down
-				buttonclick = 12;
-				textscroll--;
-				if ( textscroll < 0 )
+				if ( string->data[i] != 10 )   // newline
 				{
+					z++;
+				}
+				else
+				{
+					z = 0;
+				}
+				if ( z == 65 )
+				{
+					if ( string->data[i] != 10 )
+					{
+						char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
+						strcpy(tempString, string->data);
+						strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
+						tempString[i] = 10;
+						free(string->data);
+						string->data = tempString;
+						string->lines++;
+					}
+					z = 0;
+				}
+			}
+			Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255); // black color
+			if ( uiscale_chatlog >= 1.5 )
+			{
+				ttfPrintTextColor(ttf16, x, y, color, false, string->data);
+			}
+			else
+			{
+				ttfPrintTextColor(ttf12, x, y, color, false, string->data);
+			}
+		}
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 7 && omousey < yres - status_bmp->h * uiscale_chatlog + (7 + 27) * uiscale_chatlog )
+			{
+				if ( omousex >= xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog && omousex < xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+				{
+					// text scroll up
+					buttonclick = 3;
+					textscroll++;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+			else if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 34 && omousey < yres - status_bmp->h * uiscale_chatlog + (34 + 28) * uiscale_chatlog )
+			{
+				if ( omousex >= xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog && omousex < xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+				{
+					// text scroll down
+					buttonclick = 12;
+					textscroll--;
+					if ( textscroll < 0 )
+					{
+						textscroll = 0;
+					}
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+			else if ( omousey >= yres - status_bmp->h * uiscale_chatlog + 62 && omousey < yres - status_bmp->h * uiscale_chatlog + (62 + 31) * uiscale_chatlog )
+			{
+				if ( omousex >= xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog && omousex < xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 618 * uiscale_chatlog + 11 * uiscale_chatlog )
+				{
+					// text scroll down all the way
+					buttonclick = 4;
 					textscroll = 0;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
-				mousestatus[SDL_BUTTON_LEFT] = 0;
 			}
+			/*else if( omousey>=yres-status_bmp->h+8 && omousey<yres-status_bmp->h+8+30 ) {
+				if( omousex>=xres/2-status_bmp->w/2+618 && omousex<xres/2-status_bmp->w/2+618+11 ) {
+					// text scroll up all the way
+					buttonclick=13;
+					textscroll=list_Size(&messages)-4;
+					mousestatus[SDL_BUTTON_LEFT]=0;
+				}
+			}*/
 		}
-		else if ( omousey >= yres - status_bmp->h + 62 && omousey < yres - status_bmp->h + 62 + 31 )
+
+		// mouse wheel
+		if ( mousex >= STATUS_X && mousex < STATUS_X + status_bmp->w * uiscale_chatlog )
 		{
-			if ( omousex >= xres / 2 - status_bmp->w / 2 + 618 && omousex < xres / 2 - status_bmp->w / 2 + 618 + 11 )
+			if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h * uiscale_chatlog )
 			{
-				// text scroll down all the way
-				buttonclick = 4;
-				textscroll = 0;
-				mousestatus[SDL_BUTTON_LEFT] = 0;
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				{
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					textscroll--;
+					if ( textscroll < 0 )
+					{
+						textscroll = 0;
+					}
+				}
+				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				{
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					textscroll++;
+				}
 			}
 		}
-		/*else if( omousey>=yres-status_bmp->h+8 && omousey<yres-status_bmp->h+8+30 ) {
-			if( omousex>=xres/2-status_bmp->w/2+618 && omousex<xres/2-status_bmp->w/2+618+11 ) {
-				// text scroll up all the way
-				buttonclick=13;
-				textscroll=list_Size(&messages)-4;
-				mousestatus[SDL_BUTTON_LEFT]=0;
-			}
+		if (showfirst)
+		{
+			textscroll = list_Size(&messages) - 3;
+		}
+
+
+		//Text scroll up button.
+		if ( buttonclick == 3 )
+		{
+			pos.x = xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 617 * uiscale_chatlog;
+			pos.y = yres - status_bmp->h * uiscale_chatlog + 7 * uiscale_chatlog;
+			pos.w = 11 * uiscale_chatlog;
+			pos.h = 27 * uiscale_chatlog;
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
+			//drawImage(textup_bmp, NULL, &pos);
+		}
+		//Text scroll down all the way button.
+		if ( buttonclick == 4 )
+		{
+			pos.x = xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 617 * uiscale_chatlog;
+			pos.y = yres - status_bmp->h * uiscale_chatlog + 62 * uiscale_chatlog;
+			pos.w = 11 * uiscale_chatlog;
+			pos.h = 31 * uiscale_chatlog;
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
+			//drawImage(textdown_bmp, NULL, &pos);
+		}
+		//Text scroll down button.
+		if ( buttonclick == 12 )
+		{
+			pos.x = xres / 2 - status_bmp->w * uiscale_chatlog / 2 + 617 * uiscale_chatlog;
+			pos.y = yres - status_bmp->h * uiscale_chatlog + 34 * uiscale_chatlog;
+			pos.w = 11 * uiscale_chatlog;
+			pos.h = 28 * uiscale_chatlog;
+			drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
+			//drawImage(textup_bmp, NULL, &pos);
+		}
+		//Text scroll up all the way button.
+		/*if( buttonclick==13 ) {
+			pos.x=xres/2-status_bmp->w/2+617; pos.y=yres-status_bmp->h+8;
+			pos.w=11; pos.h=30;
+			drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
+			//drawImage(textdown_bmp, NULL, &pos);
 		}*/
 	}
 
-	// mouse wheel
-	if ( mousex >= initial_position.x && mousex < initial_position.x + status_bmp->w )
-	{
-		if ( mousey >= initial_position.y && mousey < initial_position.y + status_bmp->h )
-		{
-			if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-			{
-				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-				textscroll--;
-				if ( textscroll < 0 )
-				{
-					textscroll = 0;
-				}
-			}
-			else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-			{
-				mousestatus[SDL_BUTTON_WHEELUP] = 0;
-				textscroll++;
-			}
-		}
-	}
-	if (showfirst)
-	{
-		textscroll = list_Size(&messages) - 3;
-	}
-
-
-	//Text scroll up button.
-	if ( buttonclick == 3 )
-	{
-		pos.x = xres / 2 - status_bmp->w / 2 + 617;
-		pos.y = yres - status_bmp->h + 7;
-		pos.w = 11;
-		pos.h = 27;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
-		//drawImage(textup_bmp, NULL, &pos);
-	}
-	//Text scroll down all the way button.
-	if ( buttonclick == 4 )
-	{
-		pos.x = xres / 2 - status_bmp->w / 2 + 617;
-		pos.y = yres - status_bmp->h + 62;
-		pos.w = 11;
-		pos.h = 31;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
-		//drawImage(textdown_bmp, NULL, &pos);
-	}
-	//Text scroll down button.
-	if ( buttonclick == 12 )
-	{
-		pos.x = xres / 2 - status_bmp->w / 2 + 617;
-		pos.y = yres - status_bmp->h + 34;
-		pos.w = 11;
-		pos.h = 28;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 80);
-		//drawImage(textup_bmp, NULL, &pos);
-	}
-	//Text scroll up all the way button.
-	/*if( buttonclick==13 ) {
-		pos.x=xres/2-status_bmp->w/2+617; pos.y=yres-status_bmp->h+8;
-		pos.w=11; pos.h=30;
-		drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
-		//drawImage(textdown_bmp, NULL, &pos);
-	}*/
+	int playerStatusBarWidth = 38 * uiscale_playerbars;
+	int playerStatusBarHeight = 156 * uiscale_playerbars;
 
 	// PLAYER HEALTH BAR
 	// Display Health bar border
-	pos.x = 76;
-	pos.w = 38;
-	pos.h = 156;
-	pos.y = yres - 168;
+	pos.x = 38 + 38 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth;
+	pos.h = playerStatusBarHeight;
+	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
 
 	// Display "HP" at top of Health bar
-	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[306]);
+	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[306]);
 
 	// Display border between actual Health bar and "HP"
-	pos.x = 76;
-	pos.w = 38;
+	//pos.x = 76;
+	pos.w = playerStatusBarWidth;
 	pos.h = 0;
-	pos.y = yres - 147;
+	pos.y = yres - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
 
 	// Display the actual Health bar's faint background
-	pos.x = 80;
-	pos.w = 33;
-	pos.h = 129;
+	pos.x = 42 + 38 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth - 5;
+	pos.h = playerStatusBarHeight - 27;
 	pos.y = yres - 15 - pos.h;
 
 	// Change the color depending on if you are poisoned
@@ -529,9 +571,9 @@ void drawStatus()
 	// If the Player is alive, base the size of the actual Health bar off remaining HP
 	if ( stats[clientnum]->HP > 0 )
 	{
-		pos.x = 80;
-		pos.w = 33;
-		pos.h = 129 * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
+		//pos.x = 80;
+		pos.w = playerStatusBarWidth - 5;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
 		pos.y = yres - 15 - pos.h;
 
 		if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
@@ -556,30 +598,45 @@ void drawStatus()
 
 	// Print out the amount of HP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
-	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
+	if ( uiscale_playerbars >= 1.5 )
+	{
+		pos.x += uiscale_playerbars * 2;
+	}
+	printTextFormatted(font12x12_bmp, pos.x + 16 * uiscale_playerbars - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	// PLAYER MAGIC BAR
 	// Display the Magic bar border
-	pos.x = 12;
-	pos.w = 39;
-	pos.h = 156;
-	pos.y = yres - 168;
+	pos.x = 12 * uiscale_playerbars;
+	pos.w = playerStatusBarWidth;
+	pos.h = playerStatusBarHeight;
+	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
 
 	// Display "MP" at the top of Magic bar
-	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[307]);
+	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
 
 	// Display border between actual Magic bar and "MP"
-	pos.x = 12;
-	pos.w = 39;
+	//pos.x = 12;
+	pos.w = playerStatusBarWidth;
 	pos.h = 0;
-	pos.y = yres - 147;
+	pos.y = yres - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
 
 	// Display the actual Magic bar's faint background
-	pos.x = 16;
-	pos.w = 33;
-	pos.h = 129;
+	if ( uiscale_playerbars < 1.5 )
+	{
+		pos.x = 16;
+	}
+	else if ( uiscale_playerbars == 1.5 )
+	{
+		pos.x = 16 * uiscale_playerbars - 2;
+	}
+	else
+	{
+		pos.x = 16 * uiscale_playerbars - 4;
+	}
+	pos.w = playerStatusBarWidth - 5;
+	pos.h = playerStatusBarHeight - 27;
 	pos.y = yres - 15 - pos.h;
 
 	// Draw the actual Magic bar's faint background
@@ -588,9 +645,9 @@ void drawStatus()
 	// If the Player has MP, base the size of the actual Magic bar off remaining MP
 	if ( stats[clientnum]->MP > 0 )
 	{
-		pos.x = 16;
-		pos.w = 33;
-		pos.h = 129 * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
+		//pos.x = 16;
+		pos.w = playerStatusBarWidth - 5;
+		pos.h = (playerStatusBarHeight - 27) * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
 		pos.y = yres - 15 - pos.h;
 
 		// Only draw the actual Magic bar if the Player has MP
@@ -599,15 +656,16 @@ void drawStatus()
 
 	// Print out the amount of MP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
-	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
+	printTextFormatted(font12x12_bmp, 32 * uiscale_playerbars - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
 
 	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
-	pos.x = initial_position.x;
-	pos.y = initial_position.y - hotbar_img->h;
-	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w )
+	//pos.x = initial_position.x;
+	pos.x = (xres / 2) - 5 * hotbar_img->w * uiscale_hotbar;
+	pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
+	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w * uiscale_hotbar )
 	{
 		Uint32 color;
 		if ( current_hotbar == num && !openedChest[clientnum] )
@@ -618,20 +676,22 @@ void drawStatus()
 		{
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60); //Draw normal grey border.
 		}
-		drawImageColor(hotbar_img, NULL, &pos, color);
+		pos.w = hotbar_img->w * uiscale_hotbar;
+		pos.h = hotbar_img->h * uiscale_hotbar;
+		drawImageScaledColor(hotbar_img, NULL, &pos, color);
 
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
 			bool used = false;
-			pos.w = hotbar_img->w;
-			pos.h = hotbar_img->h;
+			pos.w = hotbar_img->w * uiscale_hotbar;
+			pos.h = hotbar_img->h * uiscale_hotbar;
 
 			SDL_Rect highlightBox;
 			highlightBox.x = pos.x + 2;
 			highlightBox.y = pos.y + 2;
-			highlightBox.w = 60;
-			highlightBox.h = 60;
+			highlightBox.w = 60 * uiscale_hotbar;
+			highlightBox.h = 60 * uiscale_hotbar;
 
 			if ( !item->identified )
 			{
@@ -663,7 +723,7 @@ void drawStatus()
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if ( stats[clientnum]->HP > 0 )
 			{
-				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
+				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
 					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
 					{
@@ -754,25 +814,34 @@ void drawStatus()
 				if ( item->count > 1 )
 				{
 					int digits = numdigits_sint16(item->count);
-					printTextFormatted(font12x12_bmp, pos.x + hotbar_img->w - (14 * digits), pos.y + hotbar_img->h - 14, "%d", item->count);
+					SDL_Surface* digitFont = font12x12_bmp;
+					if ( uiscale_hotbar >= 1.5 )
+					{
+						digitFont = font16x16_bmp;
+						printTextFormatted(digitFont, pos.x + hotbar_img->w * uiscale_hotbar - (24 * digits), pos.y + hotbar_img->h * uiscale_hotbar - 24, "%d", item->count);
+					}
+					else
+					{
+						printTextFormatted(digitFont, pos.x + hotbar_img->w * uiscale_hotbar - (14 * digits), pos.y + hotbar_img->h * uiscale_hotbar - 14, "%d", item->count);
+					}
 				}
 
 				SDL_Rect src;
 				src.x = pos.x + 2;
-				src.y = pos.y + hotbar_img->h - 18;
-				src.w = 16;
-				src.h = 16;
+				src.h = 16 * uiscale_hotbar;
+				src.y = pos.y + hotbar_img->h * uiscale_hotbar - src.h - 2;
+				src.w = 16 * uiscale_hotbar;
 
 				// item equipped
 				if ( itemCategory(item) != SPELL_CAT )
 				{
 					if ( itemIsEquipped(item, clientnum) )
 					{
-						drawImage(equipped_bmp, NULL, &src);
+						drawImageScaled(equipped_bmp, NULL, &src);
 					}
 					else if ( item->status == BROKEN )
 					{
-						drawImage(itembroken_bmp, NULL, &src);
+						drawImageScaled(itembroken_bmp, NULL, &src);
 					}
 				}
 				else
@@ -780,24 +849,31 @@ void drawStatus()
 					spell_t* spell = getSpellFromItem(item);
 					if ( selected_spell == spell )
 					{
-						drawImage(equipped_bmp, NULL, &src);
+						drawImageScaled(equipped_bmp, NULL, &src);
 					}
 				}
 			}
 		}
-		printTextFormatted(font12x12_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
+		if ( uiscale_hotbar >= 1.5 )
+		{
+			printTextFormatted(font16x16_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
+		}
+		else
+		{
+			printTextFormatted(font12x12_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
+		}
 	}
 
 	if ( !shootmode )
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
-		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w )
+		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w * uiscale_hotbar )
 		{
 			item = uidToItem(hotbar[num].item);
 			if ( item )
 			{
-				if ( mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
+				if ( mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
 					//Tooltip
 					SDL_Rect src;
@@ -978,6 +1054,31 @@ void drawStatus()
 				}
 			}
 		}
+
+		// minimap pinging.
+		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+		if ( mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+		{
+			if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE])) )
+			{
+				mousestatus[SDL_BUTTON_RIGHT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+				if ( minimapPingGimpTimer == -1 )
+				{
+					MinimapPing newPing(ticks, clientnum, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
+					minimapPingGimpTimer = TICKS_PER_SECOND / 4;
+					if ( multiplayer != CLIENT )
+					{
+						minimapPingAdd(newPing);
+					}
+					sendMinimapPing(clientnum, newPing.x, newPing.y);
+				}
+			}
+		}
+	}
+	if ( minimapPingGimpTimer >= 0 )
+	{
+		--minimapPingGimpTimer;
 	}
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
@@ -993,8 +1094,8 @@ void drawStatus()
 					)
 					||
 					(omousex >= initial_position.x 
-						&& omousex <= initial_position.x + hotbar_img->w * 10
-						&& omousey >= initial_position.y - hotbar_img->h
+						&& omousex <= initial_position.x + hotbar_img->w * uiscale_hotbar * 10
+						&& omousey >= initial_position.y - hotbar_img->h * uiscale_hotbar
 						&& omousey <= initial_position.y
 					)
 				)
@@ -1058,10 +1159,10 @@ void drawStatus()
 		if ( (mousexrel || mouseyrel) && !shootmode )
 		{
 			pos.x = initial_position.x;
-			pos.y = initial_position.y - hotbar_img->h;
-			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w )
+			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w * uiscale_hotbar )
 			{
-				if ( mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
+				if ( mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
 					selectHotbarSlot(c);
 				}
@@ -1105,9 +1206,9 @@ void drawStatus()
 				hotbar[current_hotbar].item = 0;
 			}
 
-			pos.x = initial_position.x + (current_hotbar * hotbar_img->w);
-			pos.y = initial_position.y - hotbar_img->h;
-			if ( !shootmode && !book_open && !openedChest[clientnum] && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
+			pos.x = initial_position.x + (current_hotbar * hotbar_img->w * uiscale_hotbar);
+			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
+			if ( !shootmode && !book_open && !openedChest[clientnum] && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 			{
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
 				*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
