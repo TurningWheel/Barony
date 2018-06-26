@@ -516,7 +516,7 @@ void minimapPingAdd(MinimapPing newPing)
 	int numPlayerPings = 0;
 	if ( !minimapPings.empty() )
 	{
-		for ( std::vector<MinimapPing>::const_iterator it = minimapPings.begin(); it != minimapPings.end();)
+		for ( std::vector<MinimapPing>::iterator it = minimapPings.begin(); it != minimapPings.end();)
 		{
 			MinimapPing ping = *it;
 			if ( ping.player == newPing.player )
