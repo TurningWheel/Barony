@@ -901,7 +901,6 @@ bool physfsSearchMusicToUpdate()
 {
 #ifdef SOUND
 	std::vector<std::string> themeMusic;
-	themeMusic.push_back("music/splash.ogg");
 	themeMusic.push_back("music/introduction.ogg");
 	themeMusic.push_back("music/intermission.ogg");
 	themeMusic.push_back("music/minetown.ogg");
@@ -1077,7 +1076,6 @@ void physfsReloadMusic(bool &introMusicChanged)
 #ifdef SOUND
 
 	std::vector<std::string> themeMusic;
-	themeMusic.push_back("music/splash.ogg");
 	themeMusic.push_back("music/introduction.ogg");
 	themeMusic.push_back("music/intermission.ogg");
 	themeMusic.push_back("music/minetown.ogg");
@@ -1110,52 +1108,94 @@ void physfsReloadMusic(bool &introMusicChanged)
 			{
 				musicDir += PHYSFS_getDirSeparator() + filename;
 				printlog("[PhysFS]: Reloading music file %s...", filename.c_str());
-				FMOD_SOUND* music = NULL;
 				switch ( index )
 				{
 					case 0:
-						music = introductionmusic;
+						if ( introductionmusic )
+						{
+							FMOD_Sound_Release(introductionmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &introductionmusic);
+						}
 						break;
 					case 1:
-						music = intermissionmusic;
+						if ( intermissionmusic )
+						{
+							FMOD_Sound_Release(intermissionmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &intermissionmusic);
+						}
 						break;
 					case 2:
-						music = minetownmusic;
+						if ( minetownmusic )
+						{
+							FMOD_Sound_Release(minetownmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &minetownmusic);
+						}
 						break;
 					case 3:
-						music = splashmusic;
+						if ( splashmusic )
+						{
+							FMOD_Sound_Release(splashmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &splashmusic);
+						}
 						break;
 					case 4:
-						music = librarymusic;
+						if ( librarymusic )
+						{
+							FMOD_Sound_Release(librarymusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &librarymusic);
+						}
 						break;
 					case 5:
-						music = shopmusic;
+						if ( shopmusic )
+						{
+							FMOD_Sound_Release(shopmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &shopmusic);
+						}
 						break;
 					case 6:
-						music = herxmusic;
+						if ( herxmusic )
+						{
+							FMOD_Sound_Release(herxmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &herxmusic);
+						}
 						break;
 					case 7:
-						music = templemusic;
+						if ( templemusic )
+						{
+							FMOD_Sound_Release(templemusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &templemusic);
+						}
 						break;
 					case 8:
-						music = endgamemusic;
+						if ( endgamemusic )
+						{
+							FMOD_Sound_Release(endgamemusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &endgamemusic);
+						}
 						break;
 					case 9:
-						music = escapemusic;
+						if ( escapemusic )
+						{
+							FMOD_Sound_Release(escapemusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &escapemusic);
+						}
 						break;
 					case 10:
-						music = devilmusic;
+						if ( devilmusic )
+						{
+							FMOD_Sound_Release(devilmusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &devilmusic);
+						}
 						break;
 					case 11:
-						music = sanctummusic;
+						if ( sanctummusic )
+						{
+							FMOD_Sound_Release(sanctummusic);
+							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &sanctummusic);
+						}
 						break;
 					default:
 						break;
-				}
-				if ( music )
-				{
-					FMOD_Sound_Release(music);
-					fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &music);
 				}
 			}
 		}
