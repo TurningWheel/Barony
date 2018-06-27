@@ -1426,7 +1426,6 @@ void physfsReloadTiles(bool reloadAll)
 						{
 							// animated tiles if the tile name ends in a number 0-9.
 							animatedtiles[c] = true;
-							printlog("found animated tile %s", tileFile.c_str());
 						}
 					}
 					if ( strstr(name, "Lava") || strstr(name, "lava") )
