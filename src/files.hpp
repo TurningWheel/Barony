@@ -50,6 +50,7 @@ bool physfsIsMapLevelListModded();
 bool physfsSearchItemSpritesToUpdate();
 void physfsReloadItemSprites(bool reloadAll);
 bool physfsSearchItemsTxtToUpdate();
+bool physfsSearchItemsGlobalTxtToUpdate();
 void physfsReloadItemsTxt();
 bool physfsSearchMonsterLimbFilesToUpdate();
 void physfsReloadMonsterLimbFiles();

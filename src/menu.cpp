@@ -123,6 +123,7 @@ bool gamemods_musicRequireReloadUnmodded = false;
 bool gamemods_langRequireReloadUnmodded = false;
 bool gamemods_itemSpritesRequireReloadUnmodded = false;
 bool gamemods_itemsTxtRequireReloadUnmodded = false;
+bool gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
 bool gamemods_monsterLimbsRequireReloadUnmodded = false;
 bool gamemods_systemImagesReloadUnmodded = false;
 bool gamemods_customContentLoadedFirstTime = false;
@@ -802,6 +803,13 @@ void handleMainMenu(bool mode)
 						GO_SwapBuffers(screen);
 						physfsReloadItemSprites(true);
 						gamemods_itemSpritesRequireReloadUnmodded = false;
+					}
+
+					if ( gamemods_itemsGlobalTxtRequireReloadUnmodded )
+					{
+						gamemods_itemsGlobalTxtRequireReloadUnmodded = false;
+						printlog("[PhysFS]: Unloaded modified items/items_global.txt file, reloading item spawn levels...");
+						loadItemLists();
 					}
 
 					if ( gamemods_monsterLimbsRequireReloadUnmodded )
@@ -11302,6 +11310,12 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		GO_SwapBuffers(screen);
 		physfsReloadItemSprites(false);
 		gamemods_itemSpritesRequireReloadUnmodded = true;
+	}
+
+	if ( physfsSearchItemsGlobalTxtToUpdate() )
+	{
+		gamemods_itemsGlobalTxtRequireReloadUnmodded = true;
+		loadItemLists();
 	}
 
 	if ( physfsSearchMonsterLimbFilesToUpdate() )
