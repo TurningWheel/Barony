@@ -2539,16 +2539,18 @@ bool loadItemLists()
 	}
 
 	// compose filename
-	char filename[128] = "items/items_global.txt";
+	//char filename[128] = "items/items_global.txt";
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
+	itemsTxtDirectory.append(PHYSFS_getDirSeparator()).append("items/items_global.txt");
 	// check if item list is valid
-	if ( !dataPathExists(filename) )
+	if ( !dataPathExists(itemsTxtDirectory.c_str()) )
 	{
 		// file doesn't exist
-		printlog("error: unable to locate global item list file: '%s'", filename);
+		printlog("error: unable to locate global item list file: '%s'", itemsTxtDirectory.c_str());
 		return false;
 	}
 
-	std::vector<std::string> itemLevels = getLinesFromDataFile(filename);
+	std::vector<std::string> itemLevels = getLinesFromDataFile(itemsTxtDirectory);
 	std::string line;
 	int itemIndex = 0;
 
@@ -2572,7 +2574,7 @@ bool loadItemLists()
 		}
 	}
 
-	printlog("successfully loaded global item list '%s' \n", filename);
+	printlog("successfully loaded global item list '%s' \n", itemsTxtDirectory.c_str());
 	/*for ( c = 0; c < NUMITEMS; ++c )
 	{
 		printlog("%s level: %d", items[c].name_identified, items[c].level);

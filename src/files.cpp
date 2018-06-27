@@ -1657,6 +1657,17 @@ bool physfsSearchItemsTxtToUpdate()
 	return false;
 }
 
+bool physfsSearchItemsGlobalTxtToUpdate()
+{
+	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items_global.txt");
+	if ( itemsTxtDirectory.compare("./") != 0 )
+	{
+		printlog("[PhysFS]: Found modified items/items_global.txt file, reloading item spawn levels...");
+		return true;
+	}
+	return false;
+}
+
 void physfsReloadItemsTxt()
 {
 	std::string itemsTxtDirectory = PHYSFS_getRealDir("items/items.txt");
