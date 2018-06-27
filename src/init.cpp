@@ -486,7 +486,7 @@ int initApp(char* title, int fullscreen)
 		{
 			for (x = 0; x < strlen(name); x++)
 			{
-				if ( name[x] >= '0' && name[x] < '9' )
+				if ( name[x] >= '0' && name[x] <= '9' )
 				{
 					// animated tiles if the tile name ends in a number 0-9.
 					animatedtiles[c] = true;

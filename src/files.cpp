@@ -1411,20 +1411,22 @@ void physfsReloadTiles(bool reloadAll)
 				{
 					SDL_FreeSurface(tiles[c]);
 				}
-				strncpy(name, tileFile.c_str(), 127);
-				tiles[c] = loadImage(name);
+				char fullname[128];
+				strncpy(fullname, tileFile.c_str(), 127);
+				tiles[c] = loadImage(fullname);
 				animatedtiles[c] = false;
 				lavatiles[c] = false;
 				swimmingtiles[c] = false;
 				if ( tiles[c] != NULL )
 				{
-					for ( int x = 0; x < strlen(name); x++ )
+					size_t found = tileFile.find(".png");
+					if ( found != string::npos && found != 0 )
 					{
-						if ( name[x] >= '0' && name[x] < '9' )
+						if ( tileFile.at(found - 1) >= '0' && tileFile.at(found - 1) <= '9' )
 						{
 							// animated tiles if the tile name ends in a number 0-9.
 							animatedtiles[c] = true;
-							break;
+							printlog("found animated tile %s", tileFile.c_str());
 						}
 					}
 					if ( strstr(name, "Lava") || strstr(name, "lava") )
