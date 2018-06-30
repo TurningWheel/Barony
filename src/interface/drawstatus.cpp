@@ -255,6 +255,142 @@ void warpMouseToSelectedHotbarSlot()
 	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 }
 
+void drawFollowerMenu()
+{
+	if ( followerMoveTo )
+	{
+		if ( !followerMenuEntity )
+		{
+			followerMoveTo = false;
+		}
+		return;
+	}
+	if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+	{
+		if ( followerMenuEntity && followerMenuOptionSelected != -1 )
+		{
+			if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+			{
+				followerMoveTo = true;
+				return;
+			}
+			else
+			{
+				if ( multiplayer == CLIENT )
+				{
+					sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, followerMoveToX, followerMoveToY);
+				}
+				else
+				{
+					followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY);
+				}
+				followerMenuEntity = nullptr;
+				followerMenuOptionSelected = -1;
+				followerMenuX = -1;
+				followerMenuY = -1;
+				followerMoveToX = -1;
+				followerMoveToY = -1;
+			}
+		}
+	}
+	if ( followerMenuEntity )
+	{
+		SDL_Rect src;
+		src.x = xres / 2 + 32;
+		src.y = yres / 2 - 40;
+		src.h = 20;
+		src.w = 164;
+		drawGear(xres / 2, yres / 2, 100, gearrot);
+
+		if ( omousey < followerMenuY + src.h )
+		{
+			followerMenuOptionSelected = ALLY_CMD_MOVEASIDE;
+		}
+		else if ( omousey < followerMenuY + src.h * 2 )
+		{
+			followerMenuOptionSelected = ALLY_CMD_DEFEND;
+		}
+		else if ( omousey < followerMenuY + src.h * 3 )
+		{
+			followerMenuOptionSelected = ALLY_CMD_MOVETO_SELECT;
+		}
+		else if ( omousey < followerMenuY + src.h * 4 )
+		{
+			followerMenuOptionSelected = 6;
+		}
+		else if ( omousey >= followerMenuY + src.h * 4 )
+		{
+			followerMenuOptionSelected = 7;
+		}
+
+			
+		drawWindowFancy(src.x, src.y - 24, src.x + src.w, src.y + src.h * 5);
+		ttfPrintText(ttf12, src.x + 4, src.y - TTF12_HEIGHT, "Follower Options:");
+
+		src.x += 8;
+		src.w -= 16;
+		if ( followerMenuOptionSelected == ALLY_CMD_MOVEASIDE )
+		{
+			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		else
+		{
+			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		int width = 0;
+		TTF_SizeUTF8(ttf12, language[3036], &width, nullptr);
+		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3036]);
+
+		src.y += src.h;
+		if ( followerMenuOptionSelected == ALLY_CMD_DEFEND )
+		{
+			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		else
+		{
+			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		TTF_SizeUTF8(ttf12, language[3037], &width, nullptr);
+		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3037]);
+
+		src.y += src.h;
+		if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+		{
+			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		else
+		{
+			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		TTF_SizeUTF8(ttf12, language[3038], &width, nullptr);
+		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3038]);
+
+		src.y += src.h;
+		if ( followerMenuOptionSelected == 4 )
+		{
+			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		else
+		{
+			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		TTF_SizeUTF8(ttf12, language[3039], &width, nullptr);
+		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3039]);
+
+		src.y += src.h;
+		if ( followerMenuOptionSelected == 5 )
+		{
+			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		else
+		{
+			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		}
+		TTF_SizeUTF8(ttf12, language[3040], &width, nullptr);
+		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3040]);
+	}
+}
+
 void drawStatus()
 {
 	SDL_Rect pos, initial_position;
@@ -262,6 +398,7 @@ void drawStatus()
 	node_t* node;
 	string_t* string;
 	pos.x = STATUS_X;
+
 	if ( !hide_statusbar )
 	{
 		pos.y = STATUS_Y;
@@ -1257,6 +1394,8 @@ void drawStatus()
 			}
 		}
 	}
+
+	drawFollowerMenu();
 
 	// stat increase icons
 	pos.w = 64;

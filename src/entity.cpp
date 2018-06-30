@@ -112,6 +112,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterStrafeDirection(skill[39]),
 	monsterPathCount(skill[38]),
 	monsterPlayerAllyIndex(skill[42]),
+	monsterPlayerAllyState(skill[43]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -10192,7 +10193,9 @@ void Entity::createPathBoundariesNPC()
 		return;
 	}
 
-	if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] != 0 || myStats->type == SHOPKEEPER )
+	if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] != 0 
+		|| myStats->type == SHOPKEEPER
+		|| monsterPlayerAllyState == ALLY_STATE_DEFEND )
 	{
 		// is NPC, find the bounds which movement is restricted to by finding the "box" it spawned in.
 		int i, j;
@@ -10208,7 +10211,32 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				break;
+				if ( monsterPlayerAllyState == 1 )
+				{
+					// don't use players to block boundaries.
+					bool foundplayer = false;
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							int playerx = static_cast<int>(players[player]->entity->x);
+							int playery = static_cast<int>(players[player]->entity->y);
+							if ( playerx == i && playery == y )
+							{
+								monsterPathBoundaryXStart = i;
+								foundplayer = true;
+							}
+						}
+					}
+					if ( !foundplayer )
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 		for ( i = x; i < map.width << 4; i += 16 )
@@ -10219,7 +10247,32 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				break;
+				if ( monsterPlayerAllyState == 1 )
+				{
+					// don't use players to block boundaries.
+					bool foundplayer = false;
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							int playerx = static_cast<int>(players[player]->entity->x);
+							int playery = static_cast<int>(players[player]->entity->y);
+							if ( playerx == i && playery == y )
+							{
+								monsterPathBoundaryXEnd = i;
+								foundplayer = true;
+							}
+						}
+					}
+					if ( !foundplayer )
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 		for ( j = y; j >= 0; j -= 16 )
@@ -10230,7 +10283,32 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				break;
+				if ( monsterPlayerAllyState == 1 )
+				{
+					// don't use players to block boundaries.
+					bool foundplayer = false;
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							int playerx = static_cast<int>(players[player]->entity->x);
+							int playery = static_cast<int>(players[player]->entity->y);
+							if ( playerx == x && playery == j )
+							{
+								monsterPathBoundaryYStart = j;
+								foundplayer = true;
+							}
+						}
+					}
+					if ( !foundplayer )
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 		for ( j = y; j < map.height << 4; j += 16 )
@@ -10241,10 +10319,35 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				break;
+				if ( monsterPlayerAllyState == 1 )
+				{
+					// don't use players to block boundaries.
+					bool foundplayer = false;
+					for ( int player = 0; player < MAXPLAYERS; ++player )
+					{
+						if ( players[player] && players[player]->entity )
+						{
+							int playerx = static_cast<int>(players[player]->entity->x);
+							int playery = static_cast<int>(players[player]->entity->y);
+							if ( playerx == x && playery == j )
+							{
+								monsterPathBoundaryYEnd = j;
+								foundplayer = true;
+							}
+						}
+					}
+					if ( !foundplayer )
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
-		//messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
+		messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
 	}
 }
 

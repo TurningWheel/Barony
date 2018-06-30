@@ -141,8 +141,6 @@ Entity* entityClicked()
 		{
 			return NULL;
 		}
-		*inputPressed(impulses[IN_USE]) = 0;
-		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 		if ( softwaremode )
 		{
 			return clickmap[omousey + omousex * yres];
@@ -154,8 +152,6 @@ Entity* entityClicked()
 	}
 	else
 	{
-		*inputPressed(impulses[IN_USE]) = 0;
-		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 		if ( softwaremode )
 		{
 			return clickmap[(yres / 2) + (xres / 2) * yres];

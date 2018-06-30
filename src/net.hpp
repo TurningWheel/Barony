@@ -44,6 +44,7 @@ void serverUpdatePlayerStats();
 void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval);
 void serverUpdatePlayerLVL();
 void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y);
+void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
 void clientHandleMessages();

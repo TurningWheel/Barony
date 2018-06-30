@@ -634,9 +634,6 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 			{
 				messagePlayer(monsterclicked, language[534], namesays);
 			}
-
-			// move aside
-			monsterMoveAside(my, players[monsterclicked]->entity);
 		}
 		else
 		{
@@ -2878,7 +2875,7 @@ void actMonster(Entity* my)
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 && my->monsterPlayerAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -3010,7 +3007,7 @@ void actMonster(Entity* my)
 					}
 				}
 			}
-			if ( my->monsterMoveTime == 0 && uidToEntity(myStats->leader_uid) == NULL )
+			if ( my->monsterMoveTime == 0 && (uidToEntity(myStats->leader_uid) == NULL || my->monsterPlayerAllyState == ALLY_STATE_DEFEND) )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
@@ -3024,7 +3021,7 @@ void actMonster(Entity* my)
 				int upperY = std::min<int>(centerY + (map.height / 2), map.height);
 				//messagePlayer(0, "my x: %d, my y: %d, rangex: (%d-%d), rangey: (%d-%d)", centerX, centerY, lowerX, upperX, lowerY, upperY);
 
-				if ( myStats->type != SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+				if ( myStats->type != SHOPKEEPER && (myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 && my->monsterPlayerAllyState == ALLY_STATE_DEFAULT) )
 				{
 					for ( x = lowerX; x < upperX; x++ )
 					{
@@ -3958,7 +3955,7 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 && my->monsterPlayerAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -4296,6 +4293,12 @@ timeToGoAgain:
 							}*/
 						}
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
+						if ( my->monsterPlayerAllyState == ALLY_STATE_MOVETO )
+						{
+							messagePlayer(0, "test3");
+							my->monsterPlayerAllyState = ALLY_STATE_DEFEND;
+							my->createPathBoundariesNPC();
+						}
 					}
 				}
 				else
@@ -4313,6 +4316,12 @@ timeToGoAgain:
 						}*/
 					}
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
+					if ( my->monsterPlayerAllyState == ALLY_STATE_MOVETO )
+					{
+						messagePlayer(0, "test2");
+						my->monsterPlayerAllyState = ALLY_STATE_DEFEND;
+						my->createPathBoundariesNPC();
+					}
 				}
 			}
 			else
@@ -6908,5 +6917,80 @@ bool Entity::monsterHasLeader()
 		}
 	}
 	return false;
+}
+
+void Entity::monsterAllySendCommand(int command, int destX, int destY)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( command == -1 || monsterPlayerAllyIndex == -1 || monsterPlayerAllyIndex > MAXPLAYERS )
+	{
+		return;
+	}
+	if ( !players[monsterPlayerAllyIndex] )
+	{
+		return;
+	}
+	if ( !players[monsterPlayerAllyIndex]->entity )
+	{
+		return;
+	}
+	if ( !isMobile() )
+	{
+		return;
+	}
+
+	switch ( command )
+	{
+		case ALLY_CMD_MOVEASIDE:
+			monsterMoveAside(this, players[monsterPlayerAllyIndex]->entity);
+			monsterPlayerAllyState = ALLY_STATE_DEFAULT;
+			break;
+		case ALLY_CMD_DEFEND:
+			monsterPlayerAllyState = ALLY_STATE_DEFEND;
+			createPathBoundariesNPC();
+			break;
+		case ALLY_CMD_MOVETO_SELECT:
+			break;
+		case ALLY_CMD_MOVETO_CONFIRM:
+		{
+			int u, v;
+			bool foundplace = false;
+			for ( u = destX - 1; u <= destX + 1; u++ )
+			{
+				for ( v = destY - 1; v <= destY + 1; v++ )
+				{
+					if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
+					{
+						destX = u;
+						destY = v;
+						foundplace = true;
+						break;
+					}
+				}
+				if ( foundplace )
+				{
+					break;
+				}
+			}
+			path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), destX, destY, this, nullptr);
+			if ( children.first != NULL )
+			{
+				list_RemoveNode(children.first);
+			}
+			node_t* node = list_AddNodeFirst(&children);
+			node->element = path;
+			node->deconstructor = &listDeconstructor;
+			monsterState = MONSTER_STATE_HUNT; // hunt state
+			monsterPlayerAllyState = ALLY_STATE_MOVETO;
+			serverUpdateEntitySkill(this, 0);
+			break;
+		}
+		default:
+			break;
+	}
+	messagePlayer(monsterPlayerAllyIndex, "received: %d", command);
 }
 
