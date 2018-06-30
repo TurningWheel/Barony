@@ -186,6 +186,7 @@ public:
 	real_t& monsterLookDir; //fskill[4]
 	Sint32& monsterEntityRenderAsTelepath; //skill[41]
 	Sint32& monsterPlayerAllyIndex; //skill[42] If monster is an ally of a player, assign number 0-3 to it for the players to track on the map.
+	Sint32& monsterPlayerAllyState; //skill[43]
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -706,6 +707,7 @@ public:
 
 	void monsterMoveBackwardsAndPath(); // monster tries to move backwards in a cross shaped area if stuck against an entity.
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
+	void monsterAllySendCommand(int command, int destX, int destY); // update the behavior of allied NPCs.
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.

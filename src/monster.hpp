@@ -192,6 +192,22 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	4,	2,	5,	3,	2,	2 }  // MONK 12
 };
 
+enum AllyNPCCommand : int
+{
+	ALLY_CMD_MOVEASIDE,
+	ALLY_CMD_FOLLOW,
+	ALLY_CMD_DEFEND,
+	ALLY_CMD_MOVETO_SELECT,
+	ALLY_CMD_MOVETO_CONFIRM
+};
+
+enum AllyNPCState : int
+{
+	ALLY_STATE_DEFAULT,
+	ALLY_STATE_MOVETO,
+	ALLY_STATE_DEFEND
+};
+
 #define WAIT_FOLLOWDIST 48
 #define HUNT_FOLLOWDIST 64
 

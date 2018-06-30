@@ -160,6 +160,13 @@ real_t uiscale_inventory = 1.f;
 bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
+int followerMenuX = -1;
+int followerMenuY = -1;
+int followerMenuOptionSelected = -1;
+bool followerMoveTo = false;
+int followerMoveToX = -1;
+int followerMoveToY = -1;
+
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
 	std::make_pair(&title_bmp, "images/system/title.png"),

@@ -19,6 +19,7 @@
 Player** players = nullptr;
 
 Entity* selectedEntity = nullptr;
+Entity* followerMenuEntity = nullptr;
 int current_player = 0;
 Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;

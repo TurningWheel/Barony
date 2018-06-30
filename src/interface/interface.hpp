@@ -440,3 +440,9 @@ void minimapPingAdd(MinimapPing newPing);
 extern int minimapPingGimpTimer;
 
 extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages;
+extern int followerMenuX;
+extern int followerMenuY;
+extern int followerMenuOptionSelected;
+extern bool followerMoveTo;
+extern int followerMoveToX;
+extern int followerMoveToY;

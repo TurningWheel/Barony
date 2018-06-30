@@ -25,6 +25,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "colors.hpp"
+#include "draw.hpp"
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
@@ -1346,56 +1347,131 @@ void actPlayer(Entity* my)
 		if ( intro == false )
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
-			selectedEntity = entityClicked(); // using objects
+			if ( followerMenuEntity == nullptr && followerMoveTo == false )
+			{
+				selectedEntity = entityClicked(); // using objects
+			}
+			else
+			{
+				selectedEntity = NULL;
 
+				if ( followerMoveTo && followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT
+					&& (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+				{
+					// we're selecting a point for the ally to move to.
+					*inputPressed(impulses[IN_USE]) = 0;
+					*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+					{
+						real_t startx = players[PLAYER_NUM]->entity->x;
+						real_t starty = players[PLAYER_NUM]->entity->y;
+						real_t startz = -4;
+						real_t pitch = players[PLAYER_NUM]->entity->pitch;
+						if ( pitch < 0 )
+						{
+							pitch = 0;
+						}
+						// draw line from the players height and direction until we hit the ground.
+						for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
+						{
+							startx += 0.1 * cos(players[PLAYER_NUM]->entity->yaw);
+							starty += 0.1 * sin(players[PLAYER_NUM]->entity->yaw);
+							int index = (static_cast<int>(starty + 16 * sin(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+							if ( map.tiles[OBSTACLELAYER + index] || !map.tiles[index] )
+							{
+								break;
+							}
+						}
+						spawnMagicEffectParticles(startx, starty, 0, 174);
+						followerMenuOptionSelected = ALLY_CMD_MOVETO_CONFIRM;
+						followerMoveTo = false;
+						followerMoveToX = static_cast<int>(startx) / 16;
+						followerMoveToY = static_cast<int>(starty) / 16;
+						messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
+					}
+				}
+			}
 			if ( selectedEntity != NULL )
 			{
-				if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
+				followerMenuEntity = nullptr;
+				Entity* parent = uidToEntity(selectedEntity->skill[2]);
+				if ( selectedEntity->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 				{
-					inrange[PLAYER_NUM] = true;
-				}
-				else
-				{
-					inrange[PLAYER_NUM] = false;
-				}
-				if ( multiplayer == CLIENT )
-				{
-					if ( inrange[PLAYER_NUM] )
+					// see if we selected a follower to process right click menu.
+					if ( parent && parent->monsterPlayerAllyIndex == PLAYER_NUM )
 					{
-						strcpy((char*)net_packet->data, "CKIR");
+						followerMenuEntity = parent;
+						//messagePlayer(0, "limb");
 					}
-					else
+					else if ( selectedEntity->monsterPlayerAllyIndex == PLAYER_NUM )
 					{
-						strcpy((char*)net_packet->data, "CKOR");
+						followerMenuEntity = selectedEntity;
+						//messagePlayer(0, "head");
 					}
-					net_packet->data[4] = PLAYER_NUM;
-					if (selectedEntity->behavior == &actPlayerLimb)
+					if ( followerMenuEntity )
 					{
-						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->getUID(), &net_packet->data[5]);
-					}
-					else
-					{
-						Entity* tempEntity = uidToEntity(selectedEntity->skill[2]);
-						if (tempEntity)
+						if ( followerMenuX == -1 )
 						{
-							if (tempEntity->behavior == &actMonster)
+							followerMenuX = omousex;
+						}
+						if ( followerMenuY == -1 )
+						{
+							followerMenuY = omousey;
+						}
+						selectedEntity = NULL;
+					}
+				}
+				if ( selectedEntity )
+				{
+					*inputPressed(impulses[IN_USE]) = 0;
+					*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+					if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
+					{
+						inrange[PLAYER_NUM] = true;
+					}
+					else
+					{
+						inrange[PLAYER_NUM] = false;
+					}
+					if ( multiplayer == CLIENT )
+					{
+						if ( inrange[PLAYER_NUM] )
+						{
+							strcpy((char*)net_packet->data, "CKIR");
+						}
+						else
+						{
+							strcpy((char*)net_packet->data, "CKOR");
+						}
+						net_packet->data[4] = PLAYER_NUM;
+						if (selectedEntity->behavior == &actPlayerLimb)
+						{
+							SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->getUID(), &net_packet->data[5]);
+						}
+						else
+						{
+							Entity* tempEntity = uidToEntity(selectedEntity->skill[2]);
+							if (tempEntity)
 							{
-								SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+								if (tempEntity->behavior == &actMonster)
+								{
+									SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
+								}
+								else
+								{
+									SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
+								}
 							}
 							else
 							{
 								SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
 							}
 						}
-						else
-						{
-							SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
-						}
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 9;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 9;
-					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
 			}
 		}
