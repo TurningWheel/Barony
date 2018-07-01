@@ -4295,9 +4295,17 @@ timeToGoAgain:
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 						if ( my->monsterPlayerAllyState == ALLY_STATE_MOVETO )
 						{
-							messagePlayer(0, "test3");
-							my->monsterPlayerAllyState = ALLY_STATE_DEFEND;
-							my->createPathBoundariesNPC();
+							if ( my->monsterPlayerAllyInteractUid != 0 )
+							{
+								messagePlayer(0, "test4");
+								my->monsterAllySetInteract();
+							}
+							else
+							{
+								messagePlayer(0, "test3");
+								my->monsterPlayerAllyState = ALLY_STATE_DEFEND;
+								my->createPathBoundariesNPC();
+							}
 						}
 					}
 				}
@@ -6919,7 +6927,7 @@ bool Entity::monsterHasLeader()
 	return false;
 }
 
-void Entity::monsterAllySendCommand(int command, int destX, int destY)
+void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 uid)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -6944,17 +6952,112 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY)
 
 	switch ( command )
 	{
+		case ALLY_CMD_ATTACK_CONFIRM:
+			if ( uid != 0 )
+			{
+				Entity* target = uidToEntity(uid);
+				if ( target )
+				{
+					monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
+					if ( target->behavior != &actMonster )
+					{
+						monsterPlayerAllyState = ALLY_STATE_MOVETO;
+					}
+					else
+					{
+						target->monsterPlayerAllyInteractUid = 0;
+					}
+				}
+			}
+			break;
 		case ALLY_CMD_MOVEASIDE:
 			monsterMoveAside(this, players[monsterPlayerAllyIndex]->entity);
 			break;
 		case ALLY_CMD_DEFEND:
 			monsterPlayerAllyState = ALLY_STATE_DEFEND;
 			createPathBoundariesNPC();
+			// stop in your tracks!
+			monsterState = MONSTER_STATE_WAIT; // wait state
+			serverUpdateEntitySkill(this, 0);
 			break;
 		case ALLY_CMD_MOVETO_SELECT:
 			break;
 		case ALLY_CMD_FOLLOW:
 			monsterPlayerAllyState = ALLY_STATE_DEFAULT;
+			break;
+		case ALLY_CMD_CLASS_TOGGLE:
+			++monsterPlayerAllyClass;
+			if ( monsterPlayerAllyClass > ALLY_CLASS_RANGED )
+			{
+				monsterPlayerAllyClass = ALLY_CLASS_MIXED;
+			}
+			serverUpdateEntitySkill(this, 46);
+			break;
+		case ALLY_CMD_PICKUP_TOGGLE:
+			++monsterPlayerAllyPickupItems;
+			if ( monsterPlayerAllyPickupItems > ALLY_PICKUP_ALL )
+			{
+				monsterPlayerAllyPickupItems = ALLY_PICKUP_NONPLAYER;
+			}
+			serverUpdateEntitySkill(this, 44);
+			break;
+		case ALLY_CMD_DROP_EQUIP:
+			if ( stats[monsterPlayerAllyIndex] )
+			{
+				Stat* myStats = getStats();
+				if ( myStats && stats[monsterPlayerAllyIndex] )
+				{
+					Entity* dropped;
+					Uint32 owner = players[monsterPlayerAllyIndex]->entity->getUID();
+					if ( (stats[monsterPlayerAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + stats[monsterPlayerAllyIndex]->CHR) >= SKILL_LEVEL_MASTER )
+					{
+						dropped = dropItemMonster(myStats->helmet, this, myStats);
+						if ( dropped )
+						{
+							dropped->itemOriginalOwner = owner;
+						}
+						dropped = dropItemMonster(myStats->breastplate, this, myStats);
+						if ( dropped )
+						{
+							dropped->itemOriginalOwner = owner;
+						}
+						dropped = dropItemMonster(myStats->shoes, this, myStats);
+						if ( dropped )
+						{
+							dropped->itemOriginalOwner = owner;
+						}
+						dropped = dropItemMonster(myStats->shield, this, myStats);
+						if ( dropped )
+						{
+							dropped->itemOriginalOwner = owner;
+						}
+
+						if ( (stats[monsterPlayerAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + stats[monsterPlayerAllyIndex]->CHR) >= SKILL_LEVEL_LEGENDARY )
+						{
+							dropped = dropItemMonster(myStats->ring, this, myStats);
+							if ( dropped )
+							{
+								dropped->itemOriginalOwner = owner;
+							}
+							dropped = dropItemMonster(myStats->amulet, this, myStats);
+							if ( dropped )
+							{
+								dropped->itemOriginalOwner = owner;
+							}
+							dropped = dropItemMonster(myStats->cloak, this, myStats);
+							if ( dropped )
+							{
+								dropped->itemOriginalOwner = owner;
+							}
+						}
+					}
+					dropped = dropItemMonster(myStats->weapon, this, myStats);
+					if ( dropped )
+					{
+						dropped->itemOriginalOwner = owner;
+					}
+				}
+			}
 			break;
 		case ALLY_CMD_MOVETO_CONFIRM:
 		{
@@ -6994,6 +7097,63 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY)
 			break;
 	}
 	serverUpdateEntitySkill(this, 43);
-	messagePlayer(monsterPlayerAllyIndex, "received: %d", command);
+	messagePlayer(0, "received: %d", command);
+}
+
+bool Entity::monsterAllySetInteract()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+	if ( monsterPlayerAllyInteractUid == 0 )
+	{
+		return false;
+	}
+	Entity* target = uidToEntity(monsterPlayerAllyInteractUid);
+	if ( !target )
+	{
+		monsterPlayerAllyState = ALLY_STATE_DEFAULT;
+		monsterPlayerAllyInteractUid = 0;
+		return false;
+	}
+	// check distance to interactable.
+	double range = pow(y - target->y, 2) + pow(x - target->x, 2);
+	if ( range < 1024 ) // 32 squared
+	{
+		followerInteractedEntity = target; // set followerInteractedEntity to the mechanism/item/gold etc.
+		followerInteractedEntity->monsterPlayerAllyInteractUid = getUID(); // set the remote entity to this monster's uid to lookup later.
+	}
+	monsterPlayerAllyInteractUid = 0;
+	if ( target->behavior != &actMonster && target->behavior != &actPlayer )
+	{
+	}
+	monsterPlayerAllyState = ALLY_STATE_DEFAULT;
+	//monsterPlayerAllyState = ALLY_STATE_DEFEND;
+	//createPathBoundariesNPC();
+	return true;
+}
+
+bool Entity::monsterAllyCheckInteract()
+{
+	if ( followerInteractedEntity == nullptr )
+	{
+		return false;
+	}
+	if ( followerInteractedEntity->monsterPlayerAllyInteractUid == 0 )
+	{
+		return false;
+	}
+	if ( followerInteractedEntity == this )
+	{
+		return true;
+	}
+	return false;
+}
+
+void Entity::monsterAllyClearInteract()
+{
+	followerInteractedEntity = nullptr;
+	monsterPlayerAllyInteractUid = 0;
 }
 

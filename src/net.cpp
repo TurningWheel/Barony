@@ -1011,13 +1011,13 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 	}
 }
 
-void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y)
+void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid)
 {
 	if ( multiplayer != CLIENT )
 	{
 		return;
 	}
-	messagePlayer(clientnum, "%d", uid);
+	messagePlayer(clientnum, "%d", targetUid);
 
 	// send to host.
 	strcpy((char*)net_packet->data, "ALLY");
@@ -1026,10 +1026,14 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	net_packet->data[6] = x;
 	net_packet->data[7] = y;
 	SDLNet_Write32(uid, &net_packet->data[8]);
-
+	net_packet->len = 12;
+	if ( targetUid != 0 )
+	{
+		SDLNet_Write32(targetUid, &net_packet->data[12]);
+		net_packet->len = 16;
+	}
 	net_packet->address.host = net_server.host;
 	net_packet->address.port = net_server.port;
-	net_packet->len = 12;
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
@@ -4025,11 +4029,19 @@ void serverHandlePacket()
 		int player = net_packet->data[4];
 		int allyCmd = net_packet->data[5];
 		Uint32 uid = SDLNet_Read32(&net_packet->data[8]);
-		messagePlayer(0, " reveived %d, %d, %d, %d, %d", player, allyCmd, net_packet->data[6], net_packet->data[7], uid);
+		messagePlayer(0, " received %d, %d, %d, %d, %d", player, allyCmd, net_packet->data[6], net_packet->data[7], uid);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
-			entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7]);
+			if ( net_packet->len > 12 )
+			{
+				uid = SDLNet_Read32(&net_packet->data[12]);
+				entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7], uid);
+			}
+			else
+			{
+				entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7]);
+			}
 		}
 	}
 }

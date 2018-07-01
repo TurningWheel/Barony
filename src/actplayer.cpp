@@ -1355,39 +1355,72 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity = NULL;
 
-				if ( !followerMenuToggleClick && followerMoveTo && followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT
-					&& (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+				if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 				{
-					// we're selecting a point for the ally to move to.
-					*inputPressed(impulses[IN_USE]) = 0;
-					*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
-					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+					if ( !followerMenuToggleClick && followerMoveTo )
 					{
-						real_t startx = players[PLAYER_NUM]->entity->x;
-						real_t starty = players[PLAYER_NUM]->entity->y;
-						real_t startz = -4;
-						real_t pitch = players[PLAYER_NUM]->entity->pitch;
-						if ( pitch < 0 )
+						if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
 						{
-							pitch = 0;
-						}
-						// draw line from the players height and direction until we hit the ground.
-						for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
-						{
-							startx += 0.1 * cos(players[PLAYER_NUM]->entity->yaw);
-							starty += 0.1 * sin(players[PLAYER_NUM]->entity->yaw);
-							int index = (static_cast<int>(starty + 16 * sin(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
-							if ( map.tiles[OBSTACLELAYER + index] || !map.tiles[index] )
+							// we're selecting a point for the ally to move to.
+							*inputPressed(impulses[IN_USE]) = 0;
+							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
 							{
-								break;
+								real_t startx = players[PLAYER_NUM]->entity->x;
+								real_t starty = players[PLAYER_NUM]->entity->y;
+								real_t startz = -4;
+								real_t pitch = players[PLAYER_NUM]->entity->pitch;
+								if ( pitch < 0 )
+								{
+									pitch = 0;
+								}
+								// draw line from the players height and direction until we hit the ground.
+								for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
+								{
+									startx += 0.1 * cos(players[PLAYER_NUM]->entity->yaw);
+									starty += 0.1 * sin(players[PLAYER_NUM]->entity->yaw);
+									int index = (static_cast<int>(starty + 16 * sin(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+									if ( map.tiles[OBSTACLELAYER + index] || !map.tiles[index] )
+									{
+										break;
+									}
+								}
+								spawnMagicEffectParticles(startx, starty, 0, 174);
+								followerMenuOptionSelected = ALLY_CMD_MOVETO_CONFIRM;
+								followerMoveTo = false;
+								followerMoveToX = static_cast<int>(startx) / 16;
+								followerMoveToY = static_cast<int>(starty) / 16;
+								messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
 							}
 						}
-						spawnMagicEffectParticles(startx, starty, 0, 174);
-						followerMenuOptionSelected = ALLY_CMD_MOVETO_CONFIRM;
-						followerMoveTo = false;
-						followerMoveToX = static_cast<int>(startx) / 16;
-						followerMoveToY = static_cast<int>(starty) / 16;
-						messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
+						else if ( followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT )
+						{
+							// we're selecting a target for the ally.
+							Entity* target = entityClicked();
+							*inputPressed(impulses[IN_USE]) = 0;
+							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+							if ( target )
+							{
+								Entity* parent = uidToEntity(target->skill[2]);
+								if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
+								{
+									// see if we selected a limb
+									if ( parent )
+									{
+										target = parent;
+									}
+								}
+								spawnMagicEffectParticles(target->x, target->y, 0, 174);
+								followerMenuOptionSelected = ALLY_CMD_ATTACK_CONFIRM;
+								followerMenuEntity->monsterPlayerAllyInteractUid = target->getUID();
+							}
+							else
+							{
+								followerMenuOptionSelected = ALLY_CMD_CANCEL;
+								followerMenuEntity->monsterPlayerAllyInteractUid = 0;
+							}
+							followerMoveTo = false;
+						}
 					}
 				}
 			}
