@@ -6946,13 +6946,15 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY)
 	{
 		case ALLY_CMD_MOVEASIDE:
 			monsterMoveAside(this, players[monsterPlayerAllyIndex]->entity);
-			monsterPlayerAllyState = ALLY_STATE_DEFAULT;
 			break;
 		case ALLY_CMD_DEFEND:
 			monsterPlayerAllyState = ALLY_STATE_DEFEND;
 			createPathBoundariesNPC();
 			break;
 		case ALLY_CMD_MOVETO_SELECT:
+			break;
+		case ALLY_CMD_FOLLOW:
+			monsterPlayerAllyState = ALLY_STATE_DEFAULT;
 			break;
 		case ALLY_CMD_MOVETO_CONFIRM:
 		{
@@ -6991,6 +6993,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY)
 		default:
 			break;
 	}
+	serverUpdateEntitySkill(this, 43);
 	messagePlayer(monsterPlayerAllyIndex, "received: %d", command);
 }
 

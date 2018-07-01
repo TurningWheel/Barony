@@ -195,10 +195,15 @@ static std::vector<std::vector<int>> classStatGrowth =
 enum AllyNPCCommand : int
 {
 	ALLY_CMD_MOVEASIDE,
-	ALLY_CMD_FOLLOW,
 	ALLY_CMD_DEFEND,
 	ALLY_CMD_MOVETO_SELECT,
-	ALLY_CMD_MOVETO_CONFIRM
+	ALLY_CMD_PARTY,
+	ALLY_CMD_CANCEL,
+	ALLY_CMD_5,
+	ALLY_CMD_6,
+	ALLY_CMD_7,
+	ALLY_CMD_FOLLOW,
+	ALLY_CMD_MOVETO_CONFIRM,
 };
 
 enum AllyNPCState : int
