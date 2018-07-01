@@ -4326,7 +4326,7 @@ timeToGoAgain:
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 					if ( my->monsterPlayerAllyState == ALLY_STATE_MOVETO )
 					{
-						messagePlayer(0, "test2");
+						messagePlayer(0, "test2 NO PATH, ADD ATTACK STUFF HERE");
 						my->monsterPlayerAllyState = ALLY_STATE_DEFEND;
 						my->createPathBoundariesNPC();
 					}

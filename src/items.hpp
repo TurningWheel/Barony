@@ -314,6 +314,7 @@ public:
 	Uint32 uid;        // item uid
 	Sint32 x, y;       // slot coordinates in item grid
 	Uint32 ownerUid;   // original owner
+	Uint32 interactNPCUid; // if NPC is interacting with item
 
 	// weight, category and other generic info reported by function calls
 
