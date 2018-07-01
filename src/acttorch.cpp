@@ -110,6 +110,18 @@ void actTorch(Entity* my)
 				}
 			}
 		}
+		if ( my->monsterAllyCheckInteract() )
+		{
+			list_RemoveNode(my->light->node);
+			list_RemoveNode(my->mynode);
+			Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
+			Entity* monster = uidToEntity(followerInteractedEntity->monsterPlayerAllyInteractUid);
+			if ( monster )
+			{
+				monster->addItemToMonsterInventory(item);
+			}
+			my->monsterAllyClearInteract();
+		}
 	}
 }
 
