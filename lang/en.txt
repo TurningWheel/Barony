@@ -3732,4 +3732,36 @@ IDENTICAL MOD LISTS LOADED!#
 3033 Hide Chatlog#
 3034 User Interface Options#
 3035 There's no ground beneath your feet to place that!#
+# Follower Radial Menu Text
+3036 Follower Options:#
+3037 Wait here#
+3038 Class:#
+3039 Move to...#
+3040 Pickup
+Items:#
+3041 Move aside#
+3042 Drop#
+3043 Attack!#
+3044 Interact#
+# Begin secondary option text.
+3045 Follow#
+3046 #
+3047 #
+3048 #
+3049 #
+3050 #
+3051 #
+3052 #
+3053 [Mixed]#
+3054 [Melee]#
+3055 [Ranged]#
+3056 [Unowned]#
+3057 [None]#
+3058 [All]#
+3059 Weapon#
+3060 Equipment#
+3061 All#
+3062 You do not meet the Leadership and Charisma requirements
+for this option. (Required: %s)#
+3063 Cancel#
 3099 end#
