@@ -147,6 +147,11 @@ void actSwitch(Entity* my)
 				}
 			}
 		}
+		if ( my->monsterAllyCheckInteract() )
+		{
+			my->toggleSwitch();
+			my->monsterAllyClearInteract();
+		}
 
 		if (my->skill[0])
 		{
