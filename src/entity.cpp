@@ -9619,6 +9619,10 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 	{
 		return false;
 	}
+	if ( itemToEquip.interactNPCUid == getUID() )
+	{
+		return true;
+	}
 
 	if ( myStats->weapon == nullptr )
 	{
@@ -9668,7 +9672,7 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			}
 			break;
 		case HUMAN:
-			if ( !humanCanWieldItem(item) )
+			if ( !humanCanWieldItem(item) && item.interactNPCUid != getUID() )
 			{
 				return false;
 			}
@@ -9707,7 +9711,7 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON )
 				{
 					//Weapon ain't better than weapon already holding. Don't want it.
-					if ( myStats->type == AUTOMATON ) // Automatons are hoarders.
+					if ( myStats->type == AUTOMATON || item.interactNPCUid == getUID() ) // Automatons are hoarders.
 					{
 						return true;
 					}
@@ -9747,6 +9751,13 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			{
 				return true; //Store in inventory.
 			}
+		case MAGICSTAFF:
+			if ( item.interactNPCUid == getUID() )
+			{
+				shouldEquip = &myStats->weapon;
+			}
+			return true;
+			break;
 		default:
 			return true; //Already checked if monster likes this specific item in the racial calls.
 	}

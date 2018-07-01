@@ -2319,6 +2319,7 @@ Item* newItemFromEntity(Entity* entity)
 	}
 	Item* item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
+	item->interactNPCUid = static_cast<Uint32>(entity->monsterPlayerAllyInteractUid);
 	return item;
 }
 
