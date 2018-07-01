@@ -20,6 +20,7 @@ extern int current_player; //This may not be necessary. Consider this: Each Play
 extern Entity* selectedEntity;
 extern Entity* followerMenuEntity;
 extern Entity* lastSelectedEntity;
+extern Entity* followerInteractedEntity;
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;
 extern Sint32 mousexrel, mouseyrel;
