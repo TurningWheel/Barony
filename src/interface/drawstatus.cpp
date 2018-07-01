@@ -20,6 +20,7 @@
 #include "../menu.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "../colors.hpp"
 
 char enemy_name[128];
 Sint32 enemy_hp = 0, enemy_maxhp = 0;
@@ -296,98 +297,123 @@ void drawFollowerMenu()
 	if ( followerMenuEntity )
 	{
 		SDL_Rect src;
-		src.x = xres / 2 + 32;
-		src.y = yres / 2 - 40;
-		src.h = 20;
-		src.w = 164;
-		drawGear(xres / 2, yres / 2, 100, gearrot);
+		src.x = xres / 2;
+		src.y = yres / 2;
+		src.h = 120;
+		src.w = 120;
 
-		if ( omousey < followerMenuY + src.h )
-		{
-			followerMenuOptionSelected = ALLY_CMD_MOVEASIDE;
-		}
-		else if ( omousey < followerMenuY + src.h * 2 )
-		{
-			followerMenuOptionSelected = ALLY_CMD_DEFEND;
-		}
-		else if ( omousey < followerMenuY + src.h * 3 )
-		{
-			followerMenuOptionSelected = ALLY_CMD_MOVETO_SELECT;
-		}
-		else if ( omousey < followerMenuY + src.h * 4 )
-		{
-			followerMenuOptionSelected = 6;
-		}
-		else if ( omousey >= followerMenuY + src.h * 4 )
-		{
-			followerMenuOptionSelected = 7;
-		}
-
-			
-		drawWindowFancy(src.x, src.y - 24, src.x + src.w, src.y + src.h * 5);
-		ttfPrintText(ttf12, src.x + 4, src.y - TTF12_HEIGHT, "Follower Options:");
-
-		src.x += 8;
-		src.w -= 16;
-		if ( followerMenuOptionSelected == ALLY_CMD_MOVEASIDE )
-		{
-			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		else
-		{
-			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
+		int numoptions = 8;
+		real_t angleStart = PI / 2 - (PI / numoptions);
+		real_t angleMiddle = angleStart + PI / numoptions;
+		real_t angleEnd = angleMiddle + PI / numoptions;
+		int radius = 120;
+		int highlight = -1;
+		int i = 0;
+		
 		int width = 0;
 		TTF_SizeUTF8(ttf12, language[3036], &width, nullptr);
-		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3036]);
+		ttfPrintText(ttf12, src.x - width / 2, src.y - radius - 64, language[3036]);
+		
+		drawImageRing(fancyWindow_bmp, nullptr, 120, 50, 40, 0, PI * 2, 128);
+		for ( i = 0; i < numoptions; ++i )
+		{
+			if ( highlight == -1 )
+			{
+				real_t x1 = followerMenuX + (xres / 2) * cos(angleEnd);
+				real_t y1 = followerMenuY - (yres / 2) * sin(angleEnd);
+				real_t x2 = followerMenuX + 5 * cos(angleMiddle);
+				real_t y2 = followerMenuY - 5 * sin(angleMiddle);
+				real_t x3 = followerMenuX + (xres / 2) * cos(angleStart);
+				real_t y3 = followerMenuY - (yres / 2) * sin(angleStart);
+				real_t a = ((y2 - y3)*(omousex - x3) + (x3 - x2)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
+				real_t b = ((y3 - y1)*(omousex - x3) + (x1 - x3)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
+				real_t c = 1 - a - b;
+				if ( (0 <= a && a <= 1) && (0 <= b && b <= 1) && (0 <= c && c <= 1) )
+				{
+					//barycentric calc for figuring if mouse point is within triangle.
+					highlight = i;
+					drawImageRing(fancyWindow_bmp, &src, radius, 50, (numoptions) * 8, angleStart, angleEnd, 255);
 
-		src.y += src.h;
-		if ( followerMenuOptionSelected == ALLY_CMD_DEFEND )
-		{
-			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		else
-		{
-			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		TTF_SizeUTF8(ttf12, language[3037], &width, nullptr);
-		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3037]);
+					// draw borders around highlighted item.
+					drawLine(xres / 2 + (radius - 50) * cos(angleStart), yres / 2 - (radius - 50) * sin(angleStart),
+						xres / 2 + (radius + 50) * cos(angleStart), yres / 2 - (radius + 50) * sin(angleStart), uint32ColorBaronyBlue(*mainsurface), 192);
+					drawLine(xres / 2 + (radius - 50) * cos(angleEnd), yres / 2 - (radius - 50) * sin(angleEnd),
+						xres / 2 + (radius + 49) * cos(angleEnd), yres / 2 - (radius + 49) * sin(angleEnd), uint32ColorBaronyBlue(*mainsurface), 192);
 
-		src.y += src.h;
-		if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
-		{
-			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+					drawArcInvertedY(xres / 2, yres / 2, radius - 50, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorBaronyBlue(*mainsurface), 192);
+					drawArcInvertedY(xres / 2, yres / 2, (radius + 50), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorBaronyBlue(*mainsurface), 192);
+					//real_t starty = ((angle + 2 * PI / numoptions) - angle) * (numoptions) * 8 / (2 * PI);
+					//messagePlayer(0, "%f, %f", starty);
+				}
+			}
+			TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+			ttfPrintText(ttf12, src.x + src.w * cos(angleMiddle) - width / 2, src.y - src.h * sin(angleMiddle) - 4, language[3037 + i]);
+			SDL_Rect temp;
+			temp.x = src.x + src.w * cos(angleMiddle);
+			temp.y = src.y - src.h * sin(angleMiddle);
+			temp.w = 4;
+			temp.h = 4;
+			drawRect(&temp, 0xFFFFFFFF, 255);
+			angleStart += 2 * PI / numoptions;
+			angleMiddle = angleStart + PI / numoptions;
+			angleEnd = angleMiddle + PI / numoptions;
 		}
-		else
-		{
-			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		TTF_SizeUTF8(ttf12, language[3038], &width, nullptr);
-		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3038]);
 
-		src.y += src.h;
-		if ( followerMenuOptionSelected == 4 )
-		{
-			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		else
-		{
-			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		TTF_SizeUTF8(ttf12, language[3039], &width, nullptr);
-		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3039]);
+		followerMenuOptionSelected = highlight;
+			
 
-		src.y += src.h;
-		if ( followerMenuOptionSelected == 5 )
-		{
-			drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		else
-		{
-			drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
-		}
-		TTF_SizeUTF8(ttf12, language[3040], &width, nullptr);
-		ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3040]);
+		//src.y += src.h;
+		//if ( followerMenuOptionSelected == ALLY_CMD_DEFEND )
+		//{
+		//	drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//else
+		//{
+		//	drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//TTF_SizeUTF8(ttf12, language[3037], &width, nullptr);
+		//ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3037]);
+
+		//src.y += src.h;
+		//if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+		//{
+		//	drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//else
+		//{
+		//	drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//TTF_SizeUTF8(ttf12, language[3038], &width, nullptr);
+		//ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3038]);
+
+		//src.y += src.h;
+		//if ( followerMenuOptionSelected == 4 )
+		//{
+		//	drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//else
+		//{
+		//	drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//TTF_SizeUTF8(ttf12, language[3039], &width, nullptr);
+		//ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3039]);
+
+		//src.y += src.h;
+		//if ( followerMenuOptionSelected == 5 )
+		//{
+		//	drawDepressed(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//else
+		//{
+		//	drawWindow(src.x, src.y, src.x + src.w, src.y + src.h);
+		//}
+		//TTF_SizeUTF8(ttf12, language[3040], &width, nullptr);
+		//ttfPrintText(ttf12, src.x + src.w / 2 - width / 2, src.y + 4, language[3040]);
+
+		//src.h = 64;
+		//src.w = 64;
+		//src.x = xres / 2;
+		//src.y = yres / 2;
 	}
 }
 

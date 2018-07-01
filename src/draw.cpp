@@ -229,6 +229,50 @@ void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 
 
 /*-------------------------------------------------------------------------------
 
+drawArcInvertedY, reversing the angle of direction in the y coordinate.
+
+draws an arc in either an opengl or SDL context
+
+-------------------------------------------------------------------------------*/
+
+void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha)
+{
+	int c;
+
+	// update projection
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_BLEND);
+
+	// set line width
+	GLint lineWidth;
+	glGetIntegerv(GL_LINE_WIDTH, &lineWidth);
+	glLineWidth(2);
+
+	// draw line
+	glColor4f(((Uint8)(color >> mainsurface->format->Rshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f, ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f, alpha / 255.f);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glEnable(GL_LINE_SMOOTH);
+	glBegin(GL_LINE_STRIP);
+	for ( c = angle1; c <= angle2; c++ )
+	{
+		float degInRad = c * PI / 180.f;
+		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y - ceil(sin(degInRad)*radius)));
+	}
+	glEnd();
+	glDisable(GL_LINE_SMOOTH);
+
+	// reset line width
+	glLineWidth(lineWidth);
+}
+
+/*-------------------------------------------------------------------------------
+
 	drawLine
 
 	draws a line in either an opengl or SDL context
@@ -566,6 +610,81 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
 	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
+}
+
+/*-------------------------------------------------------------------------------
+
+drawImageRing
+
+blits an image in either an opengl or SDL context into a 2d ring.
+
+-------------------------------------------------------------------------------*/
+
+void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness, int segments, real_t angStart, real_t angEnd, Uint8 alpha)
+{
+	SDL_Rect secondsrc;
+
+	// update projection
+	glPushMatrix();
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_BLEND);
+
+	// for the use of a whole image
+	if ( src == NULL )
+	{
+		secondsrc.x = 0;
+		secondsrc.y = 0;
+		secondsrc.w = image->w;
+		secondsrc.h = image->h;
+		src = &secondsrc;
+	}
+
+	// draw a textured quad
+	glBindTexture(GL_TEXTURE_2D, texid[image->refcount]);
+	glColor4f(1, 1, 1, alpha / 255.f);
+	glPushMatrix();
+
+	double s;
+	real_t arcAngle = angStart;
+	int first = segments / 2;
+	real_t distance = std::round((angEnd - angStart) * segments / (2 * PI));
+	
+	for ( int i = 0; i < first; i++ ) 
+	{
+		glBegin(GL_QUAD_STRIP);
+		for ( int j = 0; j <= static_cast<int>(distance); ++j )
+		{
+			s = i % first + 0.01;
+			arcAngle = ((j % segments) * 2 * PI / segments) + angStart; // angle of the line.
+
+			real_t arcx1 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
+			real_t arcy1 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
+			//glTexCoord2f(1.f, 1.f);
+			glVertex2f(xres / 2 + arcx1, yres / 2 + arcy1);
+
+
+			s = (i + 1) % first + 0.01;
+			real_t arcx2 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
+			real_t arcy2 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
+			//glTexCoord2f(1.f, 1.f);
+			glVertex2f(xres / 2 + arcx2, yres / 2 + arcy2);
+		}
+		glEnd();
+	}
+	glPopMatrix();
+	// debug lines
+	/*real_t x1 = xres / 2 + 300 * cos(angStart);
+	real_t y1 = yres / 2 - 300 * sin(angStart);
+	real_t x2 = xres / 2 + 300 * cos(angEnd);
+	real_t y2 = yres / 2 - 300 * sin(angEnd);
+	drawLine(xres / 2, yres / 2, x1, y1, 0xFFFFFFFF, 255);
+	drawLine(xres / 2, yres / 2, x2, y2, 0xFFFFFFFF, 255);*/
 	glEnable(GL_DEPTH_TEST);
 }
 

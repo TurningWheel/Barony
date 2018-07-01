@@ -17,11 +17,13 @@
 SDL_Surface* flipSurface(SDL_Surface* surface, int flags);
 void drawCircle(int x, int y, real_t radius, Uint32 color, Uint8 alpha);
 void drawArc(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);
+void drawArcInvertedY(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);
 void drawLine(int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha);
 int drawRect(SDL_Rect* src, Uint32 color, Uint8 alpha);
 int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha);
 void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation);
 void drawImage(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
+void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness, int segments, real_t angStart, real_t angEnd, Uint8 alpha);
 void drawImageScaled(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
 void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha);
 void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
