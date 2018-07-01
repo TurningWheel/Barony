@@ -446,3 +446,4 @@ extern int followerMenuOptionSelected;
 extern bool followerMoveTo;
 extern int followerMoveToX;
 extern int followerMoveToY;
+extern bool followerMenuToggleClick;

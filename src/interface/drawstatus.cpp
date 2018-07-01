@@ -266,34 +266,66 @@ void drawFollowerMenu()
 		}
 		return;
 	}
-	if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+	if ( followerMenuEntity )
 	{
-		if ( followerMenuEntity && followerMenuOptionSelected != -1 )
+		if ( (!(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) && !followerMenuToggleClick)
+			|| ((*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) && followerMenuToggleClick) )
 		{
-			if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+			if ( followerMenuToggleClick )
 			{
-				followerMoveTo = true;
-				return;
+				*inputPressed(impulses[IN_USE]) = 0;
+				*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+				followerMenuToggleClick = false;
 			}
-			else
+			if ( followerMenuOptionSelected != -1 )
 			{
-				if ( multiplayer == CLIENT )
+				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
+				shootmode = true;
+				identifygui_active = false;
+				selectedIdentifySlot = -1;
+				closeRemoveCurseGUI();
+				if ( openedChest[clientnum] )
 				{
-					sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, followerMoveToX, followerMoveToY);
+					openedChest[clientnum]->closeChest();
+				}
+				gui_mode = GUI_MODE_NONE;
+
+				if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+				{
+					// return early, let the player use the moveto command point.
+					followerMoveTo = true;
+					return;
 				}
 				else
 				{
-					followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY);
+					if ( followerMenuOptionSelected == ALLY_CMD_DEFEND &&
+						followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_DEFEND || followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_MOVETO  )
+					{
+						followerMenuOptionSelected = ALLY_CMD_FOLLOW;
+					}
+					if ( multiplayer == CLIENT )
+					{
+						sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, followerMoveToX, followerMoveToY);
+					}
+					else
+					{
+						followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY);
+					}
+					followerMenuEntity = nullptr;
+					followerMenuOptionSelected = -1;
+					followerMenuX = -1;
+					followerMenuY = -1;
+					followerMoveToX = -1;
+					followerMoveToY = -1;
 				}
-				followerMenuEntity = nullptr;
-				followerMenuOptionSelected = -1;
-				followerMenuX = -1;
-				followerMenuY = -1;
-				followerMoveToX = -1;
-				followerMoveToY = -1;
+			}
+			else
+			{
+				followerMenuToggleClick = true;
 			}
 		}
 	}
+
 	if ( followerMenuEntity )
 	{
 		SDL_Rect src;
@@ -314,9 +346,30 @@ void drawFollowerMenu()
 		TTF_SizeUTF8(ttf12, language[3036], &width, nullptr);
 		ttfPrintText(ttf12, src.x - width / 2, src.y - radius - 64, language[3036]);
 		
-		drawImageRing(fancyWindow_bmp, nullptr, 120, 50, 40, 0, PI * 2, 128);
+		drawImageRing(fancyWindow_bmp, nullptr, 120, 50, 40, 0, PI * 2, 156);
+
 		for ( i = 0; i < numoptions; ++i )
 		{
+			// draw borders around highlighted item.
+			drawLine(xres / 2 + (radius - 50) * cos(angleStart), yres / 2 - (radius - 50) * sin(angleStart),
+				xres / 2 + (radius + 50) * cos(angleStart), yres / 2 - (radius + 50) * sin(angleStart), uint32ColorGray(*mainsurface), 192);
+			drawLine(xres / 2 + (radius - 50) * cos(angleEnd), yres / 2 - (radius - 50) * sin(angleEnd),
+				xres / 2 + (radius + 49) * cos(angleEnd), yres / 2 - (radius + 49) * sin(angleEnd), uint32ColorGray(*mainsurface), 192);
+
+			drawArcInvertedY(xres / 2, yres / 2, radius - 50, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray(*mainsurface), 192);
+			drawArcInvertedY(xres / 2, yres / 2, (radius + 50), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray(*mainsurface), 192);
+
+			angleStart += 2 * PI / numoptions;
+			angleMiddle = angleStart + PI / numoptions;
+			angleEnd = angleMiddle + PI / numoptions;
+		}
+
+		angleStart = PI / 2 - (PI / numoptions);
+		angleMiddle = angleStart + PI / numoptions;
+		angleEnd = angleMiddle + PI / numoptions;
+		for ( i = 0; i < numoptions; ++i )
+		{
+			// draw borders around highlighted item.
 			if ( highlight == -1 )
 			{
 				real_t x1 = followerMenuX + (xres / 2) * cos(angleEnd);
@@ -332,7 +385,7 @@ void drawFollowerMenu()
 				{
 					//barycentric calc for figuring if mouse point is within triangle.
 					highlight = i;
-					drawImageRing(fancyWindow_bmp, &src, radius, 50, (numoptions) * 8, angleStart, angleEnd, 255);
+					drawImageRing(fancyWindow_bmp, &src, radius, 50, (numoptions) * 8, angleStart, angleEnd, 192);
 
 					// draw borders around highlighted item.
 					drawLine(xres / 2 + (radius - 50) * cos(angleStart), yres / 2 - (radius - 50) * sin(angleStart),
@@ -342,18 +395,20 @@ void drawFollowerMenu()
 
 					drawArcInvertedY(xres / 2, yres / 2, radius - 50, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorBaronyBlue(*mainsurface), 192);
 					drawArcInvertedY(xres / 2, yres / 2, (radius + 50), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorBaronyBlue(*mainsurface), 192);
-					//real_t starty = ((angle + 2 * PI / numoptions) - angle) * (numoptions) * 8 / (2 * PI);
-					//messagePlayer(0, "%f, %f", starty);
 				}
 			}
-			TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-			ttfPrintText(ttf12, src.x + src.w * cos(angleMiddle) - width / 2, src.y - src.h * sin(angleMiddle) - 4, language[3037 + i]);
-			SDL_Rect temp;
-			temp.x = src.x + src.w * cos(angleMiddle);
-			temp.y = src.y - src.h * sin(angleMiddle);
-			temp.w = 4;
-			temp.h = 4;
-			drawRect(&temp, 0xFFFFFFFF, 255);
+
+			if ( i == ALLY_CMD_DEFEND 
+				&& (followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_DEFEND || followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_MOVETO) )
+			{
+				TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
+				ttfPrintText(ttf12, src.x + src.w * cos(angleMiddle) - width / 2, src.y - src.h * sin(angleMiddle) - 4, language[3037 + i + 8]);
+			}
+			else
+			{
+				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+				ttfPrintText(ttf12, src.x + src.w * cos(angleMiddle) - width / 2, src.y - src.h * sin(angleMiddle) - 4, language[3037 + i]);
+			}
 			angleStart += 2 * PI / numoptions;
 			angleMiddle = angleStart + PI / numoptions;
 			angleEnd = angleMiddle + PI / numoptions;

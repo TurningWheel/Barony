@@ -654,8 +654,7 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 	real_t arcAngle = angStart;
 	int first = segments / 2;
 	real_t distance = std::round((angEnd - angStart) * segments / (2 * PI));
-	
-	for ( int i = 0; i < first; i++ ) 
+	for ( int i = 0; i < first; ++i ) 
 	{
 		glBegin(GL_QUAD_STRIP);
 		for ( int j = 0; j <= static_cast<int>(distance); ++j )
@@ -665,15 +664,61 @@ void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness,
 
 			real_t arcx1 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
 			real_t arcy1 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-			//glTexCoord2f(1.f, 1.f);
-			glVertex2f(xres / 2 + arcx1, yres / 2 + arcy1);
-
 
 			s = (i + 1) % first + 0.01;
 			real_t arcx2 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
 			real_t arcy2 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
-			//glTexCoord2f(1.f, 1.f);
+			//glTexCoord2f(1.f, 0.f);
+			glVertex2f(xres / 2 + arcx1, yres / 2 + arcy1);
+			//glTexCoord2f(0.f, 1.f);
 			glVertex2f(xres / 2 + arcx2, yres / 2 + arcy2);
+			//s = i % first + 0.01;
+			//arcAngle = (((j + 1) % segments) * 2 * PI / segments) + angStart; // angle of the line.
+			//real_t arcx3 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
+			//real_t arcy3 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
+
+			//s = (i + 1) % first + 0.01;
+			//real_t arcx4 = (radius + thickness * cos(s * 2 * PI / first)) * cos(arcAngle);
+			//real_t arcy4 = (radius + thickness * cos(s * 2 * PI / first)) * sin(arcAngle);
+
+			//std::vector<std::pair<real_t, real_t>> xycoords;
+			//xycoords.push_back(std::make_pair(arcx1, arcy1));
+			//xycoords.push_back(std::make_pair(arcx2, arcy2));
+			//xycoords.push_back(std::make_pair(arcx3, arcy3));
+			//xycoords.push_back(std::make_pair(arcx4, arcy4));
+			//std::sort(xycoords.begin(), xycoords.end());
+			//if ( xycoords.at(2).second < xycoords.at(3).second )
+			//{
+			//	glTexCoord2f(1.f, 0.f);
+			//	glVertex2f(xres / 2 + xycoords.at(2).first, yres / 2 + xycoords.at(2).second); // lower right.
+			//	glTexCoord2f(1.f, 1.f);
+			//	glVertex2f(xres / 2 + xycoords.at(3).first, yres / 2 + xycoords.at(3).second); // upper right.
+			//}
+			//else
+			//{
+			//	glTexCoord2f(1.f, 0.f);
+			//	glVertex2f(xres / 2 + xycoords.at(3).first, yres / 2 + xycoords.at(3).second); // lower right.
+			//	glTexCoord2f(1.f, 1.f);
+			//	glVertex2f(xres / 2 + xycoords.at(2).first, yres / 2 + xycoords.at(2).second); // upper right.
+			//}
+			//if ( xycoords.at(0).second < xycoords.at(1).second )
+			//{
+			//	glTexCoord2f(0.f, 0.f);
+			//	glVertex2f(xres / 2 + xycoords.at(0).first, yres / 2 + xycoords.at(0).second); // lower left.
+			//	glTexCoord2f(0.f, 1.f);
+			//	glVertex2f(xres / 2 + xycoords.at(1).first, yres / 2 + xycoords.at(1).second); // upper left.
+			//}
+			//else
+			//{
+			//	glTexCoord2f(0.f, 0.f);
+			//	glVertex2f(xres / 2 + xycoords.at(1).first, yres / 2 + xycoords.at(1).second); // lower left.
+			//	glTexCoord2f(0.f, 1.f);
+			//	glVertex2f(xres / 2 + xycoords.at(0).first, yres / 2 + xycoords.at(0).second); // upper left.
+			//}
+			
+
+			//glVertex2f(xres / 2 + arcx3, yres / 2 + arcy3);
+			//glVertex2f(xres / 2 + arcx4, yres / 2 + arcy4);
 		}
 		glEnd();
 	}

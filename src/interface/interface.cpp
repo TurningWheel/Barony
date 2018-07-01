@@ -166,6 +166,7 @@ int followerMenuOptionSelected = -1;
 bool followerMoveTo = false;
 int followerMoveToX = -1;
 int followerMoveToY = -1;
+bool followerMenuToggleClick = false;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {

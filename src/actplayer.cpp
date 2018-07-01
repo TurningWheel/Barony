@@ -1355,7 +1355,7 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity = NULL;
 
-				if ( followerMoveTo && followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT
+				if ( !followerMenuToggleClick && followerMoveTo && followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT
 					&& (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 				{
 					// we're selecting a point for the ally to move to.
@@ -1410,14 +1410,17 @@ void actPlayer(Entity* my)
 					}
 					if ( followerMenuEntity )
 					{
+						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 						if ( followerMenuX == -1 )
 						{
-							followerMenuX = omousex;
+							followerMenuX = mousex;
 						}
 						if ( followerMenuY == -1 )
 						{
-							followerMenuY = omousey;
+							followerMenuY = mousey;
 						}
+						omousex = mousex;
+						omousey = mousey;
 						selectedEntity = NULL;
 					}
 				}
