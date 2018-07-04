@@ -4035,8 +4035,10 @@ void serverHandlePacket()
 		{
 			if ( net_packet->len > 12 )
 			{
-				uid = SDLNet_Read32(&net_packet->data[12]);
-				entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7], uid);
+				Uint32 interactUid = SDLNet_Read32(&net_packet->data[12]);
+				entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7], interactUid);
+				messagePlayer(0, "received UID of target: %d, applying...", uid);
+				entity->monsterPlayerAllyInteractUid = interactUid;
 			}
 			else
 			{
