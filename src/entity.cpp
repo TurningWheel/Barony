@@ -9338,6 +9338,10 @@ void Entity::checkGroundForItems()
 	{
 		return;
 	}
+	if ( monsterPlayerAllyPickupItems == ALLY_PICKUP_NONE && monsterPlayerAllyIndex >= 0 )
+	{
+		return; // set to ignore ground items.
+	}
 
 	// Calls the function for a monster to pick up an item, if it's a monster that picks up items, only if they are not Asleep
 	if ( myStats->EFFECTS[EFF_ASLEEP] == false )
@@ -9510,9 +9514,13 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 							}
 						}
 					}
-					if ( playerOwned >= 0 && entity->ticks < 5 * TICKS_PER_SECOND )
+					if ( (playerOwned >= 0 
+						&& (entity->ticks < 5 * TICKS_PER_SECOND 
+							|| (monsterPlayerAllyPickupItems != ALLY_PICKUP_ALL && monsterPlayerAllyIndex >= 0)) 
+							) 
+						)
 					{
-						//messagePlayer(0, "item too new");
+						// player item too new on ground, or monster is set to not pickup player items.
 						continue;
 					}
 				}
@@ -9629,6 +9637,22 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 		return true; //Something is better than nothing.
 	}
 	//Monster is already holding a weapon.
+
+	if ( monsterPlayerAllyIndex >= 0 )
+	{
+		if ( monsterPlayerAllyClass == ALLY_CLASS_RANGED && isRangedWeapon(itemToEquip)
+			&& !isRangedWeapon(*(myStats->weapon)) )
+		{
+			// drop what you're holding and pickup that new bow!
+			return true;
+		}
+		else if ( monsterPlayerAllyClass == ALLY_CLASS_MELEE && !isRangedWeapon(itemToEquip)
+			&& isRangedWeapon(*(myStats->weapon)) )
+		{
+			// drop what you're holding and pickup that new non-bow!
+			return true;
+		}
+	}
 
 	if ( !Item::isThisABetterWeapon(itemToEquip, myStats->weapon) )
 	{

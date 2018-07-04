@@ -1344,6 +1344,62 @@ bool Entity::automatonCanWieldItem(const Item& item) const
 		return false;
 	}
 
+	if ( monsterPlayerAllyIndex >= 0 )
+	{
+		// player ally.
+		if ( monsterPlayerAllyClass == ALLY_CLASS_MIXED
+			|| checkEquipType(&item) == TYPE_HAT )
+		{
+			// pick up all default items.
+		}
+		else if ( monsterPlayerAllyClass == ALLY_CLASS_RANGED )
+		{
+			switch ( itemCategory(&item) )
+			{
+			case WEAPON:
+				return isRangedWeapon(item);
+			case ARMOR:
+				switch ( item.type )
+				{
+				case CRYSTAL_BREASTPIECE:
+				case CRYSTAL_HELM:
+				case CRYSTAL_SHIELD:
+				case STEEL_BREASTPIECE:
+				case STEEL_HELM:
+				case STEEL_SHIELD:
+				case IRON_BREASTPIECE:
+				case IRON_HELM:
+				case IRON_SHIELD:
+					return false;
+				default:
+					return true;
+				}
+			case MAGICSTAFF:
+				return false;
+			case THROWN:
+				return false;
+			default:
+				return false;
+			}
+		}
+		else if ( monsterPlayerAllyClass == ALLY_CLASS_MELEE )
+		{
+			switch ( itemCategory(&item) )
+			{
+			case WEAPON:
+				return !isRangedWeapon(item);
+			case ARMOR:
+				return true;
+			case MAGICSTAFF:
+				return false;
+			case THROWN:
+				return false;
+			default:
+				return false;
+			}
+		}
+	}
+
 	switch ( itemCategory(&item) )
 	{
 		case WEAPON:
