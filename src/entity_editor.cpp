@@ -88,7 +88,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterAllyIndex(skill[42]),
 	monsterAllyState(skill[43]),
 	monsterAllyPickupItems(skill[44]),
-	monsterAllyInteractUid(skill[45]),
+	monsterAllyInteractTarget(skill[45]),
 	monsterAllyClass(skill[46]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
@@ -188,7 +188,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitStartZ(fskill[3]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
-	goldSokoban(skill[2])
+	goldSokoban(skill[2]),
+	interactedByEntity(skill[47])
 {
 	int c;
 	// add the entity to the entity list

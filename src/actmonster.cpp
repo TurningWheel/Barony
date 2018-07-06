@@ -4295,7 +4295,7 @@ timeToGoAgain:
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 						if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 						{
-							if ( my->monsterAllyInteractUid != 0 )
+							if ( my->monsterAllyInteractTarget != 0 )
 							{
 								messagePlayer(0, "test4");
 								my->monsterAllySetInteract();
@@ -6965,7 +6965,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					}
 					else
 					{
-						target->monsterAllyInteractUid = 0;
+						target->monsterAllyInteractTarget = 0;
 					}
 				}
 			}
@@ -7106,15 +7106,15 @@ bool Entity::monsterAllySetInteract()
 	{
 		return false;
 	}
-	if ( monsterAllyInteractUid == 0 )
+	if ( monsterAllyInteractTarget == 0 )
 	{
 		return false;
 	}
-	Entity* target = uidToEntity(monsterAllyInteractUid);
+	Entity* target = uidToEntity(monsterAllyInteractTarget);
 	if ( !target )
 	{
 		monsterAllyState = ALLY_STATE_DEFAULT;
-		monsterAllyInteractUid = 0;
+		monsterAllyInteractTarget = 0;
 		return false;
 	}
 	// check distance to interactable.
@@ -7122,9 +7122,9 @@ bool Entity::monsterAllySetInteract()
 	if ( range < 1024 ) // 32 squared
 	{
 		followerInteractedEntity = target; // set followerInteractedEntity to the mechanism/item/gold etc.
-		followerInteractedEntity->monsterAllyInteractUid = getUID(); // set the remote entity to this monster's uid to lookup later.
+		followerInteractedEntity->monsterAllyInteractTarget = getUID(); // set the remote entity to this monster's uid to lookup later.
 	}
-	monsterAllyInteractUid = 0;
+	monsterAllyInteractTarget = 0;
 	if ( target->behavior != &actMonster && target->behavior != &actPlayer )
 	{
 	}
@@ -7140,7 +7140,7 @@ bool Entity::monsterAllyCheckInteract()
 	{
 		return false;
 	}
-	if ( followerInteractedEntity->monsterAllyInteractUid == 0 )
+	if ( followerInteractedEntity->monsterAllyInteractTarget == 0 )
 	{
 		return false;
 	}
@@ -7154,6 +7154,6 @@ bool Entity::monsterAllyCheckInteract()
 void Entity::monsterAllyClearInteract()
 {
 	followerInteractedEntity = nullptr;
-	monsterAllyInteractUid = 0;
+	monsterAllyInteractTarget = 0;
 }
 
