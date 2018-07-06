@@ -10249,7 +10249,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterAllyState == 1 )
+				if ( monsterAllyState == ALLY_STATE_DEFEND )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
@@ -10285,7 +10285,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterAllyState == 1 )
+				if ( monsterAllyState == ALLY_STATE_DEFEND )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
@@ -10321,7 +10321,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterAllyState == 1 )
+				if ( monsterAllyState == ALLY_STATE_DEFEND )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
@@ -10357,7 +10357,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterAllyState == 1 )
+				if ( monsterAllyState == ALLY_STATE_DEFEND )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
