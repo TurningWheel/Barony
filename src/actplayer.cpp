@@ -1412,12 +1412,12 @@ void actPlayer(Entity* my)
 								}
 								spawnMagicEffectParticles(target->x, target->y, 0, 174);
 								followerMenuOptionSelected = ALLY_CMD_ATTACK_CONFIRM;
-								followerMenuEntity->monsterPlayerAllyInteractUid = target->getUID();
+								followerMenuEntity->monsterAllyInteractUid = target->getUID();
 							}
 							else
 							{
 								followerMenuOptionSelected = ALLY_CMD_CANCEL;
-								followerMenuEntity->monsterPlayerAllyInteractUid = 0;
+								followerMenuEntity->monsterAllyInteractUid = 0;
 							}
 							followerMoveTo = false;
 						}
@@ -1431,12 +1431,12 @@ void actPlayer(Entity* my)
 				if ( selectedEntity->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 				{
 					// see if we selected a follower to process right click menu.
-					if ( parent && parent->monsterPlayerAllyIndex == PLAYER_NUM )
+					if ( parent && parent->monsterAllyIndex == PLAYER_NUM )
 					{
 						followerMenuEntity = parent;
 						//messagePlayer(0, "limb");
 					}
-					else if ( selectedEntity->monsterPlayerAllyIndex == PLAYER_NUM )
+					else if ( selectedEntity->monsterAllyIndex == PLAYER_NUM )
 					{
 						followerMenuEntity = selectedEntity;
 						//messagePlayer(0, "head");

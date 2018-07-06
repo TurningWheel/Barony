@@ -890,10 +890,10 @@ void gameLogic(void)
 										monster->flags[USERFLAG2] = true;
 										serverUpdateEntityFlag(monster, USERFLAG2);
 									}
-									monster->monsterPlayerAllyIndex = c;
+									monster->monsterAllyIndex = c;
 									if ( multiplayer == SERVER )
 									{
-										serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
+										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 									}
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);

@@ -115,7 +115,7 @@ void actTorch(Entity* my)
 			list_RemoveNode(my->light->node);
 			list_RemoveNode(my->mynode);
 			Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
-			Entity* monster = uidToEntity(followerInteractedEntity->monsterPlayerAllyInteractUid);
+			Entity* monster = uidToEntity(followerInteractedEntity->monsterAllyInteractUid);
 			if ( monster )
 			{
 				monster->addItemToMonsterInventory(item);

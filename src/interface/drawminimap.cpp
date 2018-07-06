@@ -140,7 +140,7 @@ void drawMinimap()
 		}
 		else
 		{
-			if ( entity->behavior == &actMonster && entity->monsterPlayerAllyIndex < 0 )
+			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
 				if ( stats[clientnum]->ring != NULL )
@@ -272,9 +272,9 @@ void drawMinimap()
 		}
 		else if ( entity->behavior == &actMonster )
 		{
-			if ( entity->monsterPlayerAllyIndex >= 0 )
+			if ( entity->monsterAllyIndex >= 0 )
 			{
-				drawMonsterAlly = entity->monsterPlayerAllyIndex;
+				drawMonsterAlly = entity->monsterAllyIndex;
 			}
 			/*node_t* node2;
 			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != nullptr; node2 = node2->next )

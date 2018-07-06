@@ -1344,15 +1344,15 @@ bool Entity::automatonCanWieldItem(const Item& item) const
 		return false;
 	}
 
-	if ( monsterPlayerAllyIndex >= 0 )
+	if ( monsterAllyIndex >= 0 )
 	{
 		// player ally.
-		if ( monsterPlayerAllyClass == ALLY_CLASS_MIXED
+		if ( monsterAllyClass == ALLY_CLASS_MIXED
 			|| checkEquipType(&item) == TYPE_HAT )
 		{
 			// pick up all default items.
 		}
-		else if ( monsterPlayerAllyClass == ALLY_CLASS_RANGED )
+		else if ( monsterAllyClass == ALLY_CLASS_RANGED )
 		{
 			switch ( itemCategory(&item) )
 			{
@@ -1382,7 +1382,7 @@ bool Entity::automatonCanWieldItem(const Item& item) const
 				return false;
 			}
 		}
-		else if ( monsterPlayerAllyClass == ALLY_CLASS_MELEE )
+		else if ( monsterAllyClass == ALLY_CLASS_MELEE )
 		{
 			switch ( itemCategory(&item) )
 			{
