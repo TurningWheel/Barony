@@ -1412,12 +1412,12 @@ void actPlayer(Entity* my)
 								}
 								spawnMagicEffectParticles(target->x, target->y, 0, 174);
 								followerMenuOptionSelected = ALLY_CMD_ATTACK_CONFIRM;
-								followerMenuEntity->monsterAllyInteractUid = target->getUID();
+								followerMenuEntity->monsterAllyInteractTarget = target->getUID();
 							}
 							else
 							{
 								followerMenuOptionSelected = ALLY_CMD_CANCEL;
-								followerMenuEntity->monsterAllyInteractUid = 0;
+								followerMenuEntity->monsterAllyInteractTarget = 0;
 							}
 							followerMoveTo = false;
 						}

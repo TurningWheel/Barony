@@ -330,7 +330,7 @@ void drawFollowerMenu()
 						{
 							if ( followerMenuOptionSelected == ALLY_CMD_ATTACK_CONFIRM )
 							{
-								sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, 0, 0, followerMenuEntity->monsterAllyInteractUid);
+								sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, 0, 0, followerMenuEntity->monsterAllyInteractTarget);
 							}
 							else if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_CONFIRM )
 							{
@@ -343,7 +343,7 @@ void drawFollowerMenu()
 						}
 						else
 						{
-							followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY, followerMenuEntity->monsterAllyInteractUid);
+							followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY, followerMenuEntity->monsterAllyInteractTarget);
 						}
 					}
 					followerMenuEntity = nullptr;

@@ -144,6 +144,7 @@ public:
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
 
+
 	//--PUBLIC CHEST SKILLS--
 
 	//skill[4]
@@ -188,8 +189,10 @@ public:
 	Sint32& monsterAllyIndex; //skill[42] If monster is an ally of a player, assign number 0-3 to it for the players to track on the map.
 	Sint32& monsterAllyState; //skill[43]
 	Sint32& monsterAllyPickupItems; //skill[44]
-	Sint32& monsterAllyInteractUid; //skill[45]
+	Sint32& monsterAllyInteractTarget; //skill[45]
 	Sint32& monsterAllyClass; //skill[46]
+	//--PUBLIC GENERAL ENTITY STUFF--
+	Sint32& interactedByEntity; //skill[47] for use with monsterAllyInteractTarget
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
