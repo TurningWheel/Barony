@@ -111,11 +111,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterStoreType(skill[18]),
 	monsterStrafeDirection(skill[39]),
 	monsterPathCount(skill[38]),
-	monsterPlayerAllyIndex(skill[42]),
-	monsterPlayerAllyState(skill[43]),
-	monsterPlayerAllyPickupItems(skill[44]),
-	monsterPlayerAllyInteractUid(skill[45]),
-	monsterPlayerAllyClass(skill[46]),
+	monsterAllyIndex(skill[42]),
+	monsterAllyState(skill[43]),
+	monsterAllyPickupItems(skill[44]),
+	monsterAllyInteractUid(skill[45]),
+	monsterAllyClass(skill[46]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -304,7 +304,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	ranbehavior = false;
 	parent = 0;
 	path = nullptr;
-	monsterPlayerAllyIndex = -1; // set to -1 to not reference player indices 0-3.
+	monsterAllyIndex = -1; // set to -1 to not reference player indices 0-3.
 	if ( checkSpriteType(this->sprite) > 1 )
 	{
 		setSpriteAttributes(this, nullptr, nullptr);
@@ -9338,7 +9338,7 @@ void Entity::checkGroundForItems()
 	{
 		return;
 	}
-	if ( monsterPlayerAllyPickupItems == ALLY_PICKUP_NONE && monsterPlayerAllyIndex >= 0 )
+	if ( monsterAllyPickupItems == ALLY_PICKUP_NONE && monsterAllyIndex >= 0 )
 	{
 		return; // set to ignore ground items.
 	}
@@ -9516,7 +9516,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					}
 					if ( (playerOwned >= 0 
 						&& (entity->ticks < 5 * TICKS_PER_SECOND 
-							|| (monsterPlayerAllyPickupItems != ALLY_PICKUP_ALL && monsterPlayerAllyIndex >= 0)) 
+							|| (monsterAllyPickupItems != ALLY_PICKUP_ALL && monsterAllyIndex >= 0)) 
 							) 
 						)
 					{
@@ -9638,15 +9638,15 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 	}
 	//Monster is already holding a weapon.
 
-	if ( monsterPlayerAllyIndex >= 0 )
+	if ( monsterAllyIndex >= 0 )
 	{
-		if ( monsterPlayerAllyClass == ALLY_CLASS_RANGED && isRangedWeapon(itemToEquip)
+		if ( monsterAllyClass == ALLY_CLASS_RANGED && isRangedWeapon(itemToEquip)
 			&& !isRangedWeapon(*(myStats->weapon)) )
 		{
 			// drop what you're holding and pickup that new bow!
 			return true;
 		}
-		else if ( monsterPlayerAllyClass == ALLY_CLASS_MELEE && !isRangedWeapon(itemToEquip)
+		else if ( monsterAllyClass == ALLY_CLASS_MELEE && !isRangedWeapon(itemToEquip)
 			&& isRangedWeapon(*(myStats->weapon)) )
 		{
 			// drop what you're holding and pickup that new non-bow!
@@ -10233,7 +10233,7 @@ void Entity::createPathBoundariesNPC()
 
 	if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] != 0 
 		|| myStats->type == SHOPKEEPER
-		|| monsterPlayerAllyState == ALLY_STATE_DEFEND )
+		|| monsterAllyState == ALLY_STATE_DEFEND )
 	{
 		// is NPC, find the bounds which movement is restricted to by finding the "box" it spawned in.
 		int i, j;
@@ -10249,7 +10249,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterPlayerAllyState == 1 )
+				if ( monsterAllyState == 1 )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
@@ -10285,7 +10285,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterPlayerAllyState == 1 )
+				if ( monsterAllyState == 1 )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
@@ -10321,7 +10321,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterPlayerAllyState == 1 )
+				if ( monsterAllyState == 1 )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;
@@ -10357,7 +10357,7 @@ void Entity::createPathBoundariesNPC()
 			}
 			else
 			{
-				if ( monsterPlayerAllyState == 1 )
+				if ( monsterAllyState == 1 )
 				{
 					// don't use players to block boundaries.
 					bool foundplayer = false;

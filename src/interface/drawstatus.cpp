@@ -322,7 +322,7 @@ void drawFollowerMenu()
 					if ( !disableOption )
 					{
 						if ( followerMenuOptionSelected == ALLY_CMD_DEFEND &&
-							(followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_DEFEND || followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_MOVETO)  )
+							(followerMenuEntity->monsterAllyState == ALLY_STATE_DEFEND || followerMenuEntity->monsterAllyState == ALLY_STATE_MOVETO)  )
 						{
 							followerMenuOptionSelected = ALLY_CMD_FOLLOW;
 						}
@@ -330,7 +330,7 @@ void drawFollowerMenu()
 						{
 							if ( followerMenuOptionSelected == ALLY_CMD_ATTACK_CONFIRM )
 							{
-								sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, 0, 0, followerMenuEntity->monsterPlayerAllyInteractUid);
+								sendAllyCommandClient(clientnum, followerMenuEntity->getUID(), followerMenuOptionSelected, 0, 0, followerMenuEntity->monsterAllyInteractUid);
 							}
 							else if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_CONFIRM )
 							{
@@ -343,7 +343,7 @@ void drawFollowerMenu()
 						}
 						else
 						{
-							followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY, followerMenuEntity->monsterPlayerAllyInteractUid);
+							followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY, followerMenuEntity->monsterAllyInteractUid);
 						}
 					}
 					followerMenuEntity = nullptr;
@@ -464,7 +464,7 @@ void drawFollowerMenu()
 
 			// draw the text for the menu wheel.
 			if ( i == ALLY_CMD_DEFEND 
-				&& (followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_DEFEND || followerMenuEntity->monsterPlayerAllyState == ALLY_STATE_MOVETO) )
+				&& (followerMenuEntity->monsterAllyState == ALLY_STATE_DEFEND || followerMenuEntity->monsterAllyState == ALLY_STATE_MOVETO) )
 			{
 				TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
 				ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
@@ -480,16 +480,16 @@ void drawFollowerMenu()
 				{
 					// draw higher.
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
-					TTF_SizeUTF8(ttf12, language[3053 + followerMenuEntity->monsterPlayerAllyClass], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerMenuEntity->monsterPlayerAllyClass]);
+					TTF_SizeUTF8(ttf12, language[3053 + followerMenuEntity->monsterAllyClass], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerMenuEntity->monsterAllyClass]);
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
 				{
 					// draw higher.
 					TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
-					TTF_SizeUTF8(ttf12, language[3056 + followerMenuEntity->monsterPlayerAllyPickupItems], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerMenuEntity->monsterPlayerAllyPickupItems]);
+					TTF_SizeUTF8(ttf12, language[3056 + followerMenuEntity->monsterAllyPickupItems], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerMenuEntity->monsterAllyPickupItems]);
 				}
 				else if ( i == ALLY_CMD_DROP_EQUIP )
 				{

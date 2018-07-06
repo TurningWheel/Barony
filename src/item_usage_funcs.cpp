@@ -2288,10 +2288,10 @@ void item_ScrollSummon(Item* item, int player)
 				{
 					monster->flags[USERFLAG2] = true;
 				}
-				monster->monsterPlayerAllyIndex = player;
+				monster->monsterAllyIndex = player;
 				if ( multiplayer == SERVER )
 				{
-					serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
+					serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 				}
 
 				// update followers for this player

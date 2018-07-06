@@ -185,11 +185,11 @@ public:
 	Sint32& monsterPathCount; //skill[38]
 	real_t& monsterLookDir; //fskill[4]
 	Sint32& monsterEntityRenderAsTelepath; //skill[41]
-	Sint32& monsterPlayerAllyIndex; //skill[42] If monster is an ally of a player, assign number 0-3 to it for the players to track on the map.
-	Sint32& monsterPlayerAllyState; //skill[43]
-	Sint32& monsterPlayerAllyPickupItems; //skill[44]
-	Sint32& monsterPlayerAllyInteractUid; //skill[45]
-	Sint32& monsterPlayerAllyClass; //skill[46]
+	Sint32& monsterAllyIndex; //skill[42] If monster is an ally of a player, assign number 0-3 to it for the players to track on the map.
+	Sint32& monsterAllyState; //skill[43]
+	Sint32& monsterAllyPickupItems; //skill[44]
+	Sint32& monsterAllyInteractUid; //skill[45]
+	Sint32& monsterAllyClass; //skill[46]
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]

@@ -188,10 +188,10 @@ void spell_summonFamiliar(int player)
 				{
 					monster->flags[USERFLAG2] = true;
 				}
-				monster->monsterPlayerAllyIndex = player;
+				monster->monsterAllyIndex = player;
 				if ( multiplayer == SERVER )
 				{
-					serverUpdateEntitySkill(monster, 42); // update monsterPlayerAllyIndex for clients.
+					serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 				}
 
 				// update followers for this player
@@ -305,10 +305,10 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		// change the color of the hit entity.
 		hit.entity->flags[USERFLAG2] = true;
 		serverUpdateEntityFlag(hit.entity, USERFLAG2);
-		hit.entity->monsterPlayerAllyIndex = parent->skill[2];
+		hit.entity->monsterAllyIndex = parent->skill[2];
 		if ( multiplayer == SERVER )
 		{
-			serverUpdateEntitySkill(hit.entity, 42); // update monsterPlayerAllyIndex for clients.
+			serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
 		}
 		int bodypart = 0;
 		for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
