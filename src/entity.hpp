@@ -247,6 +247,7 @@ public:
 	Sint32& boulderTrapFired; //skill[0]
 	Sint32& boulderTrapRefireCounter; //skill[4]
 	Sint32& boulderTrapPreDelay; //skill[5]
+	Sint32& boulderTrapRocksToSpawn; //skill[7] bitwise storage. 
 
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration; //skill[0]

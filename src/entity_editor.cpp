@@ -112,6 +112,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	boulderTrapFired(skill[0]),
 	boulderTrapRefireCounter(skill[4]),
 	boulderTrapPreDelay(skill[5]),
+	boulderTrapRocksToSpawn(skill[7]),
 	doorDir(skill[0]),
 	doorInit(skill[1]),
 	doorStatus(skill[3]),
