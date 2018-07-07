@@ -1748,7 +1748,14 @@ void actPlayer(Entity* my)
 						entity->pitch = PI / 8;
 						node_t* nextnode;
 
-						deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+						if ( multiplayer == SINGLE )
+						{
+							deleteSaveGame(multiplayer); // stops save scumming c:
+						}
+						else
+						{
+							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+						}
 
 						closeBookGUI();
 
