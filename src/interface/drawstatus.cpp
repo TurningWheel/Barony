@@ -276,7 +276,7 @@ void drawFollowerMenu()
 		{
 			if ( followerMenuOptionSelected >= ALLY_CMD_DEFEND && followerMenuOptionSelected < ALLY_CMD_END )
 			{
-				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + stats[clientnum]->CHR;
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
 				if ( skillLVL < AllyNPCSkillRequirements[followerMenuOptionSelected] )
 				{
 					disableOption = true;
@@ -418,7 +418,7 @@ void drawFollowerMenu()
 		int skillLVL = 0;
 		if ( stats[clientnum] )
 		{
-			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + stats[clientnum]->CHR;
+			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
 		}
 
 		bool mouseInCenterButton = pow((omousex - followerMenuX), 2) + pow((omousey - followerMenuY), 2) < 4900; // 70 squared is 4900.
