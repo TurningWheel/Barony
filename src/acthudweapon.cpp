@@ -45,11 +45,6 @@ void actHudArm(Entity* my)
 	hudarm = my;
 	Entity* parent = hudweapon;
 
-	if (parent == nullptr)
-	{
-		return;
-	}
-
 	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 	{
 		hudarm = nullptr;
@@ -58,6 +53,13 @@ void actHudArm(Entity* my)
 	}
 
 	if (stats[clientnum]->HP <= 0)
+	{
+		hudarm = nullptr;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if (parent == nullptr)
 	{
 		hudarm = nullptr;
 		list_RemoveNode(my->mynode);
