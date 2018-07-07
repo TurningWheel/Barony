@@ -2316,15 +2316,15 @@ Connecting to steam lobby...
 1538 Host a multiplayer game without Steamworks, using a direct IP connection.#
 1539 Join a multiplayer game without Steamworks, using a direct IP connection.#
 1540 %s, level %d %s
-dungeon level %d, singleplayer#
+dungeon level %d, singleplayer, %s#
 1541 %s, level %d %s
-dungeon level %d, server#
+dungeon level %d, server, %s#
 1542 %s, level %d %s
-dungeon level %d, client (player %d)#
+dungeon level %d, client (player %d), %s#
 1543 %s, level %d %s
-dungeon level %d, server (direct ip)#
+dungeon level %d, server (direct ip), %s#
 1544 %s, level %d %s
-dungeon level %d, client (player %d) (direct ip)#
+dungeon level %d, client (player %d) (direct ip), %s#
 
 
 # item names
