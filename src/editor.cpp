@@ -1282,6 +1282,7 @@ int main(int argc, char** argv)
 
 	// initialize
 	useModelCache = true;
+	verticalSync = true;
 	if ( (x = initApp("Barony Editor", fullscreen)) )
 	{
 		printlog("Critical error: %d\n", x);
@@ -1302,6 +1303,7 @@ int main(int argc, char** argv)
 		deinitApp();
 		exit(x);
 	}
+	
 #ifdef STEAMWORKS
 	g_SteamStatistics->RequestStats();
 #endif // STEAMWORKS
