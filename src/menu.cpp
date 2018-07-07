@@ -41,6 +41,7 @@
 #include "cppfuncs.hpp"
 #include "colors.hpp"
 #include <ctime>
+#include "sys/stat.h"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
