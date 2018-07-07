@@ -40,6 +40,7 @@
 #include "player.hpp"
 #include "cppfuncs.hpp"
 #include "colors.hpp"
+#include <ctime>
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -94,7 +95,7 @@ int score_window_to_delete = 0;
 
 int savegames_window = 0;
 int savegames_window_scroll = 0;
-std::vector<std::tuple<int, int, std::string>> savegamesList; // tuple - multiplayer type, file entry, and description of save game.
+std::vector<std::tuple<int, int, int, std::string>> savegamesList; // tuple - last modified, multiplayer type, file entry, and description of save game.
 
 // gamemods window stuff.
 int gamemods_window = 0;
@@ -4944,9 +4945,9 @@ void handleMainMenu(bool mode)
 		{
 			filename_padx = subx1 + 16;
 
-			std::vector<std::tuple<int, int, std::string>>::iterator it = savegamesList.begin();
+			std::vector<std::tuple<int, int, int, std::string>>::iterator it = savegamesList.begin();
 			std::advance(it, i);
-			std::tuple<int, int, std::string> entry = *it;
+			std::tuple<int, int, int, std::string> entry = *it;
 
 			drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
 			SDL_Rect highlightEntry;
@@ -4960,7 +4961,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				if ( std::get<0>(entry) == SINGLE ) // single player.
+				if ( std::get<1>(entry) == SINGLE ) // single player.
 				{
 					drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
 				}
@@ -4970,21 +4971,21 @@ void handleMainMenu(bool mode)
 				}
 			}
 
-			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<2>(entry).c_str());
+			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<3>(entry).c_str());
 
 			filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
 			int text_x = filename_padx;
 			int text_y = filename_pady + 10;
 			if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
 			{
-				if ( std::get<0>(entry) == SINGLE )
+				if ( std::get<1>(entry) == SINGLE )
 				{
-					savegameCurrentFileIndex = std::get<1>(entry);
+					savegameCurrentFileIndex = std::get<2>(entry);
 					buttonLoadSingleplayerGame(nullptr);
 				}
 				else
 				{
-					savegameCurrentFileIndex = std::get<1>(entry);
+					savegameCurrentFileIndex = std::get<2>(entry);
 					buttonLoadMultiplayerGame(nullptr);
 				}
 			}
@@ -4994,14 +4995,14 @@ void handleMainMenu(bool mode)
 			text_x = filename_padx;
 			if ( savegameDrawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
 			{
-				if ( std::get<0>(entry) == SINGLE )
+				if ( std::get<1>(entry) == SINGLE )
 				{
-					savegameCurrentFileIndex = std::get<1>(entry);
+					savegameCurrentFileIndex = std::get<2>(entry);
 					buttonDeleteSavedSoloGame(nullptr);
 				}
 				else
 				{
-					savegameCurrentFileIndex = std::get<1>(entry);
+					savegameCurrentFileIndex = std::get<2>(entry);
 					buttonDeleteSavedMultiplayerGame(nullptr);
 				}
 			}
@@ -9796,7 +9797,26 @@ void openNewLoadGameWindow(button_t* my)
 	{
 		if ( saveGameExists(true, fileNumber) )
 		{
-			savegamesList.push_back(std::make_tuple(getSaveGameType(true, fileNumber), fileNumber, getSaveGameName(true, fileNumber)));
+			time_t timeNow = std::time(nullptr);
+			struct tm *tm = nullptr;
+#ifdef WINDOWS
+			struct _stat result;
+			if ( _stat(setSaveGameFileName(true, false, fileNumber).c_str(), &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#else
+			struct stat result;
+			if ( stat(setSaveGameFileName(true, false, fileNumber).c_str(), &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#endif
+			if ( tm )
+			{
+				int timeDifference = std::difftime(timeNow, mktime(tm));
+				savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(true, fileNumber), fileNumber, getSaveGameName(true, fileNumber)));
+			}
 		}
 	}
 	// load multiplayer files
@@ -9804,10 +9824,30 @@ void openNewLoadGameWindow(button_t* my)
 	{
 		if ( saveGameExists(false, fileNumber) )
 		{
-			savegamesList.push_back(std::make_tuple(getSaveGameType(false, fileNumber), fileNumber, getSaveGameName(false, fileNumber)));
+			time_t timeNow = std::time(nullptr);
+			struct tm *tm = nullptr;
+#ifdef WINDOWS
+			struct _stat result;
+			if ( _stat(setSaveGameFileName(false, false, fileNumber).c_str(), &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#else
+			struct stat result;
+			if ( stat(setSaveGameFileName(false, false, fileNumber).c_str(), &result) == 0 )
+			{
+				tm = localtime(&result.st_mtime);
+			}
+#endif
+			if ( tm )
+			{
+				int timeDifference = std::difftime(timeNow, mktime(tm));
+				savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(false, fileNumber), fileNumber, getSaveGameName(false, fileNumber)));
+			}
 		}
 	}
 	savegames_window = 1;
+	std::sort(savegamesList.begin(), savegamesList.end());
 }
 
 void buttonDeleteSavedSoloGame(button_t* my)
