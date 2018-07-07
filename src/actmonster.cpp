@@ -6982,14 +6982,36 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	switch ( command )
 	{
 		case ALLY_CMD_ATTACK_CONFIRM:
-			if ( uid != 0 )
+			if ( uid != 0 && uid != getUID() )
 			{
 				Entity* target = uidToEntity(uid);
 				if ( target )
 				{
 					if ( target->behavior == &actMonster || target->behavior == &actPlayer )
 					{
-						monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+						if ( stats[monsterAllyIndex] ) // check owner's proficiency.
+						{
+							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + stats[clientnum]->CHR;
+							if ( skillLVL >= SKILL_LEVEL_MASTER )
+							{
+								// attack anything except if FF is off + friend.
+								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+								{
+									if ( !checkFriend(target) )
+									{
+										monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+									}
+									else
+									{
+										messagePlayer(0, "Friendly fire is on!");
+									}
+								}
+								else
+								{
+									monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+								}
+							}
+						}
 						monsterAllyInteractTarget = 0;
 					}
 					else
