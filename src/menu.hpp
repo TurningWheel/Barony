@@ -154,7 +154,7 @@ bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID);
 bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList);
 extern std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
 #endif // STEAMWORKS
-
+bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor);
 extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;

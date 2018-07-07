@@ -42,7 +42,7 @@ list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
 bool achievementBrawlerMode = false;
-int savegameFileIndex = 0;
+int savegameCurrentFileIndex = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -1118,7 +1118,7 @@ void loadAllScores(const std::string& scoresfilename)
 
 -------------------------------------------------------------------------------*/
 
-int saveGame()
+int saveGame(int saveIndex)
 {
 	int player;
 	node_t* node;
@@ -1134,11 +1134,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
 	}
 
 	if ( (fp = fopen(savefile, "wb")) == NULL )
@@ -1526,11 +1526,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
 	}
 
 	// now we save the follower information
@@ -1776,7 +1776,7 @@ int saveGame()
 
 -------------------------------------------------------------------------------*/
 
-int loadGame(int player)
+int loadGame(int player, int saveIndex)
 {
 	Sint32 mul;
 	node_t* node;
@@ -1786,11 +1786,11 @@ int loadGame(int player)
 	char savefile[64] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
 	}
 
 	// open file
@@ -2217,7 +2217,7 @@ int loadGame(int player)
 
 -------------------------------------------------------------------------------*/
 
-list_t* loadGameFollowers()
+list_t* loadGameFollowers(int saveIndex)
 {
 	FILE* fp;
 	int c;
@@ -2225,11 +2225,11 @@ list_t* loadGameFollowers()
 	char savefile[64] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
 	}
 
 	// open file
@@ -2416,16 +2416,16 @@ list_t* loadGameFollowers()
 
 -------------------------------------------------------------------------------*/
 
-int deleteSaveGame(int gametype)
+int deleteSaveGame(int gametype, int saveIndex)
 {
 	char savefile[64] = "";
 	if ( gametype == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2442,11 +2442,11 @@ int deleteSaveGame(int gametype)
 
 	if ( gametype == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2475,10 +2475,10 @@ int deleteSaveGame(int gametype)
 
 -------------------------------------------------------------------------------*/
 
-bool saveGameExists(bool singleplayer)
+bool saveGameExists(bool singleplayer, int saveIndex)
 {
 	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
 
 	if ( access(savefile, F_OK ) == -1 )
 	{
@@ -2519,7 +2519,7 @@ bool saveGameExists(bool singleplayer)
 
 -------------------------------------------------------------------------------*/
 
-char* getSaveGameName(bool singleplayer)
+char* getSaveGameName(bool singleplayer, int saveIndex)
 {
 	char name[128];
 	FILE* fp;
@@ -2530,7 +2530,7 @@ char* getSaveGameName(bool singleplayer)
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
 
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
@@ -2649,8 +2649,35 @@ char* getSaveGameName(bool singleplayer)
 	fread(&level, sizeof(Sint32), 1, fp);
 
 	// assemble string
-	snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, plnum);
-
+	char timestamp[128] = "";
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(savefile, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(savefile, &result) == 0 )
+		struct tm *tm = localtime(&result.st_mtime);
+	if ( tm )
+	{
+		errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+	}
+#endif // WINDOWS
+	if ( plnum == DIRECTCLIENT || plnum == CLIENT )
+	{
+		// include the player number in the printf.
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, plnum, timestamp);
+	}
+	else
+	{
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, timestamp);
+	}
 	// close file
 	fclose(fp);
 
@@ -2665,12 +2692,12 @@ char* getSaveGameName(bool singleplayer)
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getSaveGameUniqueGameKey(bool singleplayer)
+Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	Uint32 gameKey;
 	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
 
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
@@ -2713,12 +2740,12 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameType(bool singleplayer)
+int getSaveGameType(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	int mul;
 	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
 
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
@@ -2762,12 +2789,12 @@ int getSaveGameType(bool singleplayer)
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameClientnum(bool singleplayer)
+int getSaveGameClientnum(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	int clientnum;
 	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
 
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
@@ -2812,12 +2839,12 @@ int getSaveGameClientnum(bool singleplayer)
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getSaveGameMapSeed(bool singleplayer)
+Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	Uint32 seed;
 	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
 
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
@@ -3004,9 +3031,9 @@ void updateGameplayStatisticsInMainLoop()
 	}
 }
 
-std::string setSaveGameFileName(bool singleplayer, bool followersFile)
+std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex)
 {
-	std::string filename = "savegame" + std::to_string(savegameFileIndex);
+	std::string filename = "savegames/savegame" + std::to_string(saveIndex);
 
 	//OLD FORMAT
 	//#define SAVEGAMEFILE "savegame.dat"
@@ -3071,10 +3098,23 @@ std::string setSaveGameFileName(bool singleplayer, bool followersFile)
 	return filename;
 }
 
-void checkGameSaveCount(bool singleplayer)
+bool anySaveFileExists()
 {
-	std::string filename;
-	filename = setSaveGameFileName(singleplayer, false);
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(true, fileNumber) )
+		{
+			return true;
+		}
+	}
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(false, fileNumber) )
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)

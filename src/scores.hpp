@@ -90,24 +90,25 @@ int totalScore(score_t* score);
 void loadScore(int score);
 void saveAllScores(const std::string& scoresfilename);
 void loadAllScores(const std::string& scoresfilename);
-int saveGame();
-int loadGame(int player);
-list_t* loadGameFollowers();
-int deleteSaveGame(int gametype);
-bool saveGameExists(bool singleplayer);
+extern int savegameCurrentFileIndex;
+std::string setSaveGameFileName(bool singleplayer, bool followersFile, int saveIndex = savegameCurrentFileIndex);
+int saveGame(int saveIndex = savegameCurrentFileIndex);
+int loadGame(int player, int saveIndex = savegameCurrentFileIndex);
+list_t* loadGameFollowers(int saveIndex = savegameCurrentFileIndex);
+int deleteSaveGame(int gametype, int saveIndex = savegameCurrentFileIndex);
+bool saveGameExists(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+bool anySaveFileExists();
 
-char* getSaveGameName(bool singleplayer);
-int getSaveGameType(bool singleplayer);
-int getSaveGameClientnum(bool singleplayer);
-Uint32 getSaveGameMapSeed(bool singleplayer);
-Uint32 getSaveGameUniqueGameKey(bool singleplayer);
+char* getSaveGameName(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+int getSaveGameType(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+int getSaveGameClientnum(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
+Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, otherwise converts to 3 digit int
 
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
 void updateGameplayStatisticsInMainLoop(); // check for achievement values for gameplay statistics.
-std::string setSaveGameFileName(bool singleplayer, bool followersFile);
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
-extern int savegameFileIndex;
-static const int MAX_SAVE_GAMES = 10;
+static const int SAVE_GAMES_MAX = 10;

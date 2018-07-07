@@ -67,8 +67,8 @@ bool settings_window = false;
 int connect_window = 0;
 int charcreation_step = 0;
 int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
-bool singleplayerSavegameExists = false; // used on multiplayer/single player select window to store if savefile exists. 
-bool multiplayerSavegameExists = false; // used on multiplayer/single player select window to store if savefile exists. 
+int singleplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
+int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
 /*
  * settings_tab
  * valid values:
@@ -91,6 +91,10 @@ button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
 int score_window_to_delete = 0;
+
+int savegames_window = 0;
+int savegames_window_scroll = 0;
+std::vector<std::tuple<int, int, std::string>> savegamesList; // tuple - multiplayer type, file entry, and description of save game.
 
 // gamemods window stuff.
 int gamemods_window = 0;
@@ -842,7 +846,7 @@ void handleMainMenu(bool mode)
 
 					gamemods_disableSteamAchievements = false;
 
-					if ( saveGameExists(true) || saveGameExists(false) )
+					if ( anySaveFileExists() )
 					{
 						//openLoadGameWindow(NULL);
 						openNewLoadGameWindow(nullptr);
@@ -1863,14 +1867,14 @@ void handleMainMenu(bool mode)
 				}
 				if ( multiplayerselect == 0 )
 				{
-					if ( singleplayerSavegameExists )
+					if ( singleplayerSavegameFreeSlot == -1 )
 					{
 						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2965]);
 					}
 				}
 				else if ( multiplayerselect > 0 )
 				{
-					if ( multiplayerSavegameExists )
+					if ( multiplayerSavegameFreeSlot == -1 )
 					{
 						ttfPrintTextColor(ttf12, subx1 + 8, suby2 - 60, uint32ColorOrange(*mainsurface), true, language[2966]);
 					}
@@ -4850,7 +4854,174 @@ void handleMainMenu(bool mode)
 		scoreDisplayMultiplayer = false;
 	}
 
-	if ( gamemods_window != 0 )
+
+	if ( savegames_window != 0 )
+	{
+		int numSavesToShow = 5;
+		int filenameMaxLength = 48;
+		int filename_padx = subx1 + 16;
+		int filename_pady = suby1 + 32;
+		int filename_padx2 = subx2 - 16 - 40;
+		int filename_pady2 = filename_pady + numSavesToShow * TTF12_HEIGHT + 8;
+		int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
+		filename_pady += 3 * TTF12_HEIGHT;
+		int numSaves = savegamesList.size();
+		if ( numSaves > 0 )
+		{
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved savegames!");
+		}
+		else
+		{
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "no saves found!");
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + TTF12_HEIGHT + 8, uint32ColorOrange(*mainsurface), "to get started create a new folder, or copy shared custom content to the mods/ folder");
+		}
+
+		std::string modInfoStr = "current loaded mods (hover for info): ";
+		SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
+		bool drawModLoadOrder = false;
+		int drawExtendedInformationForMod = -1; // value of 0 or greater will draw.
+		int maxDescriptionLines = 10;
+
+		tooltip.x = omousex + 8;
+		tooltip.y = omousey + 8;
+		tooltip.w = 32 + TTF12_WIDTH * 14;
+		tooltip.h = TTF12_HEIGHT + 8;
+
+		filename_pady += 2 * TTF12_HEIGHT;
+
+		// do slider
+		SDL_Rect slider;
+		slider.x = filename_padx2 + 8;
+		slider.y = filename_pady - 8;
+		slider.h = suby2 - (filename_pady + 20);
+		slider.w = 32;
+
+		int entriesToScroll = std::max(static_cast<int>((numSaves / numSavesToShow) - 1), 0);
+		entriesToScroll = entriesToScroll * numSavesToShow + (numSaves % numSavesToShow);
+
+		// handle slider movement.
+		if ( numSaves > numSavesToShow )
+		{
+			drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			if ( mouseInBounds(filename_padx, slider.x + slider.w,
+				slider.y, slider.y + slider.h) )
+			{
+				if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				{
+					savegames_window_scroll = std::max(savegames_window_scroll - 1, 0);
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+				}
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				{
+					savegames_window_scroll = std::min(savegames_window_scroll + 1, entriesToScroll);
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+				}
+			}
+
+			if ( keystatus[SDL_SCANCODE_UP] )
+			{
+				savegames_window_scroll = std::max(savegames_window_scroll - 1, 0);
+				keystatus[SDL_SCANCODE_UP] = 0;
+			}
+			if ( keystatus[SDL_SCANCODE_DOWN] )
+			{
+				savegames_window_scroll = std::min(savegames_window_scroll + 1, entriesToScroll);
+				keystatus[SDL_SCANCODE_DOWN] = 0;
+			}
+			slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
+			slider.y += slider.h * savegames_window_scroll;
+			if ( savegames_window_scroll == entriesToScroll ) // reached end.
+			{
+				slider.y += (suby2 - 28) - (slider.y + slider.h); // bottom of slider is (suby2 - 28), so move the y level to imitate hitting the bottom in case of rounding error.
+			}
+			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h); // draw shortened list relative slider.
+		}
+
+		bool drawDeleteTooltip = false;
+
+		// draw the content
+		for ( int i = savegames_window_scroll; i < numSaves && i < numSavesToShow + savegames_window_scroll; ++i )
+		{
+			filename_padx = subx1 + 16;
+
+			std::vector<std::tuple<int, int, std::string>>::iterator it = savegamesList.begin();
+			std::advance(it, i);
+			std::tuple<int, int, std::string> entry = *it;
+
+			drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+			SDL_Rect highlightEntry;
+			highlightEntry.x = filename_padx;
+			highlightEntry.y = filename_pady - 8;
+			highlightEntry.w = filename_padx2 - filename_padx;
+			highlightEntry.h = filename_rowHeight + 8;
+			if ( gamemods_numCurrentModsLoaded >= 0 )
+			{
+				drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 64);
+			}
+			else
+			{
+				if ( std::get<0>(entry) == SINGLE ) // single player.
+				{
+					drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+				}
+				else
+				{
+					drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 64);
+				}
+			}
+
+			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<std::string>(entry).c_str());
+
+			filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
+			int text_x = filename_padx;
+			int text_y = filename_pady + 10;
+			if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
+			{
+				if ( std::get<0>(entry) == SINGLE )
+				{
+					savegameCurrentFileIndex = std::get<1>(entry);
+					buttonLoadSingleplayerGame(nullptr);
+				}
+				else
+				{
+					savegameCurrentFileIndex = std::get<1>(entry);
+					buttonLoadMultiplayerGame(nullptr);
+				}
+			}
+			ttfPrintTextFormatted(ttf12, text_x + 8, text_y, "%s", "Load Game");
+
+			filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
+			text_x = filename_padx;
+			if ( savegameDrawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
+			{
+				if ( std::get<0>(entry) == SINGLE )
+				{
+					savegameCurrentFileIndex = std::get<1>(entry);
+					buttonDeleteSavedSoloGame(nullptr);
+				}
+				else
+				{
+					savegameCurrentFileIndex = std::get<1>(entry);
+					buttonDeleteSavedMultiplayerGame(nullptr);
+				}
+			}
+			ttfPrintTextFormatted(ttf12, text_x + 6, text_y, "%s", "X");
+			if ( mouseInBounds(filename_padx, filename_padx + 2 * TTF12_WIDTH + 8, filename_pady, filename_pady + TTF12_HEIGHT * 2 + 4) )
+			{
+				drawDeleteTooltip = true;
+			}
+
+			filename_pady += 3 * filename_rowHeight / 2;
+		}
+
+		// draw the tooltip we initialised earlier.
+		if ( drawDeleteTooltip )
+		{
+			drawTooltip(&tooltip);
+			ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 6, "delete save file");
+		}
+	}
+	else if ( gamemods_window != 0 )
 	{
 		int filenameMaxLength = 24;
 		int filename_padx = subx1 + 16;
@@ -8037,8 +8208,8 @@ void buttonCloseSubwindow(button_t* my)
 		return;
 	}
 	loadGameSaveShowRectangle = 0;
-	singleplayerSavegameExists = false; // clear this value when closing window, user could delete savegame
-	multiplayerSavegameExists = false;  // clear this value when closing window, user could delete savegame
+	singleplayerSavegameFreeSlot = -1; // clear this value when closing window
+	multiplayerSavegameFreeSlot = -1;  // clear this value when closing window
 	directoryPath = "";
 	gamemodsWindowClearVariables();
 	if ( score_window )
@@ -8058,6 +8229,8 @@ void buttonCloseSubwindow(button_t* my)
 #endif
 	score_window = 0;
 	gamemods_window = 0;
+	savegames_window = 0;
+	savegames_window_scroll = 0;
 	lobby_window = false;
 	settings_window = false;
 	connect_window = 0;
@@ -8130,8 +8303,24 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 5 )
 	{
-		singleplayerSavegameExists = saveGameExists(true); // load the savegames and see if they exist, once off operation.
-		multiplayerSavegameExists = saveGameExists(false); // load the savegames and see if they exist, once off operation.
+		// look for a gap in save game numbering
+		savegameCurrentFileIndex = 0;
+		for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+		{
+			if ( !saveGameExists(true, fileNumber) )
+			{
+				singleplayerSavegameFreeSlot = fileNumber;
+				break;
+			}
+		}
+		for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+		{
+			if ( !saveGameExists(false, fileNumber) )
+			{
+				multiplayerSavegameFreeSlot = fileNumber;
+				break;
+			}
+		}
 		if ( SDL_IsTextInputActive() )
 		{
 			lastname = (string)stats[0]->name;
@@ -8198,10 +8387,32 @@ void buttonContinue(button_t* my)
 		lastCreatedCharacterSex = stats[0]->sex;
 		lastCreatedCharacterClass = client_classes[0];
 		lastCreatedCharacterAppearance = stats[0]->appearance;
-		
+
+		if ( multiplayerselect != SINGLE )
+		{
+			if ( multiplayerSavegameFreeSlot == -1 )
+			{
+				savegameCurrentFileIndex = 0;
+			}
+			else
+			{
+				savegameCurrentFileIndex = multiplayerSavegameFreeSlot;
+			}
+			multiplayerSavegameFreeSlot = -1;
+		}
+
 		if ( multiplayerselect == SINGLE )
 		{
+			if ( singleplayerSavegameFreeSlot == -1 )
+			{
+				savegameCurrentFileIndex = 0;
+			}
+			else
+			{
+				savegameCurrentFileIndex = singleplayerSavegameFreeSlot;
+			}
 			buttonStartSingleplayer(my);
+			singleplayerSavegameFreeSlot = -1;
 		}
 		else if ( multiplayerselect == SERVER )
 		{
@@ -9541,13 +9752,18 @@ void openLoadGameWindow(button_t* my)
 
 void openNewLoadGameWindow(button_t* my)
 {
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
 	// create confirmation window
 	subwindow = 1;
-	subx1 = xres / 2 - 420;
-	subx2 = xres / 2 + 420;
-	suby1 = yres / 2 - 300;
-	suby2 = yres / 2 + 300;
-	strcpy(subtext, "Custom Content");
+	subx1 = xres / 2 - 380;
+	subx2 = xres / 2 + 380;
+	suby1 = yres / 2 - 210;
+	suby2 = yres / 2 + 210;
+	strcpy(subtext, "Start Game");
 
 	// close button
 	button_t* button = newButton();
@@ -9562,38 +9778,36 @@ void openNewLoadGameWindow(button_t* my)
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	// fetch local mods button
 	button = newButton();
-	strcpy(button->label, "local mods");
-	button->x = subx1 + 16;
-	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
-	button->sizex = 25 * TTF12_WIDTH + 8;
-	button->sizey = 32;
-	button->action = &buttonGamemodsGetLocalMods;
+	strcpy(button->label, language[1463]);
+	button->sizex = strlen(language[1463]) * 10 + 8;
+	button->sizey = 36;
+	button->x = subx1;
+	button->y = suby1 + 36;
+	button->action = &buttonOpenCharacterCreationWindow;
 	button->visible = 1;
 	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
 
-	// fetch my workshop items
-	button_t* button2 = newButton();
-	strcpy(button2->label, "new mod folder");
-	button2->x = button->x + button->sizex + 16;
-	button2->y = suby1 + 2 * TTF12_HEIGHT + 8;
-	button2->sizex = 25 * TTF12_WIDTH + 8;
-	button2->sizey = 32;
-	button2->action = &buttonGamemodsCreateNewModTemplate;
-	button2->visible = 1;
-	button2->focused = 1;
-
-	// start modded game
-	button = newButton();
-	strcpy(button->label, "start modded game");
-	button->sizex = 25 * TTF12_WIDTH + 8;
-	button->sizey = 32;
-	button->x = subx2 - (button->sizex + 16);
-	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
-	button->action = &buttonGamemodsStartModdedGame;
-	button->visible = 1;
-	button->focused = 1;
+	savegamesList.clear();
+	// load single player files
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(true, fileNumber) )
+		{
+			savegamesList.push_back(std::make_tuple(getSaveGameType(true, fileNumber), fileNumber, getSaveGameName(true, fileNumber)));
+		}
+	}
+	// load multiplayer files
+	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
+	{
+		if ( saveGameExists(false, fileNumber) )
+		{
+			savegamesList.push_back(std::make_tuple(getSaveGameType(false, fileNumber), fileNumber, getSaveGameName(false, fileNumber)));
+		}
+	}
+	savegames_window = 1;
 }
 
 void buttonDeleteSavedSoloGame(button_t* my)
@@ -9718,9 +9932,9 @@ void buttonConfirmDeleteSoloFile(button_t* my)
 	deleteallbuttons = true;
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(SINGLE);
-	if ( saveGameExists(false) ) // check for multiplayer game to load up
+	if ( anySaveFileExists() ) // check for saved game to load up
 	{
-		openLoadGameWindow(nullptr);
+		openNewLoadGameWindow(nullptr);
 	}
 	playSound(153, 96);
 }
@@ -9733,9 +9947,9 @@ void buttonConfirmDeleteMultiplayerFile(button_t* my)
 	deleteallbuttons = true;
 	loadGameSaveShowRectangle = 0;
 	deleteSaveGame(CLIENT);
-	if ( saveGameExists(true) ) // check for singleplayer game to load up
+	if ( anySaveFileExists() ) // check for saved game to load up
 	{
-		openLoadGameWindow(nullptr);
+		openNewLoadGameWindow(nullptr);
 	}
 	playSound(153, 96);
 }
@@ -9934,6 +10148,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 void buttonLoadSingleplayerGame(button_t* button)
 {
 	loadGameSaveShowRectangle = 0;
+	savegamesList.clear();
 	loadingsavegame = getSaveGameUniqueGameKey(true);
 	int mul = getSaveGameType(true);
 
@@ -10027,6 +10242,7 @@ void buttonLoadSingleplayerGame(button_t* button)
 void buttonLoadMultiplayerGame(button_t* button)
 {
 	loadGameSaveShowRectangle = 0;
+	savegamesList.clear();
 	loadingsavegame = getSaveGameUniqueGameKey(false);
 	int mul = getSaveGameType(false);
 
@@ -11564,4 +11780,30 @@ void gamemodsWindowClearVariables()
 	gamemods_workshopSetPropertyReturn[1] = false;
 	gamemods_workshopSetPropertyReturn[2] = false;
 	gamemods_subscribedItemsStatus = 0;
+}
+
+bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor)
+{
+	bool clicked = false;
+	if ( mouseInBounds(padx, padx + padw, pady - 4, pady + padh) )
+	{
+		drawDepressed(padx, pady - 4, padx + padw, pady + padh);
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			playSound(139, 64);
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			clicked = true;
+		}
+	}
+	else
+	{
+		drawWindow(padx, pady - 4, padx + padw, pady + padh);
+	}
+	SDL_Rect pos;
+	pos.x = padx;
+	pos.y = pady - 4;
+	pos.w = padw;
+	pos.h = padh + 4;
+	drawRect(&pos, btnColor, 64);
+	return clicked;
 }
