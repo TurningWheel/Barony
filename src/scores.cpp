@@ -2663,10 +2663,12 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 #else
 	struct stat result;
 	if ( stat(savefile, &result) == 0 )
-		struct tm *tm = localtime(&result.st_mtime);
-	if ( tm )
 	{
-		errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			errno_t err = strftime(timestamp, 127, "%d %b %Y, %H:%M", tm); //day, month, year, time
+		}
 	}
 #endif // WINDOWS
 	if ( plnum == DIRECTCLIENT || plnum == CLIENT )
