@@ -386,7 +386,7 @@ void drawFollowerMenu()
 
 		for ( i = 0; i < numoptions; ++i )
 		{
-			// draw borders around highlighted item.
+			// draw borders around ring.
 			drawLine(xres / 2 + (radius - thickness) * cos(angleStart), yres / 2 - (radius - thickness) * sin(angleStart),
 				xres / 2 + (radius + thickness) * cos(angleStart), yres / 2 - (radius + thickness) * sin(angleStart), uint32ColorGray(*mainsurface), 192);
 			drawLine(xres / 2 + (radius - thickness) * cos(angleEnd), yres / 2 - (radius - thickness) * sin(angleEnd),
@@ -419,12 +419,12 @@ void drawFollowerMenu()
 			{
 				if ( !mouseInCenterButton )
 				{
-					real_t x1 = followerMenuX + (xres / 2) * cos(angleEnd);
-					real_t y1 = followerMenuY - (yres / 2) * sin(angleEnd);
+					real_t x1 = followerMenuX + (radius + thickness + 45) * cos(angleEnd);
+					real_t y1 = followerMenuY - (radius + thickness + 45) * sin(angleEnd);
 					real_t x2 = followerMenuX + 5 * cos(angleMiddle);
 					real_t y2 = followerMenuY - 5 * sin(angleMiddle);
-					real_t x3 = followerMenuX + (xres / 2) * cos(angleStart);
-					real_t y3 = followerMenuY - (yres / 2) * sin(angleStart);
+					real_t x3 = followerMenuX + (radius + thickness + 45) * cos(angleStart);
+					real_t y3 = followerMenuY - (radius + thickness + 45) * sin(angleStart);
 					real_t a = ((y2 - y3)*(omousex - x3) + (x3 - x2)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
 					real_t b = ((y3 - y1)*(omousex - x3) + (x1 - x3)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
 					real_t c = 1 - a - b;
