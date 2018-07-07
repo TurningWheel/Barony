@@ -4327,8 +4327,16 @@ timeToGoAgain:
 					if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 					{
 						messagePlayer(0, "test2 NO PATH, ADD ATTACK STUFF HERE");
-						my->monsterAllyState = ALLY_STATE_DEFEND;
-						my->createPathBoundariesNPC();
+						if ( target && my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) )
+						{
+							my->monsterState = MONSTER_STATE_HUNT;
+							my->monsterAllyState = ALLY_STATE_MOVETO;
+						}
+						else
+						{
+							my->monsterAllyState = ALLY_STATE_DEFEND;
+							my->createPathBoundariesNPC();
+						}
 					}
 				}
 			}
@@ -7061,36 +7069,16 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 		case ALLY_CMD_MOVETO_CONFIRM:
 		{
-			int u, v;
-			bool foundplace = false;
-			for ( u = destX - 1; u <= destX + 1; u++ )
+			if ( monsterSetPathToLocation(destX, destY, 1) )
 			{
-				for ( v = destY - 1; v <= destY + 1; v++ )
-				{
-					if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
-					{
-						destX = u;
-						destY = v;
-						foundplace = true;
-						break;
-					}
-				}
-				if ( foundplace )
-				{
-					break;
-				}
+				monsterState = MONSTER_STATE_HUNT; // hunt state
+				monsterAllyState = ALLY_STATE_MOVETO;
+				serverUpdateEntitySkill(this, 0);
 			}
-			path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), destX, destY, this, nullptr);
-			if ( children.first != NULL )
+			else
 			{
-				list_RemoveNode(children.first);
+				messagePlayer(0, "no path to destination");
 			}
-			node_t* node = list_AddNodeFirst(&children);
-			node->element = path;
-			node->deconstructor = &listDeconstructor;
-			monsterState = MONSTER_STATE_HUNT; // hunt state
-			monsterAllyState = ALLY_STATE_MOVETO;
-			serverUpdateEntitySkill(this, 0);
 			break;
 		}
 		default:
@@ -7119,41 +7107,94 @@ bool Entity::monsterAllySetInteract()
 	}
 	// check distance to interactable.
 	double range = pow(y - target->y, 2) + pow(x - target->x, 2);
-	if ( range < 1024 ) // 32 squared
+	if ( range < 576 ) // 24 squared
 	{
 		followerInteractedEntity = target; // set followerInteractedEntity to the mechanism/item/gold etc.
-		followerInteractedEntity->monsterAllyInteractTarget = getUID(); // set the remote entity to this monster's uid to lookup later.
+		followerInteractedEntity->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
 	}
 	monsterAllyInteractTarget = 0;
-	if ( target->behavior != &actMonster && target->behavior != &actPlayer )
-	{
-	}
 	monsterAllyState = ALLY_STATE_DEFAULT;
+	/*if ( target->behavior != &actMonster && target->behavior != &actPlayer )
+	{
+	}*/
 	//monsterAllyState = ALLY_STATE_DEFEND;
 	//createPathBoundariesNPC();
 	return true;
 }
 
-bool Entity::monsterAllyCheckInteract()
+bool Entity::isInteractWithMonster()
 {
 	if ( followerInteractedEntity == nullptr )
 	{
-		return false;
+		return false; // entity is not set to interact with any monster.
 	}
-	if ( followerInteractedEntity->monsterAllyInteractTarget == 0 )
+	if ( followerInteractedEntity->interactedByMonster == 0 )
 	{
-		return false;
+		return false; // recent monster is not set to interact.
 	}
 	if ( followerInteractedEntity == this )
 	{
-		return true;
+		return true; // a monster is set to interact with myself.
 	}
 	return false;
 }
 
-void Entity::monsterAllyClearInteract()
+void Entity::clearMonsterInteract()
 {
 	followerInteractedEntity = nullptr;
-	monsterAllyInteractTarget = 0;
+	interactedByMonster = 0;
 }
 
+bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck)
+{
+	int u, v;
+	bool foundplace = false;
+	int pathToX = destX;
+	int pathToY = destY;
+
+	if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
+	{
+		foundplace = true; // we can path directly to the destination specified.
+	}
+
+	std::vector<std::pair<int, std::pair<int, int>>> possibleDestinations; // store distance and the x, y coordinates in each element.
+
+	if ( !foundplace )
+	{
+		for ( u = destX - adjacentTilesToCheck; u <= destX + adjacentTilesToCheck; u++ )
+		{
+			for ( v = destY - adjacentTilesToCheck; v <= destY + adjacentTilesToCheck; v++ )
+			{
+				if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
+				{
+					int distance = pow(x / 16 - u, 2) + pow(y / 16 - v, 2);
+					possibleDestinations.push_back(std::make_pair(distance, std::make_pair(u, v)));
+				}
+			}
+		}
+	}
+
+	if ( !possibleDestinations.empty() )
+	{
+		// sort by distance from monster, first result is shortest path.
+		std::sort(possibleDestinations.begin(), possibleDestinations.end());
+		pathToX = possibleDestinations.at(0).second.first;
+		pathToY = possibleDestinations.at(0).second.second;
+		foundplace = true;
+	}
+
+	path = generatePath(static_cast<int>(floor(x / 16)), static_cast<int>(floor(y / 16)), pathToX, pathToY, this, nullptr);
+	if ( children.first != NULL )
+	{
+		list_RemoveNode(children.first);
+	}
+	node_t* node = list_AddNodeFirst(&children);
+	node->element = path;
+	node->deconstructor = &listDeconstructor;
+
+	if ( path == nullptr || !foundplace )
+	{
+		return false;
+	}
+	return true;
+}

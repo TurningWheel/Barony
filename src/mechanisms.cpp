@@ -147,10 +147,10 @@ void actSwitch(Entity* my)
 				}
 			}
 		}
-		if ( my->monsterAllyCheckInteract() )
+		if ( my->isInteractWithMonster() )
 		{
 			my->toggleSwitch();
-			my->monsterAllyClearInteract();
+			my->clearMonsterInteract();
 		}
 
 		if (my->skill[0])

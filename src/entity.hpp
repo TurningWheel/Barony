@@ -192,7 +192,7 @@ public:
 	Sint32& monsterAllyInteractTarget; //skill[45]
 	Sint32& monsterAllyClass; //skill[46]
 	//--PUBLIC GENERAL ENTITY STUFF--
-	Sint32& interactedByEntity; //skill[47] for use with monsterAllyInteractTarget
+	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
@@ -715,8 +715,9 @@ public:
 	bool monsterHasLeader(); // return true if monsterstats->leader_uid is not 0.
 	void monsterAllySendCommand(int command, int destX, int destY, Uint32 uid = 0); // update the behavior of allied NPCs.
 	bool monsterAllySetInteract(); // set interact flags for allied NPCs.
-	bool monsterAllyCheckInteract(); // is a monster interacting with me? check interact flags for allied NPCs.
-	void monsterAllyClearInteract(); // tidy up flags after interaction.
+	bool isInteractWithMonster(); // is a monster interacting with me? check interact flags for allied NPCs.
+	void clearMonsterInteract(); // tidy up flags after interaction.
+	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
