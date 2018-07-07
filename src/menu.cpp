@@ -844,7 +844,8 @@ void handleMainMenu(bool mode)
 
 					if ( saveGameExists(true) || saveGameExists(false) )
 					{
-						openLoadGameWindow(NULL);
+						//openLoadGameWindow(NULL);
+						openNewLoadGameWindow(nullptr);
 					}
 					else
 					{
@@ -9536,6 +9537,63 @@ void openLoadGameWindow(button_t* my)
 		button->visible = 1;
 		button->focused = 1;
 	}
+}
+
+void openNewLoadGameWindow(button_t* my)
+{
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 420;
+	subx2 = xres / 2 + 420;
+	suby1 = yres / 2 - 300;
+	suby2 = yres / 2 + 300;
+	strcpy(subtext, "Custom Content");
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	// fetch local mods button
+	button = newButton();
+	strcpy(button->label, "local mods");
+	button->x = subx1 + 16;
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->action = &buttonGamemodsGetLocalMods;
+	button->visible = 1;
+	button->focused = 1;
+
+	// fetch my workshop items
+	button_t* button2 = newButton();
+	strcpy(button2->label, "new mod folder");
+	button2->x = button->x + button->sizex + 16;
+	button2->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button2->sizex = 25 * TTF12_WIDTH + 8;
+	button2->sizey = 32;
+	button2->action = &buttonGamemodsCreateNewModTemplate;
+	button2->visible = 1;
+	button2->focused = 1;
+
+	// start modded game
+	button = newButton();
+	strcpy(button->label, "start modded game");
+	button->sizex = 25 * TTF12_WIDTH + 8;
+	button->sizey = 32;
+	button->x = subx2 - (button->sizex + 16);
+	button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+	button->action = &buttonGamemodsStartModdedGame;
+	button->visible = 1;
+	button->focused = 1;
 }
 
 void buttonDeleteSavedSoloGame(button_t* my)
