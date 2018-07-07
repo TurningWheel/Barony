@@ -671,54 +671,57 @@ void actBoulderTrap(Entity* my)
 			BOULDERTRAP_FIRED = 1;
 			for ( c = 0; c < 4; c++ )
 			{
-				switch ( c )
+				if ( my->boulderTrapRocksToSpawn & (1 << c) )
 				{
-					case 0:
-						x = 16;
-						y = 0;
-						break;
-					case 1:
-						x = 0;
-						y = 16;
-						break;
-					case 2:
-						x = -16;
-						y = 0;
-						break;
-					case 3:
-						x = 0;
-						y = -16;
-						break;
-				}
-				x = ((int)(x + my->x)) >> 4;
-				y = ((int)(y + my->y)) >> 4;
-				if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
-				{
-					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+					switch ( c )
 					{
-						Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
-						entity->parent = my->getUID();
-						entity->x = (x << 4) + 8;
-						entity->y = (y << 4) + 8;
-						entity->z = -64;
-						entity->yaw = c * (PI / 2.f);
-						entity->sizex = 7;
-						entity->sizey = 7;
-						if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+						case 0:
+							x = 16;
+							y = 0;
+							break;
+						case 1:
+							x = 0;
+							y = 16;
+							break;
+						case 2:
+							x = -16;
+							y = 0;
+							break;
+						case 3:
+							x = 0;
+							y = -16;
+							break;
+					}
+					x = ((int)(x + my->x)) >> 4;
+					y = ((int)(y + my->y)) >> 4;
+					if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+					{
+						if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							entity->yaw += PI * (rand() % 2) - PI / 2;
-							if ( entity->yaw >= PI * 2 )
+							Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
+							entity->parent = my->getUID();
+							entity->x = (x << 4) + 8;
+							entity->y = (y << 4) + 8;
+							entity->z = -64;
+							entity->yaw = c * (PI / 2.f);
+							entity->sizex = 7;
+							entity->sizey = 7;
+							if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 							{
-								entity->yaw -= PI * 2;
+								entity->yaw += PI * (rand() % 2) - PI / 2;
+								if ( entity->yaw >= PI * 2 )
+								{
+									entity->yaw -= PI * 2;
+								}
+								else if ( entity->yaw < 0 )
+								{
+									entity->yaw += PI * 2;
+								}
 							}
-							else if ( entity->yaw < 0 )
-							{
-								entity->yaw += PI * 2;
-							}
+							entity->behavior = &actBoulder;
+							entity->flags[UPDATENEEDED] = true;
+							entity->flags[PASSABLE] = true;
 						}
-						entity->behavior = &actBoulder;
-						entity->flags[UPDATENEEDED] = true;
-						entity->flags[PASSABLE] = true;
 					}
 				}
 			}

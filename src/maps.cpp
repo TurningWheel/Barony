@@ -3716,6 +3716,7 @@ void assignActions(map_t* map)
 							{
 								childEntity->z = -10.99;
 							}
+							entity->boulderTrapRocksToSpawn |= (1 << c); // add this location to spawn a boulder below the trapdoor model.
 						}
 					}
 				}
