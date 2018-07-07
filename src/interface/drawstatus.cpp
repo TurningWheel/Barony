@@ -268,6 +268,7 @@ void drawFollowerMenu()
 	}
 	
 	bool disableOption = false;
+	bool keepWheelOpen = false;
 	if ( followerMenuEntity )
 	{
 		int skillLVL = 0;
@@ -297,18 +298,23 @@ void drawFollowerMenu()
 				}
 			}
 
+			keepWheelOpen = followerMenuOptionSelected == ALLY_CMD_CLASS_TOGGLE || followerMenuOptionSelected == ALLY_CMD_PICKUP_TOGGLE;
+
 			if ( followerMenuOptionSelected != -1 )
 			{
 				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
-				shootmode = true;
-				identifygui_active = false;
-				selectedIdentifySlot = -1;
-				closeRemoveCurseGUI();
-				if ( openedChest[clientnum] )
+				if ( !keepWheelOpen )
 				{
-					openedChest[clientnum]->closeChest();
+					shootmode = true;
+					identifygui_active = false;
+					selectedIdentifySlot = -1;
+					closeRemoveCurseGUI();
+					if ( openedChest[clientnum] )
+					{
+						openedChest[clientnum]->closeChest();
+					}
+					gui_mode = GUI_MODE_NONE;
 				}
-				gui_mode = GUI_MODE_NONE;
 
 				if ( !disableOption 
 					&& (followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT || followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT ) )
@@ -346,12 +352,17 @@ void drawFollowerMenu()
 							followerMenuEntity->monsterAllySendCommand(followerMenuOptionSelected, followerMoveToX, followerMoveToY, followerMenuEntity->monsterAllyInteractTarget);
 						}
 					}
-					followerMenuEntity = nullptr;
+
 					followerMenuOptionSelected = -1;
-					followerMenuX = -1;
-					followerMenuY = -1;
-					followerMoveToX = -1;
-					followerMoveToY = -1;
+
+					if ( !keepWheelOpen )
+					{
+						followerMenuEntity = nullptr;
+						followerMenuX = -1;
+						followerMenuY = -1;
+						followerMoveToX = -1;
+						followerMoveToY = -1;
+					}
 				}
 			}
 			else
@@ -581,7 +592,11 @@ void drawFollowerMenu()
 			}
 			ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3062], requirement.c_str());
 		}
-		followerMenuOptionSelected = highlight;
+
+		if ( !keepWheelOpen )
+		{
+			followerMenuOptionSelected = highlight; // don't reselect if we're keeping the wheel open by using a toggle option.
+		}
 	}
 }
 

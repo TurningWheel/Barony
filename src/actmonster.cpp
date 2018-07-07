@@ -4297,12 +4297,14 @@ timeToGoAgain:
 						{
 							if ( my->monsterAllyInteractTarget != 0 )
 							{
-								messagePlayer(0, "test4");
+								messagePlayer(0, "Interacting with a target!");
 								my->monsterAllySetInteract();
+								my->monsterAllyInteractTarget = 0;
+								my->monsterAllyState = ALLY_STATE_DEFAULT;
 							}
 							else
 							{
-								messagePlayer(0, "test3");
+								messagePlayer(0, "Sent a move to command, defending here!");
 								my->monsterAllyState = ALLY_STATE_DEFEND;
 								my->createPathBoundariesNPC();
 							}
@@ -4326,14 +4328,33 @@ timeToGoAgain:
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 					if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 					{
-						messagePlayer(0, "test2 NO PATH, ADD ATTACK STUFF HERE");
-						if ( target && my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) )
+						messagePlayer(0, "Couldn't reach, retrying.");
+						if ( target )
 						{
-							my->monsterState = MONSTER_STATE_HUNT;
-							my->monsterAllyState = ALLY_STATE_MOVETO;
+							if ( my->monsterAllySetInteract() )
+							{
+								// we found our interactable within distance.
+								messagePlayer(0, "Found my interactable.");
+								my->monsterAllyInteractTarget = 0;
+								my->monsterAllyState = ALLY_STATE_DEFAULT;
+							}
+							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) )
+							{
+								my->monsterState = MONSTER_STATE_HUNT;
+								my->monsterAllyState = ALLY_STATE_MOVETO;
+								messagePlayer(0, "Moving to my interactable!.");
+							}
+							else
+							{
+								// no path possible, give up.
+								messagePlayer(0, "I can't get to my target.");
+								my->monsterAllyInteractTarget = 0;
+								my->monsterAllyState = ALLY_STATE_DEFAULT;
+							}
 						}
 						else
 						{
+							messagePlayer(0, "Issued move command, defending here.");
 							my->monsterAllyState = ALLY_STATE_DEFEND;
 							my->createPathBoundariesNPC();
 						}
@@ -6966,14 +6987,15 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				Entity* target = uidToEntity(uid);
 				if ( target )
 				{
-					monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
-					if ( target->behavior != &actMonster )
+					if ( target->behavior == &actMonster || target->behavior == &actPlayer )
 					{
-						monsterAllyState = ALLY_STATE_MOVETO;
+						monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+						monsterAllyInteractTarget = 0;
 					}
 					else
 					{
-						target->monsterAllyInteractTarget = 0;
+						monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
+						monsterAllyState = ALLY_STATE_MOVETO;
 					}
 				}
 			}
@@ -7107,18 +7129,16 @@ bool Entity::monsterAllySetInteract()
 	}
 	// check distance to interactable.
 	double range = pow(y - target->y, 2) + pow(x - target->x, 2);
-	if ( range < 576 ) // 24 squared
+	if ( range < 256 ) // 16 squared
 	{
 		followerInteractedEntity = target; // set followerInteractedEntity to the mechanism/item/gold etc.
 		followerInteractedEntity->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
 	}
-	monsterAllyInteractTarget = 0;
-	monsterAllyState = ALLY_STATE_DEFAULT;
-	/*if ( target->behavior != &actMonster && target->behavior != &actPlayer )
+	else
 	{
-	}*/
-	//monsterAllyState = ALLY_STATE_DEFEND;
-	//createPathBoundariesNPC();
+		return false;
+	}
+
 	return true;
 }
 
@@ -7152,7 +7172,11 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 	int pathToX = destX;
 	int pathToY = destY;
 
-	if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
+	if ( static_cast<int>(x / 16) == destX && static_cast<int>(y / 16) == destY )
+	{
+		foundplace = true; // we're trying to move to the spot we're already at!
+	}
+	else if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
 	{
 		foundplace = true; // we can path directly to the destination specified.
 	}
@@ -7165,7 +7189,11 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 		{
 			for ( v = destY - adjacentTilesToCheck; v <= destY + adjacentTilesToCheck; v++ )
 			{
-				if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
+				if ( static_cast<int>(x / 16) == u && static_cast<int>(y / 16) == v )
+				{
+					// we're trying to move to the spot we're already at!
+				}
+				else if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, this, nullptr) )
 				{
 					int distance = pow(x / 16 - u, 2) + pow(y / 16 - v, 2);
 					possibleDestinations.push_back(std::make_pair(distance, std::make_pair(u, v)));
