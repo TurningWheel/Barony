@@ -42,6 +42,7 @@ list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
 Uint32 loadingsavegame = 0;
 bool achievementBrawlerMode = false;
+int savegameFileIndex = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -1123,7 +1124,7 @@ int saveGame()
 	node_t* node;
 	FILE* fp;
 	Sint32 c;
-	char savefile[32] = "";
+	char savefile[64] = "";
 
 	// open file
 	if ( !intro )
@@ -1133,11 +1134,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		setSaveGameFileName(true, savefile, false);
+		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
 	}
 	else
 	{
-		setSaveGameFileName(false, savefile, false);
+		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
 	}
 
 	if ( (fp = fopen(savefile, "wb")) == NULL )
@@ -1525,11 +1526,11 @@ int saveGame()
 
 	if ( multiplayer == SINGLE )
 	{
-		setSaveGameFileName(true, savefile, true);
+		strncpy(savefile, setSaveGameFileName(true, true).c_str(), 63);
 	}
 	else
 	{
-		setSaveGameFileName(false, savefile, true);
+		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
 	}
 
 	// now we save the follower information
@@ -1782,14 +1783,14 @@ int loadGame(int player)
 	FILE* fp;
 	int c;
 
-	char savefile[32] = "";
+	char savefile[64] = "";
 	if ( multiplayer == SINGLE )
 	{
-		setSaveGameFileName(true, savefile, false);
+		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
 	}
 	else
 	{
-		setSaveGameFileName(false, savefile, false);
+		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
 	}
 
 	// open file
@@ -2221,14 +2222,14 @@ list_t* loadGameFollowers()
 	FILE* fp;
 	int c;
 
-	char savefile[32] = "";
+	char savefile[64] = "";
 	if ( multiplayer == SINGLE )
 	{
-		setSaveGameFileName(true, savefile, true);
+		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
 	}
 	else
 	{
-		setSaveGameFileName(false, savefile, true);
+		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
 	}
 
 	// open file
@@ -2417,14 +2418,14 @@ list_t* loadGameFollowers()
 
 int deleteSaveGame(int gametype)
 {
-	char savefile[32] = "";
+	char savefile[64] = "";
 	if ( gametype == SINGLE )
 	{
-		setSaveGameFileName(true, savefile, false);
+		strncpy(savefile, setSaveGameFileName(true, false).c_str(), 63);
 	}
 	else
 	{
-		setSaveGameFileName(false, savefile, false);
+		strncpy(savefile, setSaveGameFileName(false, false).c_str(), 63);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2441,11 +2442,11 @@ int deleteSaveGame(int gametype)
 
 	if ( gametype == SINGLE )
 	{
-		setSaveGameFileName(true, savefile, true);
+		strncpy(savefile, setSaveGameFileName(true, true).c_str(), 63);
 	}
 	else
 	{
-		setSaveGameFileName(false, savefile, true);
+		strncpy(savefile, setSaveGameFileName(false, true).c_str(), 63);
 	}
 	if (access(savefile, F_OK) != -1)
 	{
@@ -2476,8 +2477,9 @@ int deleteSaveGame(int gametype)
 
 bool saveGameExists(bool singleplayer)
 {
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
+	char savefile[64] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+
 	if ( access(savefile, F_OK ) == -1 )
 	{
 		return false;
@@ -2527,8 +2529,9 @@ char* getSaveGameName(bool singleplayer)
 	int mul, plnum, dungeonlevel;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
+	char savefile[64] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2666,8 +2669,9 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer)
 {
 	FILE* fp;
 	Uint32 gameKey;
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
+	char savefile[64] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2713,8 +2717,9 @@ int getSaveGameType(bool singleplayer)
 {
 	FILE* fp;
 	int mul;
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
+	char savefile[64] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2761,8 +2766,9 @@ int getSaveGameClientnum(bool singleplayer)
 {
 	FILE* fp;
 	int clientnum;
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
+	char savefile[64] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2810,8 +2816,9 @@ Uint32 getSaveGameMapSeed(bool singleplayer)
 {
 	FILE* fp;
 	Uint32 seed;
-	char savefile[32] = "";
-	setSaveGameFileName(singleplayer, savefile, false);
+	char savefile[64] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false).c_str(), 63);
+
 	// open file
 	if ( (fp = fopen(savefile, "rb")) == NULL )
 	{
@@ -2997,30 +3004,42 @@ void updateGameplayStatisticsInMainLoop()
 	}
 }
 
-void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
+std::string setSaveGameFileName(bool singleplayer, bool followersFile)
 {
+	std::string filename = "savegame" + std::to_string(savegameFileIndex);
+
+	//OLD FORMAT
+	//#define SAVEGAMEFILE "savegame.dat"
+	//#define SAVEGAMEFILE2 "savegame2.dat" // saves follower data
+	//#define SAVEGAMEFILE_MULTIPLAYER "savegame_multiplayer.dat"
+	//#define SAVEGAMEFILE2_MULTIPLAYER "savegame2_multiplayer.dat" // saves follower data
+	//#define SAVEGAMEFILE_MODDED "savegame_modded.dat"
+	//#define SAVEGAMEFILE2_MODDED "savegame2_modded.dat"
+	//#define SAVEGAMEFILE_MODDED_MULTIPLAYER "savegame_modded_multiplayer.dat"
+	//#define SAVEGAMEFILE2_MODDED_MULTIPLAYER "savegame2_modded_multiplayer.dat"
+
 	if ( !followersFile )
 	{
 		if ( singleplayer )
 		{
 			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
-				strcpy(nameToSet, SAVEGAMEFILE);
+				filename.append(".dat");
 			}
 			else
 			{
-				strcpy(nameToSet, SAVEGAMEFILE_MODDED);
+				filename.append("_modded.dat");
 			}
 		}
 		else
 		{
 			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
-				strcpy(nameToSet, SAVEGAMEFILE_MULTIPLAYER);
+				filename.append("_mp.dat");
 			}
 			else
 			{
-				strcpy(nameToSet, SAVEGAMEFILE_MODDED_MULTIPLAYER);
+				filename.append("_mp_modded.dat");
 			}
 		}
 	}
@@ -3030,25 +3049,32 @@ void setSaveGameFileName(bool singleplayer, char* nameToSet, bool followersFile)
 		{
 			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
-				strcpy(nameToSet, SAVEGAMEFILE2);
+				filename.append("_npcs.dat");
 			}
 			else
 			{
-				strcpy(nameToSet, SAVEGAMEFILE2_MODDED);
+				filename.append("_npcs_modded.dat");
 			}
 		}
 		else
 		{
 			if ( gamemods_numCurrentModsLoaded == -1 )
 			{
-				strcpy(nameToSet, SAVEGAMEFILE2_MULTIPLAYER);
+				filename.append("_mp_npcs.dat");
 			}
 			else
 			{
-				strcpy(nameToSet, SAVEGAMEFILE2_MODDED_MULTIPLAYER);
+				filename.append("_mp_npcs_modded.dat");
 			}
 		}
 	}
+	return filename;
+}
+
+void checkGameSaveCount(bool singleplayer)
+{
+	std::string filename;
+	filename = setSaveGameFileName(singleplayer, false);
 }
 
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit)
