@@ -28,6 +28,8 @@
 #define BOULDER_DESTX my->skill[6]
 #define BOULDER_DESTY my->skill[7]
 #define BOULDER_PLAYERPUSHED my->skill[8]
+#define BOULDER_SPAWNBLOOD my->skill[9]
+#define BOULDER_BLOODTIME my->skill[10]
 
 /*-------------------------------------------------------------------------------
 
@@ -131,7 +133,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 				}
 				playSoundEntity(my, 181, 128);
 				playSoundEntity(entity, 28, 64);
-				spawnGib(entity);
+				Entity* gib = spawnGib(entity);
 				entity->modHP(-80);
 				entity->setObituary(language[1505]);
 				if ( entity->behavior == &actPlayer )
@@ -208,6 +210,28 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					}
 
 					return 1;
+				}
+				else
+				{
+					if ( gibtype[stats->type] > 0 )
+					{
+						if ( gibtype[stats->type] == 1 )
+						{
+							BOULDER_SPAWNBLOOD = 203; //Blood entity.
+						}
+						else if ( gibtype[stats->type] == 2 )
+						{
+							BOULDER_SPAWNBLOOD = 213; //Blood entity.
+						}
+						else if ( gibtype[stats->type] == 4 )
+						{
+							BOULDER_SPAWNBLOOD = 682; //Blood entity.
+						}
+						if ( BOULDER_SPAWNBLOOD > 0 )
+						{
+							BOULDER_BLOODTIME = TICKS_PER_SECOND * 3;
+						}
+					}
 				}
 			}
 		}
@@ -635,6 +659,47 @@ void actBoulder(Entity* my)
 			BOULDER_AMBIENCE = 0;
 			playSoundEntity(my, 151, 128);
 		}
+	}
+	if ( (!BOULDER_STOPPED || BOULDER_ROLLING) && (fabs(my->vel_x) > 0 || fabs(my->vel_y) > 0) )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			if ( BOULDER_SPAWNBLOOD != 0 && BOULDER_BLOODTIME > 0 )
+			{
+				int rate = 20;
+				if ( BOULDER_BLOODTIME > 2 * TICKS_PER_SECOND )
+				{
+					rate = 7;
+				}
+				else if ( BOULDER_BLOODTIME > 1 * TICKS_PER_SECOND )
+				{
+					rate = 15;
+				}
+				if ( spawn_blood && my->ticks % (rate + rand() % 5) == 0 )
+				{
+					Entity* blood = newEntity(BOULDER_SPAWNBLOOD, 1, map.entities, nullptr); //Gib entity.;
+					if ( blood != NULL )
+					{
+						blood->x = my->x - 4 + rand() % 9;
+						blood->y = my->y - 4 + rand() % 9;
+						blood->z = 8.0 + (rand() % 20) / 100.0;
+						blood->parent = my->getUID();
+						blood->sizex = 2;
+						blood->sizey = 2;
+						int randomScale = rand() % 10;
+						blood->scalex = (100 - randomScale) / 100.f;
+						blood->scaley = blood->scalex;
+						blood->yaw = (rand() % 360) * PI / 180.0;
+						blood->flags[UPDATENEEDED] = true;
+						blood->flags[PASSABLE] = true;
+					}
+				}
+			}
+		}
+	}
+	if ( BOULDER_BLOODTIME > 0 )
+	{
+		--BOULDER_BLOODTIME;
 	}
 }
 
