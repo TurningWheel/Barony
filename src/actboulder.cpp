@@ -662,8 +662,9 @@ void actBoulder(Entity* my)
 	}
 	if ( (!BOULDER_STOPPED || BOULDER_ROLLING) && (fabs(my->vel_x) > 0 || fabs(my->vel_y) > 0) )
 	{
-		if ( multiplayer != CLIENT )
+		if ( multiplayer != CLIENT && map.tiles[static_cast<int>(my->y / 16) * MAPLAYERS + static_cast<int>(my->x / 16) * MAPLAYERS * map.height] )
 		{
+			// spawn blood only if there's a floor!
 			if ( BOULDER_SPAWNBLOOD != 0 && BOULDER_BLOODTIME > 0 )
 			{
 				int rate = 20;
