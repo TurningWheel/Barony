@@ -20,6 +20,7 @@
 #include "magic/magic.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "sys/stat.h"
 
 // definitions
 list_t topscores;

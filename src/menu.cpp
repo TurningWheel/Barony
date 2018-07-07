@@ -4970,7 +4970,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 
-			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<std::string>(entry).c_str());
+			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<2>(entry).c_str());
 
 			filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
 			int text_x = filename_padx;
