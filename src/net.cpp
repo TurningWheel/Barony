@@ -210,7 +210,7 @@ void messagePlayer(int player, char* message, ...)
 
 void messagePlayerColor(int player, Uint32 color, char* message, ...)
 {
-	char str[256] = { 0 };
+	char str[ADD_MESSAGE_BUFFER_LENGTH] = { 0 };
 	va_list argptr;
 
 	if ( message == NULL )
@@ -236,6 +236,8 @@ void messagePlayerColor(int player, Uint32 color, char* message, ...)
 
 	if ( player == clientnum )
 	{
+		printlog("%s\n", str);
+		strncpy(str, messageSanitizePercentSign(str, nullptr).c_str(), ADD_MESSAGE_BUFFER_LENGTH - 1);
 		newString(&messages, color, str);
 		while ( list_Size(&messages) > MESSAGE_LIST_SIZE_CAP )
 		{
@@ -245,7 +247,6 @@ void messagePlayerColor(int player, Uint32 color, char* message, ...)
 		{
 			addMessage(color, str);
 		}
-		printlog("%s\n", str);
 	}
 	else if ( multiplayer == SERVER )
 	{

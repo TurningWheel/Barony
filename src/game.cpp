@@ -3023,6 +3023,9 @@ int main(int argc, char** argv)
 						{
 							keystatus[SDL_SCANCODE_RETURN] = 0;
 							command = false;
+
+							strncpy(command_str, messageSanitizePercentSign(command_str, nullptr).c_str(), 127);
+
 							if ( multiplayer != CLIENT )
 							{
 								if ( command_str[0] == '/' )

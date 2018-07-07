@@ -106,6 +106,11 @@ void addMessage(Uint32 color, char* content, ...)
 			va_start(argptr, content);
 			i = vsnprintf(str, 1023, content, argptr);
 			va_end(argptr);
+
+			int additionalCharacters = 0;
+			strncpy(str, messageSanitizePercentSign(str, &additionalCharacters).c_str(), ADD_MESSAGE_BUFFER_LENGTH - 1);
+			i += additionalCharacters;
+
 			new_message->text->data = (char*) malloc(sizeof(char) * (i + 1));
 			if (new_message->text->data == NULL)
 			{
@@ -232,4 +237,24 @@ void deleteAllNotificationMessages()
 {
 	std::for_each(notification_messages.begin(), notification_messages.end(), messageDeconstructor);
 	notification_messages.clear();
+}
+
+std::string messageSanitizePercentSign(std::string src, int* percentSignsFound)
+{
+	// sanitize input string for print commands.
+	std::string commandString = src;
+	std::size_t found = commandString.find('%');
+	if ( !commandString.empty() )
+	{
+		while ( found != std::string::npos )
+		{
+			commandString.insert(found, "%");
+			found = commandString.find('%', found + 2);
+			if ( percentSignsFound )
+			{
+				++(*percentSignsFound);
+			}
+		}
+	}
+	return commandString;
 }
