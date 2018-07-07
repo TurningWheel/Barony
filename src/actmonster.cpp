@@ -5764,7 +5764,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 				if ( hit.entity->behavior == &actMonster && !hasrangedweapon )
 				{
 					// alert the monster!
-					if ( hit.entity->skill[0] != 1 )
+					if ( hit.entity->skill[0] != MONSTER_STATE_ATTACK )
 					{
 						//hit.entity->skill[0]=0;
 						//hit.entity->skill[4]=0;

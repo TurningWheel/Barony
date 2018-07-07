@@ -9264,7 +9264,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 			{
 				if ( hasRangedWeapon() )
 				{
-					monsterHitTime = 2 * HITRATE;
+					monsterHitTime = 2 * HITRATE - 2;
 				}
 				else if ( svFlags & SV_FLAG_HARDCORE )
 				{
@@ -9291,6 +9291,18 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	monsterTarget = target.getUID();
 	monsterTargetX = target.x;
 	monsterTargetY = target.y;
+
+	if ( monsterState != MONSTER_STATE_ATTACK && state == MONSTER_STATE_PATH )
+	{
+		if ( myStats->type != LICH_FIRE && myStats->type != LICH_ICE && myStats->type != LICH && myStats->type != DEVIL )
+		{
+			real_t distance = pow(x - target.x, 2) + pow(y - target.y, 2);
+			if ( distance < STRIKERANGE * STRIKERANGE )
+			{
+				monsterState = MONSTER_STATE_ATTACK;
+			}
+		}
+	}
 
 	if ( !hadOldTarget && myStats->type == SHADOW )
 	{
