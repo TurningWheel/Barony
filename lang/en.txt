@@ -3638,8 +3638,8 @@ anyone seeking that power again, deep underground. #
 2964 Are you sure you want to delete your multiplayer save file?
 
 #
-2965 WARNING: CONTINUING WILL OVERWRITE YOUR EXISTING SINGLEPLAYER SAVEFILE!#
-2966 WARNING: CONTINUING WILL OVERWRITE YOUR EXISTING MULTIPLAYER SAVEFILE!#
+2965 WARNING: CONTINUING WILL OVERWRITE YOUR OLDEST SINGLEPLAYER SAVEFILE!#
+2966 WARNING: CONTINUING WILL OVERWRITE YOUR OLDEST MULTIPLAYER SAVEFILE!#
 2967 light flicker#
 2968 press %s to drop gold#
 2969 The gods of Sokoban greatly reward your abilities!#
@@ -3764,4 +3764,31 @@ Items:#
 3062 You do not meet the Leadership and Charisma requirements
 for this option. (Required: %s)#
 3063 Cancel#
+3064 delete save file#
+3065 Start a new game, or continue from a save file:#
+3066 scroll with arrow keys or mouse wheel#
+3067 %2d / %2d singleplayer slots used#
+3068 %2d / %2d  multiplayer slots used#
+3069 %s I'll stand ground here, %s.#
+3070 %s Make a path ahead, %s!#
+3071 %s I'll sit tight.#
+3072 %s This would suit you well, %s!#
+3073 %s I'll try find something better.#
+3074 %s Move End 1#
+3075 %s Move End 2#
+3076 %s Move End 3#
+3077 %s I cant reach that.#
+3078 %s There's something in the way.#
+3079 %s Advancing to point!#
+3080 %s Cover my retreat, %s!#
+3081 %s These may be due for repairs.#
+3082 %s Nothing's irreplacable here!#
+3083 %s You can really feel the breeze down here.#
+3084 %s I can't betray my allies like that.#
+3085 %s You have to keep what few friends you have down here.#
+3086 %s Hmm.#
+3087 %s Mm.#
+3088 %s #
+3089 %s #
+3090 %s #
 3099 end#

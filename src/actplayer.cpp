@@ -1412,7 +1412,7 @@ void actPlayer(Entity* my)
 								followerMoveTo = false;
 								followerMoveToX = static_cast<int>(startx) / 16;
 								followerMoveToY = static_cast<int>(starty) / 16;
-								messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
+								//messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
 							}
 						}
 						else if ( followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT )

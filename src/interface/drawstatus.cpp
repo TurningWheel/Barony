@@ -302,6 +302,14 @@ void drawFollowerMenu()
 
 			if ( followerMenuOptionSelected != -1 )
 			{
+				if ( followerMenuOptionSelected != ALLY_CMD_ATTACK_CONFIRM && followerMenuOptionSelected != ALLY_CMD_MOVETO_CONFIRM )
+				{
+					playSound(139, 16); // click
+				}
+				else
+				{
+					playSound(399, 16); // ping
+				}
 				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
 				if ( !keepWheelOpen )
 				{

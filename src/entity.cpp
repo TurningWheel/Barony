@@ -4110,6 +4110,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						degradeWeapon = false; //certain monster's weapons don't degrade.
 					}
+
 					if ( rand() % 3 == 0 && degradeWeapon )
 					{
 						if ( player == clientnum )
@@ -10434,7 +10435,7 @@ void Entity::createPathBoundariesNPC()
 				}
 			}
 		}
-		messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
+		//messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
 	}
 }
 

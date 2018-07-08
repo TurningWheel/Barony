@@ -4030,7 +4030,7 @@ void serverHandlePacket()
 		int player = net_packet->data[4];
 		int allyCmd = net_packet->data[5];
 		Uint32 uid = SDLNet_Read32(&net_packet->data[8]);
-		messagePlayer(0, " received %d, %d, %d, %d, %d", player, allyCmd, net_packet->data[6], net_packet->data[7], uid);
+		//messagePlayer(0, " received %d, %d, %d, %d, %d", player, allyCmd, net_packet->data[6], net_packet->data[7], uid);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
@@ -4038,7 +4038,7 @@ void serverHandlePacket()
 			{
 				Uint32 interactUid = SDLNet_Read32(&net_packet->data[12]);
 				entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7], interactUid);
-				messagePlayer(0, "received UID of target: %d, applying...", uid);
+				//messagePlayer(0, "received UID of target: %d, applying...", uid);
 				entity->monsterAllyInteractTarget = interactUid;
 			}
 			else
