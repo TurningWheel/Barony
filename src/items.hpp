@@ -315,6 +315,7 @@ public:
 	Sint32 x, y;       // slot coordinates in item grid
 	Uint32 ownerUid;   // original owner
 	Uint32 interactNPCUid; // if NPC is interacting with item
+	bool forcedPickupByPlayer; // player used interact on NPC with item on floor
 
 	// weight, category and other generic info reported by function calls
 

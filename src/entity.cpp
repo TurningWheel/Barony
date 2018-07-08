@@ -9412,7 +9412,7 @@ bool Entity::canWieldItem(const Item& item) const
 	}
 }
 
-void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems)
+void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem)
 {
 	//TODO: Any networking/multiplayer needs?
 	if ( !myStats )
@@ -9427,17 +9427,35 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 
 	list_t* items = nullptr;
 	//X and Y in terms of tiles.
-	int tx = x / 16;
-	int ty = y / 16;
-	getItemsOnTile(tx, ty, &items); //Check the tile the monster is on for items.
-	getItemsOnTile(tx - 1, ty, &items); //Check tile to the left.
-	getItemsOnTile(tx + 1, ty, &items); //Check tile to the right.
-	getItemsOnTile(tx, ty - 1, &items); //Check tile up.
-	getItemsOnTile(tx, ty + 1, &items); //Check tile down.
-	getItemsOnTile(tx - 1, ty - 1, &items); //Check tile diagonal up left.
-	getItemsOnTile(tx + 1, ty - 1, &items); //Check tile diagonal up right.
-	getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
-	getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
+	if ( forcePickupItem != nullptr && forcePickupItem->behavior == &actItem )
+	{
+		//If this is the first item found, the list needs to be created.
+		if ( !(items) )
+		{
+			items = (list_t*)malloc(sizeof(list_t));
+			(items)->first = NULL;
+			(items)->last = NULL;
+		}
+
+		//Add the current entity to it.
+		node_t* node2 = list_AddNodeLast(items);
+		node2->element = forcePickupItem;
+		node2->deconstructor = &emptyDeconstructor;
+	}
+	else
+	{
+		int tx = x / 16;
+		int ty = y / 16;
+		getItemsOnTile(tx, ty, &items); //Check the tile the monster is on for items.
+		getItemsOnTile(tx - 1, ty, &items); //Check tile to the left.
+		getItemsOnTile(tx + 1, ty, &items); //Check tile to the right.
+		getItemsOnTile(tx, ty - 1, &items); //Check tile up.
+		getItemsOnTile(tx, ty + 1, &items); //Check tile down.
+		getItemsOnTile(tx - 1, ty - 1, &items); //Check tile diagonal up left.
+		getItemsOnTile(tx + 1, ty - 1, &items); //Check tile diagonal up right.
+		getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
+		getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
+	}
 	node_t* node = nullptr;
 
 	if ( items )
@@ -9468,6 +9486,10 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				if ( entity != nullptr )
 				{
 					item = newItemFromEntity(entity);
+					if ( forcePickupItem )
+					{
+						item->forcedPickupByPlayer = true;
+					}
 				}
 				if ( !item )
 				{
@@ -9531,7 +9553,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 							}
 						}
 					}
-					if ( (playerOwned >= 0 
+					if ( item->interactNPCUid == getUID() )
+					{
+						// item being interacted with, can interact with item.
+					}
+					else if ( (playerOwned >= 0 
 						&& (entity->ticks < 5 * TICKS_PER_SECOND 
 							|| (monsterAllyPickupItems != ALLY_PICKUP_ALL && monsterAllyIndex >= 0)) 
 							) 
@@ -9644,17 +9670,29 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 	{
 		return false;
 	}
-	/*if ( itemToEquip.interactNPCUid == getUID() )
-	{
-		return true;
-	}*/
 
 	if ( myStats->weapon == nullptr )
 	{
 		return true; //Something is better than nothing.
 	}
-	//Monster is already holding a weapon.
 
+	if ( myStats->weapon->beatitude < 0 )
+	{
+		//If monster already holding an item, can't swap it out if it's cursed.
+		return false;
+	}
+
+	if ( itemToEquip.interactNPCUid == getUID() )
+	{
+		return true;
+	}
+
+	if ( myStats->weapon->forcedPickupByPlayer == true )
+	{
+		return false;
+	}
+
+	//Monster is already holding a weapon.
 	if ( monsterAllyIndex >= 0 )
 	{
 		if ( monsterAllyClass == ALLY_CLASS_RANGED && isRangedWeapon(itemToEquip)
@@ -9674,12 +9712,6 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 	if ( !Item::isThisABetterWeapon(itemToEquip, myStats->weapon) )
 	{
 		return false; //Don't want junk.
-	}
-
-	if ( myStats->weapon->beatitude < 0 )
-	{
-		//If monster already holding an item, can't swap it out if it's cursed.
-		return false;
 	}
 
 	if ( itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == THROWN || itemCategory(myStats->weapon) == GEM )
@@ -9713,7 +9745,7 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			}
 			break;
 		case HUMAN:
-			if ( !humanCanWieldItem(item) /*&& item.interactNPCUid != getUID()*/ )
+			if ( !humanCanWieldItem(item) )
 			{
 				return false;
 			}
@@ -9752,7 +9784,7 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON )
 				{
 					//Weapon ain't better than weapon already holding. Don't want it.
-					if ( myStats->type == AUTOMATON || item.interactNPCUid == getUID() ) // Automatons are hoarders.
+					if ( myStats->type == AUTOMATON ) // Automatons are hoarders.
 					{
 						return true;
 					}
@@ -9792,13 +9824,13 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			{
 				return true; //Store in inventory.
 			}
-		/*case MAGICSTAFF:
+		case MAGICSTAFF:
 			if ( item.interactNPCUid == getUID() )
 			{
 				shouldEquip = &myStats->weapon;
 			}
 			return true;
-			break;*/
+			break;
 		default:
 			return true; //Already checked if monster likes this specific item in the racial calls.
 	}

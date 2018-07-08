@@ -1220,6 +1220,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		entity->skill[15] = item->identified;
 		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
+
 		if ( monsterStats && (monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS) )
 		{
 			// check if item was stolen.
@@ -2319,7 +2320,7 @@ Item* newItemFromEntity(Entity* entity)
 	}
 	Item* item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
-	item->interactNPCUid = static_cast<Uint32>(entity->monsterAllyInteractTarget);
+	item->interactNPCUid = static_cast<Uint32>(entity->interactedByMonster);
 	return item;
 }
 
@@ -3432,6 +3433,19 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 	{
 		//Some thing is better than no thing!
 		return true;
+	}
+
+	if ( followerInteractedEntity )
+	{
+		if ( newArmor.interactNPCUid == followerInteractedEntity->interactedByMonster )
+		{
+			return true;
+		}
+	}
+
+	if ( armorAlreadyHave->forcedPickupByPlayer == true )
+	{
+		return false;
 	}
 
 	//If the new weapon defends better than the current armor, it's better. Even if it's cursed, eh?
