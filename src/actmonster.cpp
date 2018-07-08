@@ -4234,10 +4234,14 @@ timeToGoAgain:
 									my->monsterState = MONSTER_STATE_PATH; // remake path
 									if ( myStats->type != LICH_FIRE && myStats->type != LICH_ICE )
 									{
-										if ( hit.entity->behavior == &actGate 
+										if ( hit.entity->behavior == &actGate || hit.entity->behavior == &actBoulder
 											 )
 										{
 											++my->monsterPathCount;
+											if ( hit.entity->behavior == &actBoulder )
+											{
+												my->monsterPathCount += 5;
+											}
 											if ( my->monsterPathCount > 100 )
 											{
 												my->monsterPathCount = 0;
