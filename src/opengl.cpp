@@ -12,6 +12,7 @@
 #include "main.hpp"
 #include "draw.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 
 #ifdef WINDOWS
 PFNGLGENBUFFERSPROC SDL_glGenBuffers;
@@ -526,6 +527,162 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glVertex3f(0, -sprite->h / 2, -sprite->w / 2);
 	glTexCoord2f(1, 0);
 	glVertex3f(0, sprite->h / 2, -sprite->w / 2);
+	glEnd();
+	glDepthRange(0, 1);
+	glPopMatrix();
+}
+
+void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int mode)
+{
+	//int x, y;
+	real_t s = 1;
+	SDL_Surface* image = sprites[0];
+	GLuint textureId = texid[sprites[0]->refcount];
+	char textToRetrieve[128];
+
+	if ( text.compare("") == 0 )
+	{
+		return;
+	}
+
+	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 16));
+	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 16)] = '\0';
+	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
+	{
+		textureId = texid[image->refcount];
+	}
+	else
+	{
+		// create the text outline surface
+		TTF_SetFontOutline(ttf12, 2);
+		SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
+		image = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorBlack);
+
+		// create the text surface
+		TTF_SetFontOutline(ttf12, 0);
+		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
+		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(ttf12, textToRetrieve, sdlColorWhite);
+
+		// combine the surfaces
+		SDL_Rect pos;
+		pos.x = 2;
+		pos.y = 2;
+		pos.h = 0;
+		pos.w = 0;
+
+		SDL_BlitSurface(textSurf, NULL, image, &pos);
+		// load the text outline surface as a GL texture
+		allsurfaces[imgref] = image;
+		allsurfaces[imgref]->refcount = imgref;
+		glLoadTexture(allsurfaces[imgref], imgref);
+		imgref++;
+		// store the surface in the text surface cache
+		if ( !ttfTextHashStore(ttfTextHash, textToRetrieve, ttf12, true, image) )
+		{
+			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
+		}
+	}
+	// setup projection
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
+	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	glEnable(GL_DEPTH_TEST);
+	if ( !entity->flags[OVERDRAW] )
+	{
+		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
+		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
+		GLfloat rotz = 0; // get z rotation
+		glRotatef(rotx, 1, 0, 0); // rotate pitch
+		glRotatef(roty, 0, 1, 0); // rotate yaw
+		glRotatef(rotz, 0, 0, 1); // rotate roll
+		glTranslatef(-camera->x * 32, camera->z, -camera->y * 32); // translates the scene based on camera position
+	}
+	else
+	{
+		glRotatef(90, 0, 1, 0);
+	}
+
+
+	// setup model matrix
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glPushMatrix();
+	if ( mode == REALCOLORS )
+	{
+		glEnable(GL_BLEND);
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
+
+	// assign texture
+	if ( mode == REALCOLORS )
+	{
+		glBindTexture(GL_TEXTURE_2D, textureId);
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	// translate sprite and rotate towards camera
+	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
+	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
+	if ( !entity->flags[OVERDRAW] )
+	{
+		real_t tangent = 180 - camera->ang * (180 / PI);
+		glRotatef(tangent, 0, 1, 0);
+	}
+	else
+	{
+		real_t tangent = 180;
+		glRotatef(tangent, 0, 1, 0);
+	}
+	glScalef(entity->scalex, entity->scalez, entity->scaley);
+
+	if ( entity->flags[OVERDRAW] )
+	{
+		glDepthRange(0, 0.1);
+	}
+
+	// get shade factor
+	if ( mode == REALCOLORS )
+	{
+		if ( !entity->flags[BRIGHT] )
+		{
+			if ( !entity->flags[OVERDRAW] )
+			{
+				s = getLightForEntity(entity->x / 16, entity->y / 16);
+			}
+			else
+			{
+				s = getLightForEntity(camera->x, camera->y);
+			}
+			glColor4f(s, s, s, 1);
+		}
+		else
+		{
+			glColor4f(1.f, 1.f, 1.f, 1);
+		}
+	}
+	else
+	{
+		Uint32 uid = entity->getUID();
+		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
+	}
+
+	// draw quad
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0);
+	glVertex3f(0, image->h / 2, image->w / 2);
+	glTexCoord2f(0, 1);
+	glVertex3f(0, -image->h / 2, image->w / 2);
+	glTexCoord2f(1, 1);
+	glVertex3f(0, -image->h / 2, -image->w / 2);
+	glTexCoord2f(1, 0);
+	glVertex3f(0, image->h / 2, -image->w / 2);
 	glEnd();
 	glDepthRange(0, 1);
 	glPopMatrix();

@@ -61,6 +61,22 @@ void actSprite(Entity* my)
 	}
 }
 
+void actSpriteNametag(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	if ( parent )
+	{
+		my->flags[INVISIBLE] = false;
+		my->x = parent->x;
+		my->y = parent->y;
+	}
+	else
+	{
+		my->flags[INVISIBLE] = true;
+		list_RemoveNode(my->mynode);
+	}
+}
+
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 {
 	int c;

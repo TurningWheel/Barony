@@ -168,6 +168,7 @@ Entity* spawnFlame(Entity* parentent, Sint32 sprite);
 void actMagic(Entity* my);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
+void actSpriteNametag(Entity* my);
 void actSleepZ(Entity* my);
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
