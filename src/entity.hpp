@@ -722,6 +722,7 @@ public:
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
+	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

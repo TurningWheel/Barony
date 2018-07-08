@@ -4301,14 +4301,28 @@ timeToGoAgain:
 						{
 							if ( my->monsterAllyInteractTarget != 0 )
 							{
-								messagePlayer(0, "Interacting with a target!");
-								my->monsterAllySetInteract();
+								//messagePlayer(0, "Interacting with a target!");
+								if ( my->monsterAllySetInteract() )
+								{
+									if ( followerInteractedEntity && followerInteractedEntity->behavior == &actItem )
+									{
+										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+									}
+									else
+									{
+										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
+									}
+								}
 								my->monsterAllyInteractTarget = 0;
 								my->monsterAllyState = ALLY_STATE_DEFAULT;
 							}
 							else
 							{
-								messagePlayer(0, "Sent a move to command, defending here!");
+								//messagePlayer(0, "Sent a move to command, defending here!");
+								if ( rand() % 5 == 0 )
+								{
+									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_END);
+								}
 								my->monsterAllyState = ALLY_STATE_DEFEND;
 								my->createPathBoundariesNPC();
 							}
@@ -4338,7 +4352,15 @@ timeToGoAgain:
 							if ( my->monsterAllySetInteract() )
 							{
 								// we found our interactable within distance.
-								messagePlayer(0, "Found my interactable.");
+								//messagePlayer(0, "Found my interactable.");
+								if ( followerInteractedEntity && followerInteractedEntity->behavior == &actItem )
+								{
+									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+								}
+								else
+								{
+									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
+								}
 								my->monsterAllyInteractTarget = 0;
 								my->monsterAllyState = ALLY_STATE_DEFAULT;
 							}
@@ -4346,19 +4368,28 @@ timeToGoAgain:
 							{
 								my->monsterState = MONSTER_STATE_HUNT;
 								my->monsterAllyState = ALLY_STATE_MOVETO;
-								messagePlayer(0, "Moving to my interactable!.");
+								//messagePlayer(0, "Moving to my interactable!.");
+								if ( rand() % 10 == 0 )
+								{
+									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_REPATH);
+								}
 							}
 							else
 							{
 								// no path possible, give up.
-								messagePlayer(0, "I can't get to my target.");
+								//messagePlayer(0, "I can't get to my target.");
+								my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_FAIL);
 								my->monsterAllyInteractTarget = 0;
 								my->monsterAllyState = ALLY_STATE_DEFAULT;
 							}
 						}
 						else
 						{
-							messagePlayer(0, "Issued move command, defending here.");
+							//messagePlayer(0, "Issued move command, defending here.");
+							if ( rand() % 5 == 0 )
+							{
+								my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_END);
+							}
 							my->monsterAllyState = ALLY_STATE_DEFEND;
 							my->createPathBoundariesNPC();
 						}
@@ -6983,6 +7014,12 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		return;
 	}
 
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
 	switch ( command )
 	{
 		case ALLY_CMD_ATTACK_CONFIRM:
@@ -7004,15 +7041,18 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 									if ( !checkFriend(target) )
 									{
 										monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+										handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK);
 									}
 									else
 									{
-										messagePlayer(0, "Friendly fire is on!");
+										// messagePlayer(0, "Friendly fire is on!");
+										handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK_FRIENDLY_FIRE);
 									}
 								}
 								else
 								{
 									monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+									handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK);
 								}
 							}
 						}
@@ -7022,17 +7062,20 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
 						monsterAllyState = ALLY_STATE_MOVETO;
+						handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_BEGIN);
 					}
 				}
 			}
 			break;
 		case ALLY_CMD_MOVEASIDE:
 			monsterMoveAside(this, players[monsterAllyIndex]->entity);
+			handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVEASIDE);
 			break;
 		case ALLY_CMD_DEFEND:
 			monsterAllyState = ALLY_STATE_DEFEND;
 			createPathBoundariesNPC();
 			// stop in your tracks!
+			handleNPCInteractDialogue(*myStats, ALLY_EVENT_WAIT);
 			monsterState = MONSTER_STATE_WAIT; // wait state
 			serverUpdateEntitySkill(this, 0);
 			break;
@@ -7040,6 +7083,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 		case ALLY_CMD_FOLLOW:
 			monsterAllyState = ALLY_STATE_DEFAULT;
+			handleNPCInteractDialogue(*myStats, ALLY_EVENT_FOLLOW);
 			break;
 		case ALLY_CMD_CLASS_TOGGLE:
 			++monsterAllyClass;
@@ -7060,8 +7104,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		case ALLY_CMD_DROP_EQUIP:
 			if ( stats[monsterAllyIndex] )
 			{
-				Stat* myStats = getStats();
-				if ( myStats && stats[monsterAllyIndex] )
+				if ( stats[monsterAllyIndex] )
 				{
 					Entity* dropped;
 					Uint32 owner = players[monsterAllyIndex]->entity->getUID();
@@ -7105,6 +7148,18 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 							{
 								dropped->itemOriginalOwner = owner;
 							}
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_ALL);
+						}
+						else
+						{
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_EQUIP);
+						}
+					}
+					else
+					{
+						if ( myStats->weapon )
+						{
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
 						}
 					}
 					dropped = dropItemMonster(myStats->weapon, this, myStats);
@@ -7125,7 +7180,8 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			else
 			{
-				messagePlayer(0, "no path to destination");
+				//messagePlayer(0, "no path to destination");
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_FAIL);
 			}
 			break;
 		}
@@ -7133,7 +7189,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 	}
 	serverUpdateEntitySkill(this, 43);
-	messagePlayer(0, "received: %d", command);
+	//messagePlayer(0, "received: %d", command);
 }
 
 bool Entity::monsterAllySetInteract()
@@ -7251,4 +7307,108 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 		return false;
 	}
 	return true;
+}
+
+void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( !isMobile() )
+	{
+		return;
+	}
+	if ( monsterAllyIndex < 0 || monsterAllyIndex >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( !stats[monsterAllyIndex] )
+	{
+		return;
+	}
+
+	char namesays[32];
+	if ( !strcmp(myStats.name, "") )
+	{
+		if ( myStats.type < KOBOLD ) //Original monster count
+		{
+			snprintf(namesays, 31, language[513], language[90 + myStats.type]); // The %s says
+		}
+		else if ( myStats.type >= KOBOLD ) //New monsters
+		{
+			snprintf(namesays, 31, language[513], language[2000 + myStats.type - KOBOLD]); // The %s says
+		}
+	}
+	else
+	{
+		snprintf(namesays, 31, language[1302], myStats.name); // %s says
+	}
+
+	std::string message;
+
+	if ( myStats.type == HUMAN )
+	{
+		switch ( event )
+		{
+			case ALLY_EVENT_MOVEASIDE:
+				message = language[535];
+				break;
+			case ALLY_EVENT_MOVETO_BEGIN:
+				if ( rand() % 3 == 0 && monsterAllyInteractTarget == 0 )
+				{
+					message = language[3079 + rand() % 2];
+				}
+				break;
+			case ALLY_EVENT_MOVETO_END:
+				message = language[3074 + rand() % 3];
+				break;
+			case ALLY_EVENT_MOVETO_FAIL:
+				message = language[3077 + rand() % 2];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM:
+				break;
+			case ALLY_EVENT_INTERACT_OTHER:
+				break;
+			case ALLY_EVENT_ATTACK:
+			case ALLY_EVENT_SPOT_ENEMY:
+				message = language[516 + rand() % 3];
+				break;
+			case ALLY_EVENT_ATTACK_FRIENDLY_FIRE:
+				message = language[3084 + rand() % 2];
+				break;
+			case ALLY_EVENT_DROP_WEAPON:
+			case ALLY_EVENT_DROP_EQUIP:
+			case ALLY_EVENT_DROP_ALL:
+				if ( rand() % 2 )
+				{
+					if ( rand() % 2 && event == ALLY_EVENT_DROP_ALL )
+					{
+						message = language[3083];
+					}
+					else
+					{
+						message = language[3072 + rand() % 2];
+					}
+				}
+				else
+				{
+					message = language[3081 + rand() % 2];
+				}
+				break;
+			case ALLY_EVENT_WAIT:
+				message = language[3069 + rand() % 3];
+				break;
+			case ALLY_EVENT_FOLLOW:
+				message = language[526 + rand() % 3];
+				break;
+			case ALLY_EVENT_MOVETO_REPATH:
+				message = language[3086 + rand() % 2];
+			default:
+				break;
+		}
+	}
+	char fullmsg[256] = "";
+	strcpy(fullmsg, message.c_str());
+	messagePlayer(monsterAllyIndex, fullmsg, namesays, stats[monsterAllyIndex]->name);
 }
