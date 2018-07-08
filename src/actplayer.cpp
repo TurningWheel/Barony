@@ -263,6 +263,28 @@ void actPlayer(Entity* my)
 		PLAYER_INIT = 1;
 		my->flags[BURNABLE] = true;
 
+		Entity* nametag = newEntity(-1, 1, map.entities, nullptr);
+		nametag->x = my->x;
+		nametag->y = my->y;
+		nametag->z = my->z - 6;
+		nametag->sizex = 1;
+		nametag->sizey = 1;
+		nametag->flags[NOUPDATE] = true;
+		nametag->flags[PASSABLE] = true;
+		nametag->flags[SPRITE] = true;
+		nametag->flags[BRIGHT] = true;
+		nametag->flags[UNCLICKABLE] = true;
+		nametag->behavior = &actSpriteNametag;
+		nametag->parent = my->getUID();
+		nametag->scalex = 0.2;
+		nametag->scaley = 0.2;
+		nametag->scalez = 0.2;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		nametag->setUID(-3);
+
 		// hud weapon
 		if ( PLAYER_NUM == clientnum )
 		{
