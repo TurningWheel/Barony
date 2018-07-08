@@ -9293,14 +9293,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	monsterTargetX = target.x;
 	monsterTargetY = target.y;
 
-	if ( monsterState != MONSTER_STATE_ATTACK && state == MONSTER_STATE_PATH )
+	if ( target.getStats() != nullptr )
 	{
-		if ( myStats->type != LICH_FIRE && myStats->type != LICH_ICE && myStats->type != LICH && myStats->type != DEVIL )
+		if ( monsterState != MONSTER_STATE_ATTACK && state == MONSTER_STATE_PATH )
 		{
-			real_t distance = pow(x - target.x, 2) + pow(y - target.y, 2);
-			if ( distance < STRIKERANGE * STRIKERANGE )
+			if ( myStats->type != LICH_FIRE && myStats->type != LICH_ICE && myStats->type != LICH && myStats->type != DEVIL )
 			{
-				monsterState = MONSTER_STATE_ATTACK;
+				real_t distance = pow(x - target.x, 2) + pow(y - target.y, 2);
+				if ( distance < STRIKERANGE * STRIKERANGE )
+				{
+					monsterState = MONSTER_STATE_ATTACK;
+				}
 			}
 		}
 	}
