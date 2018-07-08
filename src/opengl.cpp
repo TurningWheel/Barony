@@ -581,6 +581,7 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		{
 			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
 		}
+		textureId = texid[image->refcount];
 	}
 	// setup projection
 	glMatrixMode(GL_PROJECTION);
