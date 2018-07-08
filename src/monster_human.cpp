@@ -1596,6 +1596,23 @@ bool Entity::humanCanWieldItem(const Item& item) const
 	if ( monsterAllyIndex >= 0 )
 	{
 		// player ally.
+		if ( item.interactNPCUid == getUID() )
+		{
+			// monster was set to interact with this item, force want it.
+			switch ( itemCategory(&item) )
+			{
+				case WEAPON:
+				case ARMOR:
+				case RING:
+				case AMULET:
+				case MAGICSTAFF:
+				case CLOAK:
+					return true;
+				default:
+					return false;
+					break;
+			}
+		}
 		if ( monsterAllyClass == ALLY_CLASS_MIXED )
 		{
 			// pick up all default items.

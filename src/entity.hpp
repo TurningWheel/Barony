@@ -588,7 +588,7 @@ public:
 	void lichIceSummonMonster(Monster creature);
 	void lichFireSummonMonster(Monster creature);
 	// check for nearby items to add to monster's inventory
-	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
+	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem = nullptr);
 	// degrade chosen armor piece by 1 on entity, update clients.
 	void degradeArmor(Stat& hitstats, Item& armor, int armornum);
 	// check stats if monster should "retreat" in actMonster

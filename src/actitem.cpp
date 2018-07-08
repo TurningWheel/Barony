@@ -129,6 +129,17 @@ void actItem(Entity* my)
 	// pick up item
 	if (multiplayer != CLIENT)
 	{
+		if ( my->isInteractWithMonster() )
+		{
+			Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
+			if ( monsterInteracting )
+			{
+				monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 9, my);
+				my->clearMonsterInteract();
+				return;
+			}
+			my->clearMonsterInteract();
+		}
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{
 			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
