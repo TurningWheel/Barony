@@ -4870,19 +4870,10 @@ void handleMainMenu(bool mode)
 		int numSaves = savegamesList.size();
 		if ( numSaves > 0 )
 		{
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "successfully retrieved savegames!");
-		}
-		else
-		{
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "no saves found!");
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + TTF12_HEIGHT + 8, uint32ColorOrange(*mainsurface), "to get started create a new folder, or copy shared custom content to the mods/ folder");
+			//ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), language[3066]);
 		}
 
-		std::string modInfoStr = "current loaded mods (hover for info): ";
 		SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
-		bool drawModLoadOrder = false;
-		int drawExtendedInformationForMod = -1; // value of 0 or greater will draw.
-		int maxDescriptionLines = 10;
 
 		tooltip.x = omousex + 8;
 		tooltip.y = omousey + 8;
@@ -4901,6 +4892,8 @@ void handleMainMenu(bool mode)
 		int entriesToScroll = std::max(static_cast<int>((numSaves / numSavesToShow) - 1), 0);
 		entriesToScroll = entriesToScroll * numSavesToShow + (numSaves % numSavesToShow);
 
+		bool drawScrollTooltip = false;
+
 		// handle slider movement.
 		if ( numSaves > numSavesToShow )
 		{
@@ -4908,6 +4901,11 @@ void handleMainMenu(bool mode)
 			if ( mouseInBounds(filename_padx, slider.x + slider.w,
 				slider.y, slider.y + slider.h) )
 			{
+				if ( mouseInBounds(slider.x, slider.x + slider.w,
+					slider.y, slider.y + slider.h) )
+				{
+					drawScrollTooltip = true;
+				}
 				if ( mousestatus[SDL_BUTTON_WHEELUP] )
 				{
 					savegames_window_scroll = std::max(savegames_window_scroll - 1, 0);
@@ -4938,11 +4936,18 @@ void handleMainMenu(bool mode)
 			}
 			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h); // draw shortened list relative slider.
 		}
+		else
+		{
+			//drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
+		}
 
 		bool drawDeleteTooltip = false;
+		int numSingleplayerSaves = 0;
+		int numMultiplayerSaves = 0;
 
 		// draw the content
-		for ( int i = savegames_window_scroll; i < numSaves && i < numSavesToShow + savegames_window_scroll; ++i )
+		for ( int i = 0; i < numSaves; ++i )
 		{
 			filename_padx = subx1 + 16;
 
@@ -4950,77 +4955,120 @@ void handleMainMenu(bool mode)
 			std::advance(it, i);
 			std::tuple<int, int, int, std::string> entry = *it;
 
-			drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
-			SDL_Rect highlightEntry;
-			highlightEntry.x = filename_padx;
-			highlightEntry.y = filename_pady - 8;
-			highlightEntry.w = filename_padx2 - filename_padx;
-			highlightEntry.h = filename_rowHeight + 8;
-			if ( gamemods_numCurrentModsLoaded >= 0 )
+			if ( std::get<1>(entry) != SINGLE )
 			{
-				drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 64);
+				++numMultiplayerSaves;
 			}
 			else
 			{
-				if ( std::get<1>(entry) == SINGLE ) // single player.
+				++numSingleplayerSaves;
+			}
+
+			if ( i >= savegames_window_scroll && i < numSavesToShow + savegames_window_scroll )
+			{
+				drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+				SDL_Rect highlightEntry;
+				highlightEntry.x = filename_padx;
+				highlightEntry.y = filename_pady - 8;
+				highlightEntry.w = filename_padx2 - filename_padx;
+				highlightEntry.h = filename_rowHeight + 8;
+				if ( gamemods_numCurrentModsLoaded >= 0 )
 				{
-					drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
+					if ( std::get<1>(entry) == SINGLE ) // single player.
+					{
+						drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 64);
+					}
+					else
+					{
+						drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 32);
+					}
 				}
 				else
 				{
-					drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 64);
+					if ( std::get<1>(entry) == SINGLE ) // single player.
+					{
+						drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 48);
+						//drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 16);
+					}
+					else
+					{
+						drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 32);
+					}
 				}
-			}
 
-			ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<3>(entry).c_str());
+				ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%d]: %s", i + 1, std::get<3>(entry).c_str());
 
-			filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
-			int text_x = filename_padx;
-			int text_y = filename_pady + 10;
-			if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
-			{
-				if ( std::get<1>(entry) == SINGLE )
+				filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
+				int text_x = filename_padx;
+				int text_y = filename_pady + 10;
+				if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
 				{
-					savegameCurrentFileIndex = std::get<2>(entry);
-					buttonLoadSingleplayerGame(nullptr);
+					if ( std::get<1>(entry) == SINGLE )
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						buttonLoadSingleplayerGame(nullptr);
+					}
+					else
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						buttonLoadMultiplayerGame(nullptr);
+					}
 				}
-				else
-				{
-					savegameCurrentFileIndex = std::get<2>(entry);
-					buttonLoadMultiplayerGame(nullptr);
-				}
-			}
-			ttfPrintTextFormatted(ttf12, text_x + 8, text_y, "%s", "Load Game");
+				ttfPrintTextFormatted(ttf12, text_x + 8, text_y, "%s", "Load Game");
 
-			filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
-			text_x = filename_padx;
-			if ( savegameDrawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
-			{
-				if ( std::get<1>(entry) == SINGLE )
+				filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
+				text_x = filename_padx;
+				if ( savegameDrawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
 				{
-					savegameCurrentFileIndex = std::get<2>(entry);
-					buttonDeleteSavedSoloGame(nullptr);
+					if ( std::get<1>(entry) == SINGLE )
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						buttonDeleteSavedSoloGame(nullptr);
+					}
+					else
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						buttonDeleteSavedMultiplayerGame(nullptr);
+					}
 				}
-				else
+				ttfPrintTextFormatted(ttf12, text_x + 6, text_y, "%s", "X");
+				if ( mouseInBounds(filename_padx, filename_padx + 2 * TTF12_WIDTH + 8, filename_pady, filename_pady + TTF12_HEIGHT * 2 + 4) )
 				{
-					savegameCurrentFileIndex = std::get<2>(entry);
-					buttonDeleteSavedMultiplayerGame(nullptr);
+					drawDeleteTooltip = true;
 				}
-			}
-			ttfPrintTextFormatted(ttf12, text_x + 6, text_y, "%s", "X");
-			if ( mouseInBounds(filename_padx, filename_padx + 2 * TTF12_WIDTH + 8, filename_pady, filename_pady + TTF12_HEIGHT * 2 + 4) )
-			{
-				drawDeleteTooltip = true;
-			}
 
-			filename_pady += 3 * filename_rowHeight / 2;
+				filename_pady += 3 * filename_rowHeight / 2;
+			}
 		}
+
+		Uint32 saveNumColor = uint32ColorGreen(*mainsurface);
+		if ( numSingleplayerSaves == SAVE_GAMES_MAX )
+		{
+			saveNumColor = uint32ColorOrange(*mainsurface);
+		}
+		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3067]) * TTF12_WIDTH), suby1 + 44, saveNumColor,
+			language[3067], numSingleplayerSaves, SAVE_GAMES_MAX);
+
+		saveNumColor = uint32ColorGreen(*mainsurface);
+		if ( numMultiplayerSaves == SAVE_GAMES_MAX )
+		{
+			saveNumColor = uint32ColorOrange(*mainsurface);
+		}
+		ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3068]) * TTF12_WIDTH), suby1 + 44 + TTF12_HEIGHT + 4, saveNumColor,
+			language[3068], numMultiplayerSaves, SAVE_GAMES_MAX);
 
 		// draw the tooltip we initialised earlier.
 		if ( drawDeleteTooltip )
 		{
+			tooltip.w = longestline(language[3064]) * TTF12_WIDTH + 16;
 			drawTooltip(&tooltip);
-			ttfPrintTextFormatted(ttf12, tooltip.x + 4, tooltip.y + 6, "delete save file");
+			ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3064]);
+		}
+		else if ( drawScrollTooltip )
+		{
+			tooltip.w = longestline(language[3066]) * TTF12_WIDTH + 16;
+			drawTooltip(&tooltip);
+			ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3066]);
 		}
 	}
 	else if ( gamemods_window != 0 )
@@ -8395,6 +8443,16 @@ void buttonContinue(button_t* my)
 			if ( multiplayerSavegameFreeSlot == -1 )
 			{
 				savegameCurrentFileIndex = 0;
+				std::vector<std::tuple<int, int, int, std::string>>::reverse_iterator it = savegamesList.rbegin();
+				for ( ; it != savegamesList.rend(); ++it )
+				{
+					std::tuple<int, int, int, std::string> entry = *it;
+					if ( std::get<1>(entry) != SINGLE )
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						break;
+					}
+				}
 			}
 			else
 			{
@@ -8408,6 +8466,16 @@ void buttonContinue(button_t* my)
 			if ( singleplayerSavegameFreeSlot == -1 )
 			{
 				savegameCurrentFileIndex = 0;
+				std::vector<std::tuple<int, int, int, std::string>>::reverse_iterator it = savegamesList.rbegin();
+				for ( ; it != savegamesList.rend(); ++it )
+				{
+					std::tuple<int, int, int, std::string> entry = *it;
+					if ( std::get<1>(entry) == SINGLE )
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						break;
+					}
+				}
 			}
 			else
 			{
@@ -9765,7 +9833,7 @@ void openNewLoadGameWindow(button_t* my)
 	subx2 = xres / 2 + 380;
 	suby1 = yres / 2 - 210;
 	suby2 = yres / 2 + 210;
-	strcpy(subtext, "Start Game");
+	strcpy(subtext, language[3065]);
 
 	// close button
 	button_t* button = newButton();
@@ -9784,8 +9852,8 @@ void openNewLoadGameWindow(button_t* my)
 	strcpy(button->label, language[1463]);
 	button->sizex = strlen(language[1463]) * 10 + 8;
 	button->sizey = 36;
-	button->x = subx1;
-	button->y = suby1 + 36;
+	button->x = subx1 + 16;
+	button->y = suby1 + 42;
 	button->action = &buttonOpenCharacterCreationWindow;
 	button->visible = 1;
 	button->focused = 1;
@@ -11661,9 +11729,10 @@ void buttonGamemodsStartModdedGame(button_t* my)
 	}
 
 	// look for a save game
-	if ( saveGameExists(true) || saveGameExists(false) )
+	if ( anySaveFileExists() )
 	{
-		openLoadGameWindow(NULL);
+		//openLoadGameWindow(NULL);
+		openNewLoadGameWindow(nullptr);
 	}
 	else
 	{
