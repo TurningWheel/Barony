@@ -323,3 +323,14 @@ void actPlayer(Entity* my)
 {
 	return;
 }
+
+void actSpriteNametag(Entity* my)
+{
+	// dummy function
+	return;
+}
+
+int playerEntityMatchesUid(Uint32 uid)
+{
+	return -1;
+}

@@ -890,3 +890,5 @@ extern bool flickerLights;
 
 //Boulder functions.
 void boulderSokobanOnDestroy(bool pushedOffLedge);
+
+int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.

@@ -11383,3 +11383,16 @@ void Entity::setHardcoreStats(Stat& stats)
 	//messagePlayer(0, "LVL: %d", stats.LVL);
 	//messagePlayer(0, "GOLD: %d", stats.GOLD);
 }
+
+int playerEntityMatchesUid(Uint32 uid)
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && players[i]->entity && players[i]->entity->getUID() == uid )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}

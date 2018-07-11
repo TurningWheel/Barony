@@ -1328,13 +1328,11 @@ void drawEntities3D(view_t* camera, int mode)
 				{
 					if ( entity->behavior == &actSpriteNametag )
 					{
-						for ( int i = 0; i < MAXPLAYERS; ++i )
+						int playersTag = playerEntityMatchesUid(entity->parent);
+						if ( playersTag >= 0 )
 						{
-							if ( players[i] && players[i]->entity && entity->parent == players[i]->entity->getUID() )
-							{
-								glDrawSpriteFromImage(camera, entity, stats[i]->name, mode);
-								break;
-							}
+							glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
+							break;
 						}
 					}
 					else
