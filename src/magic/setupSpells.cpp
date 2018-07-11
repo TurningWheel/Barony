@@ -147,7 +147,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_sleep.overload_multiplier = 0;
 	spellElement_sleep.damage = 0;
 	spellElement_sleep.duration = 0;
-	strcpy(spellElement_opening.name, language[428]);
+	strcpy(spellElement_sleep.name, language[428]);
 
 	spellElementConstructor(&spellElement_cold);
 	spellElement_cold.mana = 5;
