@@ -896,6 +896,14 @@ void gameLogic(void)
 										serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 									}
 
+									if ( multiplayer != CLIENT )
+									{
+										monster->monsterAllyClass = monsterStats->allyClass;
+										monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
+										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
+										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
+									}
+
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));

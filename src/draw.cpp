@@ -1332,7 +1332,6 @@ void drawEntities3D(view_t* camera, int mode)
 						if ( playersTag >= 0 )
 						{
 							glDrawSpriteFromImage(camera, entity, stats[playersTag]->name, mode);
-							break;
 						}
 					}
 					else
