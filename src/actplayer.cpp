@@ -279,6 +279,11 @@ void actPlayer(Entity* my)
 		nametag->scalex = 0.2;
 		nametag->scaley = 0.2;
 		nametag->scalez = 0.2;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		nametag->setUID(-3);
 
 		// hud weapon
 		if ( PLAYER_NUM == clientnum )
