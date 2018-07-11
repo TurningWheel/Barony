@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include "main.hpp"
+
 #ifdef USE_FMOD
 #include "fmod.h"
 #endif
@@ -163,4 +165,5 @@ public:
 	Stat* copyStats();
 	void printStats();
 };
-//extern Stat* stats[MAXPLAYERS];
+
+extern Stat* stats[MAXPLAYERS];
