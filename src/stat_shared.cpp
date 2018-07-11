@@ -19,7 +19,9 @@ See LICENSE for details.
 
 // Constructor
 Stat::Stat(Sint32 sprite) :
-	sneaking(MISC_FLAGS[1])
+	sneaking(MISC_FLAGS[1]),
+	allyItemPickup(MISC_FLAGS[2]),
+	allyClass(MISC_FLAGS[3])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");
