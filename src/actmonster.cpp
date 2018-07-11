@@ -7091,6 +7091,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				monsterAllyClass = ALLY_CLASS_MIXED;
 			}
+			myStats->allyClass = monsterAllyClass;
 			serverUpdateEntitySkill(this, 46);
 			break;
 		case ALLY_CMD_PICKUP_TOGGLE:
@@ -7099,6 +7100,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				monsterAllyPickupItems = ALLY_PICKUP_NONPLAYER;
 			}
+			myStats->allyItemPickup = monsterAllyPickupItems;
 			serverUpdateEntitySkill(this, 44);
 			break;
 		case ALLY_CMD_DROP_EQUIP:

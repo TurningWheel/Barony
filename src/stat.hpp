@@ -132,6 +132,9 @@ static const int NUMCATEGORIES = 14;
 
 //--Stat Flag constants--
 static const int STAT_FLAG_NPC = 0;
+static const int STAT_FLAG_SNEAK = 1;
+static const int STAT_FLAG_ALLY_PICKUP = 2;
+static const int STAT_FLAG_ALLY_CLASS = 3;
 
 typedef enum
 {
@@ -173,6 +176,8 @@ public:
 	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
 	bool defending;
 	Sint32& sneaking; // MISC_FLAGS[1]
+	Sint32& allyItemPickup; // MISC_FLAGS[2]
+	Sint32& allyClass; // MISC_FLAGS[3]
 
 	// group think
 	Uint32 leader_uid;
