@@ -284,8 +284,11 @@ void drawFollowerMenu()
 			}
 		}
 		// process commands if option selected on the wheel.
-		if ( (!(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) && !followerMenuToggleClick)
-			|| ((*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) && followerMenuToggleClick) )
+		if ( (!(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) && !followerMenuToggleClick && !followerMenuHoldWheel)
+			|| ((*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) && followerMenuToggleClick)
+			|| (!(*inputPressed(impulses[IN_FOLLOWERMENU])) && followerMenuHoldWheel && !followerMenuToggleClick)
+			|| (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) && followerMenuOptionPrevious != -1)
+			)
 		{
 			if ( followerMenuToggleClick )
 			{
@@ -298,10 +301,36 @@ void drawFollowerMenu()
 				}
 			}
 
+			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+			{
+				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+				if ( followerMenuOptionPrevious != -1 )
+				{
+					if ( followerMenuOptionPrevious == ALLY_CMD_ATTACK_CONFIRM )
+					{
+						followerMenuOptionPrevious = ALLY_CMD_ATTACK_SELECT;
+					}
+					else if ( followerMenuOptionPrevious == ALLY_CMD_MOVETO_CONFIRM )
+					{
+						followerMenuOptionPrevious = ALLY_CMD_MOVETO_SELECT;
+					}
+					else if ( followerMenuOptionPrevious == ALLY_CMD_FOLLOW )
+					{
+						followerMenuOptionPrevious = ALLY_CMD_DEFEND;
+					}
+					else if ( followerMenuOptionPrevious == ALLY_CMD_DEFEND )
+					{
+						followerMenuOptionPrevious = ALLY_CMD_FOLLOW;
+					}
+					followerMenuOptionSelected = followerMenuOptionPrevious;
+				}
+			}
+
 			keepWheelOpen = followerMenuOptionSelected == ALLY_CMD_CLASS_TOGGLE || followerMenuOptionSelected == ALLY_CMD_PICKUP_TOGGLE;
 
 			if ( followerMenuOptionSelected != -1 )
 			{
+				followerMenuHoldWheel = false;
 				if ( followerMenuOptionSelected != ALLY_CMD_ATTACK_CONFIRM && followerMenuOptionSelected != ALLY_CMD_MOVETO_CONFIRM )
 				{
 					playSound(139, 16); // click
@@ -361,6 +390,10 @@ void drawFollowerMenu()
 						}
 					}
 
+					if ( followerMenuOptionSelected != ALLY_CMD_CANCEL )
+					{
+						followerMenuOptionPrevious = followerMenuOptionSelected;
+					}
 					followerMenuOptionSelected = -1;
 
 					if ( !keepWheelOpen )
@@ -1411,7 +1444,7 @@ void drawStatus()
 
 		// minimap pinging.
 		int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
-		if ( mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+		if ( !followerMoveTo && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 		{
 			if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE])) )
 			{

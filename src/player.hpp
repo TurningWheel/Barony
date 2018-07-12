@@ -19,6 +19,7 @@ extern int current_player; //This may not be necessary. Consider this: Each Play
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity;
 extern Entity* followerMenuEntity;
+extern Entity* followerMenuEntityRecent;
 extern Entity* lastSelectedEntity;
 extern Entity* followerInteractedEntity;
 extern Sint32 mousex, mousey;

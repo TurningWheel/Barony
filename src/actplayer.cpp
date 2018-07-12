@@ -1369,6 +1369,47 @@ void actPlayer(Entity* my)
 		if ( intro == false )
 		{
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
+
+			if ( followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT )
+			{
+				Entity* underMouse = nullptr;
+				if ( followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT && ticks % 20 == 0 )
+				{
+					if ( !shootmode )
+					{
+						Uint32 uidnum = GO_GetPixelU32(omousex, yres - omousey);
+						if ( uidnum > 0 )
+						{
+							underMouse = uidToEntity(uidnum);
+						}
+					}
+					else
+					{
+						Uint32 uidnum = GO_GetPixelU32(xres / 2, yres / 2);
+						if ( uidnum > 0 )
+						{
+							underMouse = uidToEntity(uidnum);
+						}
+					}
+
+					if ( underMouse )
+					{
+						if ( underMouse->behavior == &actTorch )
+						{
+							strcpy(followerInteractText, items[TOOL_TORCH].name_identified);
+						}
+						else
+						{
+							strcpy(followerInteractText, "");
+						}
+					}
+					else
+					{
+						strcpy(followerInteractText, "");
+					}
+				}
+			}
+
 			if ( followerMenuEntity == nullptr && followerMoveTo == false )
 			{
 				selectedEntity = entityClicked(); // using objects
@@ -1386,7 +1427,19 @@ void actPlayer(Entity* my)
 							// we're selecting a point for the ally to move to.
 							*inputPressed(impulses[IN_USE]) = 0;
 							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
-							if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
+
+							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
+							if ( mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+							{
+								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
+								minimapPingAdd(newPing);
+								spawnMagicEffectParticles(newPing.x, newPing.y, 0, 174);
+								followerMenuOptionSelected = ALLY_CMD_MOVETO_CONFIRM;
+								followerMoveTo = false;
+								followerMoveToX = static_cast<int>(newPing.x);
+								followerMoveToY = static_cast<int>(newPing.y);
+							}
+							else if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity )
 							{
 								real_t startx = players[PLAYER_NUM]->entity->x;
 								real_t starty = players[PLAYER_NUM]->entity->y;
@@ -1446,6 +1499,19 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+
+			if ( !followerMenuEntity && followerMenuEntityRecent )
+			{
+				if ( *inputPressed(impulses[IN_FOLLOWERMENU]) )
+				{
+					selectedEntity = followerMenuEntityRecent;
+					followerMenuHoldWheel = true;
+				}
+				else if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+				{
+					followerMenuEntity = followerMenuEntityRecent;
+				}
+			}
 			if ( selectedEntity != NULL )
 			{
 				followerMenuEntity = nullptr;
@@ -1465,6 +1531,7 @@ void actPlayer(Entity* my)
 					}
 					if ( followerMenuEntity )
 					{
+						followerMenuEntityRecent = followerMenuEntity;
 						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 						if ( followerMenuX == -1 )
 						{

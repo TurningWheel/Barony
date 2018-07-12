@@ -171,7 +171,9 @@ extern bool stop;
 #define IN_AUTOSORT 16
 #define IN_MINIMAPSCALE 17
 #define IN_TOGGLECHATLOG 18
-#define NUMIMPULSES 19
+#define IN_FOLLOWERMENU 19
+#define IN_FOLLOWERMENU_LASTCMD 20
+#define NUMIMPULSES 21
 
 //Joystick/gamepad impulses
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
