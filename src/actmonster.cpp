@@ -4319,9 +4319,21 @@ timeToGoAgain:
 							else
 							{
 								//messagePlayer(0, "Sent a move to command, defending here!");
-								if ( rand() % 5 == 0 )
+								// scan for enemies after reaching move point.
+								for ( node = map.creatures->first; node != nullptr; node = node->next )
 								{
-									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_END);
+									Entity* target = (Entity*)node->element;
+									if ( target->behavior == &actMonster && my->checkEnemy(target) )
+									{
+										dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+										if ( dist < sightranges[myStats->type] )
+										{
+											double tangent = atan2(target->y - my->y, target->x - my->x);
+											my->monsterLookTime = 1;
+											my->monsterMoveTime = rand() % 10 + 1;
+											my->monsterLookDir = tangent;
+										}
+									}
 								}
 								my->monsterAllyState = ALLY_STATE_DEFEND;
 								my->createPathBoundariesNPC();
@@ -4386,9 +4398,21 @@ timeToGoAgain:
 						else
 						{
 							//messagePlayer(0, "Issued move command, defending here.");
-							if ( rand() % 5 == 0 )
+							// scan for enemies after reaching move point.
+							for ( node = map.creatures->first; node != nullptr; node = node->next )
 							{
-								my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_END);
+								Entity* target = (Entity*)node->element;
+								if ( target->behavior == &actMonster && my->checkEnemy(target) )
+								{
+									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+									if ( dist < sightranges[myStats->type] )
+									{
+										double tangent = atan2(target->y - my->y, target->x - my->x);
+										my->monsterLookTime = 1;
+										my->monsterMoveTime = rand() % 10 + 1;
+										my->monsterLookDir = tangent;
+									}
+								}
 							}
 							my->monsterAllyState = ALLY_STATE_DEFEND;
 							my->createPathBoundariesNPC();
