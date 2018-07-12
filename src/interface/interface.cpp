@@ -163,10 +163,13 @@ bool uiscale_skillspage = false;
 int followerMenuX = -1;
 int followerMenuY = -1;
 int followerMenuOptionSelected = -1;
+int followerMenuOptionPrevious = -1;
 bool followerMoveTo = false;
 int followerMoveToX = -1;
 int followerMoveToY = -1;
 bool followerMenuToggleClick = false;
+bool followerMenuHoldWheel = false;
+char followerInteractText[128] = "";
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
@@ -654,6 +657,8 @@ void defaultImpulses()
 	impulses[IN_AUTOSORT] = 21;
 	impulses[IN_MINIMAPSCALE] = 27;
 	impulses[IN_TOGGLECHATLOG] = 15;
+	impulses[IN_FOLLOWERMENU] = 6;
+	impulses[IN_FOLLOWERMENU_LASTCMD] = 29;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;

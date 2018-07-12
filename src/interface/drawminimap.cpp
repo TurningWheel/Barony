@@ -276,15 +276,6 @@ void drawMinimap()
 			{
 				drawMonsterAlly = entity->monsterAllyIndex;
 			}
-			/*node_t* node2;
-			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != nullptr; node2 = node2->next )
-			{
-				if ( *((Uint32*)node2->element) == entity->getUID() )
-				{
-					drawchar = true;
-					break;
-				}
-			}*/
 		}
 		if ( drawMonsterAlly >= 0 || foundplayer >= 0 )
 		{

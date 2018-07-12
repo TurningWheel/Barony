@@ -20,6 +20,7 @@ Player** players = nullptr;
 
 Entity* selectedEntity = nullptr;
 Entity* followerMenuEntity = nullptr;
+Entity* followerMenuEntityRecent = nullptr;
 Entity* followerInteractedEntity = nullptr;
 int current_player = 0;
 Sint32 mousex = 0, mousey = 0;
