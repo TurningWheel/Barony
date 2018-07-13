@@ -1724,6 +1724,13 @@ void Entity::setHP(int amount)
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 		}
+		if ( this->behavior == &actMonster )
+		{
+			if ( this->monsterAllyIndex >= 1 && this->monsterAllyIndex < MAXPLAYERS )
+			{
+				serverUpdateAllyHP(this->monsterAllyIndex, getUID(), entitystats->HP, entitystats->MAXHP);
+			}
+		}
 	}
 }
 
@@ -2085,6 +2092,7 @@ void Entity::handleEffects(Stat* myStats)
 							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
 							playSoundEntity(this, 97, 128);
+							serverUpdateAllyStat(i, getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 						}
 					}
 				}
@@ -6730,7 +6738,29 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					shares[c]->awardXP(src, false, false);
 				}
 			}
+
+			if ( this->behavior == &actPlayer )
+			{
+				if ( stats[this->skill[2]] )
+				{
+					// award XP to player's followers.
+					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = uidToEntity(*((Uint32*)node->element));
+						if ( entityDist(this, follower) < XPSHARERANGE && follower != src )
+						{
+							Stat* followerStats = follower->getStats();
+							if ( followerStats )
+							{
+								followerStats->EXP += xpGain;
+								//messagePlayer(0, "monster got %d xp", xpGain);
+							}
+						}
+					}
+				}
+			}
 		}
+		
 	}
 
 	// award XP to main victor
@@ -9212,6 +9242,11 @@ void Entity::giveClientStats()
 		clientStats = new Stat(0);
 	}
 }
+
+//void Entity::serverUpdateStatsForAllyNPC()
+//{
+//
+//}
 
 void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 {

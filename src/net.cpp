@@ -970,6 +970,65 @@ void serverUpdatePlayerLVL()
 	}
 }
 
+void serverRemoveClientFollower(int player, Uint32 uidToRemove)
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+
+	if ( !client_disconnected[player] )
+	{
+		strcpy((char*)net_packet->data, "LDEL");
+		SDLNet_Write32(uidToRemove, &net_packet->data[4]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type)
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+
+	if ( !client_disconnected[player] )
+	{
+		strcpy((char*)net_packet->data, "NPCI");
+		SDLNet_Write32(uidToUpdate, &net_packet->data[4]);
+		net_packet->data[8] = static_cast<Uint8>(LVL);
+		SDLNet_Write16(HP, &net_packet->data[9]);
+		SDLNet_Write16(MAXHP, &net_packet->data[11]);
+		net_packet->data[13] = static_cast<Uint8>(type);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 14;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP)
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+
+	if ( !client_disconnected[player] )
+	{
+		strcpy((char*)net_packet->data, "NPCU");
+		SDLNet_Write32(uidToUpdate, &net_packet->data[4]);
+		SDLNet_Write16(HP, &net_packet->data[8]);
+		SDLNet_Write16(MAXHP, &net_packet->data[10]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 12;
+		sendPacket(net_sock, -1, net_packet, player - 1);
+	}
+}
 
 void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y)
 {
@@ -2593,6 +2652,63 @@ void clientHandlePacket()
 		return;
 	}
 
+	// remove a monster from followers list
+	else if ( !strncmp((char*)net_packet->data, "LDEL", 4) )
+	{
+		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		if ( stats[clientnum] )
+		{
+			for ( node_t* allyNode = stats[clientnum]->FOLLOWERS.first; allyNode != nullptr; allyNode = allyNode->next )
+			{
+				if ( *((Uint32*)allyNode->element) == uidnum )
+				{
+					list_RemoveNode(allyNode);
+					break;
+				}
+			}
+		}
+	}
+
+	// update client's follower data on level up or initial follow.
+	else if ( !strncmp((char*)net_packet->data, "NPCI", 4) )
+	{
+		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		Entity* monster = uidToEntity(uidnum);
+		if ( monster && monster->monsterAllyIndex == clientnum )
+		{
+			if ( !monster->clientsHaveItsStats )
+			{
+				monster->giveClientStats();
+			}
+			if ( monster->clientStats )
+			{
+				monster->clientStats->LVL = net_packet->data[8];
+				monster->clientStats->HP = SDLNet_Read16(&net_packet->data[9]);
+				monster->clientStats->MAXHP = SDLNet_Read16(&net_packet->data[11]);
+				monster->clientStats->type = static_cast<Monster>(net_packet->data[13]);
+			}
+		}
+	}
+
+	// update client's follower hp/maxhp data at intervals
+	else if ( !strncmp((char*)net_packet->data, "NPCU", 4) )
+	{
+		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
+		Entity* monster = uidToEntity(uidnum);
+		if ( monster && monster->monsterAllyIndex == clientnum )
+		{
+			if ( !monster->clientsHaveItsStats )
+			{
+				monster->giveClientStats();
+			}
+			if ( monster->clientStats )
+			{
+				monster->clientStats->HP = SDLNet_Read16(&net_packet->data[8]);
+				monster->clientStats->MAXHP = SDLNet_Read16(&net_packet->data[10]);
+			}
+		}
+	}
+
 	// bless my equipment
 	else if (!strncmp((char*)net_packet->data, "BLES", 4))
 	{
@@ -4044,6 +4160,18 @@ void serverHandlePacket()
 			else
 			{
 				entity->monsterAllySendCommand(allyCmd, net_packet->data[6], net_packet->data[7]);
+			}
+		}
+	}
+
+	else if ( !strncmp((char*)net_packet->data, "IDIE", 4) )
+	{
+		int playerDie = net_packet->data[4];
+		if ( playerDie >= 1 && playerDie < MAXPLAYERS )
+		{
+			if ( players[playerDie] && players[playerDie]->entity )
+			{
+				players[playerDie]->entity->setHP(0);
 			}
 		}
 	}

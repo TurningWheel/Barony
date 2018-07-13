@@ -469,6 +469,23 @@ void drawPartySheet()
 	pos.y = 32;
 	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
+	int numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+
+	if ( playerCnt == 0 ) // 1 player.
+	{
+		if ( numFollowers == 0 )
+		{
+			if ( shootmode )
+			{
+				return; // don't show menu if not in inventory, no point reminding the player they have no friends!
+			}
+			pos.h = (fontHeight * 4 + 12);
+		}
+		else
+		{
+			pos.h = (fontHeight + 12);
+		}
+	}
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
 
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
@@ -553,59 +570,119 @@ void drawPartySheet()
 	SDL_Rect initialSkillPos = pos;
 	SDL_Rect playerBar;
 
+	
+	if ( playerCnt == 0 && numFollowers == 0 ) // 1 player.
+	{
+		ttfPrintTextFormatted(fontPlayer, pos.x + 32, pos.y + 8, "No party members");
+	}
+
 	//Draw party stats
 	Uint32 color = uint32ColorWhite(*mainsurface);
-	for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (fontHeight * 4) + 6 )
+	if ( playerCnt > 0 )
 	{
-		if ( !client_disconnected[i] && stats[i] )
+		for ( int i = 0; i < MAXPLAYERS; ++i, pos.y += (fontHeight * 4) + 6 )
 		{
-			ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
-
-			ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i]));
-			ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
-
-			playerBar.x = pos.x + 64;
-			playerBar.w = 10 * 11;
-			if ( uiscale_skillspage )
+			if ( !client_disconnected[i] && stats[i] )
 			{
-				playerBar.x += 10;
-				playerBar.w += 48;
+				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+
+				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i]));
+				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
+
+				playerBar.x = pos.x + 64;
+				playerBar.w = 10 * 11;
+				if ( uiscale_skillspage )
+				{
+					playerBar.x += 10;
+					playerBar.w += 48;
+				}
+				playerBar.y = pos.y + fontHeight * 2 + 1;
+				playerBar.h = fontHeight;
+				// draw tooltip with blue outline
+				drawTooltip(&playerBar);
+				// draw faint red bar underneath
+				playerBar.x += 1;
+				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
+
+				// draw main red bar for current HP
+				playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->HP) / stats[i]->MAXHP);
+				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+
+				// draw HP values
+				ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight * 2 + 4, color, "HP:  %3d / %3d", stats[i]->HP, stats[i]->MAXHP);
+
+				playerBar.x = pos.x + 64;
+				playerBar.w = 10 * 11;
+				if ( uiscale_skillspage )
+				{
+					playerBar.x += 10;
+					playerBar.w += 48;
+				}
+				playerBar.y = pos.y + fontHeight * 3 + 1;
+				// draw tooltip with blue outline
+				drawTooltip(&playerBar);
+				playerBar.x += 1;
+				// draw faint blue bar underneath
+				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255);
+
+				// draw blue red bar for current MP
+				playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->MP) / stats[i]->MAXMP);
+				drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255);
+
+				// draw MP values
+				ttfPrintTextFormattedColor(fontPlayer, pos.x + 32 , pos.y + fontHeight * 3 + 4, color, "MP:  %3d / %3d", stats[i]->MP, stats[i]->MAXMP);
 			}
-			playerBar.y = pos.y + fontHeight * 2 + 1;
-			playerBar.h = fontHeight;
-			// draw tooltip with blue outline
-			drawTooltip(&playerBar);
-			// draw faint red bar underneath
-			playerBar.x += 1;
-			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
+		}
+	}
 
-			// draw main red bar for current HP
-			playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->HP) / stats[i]->MAXHP);
-			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
 
-			// draw HP values
-			ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight * 2 + 4, color, "HP:  %3d / %3d", stats[i]->HP, stats[i]->MAXHP);
 
-			playerBar.x = pos.x + 64;
-			playerBar.w = 10 * 11;
-			if ( uiscale_skillspage )
+	// draw follower stats
+	if ( numFollowers > 0 )
+	{
+		if ( playerCnt != 0 )
+		{
+			pos.y -= (fontHeight * 4) * (playerCnt + 1);
+		}
+		pos.h = numFollowers * (fontHeight * 2 + 6) + 14;
+		int i = 0;
+		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+		{
+			Entity* follower = uidToEntity(*((Uint32*)node->element));
+			if ( follower )
 			{
-				playerBar.x += 10;
-				playerBar.w += 48;
+				Stat* followerStats = follower->getStats();
+				if ( followerStats )
+				{
+					drawWindowFancy(pos.x + 8, pos.y, pos.x + pos.w, pos.y + fontHeight * 2 + 12);
+					pos.y += 6;
+					ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+					ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
+
+					playerBar.x = pos.x + 64;
+					playerBar.w = 10 * 11;
+					if ( uiscale_skillspage )
+					{
+						playerBar.x += 10;
+						playerBar.w += 48;
+					}
+					playerBar.y = pos.y + fontHeight + 1;
+					playerBar.h = fontHeight;
+					// draw tooltip with blue outline
+					drawTooltip(&playerBar);
+					// draw faint red bar underneath
+					playerBar.x += 1;
+					drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
+
+					// draw main red bar for current HP
+					playerBar.w = (playerBar.w) * (static_cast<double>(followerStats->HP) / followerStats->MAXHP);
+					drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+
+					// draw HP values
+					ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight + 4, color, "HP:  %3d / %3d", followerStats->HP, followerStats->MAXHP);
+					pos.y += (fontHeight * 2 + 6);
+				}
 			}
-			playerBar.y = pos.y + fontHeight * 3 + 1;
-			// draw tooltip with blue outline
-			drawTooltip(&playerBar);
-			playerBar.x += 1;
-			// draw faint blue bar underneath
-			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255);
-
-			// draw blue red bar for current MP
-			playerBar.w = (playerBar.w) * (static_cast<double>(stats[i]->MP) / stats[i]->MAXMP);
-			drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255);
-
-			// draw MP values
-			ttfPrintTextFormattedColor(fontPlayer, pos.x + 32 , pos.y + fontHeight * 3 + 4, color, "MP:  %3d / %3d", stats[i]->MP, stats[i]->MAXMP);
 		}
 	}
 }

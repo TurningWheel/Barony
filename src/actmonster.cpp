@@ -736,6 +736,8 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		net_packet->address.port = net_clients[monsterclicked - 1].port;
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
+
+		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 	}
 	return true;
 }
@@ -1953,6 +1955,21 @@ void actMonster(Entity* my)
 				if (myStats->leader_uid == players[c]->entity->getUID())
 				{
 					playerFollower = c;
+					if ( stats[c] )
+					{
+						for ( node_t* allyNode = stats[c]->FOLLOWERS.first; allyNode != nullptr; allyNode = allyNode->next )
+						{
+							if ( *((Uint32*)allyNode->element) == my->getUID() )
+							{
+								list_RemoveNode(allyNode);
+								if ( c != clientnum )
+								{
+									serverRemoveClientFollower(c, my->getUID());
+								}
+								break;
+							}
+						}
+					}
 					break;
 				}
 			}

@@ -1304,9 +1304,15 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/die", 4))
 	{
-		if (multiplayer != SINGLE)
+		if ( multiplayer == CLIENT )
 		{
-			messagePlayer(clientnum, language[299]);
+			// request sweet release.
+			strcpy((char*)net_packet->data, "IDIE");
+			net_packet->data[4] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 5;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		else
 		{
