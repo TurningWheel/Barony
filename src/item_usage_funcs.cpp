@@ -932,11 +932,21 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 	if ( stats->HP == stats->MAXHP )
 	{
 		playSoundEntity(entity, 52, 64);
-		messagePlayer(player, language[772]);
-		// stop bleeding
-		if ( stats->EFFECTS[EFF_BLEEDING] )
+		if ( item->beatitude < 0 )
 		{
-			entity->setEffect(EFF_BLEEDING, false, 0, false);
+			messagePlayer(player, language[2900]);
+			messagePlayer(player, language[2903]);
+			stats->EFFECTS[EFF_POISONED] = true;
+			stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
+		}
+		else
+		{
+			messagePlayer(player, language[772]);
+			// stop bleeding
+			if ( stats->EFFECTS[EFF_BLEEDING] )
+			{
+				entity->setEffect(EFF_BLEEDING, false, 0, false);
+			}
 		}
 		if ( shouldConsumeItem )
 		{
@@ -962,6 +972,11 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 		amount += 2 * stats->CON;
 	}
 
+	if ( item->beatitude < 0 )
+	{
+		amount /= (std::abs(item->beatitude) * 2);
+	}
+
 	int oldHP = entity->getHP();
 
 	entity->modHP(amount);
@@ -975,13 +990,24 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-	messagePlayerColor(player, color, language[773]);
 
-	// stop bleeding
-	if ( stats->EFFECTS[EFF_BLEEDING] )
+	if ( item->beatitude < 0 )
 	{
-		entity->setEffect(EFF_BLEEDING, false, 0, false);
+		messagePlayer(player, language[2900]);
+		messagePlayer(player, language[2903]);
+		stats->EFFECTS[EFF_POISONED] = true;
+		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
 	}
+	else
+	{
+		messagePlayerColor(player, color, language[773]);
+		// stop bleeding
+		if ( stats->EFFECTS[EFF_BLEEDING] )
+		{
+			entity->setEffect(EFF_BLEEDING, false, 0, false);
+		}
+	}
+
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item);
@@ -1035,11 +1061,21 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 	if ( stats->HP == stats->MAXHP )
 	{
 		playSoundEntity(entity, 52, 64);
-		messagePlayer(player, language[772]);
-		// stop bleeding
-		if ( stats->EFFECTS[EFF_BLEEDING] )
+		if ( item->beatitude < 0 )
 		{
-			entity->setEffect(EFF_BLEEDING, false, 0, false);
+			messagePlayer(player, language[2900]);
+			messagePlayer(player, language[2903]);
+			stats->EFFECTS[EFF_POISONED] = true;
+			stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
+		}
+		else
+		{
+			messagePlayer(player, language[772]);
+			// stop bleeding
+			if ( stats->EFFECTS[EFF_BLEEDING] )
+			{
+				entity->setEffect(EFF_BLEEDING, false, 0, false);
+			}
 		}
 		if ( shouldConsumeItem )
 		{
@@ -1065,6 +1101,11 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 		amount += 4 * stats->CON;
 	}
 
+	if ( item->beatitude < 0 )
+	{
+		amount /= (std::abs(item->beatitude) * 2);
+	}
+
 	int oldHP = entity->getHP();
 
 	entity->modHP(amount);
@@ -1078,13 +1119,23 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-	messagePlayerColor(player, color, language[773]);
-
-	// stop bleeding
-	if ( stats->EFFECTS[EFF_BLEEDING] )
+	if ( item->beatitude < 0 )
 	{
-		entity->setEffect(EFF_BLEEDING, false, 0, false);
+		messagePlayer(player, language[2900]);
+		messagePlayer(player, language[2903]);
+		stats->EFFECTS[EFF_POISONED] = true;
+		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(300, 600 - entity->getCON() * 20);
 	}
+	else
+	{
+		messagePlayerColor(player, color, language[773]);
+		// stop bleeding
+		if ( stats->EFFECTS[EFF_BLEEDING] )
+		{
+			entity->setEffect(EFF_BLEEDING, false, 0, false);
+		}
+	}
+
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item);
@@ -1142,7 +1193,17 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity)
 	if ( stats->MP == stats->MAXMP )
 	{
 		playSoundEntity(entity, 52, 64);
-		messagePlayer(player, language[772]);
+		if ( item->beatitude < 0 )
+		{
+			messagePlayer(player, language[774]);
+			messagePlayer(player, language[2902]);
+			stats->EFFECTS[EFF_SLOW] = true;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+		}
+		else
+		{
+			messagePlayer(player, language[772]);
+		}
 		consumeItem(item);
 		return;
 	}
@@ -1151,11 +1212,28 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity)
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier;
+
+	if ( stats->INT > 0 )
+	{
+		amount += std::min(30, 2 * stats->INT); // extra mana scaling from 1 to 15 INT, capped at +30 MP
+	}
+
+	if ( item->beatitude < 0 )
+	{
+		amount /= (std::abs(item->beatitude) * 2);
+		messagePlayer(player, language[774]);
+		messagePlayer(player, language[2902]);
+		stats->EFFECTS[EFF_SLOW] = true;
+		stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+	}
+	else
+	{
+		messagePlayer(player, language[774]);
+	}
 	entity->modMP(amount);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	messagePlayer(player, language[774]);
 
 	consumeItem(item);
 }
