@@ -303,7 +303,6 @@ void drawFollowerMenu()
 
 			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
 			{
-				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
 				if ( followerMenuOptionPrevious != -1 )
 				{
 					if ( followerMenuOptionPrevious == ALLY_CMD_ATTACK_CONFIRM )
@@ -327,6 +326,29 @@ void drawFollowerMenu()
 			}
 
 			keepWheelOpen = followerMenuOptionSelected == ALLY_CMD_CLASS_TOGGLE || followerMenuOptionSelected == ALLY_CMD_PICKUP_TOGGLE;
+
+			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+			{
+				if ( keepWheelOpen )
+				{
+					// need to reset the coordinates of the mouse.
+					if ( GUI_MODE_NONE )
+					{
+						openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+						omousex = mousex;
+						omousey = mousey;
+					}
+					if ( followerMenuX == -1 )
+					{
+						followerMenuX = mousex;
+					}
+					if ( followerMenuY == -1 )
+					{
+						followerMenuY = mousey;
+					}
+				}
+				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+			}
 
 			if ( followerMenuOptionSelected != -1 )
 			{

@@ -255,14 +255,6 @@ void updateCharacterSheet()
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[372], weight);
 
-	if ( proficienciesPage == 1 )
-	{
-		drawPartySheet();
-	}
-	else
-	{
-		drawSkillsSheet();
-	}
 	statsHoverText(stats[clientnum]);
 	attackHoverText(attackInfo);
 
@@ -646,6 +638,9 @@ void drawPartySheet()
 		}
 		pos.h = numFollowers * (fontHeight * 2 + 6) + 14;
 		int i = 0;
+		SDL_Rect monsterEntryWindow;
+		monsterEntryWindow.x = pos.x + 8;
+		monsterEntryWindow.w = pos.w;
 		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 		{
 			Entity* follower = uidToEntity(*((Uint32*)node->element));
@@ -654,7 +649,16 @@ void drawPartySheet()
 				Stat* followerStats = follower->getStats();
 				if ( followerStats )
 				{
-					drawWindowFancy(pos.x + 8, pos.y, pos.x + pos.w, pos.y + fontHeight * 2 + 12);
+					monsterEntryWindow.y = pos.y;
+					monsterEntryWindow.h = fontHeight * 2 + 12;
+					drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
+						monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
+					if ( followerMenuEntityRecent == follower )
+					{
+						// draw highlight on current selected monster.
+						drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
+						ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
+					}
 					pos.y += 6;
 					ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
 					ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
