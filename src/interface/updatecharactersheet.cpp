@@ -674,12 +674,11 @@ void drawPartySheet()
 							if ( mousestatus[SDL_BUTTON_LEFT] )
 							{
 								FollowerMenu.recentEntity = follower;
-								playSound(139, 32);
+								playSound(139, 64);
 								mousestatus[SDL_BUTTON_LEFT] = 0;
 							}
 							else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 							{
-								playSound(139, 32);
 								FollowerMenu.followerToCommand = follower;
 								FollowerMenu.recentEntity = follower;
 								FollowerMenu.accessedMenuFromPartySheet = true;

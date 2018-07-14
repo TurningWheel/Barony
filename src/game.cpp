@@ -3008,7 +3008,7 @@ int main(int argc, char** argv)
 
 					if ( !command && *inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) )
 					{
-						playSound(139, 32);
+						playSound(139, 64);
 						FollowerMenu.selectNextFollower();
 						proficienciesPage = 1;
 						if ( shootmode && !lock_right_sidebar )
