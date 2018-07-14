@@ -10307,7 +10307,7 @@ void playerStatIncrease(int playerClass, int chosenStats[3])
 	return;
 }
 
-void Entity::createPathBoundariesNPC()
+void Entity::createPathBoundariesNPC(int maxTileDistance)
 {
 	Stat* myStats = this->getStats();
 
@@ -10322,6 +10322,7 @@ void Entity::createPathBoundariesNPC()
 	{
 		// is NPC, find the bounds which movement is restricted to by finding the "box" it spawned in.
 		int i, j;
+		int numTiles = 0;
 		monsterPathBoundaryXStart = x / 16;
 		monsterPathBoundaryXEnd = x / 16;
 		monsterPathBoundaryYStart = y / 16;
@@ -10361,7 +10362,16 @@ void Entity::createPathBoundariesNPC()
 					break;
 				}
 			}
+			if ( maxTileDistance > 0 )
+			{
+				++numTiles;
+				if ( numTiles > maxTileDistance )
+				{
+					break;
+				}
+			}
 		}
+		numTiles = 0;
 		for ( i = x; i < map.width << 4; i += 16 )
 		{
 			if ( !checkObstacle(i, y, this, nullptr) )
@@ -10397,7 +10407,16 @@ void Entity::createPathBoundariesNPC()
 					break;
 				}
 			}
+			if ( maxTileDistance > 0 )
+			{
+				++numTiles;
+				if ( numTiles > maxTileDistance )
+				{
+					break;
+				}
+			}
 		}
+		numTiles = 0;
 		for ( j = y; j >= 0; j -= 16 )
 		{
 			if ( !checkObstacle(x, j, this, nullptr) )
@@ -10433,7 +10452,16 @@ void Entity::createPathBoundariesNPC()
 					break;
 				}
 			}
+			if ( maxTileDistance > 0 )
+			{
+				++numTiles;
+				if ( numTiles > maxTileDistance )
+				{
+					break;
+				}
+			}
 		}
+		numTiles = 0;
 		for ( j = y; j < map.height << 4; j += 16 )
 		{
 			if ( !checkObstacle(x, j, this, nullptr) )
@@ -10469,7 +10497,16 @@ void Entity::createPathBoundariesNPC()
 					break;
 				}
 			}
+			if ( maxTileDistance > 0 )
+			{
+				++numTiles;
+				if ( numTiles > maxTileDistance )
+				{
+					break;
+				}
+			}
 		}
+		numTiles = 0;
 		//messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
 	}
 }

@@ -449,7 +449,7 @@ public:
 
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
 
-	void createPathBoundariesNPC();
+	void createPathBoundariesNPC(int maxTileDistance = -1);
 	void humanSetLimbsClient(int bodypart);
 
 	/*

@@ -4358,7 +4358,7 @@ timeToGoAgain:
 									}
 								}
 								my->monsterAllyState = ALLY_STATE_DEFEND;
-								my->createPathBoundariesNPC();
+								my->createPathBoundariesNPC(5);
 							}
 						}
 					}
@@ -4437,7 +4437,7 @@ timeToGoAgain:
 								}
 							}
 							my->monsterAllyState = ALLY_STATE_DEFEND;
-							my->createPathBoundariesNPC();
+							my->createPathBoundariesNPC(5);
 						}
 					}
 				}
@@ -7129,7 +7129,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 		case ALLY_CMD_DEFEND:
 			monsterAllyState = ALLY_STATE_DEFEND;
-			createPathBoundariesNPC();
+			createPathBoundariesNPC(5);
 			// stop in your tracks!
 			handleNPCInteractDialogue(*myStats, ALLY_EVENT_WAIT);
 			monsterState = MONSTER_STATE_WAIT; // wait state
