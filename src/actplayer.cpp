@@ -1509,7 +1509,14 @@ void actPlayer(Entity* my)
 				}
 				else if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
 				{
-					followerMenuEntity = followerMenuEntityRecent;
+					if ( followerMenuOptionPrevious != -1 )
+					{
+						followerMenuEntity = followerMenuEntityRecent;
+					}
+					else
+					{
+						*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+					}
 				}
 			}
 			if ( selectedEntity != NULL )

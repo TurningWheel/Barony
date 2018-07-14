@@ -2774,6 +2774,7 @@ int main(int argc, char** argv)
 						identifygui_active = false;
 						selectedIdentifySlot = -1;
 						closeRemoveCurseGUI();
+						followerMenuEntity = nullptr;
 						if ( shopkeeper != 0 )
 						{
 							if ( multiplayer != CLIENT )
@@ -2890,6 +2891,7 @@ int main(int argc, char** argv)
 							identifygui_active = false;
 							selectedIdentifySlot = -1;
 							closeRemoveCurseGUI();
+							followerMenuEntity = nullptr;
 						}
 
 						//What even is this code? When should it be run?
@@ -3154,6 +3156,14 @@ int main(int argc, char** argv)
 					if ( shootmode == false )
 					{
 						SDL_SetRelativeMouseMode(SDL_FALSE);
+						if ( proficienciesPage == 1 )
+						{
+							drawPartySheet();
+						}
+						else
+						{
+							drawSkillsSheet();
+						}
 					}
 					else
 					{
