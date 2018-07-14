@@ -1388,12 +1388,20 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 	}
 	if ( accessedMenuFromPartySheet )
 	{
+		if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM || optionSelected == ALLY_CMD_ATTACK_CONFIRM )
+		{
+			initFollowerMenuGUICursor(true);
+		}
 		accessedMenuFromPartySheet = false;
-		mousex = partySheetMouseX;
-		mousey = partySheetMouseY;
-		SDL_SetRelativeMouseMode(SDL_FALSE);
-		SDL_WarpMouseInWindow(screen, mousex, mousey);
+		if ( optionSelected != ALLY_CMD_CANCEL && optionSelected != -1 )
+		{
+			mousex = partySheetMouseX;
+			mousey = partySheetMouseY;
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+			SDL_WarpMouseInWindow(screen, mousex, mousey);
+		}
 	}
+	optionSelected = -1;
 }
 
 void FollowerRadialMenu::drawFollowerMenu()
@@ -1482,16 +1490,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 				holdWheel = false;
 				if ( optionSelected != ALLY_CMD_ATTACK_CONFIRM && optionSelected != ALLY_CMD_MOVETO_CONFIRM )
 				{
-					playSound(139, 32); // click
+					playSound(139, 64); // click
 				}
 				else
 				{
-					playSound(399, 32); // ping
+					playSound(399, 48); // ping
 				}
 				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
 				if ( !keepWheelOpen )
 				{
-					if ( !accessedMenuFromPartySheet )
+					if ( !accessedMenuFromPartySheet
+						|| optionSelected == ALLY_CMD_MOVETO_SELECT 
+						|| optionSelected == ALLY_CMD_ATTACK_SELECT 
+						|| optionSelected == ALLY_CMD_CANCEL )
 					{
 						shootmode = true;
 						identifygui_active = false;
@@ -1546,12 +1557,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						optionPrevious = optionSelected;
 					}
-					optionSelected = -1;
 
 					if ( !keepWheelOpen )
 					{
 						closeFollowerMenuGUI();
 					}
+					optionSelected = -1;
 				}
 			}
 			else
