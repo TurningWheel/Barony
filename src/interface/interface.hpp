@@ -440,13 +440,40 @@ void minimapPingAdd(MinimapPing newPing);
 extern int minimapPingGimpTimer;
 
 extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages;
-extern int followerMenuX;
-extern int followerMenuY;
-extern int followerMenuOptionSelected;
-extern int followerMenuOptionPrevious;
-extern bool followerMoveTo;
-extern int followerMoveToX;
-extern int followerMoveToY;
-extern bool followerMenuToggleClick;
-extern bool followerMenuHoldWheel;
-extern char followerInteractText[128];
+
+class FollowerRadialMenu
+{
+public:
+	Entity* followerToCommand;
+	Entity* recentEntity;
+	Entity* entityToInteractWith;
+	int menuX; // starting mouse coordinates that are the center of the circle.
+	int menuY; // starting mouse coordinates that are the center of the circle.
+	int optionSelected; // current moused over option.
+	int optionPrevious; // previously selected option.
+	bool selectMoveTo; // player is choosing a point or target to interact with.
+	int moveToX; // x position for follower to move to.
+	int moveToY; // y position for follower to move to.
+	bool menuToggleClick; // user pressed menu key but did not select option before letting go. keeps the menu open without input.
+	bool holdWheel; // user pressed quick menu for last follower.
+	char interactText[128]; // user moused over object while selecting interact object.
+
+	FollowerRadialMenu() :
+		followerToCommand(nullptr),
+		recentEntity(nullptr),
+		menuX(-1),
+		menuY(-1),
+		optionSelected(-1),
+		optionPrevious(-1),
+		selectMoveTo(false),
+		moveToX(-1),
+		moveToY(-1),
+		menuToggleClick(false),
+		holdWheel(false),
+		interactText("") {}
+
+	void drawFollowerMenu();
+	void initFollowerMenuGUICursor(bool openInventory = true);
+	void closeFollowerMenuGUI(bool clearRecentEntity = false);
+};
+extern FollowerRadialMenu FollowerMenu;

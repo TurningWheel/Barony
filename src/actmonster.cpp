@@ -740,9 +740,9 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 	}
 
-	if ( !followerMenuEntityRecent && monsterclicked == clientnum )
+	if ( !FollowerMenu.recentEntity && monsterclicked == clientnum )
 	{
-		followerMenuEntityRecent = my;
+		FollowerMenu.recentEntity = my;
 	}
 	return true;
 }
@@ -4326,7 +4326,7 @@ timeToGoAgain:
 								//messagePlayer(0, "Interacting with a target!");
 								if ( my->monsterAllySetInteract() )
 								{
-									if ( followerInteractedEntity && followerInteractedEntity->behavior == &actItem )
+									if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
 									{
 										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
 									}
@@ -4387,7 +4387,7 @@ timeToGoAgain:
 							{
 								// we found our interactable within distance.
 								//messagePlayer(0, "Found my interactable.");
-								if ( followerInteractedEntity && followerInteractedEntity->behavior == &actItem )
+								if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
 								{
 									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
 								}
@@ -6348,9 +6348,9 @@ bool forceFollower(Entity& leader, Entity& follower)
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);
 	}
 
-	if ( !followerMenuEntityRecent && player == clientnum )
+	if ( !FollowerMenu.recentEntity && player == clientnum )
 	{
-		followerMenuEntityRecent = &follower;
+		FollowerMenu.recentEntity = &follower;
 	}
 	return true;
 }
@@ -7271,8 +7271,8 @@ bool Entity::monsterAllySetInteract()
 	double range = pow(y - target->y, 2) + pow(x - target->x, 2);
 	if ( range < 256 ) // 16 squared
 	{
-		followerInteractedEntity = target; // set followerInteractedEntity to the mechanism/item/gold etc.
-		followerInteractedEntity->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
+		FollowerMenu.entityToInteractWith = target; // set followerInteractedEntity to the mechanism/item/gold etc.
+		FollowerMenu.entityToInteractWith->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
 	}
 	else
 	{
@@ -7284,15 +7284,15 @@ bool Entity::monsterAllySetInteract()
 
 bool Entity::isInteractWithMonster()
 {
-	if ( followerInteractedEntity == nullptr )
+	if ( FollowerMenu.entityToInteractWith == nullptr )
 	{
 		return false; // entity is not set to interact with any monster.
 	}
-	if ( followerInteractedEntity->interactedByMonster == 0 )
+	if ( FollowerMenu.entityToInteractWith->interactedByMonster == 0 )
 	{
 		return false; // recent monster is not set to interact.
 	}
-	if ( followerInteractedEntity == this )
+	if ( FollowerMenu.entityToInteractWith == this )
 	{
 		return true; // a monster is set to interact with myself.
 	}
@@ -7301,7 +7301,7 @@ bool Entity::isInteractWithMonster()
 
 void Entity::clearMonsterInteract()
 {
-	followerInteractedEntity = nullptr;
+	FollowerMenu.entityToInteractWith = nullptr;
 	interactedByMonster = 0;
 }
 

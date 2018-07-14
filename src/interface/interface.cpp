@@ -24,6 +24,9 @@
 #include "../shops.hpp"
 #include "../menu.hpp"
 #include "../player.hpp"
+#include "../colors.hpp"
+#include "../net.hpp"
+#include "../draw.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -160,16 +163,7 @@ real_t uiscale_inventory = 1.f;
 bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
-int followerMenuX = -1;
-int followerMenuY = -1;
-int followerMenuOptionSelected = -1;
-int followerMenuOptionPrevious = -1;
-bool followerMoveTo = false;
-int followerMoveToX = -1;
-int followerMoveToY = -1;
-bool followerMenuToggleClick = false;
-bool followerMenuHoldWheel = false;
-char followerInteractText[128] = "";
+FollowerRadialMenu FollowerMenu;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
@@ -1360,4 +1354,425 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode)
 	mousey = yres / 2;
 	attributespage = 0;
 	//proficienciesPage = 0;
+}
+
+void FollowerRadialMenu::initFollowerMenuGUICursor(bool openInventory)
+{
+	if ( openInventory )
+	{
+		openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+	}
+	omousex = mousex;
+	omousey = mousey;
+	if ( menuX == -1 )
+	{
+		menuX = mousex;
+	}
+	if ( menuY == -1 )
+	{
+		menuY = mousey;
+	}
+}
+
+void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
+{
+	followerToCommand = nullptr;
+	menuX = -1;
+	menuY = -1;
+	moveToX = -1;
+	moveToY = -1;
+	if ( clearRecentEntity )
+	{
+		recentEntity = nullptr;
+	}
+}
+
+void FollowerRadialMenu::drawFollowerMenu()
+{
+	if ( selectMoveTo )
+	{
+		if ( !followerToCommand )
+		{
+			selectMoveTo = false;
+		}
+		return;
+	}
+
+	bool disableOption = false;
+	bool keepWheelOpen = false;
+	if ( followerToCommand )
+	{
+		int skillLVL = 0;
+		if ( stats[clientnum] )
+		{
+			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END )
+			{
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+				if ( skillLVL < AllyNPCSkillRequirements[optionSelected] )
+				{
+					disableOption = true;
+				}
+			}
+		}
+		// process commands if option selected on the wheel.
+		if ( (!(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) && !menuToggleClick && !holdWheel)
+			|| ((*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) && menuToggleClick)
+			|| (!(*inputPressed(impulses[IN_FOLLOWERMENU])) && holdWheel && !menuToggleClick)
+			|| (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) && optionPrevious != -1)
+			)
+		{
+			if ( menuToggleClick )
+			{
+				*inputPressed(impulses[IN_USE]) = 0;
+				*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+				menuToggleClick = false;
+				if ( optionSelected == -1 )
+				{
+					optionSelected = ALLY_CMD_CANCEL;
+				}
+			}
+
+			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+			{
+				if ( optionPrevious != -1 )
+				{
+					if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
+					{
+						optionPrevious = ALLY_CMD_ATTACK_SELECT;
+					}
+					else if ( optionPrevious == ALLY_CMD_MOVETO_CONFIRM )
+					{
+						optionPrevious = ALLY_CMD_MOVETO_SELECT;
+					}
+					else if ( optionPrevious == ALLY_CMD_FOLLOW )
+					{
+						optionPrevious = ALLY_CMD_DEFEND;
+					}
+					else if ( optionPrevious == ALLY_CMD_DEFEND )
+					{
+						optionPrevious = ALLY_CMD_FOLLOW;
+					}
+					optionSelected = optionPrevious;
+				}
+			}
+
+			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
+
+			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+			{
+				if ( keepWheelOpen )
+				{
+					// need to reset the coordinates of the mouse.
+					initFollowerMenuGUICursor();
+				}
+				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+			}
+
+			if ( optionSelected != -1 )
+			{
+				holdWheel = false;
+				if ( optionSelected != ALLY_CMD_ATTACK_CONFIRM && optionSelected != ALLY_CMD_MOVETO_CONFIRM )
+				{
+					playSound(139, 16); // click
+				}
+				else
+				{
+					playSound(399, 16); // ping
+				}
+				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
+				if ( !keepWheelOpen )
+				{
+					shootmode = true;
+					identifygui_active = false;
+					selectedIdentifySlot = -1;
+					closeRemoveCurseGUI();
+					if ( openedChest[clientnum] )
+					{
+						openedChest[clientnum]->closeChest();
+					}
+					gui_mode = GUI_MODE_NONE;
+				}
+
+				if ( !disableOption
+					&& (optionSelected == ALLY_CMD_MOVETO_SELECT || optionSelected == ALLY_CMD_ATTACK_SELECT) )
+				{
+					// return early, let the player use select command point.
+					selectMoveTo = true;
+					return;
+				}
+				else
+				{
+					if ( !disableOption )
+					{
+						if ( optionSelected == ALLY_CMD_DEFEND &&
+							(followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
+						{
+							optionSelected = ALLY_CMD_FOLLOW;
+						}
+						if ( multiplayer == CLIENT )
+						{
+							if ( optionSelected == ALLY_CMD_ATTACK_CONFIRM )
+							{
+								sendAllyCommandClient(clientnum, followerToCommand->getUID(), optionSelected, 0, 0, followerToCommand->monsterAllyInteractTarget);
+							}
+							else if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM )
+							{
+								sendAllyCommandClient(clientnum, followerToCommand->getUID(), optionSelected, moveToX, moveToY);
+							}
+							else
+							{
+								sendAllyCommandClient(clientnum, followerToCommand->getUID(), optionSelected, 0, 0);
+							}
+						}
+						else
+						{
+							followerToCommand->monsterAllySendCommand(optionSelected, moveToX, moveToY, followerToCommand->monsterAllyInteractTarget);
+						}
+					}
+
+					if ( optionSelected != ALLY_CMD_CANCEL )
+					{
+						optionPrevious = optionSelected;
+					}
+					optionSelected = -1;
+
+					if ( !keepWheelOpen )
+					{
+						closeFollowerMenuGUI();
+					}
+				}
+			}
+			else
+			{
+				menuToggleClick = true;
+			}
+		}
+	}
+
+	if ( followerToCommand )
+	{
+		SDL_Rect src;
+		src.x = xres / 2;
+		src.y = yres / 2;
+
+		int numoptions = 8;
+		real_t angleStart = PI / 2 - (PI / numoptions);
+		real_t angleMiddle = angleStart + PI / numoptions;
+		real_t angleEnd = angleMiddle + PI / numoptions;
+		int radius = 140;
+		int thickness = 70;
+		src.h = radius;
+		src.w = radius;
+		int highlight = -1;
+		int i = 0;
+
+		int width = 0;
+		TTF_SizeUTF8(ttf12, language[3036], &width, nullptr);
+		ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
+
+		drawImageRing(fancyWindow_bmp, nullptr, radius, thickness, 40, 0, PI * 2, 156);
+
+		for ( i = 0; i < numoptions; ++i )
+		{
+			// draw borders around ring.
+			drawLine(xres / 2 + (radius - thickness) * cos(angleStart), yres / 2 - (radius - thickness) * sin(angleStart),
+				xres / 2 + (radius + thickness) * cos(angleStart), yres / 2 - (radius + thickness) * sin(angleStart), uint32ColorGray(*mainsurface), 192);
+			drawLine(xres / 2 + (radius - thickness) * cos(angleEnd), yres / 2 - (radius - thickness) * sin(angleEnd),
+				xres / 2 + (radius + thickness - 1) * cos(angleEnd), yres / 2 - (radius + thickness - 1) * sin(angleEnd), uint32ColorGray(*mainsurface), 192);
+
+			drawArcInvertedY(xres / 2, yres / 2, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), uint32ColorGray(*mainsurface), 192);
+			drawArcInvertedY(xres / 2, yres / 2, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, uint32ColorGray(*mainsurface), 192);
+
+			angleStart += 2 * PI / numoptions;
+			angleMiddle = angleStart + PI / numoptions;
+			angleEnd = angleMiddle + PI / numoptions;
+		}
+
+		angleStart = PI / 2 - (PI / numoptions);
+		angleMiddle = angleStart + PI / numoptions;
+		angleEnd = angleMiddle + PI / numoptions;
+
+		int skillLVL = 0;
+		if ( stats[clientnum] )
+		{
+			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+		}
+
+		bool mouseInCenterButton = pow((omousex - menuX), 2) + pow((omousey - menuY), 2) < 4900; // 70 squared is 4900.
+
+		for ( i = 0; i < numoptions; ++i )
+		{
+			// see if mouse cursor is within an option.
+			if ( highlight == -1 )
+			{
+				if ( !mouseInCenterButton )
+				{
+					real_t x1 = menuX + (radius + thickness + 45) * cos(angleEnd);
+					real_t y1 = menuY - (radius + thickness + 45) * sin(angleEnd);
+					real_t x2 = menuX + 5 * cos(angleMiddle);
+					real_t y2 = menuY - 5 * sin(angleMiddle);
+					real_t x3 = menuX + (radius + thickness + 45) * cos(angleStart);
+					real_t y3 = menuY - (radius + thickness + 45) * sin(angleStart);
+					real_t a = ((y2 - y3)*(omousex - x3) + (x3 - x2)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
+					real_t b = ((y3 - y1)*(omousex - x3) + (x1 - x3)*(omousey - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
+					real_t c = 1 - a - b;
+					if ( (0 <= a && a <= 1) && (0 <= b && b <= 1) && (0 <= c && c <= 1) )
+					{
+						//barycentric calc for figuring if mouse point is within triangle.
+						highlight = i;
+						drawImageRing(fancyWindow_bmp, &src, radius, thickness, (numoptions) * 8, angleStart, angleEnd, 192);
+
+						// draw borders around highlighted item.
+						Uint32 borderColor = uint32ColorBaronyBlue(*mainsurface);
+						if ( skillLVL < AllyNPCSkillRequirements[i] )
+						{
+							borderColor = uint32ColorOrange(*mainsurface);
+						}
+						drawLine(xres / 2 + (radius - thickness) * cos(angleStart), yres / 2 - (radius - thickness) * sin(angleStart),
+							xres / 2 + (radius + thickness) * cos(angleStart), yres / 2 - (radius + thickness) * sin(angleStart), borderColor, 192);
+						drawLine(xres / 2 + (radius - thickness) * cos(angleEnd), yres / 2 - (radius - thickness) * sin(angleEnd),
+							xres / 2 + (radius + thickness - 1) * cos(angleEnd), yres / 2 - (radius + thickness - 1) * sin(angleEnd), borderColor, 192);
+
+						drawArcInvertedY(xres / 2, yres / 2, radius - thickness, std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI), borderColor, 192);
+						drawArcInvertedY(xres / 2, yres / 2, (radius + thickness), std::round((angleStart * 180) / PI), ((angleEnd * 180) / PI) + 1, borderColor, 192);
+					}
+				}
+			}
+
+			SDL_Rect txt;
+			txt.x = src.x + src.w * cos(angleMiddle);
+			txt.y = src.y - src.h * sin(angleMiddle);
+			txt.w = 0;
+			txt.h = 0;
+			SDL_Rect img;
+			img.x = txt.x - sidebar_unlock_bmp->w / 2;
+			img.y = txt.y - sidebar_unlock_bmp->h / 2;
+			img.w = sidebar_unlock_bmp->w;
+			img.h = sidebar_unlock_bmp->h;
+
+			// draw the text for the menu wheel.
+			if ( i == ALLY_CMD_DEFEND
+				&& (followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
+			{
+				TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
+				ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+			}
+			else
+			{
+				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+				if ( skillLVL < AllyNPCSkillRequirements[i] )
+				{
+					drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+				}
+				else if ( i == ALLY_CMD_CLASS_TOGGLE )
+				{
+					// draw higher.
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+					TTF_SizeUTF8(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+				}
+				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
+				{
+					// draw higher.
+					TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
+					TTF_SizeUTF8(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
+				}
+				else if ( i == ALLY_CMD_DROP_EQUIP )
+				{
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+					if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+					{
+						TTF_SizeUTF8(ttf12, language[3061], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
+					}
+					else if ( skillLVL >= SKILL_LEVEL_MASTER )
+					{
+						TTF_SizeUTF8(ttf12, language[3060], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3059], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+					}
+				}
+				else if ( i == ALLY_CMD_INTERACT )
+				{
+					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+				}
+				else if ( i == ALLY_CMD_MOVETO_SELECT )
+				{
+					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+				}
+				else
+				{
+					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+				}
+			}
+
+			angleStart += 2 * PI / numoptions;
+			angleMiddle = angleStart + PI / numoptions;
+			angleEnd = angleMiddle + PI / numoptions;
+		}
+		// draw center text.
+		if ( mouseInCenterButton )
+		{
+			highlight = -1;
+			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
+			drawCircle(xres / 2, yres / 2, 70, uint32ColorBaronyBlue(*mainsurface), 192);
+			//TTF_SizeUTF8(ttf12, language[3063], &width, nullptr);
+			//ttfPrintText(ttf12, xres / 2 - width / 2, yres / 2 - 8, language[3063]);
+		}
+
+
+		if ( disableOption )
+		{
+			SDL_Rect tooltip;
+			tooltip.x = omousex + 16;
+			tooltip.y = omousey + 16;
+			tooltip.w = longestline(language[3062]) * TTF12_WIDTH + 8;
+			tooltip.h = TTF12_HEIGHT * 2 + 8;
+			drawTooltip(&tooltip);
+			std::string requirement;
+			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END - 1 )
+			{
+				switch ( AllyNPCSkillRequirements[optionSelected] )
+				{
+					case 0:
+						requirement = language[363];
+						break;
+					case SKILL_LEVEL_NOVICE:
+						requirement = language[364];
+						break;
+					case SKILL_LEVEL_BASIC:
+						requirement = language[365];
+						break;
+					case SKILL_LEVEL_SKILLED:
+						requirement = language[366];
+						break;
+					case SKILL_LEVEL_EXPERT:
+						requirement = language[367];
+						break;
+					case SKILL_LEVEL_MASTER:
+						requirement = language[368];
+						break;
+					case SKILL_LEVEL_LEGENDARY:
+						requirement = language[369];
+						break;
+				}
+				requirement.erase(std::remove(requirement.begin(), requirement.end(), ' '), requirement.end()); // trim whitespace
+			}
+			ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3062], requirement.c_str());
+		}
+
+		if ( !keepWheelOpen )
+		{
+			optionSelected = highlight; // don't reselect if we're keeping the wheel open by using a toggle option.
+		}
+	}
 }

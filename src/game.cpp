@@ -776,8 +776,7 @@ void gameLogic(void)
 					minimapPings.clear(); // clear minimap pings
 
 					// clear follower menu entities.
-					followerMenuEntity = nullptr;
-					followerMenuEntityRecent = nullptr;
+					FollowerMenu.closeFollowerMenuGUI(true);
 
 					assignActions(&map);
 					generatePathMaps();
@@ -931,9 +930,9 @@ void gameLogic(void)
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 									}
 
-									if ( !followerMenuEntityRecent && c == clientnum )
+									if ( !FollowerMenu.recentEntity && c == clientnum )
 									{
-										followerMenuEntityRecent = monster;
+										FollowerMenu.recentEntity = monster;
 									}
 								}
 								else
@@ -2774,7 +2773,7 @@ int main(int argc, char** argv)
 						identifygui_active = false;
 						selectedIdentifySlot = -1;
 						closeRemoveCurseGUI();
-						followerMenuEntity = nullptr;
+						FollowerMenu.closeFollowerMenuGUI();
 						if ( shopkeeper != 0 )
 						{
 							if ( multiplayer != CLIENT )
@@ -2891,7 +2890,7 @@ int main(int argc, char** argv)
 							identifygui_active = false;
 							selectedIdentifySlot = -1;
 							closeRemoveCurseGUI();
-							followerMenuEntity = nullptr;
+							FollowerMenu.closeFollowerMenuGUI();
 						}
 
 						//What even is this code? When should it be run?
@@ -3290,19 +3289,19 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-						else if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT
-							|| followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT )
+						else if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 						{
 							pos.x = mousex - cursor_bmp->w / 2;
 							pos.y = mousey - cursor_bmp->h / 2;
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-							if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 							{
 								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Move to...");
 							}
 							else
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact... %s", followerInteractText);
+								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact... %s", FollowerMenu.interactText);
 							}
 						}
 						else if (draw_cursor)
@@ -3320,19 +3319,19 @@ int main(int argc, char** argv)
 						pos.y = yres / 2 - cross_bmp->h / 2;
 						pos.w = 0;
 						pos.h = 0;
-						if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT
-							|| followerMenuOptionSelected == ALLY_CMD_ATTACK_SELECT )
+						if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 						{
 							pos.x = xres / 2 - cursor_bmp->w / 2;
 							pos.y = yres / 2 - cursor_bmp->h / 2;
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-							if ( followerMenuOptionSelected == ALLY_CMD_MOVETO_SELECT )
+							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 							{
 								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Move to...");
 							}
 							else
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact... %s", followerInteractText);
+								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact... %s", FollowerMenu.interactText);
 							}
 						}
 						else

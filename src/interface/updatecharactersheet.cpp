@@ -653,11 +653,18 @@ void drawPartySheet()
 					monsterEntryWindow.h = fontHeight * 2 + 12;
 					drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
 						monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
-					if ( followerMenuEntityRecent == follower )
+					if ( FollowerMenu.recentEntity == follower )
 					{
 						// draw highlight on current selected monster.
 						drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
 						ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
+					}
+					if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode 
+						&& mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.y,
+						monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h) )
+					{
+						FollowerMenu.followerToCommand = follower;
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
 					pos.y += 6;
 					ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);

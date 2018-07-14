@@ -6117,8 +6117,7 @@ void handleMainMenu(bool mode)
 			minimapPings.clear(); // clear minimap pings
 
 			// clear follower menu entities.
-			followerMenuEntity = nullptr;
-			followerMenuEntityRecent = nullptr;
+			FollowerMenu.closeFollowerMenuGUI(true);
 
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
@@ -6278,9 +6277,9 @@ void handleMainMenu(bool mode)
 												serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 											}
 
-											if ( !followerMenuEntityRecent && c == clientnum )
+											if ( !FollowerMenu.recentEntity && c == clientnum )
 											{
-												followerMenuEntityRecent = monster;
+												FollowerMenu.recentEntity = monster;
 											}
 										}
 									}
