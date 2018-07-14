@@ -2393,8 +2393,7 @@ void clientHandlePacket()
 		minimapPings.clear(); // clear minimap pings
 
 		// clear follower menu entities.
-		FollowerMenu.closeFollowerMenuGUI();
-		FollowerMenu.recentEntity = nullptr;
+		FollowerMenu.closeFollowerMenuGUI(true);
 
 		numplayers = 0;
 		assignActions(&map);
