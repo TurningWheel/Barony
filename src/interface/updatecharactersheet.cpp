@@ -632,15 +632,19 @@ void drawPartySheet()
 	// draw follower stats
 	if ( numFollowers > 0 )
 	{
+		int monstersToDisplay = FollowerMenu.maxMonstersToDraw;
 		if ( playerCnt != 0 )
 		{
 			pos.y -= (fontHeight * 4) * (playerCnt + 1);
+			monstersToDisplay = std::max(2, monstersToDisplay - (std::max(0, playerCnt) * 2)); 
 		}
 		pos.h = numFollowers * (fontHeight * 2 + 6) + 14;
 		int i = 0;
 		SDL_Rect monsterEntryWindow;
 		monsterEntryWindow.x = pos.x + 8;
-		monsterEntryWindow.w = pos.w;
+		monsterEntryWindow.w = pos.w - 8;
+		SDL_Rect slider = monsterEntryWindow;
+		slider.y = pos.y;
 
 		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 		{
@@ -652,71 +656,116 @@ void drawPartySheet()
 				{
 					monsterEntryWindow.y = pos.y;
 					monsterEntryWindow.h = fontHeight * 2 + 12;
-					drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
-						monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
-					if ( !FollowerMenu.recentEntity )
-					{
-						FollowerMenu.recentEntity = follower;
-					}
-					if ( FollowerMenu.recentEntity == follower )
-					{
-						// draw highlight on current selected monster.
-						drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
-						ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
-					}
 
-					if ( !shootmode && (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
+					bool hideDetail = false;
+					if ( numFollowers > monstersToDisplay )
 					{
-						bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
-							monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
-						if ( inBounds )
+						if ( i < FollowerMenu.sidebarScrollIndex )
 						{
-							if ( mousestatus[SDL_BUTTON_LEFT] )
-							{
-								FollowerMenu.recentEntity = follower;
-								playSound(139, 64);
-								mousestatus[SDL_BUTTON_LEFT] = 0;
-							}
-							else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
-							{
-								FollowerMenu.followerToCommand = follower;
-								FollowerMenu.recentEntity = follower;
-								FollowerMenu.accessedMenuFromPartySheet = true;
-								FollowerMenu.partySheetMouseX = omousex;
-								FollowerMenu.partySheetMouseY = omousey;
-								FollowerMenu.initFollowerMenuGUICursor();
-							}
+							hideDetail = true;
+						}
+						else if ( i > FollowerMenu.sidebarScrollIndex + monstersToDisplay )
+						{
+							hideDetail = true;
 						}
 					}
-					pos.y += 6;
-					ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
-					ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
 
-					playerBar.x = pos.x + 64;
-					playerBar.w = 10 * 11;
-					if ( uiscale_skillspage )
+					if ( !hideDetail )
 					{
-						playerBar.x += 10;
-						playerBar.w += 48;
+						drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
+							monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
+
+						if ( !FollowerMenu.recentEntity )
+						{
+							FollowerMenu.recentEntity = follower;
+						}
+						if ( FollowerMenu.recentEntity == follower )
+						{
+							// draw highlight on current selected monster.
+							drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
+							// ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
+						}
+
+						if ( !shootmode && (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
+						{
+							bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
+								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
+							if ( inBounds )
+							{
+								if ( mousestatus[SDL_BUTTON_LEFT] )
+								{
+									FollowerMenu.recentEntity = follower;
+									playSound(139, 64);
+									FollowerMenu.accessedMenuFromPartySheet = true;
+									FollowerMenu.partySheetMouseX = omousex;
+									FollowerMenu.partySheetMouseY = omousey;
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+								}
+								else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+								{
+									FollowerMenu.followerToCommand = follower;
+									FollowerMenu.recentEntity = follower;
+									FollowerMenu.accessedMenuFromPartySheet = true;
+									FollowerMenu.partySheetMouseX = omousex;
+									FollowerMenu.partySheetMouseY = omousey;
+									FollowerMenu.initFollowerMenuGUICursor();
+									FollowerMenu.updateScrollPartySheet();
+								}
+							}
+						}
+
+						pos.y += 6;
+						ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
+
+						playerBar.x = pos.x + 64;
+						playerBar.w = 10 * 11;
+						if ( uiscale_skillspage )
+						{
+							playerBar.x += 10;
+							playerBar.w += 48;
+						}
+						playerBar.y = pos.y + fontHeight + 1;
+						playerBar.h = fontHeight;
+						// draw tooltip with blue outline
+						drawTooltip(&playerBar);
+						// draw faint red bar underneath
+						playerBar.x += 1;
+						drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
+
+						// draw main red bar for current HP
+						playerBar.w = (playerBar.w) * (static_cast<double>(followerStats->HP) / followerStats->MAXHP);
+						drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
+
+						// draw HP values
+						ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight + 4, color, "HP:  %3d / %3d", followerStats->HP, followerStats->MAXHP);
+						pos.y += (fontHeight * 2 + 6);
 					}
-					playerBar.y = pos.y + fontHeight + 1;
-					playerBar.h = fontHeight;
-					// draw tooltip with blue outline
-					drawTooltip(&playerBar);
-					// draw faint red bar underneath
-					playerBar.x += 1;
-					drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 48, 0, 0), 255);
-
-					// draw main red bar for current HP
-					playerBar.w = (playerBar.w) * (static_cast<double>(followerStats->HP) / followerStats->MAXHP);
-					drawRect(&playerBar, SDL_MapRGB(mainsurface->format, 128, 0, 0), 255);
-
-					// draw HP values
-					ttfPrintTextFormattedColor(fontPlayer, pos.x + 32, pos.y + fontHeight + 4, color, "HP:  %3d / %3d", followerStats->HP, followerStats->MAXHP);
-					pos.y += (fontHeight * 2 + 6);
 				}
 			}
 		}
+		slider.x = xres - 16;
+		slider.w = 16;
+		slider.h = (fontHeight * 2 + 12) * (std::min(monstersToDisplay + 1, numFollowers));
+		drawDepressed(slider.x, slider.y, slider.x + slider.w,
+			slider.y + slider.h);
+
+		if ( mousestatus[SDL_BUTTON_WHEELDOWN] && mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+			slider.y + slider.h) )
+		{
+			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+			FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+		}
+		else if ( mousestatus[SDL_BUTTON_WHEELUP] && mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+			slider.y + slider.h) )
+		{
+			mousestatus[SDL_BUTTON_WHEELUP] = 0;
+			FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
+		}
+
+		slider.h *= (1 / static_cast<real_t>(std::max(1, numFollowers - monstersToDisplay)));
+		slider.y += slider.h * FollowerMenu.sidebarScrollIndex;
+		drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
 	}
 }
 

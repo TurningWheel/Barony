@@ -1461,13 +1461,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						optionPrevious = ALLY_CMD_MOVETO_SELECT;
 					}
-					else if ( optionPrevious == ALLY_CMD_FOLLOW )
+					else if ( optionPrevious == ALLY_CMD_FOLLOW || optionPrevious == ALLY_CMD_DEFEND )
 					{
-						optionPrevious = ALLY_CMD_DEFEND;
-					}
-					else if ( optionPrevious == ALLY_CMD_DEFEND )
-					{
-						optionPrevious = ALLY_CMD_FOLLOW;
+						if ( followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO )
+						{
+							optionPrevious = ALLY_CMD_FOLLOW;
+						}
+						else
+						{
+							optionPrevious = ALLY_CMD_DEFEND;
+						}
 					}
 					optionSelected = optionPrevious;
 				}
@@ -1800,6 +1803,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 	}
 }
 
+int FollowerRadialMenu::numMonstersToDrawInParty()
+{
+	int players = 0;
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( !client_disconnected[c] )
+		{
+			++players;
+		}
+	}
+	return std::max(2, (maxMonstersToDraw - std::max(0, players - 1) * 2));
+}
+
 void FollowerRadialMenu::selectNextFollower()
 {
 	if ( !stats[clientnum] )
@@ -1807,7 +1823,9 @@ void FollowerRadialMenu::selectNextFollower()
 		return;
 	}
 
-	if ( list_Size(&stats[clientnum]->FOLLOWERS) <= 0 )
+	int numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+
+	if ( numFollowers <= 0 )
 	{
 		return;
 	}
@@ -1821,18 +1839,23 @@ void FollowerRadialMenu::selectNextFollower()
 			if ( follower )
 			{
 				recentEntity = follower;
+				FollowerMenu.sidebarScrollIndex = 0;
 				return;
 			}
 		}
 	}
-	else if ( list_Size(&stats[clientnum]->FOLLOWERS) == 1 )
+	else if ( numFollowers == 1 )
 	{
 		// only 1 follower, no work to do.
+		FollowerMenu.sidebarScrollIndex = 0;
 		return;
 	}
 
+	int monstersToDraw = numMonstersToDrawInParty();
+
 	node_t* node2 = nullptr;
-	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next)
+	int i = 0;
+	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i)
 	{
 		Entity* follower = uidToEntity(*((Uint32*)node->element));
 		if ( follower == recentEntity )
@@ -1847,6 +1870,20 @@ void FollowerRadialMenu::selectNextFollower()
 					{
 						followerToCommand = follower; // if we had the menu open, we're now controlling the new selected follower.
 					}
+					if ( numFollowers > monstersToDraw )
+					{
+						if ( monstersToDraw > 1 )
+						{
+							if ( i < sidebarScrollIndex || i >= sidebarScrollIndex + monstersToDraw )
+							{
+								sidebarScrollIndex = std::min(i, numFollowers - monstersToDraw - 1);
+							}
+							if ( i != 0 )
+							{
+								sidebarScrollIndex = std::min(sidebarScrollIndex + 1, numFollowers - monstersToDraw - 1);
+							}
+						}
+					}
 				}
 			}
 			else
@@ -1860,9 +1897,56 @@ void FollowerRadialMenu::selectNextFollower()
 					{
 						followerToCommand = follower; // if we had the menu open, we're now controlling the new selected follower.
 					}
+					sidebarScrollIndex = 0;
 				}
 			}
 			return;
+		}
+	}
+}
+
+void FollowerRadialMenu::updateScrollPartySheet()
+{
+	if ( !stats[clientnum] )
+	{
+		return;
+	}
+
+	int numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+
+	if ( numFollowers <= 0 )
+	{
+		return;
+	}
+
+	int monstersToDraw = numMonstersToDrawInParty();
+
+	if ( !recentEntity ) // set first follower to be the selected one.
+	{
+		return;
+	}
+	else if ( numFollowers == 1 || numFollowers <= monstersToDraw )
+	{
+		// only 1 follower or limit not reached, no work to do.
+		FollowerMenu.sidebarScrollIndex = 0;
+		return;
+	}
+
+	int i = 0;
+
+	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
+	{
+		Entity* follower = uidToEntity(*((Uint32*)node->element));
+		if ( follower == recentEntity )
+		{
+			if ( monstersToDraw > 1 )
+			{
+				if ( i < sidebarScrollIndex || i >= sidebarScrollIndex + monstersToDraw )
+				{
+					sidebarScrollIndex = std::min(i, numFollowers - monstersToDraw - 1);
+				}
+			}
+			break;
 		}
 	}
 }
