@@ -6270,6 +6270,8 @@ void handleMainMenu(bool mode)
 												net_packet->address.port = net_clients[c - 1].port;
 												net_packet->len = 8;
 												sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+												serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 											}
 										}
 									}

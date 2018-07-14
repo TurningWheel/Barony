@@ -210,6 +210,8 @@ void spell_summonFamiliar(int player)
 					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 8;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+
+					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 				}
 			}
 		}

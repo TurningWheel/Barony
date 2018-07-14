@@ -972,7 +972,7 @@ void serverUpdatePlayerLVL()
 
 void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 {
-	if ( multiplayer != SERVER )
+	if ( multiplayer != SERVER || player == 0 )
 	{
 		return;
 	}
@@ -990,7 +990,7 @@ void serverRemoveClientFollower(int player, Uint32 uidToRemove)
 
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type)
 {
-	if ( multiplayer != SERVER )
+	if ( multiplayer != SERVER || player == 0 )
 	{
 		return;
 	}
