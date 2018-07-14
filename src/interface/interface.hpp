@@ -457,6 +457,9 @@ public:
 	bool menuToggleClick; // user pressed menu key but did not select option before letting go. keeps the menu open without input.
 	bool holdWheel; // user pressed quick menu for last follower.
 	char interactText[128]; // user moused over object while selecting interact object.
+	bool accessedMenuFromPartySheet;
+	int partySheetMouseX;
+	int partySheetMouseY;
 
 	FollowerRadialMenu() :
 		followerToCommand(nullptr),
@@ -470,10 +473,15 @@ public:
 		moveToY(-1),
 		menuToggleClick(false),
 		holdWheel(false),
-		interactText("") {}
+		interactText(""),
+		accessedMenuFromPartySheet(false),
+		partySheetMouseX(-1),
+		partySheetMouseY(-1)
+	{}
 
 	void drawFollowerMenu();
 	void initFollowerMenuGUICursor(bool openInventory = true);
 	void closeFollowerMenuGUI(bool clearRecentEntity = false);
+	void selectNextFollower();
 };
 extern FollowerRadialMenu FollowerMenu;

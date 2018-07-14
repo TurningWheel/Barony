@@ -641,6 +641,7 @@ void drawPartySheet()
 		SDL_Rect monsterEntryWindow;
 		monsterEntryWindow.x = pos.x + 8;
 		monsterEntryWindow.w = pos.w;
+
 		for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next, ++i )
 		{
 			Entity* follower = uidToEntity(*((Uint32*)node->element));
@@ -653,18 +654,40 @@ void drawPartySheet()
 					monsterEntryWindow.h = fontHeight * 2 + 12;
 					drawWindowFancy(monsterEntryWindow.x, monsterEntryWindow.y, 
 						monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h);
+					if ( !FollowerMenu.recentEntity )
+					{
+						FollowerMenu.recentEntity = follower;
+					}
 					if ( FollowerMenu.recentEntity == follower )
 					{
 						// draw highlight on current selected monster.
 						drawRect(&monsterEntryWindow, uint32ColorBaronyBlue(*mainsurface), 32);
 						ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 					}
-					if ( mousestatus[SDL_BUTTON_LEFT] && !shootmode 
-						&& mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.y,
-						monsterEntryWindow.x + monsterEntryWindow.w, monsterEntryWindow.y + monsterEntryWindow.h) )
+
+					if ( !shootmode && (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
 					{
-						FollowerMenu.followerToCommand = follower;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
+						bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
+							monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
+						if ( inBounds )
+						{
+							if ( mousestatus[SDL_BUTTON_LEFT] )
+							{
+								FollowerMenu.recentEntity = follower;
+								playSound(139, 32);
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+							}
+							else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+							{
+								playSound(139, 32);
+								FollowerMenu.followerToCommand = follower;
+								FollowerMenu.recentEntity = follower;
+								FollowerMenu.accessedMenuFromPartySheet = true;
+								FollowerMenu.partySheetMouseX = omousex;
+								FollowerMenu.partySheetMouseY = omousey;
+								FollowerMenu.initFollowerMenuGUICursor();
+							}
+						}
 					}
 					pos.y += 6;
 					ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);

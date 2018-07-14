@@ -652,7 +652,8 @@ void defaultImpulses()
 	impulses[IN_MINIMAPSCALE] = 27;
 	impulses[IN_TOGGLECHATLOG] = 15;
 	impulses[IN_FOLLOWERMENU] = 6;
-	impulses[IN_FOLLOWERMENU_LASTCMD] = 29;
+	impulses[IN_FOLLOWERMENU_LASTCMD] = 20;
+	impulses[IN_FOLLOWERMENU_CYCLENEXT] = 8;
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
@@ -1385,6 +1386,14 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 	{
 		recentEntity = nullptr;
 	}
+	if ( accessedMenuFromPartySheet )
+	{
+		accessedMenuFromPartySheet = false;
+		mousex = partySheetMouseX;
+		mousey = partySheetMouseY;
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+		SDL_WarpMouseInWindow(screen, mousex, mousey);
+	}
 }
 
 void FollowerRadialMenu::drawFollowerMenu()
@@ -1473,24 +1482,27 @@ void FollowerRadialMenu::drawFollowerMenu()
 				holdWheel = false;
 				if ( optionSelected != ALLY_CMD_ATTACK_CONFIRM && optionSelected != ALLY_CMD_MOVETO_CONFIRM )
 				{
-					playSound(139, 16); // click
+					playSound(139, 32); // click
 				}
 				else
 				{
-					playSound(399, 16); // ping
+					playSound(399, 32); // ping
 				}
 				// return to shootmode and close guis etc. TODO: tidy up interface code into 1 spot?
 				if ( !keepWheelOpen )
 				{
-					shootmode = true;
-					identifygui_active = false;
-					selectedIdentifySlot = -1;
-					closeRemoveCurseGUI();
-					if ( openedChest[clientnum] )
+					if ( !accessedMenuFromPartySheet )
 					{
-						openedChest[clientnum]->closeChest();
+						shootmode = true;
+						identifygui_active = false;
+						selectedIdentifySlot = -1;
+						closeRemoveCurseGUI();
+						if ( openedChest[clientnum] )
+						{
+							openedChest[clientnum]->closeChest();
+						}
+						gui_mode = GUI_MODE_NONE;
 					}
-					gui_mode = GUI_MODE_NONE;
 				}
 
 				if ( !disableOption
@@ -1773,6 +1785,73 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( !keepWheelOpen )
 		{
 			optionSelected = highlight; // don't reselect if we're keeping the wheel open by using a toggle option.
+		}
+	}
+}
+
+void FollowerRadialMenu::selectNextFollower()
+{
+	if ( !stats[clientnum] )
+	{
+		return;
+	}
+
+	if ( list_Size(&stats[clientnum]->FOLLOWERS) <= 0 )
+	{
+		return;
+	}
+
+	if ( !recentEntity ) // set first follower to be the selected one.
+	{
+		node_t* node = stats[clientnum]->FOLLOWERS.first;
+		if ( node )
+		{
+			Entity* follower = uidToEntity(*((Uint32*)node->element));
+			if ( follower )
+			{
+				recentEntity = follower;
+				return;
+			}
+		}
+	}
+	else if ( list_Size(&stats[clientnum]->FOLLOWERS) == 1 )
+	{
+		// only 1 follower, no work to do.
+		return;
+	}
+
+	node_t* node2 = nullptr;
+	for ( node_t* node = stats[clientnum]->FOLLOWERS.first; node != nullptr; node = node->next)
+	{
+		Entity* follower = uidToEntity(*((Uint32*)node->element));
+		if ( follower == recentEntity )
+		{
+			if ( node->next != nullptr )
+			{
+				follower = uidToEntity(*((Uint32*)(node->next)->element));
+				if ( follower )
+				{
+					recentEntity = follower;
+					if ( followerToCommand )
+					{
+						followerToCommand = follower; // if we had the menu open, we're now controlling the new selected follower.
+					}
+				}
+			}
+			else
+			{
+				node2 = stats[clientnum]->FOLLOWERS.first; // loop around to first index.
+				follower = uidToEntity(*((Uint32*)(node2)->element));
+				if ( follower )
+				{
+					recentEntity = follower;
+					if ( followerToCommand )
+					{
+						followerToCommand = follower; // if we had the menu open, we're now controlling the new selected follower.
+					}
+				}
+			}
+			return;
 		}
 	}
 }

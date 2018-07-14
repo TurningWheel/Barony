@@ -1418,7 +1418,7 @@ void actPlayer(Entity* my)
 			{
 				selectedEntity = NULL;
 
-				if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
+				if ( !command && (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 				{
 					if ( !FollowerMenu.menuToggleClick && FollowerMenu.selectMoveTo )
 					{
@@ -1500,7 +1500,7 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			if ( !FollowerMenu.followerToCommand && FollowerMenu.recentEntity )
+			if ( !command && !FollowerMenu.followerToCommand && FollowerMenu.recentEntity )
 			{
 				if ( *inputPressed(impulses[IN_FOLLOWERMENU]) )
 				{

@@ -3006,6 +3006,18 @@ int main(int argc, char** argv)
 						playSound(139, 64);
 					}
 
+					if ( !command && *inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) )
+					{
+						playSound(139, 32);
+						FollowerMenu.selectNextFollower();
+						proficienciesPage = 1;
+						if ( shootmode && !lock_right_sidebar )
+						{
+							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+						}
+						*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
+					}
+
 					// commands
 					if ( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command )
 					{
@@ -3023,6 +3035,8 @@ int main(int argc, char** argv)
 						inputstr = command_str;
 						*inputPressed(impulses[IN_COMMAND]) = 0;
 						SDL_StartTextInput();
+
+						FollowerMenu.closeFollowerMenuGUI();
 					}
 					if ( command )
 					{
