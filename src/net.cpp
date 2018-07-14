@@ -2393,8 +2393,8 @@ void clientHandlePacket()
 		minimapPings.clear(); // clear minimap pings
 
 		// clear follower menu entities.
-		followerMenuEntity = nullptr;
-		followerMenuEntityRecent = nullptr;
+		FollowerMenu.closeFollowerMenuGUI();
+		FollowerMenu.recentEntity = nullptr;
 
 		numplayers = 0;
 		assignActions(&map);
@@ -2654,9 +2654,9 @@ void clientHandlePacket()
 		node->deconstructor = &defaultDeconstructor;
 		node->size = sizeof(Uint32);
 
-		if ( !followerMenuEntityRecent )
+		if ( !FollowerMenu.recentEntity )
 		{
-			followerMenuEntityRecent = uidToEntity(*uidnum);
+			FollowerMenu.recentEntity = uidToEntity(*uidnum);
 		}
 		return;
 	}

@@ -2314,9 +2314,9 @@ void item_ScrollSummon(Item* item, int player)
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 				}
 
-				if ( !followerMenuEntityRecent && player == clientnum )
+				if ( !FollowerMenu.recentEntity && player == clientnum )
 				{
-					followerMenuEntityRecent = monster;
+					FollowerMenu.recentEntity = monster;
 				}
 			}
 		}

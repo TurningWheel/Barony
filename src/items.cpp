@@ -3435,9 +3435,9 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 		return true;
 	}
 
-	if ( followerInteractedEntity )
+	if ( FollowerMenu.entityToInteractWith )
 	{
-		if ( newArmor.interactNPCUid == followerInteractedEntity->interactedByMonster )
+		if ( newArmor.interactNPCUid == FollowerMenu.entityToInteractWith->interactedByMonster )
 		{
 			return true;
 		}
