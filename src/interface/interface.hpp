@@ -461,6 +461,7 @@ public:
 	int partySheetMouseX; // store mouse x cooord for accessedMenuFromPartySheet warp.
 	int partySheetMouseY; // store mouse y cooord for accessedMenuFromPartySheet warp.
 	int sidebarScrollIndex; // entries scrolled in the sidebar list if overflowed with followers.
+	static const int maxMonstersToDraw = 5;
 
 	FollowerRadialMenu() :
 		followerToCommand(nullptr),
@@ -478,12 +479,14 @@ public:
 		accessedMenuFromPartySheet(false),
 		partySheetMouseX(-1),
 		partySheetMouseY(-1),
-		sidebarScrollIndex(-1)
+		sidebarScrollIndex(0)
 	{}
 
 	void drawFollowerMenu();
 	void initFollowerMenuGUICursor(bool openInventory = true);
 	void closeFollowerMenuGUI(bool clearRecentEntity = false);
 	void selectNextFollower();
+	int numMonstersToDrawInParty();
+	void updateScrollPartySheet();
 };
 extern FollowerRadialMenu FollowerMenu;
