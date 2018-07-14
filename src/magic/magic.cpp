@@ -213,6 +213,11 @@ void spell_summonFamiliar(int player)
 
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
 				}
+
+				if ( !followerMenuEntityRecent && player == clientnum )
+				{
+					followerMenuEntityRecent = monster;
+				}
 			}
 		}
 	}

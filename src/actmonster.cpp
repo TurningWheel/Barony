@@ -739,6 +739,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 	}
+
+	if ( !followerMenuEntityRecent && monsterclicked == clientnum )
+	{
+		followerMenuEntityRecent = my;
+	}
 	return true;
 }
 
@@ -6343,6 +6348,10 @@ bool forceFollower(Entity& leader, Entity& follower)
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);
 	}
 
+	if ( !followerMenuEntityRecent && player == clientnum )
+	{
+		followerMenuEntityRecent = &follower;
+	}
 	return true;
 }
 
