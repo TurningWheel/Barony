@@ -6313,6 +6313,10 @@ bool forceFollower(Entity& leader, Entity& follower)
 					steamAchievementClient(leader.skill[2], "BARONY_ACH_CONFESSOR");
 				}
 				list_RemoveNodeWithElement<Uint32>(oldLeaderStats->FOLLOWERS, *myuid);
+				if ( oldLeader->behavior == &actPlayer )
+				{
+					serverRemoveClientFollower(oldLeader->skill[2], *myuid);
+				}
 			}
 		}
 	}
@@ -6335,6 +6339,8 @@ bool forceFollower(Entity& leader, Entity& follower)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+
+		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);
 	}
 
 	return true;
