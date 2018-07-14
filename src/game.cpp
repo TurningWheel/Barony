@@ -775,6 +775,10 @@ void gameLogic(void)
 
 					minimapPings.clear(); // clear minimap pings
 
+					// clear follower menu entities.
+					followerMenuEntity = nullptr;
+					followerMenuEntityRecent = nullptr;
+
 					assignActions(&map);
 					generatePathMaps();
 
@@ -925,6 +929,11 @@ void gameLogic(void)
 										sendPacketSafe(net_sock, -1, net_packet, c - 1);
 
 										serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
+									}
+
+									if ( !followerMenuEntityRecent && c == clientnum )
+									{
+										followerMenuEntityRecent = monster;
 									}
 								}
 								else
