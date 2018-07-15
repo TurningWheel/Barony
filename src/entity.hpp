@@ -191,6 +191,7 @@ public:
 	Sint32& monsterAllyPickupItems; //skill[44]
 	Sint32& monsterAllyInteractTarget; //skill[45]
 	Sint32& monsterAllyClass; //skill[46]
+	Sint32& monsterDefend; //skill[47]
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 
@@ -459,6 +460,7 @@ public:
 
 	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
 	Item** shouldMonsterEquipThisArmor(const Item& item) const;
+	bool Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon);
 
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 

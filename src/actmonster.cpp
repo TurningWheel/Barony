@@ -2641,6 +2641,28 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
+		if ( my->monsterDefend == 1 )
+		{
+			if ( my->monsterState != MONSTER_STATE_ATTACK && my->monsterState != MONSTER_STATE_HUNT )
+			{
+				myStats->defending = false;
+				my->monsterDefend = 0;
+				serverUpdateEntitySkill(my, 47);
+			}
+			else
+			{
+				// decide if to defend.
+				if ( my->monsterAttack == 0 )
+				{
+					myStats->defending = true;
+				}
+				else
+				{
+					myStats->defending = false;
+				}
+			}
+		}
+
 		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
 		//	|| myStats->type == LICH_ICE )
 		//{
@@ -5771,6 +5793,15 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		}
 	}
 
+	if ( myStats->shield && monsterAttack == 0 && monsterDefend == 1 )
+	{
+		myStats->defending = true;
+	}
+	else
+	{
+		myStats->defending = false;
+	}
+
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) || lichRangeCheckOverride )
 	{
@@ -5864,6 +5895,13 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					// prepare attack, set the animation of the attack based on the current weapon.
 					int pose = this->getAttackPose();
 
+					int oldDefend = monsterDefend;
+					monsterDefend = (shouldMonsterDefend(*myStats, *hit.entity, *hitstats, dist, hasrangedweapon)) ? 1 : 0;
+					if ( oldDefend != monsterDefend )
+					{
+						serverUpdateEntitySkill(this, 47);
+					}
+
 					// turn to the target, then reset my yaw.
 					double oYaw = this->yaw;
 					this->yaw = newTangent;
@@ -5893,7 +5931,16 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 							}
 						}
 					}
-					this->attack(pose, charge, nullptr); // attacku! D:<
+
+					if ( monsterDefend && rand() % 3 == 0 )
+					{
+						// skip attack, continue defending.
+						monsterHitTime = HITRATE / 2;
+					}
+					else
+					{
+						this->attack(pose, charge, nullptr); // attacku! D:<
+					}
 					this->yaw = oYaw;
 				}
 			}
@@ -7469,4 +7516,93 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	char fullmsg[256] = "";
 	strcpy(fullmsg, message.c_str());
 	messagePlayer(monsterAllyIndex, fullmsg, namesays, stats[monsterAllyIndex]->name);
+}
+
+bool Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon)
+{
+	if ( behavior != &actMonster )
+	{
+		return false;
+	}
+
+	if ( !myStats.shield )
+	{
+		return false;
+	}
+
+	if ( monsterSpecialState > 0 )
+	{
+		return false;
+	}
+
+	if ( myStats.type == LICH
+		|| myStats.type == DEVIL
+		|| myStats.type == LICH_ICE
+		|| myStats.type == LICH_FIRE
+		|| myStats.type == SHOPKEEPER
+		)
+	{
+		return false;
+	}
+
+	bool isPlayerAlly = (monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS);
+	int blockChance = 2; // 10%
+	bool targetHasRangedWeapon = target.hasRangedWeapon();
+
+	if ( isPlayerAlly )
+	{
+		if ( stats[monsterAllyIndex] && players[monsterAllyIndex] && players[monsterAllyIndex]->entity )
+		{
+			int leaderSkill = std::max(players[monsterAllyIndex]->entity->getCHR(), 0) + stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP];
+			blockChance += std::max(0, (leaderSkill / 20) * 2); // 0-25% bonus to blockchance.
+		}
+	}
+
+	if ( myStats.PROFICIENCIES[PRO_SHIELD] > 0 )
+	{
+		blockChance += std::min(myStats.PROFICIENCIES[PRO_SHIELD] / 10, 5); // 0-25% bonus to blockchance.
+	}
+
+	bool retreatBonus = false;
+	if ( backupWithRangedWeapon(myStats, targetDist, hasrangedweapon) )
+	{
+		if ( targetHasRangedWeapon )
+		{
+			retreatBonus = true;
+		}
+		else if ( !targetHasRangedWeapon && targetDist < TOUCHRANGE )
+		{
+			retreatBonus = true;
+		}
+	}
+	if ( shouldRetreat(myStats) )
+	{
+		retreatBonus = true;
+	}
+
+	if ( retreatBonus )
+	{
+		blockChance += 2; // 10% bonus to blockchance.
+	}
+
+	blockChance = std::min(blockChance, 12); // 60% block hard cap.
+
+	if ( targetHasRangedWeapon && targetStats.weapon )
+	{
+		if ( itemCategory(targetStats.weapon) == MAGICSTAFF )
+		{
+			if ( myStats.shield->type != MIRROR_SHIELD )
+			{
+				// no point defending!
+				blockChance = 0;
+			}
+		}
+	}
+
+	if ( rand() % 20 < blockChance )
+	{
+		return true;
+	}
+
+	return false;
 }

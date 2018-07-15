@@ -668,6 +668,8 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		playSoundEntityLocal(my, 259, 16);
 	}
 
+	Entity* shieldarm = nullptr;
+
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
@@ -1013,6 +1015,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case LIMB_HUMANOID_LEFTARM:
 			{
+				shieldarm = entity;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
@@ -1041,6 +1044,15 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->pitch = 0;
 				}
+				if ( my->monsterDefend && my->monsterAttack == 0 )
+				{
+					MONSTER_SHIELDYAW = PI / 5;
+				}
+				else
+				{
+					MONSTER_SHIELDYAW = 0;
+				}
+				entity->yaw += MONSTER_SHIELDYAW;
 				break;
 			}
 			// weapon
@@ -1141,27 +1153,63 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
+				entity->yaw = shieldarm->yaw;
+				entity->roll = 0;
+				entity->pitch = 0;
+
+				if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
+				{
+					entity->focalx = limbs[AUTOMATON][7][0];
+					entity->focaly = limbs[AUTOMATON][7][1];
+					entity->focalz = limbs[AUTOMATON][7][2];
+				}
+				else
+				{
+					entity->focalx = limbs[AUTOMATON][7][0] + 0.5;
+					entity->focaly = limbs[AUTOMATON][7][1] - 1;
+					entity->focalz = limbs[AUTOMATON][7][2];
+				}
+
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
 					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
+					entity2->x += 3 * cos(entity->yaw);
+					entity2->y += 3 * sin(entity->yaw);
 					entity2->z -= 2;
 				}
 				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
 				{
 					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
+					entity2->x += 3 * cos(entity->yaw);
+					entity2->y += 3 * sin(entity->yaw);
 					entity2->z -= 2;
 				}
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
 					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
+					entity2->x += 3 * cos(entity->yaw);
+					entity2->y += 3 * sin(entity->yaw);
 					entity2->z += 1;
+				}
+				if ( MONSTER_SHIELDYAW > PI / 32 )
+				{
+					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
+					{
+						// shield, so rotate a little.
+						entity->roll += PI / 64;
+					}
+					else
+					{
+						entity->x += 0.25 * cos(my->yaw);
+						entity->y += 0.25 * sin(my->yaw);
+						entity->pitch += PI / 16;
+						if ( entity2 )
+						{
+							entity2->x += 0.75 * cos(shieldarm->yaw);
+							entity2->y += 0.75 * sin(shieldarm->yaw);
+						}
+					}
 				}
 				break;
 			// cloak
@@ -1320,6 +1368,16 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				}
 				break;
+		}
+	}
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, LIMB_HUMANOID_SHIELD);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
 		}
 	}
 	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
