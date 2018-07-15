@@ -3592,3 +3592,71 @@ Entity* Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, rea
 	}
 	return entity;
 }
+
+void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
+{
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+	//entity->sizex = 1;
+	//entity->sizey = 1;
+	entity->x = x;
+	entity->y = y;
+	entity->z = 7.5;
+	entity->vel_z = -0.8;
+	//entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 50;
+	entity->behavior = &actParticleFollowerCommand;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+
+	// boosty boost
+	for ( int c = 0; c < 10; c++ )
+	{
+		entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+		entity->x = x - 4 + rand() % 9;
+		entity->y = y - 4 + rand() % 9;
+		entity->z = z - 0 + rand() % 11;
+		entity->scalex = 0.7;
+		entity->scaley = 0.7;
+		entity->scalez = 0.7;
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->yaw = (rand() % 360) * PI / 180.f;
+		entity->flags[PASSABLE] = true;
+		entity->flags[BRIGHT] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->behavior = &actMagicParticle;
+		entity->vel_z = -1;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+
+}
+
+void actParticleFollowerCommand(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->z += my->vel_z;
+		my->yaw += my->vel_z * 2;
+		if ( my->z < -3 )
+		{
+			my->vel_z *= 0.9;
+		}
+	}
+}

@@ -1373,7 +1373,7 @@ void actPlayer(Entity* my)
 			if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
 			{
 				Entity* underMouse = nullptr;
-				if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT && ticks % 20 == 0 )
+				if ( FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT && ticks % 10 == 0 )
 				{
 					if ( !shootmode )
 					{
@@ -1433,7 +1433,7 @@ void actPlayer(Entity* my)
 							{
 								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);
-								spawnMagicEffectParticles(newPing.x, newPing.y, 0, 174);
+								createParticleFollowerCommand(newPing.x, newPing.y, 0, 174);
 								FollowerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
 								FollowerMenu.selectMoveTo = false;
 								FollowerMenu.moveToX = static_cast<int>(newPing.x);
@@ -1450,21 +1450,31 @@ void actPlayer(Entity* my)
 									pitch = 0;
 								}
 								// draw line from the players height and direction until we hit the ground.
+								real_t previousx = startx;
+								real_t previousy = starty;
+								int index = 0;
 								for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
 								{
 									startx += 0.1 * cos(players[PLAYER_NUM]->entity->yaw);
 									starty += 0.1 * sin(players[PLAYER_NUM]->entity->yaw);
-									int index = (static_cast<int>(starty + 16 * sin(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
-									if ( map.tiles[OBSTACLELAYER + index] || !map.tiles[index] )
+									index = (static_cast<int>(starty + 16 * sin(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(players[PLAYER_NUM]->entity->yaw)) >> 4) * MAPLAYERS * map.height;
+									if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+									{
+										// store the last known good coordinate
+										previousx = startx;
+										previousy = starty;
+									}
+									if ( map.tiles[OBSTACLELAYER + index] )
 									{
 										break;
 									}
 								}
-								spawnMagicEffectParticles(startx, starty, 0, 174);
+
+								createParticleFollowerCommand(previousx, previousy, 0, 174);
 								FollowerMenu.optionSelected = ALLY_CMD_MOVETO_CONFIRM;
 								FollowerMenu.selectMoveTo = false;
-								FollowerMenu.moveToX = static_cast<int>(startx) / 16;
-								FollowerMenu.moveToY = static_cast<int>(starty) / 16;
+								FollowerMenu.moveToX = static_cast<int>(previousx) / 16;
+								FollowerMenu.moveToY = static_cast<int>(previousy) / 16;
 								//messagePlayer(PLAYER_NUM, "%d, %d, pitch: %f", followerMoveToX, followerMoveToY, players[PLAYER_NUM]->entity->pitch);
 							}
 						}
