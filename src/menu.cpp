@@ -2372,8 +2372,10 @@ void handleMainMenu(bool mode)
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
 				{
 					if ( omousey >= suby1 + 168 && omousey < suby1 + 168 + 12 )
-					mousestatus[SDL_BUTTON_LEFT] = 0;
-					settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
+					}
 				}
 			}
 		}
