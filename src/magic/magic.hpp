@@ -442,6 +442,7 @@ void actParticleTimer(Entity* my);
 void actParticleSap(Entity* my);
 void actParticleSapCenter(Entity* my);
 void actParticleExplosionCharge(Entity* my);
+void actParticleFollowerCommand(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -451,6 +452,7 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
+void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
