@@ -303,6 +303,10 @@ void drawSkillsSheet()
 	pos.h = (NUMPROFICIENCIES * fontHeight) + (fontHeight * 3);
 
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
+	interfaceSkillsSheet.x = pos.x;
+	interfaceSkillsSheet.y = pos.y;
+	interfaceSkillsSheet.w = pos.w;
+	interfaceSkillsSheet.h = pos.h;
 
 	ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y + 8, language[1883]);
 
@@ -461,7 +465,11 @@ void drawPartySheet()
 	pos.y = 32;
 	pos.h = (fontHeight * 2 + 12) + ((fontHeight * 4) + 6) * (std::max(playerCnt + 1, 1));
 
-	int numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+	int numFollowers = 0;
+	if ( stats[clientnum] )
+	{
+		numFollowers = list_Size(&stats[clientnum]->FOLLOWERS);
+	}
 
 	if ( playerCnt == 0 ) // 1 player.
 	{
@@ -479,6 +487,10 @@ void drawPartySheet()
 		}
 	}
 	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
+	interfacePartySheet.x = pos.x;
+	interfacePartySheet.y = pos.y;
+	interfacePartySheet.w = pos.w;
+	interfacePartySheet.h = pos.h;
 
 	ttfPrintTextFormatted(fontPlayer, pos.x + 4, pos.y + 8, "Party Stats");
 
@@ -635,14 +647,17 @@ void drawPartySheet()
 		int monstersToDisplay = FollowerMenu.maxMonstersToDraw;
 		if ( playerCnt != 0 )
 		{
-			pos.y -= (fontHeight * 4) * (playerCnt + 1);
-			monstersToDisplay = std::max(2, monstersToDisplay - (std::max(0, playerCnt) * 2)); 
+			pos.y -= (fontHeight * 4) * std::max(playerCnt + 1, 0);
+			monstersToDisplay = FollowerMenu.numMonstersToDrawInParty();
 		}
-		pos.h = numFollowers * (fontHeight * 2 + 6) + 14;
 		int i = 0;
 		SDL_Rect monsterEntryWindow;
 		monsterEntryWindow.x = pos.x + 8;
 		monsterEntryWindow.w = pos.w - 8;
+		if ( numFollowers > (monstersToDisplay + 1) )
+		{
+			monsterEntryWindow.w -= 16;
+		}
 		SDL_Rect slider = monsterEntryWindow;
 		slider.y = pos.y;
 
@@ -747,25 +762,48 @@ void drawPartySheet()
 		slider.x = xres - 16;
 		slider.w = 16;
 		slider.h = (fontHeight * 2 + 12) * (std::min(monstersToDisplay + 1, numFollowers));
-		drawDepressed(slider.x, slider.y, slider.x + slider.w,
-			slider.y + slider.h);
+		interfacePartySheet.h += slider.h + 6;
 
-		if ( mousestatus[SDL_BUTTON_WHEELDOWN] && mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
-			slider.y + slider.h) )
+		if ( numFollowers > (monstersToDisplay + 1) )
 		{
-			mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-			FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
-		}
-		else if ( mousestatus[SDL_BUTTON_WHEELUP] && mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
-			slider.y + slider.h) )
-		{
-			mousestatus[SDL_BUTTON_WHEELUP] = 0;
-			FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
-		}
+			drawDepressed(slider.x, slider.y, slider.x + slider.w,
+				slider.y + slider.h);
 
-		slider.h *= (1 / static_cast<real_t>(std::max(1, numFollowers - monstersToDisplay)));
-		slider.y += slider.h * FollowerMenu.sidebarScrollIndex;
-		drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
+			bool mouseInScrollbarTotalHeight = mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+				slider.y + slider.h);
+
+			if ( mousestatus[SDL_BUTTON_WHEELDOWN] && mouseInScrollbarTotalHeight )
+			{
+				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+				FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+			}
+			else if ( mousestatus[SDL_BUTTON_WHEELUP] && mouseInScrollbarTotalHeight )
+			{
+				mousestatus[SDL_BUTTON_WHEELUP] = 0;
+				FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
+			}
+
+			slider.h *= (1 / static_cast<real_t>(std::max(1, numFollowers - monstersToDisplay)));
+			slider.y += slider.h * FollowerMenu.sidebarScrollIndex;
+			drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
+			if ( mouseInScrollbarTotalHeight && mousestatus[SDL_BUTTON_LEFT] )
+			{
+				if ( !mouseInBounds(xres - monsterEntryWindow.w, xres, slider.y,
+					slider.y + slider.h) )
+				{
+					if ( omousey < slider.y )
+					{
+						FollowerMenu.sidebarScrollIndex = std::max(FollowerMenu.sidebarScrollIndex - 1, 0);
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+					}
+					else if ( omousey > slider.y + slider.h )
+					{
+						FollowerMenu.sidebarScrollIndex = std::min(FollowerMenu.sidebarScrollIndex + 1, numFollowers - monstersToDisplay - 1);
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+					}
+				}
+			}
+		}
 	}
 }
 
