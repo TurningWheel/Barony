@@ -164,6 +164,8 @@ bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
 FollowerRadialMenu FollowerMenu;
+SDL_Rect interfaceSkillsSheet;
+SDL_Rect interfacePartySheet;
 
 std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 {
@@ -1589,12 +1591,26 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int thickness = 70;
 		src.h = radius;
 		src.w = radius;
+		if ( yres <= 768 )
+		{
+			radius = 110;
+			thickness = 70;
+			src.h = 125;
+			src.w = 125;
+		}
 		int highlight = -1;
 		int i = 0;
 
 		int width = 0;
 		TTF_SizeUTF8(ttf12, language[3036], &width, nullptr);
-		ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
+		if ( yres < 768 )
+		{
+			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 14, language[3036]);
+		}
+		else
+		{
+			ttfPrintText(ttf12, src.x - width / 2, src.y - radius - thickness - 24, language[3036]);
+		}
 
 		drawImageRing(fancyWindow_bmp, nullptr, radius, thickness, 40, 0, PI * 2, 156);
 
@@ -1624,7 +1640,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
 		}
 
-		bool mouseInCenterButton = pow((omousex - menuX), 2) + pow((omousey - menuY), 2) < 4900; // 70 squared is 4900.
+		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
 
 		for ( i = 0; i < numoptions; ++i )
 		{
@@ -1750,7 +1766,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			highlight = -1;
 			//drawImageRing(fancyWindow_bmp, nullptr, 35, 35, 40, 0, 2 * PI, 192);
-			drawCircle(xres / 2, yres / 2, 70, uint32ColorBaronyBlue(*mainsurface), 192);
+			drawCircle(xres / 2, yres / 2, radius - thickness, uint32ColorBaronyBlue(*mainsurface), 192);
 			//TTF_SizeUTF8(ttf12, language[3063], &width, nullptr);
 			//ttfPrintText(ttf12, xres / 2 - width / 2, yres / 2 - 8, language[3063]);
 		}

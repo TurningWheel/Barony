@@ -25,7 +25,7 @@ typedef struct damageIndicator_t
 } damageIndicator_t;
 extern list_t damageIndicators;
 
-#define STATUS_BAR_Y_OFFSET (status_bmp->h * uiscale_chatlog)
+#define STATUS_BAR_Y_OFFSET (status_bmp->h * uiscale_chatlog * !hide_statusbar)
 #define INVENTORY_SLOTSIZE (40 * uiscale_inventory)
 #define STATUS_X (xres / 2 - status_bmp->w * uiscale_chatlog / 2)
 #define STATUS_Y (yres - STATUS_BAR_Y_OFFSET)
@@ -461,7 +461,7 @@ public:
 	int partySheetMouseX; // store mouse x cooord for accessedMenuFromPartySheet warp.
 	int partySheetMouseY; // store mouse y cooord for accessedMenuFromPartySheet warp.
 	int sidebarScrollIndex; // entries scrolled in the sidebar list if overflowed with followers.
-	static const int maxMonstersToDraw = 5;
+	int maxMonstersToDraw;
 
 	FollowerRadialMenu() :
 		followerToCommand(nullptr),
@@ -479,7 +479,8 @@ public:
 		accessedMenuFromPartySheet(false),
 		partySheetMouseX(-1),
 		partySheetMouseY(-1),
-		sidebarScrollIndex(0)
+		sidebarScrollIndex(0),
+		maxMonstersToDraw(5)
 	{}
 
 	void drawFollowerMenu();
@@ -490,3 +491,5 @@ public:
 	void updateScrollPartySheet();
 };
 extern FollowerRadialMenu FollowerMenu;
+extern SDL_Rect interfaceSkillsSheet;
+extern SDL_Rect interfacePartySheet;
