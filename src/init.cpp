@@ -98,8 +98,12 @@ int initApp(char* title, int fullscreen)
 	PHYSFS_init("/");
 	if ( !PHYSFS_isInit() )
 	{
-		printlog("[PhysFS]: failed to initialize!");
+		printlog("[PhysFS]: failed to initialize! Error code: %d", PHYSFS_getLastErrorCode());
 		return 13;
+	}
+	else
+	{
+		printlog("[PhysFS]: successfully initialized, returned: %d", PHYSFS_getLastErrorCode());
 	}
 	if ( PHYSFS_mount("./", NULL, 1) )
 	{
@@ -114,14 +118,14 @@ int initApp(char* title, int fullscreen)
 			}
 			else
 			{
-				printlog("[PhysFS]: unsuccessfully created mods/ folder");
+				printlog("[PhysFS]: unsuccessfully created mods/ folder. Error code: %d", PHYSFS_getLastErrorCode());
 				return 13;
 			}
 		}
 	}
 	else
 	{
-		printlog("[PhysFS]: unsuccessfully mounted base ./ folder");
+		printlog("[PhysFS]: unsuccessfully mounted base ./ folder. Error code: %d", PHYSFS_getLastErrorCode());
 		return 13;
 	}
 
