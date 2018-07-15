@@ -27,11 +27,11 @@
  */
 #define MESSAGE_FONT ttf16
 #define MESSAGE_FONT_SIZE TTF_FontHeight(MESSAGE_FONT)
-#define MESSAGE_MAX_TOTAL_LINES ((yres - STATUS_BAR_Y_OFFSET) / MESSAGE_FONT_SIZE)
+#define MESSAGE_MAX_TOTAL_LINES ((yres - (status_bmp->h * uiscale_chatlog)) / MESSAGE_FONT_SIZE)
 //Number of pixels from the left edge of the screen the messages are.
 #define MESSAGE_X_OFFSET 5
 //The location the newest message is displayed (in other words, the bottom of the message list -- they're drawn from oldest to newest, top down).
-#define MESSAGE_Y_OFFSET (yres-STATUS_BAR_Y_OFFSET-MESSAGE_FONT_SIZE-20-(60 * uiscale_playerbars * uiscale_playerbars))
+#define MESSAGE_Y_OFFSET (yres-(status_bmp->h * uiscale_chatlog)-MESSAGE_FONT_SIZE-20-(60 * uiscale_playerbars * uiscale_playerbars))
 static const int ADD_MESSAGE_BUFFER_LENGTH = 256;
 /*
  * Right, so this is how it's going to work:
