@@ -3741,8 +3741,8 @@ IDENTICAL MOD LISTS LOADED!#
 Items:#
 3041 Move aside#
 3042 Drop#
-3043 Attack!#
-3044 Interact#
+3043 Interact...#
+3044 Rest#
 # Begin secondary option text.
 3045 Follow#
 3046 #
