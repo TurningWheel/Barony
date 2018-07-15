@@ -288,6 +288,7 @@ enum AllyNPCChatter : int
 #define MONSTER_VELZ my->vel_z
 #define MONSTER_WEAPONYAW my->fskill[5]
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
+#define MONSTER_SHIELDYAW my->fskill[8]
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y);
