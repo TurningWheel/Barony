@@ -265,6 +265,13 @@ enum AllyNPCChatter : int
 	ALLY_EVENT_FOLLOW
 };
 
+enum MonsterDefendType : int
+{
+	MONSTER_DEFEND_NONE,
+	MONSTER_DEFEND_ALLY,
+	MONSTER_DEFEND_HOLD
+};
+
 #define WAIT_FOLLOWDIST 48
 #define HUNT_FOLLOWDIST 64
 
