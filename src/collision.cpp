@@ -141,6 +141,30 @@ Entity* entityClicked()
 		{
 			return NULL;
 		}
+
+		// ui code taken from drawSkillsSheet() and drawPartySheet().
+		if ( proficienciesPage == 0 )
+		{
+			if ( mouseInBounds(interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
+				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
+			{
+				return NULL;
+			}
+		}
+		else
+		{
+			if ( mouseInBounds(interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
+				interfacePartySheet.y, interfacePartySheet.y + interfacePartySheet.h) )
+			{
+				return NULL;
+			}
+		}
+
+		if ( mouseInsidePlayerInventory() || mouseInsidePlayerHotbar() )
+		{
+			return NULL;
+		}
+
 		if ( softwaremode )
 		{
 			return clickmap[omousey + omousex * yres];
