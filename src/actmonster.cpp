@@ -2641,27 +2641,29 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
-		if ( my->monsterDefend == 1 )
+		if ( my->monsterDefend != MONSTER_DEFEND_NONE )
 		{
-			if ( my->monsterState != MONSTER_STATE_ATTACK && my->monsterState != MONSTER_STATE_HUNT )
+			if ( (my->monsterState != MONSTER_STATE_ATTACK && my->monsterState != MONSTER_STATE_HUNT)
+				|| myStats->shield == nullptr )
 			{
 				myStats->defending = false;
 				my->monsterDefend = 0;
 				serverUpdateEntitySkill(my, 47);
 			}
-			else
+			else if ( my->monsterAttack == 0 )
 			{
-				// decide if to defend.
-				if ( my->monsterAttack == 0 )
-				{
-					myStats->defending = true;
-				}
-				else
-				{
-					myStats->defending = false;
-				}
+				myStats->defending = true;
 			}
 		}
+		else
+		{
+			myStats->defending = false;
+		}
+
+		/*if ( myStats->defending )
+		{
+			messagePlayer(0, "defending!");
+		}*/
 
 		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
 		//	|| myStats->type == LICH_ICE )
@@ -5793,15 +5795,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		}
 	}
 
-	if ( myStats->shield && monsterAttack == 0 && monsterDefend == 1 )
-	{
-		myStats->defending = true;
-	}
-	else
-	{
-		myStats->defending = false;
-	}
-
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) || lichRangeCheckOverride )
 	{
@@ -5896,7 +5889,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					int pose = this->getAttackPose();
 
 					int oldDefend = monsterDefend;
-					monsterDefend = (shouldMonsterDefend(*myStats, *hit.entity, *hitstats, dist, hasrangedweapon)) ? 1 : 0;
+					monsterDefend = shouldMonsterDefend(*myStats, *hit.entity, *hitstats, dist, hasrangedweapon);
 					if ( oldDefend != monsterDefend )
 					{
 						serverUpdateEntitySkill(this, 47);
@@ -5932,10 +5925,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 						}
 					}
 
-					if ( monsterDefend && rand() % 3 == 0 )
+					if ( monsterDefend == MONSTER_DEFEND_HOLD )
 					{
 						// skip attack, continue defending.
-						monsterHitTime = HITRATE / 2;
+						monsterHitTime = HITRATE / 4;
 					}
 					else
 					{
@@ -7518,21 +7511,21 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	messagePlayer(monsterAllyIndex, fullmsg, namesays, stats[monsterAllyIndex]->name);
 }
 
-bool Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon)
+int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon)
 {
 	if ( behavior != &actMonster )
 	{
-		return false;
+		return MONSTER_DEFEND_NONE;
 	}
 
 	if ( !myStats.shield )
 	{
-		return false;
+		return MONSTER_DEFEND_NONE;
 	}
 
 	if ( monsterSpecialState > 0 )
 	{
-		return false;
+		return MONSTER_DEFEND_NONE;
 	}
 
 	if ( myStats.type == LICH
@@ -7542,7 +7535,7 @@ bool Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat
 		|| myStats.type == SHOPKEEPER
 		)
 	{
-		return false;
+		return MONSTER_DEFEND_NONE;
 	}
 
 	bool isPlayerAlly = (monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS);
@@ -7601,7 +7594,14 @@ bool Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat
 
 	if ( rand() % 20 < blockChance )
 	{
-		return true;
+		if ( isPlayerAlly )
+		{
+			return MONSTER_DEFEND_ALLY;
+		}
+		else
+		{
+			return MONSTER_DEFEND_HOLD;
+		}
 	}
 
 	return false;
