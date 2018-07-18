@@ -394,7 +394,7 @@ void handleLevelMusic()
 			devilaround = true;
 			break;
 		}
-		else if ( entity->sprite == 237 )     // minotaur head
+		else if ( entity->sprite == 239 )     // minotaur head
 		{
 			activeminotaur = true;
 			break;
@@ -998,7 +998,7 @@ void handleLevelMusic()
 			devilaround = true;
 			break;
 		}
-		else if ( entity->sprite == 237 )     // minotaur head
+		else if ( entity->sprite == 239 )     // minotaur head
 		{
 			activeminotaur = true;
 			break;
