@@ -1195,3 +1195,42 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			break;
 	}
 }
+
+bool isMonsterStatsDefault(Stat& myStats)
+{
+	Stat baseStats(myStats.type + 1000);
+	if ( baseStats.HP == myStats.HP
+		&& baseStats.MP == myStats.MP
+		&& baseStats.RANDOM_HP == myStats.RANDOM_HP
+		&& baseStats.RANDOM_MP == myStats.RANDOM_MP
+		&& baseStats.MAXHP == myStats.MAXHP
+		&& baseStats.MAXMP == myStats.MAXMP
+		&& baseStats.RANDOM_MAXHP == myStats.RANDOM_MAXHP
+		&& baseStats.RANDOM_MAXMP == myStats.RANDOM_MAXMP
+		&& baseStats.STR == myStats.STR
+		&& baseStats.DEX == myStats.DEX
+		&& baseStats.CON == myStats.CON
+		&& baseStats.INT == myStats.INT
+		&& baseStats.PER == myStats.PER
+		&& baseStats.CHR == myStats.CHR
+		&& baseStats.LVL == myStats.LVL
+		&& baseStats.RANDOM_LVL == myStats.RANDOM_LVL
+		&& baseStats.RANDOM_STR == myStats.RANDOM_STR
+		&& baseStats.RANDOM_DEX == myStats.RANDOM_DEX
+		&& baseStats.RANDOM_CON == myStats.RANDOM_CON
+		&& baseStats.RANDOM_INT == myStats.RANDOM_INT
+		&& baseStats.RANDOM_PER == myStats.RANDOM_PER
+		&& baseStats.RANDOM_CHR == myStats.RANDOM_CHR )
+	{
+		for ( int i = 0; i < 112; ++i )
+		{
+			if ( baseStats.EDITOR_ITEMS[i] != myStats.EDITOR_ITEMS[i] )
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
