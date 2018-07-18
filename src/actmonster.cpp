@@ -2643,7 +2643,7 @@ void actMonster(Entity* my)
 
 		if ( my->monsterDefend != MONSTER_DEFEND_NONE )
 		{
-			if ( (my->monsterState != MONSTER_STATE_ATTACK && my->monsterState != MONSTER_STATE_HUNT)
+			if ( my->monsterState != MONSTER_STATE_ATTACK
 				|| myStats->shield == nullptr )
 			{
 				myStats->defending = false;
@@ -5927,7 +5927,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 
 					if ( monsterDefend == MONSTER_DEFEND_HOLD )
 					{
-						// skip attack, continue defending.
+						// skip attack, continue defending. offset the hit time to allow for timing variation.
 						monsterHitTime = HITRATE / 4;
 					}
 					else
@@ -5935,6 +5935,21 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 						this->attack(pose, charge, nullptr); // attacku! D:<
 					}
 					this->yaw = oYaw;
+				}
+			}
+		}
+	}
+	else
+	{
+		if ( ticks % (90 + getUID() % 10) == 0 ) 
+		{
+			if ( !hasrangedweapon && dist > TOUCHRANGE && target && target->hasRangedWeapon() )
+			{
+				int oldDefend = monsterDefend;
+				monsterDefend = shouldMonsterDefend(*myStats, *target, *target->getStats(), dist, hasrangedweapon);
+				if ( oldDefend != monsterDefend )
+				{
+					serverUpdateEntitySkill(this, 47);
 				}
 			}
 		}
@@ -7539,6 +7554,12 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 	}
 
 	bool isPlayerAlly = (monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS);
+	
+	if ( !(isPlayerAlly || myStats.type == HUMAN) )
+	{
+		return MONSTER_DEFEND_NONE;
+	}
+	
 	int blockChance = 2; // 10%
 	bool targetHasRangedWeapon = target.hasRangedWeapon();
 
@@ -7594,9 +7615,16 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 
 	if ( rand() % 20 < blockChance )
 	{
-		if ( isPlayerAlly )
+		if ( isPlayerAlly || myStats.type == HUMAN )
 		{
-			return MONSTER_DEFEND_ALLY;
+			if ( rand() % 4 == 0 )
+			{
+				return MONSTER_DEFEND_HOLD;
+			}
+			else
+			{
+				return MONSTER_DEFEND_ALLY;
+			}
 		}
 		else
 		{
