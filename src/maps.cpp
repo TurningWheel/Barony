@@ -1968,7 +1968,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
 						{
-							if ( currentlevel > 15 )
+							if ( currentlevel > 15 && prng_get_uint() % 4 > 0 )
 							{
 								entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
 								if ( currentlevel < 25 )
@@ -1979,6 +1979,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 							else
 							{
 								entity = newEntity(27, 1, map.entities, map.creatures);  // human
+								if ( multiplayer != CLIENT && currentlevel > 5 )
+								{
+									entity->monsterStoreType = (currentlevel / 5) * 3 + (rand() % 4); // scale humans with depth.  3 LVL each 5 floors, + 0-3.
+								}
 							}
 						}
 						else
@@ -2121,7 +2125,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 							{
 								if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
 								{
-									if ( currentlevel > 15 )
+									if ( currentlevel > 15 && prng_get_uint() % 4 > 0 )
 									{
 										entity = newEntity(93, 1, map.entities, map.creatures);  // automaton
 										if ( currentlevel < 25 )
@@ -2132,6 +2136,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 									else
 									{
 										entity = newEntity(27, 1, map.entities, map.creatures);  // human
+										if ( multiplayer != CLIENT && currentlevel > 5 )
+										{
+											entity->monsterStoreType = (currentlevel / 5) * 3 + (rand() % 4); // scale humans with depth. 3 LVL each 5 floors, + 0-3.
+										}
 									}
 								}
 								else

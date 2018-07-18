@@ -46,6 +46,9 @@ void initHuman(Entity* my, Stat* myStats)
 
 			my->createPathBoundariesNPC();
 
+			Stat baseStats(HUMAN);
+			bool isDefaultStats = isMonsterStatsDefault(*myStats);
+
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
 
@@ -340,6 +343,11 @@ void initHuman(Entity* my, Stat* myStats)
 
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
+
+			if ( specialMonsterVariant == 0 && my->monsterStoreType > 0 && isDefaultStats )
+			{
+				myStats->EXP += 100 * my->monsterStoreType; // apply experience to level up the humans with floor depth.
+			}
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
