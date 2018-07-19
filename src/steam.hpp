@@ -106,10 +106,13 @@ private:
 	SteamLeaderboard_t m_CurrentLeaderboard; // Handle to leaderboard
 public:
 	int m_nLeaderboardEntries; // How many entries do we have?
-	LeaderboardEntry_t m_leaderboardEntries[10]; // The entries
-	std::string leaderBoardSteamNames[256][10];// todo: requestUserInformation
+	static const int k_numEntriesToRetrieve = 50;
+	LeaderboardEntry_t m_leaderboardEntries[k_numEntriesToRetrieve]; // The entries
+	std::string leaderBoardSteamNames[k_numEntriesToRetrieve][256];// todo: requestUserInformation
+	int fastestTimeScore;
+	static const int k_numFastestTimeTags = 64;
+	int fastestTimeTags[k_numFastestTimeTags];
 
-	CSteamLeaderboards();
 	~CSteamLeaderboards() {};
 
 	void FindLeaderboard(const char *pchLeaderboardName);
@@ -118,9 +121,9 @@ public:
 
 	void OnFindLeaderboard(LeaderboardFindResult_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardFindResult_t> m_callResultFindLeaderboard;
-	/*void OnUploadScore(LeaderboardScoreUploaded_t *pResult, bool bIOFailure);
+	void OnUploadScore(LeaderboardScoreUploaded_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardScoreUploaded_t> m_callResultUploadScore;
-	*/
+	
 	void OnDownloadScore(LeaderboardScoresDownloaded_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardScoresDownloaded_t> m_callResultDownloadScore;
 };

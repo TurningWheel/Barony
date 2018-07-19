@@ -16,10 +16,16 @@ See LICENSE for details.
 
 #ifdef STEAMWORKS
 CSteamLeaderboards::CSteamLeaderboards() :
-	m_CurrentLeaderboard(NULL),
-	m_nLeaderboardEntries(0)
+	m_CurrentLeaderboard(NULL)
 {
-
+	for ( int i = 0; i < k_numFastestTimeTags; ++i )
+	{
+		fastestTimeTags[i] = 0;
+	}
+	for ( int i = 0; i < k_numEntriesToRetrieve; ++i )
+	{
+		leaderBoardSteamNames[i] = "hello";
+	}
 }
 
 CSteamWorkshop::CSteamWorkshop() :

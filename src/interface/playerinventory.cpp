@@ -779,12 +779,11 @@ void updatePlayerInventory()
 
 
 #ifdef STEAMWORKS
-/* Some testing code...
 if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 {
 	if ( keystatus[SDL_SCANCODE_P] )
 	{
-		g_SteamLeaderboards->FindLeaderboard("Feet Traveled");
+		g_SteamLeaderboards->FindLeaderboard("Fastest Time");
 		messagePlayer(0, "Grabbing leaderboard");
 		g_SteamLeaderboards->DownloadScores();
 		keystatus[SDL_SCANCODE_P] = 0;
@@ -808,54 +807,7 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 		}
 		keystatus[SDL_SCANCODE_U] = 0;
 	}
-	if ( keystatus[SDL_SCANCODE_Y] )
-	{
-		g_SteamWorkshop->CreateItem();
-		keystatus[SDL_SCANCODE_Y] = 0;
-	}
-	*/
-	/*
-	if ( keystatus[SDL_SCANCODE_H] )
-	{
-		if ( g_SteamWorkshop->UGCUpdateHandle != 0 )
-		{
-			messagePlayer(0, "UpdateHandle: %d", g_SteamWorkshop->UGCUpdateHandle);
-			if ( SteamUGC()->SetItemTitle(g_SteamWorkshop->UGCUpdateHandle, "1234") == true )
-			{
-				messagePlayer(0, "true");
-			}
-			if ( SteamUGC()->SetItemDescription(g_SteamWorkshop->UGCUpdateHandle, "lalalala") == true )
-			{
-				messagePlayer(0, "true");
-			}
-			if ( SteamUGC()->SetItemContent(g_SteamWorkshop->UGCUpdateHandle, "C://Users//Ben//Desktop//workshop") == true )
-			{
-				messagePlayer(0, "true");
-			}
-			SteamUGC()->SubmitItemUpdate(g_SteamWorkshop->UGCUpdateHandle, "testnote");
-		}
-		keystatus[SDL_SCANCODE_H] = 0;
-	}
-	if ( keystatus[SDL_SCANCODE_J] )
-	{
-		if ( g_SteamWorkshop->SubmitItemUpdateResult.m_bUserNeedsToAcceptWorkshopLegalAgreement )
-		{
-			messagePlayer(0, "needs agreement");
-		}
-		if ( g_SteamWorkshop->SubmitItemUpdateResult.m_eResult == k_EResultOK )
-		{
-			messagePlayer(0, "Success!");
-		}
-		else
-		{
-			messagePlayer(0, "Error in submit item!");
-			uint64 bytesProcessed = 0;
-			uint64 bytesTotal = 0;
-			messagePlayer(0, "status: %d, proc: %d, total: %d", SteamUGC()->GetItemUpdateProgress(g_SteamWorkshop->UGCUpdateHandle, &bytesProcessed, &bytesTotal), bytesProcessed, bytesTotal);
-		}
-		keystatus[SDL_SCANCODE_J] = 0;
-	}
-}
+	
 	bool bFailed = false;
 	if ( SteamUser()->BLoggedOn() )
 	{
@@ -887,7 +839,7 @@ if ( SteamUser()->BLoggedOn() && g_SteamLeaderboards )
 			}
 		}
 		keystatus[SDL_SCANCODE_U] = 0;
-	}*/
+	}
 #endif // STEAMWORKS
 	// draw grid
 	pos.x = x;
