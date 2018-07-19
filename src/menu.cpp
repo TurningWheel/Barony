@@ -573,15 +573,22 @@ void handleMainMenu(bool mode)
 			int h2 = h;
 			TTF_SizeUTF8(ttf8, VERSION, &w, &h);
 			ttfPrintTextFormatted(ttf8, xres - 8 - w, yres - 8 - h - h2, VERSION);
-			if ( gamemods_numCurrentModsLoaded >= 0 )
+			if ( gamemods_numCurrentModsLoaded >= 0 || conductGameChallenges[CONDUCT_MODDED] )
 			{
-				ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 12 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
+				if ( gamemods_numCurrentModsLoaded >= 0 )
+				{
+					ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 12 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 24, yres - 12 - h - h2 * 2, "Using modified map files");
+				}
 			}
 #ifdef STEAMWORKS
 			if ( gamemods_disableSteamAchievements || (intro == false && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) )
 			{
 				TTF_SizeUTF8(ttf8, language[3003], &w, &h);
-				if ( gamemods_numCurrentModsLoaded < 0 )
+				if ( gamemods_numCurrentModsLoaded < 0 && !conductGameChallenges[CONDUCT_MODDED] )
 				{
 					h = -4;
 				}
@@ -6201,16 +6208,25 @@ void handleMainMenu(bool mode)
 				}
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
+				int checkMapHash = -1;
 				if ( loadingmap == false )
 				{
 					physfsLoadMapFile(currentlevel, mapseed, false);
+					if ( checkMapHash == 0 )
+					{
+						conductGameChallenges[CONDUCT_MODDED] = 1;
+					}
 				}
 				else
 				{
 					if ( genmap == false )
 					{
 						std::string fullMapName = physfsFormatMapName(maptoload);
-						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+						if ( checkMapHash == 0 )
+						{
+							conductGameChallenges[CONDUCT_MODDED] = 1;
+						}
 					}
 					else
 					{
@@ -6336,16 +6352,26 @@ void handleMainMenu(bool mode)
 				entity_uids = 1;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
+
+				int checkMapHash = -1;
 				if ( loadingmap == false )
 				{
-					physfsLoadMapFile(currentlevel, mapseed, false);
+					physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+					if ( checkMapHash == 0 )
+					{
+						conductGameChallenges[CONDUCT_MODDED] = 1;
+					}
 				}
 				else
 				{
 					if ( genmap == false )
 					{
 						std::string fullMapName = physfsFormatMapName(maptoload);
-						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+						loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+						if ( checkMapHash == 0 )
+						{
+							conductGameChallenges[CONDUCT_MODDED] = 1;
+						}
 					}
 					else
 					{

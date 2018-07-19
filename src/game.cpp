@@ -771,7 +771,12 @@ void gameLogic(void)
 					}
 					darkmap = false;
 					numplayers = 0;
-					int result = physfsLoadMapFile(currentlevel, mapseed, false);
+					int checkMapHash = -1;
+					int result = physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
+					if ( checkMapHash == 0 )
+					{
+						conductGameChallenges[CONDUCT_MODDED] = 1;
+					}
 
 					minimapPings.clear(); // clear minimap pings
 
@@ -2681,13 +2686,18 @@ int main(int argc, char** argv)
 						if ( loadingmap == false )
 						{
 							currentlevel = startfloor;
+							int checkMapHash = -1;
 							if ( startfloor )
 							{
-								physfsLoadMapFile(currentlevel, 0, true);
+								physfsLoadMapFile(currentlevel, 0, true, &checkMapHash);
 							}
 							else
 							{
-								physfsLoadMapFile(0, 0, true);
+								physfsLoadMapFile(0, 0, true, &checkMapHash);
+							}
+							if ( checkMapHash == 0 )
+							{
+								conductGameChallenges[CONDUCT_MODDED] = 1;
 							}
 						}
 						else
@@ -2695,7 +2705,12 @@ int main(int argc, char** argv)
 							if ( genmap == false )
 							{
 								std::string fullMapName = physfsFormatMapName(maptoload);
-								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures);
+								int checkMapHash = -1;
+								loadMap(fullMapName.c_str(), &map, map.entities, map.creatures, &checkMapHash);
+								if ( checkMapHash == 0 )
+								{
+									conductGameChallenges[CONDUCT_MODDED] = 1;
+								}
 							}
 							else
 							{

@@ -358,10 +358,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 	std::string fullMapPath;
 	fullMapPath = physfsFormatMapName(levelset);
 
-	if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures) == -1 )
+	int checkMapHash = -1;
+	if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &map, map.entities, map.creatures, &checkMapHash) == -1 )
 	{
 		printlog("error: no level of set '%s' could be found.\n", levelset);
 		return -1;
+	}
+	if ( checkMapHash == 0 )
+	{
+		conductGameChallenges[CONDUCT_MODDED] = 1;
 	}
 
 	// store this map's seed
@@ -468,7 +473,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			shopmap.creatures = new list_t;
 			shopmap.creatures->first = nullptr;
 			shopmap.creatures->last = nullptr;
-			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &shopmap, shopmap.entities, shopmap.creatures) == -1 )
+			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &shopmap, shopmap.entities, shopmap.creatures, &checkMapHash) == -1 )
 			{
 				list_FreeAll(shopmap.entities);
 				free(shopmap.entities);
@@ -478,6 +483,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					free(shopmap.tiles);
 				}
+			}
+			if ( checkMapHash == 0 )
+			{
+				conductGameChallenges[CONDUCT_MODDED] = 1;
 			}
 		}
 		else
@@ -511,10 +520,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 		tempMap->creatures = new list_t;
 		tempMap->creatures->first = nullptr;
 		tempMap->creatures->last = nullptr;
-		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), tempMap, tempMap->entities, tempMap->creatures) == -1 )
+		if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), tempMap, tempMap->entities, tempMap->creatures, &checkMapHash) == -1 )
 		{
 			mapDeconstructor((void*)tempMap);
 			continue; // failed to load level
+		}
+		if ( checkMapHash == 0 )
+		{
+			conductGameChallenges[CONDUCT_MODDED] = 1;
 		}
 
 		// level is successfully loaded, add it to the pool
@@ -610,10 +623,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 			subRoomMap->creatures = new list_t;
 			subRoomMap->creatures->first = nullptr;
 			subRoomMap->creatures->last = nullptr;
-			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures) == -1 )
+			if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), subRoomMap, subRoomMap->entities, subRoomMap->creatures, &checkMapHash) == -1 )
 			{
 				mapDeconstructor((void*)subRoomMap);
 				continue; // failed to load level
+			}
+			if ( checkMapHash == 0 )
+			{
+				conductGameChallenges[CONDUCT_MODDED] = 1;
 			}
 
 			// level is successfully loaded, add it to the pool
@@ -770,7 +787,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 				}
 				fullMapPath = physfsFormatMapName(secretmapname);
-				if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &secretlevelmap, secretlevelmap.entities, secretlevelmap.creatures) == -1 )
+				if ( fullMapPath.empty() || loadMap(fullMapPath.c_str(), &secretlevelmap, secretlevelmap.entities, secretlevelmap.creatures, &checkMapHash) == -1 )
 				{
 					list_FreeAll(secretlevelmap.entities);
 					free(secretlevelmap.entities);
@@ -781,6 +798,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 						free(secretlevelmap.tiles);
 					}
 				}
+				if ( checkMapHash == 0 )
+				{
+					conductGameChallenges[CONDUCT_MODDED] = 1;
+				}
+
 				levelnum = 0;
 				levelnum2 = -1;
 				tempMap = &secretlevelmap;
