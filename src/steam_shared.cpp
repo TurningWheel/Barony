@@ -15,18 +15,6 @@ See LICENSE for details.
 #endif
 
 #ifdef STEAMWORKS
-CSteamLeaderboards::CSteamLeaderboards() :
-	m_CurrentLeaderboard(NULL)
-{
-	for ( int i = 0; i < k_numFastestTimeTags; ++i )
-	{
-		fastestTimeTags[i] = 0;
-	}
-	for ( int i = 0; i < k_numEntriesToRetrieve; ++i )
-	{
-		leaderBoardSteamNames[i] = "hello";
-	}
-}
 
 CSteamWorkshop::CSteamWorkshop() :
 	createItemResult(),
@@ -52,57 +40,6 @@ CSteamStatistics::CSteamStatistics(SteamStat_t* gStats, int numStatistics) :
 	m_iNumStats = numStatistics;
 	m_pStats = gStats;
 	RequestStats();
-}
-
-void CSteamLeaderboards::FindLeaderboard(const char *pchLeaderboardName)
-{
-	m_CurrentLeaderboard = NULL;
-
-	SteamAPICall_t hSteamAPICall = SteamUserStats()->FindLeaderboard(pchLeaderboardName);
-	m_callResultFindLeaderboard.Set(hSteamAPICall, this,
-		&CSteamLeaderboards::OnFindLeaderboard);
-	// call OnFindLeaderboard when result of async API call
-}
-
-void CSteamLeaderboards::OnFindLeaderboard(LeaderboardFindResult_t *pCallback, bool bIOFailure)
-{
-	// see if we encountered an error during the call
-	if ( !pCallback->m_bLeaderboardFound || bIOFailure )
-	{
-		return;
-	}
-
-	m_CurrentLeaderboard = pCallback->m_hSteamLeaderboard;
-}
-
-bool CSteamLeaderboards::DownloadScores()
-{
-	if ( !m_CurrentLeaderboard )
-	{
-		return false;
-	}
-
-	// load the specified leaderboard data around the current user
-	SteamAPICall_t hSteamAPICall = SteamUserStats()->DownloadLeaderboardEntries(
-		m_CurrentLeaderboard, k_ELeaderboardDataRequestGlobalAroundUser, -4, 5);
-	m_callResultDownloadScore.Set(hSteamAPICall, this,
-		&CSteamLeaderboards::OnDownloadScore);
-
-	return true;
-}
-
-void CSteamLeaderboards::OnDownloadScore(LeaderboardScoresDownloaded_t *pCallback, bool bIOFailure)
-{
-	if ( !bIOFailure )
-	{
-		m_nLeaderboardEntries = std::min(pCallback->m_cEntryCount, 10);
-
-		for ( int index = 0; index < m_nLeaderboardEntries; ++index )
-		{
-			SteamUserStats()->GetDownloadedLeaderboardEntry(
-				pCallback->m_hSteamLeaderboardEntries, index, &m_leaderboardEntries[index], NULL, 0);
-		}
-	}
 }
 
 void CSteamWorkshop::CreateItem()

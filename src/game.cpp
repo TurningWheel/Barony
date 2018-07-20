@@ -2474,6 +2474,10 @@ int main(int argc, char** argv)
 
 			// handle steam callbacks
 #ifdef STEAMWORKS
+			if ( g_SteamLeaderboards )
+			{
+				g_SteamLeaderboards->ProcessLeaderboardUpload();
+			}
 			SteamAPI_RunCallbacks();
 #endif
 

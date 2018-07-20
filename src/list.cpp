@@ -281,6 +281,11 @@ Uint32 list_Size(list_t* list)
 	node_t* node;
 	int c;
 
+	if ( !list )
+	{
+		return 0;
+	}
+
 	for ( c = 0, node = list->first; node != NULL; node = node->next, c++ );
 	return c;
 }
