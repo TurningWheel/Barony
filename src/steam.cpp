@@ -17,6 +17,7 @@
 #include "monster.hpp"
 #include "scores.hpp"
 #include "entity.hpp"
+#include "items.hpp"
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
 #ifdef STEAMWORKS
@@ -53,6 +54,35 @@ char pchCmdLine[1024] = { 0 }; // for game join requests
 // menu stuff
 bool connectingToLobby = false, connectingToLobbyWindow = false;
 bool requestingLobbies = false;
+
+const std::string CSteamLeaderboards::leaderboardNames[CSteamLeaderboards::k_numLeaderboards] =
+{
+	"None",
+
+	"Fastest Time (Normal)",
+	"Highest Score (Normal)",
+
+	"Fastest Time (Multiplayer)",
+	"Highest Score (Multiplayer)",
+
+	"Fastest Time (Hell Route)",
+	"Highest Score (Hell Route)",
+	
+	"Fastest Time (Hardcore)",
+	"Highest Score (Hardcore)",
+
+	"Fastest Time (Classic)",
+	"Highest Score (Classic)",
+
+	"Fastest Time (Classic Hardcore)",
+	"Highest Score (Classic Hardcore)",
+
+	"Fastest Time (Multiplayer Classic)",
+	"Highest Score (Multiplayer Classic)",
+
+	"Fastest Time (Multiplayer Hell Route)",
+	"Highest Score (Multiplayer Hell Route)"
+};
 #endif
 
 
@@ -1308,6 +1338,186 @@ void steam_OnP2PSessionConnectFail( void* pCallback )
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
 		openFailedConnectionWindow(multiplayer);
+	}
+}
+
+void CSteamLeaderboards::FindLeaderboard(const char *pchLeaderboardName)
+{
+	if ( !SteamUser()->BLoggedOn() )
+	{
+		return;
+	}
+	m_CurrentLeaderboard = NULL;
+	b_LeaderboardInit = false;
+	SteamAPICall_t hSteamAPICall = SteamUserStats()->FindLeaderboard(pchLeaderboardName);
+	m_callResultFindLeaderboard.Set(hSteamAPICall, this,
+		&CSteamLeaderboards::OnFindLeaderboard);
+	// call OnFindLeaderboard when result of async API call
+}
+
+void CSteamLeaderboards::OnFindLeaderboard(LeaderboardFindResult_t *pCallback, bool bIOFailure)
+{
+	// see if we encountered an error during the call
+	if ( !pCallback->m_bLeaderboardFound || bIOFailure )
+	{
+		printlog("[STEAM]: Error, could not find leaderboard %s!", leaderboardNames[LeaderboardUpload.boardIndex]);
+		ClearUploadData();
+		return;
+	}
+	b_LeaderboardInit = true;
+	m_CurrentLeaderboard = pCallback->m_hSteamLeaderboard;
+	//DownloadScores(k_ELeaderboardDataRequestGlobal, 0, k_numEntriesToRetrieve);
+}
+
+bool CSteamLeaderboards::DownloadScores(ELeaderboardDataRequest dataRequestType, int rangeStart, int rangeEnd)
+{
+	if ( !m_CurrentLeaderboard )
+	{
+		return false;
+	}
+	b_ScoresDownloaded = false;
+
+	// load the specified leaderboard data around the current user
+	SteamAPICall_t hSteamAPICall = SteamUserStats()->DownloadLeaderboardEntries(
+		m_CurrentLeaderboard, dataRequestType, rangeStart, rangeEnd);
+	m_callResultDownloadScore.Set(hSteamAPICall, this,
+		&CSteamLeaderboards::OnDownloadScore);
+
+	return true;
+}
+
+void CSteamLeaderboards::OnDownloadScore(LeaderboardScoresDownloaded_t *pCallback, bool bIOFailure)
+{
+	if ( !bIOFailure )
+	{
+		m_nLeaderboardEntries = std::min(pCallback->m_cEntryCount, k_numEntriesToRetrieve);
+		for ( int i = 0; i < m_nLeaderboardEntries; ++i )
+		{
+			SteamUserStats()->GetDownloadedLeaderboardEntry(pCallback->m_hSteamLeaderboardEntries, 
+				i, &m_leaderboardEntries[i], downloadedTags[i], k_numLeaderboardTags);
+			leaderBoardSteamUsernames[i] = SteamFriends()->GetFriendPersonaName(m_leaderboardEntries[i].m_steamIDUser);
+		}
+		b_ScoresDownloaded = true;
+	}
+}
+
+void CSteamLeaderboards::UploadScore(int scoreToSet, int tags[k_numLeaderboardTags])
+{
+	if ( !m_CurrentLeaderboard )
+	{
+		return;
+	}
+
+	// load the specified leaderboard data around the current user
+	SteamAPICall_t hSteamAPICall = SteamUserStats()->UploadLeaderboardScore(m_CurrentLeaderboard, 
+		k_ELeaderboardUploadScoreMethodKeepBest, scoreToSet, tags,
+		k_numLeaderboardTags);
+	m_callResultUploadScore.Set(hSteamAPICall, this,
+		&CSteamLeaderboards::OnUploadScore);
+}
+
+void CSteamLeaderboards::OnUploadScore(LeaderboardScoreUploaded_t *pCallback, bool bIOFailure)
+{
+	if ( !bIOFailure && pCallback->m_bSuccess )
+	{
+		m_CurrentLeaderboard = pCallback->m_hSteamLeaderboard;
+		LastUploadResult.b_ScoreUploadComplete = pCallback->m_bSuccess;
+		LastUploadResult.b_ScoreChanged = pCallback->m_bScoreChanged;
+		LastUploadResult.globalRankNew = pCallback->m_nGlobalRankNew;
+		LastUploadResult.globalRankPrev = pCallback->m_nGlobalRankPrevious;
+		LastUploadResult.scoreUploaded = pCallback->m_nScore;
+	}
+	else
+	{
+		LastUploadResult.b_ScoreUploadComplete = false;
+		LastUploadResult.b_ScoreChanged = false;
+		LastUploadResult.globalRankNew = 0;
+		LastUploadResult.globalRankPrev = 0;
+		LastUploadResult.scoreUploaded = 0;
+	}
+}
+
+void CSteamLeaderboards::ClearUploadData()
+{
+	for ( int c = 0; c < k_numLeaderboardTags; ++c )
+	{
+		LeaderboardUpload.tags[c] = 0;
+	}
+	LeaderboardUpload.score = 0;
+	LeaderboardUpload.time = 0;
+	LeaderboardUpload.status = LEADERBOARD_STATE_NONE;
+	LeaderboardUpload.boardIndex = LEADERBOARD_NONE;
+
+	LastUploadResult.b_ScoreChanged = false;
+	LastUploadResult.b_ScoreUploadComplete = false;
+	LastUploadResult.globalRankNew = 0;
+	LastUploadResult.globalRankPrev;
+	LastUploadResult.scoreUploaded = 0;
+}
+
+void CSteamLeaderboards::ProcessLeaderboardUpload()
+{
+	if ( LeaderboardUpload.status == LEADERBOARD_STATE_NONE )
+	{
+		return;
+	}
+	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_FIND_LEADERBOARD_TIME )
+	{
+		FindLeaderboard(leaderboardNames[LeaderboardUpload.boardIndex].c_str());
+		LeaderboardUpload.status = LEADERBOARD_STATE_UPLOADING_TIME;
+		LastUploadResult.b_ScoreUploadComplete = false;
+		LastUploadResult.b_ScoreChanged = false;
+	}
+	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_UPLOADING_TIME )
+	{
+		if ( b_LeaderboardInit )
+		{
+			UploadScore(LeaderboardUpload.time, LeaderboardUpload.tags);
+			if ( LastUploadResult.b_ScoreUploadComplete == true )
+			{
+				LeaderboardUpload.status = LEADERBOARD_STATE_READY_TIME;
+				printlog("[STEAM]: Successfully uploaded leaderboard time to board name %s.", leaderboardNames[LeaderboardUpload.boardIndex].c_str());
+				if ( LastUploadResult.b_ScoreChanged )
+				{
+					printlog("[STEAM]: Registered a new fastest time on the leaderboard!");
+				}
+				else
+				{
+					printlog("[STEAM]: You did not beat your previous leaderboard time.");
+				}
+				LastUploadResult.b_ScoreUploadComplete = false;
+			}
+		}
+	}
+	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_READY_TIME )
+	{
+		FindLeaderboard(leaderboardNames[LeaderboardUpload.boardIndex + 1].c_str());
+		LeaderboardUpload.status = LEADERBOARD_STATE_UPLOADING_SCORE;
+		LastUploadResult.b_ScoreUploadComplete = false;
+		LastUploadResult.b_ScoreChanged = false;
+	}
+	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_UPLOADING_SCORE )
+	{
+		if ( b_LeaderboardInit )
+		{
+			UploadScore(LeaderboardUpload.score, LeaderboardUpload.tags);
+			if ( LastUploadResult.b_ScoreUploadComplete == true )
+			{
+				LeaderboardUpload.status = LEADERBOARD_STATE_NONE;
+				printlog("[STEAM]: Successfully uploaded leaderboard score to board name %s.", leaderboardNames[LeaderboardUpload.boardIndex + 1].c_str());
+				LastUploadResult.b_ScoreUploadComplete = false;
+				if ( LastUploadResult.b_ScoreChanged )
+				{
+					printlog("[STEAM]: Registered a new highest score on the leaderboard!");
+				}
+				else
+				{
+					printlog("[STEAM]: You did not beat your previous leaderboard score.");
+				}
+				ClearUploadData();
+				DownloadScores(k_ELeaderboardDataRequestGlobal, 0, k_numEntriesToRetrieve);
+			}
+		}
 	}
 }
 #endif

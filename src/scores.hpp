@@ -112,3 +112,8 @@ void updateGameplayStatisticsInMainLoop(); // check for achievement values for g
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
 static const int SAVE_GAMES_MAX = 10;
+
+#ifdef STEAMWORKS
+bool steamLeaderboardSetScore(score_t* score);
+bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags]);
+#endif // STEAMWORKS

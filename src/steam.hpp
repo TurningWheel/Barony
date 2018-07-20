@@ -108,24 +108,117 @@ public:
 	int m_nLeaderboardEntries; // How many entries do we have?
 	static const int k_numEntriesToRetrieve = 50;
 	LeaderboardEntry_t m_leaderboardEntries[k_numEntriesToRetrieve]; // The entries
-	std::string leaderBoardSteamNames[k_numEntriesToRetrieve][256];// todo: requestUserInformation
-	int fastestTimeScore;
-	static const int k_numFastestTimeTags = 64;
-	int fastestTimeTags[k_numFastestTimeTags];
+	std::string leaderBoardSteamUsernames[k_numEntriesToRetrieve];
+	int currentLeaderBoardIndex;
+	static const int k_numLeaderboardTags = 64;
+	int downloadedTags[k_numEntriesToRetrieve][k_numLeaderboardTags];
 
+	bool b_ScoresDownloaded;
+	bool b_LeaderboardInit;
+	bool b_ScoreUploaded;
+
+	static const int k_numLeaderboards = 17;
+	static const std::string leaderboardNames[k_numLeaderboards];
+
+	CSteamLeaderboards() :
+		m_CurrentLeaderboard(NULL),
+		m_nLeaderboardEntries(0),
+		b_ScoresDownloaded(false),
+		b_LeaderboardInit(false),
+		currentLeaderBoardIndex(0),
+		b_ScoreUploaded(false)
+	{
+		for ( int i = 0; i < k_numEntriesToRetrieve; ++i )
+		{
+			for ( int j = 0; j < k_numLeaderboardTags; ++j )
+			{
+				downloadedTags[i][j] = 0;
+				if ( i == 0 )
+				{
+					leaderBoardSteamUsernames[j] = "";
+				}
+			}
+		}
+	}
 	~CSteamLeaderboards() {};
+
+	class LastUploadResult_t {
+	public:
+		bool b_ScoreUploadComplete;
+		int scoreUploaded;
+		bool b_ScoreChanged;
+		int globalRankNew;
+		int globalRankPrev;
+
+		LastUploadResult_t() :
+			b_ScoreUploadComplete(false),
+			scoreUploaded(0),
+			b_ScoreChanged(false),
+			globalRankNew(0),
+			globalRankPrev(0)
+		{}
+	} LastUploadResult;
+
+	class LeaderboardUpload_t {
+	public:
+		int status;
+		int score;
+		int time;
+		int tags[k_numLeaderboardTags];
+		int boardIndex;
+
+		LeaderboardUpload_t() :
+			status(0),
+			score(0),
+			time(0),
+			boardIndex(0)
+		{
+			for ( int i = 0; i < k_numLeaderboardTags; ++i )
+			{
+				tags[i] = 0;
+			}
+		}
+	} LeaderboardUpload;
+
+	class LeaderboardView_t {
+	public:
+		int boardToDownload;
+		ELeaderboardDataRequest requestType;
+		int rangeStart;
+		int rangeEnd;
+		int scrollIndex;
+
+		LeaderboardView_t() :
+			boardToDownload(LEADERBOARD_NORMAL_TIME),
+			requestType(k_ELeaderboardDataRequestGlobal),
+			rangeStart(0),
+			rangeEnd(k_numEntriesToRetrieve),
+			scrollIndex(0)
+		{}
+	} LeaderboardView;
 
 	void FindLeaderboard(const char *pchLeaderboardName);
 	//bool UploadScore(int score);
-	bool DownloadScores();
+	bool DownloadScores(ELeaderboardDataRequest dataRequestType, int rangeStart, int rangeEnd);
+	void UploadScore(int scoreToSet, int tags[k_numLeaderboardTags]);
+	void ClearUploadData();
+	void ProcessLeaderboardUpload();
 
 	void OnFindLeaderboard(LeaderboardFindResult_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardFindResult_t> m_callResultFindLeaderboard;
 	void OnUploadScore(LeaderboardScoreUploaded_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardScoreUploaded_t> m_callResultUploadScore;
-	
 	void OnDownloadScore(LeaderboardScoresDownloaded_t *pResult, bool bIOFailure);
 	CCallResult<CSteamLeaderboards, LeaderboardScoresDownloaded_t> m_callResultDownloadScore;
+};
+
+enum LeaderboardUploadState : int
+{
+	LEADERBOARD_STATE_NONE,
+	LEADERBOARD_STATE_FIND_LEADERBOARD_TIME,
+	LEADERBOARD_STATE_READY_TIME,
+	LEADERBOARD_STATE_UPLOADING_TIME,
+	LEADERBOARD_STATE_UPLOADING_SCORE
 };
 
 class CSteamWorkshop
@@ -209,4 +302,63 @@ public:
 
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived);
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored);
+};
+
+enum LeaderboardScoreTags : int
+{
+	TAG_MONSTER_KILLS_1, // store 4 monster kills per index.
+	TAG_MONSTER_KILLS_2,
+	TAG_MONSTER_KILLS_3,
+	TAG_MONSTER_KILLS_4,
+	TAG_MONSTER_KILLS_5,
+	TAG_MONSTER_KILLS_6,
+	TAG_MONSTER_KILLS_7,
+	TAG_MONSTER_KILLS_8,
+	TAG_MONSTER_KILLS_9,
+	TAG_MONSTER_KILLS_10,
+	TAG_NAME1, // 4 chars per index
+	TAG_NAME2,
+	TAG_NAME3,
+	TAG_NAME4,
+	TAG_NAME5,
+	TAG_NAME6,
+	TAG_NAME7,
+	TAG_NAME8,
+	TAG_RACESEXAPPEARANCECLASS, // each offset by 8 bits
+	TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL, // offset by 8 bits, 8 bits, 16 bits (4 original conducts fit into the 16 wide field)
+	TAG_CONDUCT_2W_1, // each offset by 2 bits
+	TAG_CONDUCT_2W_2, // each offset by 2 bits
+	TAG_CONDUCT_4W_1, // each offset by 4 bits
+	TAG_CONDUCT_4W_2, // each offset by 4 bits
+	TAG_CONDUCT_4W_3, // each offset by 4 bits
+	TAG_CONDUCT_4W_4, // each offset by 4 bits
+	TAG_GAMEPLAY_STATS_16W_1, // each offset by 16 bits
+	TAG_GAMEPLAY_STATS_16W_2, // each offset by 16 bits
+	TAG_GAMEPLAY_STATS_16W_3, // each offset by 16 bits
+	TAG_GAMEPLAY_STATS_16W_4, // each offset by 16 bits
+	TAG_GAMEPLAY_STATS_8W_1, // each offset by 8 bits
+	TAG_GAMEPLAY_STATS_8W_2, // each offset by 8 bits
+	TAG_GAMEPLAY_STATS_4W_1, // each offset by 4 bits
+	TAG_GAMEPLAY_STATS_4W_2, // each offset by 4 bits
+	TAG_GAMEPLAY_STATS_2W_1, // each offset by 2 bits
+	TAG_GAMEPLAY_STATS_2W_2, // each offset by 2 bits
+	TAG_HEALTH, // offset by 16 bits
+	TAG_MANA, // offset by 16 bits
+	TAG_STRDEXCONINT, // offset by 8 bits
+	TAG_PERCHREXPLVL, // offset by 8 bits
+	TAG_GOLD,
+	TAG_PROFICIENCY1, // each offset by 8 bits
+	TAG_PROFICIENCY2, // each offset by 8 bits
+	TAG_PROFICIENCY3, // each offset by 8 bits
+	TAG_PROFICIENCY4, // each offset by 8 bits
+	TAG_PROFICIENCY5, // each offset by 8 bits
+	TAG_EQUIPMENT1, // each offset by 8 bits
+	TAG_EQUIPMENT2, // each offset by 8 bits
+	TAG_EQUIPMENT3, // each offset by 8 bits
+	TAG_EQUIPMENT_BEATITUDE1, // each offset by 8 bits
+	TAG_EQUIPMENT_BEATITUDE2, // each offset by 8 bits
+	TAG_EQUIPMENT_BEATITUDE3, // each offset by 8 bits
+	TAG_EQUIPMENT_APPEARANCE, // helm, cloak, breastplate, shield offset 4 bits each 
+	TAG_TOTAL_SCORE,
+	TAG_COMPLETION_TIME
 };

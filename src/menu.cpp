@@ -93,6 +93,7 @@ button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
 int score_window_to_delete = 0;
+int score_leaderboard_window = 0;
 
 int savegames_window = 0;
 int savegames_window_scroll = 0;
@@ -4576,8 +4577,198 @@ void handleMainMenu(bool mode)
 		}
 	}
 
+	// leaderboards window
+
+	if ( score_leaderboard_window != 0 && g_SteamLeaderboards )
+	{
+		int numEntriesToShow = 10;
+		int filenameMaxLength = 48;
+		int filename_padx = subx1 + 16;
+		int filename_pady = suby1 + 32;
+		int filename_padx2 = subx2 - 16 - 40;
+		int filename_pady2 = filename_pady + numEntriesToShow * TTF12_HEIGHT + 8;
+		int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
+		int numEntriesTotal = 0;
+
+		ttfPrintTextFormattedColor(ttf16, filename_padx, filename_pady, uint32ColorWhite(*mainsurface), "%s", 
+			g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
+
+		filename_pady += 3 * TTF12_HEIGHT;
+		if ( !g_SteamLeaderboards->b_LeaderboardInit )
+		{
+			// waiting for leaderboard to be found...
+		}
+		else if ( g_SteamLeaderboards->b_LeaderboardInit && !g_SteamLeaderboards->b_ScoresDownloaded )
+		{
+			// wait for leaderboard to be downloaded...
+			if ( score_leaderboard_window == 1 )
+			{
+				g_SteamLeaderboards->DownloadScores(g_SteamLeaderboards->LeaderboardView.requestType, g_SteamLeaderboards->LeaderboardView.rangeStart,
+					g_SteamLeaderboards->LeaderboardView.rangeEnd);
+				score_leaderboard_window = 2;
+			}
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "Downloading entries...");
+		}
+		else 
+		{
+
+			if ( g_SteamLeaderboards->b_ScoresDownloaded )
+			{
+				numEntriesTotal = g_SteamLeaderboards->m_nLeaderboardEntries;
+				if ( numEntriesTotal <= 0 )
+				{
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "No Leaderboard entries for this category");
+				}
+			}
+
+			SDL_Rect tooltip; // we will draw the tooltip after drawing the other elements of the display window.
+
+			tooltip.x = omousex + 8;
+			tooltip.y = omousey + 8;
+			tooltip.w = 32 + TTF12_WIDTH * 14;
+			tooltip.h = TTF12_HEIGHT + 8;
+
+			filename_pady += 2 * TTF12_HEIGHT;
+
+			// do slider
+			SDL_Rect slider;
+			slider.x = filename_padx2 + 8;
+			slider.y = filename_pady - 8;
+			slider.h = suby2 - (filename_pady + 20);
+			slider.w = 32;
+
+			int entriesToScroll = std::max(static_cast<int>((numEntriesTotal / numEntriesToShow) - 1), 0);
+			entriesToScroll = entriesToScroll * numEntriesToShow + (numEntriesTotal % numEntriesToShow);
+
+			bool drawScrollTooltip = false;
+
+			// handle slider movement.
+			if ( numEntriesTotal > numEntriesToShow )
+			{
+				drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				if ( mouseInBounds(filename_padx, slider.x + slider.w,
+					slider.y, slider.y + slider.h) )
+				{
+					if ( mouseInBounds(slider.x, slider.x + slider.w,
+						slider.y, slider.y + slider.h) )
+					{
+						drawScrollTooltip = true;
+					}
+					if ( mousestatus[SDL_BUTTON_WHEELUP] )
+					{
+						g_SteamLeaderboards->LeaderboardView.scrollIndex = std::max(g_SteamLeaderboards->LeaderboardView.scrollIndex - 1, 0);
+						mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					}
+					if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+					{
+						g_SteamLeaderboards->LeaderboardView.scrollIndex = std::min(g_SteamLeaderboards->LeaderboardView.scrollIndex + 1, entriesToScroll);
+						mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					}
+				}
+
+				if ( keystatus[SDL_SCANCODE_UP] )
+				{
+					g_SteamLeaderboards->LeaderboardView.scrollIndex = std::max(g_SteamLeaderboards->LeaderboardView.scrollIndex - 1, 0);
+					keystatus[SDL_SCANCODE_UP] = 0;
+				}
+				if ( keystatus[SDL_SCANCODE_DOWN] )
+				{
+					g_SteamLeaderboards->LeaderboardView.scrollIndex = std::min(g_SteamLeaderboards->LeaderboardView.scrollIndex + 1, entriesToScroll);
+					keystatus[SDL_SCANCODE_DOWN] = 0;
+				}
+				slider.h *= (1 / static_cast<real_t>(entriesToScroll + 1));
+				slider.y += slider.h * savegames_window_scroll;
+				if ( g_SteamLeaderboards->LeaderboardView.scrollIndex == entriesToScroll ) // reached end.
+				{
+					slider.y += (suby2 - 28) - (slider.y + slider.h); // bottom of slider is (suby2 - 28), so move the y level to imitate hitting the bottom in case of rounding error.
+				}
+				drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h); // draw shortened list relative slider.
+			}
+			else
+			{
+				//drawRect(&slider, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+				drawWindowFancy(slider.x, slider.y, slider.x + slider.w, slider.y + slider.h);
+			}
+
+			// draw the content
+			for ( int i = 0; i < numEntriesTotal; ++i )
+			{
+				filename_padx = subx1 + 16;
+				if ( i >= g_SteamLeaderboards->LeaderboardView.scrollIndex && i < numEntriesTotal + g_SteamLeaderboards->LeaderboardView.scrollIndex )
+				{
+					drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
+					SDL_Rect highlightEntry;
+					highlightEntry.x = filename_padx;
+					highlightEntry.y = filename_pady - 8;
+					highlightEntry.w = filename_padx2 - filename_padx;
+					highlightEntry.h = filename_rowHeight + 8;
+					drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 64);
+
+					Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) % 60;
+					Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) % 60;
+					Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) / 60;
+					ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%s]: Time: %02d:%02d:%02d",
+						SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
+						hour, min, sec);
+
+					filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
+					int text_x = filename_padx;
+					int text_y = filename_pady + 10;
+					if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
+					{
+						score_leaderboard_window = 3;
+						g_SteamLeaderboards->currentLeaderBoardIndex = i;
+						steamLeaderboardReadScore(g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex]);
+					}
+					ttfPrintTextFormatted(ttf12, text_x + 8, text_y, "%s", "View character");
+
+					filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
+					text_x = filename_padx;
+
+					//ttfPrintTextFormatted(ttf12, text_x + 6, text_y, "%s", "X");
+					if ( mouseInBounds(filename_padx, filename_padx + 2 * TTF12_WIDTH + 8, filename_pady, filename_pady + TTF12_HEIGHT * 2 + 4) )
+					{
+						//drawDeleteTooltip = true;
+					}
+
+					filename_pady += 3 * filename_rowHeight / 2;
+				}
+			}
+
+			//Uint32 saveNumColor = uint32ColorGreen(*mainsurface);
+			//if ( numSingleplayerSaves == SAVE_GAMES_MAX )
+			//{
+			//	saveNumColor = uint32ColorOrange(*mainsurface);
+			//}
+			//ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3067]) * TTF12_WIDTH), suby1 + 44, saveNumColor,
+			//	language[3067], numSingleplayerSaves, SAVE_GAMES_MAX);
+
+			//saveNumColor = uint32ColorGreen(*mainsurface);
+			//if ( numMultiplayerSaves == SAVE_GAMES_MAX )
+			//{
+			//	saveNumColor = uint32ColorOrange(*mainsurface);
+			//}
+			//ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3068]) * TTF12_WIDTH), suby1 + 44 + TTF12_HEIGHT + 4, saveNumColor,
+			//	language[3068], numMultiplayerSaves, SAVE_GAMES_MAX);
+
+			//// draw the tooltip we initialised earlier.
+			//if ( drawDeleteTooltip )
+			//{
+			//	tooltip.w = longestline(language[3064]) * TTF12_WIDTH + 16;
+			//	drawTooltip(&tooltip);
+			//	ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3064]);
+			//}
+			//else if ( drawScrollTooltip )
+			//{
+			//	tooltip.w = longestline(language[3066]) * TTF12_WIDTH + 16;
+			//	drawTooltip(&tooltip);
+			//	ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3066]);
+			//}
+		}
+	}
+
 	// statistics window
-	if ( score_window )
+	if ( score_window || score_leaderboard_window == 3 )
 	{
 		// draw button label... shamelessly hacked together from "multiplayer scores toggle button" initialisation...
 		int toggleText_x = subx2 - 44 - strlen("show multiplayer") * 12;
@@ -4585,31 +4776,43 @@ void handleMainMenu(bool mode)
 		int w = 0;
 		int h = 0;
 		list_t* scoresPtr = &topscores;
-		if ( !scoreDisplayMultiplayer )
+
+		if ( !score_leaderboard_window )
 		{
-			TTF_SizeUTF8(ttf12, "show multiplayer", &w, &h);
-			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show multiplayer");
+			if ( !scoreDisplayMultiplayer )
+			{
+				TTF_SizeUTF8(ttf12, "show multiplayer", &w, &h);
+				ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show multiplayer");
+			}
+			else
+			{
+				scoresPtr = &topscoresMultiplayer;
+				TTF_SizeUTF8(ttf12, "show solo", &w, &h);
+				ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show solo");
+			}
 		}
 		else
 		{
-			scoresPtr = &topscoresMultiplayer;
-			TTF_SizeUTF8(ttf12, "show solo", &w, &h);
-			ttfPrintText(ttf12, toggleText_x + (strlen("show multiplayer") * 12 + 8 - w) / 2, toggleText_y + (20 - h) / 2 + 3, "show solo");
+			scoresPtr = nullptr;
 		}
-		if ( !list_Size(scoresPtr) )
+
+		if ( !list_Size(scoresPtr) && !score_leaderboard_window )
 		{
 #define NOSCORESSTR language[1389]
 			ttfPrintTextFormatted(ttf16, xres / 2 - strlen(NOSCORESSTR) * 9, yres / 2 - 9, NOSCORESSTR);
 		}
 		else
 		{
-			if ( scoreDisplayMultiplayer )
+			if ( !score_leaderboard_window )
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[2958], score_window, list_Size(&topscoresMultiplayer));
-			}
-			else
-			{
-				ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[1390], score_window, list_Size(&topscores));
+				if ( scoreDisplayMultiplayer )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[2958], score_window, list_Size(&topscoresMultiplayer));
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 8, suby1 + 8, "%s - %d / %d", language[1390], score_window, list_Size(&topscores));
+				}
 			}
 
 			// draw character window
@@ -4727,11 +4930,18 @@ void handleMainMenu(bool mode)
 			}
 
 			// print total score
-			node = list_Node(scoresPtr, score_window - 1);
-			if ( node )
+			if ( score_leaderboard_window != 3 )
 			{
-				score_t* score = (score_t*)node->element;
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], totalScore(score));
+				node = list_Node(scoresPtr, score_window - 1);
+				if ( node )
+				{
+					score_t* score = (score_t*)node->element;
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], totalScore(score));
+				}
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex]);
 			}
 
 			// print character stats
@@ -4864,7 +5074,6 @@ void handleMainMenu(bool mode)
 	{
 		scoreDisplayMultiplayer = false;
 	}
-
 
 	if ( savegames_window != 0 )
 	{
@@ -6486,7 +6695,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// make a highscore!
-			saveScore();
+			int saveScoreResult = saveScore();
 
 			// pick a new subtitle :)
 			subtitleCurrent = rand() % NUMSUBTITLES;
@@ -8300,7 +8509,7 @@ void buttonCloseSubwindow(button_t* my)
 	multiplayerSavegameFreeSlot = -1;  // clear this value when closing window
 	directoryPath = "";
 	gamemodsWindowClearVariables();
-	if ( score_window )
+	if ( score_window || score_leaderboard_window )
 	{
 		// reset class loadout
 		stats[0]->sex = static_cast<sex_t>(0);
@@ -8316,6 +8525,7 @@ void buttonCloseSubwindow(button_t* my)
 	requestingLobbies = false;
 #endif
 	score_window = 0;
+	score_leaderboard_window = 0;
 	gamemods_window = 0;
 	savegames_window = 0;
 	savegames_window_scroll = 0;
@@ -9513,6 +9723,114 @@ void buttonScoreToggle(button_t* my)
 	loadScore(score_window - 1);
 }
 
+#ifdef STEAMWORKS
+
+void buttonLeaderboardFetch(button_t* my)
+{
+	if ( g_SteamLeaderboards )
+	{
+		g_SteamLeaderboards->DownloadScores(g_SteamLeaderboards->LeaderboardView.requestType,
+			g_SteamLeaderboards->LeaderboardView.rangeStart, g_SteamLeaderboards->LeaderboardView.rangeEnd);
+	}
+}
+
+void buttonLeaderboardNextCategory(button_t* my)
+{
+	if ( g_SteamLeaderboards )
+	{
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = std::min(g_SteamLeaderboards->LeaderboardView.boardToDownload + 1, (int)LEADERBOARD_MULTIPLAYER_HELL_SCORE);
+		g_SteamLeaderboards->b_ScoresDownloaded = false;
+		score_leaderboard_window = 1;
+		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
+	}
+}
+
+void buttonLeaderboardPrevCategory(button_t* my)
+{
+	if ( g_SteamLeaderboards )
+	{
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = std::max(g_SteamLeaderboards->LeaderboardView.boardToDownload - 1, (int)LEADERBOARD_NORMAL_TIME);
+		g_SteamLeaderboards->b_ScoresDownloaded = false;
+		score_leaderboard_window = 1;
+		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
+	}
+}
+
+void buttonOpenSteamLeaderboards(button_t* my)
+{
+	if ( g_SteamLeaderboards )
+	{
+		// close current window
+		buttonCloseSubwindow(nullptr);
+		list_FreeAll(&button_l);
+		deleteallbuttons = true;
+
+		// create confirmation window
+		subwindow = 1;
+		subx1 = xres / 2 - 380;
+		subx2 = xres / 2 + 380;
+		suby1 = yres / 2 - 300;
+		suby2 = yres / 2 + 300;
+		score_leaderboard_window = 1;
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = LEADERBOARD_NORMAL_TIME;
+		g_SteamLeaderboards->b_ScoresDownloaded = false;
+		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
+
+		strcpy(subtext, "Steam Leaderboards");
+
+		// close button
+		button_t* button = newButton();
+		strcpy(button->label, "x");
+		button->x = subx2 - 20;
+		button->y = suby1 + 4;
+		button->sizex = 20;
+		button->sizey = 20;
+		button->action = &buttonCloseSubwindow;
+		button->visible = 1;
+		button->focused = 1;
+		button->key = SDL_SCANCODE_ESCAPE;
+		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+		// next button
+		button = newButton();
+		strcpy(button->label, ">");
+		button->sizex = strlen(">") * 12 + 8;
+		button->sizey = 20;
+		button->x = subx2 - button->sizex - 4;
+		button->y = suby2 - 24;
+		button->action = &buttonLeaderboardNextCategory;
+		button->visible = 1;
+		button->focused = 1;
+		button->key = SDL_SCANCODE_RIGHT;
+		button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
+
+		// previous button
+		button = newButton();
+		strcpy(button->label, "<");
+		button->sizex = strlen("<") * 12 + 8;
+		button->sizey = 20;
+		button->x = subx1 + 4;
+		button->y = suby2 - 24;
+		button->action = &buttonLeaderboardPrevCategory;
+		button->visible = 1;
+		button->focused = 1;
+		button->key = SDL_SCANCODE_LEFT;
+		button->joykey = joyimpulses[INJOY_DPAD_LEFT];
+
+		// fetch leaderboards
+		button = newButton();
+		strcpy(button->label, "Fetch Leaderboard");
+		button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+		button->sizex = 25 * TTF12_WIDTH + 8;
+		button->x = subx2 - button->sizex - 8;
+		button->sizey = 32;
+		button->action = &buttonLeaderboardFetch;
+		button->visible = 1;
+		button->focused = 1;
+	}
+}
+#endif
+
 void buttonOpenScoresWindow(button_t* my)
 {
 	// create statistics window
@@ -9592,6 +9910,19 @@ void buttonOpenScoresWindow(button_t* my)
 	button->action = &buttonDeleteScoreWindow;
 	button->visible = 1;
 	button->focused = 1;
+
+	// open steam leaderboards button
+#ifdef STEAMWORKS
+	button = newButton();
+	strcpy(button->label, language[3095]);
+	button->sizex = strlen(language[3095]) * 12 + 8;
+	button->sizey = 20;
+	button->x = subx2 - 44 - strlen(language[3095]) * 12;
+	button->y = suby2 - 4 - TTF12_HEIGHT;
+	button->action = &buttonOpenSteamLeaderboards;
+	button->visible = 1;
+	button->focused = 1;
+#endif // STEAMWORKS
 }
 
 void buttonDeleteCurrentScore(button_t* my)
