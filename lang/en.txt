@@ -3791,4 +3791,5 @@ for this option. (Required: %s)#
 3088 %s #
 3089 %s #
 3090 %s #
+3095 view Steam Leaderboards#
 3099 end#
