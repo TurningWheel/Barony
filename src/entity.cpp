@@ -1691,6 +1691,12 @@ sets the HP of the given entity
 void Entity::setHP(int amount)
 {
 	Stat* entitystats = this->getStats();
+	if ( !entitystats )
+	{
+		return;
+	}
+
+	int healthDiff = entitystats->HP;
 
 	if ( this->behavior == &actPlayer && godmode )
 	{
@@ -1701,6 +1707,7 @@ void Entity::setHP(int amount)
 		return;
 	}
 	entitystats->HP = std::min(std::max(0, amount), entitystats->MAXHP);
+	healthDiff -= entitystats->HP;
 	strncpy(entitystats->obituary, language[1500], 127);
 
 	if ( this->behavior == &actPlayer && buddhamode && entitystats->HP < 1 )
@@ -1729,7 +1736,14 @@ void Entity::setHP(int amount)
 		{
 			if ( this->monsterAllyIndex >= 1 && this->monsterAllyIndex < MAXPLAYERS )
 			{
-				serverUpdateAllyHP(this->monsterAllyIndex, getUID(), entitystats->HP, entitystats->MAXHP);
+				if ( abs(healthDiff) == 1 || healthDiff == 0 )
+				{
+					serverUpdateAllyHP(this->monsterAllyIndex, getUID(), entitystats->HP, entitystats->MAXHP);
+				}
+				else
+				{
+					serverUpdateAllyHP(this->monsterAllyIndex, getUID(), entitystats->HP, entitystats->MAXHP, true);
+				}
 			}
 		}
 	}
