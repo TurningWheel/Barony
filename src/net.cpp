@@ -1010,7 +1010,7 @@ void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int M
 	}
 }
 
-void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP)
+void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee)
 {
 	if ( multiplayer != SERVER )
 	{
@@ -1026,7 +1026,14 @@ void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP)
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 12;
-		sendPacket(net_sock, -1, net_packet, player - 1);
+		if ( !guarantee )
+		{
+			sendPacket(net_sock, -1, net_packet, player - 1);
+		}
+		else
+		{
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
 	}
 }
 
