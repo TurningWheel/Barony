@@ -581,7 +581,7 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 16, yres - 12 - h - h2 * 2, "%2d mod(s) loaded", gamemods_numCurrentModsLoaded);
 				}
-				else
+				else if ( !mode )
 				{
 					ttfPrintTextFormatted(ttf8, xres - 8 - TTF8_WIDTH * 24, yres - 12 - h - h2 * 2, "Using modified map files");
 				}
@@ -4588,7 +4588,7 @@ void handleMainMenu(bool mode)
 		int filename_pady = suby1 + 32;
 		int filename_padx2 = subx2 - 16 - 40;
 		int filename_pady2 = filename_pady + numEntriesToShow * TTF12_HEIGHT + 8;
-		int filename_rowHeight = 2 * TTF12_HEIGHT + 8;
+		int filename_rowHeight = TTF12_HEIGHT + 4;
 		int numEntriesTotal = 0;
 
 		ttfPrintTextFormattedColor(ttf16, filename_padx, filename_pady, uint32ColorWhite(*mainsurface), "%s", 
@@ -4703,23 +4703,43 @@ void handleMainMenu(bool mode)
 					highlightEntry.y = filename_pady - 8;
 					highlightEntry.w = filename_padx2 - filename_padx;
 					highlightEntry.h = filename_rowHeight + 8;
-					drawRect(&highlightEntry, uint32ColorGreen(*mainsurface), 64);
+					drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 64);
 
-					Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) % 60;
-					Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) % 60;
-					Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) / 60;
-					ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "[%s]: Time: %02d:%02d:%02d",
-						SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
-						hour, min, sec);
+					if ( g_SteamLeaderboards->LeaderboardView.boardToDownload != LEADERBOARD_NONE
+						&& g_SteamLeaderboards->LeaderboardView.boardToDownload % 2 == 1 )
+					{
+						Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) % 60;
+						Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) % 60;
+						Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) / 60;
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Time: %02d:%02d:%02d    Score: %6d",
+							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
+							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
+							hour, min, sec, g_SteamLeaderboards->downloadedTags[i][TAG_TOTAL_SCORE]);
+					}
+					else
+					{
+						Uint32 sec = (g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) % 60;
+						Uint32 min = ((g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) / 60) % 60;
+						Uint32 hour = ((g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) / 60) / 60;
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Score: %6d    Time: %02d:%02d:%02d",
+							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
+							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
+							g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore, hour, min, sec);
+					}
 
-					filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
+					filename_padx = filename_padx2 - (15 * TTF12_WIDTH + 16);
 					int text_x = filename_padx;
-					int text_y = filename_pady + 10;
-					if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
+					int text_y = filename_pady;
+					if ( savegameDrawClickableButton(filename_padx, filename_pady, 15 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0) && score_leaderboard_window != 3 )
 					{
 						score_leaderboard_window = 3;
 						g_SteamLeaderboards->currentLeaderBoardIndex = i;
 						steamLeaderboardReadScore(g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex]);
+						for ( node = button_l.first; node != NULL; node = node->next )
+						{
+							button = (button_t*)node->element;
+							button->visible = 0;
+						}
 					}
 					ttfPrintTextFormatted(ttf12, text_x + 8, text_y, "%s", "View character");
 
@@ -4771,6 +4791,20 @@ void handleMainMenu(bool mode)
 	// statistics window
 	if ( score_window || score_leaderboard_window == 3 )
 	{
+		if ( score_leaderboard_window == 3 )
+		{
+			drawWindowFancy(subx1 + 20, suby1 + 20, subx2 - 20, suby2 - 20);
+			if ( savegameDrawClickableButton(subx2 - 10 * TTF12_WIDTH - 8, suby1 + 20 + 8, 8 * TTF12_WIDTH, TTF12_HEIGHT, 0) )
+			{
+				score_leaderboard_window = 2;
+				for ( node = button_l.first; node != NULL; node = node->next )
+				{
+					button = (button_t*)node->element;
+					button->visible = 1;
+				}
+			}
+			ttfPrintTextFormatted(ttf12, subx2 - 10 * TTF12_WIDTH + 4, suby1 + 20 + 8, "close");
+		}
 		// draw button label... shamelessly hacked together from "multiplayer scores toggle button" initialisation...
 		int toggleText_x = subx2 - 44 - strlen("show multiplayer") * 12;
 		int toggleText_y = suby1 + 4 ;
@@ -4942,7 +4976,7 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex]);
+				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex][TAG_TOTAL_SCORE]);
 			}
 
 			// print character stats
@@ -9919,7 +9953,7 @@ void buttonOpenScoresWindow(button_t* my)
 	button->sizex = strlen(language[3095]) * 12 + 8;
 	button->sizey = 20;
 	button->x = subx2 - 44 - strlen(language[3095]) * 12;
-	button->y = suby2 - 4 - TTF12_HEIGHT;
+	button->y = suby2 - 8 - TTF12_HEIGHT;
 	button->action = &buttonOpenSteamLeaderboards;
 	button->visible = 1;
 	button->focused = 1;
@@ -12302,7 +12336,22 @@ bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 	return clicked;
 }
 
-void gamemodsWorkshopPreloadMod(int fileID)
+void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 {
-
+	char fullpath[PATH_MAX] = "";
+	useModelCache = false;
+	if ( SteamUGC()->GetItemInstallInfo(fileID, NULL, fullpath, PATH_MAX, NULL) )
+	{
+		gamemods_modPreload = true;
+		bool addToPath = !gamemodsIsPathInMountedFiles(fullpath);
+		if ( PHYSFS_mount(fullpath, NULL, 0) )
+			{
+			reloadLanguage();
+			if ( addToPath )
+			{
+				gamemods_mountedFilepaths.push_back(std::make_pair(fullpath, modTitle)); // change string to your mod name here.
+				gamemods_workshopLoadedFileIDMap.push_back(std::make_pair(modTitle, fileID));
+			}
+		}
+	}
 }
