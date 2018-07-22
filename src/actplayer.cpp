@@ -1392,16 +1392,18 @@ void actPlayer(Entity* my)
 						}
 					}
 
-					if ( underMouse )
+					if ( underMouse && FollowerMenu.followerToCommand )
 					{
-						if ( underMouse->behavior == &actTorch )
+						Entity* parent = uidToEntity(underMouse->skill[2]);
+						if ( underMouse->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 						{
-							strcpy(FollowerMenu.interactText, items[TOOL_TORCH].name_identified);
+							// see if we selected a limb
+							if ( parent )
+							{
+								underMouse = parent;
+							}
 						}
-						else
-						{
-							strcpy(FollowerMenu.interactText, "");
-						}
+						FollowerMenu.allowedInteractEntity(*underMouse);
 					}
 					else
 					{
@@ -1490,6 +1492,14 @@ void actPlayer(Entity* my)
 								if ( target->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 								{
 									// see if we selected a limb
+									if ( parent )
+									{
+										target = parent;
+									}
+								}
+								else if ( target->sprite == 184 ) // switch base.
+								{
+									parent = uidToEntity(target->parent);
 									if ( parent )
 									{
 										target = parent;

@@ -1745,6 +1745,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
 				}
+				else if ( i == ALLY_CMD_ATTACK_SELECT )
+				{
+					if ( skillLVL >= SKILL_LEVEL_EXPERT )
+					{
+						TTF_SizeUTF8(ttf12, "Interact / ", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					}
+				}
 				else if ( i == ALLY_CMD_MOVETO_SELECT )
 				{
 					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
@@ -1965,4 +1978,86 @@ void FollowerRadialMenu::updateScrollPartySheet()
 			break;
 		}
 	}
+}
+
+bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
+{
+	if ( optionSelected != ALLY_CMD_ATTACK_SELECT )
+	{
+		return false;
+	}
+
+	if ( !followerToCommand )
+	{
+		return false;
+	}
+
+	if ( followerToCommand == &selectedEntity )
+	{
+		return false;
+	}
+
+	Stat* followerStats = followerToCommand->getStats();
+	if ( !followerStats )
+	{
+		return false;
+	}
+
+	bool interactItems = false;
+	bool interactWorld = false;
+
+	if ( followerStats->type == HUMAN || followerStats->type == AUTOMATON
+		|| followerStats->type == KOBOLD || followerStats->type == GNOME )
+	{
+		interactWorld = true;
+		interactItems = true;
+	}
+	else if ( followerStats->type == SLIME )
+	{
+		interactItems = true;
+	}
+	else if ( !(followerStats->type == RAT || followerStats->type == SLIME
+		|| followerStats->type == TROLL || followerStats->type == SPIDER
+		|| followerStats->type == GHOUL || followerStats->type == SCORPION
+		|| followerStats->type == CREATURE_IMP || followerStats->type == DEMON
+		|| followerStats->type == SCARAB || followerStats->type == CRYSTALGOLEM
+		|| followerStats->type == SHADOW || followerStats->type == COCKATRICE) )
+	{
+		interactItems = true;
+	}
+
+	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+	bool enableAttack = (skillLVL >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT]);
+
+	strcpy(FollowerMenu.interactText, "Interact with ");
+	if ( selectedEntity.behavior == &actTorch && interactWorld )
+	{
+		strcat(FollowerMenu.interactText, items[TOOL_TORCH].name_identified);
+	}
+	else if ( (selectedEntity.behavior == &actSwitch || selectedEntity.sprite == 184) && interactWorld )
+	{
+		strcat(FollowerMenu.interactText, "switch");
+	}
+	else if ( selectedEntity.behavior == &actItem && interactItems )
+	{
+		if ( selectedEntity.skill[15] == 0 )
+		{
+			strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_unidentified);
+		}
+		else
+		{
+			strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_identified);
+		}
+	}
+	else if ( selectedEntity.behavior == &actMonster && enableAttack )
+	{
+		strcpy(FollowerMenu.interactText, "Attack ");
+		strcat(FollowerMenu.interactText, monstertypename[selectedEntity.getMonsterTypeFromSprite()]);
+	}
+	else
+	{
+		strcpy(FollowerMenu.interactText, "No interactions available");
+		return false;
+	}
+	return true;
 }

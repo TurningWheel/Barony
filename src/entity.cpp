@@ -9624,6 +9624,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 )
 					{
+						if ( item && item->interactNPCUid == getUID() && forcePickupItem )
+						{
+							// held item is cursed!
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_CURSED);
+						}
 						if ( item != nullptr )
 						{
 							free(item);
@@ -9841,6 +9846,19 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 						return true;
 					}
 					return false;
+				}
+
+				if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS )
+				{
+					if ( myStats->weapon && item.interactNPCUid == getUID() )
+					{
+						shouldEquip = &myStats->weapon;
+						return true;
+					}
+					if ( myStats->weapon && myStats->weapon->forcedPickupByPlayer )
+					{
+						return false;
+					}
 				}
 
 				//Not holding a weapon. Make sure don't already have a weapon in the inventory. If doesn't have a weapon at all, then add it into the inventory since something is better than nothing.
