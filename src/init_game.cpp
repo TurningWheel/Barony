@@ -302,7 +302,19 @@ int initGame()
 
 			node_t* node2 = list_Node(&items[c].images, x);
 			string_t* string = (string_t*)node2->element;
-			*surface = loadImage(string->data);
+			std::string itemImgDir;
+			if ( PHYSFS_getRealDir(string->data) != NULL )
+			{
+				itemImgDir = PHYSFS_getRealDir(string->data);
+				itemImgDir.append(PHYSFS_getDirSeparator()).append(string->data);
+			}
+			else
+			{
+				itemImgDir = string->data;
+			}
+			char imgFileChar[256];
+			strncpy(imgFileChar, itemImgDir.c_str(), 255);
+			*surface = loadImage(imgFileChar);
 		}
 	}
 	fclose(fp);
