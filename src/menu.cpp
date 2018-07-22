@@ -135,6 +135,7 @@ bool gamemods_monsterLimbsRequireReloadUnmodded = false;
 bool gamemods_systemImagesReloadUnmodded = false;
 bool gamemods_customContentLoadedFirstTime = false;
 bool gamemods_disableSteamAchievements = false;
+bool gamemods_modPreload = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -11918,6 +11919,20 @@ void buttonGamemodsGetLocalMods(button_t* my)
 
 void buttonGamemodsStartModdedGame(button_t* my)
 {
+	if ( gamemods_modPreload )
+	{
+		// look for a save game
+		if ( anySaveFileExists() )
+		{
+			openNewLoadGameWindow(nullptr);
+		}
+		else
+		{
+			buttonOpenCharacterCreationWindow(NULL);
+		}
+		return;
+	}
+
 	gamemods_numCurrentModsLoaded = gamemods_mountedFilepaths.size();
 	if ( gamemods_numCurrentModsLoaded > 0 )
 	{
@@ -12285,4 +12300,9 @@ bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 	pos.h = padh + 4;
 	drawRect(&pos, btnColor, 64);
 	return clicked;
+}
+
+void gamemodsWorkshopPreloadMod(int fileID)
+{
+
 }
