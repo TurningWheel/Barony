@@ -3322,8 +3322,9 @@ int main(int argc, char** argv)
 								}
 							}
 						}
-						else if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
+						else if ( FollowerMenu.selectMoveTo &&
+							(FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 						{
 							pos.x = mousex - cursor_bmp->w / 2;
 							pos.y = mousey - cursor_bmp->h / 2;
@@ -3334,7 +3335,14 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact... %s", FollowerMenu.interactText);
+								if ( !strcmp(FollowerMenu.interactText, "") )
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+								}
 							}
 						}
 						else if (draw_cursor)
@@ -3352,8 +3360,8 @@ int main(int argc, char** argv)
 						pos.y = yres / 2 - cross_bmp->h / 2;
 						pos.w = 0;
 						pos.h = 0;
-						if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
-							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT )
+						if ( FollowerMenu.selectMoveTo && (FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT
+							|| FollowerMenu.optionSelected == ALLY_CMD_ATTACK_SELECT) )
 						{
 							pos.x = xres / 2 - cursor_bmp->w / 2;
 							pos.y = yres / 2 - cursor_bmp->h / 2;
@@ -3364,7 +3372,14 @@ int main(int argc, char** argv)
 							}
 							else
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact... %s", FollowerMenu.interactText);
+								if ( !strcmp(FollowerMenu.interactText, "") )
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "%s", FollowerMenu.interactText);
+								}
 							}
 						}
 						else

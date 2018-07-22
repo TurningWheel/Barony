@@ -489,6 +489,7 @@ public:
 	void selectNextFollower();
 	int numMonstersToDrawInParty();
 	void updateScrollPartySheet();
+	bool allowedInteractEntity(Entity& selectedEntity);
 };
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;

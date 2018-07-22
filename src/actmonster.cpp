@@ -4352,7 +4352,7 @@ timeToGoAgain:
 								{
 									if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
 									{
-										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+										//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
 									}
 									else
 									{
@@ -4413,7 +4413,7 @@ timeToGoAgain:
 								//messagePlayer(0, "Found my interactable.");
 								if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
 								{
-									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+									//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
 								}
 								else
 								{
@@ -7220,27 +7220,33 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				if ( stats[monsterAllyIndex] )
 				{
 					Entity* dropped;
+					bool confirmDropped = false;
+					bool dropWeaponOnly = false;
 					Uint32 owner = players[monsterAllyIndex]->entity->getUID();
 					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_MASTER )
 					{
 						dropped = dropItemMonster(myStats->helmet, this, myStats);
 						if ( dropped )
 						{
+							confirmDropped = true;
 							dropped->itemOriginalOwner = owner;
 						}
 						dropped = dropItemMonster(myStats->breastplate, this, myStats);
 						if ( dropped )
 						{
+							confirmDropped = true;
 							dropped->itemOriginalOwner = owner;
 						}
 						dropped = dropItemMonster(myStats->shoes, this, myStats);
 						if ( dropped )
 						{
+							confirmDropped = true;
 							dropped->itemOriginalOwner = owner;
 						}
 						dropped = dropItemMonster(myStats->shield, this, myStats);
 						if ( dropped )
 						{
+							confirmDropped = true;
 							dropped->itemOriginalOwner = owner;
 						}
 
@@ -7249,36 +7255,49 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 							dropped = dropItemMonster(myStats->ring, this, myStats);
 							if ( dropped )
 							{
+								confirmDropped = true;
 								dropped->itemOriginalOwner = owner;
 							}
 							dropped = dropItemMonster(myStats->amulet, this, myStats);
 							if ( dropped )
 							{
+								confirmDropped = true;
 								dropped->itemOriginalOwner = owner;
 							}
 							dropped = dropItemMonster(myStats->cloak, this, myStats);
 							if ( dropped )
 							{
+								confirmDropped = true;
 								dropped->itemOriginalOwner = owner;
 							}
-							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_ALL);
+							if ( confirmDropped )
+							{
+								handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_ALL);
+							}
 						}
 						else
 						{
-							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_EQUIP);
+							if ( confirmDropped )
+							{
+								handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_EQUIP);
+							}
 						}
 					}
 					else
 					{
 						if ( myStats->weapon )
 						{
-							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
+							dropWeaponOnly = true;
 						}
 					}
 					dropped = dropItemMonster(myStats->weapon, this, myStats);
 					if ( dropped )
 					{
 						dropped->itemOriginalOwner = owner;
+						if ( dropWeaponOnly )
+						{
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
+						}
 					}
 				}
 			}
@@ -7479,7 +7498,8 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			case ALLY_EVENT_MOVETO_FAIL:
 				message = language[3077 + rand() % 2];
 				break;
-			case ALLY_EVENT_INTERACT_ITEM:
+			case ALLY_EVENT_INTERACT_ITEM_CURSED:
+				message = language[3071];
 				break;
 			case ALLY_EVENT_INTERACT_OTHER:
 				break;
@@ -7510,7 +7530,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				}
 				break;
 			case ALLY_EVENT_WAIT:
-				message = language[3069 + rand() % 3];
+				message = language[3069 + rand() % 2];
 				break;
 			case ALLY_EVENT_FOLLOW:
 				message = language[526 + rand() % 3];
