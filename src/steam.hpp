@@ -133,10 +133,10 @@ public:
 			for ( int j = 0; j < k_numLeaderboardTags; ++j )
 			{
 				downloadedTags[i][j] = 0;
-				if ( i == 0 )
-				{
-					leaderBoardSteamUsernames[j] = "";
-				}
+			}
+			if ( i == 0 )
+			{
+				leaderBoardSteamUsernames[k_numEntriesToRetrieve] = "";
 			}
 		}
 	}
