@@ -3750,7 +3750,8 @@ Items:#
 3048 #
 3049 #
 3050 #
-3051 #
+3051 Interact /
+ Attack...#
 3052 #
 3053 [Mixed]#
 3054 [Melee]#
@@ -3770,8 +3771,8 @@ for this option. (Required: %s)#
 3067 %2d / %2d singleplayer slots used#
 3068 %2d / %2d  multiplayer slots used#
 3069 %s I'll stand ground here, %s.#
-3070 %s Make a path ahead, %s!#
-3071 %s I'll sit tight.#
+3070 %s I'll sit tight.#
+3071 %s My weapon is cursed!#
 3072 %s This would suit you well, %s!#
 3073 %s I'll try find something better.#
 3074 %s Move End 1#
