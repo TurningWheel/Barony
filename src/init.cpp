@@ -144,7 +144,7 @@ int initApp(char* title, int fullscreen)
 	g_SteamWorkshop = new CSteamWorkshop();
 	g_SteamStatistics = new CSteamStatistics(g_SteamStats, NUM_STEAM_STATISTICS);
 	// Preloads mod content from a workshop fileID
-	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE);
+	//gamemodsWorkshopPreloadMod(YOUR WORKSHOP FILE ID HERE, "YOUR WORKSHOP TITLE HERE");
 #endif
 
 	window_title = title;
