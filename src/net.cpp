@@ -2003,6 +2003,8 @@ void clientHandlePacket()
 			playmusic( sounds[209], false, true, false );
 #endif
 			combat = false;
+			assailant[clientnum] = false;
+			assailantTimer[clientnum] = 0;
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
