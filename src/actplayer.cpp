@@ -2046,6 +2046,9 @@ void actPlayer(Entity* my)
 						deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
 					}
 
+					assailant[PLAYER_NUM] = false;
+					assailantTimer[PLAYER_NUM] = 0;
+
 					if ( multiplayer != SINGLE )
 					{
 						messagePlayer(PLAYER_NUM, language[578]);
