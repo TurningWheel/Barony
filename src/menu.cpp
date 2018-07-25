@@ -7762,7 +7762,6 @@ void openGameoverWindow()
 	score_t* score = scoreConstructor();
 	Uint32 total = totalScore(score);
 	snprintf(scorenum, 16, "%d\n\n", total);
-	scoreDeconstructor((void*)score);
 
 	bool madetop = false;
 	list_t* scoresPtr = &topscores;
@@ -7782,6 +7781,8 @@ void openGameoverWindow()
 	{
 		madetop = true;
 	}
+
+	scoreDeconstructor((void*)score);
 
 	shootmode = false;
 	if ( multiplayer == SINGLE )
