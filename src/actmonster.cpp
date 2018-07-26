@@ -1971,6 +1971,14 @@ void actMonster(Entity* my)
 								{
 									serverRemoveClientFollower(c, my->getUID());
 								}
+								else
+								{
+									if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
+										|| FollowerMenu.recentEntity->getUID() == my->getUID()) )
+									{
+										FollowerMenu.recentEntity = nullptr;
+									}
+								}
 								break;
 							}
 						}
@@ -7161,6 +7169,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 									}
 								}
 								else
+								{
+									monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
+									handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK);
+								}
+							}
+							else if ( skillLVL >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM] )
+							{
+								if ( !checkFriend(target) )
 								{
 									monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
 									handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK);
