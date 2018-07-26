@@ -1650,6 +1650,17 @@ bool Entity::humanCanWieldItem(const Item& item) const
 				case MAGICSTAFF:
 				case CLOAK:
 					return true;
+					break;
+				case TOOL:
+					if ( item.type == TOOL_TORCH || item.type == TOOL_LANTERN || item.type == TOOL_CRYSTALSHARD )
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+					break;
 				default:
 					return false;
 					break;
