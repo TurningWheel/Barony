@@ -460,7 +460,9 @@ public:
 
 	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
 	Item** shouldMonsterEquipThisArmor(const Item& item) const;
-	int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon);
+	int shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon);
+	bool monsterConsumeFoodEntity(Entity* food, Stat* myStats);
+	Entity* monsterAllyGetPlayerLeader();
 
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 

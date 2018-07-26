@@ -1505,16 +1505,28 @@ void actPlayer(Entity* my)
 										target = parent;
 									}
 								}
-								spawnMagicEffectParticles(target->x, target->y, 0, 174);
-								FollowerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
-								FollowerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
+								if ( FollowerMenu.allowedInteractEntity(*target) )
+								{
+									createParticleFollowerCommand(target->x, target->y, 0, 174);
+									FollowerMenu.optionSelected = ALLY_CMD_ATTACK_CONFIRM;
+									FollowerMenu.followerToCommand->monsterAllyInteractTarget = target->getUID();
+								}
+								else
+								{
+									messagePlayer(clientnum, language[3094]);
+									FollowerMenu.optionSelected = ALLY_CMD_CANCEL;
+									FollowerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
+									FollowerMenu.followerToCommand->monsterAllyInteractTarget = 0;
+								}
 							}
 							else
 							{
 								FollowerMenu.optionSelected = ALLY_CMD_CANCEL;
+								FollowerMenu.optionPrevious = ALLY_CMD_ATTACK_CONFIRM;
 								FollowerMenu.followerToCommand->monsterAllyInteractTarget = 0;
 							}
 							FollowerMenu.selectMoveTo = false;
+							strcpy(FollowerMenu.interactText, "");
 						}
 					}
 				}

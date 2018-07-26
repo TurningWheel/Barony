@@ -1424,7 +1424,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int skillLVL = 0;
 		if ( stats[clientnum] )
 		{
-			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END )
+			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
 				if ( skillLVL < AllyNPCSkillRequirements[optionSelected] )
@@ -1740,7 +1740,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
 					}
 				}
-				else if ( i == ALLY_CMD_INTERACT )
+				else if ( i == ALLY_CMD_SPECIAL )
 				{
 					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
@@ -1794,7 +1794,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			tooltip.h = TTF12_HEIGHT * 2 + 8;
 			drawTooltip(&tooltip);
 			std::string requirement;
-			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END - 1 )
+			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END && optionSelected != ALLY_CMD_CANCEL )
 			{
 				switch ( AllyNPCSkillRequirements[optionSelected] )
 				{
@@ -2027,7 +2027,7 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	}
 
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
-	bool enableAttack = (skillLVL >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT]);
+	bool enableAttack = (skillLVL >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM]);
 
 	strcpy(FollowerMenu.interactText, "Interact with ");
 	if ( selectedEntity.behavior == &actTorch && interactWorld )

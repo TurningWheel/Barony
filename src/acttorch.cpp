@@ -118,7 +118,8 @@ void actTorch(Entity* my)
 			if ( monster )
 			{
 				Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
-				monster->addItemToMonsterInventory(item);
+				dropItemMonster(item, monster, monster->getStats());
+				//monster->addItemToMonsterInventory(item);
 			}
 			my->clearMonsterInteract();
 		}
