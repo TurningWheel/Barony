@@ -9580,6 +9580,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				node_t* replaceInventoryItem = nullptr;
 				if ( !monsterWantsItem(*item, shouldWield, replaceInventoryItem) )
 				{
+					if ( item && item->interactNPCUid == getUID() && forcePickupItem )
+					{
+						// I don't want this.
+						handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_NOUSE);
+					}
 					if ( item != nullptr )
 					{
 						free(item);
@@ -9900,6 +9905,16 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				shouldEquip = &myStats->weapon;
 			}
 			return true;
+			break;
+		case TOOL:
+			if ( item.interactNPCUid == getUID() )
+			{
+				if ( item.type == TOOL_TORCH || item.type == TOOL_LANTERN || item.type == TOOL_CRYSTALSHARD )
+				{
+					shouldEquip = &myStats->shield;
+					return true;
+				}
+			}
 			break;
 		default:
 			return true; //Already checked if monster likes this specific item in the racial calls.

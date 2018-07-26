@@ -2683,8 +2683,8 @@ void clientHandlePacket()
 			{
 				if ( *((Uint32*)allyNode->element) == uidnum )
 				{
-					if ( FollowerMenu.recentEntity && FollowerMenu.recentEntity->getUID() == 0
-						|| FollowerMenu.recentEntity->getUID() == uidnum )
+					if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
+						|| FollowerMenu.recentEntity->getUID() == uidnum) )
 					{
 						FollowerMenu.recentEntity = nullptr;
 					}

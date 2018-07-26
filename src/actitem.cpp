@@ -134,7 +134,17 @@ void actItem(Entity* my)
 			Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
 			if ( monsterInteracting )
 			{
-				monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 9, my);
+				if ( my->skill[10] >= 0 && my->skill[10] < NUMITEMS )
+				{
+					if ( items[my->skill[10]].category == Category::FOOD )
+					{
+						monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats());
+					}
+					else
+					{
+						monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 9, my);
+					}
+				}
 				my->clearMonsterInteract();
 				return;
 			}

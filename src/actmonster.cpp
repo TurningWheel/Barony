@@ -4435,10 +4435,7 @@ timeToGoAgain:
 								my->monsterState = MONSTER_STATE_HUNT;
 								my->monsterAllyState = ALLY_STATE_MOVETO;
 								//messagePlayer(0, "Moving to my interactable!.");
-								if ( rand() % 10 == 0 )
-								{
-									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_REPATH);
-								}
+								my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_REPATH);
 							}
 							else
 							{
@@ -7132,6 +7129,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	{
 		return;
 	}
+	if ( monsterTarget == players[monsterAllyIndex]->entity->getUID() )
+	{
+		// angry at owner.
+		return;
+	}
 
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -7181,6 +7183,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 									monsterAcquireAttackTarget(*target, MONSTER_STATE_ATTACK);
 									handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK);
 								}
+								else
+								{
+									handleNPCInteractDialogue(*myStats, ALLY_EVENT_ATTACK_FRIENDLY_FIRE);
+								}
 							}
 						}
 						monsterAllyInteractTarget = 0;
@@ -7189,7 +7195,6 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH);
 						monsterAllyState = ALLY_STATE_MOVETO;
-						handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_BEGIN);
 					}
 				}
 			}
@@ -7325,6 +7330,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				monsterState = MONSTER_STATE_HUNT; // hunt state
 				monsterAllyState = ALLY_STATE_MOVETO;
 				serverUpdateEntitySkill(this, 0);
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_BEGIN);
 			}
 			else
 			{
@@ -7404,7 +7410,7 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 
 	if ( static_cast<int>(x / 16) == destX && static_cast<int>(y / 16) == destY )
 	{
-		foundplace = true; // we're trying to move to the spot we're already at!
+		return true; // we're trying to move to the spot we're already at!
 	}
 	else if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
 	{
@@ -7503,19 +7509,28 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message = language[535];
 				break;
 			case ALLY_EVENT_MOVETO_BEGIN:
-				if ( rand() % 3 == 0 && monsterAllyInteractTarget == 0 )
+				if ( rand() % 10 == 0 )
 				{
 					message = language[3079 + rand() % 2];
 				}
-				break;
-			case ALLY_EVENT_MOVETO_END:
-				message = language[3074 + rand() % 3];
 				break;
 			case ALLY_EVENT_MOVETO_FAIL:
 				message = language[3077 + rand() % 2];
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
 				message = language[3071];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
+				message = language[3074];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_BAD:
+				message = language[3088];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD:
+				message = language[3075];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
+				message = language[3090];
 				break;
 			case ALLY_EVENT_INTERACT_OTHER:
 				break;
@@ -7552,14 +7567,21 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message = language[526 + rand() % 3];
 				break;
 			case ALLY_EVENT_MOVETO_REPATH:
-				message = language[3086 + rand() % 2];
+				if ( rand() % 20 == 0 )
+				{
+					message = language[3086 + rand() % 2];
+				}
+				break;
 			default:
 				break;
 		}
 	}
 	char fullmsg[256] = "";
 	strcpy(fullmsg, message.c_str());
-	messagePlayer(monsterAllyIndex, fullmsg, namesays, stats[monsterAllyIndex]->name);
+	if ( strcmp(fullmsg, "") )
+	{
+		messagePlayer(monsterAllyIndex, fullmsg, namesays, stats[monsterAllyIndex]->name);
+	}
 }
 
 int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon)
@@ -7669,4 +7691,169 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 	}
 
 	return false;
+}
+
+bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
+{
+	if ( !myStats )
+	{
+		return false;
+	}
+	
+	if ( !food )
+	{
+		return false;
+	}
+
+	Item* item = newItemFromEntity(food);
+	if ( !item || item->type == FOOD_TIN )
+	{
+		return false;
+	}
+
+	int buffDuration = item->status * TICKS_PER_SECOND * 2; // (2 - 8 seconds)
+	bool puking = false;
+	int pukeChance = 100;
+	// chance of rottenness
+	switch ( item->status )
+	{
+		case EXCELLENT:
+			pukeChance = 100;
+			break;
+		case SERVICABLE:
+			pukeChance = 25;
+			break;
+		case WORN:
+			pukeChance = 10;
+			break;
+		case DECREPIT:
+			pukeChance = 4;
+			break;
+		default:
+			pukeChance = 100;
+			break;
+	}
+
+	if ( rand() % pukeChance == 0 && pukeChance < 100 )
+	{
+		buffDuration = 0;
+		this->char_gonnavomit = 40 + rand() % 10;
+		puking = true;
+	}
+	else
+	{
+		if ( item->beatitude >= 0 )
+		{
+			if ( item->status > WORN )
+			{
+				buffDuration -= rand() % ((buffDuration / 2) + 1); // 50-100% duration
+			}
+			else
+			{
+				buffDuration -= rand() % ((buffDuration / 4) + 1); // 75-100% duration
+			}
+		}
+		else
+		{
+			buffDuration = 0;
+		}
+	}
+
+	int heal = 0;
+	switch ( item->type )
+	{
+		case FOOD_APPLE:
+			heal = 5 + item->beatitude;
+			buffDuration = std::min(buffDuration, 2 * TICKS_PER_SECOND);
+			break;
+		case FOOD_BREAD:
+			heal = 7 + item->beatitude;
+			buffDuration = std::min(buffDuration, 6 * TICKS_PER_SECOND);
+			break;
+		case FOOD_CHEESE:
+			heal = 3 + item->beatitude;
+			buffDuration = std::min(buffDuration, 2 * TICKS_PER_SECOND);
+			break;
+		case FOOD_CREAMPIE:
+			heal = 7 + item->beatitude;
+			buffDuration = std::min(buffDuration, 6 * TICKS_PER_SECOND);
+			break;
+		case FOOD_FISH:
+			heal = 7 + item->beatitude;
+			break;
+		case FOOD_MEAT:
+			heal = 9 + item->beatitude;
+			break;
+		case FOOD_TOMALLEY:
+			heal = 7 + item->beatitude;
+			buffDuration = std::min(buffDuration, 4 * TICKS_PER_SECOND);
+			break;
+		default:
+			free(item);
+			handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_NOUSE);
+			return false;
+			break;
+	}
+
+	if ( puking )
+	{
+		heal -= 5;
+		if ( rand() % 4 == 0 )
+		{
+			// angry at owner.
+			Entity* leader = monsterAllyGetPlayerLeader();
+			if ( leader )
+			{
+				monsterAcquireAttackTarget(*leader, MONSTER_STATE_ATTACK);
+			}
+		}
+	}
+	this->modHP(heal);
+
+	if ( buffDuration > 0 )
+	{
+		myStats->EFFECTS[EFF_HP_REGEN] = true;
+		myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
+	}
+
+	if ( puking )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN);
+	}
+	else if ( item->beatitude < 0 || item->status <= WORN )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_BAD);
+	}
+	else
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD);
+	}
+
+	if ( item->count > 1 )
+	{
+		--food->skill[13]; // update the entity on ground item count.
+	}
+	else
+	{
+		food->removeLightField();
+		list_RemoveNode(food->mynode);
+	}
+	free(item);
+
+	// eating sound
+	playSoundEntity(this, 50 + rand() % 2, 64);
+
+	return true;
+}
+
+Entity* Entity::monsterAllyGetPlayerLeader()
+{
+	if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS )
+	{
+		if ( players[monsterAllyIndex] )
+		{
+			return players[monsterAllyIndex]->entity;
+		}
+	}
+	return nullptr;
 }
