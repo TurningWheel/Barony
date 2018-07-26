@@ -2471,7 +2471,7 @@ void clientHandlePacket()
 					break;
 			}
 		}
-		if ( MFLAG_DISABLETELEPORT )
+		if ( MFLAG_DISABLETELEPORT || MFLAG_DISABLEOPENING )
 		{
 			messagePlayer(clientnum, language[2382]);
 		}
