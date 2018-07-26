@@ -1604,13 +1604,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actDoor)
 						{
-							playSoundEntity(hit.entity, 92, 64);
-							hit.entity->skill[5] = 1; //Lock the door.
-							if ( parent )
+							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 							{
-								if ( parent->behavior == &actPlayer )
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
+								messagePlayerColor(parent->skill[2], color, language[3101]); // disabled locking spell.
+							}
+							else
+							{
+								playSoundEntity(hit.entity, 92, 64);
+								hit.entity->skill[5] = 1; //Lock the door.
+								if ( parent )
 								{
-									messagePlayer(parent->skill[2], language[399]);
+									if ( parent->behavior == &actPlayer )
+									{
+										messagePlayer(parent->skill[2], language[399]);
+									}
 								}
 							}
 						}
@@ -1620,12 +1629,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 92, 64);
 							if ( !hit.entity->chestLocked )
 							{
-								hit.entity->lockChest();
-								if ( parent )
+								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 								{
-									if ( parent->behavior == &actPlayer )
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
+									messagePlayerColor(parent->skill[2], color, language[3100]); // disabled locking spell.
+								}
+								else
+								{
+									hit.entity->lockChest();
+									if ( parent )
 									{
-										messagePlayer(parent->skill[2], language[400]);
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayer(parent->skill[2], language[400]);
+										}
 									}
 								}
 							}
@@ -1651,45 +1669,65 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actDoor)
 						{
-							// Open the Door
-							playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
-							hit.entity->skill[5] = 0; // Unlocks the Door
+							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3097]);
+								messagePlayerColor(parent->skill[2], color, language[3101]); // disabled opening spell.
+							}
+							else
+							{
+								// Open the Door
+								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+								hit.entity->skill[5] = 0; // Unlocks the Door
 
-							if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
-							{
-								hit.entity->skill[3] = 1 + (my->x > hit.entity->x); // Opens the Door
-								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
-							}
-							else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
-							{
-								hit.entity->skill[3] = 1 + (my->x < hit.entity->x); // Opens the Door
-								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
-							}
-							if ( parent )
-								if ( parent->behavior == &actPlayer)
+								if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
 								{
-									messagePlayer(parent->skill[2], language[402]);
+									hit.entity->skill[3] = 1 + (my->x > hit.entity->x); // Opens the Door
+									playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 								}
-						}
-						else if ( hit.entity->behavior == &actGate )
-						{
-							// Open the Gate
-							if ( (hit.entity->skill[28] != 2 && hit.entity->gateInverted == 0)
-								|| (hit.entity->skill[28] != 1 && hit.entity->gateInverted == 1) )
-							{
-								if ( hit.entity->gateInverted == 1 )
+								else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
 								{
-									hit.entity->skill[28] = 1; // Depowers the Gate
-								}
-								else
-								{
-									hit.entity->skill[28] = 2; // Powers the Gate
+									hit.entity->skill[3] = 1 + (my->x < hit.entity->x); // Opens the Door
+									playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 								}
 								if ( parent )
 								{
-									if ( parent->behavior == &actPlayer )
+									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
+										messagePlayer(parent->skill[2], language[402]);
+									}
+								}
+							}
+						}
+						else if ( hit.entity->behavior == &actGate )
+						{
+							if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+								messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3098]);
+								messagePlayerColor(parent->skill[2], color, language[3102]); // disabled opening spell.
+							}
+							else
+							{
+								// Open the Gate
+								if ( (hit.entity->skill[28] != 2 && hit.entity->gateInverted == 0)
+									|| (hit.entity->skill[28] != 1 && hit.entity->gateInverted == 1) )
+								{
+									if ( hit.entity->gateInverted == 1 )
+									{
+										hit.entity->skill[28] = 1; // Depowers the Gate
+									}
+									else
+									{
+										hit.entity->skill[28] = 2; // Powers the Gate
+									}
+									if ( parent )
+									{
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
+										}
 									}
 								}
 							}
@@ -1699,13 +1737,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// Unlock the Chest
 							if ( hit.entity->chestLocked )
 							{
-								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
-								hit.entity->unlockChest();
-								if ( parent )
+								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEOPENING )
 								{
-									if ( parent->behavior == &actPlayer)
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									messagePlayerColor(parent->skill[2], 0xFFFFFFFF, language[3096], language[3099]);
+									messagePlayerColor(parent->skill[2], color, language[3100]); // disabled opening spell.
+								}
+								else
+								{
+									playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+									hit.entity->unlockChest();
+									if ( parent )
 									{
-										messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
+										if ( parent->behavior == &actPlayer)
+										{
+											messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
+										}
 									}
 								}
 							}

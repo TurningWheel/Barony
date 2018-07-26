@@ -297,7 +297,7 @@ std::unordered_map<std::string, int> mapHashes =
 	{ "caves24c.lmp", 169732 },
 	{ "caves24d.lmp", 391561 },
 	{ "cavestocitadel.lmp", 215724 },
-	{ "caveslair.lmp", 4625772 },
+	{ "caveslair.lmp", 4872675 },
 	{ "citadel.lmp", 729069 },
 	{ "citadel00.lmp", 23997 },
 	{ "citadel01.lmp", 30094 },
@@ -1046,7 +1046,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 			}
 			else
 			{
-				printlog("Notice: Unable to verify map %s hash.", filename2);
+				printlog("Notice: Unable to verify map %s hash %d.", filename2, mapHashData);
 				*checkMapHash = 0;
 			}
 		}
@@ -1065,7 +1065,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 				}
 				else
 				{
-					printlog("Notice: Unable to verify map %s hash.", filename2);
+					printlog("Notice: Unable to verify map %s hash %d.", filename2, mapHashData);
 					*checkMapHash = 0;
 				}
 			}

@@ -2696,6 +2696,10 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Gen Adjacent Rooms:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_GENADJACENTROOMS]);
 
+					pad_y1 += 24;
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Opening Spell:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLEOPENING]);
+
 					start_y = suby2 - 44;
 					pad_y1 = 0;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Width:");
@@ -2846,6 +2850,18 @@ int main(int argc, char** argv)
 							else
 							{
 								strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 268 && omousex < start_x3 + 24 && omousey < suby1 + 284 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEOPENING], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLEOPENING], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLEOPENING], "[x]");
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}

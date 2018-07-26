@@ -317,11 +317,13 @@ static const int MAP_FLAG_DISABLEDIGGING = 12;
 static const int MAP_FLAG_DISABLETELEPORT = 13;
 static const int MAP_FLAG_DISABLELEVITATION = 14;
 static const int MAP_FLAG_GENADJACENTROOMS = 15;
+static const int MAP_FLAG_DISABLEOPENING = 16;
 
 #define MFLAG_DISABLEDIGGING ((map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF) // first leftmost byte
 #define MFLAG_DISABLETELEPORT ((map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF) // second leftmost byte
 #define MFLAG_DISABLELEVITATION ((map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF) // third leftmost byte
 #define MFLAG_GENADJACENTROOMS ((map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF) // fourth leftmost byte
+#define MFLAG_DISABLEOPENING ((map.flags[MAP_FLAG_GENBYTES4] >> 24) & 0xFF) // first leftmost byte
 
 // delete entity structure
 typedef struct deleteent_t
@@ -501,7 +503,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 3100
+#define NUMLANGENTRIES 3150
 extern char languageCode[32];
 extern char** language;
 
