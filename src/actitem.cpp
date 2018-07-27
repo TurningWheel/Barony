@@ -142,7 +142,7 @@ void actItem(Entity* my)
 					}
 					else
 					{
-						monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 9, my);
+						monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 24, 9, my);
 					}
 				}
 				my->clearMonsterInteract();
