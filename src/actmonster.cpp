@@ -7750,6 +7750,12 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		return false;
 	}
 
+	if ( !FollowerMenu.allowedInteractFood(myStats->type) )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_NOUSE);
+		return false;
+	}
+
 	int buffDuration = item->status * TICKS_PER_SECOND * 2; // (2 - 8 seconds)
 	bool puking = false;
 	int pukeChance = 100;
