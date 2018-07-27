@@ -9506,6 +9506,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 	//X and Y in terms of tiles.
 	if ( forcePickupItem != nullptr && forcePickupItem->behavior == &actItem )
 	{
+		if ( !FollowerMenu.allowedInteractItems(myStats->type) )
+		{
+			return;
+		}
+		
 		//If this is the first item found, the list needs to be created.
 		if ( !(items) )
 		{
