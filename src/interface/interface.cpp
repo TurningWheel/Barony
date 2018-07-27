@@ -1431,6 +1431,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					disableOption = true;
 				}
+				else if ( optionSelected == ALLY_CMD_SPECIAL && followerToCommand->monsterAllySpecialCooldown != 0 )
+				{
+					disableOption = true;
+				}
 			}
 		}
 		// process commands if option selected on the wheel.
@@ -1479,6 +1483,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 
 			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
+			if ( disableOption )
+			{
+				keepWheelOpen = true;
+			}
 
 			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
 			{
@@ -1742,8 +1750,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else if ( i == ALLY_CMD_SPECIAL )
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					if ( followerToCommand->monsterAllySpecialCooldown != 0 )
+					{
+						drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					}
 				}
 				else if ( i == ALLY_CMD_ATTACK_SELECT )
 				{
@@ -1792,37 +1807,47 @@ void FollowerRadialMenu::drawFollowerMenu()
 			tooltip.y = omousey + 16;
 			tooltip.w = longestline(language[3062]) * TTF12_WIDTH + 8;
 			tooltip.h = TTF12_HEIGHT * 2 + 8;
-			drawTooltip(&tooltip);
-			std::string requirement;
-			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END && optionSelected != ALLY_CMD_CANCEL )
+			if ( optionSelected == ALLY_CMD_SPECIAL && followerToCommand->monsterAllySpecialCooldown != 0 )
 			{
-				switch ( AllyNPCSkillRequirements[optionSelected] )
-				{
-					case 0:
-						requirement = language[363];
-						break;
-					case SKILL_LEVEL_NOVICE:
-						requirement = language[364];
-						break;
-					case SKILL_LEVEL_BASIC:
-						requirement = language[365];
-						break;
-					case SKILL_LEVEL_SKILLED:
-						requirement = language[366];
-						break;
-					case SKILL_LEVEL_EXPERT:
-						requirement = language[367];
-						break;
-					case SKILL_LEVEL_MASTER:
-						requirement = language[368];
-						break;
-					case SKILL_LEVEL_LEGENDARY:
-						requirement = language[369];
-						break;
-				}
-				requirement.erase(std::remove(requirement.begin(), requirement.end(), ' '), requirement.end()); // trim whitespace
+				tooltip.h = TTF12_HEIGHT + 8;
+				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
+				drawTooltip(&tooltip);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3092]);
 			}
-			ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3062], requirement.c_str());
+			else
+			{
+				drawTooltip(&tooltip);
+				std::string requirement;
+				if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END && optionSelected != ALLY_CMD_CANCEL )
+				{
+					switch ( AllyNPCSkillRequirements[optionSelected] )
+					{
+						case 0:
+							requirement = language[363];
+							break;
+						case SKILL_LEVEL_NOVICE:
+							requirement = language[364];
+							break;
+						case SKILL_LEVEL_BASIC:
+							requirement = language[365];
+							break;
+						case SKILL_LEVEL_SKILLED:
+							requirement = language[366];
+							break;
+						case SKILL_LEVEL_EXPERT:
+							requirement = language[367];
+							break;
+						case SKILL_LEVEL_MASTER:
+							requirement = language[368];
+							break;
+						case SKILL_LEVEL_LEGENDARY:
+							requirement = language[369];
+							break;
+					}
+					requirement.erase(std::remove(requirement.begin(), requirement.end(), ' '), requirement.end()); // trim whitespace
+				}
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3062], requirement.c_str());
+			}
 		}
 
 		if ( !keepWheelOpen )
@@ -2040,13 +2065,20 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	}
 	else if ( selectedEntity.behavior == &actItem && interactItems )
 	{
-		if ( selectedEntity.skill[15] == 0 )
+		if ( multiplayer != CLIENT )
 		{
-			strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_unidentified);
+			if ( selectedEntity.skill[15] == 0 )
+			{
+				strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_unidentified);
+			}
+			else
+			{
+				strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_identified);
+			}
 		}
 		else
 		{
-			strcat(FollowerMenu.interactText, items[selectedEntity.skill[10]].name_identified);
+			strcat(FollowerMenu.interactText, "item");
 		}
 	}
 	else if ( selectedEntity.behavior == &actMonster && enableAttack )

@@ -2643,6 +2643,10 @@ void actMonster(Entity* my)
 			--my->monsterSpecialTimer;
 		}
 
+		if ( my->monsterAllySpecialCooldown > 0 )
+		{
+			--my->monsterAllySpecialCooldown;
+		}
 
 		if ( myStats->type == AUTOMATON )
 		{
@@ -7125,10 +7129,6 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	{
 		return;
 	}
-	if ( !isMobile() )
-	{
-		return;
-	}
 	if ( monsterTarget == players[monsterAllyIndex]->entity->getUID() )
 	{
 		// angry at owner.
@@ -7138,6 +7138,13 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
+		return;
+	}
+
+	if ( !isMobile() )
+	{
+		// doesn't respond.
+		messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[514], language[515], MSG_COMBAT);
 		return;
 	}
 
@@ -7339,6 +7346,20 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			break;
 		}
+		case ALLY_CMD_SPECIAL:
+		{
+			if ( monsterAllySpecialCooldown == 0 )
+			{
+				int duration = TICKS_PER_SECOND * (60 - (rand() % 30));
+				setEffect(EFF_ASLEEP, true, duration, false); // 30-60 seconds of sleep.
+				setEffect(EFF_HP_REGEN, true, duration, false);
+				monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
+				monsterAllySpecialCooldown = -1; // locked out until next floor.
+				serverUpdateEntitySkill(this, 49);
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[398], language[397], MSG_COMBAT);
+			}
+			break;
+		}
 		default:
 			break;
 	}
@@ -7365,7 +7386,7 @@ bool Entity::monsterAllySetInteract()
 	}
 	// check distance to interactable.
 	double range = pow(y - target->y, 2) + pow(x - target->x, 2);
-	if ( range < 256 ) // 16 squared
+	if ( range < 576 ) // 24 squared
 	{
 		FollowerMenu.entityToInteractWith = target; // set followerInteractedEntity to the mechanism/item/gold etc.
 		FollowerMenu.entityToInteractWith->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
@@ -7527,10 +7548,20 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message = language[3088];
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD:
-				message = language[3075];
+				if ( myStats.HUNGER > 800 )
+				{
+					message = language[3076];
+				}
+				else
+				{
+					message = language[3075];
+				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
 				message = language[3090];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
+				message = language[3089 + rand() % 2];
 				break;
 			case ALLY_EVENT_INTERACT_OTHER:
 				break;
@@ -7711,27 +7742,36 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		return false;
 	}
 
+	if ( myStats->HUNGER >= 800 )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_FULL);
+		return false;
+	}
+
 	int buffDuration = item->status * TICKS_PER_SECOND * 2; // (2 - 8 seconds)
 	bool puking = false;
 	int pukeChance = 100;
 	// chance of rottenness
-	switch ( item->status )
+	if ( myStats->type == HUMAN )
 	{
-		case EXCELLENT:
-			pukeChance = 100;
-			break;
-		case SERVICABLE:
-			pukeChance = 25;
-			break;
-		case WORN:
-			pukeChance = 10;
-			break;
-		case DECREPIT:
-			pukeChance = 4;
-			break;
-		default:
-			pukeChance = 100;
-			break;
+		switch ( item->status )
+		{
+			case EXCELLENT:
+				pukeChance = 100;
+				break;
+			case SERVICABLE:
+				pukeChance = 25;
+				break;
+			case WORN:
+				pukeChance = 10;
+				break;
+			case DECREPIT:
+				pukeChance = 4;
+				break;
+			default:
+				pukeChance = 100;
+				break;
+		}
 	}
 
 	if ( rand() % pukeChance == 0 && pukeChance < 100 )
@@ -7759,34 +7799,54 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		}
 	}
 
+	if ( puking )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN);
+	}
+	else if ( item->status <= WORN )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_BAD);
+	}
+	else
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD);
+	}
+
 	int heal = 0;
 	switch ( item->type )
 	{
 		case FOOD_APPLE:
 			heal = 5 + item->beatitude;
 			buffDuration = std::min(buffDuration, 2 * TICKS_PER_SECOND);
+			myStats->HUNGER += 200;
 			break;
 		case FOOD_BREAD:
 			heal = 7 + item->beatitude;
 			buffDuration = std::min(buffDuration, 6 * TICKS_PER_SECOND);
+			myStats->HUNGER += 400;
 			break;
 		case FOOD_CHEESE:
 			heal = 3 + item->beatitude;
 			buffDuration = std::min(buffDuration, 2 * TICKS_PER_SECOND);
+			myStats->HUNGER += 100;
 			break;
 		case FOOD_CREAMPIE:
 			heal = 7 + item->beatitude;
 			buffDuration = std::min(buffDuration, 6 * TICKS_PER_SECOND);
+			myStats->HUNGER += 200;
 			break;
 		case FOOD_FISH:
 			heal = 7 + item->beatitude;
+			myStats->HUNGER += 500;
 			break;
 		case FOOD_MEAT:
 			heal = 9 + item->beatitude;
+			myStats->HUNGER += 600;
 			break;
 		case FOOD_TOMALLEY:
 			heal = 7 + item->beatitude;
 			buffDuration = std::min(buffDuration, 4 * TICKS_PER_SECOND);
+			myStats->HUNGER += 400;
 			break;
 		default:
 			free(item);
@@ -7794,6 +7854,8 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 			return false;
 			break;
 	}
+
+	myStats->HUNGER = std::min(myStats->HUNGER, 1500); // range checking max of 1500 hunger points.
 
 	if ( puking )
 	{
@@ -7816,19 +7878,6 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
 	}
 
-	if ( puking )
-	{
-		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN);
-	}
-	else if ( item->beatitude < 0 || item->status <= WORN )
-	{
-		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_BAD);
-	}
-	else
-	{
-		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD);
-	}
-
 	if ( item->count > 1 )
 	{
 		--food->skill[13]; // update the entity on ground item count.
@@ -7848,6 +7897,10 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 
 Entity* Entity::monsterAllyGetPlayerLeader()
 {
+	if ( behavior != &actMonster )
+	{
+		return nullptr;
+	}
 	if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS )
 	{
 		if ( players[monsterAllyIndex] )

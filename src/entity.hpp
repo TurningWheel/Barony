@@ -192,6 +192,8 @@ public:
 	Sint32& monsterAllyInteractTarget; //skill[45]
 	Sint32& monsterAllyClass; //skill[46]
 	Sint32& monsterDefend; //skill[47]
+	Sint32& monsterAllySpecial; //skill[48]
+	Sint32& monsterAllySpecialCooldown; //skill[49]
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 
