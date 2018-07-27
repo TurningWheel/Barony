@@ -490,6 +490,13 @@ public:
 	int numMonstersToDrawInParty();
 	void updateScrollPartySheet();
 	bool allowedInteractEntity(Entity& selectedEntity);
+	int optionDisabledForCreature(int playerSkillLVL, int monsterType, int option);
+	bool allowedClassToggle(int monsterType);
+	bool allowedItemPickupToggle(int monsterType);
+	bool allowedInteractFood(int monsterType);
+	bool allowedInteractWorld(int monsterType);
+	bool allowedInteractItems(int monsterType);
+	bool attackCommandOnly(int monsterType);
 };
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;
