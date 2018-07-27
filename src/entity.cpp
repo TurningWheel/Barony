@@ -10254,6 +10254,17 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 
+	Entity* leader = monsterAllyGetPlayerLeader();
+	if ( leader && stats[monsterAllyIndex] )
+	{
+		Stat* leaderStats = leader->getStats();
+		if ( leaderStats->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex]) >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM] )
+		{
+			// do not retreat for brave leader!
+			return false;
+		}
+	}
+
 	if ( myStats.MAXHP >= 100 )
 	{
 		if ( myStats.HP <= myStats.MAXHP / 6 && this->getCHR() >= -2 )
