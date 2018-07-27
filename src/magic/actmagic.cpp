@@ -866,7 +866,63 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( parent->behavior == &actMagicTrap || parent->behavior == &actMagicTrapCeiling )
 						{
-							monsterMoveAside(hit.entity, hit.entity);
+							if ( parent->behavior == &actMagicTrap )
+							{
+								if ( static_cast<int>(parent->y / 16) == static_cast<int>(hit.entity->y / 16) )
+								{
+									// avoid y axis.
+									int direction = 1;
+									if ( rand() % 2 == 0 )
+									{
+										direction = -1;
+									}
+									if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) + 1 * direction, 0) )
+									{
+										hit.entity->monsterState = MONSTER_STATE_HUNT;
+										serverUpdateEntitySkill(hit.entity, 0);
+									}
+									else if ( hit.entity->monsterSetPathToLocation(hit.entity->x / 16, (hit.entity->y / 16) - 1 * direction, 0) )
+									{
+										hit.entity->monsterState = MONSTER_STATE_HUNT;
+										serverUpdateEntitySkill(hit.entity, 0);
+									}
+									else
+									{
+										monsterMoveAside(hit.entity, hit.entity);
+									}
+								}
+								else if ( static_cast<int>(parent->x / 16) == static_cast<int>(hit.entity->x / 16) )
+								{
+									int direction = 1;
+									if ( rand() % 2 == 0 )
+									{
+										direction = -1;
+									}
+									// avoid x axis.
+									if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) + 1 * direction, hit.entity->y / 16, 0) )
+									{
+										hit.entity->monsterState = MONSTER_STATE_HUNT;
+										serverUpdateEntitySkill(hit.entity, 0);
+									}
+									else if ( hit.entity->monsterSetPathToLocation((hit.entity->x / 16) - 1 * direction, hit.entity->y / 16, 0) )
+									{
+										hit.entity->monsterState = MONSTER_STATE_HUNT;
+										serverUpdateEntitySkill(hit.entity, 0);
+									}
+									else
+									{
+										monsterMoveAside(hit.entity, hit.entity);
+									}
+								}
+								else
+								{
+									monsterMoveAside(hit.entity, hit.entity);
+								}
+							}
+							else
+							{
+								monsterMoveAside(hit.entity, hit.entity);
+							}
 						}
 						else
 						{
