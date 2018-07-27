@@ -1084,7 +1084,7 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	{
 		return;
 	}
-	messagePlayer(clientnum, "%d", targetUid);
+	//messagePlayer(clientnum, "%d", targetUid);
 
 	// send to host.
 	strcpy((char*)net_packet->data, "ALLY");
