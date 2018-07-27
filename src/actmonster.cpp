@@ -7117,7 +7117,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	{
 		return;
 	}
-	if ( command == -1 || monsterAllyIndex == -1 || monsterAllyIndex > MAXPLAYERS )
+	if ( command == -1 || command == ALLY_CMD_CANCEL || monsterAllyIndex == -1 || monsterAllyIndex > MAXPLAYERS )
 	{
 		return;
 	}
@@ -7351,12 +7351,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			if ( monsterAllySpecialCooldown == 0 )
 			{
 				int duration = TICKS_PER_SECOND * (60 - (rand() % 30));
-				setEffect(EFF_ASLEEP, true, duration, false); // 30-60 seconds of sleep.
-				setEffect(EFF_HP_REGEN, true, duration, false);
-				monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
-				monsterAllySpecialCooldown = -1; // locked out until next floor.
-				serverUpdateEntitySkill(this, 49);
-				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[398], language[397], MSG_COMBAT);
+				if ( setEffect(EFF_ASLEEP, true, duration, false) ) // 30-60 seconds of sleep.
+				{
+					setEffect(EFF_HP_REGEN, true, duration, false);
+					monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
+					monsterAllySpecialCooldown = -1; // locked out until next floor.
+					serverUpdateEntitySkill(this, 49);
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[398], language[397], MSG_COMBAT);
+				}
 			}
 			break;
 		}

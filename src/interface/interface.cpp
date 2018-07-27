@@ -1417,23 +1417,36 @@ void FollowerRadialMenu::drawFollowerMenu()
 		return;
 	}
 
-	bool disableOption = false;
+	int disableOption = 0;
 	bool keepWheelOpen = false;
 	if ( followerToCommand )
 	{
+		Stat* followerStats = followerToCommand->getStats();
+		if ( !followerStats )
+		{
+			return;
+		}
 		int skillLVL = 0;
 		if ( stats[clientnum] )
 		{
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
-				if ( skillLVL < AllyNPCSkillRequirements[optionSelected] )
+				if ( optionSelected == ALLY_CMD_ATTACK_SELECT )
 				{
-					disableOption = true;
+					if ( attackCommandOnly(followerStats->type) )
+					{
+						// attack only.
+						disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+					}
+					else
+					{
+						disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
+					}
 				}
-				else if ( optionSelected == ALLY_CMD_SPECIAL && followerToCommand->monsterAllySpecialCooldown != 0 )
+				else
 				{
-					disableOption = true;
+					disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, optionSelected);
 				}
 			}
 		}
@@ -1483,7 +1496,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			}
 
 			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
-			if ( disableOption )
+			if ( disableOption != 0 )
 			{
 				keepWheelOpen = true;
 			}
@@ -1513,8 +1526,8 @@ void FollowerRadialMenu::drawFollowerMenu()
 				if ( !keepWheelOpen )
 				{
 					if ( !accessedMenuFromPartySheet
-						|| optionSelected == ALLY_CMD_MOVETO_SELECT 
-						|| optionSelected == ALLY_CMD_ATTACK_SELECT 
+						|| optionSelected == ALLY_CMD_MOVETO_SELECT
+						|| optionSelected == ALLY_CMD_ATTACK_SELECT
 						|| optionSelected == ALLY_CMD_CANCEL )
 					{
 						shootmode = true;
@@ -1529,7 +1542,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					}
 				}
 
-				if ( !disableOption
+				if ( disableOption == 0
 					&& (optionSelected == ALLY_CMD_MOVETO_SELECT || optionSelected == ALLY_CMD_ATTACK_SELECT) )
 				{
 					// return early, let the player use select command point.
@@ -1538,7 +1551,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else
 				{
-					if ( !disableOption )
+					if ( disableOption == 0 )
 					{
 						if ( optionSelected == ALLY_CMD_DEFEND &&
 							(followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
@@ -1587,6 +1600,17 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	if ( followerToCommand )
 	{
+		int skillLVL = 0;
+		Stat* followerStats = followerToCommand->getStats();
+		if ( !followerStats )
+		{
+			return;
+		}
+		if ( stats[clientnum] )
+		{
+			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+		}
+
 		SDL_Rect src;
 		src.x = xres / 2;
 		src.y = yres / 2;
@@ -1642,12 +1666,6 @@ void FollowerRadialMenu::drawFollowerMenu()
 		angleMiddle = angleStart + PI / numoptions;
 		angleEnd = angleMiddle + PI / numoptions;
 
-		int skillLVL = 0;
-		if ( stats[clientnum] )
-		{
-			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
-		}
-
 		bool mouseInCenterButton = sqrt(pow((omousex - menuX), 2) + pow((omousey - menuY), 2)) < (radius - thickness);
 
 		for ( i = 0; i < numoptions; ++i )
@@ -1674,7 +1692,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 						// draw borders around highlighted item.
 						Uint32 borderColor = uint32ColorBaronyBlue(*mainsurface);
-						if ( skillLVL < AllyNPCSkillRequirements[i] )
+						if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
 						{
 							borderColor = uint32ColorOrange(*mainsurface);
 						}
@@ -1701,7 +1719,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			img.h = sidebar_unlock_bmp->h;
 
 			// draw the text for the menu wheel.
-			if ( i == ALLY_CMD_DEFEND
+
+			if ( optionDisabledForCreature(skillLVL, followerStats->type, i) != 0 )
+			{
+				drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
+			}
+			else if ( i == ALLY_CMD_DEFEND
 				&& (followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
 			{
 				TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
@@ -1710,11 +1733,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			else
 			{
 				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-				if ( skillLVL < AllyNPCSkillRequirements[i] )
-				{
-					drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
-				}
-				else if ( i == ALLY_CMD_CLASS_TOGGLE )
+				if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
 					// draw higher.
 					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
@@ -1750,27 +1769,28 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else if ( i == ALLY_CMD_SPECIAL )
 				{
-					if ( followerToCommand->monsterAllySpecialCooldown != 0 )
-					{
-						drawImage(sidebar_unlock_bmp, nullptr, &img); // locked menu options
-					}
-					else
-					{
-						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
-					}
+					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
 				}
 				else if ( i == ALLY_CMD_ATTACK_SELECT )
 				{
-					if ( skillLVL >= SKILL_LEVEL_EXPERT )
+					if ( !attackCommandOnly(followerStats->type) )
 					{
-						TTF_SizeUTF8(ttf12, "Interact / ", &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
+						if ( optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0 )
+						{
+							TTF_SizeUTF8(ttf12, "Interact / ", &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3051]);
+						}
+						else
+						{
+							TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						}
 					}
 					else
 					{
-						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+						TTF_SizeUTF8(ttf12, language[3104], &width, nullptr); // print just attack if no world interaction.
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3104]);
 					}
 				}
 				else if ( i == ALLY_CMD_MOVETO_SELECT )
@@ -1800,27 +1820,48 @@ void FollowerRadialMenu::drawFollowerMenu()
 		}
 
 
-		if ( disableOption )
+		if ( disableOption != 0 )
 		{
 			SDL_Rect tooltip;
 			tooltip.x = omousex + 16;
 			tooltip.y = omousey + 16;
 			tooltip.w = longestline(language[3062]) * TTF12_WIDTH + 8;
 			tooltip.h = TTF12_HEIGHT * 2 + 8;
-			if ( optionSelected == ALLY_CMD_SPECIAL && followerToCommand->monsterAllySpecialCooldown != 0 )
+
+			if ( disableOption == -2 ) // disabled due to cooldown
 			{
 				tooltip.h = TTF12_HEIGHT + 8;
 				tooltip.w = longestline(language[3092]) * TTF12_WIDTH + 8;
 				drawTooltip(&tooltip);
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3092]);
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3092]);
+			}
+			else if ( disableOption == -1 ) // disabled due to creature type
+			{
+				tooltip.h = TTF12_HEIGHT + 8;
+				tooltip.w = longestline(language[3103]) * TTF12_WIDTH + 8;
+				if ( followerStats->type < KOBOLD ) //Original monster count
+				{
+					tooltip.w += strlen(language[90 + followerStats->type]) * TTF12_WIDTH;
+					drawTooltip(&tooltip);
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+						uint32ColorOrange(*mainsurface), language[3103], language[90 + followerStats->type]);
+				}
+				else if ( followerStats->type >= KOBOLD ) //New monsters
+				{
+					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
+					drawTooltip(&tooltip);
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
+						uint32ColorOrange(*mainsurface), language[3103], language[2000 + followerStats->type - KOBOLD]);
+				}
 			}
 			else
 			{
 				drawTooltip(&tooltip);
-				std::string requirement;
+				std::string requirement = "";
+				std::string current = "";
 				if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END && optionSelected != ALLY_CMD_CANCEL )
 				{
-					switch ( AllyNPCSkillRequirements[optionSelected] )
+					switch ( std::min(disableOption, SKILL_LEVEL_LEGENDARY) )
 					{
 						case 0:
 							requirement = language[363];
@@ -1843,10 +1884,43 @@ void FollowerRadialMenu::drawFollowerMenu()
 						case SKILL_LEVEL_LEGENDARY:
 							requirement = language[369];
 							break;
+						default:
+							break;
 					}
 					requirement.erase(std::remove(requirement.begin(), requirement.end(), ' '), requirement.end()); // trim whitespace
+
+					if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+					{
+						current = language[369];
+					}
+					else if ( skillLVL >= SKILL_LEVEL_MASTER )
+					{
+						current = language[368];
+					}
+					else if ( skillLVL >= SKILL_LEVEL_EXPERT )
+					{
+						current = language[367];
+					}
+					else if ( skillLVL >= SKILL_LEVEL_SKILLED )
+					{
+						current = language[366];
+					}
+					else if ( skillLVL >= SKILL_LEVEL_BASIC )
+					{
+						current = language[365];
+					}
+					else if ( skillLVL >= SKILL_LEVEL_NOVICE )
+					{
+						current = language[364];
+					}
+					else
+					{
+						current = language[363];
+					}
+					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
 				}
-				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 4, uint32ColorOrange(*mainsurface), language[3062], requirement.c_str());
+				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
+					uint32ColorOrange(*mainsurface), language[3062], requirement.c_str(), current.c_str());
 			}
 		}
 
@@ -2028,31 +2102,12 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 		return false;
 	}
 
-	bool interactItems = false;
-	bool interactWorld = false;
-
-	if ( followerStats->type == HUMAN || followerStats->type == AUTOMATON
-		|| followerStats->type == KOBOLD || followerStats->type == GNOME )
-	{
-		interactWorld = true;
-		interactItems = true;
-	}
-	else if ( followerStats->type == SLIME )
-	{
-		interactItems = true;
-	}
-	else if ( !(followerStats->type == RAT || followerStats->type == SLIME
-		|| followerStats->type == TROLL || followerStats->type == SPIDER
-		|| followerStats->type == GHOUL || followerStats->type == SCORPION
-		|| followerStats->type == CREATURE_IMP || followerStats->type == DEMON
-		|| followerStats->type == SCARAB || followerStats->type == CRYSTALGOLEM
-		|| followerStats->type == SHADOW || followerStats->type == COCKATRICE) )
-	{
-		interactItems = true;
-	}
+	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
+	bool interactWorld = allowedInteractWorld(followerStats->type);
 
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
-	bool enableAttack = (skillLVL >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM]);
+	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
+	
 
 	strcpy(FollowerMenu.interactText, "Interact with ");
 	if ( selectedEntity.behavior == &actTorch && interactWorld )
@@ -2084,7 +2139,15 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	else if ( selectedEntity.behavior == &actMonster && enableAttack )
 	{
 		strcpy(FollowerMenu.interactText, "Attack ");
-		strcat(FollowerMenu.interactText, monstertypename[selectedEntity.getMonsterTypeFromSprite()]);
+		int monsterType = selectedEntity.getMonsterTypeFromSprite();
+		if ( monsterType < KOBOLD ) //Original monster count
+		{
+			strcat(FollowerMenu.interactText, language[90 + monsterType]);
+		}
+		else if ( monsterType >= KOBOLD ) //New monsters
+		{
+			strcat(FollowerMenu.interactText, language[2000 + monsterType - KOBOLD]);
+		}
 	}
 	else
 	{
@@ -2092,4 +2155,295 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 		return false;
 	}
 	return true;
+}
+
+int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monsterType, int option)
+{
+	int creatureTier = 0;
+
+	switch ( monsterType )
+	{
+		case HUMAN:
+		case RAT:
+		case SLIME:
+		case SPIDER:
+		case SKELETON:
+		case SCORPION:
+			creatureTier = 0;
+			break;
+		case GOBLIN:
+		case TROLL:
+		case GHOUL:
+		case GNOME:
+		case SCARAB:
+		case AUTOMATON:
+		case SUCCUBUS:
+			creatureTier = 1;
+			break;
+		case CREATURE_IMP:
+		case DEMON:
+		case KOBOLD:
+		case INCUBUS:
+		case INSECTOID:
+		case GOATMAN:
+			creatureTier = 2;
+			break;
+		case CRYSTALGOLEM:
+		case VAMPIRE:
+		case COCKATRICE:
+		case SHADOW:
+			creatureTier = 3;
+			break;
+	}
+
+	int requirement = AllyNPCSkillRequirements[option];
+
+	if ( option == ALLY_CMD_SPECIAL
+		&& followerToCommand->monsterAllySpecialCooldown != 0 )
+	{
+		return -2; // disabled due to cooldown.
+	}
+
+	switch ( option )
+	{
+		case ALLY_CMD_MOVEASIDE:
+		case ALLY_CMD_CANCEL:
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			return 0; // all permitted.
+			break;
+
+		case ALLY_CMD_FOLLOW:
+		case ALLY_CMD_DEFEND:
+			if ( creatureTier > 0 )
+			{
+				requirement = 20 * creatureTier; // 20, 40, 60.
+			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to advanced skill requirements.
+			}
+			return 0;
+			break;
+
+		case ALLY_CMD_MOVETO_SELECT:
+		case ALLY_CMD_MOVETO_CONFIRM:
+			if ( creatureTier > 0 )
+			{
+				requirement += 20 * creatureTier; // 40, 60, 80.
+			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to advanced skill requirements.
+			}
+			return 0;
+			break;
+
+		case ALLY_CMD_DROP_EQUIP:
+			if ( !allowedInteractItems(monsterType) )
+			{
+				return -1; // disabled due to creature.
+			}
+			else if ( creatureTier > 0 )
+			{
+				requirement += 20 * creatureTier; // 60, 80, 100
+			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to advanced skill requirements.
+			}
+			return 0;
+			break;
+
+		case ALLY_CMD_ATTACK_SELECT:
+			if ( attackCommandOnly(monsterType) )
+			{
+				// attack only.
+				if ( creatureTier == 3 && playerSkillLVL < SKILL_LEVEL_LEGENDARY )
+				{
+					return SKILL_LEVEL_LEGENDARY; // disabled due to advanced skill requirements.
+				}
+				else if ( creatureTier == 2 && playerSkillLVL < SKILL_LEVEL_MASTER )
+				{
+					return SKILL_LEVEL_MASTER; // disabled due to advanced skill requirements.
+				}
+				else if ( playerSkillLVL < AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM] )
+				{
+					return AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM];
+				}
+				return 0;
+			}
+			else
+			{
+				if ( playerSkillLVL < AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT] )
+				{
+					return AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT];
+				}
+				return 0;
+			}
+			break;
+
+		case ALLY_CMD_ATTACK_CONFIRM:
+			if ( creatureTier == 3 && playerSkillLVL < SKILL_LEVEL_LEGENDARY )
+			{
+				return SKILL_LEVEL_LEGENDARY; // disabled due to advanced skill requirements.
+			}
+			else if ( creatureTier == 2 && playerSkillLVL < SKILL_LEVEL_MASTER )
+			{
+				return SKILL_LEVEL_MASTER; // disabled due to advanced skill requirements.
+			}
+			else if ( playerSkillLVL < AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM] )
+			{
+				return AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM];
+			}
+			return 0;
+			break;
+
+		case ALLY_CMD_CLASS_TOGGLE:
+			if ( !allowedClassToggle(monsterType) )
+			{
+				return -1; // disabled due to creature.
+			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			return 0;
+			break;
+
+		case ALLY_CMD_PICKUP_TOGGLE:
+			if ( !allowedItemPickupToggle(monsterType) )
+			{
+				return -1; // disabled due to creature.
+			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			return 0;
+			break;
+
+		case ALLY_CMD_SPECIAL:
+			if ( creatureTier == 3 )
+			{
+				return -1; // disabled due to creature.
+			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		default:
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+	}
+	return 0;
+}
+
+bool FollowerRadialMenu::allowedClassToggle(int monsterType)
+{
+	switch ( monsterType )
+	{
+		case HUMAN:
+		case GOBLIN:
+		case AUTOMATON:
+		case GOATMAN:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::allowedItemPickupToggle(int monsterType)
+{
+	switch ( monsterType )
+	{
+		case HUMAN:
+		case GOBLIN:
+		case AUTOMATON:
+		case GOATMAN:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::allowedInteractFood(int monsterType)
+{
+	switch ( monsterType )
+	{
+		case HUMAN:
+		case GOBLIN:
+		case AUTOMATON:
+		case GNOME:
+		case KOBOLD:
+		case GOATMAN:
+		case SLIME:
+		case INSECTOID:
+		case SPIDER:
+		case SCORPION:
+		case RAT:
+		case TROLL:
+		case COCKATRICE:
+		case SCARAB:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::allowedInteractWorld(int monsterType)
+{
+	switch ( monsterType )
+	{
+		case HUMAN:
+		case GOBLIN:
+		case AUTOMATON:
+		case GNOME:
+		case KOBOLD:
+		case GOATMAN:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::allowedInteractItems(int monsterType)
+{
+	switch ( monsterType )
+	{
+		case HUMAN:
+		case GOBLIN:
+		case AUTOMATON:
+		case GNOME:
+		case KOBOLD:
+		case GOATMAN:
+		case INCUBUS:
+		case INSECTOID:
+		case SKELETON:
+		case VAMPIRE:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::attackCommandOnly(int monsterType)
+{
+	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractItems(monsterType));
 }

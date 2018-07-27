@@ -3337,7 +3337,25 @@ int main(int argc, char** argv)
 							{
 								if ( !strcmp(FollowerMenu.interactText, "") )
 								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+									if ( FollowerMenu.followerToCommand )
+									{
+										int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+										if ( FollowerMenu.allowedInteractItems(type)
+											|| FollowerMenu.allowedInteractFood(type)
+											|| FollowerMenu.allowedInteractWorld(type)
+										)
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+										}
+										else
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+										}
+									}
+									else
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+									}
 								}
 								else
 								{
@@ -3374,7 +3392,25 @@ int main(int argc, char** argv)
 							{
 								if ( !strcmp(FollowerMenu.interactText, "") )
 								{
-									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+									if ( FollowerMenu.followerToCommand )
+									{
+										int type = FollowerMenu.followerToCommand->getMonsterTypeFromSprite();
+										if ( FollowerMenu.allowedInteractItems(type)
+											|| FollowerMenu.allowedInteractFood(type)
+											|| FollowerMenu.allowedInteractWorld(type)
+											)
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+										}
+										else
+										{
+											ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Attack...");
+										}
+									}
+									else
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Interact with...");
+									}
 								}
 								else
 								{
