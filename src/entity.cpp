@@ -117,6 +117,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterAllyInteractTarget(skill[45]),
 	monsterAllyClass(skill[46]),
 	monsterDefend(skill[47]),
+	monsterAllySpecial(skill[48]),
+	monsterAllySpecialCooldown(skill[49]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -855,6 +857,12 @@ void Entity::effectTimes()
 				{
 					case EFF_ASLEEP:
 						messagePlayer(player, language[593]);
+						if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
+						{
+							monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
+							myStats->EFFECTS[EFF_HP_REGEN] = false;
+							myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
+						}
 						break;
 					case EFF_POISONED:
 						messagePlayer(player, language[594]);
@@ -1738,7 +1746,7 @@ void Entity::setHP(int amount)
 			{
 				if ( abs(healthDiff) == 1 || healthDiff == 0 )
 				{
-					serverUpdateAllyHP(this->monsterAllyIndex, getUID(), entitystats->HP, entitystats->MAXHP);
+					serverUpdateAllyHP(this->monsterAllyIndex, getUID(), entitystats->HP, entitystats->MAXHP, true);
 				}
 				else
 				{
@@ -2535,6 +2543,7 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = getHealthRegenInterval(*myStats);
+	bool naturalHeal = false;
 	if ( healthRegenInterval >= 0 )
 	{
 		if ( myStats->HP < myStats->MAXHP )
@@ -2546,6 +2555,7 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					this->char_heal = 0;
 					this->modHP(1);
+					naturalHeal = true;
 				}
 			}
 		}
@@ -3134,8 +3144,23 @@ void Entity::handleEffects(Stat* myStats)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		messagePlayer(player, language[658]);
-		myStats->EFFECTS[EFF_ASLEEP] = false;
-		myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+		if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
+		{
+			// allies resting.
+			if ( !naturalHeal )
+			{
+				myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+				myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
+				myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
+				monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
+			}
+		}
+		else
+		{
+			myStats->EFFECTS[EFF_ASLEEP] = false;
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+		}
 		serverUpdateEffects(player);
 	}
 	myStats->OLDHP = myStats->HP;
@@ -9656,6 +9681,26 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						steamAchievementClient(playerOwned, "BARONY_ACH_EARN_THIS");
 					}
 
+					if ( item && item->interactNPCUid == getUID() && forcePickupItem )
+					{
+						if ( itemCategory(item) == AMULET || itemCategory(item) == RING )
+						{
+							playSoundEntity(this, 33 + rand() % 2, 64);
+						}
+						else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
+						{
+							playSoundEntity(this, 40 + rand() % 4, 64);
+						}
+						else if ( itemCategory(item) == ARMOR )
+						{
+							playSoundEntity(this, 44 + rand() % 3, 64);
+						}
+						else if ( item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
+						{
+							playSoundEntity(this, 134, 64);
+						}
+					}
+
 					(*shouldWield) = item;
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
@@ -9903,6 +9948,20 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			if ( item.interactNPCUid == getUID() )
 			{
 				shouldEquip = &myStats->weapon;
+			}
+			return true;
+			break;
+		case RING:
+			if ( item.interactNPCUid == getUID() )
+			{
+				shouldEquip = &myStats->ring;
+			}
+			return true;
+			break;
+		case AMULET:
+			if ( item.interactNPCUid == getUID() )
+			{
+				shouldEquip = &myStats->amulet;
 			}
 			return true;
 			break;
@@ -10720,7 +10779,14 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	
 	if ( myStats.EFFECTS[EFF_HP_REGEN] )
 	{
-		healring += 2;
+		if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats.EFFECTS[EFF_ASLEEP] )
+		{
+			healring += 1;
+		}
+		else
+		{
+			healring += 2;
+		}
 		if ( healring > 3 )
 		{
 			healring = 3;

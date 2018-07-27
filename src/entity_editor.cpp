@@ -91,6 +91,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterAllyInteractTarget(skill[45]),
 	monsterAllyClass(skill[46]),
 	monsterDefend(skill[47]),
+	monsterAllySpecial(skill[48]),
+	monsterAllySpecialCooldown(skill[49]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
