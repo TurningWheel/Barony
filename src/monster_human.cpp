@@ -1635,87 +1635,9 @@ bool Entity::humanCanWieldItem(const Item& item) const
 		return false;
 	}
 
-	if ( monsterAllyIndex >= 0 )
+	if ( monsterAllyIndex >= 0 && (monsterAllyClass != ALLY_CLASS_MIXED || item.interactNPCUid == getUID()) )
 	{
-		// player ally.
-		if ( item.interactNPCUid == getUID() )
-		{
-			// monster was set to interact with this item, force want it.
-			switch ( itemCategory(&item) )
-			{
-				case WEAPON:
-				case ARMOR:
-				case RING:
-				case AMULET:
-				case MAGICSTAFF:
-				case CLOAK:
-					return true;
-					break;
-				case TOOL:
-					if ( item.type == TOOL_TORCH || item.type == TOOL_LANTERN || item.type == TOOL_CRYSTALSHARD )
-					{
-						return true;
-					}
-					else
-					{
-						return false;
-					}
-					break;
-				default:
-					return false;
-					break;
-			}
-		}
-		if ( monsterAllyClass == ALLY_CLASS_MIXED )
-		{
-			// pick up all default items.
-		}
-		else if ( monsterAllyClass == ALLY_CLASS_RANGED )
-		{
-			switch ( itemCategory(&item) )
-			{
-				case WEAPON:
-					return isRangedWeapon(item);
-				case ARMOR:
-					switch ( item.type )
-					{
-						case CRYSTAL_BREASTPIECE:
-						case CRYSTAL_HELM:
-						case CRYSTAL_SHIELD:
-						case STEEL_BREASTPIECE:
-						case STEEL_HELM:
-						case STEEL_SHIELD:
-						case IRON_BREASTPIECE:
-						case IRON_HELM:
-						case IRON_SHIELD:
-							return false;
-						default:
-							return true;
-					}
-				case MAGICSTAFF:
-					return false;
-				case THROWN:
-					return false;
-				default:
-					return false;
-			}
-		}
-		else if ( monsterAllyClass == ALLY_CLASS_MELEE )
-		{
-			switch ( itemCategory(&item) )
-			{
-			case WEAPON:
-				return !isRangedWeapon(item);
-			case ARMOR:
-				return true;
-			case MAGICSTAFF:
-				return false;
-			case THROWN:
-				return false;
-			default:
-				return false;
-			}
-		}
+		return monsterAllyEquipmentInClass(item);
 	}
 
 	switch ( itemCategory(&item) )

@@ -1121,6 +1121,11 @@ bool Entity::goblinCanWieldItem(const Item& item) const
 		return false;
 	}
 
+	if ( monsterAllyIndex >= 0 && (monsterAllyClass != ALLY_CLASS_MIXED || item.interactNPCUid == getUID()) )
+	{
+		return monsterAllyEquipmentInClass(item);
+	}
+
 	switch ( itemCategory(&item) )
 	{
 		case WEAPON:
