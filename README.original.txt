@@ -4,6 +4,9 @@ INTRODUCTION
 	You can play it in singleplayer or multiplayer modes.
 
 ARGUMENTS
+	Arguments force the game to load with special conditions.
+	To use these arguments, write them in Steam's "Set launch options...". 
+	Read Steam's article "Setting Game Launch Options" for more information
 	
 	-windowed        -  Forces the game to start in a window.
 	-size=???x???    -  Sets the display resolution.
@@ -11,6 +14,7 @@ ARGUMENTS
 	-gen=???         -  Generates a dungeon to run on startup as opposed to reading the first line from levels.txt.
 	-config=???      -  Chooses a config file to execute on startup as opposed to simply running 'default.cfg'.
 	-quickstart=???  -  Bypasses the menu/character creation process and simply starts the game with the player as the specified class.
+	[b]-datadir=???[/b] - The directory that game is located in
 
 	Ex:
 		game -windowed -size=960x600 -map=test -quickstart=barbarian
