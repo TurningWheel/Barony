@@ -2383,7 +2383,6 @@ bool FollowerRadialMenu::allowedInteractFood(int monsterType)
 	{
 		case HUMAN:
 		case GOBLIN:
-		case AUTOMATON:
 		case GNOME:
 		case KOBOLD:
 		case GOATMAN:
