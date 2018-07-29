@@ -3732,6 +3732,7 @@ IDENTICAL MOD LISTS LOADED!#
 3033 Hide Chatlog#
 3034 User Interface Options#
 3035 There's no ground beneath your feet to place that!#
+
 # Follower Radial Menu Text
 3036 Follower Options:#
 3037 Wait here#
@@ -3763,21 +3764,23 @@ Items:#
 3060 Equipment#
 3061 All#
 3062 You do not meet the Leadership and Charisma requirements
-for this option. (Required: %s)#
+for this option. (Required: %s, Current: %s)#
 3063 Cancel#
 3064 delete save file#
 3065 Start a new game, or continue from a save file:#
 3066 scroll with arrow keys or mouse wheel#
 3067 %2d / %2d singleplayer slots used#
 3068 %2d / %2d  multiplayer slots used#
+
+# Follower responses.
 3069 %s I'll stand ground here, %s.#
 3070 %s I'll sit tight.#
-3071 %s My weapon is cursed!#
+3071 %s My %s cursed!#
 3072 %s This would suit you well, %s!#
 3073 %s I'll try find something better.#
-3074 %s Move End 1#
-3075 %s Move End 2#
-3076 %s Move End 3#
+3074 %s I have no use for this.#
+3075 %s That hit the spot!#
+3076 %s Oof. I'm really full now.#
 3077 %s I cant reach that.#
 3078 %s There's something in the way.#
 3079 %s Advancing to point!#
@@ -3789,8 +3792,40 @@ for this option. (Required: %s)#
 3085 %s You have to keep what few friends you have down here.#
 3086 %s Hmm.#
 3087 %s Mm.#
-3088 %s #
-3089 %s #
-3090 %s #
+3088 %s That one was a little mouldy.#
+3089 %s I couldn't possibly eat any more.#
+3090 %s I'm not hungry now.#
+3091 %s Blecch! Rotten food!#
+3092 You may only use this command once per floor.#
+3094 No interaction available.#
 3095 view Steam Leaderboards#
-3099 end#
+3096 Your spell hits the %s!#
+3097 door#
+3098 gate#
+3099 chest#
+3100 An arcane protection holds the lock firmly in place!#
+3101 An arcane protection holds the door firmly in place!#
+3102 An arcane protection holds the gate firmly in place!#
+3103 Command not available for %s.#
+3104 Attack...#
+3105 The %s waits patiently.#
+3106 %s waits patiently.#
+3107 weapon is#
+3108 helmet is#
+3109 hat is#
+3110 breastpiece is#
+3111 boots are#
+3112 shield is#
+3113 gloves are#
+3114 cloak is#
+3115 ring is#
+3116 amulet is#
+3117 equipment is#
+3118 %s cursed!#
+3119 The %s's #
+3120 %s's #
+3121 The %s #
+3122 %s #
+3123 stares at the %s dismissively.#
+3124 quickly eats the %s.#
+3149 end#

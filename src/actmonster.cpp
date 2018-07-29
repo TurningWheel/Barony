@@ -7161,7 +7161,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						if ( stats[monsterAllyIndex] ) // check owner's proficiency.
 						{
 							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
-							if ( skillLVL >= SKILL_LEVEL_MASTER )
+							if ( skillLVL >= SKILL_LEVEL_MASTER || myStats->type != HUMAN )
 							{
 								// attack anything except if FF is off + friend.
 								if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -7541,7 +7541,59 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				message = language[3077 + rand() % 2];
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
-				message = language[3071];
+				if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+				{
+					Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+					if ( item )
+					{
+						char fullmsg[256] = "";
+						switch ( itemCategory(item) )
+						{
+							case WEAPON:
+							case MAGICSTAFF:
+								snprintf(fullmsg, 63, language[3071], namesays, language[3107]);
+								break;
+							case ARMOR:
+							case TOOL:
+								switch ( checkEquipType(item) )
+								{
+									case TYPE_OFFHAND:
+										snprintf(fullmsg, 63, language[3071], namesays, language[3112]);
+										break;
+									case TYPE_HELM:
+									case TYPE_HAT:
+									case TYPE_BREASTPIECE:
+									case TYPE_BOOTS:
+									case TYPE_SHIELD:
+									case TYPE_GLOVES:
+									case TYPE_CLOAK:
+										snprintf(fullmsg, 63, language[3071], namesays, language[3107 + checkEquipType(item)]);
+										break;
+									default:
+										snprintf(fullmsg, 63, language[3071], namesays, language[3117]);
+										break;
+								}
+								break;
+							case RING:
+								snprintf(fullmsg, 63, language[3071], namesays, language[3108 + TYPE_RING]);
+								break;
+							case AMULET:
+								snprintf(fullmsg, 63, language[3071], namesays, language[3108 + TYPE_AMULET]);
+								break;
+							default:
+								break;
+						}
+						if ( strcmp(fullmsg, "") )
+						{
+							messagePlayer(monsterAllyIndex, fullmsg);
+						}
+					}
+					if ( item )
+					{
+						free(item);
+					}
+				}
+				return;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
 				message = language[3074];
@@ -7604,6 +7656,171 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				{
 					message = language[3086 + rand() % 2];
 				}
+				break;
+			default:
+				break;
+		}
+	}
+	else
+	{
+		switch ( event )
+		{
+			case ALLY_EVENT_MOVEASIDE:
+				//message = language[535];
+				break;
+			case ALLY_EVENT_MOVETO_BEGIN:
+				/*if ( rand() % 10 == 0 )
+				{
+					message = language[3079 + rand() % 2];
+				}*/
+				break;
+			case ALLY_EVENT_MOVETO_FAIL:
+				//message = language[3077 + rand() % 2];
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_CURSED:
+				if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+				{
+					Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+					if ( item )
+					{
+						char fullmsg[256] = "";
+						switch ( itemCategory(item) )
+						{
+							case WEAPON:
+							case MAGICSTAFF:
+								snprintf(fullmsg, 63, language[3118], language[3107]);
+								break;
+							case ARMOR:
+							case TOOL:
+								switch ( checkEquipType(item) )
+								{
+									case TYPE_OFFHAND:
+										snprintf(fullmsg, 63, language[3118], language[3112]);
+										break;
+									case TYPE_HELM:
+									case TYPE_HAT:
+									case TYPE_BREASTPIECE:
+									case TYPE_BOOTS:
+									case TYPE_SHIELD:
+									case TYPE_GLOVES:
+									case TYPE_CLOAK:
+										snprintf(fullmsg, 63, language[3118], language[3107 + checkEquipType(item)]);
+										break;
+									default:
+										snprintf(fullmsg, 63, language[3118], language[3117]);
+										break;
+								}
+								break;
+							case RING:
+								snprintf(fullmsg, 63, language[3118], language[3108 + TYPE_RING]);
+								break;
+							case AMULET:
+								snprintf(fullmsg, 63, language[3118], language[3108 + TYPE_AMULET]);
+								break;
+							default:
+								break;
+						}
+						if ( strcmp(fullmsg, "") )
+						{
+							char genericStr[128];
+							strcpy(genericStr, language[3119]);
+							strcat(genericStr, fullmsg);
+							char namedStr[128];
+							strcpy(namedStr, language[3120]);
+							strcat(namedStr, fullmsg);
+							messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+								myStats, genericStr, namedStr, MSG_COMBAT);
+						}
+					}
+					if ( item )
+					{
+						free(item);
+					}
+				}
+				return;
+				break;
+			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
+			{
+				Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+				if ( item )
+				{
+					char itemString[64] = "";
+					snprintf(itemString, 63, language[3123], items[item->type].name_unidentified);
+					char genericStr[128] = "";
+					strcpy(genericStr, language[3121]);
+					strcat(genericStr, itemString);
+					char namedStr[128] = "";
+					strcpy(namedStr, language[3122]);
+					strcat(namedStr, itemString);
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+						myStats, genericStr, namedStr, MSG_COMBAT);
+					free(item);
+				}
+				return;
+				break;
+			}
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_BAD:
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_GOOD:
+			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
+			{
+				Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+				if ( item )
+				{
+					char itemString[64] = "";
+					snprintf(itemString, 63, language[3124], items[item->type].name_unidentified);
+					char genericStr[128] = "";
+					strcpy(genericStr, language[3121]);
+					strcat(genericStr, itemString);
+					char namedStr[128] = "";
+					strcpy(namedStr, language[3122]);
+					strcat(namedStr, itemString);
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+						myStats, genericStr, namedStr, MSG_COMBAT);
+					free(item);
+				}
+				return;
+				break;
+			}
+			case ALLY_EVENT_INTERACT_OTHER:
+				break;
+			case ALLY_EVENT_ATTACK:
+			case ALLY_EVENT_SPOT_ENEMY:
+				//message = language[516 + rand() % 3];
+				break;
+			case ALLY_EVENT_ATTACK_FRIENDLY_FIRE:
+				//message = language[3084 + rand() % 2];
+				break;
+			case ALLY_EVENT_DROP_WEAPON:
+			case ALLY_EVENT_DROP_EQUIP:
+			case ALLY_EVENT_DROP_ALL:
+				/*if ( rand() % 2 )
+				{
+					if ( rand() % 2 && event == ALLY_EVENT_DROP_ALL )
+					{
+						message = language[3083];
+					}
+					else
+					{
+						message = language[3072 + rand() % 2];
+					}
+				}
+				else
+				{
+					message = language[3081 + rand() % 2];
+				}*/
+				break;
+			case ALLY_EVENT_WAIT:
+				//message = language[3069 + rand() % 2];
+				break;
+			case ALLY_EVENT_FOLLOW:
+				//message = language[526 + rand() % 3];
+				break;
+			case ALLY_EVENT_MOVETO_REPATH:
+				/*if ( rand() % 20 == 0 )
+				{
+					message = language[3086 + rand() % 2];
+				}*/
 				break;
 			default:
 				break;
@@ -7744,15 +7961,15 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		return false;
 	}
 
-	if ( myStats->HUNGER >= 800 )
-	{
-		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_FULL);
-		return false;
-	}
-
 	if ( !FollowerMenu.allowedInteractFood(myStats->type) )
 	{
 		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_NOUSE);
+		return false;
+	}
+
+	if ( myStats->HUNGER >= 800 )
+	{
+		handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM_FOOD_FULL);
 		return false;
 	}
 
@@ -7917,4 +8134,183 @@ Entity* Entity::monsterAllyGetPlayerLeader()
 		}
 	}
 	return nullptr;
+}
+
+bool Entity::monsterAllyEquipmentInClass(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS )
+	{
+		// player ally.
+		bool hats = true;
+		bool helm = true;
+		bool gloves = false;
+		bool breastplate = true;
+		if ( myStats->type == HUMAN || myStats->type == VAMPIRE )
+		{
+			gloves = true;
+		}
+		if ( myStats->type == GOATMAN || myStats->type == GNOME || myStats->type == INCUBUS 
+			|| myStats->type == SUCCUBUS || myStats->type == INSECTOID || myStats->type == VAMPIRE
+			|| myStats->type == KOBOLD )
+		{
+			hats = false;
+			helm = false;
+		}
+		if ( myStats->type == VAMPIRE )
+		{
+			breastplate = false;
+		}
+		if ( myStats->type == AUTOMATON )
+		{
+			hats = false;
+		}
+
+		if ( item.interactNPCUid == getUID() )
+		{
+			// monster was set to interact with this item, force want it.
+			switch ( itemCategory(&item) )
+			{
+				case ARMOR:
+					if ( checkEquipType(&item) == TYPE_HAT )
+					{
+						if ( myStats->type == KOBOLD && item.type == HAT_HOOD )
+						{
+							return true;
+						}
+						return hats;
+					}
+					else if ( checkEquipType(&item) == TYPE_HELM )
+					{
+						return helm;
+					}
+					else if ( checkEquipType(&item) == TYPE_BREASTPIECE )
+					{
+						return breastplate;
+					}
+					else if ( checkEquipType(&item) == TYPE_GLOVES )
+					{
+						return gloves;
+					}
+					return true;
+					break;
+				case WEAPON:
+				case RING:
+				case AMULET:
+				case MAGICSTAFF:
+				case CLOAK:
+					return true;
+					break;
+				case TOOL:
+					if ( item.type == TOOL_TORCH || item.type == TOOL_LANTERN || item.type == TOOL_CRYSTALSHARD )
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+					break;
+				default:
+					return false;
+					break;
+			}
+		}
+		else if ( monsterAllyClass == ALLY_CLASS_MIXED )
+		{
+			// pick up all default items.
+		}
+		else if ( monsterAllyClass == ALLY_CLASS_RANGED )
+		{
+			switch ( itemCategory(&item) )
+			{
+				case WEAPON:
+					return isRangedWeapon(item);
+				case ARMOR:
+					switch ( item.type )
+					{
+						case CRYSTAL_BREASTPIECE:
+						case CRYSTAL_HELM:
+						case CRYSTAL_SHIELD:
+						case STEEL_BREASTPIECE:
+						case STEEL_HELM:
+						case STEEL_SHIELD:
+						case IRON_BREASTPIECE:
+						case IRON_HELM:
+						case IRON_SHIELD:
+							return false;
+							break;
+						default:
+							break;
+					}
+					if ( checkEquipType(&item) == TYPE_HAT )
+					{
+						return hats;
+					}
+					else if ( checkEquipType(&item) == TYPE_HELM )
+					{
+						return helm;
+					}
+					break;
+				case MAGICSTAFF:
+					return false;
+					break;
+				case THROWN:
+					if ( myStats->type == GOATMAN )
+					{
+						return true;
+					}
+					return false;
+					break;
+				case POTION:
+					if ( myStats->type == GOATMAN )
+					{
+						switch ( item.type )
+						{
+							case POTION_BOOZE:
+								return true;
+							case POTION_HEALING:
+								return true;
+							default:
+								return false;
+						}
+					}
+					return false;
+					break;
+				default:
+					return false;
+					break;
+			}
+		}
+		else if ( monsterAllyClass == ALLY_CLASS_MELEE )
+		{
+			switch ( itemCategory(&item) )
+			{
+				case WEAPON:
+					return !isRangedWeapon(item);
+				case ARMOR:
+					if ( checkEquipType(&item) == TYPE_HAT )
+					{
+						return hats;
+					}
+					else if ( checkEquipType(&item) == TYPE_HELM )
+					{
+						return helm;
+					}
+					return true;
+				case MAGICSTAFF:
+					return false;
+				case THROWN:
+					return false;
+				default:
+					return false;
+			}
+		}
+	}
+	return false;
 }

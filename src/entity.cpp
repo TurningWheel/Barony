@@ -9655,7 +9655,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					}
 				}
 
-				if ( shouldWield )
+				if ( myStats->type == SLIME )
+				{
+					list_RemoveNode(entity->mynode); // slimes eat the item up.
+				}
+				else if ( shouldWield )
 				{
 					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 )
 					{
@@ -9671,13 +9675,18 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						continue;
 					}
 
-					if ( myStats->type == AUTOMATON && list_Size(&myStats->inventory) < maxInventoryItems )
+					if ( myStats->type == AUTOMATON && list_Size(&myStats->inventory) < maxInventoryItems
+						&& !(item->interactNPCUid == getUID() && forcePickupItem) )
 					{
-						addItemToMonsterInventory(*shouldWield); // Automatons are hoarders.
+						addItemToMonsterInventory(*shouldWield); // Automatons are hoarders, except if commanded.
 					}
 					else
 					{
-						dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+						Entity* dropped = dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+						if ( dropped && item && item->interactNPCUid == getUID() )
+						{
+							dropped->itemOriginalOwner = monsterAllyIndex;
+						}
 					}
 
 					if ( playerOwned >= 0 && checkFriend(players[playerOwned]->entity)
@@ -9788,15 +9797,15 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 		return true; //Something is better than nothing.
 	}
 
+	if ( itemToEquip.interactNPCUid == getUID() )
+	{
+		return true;
+	}
+
 	if ( myStats->weapon->beatitude < 0 )
 	{
 		//If monster already holding an item, can't swap it out if it's cursed.
 		return false;
-	}
-
-	if ( itemToEquip.interactNPCUid == getUID() )
-	{
-		return true;
 	}
 
 	if ( myStats->weapon->forcedPickupByPlayer == true )
@@ -9871,11 +9880,34 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 		case AUTOMATON:
 			if ( !automatonCanWieldItem(item) )
 			{
-				return true; //Can pick up all items automaton can't equip, because recycler.
+				if ( item.interactNPCUid == getUID() )
+				{
+					// item is being interacted with but we won't auto pick up on interact.
+					return false;
+				}
+				else
+				{
+					return true; //Can pick up all items automaton can't equip, because recycler.
+				}
 			}
+			break;
+		case GNOME:
+		case KOBOLD:
+		case INCUBUS:
+		case INSECTOID:
+		case SKELETON:
+		case VAMPIRE:
+			if ( !monsterAllyEquipmentInClass(item) )
+			{
+				return false;
+			}
+			break;
+		case SLIME:
+			return true; // noms on all items.
 			break;
 		default:
 			return false;
+			break;
 	}
 
 	switch ( itemCategory(&item) )
@@ -9938,6 +9970,7 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				shouldEquip = shouldMonsterEquipThisArmor(item);
 				return true;
 			}
+
 			return (shouldEquip = shouldMonsterEquipThisArmor(item));
 		case THROWN:
 			if ( myStats->weapon == nullptr )
@@ -9998,14 +10031,23 @@ Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
 	switch ( checkEquipType(&item) )
 	{
 		case TYPE_HAT:
-			if ( myStats->helmet && myStats->helmet->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->helmet )
+			{
+				return &myStats->helmet;
+			}
+			if ( myStats->helmet && (myStats->helmet->beatitude < 0 || myStats->helmet->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //No can has hats : (
 			}
 
 			return Item::isThisABetterArmor(item, myStats->helmet) ? &myStats->helmet : nullptr;
 		case TYPE_HELM:
-			if ( myStats->helmet && myStats->helmet->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->helmet )
+			{
+				return &myStats->helmet;
+			}
+
+			if ( myStats->helmet && (myStats->helmet->beatitude < 0 || myStats->helmet->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //Can't swap out armor piece if current one is cursed!
 			}
@@ -10018,40 +10060,66 @@ Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
 			return Item::isThisABetterArmor(item, myStats->helmet) ? &myStats->helmet : nullptr;
 			break;
 		case TYPE_SHIELD:
-			if ( myStats->shield && myStats->shield->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->shield )
+			{
+				return &myStats->shield;
+			}
+
+			if ( myStats->shield && (myStats->shield->beatitude < 0 || myStats->shield->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //Can't swap out armor piece if current one is cursed!
 			}
 
 			return Item::isThisABetterArmor(item, myStats->shield) ? &myStats->shield : nullptr;
 		case TYPE_BREASTPIECE:
-			if ( myStats->breastplate && myStats->breastplate->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->breastplate )
+			{
+				return &myStats->breastplate;
+			}
+
+			if ( myStats->breastplate && (myStats->breastplate->beatitude < 0 || myStats->breastplate->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //Can't swap out armor piece if current one is cursed!
 			}
 
 			return Item::isThisABetterArmor(item, myStats->breastplate) ? &myStats->breastplate : nullptr;
 		case TYPE_CLOAK:
-			if ( myStats->cloak && myStats->cloak->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->cloak )
+			{
+				return &myStats->cloak;
+			}
+
+			if ( myStats->cloak && (myStats->cloak->beatitude < 0 || myStats->cloak->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //Can't swap out armor piece if current one is cursed!
 			}
 
 			return Item::isThisABetterArmor(item, myStats->cloak) ? &myStats->cloak : nullptr;
 		case TYPE_BOOTS:
-			if ( myStats->shoes && myStats->shoes->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->shoes )
+			{
+				return &myStats->shoes;
+			}
+
+			if ( myStats->shoes && (myStats->shoes->beatitude < 0 || myStats->shoes->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //Can't swap out armor piece if current one is cursed!
 			}
 
 			return Item::isThisABetterArmor(item, myStats->shoes) ? &myStats->shoes : nullptr;
 		case TYPE_GLOVES:
-			if ( myStats->gloves && myStats->gloves->beatitude < 0 )
+			if ( item.interactNPCUid == getUID() && myStats->gloves )
+			{
+				return &myStats->gloves;
+			}
+
+			if ( myStats->gloves && (myStats->gloves->beatitude < 0 || myStats->gloves->forcedPickupByPlayer == true) )
 			{
 				return nullptr; //Can't swap out armor piece if current one is cursed!
 			}
 
 			return Item::isThisABetterArmor(item, myStats->gloves) ? &myStats->gloves : nullptr;
+			break;
 		default:
 			return nullptr;
 	}

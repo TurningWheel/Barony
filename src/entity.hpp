@@ -465,6 +465,7 @@ public:
 	int shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat& targetStats, int targetDist, bool hasrangedweapon);
 	bool monsterConsumeFoodEntity(Entity* food, Stat* myStats);
 	Entity* monsterAllyGetPlayerLeader();
+	bool monsterAllyEquipmentInClass(const Item& item) const;
 
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 
