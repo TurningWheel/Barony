@@ -2765,15 +2765,22 @@ dungeon level %d, client (player %d) (direct ip), %s#
 1980 Previous Hotbar Slot#
 1981 Minimap Scale Toggle#
 1982 Toggle Chatlog#
+1983 NPC Menu Quick Access#
+1984 Repeat Last Follower Command#
+1985 Cycle Currently Selected Follower#
+
 # Other bindings.
-1983 Autosort Inventory#
-1984 Minimap Scale Toggle#
-1985 Toggle Chatlog#
+1986 Autosort Inventory#
+1987 Minimap Scale Toggle#
+1988 Toggle Chatlog#
+1989 NPC Menu Quick Access#
+1990 Repeat Last NPC Command#
+1991 Cycle Through NPCs#
 
 # More stuff on the gamepad bindings screen.
-1990 Menu exclusive bindings:#
-1991 Game exclusive bindings:#
-1992 Click to unbind. Click an unbound action to assign binding.#
+1994 Menu exclusive bindings:#
+1995 Game exclusive bindings:#
+1996 Click to unbind. Click an unbound action to assign binding.#
 
 
 1997 auto appraise items#
@@ -3798,6 +3805,9 @@ for this option. (Required: %s, Current: %s)#
 3091 %s Blecch! Rotten food!#
 3092 You may only use this command once per floor.#
 3094 No interaction available.#
+# Follower responses end.
+
+# Misc
 3095 view Steam Leaderboards#
 3096 Your spell hits the %s!#
 3097 door#
@@ -3806,6 +3816,8 @@ for this option. (Required: %s, Current: %s)#
 3100 An arcane protection holds the lock firmly in place!#
 3101 An arcane protection holds the door firmly in place!#
 3102 An arcane protection holds the gate firmly in place!#
+
+# Follower responses cont'd.
 3103 Command not available for %s.#
 3104 Attack...#
 3105 The %s waits patiently.#
@@ -3828,4 +3840,18 @@ for this option. (Required: %s, Current: %s)#
 3122 %s #
 3123 stares at the %s dismissively.#
 3124 quickly eats the %s.#
+3125 surrenders their weapon.#
+3126 surrenders some of their equipment.#
+3127 surrenders their equipment.#
+3128 %s decides to follow you!#
+3129 The %s grunts.#
+3130 %s grunts.#
+3131 The %s can't reach that from here.#
+3132 %s can't reach that from here.#
+3133 There's something in the way of the %s.#
+3134 There's something in the way of %s.#
+3135 %s Apologies %s, but I won't let go of these keepsakes.#
+
+# Misc
+3136 Hide Player Nametags#
 3149 end#

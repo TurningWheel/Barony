@@ -388,6 +388,8 @@ extern bool lock_right_sidebar;
 
 extern bool show_game_timer_always;
 
+extern bool hide_playertags;
+
 const char* getInputName(Uint32 scancode);
 Sint8* inputPressed(Uint32 scancode);
 

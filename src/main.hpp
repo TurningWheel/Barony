@@ -222,10 +222,13 @@ static const unsigned INJOY_GAME_HOTBAR_PREV = 31;
 static const unsigned INJOY_GAME_HOTBAR_NEXT = 32;
 static const unsigned INJOY_GAME_MINIMAPSCALE = 33;
 static const unsigned INJOY_GAME_TOGGLECHATLOG = 34;
+static const unsigned INJOY_GAME_FOLLOWERMENU = 35;
+static const unsigned INJOY_GAME_FOLLOWERMENU_LASTCMD = 36;
+static const unsigned INJOY_GAME_FOLLOWERMENU_CYCLE = 37;
 
 static const unsigned INDEX_JOYBINDINGS_START_GAME = 26;
 
-static const unsigned NUM_JOY_IMPULSES = 35;
+static const unsigned NUM_JOY_IMPULSES = 38;
 
 static const unsigned UNBOUND_JOYBINDING = 399;
 

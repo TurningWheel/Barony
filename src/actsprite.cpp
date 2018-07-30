@@ -15,6 +15,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "entity.hpp"
+#include "interface/interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -66,9 +67,16 @@ void actSpriteNametag(Entity* my)
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
 	{
-		my->flags[INVISIBLE] = false;
-		my->x = parent->x;
-		my->y = parent->y;
+		if ( !hide_playertags )
+		{
+			my->flags[INVISIBLE] = false;
+			my->x = parent->x;
+			my->y = parent->y;
+		}
+		else
+		{
+			my->flags[INVISIBLE] = true;
+		}
 	}
 	else
 	{

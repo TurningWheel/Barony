@@ -156,6 +156,7 @@ bool auto_appraise_new_items = false;
 bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
 bool hide_statusbar = false;
+bool hide_playertags = false;
 real_t uiscale_chatlog = 1.f;
 real_t uiscale_playerbars = 1.f;
 real_t uiscale_hotbar = 1.f;
@@ -632,10 +633,10 @@ void defaultImpulses()
 	impulses[IN_BACK] = 22;
 	impulses[IN_RIGHT] = 7;
 #endif
-	impulses[IN_TURNL] = 20;
-	impulses[IN_TURNR] = 8;
-	impulses[IN_UP] = 6;
-	impulses[IN_DOWN] = 29;
+	impulses[IN_TURNL] = 80;
+	impulses[IN_TURNR] = 79;
+	impulses[IN_UP] = 82;
+	impulses[IN_DOWN] = 81;
 	impulses[IN_CHAT] = 40;
 	impulses[IN_COMMAND] = 56;
 	impulses[IN_STATUS] = 43;
@@ -692,6 +693,9 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
 	joyimpulses[INJOY_GAME_TOGGLECHATLOG] = 399;
 	joyimpulses[INJOY_GAME_MINIMAPSCALE] = 399;
+	joyimpulses[INJOY_GAME_FOLLOWERMENU] = 399;
+	joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD] = 399;
+	joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE] = 399;
 }
 
 void defaultConfig()
@@ -725,10 +729,10 @@ void defaultConfig()
 	consoleCommand("/bind 22 IN_BACK");
 	consoleCommand("/bind 7 IN_RIGHT");
 #endif
-	consoleCommand("/bind 20 IN_TURNL");
-	consoleCommand("/bind 8 IN_TURNR");
-	consoleCommand("/bind 6 IN_UP");
-	consoleCommand("/bind 29 IN_DOWN");
+	consoleCommand("/bind 80 IN_TURNL");
+	consoleCommand("/bind 79 IN_TURNR");
+	consoleCommand("/bind 82 IN_UP");
+	consoleCommand("/bind 81 IN_DOWN");
 	consoleCommand("/bind 40 IN_CHAT");
 	consoleCommand("/bind 56 IN_COMMAND");
 	consoleCommand("/bind 43 IN_STATUS");
@@ -782,6 +786,9 @@ void defaultConfig()
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
 	consoleCommand("/joybind 399 INJOY_GAME_MINIMAPSCALE"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 399 INJOY_GAME_TOGGLECHATLOG"); //SCANCODE_UNASSIGNED_BINDING
+	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU"); //SCANCODE_UNASSIGNED_BINDING
+	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU_LASTCMD"); //SCANCODE_UNASSIGNED_BINDING
+	consoleCommand("/joybind 399 INJOY_GAME_FOLLOWERMENU_CYCLE"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -1148,6 +1155,10 @@ int saveConfig(char* filename)
 	fprintf(fp, "/uiscale_hotbar %f\n", uiscale_hotbar);
 	fprintf(fp, "/uiscale_chatbox %f\n", uiscale_chatlog);
 	fprintf(fp, "/uiscale_playerbars %f\n", uiscale_playerbars);
+	if ( hide_playertags )
+	{
+		fprintf(fp, "/hideplayertags\n");
+	}
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;
@@ -1453,8 +1464,8 @@ void FollowerRadialMenu::drawFollowerMenu()
 		// process commands if option selected on the wheel.
 		if ( (!(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) && !menuToggleClick && !holdWheel)
 			|| ((*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) && menuToggleClick)
-			|| (!(*inputPressed(impulses[IN_FOLLOWERMENU])) && holdWheel && !menuToggleClick)
-			|| (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) && optionPrevious != -1)
+			|| (!(*inputPressed(impulses[IN_FOLLOWERMENU] || !(*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU])) )) && holdWheel && !menuToggleClick)
+			|| (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD] || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD])) && optionPrevious != -1)
 			)
 		{
 			if ( menuToggleClick )
@@ -1468,7 +1479,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 
-			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
 			{
 				if ( optionPrevious != -1 )
 				{
@@ -1501,7 +1512,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				keepWheelOpen = true;
 			}
 
-			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
 			{
 				if ( keepWheelOpen )
 				{
@@ -1509,6 +1520,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					initFollowerMenuGUICursor();
 				}
 				*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+				*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
 			}
 
 			if ( optionSelected != -1 )

@@ -216,19 +216,22 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		}
 	}
 
-	if ( enemy_lastuid != target->getUID() || enemy_timer == 0 )
+	if ( player >= 0 )
 	{
-		// if new target or timer expired, get new OLDHP value.
-		if ( stats )
+		if ( enemy_lastuid != target->getUID() || enemy_timer == 0 )
 		{
-			enemy_oldhp = stats->OLDHP;
+			// if new target or timer expired, get new OLDHP value.
+			if ( stats )
+			{
+				enemy_oldhp = stats->OLDHP;
+			}
+			else
+			{
+				enemy_oldhp = enemy_hp; // chairs/tables and things.
+			}
 		}
-		else
-		{
-			enemy_oldhp = enemy_hp; // chairs/tables and things.
-		}
+		enemy_lastuid = target->getUID();
 	}
-	enemy_lastuid = target->getUID();
 	if ( player == clientnum )
 	{
 		enemy_timer = ticks;

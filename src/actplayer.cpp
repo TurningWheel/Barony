@@ -1534,12 +1534,12 @@ void actPlayer(Entity* my)
 
 			if ( !command && !FollowerMenu.followerToCommand && FollowerMenu.recentEntity )
 			{
-				if ( *inputPressed(impulses[IN_FOLLOWERMENU]) )
+				if ( *inputPressed(impulses[IN_FOLLOWERMENU]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU]) )
 				{
 					selectedEntity = FollowerMenu.recentEntity;
 					FollowerMenu.holdWheel = true;
 				}
-				else if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) )
+				else if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
 				{
 					if ( FollowerMenu.optionPrevious != -1 )
 					{
@@ -1548,6 +1548,7 @@ void actPlayer(Entity* my)
 					else
 					{
 						*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
 					}
 				}
 			}
