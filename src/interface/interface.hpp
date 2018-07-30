@@ -39,8 +39,8 @@ extern real_t uiscale_hotbar;
 extern real_t uiscale_inventory;
 
 extern char enemy_name[128];
-extern Sint32 enemy_hp, enemy_maxhp;
-extern Uint32 enemy_timer;
+extern Sint32 enemy_hp, enemy_maxhp, enemy_oldhp;
+extern Uint32 enemy_timer, enemy_lastuid;
 extern Uint32 enemy_bar_color[MAXPLAYERS];
 
 #ifndef SHOPWINDOW_SIZE

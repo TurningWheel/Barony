@@ -23,8 +23,8 @@
 #include "../colors.hpp"
 
 char enemy_name[128];
-Sint32 enemy_hp = 0, enemy_maxhp = 0;
-Uint32 enemy_timer = 0;
+Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
+Uint32 enemy_timer = 0, enemy_lastuid = 0;
 Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
 
 /*-------------------------------------------------------------------------------
@@ -162,6 +162,7 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp)
 {
+	// server/singleplayer only function.
 	int player = -1;
 	int c;
 
@@ -215,6 +216,19 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		}
 	}
 
+	if ( enemy_lastuid != target->getUID() || enemy_timer == 0 )
+	{
+		// if new target or timer expired, get new OLDHP value.
+		if ( stats )
+		{
+			enemy_oldhp = stats->OLDHP;
+		}
+		else
+		{
+			enemy_oldhp = enemy_hp; // chairs/tables and things.
+		}
+	}
+	enemy_lastuid = target->getUID();
 	if ( player == clientnum )
 	{
 		enemy_timer = ticks;
@@ -228,11 +242,13 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		SDLNet_Write32(hp, &net_packet->data[4]);
 		SDLNet_Write32(maxhp, &net_packet->data[8]);
 		SDLNet_Write32(enemy_bar_color[player], &net_packet->data[12]);
-		strcpy((char*)(&net_packet->data[16]), name);
-		net_packet->data[16 + strlen(name)] = 0;
+		SDLNet_Write32(enemy_oldhp, &net_packet->data[16]);
+		SDLNet_Write32(enemy_lastuid, &net_packet->data[20]);
+		strcpy((char*)(&net_packet->data[24]), name);
+		net_packet->data[24 + strlen(name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 16 + strlen(name) + 1;
+		net_packet->len = 24 + strlen(name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
@@ -319,6 +335,30 @@ void drawStatus()
 		pos.w = 506;
 		pos.h = 32;
 		drawRect(&pos, SDL_MapRGB(mainsurface->format, 16, 0, 0), 255);
+		if ( enemy_oldhp > enemy_hp )
+		{
+			int timeDiff = ticks - enemy_timer;
+			if ( timeDiff > 30 )
+			{
+				// delay 30 ticks before background hp drop animation
+				// we want to complete animation with x ticks to go
+				int depletionTicks = (80 - timeDiff) / 2;
+				int healthDiff = enemy_oldhp - enemy_hp;
+				if ( ticks % 2 == 0 )
+				{
+					enemy_oldhp -= std::max((healthDiff) / std::max(depletionTicks, 1), 1);
+				}
+			}
+			pos.w = 506 * ((double)enemy_oldhp / enemy_maxhp);
+			if ( enemy_bar_color[clientnum] > 0 )
+			{
+				drawRect(&pos, enemy_bar_color[clientnum], 128);
+			}
+			else
+			{
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 128, 0, 0), 128);
+			}
+		}
 		if ( enemy_hp > 0 )
 		{
 			pos.w = 506 * ((double)enemy_hp / enemy_maxhp);

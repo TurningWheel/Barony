@@ -1741,8 +1741,15 @@ void clientHandlePacket()
 		enemy_hp = SDLNet_Read32(&net_packet->data[4]);
 		enemy_maxhp = SDLNet_Read32(&net_packet->data[8]);
 		enemy_bar_color[clientnum] = SDLNet_Read32(&net_packet->data[12]); // receive color enemy bar data for my client.
+		Sint32 oldhp = SDLNet_Read32(&net_packet->data[16]);
+		Uint32 uid = SDLNet_Read32(&net_packet->data[20]);
+		if ( enemy_lastuid != uid || enemy_timer == 0 )
+		{
+			enemy_oldhp = oldhp;
+		}
+		enemy_lastuid = uid;
 		enemy_timer = ticks;
-		strcpy(enemy_name, (char*)(&net_packet->data[16]));
+		strcpy(enemy_name, (char*)(&net_packet->data[24]));
 		return;
 	}
 
