@@ -761,8 +761,12 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 							//					node2->deconstructor = &myStats->~Stat;
 							node2->size = sizeof(myStats);
 
-
-							fread(&myStats->sex, sizeof(sex_t), 1, fp);
+							sex_t dummyVar = MALE; 
+							// we don't actually embed the sex from the editor
+							// advance the fp since we read in 0 always.
+							// otherwise it would overwrite the value of a handplaced succubus or a certain icey lich.
+							// certainly were a lot of male adventurers locked in cells...
+							fread(&dummyVar, sizeof(sex_t), 1, fp);
 							fread(&myStats->name, sizeof(char[128]), 1, fp);
 							fread(&myStats->HP, sizeof(Sint32), 1, fp);
 							fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
