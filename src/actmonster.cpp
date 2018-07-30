@@ -7663,10 +7663,14 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 	}
 	else
 	{
+		char genericStr[128] = "";
+		char namedStr[128] = "";
+
 		switch ( event )
 		{
 			case ALLY_EVENT_MOVEASIDE:
-				//message = language[535];
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					myStats, language[3129], language[3130], MSG_COMBAT);
 				break;
 			case ALLY_EVENT_MOVETO_BEGIN:
 				/*if ( rand() % 10 == 0 )
@@ -7675,7 +7679,16 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				}*/
 				break;
 			case ALLY_EVENT_MOVETO_FAIL:
-				//message = language[3077 + rand() % 2];
+				if ( rand() % 2 == 0 )
+				{
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+						myStats, language[3131], language[3132], MSG_COMBAT);
+				}
+				else
+				{
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+						myStats, language[3133], language[3134], MSG_COMBAT);
+				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_CURSED:
 				if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
@@ -7737,7 +7750,6 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 						free(item);
 					}
 				}
-				return;
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_NOUSE:
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
@@ -7747,17 +7759,14 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				{
 					char itemString[64] = "";
 					snprintf(itemString, 63, language[3123], items[item->type].name_unidentified);
-					char genericStr[128] = "";
 					strcpy(genericStr, language[3121]);
 					strcat(genericStr, itemString);
-					char namedStr[128] = "";
 					strcpy(namedStr, language[3122]);
 					strcat(namedStr, itemString);
 					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
 						myStats, genericStr, namedStr, MSG_COMBAT);
 					free(item);
 				}
-				return;
 				break;
 			}
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_BAD:
@@ -7769,17 +7778,14 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				{
 					char itemString[64] = "";
 					snprintf(itemString, 63, language[3124], items[item->type].name_unidentified);
-					char genericStr[128] = "";
 					strcpy(genericStr, language[3121]);
 					strcat(genericStr, itemString);
-					char namedStr[128] = "";
 					strcpy(namedStr, language[3122]);
 					strcat(namedStr, itemString);
 					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
 						myStats, genericStr, namedStr, MSG_COMBAT);
 					free(item);
 				}
-				return;
 				break;
 			}
 			case ALLY_EVENT_INTERACT_OTHER:
@@ -7792,29 +7798,36 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				//message = language[3084 + rand() % 2];
 				break;
 			case ALLY_EVENT_DROP_WEAPON:
+				strcpy(genericStr, language[3121]);
+				strcat(genericStr, language[3125]);
+				strcpy(namedStr, language[3122]);
+				strcat(namedStr, language[3125]);
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					myStats, genericStr, namedStr, MSG_COMBAT);
+				break;
 			case ALLY_EVENT_DROP_EQUIP:
+				strcpy(genericStr, language[3121]);
+				strcat(genericStr, language[3126]);
+				strcpy(namedStr, language[3122]);
+				strcat(namedStr, language[3126]);
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					myStats, genericStr, namedStr, MSG_COMBAT);
+				break;
 			case ALLY_EVENT_DROP_ALL:
-				/*if ( rand() % 2 )
-				{
-					if ( rand() % 2 && event == ALLY_EVENT_DROP_ALL )
-					{
-						message = language[3083];
-					}
-					else
-					{
-						message = language[3072 + rand() % 2];
-					}
-				}
-				else
-				{
-					message = language[3081 + rand() % 2];
-				}*/
+				strcpy(genericStr, language[3121]);
+				strcat(genericStr, language[3127]);
+				strcpy(namedStr, language[3122]);
+				strcat(namedStr, language[3127]);
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					myStats, genericStr, namedStr, MSG_COMBAT);
 				break;
 			case ALLY_EVENT_WAIT:
-				//message = language[3069 + rand() % 2];
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					myStats, language[3105], language[3106], MSG_COMBAT);
 				break;
 			case ALLY_EVENT_FOLLOW:
-				//message = language[526 + rand() % 3];
+				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+					myStats, language[529], language[3128], MSG_COMBAT);
 				break;
 			case ALLY_EVENT_MOVETO_REPATH:
 				/*if ( rand() % 20 == 0 )
@@ -7825,6 +7838,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 			default:
 				break;
 		}
+		return;
 	}
 	char fullmsg[256] = "";
 	strcpy(fullmsg, message.c_str());

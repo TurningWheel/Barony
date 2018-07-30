@@ -2108,8 +2108,14 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
 	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
 	
-
-	strcpy(FollowerMenu.interactText, "Interact with ");
+	if ( !interactItems && !interactWorld && enableAttack )
+	{
+		strcpy(FollowerMenu.interactText, "Attack ");
+	}
+	else
+	{
+		strcpy(FollowerMenu.interactText, "Interact with ");
+	}
 	if ( selectedEntity.behavior == &actTorch && interactWorld )
 	{
 		strcat(FollowerMenu.interactText, items[TOOL_TORCH].name_identified);
