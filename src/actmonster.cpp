@@ -7243,89 +7243,91 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			serverUpdateEntitySkill(this, 44);
 			break;
 		case ALLY_CMD_DROP_EQUIP:
-			if ( stats[monsterAllyIndex] )
+			if ( strcmp(myStats->name, "") )
 			{
-				if ( stats[monsterAllyIndex] )
+				// named humans refuse to drop equipment.
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_HUMAN_REFUSE);
+			}
+			else if ( stats[monsterAllyIndex] )
+			{
+				Entity* dropped;
+				bool confirmDropped = false;
+				bool dropWeaponOnly = false;
+				Uint32 owner = players[monsterAllyIndex]->entity->getUID();
+				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_MASTER )
 				{
-					Entity* dropped;
-					bool confirmDropped = false;
-					bool dropWeaponOnly = false;
-					Uint32 owner = players[monsterAllyIndex]->entity->getUID();
-					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_MASTER )
+					dropped = dropItemMonster(myStats->helmet, this, myStats);
+					if ( dropped )
 					{
-						dropped = dropItemMonster(myStats->helmet, this, myStats);
-						if ( dropped )
-						{
-							confirmDropped = true;
-							dropped->itemOriginalOwner = owner;
-						}
-						dropped = dropItemMonster(myStats->breastplate, this, myStats);
-						if ( dropped )
-						{
-							confirmDropped = true;
-							dropped->itemOriginalOwner = owner;
-						}
-						dropped = dropItemMonster(myStats->shoes, this, myStats);
-						if ( dropped )
-						{
-							confirmDropped = true;
-							dropped->itemOriginalOwner = owner;
-						}
-						dropped = dropItemMonster(myStats->shield, this, myStats);
-						if ( dropped )
-						{
-							confirmDropped = true;
-							dropped->itemOriginalOwner = owner;
-						}
+						confirmDropped = true;
+						dropped->itemOriginalOwner = owner;
+					}
+					dropped = dropItemMonster(myStats->breastplate, this, myStats);
+					if ( dropped )
+					{
+						confirmDropped = true;
+						dropped->itemOriginalOwner = owner;
+					}
+					dropped = dropItemMonster(myStats->shoes, this, myStats);
+					if ( dropped )
+					{
+						confirmDropped = true;
+						dropped->itemOriginalOwner = owner;
+					}
+					dropped = dropItemMonster(myStats->shield, this, myStats);
+					if ( dropped )
+					{
+						confirmDropped = true;
+						dropped->itemOriginalOwner = owner;
+					}
 
-						if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_LEGENDARY )
+					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_LEGENDARY )
+					{
+						dropped = dropItemMonster(myStats->ring, this, myStats);
+						if ( dropped )
 						{
-							dropped = dropItemMonster(myStats->ring, this, myStats);
-							if ( dropped )
-							{
-								confirmDropped = true;
-								dropped->itemOriginalOwner = owner;
-							}
-							dropped = dropItemMonster(myStats->amulet, this, myStats);
-							if ( dropped )
-							{
-								confirmDropped = true;
-								dropped->itemOriginalOwner = owner;
-							}
-							dropped = dropItemMonster(myStats->cloak, this, myStats);
-							if ( dropped )
-							{
-								confirmDropped = true;
-								dropped->itemOriginalOwner = owner;
-							}
-							if ( confirmDropped )
-							{
-								handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_ALL);
-							}
+							confirmDropped = true;
+							dropped->itemOriginalOwner = owner;
 						}
-						else
+						dropped = dropItemMonster(myStats->amulet, this, myStats);
+						if ( dropped )
 						{
-							if ( confirmDropped )
-							{
-								handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_EQUIP);
-							}
+							confirmDropped = true;
+							dropped->itemOriginalOwner = owner;
+						}
+						dropped = dropItemMonster(myStats->cloak, this, myStats);
+						if ( dropped )
+						{
+							confirmDropped = true;
+							dropped->itemOriginalOwner = owner;
+						}
+						if ( confirmDropped )
+						{
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_ALL);
 						}
 					}
 					else
 					{
-						if ( myStats->weapon )
+						if ( confirmDropped )
 						{
-							dropWeaponOnly = true;
+							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_EQUIP);
 						}
 					}
-					dropped = dropItemMonster(myStats->weapon, this, myStats);
-					if ( dropped )
+				}
+				else
+				{
+					if ( myStats->weapon )
 					{
-						dropped->itemOriginalOwner = owner;
-						if ( dropWeaponOnly )
-						{
-							handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
-						}
+						dropWeaponOnly = true;
+					}
+				}
+				dropped = dropItemMonster(myStats->weapon, this, myStats);
+				if ( dropped )
+				{
+					dropped->itemOriginalOwner = owner;
+					if ( dropWeaponOnly )
+					{
+						handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
 					}
 				}
 			}
@@ -7625,6 +7627,9 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				break;
 			case ALLY_EVENT_ATTACK_FRIENDLY_FIRE:
 				message = language[3084 + rand() % 2];
+				break;
+			case ALLY_EVENT_DROP_HUMAN_REFUSE:
+				message = language[3135];
 				break;
 			case ALLY_EVENT_DROP_WEAPON:
 			case ALLY_EVENT_DROP_EQUIP:
