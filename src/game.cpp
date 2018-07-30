@@ -3025,7 +3025,7 @@ int main(int argc, char** argv)
 						playSound(139, 64);
 					}
 
-					if ( !command && *inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) )
+					if ( !command && (*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE])) )
 					{
 						playSound(139, 64);
 						FollowerMenu.selectNextFollower();
@@ -3035,6 +3035,7 @@ int main(int argc, char** argv)
 							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 						}
 						*inputPressed(impulses[IN_FOLLOWERMENU_CYCLENEXT]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE]) = 0;
 					}
 
 					// commands

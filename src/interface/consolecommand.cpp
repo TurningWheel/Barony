@@ -2121,6 +2121,10 @@ void consoleCommand(char* command_str)
 		{
 			hide_statusbar = !hide_statusbar;
 		}
+		else if ( !strncmp(command_str, "/hideplayertags", 15) )
+		{
+			hide_playertags = !hide_playertags;
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);

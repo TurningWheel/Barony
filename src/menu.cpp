@@ -196,6 +196,7 @@ real_t settings_uiscale_playerbars = 1.f;
 real_t settings_uiscale_chatlog = 1.f;
 real_t settings_uiscale_inventory = 1.f;
 bool settings_hide_statusbar = false;
+bool settings_hide_playertags = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -2315,6 +2316,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[ ] %s", language[3033]);
 			}
+			if ( settings_hide_playertags )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 378, "[x] %s", language[3136]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 378, "[ ] %s", language[3136]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -2334,6 +2343,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_hide_statusbar = (settings_hide_statusbar == 0);
+					}
+					else if ( omousey >= suby1 + 378 && omousey < suby1 + 378 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_hide_playertags = (settings_hide_playertags == 0);
 					}
 				}
 			}
@@ -2413,7 +2427,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1983 + (c - 16)]);
+					ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16 * c, language[1986 + (c - 16)]);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingkey )
 				{
@@ -2517,7 +2531,7 @@ void handleMainMenu(bool mode)
 			startPos.x = subx1 + 24;
 			startPos.y = suby1 + 60;
 			SDL_Rect currentPos = startPos;
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1992]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1996]);
 			currentPos.y += 24;
 
 			bool rebindingaction = false;
@@ -2535,7 +2549,7 @@ void handleMainMenu(bool mode)
 			//Print out the menu-exclusive bindings.
 			currentPos.y += 12;
 			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1990]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1994]);
 			currentPos.y += 18;
 			for ( c = INDEX_JOYBINDINGS_START_MENU; c < INDEX_JOYBINDINGS_START_GAME; ++c, currentPos.y += 12 )
 			{
@@ -2545,7 +2559,7 @@ void handleMainMenu(bool mode)
 			//Print out the game-exclusive bindings.
 			currentPos.y += 12;
 			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1991]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1995]);
 			currentPos.y += 18;
 			for ( c = INDEX_JOYBINDINGS_START_GAME; c < NUM_JOY_IMPULSES; ++c, currentPos.y += 12 )
 			{
@@ -7963,6 +7977,7 @@ void openSettingsWindow()
 	settings_uiscale_chatlog = uiscale_chatlog;
 	settings_uiscale_playerbars = uiscale_playerbars;
 	settings_hide_statusbar = hide_statusbar;
+	settings_hide_playertags = hide_playertags;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -8018,8 +8033,8 @@ void openSettingsWindow()
 	suby1 = yres / 2 - ((yres==480)?210:278);
 	suby2 = yres / 2 + ((yres==480)?210:278);
 #else
-	suby1 = yres / 2 - 312;
-	suby2 = yres / 2 + 312;
+	suby1 = yres / 2 - 320;
+	suby2 = yres / 2 + 320;
 #endif
 	strcpy(subtext, language[1306]);
 
@@ -9615,7 +9630,7 @@ void applySettings()
 	uiscale_chatlog = settings_uiscale_chatlog;
 	uiscale_playerbars = settings_uiscale_playerbars;
 	hide_statusbar = settings_hide_statusbar;
-
+	hide_playertags = settings_hide_playertags;
 	saveConfig("default.cfg");
 }
 
