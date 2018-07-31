@@ -2789,8 +2789,7 @@ int main(int argc, char** argv)
 					{
 						shootmode = true;
 						gui_mode = GUI_MODE_INVENTORY;
-						identifygui_active = false;
-						selectedIdentifySlot = -1;
+						CloseIdentifyGUI();
 						closeRemoveCurseGUI();
 						FollowerMenu.closeFollowerMenuGUI();
 						if ( shopkeeper != 0 )
@@ -2906,8 +2905,8 @@ int main(int argc, char** argv)
 						else
 						{
 							shootmode = true;
-							identifygui_active = false;
-							selectedIdentifySlot = -1;
+							gui_mode = GUI_MODE_INVENTORY;
+							CloseIdentifyGUI();
 							closeRemoveCurseGUI();
 							FollowerMenu.closeFollowerMenuGUI();
 						}
@@ -2942,10 +2941,7 @@ int main(int argc, char** argv)
 							//Clean up shopkeeper gamepad code here.
 							selectedShopSlot = -1;
 						}
-						if ( shootmode == false )
-						{
-						}
-						else
+						if ( shootmode )
 						{
 							if (openedChest[clientnum])
 							{
