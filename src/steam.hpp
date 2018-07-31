@@ -166,12 +166,14 @@ public:
 		int time;
 		int tags[k_numLeaderboardTags];
 		int boardIndex;
+		bool uploadInit;
 
 		LeaderboardUpload_t() :
 			status(0),
 			score(0),
 			time(0),
-			boardIndex(0)
+			boardIndex(0),
+			uploadInit(false)
 		{
 			for ( int i = 0; i < k_numLeaderboardTags; ++i )
 			{

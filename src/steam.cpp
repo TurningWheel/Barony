@@ -1447,6 +1447,7 @@ void CSteamLeaderboards::ClearUploadData()
 	LeaderboardUpload.time = 0;
 	LeaderboardUpload.status = LEADERBOARD_STATE_NONE;
 	LeaderboardUpload.boardIndex = LEADERBOARD_NONE;
+	LeaderboardUpload.uploadInit = false;
 
 	LastUploadResult.b_ScoreChanged = false;
 	LastUploadResult.b_ScoreUploadComplete = false;
@@ -1461,61 +1462,75 @@ void CSteamLeaderboards::ProcessLeaderboardUpload()
 	{
 		return;
 	}
-	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_FIND_LEADERBOARD_TIME )
+
+	if ( ticks % 25 == 0 )
 	{
-		FindLeaderboard(leaderboardNames[LeaderboardUpload.boardIndex].c_str());
-		LeaderboardUpload.status = LEADERBOARD_STATE_UPLOADING_TIME;
-		LastUploadResult.b_ScoreUploadComplete = false;
-		LastUploadResult.b_ScoreChanged = false;
-	}
-	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_UPLOADING_TIME )
-	{
-		if ( b_LeaderboardInit )
+		if ( LeaderboardUpload.status == LEADERBOARD_STATE_FIND_LEADERBOARD_TIME )
 		{
-			UploadScore(LeaderboardUpload.time, LeaderboardUpload.tags);
-			if ( LastUploadResult.b_ScoreUploadComplete == true )
+			FindLeaderboard(leaderboardNames[LeaderboardUpload.boardIndex].c_str());
+			LeaderboardUpload.status = LEADERBOARD_STATE_UPLOADING_TIME;
+			LastUploadResult.b_ScoreUploadComplete = false;
+			LastUploadResult.b_ScoreChanged = false;
+		}
+		else if ( LeaderboardUpload.status == LEADERBOARD_STATE_UPLOADING_TIME )
+		{
+			if ( b_LeaderboardInit )
 			{
-				LeaderboardUpload.status = LEADERBOARD_STATE_READY_TIME;
-				printlog("[STEAM]: Successfully uploaded leaderboard time to board name %s.", leaderboardNames[LeaderboardUpload.boardIndex].c_str());
-				if ( LastUploadResult.b_ScoreChanged )
+				if ( !LeaderboardUpload.uploadInit )
 				{
-					printlog("[STEAM]: Registered a new fastest time on the leaderboard!");
+					UploadScore(LeaderboardUpload.time, LeaderboardUpload.tags);
+					LeaderboardUpload.uploadInit = true;
 				}
-				else
+				if ( LastUploadResult.b_ScoreUploadComplete == true )
 				{
-					printlog("[STEAM]: You did not beat your previous leaderboard time.");
+					LeaderboardUpload.uploadInit = false;
+					LeaderboardUpload.status = LEADERBOARD_STATE_READY_TIME;
+					printlog("[STEAM]: Successfully uploaded leaderboard time to board name %s.", leaderboardNames[LeaderboardUpload.boardIndex].c_str());
+					if ( LastUploadResult.b_ScoreChanged )
+					{
+						printlog("[STEAM]: Registered a new fastest time on the leaderboard!");
+					}
+					else
+					{
+						printlog("[STEAM]: You did not beat your previous leaderboard time.");
+					}
+					LastUploadResult.b_ScoreUploadComplete = false;
 				}
-				LastUploadResult.b_ScoreUploadComplete = false;
 			}
 		}
-	}
-	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_READY_TIME )
-	{
-		FindLeaderboard(leaderboardNames[LeaderboardUpload.boardIndex + 1].c_str());
-		LeaderboardUpload.status = LEADERBOARD_STATE_UPLOADING_SCORE;
-		LastUploadResult.b_ScoreUploadComplete = false;
-		LastUploadResult.b_ScoreChanged = false;
-	}
-	else if ( LeaderboardUpload.status == LEADERBOARD_STATE_UPLOADING_SCORE )
-	{
-		if ( b_LeaderboardInit )
+		else if ( LeaderboardUpload.status == LEADERBOARD_STATE_READY_TIME )
 		{
-			UploadScore(LeaderboardUpload.score, LeaderboardUpload.tags);
-			if ( LastUploadResult.b_ScoreUploadComplete == true )
+			FindLeaderboard(leaderboardNames[LeaderboardUpload.boardIndex + 1].c_str());
+			LeaderboardUpload.status = LEADERBOARD_STATE_UPLOADING_SCORE;
+			LastUploadResult.b_ScoreUploadComplete = false;
+			LastUploadResult.b_ScoreChanged = false;
+		}
+		else if ( LeaderboardUpload.status == LEADERBOARD_STATE_UPLOADING_SCORE )
+		{
+			if ( b_LeaderboardInit )
 			{
-				LeaderboardUpload.status = LEADERBOARD_STATE_NONE;
-				printlog("[STEAM]: Successfully uploaded leaderboard score to board name %s.", leaderboardNames[LeaderboardUpload.boardIndex + 1].c_str());
-				LastUploadResult.b_ScoreUploadComplete = false;
-				if ( LastUploadResult.b_ScoreChanged )
+				if ( !LeaderboardUpload.uploadInit )
 				{
-					printlog("[STEAM]: Registered a new highest score on the leaderboard!");
+					UploadScore(LeaderboardUpload.score, LeaderboardUpload.tags);
+					LeaderboardUpload.uploadInit = true;
 				}
-				else
+				if ( LastUploadResult.b_ScoreUploadComplete == true )
 				{
-					printlog("[STEAM]: You did not beat your previous leaderboard score.");
+					LeaderboardUpload.uploadInit = false;
+					LeaderboardUpload.status = LEADERBOARD_STATE_NONE;
+					printlog("[STEAM]: Successfully uploaded leaderboard score to board name %s.", leaderboardNames[LeaderboardUpload.boardIndex + 1].c_str());
+					LastUploadResult.b_ScoreUploadComplete = false;
+					if ( LastUploadResult.b_ScoreChanged )
+					{
+						printlog("[STEAM]: Registered a new highest score on the leaderboard!");
+					}
+					else
+					{
+						printlog("[STEAM]: You did not beat your previous leaderboard score.");
+					}
+					ClearUploadData();
+					DownloadScores(k_ELeaderboardDataRequestGlobal, 0, k_numEntriesToRetrieve);
 				}
-				ClearUploadData();
-				DownloadScores(k_ELeaderboardDataRequestGlobal, 0, k_numEntriesToRetrieve);
 			}
 		}
 	}

@@ -4722,9 +4722,9 @@ void handleMainMenu(bool mode)
 					if ( g_SteamLeaderboards->LeaderboardView.boardToDownload != LEADERBOARD_NONE
 						&& g_SteamLeaderboards->LeaderboardView.boardToDownload % 2 == 1 )
 					{
-						Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) % 60;
-						Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) % 60;
-						Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore / TICKS_PER_SECOND) / 60) / 60;
+						Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) % 60;
+						Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) / 60) % 60;
+						Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) / 60) / 60;
 						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Time: %02d:%02d:%02d    Score: %6d",
 							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
 							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
@@ -4760,45 +4760,9 @@ void handleMainMenu(bool mode)
 					filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
 					text_x = filename_padx;
 
-					//ttfPrintTextFormatted(ttf12, text_x + 6, text_y, "%s", "X");
-					if ( mouseInBounds(filename_padx, filename_padx + 2 * TTF12_WIDTH + 8, filename_pady, filename_pady + TTF12_HEIGHT * 2 + 4) )
-					{
-						//drawDeleteTooltip = true;
-					}
-
 					filename_pady += 3 * filename_rowHeight / 2;
 				}
 			}
-
-			//Uint32 saveNumColor = uint32ColorGreen(*mainsurface);
-			//if ( numSingleplayerSaves == SAVE_GAMES_MAX )
-			//{
-			//	saveNumColor = uint32ColorOrange(*mainsurface);
-			//}
-			//ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3067]) * TTF12_WIDTH), suby1 + 44, saveNumColor,
-			//	language[3067], numSingleplayerSaves, SAVE_GAMES_MAX);
-
-			//saveNumColor = uint32ColorGreen(*mainsurface);
-			//if ( numMultiplayerSaves == SAVE_GAMES_MAX )
-			//{
-			//	saveNumColor = uint32ColorOrange(*mainsurface);
-			//}
-			//ttfPrintTextFormattedColor(ttf12, subx2 - (longestline(language[3068]) * TTF12_WIDTH), suby1 + 44 + TTF12_HEIGHT + 4, saveNumColor,
-			//	language[3068], numMultiplayerSaves, SAVE_GAMES_MAX);
-
-			//// draw the tooltip we initialised earlier.
-			//if ( drawDeleteTooltip )
-			//{
-			//	tooltip.w = longestline(language[3064]) * TTF12_WIDTH + 16;
-			//	drawTooltip(&tooltip);
-			//	ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3064]);
-			//}
-			//else if ( drawScrollTooltip )
-			//{
-			//	tooltip.w = longestline(language[3066]) * TTF12_WIDTH + 16;
-			//	drawTooltip(&tooltip);
-			//	ttfPrintTextFormatted(ttf12, tooltip.x + 6, tooltip.y + 6, language[3066]);
-			//}
 		}
 	}
 
@@ -4807,7 +4771,7 @@ void handleMainMenu(bool mode)
 	{
 		if ( score_leaderboard_window == 3 )
 		{
-			drawWindowFancy(subx1 + 20, suby1 + 20, subx2 - 20, suby2 - 20);
+			drawWindowFancy(subx1 + 20, suby1 + 20, subx2 - 20, suby2 - 10);
 			if ( savegameDrawClickableButton(subx2 - 10 * TTF12_WIDTH - 8, suby1 + 20 + 8, 8 * TTF12_WIDTH, TTF12_HEIGHT, 0) )
 			{
 				score_leaderboard_window = 2;
@@ -6469,7 +6433,7 @@ void handleMainMenu(bool mode)
 				int checkMapHash = -1;
 				if ( loadingmap == false )
 				{
-					physfsLoadMapFile(currentlevel, mapseed, false);
+					physfsLoadMapFile(currentlevel, mapseed, false, &checkMapHash);
 					if ( checkMapHash == 0 )
 					{
 						conductGameChallenges[CONDUCT_MODDED] = 1;

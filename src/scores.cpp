@@ -3259,11 +3259,16 @@ bool steamLeaderboardSetScore(score_t* score)
 		return false;
 	}
 
-	if ( score->victory == 0 || score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| score->conductGameChallenges[CONDUCT_MODDED] )
+	if ( score->victory == 0 )
 	{
-		//return false;
+		return false;
 	}
+
+	//if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+	//	|| score->conductGameChallenges[CONDUCT_MODDED] )
+	//{
+	//	//return false;
+	//}
 
 	if ( !score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
@@ -3278,7 +3283,7 @@ bool steamLeaderboardSetScore(score_t* score)
 			{
 				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_NORMAL_TIME;
 			}
-			else if ( score->victory == 1 && score->conductGameChallenges[CONDUCT_CLASSIC_MODE] )
+			else if ( score->victory == 1 )
 			{
 				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_TIME;
 			}
@@ -3306,7 +3311,7 @@ bool steamLeaderboardSetScore(score_t* score)
 		{
 			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_TIME;
 		}
-		else if ( score->victory == 1 && score->conductGameChallenges[CONDUCT_CLASSIC_MODE] )
+		else if ( score->victory == 1 )
 		{
 			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_CLASSIC_TIME;
 		}
@@ -3372,11 +3377,11 @@ bool steamLeaderboardSetScore(score_t* score)
 	{
 		if ( c < 16 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= std::min(0, score->conductGameChallenges[c]) << c * 2;
+			g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= score->conductGameChallenges[c] << (c * 2);
 		}
 		else
 		{
-			g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= std::min(0, score->conductGameChallenges[c]) << (16 - c) * 2;
+			g_SteamLeaderboards->LeaderboardUpload.tags[tag] |= score->conductGameChallenges[c] << ((16 - c) * 2);
 		}
 		if ( c == 15 )
 		{
@@ -3555,11 +3560,11 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	{
 		if ( c < 16 )
 		{
-			steamLeaderboardScore.conductGameChallenges[c] = (tags[tag] >> c * tagWidth) & 0b11;
+			conductGameChallenges[c] = (tags[tag] >> c * tagWidth) & 0b11;
 		}
 		else
 		{
-			steamLeaderboardScore.conductGameChallenges[c] = (tags[tag] >> (16 - c) * tagWidth) & 0b11;
+			conductGameChallenges[c] = (tags[tag] >> (16 - c) * tagWidth) & 0b11;
 		}
 		if ( c == 15 )
 		{
