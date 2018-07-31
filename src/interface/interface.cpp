@@ -1399,6 +1399,8 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 	{
 		recentEntity = nullptr;
 	}
+	menuToggleClick = false;
+	holdWheel = false;
 	if ( accessedMenuFromPartySheet )
 	{
 		if ( optionSelected == ALLY_CMD_MOVETO_CONFIRM || optionSelected == ALLY_CMD_ATTACK_CONFIRM )
@@ -1543,8 +1545,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						|| optionSelected == ALLY_CMD_CANCEL )
 					{
 						shootmode = true;
-						identifygui_active = false;
-						selectedIdentifySlot = -1;
+						CloseIdentifyGUI();
 						closeRemoveCurseGUI();
 						if ( openedChest[clientnum] )
 						{
