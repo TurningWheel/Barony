@@ -6658,7 +6658,7 @@ void reselectEntityGroup()
 	}
 }
 
-int generateDungeon(char* levelset, Uint32 seed)
+int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapParameters)
 {
 	return 0; // dummy function
 }

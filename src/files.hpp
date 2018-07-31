@@ -57,3 +57,10 @@ void physfsReloadMonsterLimbFiles();
 void physfsReloadSystemImages();
 bool physfsSearchSystemImagesToUpdate();
 extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
+
+enum MapParameterIndices : int
+{
+	LEVELPARAM_CHANCE_SECRET,
+	LEVELPARAM_CHANCE_DARKNESS,
+	LEVELPARAM_CHANCE_MINOTAUR
+};

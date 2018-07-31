@@ -1460,15 +1460,55 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 		}
 		else if ( mapType.compare("gen:") == 0 )
 		{
+			std::size_t secretChanceFound = mapName.find(" secret%: ");
+			std::size_t darkmapChanceFound = mapName.find(" darkmap%: ");
+			std::size_t minotaurChanceFound = mapName.find(" minotaur%: ");
+			std::string parameterStr = "";
+			std::tuple<int, int, int> mapParameters = { -1, -1, -1 };
+			if ( secretChanceFound != std::string::npos )
+			{
+				// found a percentage for secret levels to spawn.
+				parameterStr = mapName.substr(secretChanceFound + strlen(" secret%: "));
+				parameterStr = parameterStr.substr(0, parameterStr.find_first_of(" \0"));
+				std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) = std::stoi(parameterStr);
+				if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) < 0 || std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) > 100 )
+				{
+					std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) = -1;
+				}
+			}
+			if ( darkmapChanceFound != std::string::npos )
+			{
+				// found a percentage for secret levels to spawn.
+				parameterStr = mapName.substr(darkmapChanceFound + strlen(" darkmap%: "));
+				parameterStr = parameterStr.substr(0, parameterStr.find_first_of(" \0"));
+				std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) = std::stoi(parameterStr);
+				if ( std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) < 0 || std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) > 100 )
+				{
+					std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) = -1;
+				}
+			}
+			if ( minotaurChanceFound != std::string::npos )
+			{
+				// found a percentage for secret levels to spawn.
+				parameterStr = mapName.substr(minotaurChanceFound + strlen(" minotaur%: "));
+				parameterStr = parameterStr.substr(0, parameterStr.find_first_of(" \0"));
+				std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) = std::stoi(parameterStr);
+				if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) < 0 || std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) > 100 )
+				{
+					std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) = -1;
+				}
+			}
+			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
+
 			strncpy(tempstr, mapName.c_str(), mapName.length());
 			tempstr[mapName.length()] = '\0';
 			if ( useRandSeed )
 			{
-				return generateDungeon(tempstr, rand());
+				return generateDungeon(tempstr, rand(), mapParameters);
 			}
 			else
 			{
-				return generateDungeon(tempstr, seed);
+				return generateDungeon(tempstr, seed, mapParameters);
 			}
 		}
 		//printlog("%s", mapName.c_str());
@@ -1895,6 +1935,7 @@ bool physfsIsMapLevelListModded()
 			{
 				mapName.erase(carriageReturn);
 			}
+			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
 			mapName = "maps/" + mapName + ".lmp";
 			//printlog("%s", mapName.c_str());
 			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
@@ -1943,6 +1984,7 @@ bool physfsIsMapLevelListModded()
 			{
 				mapName.erase(carriageReturn);
 			}
+			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
 			mapName = "maps/" + mapName + ".lmp";
 			//printlog("%s", mapName.c_str());
 			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )

@@ -634,7 +634,7 @@ void glDrawWorld(view_t* camera, int mode);
 SDL_Cursor* newCursor(char* image[]);
 
 // function prototypes for maps.c:
-int generateDungeon(char* levelset, Uint32 seed);
+int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapParameters = std::make_tuple(-1, -1, -1)); // secretLevelChance of -1 is default Barony generation.
 void assignActions(map_t* map);
 
 // Cursor bitmap definitions
