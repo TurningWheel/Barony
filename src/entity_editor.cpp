@@ -188,6 +188,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitLifetime(skill[10]),
 	actmagicMirrorReflected(skill[11]),
 	actmagicMirrorReflectedCaster(skill[12]),
+	actmagicCastByMagicstaff(skill[13]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3]),
 	goldAmount(skill[0]),

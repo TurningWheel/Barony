@@ -356,6 +356,7 @@ public:
 	Sint32&	actmagicOrbitLifetime; //skill[10]
 	Sint32& actmagicMirrorReflected; //skill[11]
 	Sint32& actmagicMirrorReflectedCaster; //skill[12]
+	Sint32& actmagicCastByMagicstaff; //skill[13]
 	real_t actmagicOrbitVerticalSpeed; //fskill[2]
 	real_t actmagicOrbitStartZ; //fskill[3]
 	
@@ -841,8 +842,8 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 220;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 94;
+static const int NUM_ITEM_STRINGS = 221;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 95;
 static const int NUM_EDITOR_SPRITES = 130;
 static const int NUM_EDITOR_TILES = 300;
 
@@ -899,3 +900,4 @@ extern bool flickerLights;
 void boulderSokobanOnDestroy(bool pushedOffLedge);
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
+bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.

@@ -1445,7 +1445,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							playSoundEntity(hit.entity, 396 + rand() % 3, 64); //TODO: Slow spell sound.
+							playSoundEntity(hit.entity, 396 + rand() % 3, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
@@ -2174,6 +2174,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
 				{
 					spellEffectDrainSoul(*my, *element, parent, resistance);
+				}
+				else if ( !strcmp(element->name, spellElement_charmMonster.name) )
+				{
+					spellEffectCharmMonster(*my, *element, parent, resistance, static_cast<bool>(my->actmagicCastByMagicstaff));
 				}
 
 				if ( hitstats )
@@ -3757,6 +3761,99 @@ void actParticleFollowerCommand(Entity* my)
 		--PARTICLE_LIFE;
 		my->z += my->vel_z;
 		my->yaw += my->vel_z * 2;
+		if ( my->z < -3 )
+		{
+			my->vel_z *= 0.9;
+		}
+	}
+}
+
+void createParticleCharmMonster(Entity* parent)
+{
+	if ( !parent )
+	{
+		return;
+	}
+	Entity* entity = newEntity(685, 1, map.entities, nullptr); //Particle entity.
+	//entity->sizex = 1;
+	//entity->sizey = 1;
+	entity->parent = parent->getUID();
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->z = 7.5;
+	entity->vel_z = -0.8;
+	entity->scalex = 0.1;
+	entity->scaley = 0.1;
+	entity->scalez = 0.1;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 45;
+	entity->behavior = &actParticleCharmMonster;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+}
+
+void actParticleCharmMonster(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		real_t yaw = 0;
+		int numParticles = 8;
+		for ( int c = 0; c < 8; c++ )
+		{
+			Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = -10;
+			entity->yaw = yaw;
+			entity->vel_x = 0.2;
+			entity->vel_y = 0.2;
+			entity->vel_z = -0.02;
+			entity->skill[0] = 100;
+			entity->skill[1] = 0; // direction.
+			entity->fskill[0] = 0.1;
+			entity->behavior = &actParticleErupt;
+			entity->flags[PASSABLE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UNCLICKABLE] = true;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			entity->setUID(-3);
+			yaw += 2 * PI / numParticles;
+		}
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		Entity* parent = uidToEntity(my->parent);
+		if ( parent )
+		{
+			my->x = parent->x;
+			my->y = parent->y;
+		}
+		my->z += my->vel_z;
+		my->yaw += my->vel_z * 2;
+		if ( my->scalex < 0.8 )
+		{
+			my->scalex += 0.02;
+		}
+		else
+		{
+			my->scalex = 0.8;
+		}
+		my->scaley = my->scalex;
+		my->scalez = my->scalex;
 		if ( my->z < -3 )
 		{
 			my->vel_z *= 0.9;

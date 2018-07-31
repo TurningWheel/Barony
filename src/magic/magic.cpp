@@ -52,6 +52,7 @@ void freeSpells()
 	list_FreeAll(&spell_stealWeapon.elements);
 	list_FreeAll(&spell_drainSoul.elements);
 	list_FreeAll(&spell_vampiricAura.elements);
+	list_FreeAll(&spell_charmMonster.elements);
 }
 
 void spell_magicMap(int player)
@@ -309,27 +310,30 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 			messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2428], language[2427], MSG_COMBAT);
 		}
 
-		// change the color of the hit entity.
-		hit.entity->flags[USERFLAG2] = true;
-		serverUpdateEntityFlag(hit.entity, USERFLAG2);
 		hit.entity->monsterAllyIndex = parent->skill[2];
 		if ( multiplayer == SERVER )
 		{
 			serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
 		}
-		int bodypart = 0;
-		for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
+		// change the color of the hit entity.
+		if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
 		{
-			if ( bodypart >= LIMB_HUMANOID_TORSO )
+			hit.entity->flags[USERFLAG2] = true;
+			serverUpdateEntityFlag(hit.entity, USERFLAG2);
+			int bodypart = 0;
+			for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
 			{
-				Entity* tmp = (Entity*)node->element;
-				if ( tmp )
+				if ( bodypart >= LIMB_HUMANOID_TORSO )
 				{
-					tmp->flags[USERFLAG2] = true;
-					serverUpdateEntityFlag(tmp, USERFLAG2);
+					Entity* tmp = (Entity*)node->element;
+					if ( tmp )
+					{
+						tmp->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(tmp, USERFLAG2);
+					}
 				}
+				++bodypart;
 			}
-			++bodypart;
 		}
 
 		caster.drainMP(hitstats->HP); //Drain additional MP equal to health of monster.
@@ -365,8 +369,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					/*my.removeLightField();
-					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -497,8 +499,6 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					/*my.removeLightField();
-					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -653,8 +653,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					/*my.removeLightField();
-					list_RemoveNode(my.mynode);*/
 					return;
 				}
 			}
@@ -841,4 +839,217 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	createParticleDropRising(caster, 600, 0.7);
 	serverSpawnMiscParticles(caster, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 	return channeled_spell;
+}
+
+void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff)
+{
+	if ( hit.entity )
+	{
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					return;
+				}
+			}
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
+
+			if ( !parent )
+			{
+				return;
+			}
+			Stat* casterStats = parent->getStats();
+			if ( !casterStats )
+			{
+				return;
+			}
+					
+			int difficulty = 0;
+			switch ( hitstats->type )
+			{
+				case HUMAN:
+				case RAT:
+				case SLIME:
+				case SPIDER:
+				case SKELETON:
+				case SCORPION:
+					difficulty = 0;
+					break;
+				case GOBLIN:
+				case TROLL:
+				case GHOUL:
+				case GNOME:
+				case SCARAB:
+				case AUTOMATON:
+				case SUCCUBUS:
+					difficulty = 1;
+					break;
+				case CREATURE_IMP:
+				case DEMON:
+				case KOBOLD:
+				case INCUBUS:
+				case INSECTOID:
+				case GOATMAN:
+					difficulty = 2;
+					break;
+				case CRYSTALGOLEM:
+				case VAMPIRE:
+					difficulty = 5;
+					break;
+				case COCKATRICE:
+				case SHADOW:
+				case SHOPKEEPER:
+				case LICH:
+				case DEVIL:
+				case LICH_ICE:
+				case LICH_FIRE:
+				case MINOTAUR:
+					difficulty = 666;
+					break;
+			}
+
+			int chance = 80;
+			// CHANCE CALCULATION
+			if ( hitstats->EFFECTS[EFF_CONFUSED] || hitstats->EFFECTS[EFF_DRUNK] )
+			{
+				difficulty -= 1;
+			}
+			if ( strcmp(hitstats->name, "") && !monsterNameIsGeneric(*hitstats) )
+			{
+				difficulty += 1; // minibosses +1 difficulty.
+			}
+			chance -= difficulty * 30;
+			chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+			if ( !magicstaff )
+			{
+				chance += ((parent->getINT() + casterStats->PROFICIENCIES[PRO_MAGIC]) / 20) * 10;
+			}
+			if ( hit.entity->monsterState == MONSTER_STATE_WAIT )
+			{
+				chance += 10;
+			}
+			chance /= (1 + resistance);
+			// END CHANCE CALCULATION
+
+			if ( (hitstats->type == VAMPIRE && !strncmp(hitstats->name, "Bram Kindly", 11))
+				|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
+				)
+			{
+				chance = 0;
+			}
+
+			messagePlayer(0, "Your charm chance: %d", chance);
+
+			if ( chance <= 0 )
+			{
+				// no effect.
+				playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+				}
+				if ( player >= 0 )
+				{
+					color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					//messagePlayerColor(player, color, language[2441]);
+				}
+			}
+			else if ( rand() % 100 < chance && hitstats->leader_uid == 0 && player < 0 )
+			{
+				// followed or fully charmed. (players not affected here.)
+				forceFollower(*parent, *hit.entity);
+				createParticleCharmMonster(hit.entity);
+				playSoundEntity(hit.entity, 174, 64); // WeirdSpell.ogg
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
+				}
+				if ( player >= 0 )
+				{
+					color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					//messagePlayerColor(player, color, language[2441]);
+				}
+
+				hit.entity->monsterAllyIndex = parent->skill[2];
+				if ( multiplayer == SERVER )
+				{
+					serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
+				}
+				// change the color of the hit entity.
+				if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+				{
+					hit.entity->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(hit.entity, USERFLAG2);
+					int bodypart = 0;
+					for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
+					{
+						if ( bodypart >= LIMB_HUMANOID_TORSO )
+						{
+							Entity* tmp = (Entity*)node->element;
+							if ( tmp )
+							{
+								tmp->flags[USERFLAG2] = true;
+								serverUpdateEntityFlag(tmp, USERFLAG2);
+							}
+						}
+						++bodypart;
+					}
+				}
+			}
+			else
+			{
+				// had a chance or currently in service of another monster, failed to completely charm. loses will to attack.
+				int duration = element.duration;
+				duration /= (1 + resistance);
+				if ( hit.entity->setEffect(EFF_PACIFY, true, duration, true) )
+				{
+					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
+					}
+					if ( player >= 0 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						//messagePlayerColor(player, color, language[2441]);
+					}
+				}
+				else
+				{
+					playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					}
+					if ( player >= 0 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						//messagePlayerColor(player, color, language[2441]);
+					}
+				}
+			}
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+	return;
 }

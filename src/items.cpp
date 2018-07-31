@@ -1897,6 +1897,7 @@ void useItem(Item* item, int player)
 		case MAGICSTAFF_STONEBLOOD:
 		case MAGICSTAFF_BLEED:
 		case MAGICSTAFF_SUMMON:
+		case MAGICSTAFF_CHARM:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:
@@ -1942,7 +1943,7 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_STEAL_WEAPON:
 		case SPELLBOOK_DRAIN_SOUL:
 		case SPELLBOOK_VAMPIRIC_AURA:
-		case SPELLBOOK_BLANK_5:
+		case SPELLBOOK_CHARM_MONSTER:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:

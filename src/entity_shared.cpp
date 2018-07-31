@@ -327,7 +327,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_steal_weapon",
 	"spellbook_drain_soul",
 	"spellbook_vampiric_aura",
-	"spellbook_blank_5",
+	"spellbook_charm",
 	"potion_empty",
 	"artifact_orb_blue",
 	"artifact_orb_red",
@@ -335,6 +335,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"artifact_orb_green",
 	"tunic",
 	"hat_fez",
+	"magicstaff_charm",
 	""
 };
 
@@ -409,6 +410,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"magicstaff_stoneblood",
 		"magicstaff_bleed",
 		"magicstaff_summon",
+		"magicstaff_charm",
 		"spellbook_forcebolt",
 		"spellbook_magicmissile",
 		"spellbook_cold",
@@ -438,7 +440,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_steal_weapon",
 		"spellbook_drain_soul",
 		"spellbook_vampiric_aura",
-		"spellbook_blank_5",
+		"spellbook_charm",
 		"tool_pickaxe",
 		"artifact_sword",
 		"artifact_mace",
@@ -448,7 +450,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_orb_blue",
 		"artifact_orb_red",
 		"artifact_orb_purple",
-		"artifact_orb_green"
+		"artifact_orb_green",
 		""
 	},
 	{

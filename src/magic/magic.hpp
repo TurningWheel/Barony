@@ -47,7 +47,8 @@ static const int SPELL_ACID_SPRAY = 27;
 static const int SPELL_STEAL_WEAPON = 28;
 static const int SPELL_DRAIN_SOUL = 29;
 static const int SPELL_VAMPIRIC_AURA = 30;
-static const int NUM_SPELLS = 31;
+static const int SPELL_CHARM_MONSTER = 31;
+static const int NUM_SPELLS = 32;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -345,6 +346,8 @@ extern spellElement_t spellElement_stealWeapon;
 extern spellElement_t spellElement_drainSoul;
 /* Vampiric Aura */
 extern spellElement_t spellElement_vampiricAura;
+
+extern spellElement_t spellElement_charmMonster;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -414,6 +417,7 @@ extern spell_t spell_acidSpray;
 extern spell_t spell_stealWeapon;
 extern spell_t spell_drainSoul;
 extern spell_t spell_vampiricAura;
+extern spell_t spell_charmMonster;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -443,6 +447,7 @@ void actParticleSap(Entity* my);
 void actParticleSapCenter(Entity* my);
 void actParticleExplosionCharge(Entity* my);
 void actParticleFollowerCommand(Entity* my);
+void actParticleCharmMonster(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -453,6 +458,7 @@ Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
+void createParticleCharmMonster(Entity* parent);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
@@ -523,5 +529,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
+void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
 
 void freeSpells();

@@ -859,6 +859,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			entity->skill[4] = 0;
 			entity->skill[5] = traveltime;
+			if ( using_magicstaff )
+			{
+				entity->actmagicCastByMagicstaff = 1;
+			}
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
 			((spell_t*)node->element)->caster = caster->getUID();
@@ -952,6 +956,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			entity->skill[4] = 0;
 			entity->skill[5] = traveltime;
+			if ( using_magicstaff )
+			{
+				entity->actmagicCastByMagicstaff = 1;
+			}
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
 			((spell_t*)node->element)->caster = caster->getUID();
@@ -989,6 +997,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			entity1->skill[4] = 0;
 			entity1->skill[5] = traveltime;
+			if ( using_magicstaff )
+			{
+				entity1->actmagicCastByMagicstaff = 1;
+			}
 			node = list_AddNodeFirst(&entity1->children);
 			node->element = copySpell(spell);
 			((spell_t*)node->element)->caster = caster->getUID();
@@ -1015,6 +1027,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			entity2->skill[4] = 0;
 			entity2->skill[5] = traveltime;
+			if ( using_magicstaff )
+			{
+				entity2->actmagicCastByMagicstaff = 1;
+			}
 			node = list_AddNodeFirst(&entity2->children);
 			node->element = copySpell(spell);
 			((spell_t*)node->element)->caster = caster->getUID();
@@ -1203,6 +1219,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 598;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_charmMonster.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 173;
 				}
 			}
 		}
