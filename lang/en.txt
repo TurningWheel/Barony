@@ -2929,7 +2929,7 @@ dungeon level %d, client (player %d) (direct ip), %s#
 2279 spellbook#
 2280 spellbook of vampiric aura#
 2281 spellbook#
-2282 blank spellbook 5#
+2282 spellbook of charm monster#
 2283 spellbook#
 2284 empty bottle#
 2285 empty bottle#
@@ -2945,6 +2945,8 @@ dungeon level %d, client (player %d) (direct ip), %s#
 2295 tunic#
 2296 fez#
 2297 fez#
+2298 magicstaff of charm monster#
+2299 magicstaff#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -3001,7 +3003,7 @@ but it retracts beyond your might!#
 2396 Steal Weapon#
 2397 Drain Soul#
 2398 Vampiric Aura#
-2399 blank#
+2399 Charm Monster#
 
 2400 Gamepad#
 
@@ -3850,8 +3852,12 @@ for this option. (Required: %s, Current: %s)#
 3132 %s can't reach that from here.#
 3133 There's something in the way of the %s.#
 3134 There's something in the way of %s.#
-3135 %s Apologies %s, but I won't let go of these keepsakes.#
+3135 %s Apologies %s, but I won't let go of my keepsakes.#
 
 # Misc
 3136 Hide Player Nametags#
+3137 The %s is charmed into your service!#
+3138 %s is charmed into your service!#
+3139 The %s loses their will to fight!#
+3140 %s loses their will to fight!#
 3149 end#
