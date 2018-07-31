@@ -327,7 +327,7 @@ int monsterCurve(int level)
 
 -------------------------------------------------------------------------------*/
 
-int generateDungeon(char* levelset, Uint32 seed)
+int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapParameters)
 {
 	char* sublevelname, *subRoomName;
 	char sublevelnum[3];
@@ -354,7 +354,37 @@ int generateDungeon(char* levelset, Uint32 seed)
 	bool *monsterexcludelocations;
 	bool *lootexcludelocations;
 
-	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
+	if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) == -1
+		&& std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) == -1
+		&& std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) == -1 )
+	{
+		printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
+	}
+	else
+	{
+		char generationLog[256] = "generating a dungeon from level set '%s'";
+		char tmpBuffer[32];
+		if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) != -1 )
+		{
+			snprintf(tmpBuffer, 31, ", secret chance %d%%%%", std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters));
+			strcat(generationLog, tmpBuffer);
+		}
+		if ( std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) != -1 )
+		{
+			snprintf(tmpBuffer, 31, ", darkmap chance %d%%%%", std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters));
+			strcat(generationLog, tmpBuffer);
+		}
+		if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
+		{
+			snprintf(tmpBuffer, 31, ", minotaur chance %d%%%%", std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters));
+			strcat(generationLog, tmpBuffer);
+		}
+		strcat(generationLog, ", (seed %d)...\n");
+		printlog(generationLog, levelset, seed);
+
+		conductGameChallenges[CONDUCT_MODDED] = 1;
+	}
+
 	std::string fullMapPath;
 	fullMapPath = physfsFormatMapName(levelset);
 
@@ -380,7 +410,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	// determine whether minotaur level or not
-	if ( (currentlevel < 25 && (currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3))
+	if ( std::get<LEVELPARAM_CHANCE_MINOTAUR>(mapParameters) != -1 )
+	{
+		if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) && (svFlags & SV_FLAG_MINOTAURS) )
+		{
+			minotaurlevel = 1;
+		}
+	}
+	else if ( (currentlevel < 25 && (currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3))
 		|| (currentlevel > 25 && (currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 4)) )
 	{
 		if ( prng_get_uint() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
@@ -390,19 +427,45 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	// dark level
-	if ( !secretlevel && currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
+	if ( !secretlevel )
 	{
-		if ( prng_get_uint() % 4 == 0 )
+		if ( std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) != -1 )
 		{
-			darkmap = true;
-			messagePlayer(clientnum, language[1108]);
+			if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_DARKNESS>(mapParameters) )
+			{
+				darkmap = true;
+				messagePlayer(clientnum, language[1108]);
+			}
+			else
+			{
+				darkmap = false;
+			}
+		}
+		else if ( currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
+		{
+			if ( prng_get_uint() % 4 == 0 )
+			{
+				darkmap = true;
+				messagePlayer(clientnum, language[1108]);
+			}
 		}
 	}
 
 	// secret stuff
 	if ( !secretlevel )
 	{
-		if ( (currentlevel == 3 && prng_get_uint() % 2) || currentlevel == 2 )
+		if ( std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) != -1 )
+		{
+			if ( prng_get_uint() % 100 < std::get<LEVELPARAM_CHANCE_SECRET>(mapParameters) )
+			{
+				secretlevelexit = 7;
+			}
+			else
+			{
+				secretlevelexit = 0;
+			}
+		}
+		else if ( (currentlevel == 3 && prng_get_uint() % 2) || currentlevel == 2 )
 		{
 			secretlevelexit = 1;
 		}
@@ -782,6 +845,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 						break;
 					case 6:
 						strcpy(secretmapname, "citadelsecret");
+						break;
+					case 7:
+						strcpy(secretmapname, levelset);
+						strcat(secretmapname, "secret");
 						break;
 					default:
 						break;
