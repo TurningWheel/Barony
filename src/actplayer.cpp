@@ -1572,7 +1572,7 @@ void actPlayer(Entity* my)
 					if ( FollowerMenu.followerToCommand )
 					{
 						FollowerMenu.recentEntity = FollowerMenu.followerToCommand;
-						FollowerMenu.initFollowerMenuGUICursor();
+						FollowerMenu.initFollowerMenuGUICursor(true);
 						FollowerMenu.updateScrollPartySheet();
 						selectedEntity = NULL;
 					}
