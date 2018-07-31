@@ -268,7 +268,7 @@ int saveScore()
 		}
 		else
 		{
-			printlog("[STEAM]: Failed to upload leaderboard score!");
+			printlog("[STEAM]: Did not qualify for leaderboard score upload.");
 		}
 	}
 #endif // STEAMWORKS
