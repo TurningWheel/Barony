@@ -2125,6 +2125,20 @@ void consoleCommand(char* command_str)
 		{
 			hide_playertags = !hide_playertags;
 		}
+		else if ( !strncmp(command_str, "/togglesecretlevel", 18) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+			secretlevel = (secretlevel == false);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
