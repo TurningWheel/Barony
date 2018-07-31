@@ -277,6 +277,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_vampiricAura.duration = 1500; //TODO: Decide on something.
 	strcpy(spellElement_vampiricAura.name, language[2398]);
 
+	spellElementConstructor(&spellElement_charmMonster);
+	spellElement_charmMonster.mana = 49;
+	spellElement_charmMonster.base_mana = 49;
+	spellElement_charmMonster.overload_multiplier = 1;
+	spellElement_charmMonster.damage = 0;
+	spellElement_charmMonster.duration = 300;
+	strcpy(spellElement_charmMonster.name, language[2399]);
+
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
 	spell_forcebolt.ID = SPELL_FORCEBOLT;
@@ -805,4 +813,24 @@ void setupSpells()   ///TODO: Verify this function.
 	element = (spellElement_t*)node->element;
 	element->node = node; //Tell the element what list it resides in.
 	element->channeled = true;
+
+	spellConstructor(&spell_charmMonster);
+	strcpy(spell_charmMonster.name, language[2399]);
+	spell_charmMonster.ID = SPELL_CHARM_MONSTER;
+	spell_charmMonster.difficulty = 80;
+	node = list_AddNodeLast(&spell_charmMonster.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_charmMonster);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
 }

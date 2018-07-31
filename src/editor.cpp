@@ -3788,7 +3788,7 @@ int main(int argc, char** argv)
 											}
 											else
 											{
-												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 1);
+												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 2);
 											}
 										}
 										else if ( propertyInt == 0 )
@@ -3809,7 +3809,7 @@ int main(int argc, char** argv)
 											}
 											else
 											{
-												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 1);
+												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 2);
 											}
 										}
 									}
@@ -3963,7 +3963,7 @@ int main(int argc, char** argv)
 
 						drawDepressed(pad_x1, pad_y1, subx2 - 20, pad_y2);
 						drawDepressed(subx2 - 20, pad_y1, subx2 - 4, pad_y2);
-						slidersize = std::min<int>(((pad_y2 - 1) - (pad_y1 + 1)), ((pad_y2 - 1) - (pad_y1 + 1)) / ((real_t)(editorNumItems) / 20)); //TODO: Why are int and real_t being compared?
+						slidersize = std::min<int>(((pad_y2 - 1) - (pad_y1 + 1)), ((pad_y2 - 1) - (pad_y1 + 1)) / ((real_t)(editorNumItems + 1) / 20)); //TODO: Why are int and real_t being compared?
 						slidery = std::min(std::max(pad_y1, slidery), pad_y2 - 1 - slidersize);
 						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
 
@@ -4056,11 +4056,11 @@ int main(int argc, char** argv)
 								itemSelect = y2 + ((omousey - (pad_y1 + 4)) >> 3);
 								if ( newwindow == 4 )
 								{
-									itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+									itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 2, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 								}
 								else
 								{
-									itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 1, y2 + 23)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+									itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 2, y2 + 23)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 								}
 								switch ( itemSlotSelected )
 								{

@@ -740,6 +740,16 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 	}
 
+	for ( node_t* node = stats[monsterclicked]->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		Uint32* c = (Uint32*)node->element;
+		Entity* entity = uidToEntity(*c);
+		if ( entity->monsterTarget == *myuid )
+		{
+			entity->monsterReleaseAttackTarget(); // followers stop punching the new target.
+		}
+	}
+
 	if ( !FollowerMenu.recentEntity && monsterclicked == clientnum )
 	{
 		FollowerMenu.recentEntity = my;
@@ -2651,6 +2661,11 @@ void actMonster(Entity* my)
 		if ( myStats->type == AUTOMATON )
 		{
 			my->automatonRecycleItem();
+		}
+
+		if ( myStats->EFFECTS[EFF_PACIFY] )
+		{
+			my->monsterHitTime = HITRATE / 2; // stop this incrementing to HITRATE but leave monster ready to strike shortly after.
 		}
 
 		if ( my->monsterDefend != MONSTER_DEFEND_NONE )
@@ -6397,6 +6412,16 @@ bool forceFollower(Entity& leader, Entity& follower)
 	follower.monsterState = 0;
 	follower.monsterTarget = 0;
 	followerStats->leader_uid = leader.getUID();
+
+	for ( node_t* node = leaderStats->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		Uint32* c = (Uint32*)node->element;
+		Entity* entity = uidToEntity(*c);
+		if ( entity->monsterTarget == *myuid )
+		{
+			entity->monsterReleaseAttackTarget(); // followers stop punching the new target.
+		}
+	}
 
 	int player = leader.isEntityPlayer();
 	if ( player > 0 && multiplayer == SERVER )

@@ -214,6 +214,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitLifetime(skill[10]),
 	actmagicMirrorReflected(skill[11]),
 	actmagicMirrorReflectedCaster(skill[12]),
+	actmagicCastByMagicstaff(skill[13]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3]),
 	goldAmount(skill[0]),
@@ -2806,6 +2807,14 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->EFFECTS[EFF_PACIFY] )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			spawnAmbientParticles(1, 685, 20 + rand() % 10, 0.5, true);
+		}
+	}
+
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && myStats->type == SHADOW )
 	{
 		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
@@ -4147,6 +4156,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case MAGICSTAFF_BLEED:
 							castSpell(uid, &spell_bleed, true, false);
 							break;
+						case MAGICSTAFF_CHARM:
+							castSpell(uid, &spell_charmMonster, true, false);
+							break;
 						default:
 							messagePlayer(player, "This is my wish stick! Wishy wishy wish!");
 							break;
@@ -4246,6 +4258,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 							break;
 						case SPELLBOOK_VAMPIRIC_AURA:
 							castSpell(uid, &spell_vampiricAura, true, false);
+							break;
+						case SPELLBOOK_CHARM_MONSTER:
+							castSpell(uid, &spell_charmMonster, true, false);
 							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 						//castSpell(uid, &spell_reflectMagic, true, false)
@@ -9167,6 +9182,11 @@ void Entity::handleEffectsClient()
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->EFFECTS[EFF_PACIFY] )
+	{
+		spawnAmbientParticles(30, 685, 20 + rand() % 30, 0.5, true);
+	}
+
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && getMonsterTypeFromSprite() == SHADOW )
 	{
 		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
@@ -9242,6 +9262,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	{
 		case EFF_ASLEEP:
 		case EFF_PARALYZED:
+		case EFF_PACIFY:
 			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 			{
@@ -10307,6 +10328,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 	// retreating monsters will not try path when losing sight of target
 
+	if ( myStats.EFFECTS[EFF_PACIFY] )
+	{
+		return true;
+	}
 	if ( myStats.type == SHADOW )
 	{
 		return false;
@@ -11036,20 +11061,9 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		return;
 	}
 
-	bool namedMonsterAsGeneric = false; 
-	if ( strstr(monsterStats.name, "lesser") 
-		|| strstr(monsterStats.name, "young") 
-		|| strstr(monsterStats.name, "enslaved")
-		|| strstr(monsterStats.name, "damaged")
-		|| strstr(monsterStats.name, "corrupted")
-		|| strstr(monsterStats.name, "cultist") 
-		|| strstr(monsterStats.name, "knight")
-		|| strstr(monsterStats.name, "sentinel")
-		|| strstr(monsterStats.name, "mage") )
-	{
-		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
-		namedMonsterAsGeneric = true;
-	}
+	// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
+	bool namedMonsterAsGeneric = monsterNameIsGeneric(monsterStats);
+
 	//char str[256] = { 0 };
 	if ( !strcmp(monsterStats.name, "") )
 	{
@@ -11666,4 +11680,22 @@ int playerEntityMatchesUid(Uint32 uid)
 	}
 
 	return -1;
+}
+
+bool monsterNameIsGeneric(Stat& monsterStats)
+{
+	if ( strstr(monsterStats.name, "lesser")
+		|| strstr(monsterStats.name, "young")
+		|| strstr(monsterStats.name, "enslaved")
+		|| strstr(monsterStats.name, "damaged")
+		|| strstr(monsterStats.name, "corrupted")
+		|| strstr(monsterStats.name, "cultist")
+		|| strstr(monsterStats.name, "knight")
+		|| strstr(monsterStats.name, "sentinel")
+		|| strstr(monsterStats.name, "mage") )
+	{
+		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
+		return true;
+	}
+	return false;
 }
