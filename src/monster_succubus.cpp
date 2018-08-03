@@ -95,6 +95,14 @@ void initSuccubus(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					if ( !strcmp(myStats->name, "Lilith") && rand() % 4 > 0 )
+					{
+						newItem(MAGICSTAFF_CHARM, EXCELLENT, -1 + rand() % 3, 1, rand(), false, &myStats->inventory); // 75% chance
+					}
+					else if ( rand() % 10 == 0 )
+					{
+						newItem(MAGICSTAFF_CHARM, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory); // 10% chance
+					}
 					break;
 				default:
 					break;
