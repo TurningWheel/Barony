@@ -2117,61 +2117,69 @@ void actPlayer(Entity* my)
 			}
 		}
 
-		if ( !command && allowMovement )
+		if ( (!command || pacified) && allowMovement )
 		{
 			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 			float x_force = 0;
 			float y_force = 0;
-			if (!stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
-			{
-				//Normal controls.
-				x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
-				y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * .25);
-				if ( noclip )
-				{
-					if ( keystatus[SDL_SCANCODE_LSHIFT] )
-					{
-						x_force = x_force * 0.5;
-						y_force = y_force * 0.5;
-					}
-				}
-			}
-			else
-			{
-				//Confused controls.
-				x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
-				y_force = (*inputPressed(impulses[IN_BACK]) - (double) * inputPressed(impulses[IN_FORWARD]) * .25);
-			}
-
-			if (game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]))
-			{
-				x_force = game_controller->getLeftXPercent();
-
-				if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
-				{
-					x_force *= -1;
-				}
-			}
-			if (game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]))
-			{
-				y_force = game_controller->getLeftYPercent();
-
-				if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
-				{
-					y_force *= -1;
-				}
-
-				if (y_force < 0)
-				{
-					y_force *= 0.25f;    //Move backwards more slowly.
-				}
-			}
 
 			if ( pacified )
 			{
 				x_force = 0.f;
 				y_force = -0.1;
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
+				{
+					y_force *= -1;
+				}
 			}
+			else
+			{
+				if (!stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
+				{
+					//Normal controls.
+					x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
+					y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * .25);
+					if ( noclip )
+					{
+						if ( keystatus[SDL_SCANCODE_LSHIFT] )
+						{
+							x_force = x_force * 0.5;
+							y_force = y_force * 0.5;
+						}
+					}
+				}
+				else
+				{
+					//Confused controls.
+					x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
+					y_force = (*inputPressed(impulses[IN_BACK]) - (double) * inputPressed(impulses[IN_FORWARD]) * .25);
+				}
+
+				if (game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]))
+				{
+					x_force = game_controller->getLeftXPercent();
+
+					if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
+					{
+						x_force *= -1;
+					}
+				}
+				if (game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]))
+				{
+					y_force = game_controller->getLeftYPercent();
+
+					if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
+					{
+						y_force *= -1;
+					}
+
+					if (y_force < 0)
+					{
+						y_force *= 0.25f;    //Move backwards more slowly.
+					}
+				}
+			}
+
 
 			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);
 			if ( my->getDEX() <= 5 )
