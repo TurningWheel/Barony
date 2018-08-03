@@ -5459,7 +5459,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-					else if ( damage > 0 && rand() % 4 == 0 )
+					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY]) && rand() % 4 == 0 )
 					{
 						int armornum = 0;
 						Item* armor = NULL;

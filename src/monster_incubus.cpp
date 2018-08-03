@@ -104,6 +104,7 @@ void initIncubus(Entity* my, Stat* myStats)
 
 			// always give special spell to incubus, undroppable.
 			newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
 			if ( rand() % 4 == 0 ) // 1 in 4
 			{
@@ -1102,11 +1103,19 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			return;
 		}
 
-		if ( targetStats->weapon )
+		bool tryCharm = true;
+		bool trySteal = true;
+		if ( targetStats->EFFECTS[EFF_PACIFY] )
 		{
-			// try to steal weapon if target is holding.
-			// occurs less often against fellow monsters.
-			specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+			tryCharm = false;
+		}
+		if ( !targetStats->weapon )
+		{
+			trySteal = false;
+		}
+
+		if ( trySteal || tryCharm )
+		{
 			if ( myStats->HP <= myStats->MAXHP * 0.8 )
 			{
 				bonusFromHP += 1; // +2.5% chance if on low health
@@ -1117,19 +1126,61 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			}
 
 			int requiredRoll = (1 + bonusFromHP + (targetStats->EFFECTS[EFF_CONFUSED] ? 4 : 0)
-				+ (targetStats->EFFECTS[EFF_DRUNK] ? 2 : 0)); // +2.5% base, + extra if target is inebriated
-			requiredRoll += (myStats->weapon == nullptr ? 3 : 0); // bonus if no weapon held
+				+ (targetStats->EFFECTS[EFF_DRUNK] ? 2 : 0)
+				+ (targetStats->EFFECTS[EFF_PACIFY] ? 2 : 0)); // +2.5% base, + extra if target is inebriated
+
+			if ( trySteal && tryCharm )
+			{
+				if ( rand() % 8 == 0 )
+				{
+					trySteal = false; // try charm 12.5% of the time.
+				}
+				else
+				{
+					tryCharm = false;
+				}
+			}
+
+			if ( trySteal )
+			{
+				// try to steal weapon if target is holding.
+				// occurs less often against fellow monsters.
+				specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+			}
+			else if ( tryCharm )
+			{
+				specialRoll = rand() % 40;
+			}
+
+			if ( trySteal )
+			{
+				requiredRoll += (myStats->weapon == nullptr ? 3 : 0); // bonus if no weapon held
+			}
 
 			if ( specialRoll < requiredRoll ) 
 			{
 				node_t* node = nullptr;
-				node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
-				if ( node != nullptr )
+				if ( trySteal )
 				{
-					swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
-					monsterSpecialState = INCUBUS_STEAL;
-					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
-					return;
+					node = itemNodeInInventory(myStats, SPELLBOOK_STEAL_WEAPON, static_cast<Category>(-1));
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+						monsterSpecialState = INCUBUS_STEAL;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						return;
+					}
+				}
+				else if ( tryCharm )
+				{
+					node = itemNodeInInventory(myStats, SPELLBOOK_CHARM_MONSTER, static_cast<Category>(-1));
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+						monsterSpecialState = INCUBUS_CHARM;
+						serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+						return;
+					}
 				}
 			}
 		}

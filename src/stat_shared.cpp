@@ -586,6 +586,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_POLEARM] = 60;
 			stats->PROFICIENCIES[PRO_RANGED] = 75;
 			stats->PROFICIENCIES[PRO_MAGIC] = 100;
+			stats->PROFICIENCIES[PRO_LEADERSHIP] = 60;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; // booze potion
@@ -1133,6 +1134,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
 
+			stats->PROFICIENCIES[PRO_MAGIC] = 60;
+			stats->PROFICIENCIES[PRO_LEADERSHIP] = 40;
 			break;
 		case 81:
 		case (1000 + RAT):

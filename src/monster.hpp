@@ -528,10 +528,12 @@ static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CHARM = 300;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
+static const int MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM = 400;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -626,11 +628,14 @@ static const int INCUBUS_CONFUSION = 1;
 static const int INCUBUS_STEAL = 2;
 static const int INCUBUS_TELEPORT_STEAL = 3;
 static const int INCUBUS_TELEPORT = 4;
+static const int INCUBUS_CHARM = 5;
 
 //--Vampire--
 static const int VAMPIRE_CAST_AURA = 1;
 static const int VAMPIRE_CAST_DRAIN = 2;
 
+//--Succubus--
+static const int SUCCUBUS_CHARM = 1;
 
 //--Shadow--
 static const int SHADOW_SPELLCAST = 1;
