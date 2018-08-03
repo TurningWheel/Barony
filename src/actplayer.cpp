@@ -2105,7 +2105,19 @@ void actPlayer(Entity* my)
 		weightratio = fmin(fmax(0, weightratio), 1);
 
 		// calculate movement forces
-		if ( !command && my->isMobile() )
+
+		bool allowMovement = my->isMobile();
+		bool pacified = stats[PLAYER_NUM]->EFFECTS[EFF_PACIFY];
+		if ( !allowMovement && pacified )
+		{
+			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_PARALYZED] && !stats[PLAYER_NUM]->EFFECTS[EFF_STUNNED]
+				&& !stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
+			{
+				allowMovement = true;
+			}
+		}
+
+		if ( !command && allowMovement )
 		{
 			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 			float x_force = 0;
@@ -2153,6 +2165,12 @@ void actPlayer(Entity* my)
 				{
 					y_force *= 0.25f;    //Move backwards more slowly.
 				}
+			}
+
+			if ( pacified )
+			{
+				x_force = 0.f;
+				y_force = -0.25;
 			}
 
 			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);

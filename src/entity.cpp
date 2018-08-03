@@ -3838,6 +3838,11 @@ bool Entity::isMobile()
 		return true;
 	}
 
+	if ( behavior == &actPlayer && entitystats->EFFECTS[EFF_PACIFY] )
+	{
+		return false;
+	}
+
 	// paralyzed
 	if ( entitystats->EFFECTS[EFF_PARALYZED] )
 	{
@@ -4170,8 +4175,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						degradeWeapon = false; //certain monster's weapons don't degrade.
 					}
+					bool forceDegrade = false;
+					if ( degradeWeapon )
+					{
+						if ( myStats->weapon->type == MAGICSTAFF_CHARM )
+						{
+							if ( myStats->weapon->beatitude <= SERVICABLE )
+							{
+								forceDegrade = true;
+							}
+						}
+					}
 
-					if ( rand() % 3 == 0 && degradeWeapon )
+					if ( (rand() % 3 == 0 && degradeWeapon) || forceDegrade )
 					{
 						if ( player == clientnum )
 						{
@@ -9268,7 +9284,10 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 			{
-				return false;
+				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) )
+				{
+					return false;
+				}
 			}
 			break;
 		default:
