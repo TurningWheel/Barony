@@ -6499,6 +6499,14 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case SUCCUBUS:
+					if ( monsterSpecialState == SUCCUBUS_CHARM )
+					{
+						// special handled in succubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM;
+						break;
+					}
+					break;
 				case CRYSTALGOLEM:
 					specialRoll = rand() % 20;
 					enemiesNearby = numTargetsAroundEntity(this, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
@@ -6659,6 +6667,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET;
 						break;
 					}
+					else if ( monsterSpecialState == INCUBUS_CHARM )
+					{
+						// special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_CHARM;
+						break;
+					}
 					break;
 				case VAMPIRE:
 					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
@@ -6711,6 +6725,22 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					else
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
+					}
+					break;
+				case SUCCUBUS:
+					if ( monsterSpecialState == SUCCUBUS_CHARM )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
 					}
 					break;
 				case INSECTOID:
@@ -6783,6 +6813,20 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					else if ( monsterSpecialState == INCUBUS_TELEPORT )
 					{
 						// this flag will be cleared in incubusChooseWeapon
+					}
+					else if ( monsterSpecialState == INCUBUS_CHARM )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
 					}
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;

@@ -84,6 +84,8 @@ void initSuccubus(Entity* my, Stat* myStats)
 
 			my->setHardcoreStats(*myStats);
 
+			newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -724,5 +726,61 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		// do nothing, don't reset attacktime or increment it.
+	}
+}
+
+void Entity::succubusChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
+	{
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
+		{
+			return;
+		}
+
+		// try to charm enemy.
+		int specialRoll = -1;
+		int bonusFromHP = 0;
+		specialRoll = rand() % 40;
+		if ( myStats->HP <= myStats->MAXHP * 0.8 )
+		{
+			bonusFromHP += 1; // +2.5% chance if on low health
+		}
+		if ( myStats->HP <= myStats->MAXHP * 0.4 )
+		{
+			bonusFromHP += 1; // +extra 2.5% chance if on lower health
+		}
+
+		int requiredRoll = (1 + bonusFromHP + (targetStats->EFFECTS[EFF_CONFUSED] ? 4 : 0)
+			+ (targetStats->EFFECTS[EFF_DRUNK] ? 2 : 0)); // +2.5% base, + extra if target is inebriated
+
+		if ( dist < 40 )
+		{
+			requiredRoll += 1; //+extra 2.5% chance if dist is smaller.
+		}
+
+		if ( specialRoll < requiredRoll )
+		{
+			node_t* node = nullptr;
+			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+			if ( node != nullptr )
+			{
+				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+				monsterSpecialState = SUCCUBUS_CHARM;
+				return;
+			}
+		}
 	}
 }

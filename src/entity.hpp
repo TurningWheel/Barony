@@ -667,6 +667,9 @@ public:
 			case SHADOW:
 				shadowChooseWeapon(target, dist);
 				break;
+			case SUCCUBUS:
+				succubusChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
@@ -676,6 +679,7 @@ public:
 	void incubusChooseWeapon(const Entity* target, double dist);
 	void vampireChooseWeapon(const Entity* target, double dist);
 	void shadowChooseWeapon(const Entity* target, double dist);
+	void succubusChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
