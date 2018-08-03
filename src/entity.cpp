@@ -8365,7 +8365,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				weaponarm->skill[1] = 1;
 			}
 		}
-		else if ( weaponarm->skill[1] == 1 )
+		else if ( weaponarm->skill[1] >= 1 )
 		{
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
 			{
@@ -8416,7 +8416,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				weaponarm->skill[1] = 1;
 			}
 		}
-		else if ( weaponarm->skill[1] == 1 )
+		else if ( weaponarm->skill[1] >= 1 )
 		{
 			// post-swing return to normal weapon yaw
 			if ( limbAnimateToLimit(this, ANIMATE_WEAPON_YAW, -0.5, 0, false, 0.0) )
@@ -8475,7 +8475,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				weaponarm->skill[1] = 2;
 			}
 		}
-		else if ( weaponarm->skill[1] == 2 )
+		else if ( weaponarm->skill[1] >= 2 )
 		{
 			// return to neutral
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0) )
@@ -8539,7 +8539,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				weaponarm->skill[1] = 2;
 			}
 		}
-		else if ( weaponarm->skill[1] == 2 )
+		else if ( weaponarm->skill[1] >= 2 )
 		{
 			// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(weaponarm->pitch, -0.2, rightbody->pitch) )
@@ -8610,7 +8610,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				weaponarm->skill[1] = 2;
 			}
 		}
-		else if ( weaponarm->skill[1] == 2 )
+		else if ( weaponarm->skill[1] >= 2 )
 		{
 			// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(weaponarm->pitch, -0.2, rightbody->pitch) )
