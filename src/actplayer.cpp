@@ -2170,7 +2170,7 @@ void actPlayer(Entity* my)
 			if ( pacified )
 			{
 				x_force = 0.f;
-				y_force = -0.25;
+				y_force = -0.1;
 			}
 
 			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);
