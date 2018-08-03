@@ -744,7 +744,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	{
 		Uint32* c = (Uint32*)node->element;
 		Entity* entity = uidToEntity(*c);
-		if ( entity->monsterTarget == *myuid )
+		if ( entity && entity->monsterTarget == *myuid )
 		{
 			entity->monsterReleaseAttackTarget(); // followers stop punching the new target.
 		}
@@ -6417,7 +6417,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 	{
 		Uint32* c = (Uint32*)node->element;
 		Entity* entity = uidToEntity(*c);
-		if ( entity->monsterTarget == *myuid )
+		if ( entity && entity->monsterTarget == *myuid )
 		{
 			entity->monsterReleaseAttackTarget(); // followers stop punching the new target.
 		}
