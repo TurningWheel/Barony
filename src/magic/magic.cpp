@@ -915,6 +915,8 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			}
 
 			int chance = 80;
+			bool allowStealFollowers = false;
+			Stat* casterStats = nullptr;
 
 			/************** CHANCE CALCULATION ***********/
 			if ( hitstats->EFFECTS[EFF_CONFUSED] || hitstats->EFFECTS[EFF_DRUNK] || player >= 0 )
@@ -928,15 +930,36 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			chance -= difficulty * 30;
 			if ( parent )
 			{
-				Stat* casterStats = parent->getStats();
-				if ( !casterStats )
+				casterStats = parent->getStats();
+				if ( casterStats )
 				{
-					return;
-				}
-				chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
-				if ( !magicstaff )
-				{
-					chance += ((parent->getINT() + casterStats->PROFICIENCIES[PRO_MAGIC]) / 20) * 10;
+					chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+					if ( !magicstaff )
+					{
+						chance += ((parent->getINT() + casterStats->PROFICIENCIES[PRO_MAGIC]) / 20) * 10;
+					}
+
+					if ( parent->behavior == &actMonster )
+					{
+						allowStealFollowers = true;
+						if ( casterStats->type == INCUBUS || casterStats->type == SUCCUBUS )
+						{
+							if ( hitstats->type == DEMON || hitstats->type == INCUBUS
+								|| hitstats->type == SUCCUBUS || hitstats->type == CREATURE_IMP
+								|| hitstats->type == GOATMAN )
+							{
+								chance = 100; // bonus for demons.
+							}
+							else if ( difficulty <= 2 )
+							{
+								chance = 80; // special base chance for monsters.
+							}
+						}
+						else if ( difficulty <= 2 )
+						{
+							chance = 60; // special base chance for monsters.
+						}
+					}
 				}
 			}
 			if ( hit.entity->monsterState == MONSTER_STATE_WAIT )
@@ -946,6 +969,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			chance /= (1 + resistance);
 			/************** END CHANCE CALCULATION ***********/
 
+			// special cases:
 			if ( (hitstats->type == VAMPIRE && !strncmp(hitstats->name, "Bram Kindly", 11))
 				|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
 				)
@@ -953,9 +977,45 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				chance = 0;
 			}
 
-			//messagePlayer(0, "Your charm chance: %d", chance);
-
-			if ( chance <= 0 )
+			if ( hit.entity == parent )
+			{
+				// caster hit themselves somehow... get pacified.
+				int duration = element.duration;
+				duration /= (1 + resistance);
+				if ( hit.entity->setEffect(EFF_PACIFY, true, duration, true) )
+				{
+					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
+					if ( player >= 0 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(player, color, language[3144]);
+					}
+					if ( parent )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
+						}
+						// update enemy bar for attacker
+						if ( !strcmp(hitstats->name, "") )
+						{
+							if ( hitstats->type < KOBOLD ) //Original monster count
+							{
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							}
+							else if ( hitstats->type >= KOBOLD ) //New monsters
+							{
+								updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+							}
+						}
+						else
+						{
+							updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+						}
+					}
+				}
+			}
+			else if ( chance <= 0 )
 			{
 				// no effect.
 				playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
@@ -969,13 +1029,15 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					messagePlayerColor(player, color, language[3141]);
 				}
 			}
-			else if ( rand() % 100 < chance 
-				&& hitstats->leader_uid == 0 
+			else if ( parent && rand() % 100 < chance
+				&& (hitstats->leader_uid == 0 || (allowStealFollowers && hitstats->leader_uid != parent->getUID()) )
 				&& player < 0 
 				&& hitstats->type != SHOPKEEPER
-				&& parent )
+				)
 			{
-				// followed or fully charmed. (players not affected here.)
+				// fully charmed. (players not affected here.)
+				// does not affect shopkeepers
+				// succubus/incubus can steal followers from others, checking to see if they don't already follow them.
 				if ( forceFollower(*parent, *hit.entity) )
 				{
 					createParticleCharmMonster(hit.entity);
@@ -984,13 +1046,13 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					{
 						parent->increaseSkill(PRO_LEADERSHIP);
 						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
+						hit.entity->monsterAllyIndex = parent->skill[2];
+						if ( multiplayer == SERVER )
+						{
+							serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
+						}
 					}
 
-					hit.entity->monsterAllyIndex = parent->skill[2];
-					if ( multiplayer == SERVER )
-					{
-						serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
-					}
 					// change the color of the hit entity.
 					if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
 					{
@@ -1011,6 +1073,23 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 							++bodypart;
 						}
 					}
+					if ( parent->behavior == &actMonster )
+					{
+						if ( parent->monsterTarget == hit.entity->getUID() )
+						{
+							parent->monsterReleaseAttackTarget(); // monsters stop attacking their new friend.
+						}
+
+						// handle players losing their allies.
+						if ( hit.entity->monsterAllyIndex != -1 )
+						{
+							hit.entity->monsterAllyIndex = -1;
+							if ( multiplayer == SERVER )
+							{
+								serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
+							}
+						}
+					}
 				}
 			}
 			else
@@ -1019,6 +1098,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				// loses will to attack.
 				int duration = element.duration;
 				duration /= (1 + resistance);
+				if ( hitstats->type == SHOPKEEPER )
+				{
+					duration = 100;
+				}
 				if ( hit.entity->setEffect(EFF_PACIFY, true, duration, true) )
 				{
 					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
