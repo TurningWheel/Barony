@@ -146,6 +146,10 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
 	}
+	else if ( targetStats.EFFECTS[EFF_PACIFY] )
+	{
+		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
+	}
 	else
 	{
 		enemy_bar_color[player] = 0;
@@ -209,10 +213,11 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 				net_packet->len = 12;
 				sendPacketSafe(net_sock, -1, net_packet, playertarget - 1);
 			}
-			if ( player >= 0 )
-			{
-				updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
-			}
+		}
+
+		if ( player >= 0 )
+		{
+			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
 	}
 
