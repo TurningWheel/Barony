@@ -1136,6 +1136,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 			stats->PROFICIENCIES[PRO_MAGIC] = 60;
 			stats->PROFICIENCIES[PRO_LEADERSHIP] = 40;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 10; //Magicstaff of charm monster.
 			break;
 		case 81:
 		case (1000 + RAT):
