@@ -6800,6 +6800,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				if ( stats[this->skill[2]] )
 				{
 					// award XP to player's followers.
+					int numFollowers = list_Size(&stats[this->skill[2]]->FOLLOWERS);
 					for ( node = stats[this->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = uidToEntity(*((Uint32*)node->element));
@@ -6808,7 +6809,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 							Stat* followerStats = follower->getStats();
 							if ( followerStats )
 							{
-								followerStats->EXP += xpGain;
+								int xpDivide = std::min(std::max(1, numFollowers), 4); // 1 - 4 depending on followers.
+								followerStats->EXP += (xpGain / xpDivide);
 								//messagePlayer(0, "monster got %d xp", xpGain);
 							}
 						}
