@@ -341,9 +341,9 @@ void drawStatus()
 		if ( enemy_oldhp > enemy_hp )
 		{
 			int timeDiff = ticks - enemy_timer;
-			if ( timeDiff > 30 )
+			if ( timeDiff > 30 || enemy_hp == 0 )
 			{
-				// delay 30 ticks before background hp drop animation
+				// delay 30 ticks before background hp drop animation, or if health 0 start immediately.
 				// we want to complete animation with x ticks to go
 				int depletionTicks = (80 - timeDiff) / 2;
 				int healthDiff = enemy_oldhp - enemy_hp;
