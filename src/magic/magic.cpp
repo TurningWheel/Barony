@@ -870,16 +870,6 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				player = hit.entity->skill[2];
 			}
 
-			if ( !parent )
-			{
-				return;
-			}
-			Stat* casterStats = parent->getStats();
-			if ( !casterStats )
-			{
-				return;
-			}
-					
 			int difficulty = 0;
 			switch ( hitstats->type )
 			{
@@ -889,6 +879,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				case SPIDER:
 				case SKELETON:
 				case SCORPION:
+				case SHOPKEEPER:
 					difficulty = 0;
 					break;
 				case GOBLIN:
@@ -914,7 +905,6 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					break;
 				case COCKATRICE:
 				case SHADOW:
-				case SHOPKEEPER:
 				case LICH:
 				case DEVIL:
 				case LICH_ICE:
@@ -925,27 +915,36 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			}
 
 			int chance = 80;
-			// CHANCE CALCULATION
-			if ( hitstats->EFFECTS[EFF_CONFUSED] || hitstats->EFFECTS[EFF_DRUNK] )
+
+			/************** CHANCE CALCULATION ***********/
+			if ( hitstats->EFFECTS[EFF_CONFUSED] || hitstats->EFFECTS[EFF_DRUNK] || player >= 0 )
 			{
-				difficulty -= 1;
+				difficulty -= 1; // players and confused/drunk monsters have lower resistance.
 			}
 			if ( strcmp(hitstats->name, "") && !monsterNameIsGeneric(*hitstats) )
 			{
 				difficulty += 1; // minibosses +1 difficulty.
 			}
 			chance -= difficulty * 30;
-			chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
-			if ( !magicstaff )
+			if ( parent )
 			{
-				chance += ((parent->getINT() + casterStats->PROFICIENCIES[PRO_MAGIC]) / 20) * 10;
+				Stat* casterStats = parent->getStats();
+				if ( !casterStats )
+				{
+					return;
+				}
+				chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+				if ( !magicstaff )
+				{
+					chance += ((parent->getINT() + casterStats->PROFICIENCIES[PRO_MAGIC]) / 20) * 10;
+				}
 			}
 			if ( hit.entity->monsterState == MONSTER_STATE_WAIT )
 			{
 				chance += 10;
 			}
 			chance /= (1 + resistance);
-			// END CHANCE CALCULATION
+			/************** END CHANCE CALCULATION ***********/
 
 			if ( (hitstats->type == VAMPIRE && !strncmp(hitstats->name, "Bram Kindly", 11))
 				|| (hitstats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
@@ -954,109 +953,123 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				chance = 0;
 			}
 
-			messagePlayer(0, "Your charm chance: %d", chance);
+			//messagePlayer(0, "Your charm chance: %d", chance);
 
 			if ( chance <= 0 )
 			{
 				// no effect.
 				playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
-				if ( parent->behavior == &actPlayer )
+				if ( parent && parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
 				}
 				if ( player >= 0 )
 				{
-					color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					//messagePlayerColor(player, color, language[2441]);
+					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(player, color, language[3141]);
 				}
 			}
-			else if ( rand() % 100 < chance && hitstats->leader_uid == 0 && player < 0 )
+			else if ( rand() % 100 < chance 
+				&& hitstats->leader_uid == 0 
+				&& player < 0 
+				&& hitstats->type != SHOPKEEPER
+				&& parent )
 			{
 				// followed or fully charmed. (players not affected here.)
-				forceFollower(*parent, *hit.entity);
-				createParticleCharmMonster(hit.entity);
-				playSoundEntity(hit.entity, 174, 64); // WeirdSpell.ogg
-				if ( parent->behavior == &actPlayer )
+				if ( forceFollower(*parent, *hit.entity) )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
-				}
-				if ( player >= 0 )
-				{
-					color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					//messagePlayerColor(player, color, language[2441]);
-				}
-
-				hit.entity->monsterAllyIndex = parent->skill[2];
-				if ( multiplayer == SERVER )
-				{
-					serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
-				}
-				// change the color of the hit entity.
-				if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
-				{
-					hit.entity->flags[USERFLAG2] = true;
-					serverUpdateEntityFlag(hit.entity, USERFLAG2);
-					int bodypart = 0;
-					for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
+					createParticleCharmMonster(hit.entity);
+					playSoundEntity(hit.entity, 174, 64); // WeirdSpell.ogg
+					if ( parent->behavior == &actPlayer )
 					{
-						if ( bodypart >= LIMB_HUMANOID_TORSO )
+						parent->increaseSkill(PRO_LEADERSHIP);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
+					}
+
+					hit.entity->monsterAllyIndex = parent->skill[2];
+					if ( multiplayer == SERVER )
+					{
+						serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
+					}
+					// change the color of the hit entity.
+					if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+					{
+						hit.entity->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(hit.entity, USERFLAG2);
+						int bodypart = 0;
+						for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
 						{
-							Entity* tmp = (Entity*)node->element;
-							if ( tmp )
+							if ( bodypart >= LIMB_HUMANOID_TORSO )
 							{
-								tmp->flags[USERFLAG2] = true;
-								serverUpdateEntityFlag(tmp, USERFLAG2);
+								Entity* tmp = (Entity*)node->element;
+								if ( tmp )
+								{
+									tmp->flags[USERFLAG2] = true;
+									serverUpdateEntityFlag(tmp, USERFLAG2);
+								}
 							}
+							++bodypart;
 						}
-						++bodypart;
 					}
 				}
 			}
 			else
 			{
-				// had a chance or currently in service of another monster, failed to completely charm. loses will to attack.
+				// had a chance, or currently in service of another monster, or a player, or spell no parent, failed to completely charm. 
+				// loses will to attack.
 				int duration = element.duration;
 				duration /= (1 + resistance);
 				if ( hit.entity->setEffect(EFF_PACIFY, true, duration, true) )
 				{
 					playSoundEntity(hit.entity, 168, 128); // Healing.ogg
-					if ( parent->behavior == &actPlayer )
-					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
-					}
 					if ( player >= 0 )
 					{
 						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						//messagePlayerColor(player, color, language[2441]);
+						messagePlayerColor(player, color, language[3144]);
 					}
-					// update enemy bar for attacker
-					if ( !strcmp(hitstats->name, "") )
+					if ( parent )
 					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
+						if ( parent->behavior == &actPlayer )
 						{
-							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
 						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
+						// update enemy bar for attacker
+						if ( !strcmp(hitstats->name, "") )
 						{
-							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+							if ( hitstats->type < KOBOLD ) //Original monster count
+							{
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							}
+							else if ( hitstats->type >= KOBOLD ) //New monsters
+							{
+								updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+							}
+						}
+						else
+						{
+							updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 						}
 					}
-					else
+					if ( hitstats->type == SHOPKEEPER && player >= 0 )
 					{
-						updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+						// reverses shop keeper grudges.
+						swornenemies[SHOPKEEPER][HUMAN] = false;
+						monsterally[SHOPKEEPER][HUMAN] = true;
+						hit.entity->monsterReleaseAttackTarget();
 					}
 				}
 				else
 				{
+					// resists the charm.
 					playSoundEntity(hit.entity, 163, 64); // FailedSpell1V1.ogg
-					if ( parent->behavior == &actPlayer )
+					if ( parent && parent->behavior == &actPlayer )
 					{
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3142], language[3143], MSG_COMBAT);
 					}
 					if ( player >= 0 )
 					{
-						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						//messagePlayerColor(player, color, language[2441]);
+						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						messagePlayerColor(player, color, language[3141]);
 					}
 				}
 			}
