@@ -701,7 +701,8 @@ void drawPartySheet()
 							// ttfPrintText(ttf16, xres - 20, monsterEntryWindow.y + monsterEntryWindow.h / 2 - fontHeight / 2, "<");
 						}
 
-						if ( !shootmode && (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
+						if ( stats[clientnum] && stats[clientnum]->HP > 0 && !shootmode 
+							&& (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE]))) )
 						{
 							bool inBounds = mouseInBounds(monsterEntryWindow.x, monsterEntryWindow.x + monsterEntryWindow.w,
 								monsterEntryWindow.y, monsterEntryWindow.y + monsterEntryWindow.h);
