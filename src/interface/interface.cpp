@@ -1592,7 +1592,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						}
 					}
 
-					if ( optionSelected != ALLY_CMD_CANCEL )
+					if ( optionSelected != ALLY_CMD_CANCEL && disableOption == 0 )
 					{
 						optionPrevious = optionSelected;
 					}
@@ -1601,7 +1601,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					{
 						closeFollowerMenuGUI();
 					}
-					optionSelected = -1;
+					optionSelected = -1; 
 				}
 			}
 			else
@@ -1832,6 +1832,26 @@ void FollowerRadialMenu::drawFollowerMenu()
 			//ttfPrintText(ttf12, xres / 2 - width / 2, yres / 2 - 8, language[3063]);
 		}
 
+		if ( optionSelected == -1 && disableOption == 0 && highlight != -1 )
+		{
+			// in case optionSelected is cleared, but we're still highlighting text (happens on next frame when clicking on disabled option.)
+			if ( highlight == ALLY_CMD_ATTACK_SELECT )
+			{
+				if ( attackCommandOnly(followerStats->type) )
+				{
+					// attack only.
+					disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM);
+				}
+				else
+				{
+					disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+				}
+			}
+			else
+			{
+				disableOption = FollowerMenu.optionDisabledForCreature(skillLVL, followerStats->type, highlight);
+			}
+		}
 
 		if ( disableOption != 0 )
 		{
@@ -1872,7 +1892,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				drawTooltip(&tooltip);
 				std::string requirement = "";
 				std::string current = "";
-				if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected <= ALLY_CMD_END && optionSelected != ALLY_CMD_CANCEL )
+				if ( highlight >= ALLY_CMD_DEFEND && highlight <= ALLY_CMD_END && highlight != ALLY_CMD_CANCEL )
 				{
 					switch ( std::min(disableOption, SKILL_LEVEL_LEGENDARY) )
 					{
