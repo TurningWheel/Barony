@@ -136,7 +136,7 @@ void actItem(Entity* my)
 			{
 				if ( my->skill[10] >= 0 && my->skill[10] < NUMITEMS )
 				{
-					if ( items[my->skill[10]].category == Category::FOOD )
+					if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
 					{
 						monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats());
 					}

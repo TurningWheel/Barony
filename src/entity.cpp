@@ -9557,7 +9557,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		return;
 	}
 
-	list_t* items = nullptr;
+	list_t* itemsList = nullptr;
 	//X and Y in terms of tiles.
 	if ( forcePickupItem != nullptr && forcePickupItem->behavior == &actItem )
 	{
@@ -9567,15 +9567,15 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		}
 		
 		//If this is the first item found, the list needs to be created.
-		if ( !(items) )
+		if ( !(itemsList) )
 		{
-			items = (list_t*)malloc(sizeof(list_t));
-			(items)->first = NULL;
-			(items)->last = NULL;
+			itemsList = (list_t*)malloc(sizeof(list_t));
+			(itemsList)->first = NULL;
+			(itemsList)->last = NULL;
 		}
 
 		//Add the current entity to it.
-		node_t* node2 = list_AddNodeLast(items);
+		node_t* node2 = list_AddNodeLast(itemsList);
 		node2->element = forcePickupItem;
 		node2->deconstructor = &emptyDeconstructor;
 	}
@@ -9583,19 +9583,19 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 	{
 		int tx = x / 16;
 		int ty = y / 16;
-		getItemsOnTile(tx, ty, &items); //Check the tile the monster is on for items.
-		getItemsOnTile(tx - 1, ty, &items); //Check tile to the left.
-		getItemsOnTile(tx + 1, ty, &items); //Check tile to the right.
-		getItemsOnTile(tx, ty - 1, &items); //Check tile up.
-		getItemsOnTile(tx, ty + 1, &items); //Check tile down.
-		getItemsOnTile(tx - 1, ty - 1, &items); //Check tile diagonal up left.
-		getItemsOnTile(tx + 1, ty - 1, &items); //Check tile diagonal up right.
-		getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
-		getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
+		getItemsOnTile(tx, ty, &itemsList); //Check the tile the monster is on for items.
+		getItemsOnTile(tx - 1, ty, &itemsList); //Check tile to the left.
+		getItemsOnTile(tx + 1, ty, &itemsList); //Check tile to the right.
+		getItemsOnTile(tx, ty - 1, &itemsList); //Check tile up.
+		getItemsOnTile(tx, ty + 1, &itemsList); //Check tile down.
+		getItemsOnTile(tx - 1, ty - 1, &itemsList); //Check tile diagonal up left.
+		getItemsOnTile(tx + 1, ty - 1, &itemsList); //Check tile diagonal up right.
+		getItemsOnTile(tx - 1, ty + 1, &itemsList); //Check tile diagonal down left.
+		getItemsOnTile(tx + 1, ty + 1, &itemsList); //Check tile diagonal down right.
 	}
 	node_t* node = nullptr;
 
-	if ( items )
+	if ( itemsList )
 	{
 		/*
 		* Rundown of the function:
@@ -9603,7 +9603,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 		* Add item to inventory.
 		*/
 
-		for ( node = items->first; node != nullptr; node = node->next )
+		for ( node = itemsList->first; node != nullptr; node = node->next )
 		{
 			//Turn the entity into an item.
 			if ( node->element )
@@ -9712,6 +9712,14 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 
 				if ( myStats->type == SLIME )
 				{
+					if ( item->identified )
+					{
+						messagePlayer(monsterAllyIndex, language[3145], items[item->type].name_identified);
+					}
+					else
+					{
+						messagePlayer(monsterAllyIndex, language[3145], items[item->type].name_unidentified);
+					}
 					list_RemoveNode(entity->mynode); // slimes eat the item up.
 				}
 				else if ( shouldWield )
@@ -9808,8 +9816,8 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				}
 			}
 		}
-		list_FreeAll(items);
-		free(items);
+		list_FreeAll(itemsList);
+		free(itemsList);
 	}
 }
 
