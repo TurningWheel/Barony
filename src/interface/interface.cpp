@@ -2473,6 +2473,7 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 		case INSECTOID:
 		case SKELETON:
 		case VAMPIRE:
+		case SLIME:
 			return true;
 			break;
 		default:
@@ -2483,5 +2484,5 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 
 bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 {
-	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractItems(monsterType));
+	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
 }
