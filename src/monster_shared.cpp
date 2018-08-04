@@ -283,6 +283,10 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return LICH_ICE;
 	}
+	else if ( mySprite == 189 || mySprite == 210 )
+	{
+		return SLIME;
+	}
 	return NOTHING;
 }
 
