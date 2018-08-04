@@ -3864,4 +3864,5 @@ for this option. (Required: %s, Current: %s)#
 3142 The charm had no effect on the %s!#
 3143 The charm had no effect on %s!#
 3144 A magical charm seizes your will to fight!#
+3145 The slime envelops and consumes the %s!#
 3149 end#
