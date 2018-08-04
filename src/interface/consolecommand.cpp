@@ -2139,6 +2139,29 @@ void consoleCommand(char* command_str)
 			}
 			secretlevel = (secretlevel == false);
 		}
+		else if ( !strncmp(command_str, "/seteffect ", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+
+			int effect = atoi(&command_str[11]);
+			if ( effect >= NUMEFFECTS || effect < 0 )
+			{
+				return;
+			}
+			else
+			{
+				players[clientnum]->entity->setEffect(effect, true, 500, true);
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
