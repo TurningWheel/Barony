@@ -3858,6 +3858,10 @@ for this option. (Required: %s, Current: %s)#
 3136 Hide Player Nametags#
 3137 The %s is charmed into your service!#
 3138 %s is charmed into your service!#
-3139 The %s loses their will to fight!#
-3140 %s loses their will to fight!#
+3139 The charm seizes the %s's will to fight!#
+3140 The charm seizes %s's will to fight!#
+3141 You resist the effects of the charm!#
+3142 The charm had no effect on the %s!#
+3143 The charm had no effect on %s!#
+3144 A magical charm seizes your will to fight!#
 3149 end#
