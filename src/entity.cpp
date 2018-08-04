@@ -2681,7 +2681,11 @@ void Entity::handleEffects(Stat* myStats)
 		if ( this->char_poison > 150 )   // three seconds
 		{
 			this->char_poison = 0;
-			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
+			int poisonhurt = std::max(3, (myStats->HP / 20));
+			if ( poisonhurt > 3 )
+			{
+				poisonhurt -= rand() % (std::max(1, poisonhurt / 4));
+			}
 			this->modHP(-poisonhurt);
 			if ( myStats->HP <= 0 )
 			{
@@ -2727,9 +2731,18 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		if ( ticks % 120 == 0 )
 		{
-			if ( myStats->HP > 5 )
+			if ( myStats->HP > 5 + (std::max(0, getCON())) ) // CON increases when bleeding stops.
 			{
-				int bleedhurt = 1;
+				int bleedhurt = 1 + myStats->HP / 30;
+				if ( bleedhurt > 1 )
+				{
+					bleedhurt -= rand() % (std::max(1, bleedhurt / 2));
+				}
+				if ( getCON() > 0 )
+				{
+					bleedhurt -= (getCON() / 5);
+				}
+				bleedhurt = std::max(1, bleedhurt);
 				this->modHP(-bleedhurt);
 				this->setObituary(language[1532]);
 				Entity* gib = spawnGib(this);
