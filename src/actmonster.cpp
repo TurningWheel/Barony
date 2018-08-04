@@ -676,7 +676,12 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		{
 			if ( myStats->leader_uid == 0 )
 			{
-				if ( (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS) ) )
+				int allowedFollowers = std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20));
+				if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
+				{
+					allowedFollowers = 25;
+				}
+				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 				{
 					canAlly = true;
 				}
@@ -7429,6 +7434,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					monsterAllySpecialCooldown = -1; // locked out until next floor.
 					serverUpdateEntitySkill(this, 49);
 					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[398], language[397], MSG_COMBAT);
+					if ( players[monsterAllyIndex] && players[monsterAllyIndex]->entity 
+						&& myStats->HP < myStats->MAXHP && rand() % 3 == 0 )
+					{
+						players[monsterAllyIndex]->entity->increaseSkill(PRO_LEADERSHIP);
+					}
 				}
 			}
 			break;
@@ -8170,13 +8180,13 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 
 	myStats->HUNGER = std::min(myStats->HUNGER, 1500); // range checking max of 1500 hunger points.
 
+	Entity* leader = monsterAllyGetPlayerLeader();
 	if ( puking )
 	{
 		heal -= 5;
 		if ( rand() % 4 == 0 )
 		{
 			// angry at owner.
-			Entity* leader = monsterAllyGetPlayerLeader();
 			if ( leader )
 			{
 				monsterAcquireAttackTarget(*leader, MONSTER_STATE_ATTACK);
@@ -8184,6 +8194,11 @@ bool Entity::monsterConsumeFoodEntity(Entity* food, Stat* myStats)
 		}
 	}
 	this->modHP(heal);
+
+	if ( !puking && leader && rand() % 2 == 0 )
+	{
+		leader->increaseSkill(PRO_LEADERSHIP);
+	}
 
 	if ( buffDuration > 0 )
 	{
