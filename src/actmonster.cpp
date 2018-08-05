@@ -4436,7 +4436,7 @@ timeToGoAgain:
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 					if ( my->monsterAllyState == ALLY_STATE_MOVETO )
 					{
-						messagePlayer(0, "Couldn't reach, retrying.");
+						//messagePlayer(0, "Couldn't reach, retrying.");
 						if ( target )
 						{
 							if ( my->monsterAllySetInteract() )
