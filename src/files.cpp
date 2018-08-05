@@ -1471,7 +1471,7 @@ int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int* check
 			std::size_t darkmapChanceFound = mapName.find(" darkmap%: ");
 			std::size_t minotaurChanceFound = mapName.find(" minotaur%: ");
 			std::string parameterStr = "";
-			std::tuple<int, int, int> mapParameters = { -1, -1, -1 };
+			std::tuple<int, int, int> mapParameters = std::make_tuple(-1, -1, -1);
 			if ( secretChanceFound != std::string::npos )
 			{
 				// found a percentage for secret levels to spawn.
