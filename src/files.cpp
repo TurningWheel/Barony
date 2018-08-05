@@ -409,7 +409,7 @@ bool completePath(char *dest, const char * const filename, const char *base) {
 #ifdef WINDOWS
 	// Already absolute (drive letter in path)
 	if ( filename[1] == ':' ) {
-		strncpy(dest, filename, 1024);
+		strncpy(dest, filename, PATH_MAX);
 		return true;
 	}
 #endif

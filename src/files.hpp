@@ -17,20 +17,23 @@
 #include <cstdio>
 #include <dirent.h>
 
+extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
+extern char outputdir[PATH_MAX];
 void glLoadTexture(SDL_Surface* image, int texnum);
 SDL_Surface* loadImage(char* filename);
 voxel_t* loadVoxel(char* filename2);
 int loadMap(const char* filename, map_t* destmap, list_t* entlist, list_t* creatureList, int *checkMapHash = nullptr);
 int loadConfig(char* filename);
+int loadDefaultConfig();
 int saveMap(const char* filename);
 char* readFile(char* filename);
 std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles);
 FILE *openDataFile(const char *const filename, const char * const mode);
 DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
-bool completePath(char *dest, const char * const path);
+bool completePath(char *dest, const char * const path, const char *base = datadir);
+void openLogFile();
 std::vector<std::string> getLinesFromDataFile(std::string filename);
-extern char datadir[PATH_MAX]; //PATH_MAX as defined in main.hpp -- maybe define in Config.hpp?
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap);
 int physfsLoadMapFile(int levelToLoad, Uint32 seed, bool useRandSeed, int *checkMapHash = nullptr);
 std::list<std::string> physfsGetFileNamesInDirectory(const char* dir);
