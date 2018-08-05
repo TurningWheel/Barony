@@ -4593,7 +4593,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// leaderboards window
-
+#ifdef STEAMWORKS
 	if ( score_leaderboard_window != 0 && g_SteamLeaderboards )
 	{
 		int numEntriesToShow = 10;
@@ -4765,7 +4765,7 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
-
+#endif
 	// statistics window
 	if ( score_window || score_leaderboard_window == 3 )
 	{
@@ -4954,7 +4954,9 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
+#ifdef STEAMWORKS
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], g_SteamLeaderboards->downloadedTags[g_SteamLeaderboards->currentLeaderBoardIndex][TAG_TOTAL_SCORE]);
+#endif // STEAMWORKS
 			}
 
 			// print character stats
@@ -12315,7 +12317,7 @@ bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 	drawRect(&pos, btnColor, 64);
 	return clicked;
 }
-
+#ifdef STEAMWORKS
 void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 {
 	char fullpath[PATH_MAX] = "";
@@ -12335,3 +12337,4 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 		}
 	}
 }
+#endif // STEAMWORKS
