@@ -197,7 +197,7 @@ void drawMinimap()
 	// draw player pings
 	if ( !minimapPings.empty() )
 	{
-		for ( std::vector<MinimapPing>::const_iterator it = minimapPings.begin(); it != minimapPings.end();)
+		for ( std::vector<MinimapPing>::iterator it = minimapPings.begin(); it != minimapPings.end();)
 		{
 			MinimapPing ping = *it;
 			switch ( ping.player )
