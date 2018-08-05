@@ -2315,7 +2315,7 @@ int main(int argc, char** argv)
 		strncpy(datadir, BASE_DATA_DIR, datadirsz);
 		datadir[datadirsz] = '\0';
 #ifdef WINDOWS
-		outputdir = "./";
+		strcpy(outputdir, "./");
 #else
 		char *basepath = getenv("HOME");
 		snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);

@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "files.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "menu.hpp"
@@ -538,8 +539,11 @@ void saveAllScores(const std::string& scoresfilename)
 	FILE* fp;
 	int c;
 
+	char path[PATH_MAX] = "";
+	completePath(path, scoresfilename.c_str(), outputdir);
+
 	// open file
-	if ( (fp = fopen(scoresfilename.c_str(), "wb")) == NULL )
+	if ( (fp = fopen(path, "wb")) == NULL )
 	{
 		printlog("error: failed to save '%s!'\n", scoresfilename.c_str());
 		return;
@@ -758,6 +762,8 @@ void loadAllScores(const std::string& scoresfilename)
 {
 	FILE* fp;
 	Uint32 c, i;
+	char path[PATH_MAX] = "";
+	completePath(path, scoresfilename.c_str(), outputdir);
 
 	// clear top scores
 	if ( scoresfilename.compare(SCORESFILE) == 0 )
@@ -770,7 +776,7 @@ void loadAllScores(const std::string& scoresfilename)
 	}
 
 	// open file
-	if ( (fp = fopen(scoresfilename.c_str(), "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		return;
 	}
@@ -1144,7 +1150,8 @@ int saveGame(int saveIndex)
 	node_t* node;
 	FILE* fp;
 	Sint32 c;
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 
 	// open file
 	if ( !intro )
@@ -1154,14 +1161,15 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
-	if ( (fp = fopen(savefile, "wb")) == NULL )
+	if ( (fp = fopen(path, "wb")) == NULL )
 	{
 		printlog("warning: failed to save '%s'!\n", savefile);
 		return 1;
@@ -1546,12 +1554,13 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
 	// now we save the follower information
 	if ( (fp = fopen(savefile, "wb")) == NULL )
@@ -1803,18 +1812,20 @@ int loadGame(int player, int saveIndex)
 	FILE* fp;
 	int c;
 
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to load '%s'!\n", savefile);
 		return 1;
@@ -2242,18 +2253,20 @@ list_t* loadGameFollowers(int saveIndex)
 	FILE* fp;
 	int c;
 
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to load '%s'!\n", savefile);
 		return NULL;
@@ -2438,16 +2451,19 @@ list_t* loadGameFollowers(int saveIndex)
 
 int deleteSaveGame(int gametype, int saveIndex)
 {
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 	if ( gametype == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
-	if (access(savefile, F_OK) != -1)
+	completePath(path, savefile, outputdir);
+
+	if (access(path, F_OK) != -1)
 	{
 		printlog("deleting savegame in '%s'...\n", savefile);
 		int result = remove(savefile);
@@ -2468,7 +2484,9 @@ int deleteSaveGame(int gametype, int saveIndex)
 	{
 		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
 	}
-	if (access(savefile, F_OK) != -1)
+	completePath(path, savefile, outputdir);
+
+	if (access(path, F_OK) != -1)
 	{
 		printlog("deleting savegame in '%s'...\n", savefile);
 		int result = remove(savefile);
@@ -2497,17 +2515,19 @@ int deleteSaveGame(int gametype, int saveIndex)
 
 bool saveGameExists(bool singleplayer, int saveIndex)
 {
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
-	if ( access(savefile, F_OK ) == -1 )
+	if ( access(path, F_OK ) == -1 )
 	{
 		return false;
 	}
 	else
 	{
 		FILE* fp;
-		if ( (fp = fopen(savefile, "rb")) == NULL )
+		if ( (fp = fopen(path, "rb")) == NULL )
 		{
 			return false;
 		}
@@ -2549,11 +2569,13 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	int mul, plnum, dungeonlevel;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to check name in '%s'!\n", savefile);
 		free(tempstr);
@@ -2718,11 +2740,13 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	Uint32 gameKey;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to get map seed out of '%s'!\n", savefile);
 		return 0;
@@ -2766,11 +2790,13 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	int mul;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to get game type out of '%s'!\n", savefile);
 		return 0;
@@ -2815,11 +2841,13 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	int clientnum;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to get clientnum out of '%s'!\n", savefile);
 		return 0;
@@ -2865,11 +2893,13 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	Uint32 seed;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		printlog("error: failed to get map seed out of '%s'!\n", savefile);
 		return 0;

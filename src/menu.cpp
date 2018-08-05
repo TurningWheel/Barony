@@ -12325,7 +12325,7 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 		gamemods_modPreload = true;
 		bool addToPath = !gamemodsIsPathInMountedFiles(fullpath);
 		if ( PHYSFS_mount(fullpath, NULL, 0) )
-			{
+		{
 			reloadLanguage();
 			if ( addToPath )
 			{
