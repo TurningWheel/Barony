@@ -950,6 +950,7 @@ int loadDefaultConfig()
 
 int saveConfig(char* filename)
 {
+	char path[PATH_MAX];
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	FILE* fp;
@@ -967,8 +968,10 @@ int saveConfig(char* filename)
 		strcat(filename, ".cfg");
 	}
 
+	completePath(path, filename);
+
 	// open the config file
-	if ( (fp = fopen(filename, "wb")) == NULL )
+	if ( (fp = fopen(path, "wb")) == NULL )
 	{
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
 		return 1;
@@ -1192,13 +1195,6 @@ int saveConfig(char* filename)
 		free(filename);
 	}
 	return 0;
-}
-
-int saveDefaultConfig()
-{
-	char path[PATH_MAX];
-	completePath(path, "default.cfg", outputdir);
-	return saveConfig(path);
 }
 
 /*-------------------------------------------------------------------------------

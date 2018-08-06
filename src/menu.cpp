@@ -12213,7 +12213,7 @@ bool gamemodsClearAllMountedPaths()
 		std::string line = *i;
 		if ( line.compare("./") != 0 ) // don't unmount the base ./ directory
 		{
-			if ( PHYSFS_unmount(*i) == NULL )
+			if ( PHYSFS_unmount(*i) == 0 )
 			{
 				success = false;
 				printlog("[%s] unsuccessfully removed from the search path.\n", line.c_str());
