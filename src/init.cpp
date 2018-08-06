@@ -106,7 +106,12 @@ int initApp(char* title, int fullscreen)
 	{
 		printlog("[PhysFS]: successfully initialized, returned: %d", PHYSFS_getLastErrorCode());
 	}
-	if ( PHYSFS_mount("./", NULL, 1) )
+	if ( !PHYSFS_mount(datadir, NULL, 1) )
+	{
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", datadir, PHYSFS_getLastErrorCode());
+		return 13;
+	}
+	if ( PHYSFS_mount(outputdir, NULL, 1) )
 	{
 		printlog("[PhysFS]: successfully mounted base ./ folder");
 		if ( PHYSFS_setWriteDir("./") )
@@ -126,7 +131,7 @@ int initApp(char* title, int fullscreen)
 	}
 	else
 	{
-		printlog("[PhysFS]: unsuccessfully mounted base ./ folder. Error code: %d", PHYSFS_getLastErrorCode());
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", outputdir, PHYSFS_getLastErrorCode());
 		return 13;
 	}
 
