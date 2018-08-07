@@ -114,7 +114,7 @@ int initApp(char* title, int fullscreen)
 	if ( PHYSFS_mount(outputdir, NULL, 1) )
 	{
 		printlog("[PhysFS]: successfully mounted base ./ folder");
-		if ( PHYSFS_setWriteDir("./") )
+		if ( PHYSFS_setWriteDir(outputdir) )
 		{
 			PHYSFS_mkdir("savegames");
 			if ( PHYSFS_mkdir("mods") )
