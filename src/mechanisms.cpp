@@ -593,3 +593,40 @@ list_t* Entity::getPowerableNeighbors()
 
 	return return_val;
 }
+
+void actSoundSource(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actSoundSource();
+}
+
+void Entity::actSoundSource()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( circuit_status == CIRCUIT_ON )
+	{
+		// received power
+		if ( !soundSourceFired )
+		{
+			soundSourceFired = 1;
+			if ( soundSourceToPlay >= 0 && soundSourceToPlay < numsounds )
+			{
+				playSoundEntity(this, soundSourceToPlay, soundSourceVolume);
+			}
+		}
+	}
+	else if ( circuit_status == CIRCUIT_OFF )
+	{
+		if ( soundSourceFired && !soundSourceLatchOn )
+		{
+			soundSourceFired = 0;
+		}
+	}
+}

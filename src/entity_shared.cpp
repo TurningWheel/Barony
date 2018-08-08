@@ -106,6 +106,15 @@ int checkSpriteType(Sint32 sprite)
 		// floor decoration
 		return 13;
 		break;
+	case 130:
+		// sound source
+		return 14;
+	case 131:
+		// light source
+		return 15;
+	case 132:
+		// text source
+		return 16;
 	default:
 		return 0;
 		break;
@@ -694,7 +703,9 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"PISTONS",
 	"FLOOR DECORATION",
 	"TELEPORT LOCATION",
-	"ENDEND PORTAL"
+	"ENDEND PORTAL",
+	"SOUND SOURCE",
+	"LIGHT SOURCE"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1343,6 +1354,67 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->floorDecorationModel = 0;
 			entityNew->floorDecorationRotation = 0;
 			entityNew->floorDecorationHeightOffset = 0;
+		}
+	}
+	else if ( spriteType == 14 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->soundSourceToPlay = entityToCopy->soundSourceToPlay;
+			entityNew->soundSourceVolume = entityToCopy->soundSourceVolume;
+			entityNew->soundSourceLatchOn = entityToCopy->soundSourceLatchOn;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->soundSourceToPlay = 0;
+			entityNew->soundSourceVolume = 0;
+			entityNew->soundSourceLatchOn = 0;
+		}
+	}
+	else if ( spriteType == 15 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->lightSourceRequirePower = entityToCopy->lightSourceRequirePower;
+			entityNew->lightSourceBrightness = entityToCopy->lightSourceBrightness;
+			entityNew->lightSourceInvertPower = entityToCopy->lightSourceInvertPower;
+			entityNew->lightSourceLatchOn = entityToCopy->lightSourceLatchOn;
+			entityNew->lightSourceRadius = entityToCopy->lightSourceRadius;
+			entityNew->lightSourceFlicker = entityToCopy->lightSourceFlicker;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->lightSourceRequirePower = 0;
+			entityNew->lightSourceBrightness = 128;
+			entityNew->lightSourceInvertPower = 0;
+			entityNew->lightSourceLatchOn = 0;
+			entityNew->lightSourceRadius = 5;
+			entityNew->lightSourceFlicker = 0;
+		}
+	}
+	else if ( spriteType == 16 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->textSourceColorRGB = entityToCopy->textSourceColorRGB;
+			entityNew->textSource1 = entityToCopy->textSource1;
+			entityNew->textSource2 = entityToCopy->textSource2;
+			entityNew->textSource3 = entityToCopy->textSource3;
+			entityNew->textSourceBegin = entityToCopy->textSourceBegin;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->textSourceColorRGB = 0xFFFFFFFF;
+			entityNew->textSource1 = 0;
+			entityNew->textSource2 = 0;
+			entityNew->textSource3 = 0;
+			entityNew->textSourceBegin = 0;
 		}
 	}
 
