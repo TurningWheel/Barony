@@ -989,7 +989,7 @@ int loadTilePalettes()
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
@@ -1093,7 +1093,7 @@ int saveTilePalettes()
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
@@ -1273,6 +1273,15 @@ int main(int argc, char** argv)
 	Stat* spriteStats = nullptr;
 
 	processCommandLine(argc, argv);
+
+#ifdef WINDOWS
+	strcpy(outputdir, "./");
+#else
+	char *basepath = getenv("HOME");
+	snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+	if ( access(outputdir, F_OK) == -1 )
+		mkdir(outputdir, 0777);
+#endif
 
 	// load default language file (english)
 	if ( loadLanguage("en") )

@@ -395,31 +395,31 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 }
 
 
-bool completePath(char *dest, const char * const filename) {
+bool completePath(char *dest, const char * const filename, const char *base) {
 	if (!(filename && filename[0])) {
 		return false;
 	}
 
 	// Already absolute
 	if (filename[0] == '/') {
-		strncpy(dest, filename, 1024);
+		strncpy(dest, filename, PATH_MAX);
 		return true;
 	}
 
 #ifdef WINDOWS
 	// Already absolute (drive letter in path)
 	if ( filename[1] == ':' ) {
-		strncpy(dest, filename, 1024);
+		strncpy(dest, filename, PATH_MAX);
 		return true;
 	}
 #endif
 
-	snprintf(dest, 1024, "%s/%s", datadir, filename);
+	snprintf(dest, PATH_MAX, "%s/%s", base, filename);
 	return true;
 }
 
 FILE* openDataFile(const char * const filename, const char * const mode) {
-	char path[1024];
+	char path[PATH_MAX];
 	completePath(path, filename);
 	FILE * result = fopen(path, mode);
 	if (!result) {
@@ -429,7 +429,7 @@ FILE* openDataFile(const char * const filename, const char * const mode) {
 }
 
 DIR* openDataDir(const char * const name) {
-	char path[1024];
+	char path[PATH_MAX];
 	completePath(path, name);
 	DIR * result = opendir(path);
 	if (!result) {
@@ -440,9 +440,16 @@ DIR* openDataDir(const char * const name) {
 
 
 bool dataPathExists(const char * const path) {
-	char full_path[1024];
+	char full_path[PATH_MAX];
 	completePath(full_path, path);
 	return access(full_path, F_OK) != -1;
+}
+
+void openLogFile() {
+	char path[PATH_MAX];
+	completePath(path, "log.txt", outputdir);
+
+	logfile = freopen(path, "wb" /*or "wt"*/, stderr);
 }
 
 
@@ -457,7 +464,7 @@ bool dataPathExists(const char * const path) {
 
 SDL_Surface* loadImage(char* filename)
 {
-	char full_path[1024];
+	char full_path[PATH_MAX];
 	completePath(full_path, filename);
 	SDL_Surface* originalSurface;
 

@@ -329,7 +329,7 @@ else()
 endif()
 target_link_libraries(barony ${OPENGL_LIBRARIES})
 target_link_libraries(barony ${THREADS_LIBRARIES})
-target_link_libraries(barony -lm)
+target_link_libraries(barony -lm -lc)
 if( NOT WIN32 AND NOT APPLE)
   #Remember, Windows and Mac aren't using find_package for FMOD and PNG.
   target_link_libraries(barony ${PNG_LIBRARY})
@@ -419,7 +419,7 @@ else()
 endif()
 target_link_libraries(${EDITOR_EXE_NAME} ${OPENGL_LIBRARIES})
 target_link_libraries(${EDITOR_EXE_NAME} ${THREADS_LIBRARIES})
-target_link_libraries(${EDITOR_EXE_NAME} -lm)
+target_link_libraries(${EDITOR_EXE_NAME} -lm -lc)
 # We need to link to Winsock if we're on Windows
 if( NOT WIN32 AND NOT APPLE)
   #Remember, Windows and Mac aren't using find_package for FMOD and PNG.
