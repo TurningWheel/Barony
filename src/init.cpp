@@ -67,7 +67,7 @@ int initApp(char* title, int fullscreen)
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	for (c = 0; c < NUM_JOY_STATUS; ++c)
@@ -106,16 +106,23 @@ int initApp(char* title, int fullscreen)
 	{
 		printlog("[PhysFS]: successfully initialized, returned: %d", PHYSFS_getLastErrorCode());
 	}
-	if ( PHYSFS_mount("./", NULL, 1) )
+	if ( !PHYSFS_mount(datadir, NULL, 1) )
 	{
-		printlog("[PhysFS]: successfully mounted base ./ folder");
-		if ( PHYSFS_setWriteDir("./") )
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", datadir, PHYSFS_getLastErrorCode());
+		return 13;
+	}
+	if ( PHYSFS_mount(outputdir, NULL, 1) )
+	{
+		printlog("[PhysFS]: successfully mounted output %s folder", outputdir);
+		if ( PHYSFS_setWriteDir(outputdir) )
 		{
 			PHYSFS_mkdir("savegames");
 			if ( PHYSFS_mkdir("mods") )
 			{
-				PHYSFS_setWriteDir("./mods/");
-				printlog("[PhysFS]: successfully set write folder ./mods/");
+				std::string path = outputdir;
+				path.append(PHYSFS_getDirSeparator()).append("mods");
+				PHYSFS_setWriteDir(path.c_str());
+				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
 			}
 			else
 			{
@@ -126,7 +133,7 @@ int initApp(char* title, int fullscreen)
 	}
 	else
 	{
-		printlog("[PhysFS]: unsuccessfully mounted base ./ folder. Error code: %d", PHYSFS_getLastErrorCode());
+		printlog("[PhysFS]: unsuccessfully mounted base %s folder. Error code: %d", outputdir, PHYSFS_getLastErrorCode());
 		return 13;
 	}
 
@@ -622,7 +629,7 @@ int loadLanguage(char* lang)
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename
@@ -2543,7 +2550,7 @@ bool loadItemLists()
 	// open log file
 	if ( !logfile )
 	{
-		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+		openLogFile();
 	}
 
 	// compose filename

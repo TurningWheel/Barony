@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "files.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "menu.hpp"
@@ -538,8 +539,11 @@ void saveAllScores(const std::string& scoresfilename)
 	FILE* fp;
 	int c;
 
+	char path[PATH_MAX] = "";
+	completePath(path, scoresfilename.c_str(), outputdir);
+
 	// open file
-	if ( (fp = fopen(scoresfilename.c_str(), "wb")) == NULL )
+	if ( (fp = fopen(path, "wb")) == NULL )
 	{
 		printlog("error: failed to save '%s!'\n", scoresfilename.c_str());
 		return;
@@ -758,6 +762,8 @@ void loadAllScores(const std::string& scoresfilename)
 {
 	FILE* fp;
 	Uint32 c, i;
+	char path[PATH_MAX] = "";
+	completePath(path, scoresfilename.c_str(), outputdir);
 
 	// clear top scores
 	if ( scoresfilename.compare(SCORESFILE) == 0 )
@@ -770,7 +776,7 @@ void loadAllScores(const std::string& scoresfilename)
 	}
 
 	// open file
-	if ( (fp = fopen(scoresfilename.c_str(), "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
 		return;
 	}
@@ -1144,7 +1150,8 @@ int saveGame(int saveIndex)
 	node_t* node;
 	FILE* fp;
 	Sint32 c;
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 
 	// open file
 	if ( !intro )
@@ -1154,16 +1161,17 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
-	if ( (fp = fopen(savefile, "wb")) == NULL )
+	if ( (fp = fopen(path, "wb")) == NULL )
 	{
-		printlog("warning: failed to save '%s'!\n", savefile);
+		printlog("warning: failed to save '%s'!\n", path);
 		return 1;
 	}
 
@@ -1546,17 +1554,18 @@ int saveGame(int saveIndex)
 
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
 	// now we save the follower information
-	if ( (fp = fopen(savefile, "wb")) == NULL )
+	if ( (fp = fopen(path, "wb")) == NULL )
 	{
-		printlog("warning: failed to save '%s'!\n", savefile);
+		printlog("warning: failed to save '%s'!\n", path);
 		return 1;
 	}
 	fprintf(fp, "BARONYSAVEGAMEFOLLOWERS");
@@ -1803,20 +1812,22 @@ int loadGame(int player, int saveIndex)
 	FILE* fp;
 	int c;
 
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to load '%s'!\n", savefile);
+		printlog("error: failed to load '%s'!\n", path);
 		return 1;
 	}
 
@@ -1825,7 +1836,7 @@ int loadGame(int player, int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 1;
 	}
@@ -1835,7 +1846,7 @@ int loadGame(int player, int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 1;
 	}
@@ -2242,20 +2253,22 @@ list_t* loadGameFollowers(int saveIndex)
 	FILE* fp;
 	int c;
 
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 	if ( multiplayer == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), PATH_MAX - 1);
 	}
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to load '%s'!\n", savefile);
+		printlog("error: failed to load '%s'!\n", path);
 		return NULL;
 	}
 
@@ -2264,7 +2277,7 @@ list_t* loadGameFollowers(int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAMEFOLLOWERS"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAMEFOLLOWERS", strlen("BARONYSAVEGAMEFOLLOWERS")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return NULL;
 	}
@@ -2274,7 +2287,7 @@ list_t* loadGameFollowers(int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if version number returned is invalid, abort
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return nullptr;
 	}
@@ -2438,22 +2451,25 @@ list_t* loadGameFollowers(int saveIndex)
 
 int deleteSaveGame(int gametype, int saveIndex)
 {
-	char savefile[64] = "";
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
 	if ( gametype == SINGLE )
 	{
-		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(true, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
 	else
 	{
-		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), 63);
+		strncpy(savefile, setSaveGameFileName(false, false, saveIndex).c_str(), PATH_MAX - 1);
 	}
-	if (access(savefile, F_OK) != -1)
+	completePath(path, savefile, outputdir);
+
+	if (access(path, F_OK) != -1)
 	{
-		printlog("deleting savegame in '%s'...\n", savefile);
-		int result = remove(savefile);
+		printlog("deleting savegame in '%s'...\n", path);
+		int result = remove(path);
 		if (result)
 		{
-			printlog("warning: failed to delete savegame in '%s'!\n", savefile);
+			printlog("warning: failed to delete savegame in '%s'!\n", path);
 #ifdef _MSC_VER
 			printlog(strerror(errno));
 #endif
@@ -2468,13 +2484,15 @@ int deleteSaveGame(int gametype, int saveIndex)
 	{
 		strncpy(savefile, setSaveGameFileName(false, true, saveIndex).c_str(), 63);
 	}
-	if (access(savefile, F_OK) != -1)
+	completePath(path, savefile, outputdir);
+
+	if (access(path, F_OK) != -1)
 	{
-		printlog("deleting savegame in '%s'...\n", savefile);
-		int result = remove(savefile);
+		printlog("deleting savegame in '%s'...\n", path);
+		int result = remove(path);
 		if (result)
 		{
-			printlog("warning: failed to delete savegame in '%s'!\n", savefile);
+			printlog("warning: failed to delete savegame in '%s'!\n", path);
 #ifdef _MSC_VER
 			printlog(strerror(errno));
 #endif
@@ -2497,17 +2515,19 @@ int deleteSaveGame(int gametype, int saveIndex)
 
 bool saveGameExists(bool singleplayer, int saveIndex)
 {
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
-	if ( access(savefile, F_OK ) == -1 )
+	if ( access(path, F_OK ) == -1 )
 	{
 		return false;
 	}
 	else
 	{
 		FILE* fp;
-		if ( (fp = fopen(savefile, "rb")) == NULL )
+		if ( (fp = fopen(path, "rb")) == NULL )
 		{
 			return false;
 		}
@@ -2549,13 +2569,15 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	int mul, plnum, dungeonlevel;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to check name in '%s'!\n", savefile);
+		printlog("error: failed to check name in '%s'!\n", path);
 		free(tempstr);
 		return NULL;
 	}
@@ -2565,7 +2587,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		free(tempstr);
 		return NULL;
@@ -2576,7 +2598,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		free(tempstr);
 		return nullptr;
@@ -2672,7 +2694,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	char timestamp[128] = "";
 #ifdef WINDOWS
 	struct _stat result;
-	if ( _stat(savefile, &result) == 0 )
+	if ( _stat(path, &result) == 0 )
 	{
 		struct tm *tm = localtime(&result.st_mtime);
 		if ( tm )
@@ -2682,7 +2704,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	}
 #else
 	struct stat result;
-	if ( stat(savefile, &result) == 0 )
+	if ( stat(path, &result) == 0 )
 	{
 		struct tm *tm = localtime(&result.st_mtime);
 		if ( tm )
@@ -2718,13 +2740,15 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	Uint32 gameKey;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to get map seed out of '%s'!\n", savefile);
+		printlog("error: failed to get map seed out of '%s'!\n", path);
 		return 0;
 	}
 
@@ -2733,7 +2757,7 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2742,7 +2766,7 @@ Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2766,13 +2790,15 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	int mul;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to get game type out of '%s'!\n", savefile);
+		printlog("error: failed to get game type out of '%s'!\n", path);
 		return 0;
 	}
 
@@ -2781,7 +2807,7 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2790,7 +2816,7 @@ int getSaveGameType(bool singleplayer, int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2815,13 +2841,15 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	int clientnum;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to get clientnum out of '%s'!\n", savefile);
+		printlog("error: failed to get clientnum out of '%s'!\n", path);
 		return 0;
 	}
 
@@ -2830,7 +2858,7 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2839,7 +2867,7 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2865,13 +2893,15 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 {
 	FILE* fp;
 	Uint32 seed;
-	char savefile[64] = "";
-	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), 63);
+	char savefile[PATH_MAX] = "";
+	char path[PATH_MAX] = "";
+	strncpy(savefile, setSaveGameFileName(singleplayer, false, saveIndex).c_str(), PATH_MAX - 1);
+	completePath(path, savefile, outputdir);
 
 	// open file
-	if ( (fp = fopen(savefile, "rb")) == NULL )
+	if ( (fp = fopen(path, "rb")) == NULL )
 	{
-		printlog("error: failed to get map seed out of '%s'!\n", savefile);
+		printlog("error: failed to get map seed out of '%s'!\n", path);
 		return 0;
 	}
 
@@ -2880,7 +2910,7 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -2889,7 +2919,7 @@ Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex)
 	if ( versionNumber == -1 )
 	{
 		// if getSavegameVersion returned -1, abort.
-		printlog("error: '%s' is corrupt!\n", savefile);
+		printlog("error: '%s' is corrupt!\n", path);
 		fclose(fp);
 		return 0;
 	}
@@ -3359,16 +3389,16 @@ bool steamLeaderboardSetScore(score_t* score)
 
 	tagWidth = 8;
 	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= score->stats->type;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= (score->stats->sex) << tagWidth * 1;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= (score->stats->appearance) << tagWidth * 2;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= (score->classnum) << tagWidth * 3;
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= (score->stats->sex) << (tagWidth * 1);
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= (score->stats->appearance) << (tagWidth * 2);
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_RACESEXAPPEARANCECLASS] |= (score->classnum) << (tagWidth * 3);
 
 	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->victory);
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->dungeonlevel) << tagWidth;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductPenniless) << tagWidth * 2;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductFoodless) << tagWidth * 2 + 1;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductVegetarian) << tagWidth * 2 + 2;
-	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductIlliterate) << tagWidth * 2 + 3;
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->dungeonlevel) << (tagWidth);
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductPenniless) << (tagWidth * 2);
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductFoodless) << (tagWidth * 2 + 1);
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductVegetarian) << (tagWidth * 2 + 2);
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] |= (score->conductIlliterate) << (tagWidth * 2 + 3);
 
 	tag = TAG_CONDUCT_2W_1;
 	tagWidth = 16;
