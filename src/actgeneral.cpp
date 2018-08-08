@@ -493,3 +493,17 @@ void actFloorDecoration(Entity* my)
 		my->flags[PASSABLE] = true;
 	}
 }
+
+void actTextSource(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	my->actTextSource();
+}
+
+void Entity::actTextSource()
+{
+
+}

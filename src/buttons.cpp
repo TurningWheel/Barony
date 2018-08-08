@@ -1926,6 +1926,73 @@ void buttonSpriteProperties(button_t* my)
 			suby2 = yres / 2 + 85;
 			strcpy(subtext, "Floor Decoration Model Properties:");
 			break;
+		case 14:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->soundSourceToPlay));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->soundSourceVolume));
+			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->soundSourceLatchOn));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 18;
+			subx1 = xres / 2 - 230;
+			subx2 = xres / 2 + 230;
+			suby1 = yres / 2 - 85;
+			suby2 = yres / 2 + 85;
+			strcpy(subtext, "Sound Source Properties:");
+			break;
+		case 15:
+			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->lightSourceRequirePower));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->lightSourceBrightness));
+			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->lightSourceInvertPower));
+			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->lightSourceLatchOn));
+			snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity->lightSourceRadius));
+			snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->lightSourceFlicker));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 19;
+			subx1 = xres / 2 - 200;
+			subx2 = xres / 2 + 200;
+			suby1 = yres / 2 - 120;
+			suby2 = yres / 2 + 120;
+			strcpy(subtext, "Light Source Properties:");
+			break;
+		case 16:
+		{
+			snprintf(spriteProperties[0], 9, "%d", static_cast<int>(selectedEntity->textSourceColorRGB));
+			//snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->textSource1));
+			//snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->textSource2));
+			//snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->textSource3));
+			char buf[240] = "";
+			int totalChars = 0;
+			for ( int i = 4; i < 64; ++i )
+			{
+				if ( selectedEntity->skill[i] != 0 )
+				{
+					for ( int c = 0; c < 4; ++c )
+					{
+						buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+						++totalChars;
+					}
+				}
+			}
+			buf[totalChars] = '\0';
+			strncpy(spriteProperties[1], buf, 127);
+			strncpy(spriteProperties[2], buf + 128, 112);
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 20;
+			subx1 = xres / 2 - 200;
+			subx2 = xres / 2 + 200;
+			suby1 = yres / 2 - 140;
+			suby2 = yres / 2 + 140;
+			strcpy(subtext, "Text Source Properties:");
+			break;
+		}
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -2774,10 +2841,65 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->floorDecorationRotation = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->floorDecorationHeightOffset = (Sint32)atoi(spriteProperties[2]);
 				break;
+			case 14: //sound source
+				selectedEntity->soundSourceToPlay = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->soundSourceVolume = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->soundSourceLatchOn = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 15: //light source
+				selectedEntity->lightSourceRequirePower = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->lightSourceBrightness = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->lightSourceInvertPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->lightSourceLatchOn = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->lightSourceRadius = (Sint32)atoi(spriteProperties[4]);
+				selectedEntity->lightSourceFlicker = (Sint32)atoi(spriteProperties[5]);
+				break;
+			case 16: // text source
+			{
+				selectedEntity->textSourceColorRGB = (Sint32)atoi(spriteProperties[0]);
+				//selectedEntity->textSource1 = (Sint32)atoi(spriteProperties[1]);
+				//selectedEntity->textSource2 = (Sint32)atoi(spriteProperties[2]);
+				//selectedEntity->textSource3 = (Sint32)atoi(spriteProperties[3]);
+				if ( spriteProperties[1][0] != 0 )
+				{
+					int totalChars = 0;
+					char checkChr = 'a';
+					for ( int i = 4; i < 64 && checkChr != '\0'; ++i )
+					{
+						selectedEntity->skill[i] = 0;
+						for ( int c = 0; c < 4; ++c )
+						{
+							if ( totalChars == 127 )
+							{
+								selectedEntity->skill[i] |= '\0' << (c * 8);
+								--totalChars;
+							}
+							else if ( totalChars > 127 )
+							{
+								selectedEntity->skill[i] |= (spriteProperties[2][totalChars - 128]) << (c * 8);
+							}
+							else
+							{
+								selectedEntity->skill[i] |= (spriteProperties[1][totalChars]) << (c * 8);
+							}
+							checkChr = (selectedEntity->skill[i] >> (c * 8)) & 0xFF;
+							++totalChars;
+						}
+					}
+				}
+				break;
+			}
 			default:
 				break;
 		}
-		strcpy(message, "                 Modified sprite properties.");
+		if ( spriteType == 16 )
+		{
+			strcpy(message, spriteProperties[1]);
+		}
+		else
+		{
+			strcpy(message, "                 Modified sprite properties.");
+		}
 		messagetime = 60;
 	}
 
