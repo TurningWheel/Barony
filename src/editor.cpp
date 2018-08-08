@@ -18,7 +18,7 @@
 #include "interface/interface.hpp"
 #include "files.hpp"
 #include "init.hpp"
-
+#include <sys/stat.h>
 #define EDITOR
 
 #ifdef STEAMWORKS
