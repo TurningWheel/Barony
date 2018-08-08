@@ -968,7 +968,7 @@ int saveConfig(char* filename)
 		strcat(filename, ".cfg");
 	}
 
-	completePath(path, filename);
+	completePath(path, filename, outputdir);
 
 	// open the config file
 	if ( (fp = fopen(path, "wb")) == NULL )

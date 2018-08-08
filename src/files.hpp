@@ -45,7 +45,7 @@ void physfsReloadSounds(bool reloadAll);
 void physfsReloadBooks();
 bool physfsSearchBooksToUpdate();
 bool physfsSearchMusicToUpdate();
-void physfsReloadMusic(bool &introMusicChanged);
+void physfsReloadMusic(bool &introMusicChanged, bool reloadAll);
 void physfsReloadTiles(bool reloadAll);
 bool physfsSearchTilesToUpdate();
 extern std::vector<int> gamemods_modelsListModifiedIndexes;
