@@ -119,8 +119,8 @@ static void updateMapNames()
 static void updateModFolderNames()
 {
 	modFolderNames.clear();
-	std::string path = BASE_DATA_DIR;
-	path.append("mods/");
+	std::string path = outputdir;
+	path.append(PHYSFS_getDirSeparator()).append("mods/");
 	modFolderNames = directoryContents(path.c_str(), true, false);
 	if ( !modFolderNames.empty() )
 	{
@@ -132,8 +132,8 @@ static void updateModFolderNames()
 
 void writeLevelsTxt(std::string modFolder)
 {
-	std::string path = BASE_DATA_DIR;
-	path.append("mods/").append(modFolder);
+	std::string path = outputdir;
+	path.append(PHYSFS_getDirSeparator()).append("mods/").append(modFolder);
 	if ( access(path.c_str(), F_OK) == 0 )
 	{
 		std::string writeFile = modFolder + "/maps/levels.txt";
@@ -600,7 +600,7 @@ void buttonOpen(button_t* my)
 
 void buttonSetSaveDirectoryFolder(button_t* my)
 {
-	std::string filepath = BASE_DATA_DIR;
+	std::string filepath = outputdir;
 	bool inModFolder = false;
 	if ( strcmp(foldername, ".") == 0 || strcmp(foldername, "") == 0 )
 	{
@@ -608,7 +608,7 @@ void buttonSetSaveDirectoryFolder(button_t* my)
 	}
 	else if ( strcmp(foldername, BASE_DATA_DIR) )
 	{
-		filepath.append("mods/").append(foldername);
+		filepath.append(PHYSFS_getDirSeparator()).append("mods/").append(foldername);
 		physfs_saveDirectory = filepath + PHYSFS_getDirSeparator();
 		inModFolder = true;
 	}
@@ -686,14 +686,14 @@ void buttonSetOpenDirectoryFolder(button_t* my)
 {
 	if ( PHYSFS_unmount(physfs_openDirectory.c_str()) )
 	{
-		std::string filepath = BASE_DATA_DIR;
+		std::string filepath = outputdir;
 		if ( strcmp(foldername, ".") == 0 || strcmp(foldername, "") == 0 )
 		{
 			physfs_openDirectory = BASE_DATA_DIR;
 		}
 		else if ( strcmp(foldername, BASE_DATA_DIR) )
 		{
-			filepath.append("mods/").append(foldername);
+			filepath.append(PHYSFS_getDirSeparator()).append("mods/").append(foldername);
 			physfs_openDirectory = filepath + PHYSFS_getDirSeparator();
 		}
 		else

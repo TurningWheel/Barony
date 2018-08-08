@@ -784,7 +784,14 @@ void handleMainMenu(bool mode)
 						TTF_SizeUTF8(ttf16, language[2994], &w, &h);
 						ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2994]);
 						GO_SwapBuffers(screen);
-						physfsSearchMusicToUpdate();
+						bool reloadIntroMusic = false;
+						physfsReloadMusic(reloadIntroMusic, true);
+						if ( reloadIntroMusic )
+						{
+#ifdef SOUND
+							playmusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
+#endif			
+						}
 						gamemods_musicRequireReloadUnmodded = false;
 					}
 
@@ -6227,7 +6234,8 @@ void handleMainMenu(bool mode)
 				highlightEntry.h = filename_rowHeight + 8;
 				drawRect(&highlightEntry, SDL_MapRGB(mainsurface->format, 128, 128, 128), 64);
 
-				std::string path = "./mods/" + folderName;
+				std::string path = outputdir;
+				path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(folderName);
 				bool pathIsMounted = gamemodsIsPathInMountedFiles(path);
 
 				if ( pathIsMounted )
@@ -10254,15 +10262,19 @@ void openNewLoadGameWindow(button_t* my)
 		{
 			time_t timeNow = std::time(nullptr);
 			struct tm *tm = nullptr;
+			char path[PATH_MAX] = "";
+			char savefile[PATH_MAX] = "";
+			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
+			completePath(path, savefile, outputdir);
 #ifdef WINDOWS
 			struct _stat result;
-			if ( _stat(setSaveGameFileName(true, false, fileNumber).c_str(), &result) == 0 )
+			if ( _stat(path, &result) == 0 )
 			{
 				tm = localtime(&result.st_mtime);
 			}
 #else
 			struct stat result;
-			if ( stat(setSaveGameFileName(true, false, fileNumber).c_str(), &result) == 0 )
+			if ( stat(path, &result) == 0 )
 			{
 				tm = localtime(&result.st_mtime);
 			}
@@ -10281,15 +10293,19 @@ void openNewLoadGameWindow(button_t* my)
 		{
 			time_t timeNow = std::time(nullptr);
 			struct tm *tm = nullptr;
+			char path[PATH_MAX] = "";
+			char savefile[PATH_MAX] = "";
+			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
+			completePath(path, savefile, outputdir);
 #ifdef WINDOWS
 			struct _stat result;
-			if ( _stat(setSaveGameFileName(false, false, fileNumber).c_str(), &result) == 0 )
+			if ( _stat(path, &result) == 0 )
 			{
 				tm = localtime(&result.st_mtime);
 			}
 #else
 			struct stat result;
-			if ( stat(setSaveGameFileName(false, false, fileNumber).c_str(), &result) == 0 )
+			if ( stat(path, &result) == 0 )
 			{
 				tm = localtime(&result.st_mtime);
 			}
@@ -10909,13 +10925,29 @@ void buttonGamemodsOpenDirectory(button_t* my)
 
 		if ( directoryName.compare("..") == 0 || directoryName.compare(".") == 0 )
 		{
-			directoryPath = directoryName;
-			directoryPath.append(PHYSFS_getDirSeparator());
+			if ( !strcmp(outputdir, "./") )
+			{
+				directoryPath.append(directoryName);
+				directoryPath.append(PHYSFS_getDirSeparator());
+			}
+			else
+			{
+				directoryPath = outputdir;
+				directoryPath.append(PHYSFS_getDirSeparator()).append(directoryName).append(PHYSFS_getDirSeparator());
+			}
 		}
 		else
 		{
-			directoryPath.append(directoryName);
-			directoryPath.append(PHYSFS_getDirSeparator());
+			if ( !strcmp(outputdir, "./") )
+			{
+				directoryPath.append(directoryName);
+				directoryPath.append(PHYSFS_getDirSeparator());
+			}
+			else
+			{
+				directoryPath = outputdir;
+				directoryPath.append(PHYSFS_getDirSeparator()).append(directoryName).append(PHYSFS_getDirSeparator());
+			}
 		}
 		gamemods_window_fileSelect = 0;
 		gamemods_window_scroll = 0;
@@ -10994,8 +11026,8 @@ void writeLevelsTxt(std::string modFolder)
 
 void buttonGamemodsCreateModDirectory(button_t* my)
 {
-	std::string baseDir = PHYSFS_getBaseDir();
-	baseDir.append("mods").append(PHYSFS_getDirSeparator()).append(gamemods_newBlankDirectory);
+	std::string baseDir = outputdir;
+	baseDir.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator()).append(gamemods_newBlankDirectory);
 
 	if ( access(baseDir.c_str(), F_OK) == 0 )
 	{
@@ -11101,7 +11133,7 @@ void buttonGamemodsBaseDirectory(button_t* my)
 {
 	gamemods_window_fileSelect = 0;
 	gamemods_window_scroll = 0;
-	directoryPath = datadir;
+	directoryPath = outputdir;
 	directoryToUpload = directoryPath;
 	currentDirectoryFiles = directoryContents(directoryPath.c_str(), true, false);
 }
@@ -11393,8 +11425,8 @@ void buttonGamemodsStartUploadItem(button_t* my)
 void gamemodsWindowUploadInit(bool creatingNewItem)
 {
 	gamemods_window = 1;
-	currentDirectoryFiles = directoryContents(datadir, true, false);
-	directoryToUpload = datadir;
+	currentDirectoryFiles = directoryContents(outputdir, true, false);
+	directoryToUpload = outputdir;
 
 	// create window
 	subwindow = 1;
@@ -11521,8 +11553,8 @@ void gamemodsWindowUploadInit(bool creatingNewItem)
 void gamemodsSubscribedItemsInit()
 {
 	gamemods_window = 3;
-	currentDirectoryFiles = directoryContents(datadir, true, false);
-	directoryToUpload = datadir;
+	currentDirectoryFiles = directoryContents(outputdir, true, false);
+	directoryToUpload = outputdir;
 
 	gamemodsMountAllExistingPaths();
 
@@ -11930,7 +11962,9 @@ void buttonGamemodsGetLocalMods(button_t* my)
 	gamemods_window_scroll = 0;
 	gamemods_window = 7;
 	gamemods_localModFoldernames.clear();
-	gamemods_localModFoldernames = directoryContents("./mods/", true, false);
+	std::string path = outputdir;
+	path.append(PHYSFS_getDirSeparator()).append("mods").append(PHYSFS_getDirSeparator());
+	gamemods_localModFoldernames = directoryContents(path.c_str(), true, false);
 }
 
 void buttonGamemodsStartModdedGame(button_t* my)
@@ -12044,11 +12078,11 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[2993]);
 		GO_SwapBuffers(screen);
 		bool reloadIntroMusic = false;
-		physfsReloadMusic(reloadIntroMusic);
+		physfsReloadMusic(reloadIntroMusic, false);
 		if ( reloadIntroMusic )
 		{
 #ifdef SOUND
-			playmusic(intromusic[rand() % NUMINTROMUSIC], false, true, true);
+			playmusic(intromusic[rand() % (NUMINTROMUSIC - 1)], false, true, true);
 #endif			
 		}
 		gamemods_musicRequireReloadUnmodded = true;
@@ -12144,8 +12178,8 @@ void gamemodsCustomContentInit()
 {
 
 	gamemods_window = 3;
-	currentDirectoryFiles = directoryContents(datadir, true, false);
-	directoryToUpload = datadir;
+	currentDirectoryFiles = directoryContents(outputdir, true, false);
+	directoryToUpload = outputdir;
 
 	gamemodsMountAllExistingPaths();
 
@@ -12211,7 +12245,7 @@ bool gamemodsClearAllMountedPaths()
 	for ( i = PHYSFS_getSearchPath(); *i != NULL; i++ )
 	{
 		std::string line = *i;
-		if ( line.compare("./") != 0 ) // don't unmount the base ./ directory
+		if ( line.compare(outputdir) != 0 && line.compare("./") != 0 ) // don't unmount the base ./ directory
 		{
 			if ( PHYSFS_unmount(*i) == 0 )
 			{

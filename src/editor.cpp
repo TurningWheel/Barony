@@ -1274,6 +1274,15 @@ int main(int argc, char** argv)
 
 	processCommandLine(argc, argv);
 
+#ifdef WINDOWS
+	strcpy(outputdir, "./");
+#else
+	char *basepath = getenv("HOME");
+	snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
+	if ( access(outputdir, F_OK) == -1 )
+		mkdir(outputdir, 0777);
+#endif
+
 	// load default language file (english)
 	if ( loadLanguage("en") )
 	{

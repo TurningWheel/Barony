@@ -113,14 +113,16 @@ int initApp(char* title, int fullscreen)
 	}
 	if ( PHYSFS_mount(outputdir, NULL, 1) )
 	{
-		printlog("[PhysFS]: successfully mounted base ./ folder");
+		printlog("[PhysFS]: successfully mounted output %s folder", outputdir);
 		if ( PHYSFS_setWriteDir(outputdir) )
 		{
 			PHYSFS_mkdir("savegames");
 			if ( PHYSFS_mkdir("mods") )
 			{
-				PHYSFS_setWriteDir("./mods/");
-				printlog("[PhysFS]: successfully set write folder ./mods/");
+				std::string path = outputdir;
+				path.append(PHYSFS_getDirSeparator()).append("mods");
+				PHYSFS_setWriteDir(path.c_str());
+				printlog("[PhysFS]: successfully set write folder %s", path.c_str());
 			}
 			else
 			{
