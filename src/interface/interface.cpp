@@ -691,11 +691,11 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
 	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
 	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
-	joyimpulses[INJOY_GAME_TOGGLECHATLOG] = 399;
-	joyimpulses[INJOY_GAME_MINIMAPSCALE] = 399;
-	joyimpulses[INJOY_GAME_FOLLOWERMENU] = 399;
-	joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD] = 399;
-	joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE] = 399;
+	joyimpulses[INJOY_GAME_TOGGLECHATLOG] = SCANCODE_UNASSIGNED_BINDING;
+	joyimpulses[INJOY_GAME_MINIMAPSCALE] = SCANCODE_UNASSIGNED_BINDING;
+	joyimpulses[INJOY_GAME_FOLLOWERMENU] = SCANCODE_UNASSIGNED_BINDING;
+	joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD] = SCANCODE_UNASSIGNED_BINDING;
+	joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE] = SCANCODE_UNASSIGNED_BINDING;
 }
 
 void defaultConfig()
@@ -801,7 +801,7 @@ void defaultConfig()
 	return;
 }
 
-static char impulsenames[NUMIMPULSES][12] =
+static char impulsenames[NUMIMPULSES][23] =
 {
 	"FORWARD",
 	"LEFT",
@@ -819,7 +819,12 @@ static char impulsenames[NUMIMPULSES][12] =
 	"DEFEND",
 	"ATTACK",
 	"USE",
-	"AUTOSORT"
+	"AUTOSORT",
+	"MINIMAPSCALE",
+	"TOGGLECHATLOG",
+	"FOLLOWERMENU_OPEN",
+	"FOLLOWERMENU_LASTCMD",
+	"FOLLOWERMENU_CYCLENEXT"
 };
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
@@ -863,7 +868,10 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"GAME_HOTBAR_PREV",
 	"GAME_HOTBAR_NEXT",
 	"GAME_MINIMAPSCALE",
-	"GAME_TOGGLECHATLOG"
+	"GAME_TOGGLECHATLOG",
+	"GAME_FOLLOWERMENU_OPEN",
+	"GAME_FOLLOWERMENU_LASTCMD",
+	"GAME_FOLLOWERMENU_CYCLENEXT"
 };
 
 /*-------------------------------------------------------------------------------
