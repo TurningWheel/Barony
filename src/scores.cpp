@@ -3294,11 +3294,11 @@ bool steamLeaderboardSetScore(score_t* score)
 		return false;
 	}
 
-	//if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-	//	|| score->conductGameChallenges[CONDUCT_MODDED] )
-	//{
-	//	//return false;
-	//}
+	if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+		|| score->conductGameChallenges[CONDUCT_MODDED] )
+	{
+		return false;
+	}
 
 	if ( !score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
