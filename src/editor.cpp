@@ -220,12 +220,37 @@ char lightSourcePropertyNames[6][41] =
 	"Light flicker enable (0-1)"
 };
 
-char textSourcePropertyNames[3][20] =
+char textSourcePropertyNames[8][25] =
 {
-	"Color (R, G, B): %d",
+	"Color (R, G, B) (0-255):",
+	"",
+	"",
 	"Text:",
+	"",
+	"",
+	"",
 	""
 };
+
+/*-------------------------------------------------------------------------------
+
+mouseInBounds
+
+Returns true if the mouse is within the rectangle specified, otherwise
+returns false
+
+-------------------------------------------------------------------------------*/
+
+bool mouseInBounds(int x1, int x2, int y1, int y2)
+{
+	if ( omousey >= y1 && omousey < y2 )
+		if ( omousex >= x1 && omousex < x2 )
+		{
+			return true;
+		}
+
+	return false;
+}
 
 int recentUsedTiles[9][9] = { 0 };
 int recentUsedTilePalette = 0;
@@ -5737,22 +5762,87 @@ int main(int argc, char** argv)
 
 						for ( int i = 0; i < numProperties; i++ )
 						{
+							inputField_x = subx1 + 8;
 							int propertyInt = atoi(spriteProperties[i]);
+							if ( i >= 3 && i < 8 )
+							{
+								inputFieldWidth = subx2 - inputField_x; // width of the text field
+								inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+								if ( i > 3 )
+								{
+									spacing = 18;
+								}
+								else
+								{
+									spacing = 36;
+								}
+							}
+							else
+							{
+								inputFieldWidth = 64; // width of the text field
+								inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+								spacing = 36;
+							}
 
-							strcpy(tmpPropertyName, textSourcePropertyNames[i]);
-							inputFieldHeader_y = suby1 + 28 + i * spacing;
-							inputField_y = inputFieldHeader_y + 16;
+							if ( i <= 2 )
+							{
+								inputFieldFeedback_x = inputField_x + (inputFieldWidth + 8) * 4 - 4;
+							}
+							if ( i == 1 || i == 2 )
+							{
+								inputFieldHeader_y = suby1 + 28;
+								inputField_y = inputFieldHeader_y + 16;
+								inputField_x = subx1 + 8 + (inputFieldWidth + 8) * i;
+								if ( i == 2 )
+								{
+									Uint32 colorPreview = SDL_MapRGB(mainsurface->format, (Uint32)atoi(spriteProperties[0]),
+										(Uint32)atoi(spriteProperties[1]), (Uint32)atoi(spriteProperties[2]));
+									SDL_Rect src;
+									src.x = subx1 + 8 + (inputFieldWidth + 8) * 3;
+									src.h = 16;
+									src.w = 32;
+									src.y = inputField_y - 4;
+									drawRect(&src, colorPreview, 255);
+								}
+							}
+							else if ( i > 3 && i < 8 )
+							{
+								inputFieldHeader_y = suby1 + 28 + (i - 1) * spacing;
+								inputField_y = inputFieldHeader_y + 16;
+							}
+							else
+							{
+								// header print
+								if ( i != 0 )
+								{
+									inputFieldHeader_y = suby1 + 28 + (i - 2) * spacing;
+								}
+								else
+								{
+									inputFieldHeader_y = suby1 + 28;
+								}
+								inputField_y = inputFieldHeader_y + 16;
+								strcpy(tmpPropertyName, textSourcePropertyNames[i]);
+								printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+							}
 							// box outlines then text
-							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
 							// print values on top of boxes
-							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
-							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+							if ( i == 1 || i == 2 )
+							{
+								drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+								printText(font8x8_bmp, inputField_x, inputField_y, spriteProperties[i]);
+							}
+							else
+							{
+								drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+								printText(font8x8_bmp, inputField_x, inputField_y, spriteProperties[i]);
+							}
 
 							if ( errorArr[i] != 1 )
 							{
-								if ( i == 0 )
+								if ( i >= 0 && i <= 2 )
 								{
-									if ( propertyInt > 2 || propertyInt < 0 )
+									if ( propertyInt > 255 || propertyInt < 0 )
 									{
 										propertyPageError(i, 0); // reset to default 0.
 									}
@@ -5772,7 +5862,70 @@ int main(int argc, char** argv)
 							}
 						}
 
-						propertyPageTextAndInput(numProperties, inputFieldWidth);
+						spacing = 36;
+
+						// Cycle properties with TAB.
+						if ( keystatus[SDL_SCANCODE_TAB] )
+						{
+							keystatus[SDL_SCANCODE_TAB] = 0;
+							cursorflash = ticks;
+							editproperty++;
+							if ( editproperty == numProperties )
+							{
+								editproperty = 0;
+							}
+
+							inputstr = spriteProperties[editproperty];
+						}
+
+						// select a textbox
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( int i = 0; i < numProperties; i++ )
+							{
+								inputField_x = subx1 + 8;
+								if ( i > 3 && i < 8 )
+								{
+									spacing = 18;
+									inputFieldWidth = subx2 - inputField_x; // width of the text field
+									if ( mouseInBounds(inputField_x - 4, inputField_x - 4 + inputFieldWidth,
+										suby1 + 40 + (i - 1) * spacing, suby1 + 56 + (i - 1) * spacing) )
+									{
+										inputstr = spriteProperties[i];
+										editproperty = i;
+										cursorflash = ticks;
+									}
+								}
+								else
+								{
+									if ( i == 3 )
+									{
+										inputFieldWidth = subx2 - inputField_x; // width of the text field
+									}
+									else
+									{
+										inputFieldWidth = 64; // width of the text field
+									}
+									spacing = 36;
+									if ( i == 1 || i == 2 )
+									{
+										inputField_x = subx1 + 8 + (inputFieldWidth + 8) * i;
+										spacing = 0;
+									}
+									else if ( i == 3 )
+									{
+										spacing = 12;
+									}
+									if ( mouseInBounds(inputField_x - 4, inputField_x - 4 + inputFieldWidth, 
+										suby1 + 40 + i * spacing, suby1 + 56 + i * spacing) )
+									{
+										inputstr = spriteProperties[i];
+										editproperty = i;
+										cursorflash = ticks;
+									}
+								}
+							}
+						}
 
 						if ( editproperty < numProperties )   // edit
 						{
@@ -5783,15 +5936,47 @@ int main(int argc, char** argv)
 							}
 
 							// set the maximum length allowed for user input
-							if ( editproperty == 1 )
+							if ( editproperty >= 3 && editproperty < 8 )
 							{
-								inputlen = 128;
+								if ( editproperty == 7 )
+								{
+									inputlen = 32;
+								}
+								else
+								{
+									inputlen = 48;
+								}
 							}
 							else
 							{
 								inputlen = 4;
 							}
-							propertyPageCursorFlash(spacing);
+							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+							{
+								if ( editproperty > 3 && editproperty < 8 )
+								{
+									spacing = 18;
+									printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + (editproperty - 1) * spacing, "\26");
+								}
+								else
+								{
+									spacing = 36;
+									if ( editproperty == 1 || editproperty == 2 )
+									{
+										spacing = 0;
+										inputFieldWidth = 64;
+										printText(font8x8_bmp, subx1 + 8 + (inputFieldWidth + 8) * editproperty + strlen(spriteProperties[editproperty]) * 8, suby1 + 44, "\26");
+									}
+									else if ( editproperty == 3 )
+									{
+										printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + spacing, "\26");
+									}
+									else
+									{
+										printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing, "\26");
+									}
+								}
+							}
 						}
 					}
 				}

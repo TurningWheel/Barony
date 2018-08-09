@@ -951,8 +951,10 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->textSource1, sizeof(Sint32), 1, fp);
 						fread(&entity->textSource2, sizeof(Sint32), 1, fp);
 						fread(&entity->textSource3, sizeof(Sint32), 1, fp);
-						char textSrc[240] = "";
-						fread(&textSrc, sizeof(char[240]), 1, fp);
+						for ( int i = 4; i < 60; ++i )
+						{
+							fread(&entity->skill[i], sizeof(Sint32), 1, fp);
+						}
 						break;
 					}
 					default:
@@ -1291,8 +1293,10 @@ int saveMap(const char* filename2)
 					fwrite(&entity->textSource1, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSource2, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSource3, sizeof(Sint32), 1, fp);
-					char textSrc[240] = "";
-					fwrite(&textSrc, sizeof(char[240]), 1, fp);
+					for ( int i = 4; i < 60; ++i )
+					{
+						fwrite(&entity->skill[i], sizeof(Sint32), 1, fp);
+					}
 					break;
 				}
 				default:

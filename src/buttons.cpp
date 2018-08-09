@@ -1961,13 +1961,15 @@ void buttonSpriteProperties(button_t* my)
 			break;
 		case 16:
 		{
-			snprintf(spriteProperties[0], 9, "%d", static_cast<int>(selectedEntity->textSourceColorRGB));
-			//snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->textSource1));
-			//snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->textSource2));
-			//snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->textSource3));
-			char buf[240] = "";
+			Uint32 r = (Uint32)(selectedEntity->textSourceColorRGB >> 16) & 0xFF;
+			Uint32 g = (Uint32)(selectedEntity->textSourceColorRGB >> 8) & 0xFF;
+			Uint32 b = (Uint32)(selectedEntity->textSourceColorRGB >> 0) & 0xFF;
+			snprintf(spriteProperties[0], 4, "%d", r);
+			snprintf(spriteProperties[1], 4, "%d", g);
+			snprintf(spriteProperties[2], 4, "%d", b);
+			char buf[256] = "";
 			int totalChars = 0;
-			for ( int i = 4; i < 64; ++i )
+			for ( int i = 4; i < 60; ++i )
 			{
 				if ( selectedEntity->skill[i] != 0 )
 				{
@@ -1978,9 +1980,15 @@ void buttonSpriteProperties(button_t* my)
 					}
 				}
 			}
-			buf[totalChars] = '\0';
-			strncpy(spriteProperties[1], buf, 127);
-			strncpy(spriteProperties[2], buf + 128, 112);
+			if ( buf[totalChars] != '\0' )
+			{
+				buf[totalChars] = '\0';
+			}
+			strncpy(spriteProperties[3], buf, 48);
+			strncpy(spriteProperties[4], buf + 48, 48);
+			strncpy(spriteProperties[5], buf + 96, 48);
+			strncpy(spriteProperties[6], buf + 144, 48);
+			strncpy(spriteProperties[7], buf + 192, 48);
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -2856,35 +2864,50 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				break;
 			case 16: // text source
 			{
-				selectedEntity->textSourceColorRGB = (Sint32)atoi(spriteProperties[0]);
-				//selectedEntity->textSource1 = (Sint32)atoi(spriteProperties[1]);
-				//selectedEntity->textSource2 = (Sint32)atoi(spriteProperties[2]);
-				//selectedEntity->textSource3 = (Sint32)atoi(spriteProperties[3]);
-				if ( spriteProperties[1][0] != 0 )
+				Uint32 r = (Uint32)atoi(spriteProperties[0]);
+				Uint32 g = (Uint32)atoi(spriteProperties[1]);
+				Uint32 b = (Uint32)atoi(spriteProperties[2]);
+				selectedEntity->textSourceColorRGB = 0;
+				selectedEntity->textSourceColorRGB |= (r << 16);
+				selectedEntity->textSourceColorRGB |= (g << 8);
+				selectedEntity->textSourceColorRGB |= (b << 0);
+				int totalChars = 0;
+				char checkChr = 'a';
+				for ( int i = 4; i < 60 && totalChars < 224; ++i )
 				{
-					int totalChars = 0;
-					char checkChr = 'a';
-					for ( int i = 4; i < 64 && checkChr != '\0'; ++i )
+					selectedEntity->skill[i] = 0;
+					for ( int c = 0; c < 4; ++c )
 					{
-						selectedEntity->skill[i] = 0;
-						for ( int c = 0; c < 4; ++c )
+						if ( totalChars >= 192 )
 						{
-							if ( totalChars == 127 )
-							{
-								selectedEntity->skill[i] |= '\0' << (c * 8);
-								--totalChars;
-							}
-							else if ( totalChars > 127 )
-							{
-								selectedEntity->skill[i] |= (spriteProperties[2][totalChars - 128]) << (c * 8);
-							}
-							else
-							{
-								selectedEntity->skill[i] |= (spriteProperties[1][totalChars]) << (c * 8);
-							}
-							checkChr = (selectedEntity->skill[i] >> (c * 8)) & 0xFF;
-							++totalChars;
+							selectedEntity->skill[i] |= (spriteProperties[7][totalChars - 192]) << (c * 8);
+							checkChr = spriteProperties[7][totalChars - 192];
 						}
+						else if ( totalChars >= 144 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[6][totalChars - 144]) << (c * 8);
+							checkChr = spriteProperties[6][totalChars - 144];
+						}
+						else if ( totalChars >= 96 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[5][totalChars - 96]) << (c * 8);
+							checkChr = spriteProperties[5][totalChars - 96];
+						}
+						else if ( totalChars >= 48 )
+						{
+							selectedEntity->skill[i] |= (spriteProperties[4][totalChars - 48]) << (c * 8);
+							checkChr = spriteProperties[4][totalChars - 48];
+						}
+						else
+						{
+							selectedEntity->skill[i] |= (spriteProperties[3][totalChars]) << (c * 8);
+							checkChr = spriteProperties[3][totalChars];
+						}
+						if ( checkChr == '\0' )
+						{
+							totalChars += 48;
+						}
+						++totalChars;
 					}
 				}
 				break;
@@ -2892,14 +2915,8 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			default:
 				break;
 		}
-		if ( spriteType == 16 )
-		{
-			strcpy(message, spriteProperties[1]);
-		}
-		else
-		{
-			strcpy(message, "                 Modified sprite properties.");
-		}
+
+		strcpy(message, "                 Modified sprite properties.");
 		messagetime = 60;
 	}
 

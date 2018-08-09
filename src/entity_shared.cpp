@@ -1405,7 +1405,10 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->textSource1 = entityToCopy->textSource1;
 			entityNew->textSource2 = entityToCopy->textSource2;
 			entityNew->textSource3 = entityToCopy->textSource3;
-			entityNew->textSourceBegin = entityToCopy->textSourceBegin;
+			for ( int i = 4; i < 60; ++i )
+			{
+				entityNew->skill[i] = entityToCopy->skill[i];
+			}
 		}
 		else
 		{
@@ -1414,7 +1417,10 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->textSource1 = 0;
 			entityNew->textSource2 = 0;
 			entityNew->textSource3 = 0;
-			entityNew->textSourceBegin = 0;
+			for ( int i = 4; i < 60; ++i )
+			{
+				entityNew->skill[i] = 0;
+			}
 		}
 	}
 
