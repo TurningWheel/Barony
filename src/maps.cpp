@@ -4994,13 +4994,26 @@ void assignActions(map_t* map)
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
-				//light source
+			//light source
 			case 131:
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actLightSource;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				break;
+			//text source
+			case 132:
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actTextSource;
 				entity->flags[SPRITE] = true;
 				entity->flags[INVISIBLE] = true;
 				entity->flags[PASSABLE] = true;

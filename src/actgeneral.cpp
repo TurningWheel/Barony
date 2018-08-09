@@ -505,5 +505,60 @@ void actTextSource(Entity* my)
 
 void Entity::actTextSource()
 {
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( circuit_status == CIRCUIT_ON )
+	{
+		// received power
+		if ( !textSource1 )
+		{
+			textSource1 = 1;
+			// assemble the string.
+			char buf[256] = "";
+			int totalChars = 0;
+			for ( int i = 4; i < 60; ++i )
+			{
+				if ( skill[i] != 0 )
+				{
+					for ( int c = 0; c < 4; ++c )
+					{
+						buf[totalChars] = static_cast<char>((skill[i] >> (c * 8)) & 0xFF);
+						++totalChars;
+					}
+				}
+			}
+			if ( buf[totalChars] != '\0' )
+			{
+				buf[totalChars] = '\0';
+			}
+			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
+				(textSourceColorRGB >> 0) & 0xFF);
+			std::string output = buf;
+			size_t found = output.find("\\n");
+			while ( found != std::string::npos )
+			{
+				output.erase(found, 2);
+				output.insert(found, 1, '\n');
+				found = output.find("\\n");
+			}
+			strcpy(buf, output.c_str());
 
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] )
+				{
+					messagePlayerColor(c, color, buf);
+				}
+			}
+		}
+	}
+	else if ( circuit_status == CIRCUIT_OFF )
+	{
+		if ( textSource1 && !textSource2 )
+		{
+			textSource1 = 0;
+		}
+	}
 }
