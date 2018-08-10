@@ -134,10 +134,7 @@ public:
 			{
 				downloadedTags[i][j] = 0;
 			}
-			if ( i == 0 )
-			{
-				leaderBoardSteamUsernames[k_numEntriesToRetrieve] = "";
-			}
+			leaderBoardSteamUsernames[i] = "";
 		}
 	}
 	~CSteamLeaderboards() {};

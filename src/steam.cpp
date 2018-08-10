@@ -1390,7 +1390,7 @@ void CSteamLeaderboards::OnDownloadScore(LeaderboardScoresDownloaded_t *pCallbac
 {
 	if ( !bIOFailure )
 	{
-		m_nLeaderboardEntries = std::min(pCallback->m_cEntryCount, k_numEntriesToRetrieve);
+		m_nLeaderboardEntries = std::min(pCallback->m_cEntryCount, (int)CSteamLeaderboards::k_numEntriesToRetrieve);
 		for ( int i = 0; i < m_nLeaderboardEntries; ++i )
 		{
 			SteamUserStats()->GetDownloadedLeaderboardEntry(pCallback->m_hSteamLeaderboardEntries, 
