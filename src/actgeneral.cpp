@@ -509,12 +509,27 @@ void Entity::actTextSource()
 	{
 		return;
 	}
+
+	if ( ((textSourceVariables4W >> 16) & 0xFFFF) == 0 ) // store the delay in the 16 leftmost bits.
+	{
+		textSourceVariables4W |= (textSourceDelay << 16);
+	}
+
 	if ( circuit_status == CIRCUIT_ON )
 	{
 		// received power
-		if ( !textSource1 )
+		if ( textSourceDelay > 0 )
 		{
-			textSource1 = 1;
+			--textSourceDelay;
+			return;
+		}
+		else
+		{
+			textSourceDelay = (textSourceVariables4W >> 16) & 0xFFFF;
+		}
+		if ( (textSourceVariables4W & 0xFF) == 0 )
+		{
+			textSourceVariables4W |= 1;
 			// assemble the string.
 			char buf[256] = "";
 			int totalChars = 0;
@@ -536,6 +551,12 @@ void Entity::actTextSource()
 			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
 				(textSourceColorRGB >> 0) & 0xFF);
 			std::string output = buf;
+			size_t foundPlayerRef = output.find("@p");
+			if ( foundPlayerRef != std::string::npos )
+			{
+				output.erase(foundPlayerRef, 2);
+				output.insert(foundPlayerRef, "%s");
+			}
 			size_t found = output.find("\\n");
 			while ( found != std::string::npos )
 			{
@@ -549,16 +570,24 @@ void Entity::actTextSource()
 			{
 				if ( !client_disconnected[c] )
 				{
-					messagePlayerColor(c, color, buf);
+					if ( foundPlayerRef != std::string::npos && stats[c] )
+					{
+						messagePlayerColor(c, color, buf, stats[c]->name);
+					}
+					else
+					{
+						messagePlayerColor(c, color, buf);
+					}
 				}
 			}
 		}
 	}
 	else if ( circuit_status == CIRCUIT_OFF )
 	{
-		if ( textSource1 && !textSource2 )
+		textSourceDelay = (textSourceVariables4W >> 16) & 0xFFFF;
+		if ( (textSourceVariables4W & 0xFF) == 1 && ((textSourceVariables4W >> 8) & 0xFF) == 0 )
 		{
-			textSource1 = 0;
+			textSourceVariables4W -= 1;
 		}
 	}
 }

@@ -370,21 +370,33 @@ public:
 	Sint32& soundSourceToPlay; //skill[1]
 	Sint32& soundSourceVolume; //skill[2]
 	Sint32& soundSourceLatchOn; //skill[3]
+	Sint32& soundSourceDelay; //skill[4]
+	Sint32& soundSourceDelayCounter;//skill[5]
+	Sint32& soundSourceOrigin;//skill[6]
 
 	//--PUBLIC LIGHT SOURCE SKILLS--
 	Sint32& lightSourceBrightness; //skill[0]
-	Sint32& lightSourceRequirePower; //skill[1]
+	Sint32& lightSourceAlwaysOn; //skill[1]
 	Sint32& lightSourceInvertPower; //skill[2]
 	Sint32& lightSourceLatchOn; //skill[3]
 	Sint32& lightSourceRadius; //skill[4]
 	Sint32& lightSourceFlicker; //skill[5]
+	Sint32& lightSourceDelay; //skill[6]
+	Sint32& lightSourceDelayCounter;//skill[7]
 
 	//--PUBLIC TEXT SOURCE SKILLS--
 	Sint32& textSourceColorRGB; //skill[0]
-	Sint32& textSource1; //skill[1]
-	Sint32& textSource2; //skill[2]
+	Sint32& textSourceVariables4W; //skill[1]
+	Sint32& textSourceDelay; //skill[2]
 	Sint32& textSource3; //skill[3]
 	Sint32& textSourceBegin; //skill[4]
+
+	//--PUBLIC SIGNAL SKILLS--
+	Sint32& signalActivateDelay; //skill[1]
+	Sint32& signalTimerInterval; //skill[2]
+	Sint32& signalTimerRepeatCount; //skill[3]
+	Sint32& signalTimerLatchInput; //skill[4]
+	Sint32& signalInputDirection; //skill[5]
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -543,6 +555,7 @@ public:
 	void actSoundSource();
 	void actLightSource();
 	void actTextSource();
+	void actSignalTimer();
 
 	Monster getRace() const
 	{
@@ -874,7 +887,7 @@ void actTextSource(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 221;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 95;
-static const int NUM_EDITOR_SPRITES = 133;
+static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;
 
 // furniture types.

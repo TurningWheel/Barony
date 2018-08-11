@@ -1930,6 +1930,8 @@ void buttonSpriteProperties(button_t* my)
 			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->soundSourceToPlay));
 			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->soundSourceVolume));
 			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->soundSourceLatchOn));
+			snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->soundSourceDelay));
+			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->soundSourceOrigin));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1937,17 +1939,18 @@ void buttonSpriteProperties(button_t* my)
 			newwindow = 18;
 			subx1 = xres / 2 - 230;
 			subx2 = xres / 2 + 230;
-			suby1 = yres / 2 - 85;
-			suby2 = yres / 2 + 85;
+			suby1 = yres / 2 - 112;
+			suby2 = yres / 2 + 112;
 			strcpy(subtext, "Sound Source Properties:");
 			break;
 		case 15:
-			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->lightSourceRequirePower));
+			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->lightSourceAlwaysOn));
 			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->lightSourceBrightness));
 			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->lightSourceInvertPower));
 			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->lightSourceLatchOn));
 			snprintf(spriteProperties[4], 3, "%d", static_cast<int>(selectedEntity->lightSourceRadius));
 			snprintf(spriteProperties[5], 2, "%d", static_cast<int>(selectedEntity->lightSourceFlicker));
+			snprintf(spriteProperties[6], 5, "%d", static_cast<int>(selectedEntity->lightSourceDelay));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1955,8 +1958,8 @@ void buttonSpriteProperties(button_t* my)
 			newwindow = 19;
 			subx1 = xres / 2 - 200;
 			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 120;
-			suby2 = yres / 2 + 120;
+			suby1 = yres / 2 - 160;
+			suby2 = yres / 2 + 160;
 			strcpy(subtext, "Light Source Properties:");
 			break;
 		case 16:
@@ -1975,8 +1978,16 @@ void buttonSpriteProperties(button_t* my)
 				{
 					for ( int c = 0; c < 4; ++c )
 					{
-						buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
-						++totalChars;
+						if ( static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF) == '\0'
+							&& i != 59 && selectedEntity->skill[i + 1] != 0 )
+						{
+							// don't add '\0' termination unless the next skill slot is empty as we have more data to read.
+						}
+						else
+						{
+							buf[totalChars] = static_cast<char>((selectedEntity->skill[i] >> (c * 8)) & 0xFF);
+							++totalChars;
+						}
 					}
 				}
 			}
@@ -1989,6 +2000,8 @@ void buttonSpriteProperties(button_t* my)
 			strncpy(spriteProperties[5], buf + 96, 48);
 			strncpy(spriteProperties[6], buf + 144, 48);
 			strncpy(spriteProperties[7], buf + 192, 48);
+			snprintf(spriteProperties[8], 5, "%d", static_cast<int>(selectedEntity->textSourceDelay));
+			snprintf(spriteProperties[9], 2, "%d", static_cast<int>((selectedEntity->textSourceVariables4W >> 8) & 0xFF));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -2001,6 +2014,23 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(subtext, "Text Source Properties:");
 			break;
 		}
+		case 17:
+			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->signalInputDirection));
+			snprintf(spriteProperties[1], 5, "%d", static_cast<int>(selectedEntity->signalActivateDelay));
+			snprintf(spriteProperties[2], 5, "%d", static_cast<int>(selectedEntity->signalTimerInterval));
+			snprintf(spriteProperties[3], 5, "%d", static_cast<int>(selectedEntity->signalTimerRepeatCount));
+			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->signalTimerLatchInput));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 21;
+			subx1 = xres / 2 - 220;
+			subx2 = xres / 2 + 220;
+			suby1 = yres / 2 - 120;
+			suby2 = yres / 2 + 120;
+			strcpy(subtext, "Signal Timer Properties:");
+			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -2853,14 +2883,17 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->soundSourceToPlay = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->soundSourceVolume = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->soundSourceLatchOn = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->soundSourceDelay = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->soundSourceOrigin = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 15: //light source
-				selectedEntity->lightSourceRequirePower = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->lightSourceAlwaysOn = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->lightSourceBrightness = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->lightSourceInvertPower = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->lightSourceLatchOn = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity->lightSourceRadius = (Sint32)atoi(spriteProperties[4]);
 				selectedEntity->lightSourceFlicker = (Sint32)atoi(spriteProperties[5]);
+				selectedEntity->lightSourceDelay = (Sint32)atoi(spriteProperties[6]);
 				break;
 			case 16: // text source
 			{
@@ -2871,6 +2904,9 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->textSourceColorRGB |= (r << 16);
 				selectedEntity->textSourceColorRGB |= (g << 8);
 				selectedEntity->textSourceColorRGB |= (b << 0);
+				selectedEntity->textSourceDelay = (Sint32)atoi(spriteProperties[8]);
+				selectedEntity->textSourceVariables4W = 0;
+				selectedEntity->textSourceVariables4W |= ((Sint32)atoi(spriteProperties[9]) & 0xFF) << 8;
 				int totalChars = 0;
 				char checkChr = 'a';
 				for ( int i = 4; i < 60 && totalChars < 224; ++i )
@@ -2905,13 +2941,23 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						}
 						if ( checkChr == '\0' )
 						{
-							totalChars += 48;
+							totalChars += (48 - (totalChars % 48));
 						}
-						++totalChars;
+						else
+						{
+							++totalChars;
+						}
 					}
 				}
 				break;
 			}
+			case 17:
+				selectedEntity->signalInputDirection = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->signalActivateDelay = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->signalTimerInterval = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->signalTimerRepeatCount = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->signalTimerLatchInput = (Sint32)atoi(spriteProperties[4]);
+				break;
 			default:
 				break;
 		}

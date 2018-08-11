@@ -221,12 +221,20 @@ void actLightSource(Entity* my)
 	my->actLightSource();
 }
 
-#define LIGHTSOURCE_LIGHT skill[6]
-#define LIGHTSOURCE_FLICKER skill[7]
-#define LIGHTSOURCE_ENABLED skill[8]
+#define LIGHTSOURCE_LIGHT skill[8]
+#define LIGHTSOURCE_FLICKER skill[9]
+#define LIGHTSOURCE_ENABLED skill[10]
 
 void Entity::actLightSource()
 {
+	if ( multiplayer != CLIENT )
+	{
+		if ( lightSourceDelay > 0 && lightSourceDelayCounter == 0 )
+		{
+			lightSourceDelayCounter = lightSourceDelay;
+		}
+	}
+
 	if ( LIGHTSOURCE_ENABLED )
 	{
 		// lighting
@@ -272,8 +280,20 @@ void Entity::actLightSource()
 			{
 				if ( LIGHTSOURCE_ENABLED == 1 && lightSourceLatchOn < 2 + lightSourceInvertPower )
 				{
+					if ( lightSourceInvertPower == 1 && lightSourceDelayCounter > 0 )
+					{
+						--lightSourceDelayCounter;
+						if ( lightSourceDelayCounter != 0 )
+						{
+							return;
+						}
+					}
+					else if ( lightSourceInvertPower == 0 && lightSourceDelay > 0 )
+					{
+						lightSourceDelayCounter = lightSourceDelay;
+					}
 					LIGHTSOURCE_ENABLED = 0;
-					serverUpdateEntitySkill(this, 8);
+					serverUpdateEntitySkill(this, 10);
 					if ( lightSourceLatchOn > 0 )
 					{
 						++lightSourceLatchOn;
@@ -290,13 +310,25 @@ void Entity::actLightSource()
 			return;
 		}
 
-		if ( !lightSourceRequirePower || (circuit_status == CIRCUIT_ON && !lightSourceInvertPower)
+		if ( lightSourceAlwaysOn == 1 || (circuit_status == CIRCUIT_ON && !lightSourceInvertPower)
 			|| (circuit_status == CIRCUIT_OFF && lightSourceInvertPower == 1) )
 		{
 			if ( LIGHTSOURCE_ENABLED == 0 && lightSourceLatchOn < 2 + lightSourceInvertPower )
 			{
+				if ( lightSourceInvertPower == 0 && lightSourceDelayCounter > 0 )
+				{
+					--lightSourceDelayCounter;
+					if ( lightSourceDelayCounter != 0 )
+					{
+						return;
+					}
+				}
+				else if ( lightSourceInvertPower == 1 && lightSourceDelay > 0 )
+				{
+					lightSourceDelayCounter = lightSourceDelay;
+				}
 				LIGHTSOURCE_ENABLED = 1;
-				serverUpdateEntitySkill(this, 8);
+				serverUpdateEntitySkill(this, 10);
 				if ( lightSourceLatchOn > 0 )
 				{
 					++lightSourceLatchOn;
