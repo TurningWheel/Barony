@@ -121,7 +121,7 @@ public:
 	static const std::string leaderboardNames[k_numLeaderboards];
 
 	CSteamLeaderboards() :
-		m_CurrentLeaderboard(NULL),
+		m_CurrentLeaderboard(0),
 		m_nLeaderboardEntries(0),
 		b_ScoresDownloaded(false),
 		b_LeaderboardInit(false),
