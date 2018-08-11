@@ -936,20 +936,23 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						fread(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
 						fread(&entity->soundSourceVolume, sizeof(Sint32), 1, fp);
 						fread(&entity->soundSourceLatchOn, sizeof(Sint32), 1, fp);
+						fread(&entity->soundSourceDelay, sizeof(Sint32), 1, fp);
+						fread(&entity->soundSourceOrigin, sizeof(Sint32), 1, fp);
 						break;
 					case 15:
-						fread(&entity->lightSourceRequirePower, sizeof(Sint32), 1, fp);
+						fread(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1, fp);
 						fread(&entity->lightSourceBrightness, sizeof(Sint32), 1, fp);
 						fread(&entity->lightSourceInvertPower, sizeof(Sint32), 1, fp);
 						fread(&entity->lightSourceLatchOn, sizeof(Sint32), 1, fp);
 						fread(&entity->lightSourceRadius, sizeof(Sint32), 1, fp);
 						fread(&entity->lightSourceFlicker, sizeof(Sint32), 1, fp);
+						fread(&entity->lightSourceDelay, sizeof(Sint32), 1, fp);
 						break;
 					case 16:
 					{
 						fread(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
-						fread(&entity->textSource1, sizeof(Sint32), 1, fp);
-						fread(&entity->textSource2, sizeof(Sint32), 1, fp);
+						fread(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
+						fread(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
 						fread(&entity->textSource3, sizeof(Sint32), 1, fp);
 						for ( int i = 4; i < 60; ++i )
 						{
@@ -957,6 +960,13 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 						}
 						break;
 					}
+					case 17:
+						fread(&entity->signalInputDirection, sizeof(Sint32), 1, fp);
+						fread(&entity->signalActivateDelay, sizeof(Sint32), 1, fp);
+						fread(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
+						fread(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
+						fread(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -1278,20 +1288,23 @@ int saveMap(const char* filename2)
 					fwrite(&entity->soundSourceToPlay, sizeof(Sint32), 1, fp);
 					fwrite(&entity->soundSourceVolume, sizeof(Sint32), 1, fp);
 					fwrite(&entity->soundSourceLatchOn, sizeof(Sint32), 1, fp);
+					fwrite(&entity->soundSourceDelay, sizeof(Sint32), 1, fp);
+					fwrite(&entity->soundSourceOrigin, sizeof(Sint32), 1, fp);
 					break;
 				case 15:
-					fwrite(&entity->lightSourceRequirePower, sizeof(Sint32), 1, fp);
+					fwrite(&entity->lightSourceAlwaysOn, sizeof(Sint32), 1, fp);
 					fwrite(&entity->lightSourceBrightness, sizeof(Sint32), 1, fp);
 					fwrite(&entity->lightSourceInvertPower, sizeof(Sint32), 1, fp);
 					fwrite(&entity->lightSourceLatchOn, sizeof(Sint32), 1, fp);
 					fwrite(&entity->lightSourceRadius, sizeof(Sint32), 1, fp);
 					fwrite(&entity->lightSourceFlicker, sizeof(Sint32), 1, fp);
+					fwrite(&entity->lightSourceDelay, sizeof(Sint32), 1, fp);
 					break;
 				case 16:
 				{
 					fwrite(&entity->textSourceColorRGB, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSource1, sizeof(Sint32), 1, fp);
-					fwrite(&entity->textSource2, sizeof(Sint32), 1, fp);
+					fwrite(&entity->textSourceVariables4W, sizeof(Sint32), 1, fp);
+					fwrite(&entity->textSourceDelay, sizeof(Sint32), 1, fp);
 					fwrite(&entity->textSource3, sizeof(Sint32), 1, fp);
 					for ( int i = 4; i < 60; ++i )
 					{
@@ -1299,6 +1312,13 @@ int saveMap(const char* filename2)
 					}
 					break;
 				}
+				case 17:
+					fwrite(&entity->signalInputDirection, sizeof(Sint32), 1, fp);
+					fwrite(&entity->signalActivateDelay, sizeof(Sint32), 1, fp);
+					fwrite(&entity->signalTimerInterval, sizeof(Sint32), 1, fp);
+					fwrite(&entity->signalTimerRepeatCount, sizeof(Sint32), 1, fp);
+					fwrite(&entity->signalTimerLatchInput, sizeof(Sint32), 1, fp);
+					break;
 				default:
 					break;
 			}
