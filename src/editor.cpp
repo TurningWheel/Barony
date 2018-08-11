@@ -6162,13 +6162,13 @@ int main(int argc, char** argv)
 										switch ( propertyInt )
 										{
 											case 0:
-												strcpy(tmpStr, "East");
+												strcpy(tmpStr, "West");
 												break;
 											case 1:
 												strcpy(tmpStr, "South");
 												break;
 											case 2:
-												strcpy(tmpStr, "West");
+												strcpy(tmpStr, "East");
 												break;
 											case 3:
 												strcpy(tmpStr, "North");

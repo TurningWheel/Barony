@@ -75,8 +75,8 @@ void Entity::updateCircuitNeighbors()
 						//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
 						switch ( powerable->signalInputDirection )
 						{
-							case 0: // east
-								if ( (x1 - 1) == x2 )
+							case 0: // west
+								if ( (x1 + 1) == x2 )
 								{
 									(circuit_status > 1) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
@@ -87,8 +87,8 @@ void Entity::updateCircuitNeighbors()
 									(circuit_status > 1) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
-							case 2: // west
-								if ( (x1 + 1) == x2 )
+							case 2: // east
+								if ( (x1 - 1) == x2 )
 								{
 									(circuit_status > 1) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
@@ -519,8 +519,8 @@ void Entity::toggleSwitch()
 						//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
 						switch ( powerable->signalInputDirection )
 						{
-							case 0: // east
-								if ( (x1 - 1) == x2 )
+							case 0: // west
+								if ( (x1 + 1) == x2 )
 								{
 									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
@@ -531,8 +531,8 @@ void Entity::toggleSwitch()
 									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
 								break;
-							case 2: // west
-								if ( (x1 + 1) == x2 )
+							case 2: // east
+								if ( (x1 - 1) == x2 )
 								{
 									(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 								}
@@ -590,8 +590,8 @@ void Entity::switchUpdateNeighbors()
 							//messagePlayer(0, "%d, %d, %d, %d", x1, x2, y1, y2);
 							switch ( powerable->signalInputDirection )
 							{
-								case 0: // east
-									if ( (x1 - 1) == x2 )
+								case 0: // west
+									if ( (x1 + 1) == x2 )
 									{
 										powerable->mechanismPowerOn();
 									}
@@ -602,8 +602,8 @@ void Entity::switchUpdateNeighbors()
 										powerable->mechanismPowerOn();
 									}
 									break;
-								case 2: // west
-									if ( (x1 + 1) == x2 )
+								case 2: // east
+									if ( (x1 - 1) == x2 )
 									{
 										powerable->mechanismPowerOn();
 									}
@@ -882,14 +882,14 @@ void Entity::actSignalTimer()
 	{
 		switch ( signalInputDirection )
 		{
-			case 0: // east
-				getPowerablesOnTile(tx - 1, ty, &neighbors); //Check tile to the left.
+			case 0: // west
+				getPowerablesOnTile(tx + 1, ty, &neighbors); //Check tile to the left.
 				break;
 			case 1: // south
 				getPowerablesOnTile(tx, ty - 1, &neighbors); //Check tile to the north.
 				break;
-			case 2: // west
-				getPowerablesOnTile(tx + 1, ty, &neighbors); //Check tile to the right.
+			case 2: // east
+				getPowerablesOnTile(tx - 1, ty, &neighbors); //Check tile to the right.
 				break;
 			case 3: // north
 				getPowerablesOnTile(tx, ty + 1, &neighbors); //Check tile to the south
@@ -916,7 +916,7 @@ void Entity::actSignalTimer()
 							{
 								switch ( powerable->signalInputDirection )
 								{
-									case 0: // east
+									case 0: // west
 										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) - 1) )
 										{
 											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
@@ -928,7 +928,7 @@ void Entity::actSignalTimer()
 											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
 										}
 										break;
-									case 2: // west
+									case 2: // east
 										if ( static_cast<int>(this->x / 16) == static_cast<int>((powerable->x / 16) + 1) )
 										{
 											(switch_power == SWITCH_POWERED) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
