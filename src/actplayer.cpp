@@ -1536,12 +1536,27 @@ void actPlayer(Entity* my)
 			{
 				if ( *inputPressed(impulses[IN_FOLLOWERMENU]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU]) )
 				{
-					selectedEntity = FollowerMenu.recentEntity;
-					FollowerMenu.holdWheel = true;
+					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+						&& FollowerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+					{
+						// your ally is angry at you!
+					}
+					else
+					{
+						selectedEntity = FollowerMenu.recentEntity;
+						FollowerMenu.holdWheel = true;
+					}
 				}
 				else if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
 				{
-					if ( FollowerMenu.optionPrevious != -1 )
+					if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+						&& FollowerMenu.recentEntity->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+					{
+						// your ally is angry at you!
+						*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) = 0;
+					}
+					else if ( FollowerMenu.optionPrevious != -1 )
 					{
 						FollowerMenu.followerToCommand = FollowerMenu.recentEntity;
 					}
@@ -1569,12 +1584,23 @@ void actPlayer(Entity* my)
 						FollowerMenu.followerToCommand = selectedEntity;
 						//messagePlayer(0, "head");
 					}
+
 					if ( FollowerMenu.followerToCommand )
 					{
-						FollowerMenu.recentEntity = FollowerMenu.followerToCommand;
-						FollowerMenu.initFollowerMenuGUICursor(true);
-						FollowerMenu.updateScrollPartySheet();
-						selectedEntity = NULL;
+						if ( players[PLAYER_NUM] && players[PLAYER_NUM]->entity
+							&& FollowerMenu.followerToCommand->monsterTarget == players[PLAYER_NUM]->entity->getUID() )
+						{
+							// your ally is angry at you!
+							FollowerMenu.followerToCommand = nullptr;
+							FollowerMenu.optionPrevious = -1;
+						}
+						else
+						{
+							FollowerMenu.recentEntity = FollowerMenu.followerToCommand;
+							FollowerMenu.initFollowerMenuGUICursor(true);
+							FollowerMenu.updateScrollPartySheet();
+							selectedEntity = NULL;
+						}
 					}
 				}
 				if ( selectedEntity )

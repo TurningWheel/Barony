@@ -9446,6 +9446,11 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		}
 	}
 
+	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
+	{
+		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
+	}
+
 	if ( !hadOldTarget && myStats->type == SHADOW )
 	{
 		//messagePlayer(clientnum, "TODO: Shadow got new target.");
@@ -9482,6 +9487,11 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 	}*/
 
 	monsterTarget = 0;
+
+	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
+	{
+		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
+	}
 
 	return true;
 }

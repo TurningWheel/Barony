@@ -2984,6 +2984,10 @@ void actMonster(Entity* my)
 						if ( previousMonsterState != my->monsterState )
 						{
 							serverUpdateEntitySkill(my, 0);
+							if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+							{
+								serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+							}
 						}
 						return;
 					}
@@ -3027,6 +3031,10 @@ void actMonster(Entity* my)
 							if ( previousMonsterState != my->monsterState )
 							{
 								serverUpdateEntitySkill(my, 0);
+								if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+								{
+									serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+								}
 							}
 							return;
 						}
@@ -3182,6 +3190,10 @@ void actMonster(Entity* my)
 				if ( previousMonsterState != my->monsterState )
 				{
 					serverUpdateEntitySkill(my, 0);
+					if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+					{
+						serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+					}
 				}
 				if ( myStats->type == SHADOW )
 				{
@@ -3998,10 +4010,18 @@ timeToGoAgain:
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
+					if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+					{
+						serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+					}
 					return;
 				}
 				my->monsterState = MONSTER_STATE_PATH;
 				serverUpdateEntitySkill(my, 0); //Update state.
+				if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+				{
+					serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+				}
 				return;
 			}
 
@@ -5636,6 +5656,10 @@ timeToGoAgain:
 	if ( previousMonsterState != my->monsterState )
 	{
 		serverUpdateEntitySkill(my, 0);
+		if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+		{
+			serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+		}
 	}
 
 	// move body parts
@@ -6184,7 +6208,8 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			return 1; //reached setpoint
 		}
 		limb->yaw += rate;
-	} else if ( axis == ANIMATE_PITCH )
+	} 
+	else if ( axis == ANIMATE_PITCH )
 	{
 		while ( limb->pitch < 0 )
 		{
@@ -6219,7 +6244,8 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			return 1; //reached setpoint
 		}
 		limb->pitch += rate;
-	} else if ( axis == ANIMATE_ROLL )
+	} 
+	else if ( axis == ANIMATE_ROLL )
 	{
 		while ( limb->roll < 0 )
 		{
