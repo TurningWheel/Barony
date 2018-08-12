@@ -712,7 +712,7 @@ void drawPartySheet()
 								if ( mousestatus[SDL_BUTTON_LEFT] )
 								{
 									FollowerMenu.recentEntity = follower;
-									playSound(399, 64);
+									playSound(139, 64);
 									FollowerMenu.accessedMenuFromPartySheet = true;
 									FollowerMenu.partySheetMouseX = omousex;
 									FollowerMenu.partySheetMouseY = omousey;
@@ -740,15 +740,34 @@ void drawPartySheet()
 						}
 
 						pos.y += 6;
+						char name[16] = "";
 						if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
 						{
-							ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", followerStats->name);
+							if ( strlen(followerStats->name) > 10 )
+							{
+								strncpy(name, followerStats->name, 8);
+								strcat(name, "..");
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", name);
+							}
+							else
+							{
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", followerStats->name);
+							}
 						}
 						else
 						{
-							ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+							if ( strlen(monstertypename[followerStats->type]) > 10 )
+							{
+								strncpy(name, monstertypename[followerStats->type], 8);
+								strcat(name, "..");
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", name);
+							}
+							else
+							{
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+							}
 						}
-						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
+						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 11, pos.y, color, "LVL %2d", followerStats->LVL);
 
 						playerBar.x = pos.x + 64;
 						playerBar.w = 10 * 11;
