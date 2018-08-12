@@ -4726,26 +4726,35 @@ void handleMainMenu(bool mode)
 					highlightEntry.h = filename_rowHeight + 8;
 					drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 64);
 
+					char steamID[32] = "";
+					if ( strlen(SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser)) > 18 )
+					{
+						strncpy(steamID, SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser), 16);
+						strcat(steamID, "..");
+					}
+					else
+					{
+						strncpy(steamID, SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser), 18);
+					}
 					if ( g_SteamLeaderboards->LeaderboardView.boardToDownload != LEADERBOARD_NONE
 						&& g_SteamLeaderboards->LeaderboardView.boardToDownload % 2 == 1 )
 					{
 						Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) % 60;
 						Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) / 60) % 60;
 						Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) / 60) / 60;
-						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Time: %02d:%02d:%02d    Score: %6d",
+
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%18s]:   Time: %02d:%02d:%02d  Score: %6d",
 							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
-							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
-							hour, min, sec, g_SteamLeaderboards->downloadedTags[i][TAG_TOTAL_SCORE]);
+							steamID, hour, min, sec, g_SteamLeaderboards->downloadedTags[i][TAG_TOTAL_SCORE]);
 					}
 					else
 					{
 						Uint32 sec = (g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) % 60;
 						Uint32 min = ((g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) / 60) % 60;
 						Uint32 hour = ((g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) / 60) / 60;
-						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Score: %6d    Time: %02d:%02d:%02d",
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%18s]:   Score: %6d  Time: %02d:%02d:%02d",
 							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
-							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
-							g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore, hour, min, sec);
+							steamID, g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore, hour, min, sec);
 					}
 
 					filename_padx = filename_padx2 - (15 * TTF12_WIDTH + 16);
