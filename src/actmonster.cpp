@@ -2820,10 +2820,7 @@ void actMonster(Entity* my)
 								}
 								if ( hit.entity == entity )
 								{
-									/*my->monsterState = MONSTER_STATE_ATTACK; // charge state
-									my->monsterTarget = hit.entity->getUID();
-									my->monsterTargetX = hit.entity->x;
-									my->monsterTargetY = hit.entity->y;*/
+									// charge state
 									Entity& attackTarget = *hit.entity;
 									my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 
@@ -2876,10 +2873,6 @@ void actMonster(Entity* my)
 														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 														if ( hit.entity == entity )
 														{
-															/*entity->monsterState = MONSTER_STATE_PATH;
-															entity->monsterTarget = my->monsterTarget;
-															entity->fskill[2] = my->monsterTargetX;
-															entity->fskill[3] = my->monsterTargetY;*/
 															entity->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_PATH);
 														}
 													}
@@ -2929,10 +2922,6 @@ void actMonster(Entity* my)
 					}
 					if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
 					{
-						/*my->monsterState = MONSTER_STATE_PATH; // path state
-						my->monsterTarget = players[playerToChase]->entity->getUID();
-						my->monsterTargetX = players[playerToChase]->entity->x;
-						my->monsterTargetY = players[playerToChase]->entity->y;*/
 						my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
 					}
 					if ( previousMonsterState != my->monsterState )
@@ -3894,10 +3883,7 @@ timeToGoAgain:
 											if ( hit.entity == entity )
 											{
 												Entity& attackTarget = *hit.entity;
-												/*my->monsterTarget = hit.entity->getUID();
-												my->monsterState = MONSTER_STATE_ATTACK; // charge state
-												my->monsterTargetX = hit.entity->x;
-												my->monsterTargetY = hit.entity->y;*/
+												// charge state
 												my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 
 												if ( MONSTER_SOUND == NULL )
@@ -3991,11 +3977,7 @@ timeToGoAgain:
 					}
 					if (playerToChase >= 0)
 					{
-						/*my->monsterState = MONSTER_STATE_PATH; // path state
-						my->monsterTarget = players[playerToChase]->entity->getUID();
-						my->monsterTargetX = players[playerToChase]->entity->x;
-						my->monsterTargetY = players[playerToChase]->entity->y;*/
-
+						// path state
 						if ( players[playerToChase] && players[playerToChase]->entity )
 						{
 							my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
@@ -4280,11 +4262,7 @@ timeToGoAgain:
 										}
 										else if ( my->checkEnemy(hit.entity) )
 										{
-											/*my->monsterTarget = hit.entity->getUID();
-											my->monsterTargetX = hit.entity->x;
-											my->monsterTargetY = hit.entity->y;
-											my->monsterState = MONSTER_STATE_ATTACK; // charge state*/
-
+											// charge state
 											Entity& attackTarget = *hit.entity;
 											my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 										}
@@ -4294,11 +4272,7 @@ timeToGoAgain:
 								{
 									if ( my->checkEnemy(hit.entity) )
 									{
-										/*my->monsterTarget = hit.entity->getUID();
-										my->monsterTargetX = hit.entity->x;
-										my->monsterTargetY = hit.entity->y;
-										my->monsterState = MONSTER_STATE_ATTACK; // charge state*/
-
+										// charge state
 										Entity& attackTarget = *hit.entity;
 										my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 									}
@@ -5900,15 +5874,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					// alert the monster!
 					if ( hit.entity->skill[0] != MONSTER_STATE_ATTACK )
 					{
-						//hit.entity->skill[0]=0;
-						//hit.entity->skill[4]=0;
-						//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
-
-						/*hit.entity->monsterState = MONSTER_STATE_PATH;
-						hit.entity->monsterTarget = this->getUID();
-						hit.entity->monsterTargetX = this->x;
-						hit.entity->monsterTargetY = this->y;*/
-
 						hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH);
 					}
 				}
