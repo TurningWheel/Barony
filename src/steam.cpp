@@ -1390,7 +1390,8 @@ void CSteamLeaderboards::OnDownloadScore(LeaderboardScoresDownloaded_t *pCallbac
 {
 	if ( !bIOFailure )
 	{
-		m_nLeaderboardEntries = std::min(pCallback->m_cEntryCount, k_numEntriesToRetrieve);
+		int numEntries = CSteamLeaderboards::k_numEntriesToRetrieve;
+		m_nLeaderboardEntries = std::min(pCallback->m_cEntryCount, numEntries);
 		for ( int i = 0; i < m_nLeaderboardEntries; ++i )
 		{
 			SteamUserStats()->GetDownloadedLeaderboardEntry(pCallback->m_hSteamLeaderboardEntries, 
@@ -1529,7 +1530,8 @@ void CSteamLeaderboards::ProcessLeaderboardUpload()
 						printlog("[STEAM]: You did not beat your previous leaderboard score.");
 					}
 					ClearUploadData();
-					DownloadScores(k_ELeaderboardDataRequestGlobal, 0, k_numEntriesToRetrieve);
+					int numEntries = CSteamLeaderboards::k_numEntriesToRetrieve;
+					DownloadScores(k_ELeaderboardDataRequestGlobal, 0, numEntries);
 				}
 			}
 		}
