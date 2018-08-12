@@ -7684,7 +7684,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
-				message = language[3090];
+				message = language[3091];
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
 				message = language[3089 + rand() % 2];
