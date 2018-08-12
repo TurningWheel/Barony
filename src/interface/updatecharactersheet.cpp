@@ -740,7 +740,14 @@ void drawPartySheet()
 						}
 
 						pos.y += 6;
-						ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+						if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
+						{
+							ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", followerStats->name);
+						}
+						else
+						{
+							ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+						}
 						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
 
 						playerBar.x = pos.x + 64;

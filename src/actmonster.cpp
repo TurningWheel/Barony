@@ -737,9 +737,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		//Tell the client he suckered somebody into his cult.
 		strcpy((char*) (net_packet->data), "LEAD");
 		SDLNet_Write32((Uint32 )my->getUID(), &net_packet->data[4]);
+		strcpy((char*)(&net_packet->data[8]), myStats->name);
+		net_packet->data[8 + strlen(myStats->name)] = 0;
 		net_packet->address.host = net_clients[monsterclicked - 1].host;
 		net_packet->address.port = net_clients[monsterclicked - 1].port;
-		net_packet->len = 8;
+		net_packet->len = 8 + strlen(myStats->name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
@@ -6425,9 +6427,11 @@ bool forceFollower(Entity& leader, Entity& follower)
 		//Tell the client he suckered somebody into his cult.
 		strcpy((char*) (net_packet->data), "LEAD");
 		SDLNet_Write32((Uint32 )follower.getUID(), &net_packet->data[4]);
+		strcpy((char*)(&net_packet->data[8]), followerStats->name);
+		net_packet->data[8 + strlen(followerStats->name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 8;
+		net_packet->len = 8 + strlen(followerStats->name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);

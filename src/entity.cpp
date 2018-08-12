@@ -9345,11 +9345,6 @@ void Entity::giveClientStats()
 	}
 }
 
-//void Entity::serverUpdateStatsForAllyNPC()
-//{
-//
-//}
-
 void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 {
 	Stat* myStats = getStats();

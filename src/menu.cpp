@@ -6519,9 +6519,11 @@ void handleMainMenu(bool mode)
 											{
 												strcpy((char*)net_packet->data, "LEAD");
 												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
+												strcpy((char*)(&net_packet->data[8]), monsterStats->name);
+												net_packet->data[8 + strlen(monsterStats->name)] = 0;
 												net_packet->address.host = net_clients[c - 1].host;
 												net_packet->address.port = net_clients[c - 1].port;
-												net_packet->len = 8;
+												net_packet->len = 8 + strlen(monsterStats->name) + 1;
 												sendPacketSafe(net_sock, -1, net_packet, c - 1);
 
 												serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
