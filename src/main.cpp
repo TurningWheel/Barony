@@ -185,7 +185,7 @@ char oldfilename[128];
 char message[256];
 int messagetime = 0;
 char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[32];
-char mapflagtext[MAPFLAGS][32];
+char mapflagtext[MAPFLAGTEXTS][32];
 char spriteProperties[32][128];
 char tmpSpriteProperties[32][128];
 int editproperty = 0;
