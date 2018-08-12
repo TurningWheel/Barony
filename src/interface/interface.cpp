@@ -1452,6 +1452,21 @@ void FollowerRadialMenu::drawFollowerMenu()
 	bool keepWheelOpen = false;
 	if ( followerToCommand )
 	{
+		if ( players[clientnum] && players[clientnum]->entity
+			&& followerToCommand->monsterTarget == players[clientnum]->entity->getUID() )
+		{
+			shootmode = true;
+			CloseIdentifyGUI();
+			closeRemoveCurseGUI();
+			if ( openedChest[clientnum] )
+			{
+				openedChest[clientnum]->closeChest();
+			}
+			gui_mode = GUI_MODE_NONE;
+			closeFollowerMenuGUI();
+			return;
+		}
+
 		Stat* followerStats = followerToCommand->getStats();
 		if ( !followerStats )
 		{
@@ -2078,6 +2093,11 @@ void FollowerRadialMenu::selectNextFollower()
 					}
 					sidebarScrollIndex = 0;
 				}
+			}
+			if ( recentEntity )
+			{
+				createParticleFollowerCommand(recentEntity->x, recentEntity->y, 0, 174);
+				playSound(399, 64);
 			}
 			return;
 		}

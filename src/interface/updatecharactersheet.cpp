@@ -18,6 +18,7 @@
 #include "../colors.hpp"
 #include "interface.hpp"
 #include "../sound.hpp"
+#include "../magic/magic.hpp"
 
 void statsHoverText(Stat* tmpStat);
 
@@ -711,11 +712,15 @@ void drawPartySheet()
 								if ( mousestatus[SDL_BUTTON_LEFT] )
 								{
 									FollowerMenu.recentEntity = follower;
-									playSound(139, 64);
+									playSound(399, 64);
 									FollowerMenu.accessedMenuFromPartySheet = true;
 									FollowerMenu.partySheetMouseX = omousex;
 									FollowerMenu.partySheetMouseY = omousey;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
+									if ( FollowerMenu.recentEntity )
+									{
+										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+									}
 								}
 								else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 								{
@@ -726,6 +731,10 @@ void drawPartySheet()
 									FollowerMenu.partySheetMouseY = omousey;
 									FollowerMenu.initFollowerMenuGUICursor();
 									FollowerMenu.updateScrollPartySheet();
+									if ( FollowerMenu.recentEntity )
+									{
+										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+									}
 								}
 							}
 						}
