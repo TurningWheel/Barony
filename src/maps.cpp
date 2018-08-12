@@ -3805,7 +3805,7 @@ void assignActions(map_t* map)
 							childEntity->x = (x << 4) + 8;
 							childEntity->y = (y << 4) + 8;
 							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-							entity->flags[PASSABLE] = true;
+							childEntity->flags[PASSABLE] = true;
 							if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 							{
 								childEntity->z = -26.99;
@@ -4190,7 +4190,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4229,7 +4229,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4268,7 +4268,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4307,7 +4307,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
