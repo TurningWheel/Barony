@@ -196,11 +196,6 @@ void actArrow(Entity* my)
 					{
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
-							/*hit.entity->monsterState = MONSTER_STATE_PATH;
-							hit.entity->monsterTarget = parent->getUID();
-							hit.entity->monsterTargetX = parent->x;
-							hit.entity->monsterTargetY = parent->y;*/
-
 							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 						}
 
@@ -222,11 +217,6 @@ void actArrow(Entity* my)
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
-												/*entity->monsterState = MONSTER_STATE_PATH;
-												entity->monsterTarget = parent->getUID();
-												entity->monsterTargetX = parent->x;
-												entity->monsterTargetY = parent->y;*/
-
 												entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 											}
 										}

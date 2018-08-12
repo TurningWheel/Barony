@@ -4751,15 +4751,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// alert the monster!
 						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
-							//hit.entity->skill[0]=0;
-							//hit.entity->skill[4]=0;
-							//hit.entity->fskill[4]=atan2(my->y-hit.entity->y,my->x-hit.entity->x);
-
-							/*hit.entity->monsterState = MONSTER_STATE_PATH;
-							hit.entity->monsterTarget = uid;
-							hit.entity->monsterTargetX = x;
-							hit.entity->monsterTargetY = y;*/
-
 							Entity* attackTarget = uidToEntity(uid);
 
 							if ( attackTarget )
@@ -4786,11 +4777,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
-												/*entity->monsterState = MONSTER_STATE_PATH;
-												entity->monsterTarget = uid;
-												entity->monsterTargetX = x;
-												entity->monsterTargetY = y;*/
-
 												Entity* attackTarget = uidToEntity(uid);
 												if ( attackTarget )
 												{
@@ -4825,11 +4811,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( entity->monsterState == MONSTER_STATE_WAIT || (entity->monsterState == MONSTER_STATE_HUNT && entity->monsterTarget != uid) ) // monster is waiting or hunting
 							{
-								/*entity->monsterState = MONSTER_STATE_PATH;
-								entity->monsterTarget = uid;
-								entity->monsterTargetX = x;
-								entity->monsterTargetY = y;*/
-
 								Entity* attackTarget = uidToEntity(uid);
 								if ( attackTarget )
 								{
