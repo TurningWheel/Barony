@@ -2097,7 +2097,7 @@ void FollowerRadialMenu::selectNextFollower()
 			if ( recentEntity )
 			{
 				createParticleFollowerCommand(recentEntity->x, recentEntity->y, 0, 174);
-				playSound(399, 64);
+				playSound(139, 64);
 			}
 			return;
 		}
