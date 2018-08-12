@@ -2564,6 +2564,9 @@ void clientHandlePacket()
 					case PARTICLE_EFFECT_RISING_DROP:
 						createParticleDropRising(entity, sprite, 1.0);
 						break;
+					case PARTICLE_EFFECT_CHARM_MONSTER:
+						createParticleCharmMonster(entity);
+						break;
 					case PARTICLE_EFFECT_PORTAL_SPAWN:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 100, sprite);
@@ -2673,9 +2676,18 @@ void clientHandlePacket()
 		node->deconstructor = &defaultDeconstructor;
 		node->size = sizeof(Uint32);
 
+		Entity* monster = uidToEntity(*uidnum);
+		if ( !monster->clientsHaveItsStats )
+		{
+			monster->giveClientStats();
+		}
+		if ( monster->clientStats )
+		{
+			strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
+		}
 		if ( !FollowerMenu.recentEntity )
 		{
-			FollowerMenu.recentEntity = uidToEntity(*uidnum);
+			FollowerMenu.recentEntity = monster;
 		}
 		return;
 	}
