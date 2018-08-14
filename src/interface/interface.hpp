@@ -485,6 +485,7 @@ public:
 		maxMonstersToDraw(5)
 	{}
 
+	bool followerMenuIsOpen();
 	void drawFollowerMenu();
 	void initFollowerMenuGUICursor(bool openInventory = true);
 	void closeFollowerMenuGUI(bool clearRecentEntity = false);

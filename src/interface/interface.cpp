@@ -1437,6 +1437,15 @@ void FollowerRadialMenu::closeFollowerMenuGUI(bool clearRecentEntity)
 	optionSelected = -1;
 }
 
+bool FollowerRadialMenu::followerMenuIsOpen()
+{
+	if ( selectMoveTo || followerToCommand != nullptr )
+	{
+		return true;
+	}
+	return false;
+}
+
 void FollowerRadialMenu::drawFollowerMenu()
 {
 	if ( selectMoveTo )

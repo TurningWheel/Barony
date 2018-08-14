@@ -44,6 +44,10 @@ void clickDescription(int player, Entity* entity)
 		{
 			return;
 		}
+		if ( FollowerMenu.followerMenuIsOpen() )
+		{
+			return;
+		}
 		if (openedChest[clientnum])
 			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
 			{
