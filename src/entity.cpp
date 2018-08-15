@@ -2706,7 +2706,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( this->char_poison > 150 )   // three seconds
 		{
 			this->char_poison = 0;
-			int poisonhurt = std::max(3, (myStats->HP / 20));
+			int poisonhurt = std::max(3, (myStats->MAXHP / 20));
 			if ( poisonhurt > 3 )
 			{
 				poisonhurt -= rand() % (std::max(1, poisonhurt / 4));
@@ -2758,7 +2758,7 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			if ( myStats->HP > 5 + (std::max(0, getCON())) ) // CON increases when bleeding stops.
 			{
-				int bleedhurt = 1 + myStats->HP / 30;
+				int bleedhurt = 1 + myStats->MAXHP / 30;
 				if ( bleedhurt > 1 )
 				{
 					bleedhurt -= rand() % (std::max(1, bleedhurt / 2));
