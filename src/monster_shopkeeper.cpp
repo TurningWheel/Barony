@@ -344,7 +344,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 						else
 						{
-							tmpItem = newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+							tmpItem = newItem(itemLevelCurve(MAGICSTAFF, 0, 15), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
 						}
 						// post-processing
 						if ( rand() % blessedShopkeeper > 0 )
