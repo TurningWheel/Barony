@@ -60,6 +60,12 @@ FMOD_SOUND* sanctummusic = NULL;
 FMOD_SOUND* introductionmusic = NULL;
 FMOD_SOUND** cavesmusic = NULL;
 FMOD_SOUND** citadelmusic = NULL;
+FMOD_SOUND* gnomishminesmusic = NULL;
+FMOD_SOUND* greatcastlemusic = NULL;
+FMOD_SOUND* sokobanmusic = NULL;
+FMOD_SOUND* caveslairmusic = NULL;
+FMOD_SOUND* bramscastlemusic = NULL;
+FMOD_SOUND* hamletmusic = NULL;
 bool levelmusicplaying = false;
 
 FMOD_CHANNEL* music_channel = NULL;
@@ -398,6 +404,12 @@ OPENAL_BUFFER* sanctummusic = NULL;
 OPENAL_BUFFER* introductionmusic = NULL;
 OPENAL_BUFFER** cavesmusic = NULL;
 OPENAL_BUFFER** citadelmusic = NULL;
+OPENAL_BUFFER* gnomishminesmusic = NULL;
+OPENAL_BUFFER* greatcastlemusic = NULL;
+OPENAL_BUFFER* sokobanmusic = NULL;
+OPENAL_BUFFER* caveslairmusic = NULL;
+OPENAL_BUFFER* bramscastlemusic = NULL;
+OPENAL_BUFFER* hamletmusic = NULL;
 bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = NULL;
@@ -913,6 +925,12 @@ bool physfsSearchMusicToUpdate()
 	themeMusic.push_back("music/escape.ogg");
 	themeMusic.push_back("music/devil.ogg");
 	themeMusic.push_back("music/sanctum.ogg");
+	themeMusic.push_back("music/gnomishmines.ogg");
+	themeMusic.push_back("music/greatcastle.ogg");
+	themeMusic.push_back("music/sokoban.ogg");
+	themeMusic.push_back("music/caveslair.ogg");
+	themeMusic.push_back("music/bramscastle.ogg");
+	themeMusic.push_back("music/hamlet.ogg");
 
 	for ( std::vector<std::string>::iterator it = themeMusic.begin(); it != themeMusic.end(); ++it )
 	{
@@ -1088,6 +1106,12 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 	themeMusic.push_back("music/escape.ogg");
 	themeMusic.push_back("music/devil.ogg");
 	themeMusic.push_back("music/sanctum.ogg");
+	themeMusic.push_back("music/gnomishmines.ogg");
+	themeMusic.push_back("music/greatcastle.ogg");
+	themeMusic.push_back("music/sokoban.ogg");
+	themeMusic.push_back("music/caveslair.ogg");
+	themeMusic.push_back("music/bramscastle.ogg");
+	themeMusic.push_back("music/hamlet.ogg");
 
 	int index = 0;
 #ifdef USE_OPENAL
@@ -1193,6 +1217,48 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 							FMOD_Sound_Release(sanctummusic);
 							fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &sanctummusic);
 						}
+						break;
+					case 12:
+						if ( gnomishminesmusic )
+						{
+							FMOD_Sound_Release(gnomishminesmusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &gnomishminesmusic);
+						break;
+					case 13:
+						if ( greatcastlemusic )
+						{
+							FMOD_Sound_Release(greatcastlemusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &greatcastlemusic);
+						break;
+					case 14:
+						if ( sokobanmusic )
+						{
+							FMOD_Sound_Release(sokobanmusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &sokobanmusic);
+						break;
+					case 15:
+						if ( caveslairmusic )
+						{
+							FMOD_Sound_Release(caveslairmusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &caveslairmusic);
+						break;
+					case 16:
+						if ( bramscastlemusic )
+						{
+							FMOD_Sound_Release(bramscastlemusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &bramscastlemusic);
+						break;
+					case 17:
+						if ( hamletmusic )
+						{
+							FMOD_Sound_Release(hamletmusic);
+						}
+						fmod_result = FMOD_System_CreateStream(fmod_system, musicDir.c_str(), FMOD_SOFTWARE, NULL, &hamletmusic);
 						break;
 					default:
 						break;
