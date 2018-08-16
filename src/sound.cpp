@@ -1484,3 +1484,47 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 
 #endif // SOUND
 }
+
+void gamemodsUnloadCustomThemeMusic()
+{
+#ifndef SOUND
+	return;
+#endif // !SOUND
+#ifdef USE_OPENAL
+#define FMOD_Sound_Release OPENAL_Sound_Release
+#endif
+	// free custom music slots, not used by official music assets.
+	if ( gnomishminesmusic )
+	{
+		FMOD_Sound_Release(gnomishminesmusic);
+		gnomishminesmusic = NULL;
+	}
+	if ( greatcastlemusic )
+	{
+		FMOD_Sound_Release(greatcastlemusic);
+		greatcastlemusic = NULL;
+	}
+	if ( sokobanmusic )
+	{
+		FMOD_Sound_Release(sokobanmusic);
+		sokobanmusic = NULL;
+	}
+	if ( caveslairmusic )
+	{
+		FMOD_Sound_Release(caveslairmusic);
+		caveslairmusic = NULL;
+	}
+	if ( bramscastlemusic )
+	{
+		FMOD_Sound_Release(bramscastlemusic);
+		bramscastlemusic = NULL;
+	}
+	if ( hamletmusic )
+	{
+		FMOD_Sound_Release(hamletmusic);
+		hamletmusic = NULL;
+	}
+#ifdef USE_OPENAL
+#undef FMOD_Sound_Release
+#endif
+}
