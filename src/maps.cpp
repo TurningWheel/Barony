@@ -5109,28 +5109,6 @@ void mapLevel(int player)
 	}
 }
 
-Entity* map_t::getEntityWithUID(Uint32 uid)
-{
-	Entity* entity = nullptr;
-
-	for ( node_t* node = entities->first; node; node = node->next )
-	{
-		entity = (node->element? static_cast<Entity*>(node->element) : nullptr);
-
-		if ( !entity )
-		{
-			continue;
-		}
-
-		if ( entity->getUID() == uid )
-		{
-			return entity;
-		}
-	}
-
-	return nullptr;
-}
-
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 {
 	bool foundVictory = false;
