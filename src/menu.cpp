@@ -10314,7 +10314,7 @@ void openNewLoadGameWindow(button_t* my)
 			struct tm *tm = nullptr;
 			char path[PATH_MAX] = "";
 			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
+			strncpy(savefile, setSaveGameFileName(false, false, fileNumber).c_str(), PATH_MAX - 1);
 			completePath(path, savefile, outputdir);
 #ifdef WINDOWS
 			struct _stat result;
