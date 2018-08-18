@@ -38,12 +38,14 @@
 #include "player.hpp"
 #include <limits>
 
+#if defined(LINUX) || defined(APPLE)
+#include <sys/stat.h>
+#endif
 #ifdef LINUX
 //Sigsegv catching stuff.
 #include <signal.h>
 #include <string.h>
 #include <execinfo.h>
-#include <sys/stat.h>
 
 const unsigned STACK_SIZE = 10;
 

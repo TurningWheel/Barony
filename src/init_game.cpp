@@ -156,7 +156,7 @@ int initGame()
 	std::string itemsDirectory = PHYSFS_getRealDir("items/items.txt");
 	itemsDirectory.append(PHYSFS_getDirSeparator()).append("items/items.txt");
 	fp = openDataFile(itemsDirectory.c_str(), "r");
-	for ( c = 0; !feof(fp); ++c )
+	for ( c = 0; c < NUMITEMS; ++c )
 	{
 		if ( c > ARTIFACT_BOW )
 		{
@@ -169,6 +169,10 @@ int initGame()
 			items[c].name_identified = language[1545 + c * 2];
 			items[c].name_unidentified = language[1546 + c * 2];
 		}
+		items[c].index = items[c].fpindex = items[c].variations = 1;
+
+		if (feof(fp))
+			continue;
 		fscanf(fp, "%d", &items[c].index);
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
 			{
