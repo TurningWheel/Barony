@@ -3118,6 +3118,27 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->EFFECTS[c] = false;
 						myStats->EFFECTS_TIMERS[c] = 0;
 					}
+					
+					// check if hovering over a pit
+					//if ( !isLevitating(myStats) )
+					//{
+					//	int my_x, my_y, u, v;
+					//	my_x = std::min(std::max<unsigned int>(1, this->x / 16), map.width - 2);
+					//	my_y = std::min(std::max<unsigned int>(1, this->y / 16), map.height - 2);
+					//	for ( u = my_x - 1; u <= my_x + 1; u++ )
+					//	{
+					//		for ( v = my_y - 1; v <= my_y + 1; v++ )
+					//		{
+					//			if ( entityInsideTile(this, u, v, 0) )   // no floor
+					//			{
+					//				break;
+					//			}
+					//		}
+					//	}
+					//}
+					myStats->EFFECTS[EFF_LEVITATING] = true;
+					myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 5 * TICKS_PER_SECOND;
+
 					this->flags[BURNING] = false;
 					serverUpdateEntityFlag(this, BURNING);
 					serverUpdateEffects(player);
