@@ -69,6 +69,12 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+#ifdef APPLE
+
+#include <sys/stat.h>
+
+#endif
+
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
 std::vector<std::string> physFSFilesInDirectory;
