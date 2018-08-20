@@ -147,7 +147,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						}
 					}
 				}
-				if ( stats->HP > 0 )
+				if ( stats->HP > 0 || (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING) )
 				{
 					// spawn several rock items
 					int i = 8 + rand() % 4;
@@ -676,7 +676,7 @@ void actBoulder(Entity* my)
 				{
 					rate = 15;
 				}
-				if ( spawn_blood && my->ticks % (rate + rand() % 5) == 0 )
+				if ( spawn_blood && my->ticks % (rate + rand() % 3) == 0 )
 				{
 					Entity* blood = newEntity(BOULDER_SPAWNBLOOD, 1, map.entities, nullptr); //Gib entity.;
 					if ( blood != NULL )

@@ -1064,7 +1064,7 @@ You should call a plumber!#
 
 652 But wait! Your amulet is glowing!#
 653 But wait! Your amulet feels warm!#
-654 You are brought back to life.#
+654 You are brought back to life and begin to float through the air!#
 655 However, your amulet crumbles to dust.#
 656 Whoops, sorry. Guess it was a dud.#
 657 See you in the next life.#

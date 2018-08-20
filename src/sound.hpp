@@ -70,6 +70,12 @@ extern FMOD_SOUND* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern FMOD_SOUND** cavesmusic;
 extern FMOD_SOUND** citadelmusic;
+extern FMOD_SOUND* gnomishminesmusic;
+extern FMOD_SOUND* greatcastlemusic;
+extern FMOD_SOUND* sokobanmusic;
+extern FMOD_SOUND* caveslairmusic;
+extern FMOD_SOUND* bramscastlemusic;
+extern FMOD_SOUND* hamletmusic;
 #define NUMCAVESMUSIC 3
 #define NUMCITADELMUSIC 3
 #define NUMINTROMUSIC 3
@@ -151,6 +157,12 @@ extern OPENAL_BUFFER* introductionmusic;
 #define NUMMINOTAURMUSIC 2
 extern OPENAL_BUFFER** cavesmusic;
 extern OPENAL_BUFFER** citadelmusic;
+extern OPENAL_BUFFER* gnomishminesmusic;
+extern OPENAL_BUFFER* greatcastlemusic;
+extern OPENAL_BUFFER* sokobanmusic;
+extern OPENAL_BUFFER* caveslairmusic;
+extern OPENAL_BUFFER* bramscastlemusic;
+extern OPENAL_BUFFER* hamletmusic;
 #define NUMCAVESMUSIC 3
 #define NUMCITADELMUSIC 3
 #define NUMINTROMUSIC 3

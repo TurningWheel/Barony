@@ -59,6 +59,7 @@ bool physfsSearchMonsterLimbFilesToUpdate();
 void physfsReloadMonsterLimbFiles();
 void physfsReloadSystemImages();
 bool physfsSearchSystemImagesToUpdate();
+void gamemodsUnloadCustomThemeMusic();
 extern std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImagesToReload;
 
 enum MapParameterIndices : int

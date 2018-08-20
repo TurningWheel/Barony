@@ -779,6 +779,7 @@ void handleMainMenu(bool mode)
 
 					if ( gamemods_musicRequireReloadUnmodded )
 					{
+						gamemodsUnloadCustomThemeMusic();
 						drawClearBuffers();
 						int w, h;
 						TTF_SizeUTF8(ttf16, language[2994], &w, &h);
@@ -4726,26 +4727,35 @@ void handleMainMenu(bool mode)
 					highlightEntry.h = filename_rowHeight + 8;
 					drawRect(&highlightEntry, uint32ColorBaronyBlue(*mainsurface), 64);
 
+					char steamID[32] = "";
+					if ( strlen(SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser)) > 18 )
+					{
+						strncpy(steamID, SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser), 16);
+						strcat(steamID, "..");
+					}
+					else
+					{
+						strncpy(steamID, SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser), 18);
+					}
 					if ( g_SteamLeaderboards->LeaderboardView.boardToDownload != LEADERBOARD_NONE
 						&& g_SteamLeaderboards->LeaderboardView.boardToDownload % 2 == 1 )
 					{
 						Uint32 sec = (g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) % 60;
 						Uint32 min = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) / 60) % 60;
 						Uint32 hour = ((g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore) / 60) / 60;
-						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Time: %02d:%02d:%02d    Score: %6d",
+
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%18s]:   Time: %02d:%02d:%02d  Score: %6d",
 							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
-							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
-							hour, min, sec, g_SteamLeaderboards->downloadedTags[i][TAG_TOTAL_SCORE]);
+							steamID, hour, min, sec, g_SteamLeaderboards->downloadedTags[i][TAG_TOTAL_SCORE]);
 					}
 					else
 					{
 						Uint32 sec = (g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) % 60;
 						Uint32 min = ((g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) / 60) % 60;
 						Uint32 hour = ((g_SteamLeaderboards->downloadedTags[i][TAG_COMPLETION_TIME]) / 60) / 60;
-						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%s]: Score: %6d    Time: %02d:%02d:%02d",
+						ttfPrintTextFormatted(ttf12, filename_padx + 8, filename_pady, "#%2d [%18s]:   Score: %6d  Time: %02d:%02d:%02d",
 							g_SteamLeaderboards->m_leaderboardEntries[i].m_nGlobalRank,
-							SteamFriends()->GetFriendPersonaName(g_SteamLeaderboards->m_leaderboardEntries[i].m_steamIDUser),
-							g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore, hour, min, sec);
+							steamID, g_SteamLeaderboards->m_leaderboardEntries[i].m_nScore, hour, min, sec);
 					}
 
 					filename_padx = filename_padx2 - (15 * TTF12_WIDTH + 16);
@@ -6519,9 +6529,11 @@ void handleMainMenu(bool mode)
 											{
 												strcpy((char*)net_packet->data, "LEAD");
 												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
+												strcpy((char*)(&net_packet->data[8]), monsterStats->name);
+												net_packet->data[8 + strlen(monsterStats->name)] = 0;
 												net_packet->address.host = net_clients[c - 1].host;
 												net_packet->address.port = net_clients[c - 1].port;
-												net_packet->len = 8;
+												net_packet->len = 8 + strlen(monsterStats->name) + 1;
 												sendPacketSafe(net_sock, -1, net_packet, c - 1);
 
 												serverUpdateAllyStat(c, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
@@ -10302,7 +10314,7 @@ void openNewLoadGameWindow(button_t* my)
 			struct tm *tm = nullptr;
 			char path[PATH_MAX] = "";
 			char savefile[PATH_MAX] = "";
-			strncpy(savefile, setSaveGameFileName(true, false, fileNumber).c_str(), PATH_MAX - 1);
+			strncpy(savefile, setSaveGameFileName(false, false, fileNumber).c_str(), PATH_MAX - 1);
 			completePath(path, savefile, outputdir);
 #ifdef WINDOWS
 			struct _stat result;
@@ -12076,6 +12088,8 @@ void buttonGamemodsStartModdedGame(button_t* my)
 		physfsReloadBooks();
 		gamemods_booksRequireReloadUnmodded = true;
 	}
+
+	gamemodsUnloadCustomThemeMusic();
 
 	if ( physfsSearchMusicToUpdate() )
 	{

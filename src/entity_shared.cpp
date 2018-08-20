@@ -106,6 +106,18 @@ int checkSpriteType(Sint32 sprite)
 		// floor decoration
 		return 13;
 		break;
+	case 130:
+		// sound source
+		return 14;
+	case 131:
+		// light source
+		return 15;
+	case 132:
+		// text source
+		return 16;
+	case 133:
+		// signal modifier
+		return 17;
 	default:
 		return 0;
 		break;
@@ -694,7 +706,11 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"PISTONS",
 	"FLOOR DECORATION",
 	"TELEPORT LOCATION",
-	"ENDEND PORTAL"
+	"ENDEND PORTAL",
+	"SOUND SOURCE",
+	"LIGHT SOURCE",
+	"TEXT SOURCE",
+	"SIGNAL TIMER"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1343,6 +1359,100 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->floorDecorationModel = 0;
 			entityNew->floorDecorationRotation = 0;
 			entityNew->floorDecorationHeightOffset = 0;
+		}
+	}
+	else if ( spriteType == 14 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->soundSourceToPlay = entityToCopy->soundSourceToPlay;
+			entityNew->soundSourceVolume = entityToCopy->soundSourceVolume;
+			entityNew->soundSourceLatchOn = entityToCopy->soundSourceLatchOn;
+			entityNew->soundSourceDelay = entityToCopy->soundSourceDelay;
+			entityNew->soundSourceOrigin = entityToCopy->soundSourceOrigin;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->soundSourceToPlay = 0;
+			entityNew->soundSourceVolume = 0;
+			entityNew->soundSourceLatchOn = 0;
+			entityNew->soundSourceDelay = 0;
+			entityNew->soundSourceOrigin = 0;
+		}
+	}
+	else if ( spriteType == 15 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->lightSourceAlwaysOn = entityToCopy->lightSourceAlwaysOn;
+			entityNew->lightSourceBrightness = entityToCopy->lightSourceBrightness;
+			entityNew->lightSourceInvertPower = entityToCopy->lightSourceInvertPower;
+			entityNew->lightSourceLatchOn = entityToCopy->lightSourceLatchOn;
+			entityNew->lightSourceRadius = entityToCopy->lightSourceRadius;
+			entityNew->lightSourceFlicker = entityToCopy->lightSourceFlicker;
+			entityNew->lightSourceDelay = entityToCopy->lightSourceDelay;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->lightSourceAlwaysOn = 0;
+			entityNew->lightSourceBrightness = 128;
+			entityNew->lightSourceInvertPower = 0;
+			entityNew->lightSourceLatchOn = 0;
+			entityNew->lightSourceRadius = 5;
+			entityNew->lightSourceFlicker = 0;
+			entityNew->lightSourceDelay = 0;
+		}
+	}
+	else if ( spriteType == 16 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->textSourceColorRGB = entityToCopy->textSourceColorRGB;
+			entityNew->textSourceVariables4W = entityToCopy->textSourceVariables4W;
+			entityNew->textSourceDelay = entityToCopy->textSourceDelay;
+			entityNew->textSource3 = entityToCopy->textSource3;
+			for ( int i = 4; i < 60; ++i )
+			{
+				entityNew->skill[i] = entityToCopy->skill[i];
+			}
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->textSourceColorRGB = 0xFFFFFFFF;
+			entityNew->textSourceVariables4W = 0;
+			entityNew->textSourceDelay = 0;
+			entityNew->textSource3 = 0;
+			for ( int i = 4; i < 60; ++i )
+			{
+				entityNew->skill[i] = 0;
+			}
+		}
+	}
+	else if ( spriteType == 17 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->signalInputDirection = entityToCopy->signalInputDirection;
+			entityNew->signalActivateDelay = entityToCopy->signalActivateDelay;
+			entityNew->signalTimerInterval = entityToCopy->signalTimerInterval;
+			entityNew->signalTimerRepeatCount = entityToCopy->signalTimerRepeatCount;
+			entityNew->signalTimerLatchInput = entityToCopy->signalTimerLatchInput;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->signalInputDirection = 0;
+			entityNew->signalActivateDelay = 0;
+			entityNew->signalTimerInterval = 0;
+			entityNew->signalTimerRepeatCount = 0;
+			entityNew->signalTimerLatchInput = 0;
 		}
 	}
 

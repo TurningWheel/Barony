@@ -493,3 +493,101 @@ void actFloorDecoration(Entity* my)
 		my->flags[PASSABLE] = true;
 	}
 }
+
+void actTextSource(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	my->actTextSource();
+}
+
+void Entity::actTextSource()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( ((textSourceVariables4W >> 16) & 0xFFFF) == 0 ) // store the delay in the 16 leftmost bits.
+	{
+		textSourceVariables4W |= (textSourceDelay << 16);
+	}
+
+	if ( circuit_status == CIRCUIT_ON )
+	{
+		// received power
+		if ( textSourceDelay > 0 )
+		{
+			--textSourceDelay;
+			return;
+		}
+		else
+		{
+			textSourceDelay = (textSourceVariables4W >> 16) & 0xFFFF;
+		}
+		if ( (textSourceVariables4W & 0xFF) == 0 )
+		{
+			textSourceVariables4W |= 1;
+			// assemble the string.
+			char buf[256] = "";
+			int totalChars = 0;
+			for ( int i = 4; i < 60; ++i )
+			{
+				if ( skill[i] != 0 )
+				{
+					for ( int c = 0; c < 4; ++c )
+					{
+						buf[totalChars] = static_cast<char>((skill[i] >> (c * 8)) & 0xFF);
+						++totalChars;
+					}
+				}
+			}
+			if ( buf[totalChars] != '\0' )
+			{
+				buf[totalChars] = '\0';
+			}
+			Uint32 color = SDL_MapRGB(mainsurface->format, (textSourceColorRGB >> 16) & 0xFF, (textSourceColorRGB >> 8) & 0xFF,
+				(textSourceColorRGB >> 0) & 0xFF);
+			std::string output = buf;
+			size_t foundPlayerRef = output.find("@p");
+			if ( foundPlayerRef != std::string::npos )
+			{
+				output.erase(foundPlayerRef, 2);
+				output.insert(foundPlayerRef, "%s");
+			}
+			size_t found = output.find("\\n");
+			while ( found != std::string::npos )
+			{
+				output.erase(found, 2);
+				output.insert(found, 1, '\n');
+				found = output.find("\\n");
+			}
+			strcpy(buf, output.c_str());
+
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( !client_disconnected[c] )
+				{
+					if ( foundPlayerRef != std::string::npos && stats[c] )
+					{
+						messagePlayerColor(c, color, buf, stats[c]->name);
+					}
+					else
+					{
+						messagePlayerColor(c, color, buf);
+					}
+				}
+			}
+		}
+	}
+	else if ( circuit_status == CIRCUIT_OFF )
+	{
+		textSourceDelay = (textSourceVariables4W >> 16) & 0xFFFF;
+		if ( (textSourceVariables4W & 0xFF) == 1 && ((textSourceVariables4W >> 8) & 0xFF) == 0 )
+		{
+			textSourceVariables4W -= 1;
+		}
+	}
+}

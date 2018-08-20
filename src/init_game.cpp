@@ -418,6 +418,30 @@ int fmod_result;
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/sanctum.ogg", FMOD_SOFTWARE, NULL, &sanctummusic);
+	if ( PHYSFS_getRealDir("music/gnomishmines.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/gnomishmines.ogg", FMOD_SOFTWARE, NULL, &gnomishminesmusic);
+	}
+	if ( PHYSFS_getRealDir("music/greatcastle.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/greatcastle.ogg", FMOD_SOFTWARE, NULL, &greatcastlemusic);
+	}
+	if ( PHYSFS_getRealDir("music/sokoban.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/sokoban.ogg", FMOD_SOFTWARE, NULL, &sokobanmusic);
+	}
+	if ( PHYSFS_getRealDir("music/caveslair.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/caveslair.ogg", FMOD_SOFTWARE, NULL, &caveslairmusic);
+	}
+	if ( PHYSFS_getRealDir("music/bramscastle.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/bramscastle.ogg", FMOD_SOFTWARE, NULL, &bramscastlemusic);
+	}
+	if ( PHYSFS_getRealDir("music/hamlet.ogg") != NULL )
+	{
+		fmod_result = FMOD_System_CreateStream(fmod_system, "music/hamlet.ogg", FMOD_SOFTWARE, NULL, &hamletmusic);
+	}
 	//fmod_result = FMOD_System_CreateStream(fmod_system, "music/story.ogg", FMOD_SOFTWARE, NULL, &storymusic);
 
 	if ( NUMMINESMUSIC > 0 )
@@ -740,6 +764,12 @@ void deinitGame()
 	FMOD_Sound_Release(escapemusic);
 	FMOD_Sound_Release(devilmusic);
 	FMOD_Sound_Release(sanctummusic);
+	FMOD_Sound_Release(gnomishminesmusic);
+	FMOD_Sound_Release(greatcastlemusic);
+	FMOD_Sound_Release(sokobanmusic);
+	FMOD_Sound_Release(caveslairmusic);
+	FMOD_Sound_Release(bramscastlemusic);
+	FMOD_Sound_Release(hamletmusic);
 	for ( c = 0; c < NUMMINESMUSIC; c++ )
 	{
 		FMOD_Sound_Release(minesmusic[c]);

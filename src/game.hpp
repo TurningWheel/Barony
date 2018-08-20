@@ -217,6 +217,9 @@ void actMidGamePortal(Entity* my);
 void actTeleporter(Entity* my);
 void actMagicTrapCeiling(Entity* my);
 void actExpansionEndGamePortal(Entity* my);
+void actSoundSource(Entity* my);
+void actLightSource(Entity* my);
+void actSignalTimer(Entity* my);
 
 void startMessages();
 
