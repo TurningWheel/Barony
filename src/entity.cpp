@@ -220,7 +220,32 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
-	interactedByMonster(skill[47])
+	interactedByMonster(skill[47]),
+	soundSourceFired(skill[0]),
+	soundSourceToPlay(skill[1]),
+	soundSourceVolume(skill[2]),
+	soundSourceLatchOn(skill[3]),
+	soundSourceDelay(skill[4]),
+	soundSourceDelayCounter(skill[5]),
+	soundSourceOrigin(skill[6]),
+	lightSourceBrightness(skill[0]),
+	lightSourceAlwaysOn(skill[1]),
+	lightSourceInvertPower(skill[2]),
+	lightSourceLatchOn(skill[3]),
+	lightSourceRadius(skill[4]),
+	lightSourceFlicker(skill[5]),
+	lightSourceDelay(skill[6]),
+	lightSourceDelayCounter(skill[7]),
+	textSourceColorRGB(skill[0]),
+	textSourceVariables4W(skill[1]),
+	textSourceDelay(skill[2]),
+	textSource3(skill[3]),
+	textSourceBegin(skill[4]),
+	signalActivateDelay(skill[1]),
+	signalTimerInterval(skill[2]),
+	signalTimerRepeatCount(skill[3]),
+	signalTimerLatchInput(skill[4]),
+	signalInputDirection(skill[5])
 {
 	int c;
 	// add the entity to the entity list
@@ -2681,7 +2706,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( this->char_poison > 150 )   // three seconds
 		{
 			this->char_poison = 0;
-			int poisonhurt = std::max(3, (myStats->HP / 20));
+			int poisonhurt = std::max(3, (myStats->MAXHP / 20));
 			if ( poisonhurt > 3 )
 			{
 				poisonhurt -= rand() % (std::max(1, poisonhurt / 4));
@@ -2733,7 +2758,7 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			if ( myStats->HP > 5 + (std::max(0, getCON())) ) // CON increases when bleeding stops.
 			{
-				int bleedhurt = 1 + myStats->HP / 30;
+				int bleedhurt = 1 + myStats->MAXHP / 30;
 				if ( bleedhurt > 1 )
 				{
 					bleedhurt -= rand() % (std::max(1, bleedhurt / 2));
@@ -3093,6 +3118,27 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->EFFECTS[c] = false;
 						myStats->EFFECTS_TIMERS[c] = 0;
 					}
+					
+					// check if hovering over a pit
+					//if ( !isLevitating(myStats) )
+					//{
+					//	int my_x, my_y, u, v;
+					//	my_x = std::min(std::max<unsigned int>(1, this->x / 16), map.width - 2);
+					//	my_y = std::min(std::max<unsigned int>(1, this->y / 16), map.height - 2);
+					//	for ( u = my_x - 1; u <= my_x + 1; u++ )
+					//	{
+					//		for ( v = my_y - 1; v <= my_y + 1; v++ )
+					//		{
+					//			if ( entityInsideTile(this, u, v, 0) )   // no floor
+					//			{
+					//				break;
+					//			}
+					//		}
+					//	}
+					//}
+					myStats->EFFECTS[EFF_LEVITATING] = true;
+					myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 5 * TICKS_PER_SECOND;
+
 					this->flags[BURNING] = false;
 					serverUpdateEntityFlag(this, BURNING);
 					serverUpdateEffects(player);
@@ -4726,15 +4772,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// alert the monster!
 						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
-							//hit.entity->skill[0]=0;
-							//hit.entity->skill[4]=0;
-							//hit.entity->fskill[4]=atan2(my->y-hit.entity->y,my->x-hit.entity->x);
-
-							/*hit.entity->monsterState = MONSTER_STATE_PATH;
-							hit.entity->monsterTarget = uid;
-							hit.entity->monsterTargetX = x;
-							hit.entity->monsterTargetY = y;*/
-
 							Entity* attackTarget = uidToEntity(uid);
 
 							if ( attackTarget )
@@ -4761,11 +4798,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
-												/*entity->monsterState = MONSTER_STATE_PATH;
-												entity->monsterTarget = uid;
-												entity->monsterTargetX = x;
-												entity->monsterTargetY = y;*/
-
 												Entity* attackTarget = uidToEntity(uid);
 												if ( attackTarget )
 												{
@@ -4800,11 +4832,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( entity->monsterState == MONSTER_STATE_WAIT || (entity->monsterState == MONSTER_STATE_HUNT && entity->monsterTarget != uid) ) // monster is waiting or hunting
 							{
-								/*entity->monsterState = MONSTER_STATE_PATH;
-								entity->monsterTarget = uid;
-								entity->monsterTargetX = x;
-								entity->monsterTargetY = y;*/
-
 								Entity* attackTarget = uidToEntity(uid);
 								if ( attackTarget )
 								{
@@ -9339,11 +9366,6 @@ void Entity::giveClientStats()
 	}
 }
 
-//void Entity::serverUpdateStatsForAllyNPC()
-//{
-//
-//}
-
 void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 {
 	Stat* myStats = getStats();
@@ -9440,6 +9462,11 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		}
 	}
 
+	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
+	{
+		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
+	}
+
 	if ( !hadOldTarget && myStats->type == SHADOW )
 	{
 		//messagePlayer(clientnum, "TODO: Shadow got new target.");
@@ -9476,6 +9503,11 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 	}*/
 
 	monsterTarget = 0;
+
+	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
+	{
+		serverUpdateEntitySkill(this, 1); // update monsterTarget for player leaders.
+	}
 
 	return true;
 }
@@ -10431,7 +10463,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	{
 		return false;
 	}
-	if ( myStats.type == VAMPIRE && monsterSpecialState > 0 )
+	if ( myStats.type == VAMPIRE && (monsterSpecialState > 0 || !strncmp(myStats.name, "Bram Kindly", 11)) )
 	{
 		return false;
 	}

@@ -1578,13 +1578,12 @@ void clientHandlePacket()
 	// delete entity
 	else if (!strncmp((char*)net_packet->data, "ENTD", 4))
 	{
-		for ( node = map.entities->first; node != nullptr; node = nextnode )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			nextnode = node->next;
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == (int)SDLNet_Read32(&net_packet->data[4]) )
+			entity2 = newEntity(entity->sprite, 1, &removedEntities, nullptr);
+			if ( entity2 )
 			{
-				entity2 = newEntity(entity->sprite, 1, &removedEntities, nullptr);
 				entity2->setUID(entity->getUID());
 				for ( j = 0; j < MAXPLAYERS; ++j )
 				{
@@ -1608,7 +1607,6 @@ void clientHandlePacket()
 				net_packet->address.port = net_server.port;
 				net_packet->len = 9;
 				sendPacket(net_sock, -1, net_packet, 0);
-				break;
 			}
 		}
 		return;
@@ -2514,76 +2512,75 @@ void clientHandlePacket()
 	// spawn misc particle effect 
 	else if ( !strncmp((char*)net_packet->data, "SPPE", 4) )
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
+			int particleType = static_cast<int>(net_packet->data[8]);
+			int sprite = static_cast<int>(SDLNet_Read16(&net_packet->data[9]));
+			switch ( particleType )
 			{
-				int particleType = static_cast<int>(net_packet->data[8]);
-				int sprite = static_cast<int>(SDLNet_Read16(&net_packet->data[9]));
-				switch ( particleType )
-				{
-					case PARTICLE_EFFECT_ABILITY_PURPLE:
-						createParticleDot(entity);
-						break;
-					case PARTICLE_EFFECT_ABILITY_ROCK:
-						createParticleRock(entity);
-						break;
-					case PARTICLE_EFFECT_SHADOW_INVIS:
-						createParticleDropRising(entity, sprite, 1.0);
-						break;
-					case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
-					{
-						Entity* spellTimer = createParticleTimer(entity, 80, sprite);
-						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
-						spellTimer->particleTimerCountdownSprite = sprite;
-						spellTimer->particleTimerPreDelay = 40;
-					}
-						break;
-					case PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET:
-					{
-						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
-						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
-						spellTimer->particleTimerCountdownSprite = sprite;
-					}
-						break;
-					case PARTICLE_EFFECT_SHADOW_TELEPORT:
-					{
-						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
-						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
-						spellTimer->particleTimerCountdownSprite = sprite;
-					}
+				case PARTICLE_EFFECT_ABILITY_PURPLE:
+					createParticleDot(entity);
 					break;
-					case PARTICLE_EFFECT_ERUPT:
-						createParticleErupt(entity, sprite);
-						break;
-					case PARTICLE_EFFECT_VAMPIRIC_AURA:
-						createParticleDropRising(entity, sprite, 0.5);
-						break;
-					case PARTICLE_EFFECT_RISING_DROP:
-						createParticleDropRising(entity, sprite, 1.0);
-						break;
-					case PARTICLE_EFFECT_PORTAL_SPAWN:
-					{
-						Entity* spellTimer = createParticleTimer(entity, 100, sprite);
-						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPAWN_PORTAL;
-						spellTimer->particleTimerCountdownSprite = 174;
-						spellTimer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
-					}
-						break;
-					case PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY:
-					case PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY:
-					case PARTICLE_EFFECT_LICH_TELEPORT_ROAMING:
-					{
-						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
-						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
-						spellTimer->particleTimerCountdownSprite = sprite;
-					}
-						break;
-					default:
-						break;
+				case PARTICLE_EFFECT_ABILITY_ROCK:
+					createParticleRock(entity);
+					break;
+				case PARTICLE_EFFECT_SHADOW_INVIS:
+					createParticleDropRising(entity, sprite, 1.0);
+					break;
+				case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 80, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+					spellTimer->particleTimerPreDelay = 40;
 				}
+					break;
+				case PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+				}
+					break;
+				case PARTICLE_EFFECT_SHADOW_TELEPORT:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+				}
+				break;
+				case PARTICLE_EFFECT_ERUPT:
+					createParticleErupt(entity, sprite);
+					break;
+				case PARTICLE_EFFECT_VAMPIRIC_AURA:
+					createParticleDropRising(entity, sprite, 0.5);
+					break;
+				case PARTICLE_EFFECT_RISING_DROP:
+					createParticleDropRising(entity, sprite, 1.0);
+					break;
+				case PARTICLE_EFFECT_CHARM_MONSTER:
+					createParticleCharmMonster(entity);
+					break;
+				case PARTICLE_EFFECT_PORTAL_SPAWN:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 100, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPAWN_PORTAL;
+					spellTimer->particleTimerCountdownSprite = 174;
+					spellTimer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
+				}
+					break;
+				case PARTICLE_EFFECT_LICHFIRE_TELEPORT_STATIONARY:
+				case PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY:
+				case PARTICLE_EFFECT_LICH_TELEPORT_ROAMING:
+				{
+					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+					spellTimer->particleTimerCountdownSprite = sprite;
+				}
+					break;
+				default:
+					break;
 			}
 		}
 		return;
@@ -2673,9 +2670,18 @@ void clientHandlePacket()
 		node->deconstructor = &defaultDeconstructor;
 		node->size = sizeof(Uint32);
 
+		Entity* monster = uidToEntity(*uidnum);
+		if ( !monster->clientsHaveItsStats )
+		{
+			monster->giveClientStats();
+		}
+		if ( monster->clientStats )
+		{
+			strcpy(monster->clientStats->name, (char*)&net_packet->data[8]);
+		}
 		if ( !FollowerMenu.recentEntity )
 		{
-			FollowerMenu.recentEntity = uidToEntity(*uidnum);
+			FollowerMenu.recentEntity = monster;
 		}
 		return;
 	}
@@ -2863,14 +2869,10 @@ void clientHandlePacket()
 	// update entity appearance (sprite)
 	else if (!strncmp((char*)net_packet->data, "ENTA", 4))
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
-			{
-				entity->sprite = SDLNet_Read32(&net_packet->data[8]);
-			}
+			entity->sprite = SDLNet_Read32(&net_packet->data[8]);
 		}
 		return;
 	}
@@ -2878,29 +2880,25 @@ void clientHandlePacket()
 	// bodypart ids
 	else if (!strncmp((char*)net_packet->data, "BDYI", 4))
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
+			node_t* childNode;
+			int c;
+			for ( c = 0, childNode = entity->children.first; childNode != nullptr; childNode = childNode->next, c++ )
 			{
-				node_t* tempNode;
-				int c;
-				for ( c = 0, tempNode = entity->children.first; tempNode != nullptr; tempNode = tempNode->next, c++ )
+				if ( c < 1 || (c < 2 && entity->behavior == &actMonster) )
 				{
-					if ( c < 1 || (c < 2 && entity->behavior == &actMonster) )
-					{
-						continue;
-					}
-					Entity* tempEntity = (Entity*)tempNode->element;
-					if ( entity->behavior == &actMonster )
-					{
-						tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 2)]));
-					}
-					else
-					{
-						tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 1)]));
-					}
+					continue;
+				}
+				Entity* tempEntity = (Entity*)childNode->element;
+				if ( entity->behavior == &actMonster )
+				{
+					tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 2)]));
+				}
+				else
+				{
+					tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 1)]));
 				}
 			}
 		}
@@ -2921,20 +2919,16 @@ void clientHandlePacket()
 	// update entity bodypart
 	else if (!strncmp((char*)net_packet->data, "ENTB", 4))
 	{
-		i = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
+			node_t* childNode = list_Node(&entity->children, net_packet->data[8]);
+			if ( childNode )
 			{
-				node_t* tempNode = list_Node(&entity->children, net_packet->data[8]);
-				if ( tempNode )
-				{
-					Entity* tempEntity = (Entity*)tempNode->element;
-					tempEntity->sprite = SDLNet_Read32(&net_packet->data[9]);
-					tempEntity->skill[7] = tempEntity->sprite;
-					tempEntity->flags[INVISIBLE] = net_packet->data[13];
-				}
+				Entity* tempEntity = (Entity*)childNode->element;
+				tempEntity->sprite = SDLNet_Read32(&net_packet->data[9]);
+				tempEntity->skill[7] = tempEntity->sprite;
+				tempEntity->flags[INVISIBLE] = net_packet->data[13];
 			}
 		}
 		return;
@@ -2943,14 +2937,10 @@ void clientHandlePacket()
 	// update entity skill
 	else if (!strncmp((char*)net_packet->data, "ENTS", 4))
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
-			{
-				entity->skill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
-			}
+			entity->skill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
 		}
 		return;
 	}
@@ -2958,14 +2948,10 @@ void clientHandlePacket()
 	// update entity fskill
 	else if ( !strncmp((char*)net_packet->data, "ENFS", 4) )
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
-			{
-				entity->fskill[net_packet->data[8]] = (SDLNet_Read16(&net_packet->data[9]) / 256.0);
-			}
+			entity->fskill[net_packet->data[8]] = (SDLNet_Read16(&net_packet->data[9]) / 256.0);
 		}
 		return;
 	}
@@ -2973,14 +2959,10 @@ void clientHandlePacket()
 	// update entity flag
 	else if (!strncmp((char*)net_packet->data, "ENTF", 4))
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == i )
-			{
-				entity->flags[net_packet->data[8]] = net_packet->data[9];
-			}
+			entity->flags[net_packet->data[8]] = net_packet->data[9];
 		}
 		return;
 	}
@@ -2989,62 +2971,48 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "ENTU", 4))
 	{
 		client_keepalive[0] = ticks; // don't timeout
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-		for ( node = map.entities->first; node != nullptr; node = nextnode )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			nextnode = node->next;
-			entity2 = (Entity*)node->element;
-			if (entity2->getUID() == i)
+			if ( (Uint32)SDLNet_Read32(&net_packet->data[36]) < (Uint32)entity->lastupdateserver )
 			{
-				if ( (Uint32)SDLNet_Read32(&net_packet->data[36]) < (Uint32)entity2->lastupdateserver )
-				{
-					i = -1; // old packet, not used
-				}
-				else if ( entity2->behavior == &actPlayer && entity2->skill[2] == clientnum )
-				{
-					i = -1; // don't update my player
-				}
-				else if (entity2->flags[NOUPDATE])
-				{
-					// inform the server that it tried to update a no-update entity
-					strcpy((char*)net_packet->data, "NOUP");
-					net_packet->data[4] = clientnum;
-					SDLNet_Write32(entity2->getUID(), &net_packet->data[5]);
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 9;
-					sendPacket(net_sock, -1, net_packet, 0);
-				}
-				else
-				{
-					// receive the entity
-					receiveEntity(entity2);
-					entity2->behavior = NULL;
-					clientActions(entity2);
-				}
-				i = -1;
-				break;
+				// old packet, not used
 			}
-		}
-		if ( i == -1 )
-		{
+			else if ( entity->behavior == &actPlayer && entity->skill[2] == clientnum )
+			{
+				// don't update my player
+			}
+			else if ( entity->flags[NOUPDATE])
+			{
+				// inform the server that it tried to update a no-update entity
+				strcpy((char*)net_packet->data, "NOUP");
+				net_packet->data[4] = clientnum;
+				SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacket(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				// receive the entity
+				receiveEntity(entity);
+				entity->behavior = NULL;
+				clientActions(entity);
+			}
 			return;
 		}
+
 		for ( node = removedEntities.first; node != NULL; node = node->next )
 		{
 			entity2 = (Entity*)node->element;
 			if ( entity2->getUID() == (int)SDLNet_Read32(&net_packet->data[4]) )
 			{
-				i = -1;
-				break;
+				return;
 			}
 		}
-		if ( i == -1 )
-		{
-			return;
-		}
-		entity = receiveEntity(NULL);
 
+		entity = receiveEntity(NULL);
 		// IMPORTANT! Assign actions to the objects the client has control over
 		clientActions(entity);
 		return;
@@ -3053,33 +3021,26 @@ void clientHandlePacket()
 	//Multiplayer chest code (client).
 	else if ( !strncmp((char*)net_packet->data, "CHST", 4) )
 	{
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
-
 		if ( openedChest[clientnum] )
 		{
 			//Close the chest.
 			closeChestClientside();
 		}
 
-		for ( node = map.entities->first; node != nullptr; node = nextnode )
+		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
+		if ( entity )
 		{
-			nextnode = node->next;
-			entity2 = (Entity*)node->element;
-			if ( entity2->getUID() == i )
+			openedChest[clientnum] = entity; //Set the opened chest to this.
+			if ( removecursegui_active )
 			{
-				openedChest[clientnum] = entity2; //Set the opened chest to this.
-				if ( removecursegui_active )
-				{
-					closeRemoveCurseGUI();
-				}
-				identifygui_active = false;
-				list_FreeAll(&chestInv);
-				chestInv.first = nullptr;
-				chestInv.last = nullptr;
-				openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+				closeRemoveCurseGUI();
 			}
+			identifygui_active = false;
+			list_FreeAll(&chestInv);
+			chestInv.first = nullptr;
+			chestInv.last = nullptr;
+			openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 		}
-
 		return;
 	}
 
@@ -3355,7 +3316,7 @@ void clientHandlePacket()
 
 		Uint32 uid = static_cast<int>(SDLNet_Read32(&net_packet->data[4]));
 
-		Entity* entity = map.getEntityWithUID(uid);
+		Entity* entity = uidToEntity(uid);
 
 		if ( entity )
 		{
@@ -3388,7 +3349,6 @@ void clientHandlePacket()
 				}
 			}
 		}
-
 		return;
 	}
 	else if ( !strncmp((char*)net_packet->data, "PMAP", 4) )

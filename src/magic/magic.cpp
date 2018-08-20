@@ -207,9 +207,11 @@ void spell_summonFamiliar(int player)
 				{
 					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
+					strcpy((char*)(&net_packet->data[8]), monsterStats->name);
+					net_packet->data[8 + strlen(monsterStats->name)] = 0;
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 8;
+					net_packet->len = 8 + strlen(monsterStats->name) + 1;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 					serverUpdateAllyStat(player, monster->getUID(), monsterStats->LVL, monsterStats->HP, monsterStats->MAXHP, monsterStats->type);
@@ -1040,6 +1042,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				// succubus/incubus can steal followers from others, checking to see if they don't already follow them.
 				if ( forceFollower(*parent, *hit.entity) )
 				{
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_CHARM_MONSTER, 0);
 					createParticleCharmMonster(hit.entity);
 					playSoundEntity(hit.entity, 174, 64); // WeirdSpell.ogg
 					if ( parent->behavior == &actPlayer )

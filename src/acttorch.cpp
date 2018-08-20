@@ -210,3 +210,130 @@ void actCrystalShard(Entity* my)
 		}
 	}
 }
+
+void actLightSource(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actLightSource();
+}
+
+#define LIGHTSOURCE_LIGHT skill[8]
+#define LIGHTSOURCE_FLICKER skill[9]
+#define LIGHTSOURCE_ENABLED skill[10]
+
+void Entity::actLightSource()
+{
+	if ( multiplayer != CLIENT )
+	{
+		if ( lightSourceDelay > 0 && lightSourceDelayCounter == 0 )
+		{
+			lightSourceDelayCounter = lightSourceDelay;
+		}
+	}
+
+	if ( LIGHTSOURCE_ENABLED )
+	{
+		// lighting
+		if ( !LIGHTSOURCE_LIGHT )
+		{
+			light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+			LIGHTSOURCE_LIGHT = 1;
+		}
+		if ( lightSourceFlicker && flickerLights )
+		{
+			--LIGHTSOURCE_FLICKER;
+		}
+		else
+		{
+			LIGHTSOURCE_LIGHT = 1;
+			if ( !light )
+			{
+				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+			}
+		}
+
+		if ( LIGHTSOURCE_FLICKER <= 0 )
+		{
+			LIGHTSOURCE_LIGHT = (LIGHTSOURCE_LIGHT == 1) + 1;
+
+			if ( LIGHTSOURCE_LIGHT == 1 )
+			{
+				removeLightField();
+				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, lightSourceBrightness);
+			}
+			else
+			{
+				removeLightField();
+				light = lightSphereShadow(x / 16, y / 16, lightSourceRadius, std::max(lightSourceBrightness - 16, 0));
+			}
+			LIGHTSOURCE_FLICKER = 2 + rand() % 7;
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			if ( (circuit_status == CIRCUIT_OFF && !lightSourceInvertPower)
+				|| (circuit_status == CIRCUIT_ON && lightSourceInvertPower == 1) )
+			{
+				if ( LIGHTSOURCE_ENABLED == 1 && lightSourceLatchOn < 2 + lightSourceInvertPower )
+				{
+					if ( lightSourceInvertPower == 1 && lightSourceDelayCounter > 0 )
+					{
+						--lightSourceDelayCounter;
+						if ( lightSourceDelayCounter != 0 )
+						{
+							return;
+						}
+					}
+					else if ( lightSourceInvertPower == 0 && lightSourceDelay > 0 )
+					{
+						lightSourceDelayCounter = lightSourceDelay;
+					}
+					LIGHTSOURCE_ENABLED = 0;
+					serverUpdateEntitySkill(this, 10);
+					if ( lightSourceLatchOn > 0 )
+					{
+						++lightSourceLatchOn;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		removeLightField();
+		if ( multiplayer == CLIENT )
+		{
+			return;
+		}
+
+		if ( lightSourceAlwaysOn == 1 || (circuit_status == CIRCUIT_ON && !lightSourceInvertPower)
+			|| (circuit_status == CIRCUIT_OFF && lightSourceInvertPower == 1) )
+		{
+			if ( LIGHTSOURCE_ENABLED == 0 && lightSourceLatchOn < 2 + lightSourceInvertPower )
+			{
+				if ( lightSourceInvertPower == 0 && lightSourceDelayCounter > 0 )
+				{
+					--lightSourceDelayCounter;
+					if ( lightSourceDelayCounter != 0 )
+					{
+						return;
+					}
+				}
+				else if ( lightSourceInvertPower == 1 && lightSourceDelay > 0 )
+				{
+					lightSourceDelayCounter = lightSourceDelay;
+				}
+				LIGHTSOURCE_ENABLED = 1;
+				serverUpdateEntitySkill(this, 10);
+				if ( lightSourceLatchOn > 0 )
+				{
+					++lightSourceLatchOn;
+				}
+			}
+		}
+	}
+}

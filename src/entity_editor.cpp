@@ -194,7 +194,32 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
-	interactedByMonster(skill[47])
+	interactedByMonster(skill[47]),
+	soundSourceFired(skill[0]),
+	soundSourceToPlay(skill[1]),
+	soundSourceVolume(skill[2]),
+	soundSourceLatchOn(skill[3]),
+	soundSourceDelay(skill[4]),
+	soundSourceDelayCounter(skill[5]),
+	soundSourceOrigin(skill[6]),
+	lightSourceBrightness(skill[0]),
+	lightSourceAlwaysOn(skill[1]),
+	lightSourceInvertPower(skill[2]),
+	lightSourceLatchOn(skill[3]),
+	lightSourceRadius(skill[4]),
+	lightSourceFlicker(skill[5]),
+	lightSourceDelay(skill[6]),
+	lightSourceDelayCounter(skill[7]),
+	textSourceColorRGB(skill[0]),
+	textSourceVariables4W(skill[1]),
+	textSourceDelay(skill[2]),
+	textSource3(skill[3]),
+	textSourceBegin(skill[4]),
+	signalActivateDelay(skill[1]),
+	signalTimerInterval(skill[2]),
+	signalTimerRepeatCount(skill[3]),
+	signalTimerLatchInput(skill[4]),
+	signalInputDirection(skill[5])
 {
 	int c;
 	// add the entity to the entity list

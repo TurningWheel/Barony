@@ -3805,7 +3805,7 @@ void assignActions(map_t* map)
 							childEntity->x = (x << 4) + 8;
 							childEntity->y = (y << 4) + 8;
 							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-							entity->flags[PASSABLE] = true;
+							childEntity->flags[PASSABLE] = true;
 							if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 							{
 								childEntity->z = -26.99;
@@ -4190,7 +4190,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4229,7 +4229,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4268,7 +4268,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4307,7 +4307,7 @@ void assignActions(map_t* map)
 						childEntity->x = (x << 4) + 8;
 						childEntity->y = (y << 4) + 8;
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-						entity->flags[PASSABLE] = true;
+						childEntity->flags[PASSABLE] = true;
 						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 						{
 							childEntity->z = -26.99;
@@ -4981,6 +4981,58 @@ void assignActions(map_t* map)
 				entity->portalVictoryType = 3;
 				entity->skill[28] = 1; // is a mechanism
 				break;
+			//sound source
+			case 130: 
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actSoundSource;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				break;
+			//light source
+			case 131:
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actLightSource;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				//entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				break;
+			//text source
+			case 132:
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actTextSource;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				break;
+			//signal timer
+			case 133:
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actSignalTimer;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				break;
 			default:
 				break;
 		}
@@ -5055,28 +5107,6 @@ void mapLevel(int player)
 			}
 		}
 	}
-}
-
-Entity* map_t::getEntityWithUID(Uint32 uid)
-{
-	Entity* entity = nullptr;
-
-	for ( node_t* node = entities->first; node; node = node->next )
-	{
-		entity = (node->element? static_cast<Entity*>(node->element) : nullptr);
-
-		if ( !entity )
-		{
-			continue;
-		}
-
-		if ( entity->getUID() == uid )
-		{
-			return entity;
-		}
-	}
-
-	return nullptr;
 }
 
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)

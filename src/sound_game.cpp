@@ -483,9 +483,64 @@ void handleLevelMusic()
 			}
 			playmusic(underworldmusic[currenttrack], false, true, true);
 		}
-		else if ( !strcmp(map.name, "Minetown") || !strcmp(map.name, "The Gnomish Mines") )     // minetown & gnomish mines
+		else if ( !strcmp(map.name, "Minetown") )     // minetown
 		{
 			playmusic(minetownmusic, true, true, true);
+		}
+		else if ( !strcmp(map.name, "The Gnomish Mines") )
+		{
+			if ( gnomishminesmusic )
+			{
+				playmusic(gnomishminesmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(minetownmusic, true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "The Haunted Castle") )
+		{
+			if ( greatcastlemusic )
+			{
+				playmusic(greatcastlemusic, true, true, true);
+			}
+			else
+			{
+				playmusic(intermissionmusic, true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "Sokoban") )
+		{
+			if ( sokobanmusic )
+			{
+				playmusic(sokobanmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(intermissionmusic, true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "Cockatrice Lair") )
+		{
+			if ( caveslairmusic )
+			{
+				playmusic(caveslairmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(cavesmusic[2], true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "Bram's Castle") )
+		{
+			if ( bramscastlemusic )
+			{
+				playmusic(bramscastlemusic, true, true, true);
+			}
+			else
+			{
+				playmusic(citadelmusic[2], true, true, true);
+			}
 		}
 		else if ( !strcmp(map.name, "The Mystic Library") )     // mystic library
 		{
@@ -544,7 +599,14 @@ void handleLevelMusic()
 		}
 		else if ( !strcmp(map.name, "Mages Guild") )
 		{
-			playmusic(minesmusic[4], true, true, true);
+			if ( hamletmusic )
+			{
+				playmusic(hamletmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(minesmusic[4], true, true, true);
+			}
 		}
 		else
 		{
@@ -636,11 +698,11 @@ void handleLevelMusic()
 		{
 			playmusic(hellmusic[0], true, true, true);
 		}
-		else if ( !strncmp(map.name, "Caves", 5) )
+		else if ( !strncmp(map.name, "Caves", 5) || !strcmp(map.name, "Cockatrice Lair") )
 		{
 			playmusic(cavesmusic[0], true, true, true);
 		}
-		else if ( !strncmp(map.name, "Citadel", 7) )
+		else if ( !strncmp(map.name, "Citadel", 7) || !strcmp(map.name, "Bram's Castle") )
 		{
 			playmusic(citadelmusic[0], true, true, true);
 		}
@@ -1088,9 +1150,64 @@ void handleLevelMusic()
 			}
 			playmusic(underworldmusic[currenttrack], false, true, true);
 		}
-		else if ( !strcmp(map.name, "Minetown") || !strcmp(map.name, "The Gnomish Mines") )     // minetown & gnomish mines
+		else if ( !strcmp(map.name, "Minetown") )     // minetown
 		{
 			playmusic(minetownmusic, true, true, true);
+		}
+		else if ( !strcmp(map.name, "The Gnomish Mines") )
+		{
+			if ( gnomishminesmusic )
+			{
+				playmusic(gnomishminesmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(minetownmusic, true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "The Haunted Castle") )
+		{
+			if ( greatcastlemusic )
+			{
+				playmusic(greatcastlemusic, true, true, true);
+			}
+			else
+			{
+				playmusic(intermissionmusic, true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "Sokoban") )
+		{
+			if ( sokobanmusic )
+			{
+				playmusic(sokobanmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(intermissionmusic, true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "Cockatrice Lair") )
+		{
+			if ( caveslairmusic )
+			{
+				playmusic(caveslairmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(cavesmusic[2], true, true, true);
+			}
+		}
+		else if ( !strcmp(map.name, "Bram's Castle") )
+		{
+			if ( bramscastlemusic )
+			{
+				playmusic(bramscastlemusic, true, true, true);
+			}
+			else
+			{
+				playmusic(citadelmusic[2], true, true, true);
+			}
 		}
 		else if ( !strcmp(map.name, "The Mystic Library") )     // mystic library
 		{
@@ -1146,6 +1263,17 @@ void handleLevelMusic()
 				currenttrack = 1;
 			}
 			playmusic(citadelmusic[currenttrack], false, true, true);
+		}
+		else if ( !strcmp(map.name, "Mages Guild") )
+		{
+			if ( hamletmusic )
+			{
+				playmusic(hamletmusic, true, true, true);
+			}
+			else
+			{
+				playmusic(minesmusic[4], true, true, true);
+			}
 		}
 		else
 		{
@@ -1237,11 +1365,11 @@ void handleLevelMusic()
 		{
 			playmusic(hellmusic[0], true, true, true);
 		}
-		else if ( !strncmp(map.name, "Caves", 5) )
+		else if ( !strncmp(map.name, "Caves", 5) || !strcmp(map.name, "Cockatrice Lair") )
 		{
 			playmusic(cavesmusic[0], true, true, true);
 		}
-		else if ( !strncmp(map.name, "Citadel", 7) )
+		else if ( !strncmp(map.name, "Citadel", 7) || !strcmp(map.name, "Bram's Castle") )
 		{
 			playmusic(citadelmusic[0], true, true, true);
 		}

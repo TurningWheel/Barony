@@ -18,6 +18,7 @@
 #include "../colors.hpp"
 #include "interface.hpp"
 #include "../sound.hpp"
+#include "../magic/magic.hpp"
 
 void statsHoverText(Stat* tmpStat);
 
@@ -716,6 +717,10 @@ void drawPartySheet()
 									FollowerMenu.partySheetMouseX = omousex;
 									FollowerMenu.partySheetMouseY = omousey;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
+									if ( FollowerMenu.recentEntity )
+									{
+										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+									}
 								}
 								else if ( (*inputPressed(impulses[IN_USE]) || *inputPressed(joyimpulses[INJOY_GAME_USE])) )
 								{
@@ -726,13 +731,43 @@ void drawPartySheet()
 									FollowerMenu.partySheetMouseY = omousey;
 									FollowerMenu.initFollowerMenuGUICursor();
 									FollowerMenu.updateScrollPartySheet();
+									if ( FollowerMenu.recentEntity )
+									{
+										createParticleFollowerCommand(FollowerMenu.recentEntity->x, FollowerMenu.recentEntity->y, 0, 174);
+									}
 								}
 							}
 						}
 
 						pos.y += 6;
-						ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
-						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y, color, "LVL %2d", followerStats->LVL);
+						char name[16] = "";
+						if ( strcmp(followerStats->name, "") && strcmp(followerStats->name, "nothing") )
+						{
+							if ( strlen(followerStats->name) > 10 )
+							{
+								strncpy(name, followerStats->name, 8);
+								strcat(name, "..");
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", name);
+							}
+							else
+							{
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", followerStats->name);
+							}
+						}
+						else
+						{
+							if ( strlen(monstertypename[followerStats->type]) > 10 )
+							{
+								strncpy(name, monstertypename[followerStats->type], 8);
+								strcat(name, "..");
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", name);
+							}
+							else
+							{
+								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", monstertypename[followerStats->type]);
+							}
+						}
+						ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 11, pos.y, color, "LVL %2d", followerStats->LVL);
 
 						playerBar.x = pos.x + 64;
 						playerBar.w = 10 * 11;

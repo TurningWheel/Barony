@@ -737,9 +737,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		//Tell the client he suckered somebody into his cult.
 		strcpy((char*) (net_packet->data), "LEAD");
 		SDLNet_Write32((Uint32 )my->getUID(), &net_packet->data[4]);
+		strcpy((char*)(&net_packet->data[8]), myStats->name);
+		net_packet->data[8 + strlen(myStats->name)] = 0;
 		net_packet->address.host = net_clients[monsterclicked - 1].host;
 		net_packet->address.port = net_clients[monsterclicked - 1].port;
-		net_packet->len = 8;
+		net_packet->len = 8 + strlen(myStats->name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
@@ -2820,10 +2822,7 @@ void actMonster(Entity* my)
 								}
 								if ( hit.entity == entity )
 								{
-									/*my->monsterState = MONSTER_STATE_ATTACK; // charge state
-									my->monsterTarget = hit.entity->getUID();
-									my->monsterTargetX = hit.entity->x;
-									my->monsterTargetY = hit.entity->y;*/
+									// charge state
 									Entity& attackTarget = *hit.entity;
 									my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 
@@ -2876,10 +2875,6 @@ void actMonster(Entity* my)
 														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 														if ( hit.entity == entity )
 														{
-															/*entity->monsterState = MONSTER_STATE_PATH;
-															entity->monsterTarget = my->monsterTarget;
-															entity->fskill[2] = my->monsterTargetX;
-															entity->fskill[3] = my->monsterTargetY;*/
 															entity->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_PATH);
 														}
 													}
@@ -2929,10 +2924,6 @@ void actMonster(Entity* my)
 					}
 					if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
 					{
-						/*my->monsterState = MONSTER_STATE_PATH; // path state
-						my->monsterTarget = players[playerToChase]->entity->getUID();
-						my->monsterTargetX = players[playerToChase]->entity->x;
-						my->monsterTargetY = players[playerToChase]->entity->y;*/
 						my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
 					}
 					if ( previousMonsterState != my->monsterState )
@@ -2995,6 +2986,10 @@ void actMonster(Entity* my)
 						if ( previousMonsterState != my->monsterState )
 						{
 							serverUpdateEntitySkill(my, 0);
+							if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+							{
+								serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+							}
 						}
 						return;
 					}
@@ -3038,6 +3033,10 @@ void actMonster(Entity* my)
 							if ( previousMonsterState != my->monsterState )
 							{
 								serverUpdateEntitySkill(my, 0);
+								if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+								{
+									serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+								}
 							}
 							return;
 						}
@@ -3193,6 +3192,10 @@ void actMonster(Entity* my)
 				if ( previousMonsterState != my->monsterState )
 				{
 					serverUpdateEntitySkill(my, 0);
+					if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+					{
+						serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+					}
 				}
 				if ( myStats->type == SHADOW )
 				{
@@ -3894,10 +3897,7 @@ timeToGoAgain:
 											if ( hit.entity == entity )
 											{
 												Entity& attackTarget = *hit.entity;
-												/*my->monsterTarget = hit.entity->getUID();
-												my->monsterState = MONSTER_STATE_ATTACK; // charge state
-												my->monsterTargetX = hit.entity->x;
-												my->monsterTargetY = hit.entity->y;*/
+												// charge state
 												my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 
 												if ( MONSTER_SOUND == NULL )
@@ -3991,11 +3991,7 @@ timeToGoAgain:
 					}
 					if (playerToChase >= 0)
 					{
-						/*my->monsterState = MONSTER_STATE_PATH; // path state
-						my->monsterTarget = players[playerToChase]->entity->getUID();
-						my->monsterTargetX = players[playerToChase]->entity->x;
-						my->monsterTargetY = players[playerToChase]->entity->y;*/
-
+						// path state
 						if ( players[playerToChase] && players[playerToChase]->entity )
 						{
 							my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
@@ -4016,10 +4012,18 @@ timeToGoAgain:
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
+					if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+					{
+						serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+					}
 					return;
 				}
 				my->monsterState = MONSTER_STATE_PATH;
 				serverUpdateEntitySkill(my, 0); //Update state.
+				if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+				{
+					serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+				}
 				return;
 			}
 
@@ -4280,11 +4284,7 @@ timeToGoAgain:
 										}
 										else if ( my->checkEnemy(hit.entity) )
 										{
-											/*my->monsterTarget = hit.entity->getUID();
-											my->monsterTargetX = hit.entity->x;
-											my->monsterTargetY = hit.entity->y;
-											my->monsterState = MONSTER_STATE_ATTACK; // charge state*/
-
+											// charge state
 											Entity& attackTarget = *hit.entity;
 											my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 										}
@@ -4294,11 +4294,7 @@ timeToGoAgain:
 								{
 									if ( my->checkEnemy(hit.entity) )
 									{
-										/*my->monsterTarget = hit.entity->getUID();
-										my->monsterTargetX = hit.entity->x;
-										my->monsterTargetY = hit.entity->y;
-										my->monsterState = MONSTER_STATE_ATTACK; // charge state*/
-
+										// charge state
 										Entity& attackTarget = *hit.entity;
 										my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 									}
@@ -5662,6 +5658,10 @@ timeToGoAgain:
 	if ( previousMonsterState != my->monsterState )
 	{
 		serverUpdateEntitySkill(my, 0);
+		if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+		{
+			serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+		}
 	}
 
 	// move body parts
@@ -5900,15 +5900,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					// alert the monster!
 					if ( hit.entity->skill[0] != MONSTER_STATE_ATTACK )
 					{
-						//hit.entity->skill[0]=0;
-						//hit.entity->skill[4]=0;
-						//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
-
-						/*hit.entity->monsterState = MONSTER_STATE_PATH;
-						hit.entity->monsterTarget = this->getUID();
-						hit.entity->monsterTargetX = this->x;
-						hit.entity->monsterTargetY = this->y;*/
-
 						hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH);
 					}
 				}
@@ -6219,7 +6210,8 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			return 1; //reached setpoint
 		}
 		limb->yaw += rate;
-	} else if ( axis == ANIMATE_PITCH )
+	} 
+	else if ( axis == ANIMATE_PITCH )
 	{
 		while ( limb->pitch < 0 )
 		{
@@ -6254,7 +6246,8 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			return 1; //reached setpoint
 		}
 		limb->pitch += rate;
-	} else if ( axis == ANIMATE_ROLL )
+	} 
+	else if ( axis == ANIMATE_ROLL )
 	{
 		while ( limb->roll < 0 )
 		{
@@ -6434,9 +6427,11 @@ bool forceFollower(Entity& leader, Entity& follower)
 		//Tell the client he suckered somebody into his cult.
 		strcpy((char*) (net_packet->data), "LEAD");
 		SDLNet_Write32((Uint32 )follower.getUID(), &net_packet->data[4]);
+		strcpy((char*)(&net_packet->data[8]), followerStats->name);
+		net_packet->data[8 + strlen(followerStats->name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 8;
+		net_packet->len = 8 + strlen(followerStats->name) + 1;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		serverUpdateAllyStat(player, follower.getUID(), followerStats->LVL, followerStats->HP, followerStats->MAXHP, followerStats->type);
@@ -7693,7 +7688,7 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 				}
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_ROTTEN:
-				message = language[3090];
+				message = language[3091];
 				break;
 			case ALLY_EVENT_INTERACT_ITEM_FOOD_FULL:
 				message = language[3089 + rand() % 2];
