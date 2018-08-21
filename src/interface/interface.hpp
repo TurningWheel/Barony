@@ -468,6 +468,7 @@ public:
 	FollowerRadialMenu() :
 		followerToCommand(nullptr),
 		recentEntity(nullptr),
+		entityToInteractWith(nullptr),
 		menuX(-1),
 		menuY(-1),
 		optionSelected(-1),
@@ -477,13 +478,14 @@ public:
 		moveToY(-1),
 		menuToggleClick(false),
 		holdWheel(false),
-		interactText(""),
 		accessedMenuFromPartySheet(false),
 		partySheetMouseX(-1),
 		partySheetMouseY(-1),
 		sidebarScrollIndex(0),
 		maxMonstersToDraw(5)
-	{}
+	{
+		memset(interactText, 0, 128);
+	}
 
 	bool followerMenuIsOpen();
 	void drawFollowerMenu();
