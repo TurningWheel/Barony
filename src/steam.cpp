@@ -1360,7 +1360,7 @@ void CSteamLeaderboards::OnFindLeaderboard(LeaderboardFindResult_t *pCallback, b
 	// see if we encountered an error during the call
 	if ( !pCallback->m_bLeaderboardFound || bIOFailure )
 	{
-		printlog("[STEAM]: Error, could not find leaderboard %s!", leaderboardNames[LeaderboardUpload.boardIndex]);
+		printlog("[STEAM]: Error, could not find leaderboard %s!", leaderboardNames[LeaderboardUpload.boardIndex].c_str());
 		ClearUploadData();
 		return;
 	}
