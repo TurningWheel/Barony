@@ -1487,9 +1487,7 @@ void physfsReloadMusic(bool &introMusicChanged, bool reloadAll)
 
 void gamemodsUnloadCustomThemeMusic()
 {
-#ifndef SOUND
-	return;
-#endif // !SOUND
+#ifdef SOUND
 #ifdef USE_OPENAL
 #define FMOD_Sound_Release OPENAL_Sound_Release
 #endif
@@ -1527,4 +1525,5 @@ void gamemodsUnloadCustomThemeMusic()
 #ifdef USE_OPENAL
 #undef FMOD_Sound_Release
 #endif
+#endif // !SOUND
 }
