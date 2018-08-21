@@ -6330,7 +6330,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 								}
 								// Update the paths so that monsters know they can walk through it
-								generatePathMaps();
+								//generatePathMaps();
+								PathMapQueue.addRequest();
 							}
 
 							if ( rand() % 2 && degradePickaxe )

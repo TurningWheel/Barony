@@ -143,6 +143,17 @@ enum ESteamLeaderboardTitles : int
 	LEADERBOARD_MULTIPLAYER_HELL_SCORE
 };
 
+enum pathMapThreadStatus : int
+{
+	PATHMAP_THREAD_IDLE,
+	PATHMAP_THREAD_RUNNING,
+	PATHMAP_THREAD_COMPLETE,
+	PATHMAP_THREAD_EARLY_EXIT
+};
+
+#define MAP_MAX_DIMENSION_X 1024
+#define MAP_MAX_DIMENSION_Y 1024
+
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);
 void steamAchievementClient(int player, const char* achName);
