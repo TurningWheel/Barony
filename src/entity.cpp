@@ -2707,6 +2707,13 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			this->char_poison = 0;
 			int poisonhurt = std::max(3, (myStats->MAXHP / 20));
+			if ( myStats->type == LICH_ICE
+				|| myStats->type == LICH_FIRE
+				|| myStats->type == LICH
+				|| myStats->type == DEVIL )
+			{
+				poisonhurt = std::min(poisonhurt, 15); // prevent doing 50+ dmg
+			}
 			if ( poisonhurt > 3 )
 			{
 				poisonhurt -= rand() % (std::max(1, poisonhurt / 4));
@@ -2766,6 +2773,13 @@ void Entity::handleEffects(Stat* myStats)
 				if ( getCON() > 0 )
 				{
 					bleedhurt -= (getCON() / 5);
+				}
+				if ( myStats->type == LICH_ICE
+					|| myStats->type == LICH_FIRE
+					|| myStats->type == LICH
+					|| myStats->type == DEVIL )
+				{
+					bleedhurt = std::min(bleedhurt, 15); // prevent doing 50+ dmg
 				}
 				bleedhurt = std::max(1, bleedhurt);
 				this->modHP(-bleedhurt);
