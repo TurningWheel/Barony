@@ -4613,6 +4613,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return;
 			}
 
+			bool previousMonsterState = -1;
+
 			if ( hit.entity->behavior == &actBoulder )
 			{
 				if ( myStats->weapon != nullptr )
@@ -4777,6 +4779,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( hit.entity->behavior == &actMonster )
 			{
+				previousMonsterState = hit.entity->monsterState;
 				if ( hit.entity->children.first != nullptr )
 				{
 					if ( hit.entity->children.first->next != nullptr )
@@ -5116,8 +5119,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								stealthCapstoneBonus = 2;
 							}
 							
-							if ( hit.entity->monsterState == MONSTER_STATE_WAIT 
-								|| hit.entity->monsterState == MONSTER_STATE_PATH )
+							if ( previousMonsterState == MONSTER_STATE_WAIT
+								|| previousMonsterState == MONSTER_STATE_PATH )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
