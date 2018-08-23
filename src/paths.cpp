@@ -793,11 +793,19 @@ bool isPathObstacle(Entity* entity)
 
 void PathMapQueueHandler::addRequest()
 {
-	++nInQueue;
-	messagePlayer(0, "adding request, num requests is %d", nInQueue);
-	if ( nInQueue == 1 && kThreadStatus == PATHMAP_THREAD_IDLE )
+	if ( kThreadStatus == PATHMAP_THREAD_RUNNING && nInQueue > 1 )
 	{
-		initThread();
+		// don't add another request to the queue as current thread is running 
+		// and the next request will pick up our current changes.
+	}
+	else
+	{
+		++nInQueue;
+		messagePlayer(0, "adding request, num requests is %d", nInQueue);
+		if ( nInQueue == 1 && kThreadStatus == PATHMAP_THREAD_IDLE )
+		{
+			initThread();
+		}
 	}
 	return;
 }
@@ -816,7 +824,7 @@ void PathMapQueueHandler::initThread()
 	memset(localFlyingPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
 	kThreadStatus = PATHMAP_THREAD_RUNNING;
 	messagePlayer(0, "started thread, remaining requests %d", nInQueue);
-	currentThread = std::thread(generatePathMapsThreaded);
+	currentThread = std::thread(&PathMapQueueHandler::generatePathMapsThreaded, &PathMapQueue);
 }
 
 bool PathMapQueueHandler::processThread()
@@ -843,7 +851,7 @@ bool PathMapQueueHandler::processThread()
 		}
 		copyPathMap();
 		kThreadStatus = PATHMAP_THREAD_IDLE;
-		--nInQueue;
+		nInQueue = std::max(nInQueue - 1, 0);
 		messagePlayer(0, "end thread, remaining requests %d", nInQueue);
 		if ( nInQueue > 0 )
 		{
@@ -877,7 +885,7 @@ void PathMapQueueHandler::deinit()
 }
 
 
-void generatePathMapsThreaded()
+void PathMapQueueHandler::generatePathMapsThreaded()
 {
 	int x, y;
 
@@ -905,6 +913,7 @@ void generatePathMapsThreaded()
 		}
 	}
 
+	std::lock_guard<std::mutex> guard(this->mutex);
 	if ( mapChanged )
 	{
 		PathMapQueue.kThreadStatus = PATHMAP_THREAD_EARLY_EXIT;

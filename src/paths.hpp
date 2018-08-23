@@ -21,12 +21,13 @@ extern int pathMapZone;
 Uint32 heuristic(int x1, int y1, int x2, int y2);
 list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, bool lavaIsPassable = false);
 void generatePathMaps();
-void generatePathMapsThreaded();
 // return true if an entity is blocks pathing
 bool isPathObstacle(Entity* entity);
 
 class PathMapQueueHandler
 {
+private:
+	std::mutex mutex;
 public:
 	int nInQueue;
 	int kThreadStatus;
@@ -53,5 +54,6 @@ public:
 	void copyPathMap();
 	void initThread();
 	void deinit();
+	void generatePathMapsThreaded();
 };
 extern PathMapQueueHandler PathMapQueue;
