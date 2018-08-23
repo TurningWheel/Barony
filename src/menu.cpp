@@ -4999,7 +4999,8 @@ void handleMainMenu(bool mode)
 				&& !conductGameChallenges[CONDUCT_MODDED]
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
-				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED] )
+				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]
+				&& !conductGameChallenges[CONDUCT_MULTIPLAYER])
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
 			}
@@ -9811,8 +9812,8 @@ void buttonOpenSteamLeaderboards(button_t* my)
 
 		// create confirmation window
 		subwindow = 1;
-		subx1 = xres / 2 - 380;
-		subx2 = xres / 2 + 380;
+		subx1 = xres / 2 - 390;
+		subx2 = xres / 2 + 390;
 		suby1 = yres / 2 - 300;
 		suby2 = yres / 2 + 300;
 		score_leaderboard_window = 1;
@@ -9889,8 +9890,8 @@ void buttonOpenScoresWindow(button_t* my)
 	suby1 = yres / 2 - ((yres == 480) ? 200 : 240);
 	suby2 = yres / 2 + ((yres == 480) ? 200 : 240);
 #else
-	suby1 = yres / 2 - 240;
-	suby2 = yres / 2 + 240;
+	suby1 = yres / 2 - 260;
+	suby2 = yres / 2 + 260;
 #endif
 	strcpy(subtext, "");
 
