@@ -11725,25 +11725,24 @@ void Entity::setHardcoreStats(Stat& stats)
 		stats.MAXHP = stats.HP;
 		stats.OLDHP = stats.HP;
 
-		statIncrease = (abs(stats.STR) % 5 + 1) * 5; // each 5 STR add 5 more STR.
+		statIncrease = (abs(stats.STR) / 5 + 1) * 5; // each 5 STR add 5 more STR.
 		stats.STR += (statIncrease - (rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
-		statIncrease = (abs(stats.PER) % 5 + 1) * 5; // each 5 PER add 5 more PER.
+		statIncrease = (abs(stats.PER) / 5 + 1) * 5; // each 5 PER add 5 more PER.
 		stats.PER += (statIncrease - (rand() % (std::max(statIncrease / 4, 1)))); // 75%-100% of increased value.
 
-		statIncrease = std::min((abs(stats.DEX) % 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
+		statIncrease = std::min((abs(stats.DEX) / 4 + 1) * 1, 8); // each 4 DEX add 1 more DEX, capped at 8.
 		stats.DEX += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
-		statIncrease = (abs(stats.CON) % 5 + 1) * 1; // each 5 CON add 1 more CON.
+		statIncrease = (abs(stats.CON) / 5 + 1) * 1; // each 5 CON add 1 more CON.
 		stats.CON += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
-		statIncrease = (abs(stats.INT) % 5 + 1) * 5; // each 5 INT add 5 more INT.
+		statIncrease = (abs(stats.INT) / 5 + 1) * 5; // each 5 INT add 5 more INT.
 		stats.INT += (statIncrease - (rand() % (std::max(statIncrease / 2, 1)))); // 50%-100% of increased value.
 
-		if ( rand() % 4 == 0 )
-		{
-			stats.LVL += 1;
-		}
+		int lvlIncrease = rand() % 4;
+		lvlIncrease = std::max(0, lvlIncrease - 1);
+		stats.LVL += (lvlIncrease - 1); // increase by 1 or 2 50%, else stay same.
 	}
 	//messagePlayer(0, "Set stats to: ");
 	//messagePlayer(0, "MAXHP: %d", stats.MAXHP);
