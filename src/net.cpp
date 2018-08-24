@@ -3506,20 +3506,12 @@ void serverHandlePacket()
 	{
 		int x = net_packet->data[4];
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
-		bool foundit = false;
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->getUID() == uid )
-			{
-				foundit = true;
-				break;
-			}
+			return; // found entity.
 		}
-		if ( foundit )
-		{
-			return;
-		}
+		// else reply with entity deleted.
 		strcpy((char*)net_packet->data, "ENTD");
 		SDLNet_Write32(uid, &net_packet->data[4]);
 		net_packet->address.host = net_clients[x - 1].host;
@@ -3565,16 +3557,6 @@ void serverHandlePacket()
 		dy -= players[net_packet->data[4]]->entity->y;
 		dist = sqrt( dx * dx + dy * dy );
 
-		// make water passable
-		for ( node = map.entities->first; node != nullptr; node = node->next )
-		{
-			Entity* tempentity = (Entity*)node->element;
-			if ( tempentity->sprite == 28 && tempentity->flags[SPRITE] == true )
-			{
-				tempentity->flags[PASSABLE] = true;
-			}
-		}
-
 		// move player with collision detection
 		if (clipMove(&players[net_packet->data[4]]->entity->x, &players[net_packet->data[4]]->entity->y, dx, dy, players[net_packet->data[4]]->entity) < dist - .025 )
 		{
@@ -3589,30 +3571,17 @@ void serverHandlePacket()
 			net_packet->len = 8;
 			sendPacket(net_sock, -1, net_packet, j - 1);
 		}
-
-		// make water unpassable
-		for ( node = map.entities->first; node != nullptr; node = node->next )
-		{
-			Entity* tempentity = (Entity*)node->element;
-			if ( tempentity->sprite == 28 && tempentity->flags[SPRITE] == true )
-			{
-				tempentity->flags[PASSABLE] = false;
-			}
-		}
-
 		return;
 	}
 
 	// tried to update
 	else if (!strncmp((char*)net_packet->data, "NOUP", 4))
 	{
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
 		{
-			Entity* tempEntity = (Entity*)node->element;
-			if (tempEntity->getUID() == SDLNet_Read32(&net_packet->data[5]))
-			{
-				tempEntity->flags[UPDATENEEDED] = false;
-			}
+			entity->flags[UPDATENEEDED] = false;
 		}
 		return;
 	}
@@ -3636,15 +3605,12 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "CKIR", 4))
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
-		for (node = map.entities->first; node != nullptr; node = node->next)
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if (entity->getUID() == SDLNet_Read32(&net_packet->data[5]))
-			{
-				client_selected[net_packet->data[4]] = entity;
-				inrange[net_packet->data[4]] = true;
-				break;
-			}
+			client_selected[net_packet->data[4]] = entity;
+			inrange[net_packet->data[4]] = true;
 		}
 		return;
 	}
@@ -3652,15 +3618,12 @@ void serverHandlePacket()
 	// clicked entity out of range
 	else if (!strncmp((char*)net_packet->data, "CKOR", 4))
 	{
-		for (node = map.entities->first; node != nullptr; node = node->next)
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if (entity->getUID() == SDLNet_Read32(&net_packet->data[5]))
-			{
-				client_selected[net_packet->data[4]] = entity;
-				inrange[net_packet->data[4]] = false;
-				break;
-			}
+			client_selected[net_packet->data[4]] = entity;
+			inrange[net_packet->data[4]] = false;
 		}
 		return;
 	}
@@ -3730,14 +3693,11 @@ void serverHandlePacket()
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		j = net_packet->data[4]; // player number
-		for (node = map.entities->first; node != nullptr; node = node->next)
+		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* entity = uidToEntity(uid);
+		if ( entity )
 		{
-			entity = (Entity*)node->element;
-			if (entity->getUID() == SDLNet_Read32(&net_packet->data[5]))
-			{
-				clickDescription(j, entity);
-				break;
-			}
+			clickDescription(j, entity);
 		}
 		return;
 	}
