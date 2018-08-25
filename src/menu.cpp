@@ -11795,7 +11795,6 @@ void buttonGamemodsSubscribeToHostsModFiles(button_t* my)
 		if ( serverNumModsLoaded > 0 )
 		{
 			char tagName[32];
-			char fullpath[PATH_MAX];
 			std::vector<uint64> fileIdsToDownload;
 			for ( int lines = 0; lines < serverNumModsLoaded; ++lines )
 			{
