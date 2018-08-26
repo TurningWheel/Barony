@@ -23,6 +23,7 @@
 int* pathMapFlying = NULL;
 int* pathMapGrounded = NULL;
 int pathMapZone = 1;
+PathMapQueueHandler PathMapQueue;
 
 #define STRAIGHTCOST 10
 #define DIAGONALCOST 14
@@ -470,11 +471,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 
 -------------------------------------------------------------------------------*/
 
-void fillPathMap(int* pathMap, int x, int y, int zone);
+void fillPathMap(int* pathMap, int x, int y, int zone, bool flying);
 
 void generatePathMaps()
 {
 	int x, y;
+
+	PathMapQueue.deinit(); // deinit any outstanding threaded pathmap requests.
 
 	if ( pathMapGrounded )
 	{
@@ -494,17 +497,17 @@ void generatePathMaps()
 		{
 			if ( !pathMapGrounded[y + x * map.height] )
 			{
-				fillPathMap(pathMapGrounded, x, y, pathMapZone);
+				fillPathMap(pathMapGrounded, x, y, pathMapZone, false);
 			}
 			if ( !pathMapFlying[y + x * map.height] )
 			{
-				fillPathMap(pathMapFlying, x, y, pathMapZone);
+				fillPathMap(pathMapFlying, x, y, pathMapZone, true);
 			}
 		}
 	}
 }
 
-void fillPathMap(int* pathMap, int x, int y, int zone)
+void fillPathMap(int* pathMap, int x, int y, int zone, bool flying)
 {
 	bool obstacle = true;
 
@@ -514,7 +517,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 	{
 		obstacle = false;
 	}
-	else if ( pathMap == pathMapFlying && !map.tiles[OBSTACLELAYER + index] )
+	else if ( flying && !map.tiles[OBSTACLELAYER + index] )
 	{
 		obstacle = false;
 	}
@@ -602,7 +605,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = v * MAPLAYERS + (u + 1) * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+								if ( !map.tiles[OBSTACLELAYER + index] && (flying
 									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
 								{
 									pathMap[v + (u + 1)*map.height] = zone;
@@ -649,7 +652,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = v * MAPLAYERS + (u - 1) * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+								if ( !map.tiles[OBSTACLELAYER + index] && (flying
 									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
 								{
 									pathMap[v + (u - 1)*map.height] = zone;
@@ -696,7 +699,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = (v + 1) * MAPLAYERS + u * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+								if ( !map.tiles[OBSTACLELAYER + index] && (flying
 									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
 								{
 									pathMap[(v + 1) + u * map.height] = zone;
@@ -743,7 +746,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = (v - 1) * MAPLAYERS + u * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+								if ( !map.tiles[OBSTACLELAYER + index] && (flying
 									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
 								{
 									pathMap[(v - 1) + u * map.height] = zone;
@@ -786,4 +789,155 @@ bool isPathObstacle(Entity* entity)
 	}
 
 	return false;
+}
+
+void PathMapQueueHandler::addRequest()
+{
+	if ( kThreadStatus == PATHMAP_THREAD_RUNNING && nInQueue > 1 )
+	{
+		// don't add another request to the queue as current thread is running 
+		// and the next request will pick up our current changes.
+	}
+	else
+	{
+		++nInQueue;
+		messagePlayer(0, "adding request, num requests is %d", nInQueue);
+		if ( nInQueue == 1 && kThreadStatus == PATHMAP_THREAD_IDLE )
+		{
+			initThread();
+		}
+	}
+	return;
+}
+
+void PathMapQueueHandler::initThread()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	currentMapX = map.width;
+	currentMapY = map.height;
+	currentMap = currentlevel;
+	memset(localGroundPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
+	memset(localFlyingPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
+	kThreadStatus = PATHMAP_THREAD_RUNNING;
+	messagePlayer(0, "started thread, remaining requests %d", nInQueue);
+	currentThread = std::thread(&PathMapQueueHandler::generatePathMapsThreaded, &PathMapQueue);
+}
+
+bool PathMapQueueHandler::processThread()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+
+	// wait for a completed thread.
+	if ( kThreadStatus == PATHMAP_THREAD_IDLE || kThreadStatus == PATHMAP_THREAD_RUNNING )
+	{
+		return false;
+	}
+	else if ( kThreadStatus == PATHMAP_THREAD_EARLY_EXIT )
+	{
+		PathMapQueue.deinit(); // join then reset any remaining requests as these are invalid.
+	}
+	else if ( kThreadStatus == PATHMAP_THREAD_COMPLETE )
+	{
+		if ( currentThread.joinable() )
+		{
+			currentThread.join();
+		}
+		copyPathMap();
+		kThreadStatus = PATHMAP_THREAD_IDLE;
+		nInQueue = std::max(nInQueue - 1, 0);
+		messagePlayer(0, "end thread, remaining requests %d", nInQueue);
+		if ( nInQueue > 0 )
+		{
+			// kick off a new thread in the request queue.
+			initThread();
+		}
+		return true;
+	}
+	return false;
+}
+
+void PathMapQueueHandler::deinit()
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	// join and end thread, reset variables.
+	if ( currentThread.joinable() )
+	{
+		currentThread.join();
+		messagePlayer(0, "deinit threaded path map");
+	}
+	currentMapX = 0;
+	currentMapY = 0;
+	currentMap = 0;
+	nInQueue = 0;
+	kThreadStatus = PATHMAP_THREAD_IDLE;
+	memset(localGroundPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
+	memset(localFlyingPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
+}
+
+
+void PathMapQueueHandler::generatePathMapsThreaded()
+{
+	int x, y;
+
+	int numZones = 1;
+	bool mapChanged = false;
+	for ( y = 0; y < map.height && !mapChanged; y++ )
+	{
+		for ( x = 0; x < map.width; x++ )
+		{
+			if ( map.height != PathMapQueue.currentMapY
+				|| map.width != PathMapQueue.currentMapX
+				|| currentlevel != PathMapQueue.currentMap )
+			{
+				mapChanged = true; // map changed during processing, abort!
+				break;
+			}
+			if ( !PathMapQueue.localGroundPathMap[y + x * map.height] )
+			{
+				fillPathMap(PathMapQueue.localGroundPathMap, x, y, numZones, false);
+			}
+			if ( !PathMapQueue.localFlyingPathMap[y + x * map.height] )
+			{
+				fillPathMap(PathMapQueue.localFlyingPathMap, x, y, numZones, true);
+			}
+		}
+	}
+
+	std::lock_guard<std::mutex> guard(this->mutex);
+	if ( mapChanged )
+	{
+		PathMapQueue.kThreadStatus = PATHMAP_THREAD_EARLY_EXIT;
+		return;
+	}
+	PathMapQueue.kThreadStatus = PATHMAP_THREAD_COMPLETE;
+}
+
+void PathMapQueueHandler::copyPathMap()
+{
+	// free existing path maps, then copy the data we mapped out.
+	if ( pathMapGrounded )
+	{
+		free(pathMapGrounded);
+	}
+	pathMapGrounded = (int*)calloc(map.width * map.height, sizeof(int));
+	if ( pathMapFlying )
+	{
+		free(pathMapFlying);
+	}
+	pathMapFlying = (int*)calloc(map.width * map.height, sizeof(int));
+
+	memcpy(pathMapGrounded, localGroundPathMap, map.width * map.height * sizeof(int));
+	memcpy(pathMapFlying, localFlyingPathMap, map.width * map.height * sizeof(int));
+	memset(localGroundPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
+	memset(localFlyingPathMap, 0, MAP_MAX_DIMENSION_X * MAP_MAX_DIMENSION_Y);
 }

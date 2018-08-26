@@ -1900,6 +1900,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 
 									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
+									
+									// Update the paths so that monsters know they can walk through it
+									//generatePathMaps();
+									PathMapQueue.addRequest();
+
 									// send wall destroy info to clients
 									for ( c = 1; c < MAXPLAYERS; c++ )
 									{

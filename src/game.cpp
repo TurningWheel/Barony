@@ -586,6 +586,12 @@ void gameLogic(void)
 				updateGameplayStatisticsInMainLoop();
 			}
 
+			if ( ticks % 10 == 0 )
+			{
+				// Check on the queue if a mid-game path map generation is running via digging.
+				PathMapQueue.processThread();
+			}
+
 			updatePlayerConductsInMainLoop();
 
 			//if( TICKS_PER_SECOND )

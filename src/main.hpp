@@ -27,6 +27,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 #include "Config.hpp"
 #include "physfs.h"
+#include <mutex> // for path map multithreading
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
@@ -666,3 +667,5 @@ extern CSteamWorkshop* g_SteamWorkshop;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
 extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS
+
+extern std::mutex multithread_global_mutex;

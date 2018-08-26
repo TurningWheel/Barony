@@ -22,8 +22,12 @@
 void list_FreeAll(list_t* list)
 {
 	node_t* node, *nextnode;
-	if (list == map.entities)
+
+	if ( list == map.entities )
+	{
 		map.entities_map.clear();
+	}
+
 	for ( node = list->first; node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
@@ -47,8 +51,14 @@ void list_RemoveNode(node_t* node)
 	{
 		return;
 	}
+
+	std::unique_lock<std::mutex> guard(multithread_global_mutex);
+	guard.unlock();
+	bool locked = false;
 	if (node->list && node->list == map.entities)
 	{
+		locked = true;
+		guard.lock(); // lock the removal of a map.entities node.
 		map.entities_map.erase(((Entity*)node->element)->getUID());
 	}
 	if ( node->list && node->list->first )
@@ -89,8 +99,14 @@ void list_RemoveNode(node_t* node)
 
 	// once the node is removed from the list, delete it
 	// If a node has a deconstructor, then deconstruct it.  Otherwise it's a class and we'll delete it (which calls the destructor)
+	
 	if (*node->deconstructor)
 	{
+		if ( locked )
+		{
+			guard.unlock();
+			locked = false;
+		}
 		(*node->deconstructor)(node->element);
 	}
 	else

@@ -260,6 +260,8 @@ Uint32 cursorflash = 0;
 
 bool no_sound = false;
 
+std::mutex multithread_global_mutex;
+
 //Entity *players[4];
 
 hit_t hit;
