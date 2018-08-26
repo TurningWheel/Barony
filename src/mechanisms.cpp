@@ -717,6 +717,7 @@ void actSoundSource(Entity* my)
 
 void Entity::actSoundSource()
 {
+#ifdef SOUND
 	if ( multiplayer == CLIENT )
 	{
 		return;
@@ -768,6 +769,7 @@ void Entity::actSoundSource()
 			soundSourceFired = 0;
 		}
 	}
+#endif // SOUND
 }
 
 #define SIGNALTIMER_DELAYCOUNT skill[6]

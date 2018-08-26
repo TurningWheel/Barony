@@ -1316,6 +1316,12 @@ void drawStatus()
 	pos.x = xres - pos.w * 3 - 9;
 	pos.y = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) + (32 + 64 + 64 + 3); // 131px from end of prof window.
 
+	if ( (!shootmode || lock_right_sidebar) && proficienciesPage == 1 
+		&& pos.y < (interfacePartySheet.y + interfacePartySheet.h + 16) )
+	{
+		pos.y = interfacePartySheet.y + interfacePartySheet.h + 16;
+	}
+
 	if ( pos.y + pos.h > (yres - map.height * 4) ) // check if overlapping minimap
 	{
 		pos.y = (yres - map.height * 4) - (64 + 3); // align above minimap
