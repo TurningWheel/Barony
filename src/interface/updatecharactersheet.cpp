@@ -648,7 +648,8 @@ void drawPartySheet()
 		int monstersToDisplay = FollowerMenu.maxMonstersToDraw;
 		if ( playerCnt != 0 )
 		{
-			pos.y -= (fontHeight * 4) * std::max(playerCnt + 1, 0);
+			pos.y -= (fontHeight * 4) * 2;
+			pos.y += std::max(playerCnt - 1, 0) * (fontHeight * 4 + 8);
 			monstersToDisplay = FollowerMenu.numMonstersToDrawInParty();
 		}
 		int i = 0;

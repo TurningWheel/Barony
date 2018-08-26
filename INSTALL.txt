@@ -11,6 +11,27 @@ For Debian/Ubuntu you can install them with
 
 sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev
 
+You will also need PhysFS v3.0.1 for Barony v3.1.5+
+Linux Install (Navigate to somewhere to drop install files first):
+ * wget https://icculus.org/physfs/downloads/physfs-3.0.1.tar.bz2
+ * bzip2 -d physfs-3.0.1.tar.bz2
+ * tar -xvf physfs-3.0.1.tar
+ * cd physfs-3.0.1
+ * cmake ./
+ * make install
+You can then remove the installation files.
+
+Windows install:
+ * Download from https://icculus.org/physfs/downloads/physfs-3.0.1.tar.bz2
+ * Open with .7zip or similar, open up docs/INSTALL.txt inside the archive for instructions to read along with this short guide.
+ * Download/install cmake-gui for Windows (or use a command line version if you have it)
+ * Open up the physfs-3.0.1 directory in cmake-gui and select configure, then generate
+ * You will now get Visual Studio files to open up and build
+ * Open up files in Visual Studio, in Solution Explorer right click the 'physfs' solution and 'build'
+ * You will now see a physfs.lib file in physfs-3.0.1/Release/ to use when building Barony. Put this in one of the VCC++ Library Directories folder for the Barony project.
+ * Similarly you can find physfs-3.0.1/src/physfs.h to put in one of the VC++ Include Directories from the Barony project.
+ 
+
 Optional dependencies required for sound:
  * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it).
 You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF (it's also disabled if not found).
