@@ -1900,6 +1900,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 
 									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
+
 									// send wall destroy info to clients
 									for ( c = 1; c < MAXPLAYERS; c++ )
 									{
@@ -1915,6 +1916,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										net_packet->len = 8;
 										sendPacketSafe(net_sock, -1, net_packet, c - 1);
 									}
+
+									generatePathMaps();
 								}
 							}
 						}
