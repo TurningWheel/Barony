@@ -266,6 +266,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	{
 		addToCreatureList(creaturelist);
 	}
+	myTileListNode = nullptr;
 
 	// now reset all of my data elements
 	lastupdate = 0;
@@ -387,6 +388,11 @@ Entity::~Entity()
 	{
 		list_RemoveNode(myCreatureListNode);
 		myCreatureListNode = nullptr;
+	}
+	if ( myTileListNode )
+	{
+		list_RemoveNode(myTileListNode);
+		myTileListNode = nullptr;
 	}
 
 	// alert clients of the entity's deletion
@@ -11788,4 +11794,47 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		return true;
 	}
 	return false;
+}
+
+
+
+node_t* TileEntityListHandler::updateEntity(Entity& entity)
+{
+	int x = (static_cast<int>(entity.x) >> 4);
+	int y = (static_cast<int>(entity.y) >> 4);
+	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
+	{
+		if ( entity.myTileListNode )
+		{
+			messagePlayer(0, "updating position to %d, %d", x, y);
+			list_RemoveNode(entity.myTileListNode);
+			entity.myTileListNode = nullptr;
+		}
+		else
+		{
+			messagePlayer(0, "added at %d, %d", x, y);
+		}
+		entity.myTileListNode = list_AddNodeLast(&map.TileEntityList.gridEntities[x][y]);
+		entity.myTileListNode->element = &entity;
+		entity.myTileListNode->deconstructor = &emptyDeconstructor;
+		entity.myTileListNode->size = sizeof(Entity);
+		return entity.myTileListNode;
+	}
+	return nullptr;
+}
+
+void TileEntityListHandler::clearTile(int x, int y)
+{
+	list_FreeAll(&gridEntities[x][y]);
+}
+
+void TileEntityListHandler::emptyGridEntities()
+{
+	for ( int i = 0; i < kMaxMapDimension; ++i )
+	{
+		for ( int j = 0; j < kMaxMapDimension; ++j )
+		{
+			clearTile(i, j);
+		}
+	}
 }
