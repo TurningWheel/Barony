@@ -604,7 +604,17 @@ void gameLogic(void)
 					{
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
+							int ox = static_cast<int>(entity->x) >> 4;
+							int oy = static_cast<int>(entity->y) >> 4;
 							(*entity->behavior)(entity);
+							if ( abs(entity->vel_x) > 0 || abs(entity->vel_y) > 0 )
+							{
+								if ( ox != static_cast<int>(entity->x) >> 4
+									|| oy != static_cast<int>(entity->y) >> 4 )
+								{
+									map.TileEntityList.updateEntity(*entity);
+								}
+							}
 						}
 						if ( entitiesdeleted.first != nullptr )
 						{
