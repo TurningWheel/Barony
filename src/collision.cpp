@@ -308,16 +308,21 @@ bool entityInsideSomething(Entity* entity)
 	}
 
 	// test against entities
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(entity, 2);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		Entity* testEntity = (Entity*)node->element;
-		if ( testEntity == entity || testEntity->flags[PASSABLE] )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-		if ( entityInsideEntity(entity, testEntity) )
-		{
-			return true;
+			Entity* testEntity = (Entity*)node->element;
+			if ( testEntity == entity || testEntity->flags[PASSABLE] )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(entity, testEntity) )
+			{
+				return true;
+			}
 		}
 	}
 
@@ -408,42 +413,46 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 		}
 	}
-	for (node = map.entities->first; node != nullptr; node = node->next)
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(tx) >> 4, static_cast<int>(ty) >> 4, 2);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		entity = (Entity*)node->element;
-		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-		if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
-		{
-			continue;    // monsters don't have hard collision with door frames
-		}
-		Stat* myStats = stats; //my->getStats();	//SEB <<<
-		Stat* yourStats = entity->getStats();
-		if ( myStats && yourStats )
-		{
-			if ( yourStats->leader_uid == my->getUID() )
+			entity = (Entity*)node->element;
+			if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
 			{
 				continue;
 			}
-			if ( myStats->leader_uid == entity->getUID() )
+			if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
 			{
-				continue;
+				continue;    // monsters don't have hard collision with door frames
 			}
-			if ( monsterally[myStats->type][yourStats->type] )
+			Stat* myStats = stats; //my->getStats();	//SEB <<<
+			Stat* yourStats = entity->getStats();
+			if ( myStats && yourStats )
 			{
-				continue;
+				if ( yourStats->leader_uid == my->getUID() )
+				{
+					continue;
+				}
+				if ( myStats->leader_uid == entity->getUID() )
+				{
+					continue;
+				}
+				if ( monsterally[myStats->type][yourStats->type] )
+				{
+					continue;
+				}
+				if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
+				{
+					continue;
+				}
 			}
-			if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
+			if ( multiplayer == CLIENT )
 			{
-				continue;
-			}
-		}
-		if ( multiplayer == CLIENT )
-		{
-			// fixes bug where clients can't move through humans
-			if ( (entity->sprite >= 113 && entity->sprite < 118) ||
+				// fixes bug where clients can't move through humans
+				if ( (entity->sprite >= 113 && entity->sprite < 118) ||
 					(entity->sprite >= 125 && entity->sprite < 130) ||
 					(entity->sprite >= 332 && entity->sprite < 334) ||
 					(entity->sprite >= 341 && entity->sprite < 347) ||
@@ -451,87 +460,88 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					(entity->sprite >= 367 && entity->sprite < 373) ||
 					(entity->sprite >= 380 && entity->sprite < 386) ||
 					entity->sprite == 217 )   // human heads
-			{
-				continue;
-			}
-			else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
-			{
-				continue; // fix clients not being able to walk through friendly monsters
-			}
-		}
-		const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
-		const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
-		if( (entity->sizex>0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
-		{
-			if( (entity->sizey>0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
-			{
-				tx2 = std::max(txmin, exmin);
-				ty2 = std::max(tymin, eymin);
-				hit.x = tx2;
-				hit.y = ty2;
-				hit.mapx = entity->x / 16;
-				hit.mapy = entity->y / 16;
-				hit.entity = entity;
-				if ( multiplayer != CLIENT )
 				{
-					if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
-					{
-						bool dyrnwyn = false;
-						Stat* stats = hit.entity->getStats();
-						if ( stats )
-						{
-							if ( stats->weapon )
-							{
-								if ( stats->weapon->type == ARTIFACT_SWORD )
-								{
-									dyrnwyn = true;
-								}
-							}
-						}
-						if ( !dyrnwyn )
-						{
-							bool previouslyOnFire = hit.entity->flags[BURNING];
-
-							// Attempt to set the Entity on fire
-							hit.entity->SetEntityOnFire();
-
-							// If the Entity is now on fire, tell them
-							if ( hit.entity->flags[BURNING] && !previouslyOnFire )
-							{
-								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
-							}
-						}
-					}
-					else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
-					{
-						bool dyrnwyn = false;
-						Stat* stats = my->getStats();
-						if ( stats )
-						{
-							if ( stats->weapon )
-							{
-								if ( stats->weapon->type == ARTIFACT_SWORD )
-								{
-									dyrnwyn = true;
-								}
-							}
-						}
-						if ( !dyrnwyn )
-						{
-							bool previouslyOnFire = hit.entity->flags[BURNING];
-
-							// Attempt to set the Entity on fire
-							hit.entity->SetEntityOnFire();
-
-							// If the Entity is now on fire, tell them
-							if ( hit.entity->flags[BURNING] && !previouslyOnFire )
-							{
-								messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
-							}
-						}
-					}
+					continue;
 				}
-				return 0;
+				else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
+				{
+					continue; // fix clients not being able to walk through friendly monsters
+				}
+			}
+			const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
+			const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+			if ( (entity->sizex > 0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
+			{
+				if ( (entity->sizey > 0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
+				{
+					tx2 = std::max(txmin, exmin);
+					ty2 = std::max(tymin, eymin);
+					hit.x = tx2;
+					hit.y = ty2;
+					hit.mapx = entity->x / 16;
+					hit.mapy = entity->y / 16;
+					hit.entity = entity;
+					if ( multiplayer != CLIENT )
+					{
+						if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
+						{
+							bool dyrnwyn = false;
+							Stat* stats = hit.entity->getStats();
+							if ( stats )
+							{
+								if ( stats->weapon )
+								{
+									if ( stats->weapon->type == ARTIFACT_SWORD )
+									{
+										dyrnwyn = true;
+									}
+								}
+							}
+							if ( !dyrnwyn )
+							{
+								bool previouslyOnFire = hit.entity->flags[BURNING];
+
+								// Attempt to set the Entity on fire
+								hit.entity->SetEntityOnFire();
+
+								// If the Entity is now on fire, tell them
+								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
+								{
+									messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
+								}
+							}
+						}
+						else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+						{
+							bool dyrnwyn = false;
+							Stat* stats = my->getStats();
+							if ( stats )
+							{
+								if ( stats->weapon )
+								{
+									if ( stats->weapon->type == ARTIFACT_SWORD )
+									{
+										dyrnwyn = true;
+									}
+								}
+							}
+							if ( !dyrnwyn )
+							{
+								bool previouslyOnFire = hit.entity->flags[BURNING];
+
+								// Attempt to set the Entity on fire
+								hit.entity->SetEntityOnFire();
+
+								// If the Entity is now on fire, tell them
+								if ( hit.entity->flags[BURNING] && !previouslyOnFire )
+								{
+									messagePlayer(hit.entity->skill[2], language[590]); // "You suddenly catch fire!"
+								}
+							}
+						}
+					}
+					return 0;
+				}
 			}
 		}
 	}
@@ -1116,18 +1126,23 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
 			}
 
-			for ( node = map.entities->first; node != nullptr; node = node->next )
+			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(x) >> 4, static_cast<int>(y) >> 4, 2);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 			{
-				entity = (Entity*)node->element;
-				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+				list_t* currentList = *it;
+				for ( node = currentList->first; node != nullptr; node = node->next )
 				{
-					continue;
-				}
-				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
-				{
-					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+					entity = (Entity*)node->element;
+					if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
 					{
-						return 1;
+						continue;
+					}
+					if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) )
+					{
+						if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) )
+						{
+							return 1;
+						}
 					}
 				}
 			}

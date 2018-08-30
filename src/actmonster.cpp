@@ -2570,83 +2570,88 @@ void actMonster(Entity* my)
 		}
 
 		// being bumped by someone friendly
-		for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next ) //Can't convert to map.creatures because of doorframes.
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
-			entity = (Entity*)node2->element;
-			if ( entity == my )
+			list_t* currentList = *it;
+			for ( node2 = currentList->first; node2 != nullptr; node2 = node2->next ) //Can't convert to map.creatures because of doorframes.
 			{
-				continue;
-			}
-			if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame )
-			{
-				continue;
-			}
-			if ( entityInsideEntity(my, entity) )
-			{
-				if ( entity->behavior != &actDoorFrame )
+				entity = (Entity*)node2->element;
+				if ( entity == my )
 				{
-					double tangent = atan2(my->y - entity->y, my->x - entity->x);
-					MONSTER_VELX = cos(tangent) * .1;
-					MONSTER_VELY = sin(tangent) * .1;
+					continue;
 				}
-				else
+				if ( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame )
 				{
-					if ( entity->yaw >= -0.1 && entity->yaw <= 0.1 )
+					continue;
+				}
+				if ( entityInsideEntity(my, entity) )
+				{
+					if ( entity->behavior != &actDoorFrame )
 					{
-						// east/west doorway
-						if ( my->y < floor(my->y / 16) * 16 + 8 )
-						{
-							// slide south
-							MONSTER_VELX = 0;
-							MONSTER_VELY = .25;
-						}
-						else
-						{
-							// slide north
-							MONSTER_VELX = 0;
-							MONSTER_VELY = -.25;
-						}
+						double tangent = atan2(my->y - entity->y, my->x - entity->x);
+						MONSTER_VELX = cos(tangent) * .1;
+						MONSTER_VELY = sin(tangent) * .1;
 					}
 					else
 					{
-						// north/south doorway
-						if ( my->x < floor(my->x / 16) * 16 + 8 )
+						if ( entity->yaw >= -0.1 && entity->yaw <= 0.1 )
 						{
-							// slide east
-							MONSTER_VELX = .25;
-							MONSTER_VELY = 0;
+							// east/west doorway
+							if ( my->y < floor(my->y / 16) * 16 + 8 )
+							{
+								// slide south
+								MONSTER_VELX = 0;
+								MONSTER_VELY = .25;
+							}
+							else
+							{
+								// slide north
+								MONSTER_VELX = 0;
+								MONSTER_VELY = -.25;
+							}
 						}
 						else
 						{
-							// slide west
-							MONSTER_VELX = -.25;
-							MONSTER_VELY = 0;
+							// north/south doorway
+							if ( my->x < floor(my->x / 16) * 16 + 8 )
+							{
+								// slide east
+								MONSTER_VELX = .25;
+								MONSTER_VELY = 0;
+							}
+							else
+							{
+								// slide west
+								MONSTER_VELX = -.25;
+								MONSTER_VELY = 0;
+							}
+						}
+						//messagePlayer(0, "path: %d", my->monsterPathCount);
+						++my->monsterPathCount;
+						if ( my->monsterPathCount > 50 )
+						{
+							my->monsterPathCount = 0;
+							monsterMoveAside(my, my);
 						}
 					}
-					//messagePlayer(0, "path: %d", my->monsterPathCount);
-					++my->monsterPathCount;
-					if ( my->monsterPathCount > 50 )
+
+
+					if ( (entity->sprite == 274 || entity->sprite == 646 
+						|| entity->sprite == 650 || entity->sprite == 304) 
+						&& entity->flags[PASSABLE] == true )
 					{
-						my->monsterPathCount = 0;
-						monsterMoveAside(my, my);
+						// LICH/LICH_FIRE/LICH_ICE/DEVIL
+						// If these guys are PASSABLE then they're either dying or some other animation
+						// Move the monster inside the boss, but don't set PASSABLE to false again.
+						clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 					}
-				}
-
-
-				if ( (entity->sprite == 274 || entity->sprite == 646 
-					|| entity->sprite == 650 || entity->sprite == 304) 
-					&& entity->flags[PASSABLE] == true )
-				{
-					// LICH/LICH_FIRE/LICH_ICE/DEVIL
-					// If these guys are PASSABLE then they're either dying or some other animation
-					// Move the monster inside the boss, but don't set PASSABLE to false again.
-					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
-				}
-				else
-				{
-					entity->flags[PASSABLE] = true;
-					clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
-					entity->flags[PASSABLE] = false;
+					else
+					{
+						entity->flags[PASSABLE] = true;
+						clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+						entity->flags[PASSABLE] = false;
+					}
 				}
 			}
 		}

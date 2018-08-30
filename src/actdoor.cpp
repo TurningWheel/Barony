@@ -206,17 +206,22 @@ void actDoor(Entity* my)
 			// don't set impassable if someone's inside, otherwise do
 			node_t* node;
 			bool somebodyinside = false;
-			for ( node = map.entities->first; node != nullptr; node = node->next )
+			std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 			{
-				Entity* entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1  )
+				list_t* currentList = *it;
+				for ( node = currentList->first; node != nullptr; node = node->next )
 				{
-					continue;
-				}
-				if ( entityInsideEntity(my, entity) )
-				{
-					somebodyinside = true;
-					break;
+					Entity* entity = (Entity*)node->element;
+					if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1  )
+					{
+						continue;
+					}
+					if ( entityInsideEntity(my, entity) )
+					{
+						somebodyinside = true;
+						break;
+					}
 				}
 			}
 			if ( !somebodyinside )
