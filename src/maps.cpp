@@ -5039,7 +5039,7 @@ void assignActions(map_t* map)
 		if ( entity )
 		{
 			nextnode = node->next;
-			map->TileEntityList.updateEntity(*entity);
+			TileEntityList.addEntity(*entity);
 		}
 	}
 

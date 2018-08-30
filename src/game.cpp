@@ -37,6 +37,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include <limits>
+#include <chrono>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -78,7 +79,7 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
 std::vector<std::string> physFSFilesInDirectory;
-
+TileEntityListHandler TileEntityList;
 // recommended for valgrind debugging:
 // res of 480x270
 // /nohud
@@ -607,12 +608,14 @@ void gameLogic(void)
 							int ox = static_cast<int>(entity->x) >> 4;
 							int oy = static_cast<int>(entity->y) >> 4;
 							(*entity->behavior)(entity);
+
 							if ( abs(entity->vel_x) > 0 || abs(entity->vel_y) > 0 )
 							{
 								if ( ox != static_cast<int>(entity->x) >> 4
 									|| oy != static_cast<int>(entity->y) >> 4 )
 								{
-									map.TileEntityList.updateEntity(*entity);
+									// if entity moved into a new tile, update it's tile position in global tile list.
+									TileEntityList.updateEntity(*entity);
 								}
 							}
 						}
@@ -801,7 +804,9 @@ void gameLogic(void)
 					FollowerMenu.closeFollowerMenuGUI(true);
 
 					assignActions(&map);
+					std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 					generatePathMaps();
+					messagePlayer(0, "time: %d", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t1));
 
 					if ( !strncmp(map.name, "Mages Guild", 11) )
 					{
