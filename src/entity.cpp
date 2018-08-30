@@ -11796,30 +11796,48 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 	return false;
 }
 
-
-
-node_t* TileEntityListHandler::updateEntity(Entity& entity)
+node_t* TileEntityListHandler::addEntity(Entity& entity)
 {
+	if ( entity.myTileListNode )
+	{
+		return nullptr;
+	}
+
 	int x = (static_cast<int>(entity.x) >> 4);
 	int y = (static_cast<int>(entity.y) >> 4);
 	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
 	{
-		if ( entity.myTileListNode )
-		{
-			messagePlayer(0, "updating position to %d, %d", x, y);
-			list_RemoveNode(entity.myTileListNode);
-			entity.myTileListNode = nullptr;
-		}
-		else
-		{
-			messagePlayer(0, "added at %d, %d", x, y);
-		}
-		entity.myTileListNode = list_AddNodeLast(&map.TileEntityList.gridEntities[x][y]);
+		messagePlayer(0, "added at %d, %d", x, y);
+		entity.myTileListNode = list_AddNodeLast(&TileEntityList.gridEntities[x][y]);
 		entity.myTileListNode->element = &entity;
 		entity.myTileListNode->deconstructor = &emptyDeconstructor;
 		entity.myTileListNode->size = sizeof(Entity);
 		return entity.myTileListNode;
 	}
+
+	return nullptr;
+}
+
+node_t* TileEntityListHandler::updateEntity(Entity& entity)
+{
+	if ( !entity.myTileListNode )
+	{
+		return nullptr;
+	}
+
+	int x = (static_cast<int>(entity.x) >> 4);
+	int y = (static_cast<int>(entity.y) >> 4);
+	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
+	{
+		messagePlayer(0, "updating position to %d, %d", x, y);
+		list_RemoveNode(entity.myTileListNode);
+		entity.myTileListNode = list_AddNodeLast(&TileEntityList.gridEntities[x][y]);
+		entity.myTileListNode->element = &entity;
+		entity.myTileListNode->deconstructor = &emptyDeconstructor;
+		entity.myTileListNode->size = sizeof(Entity);
+		return entity.myTileListNode;
+	}
+
 	return nullptr;
 }
 

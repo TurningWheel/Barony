@@ -269,6 +269,43 @@ extern std::vector<std::string> randomPlayerNamesFemale;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 
-
 void mapLevel(int player);
+
+class TileEntityListHandler
+{
+private:
+	static const int kMaxMapDimension = 256;
+public:
+	list_t gridEntities[kMaxMapDimension][kMaxMapDimension];
+
+	void clearTile(int x, int y);
+	void emptyGridEntities();
+	node_t* addEntity(Entity& entity);
+	node_t* updateEntity(Entity& entity);
+
+	TileEntityListHandler()
+	{
+		for ( int i = 0; i < kMaxMapDimension; ++i )
+		{
+			for ( int j = 0; j < kMaxMapDimension; ++j )
+			{
+				gridEntities[i][j].first = nullptr;
+				gridEntities[i][j].last = nullptr;
+			}
+		}
+	};
+
+	~TileEntityListHandler()
+	{
+		for ( int i = 0; i < kMaxMapDimension; ++i )
+		{
+			for ( int j = 0; j < kMaxMapDimension; ++j )
+			{
+				clearTile(i, j);
+			}
+		}
+	};
+};
+extern TileEntityListHandler TileEntityList;
+
 

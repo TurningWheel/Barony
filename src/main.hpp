@@ -278,41 +278,6 @@ typedef struct list_t
 extern list_t button_l;
 extern list_t light_l;
 
-class TileEntityListHandler
-{
-private:
-	static const int kMaxMapDimension = 256;
-public:
-	list_t gridEntities[kMaxMapDimension][kMaxMapDimension];
-
-	void clearTile(int x, int y);
-	void emptyGridEntities();
-	node_t* updateEntity(Entity& entity);
-
-	TileEntityListHandler()
-	{
-		for ( int i = 0; i < kMaxMapDimension; ++i )
-		{
-			for ( int j = 0; j < kMaxMapDimension; ++j )
-			{
-				gridEntities[i][j].first = nullptr;
-				gridEntities[i][j].last = nullptr;
-			}
-		}
-	};
-
-	~TileEntityListHandler()
-	{
-		for ( int i = 0; i < kMaxMapDimension; ++i )
-		{
-			for ( int j = 0; j < kMaxMapDimension; ++j )
-			{
-				clearTile(i, j);
-			}
-		}
-	};
-};
-
 // game world structure
 typedef struct map_t
 {
@@ -324,7 +289,6 @@ typedef struct map_t
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 	list_t* creatures; //A list of Entity* pointers.
-	TileEntityListHandler TileEntityList;
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
