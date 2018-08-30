@@ -675,11 +675,11 @@ void getPowerablesOnTile(int x, int y, list_t** list)
 		}
 	}
 
-	if (entities)
+	/*if (entities)
 	{
 		list_FreeAll(entities);
 		free(entities);
-	}
+	}*/
 
 	//return return_val;
 }

@@ -3960,6 +3960,8 @@ returns a list of entities that are occupying the map tile specified at
 
 list_t* checkTileForEntity(int x, int y)
 {
+	return &TileEntityList.gridEntities[x][y];
+
 	list_t* return_val = NULL;
 
 	//Loop through the list.
@@ -4056,11 +4058,11 @@ void getItemsOnTile(int x, int y, list_t** list)
 		}
 	}
 
-	if ( entities )
+	/*if ( entities )
 	{
 		list_FreeAll(entities);
 		free(entities);
-	}
+	}*/
 
 	//return return_val;
 }
@@ -11807,7 +11809,7 @@ node_t* TileEntityListHandler::addEntity(Entity& entity)
 	int y = (static_cast<int>(entity.y) >> 4);
 	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
 	{
-		messagePlayer(0, "added at %d, %d", x, y);
+		//messagePlayer(0, "added at %d, %d", x, y);
 		entity.myTileListNode = list_AddNodeLast(&TileEntityList.gridEntities[x][y]);
 		entity.myTileListNode->element = &entity;
 		entity.myTileListNode->deconstructor = &emptyDeconstructor;
@@ -11829,7 +11831,7 @@ node_t* TileEntityListHandler::updateEntity(Entity& entity)
 	int y = (static_cast<int>(entity.y) >> 4);
 	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
 	{
-		messagePlayer(0, "updating position to %d, %d", x, y);
+		//messagePlayer(0, "updating position to %d, %d", x, y);
 		list_RemoveNode(entity.myTileListNode);
 		entity.myTileListNode = list_AddNodeLast(&TileEntityList.gridEntities[x][y]);
 		entity.myTileListNode->element = &entity;

@@ -541,8 +541,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 					}
 				}
 			}
-			list_FreeAll(list);
-			free(list);
+			//list_FreeAll(list);
+			//free(list);
 		}
 	}
 
@@ -596,8 +596,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
@@ -643,8 +643,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
@@ -690,8 +690,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
@@ -737,8 +737,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
