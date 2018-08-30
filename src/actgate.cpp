@@ -170,22 +170,27 @@ void Entity::actGate()
 	bool somebodyinside = false;
 	if ( this->z > gateStartHeight - 6 && this->flags[PASSABLE] )
 	{
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
 		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity == this || entity->flags[PASSABLE] || entity->sprite == 1 )
+			list_t* currentList = *it;
+			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
-				continue;
+				Entity* entity = (Entity*)node->element;
+				if ( entity == this || entity->flags[PASSABLE] || entity->sprite == 1 )
+				{
+					continue;
+				}
+				if ( entityInsideEntity(this, entity) )
+				{
+					somebodyinside = true;
+					break;
+				}
 			}
-			if ( entityInsideEntity(this, entity) )
+			if ( !somebodyinside )
 			{
-				somebodyinside = true;
-				break;
+				this->flags[PASSABLE] = false;
 			}
-		}
-		if ( !somebodyinside )
-		{
-			this->flags[PASSABLE] = false;
 		}
 	}
 	else if ( this->z < gateStartHeight - 9 && !this->flags[PASSABLE] )

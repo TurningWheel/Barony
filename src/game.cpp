@@ -607,6 +607,11 @@ void gameLogic(void)
 						{
 							int ox = static_cast<int>(entity->x) >> 4;
 							int oy = static_cast<int>(entity->y) >> 4;
+							if ( !entity->myTileListNode )
+							{
+								TileEntityList.addEntity(*entity);
+							}
+
 							(*entity->behavior)(entity);
 
 							if ( abs(entity->vel_x) > 0 || abs(entity->vel_y) > 0 )

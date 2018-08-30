@@ -828,102 +828,107 @@ void actMinotaurCeilingBuster(Entity* my)
 					}
 				}
 				node_t* node, *nextnode;
-				for ( node = map.entities->first; node != nullptr; node = nextnode )
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 				{
-					nextnode = node->next;
-					Entity* entity = (Entity*)node->element;
-					if ( (int)(x / 16) == (int)(entity->x / 16) && (int)(y / 16) == (int)(entity->y / 16) )
+					list_t* currentList = *it;
+					for ( node = currentList->first; node != nullptr; node = nextnode )
 					{
-						if ( entity->behavior == &actDoorFrame )
+						nextnode = node->next;
+						Entity* entity = (Entity*)node->element;
+						if ( (int)(x / 16) == (int)(entity->x / 16) && (int)(y / 16) == (int)(entity->y / 16) )
 						{
-							// spawn several rock items
-							int c, i = 8 + rand() % 4;
-							for ( c = 0; c < i; c++ )
+							if ( entity->behavior == &actDoorFrame )
 							{
-								Entity *entity = nullptr;
-								if ( multiplayer == SERVER )
+								// spawn several rock items
+								int c, i = 8 + rand() % 4;
+								for ( c = 0; c < i; c++ )
 								{
-									entity = spawnGib(my);
+									Entity *entity = nullptr;
+									if ( multiplayer == SERVER )
+									{
+										entity = spawnGib(my);
+									}
+									else
+									{
+										entity = spawnGibClient(my->x, my->y, my->z, 5);
+									}
+									if ( entity )
+									{
+										entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+										entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+										entity->z = -8;
+										entity->flags[PASSABLE] = true;
+										entity->flags[INVISIBLE] = false;
+										entity->flags[NOUPDATE] = true;
+										entity->flags[UPDATENEEDED] = false;
+										entity->sprite = items[GEM_ROCK].index;
+										entity->yaw = rand() % 360 * PI / 180;
+										entity->pitch = rand() % 360 * PI / 180;
+										entity->roll = rand() % 360 * PI / 180;
+										entity->vel_x = (rand() % 20 - 10) / 10.0;
+										entity->vel_y = (rand() % 20 - 10) / 10.0;
+										entity->vel_z = -.25;
+										entity->fskill[3] = 0.03;
+									}
 								}
-								else
-								{
-									entity = spawnGibClient(my->x, my->y, my->z, 5);
-								}
-								if ( entity )
-								{
-									entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-									entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-									entity->z = -8;
-									entity->flags[PASSABLE] = true;
-									entity->flags[INVISIBLE] = false;
-									entity->flags[NOUPDATE] = true;
-									entity->flags[UPDATENEEDED] = false;
-									entity->sprite = items[GEM_ROCK].index;
-									entity->yaw = rand() % 360 * PI / 180;
-									entity->pitch = rand() % 360 * PI / 180;
-									entity->roll = rand() % 360 * PI / 180;
-									entity->vel_x = (rand() % 20 - 10) / 10.0;
-									entity->vel_y = (rand() % 20 - 10) / 10.0;
-									entity->vel_z = -.25;
-									entity->fskill[3] = 0.03;
-								}
-							}
-							list_RemoveNode(entity->mynode);
-						}
-						else if ( entity->behavior == &actDoor )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								entity->skill[4] = 0; // destroy the door
-							}
-						}
-						else if ( entity->behavior == &actGate )
-						{
-							if ( multiplayer != CLIENT )
-							{
-								playSoundEntity(entity, 76, 64);
 								list_RemoveNode(entity->mynode);
 							}
-						}
-						else if (	entity->behavior == &actStalagCeiling	||
-									entity->behavior == &actStalagFloor		||
-									entity->behavior == &actStalagColumn
-								)
-						{
-							// spawn several rock items
-							int c, i = rand() % 4;
-							for ( c = 0; c < i; ++c )
+							else if ( entity->behavior == &actDoor )
 							{
-								//Entity* childEntity = spawnGib(my);
-								Entity *childEntity = nullptr;
-								if ( multiplayer == SERVER )
+								if ( multiplayer != CLIENT )
 								{
-									childEntity = spawnGib(my);
-								}
-								else
-								{
-									childEntity = spawnGibClient(my->x, my->y, my->z, 5);
-								}
-								if ( entity )
-								{
-									childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-									childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-									childEntity->z = -8;
-									childEntity->flags[PASSABLE] = true;
-									childEntity->flags[INVISIBLE] = false;
-									childEntity->flags[NOUPDATE] = true;
-									childEntity->flags[UPDATENEEDED] = false;
-									childEntity->sprite = items[GEM_ROCK].index;
-									childEntity->yaw = rand() % 360 * PI / 180;
-									childEntity->pitch = rand() % 360 * PI / 180;
-									childEntity->roll = rand() % 360 * PI / 180;
-									childEntity->vel_x = (rand() % 20 - 10) / 10.0;
-									childEntity->vel_y = (rand() % 20 - 10) / 10.0;
-									childEntity->vel_z = -.25;
-									childEntity->fskill[3] = 0.03;
+									entity->skill[4] = 0; // destroy the door
 								}
 							}
-							list_RemoveNode(entity->mynode);
+							else if ( entity->behavior == &actGate )
+							{
+								if ( multiplayer != CLIENT )
+								{
+									playSoundEntity(entity, 76, 64);
+									list_RemoveNode(entity->mynode);
+								}
+							}
+							else if (	entity->behavior == &actStalagCeiling	||
+										entity->behavior == &actStalagFloor		||
+										entity->behavior == &actStalagColumn
+									)
+							{
+								// spawn several rock items
+								int c, i = rand() % 4;
+								for ( c = 0; c < i; ++c )
+								{
+									//Entity* childEntity = spawnGib(my);
+									Entity *childEntity = nullptr;
+									if ( multiplayer == SERVER )
+									{
+										childEntity = spawnGib(my);
+									}
+									else
+									{
+										childEntity = spawnGibClient(my->x, my->y, my->z, 5);
+									}
+									if ( entity )
+									{
+										childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+										childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+										childEntity->z = -8;
+										childEntity->flags[PASSABLE] = true;
+										childEntity->flags[INVISIBLE] = false;
+										childEntity->flags[NOUPDATE] = true;
+										childEntity->flags[UPDATENEEDED] = false;
+										childEntity->sprite = items[GEM_ROCK].index;
+										childEntity->yaw = rand() % 360 * PI / 180;
+										childEntity->pitch = rand() % 360 * PI / 180;
+										childEntity->roll = rand() % 360 * PI / 180;
+										childEntity->vel_x = (rand() % 20 - 10) / 10.0;
+										childEntity->vel_y = (rand() % 20 - 10) / 10.0;
+										childEntity->vel_z = -.25;
+										childEntity->fskill[3] = 0.03;
+									}
+								}
+								list_RemoveNode(entity->mynode);
+							}
 						}
 					}
 				}

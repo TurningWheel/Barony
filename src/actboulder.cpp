@@ -330,17 +330,22 @@ void actBoulder(Entity* my)
 		{
 			if ( my->z >= -8 && fabs(my->vel_z) > 2 )
 			{
-				node_t* node;
-				for ( node = map.entities->first; node != nullptr; node = node->next )
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity == my )
+					list_t* currentList = *it;
+					node_t* node;
+					for ( node = currentList->first; node != nullptr; node = node->next )
 					{
-						continue;
-					}
-					if ( boulderCheckAgainstEntity(my, entity) )
-					{
-						return;
+						Entity* entity = (Entity*)node->element;
+						if ( entity == my )
+						{
+							continue;
+						}
+						if ( boulderCheckAgainstEntity(my, entity) )
+						{
+							return;
+						}
 					}
 				}
 			}
@@ -433,17 +438,22 @@ void actBoulder(Entity* my)
 			// crush objects
 			if ( dist && !BOULDER_NOGROUND )
 			{
-				node_t* node;
-				for ( node = map.entities->first; node != nullptr; node = node->next )
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity == my )
+					list_t* currentList = *it;
+					node_t* node;
+					for ( node = currentList->first; node != nullptr; node = node->next )
 					{
-						continue;
-					}
-					if ( boulderCheckAgainstEntity(my, entity) )
-					{
-						return;
+						Entity* entity = (Entity*)node->element;
+						if ( entity == my )
+						{
+							continue;
+						}
+						if ( boulderCheckAgainstEntity(my, entity) )
+						{
+							return;
+						}
 					}
 				}
 			}
@@ -614,17 +624,22 @@ void actBoulder(Entity* my)
 				// crush objects
 				if ( dist && !BOULDER_NOGROUND )
 				{
-					node_t* node;
-					for ( node = map.entities->first; node != nullptr; node = node->next )
+					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 					{
-						Entity* entity = (Entity*)node->element;
-						if ( entity == my )
+						list_t* currentList = *it;
+						node_t* node;
+						for ( node = currentList->first; node != nullptr; node = node->next )
 						{
-							continue;
-						}
-						if ( boulderCheckAgainstEntity(my, entity) )
-						{
-							return;
+							Entity* entity = (Entity*)node->element;
+							if ( entity == my )
+							{
+								continue;
+							}
+							if ( boulderCheckAgainstEntity(my, entity) )
+							{
+								return;
+							}
 						}
 					}
 				}
