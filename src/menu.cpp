@@ -9746,6 +9746,10 @@ void applySettings()
 	uiscale_playerbars = settings_uiscale_playerbars;
 	hide_statusbar = settings_hide_statusbar;
 	hide_playertags = settings_hide_playertags;
+	if ( net_handler && disableMultithreadedSteamNetworking != settings_disableMultithreadedSteamNetworking )
+	{
+		net_handler->toggleMultithreading(settings_disableMultithreadedSteamNetworking);
+	}
 	disableMultithreadedSteamNetworking = settings_disableMultithreadedSteamNetworking;
 	saveConfig("default.cfg");
 }

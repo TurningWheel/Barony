@@ -94,6 +94,7 @@ public:
 
 	void initializeMultithreadedPacketHandling();
 	void stopMultithreadedPacketHandling();
+	void toggleMultithreading(bool disableMultithreading);
 
 	bool getContinueMultithreadingSteamPackets();
 
