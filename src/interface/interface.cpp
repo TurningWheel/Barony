@@ -1177,6 +1177,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/hideplayertags\n");
 	}
+	if ( disableMultithreadedSteamNetworking )
+	{
+		fprintf(fp, "/disablenetworkmultithreading\n");
+	}
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;

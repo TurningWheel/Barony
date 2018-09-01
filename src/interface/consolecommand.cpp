@@ -2200,6 +2200,10 @@ void consoleCommand(char* command_str)
 		{
 			hide_playertags = !hide_playertags;
 		}
+		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
+		{
+			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
+		}
 		else if ( !strncmp(command_str, "/togglesecretlevel", 18) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )

@@ -109,6 +109,8 @@ public:
 	SDL_mutex* continue_multithreading_steam_packets_lock;
 } extern* net_handler;
 
+extern bool disableMultithreadedSteamNetworking;
+
 int steamPacketThread(void* data);
 
 void deleteMultiplayerSaveGames(); //Server function, deletes its own save and broadcasts delete packet to clients.
