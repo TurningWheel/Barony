@@ -2950,8 +2950,19 @@ void handleMainMenu(bool mode)
 #endif // STEAMWORKS
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
-						tooltip_box.h = TTF12_HEIGHT + 8;
+						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+						if ( i == 2 || i == 3 || i == 5 || i == 6 )
+						{
+							tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+						}
+						else if ( i == 4 )
+						{
+							tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+						}
+						else
+						{
+							tooltip_box.h = TTF12_HEIGHT + 8;
+						}
 					}
 				}
 			}
@@ -3138,14 +3149,16 @@ void handleMainMenu(bool mode)
 				}
 			}
 
-			// networking hover text and mouse selection
-			current_y = networking_options_start_y;
 
 			if ( omousex >= subx1 + 42 && omousex < subx1 + 66 )
 			{
 				tooltip_box.x = omousex + 16;
 				tooltip_box.y = omousey + 8;
 				tooltip_box.h = TTF12_HEIGHT + 8;
+
+				// networking hover text and mouse selection
+				current_y = networking_options_start_y;
+
 				if ( omousey >= current_y && omousey < current_y + 12 )
 				{
 					tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
@@ -3157,6 +3170,72 @@ void handleMainMenu(bool mode)
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_disableMultithreadedSteamNetworking = (settings_disableMultithreadedSteamNetworking == false);
 					}
+				}
+
+				current_y = options_start_y;
+
+				if ( omousey >= current_y && omousey < current_y + 12 ) // ip broadcast
+				{
+					tooltip_box.w = longestline(language[3149]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3149]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // no hud
+				{
+					tooltip_box.w = longestline(language[3150]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3150]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // auto add to hotbar
+				{
+					tooltip_box.w = longestline(language[3151]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3151]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // auto appraisal
+				{
+					tooltip_box.w = longestline(language[3152]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3152]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // no messages
+				{
+					tooltip_box.w = longestline(language[3153]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3153]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // right click protect
+				{
+					tooltip_box.w = longestline(language[3154]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3154]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // numkey hotbar
+				{
+					tooltip_box.w = longestline(language[3155]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3155]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // lock ride sidebar
+				{
+					tooltip_box.w = longestline(language[3156]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3156]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // show timer always
+				{
+					tooltip_box.w = longestline(language[3157]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3157]);
 				}
 			}
 		}

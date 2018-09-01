@@ -2712,15 +2712,19 @@ dungeon level %d, client (player %d) (direct ip), %s#
 # game/server flags tooltips
 
 # Cheats.
-1942 NOTE: Enabling cheats will disable Steam Achievements on your save files!#
-# Friendly fire. CURRENTLY UNUSED
-1943 #
-# Minotaurs. CURRENTLY UNUSED
-1944 #
-# Hunger. CURRENTLY UNUSED
-1945 #
+1942 NOTE: Enabling cheats will disable Steam Achievements on your save files! #
+# Friendly fire.
+1943 NOTE: Enabling FF will allow you to damage your allies with attacks and magic! #
+# Minotaurs.
+1944 NOTE: Disabling this will prevent minotaurs from spawning in regular levels, 
+allowing you to take your time through each level.#
+# Hunger.
+1945 NOTE: Disabling hunger removes the need to eat food to prevent starvation. 
+Food will instead heal 5 HP each, and natural HP regeneration is disabled.#
 # Traps.
-1946 NOTE: Only removes generated traps#
+1946 NOTE: Only removes randomly generated traps, such as boulders and arrow traps along 
+the edges and hallways of levels. Traps will only be found inside rooms that have 
+been designed to contain them.#
 
 # Gamepad settings menu stuff.
 1947 Gamepad Bindings#
@@ -3618,9 +3622,11 @@ anyone seeking that power again, deep underground. #
 2919 Reserved#
 2920 Reserved#
 # Hardcore.
-2921 NOTE: Experimental!#
+2921 NOTE: Experimental! Increases the stats of all enemies and improves their reaction 
+time. For experienced adventurers who wish for a more difficult challenge! #
 # CURRENTLY UNUSED
-2922 Cursed Edition levels only#
+2922 Cursed Edition levels only. For those wanting a shorter playthrough, or trying their 
+hand at conquering the Classic leaderboard categories.#
 # CURRENTLY UNUSED
 2923 #
 # CURRENTLY UNUSED
@@ -3865,4 +3871,28 @@ for this option. (Required: %s, Current: %s)#
 3143 The charm had no effect on %s!#
 3144 A magical charm seizes your will to fight!#
 3145 The slime envelops and consumes the %s!#
-3149 end#
+
+3146 Networking#
+3147 disable multithreaded Steam networking#
+3148 Some clients may experience stuttering or poor framerates if enabled, 
+disable this or try direct-ip hosted lobbies to improve performance.#
+3149 Hides IP address when typing in the direct-ip connect window. #
+3150 Hides HUD elements in-game, such as hotbar, HP/MP, minimap etc. #
+3151 Picked up items will automatically be added to your hotbar if enabled. You can 
+specify which categories of items that get added in the options to the right.#
+3152 Automatically starts appraising unidentified items when you pick them up. 
+Will not interrupt any existing appraisal of an item.#
+3153 Disables game event messages on the left-hand side message log. Messages will 
+still appear in the bottom scrollable message log.#
+3154 If enabled, right clicking on an item in the inventory will not automatically equip or 
+use the item. The option must be selected from the right-click popup menu instead.#
+3155 If enabled, hovering over an item in the inventory or hotbar panels and pressing the 
+keyboard keys 0-9 will send that item to the numbered hotbar slot. If hovered over the
+hotbar, items will automatically swap positions if the specified slot is filled.#
+3156 Keeps the right-side skills/party HUD pages open when the inventory is closed. Locking 
+the party page is helpful when keeping track of follower or player ally health. Can be
+locked/unlocked in-game by left clicking the lock symbol on the HUD page.#
+3157 Always shows the in-game timer when the inventory is closed in the upper right-hand section of 
+the screen. Useful to track speedrun times, when the minotaur will arrive, or how long your
+current food situation will last.#
+3199 end#
