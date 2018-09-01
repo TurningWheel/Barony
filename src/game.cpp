@@ -2232,34 +2232,19 @@ void pauseGame(int mode, int ignoreplayer)
 -------------------------------------------------------------------------------*/
 
 // records the SDL_GetTicks() value at the moment the mainloop restarted
-Uint32 lastGameTickCount = 0;
+Uint64 lastGameTickCount = 0;
 
 bool frameRateLimit( Uint32 maxFrameRate )
 {
 	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
+	Uint64 gameTickCount = SDL_GetPerformanceCounter();
 
-	if ( (1000.0f / std::ceil(desiredFrameMilliseconds)) < maxFrameRate )
-	{
-		// check if our fps limiter will calculate the fps to be below the target.
-		// if below target, then set our milisecond target to be 1 less millisecond
-		desiredFrameMilliseconds = desiredFrameMilliseconds - 1;
-	}
+	float millisecondsElapsed = static_cast<float>(gameTickCount - lastGameTickCount) * 1000
+		/ static_cast<float>(SDL_GetPerformanceFrequency());
 
-	Uint32 gameTickCount = SDL_GetTicks();
-
-	float millisecondsElapsed = (float)(gameTickCount - lastGameTickCount);
 	if ( millisecondsElapsed < desiredFrameMilliseconds )
 	{
-		// if enough time is left sleep, otherwise just keep spinning so we don't go over the limit...
-		if ( desiredFrameMilliseconds - millisecondsElapsed > 5.0f )
-		{
-#ifndef WINDOWS
-			usleep( 5000 );
-#else
-			Sleep( 5 );
-#endif
-		}
-
+		// if enough time is left wait, otherwise just keep spinning so we don't go over the limit...
 		return true;
 	}
 	else
@@ -2493,7 +2478,7 @@ int main(int argc, char** argv)
 		while (mainloop)
 		{
 			// record the time at the start of this cycle
-			lastGameTickCount = SDL_GetTicks();
+			lastGameTickCount = SDL_GetPerformanceCounter();
 
 			// game logic
 			if ( !intro )
