@@ -37,7 +37,6 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include <limits>
-#include <chrono>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -809,9 +808,7 @@ void gameLogic(void)
 					FollowerMenu.closeFollowerMenuGUI(true);
 
 					assignActions(&map);
-					std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 					generatePathMaps();
-					messagePlayer(0, "time: %d", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t1));
 
 					if ( !strncmp(map.name, "Mages Guild", 11) )
 					{
