@@ -515,47 +515,17 @@ void consoleCommand(char* command_str)
 		else if ( strstr(command_str, "IN_TURNL") )
 		{
 			impulses[IN_TURNL] = atoi(&command_str[6]);
-			if ( impulses[IN_FOLLOWERMENU_LASTCMD] == impulses[IN_TURNL] )
-			{
-				// reset to default arrow key to avoid overlapping keybinds on first launch.
-				// due to legacy keybind, now we have useful things to assign to q,e,z,c
-				impulses[IN_TURNL] = 80;
-				printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_LASTCMD. Automatically rebound IN_TURNL: %d (Left arrow key)\n", impulses[IN_TURNL]);
-			}
-			else
-			{
-				printlog("Bound IN_TURNL: %d\n", atoi(&command_str[6]));
-			}
+			printlog("Bound IN_TURNL: %d\n", atoi(&command_str[6]));
 		}
 		else if ( strstr(command_str, "IN_TURNR") )
 		{
 			impulses[IN_TURNR] = atoi(&command_str[6]);
-			if ( impulses[IN_FOLLOWERMENU_CYCLENEXT] == impulses[IN_TURNR] )
-			{
-				// reset to default arrow key to avoid overlapping keybinds on first launch.
-				// due to legacy keybind, now we have useful things to assign to q,e,z,c
-				impulses[IN_TURNR] = 79;
-				printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
-			}
-			else
-			{
-				printlog("Bound IN_TURNR: %d\n", atoi(&command_str[6]));
-			}
+			printlog("Bound IN_TURNR: %d\n", atoi(&command_str[6]));
 		}
 		else if ( strstr(command_str, "IN_UP") )
 		{
 			impulses[IN_UP] = atoi(&command_str[6]);
-			if ( impulses[IN_FOLLOWERMENU] == impulses[IN_UP] )
-			{
-				// reset to default arrow key to avoid overlapping keybinds on first launch.
-				// due to legacy keybind, now we have useful things to assign to q,e,z,c
-				impulses[IN_UP] = 82;
-				printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU. Automatically rebound IN_UP: %d (Up arrow key)\n", impulses[IN_UP]);
-			}
-			else
-			{
-				printlog("Bound IN_UP: %d\n", atoi(&command_str[6]));
-			}
+			printlog("Bound IN_UP: %d\n", atoi(&command_str[6]));
 		}
 		else if ( strstr(command_str, "IN_DOWN") )
 		{
