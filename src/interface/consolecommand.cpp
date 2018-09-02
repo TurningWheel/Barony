@@ -2138,7 +2138,11 @@ void consoleCommand(char* command_str)
 
 	if ( invalidcommand ) // starting new if else block to get around compiler >128 statement limit.
 	{
-		if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
+		if ( !strncmp(command_str, "/muteaudiofocuslost", 19) )
+		{
+			mute_audio_on_focus_lost = (mute_audio_on_focus_lost == false);
+		}
+		else if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
 		{
 			minimapTransparencyForeground = atoi(&command_str[23]);
 			minimapTransparencyForeground = std::min(std::max<int>(0, minimapTransparencyForeground), 100);

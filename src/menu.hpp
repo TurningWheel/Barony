@@ -180,6 +180,7 @@ extern bool settings_spawn_blood;
 extern bool settings_light_flicker;
 extern bool settings_vsync;
 extern bool settings_minimap_ping_mute;
+extern bool settings_mute_audio_on_focus_lost;
 extern int settings_minimap_transparency_foreground;
 extern int settings_minimap_transparency_background;
 extern int settings_minimap_scale;

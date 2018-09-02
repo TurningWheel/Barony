@@ -163,7 +163,8 @@ bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
 bool settings_vsync;
-bool settings_minimap_ping_mute;
+bool settings_minimap_ping_mute = false;
+bool settings_mute_audio_on_focus_lost = false;
 int settings_minimap_transparency_foreground = 0;
 int settings_minimap_transparency_background = 0;
 int settings_minimap_scale = 4;
@@ -2399,6 +2400,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[ ] %s", language[3012]);
 			}
+			if ( settings_mute_audio_on_focus_lost )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[x] %s", language[3158]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[ ] %s", language[3158]);
+			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
@@ -2407,6 +2416,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
+					}
+					else if ( omousey >= suby1 + 192 && omousey < suby1 + 192 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
 					}
 				}
 			}
@@ -8082,6 +8096,7 @@ void openSettingsWindow()
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
+	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
 	settings_minimap_transparency_foreground = minimapTransparencyForeground;
 	settings_minimap_transparency_background = minimapTransparencyBackground;
 	settings_minimap_scale = minimapScale;
@@ -9682,6 +9697,7 @@ void applySettings()
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
 	minimapPingMute = settings_minimap_ping_mute;
+	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
 
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);

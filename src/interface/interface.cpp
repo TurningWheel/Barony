@@ -1059,6 +1059,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/muteping\n");
 	}
+	if ( mute_audio_on_focus_lost )
+	{
+		fprintf(fp, "/muteaudiofocuslost\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");
