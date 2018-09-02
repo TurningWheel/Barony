@@ -3156,6 +3156,7 @@ void handleMainMenu(bool mode)
 				tooltip_box.y = omousey + 8;
 				tooltip_box.h = TTF12_HEIGHT + 8;
 
+#ifdef STEAMWORKS
 				// networking hover text and mouse selection
 				current_y = networking_options_start_y;
 
@@ -3171,6 +3172,7 @@ void handleMainMenu(bool mode)
 						settings_disableMultithreadedSteamNetworking = (settings_disableMultithreadedSteamNetworking == false);
 					}
 				}
+#endif // STEAMWORKS
 
 				current_y = options_start_y;
 
