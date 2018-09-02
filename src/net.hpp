@@ -94,6 +94,7 @@ public:
 
 	void initializeMultithreadedPacketHandling();
 	void stopMultithreadedPacketHandling();
+	void toggleMultithreading(bool disableMultithreading);
 
 	bool getContinueMultithreadingSteamPackets();
 
@@ -108,6 +109,8 @@ public:
 
 	SDL_mutex* continue_multithreading_steam_packets_lock;
 } extern* net_handler;
+
+extern bool disableMultithreadedSteamNetworking;
 
 int steamPacketThread(void* data);
 

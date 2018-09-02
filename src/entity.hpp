@@ -403,6 +403,7 @@ public:
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 	node_t* myCreatureListNode;
+	node_t* myTileListNode;
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
 

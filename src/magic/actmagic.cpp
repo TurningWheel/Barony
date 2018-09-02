@@ -3587,21 +3587,26 @@ bool Entity::magicFallingCollision()
 
 	if ( actmagicIsVertical == MAGIC_ISVERTICAL_Z )
 	{
-		node_t* node;
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity )
+			list_t* currentList = *it;
+			node_t* node;
+			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
-				if ( entity == this )
+				Entity* entity = (Entity*)node->element;
+				if ( entity )
 				{
-					continue;
-				}
-				if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
-				{
-					hit.entity = entity;
-					//hit.side = HORIZONTAL;
-					return true;
+					if ( entity == this )
+					{
+						continue;
+					}
+					if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
+					{
+						hit.entity = entity;
+						//hit.side = HORIZONTAL;
+						return true;
+					}
 				}
 			}
 		}
@@ -3619,18 +3624,23 @@ bool Entity::magicOrbitingCollision()
 		return false;
 	}
 
-	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next )
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( entity == this )
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != NULL; node = node->next )
 		{
-			continue;
-		}
-		if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
-		{
-			hit.entity = entity;
-			return true;
+			Entity* entity = (Entity*)node->element;
+			if ( entity == this )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
+			{
+				hit.entity = entity;
+				return true;
+			}
 		}
 	}
 
