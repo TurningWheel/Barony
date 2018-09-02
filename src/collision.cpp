@@ -644,6 +644,11 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 	std::vector<list_t*> entLists; // stores the possible entities to look through depending on the quadrant.
 	// start search from 1 tile behind facing direction in x/y position, extending to the edge of the map in the facing direction.
 
+	if ( multiplayer == CLIENT )
+	{
+		entLists.push_back(map.entities); // default to old map.entities if client (if they ever call this function...)
+	}
+
 	if ( angle >= PI / 2 && angle < PI ) // -x, +y
 	{
 		quadrant = 1;
@@ -651,11 +656,14 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			0,	std::min(static_cast<int>(map.width) - 1, originx + 1),
 			std::max(0, originy - 1), map.height - 1);*/
 
-		for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
+		if ( multiplayer != CLIENT )
 		{
-			for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+			for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
 			{
-				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
 			}
 		}
 	}
@@ -666,11 +674,14 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			std::max(0, originx - 1), map.width - 1,
 			std::max(0, originy - 1), map.height - 1);*/
 
-		for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
+		if ( multiplayer != CLIENT )
 		{
-			for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+			for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
 			{
-				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
 			}
 		}
 	}
@@ -681,11 +692,14 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			std::max(0, originx - 1), map.width - 1,
 			0, std::min(static_cast<int>(map.height) - 1, originy + 1));*/
 
-		for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
+		if ( multiplayer != CLIENT )
 		{
-			for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+			for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
 			{
-				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
 			}
 		}
 	}
@@ -696,11 +710,14 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 			0, std::min(static_cast<int>(map.width) - 1, originx + 1),
 			0, std::min(static_cast<int>(map.height) - 1, originy + 1));*/
 
-		for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
+		if ( multiplayer != CLIENT )
 		{
-			for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+			for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
 			{
-				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+				{
+					entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+				}
 			}
 		}
 	}
