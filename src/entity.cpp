@@ -11892,7 +11892,7 @@ std::vector<list_t*> TileEntityListHandler::getEntitiesWithinRadius(int u, int v
 	return return_val;
 }
 
-/* returns list of entities within a radius, e.g 1 radius is a 3x3 area around given center. */
+/* returns list of entities within a radius around entity, e.g 1 radius is a 3x3 area around entity. */
 std::vector<list_t*> TileEntityListHandler::getEntitiesWithinRadiusAroundEntity(Entity* entity, int radius)
 {
 	int u = static_cast<int>(entity->x) >> 4;

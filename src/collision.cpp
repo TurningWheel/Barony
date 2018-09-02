@@ -362,20 +362,26 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	}
 	bool isMonster = false;
 	if ( my )
+	{
 		if ( my->behavior == &actMonster )
 		{
 			isMonster = true;
 		}
+	}
 	if ( isMonster && multiplayer == CLIENT )
+	{
 		if ( my->sprite == 289 || my->sprite == 274 || my->sprite == 413 )   // imp and lich and cockatrice
 		{
 			levitating = true;
 		}
+	}
 	if ( my )
+	{
 		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
 		{
 			levitating = true;
 		}
+	}
 
 	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
 	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
@@ -413,7 +419,15 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 		}
 	}
-	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(tx) >> 4, static_cast<int>(ty) >> 4, 2);
+	std::vector<list_t*> entLists;
+	if ( multiplayer == CLIENT )
+	{
+		entLists.push_back(map.entities); // clients use old map.entities method
+	}
+	else
+	{
+		entLists = TileEntityList.getEntitiesWithinRadius(static_cast<int>(tx) >> 4, static_cast<int>(ty) >> 4, 2);
+	}
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;
