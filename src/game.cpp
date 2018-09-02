@@ -78,7 +78,7 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 std::vector<std::string> randomPlayerNamesMale;
 std::vector<std::string> randomPlayerNamesFemale;
 std::vector<std::string> physFSFilesInDirectory;
-
+TileEntityListHandler TileEntityList;
 // recommended for valgrind debugging:
 // res of 480x270
 // /nohud
@@ -604,7 +604,21 @@ void gameLogic(void)
 					{
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
+							int ox = static_cast<int>(entity->x) >> 4;
+							int oy = static_cast<int>(entity->y) >> 4;
+							if ( !entity->myTileListNode )
+							{
+								TileEntityList.addEntity(*entity);
+							}
+
 							(*entity->behavior)(entity);
+
+							if ( ox != static_cast<int>(entity->x) >> 4
+								|| oy != static_cast<int>(entity->y) >> 4 )
+							{
+								// if entity moved into a new tile, update it's tile position in global tile list.
+								TileEntityList.updateEntity(*entity);
+							}
 						}
 						if ( entitiesdeleted.first != nullptr )
 						{
@@ -2212,34 +2226,19 @@ void pauseGame(int mode, int ignoreplayer)
 -------------------------------------------------------------------------------*/
 
 // records the SDL_GetTicks() value at the moment the mainloop restarted
-Uint32 lastGameTickCount = 0;
+Uint64 lastGameTickCount = 0;
 
 bool frameRateLimit( Uint32 maxFrameRate )
 {
 	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
+	Uint64 gameTickCount = SDL_GetPerformanceCounter();
 
-	if ( (1000.0f / std::ceil(desiredFrameMilliseconds)) < maxFrameRate )
-	{
-		// check if our fps limiter will calculate the fps to be below the target.
-		// if below target, then set our milisecond target to be 1 less millisecond
-		desiredFrameMilliseconds = desiredFrameMilliseconds - 1;
-	}
+	float millisecondsElapsed = static_cast<float>(gameTickCount - lastGameTickCount) * 1000
+		/ static_cast<float>(SDL_GetPerformanceFrequency());
 
-	Uint32 gameTickCount = SDL_GetTicks();
-
-	float millisecondsElapsed = (float)(gameTickCount - lastGameTickCount);
 	if ( millisecondsElapsed < desiredFrameMilliseconds )
 	{
-		// if enough time is left sleep, otherwise just keep spinning so we don't go over the limit...
-		if ( desiredFrameMilliseconds - millisecondsElapsed > 5.0f )
-		{
-#ifndef WINDOWS
-			usleep( 5000 );
-#else
-			Sleep( 5 );
-#endif
-		}
-
+		// if enough time is left wait, otherwise just keep spinning so we don't go over the limit...
 		return true;
 	}
 	else
@@ -2473,7 +2472,7 @@ int main(int argc, char** argv)
 		while (mainloop)
 		{
 			// record the time at the start of this cycle
-			lastGameTickCount = SDL_GetTicks();
+			lastGameTickCount = SDL_GetPerformanceCounter();
 
 			// game logic
 			if ( !intro )

@@ -146,19 +146,24 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 	}
 
 	node_t* node;
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 0);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( entity->sprite == 14 
-			|| entity->sprite == 15 
-			|| entity->sprite == 19 
-			|| entity->sprite == 20 
-			|| entity->sprite == 39 
-			|| entity->sprite == 44 )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
+			Entity* entity = (Entity*)node->element;
+			if ( entity->sprite == 14 
+				|| entity->sprite == 15 
+				|| entity->sprite == 19 
+				|| entity->sprite == 20 
+				|| entity->sprite == 39 
+				|| entity->sprite == 44 )
 			{
-				return 1;
+				if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
+				{
+					return 1;
+				}
 			}
 		}
 	}
@@ -541,8 +546,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 					}
 				}
 			}
-			list_FreeAll(list);
-			free(list);
+			//list_FreeAll(list);
+			//free(list);
 		}
 	}
 
@@ -596,8 +601,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
@@ -643,8 +648,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
@@ -690,8 +695,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{
@@ -737,8 +742,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = true;
 								}
-								list_FreeAll(list);
-								free(list);
+								//list_FreeAll(list);
+								//free(list);
 							}
 							if ( !foundWallModifier && !foundObstacle )
 							{

@@ -197,6 +197,7 @@ real_t settings_uiscale_chatlog = 1.f;
 real_t settings_uiscale_inventory = 1.f;
 bool settings_hide_statusbar = false;
 bool settings_hide_playertags = false;
+bool settings_disableMultithreadedSteamNetworking = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -2949,11 +2950,40 @@ void handleMainMenu(bool mode)
 #endif // STEAMWORKS
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
-						tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
-						tooltip_box.h = TTF12_HEIGHT + 8;
+						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+						if ( i == 2 || i == 3 || i == 5 || i == 6 )
+						{
+							tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+						}
+						else if ( i == 4 )
+						{
+							tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+						}
+						else
+						{
+							tooltip_box.h = TTF12_HEIGHT + 8;
+						}
 					}
 				}
 			}
+
+			// network options
+#ifdef STEAMWORKS
+			current_y += 32;
+			ttfPrintText(ttf12, subx1 + 24, current_y, language[3146]);
+			current_y += 24;
+
+			int networking_options_start_y = current_y;
+
+			if ( settings_disableMultithreadedSteamNetworking )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[3147]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", language[3147]);
+			}
+#endif // STEAMWORKS
 
 			if (hovering_selection > -1)
 			{
@@ -2979,32 +3009,32 @@ void handleMainMenu(bool mode)
 			{
 				if ( omousex >= subx1 + 42 && omousex < subx1 + 66 )
 				{
-					if (omousey >= current_y && omousey < current_y + 12)
+					if ( omousey >= current_y && omousey < current_y + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_broadcast = (settings_broadcast == false);
 					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_nohud = (settings_nohud == false);
 					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == false);
 					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == false);
 					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_disable_messages = (settings_disable_messages == false);
 					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					else if ( omousey >= (current_y += 16) && omousey < current_y + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
@@ -3062,7 +3092,7 @@ void handleMainMenu(bool mode)
 								}
 								mousestatus[SDL_BUTTON_LEFT] = 0;
 							}
-							else if(mouseInBounds(autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12))
+							else if ( mouseInBounds(autosort_options_x + 36, autosort_options_x + 52, autosort_options_y, autosort_options_y + 12) )
 							{
 								++settings_autosort_inventory_categories[i];
 								if ( settings_autosort_inventory_categories[i] > 9 )
@@ -3084,7 +3114,7 @@ void handleMainMenu(bool mode)
 				if ( multiplayer != CLIENT )
 				{
 					current_y = server_flags_start_y;
-					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
+					for ( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
 					{
 						if ( mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
 						{
@@ -3101,9 +3131,9 @@ void handleMainMenu(bool mode)
 								net_packet->len = 8;
 
 								int c;
-								for (c = 1; c < MAXPLAYERS; ++c)
+								for ( c = 1; c < MAXPLAYERS; ++c )
 								{
-									if (client_disconnected[c])
+									if ( client_disconnected[c] )
 									{
 										continue;
 									}
@@ -3116,6 +3146,96 @@ void handleMainMenu(bool mode)
 							}
 						}
 					}
+				}
+			}
+
+
+			if ( omousex >= subx1 + 42 && omousex < subx1 + 66 )
+			{
+				tooltip_box.x = omousex + 16;
+				tooltip_box.y = omousey + 8;
+				tooltip_box.h = TTF12_HEIGHT + 8;
+
+				// networking hover text and mouse selection
+				current_y = networking_options_start_y;
+
+				if ( omousey >= current_y && omousey < current_y + 12 )
+				{
+					tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_disableMultithreadedSteamNetworking = (settings_disableMultithreadedSteamNetworking == false);
+					}
+				}
+
+				current_y = options_start_y;
+
+				if ( omousey >= current_y && omousey < current_y + 12 ) // ip broadcast
+				{
+					tooltip_box.w = longestline(language[3149]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3149]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // no hud
+				{
+					tooltip_box.w = longestline(language[3150]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3150]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // auto add to hotbar
+				{
+					tooltip_box.w = longestline(language[3151]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3151]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // auto appraisal
+				{
+					tooltip_box.w = longestline(language[3152]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3152]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // no messages
+				{
+					tooltip_box.w = longestline(language[3153]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3153]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // right click protect
+				{
+					tooltip_box.w = longestline(language[3154]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3154]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // numkey hotbar
+				{
+					tooltip_box.w = longestline(language[3155]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3155]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // lock ride sidebar
+				{
+					tooltip_box.w = longestline(language[3156]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3156]);
+				}
+				else if ( omousey >= (current_y += 16) && omousey < current_y + 12 ) // show timer always
+				{
+					tooltip_box.w = longestline(language[3157]) * TTF12_WIDTH + 8;
+					tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					drawTooltip(&tooltip_box);
+					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3157]);
 				}
 			}
 		}
@@ -7972,6 +8092,7 @@ void openSettingsWindow()
 	settings_uiscale_playerbars = uiscale_playerbars;
 	settings_hide_statusbar = hide_statusbar;
 	settings_hide_playertags = hide_playertags;
+	settings_disableMultithreadedSteamNetworking = disableMultithreadedSteamNetworking;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -9625,6 +9746,11 @@ void applySettings()
 	uiscale_playerbars = settings_uiscale_playerbars;
 	hide_statusbar = settings_hide_statusbar;
 	hide_playertags = settings_hide_playertags;
+	if ( net_handler && disableMultithreadedSteamNetworking != settings_disableMultithreadedSteamNetworking )
+	{
+		net_handler->toggleMultithreading(settings_disableMultithreadedSteamNetworking);
+	}
+	disableMultithreadedSteamNetworking = settings_disableMultithreadedSteamNetworking;
 	saveConfig("default.cfg");
 }
 

@@ -266,6 +266,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	{
 		addToCreatureList(creaturelist);
 	}
+	myTileListNode = nullptr;
 
 	// now reset all of my data elements
 	lastupdate = 0;
@@ -387,6 +388,11 @@ Entity::~Entity()
 	{
 		list_RemoveNode(myCreatureListNode);
 		myCreatureListNode = nullptr;
+	}
+	if ( myTileListNode )
+	{
+		list_RemoveNode(myTileListNode);
+		myTileListNode = nullptr;
 	}
 
 	// alert clients of the entity's deletion
@@ -3954,48 +3960,50 @@ returns a list of entities that are occupying the map tile specified at
 
 list_t* checkTileForEntity(int x, int y)
 {
-	list_t* return_val = NULL;
+	return &TileEntityList.gridEntities[x][y];
 
-	//Loop through the list.
-	//If the entity's x and y match the tile's x and y (correcting for the difference in the two x/y systems, of course), then the entity is on the tile.
-	//Traverse map.entities...
-	node_t* node = NULL;
-	node_t* node2 = NULL;
-#ifdef __ARM_NEON__
-	const int32x2_t xy = { x, y };
-#endif
-
-	for ( node = map.entities->first; node != NULL; node = node->next )
-	{
-		if ( node->element )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity ) {
-#ifdef __ARM_NEON__
-				uint32x2_t eqxy = vceq_s32(vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f / 16.0f)), xy);
-				if ( eqxy[0] && eqxy[1] )
-#else
-				if ( (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y )   //Check if the current entity is on the tile.
-#endif
-				{
-					//Right. So. Create the list if it doesn't exist.
-					if ( !return_val )
-					{
-						return_val = (list_t*)malloc(sizeof(list_t));
-						return_val->first = NULL;
-						return_val->last = NULL;
-					}
-
-					//And add the current entity to it.
-					node2 = list_AddNodeLast(return_val);
-					node2->element = entity;
-					node2->deconstructor = &emptyDeconstructor;
-				}
-			}
-		}
-	}
-
-	return return_val;
+//	list_t* return_val = NULL;
+//
+//	//Loop through the list.
+//	//If the entity's x and y match the tile's x and y (correcting for the difference in the two x/y systems, of course), then the entity is on the tile.
+//	//Traverse map.entities...
+//	node_t* node = NULL;
+//	node_t* node2 = NULL;
+//#ifdef __ARM_NEON__
+//	const int32x2_t xy = { x, y };
+//#endif
+//
+//	for ( node = map.entities->first; node != NULL; node = node->next )
+//	{
+//		if ( node->element )
+//		{
+//			Entity* entity = (Entity*)node->element;
+//			if ( entity ) {
+//#ifdef __ARM_NEON__
+//				uint32x2_t eqxy = vceq_s32(vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f / 16.0f)), xy);
+//				if ( eqxy[0] && eqxy[1] )
+//#else
+//				if ( (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y )   //Check if the current entity is on the tile.
+//#endif
+//				{
+//					//Right. So. Create the list if it doesn't exist.
+//					if ( !return_val )
+//					{
+//						return_val = (list_t*)malloc(sizeof(list_t));
+//						return_val->first = NULL;
+//						return_val->last = NULL;
+//					}
+//
+//					//And add the current entity to it.
+//					node2 = list_AddNodeLast(return_val);
+//					node2->element = entity;
+//					node2->deconstructor = &emptyDeconstructor;
+//				}
+//			}
+//		}
+//	}
+//
+//	return return_val;
 }
 
 /*-------------------------------------------------------------------------------
@@ -4050,11 +4058,11 @@ void getItemsOnTile(int x, int y, list_t** list)
 		}
 	}
 
-	if ( entities )
+	/*if ( entities )
 	{
 		list_FreeAll(entities);
 		free(entities);
-	}
+	}*/
 
 	//return return_val;
 }
@@ -11788,4 +11796,106 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		return true;
 	}
 	return false;
+}
+
+node_t* TileEntityListHandler::addEntity(Entity& entity)
+{
+	if ( entity.myTileListNode )
+	{
+		return nullptr;
+	}
+
+	if ( entity.getUID() == -3 )
+	{
+		return nullptr;
+	}
+
+	int x = (static_cast<int>(entity.x) >> 4);
+	int y = (static_cast<int>(entity.y) >> 4);
+	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
+	{
+		//messagePlayer(0, "added at %d, %d", x, y);
+		entity.myTileListNode = list_AddNodeLast(&TileEntityList.gridEntities[x][y]);
+		entity.myTileListNode->element = &entity;
+		entity.myTileListNode->deconstructor = &emptyDeconstructor;
+		entity.myTileListNode->size = sizeof(Entity);
+		return entity.myTileListNode;
+	}
+
+	return nullptr;
+}
+
+node_t* TileEntityListHandler::updateEntity(Entity& entity)
+{
+	if ( !entity.myTileListNode )
+	{
+		return nullptr;
+	}
+
+	int x = (static_cast<int>(entity.x) >> 4);
+	int y = (static_cast<int>(entity.y) >> 4);
+	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
+	{
+		list_RemoveNode(entity.myTileListNode);
+		entity.myTileListNode = list_AddNodeLast(&TileEntityList.gridEntities[x][y]);
+		entity.myTileListNode->element = &entity;
+		entity.myTileListNode->deconstructor = &emptyDeconstructor;
+		entity.myTileListNode->size = sizeof(Entity);
+		return entity.myTileListNode;
+	}
+
+	return nullptr;
+}
+
+void TileEntityListHandler::clearTile(int x, int y)
+{
+	list_FreeAll(&gridEntities[x][y]);
+}
+
+void TileEntityListHandler::emptyGridEntities()
+{
+	for ( int i = 0; i < kMaxMapDimension; ++i )
+	{
+		for ( int j = 0; j < kMaxMapDimension; ++j )
+		{
+			clearTile(i, j);
+		}
+	}
+}
+
+list_t* TileEntityListHandler::getTileList(int x, int y)
+{
+	if ( x >= 0 && x < kMaxMapDimension && y >= 0 && y < kMaxMapDimension )
+	{
+		return &gridEntities[x][y];
+	}
+	return nullptr;
+}
+
+/* returns list of entities within a radius, e.g 1 radius is a 3x3 area around given center. */
+std::vector<list_t*> TileEntityListHandler::getEntitiesWithinRadius(int u, int v, int radius)
+{
+	std::vector<list_t*> return_val;
+
+	for ( int i = u - radius; i <= u + radius; ++i )
+	{
+		for ( int j = v - radius; j <= v + radius; ++j )
+		{
+			list_t* list = getTileList(i, j);
+			if ( list )
+			{
+				return_val.push_back(list);
+			}
+		}
+	}
+
+	return return_val;
+}
+
+/* returns list of entities within a radius around entity, e.g 1 radius is a 3x3 area around entity. */
+std::vector<list_t*> TileEntityListHandler::getEntitiesWithinRadiusAroundEntity(Entity* entity, int radius)
+{
+	int u = static_cast<int>(entity->x) >> 4;
+	int v = static_cast<int>(entity->y) >> 4;
+	return getEntitiesWithinRadius(u, v, radius);
 }

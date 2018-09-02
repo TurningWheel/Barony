@@ -372,18 +372,24 @@ void actTrap(Entity* my)
 		my->switchUpdateNeighbors();
 	}
 
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyonme; ++it )
 	{
-		entity = (Entity*)node->element;
-		if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
+			entity = (Entity*)node->element;
+			if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
 			{
-				somebodyonme = true;
-				if ( !TRAP_ON )
+				if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
 				{
-					my->toggleSwitch();
-					TRAP_ON = 1;
+					somebodyonme = true;
+					if ( !TRAP_ON )
+					{
+						my->toggleSwitch();
+						TRAP_ON = 1;
+					}
+					break;
 				}
 			}
 		}
@@ -468,15 +474,20 @@ void actTrapPermanent(Entity* my)
 	}
 	else
 	{
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
-			entity = (Entity*)node->element;
-			if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
+			list_t* currentList = *it;
+			for ( node = currentList->first; node != nullptr; node = node->next )
 			{
-				if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
+				entity = (Entity*)node->element;
+				if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder )
 				{
-					my->toggleSwitch();
-					TRAPPERMANENT_ON = 1;
+					if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
+					{
+						my->toggleSwitch();
+						TRAPPERMANENT_ON = 1;
+					}
 				}
 			}
 		}
@@ -675,11 +686,11 @@ void getPowerablesOnTile(int x, int y, list_t** list)
 		}
 	}
 
-	if (entities)
+	/*if (entities)
 	{
 		list_FreeAll(entities);
 		free(entities);
-	}
+	}*/
 
 	//return return_val;
 }

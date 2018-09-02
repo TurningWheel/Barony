@@ -40,6 +40,7 @@ char last_ip[64] = "";
 char last_port[64] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
+bool disableMultithreadedSteamNetworking = false;
 
 // uncomment this to have the game log packet info
 //#define PACKETINFO
@@ -3393,13 +3394,20 @@ void clientHandleMessages()
 	if (!directConnect && !net_handler)
 	{
 		net_handler = new NetHandler();
-		net_handler->initializeMultithreadedPacketHandling();
+		if ( !disableMultithreadedSteamNetworking )
+		{
+			net_handler->initializeMultithreadedPacketHandling();
+		}
 	}
 #endif
 
 	if (!directConnect)
 	{
 		//Steam stuff goes here.
+		if ( disableMultithreadedSteamNetworking )
+		{
+			steamPacketThread(static_cast<void*>(net_handler));
+		}
 		SteamPacketWrapper* packet = nullptr;
 		while (packet = net_handler->getGamePacket())
 		{
@@ -4144,13 +4152,20 @@ void serverHandleMessages()
 	if (!directConnect && !net_handler)
 	{
 		net_handler = new NetHandler();
-		net_handler->initializeMultithreadedPacketHandling();
+		if ( !disableMultithreadedSteamNetworking )
+		{
+			net_handler->initializeMultithreadedPacketHandling();
+		}
 	}
 #endif
 
 	if (!directConnect)
 	{
 		//Steam stuff goes here.
+		if ( disableMultithreadedSteamNetworking )
+		{
+			steamPacketThread(static_cast<void*>(net_handler));
+		}
 		SteamPacketWrapper* packet = nullptr;
 		while (packet = net_handler->getGamePacket())
 		{
@@ -4359,7 +4374,10 @@ NetHandler::~NetHandler()
 	//First, must join with the worker thread.
 	printlog("Waiting for steam_packet_thread to finish...");
 	stopMultithreadedPacketHandling();
-	SDL_WaitThread(steam_packet_thread, NULL); //Wait for the thread to finish.
+	if ( steam_packet_thread )
+	{
+		SDL_WaitThread(steam_packet_thread, NULL); //Wait for the thread to finish.
+	}
 	printlog("Done.\n");
 
 	SDL_DestroyMutex(game_packets_lock);
@@ -4373,6 +4391,38 @@ NetHandler::~NetHandler()
 		SteamPacketWrapper* packet = game_packets.front();
 		delete packet;
 		game_packets.pop();
+	}
+}
+
+void NetHandler::toggleMultithreading(bool disableMultithreading)
+{
+	if ( disableMultithreading )
+	{
+		// stop the old thread...
+		if ( steam_packet_thread )
+		{
+			printlog("Waiting for steam_packet_thread to finish...");
+			stopMultithreadedPacketHandling();
+			if ( steam_packet_thread )
+			{
+				SDL_WaitThread(steam_packet_thread, NULL); //Wait for the thread to finish.
+			}
+			printlog("Done.\n");
+			SDL_DestroyMutex(game_packets_lock);
+			game_packets_lock = nullptr;
+			SDL_DestroyMutex(continue_multithreading_steam_packets_lock);
+			continue_multithreading_steam_packets_lock = nullptr;
+			steam_packet_thread = nullptr;
+		}
+	}
+	else
+	{
+		// create the new thread...
+		steam_packet_thread = nullptr;
+		continue_multithreading_steam_packets = false;
+		game_packets_lock = SDL_CreateMutex();
+		continue_multithreading_steam_packets_lock = SDL_CreateMutex();
+		initializeMultithreadedPacketHandling();
 	}
 }
 
@@ -4411,13 +4461,24 @@ void NetHandler::addGamePacket(SteamPacketWrapper* packet)
 SteamPacketWrapper* NetHandler::getGamePacket()
 {
 	SteamPacketWrapper* packet = nullptr;
-	SDL_LockMutex(game_packets_lock);
-	if (!game_packets.empty())
+	if ( !disableMultithreadedSteamNetworking )
 	{
-		packet = game_packets.front();
-		game_packets.pop();
+		SDL_LockMutex(game_packets_lock);
+		if (!game_packets.empty())
+		{
+			packet = game_packets.front();
+			game_packets.pop();
+		}
+		SDL_UnlockMutex(game_packets_lock);
 	}
-	SDL_UnlockMutex(game_packets_lock);
+	else
+	{
+		if ( !game_packets.empty() )
+		{
+			packet = game_packets.front();
+			game_packets.pop();
+		}
+	}
 	return packet;
 }
 
@@ -4480,9 +4541,16 @@ int steamPacketThread(void* data)
 			handler.addGamePacket(packet);
 		}
 
-		SDL_LockMutex(handler.continue_multithreading_steam_packets_lock);
-		run = handler.getContinueMultithreadingSteamPackets();
-		SDL_UnlockMutex(handler.continue_multithreading_steam_packets_lock);
+		if ( !disableMultithreadedSteamNetworking )
+		{
+			SDL_LockMutex(handler.continue_multithreading_steam_packets_lock);
+			run = handler.getContinueMultithreadingSteamPackets();
+			SDL_UnlockMutex(handler.continue_multithreading_steam_packets_lock);
+		}
+		else
+		{
+			run = false; // only run thread once if multithreading disabled.
+		}
 	}
 
 #endif

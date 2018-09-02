@@ -210,6 +210,7 @@ extern real_t settings_uiscale_chatlog;
 extern real_t settings_uiscale_inventory;
 extern bool settings_hide_statusbar;
 extern bool settings_hide_playertags;
+extern bool settings_disableMultithreadedSteamNetworking;
 
 static const int NUM_SETTINGS_TABS = 7;
 
