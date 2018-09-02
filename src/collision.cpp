@@ -639,21 +639,70 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		angle += PI * 2;
 	}
 
-	if ( angle >= PI / 2 && angle < PI )
+	int originx = static_cast<int>(my->x) >> 4;
+	int originy = static_cast<int>(my->y) >> 4;
+	std::vector<list_t*> entLists; // stores the possible entities to look through depending on the quadrant.
+	// start search from 1 tile behind facing direction in x/y position, extending to the edge of the map in the facing direction.
+
+	if ( angle >= PI / 2 && angle < PI ) // -x, +y
 	{
 		quadrant = 1;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d", 
+			0,	std::min(static_cast<int>(map.width) - 1, originx + 1),
+			std::max(0, originy - 1), map.height - 1);*/
+
+		for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
+		{
+			for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+			{
+				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+			}
+		}
 	}
-	else if ( angle >= 0 && angle < PI / 2 )
+	else if ( angle >= 0 && angle < PI / 2 ) // +x, +y
 	{
 		quadrant = 2;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d",
+			std::max(0, originx - 1), map.width - 1,
+			std::max(0, originy - 1), map.height - 1);*/
+
+		for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
+		{
+			for ( int iy = std::max(0, originy - 1); iy < map.height; ++iy )
+			{
+				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+			}
+		}
 	}
-	else if ( angle >= 3 * (PI / 2) && angle < PI * 2 )
+	else if ( angle >= 3 * (PI / 2) && angle < PI * 2 ) // +x, -y
 	{
 		quadrant = 3;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d",
+			std::max(0, originx - 1), map.width - 1,
+			0, std::min(static_cast<int>(map.height) - 1, originy + 1));*/
+
+		for ( int ix = std::max(0, originx - 1); ix < map.width; ++ix )
+		{
+			for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+			{
+				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+			}
+		}
 	}
-	else
+	else // -x, -y
 	{
 		quadrant = 4;
+		/*messagePlayer(0, "drawing from x: %d - %d, y: %d- %d",
+			0, std::min(static_cast<int>(map.width) - 1, originx + 1),
+			0, std::min(static_cast<int>(map.height) - 1, originy + 1));*/
+
+		for ( int ix = std::min(static_cast<int>(map.width) - 1, originx + 1); ix >= 0; --ix )
+		{
+			for ( int iy = std::min(static_cast<int>(map.height) - 1, originy + 1); iy >= 0; --iy )
+			{
+				entLists.push_back(&TileEntityList.gridEntities[ix][iy]);
+			}
+		}
 	}
 
 	bool adjust = false;
@@ -673,109 +722,117 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		}
 	}
 
-	for ( node = map.entities->first; node != nullptr; node = node->next )
+	//std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
-		Entity* entity = (Entity*)node->element;
-		if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
+		list_t* currentList = *it;
+		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
-			continue;
-		}
-
-		if ( quadrant == 2 || quadrant == 4 )
-		{
-			// upper right and lower left
-			real_t upperX = entity->x + entity->sizex;
-			real_t upperY = entity->y - entity->sizey;
-			real_t lowerX = entity->x - entity->sizex;
-			real_t lowerY = entity->y + entity->sizey;
-			real_t upperTan = atan2(upperY - y1, upperX - x1);
-			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
-			if ( adjust )
+			Entity* entity = (Entity*)node->element;
+			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
 			{
-				if ( upperTan < 0 )
-				{
-					upperTan += PI * 2;
-				}
-				if ( lowerTan < 0 )
-				{
-					lowerTan += PI * 2;
-				}
+				continue;
 			}
 
-			// determine whether line intersects entity
-			if ( quadrant == 2 )
+			if ( quadrant == 2 || quadrant == 4 )
 			{
-				if ( angle >= upperTan && angle <= lowerTan )
+				// upper right and lower left
+				real_t upperX = entity->x + entity->sizex;
+				real_t upperY = entity->y - entity->sizey;
+				real_t lowerX = entity->x - entity->sizex;
+				real_t lowerY = entity->y + entity->sizey;
+				real_t upperTan = atan2(upperY - y1, upperX - x1);
+				real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
+				if ( adjust )
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( upperTan < 0 )
 					{
-						lowestDist = dist;
-						result = entity;
+						upperTan += PI * 2;
+					}
+					if ( lowerTan < 0 )
+					{
+						lowerTan += PI * 2;
+					}
+				}
+
+				// determine whether line intersects entity
+				if ( quadrant == 2 )
+				{
+					if ( angle >= upperTan && angle <= lowerTan )
+					{
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
+					}
+				}
+				else
+				{
+					if ( angle <= upperTan && angle >= lowerTan )
+					{
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
 					}
 				}
 			}
 			else
 			{
-				if ( angle <= upperTan && angle >= lowerTan )
+				// upper left and lower right
+				real_t upperX = entity->x - entity->sizex;
+				real_t upperY = entity->y - entity->sizey;
+				real_t lowerX = entity->x + entity->sizex;
+				real_t lowerY = entity->y + entity->sizey;
+				real_t upperTan = atan2(upperY - y1, upperX - x1);
+				real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
+				if ( adjust )
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( upperTan < 0 )
 					{
-						lowestDist = dist;
-						result = entity;
+						upperTan += PI * 2;
+					}
+					if ( lowerTan < 0 )
+					{
+						lowerTan += PI * 2;
 					}
 				}
-			}
-		}
-		else
-		{
-			// upper left and lower right
-			real_t upperX = entity->x - entity->sizex;
-			real_t upperY = entity->y - entity->sizey;
-			real_t lowerX = entity->x + entity->sizex;
-			real_t lowerY = entity->y + entity->sizey;
-			real_t upperTan = atan2(upperY - y1, upperX - x1);
-			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
-			if ( adjust )
-			{
-				if ( upperTan < 0 )
-				{
-					upperTan += PI * 2;
-				}
-				if ( lowerTan < 0 )
-				{
-					lowerTan += PI * 2;
-				}
-			}
 
-			// determine whether line intersects entity
-			if ( quadrant == 3 )
-			{
-				if ( angle >= upperTan && angle <= lowerTan )
+				// determine whether line intersects entity
+				if ( quadrant == 3 )
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( angle >= upperTan && angle <= lowerTan )
 					{
-						lowestDist = dist;
-						result = entity;
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
 					}
 				}
-			}
-			else
-			{
-				if ( angle <= upperTan && angle >= lowerTan )
+				else
 				{
-					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if ( dist < lowestDist )
+					if ( angle <= upperTan && angle >= lowerTan )
 					{
-						lowestDist = dist;
-						result = entity;
+						real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+						if ( dist < lowestDist )
+						{
+							lowestDist = dist;
+							result = entity;
+						}
 					}
 				}
 			}
 		}
 	}
+	//std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+	//messagePlayer(0, "%lld", std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1));
 	return result;
 }
 
