@@ -2174,6 +2174,10 @@ void consoleCommand(char* command_str)
 		{
 			hide_playertags = !hide_playertags;
 		}
+		else if ( !strncmp(command_str, "/showskillvalues", 16) )
+		{
+			show_skill_values = !show_skill_values;
+		}
 		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
 		{
 			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
