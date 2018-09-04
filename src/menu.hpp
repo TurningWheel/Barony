@@ -156,7 +156,7 @@ bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID);
 bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList);
 extern std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
 #endif // STEAMWORKS
-bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor);
+bool drawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor);
 extern bool scoreDisplayMultiplayer;
 
 extern Sint32 slidery, slidersize, oslidery;
@@ -211,6 +211,7 @@ extern real_t settings_uiscale_chatlog;
 extern real_t settings_uiscale_inventory;
 extern bool settings_hide_statusbar;
 extern bool settings_hide_playertags;
+extern bool settings_show_skill_values;
 extern bool settings_disableMultithreadedSteamNetworking;
 
 static const int NUM_SETTINGS_TABS = 7;

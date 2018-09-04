@@ -157,6 +157,7 @@ bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
 bool hide_statusbar = false;
 bool hide_playertags = false;
+bool show_skill_values = false;
 real_t uiscale_chatlog = 1.f;
 real_t uiscale_playerbars = 1.f;
 real_t uiscale_hotbar = 1.f;
@@ -1210,6 +1211,10 @@ int saveConfig(char* filename)
 	if ( hide_playertags )
 	{
 		fprintf(fp, "/hideplayertags\n");
+	}
+	if ( show_skill_values )
+	{
+		fprintf(fp, "/showskillvalues\n");
 	}
 	if ( disableMultithreadedSteamNetworking )
 	{

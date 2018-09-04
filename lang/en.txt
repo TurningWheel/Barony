@@ -3897,5 +3897,6 @@ the screen. Useful to track speedrun times, when the minotaur will arrive, or ho
 current food situation will last.#
 
 3158 mute audio when game window focus is lost#
+3159 Show Numerical Skill Values#
 
 3199 end#
