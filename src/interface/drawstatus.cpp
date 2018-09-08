@@ -308,25 +308,6 @@ void drawStatus()
 		drawImageScaled(status_bmp, NULL, &pos);
 	}
 
-	// hunger icon
-	if ( stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
-	{
-		pos.x = 128;
-		pos.y = yres - 160;
-		pos.w = 64;
-		pos.h = 64;
-		drawImageScaled(hunger_bmp, NULL, &pos);
-	}
-
-	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
-	{
-		pos.x = 128;
-		pos.y = yres - 160 + 64 + 2;
-		pos.w = 64;
-		pos.h = 64;
-		drawImageScaled(minotaur_bmp, nullptr, &pos);
-	}
-
 	// enemy health
 	if ( ticks - enemy_timer < 120 && enemy_timer )
 	{
@@ -653,6 +634,26 @@ void drawStatus()
 		pos.x += uiscale_playerbars * 2;
 	}
 	printTextFormatted(font12x12_bmp, pos.x + 16 * uiscale_playerbars - strlen(tempstr) * 6, yres - (playerStatusBarHeight / 2 + 8), tempstr);
+
+	// hunger icon
+	if ( stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	{
+		pos.x = pos.x + playerStatusBarWidth + 10; // was pos.x = 128;
+		pos.y = yres - 160;
+		pos.w = 64;
+		pos.h = 64;
+		drawImageScaled(hunger_bmp, NULL, &pos);
+	}
+	// minotaur icon
+	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
+	{
+		//pos.x = 128;
+		pos.y = yres - 160 + 64 + 2;
+		pos.w = 64;
+		pos.h = 64;
+		drawImageScaled(minotaur_bmp, nullptr, &pos);
+	}
+
 
 	// PLAYER MAGIC BAR
 	// Display the Magic bar border
