@@ -5077,8 +5077,8 @@ void assignActions(map_t* map)
 
 	for ( node = map->entities->first; node != nullptr; )
 	{
-		node = node->next;
 		Entity* postProcessEntity = (Entity*)node->element;
+		node = node->next;
 		if ( postProcessEntity )
 		{
 			if ( postProcessEntity->behavior == &actItem )
@@ -5122,7 +5122,8 @@ void assignActions(map_t* map)
 					if ( tmpentity && tmpentity != postProcessEntity )
 					{
 						if ( tmpentity->behavior != &actMonster
-							&& !tmpentity->flags[PASSABLE] )
+							&& !tmpentity->flags[PASSABLE]
+							&& tmpentity->behavior != &actFurniture )
 						{
 							// remove the trapdoor since we've spawned over a gate, chest, door etc.
 							list_RemoveNode(postProcessEntity->mynode);

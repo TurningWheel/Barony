@@ -85,6 +85,10 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actColumn )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -273,6 +277,15 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 			{
 				entity->skill[6] = (my->y < entity->y);
 			}
+			playSoundEntity(my, 181, 128);
+		}
+	}
+	else if ( entity->behavior == &actFurniture )
+	{
+		if ( entityInsideEntity(my, entity) )
+		{
+			playSoundEntity(entity, 28, 64);
+			entity->furnitureHealth = 0;
 			playSoundEntity(my, 181, 128);
 		}
 	}
@@ -744,11 +757,7 @@ void actBoulderTrap(Entity* my)
 	{
 		if ( !BOULDERTRAP_FIRED )
 		{
-			playSoundEntity(my, 150, 128);
-			for ( c = 0; c < MAXPLAYERS; c++ )
-			{
-				playSoundPlayer(c, 150, 64);
-			}
+			int foundTrapdoor = -1;
 			BOULDERTRAP_FIRED = 1;
 			for ( c = 0; c < 4; c++ )
 			{
@@ -780,17 +789,16 @@ void actBoulderTrap(Entity* my)
 						if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
 							list_t* trapdoors = TileEntityList.getTileList(x, y);
-							bool foundTrapdoor = false;
 							for ( node_t* trapNode = trapdoors->first; trapNode != nullptr; trapNode = trapNode->next )
 							{
 								Entity* trapEntity = (Entity*)trapNode->element;
 								if ( trapEntity && trapEntity->sprite == 252 && trapEntity->z <= -10 )
 								{
-									foundTrapdoor = true;
+									foundTrapdoor = c;
 									break;
 								}
 							}
-							if ( foundTrapdoor )
+							if ( foundTrapdoor == c )
 							{
 								Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 								entity->parent = my->getUID();
@@ -818,6 +826,14 @@ void actBoulderTrap(Entity* my)
 							}
 						}
 					}
+				}
+			}
+			if ( foundTrapdoor >= 0 )
+			{
+				playSoundEntity(my, 150, 128);
+				for ( c = 0; c < MAXPLAYERS; c++ )
+				{
+					playSoundPlayer(c, 150, 64);
 				}
 			}
 		}
