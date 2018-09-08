@@ -2056,18 +2056,6 @@ void consoleCommand(char* command_str)
 		monsterGlobalAttackTimeMultiplier = speed;
 		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
 	}
-	else if ( !strncmp(command_str, "/brawlermode", 12) )
-	{
-		achievementBrawlerMode = !achievementBrawlerMode;
-		if ( achievementBrawlerMode )
-		{
-			messagePlayer(clientnum, language[2995]);
-		}
-		else
-		{
-			messagePlayer(clientnum, language[2996]);
-		}
-	}
 	else if ( !strncmp(command_str, "/loadmod ", 9) )
 	{
 		std::string cmd = command_str;
@@ -2217,6 +2205,22 @@ void consoleCommand(char* command_str)
 			else
 			{
 				players[clientnum]->entity->setEffect(effect, true, 500, true);
+			}
+		}
+		else if ( !strncmp(command_str, "/brawlermode", 12) )
+		{
+			achievementBrawlerMode = !achievementBrawlerMode;
+			if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+			{
+				messagePlayer(clientnum, language[2995]);
+			}
+			else if ( achievementBrawlerMode && !conductGameChallenges[CONDUCT_BRAWLER] )
+			{
+				messagePlayer(clientnum, language[2998]);
+			}
+			else if ( !achievementBrawlerMode )
+			{
+				messagePlayer(clientnum, language[2996]);
 			}
 		}
 		else
