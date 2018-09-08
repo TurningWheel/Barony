@@ -230,10 +230,10 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			{
 				enemy_oldhp = stats->OLDHP;
 			}
-			else
-			{
-				enemy_oldhp = enemy_hp; // chairs/tables and things.
-			}
+		}
+		if ( !stats )
+		{
+			enemy_oldhp = hp; // chairs/tables and things.
 		}
 		enemy_lastuid = target->getUID();
 	}
