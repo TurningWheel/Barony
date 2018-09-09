@@ -6,10 +6,11 @@ You will need the following libraries to build Barony:
  * SDL2_ttf (https://www.libsdl.org/projects/SDL_ttf/)
  * libpng (http://www.libpng.org/pub/png/libpng.html)
  * libz (https://zlib.net/) used by libpng
+ * libphysfs (http://www.icculus.org/physfs/)
  
 For Debian/Ubuntu you can install them with
 
-sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev
+sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libpng-dev libz-dev libphysfs-dev
 
 You will also need PhysFS v3.0.1 for Barony v3.1.5+
 Linux Install (Navigate to somewhere to drop install files first):
