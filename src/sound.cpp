@@ -463,7 +463,7 @@ int OPENAL_ThreadFunction(void* data) {
 		// check finished sound to free them, unless it's a streamed channel...
 		for (int i=0; i<upper_unfreechannel; i++) {
 			if(openal_sounds[i].active && !openal_sounds[i].buffer->stream) {
-				ALint state = AL_STOPPED;
+				ALint state = 0;
 				alGetSourcei(openal_sounds[i].id, AL_SOURCE_STATE, &state);
 				if(!(state==AL_PLAYING || state==AL_PAUSED || state==AL_INITIAL)) {
 					private_OPENAL_Channel_Stop(&openal_sounds[i]);
