@@ -1393,7 +1393,7 @@ out_input_file:
 std::list<std::string> directoryContents(const char* directory, bool includeSubdirectory, bool includeFiles)
 {
 	std::list<std::string> list;
-	char fullPath[1024];
+	char fullPath[PATH_MAX];
 	completePath(fullPath, directory);
 	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
@@ -1405,7 +1405,7 @@ std::list<std::string> directoryContents(const char* directory, bool includeSubd
 	}
 
 	struct stat cur;
-	char curPath[1024];
+	char curPath[PATH_MAX];
 	while ((entry = readdir(dir)) != NULL)
 	{
 		strcpy(curPath, fullPath);
@@ -1605,7 +1605,6 @@ std::list<std::string> physfsGetFileNamesInDirectory(const char* dir)
 		return filenames;
 	}
 	char **i;
-	char buf[1024];
 	std::string file;
 	for ( i = rc; *i != NULL; i++ )
 	{
