@@ -2511,6 +2511,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("19 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
@@ -2523,6 +2524,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -2532,6 +2534,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("21 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -3497,6 +3500,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities, nullptr); //Switch entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = 8;
 				childEntity->focalz = -4.5;
@@ -3535,6 +3539,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities, nullptr); //Gate entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
@@ -3550,6 +3555,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -3560,6 +3566,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -3576,6 +3583,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities, nullptr); //Gate entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
@@ -3590,6 +3598,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -3600,6 +3609,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -3646,6 +3656,7 @@ void assignActions(map_t* map)
 					childEntity->x = entity->x;
 					childEntity->y = entity->y - 3;
 				}
+				TileEntityList.addEntity(*childEntity);
 				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 2.75;
 				childEntity->focalx = 3;
@@ -3814,6 +3825,7 @@ void assignActions(map_t* map)
 							{
 								childEntity->z = -10.99;
 							}
+							TileEntityList.addEntity(*childEntity);
 							entity->boulderTrapRocksToSpawn |= (1 << c); // add this location to spawn a boulder below the trapdoor model.
 						}
 					}
@@ -3931,6 +3943,7 @@ void assignActions(map_t* map)
 					childEntity = newEntity(8, 1, map->entities, nullptr);
 					childEntity->x = entity->x - 8;
 					childEntity->y = entity->y - 8;
+					TileEntityList.addEntity(*childEntity);
 					//printlog("31 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 					childEntity->z = 0;
 					childEntity->itemNotMoving = 1; // so the item retains its position
@@ -3959,6 +3972,7 @@ void assignActions(map_t* map)
 						}
 						childEntity->x -= cos(childEntity->yaw) * 7;
 						childEntity->y -= sin(childEntity->yaw) * 7;
+						TileEntityList.addEntity(*childEntity);
 					}
 				}
 				break;
@@ -4031,6 +4045,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(283, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("33 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 7.75 - 0.01;
 				childEntity->flags[PASSABLE] = true;
@@ -4199,6 +4214,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						TileEntityList.addEntity(*childEntity);
 					}
 				}
 				break;
@@ -4238,6 +4254,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						TileEntityList.addEntity(*childEntity);
 					}
 				}
 				break;
@@ -4277,6 +4294,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						TileEntityList.addEntity(*childEntity);
 					}
 				}
 				break;
@@ -4316,6 +4334,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -10.99;
 						}
+						TileEntityList.addEntity(*childEntity);
 					}
 				}
 				break;
@@ -4361,6 +4380,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 4;
 				childEntity->behavior = &actPowerCrystal;
 				childEntity->flags[PASSABLE] = true;
+				TileEntityList.addEntity(*childEntity);
 
 				node_t* tempNode = list_AddNodeLast(&entity->children);
 				tempNode->element = childEntity; // add the node to the children list.
@@ -4481,6 +4501,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
@@ -4496,6 +4517,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -4506,6 +4528,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -4522,6 +4545,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->gateInverted = 1; // inverted.
@@ -4536,6 +4560,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -4546,6 +4571,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -4563,6 +4589,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(586, 0, map->entities, nullptr);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = 8;
 				childEntity->leverTimerTicks = std::max(entity->leverTimerTicks, 1) * TICKS_PER_SECOND; // convert seconds to ticks from editor, make sure not less than 1
@@ -4606,6 +4633,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actPedestalOrb;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				childEntity->z = -2;
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -4751,6 +4779,7 @@ void assignActions(map_t* map)
 						{
 							childEntity->z = -6.99;
 						}
+						TileEntityList.addEntity(*childEntity);
 						node_t* tempNode = list_AddNodeLast(&entity->children);
 						tempNode->element = childEntity; // add the node to the children list.
 						tempNode->deconstructor = &emptyDeconstructor;
@@ -4761,6 +4790,7 @@ void assignActions(map_t* map)
 						childEntity->x = entity->x;
 						childEntity->y = entity->y;
 						childEntity->z = 8.24;
+						TileEntityList.addEntity(*childEntity);
 						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 						childEntity->flags[PASSABLE] = true;
 						tempNode = list_AddNodeLast(&entity->children);
@@ -4919,6 +4949,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actPistonCam;
 				childEntity->pistonCamRotateSpeed = 0.2;
 				childEntity->flags[UNCLICKABLE] = true;
+				TileEntityList.addEntity(*childEntity);
 				/*if ( multiplayer != CLIENT )
 				{
 					entity_uids--;
@@ -4931,6 +4962,7 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actPistonCam;
 				childEntity->pistonCamRotateSpeed = -0.2;
 				childEntity->flags[UNCLICKABLE] = true;
+				TileEntityList.addEntity(*childEntity);
 				/*if ( multiplayer != CLIENT )
 				{
 					entity_uids--;
@@ -5043,35 +5075,61 @@ void assignActions(map_t* map)
 		}
 	}
 
-	for ( node = map->entities->first; node != nullptr; node = node->next )
+	for ( node = map->entities->first; node != nullptr; )
 	{
-		Entity* itemEnt = (Entity*)node->element;
-		if ( itemEnt && itemEnt->behavior == &actItem )
+		Entity* postProcessEntity = (Entity*)node->element;
+		node = node->next;
+		if ( postProcessEntity )
 		{
-			// see if there's any platforms to set items upon.
-			for ( node_t* tmpnode = map->entities->first; tmpnode != nullptr; tmpnode = tmpnode->next )
+			if ( postProcessEntity->behavior == &actItem )
 			{
-				Entity* tmpentity = (Entity*)tmpnode->element;
-				if ( (tmpentity->behavior == &actFurniture
-						&& (tmpentity->x == itemEnt->x) && (tmpentity->y == itemEnt->y)
-					) )
+				// see if there's any platforms to set items upon.
+				for ( node_t* tmpnode = map->entities->first; tmpnode != nullptr; tmpnode = tmpnode->next )
 				{
-					if ( itemEnt->z > 4 )
+					Entity* tmpentity = (Entity*)tmpnode->element;
+					if ( (tmpentity->behavior == &actFurniture
+							&& (tmpentity->x == postProcessEntity->x) && (tmpentity->y == postProcessEntity->y)
+						) )
 					{
-						if ( tmpentity->sprite == 271 )
+						if ( postProcessEntity->z > 4 )
 						{
-							// is table
-							itemEnt->z -= 6;
-							tmpentity->parent = itemEnt->getUID();
+							if ( tmpentity->sprite == 271 )
+							{
+								// is table
+								postProcessEntity->z -= 6;
+								tmpentity->parent = postProcessEntity->getUID();
+							}
+							else if ( tmpentity->sprite == 630 )
+							{
+								// is podium
+								postProcessEntity->z -= 6;
+								tmpentity->parent = postProcessEntity->getUID();
+							}
 						}
-						else if ( tmpentity->sprite == 630 )
+						break;
+					}
+				}
+			}
+			else if ( postProcessEntity->sprite == 252 && postProcessEntity->z <= -10 )
+			{
+				// trapdoor for boulder traps.
+				int findx = static_cast<int>(postProcessEntity->x) >> 4;
+				int findy = static_cast<int>(postProcessEntity->y) >> 4;
+				list_t* entitiesOnTile = TileEntityList.getTileList(findx, findy);
+				for ( node_t* tmpnode = entitiesOnTile->first; tmpnode != nullptr; tmpnode = tmpnode->next )
+				{
+					Entity* tmpentity = (Entity*)tmpnode->element;
+					if ( tmpentity && tmpentity != postProcessEntity )
+					{
+						if ( tmpentity->behavior != &actMonster
+							&& !tmpentity->flags[PASSABLE]
+							&& tmpentity->behavior != &actFurniture )
 						{
-							// is podium
-							itemEnt->z -= 6;
-							tmpentity->parent = itemEnt->getUID();
+							// remove the trapdoor since we've spawned over a gate, chest, door etc.
+							list_RemoveNode(postProcessEntity->mynode);
+							break;
 						}
 					}
-					break;
 				}
 			}
 		}

@@ -2002,6 +2002,54 @@ void handleEvents(void)
 					mouseyrel = 0;
 				}
 				break;
+			case SDL_WINDOWEVENT:
+				if ( event.window.event == SDL_WINDOWEVENT_FOCUS_LOST && mute_audio_on_focus_lost )
+				{
+#ifdef USE_FMOD
+					if ( music_group )
+					{
+						FMOD_ChannelGroup_SetVolume(music_group, 0.f);
+					}
+					if ( sound_group )
+					{
+						FMOD_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+#endif // USE_FMOD
+#ifdef USE_OPENAL
+					if ( music_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(music_group, 0.f);
+					}
+					if ( sound_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(sound_group, 0.f);
+					}
+#endif
+				}
+				else if ( event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED )
+				{
+#ifdef USE_FMOD
+					if ( music_group )
+					{
+						FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+					}
+					if ( sound_group )
+					{
+						FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+#endif // USE_FMOD
+#ifdef USE_OPENAL
+					if ( music_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+					}
+					if ( sound_group )
+					{
+						OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+					}
+#endif
+				}
+				break;
 				/*case SDL_CONTROLLERAXISMOTION:
 					printlog("Controller axis motion detected.\n");
 					//if (event.caxis.which == 0) //TODO: Multi-controller support.
