@@ -157,6 +157,7 @@ bool lock_right_sidebar = false;
 bool show_game_timer_always = false;
 bool hide_statusbar = false;
 bool hide_playertags = false;
+bool show_skill_values = false;
 real_t uiscale_chatlog = 1.f;
 real_t uiscale_playerbars = 1.f;
 real_t uiscale_hotbar = 1.f;
@@ -750,6 +751,10 @@ void defaultConfig()
 	consoleCommand("/bind 21 IN_AUTOSORT");
 	consoleCommand("/bind 27 IN_MINIMAPSCALE");
 	consoleCommand("/bind 15 IN_TOGGLECHATLOG");
+	consoleCommand("/bind 6 IN_FOLLOWERMENU");
+	consoleCommand("/bind 20 IN_FOLLOWERMENU_LASTCMD");
+	consoleCommand("/bind 8 IN_FOLLOWERMENU_CYCLENEXT");
+
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
@@ -937,6 +942,32 @@ int loadConfig(char* filename)
 	{
 		free(filename);
 	}
+
+	if ( impulses[IN_FOLLOWERMENU_CYCLENEXT] == impulses[IN_TURNR]
+		&& impulses[IN_TURNR] == 8 )
+	{
+		// reset to default arrow key to avoid overlapping keybinds on first launch.
+		// due to legacy keybind, now we have useful things to assign to q,e,z,c
+		impulses[IN_TURNR] = 79;
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+	}
+	if ( impulses[IN_FOLLOWERMENU] == impulses[IN_UP]
+		&& impulses[IN_UP] == 6 )
+	{
+		// reset to default arrow key to avoid overlapping keybinds on first launch.
+		// due to legacy keybind, now we have useful things to assign to q,e,z,c
+		impulses[IN_UP] = 82;
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+	}
+	if ( impulses[IN_FOLLOWERMENU_LASTCMD] == impulses[IN_TURNL]
+		&& impulses[IN_TURNL] == 20 )
+	{
+		// reset to default arrow key to avoid overlapping keybinds on first launch.
+		// due to legacy keybind, now we have useful things to assign to q,e,z,c
+		impulses[IN_TURNL] = 80;
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+	}
+
 	return 0;
 }
 
@@ -1059,6 +1090,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/muteping\n");
 	}
+	if ( mute_audio_on_focus_lost )
+	{
+		fprintf(fp, "/muteaudiofocuslost\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");
@@ -1176,6 +1211,10 @@ int saveConfig(char* filename)
 	if ( hide_playertags )
 	{
 		fprintf(fp, "/hideplayertags\n");
+	}
+	if ( show_skill_values )
+	{
+		fprintf(fp, "/showskillvalues\n");
 	}
 	if ( disableMultithreadedSteamNetworking )
 	{

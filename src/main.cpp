@@ -224,6 +224,7 @@ bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;
 bool minimapPingMute = false;
+bool mute_audio_on_focus_lost = false;
 int minimapTransparencyForeground = 0;
 int minimapTransparencyBackground = 0;
 int minimapScale = 4;

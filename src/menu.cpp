@@ -163,7 +163,8 @@ bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
 bool settings_vsync;
-bool settings_minimap_ping_mute;
+bool settings_minimap_ping_mute = false;
+bool settings_mute_audio_on_focus_lost = false;
 int settings_minimap_transparency_foreground = 0;
 int settings_minimap_transparency_background = 0;
 int settings_minimap_scale = 4;
@@ -197,6 +198,7 @@ real_t settings_uiscale_chatlog = 1.f;
 real_t settings_uiscale_inventory = 1.f;
 bool settings_hide_statusbar = false;
 bool settings_hide_playertags = false;
+bool settings_show_skill_values = false;
 bool settings_disableMultithreadedSteamNetworking = false;
 Sint32 oslidery = 0;
 
@@ -2299,64 +2301,77 @@ void handleMainMenu(bool mode)
 			doSlider(subx1 + 498, suby1 + 222 + 24, 10, 0, 100, 1, (int*)(&settings_minimap_transparency_background));
 
 			// UI options
-			ttfPrintText(ttf12, subx1 + 498, suby1 + 282, language[3034]);
+			ttfPrintText(ttf12, subx1 + 498, suby1 + 276, language[3034]);
 
 			if ( settings_uiscale_charactersheet )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 306, "[x] %s", language[3027]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 300, "[x] %s", language[3027]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 306, "[ ] %s", language[3027]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 300, "[ ] %s", language[3027]);
 			}
 			if ( settings_uiscale_skillspage )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 330, "[x] %s", language[3028]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 324, "[x] %s", language[3028]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 330, "[ ] %s", language[3028]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 324, "[ ] %s", language[3028]);
 			}
 			if ( settings_hide_statusbar )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[x] %s", language[3033]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 348, "[x] %s", language[3033]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 354, "[ ] %s", language[3033]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 348, "[ ] %s", language[3033]);
 			}
 			if ( settings_hide_playertags )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 378, "[x] %s", language[3136]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 372, "[x] %s", language[3136]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 378, "[ ] %s", language[3136]);
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 372, "[ ] %s", language[3136]);
+			}
+			if ( settings_show_skill_values )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[x] %s", language[3159]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 498, suby1 + 396, "[ ] %s", language[3159]);
 			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 498 && omousex < subx1 + 522 )
 				{
-					if ( omousey >= suby1 + 306 && omousey < suby1 + 306 + 12 )
+					if ( omousey >= suby1 + 300 && omousey < suby1 + 300 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_uiscale_charactersheet = (settings_uiscale_charactersheet == 0);
 					}
-					else if ( omousey >= suby1 + 330 && omousey < suby1 + 330 + 12 )
+					else if ( omousey >= suby1 + 324 && omousey < suby1 + 324 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_uiscale_skillspage = (settings_uiscale_skillspage == 0);
 					}
-					else if ( omousey >= suby1 + 354 && omousey < suby1 + 354 + 12 )
+					else if ( omousey >= suby1 + 348 && omousey < suby1 + 348 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_hide_statusbar = (settings_hide_statusbar == 0);
 					}
-					else if ( omousey >= suby1 + 378 && omousey < suby1 + 378 + 12 )
+					else if ( omousey >= suby1 + 372 && omousey < suby1 + 372 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_hide_playertags = (settings_hide_playertags == 0);
+					}
+					else if ( omousey >= suby1 + 396 && omousey < suby1 + 396 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_show_skill_values = (settings_show_skill_values == 0);
 					}
 				}
 			}
@@ -2399,6 +2414,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 168, "[ ] %s", language[3012]);
 			}
+			if ( settings_mute_audio_on_focus_lost )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[x] %s", language[3158]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[ ] %s", language[3158]);
+			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
@@ -2407,6 +2430,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_minimap_ping_mute = (settings_minimap_ping_mute == false);
+					}
+					else if ( omousey >= suby1 + 192 && omousey < suby1 + 192 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
 					}
 				}
 			}
@@ -3156,6 +3184,7 @@ void handleMainMenu(bool mode)
 				tooltip_box.y = omousey + 8;
 				tooltip_box.h = TTF12_HEIGHT + 8;
 
+#ifdef STEAMWORKS
 				// networking hover text and mouse selection
 				current_y = networking_options_start_y;
 
@@ -3171,6 +3200,7 @@ void handleMainMenu(bool mode)
 						settings_disableMultithreadedSteamNetworking = (settings_disableMultithreadedSteamNetworking == false);
 					}
 				}
+#endif // STEAMWORKS
 
 				current_y = options_start_y;
 
@@ -4724,7 +4754,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 	if ( score_leaderboard_window != 0 && g_SteamLeaderboards )
 	{
-		int numEntriesToShow = 10;
+		int numEntriesToShow = 15;
 		int filenameMaxLength = 48;
 		int filename_padx = subx1 + 16;
 		int filename_pady = suby1 + 32;
@@ -4837,7 +4867,7 @@ void handleMainMenu(bool mode)
 			for ( int i = 0; i < numEntriesTotal; ++i )
 			{
 				filename_padx = subx1 + 16;
-				if ( i >= g_SteamLeaderboards->LeaderboardView.scrollIndex && i < numEntriesTotal + g_SteamLeaderboards->LeaderboardView.scrollIndex )
+				if ( i >= g_SteamLeaderboards->LeaderboardView.scrollIndex && i < numEntriesToShow + g_SteamLeaderboards->LeaderboardView.scrollIndex )
 				{
 					drawWindowFancy(filename_padx, filename_pady - 8, filename_padx2, filename_pady + filename_rowHeight);
 					SDL_Rect highlightEntry;
@@ -4881,7 +4911,7 @@ void handleMainMenu(bool mode)
 					filename_padx = filename_padx2 - (15 * TTF12_WIDTH + 16);
 					int text_x = filename_padx;
 					int text_y = filename_pady;
-					if ( savegameDrawClickableButton(filename_padx, filename_pady, 15 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0) && score_leaderboard_window != 3 )
+					if ( drawClickableButton(filename_padx, filename_pady, 15 * TTF12_WIDTH + 8, TTF12_HEIGHT, 0) && score_leaderboard_window != 3 )
 					{
 						score_leaderboard_window = 3;
 						g_SteamLeaderboards->currentLeaderBoardIndex = i;
@@ -4908,8 +4938,8 @@ void handleMainMenu(bool mode)
 	{
 		if ( score_leaderboard_window == 3 )
 		{
-			drawWindowFancy(subx1 + 20, suby1 + 20, subx2 - 20, suby2 - 10);
-			if ( savegameDrawClickableButton(subx2 - 10 * TTF12_WIDTH - 8, suby1 + 20 + 8, 8 * TTF12_WIDTH, TTF12_HEIGHT, 0) )
+			drawWindowFancy(subx1 + 10, suby1 + 20, subx2 - 10, suby2 - 10);
+			if ( drawClickableButton(subx2 - 10 * TTF12_WIDTH - 3, suby1 + 20 + 8, 8 * TTF12_WIDTH, TTF12_HEIGHT, 0) )
 			{
 				score_leaderboard_window = 2;
 				for ( node = button_l.first; node != NULL; node = node->next )
@@ -4918,7 +4948,7 @@ void handleMainMenu(bool mode)
 					button->visible = 1;
 				}
 			}
-			ttfPrintTextFormatted(ttf12, subx2 - 10 * TTF12_WIDTH + 4, suby1 + 20 + 8, "close");
+			ttfPrintTextFormatted(ttf12, subx2 - 10 * TTF12_WIDTH + 9, suby1 + 20 + 8, "close");
 		}
 		// draw button label... shamelessly hacked together from "multiplayer scores toggle button" initialisation...
 		int toggleText_x = subx2 - 44 - strlen("show multiplayer") * 12;
@@ -5196,22 +5226,22 @@ void handleMainMenu(bool mode)
 					{
 						if ( x < KOBOLD )
 						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[111 + x]);
 						}
 						else
 						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2050 + (x - KOBOLD)]);
 						}
 					}
 					else
 					{
 						if ( x < KOBOLD )
 						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[90 + x]);
 						}
 						else
 						{
-							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 180, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
+							ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 14) * 156, suby1 + 296 + (y % 14) * 12, "%d %s", kills[x], language[2000 + (x - KOBOLD)]);
 						}
 					}
 					y++;
@@ -5372,7 +5402,7 @@ void handleMainMenu(bool mode)
 				filename_padx = filename_padx2 - (13 * TTF12_WIDTH + 16);
 				int text_x = filename_padx;
 				int text_y = filename_pady + 10;
-				if ( savegameDrawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
+				if ( drawClickableButton(filename_padx, filename_pady, 10 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, 0) )
 				{
 					if ( std::get<1>(entry) == SINGLE )
 					{
@@ -5389,7 +5419,7 @@ void handleMainMenu(bool mode)
 
 				filename_padx = filename_padx2 - (2 * TTF12_WIDTH + 14);
 				text_x = filename_padx;
-				if ( savegameDrawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
+				if ( drawClickableButton(filename_padx, filename_pady, 2 * TTF12_WIDTH + 8, TTF12_HEIGHT * 2 + 4, uint32ColorRed(*mainsurface)) )
 				{
 					if ( std::get<1>(entry) == SINGLE )
 					{
@@ -8080,6 +8110,7 @@ void openSettingsWindow()
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
+	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
 	settings_minimap_transparency_foreground = minimapTransparencyForeground;
 	settings_minimap_transparency_background = minimapTransparencyBackground;
 	settings_minimap_scale = minimapScale;
@@ -8092,6 +8123,7 @@ void openSettingsWindow()
 	settings_uiscale_playerbars = uiscale_playerbars;
 	settings_hide_statusbar = hide_statusbar;
 	settings_hide_playertags = hide_playertags;
+	settings_show_skill_values = show_skill_values;
 	settings_disableMultithreadedSteamNetworking = disableMultithreadedSteamNetworking;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
@@ -9680,6 +9712,7 @@ void applySettings()
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
 	minimapPingMute = settings_minimap_ping_mute;
+	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
 
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
@@ -9746,6 +9779,7 @@ void applySettings()
 	uiscale_playerbars = settings_uiscale_playerbars;
 	hide_statusbar = settings_hide_statusbar;
 	hide_playertags = settings_hide_playertags;
+	show_skill_values = settings_show_skill_values;
 	if ( net_handler && disableMultithreadedSteamNetworking != settings_disableMultithreadedSteamNetworking )
 	{
 		net_handler->toggleMultithreading(settings_disableMultithreadedSteamNetworking);
@@ -12473,7 +12507,7 @@ void gamemodsWindowClearVariables()
 	gamemods_subscribedItemsStatus = 0;
 }
 
-bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor)
+bool drawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor)
 {
 	bool clicked = false;
 	if ( mouseInBounds(padx, padx + padw, pady - 4, pady + padh) )
@@ -12495,7 +12529,10 @@ bool savegameDrawClickableButton(int padx, int pady, int padw, int padh, Uint32 
 	pos.y = pady - 4;
 	pos.w = padw;
 	pos.h = padh + 4;
-	drawRect(&pos, btnColor, 64);
+	if ( btnColor != 0 )
+	{
+		drawRect(&pos, btnColor, 64);
+	}
 	return clicked;
 }
 #ifdef STEAMWORKS

@@ -3895,4 +3895,8 @@ locked/unlocked in-game by left clicking the lock symbol on the HUD page.#
 3157 Always shows the in-game timer when the inventory is closed in the upper right-hand section of 
 the screen. Useful to track speedrun times, when the minotaur will arrive, or how long your
 current food situation will last.#
+
+3158 mute audio when game window focus is lost#
+3159 Show Numerical Skill Values#
+
 3199 end#

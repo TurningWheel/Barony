@@ -515,47 +515,17 @@ void consoleCommand(char* command_str)
 		else if ( strstr(command_str, "IN_TURNL") )
 		{
 			impulses[IN_TURNL] = atoi(&command_str[6]);
-			if ( impulses[IN_FOLLOWERMENU_LASTCMD] == impulses[IN_TURNL] )
-			{
-				// reset to default arrow key to avoid overlapping keybinds on first launch.
-				// due to legacy keybind, now we have useful things to assign to q,e,z,c
-				impulses[IN_TURNL] = 80;
-				printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_LASTCMD. Automatically rebound IN_TURNL: %d (Left arrow key)\n", impulses[IN_TURNL]);
-			}
-			else
-			{
-				printlog("Bound IN_TURNL: %d\n", atoi(&command_str[6]));
-			}
+			printlog("Bound IN_TURNL: %d\n", atoi(&command_str[6]));
 		}
 		else if ( strstr(command_str, "IN_TURNR") )
 		{
 			impulses[IN_TURNR] = atoi(&command_str[6]);
-			if ( impulses[IN_FOLLOWERMENU_CYCLENEXT] == impulses[IN_TURNR] )
-			{
-				// reset to default arrow key to avoid overlapping keybinds on first launch.
-				// due to legacy keybind, now we have useful things to assign to q,e,z,c
-				impulses[IN_TURNR] = 79;
-				printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
-			}
-			else
-			{
-				printlog("Bound IN_TURNR: %d\n", atoi(&command_str[6]));
-			}
+			printlog("Bound IN_TURNR: %d\n", atoi(&command_str[6]));
 		}
 		else if ( strstr(command_str, "IN_UP") )
 		{
 			impulses[IN_UP] = atoi(&command_str[6]);
-			if ( impulses[IN_FOLLOWERMENU] == impulses[IN_UP] )
-			{
-				// reset to default arrow key to avoid overlapping keybinds on first launch.
-				// due to legacy keybind, now we have useful things to assign to q,e,z,c
-				impulses[IN_UP] = 82;
-				printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU. Automatically rebound IN_UP: %d (Up arrow key)\n", impulses[IN_UP]);
-			}
-			else
-			{
-				printlog("Bound IN_UP: %d\n", atoi(&command_str[6]));
-			}
+			printlog("Bound IN_UP: %d\n", atoi(&command_str[6]));
 		}
 		else if ( strstr(command_str, "IN_DOWN") )
 		{
@@ -2086,18 +2056,6 @@ void consoleCommand(char* command_str)
 		monsterGlobalAttackTimeMultiplier = speed;
 		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
 	}
-	else if ( !strncmp(command_str, "/brawlermode", 12) )
-	{
-		achievementBrawlerMode = !achievementBrawlerMode;
-		if ( achievementBrawlerMode )
-		{
-			messagePlayer(clientnum, language[2995]);
-		}
-		else
-		{
-			messagePlayer(clientnum, language[2996]);
-		}
-	}
 	else if ( !strncmp(command_str, "/loadmod ", 9) )
 	{
 		std::string cmd = command_str;
@@ -2138,7 +2096,11 @@ void consoleCommand(char* command_str)
 
 	if ( invalidcommand ) // starting new if else block to get around compiler >128 statement limit.
 	{
-		if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
+		if ( !strncmp(command_str, "/muteaudiofocuslost", 19) )
+		{
+			mute_audio_on_focus_lost = (mute_audio_on_focus_lost == false);
+		}
+		else if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
 		{
 			minimapTransparencyForeground = atoi(&command_str[23]);
 			minimapTransparencyForeground = std::min(std::max<int>(0, minimapTransparencyForeground), 100);
@@ -2200,6 +2162,10 @@ void consoleCommand(char* command_str)
 		{
 			hide_playertags = !hide_playertags;
 		}
+		else if ( !strncmp(command_str, "/showskillvalues", 16) )
+		{
+			show_skill_values = !show_skill_values;
+		}
 		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
 		{
 			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
@@ -2239,6 +2205,22 @@ void consoleCommand(char* command_str)
 			else
 			{
 				players[clientnum]->entity->setEffect(effect, true, 500, true);
+			}
+		}
+		else if ( !strncmp(command_str, "/brawlermode", 12) )
+		{
+			achievementBrawlerMode = !achievementBrawlerMode;
+			if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
+			{
+				messagePlayer(clientnum, language[2995]);
+			}
+			else if ( achievementBrawlerMode && !conductGameChallenges[CONDUCT_BRAWLER] )
+			{
+				messagePlayer(clientnum, language[2998]);
+			}
+			else if ( !achievementBrawlerMode )
+			{
+				messagePlayer(clientnum, language[2996]);
 			}
 		}
 		else

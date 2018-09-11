@@ -19,6 +19,7 @@
 #include "interface.hpp"
 #include "../sound.hpp"
 #include "../magic/magic.hpp"
+#include "../menu.hpp"
 
 void statsHoverText(Stat* tmpStat);
 
@@ -408,7 +409,11 @@ void drawSkillsSheet()
 			color = uint32ColorWhite(*mainsurface);
 		}
 
-		if ( stats[clientnum]->PROFICIENCIES[i] == 0 )
+		if ( show_skill_values )
+		{
+			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, "%15d / 100", stats[clientnum]->PROFICIENCIES[i]);
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] == 0 )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[363]);
 		}
