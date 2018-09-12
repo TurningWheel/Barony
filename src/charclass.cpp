@@ -1451,7 +1451,43 @@ void initClass(int player)
 			free(item);
 		}
 	}
+	// test
+	else if ( client_classes[player] == 13 )
+	{
+		// attributes
+		stats[player]->type = SKELETON;
+		stats[player]->DEX += 2;
+		stats[player]->PER += 2;
+		stats[player]->INT -= 1;
+		stats[player]->STR -= 1;
+		stats[player]->CHR -= 1;
 
+		stats[player]->MAXHP -= 10;
+		stats[player]->HP -= 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 25;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 50;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
+
+		// bronze sword
+		item = newItem(BRONZE_SWORD, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+	}
 	// move default items to the right
 	if ( player == clientnum )
 	{

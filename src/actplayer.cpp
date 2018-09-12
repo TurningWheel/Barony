@@ -236,6 +236,17 @@ void actPlayer(Entity* my)
 		return;
 	}
 
+	Monster playerRace = HUMAN;
+	int spriteTorso = 106 + 12 * stats[PLAYER_NUM]->sex;
+	int spriteLegRight = 107 + 12 * stats[PLAYER_NUM]->sex;
+	int spriteLegLeft = 108 + 12 * stats[PLAYER_NUM]->sex;
+	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
+	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
+	if ( client_classes[PLAYER_NUM] == 13 )
+	{
+		playerRace = SKELETON;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		if ( PLAYER_NUM != clientnum )
@@ -350,16 +361,16 @@ void actPlayer(Entity* my)
 		}
 
 		// torso
-		entity = newEntity(106 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(spriteTorso, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[HUMAN][1][0];
-		entity->focaly = limbs[HUMAN][1][1];
-		entity->focalz = limbs[HUMAN][1][2];
+		entity->focalx = limbs[playerRace][1][0];
+		entity->focaly = limbs[playerRace][1][1];
+		entity->focalz = limbs[playerRace][1][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -369,16 +380,16 @@ void actPlayer(Entity* my)
 		my->bodyparts.push_back(entity);
 
 		// right leg
-		entity = newEntity(107 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(spriteLegRight, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[HUMAN][2][0];
-		entity->focaly = limbs[HUMAN][2][1];
-		entity->focalz = limbs[HUMAN][2][2];
+		entity->focalx = limbs[playerRace][2][0];
+		entity->focaly = limbs[playerRace][2][1];
+		entity->focalz = limbs[playerRace][2][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -388,16 +399,16 @@ void actPlayer(Entity* my)
 		my->bodyparts.push_back(entity);
 
 		// left leg
-		entity = newEntity(108 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(spriteLegLeft, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[HUMAN][3][0];
-		entity->focaly = limbs[HUMAN][3][1];
-		entity->focalz = limbs[HUMAN][3][2];
+		entity->focalx = limbs[playerRace][3][0];
+		entity->focaly = limbs[playerRace][3][1];
+		entity->focalz = limbs[playerRace][3][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -407,16 +418,16 @@ void actPlayer(Entity* my)
 		my->bodyparts.push_back(entity);
 
 		// right arm
-		entity = newEntity(109 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(spriteArmRight, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[HUMAN][4][0];
-		entity->focaly = limbs[HUMAN][4][1];
-		entity->focalz = limbs[HUMAN][4][2];
+		entity->focalx = limbs[playerRace][4][0];
+		entity->focaly = limbs[playerRace][4][1];
+		entity->focalz = limbs[playerRace][4][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -426,16 +437,16 @@ void actPlayer(Entity* my)
 		my->bodyparts.push_back(entity);
 
 		// left arm
-		entity = newEntity(110 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities, nullptr); //Limb entity.
+		entity = newEntity(spriteArmLeft, 1, map.entities, nullptr); //Limb entity.
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[HUMAN][5][0];
-		entity->focaly = limbs[HUMAN][5][1];
-		entity->focalz = limbs[HUMAN][5][2];
+		entity->focalx = limbs[playerRace][5][0];
+		entity->focaly = limbs[playerRace][5][1];
+		entity->focalz = limbs[playerRace][5][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -453,9 +464,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[HUMAN][6][0];
-		entity->focaly = limbs[HUMAN][6][1];
-		entity->focalz = limbs[HUMAN][6][2];
+		entity->focalx = limbs[playerRace][6][0];
+		entity->focaly = limbs[playerRace][6][1];
+		entity->focalz = limbs[playerRace][6][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -473,9 +484,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[HUMAN][7][0];
-		entity->focaly = limbs[HUMAN][7][1];
-		entity->focalz = limbs[HUMAN][7][2];
+		entity->focalx = limbs[playerRace][7][0];
+		entity->focaly = limbs[playerRace][7][1];
+		entity->focalz = limbs[playerRace][7][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		entity->focalx = 2;
@@ -497,9 +508,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[HUMAN][8][0];
-		entity->focaly = limbs[HUMAN][8][1];
-		entity->focalz = limbs[HUMAN][8][2];
+		entity->focalx = limbs[playerRace][8][0];
+		entity->focaly = limbs[playerRace][8][1];
+		entity->focalz = limbs[playerRace][8][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -520,9 +531,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[HUMAN][9][0];
-		entity->focaly = limbs[HUMAN][9][1];
-		entity->focalz = limbs[HUMAN][9][2];
+		entity->focalx = limbs[playerRace][9][0];
+		entity->focaly = limbs[playerRace][9][1];
+		entity->focalz = limbs[playerRace][9][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -543,9 +554,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[HUMAN][10][0];
-		entity->focaly = limbs[HUMAN][10][1];
-		entity->focalz = limbs[HUMAN][10][2];
+		entity->focalx = limbs[playerRace][10][0];
+		entity->focaly = limbs[playerRace][10][1];
+		entity->focalz = limbs[playerRace][10][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -1762,7 +1773,14 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
 		// set head model
-		if ( stats[PLAYER_NUM]->appearance < 5 )
+		if ( playerRace != HUMAN )
+		{
+			if ( playerRace == SKELETON )
+			{
+				my->sprite = 686;
+			}
+		}
+		else if ( stats[PLAYER_NUM]->appearance < 5 )
 		{
 			my->sprite = 113 + 12 * stats[PLAYER_NUM]->sex + stats[PLAYER_NUM]->appearance;
 		}
@@ -2823,17 +2841,31 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->breastplate == NULL )
 					{
-						switch ( stats[PLAYER_NUM]->appearance / 6 )
+						if ( playerRace == HUMAN )
 						{
-							case 1:
-								entity->sprite = 334 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							case 2:
-								entity->sprite = 360 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							default:
-								entity->sprite = 106 + 12 * stats[PLAYER_NUM]->sex;
-								break;
+							switch ( stats[PLAYER_NUM]->appearance / 6 )
+							{
+								case 1:
+									entity->sprite = 334 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								case 2:
+									entity->sprite = 360 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								default:
+									entity->sprite = 106 + 12 * stats[PLAYER_NUM]->sex;
+									break;
+							}
+						}
+						else
+						{
+							switch ( playerRace )
+							{
+								case SKELETON:
+									entity->sprite = 687;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					else
@@ -2854,9 +2886,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				entity->x -= .25 * cos(my->yaw);
-				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2.5;
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case 2:
@@ -2864,17 +2894,31 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->shoes == NULL )
 					{
-						switch ( stats[PLAYER_NUM]->appearance / 6 )
+						if ( playerRace == HUMAN )
 						{
-							case 1:
-								entity->sprite = 335 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							case 2:
-								entity->sprite = 361 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							default:
-								entity->sprite = 107 + 12 * stats[PLAYER_NUM]->sex;
-								break;
+							switch ( stats[PLAYER_NUM]->appearance / 6 )
+							{
+								case 1:
+									entity->sprite = 335 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								case 2:
+									entity->sprite = 361 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								default:
+									entity->sprite = 107 + 12 * stats[PLAYER_NUM]->sex;
+									break;
+							}
+						}
+						else
+						{
+							switch ( playerRace )
+							{
+								case SKELETON:
+									entity->sprite = 693;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					else
@@ -2895,14 +2939,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
-				entity->z += 5;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->yaw += PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
 			case 3:
@@ -2910,17 +2947,31 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->shoes == NULL )
 					{
-						switch ( stats[PLAYER_NUM]->appearance / 6 )
+						if ( playerRace == HUMAN )
 						{
-							case 1:
-								entity->sprite = 336 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							case 2:
-								entity->sprite = 362 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							default:
-								entity->sprite = 108 + 12 * stats[PLAYER_NUM]->sex;
-								break;
+							switch ( stats[PLAYER_NUM]->appearance / 6 )
+							{
+								case 1:
+									entity->sprite = 336 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								case 2:
+									entity->sprite = 362 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								default:
+									entity->sprite = 108 + 12 * stats[PLAYER_NUM]->sex;
+									break;
+							}
+						}
+						else
+						{
+							switch ( playerRace )
+							{
+								case SKELETON:
+									entity->sprite = 692;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					else
@@ -2941,14 +2992,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
-				entity->z += 5;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->yaw -= PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm
 			case 4:
@@ -2957,17 +3001,31 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->gloves == NULL )
 					{
-						switch ( stats[PLAYER_NUM]->appearance / 6 )
+						if ( playerRace == HUMAN )
 						{
-							case 1:
-								entity->sprite = 337 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							case 2:
-								entity->sprite = 363 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							default:
-								entity->sprite = 109 + 12 * stats[PLAYER_NUM]->sex;
-								break;
+							switch ( stats[PLAYER_NUM]->appearance / 6 )
+							{
+								case 1:
+									entity->sprite = 337 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								case 2:
+									entity->sprite = 363 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								default:
+									entity->sprite = 109 + 12 * stats[PLAYER_NUM]->sex;
+									break;
+							}
+						}
+						else
+						{
+							switch ( playerRace )
+							{
+								case SKELETON:
+									entity->sprite = 689;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					else
@@ -2995,39 +3053,25 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += 1.5;
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
 				node_t* tempNode = list_Node(&my->children, 6);
 				if ( tempNode )
 				{
 					Entity* weapon = (Entity*)tempNode->element;
-					/*if( multiplayer==CLIENT ) {
-						if( !PLAYER_ARMBENDED ) {
-							if( entity->skill[7]==0 )
-								entity->skill[7] = entity->sprite;
-							entity->sprite = entity->skill[7];
-							entity->sprite += 2*(weapon->flags[INVISIBLE]!=true);
-						}
-					}*/
 					if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED )
 					{
-						entity->focalx = limbs[HUMAN][4][0]; // 0
-						entity->focaly = limbs[HUMAN][4][1]; // 0
-						entity->focalz = limbs[HUMAN][4][2]; // 1.5
+						entity->focalx = limbs[playerRace][4][0]; // 0
+						entity->focaly = limbs[playerRace][4][1]; // 0
+						entity->focalz = limbs[playerRace][4][2]; // 1.5
 					}
 					else
 					{
-						entity->focalx = limbs[HUMAN][4][0] + 0.75;
-						entity->focaly = limbs[HUMAN][4][1];
-						entity->focalz = limbs[HUMAN][4][2] - 0.75;
+						entity->focalx = limbs[playerRace][4][0] + 0.75;
+						entity->focaly = limbs[playerRace][4][1];
+						entity->focalz = limbs[playerRace][4][2] - 0.75;
 					}
 				}
 				entity->yaw += PLAYER_WEAPONYAW;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			}
 			// left arm
@@ -3037,17 +3081,31 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->gloves == NULL )
 					{
-						switch ( stats[PLAYER_NUM]->appearance / 6 )
+						if ( playerRace == HUMAN )
 						{
-							case 1:
-								entity->sprite = 338 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							case 2:
-								entity->sprite = 364 + 13 * stats[PLAYER_NUM]->sex;
-								break;
-							default:
-								entity->sprite = 110 + 12 * stats[PLAYER_NUM]->sex;
-								break;
+							switch ( stats[PLAYER_NUM]->appearance / 6 )
+							{
+								case 1:
+									entity->sprite = 338 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								case 2:
+									entity->sprite = 364 + 13 * stats[PLAYER_NUM]->sex;
+									break;
+								default:
+									entity->sprite = 110 + 12 * stats[PLAYER_NUM]->sex;
+									break;
+							}
+						}
+						else
+						{
+							switch ( playerRace )
+							{
+								case SKELETON:
+									entity->sprite = 688;
+									break;
+								default:
+									break;
+							}
 						}
 					}
 					else
@@ -3072,29 +3130,23 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 1.5;
+				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
 				node_t* tempNode = list_Node(&my->children, 7);
 				if ( tempNode )
 				{
 					Entity* shield = (Entity*)tempNode->element;
 					if ( shield->flags[INVISIBLE] )
 					{
-						entity->focalx = limbs[HUMAN][5][0]; // 0
-						entity->focaly = limbs[HUMAN][5][1]; // 0
-						entity->focalz = limbs[HUMAN][5][2]; // 1.5
+						entity->focalx = limbs[playerRace][5][0]; // 0
+						entity->focaly = limbs[playerRace][5][1]; // 0
+						entity->focalz = limbs[playerRace][5][2]; // 1.5
 					}
 					else
 					{
-						entity->focalx = limbs[HUMAN][5][0] + 0.75;
-						entity->focaly = limbs[HUMAN][5][1];
-						entity->focalz = limbs[HUMAN][5][2] - 0.75;
+						entity->focalx = limbs[playerRace][5][0] + 0.75;
+						entity->focaly = limbs[playerRace][5][1];
+						entity->focalz = limbs[playerRace][5][2] - 0.75;
 					}
-				}
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->pitch = 0;
 				}
 				if ( multiplayer != CLIENT )
 				{
@@ -3213,19 +3265,19 @@ void actPlayer(Entity* my)
 					}
 					if ( !PLAYER_ARMBENDED )
 					{
-						entity->focalx = limbs[HUMAN][6][0]; // 1.5
+						entity->focalx = limbs[playerRace][6][0]; // 1.5
 						if ( entity->sprite == items[CROSSBOW].index )
 						{
 							entity->focalx += 2;
 						}
-						entity->focaly = limbs[HUMAN][6][1]; // 0
-						entity->focalz = limbs[HUMAN][6][2]; // -.5
+						entity->focaly = limbs[playerRace][6][1]; // 0
+						entity->focalz = limbs[playerRace][6][2]; // -.5
 					}
 					else
 					{
-						entity->focalx = limbs[HUMAN][6][0] + 1.5; // 3
-						entity->focaly = limbs[HUMAN][6][1]; // 0
-						entity->focalz = limbs[HUMAN][6][2] - 2; // -2.5
+						entity->focalx = limbs[playerRace][6][0] + 1.5; // 3
+						entity->focaly = limbs[playerRace][6][1]; // 0
+						entity->focalz = limbs[playerRace][6][2] - 2; // -2.5
 						entity->yaw -= sin(weaponarm->roll) * PI / 2;
 						entity->pitch += cos(weaponarm->roll) * PI / 2;
 					}
@@ -3411,9 +3463,9 @@ void actPlayer(Entity* my)
 				break;
 			// helm
 			case 9:
-				entity->focalx = limbs[HUMAN][9][0]; // 0
-				entity->focaly = limbs[HUMAN][9][1]; // 0
-				entity->focalz = limbs[HUMAN][9][2]; // -1.75
+				entity->focalx = limbs[playerRace][9][0]; // 0
+				entity->focaly = limbs[playerRace][9][1]; // 0
+				entity->focalz = limbs[playerRace][9][2]; // -1.75
 				entity->pitch = my->pitch;
 				entity->roll = 0;
 				if ( multiplayer != CLIENT )
@@ -3457,9 +3509,9 @@ void actPlayer(Entity* my)
 				break;
 			// mask
 			case 10:
-				entity->focalx = limbs[HUMAN][10][0]; // 0
-				entity->focaly = limbs[HUMAN][10][1]; // 0
-				entity->focalz = limbs[HUMAN][10][2]; // .5
+				entity->focalx = limbs[playerRace][10][0]; // 0
+				entity->focaly = limbs[playerRace][10][1]; // 0
+				entity->focalz = limbs[playerRace][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
@@ -3517,15 +3569,15 @@ void actPlayer(Entity* my)
 				}
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[HUMAN][10][0] + .35; // .35
-					entity->focaly = limbs[HUMAN][10][1] - 2; // -2
-					entity->focalz = limbs[HUMAN][10][2]; // .5
+					entity->focalx = limbs[playerRace][10][0] + .35; // .35
+					entity->focaly = limbs[playerRace][10][1] - 2; // -2
+					entity->focalz = limbs[playerRace][10][2]; // .5
 				}
 				else
 				{
-					entity->focalx = limbs[HUMAN][10][0] + .25; // .25
-					entity->focaly = limbs[HUMAN][10][1] - 2.25; // -2.25
-					entity->focalz = limbs[HUMAN][10][2]; // .5
+					entity->focalx = limbs[playerRace][10][0] + .25; // .25
+					entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
+					entity->focalz = limbs[playerRace][10][2]; // .5
 				}
 				break;
 		}

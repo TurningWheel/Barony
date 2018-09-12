@@ -199,7 +199,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return SHOPKEEPER;
 	}
-	else if ( mySprite == 229 )     // skeleton head
+	else if ( mySprite == 229 || mySprite == 686 )     // skeleton head
 	{
 		return SKELETON;
 	}
