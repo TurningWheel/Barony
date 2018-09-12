@@ -101,7 +101,7 @@ extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
-#define NUMCLASSES 13
+#define NUMCLASSES 14
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;

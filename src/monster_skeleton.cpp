@@ -617,9 +617,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= .25 * cos(my->yaw);
-				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2;
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -647,18 +645,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->yaw += PI / 8;
-					entity->pitch = -PI / 2;
-				}
-				else if ( entity->pitch <= -PI / 3 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
@@ -686,18 +673,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->yaw -= PI / 8;
-					entity->pitch = -PI / 2;
-				}
-				else if ( entity->pitch <= -PI / 3 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm
 			case LIMB_HUMANOID_RIGHTARM:
@@ -723,14 +699,8 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 234;
 					}
 				}
-				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 1.75 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += .5;
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			// left arm
 			}
@@ -759,13 +729,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
 					}
 				}
-				entity->x -= 1.75 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 1.75 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += .5;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_LEFTARM);
 				if ( my->monsterDefend && my->monsterAttack == 0 )
 				{
 					MONSTER_SHIELDYAW = PI / 5;

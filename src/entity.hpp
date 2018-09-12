@@ -589,9 +589,9 @@ public:
 
 	//--monster type from sprite
 	int getMonsterTypeFromSprite();
-	//--monster helmet limb offsets
+	//--monster limb offsets
 	void setHelmetLimbOffset(Entity* helm);
-
+	void setHumanoidLimbOffset(Entity* limb, Monster race, int limbType);
 	void actMonsterLimb(bool processLight = false);
 
 	void removeMonsterDeathNodes();

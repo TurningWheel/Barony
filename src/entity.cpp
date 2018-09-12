@@ -11899,3 +11899,124 @@ std::vector<list_t*> TileEntityListHandler::getEntitiesWithinRadiusAroundEntity(
 	int v = static_cast<int>(entity->y) >> 4;
 	return getEntitiesWithinRadius(u, v, radius);
 }
+
+void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
+{
+	if ( !limb )
+	{
+		return;
+	}
+	switch ( race )
+	{
+		case HUMAN:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2.5;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2) + .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2) + .25 * sin(this->yaw);
+				limb->z += 5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2) - .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2) - .25 * sin(this->yaw);
+				limb->z += 5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->z += 1.5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->z += 1.5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
+		case SKELETON:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2) + .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2) + .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2) - .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2) - .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 1.75 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 1.75 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 1.75 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 1.75 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
+		default:
+			break;
+	}
+}
