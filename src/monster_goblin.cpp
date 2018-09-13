@@ -638,9 +638,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= .25 * cos(my->yaw);
-				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2;
+				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -668,14 +666,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->yaw += PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
@@ -703,14 +694,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->yaw -= PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm
 			case LIMB_HUMANOID_RIGHTARM:
@@ -736,14 +720,8 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 179;
 					}
 				}
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += .5;
+				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			// left arm
 			}
@@ -769,13 +747,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 177;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += .5;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, GOBLIN, LIMB_HUMANOID_LEFTARM);
 				if ( my->monsterDefend && my->monsterAttack == 0 )
 				{
 					MONSTER_SHIELDYAW = PI / 5;
@@ -882,53 +854,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 2.5;
-				entity->yaw = shieldarm->yaw;
-				entity->roll = 0;
-				entity->pitch = 0;
-				if ( entity->sprite == items[TOOL_TORCH].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z += 1;
-				}
-				if ( MONSTER_SHIELDYAW > PI / 32 )
-				{
-					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
-					{
-						// shield, so rotate a little.
-						entity->roll += PI / 64;
-					}
-					else
-					{
-						entity->x += 0.25 * cos(my->yaw);
-						entity->y += 0.25 * sin(my->yaw);
-						entity->pitch += PI / 16;
-						if ( entity2 )
-						{
-							entity2->x += 0.75 * cos(shieldarm->yaw);
-							entity2->y += 0.75 * sin(shieldarm->yaw);
-						}
-					}
-				}
+				my->handleHumanoidShieldLimb(entity, shieldarm);
 				break;
 			// cloak
 			case LIMB_HUMANOID_CLOAK:

@@ -12053,6 +12053,122 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 			}
 			break;
+		case GOBLIN:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2) + .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2) + .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= 2.4 && this->z <= 2.6 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2) - .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2) - .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= 2.4 && this->z <= 2.6 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 2.4 && this->z <= 2.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 2.4 && this->z <= 2.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
+		case INCUBUS:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .5 * cos(this->yaw);
+				limb->y -= .5 * sin(this->yaw);
+				limb->z += 2.5;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2) - .75 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2) - .75 * sin(this->yaw);
+				limb->z += 5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2) + .75 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2) + .75 * sin(this->yaw);
+				limb->z += 5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
 		default:
 			break;
 	}
@@ -12138,15 +12254,15 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 
 			if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
 			{
-				shieldLimb->focalx = limbs[SKELETON][7][0];
-				shieldLimb->focaly = limbs[SKELETON][7][1];
-				shieldLimb->focalz = limbs[SKELETON][7][2];
+				shieldLimb->focalx = limbs[race][7][0];
+				shieldLimb->focaly = limbs[race][7][1];
+				shieldLimb->focalz = limbs[race][7][2];
 			}
 			else
 			{
-				shieldLimb->focalx = limbs[SKELETON][7][0] - 0.5;
-				shieldLimb->focaly = limbs[SKELETON][7][1] - 1;
-				shieldLimb->focalz = limbs[SKELETON][7][2];
+				shieldLimb->focalx = limbs[race][7][0] - 0.5;
+				shieldLimb->focaly = limbs[race][7][1] - 1;
+				shieldLimb->focalz = limbs[race][7][2];
 			}
 
 			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
@@ -12169,6 +12285,73 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
 				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
 				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				flameEntity->z += 1;
+			}
+
+			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
+			{
+				if ( shieldLimb->sprite != items[TOOL_TORCH].index
+					&& shieldLimb->sprite != items[TOOL_LANTERN].index
+					&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+				{
+					// shield, so rotate a little.
+					shieldLimb->roll += PI / 64;
+				}
+				else
+				{
+					shieldLimb->x += 0.25 * cos(this->yaw);
+					shieldLimb->y += 0.25 * sin(this->yaw);
+					shieldLimb->pitch += PI / 16;
+					if ( flameEntity )
+					{
+						flameEntity->x += 0.75 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 0.75 * sin(shieldArmLimb->yaw);
+					}
+				}
+			}
+			break;
+		case GOBLIN:
+		case INCUBUS:
+			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->z += 2.5;
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = 0;
+
+			/*if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+			{
+				shieldLimb->focalx = limbs[race][7][0];
+				shieldLimb->focaly = limbs[race][7][1];
+				shieldLimb->focalz = limbs[race][7][2];
+			}
+			else
+			{
+				shieldLimb->focalx = limbs[race][7][0] - 0.5;
+				shieldLimb->focaly = limbs[race][7][1] - 1;
+				shieldLimb->focalz = limbs[race][7][2];
+			}*/
+
+			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			{
+				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				flameEntity->x += 2 * cos(shieldLimb->yaw);
+				flameEntity->y += 2 * sin(shieldLimb->yaw);
+				flameEntity->z -= 2;
+			}
+			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			{
+				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				flameEntity->x += 2 * cos(shieldLimb->yaw);
+				flameEntity->y += 2 * sin(shieldLimb->yaw);
+				flameEntity->z -= 2;
+			}
+			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			{
+				shieldLimb->z += 2;
+				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				flameEntity->x += 2 * cos(shieldLimb->yaw);
+				flameEntity->y += 2 * sin(shieldLimb->yaw);
 				flameEntity->z += 1;
 			}
 
