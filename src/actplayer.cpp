@@ -244,7 +244,7 @@ void actPlayer(Entity* my)
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 	if ( client_classes[PLAYER_NUM] == 13 )
 	{
-		playerRace = GOBLIN;
+		playerRace = INCUBUS;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -1779,6 +1779,14 @@ void actPlayer(Entity* my)
 			{
 				my->sprite = 686;
 			}
+			else if ( playerRace == GOBLIN )
+			{
+				my->sprite = 694;
+			}
+			else if ( playerRace == INCUBUS )
+			{
+				my->sprite = 702;
+			}
 		}
 		else if ( stats[PLAYER_NUM]->appearance < 5 )
 		{
@@ -2863,6 +2871,12 @@ void actPlayer(Entity* my)
 								case SKELETON:
 									entity->sprite = 687;
 									break;
+								case GOBLIN:
+									entity->sprite = 695;
+									break;
+								case INCUBUS:
+									entity->sprite = 703;
+									break;
 								default:
 									break;
 							}
@@ -2915,6 +2929,12 @@ void actPlayer(Entity* my)
 							{
 								case SKELETON:
 									entity->sprite = 693;
+									break;
+								case GOBLIN:
+									entity->sprite = 701;
+									break;
+								case INCUBUS:
+									entity->sprite = 709;
 									break;
 								default:
 									break;
@@ -2969,6 +2989,12 @@ void actPlayer(Entity* my)
 								case SKELETON:
 									entity->sprite = 692;
 									break;
+								case GOBLIN:
+									entity->sprite = 700;
+									break;
+								case INCUBUS:
+									entity->sprite = 708;
+									break;
 								default:
 									break;
 							}
@@ -3022,6 +3048,12 @@ void actPlayer(Entity* my)
 							{
 								case SKELETON:
 									entity->sprite = 689;
+									break;
+								case GOBLIN:
+									entity->sprite = 697;
+									break;
+								case INCUBUS:
+									entity->sprite = 705;
 									break;
 								default:
 									break;
@@ -3102,6 +3134,12 @@ void actPlayer(Entity* my)
 							{
 								case SKELETON:
 									entity->sprite = 688;
+									break;
+								case GOBLIN:
+									entity->sprite = 696;
+									break;
+								case INCUBUS:
+									entity->sprite = 704;
 									break;
 								default:
 									break;

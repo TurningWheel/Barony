@@ -179,7 +179,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return RAT;
 	}
-	else if ( mySprite == 180 )     // goblin head
+	else if ( mySprite == 180 || mySprite == 694 )     // goblin head
 	{
 		return GOBLIN;
 	}
@@ -263,7 +263,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return VAMPIRE;
 	}
-	else if ( mySprite == 445 )     // incubus head
+	else if ( mySprite == 445 || mySprite == 702 )     // incubus head
 	{
 		return INCUBUS;
 	}
