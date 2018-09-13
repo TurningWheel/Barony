@@ -244,7 +244,7 @@ void actPlayer(Entity* my)
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 	if ( client_classes[PLAYER_NUM] == 13 )
 	{
-		playerRace = SKELETON;
+		playerRace = GOBLIN;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -3220,68 +3220,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( weaponarm != NULL )
-				{
-					if ( entity->sprite == items[SHORTBOW].index )
-					{
-						entity->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-						entity->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-						entity->z = weaponarm->z + 1;
-						entity->pitch = weaponarm->pitch + .25;
-					}
-					else if ( entity->sprite == items[CROSSBOW].index )
-					{
-						entity->x = weaponarm->x;
-						entity->y = weaponarm->y;
-						entity->z = weaponarm->z + 1;
-						entity->pitch = weaponarm->pitch;
-					}
-					else if ( entity->sprite == items[ARTIFACT_BOW].index )
-					{
-						entity->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-						entity->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-						entity->z = weaponarm->z + 1;
-						entity->pitch = weaponarm->pitch + .25;
-					}
-					else if ( entity->sprite == items[TOOL_LOCKPICK].index )
-					{
-						entity->x = weaponarm->x + 1.5 * cos(weaponarm->yaw);
-						entity->y = weaponarm->y + 1.5 * sin(weaponarm->yaw);
-						entity->z = weaponarm->z + 1.5;
-						entity->pitch = weaponarm->pitch + .25;
-					}
-					else
-					{
-						entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (PLAYER_ATTACK == 0);
-						entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (PLAYER_ATTACK == 0);
-						entity->z = weaponarm->z - .5 * (PLAYER_ATTACK == 0);
-						entity->pitch = weaponarm->pitch + .25 * (PLAYER_ATTACK == 0);
-					}
-					entity->yaw = weaponarm->yaw;
-					entity->roll = weaponarm->roll;
-					if ( entity->sprite >= 50 && entity->sprite < 58 )
-					{
-						entity->roll += (PI / 2);
-					}
-					if ( !PLAYER_ARMBENDED )
-					{
-						entity->focalx = limbs[playerRace][6][0]; // 1.5
-						if ( entity->sprite == items[CROSSBOW].index )
-						{
-							entity->focalx += 2;
-						}
-						entity->focaly = limbs[playerRace][6][1]; // 0
-						entity->focalz = limbs[playerRace][6][2]; // -.5
-					}
-					else
-					{
-						entity->focalx = limbs[playerRace][6][0] + 1.5; // 3
-						entity->focaly = limbs[playerRace][6][1]; // 0
-						entity->focalz = limbs[playerRace][6][2] - 2; // -2.5
-						entity->yaw -= sin(weaponarm->roll) * PI / 2;
-						entity->pitch += cos(weaponarm->roll) * PI / 2;
-					}
-				}
+				my->handleHumanoidWeaponLimb(entity, weaponarm);
 				break;
 			// shield
 			case 7:
@@ -3334,89 +3273,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 2.5;
-				entity->yaw = shieldarm->yaw;
-				entity->roll = 0;
-				entity->pitch = 0;
-				if ( entity->sprite == items[TOOL_TORCH].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					if ( PLAYER_NUM == clientnum )
-					{
-						entity2->flags[GENIUS] = true;
-					}
-					entity2->x += 2 * cos(shieldarm->yaw);
-					entity2->y += 2 * sin(shieldarm->yaw);
-					entity2->z -= 2;
-					if ( my->skill[2] == clientnum )
-					{
-						entity2->setUID(-4);
-					}
-					else
-					{
-						entity2->setUID(-3);
-					}
-				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					if ( PLAYER_NUM == clientnum )
-					{
-						entity2->flags[GENIUS] = true;
-					}
-					entity2->x += 2 * cos(shieldarm->yaw);
-					entity2->y += 2 * sin(shieldarm->yaw);
-					entity2->z -= 2;
-					if ( my->skill[2] == clientnum )
-					{
-						entity2->setUID(-4);
-					}
-					else
-					{
-						entity2->setUID(-3);
-					}
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					if ( PLAYER_NUM == clientnum )
-					{
-						entity2->flags[GENIUS] = true;
-					}
-					entity2->x += 2 * cos(shieldarm->yaw);
-					entity2->y += 2 * sin(shieldarm->yaw);
-					entity2->z += 1;
-					if ( my->skill[2] == clientnum )
-					{
-						entity2->setUID(-4);
-					}
-					else
-					{
-						entity2->setUID(-3);
-					}
-				}
-				if ( PLAYER_SHIELDYAW > PI / 32 )
-				{
-					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
-					{
-						// shield, so rotate a little.
-						entity->roll += PI / 64;
-					}
-					else
-					{
-						entity->x += 0.25 * cos(my->yaw);
-						entity->y += 0.25 * sin(my->yaw);
-						entity->pitch += PI / 16;
-						if ( entity2 )
-						{
-							entity2->x += 0.75 * cos(shieldarm->yaw);
-							entity2->y += 0.75 * sin(shieldarm->yaw);
-						}
-					}
-				}
+				my->handleHumanoidShieldLimb(entity, shieldarm);
 				break;
 			// cloak
 			case 8:

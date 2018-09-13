@@ -9022,6 +9022,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 
 	int monsterType = this->getMonsterTypeFromSprite();
+	int myAttack = this->monsterAttack;
+	bool isPlayer = this->behavior == &actPlayer;
+	if ( isPlayer )
+	{
+		myAttack = this->skill[9];
+	}
 
 	if ( weaponLimb->flags[INVISIBLE] == false ) //TODO: isInvisible()?
 	{
@@ -9034,10 +9040,20 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index )
 		{
-			weaponLimb->x = weaponArmLimb->x - 1.5 * cos(weaponArmLimb->yaw);
-			weaponLimb->y = weaponArmLimb->y - 1.5 * sin(weaponArmLimb->yaw);
-			weaponLimb->z = weaponArmLimb->z + 2;
-			weaponLimb->pitch = weaponArmLimb->pitch + .25;
+			if ( isPlayer && monsterType == HUMAN )
+			{
+				weaponLimb->x = weaponArmLimb->x - .5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y = weaponArmLimb->y - .5 * sin(weaponArmLimb->yaw);
+				weaponLimb->z = weaponArmLimb->z + 1;
+				weaponLimb->pitch = weaponArmLimb->pitch + .25;
+			}
+			else
+			{
+				weaponLimb->x = weaponArmLimb->x - 1.5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y = weaponArmLimb->y - 1.5 * sin(weaponArmLimb->yaw);
+				weaponLimb->z = weaponArmLimb->z + 2;
+				weaponLimb->pitch = weaponArmLimb->pitch + .25;
+			}
 		}
 		else if ( weaponLimb->sprite == items[CROSSBOW].index )
 		{
@@ -9046,11 +9062,18 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->z = weaponArmLimb->z + 1;
 			weaponLimb->pitch = weaponArmLimb->pitch;
 		}
+		else if ( weaponLimb->sprite == items[TOOL_LOCKPICK].index )
+		{
+			weaponLimb->x = weaponArmLimb->x + 1.5 * cos(weaponArmLimb->yaw);
+			weaponLimb->y = weaponArmLimb->y + 1.5 * sin(weaponArmLimb->yaw);
+			weaponLimb->z = weaponArmLimb->z + 1.5;
+			weaponLimb->pitch = weaponArmLimb->pitch + .25;
+		}
 		else
 		{
 			/*weaponLimb->focalx = limbs[monsterType][6][0];
 			weaponLimb->focalz = limbs[monsterType][6][2];*/
-			if ( this->monsterAttack == 3 )
+			if ( myAttack == 3 && !isPlayer )
 			{
 				// poking animation, weapon pointing straight ahead.
 				if ( weaponArmLimb->skill[1] < 2 && weaponArmLimb->pitch < PI / 2 )
@@ -9070,7 +9093,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					}
 					else
 					{
-						weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
+						weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
 						if ( weaponLimb->pitch > PI / 2 )
 						{
 							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
@@ -9088,31 +9111,29 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				// hold sword with pitch aligned to arm rotation.
 				else
 				{
-					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (this->monsterAttack == 0);
-					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (myAttack == 0);
+					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (myAttack == 0);
 					weaponLimb->z = weaponArmLimb->z - .5;
-					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
+					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (myAttack == 0);
 					if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 					{
 						weaponLimb->z += 1;
 					}
 				}
-
-
 			}
 			else
 			{
-				weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (this->monsterAttack == 0);
-				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
-				weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
-				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
+				weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (myAttack == 0);
+				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (myAttack == 0);
+				weaponLimb->z = weaponArmLimb->z - .5 * (myAttack == 0);
+				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (myAttack == 0);
 			}
 		}
 	}
 
 	weaponLimb->yaw = weaponArmLimb->yaw;
 
-	if ( this->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 && monsterType == GOATMAN )
+	if ( myAttack == MONSTER_POSE_RANGED_WINDUP3 && monsterType == GOATMAN )
 	{
 		// specific for potion throwing goatmen.
 		limbAnimateToLimit(weaponLimb, ANIMATE_ROLL, 0.25, 1 * PI / 4, false, 0.0);
@@ -9120,9 +9141,18 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	else
 	{
 		weaponLimb->roll = weaponArmLimb->roll;
+		if ( isPlayer )
+		{
+			if ( weaponLimb->sprite >= 50 && weaponLimb->sprite < 58 )
+			{
+				weaponLimb->roll += (PI / 2); // potion sprites rotated
+			}
+		}
 	}
 
-	if ( !this->monsterArmbended )
+	bool armBended = (!isPlayer && this->monsterArmbended) || (isPlayer && this->skill[11]);
+
+	if ( !armBended )
 	{
 		weaponLimb->focalx = limbs[monsterType][6][0]; // 2.5
 		if ( weaponLimb->sprite == items[CROSSBOW].index )
@@ -9134,15 +9164,22 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 	else
 	{
-		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 		if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 		{
 			weaponLimb->focalx = limbs[monsterType][6][0] + 2; // 3.5
+			weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 			weaponLimb->focalz = limbs[monsterType][6][2] - 3.5; // -2.5
+		}
+		else if ( isPlayer && monsterType == HUMAN )
+		{
+			weaponLimb->focalx = limbs[monsterType][6][0] + 1.5;
+			weaponLimb->focaly = limbs[monsterType][6][1];
+			weaponLimb->focalz = limbs[monsterType][6][2] - 2;
 		}
 		else
 		{
 			weaponLimb->focalx = limbs[monsterType][6][0] + 1; // 3.5
+			weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 			weaponLimb->focalz = limbs[monsterType][6][2] - 2; // -2.5
 		}
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
@@ -12018,5 +12055,159 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			break;
 		default:
 			break;
+	}
+}
+
+void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
+{
+	if ( !shieldLimb || !shieldArmLimb )
+	{
+		return;
+	}
+
+	int race = this->getMonsterTypeFromSprite();
+	int player = -1;
+	if ( this->behavior == &actPlayer )
+	{
+		player = this->skill[2];
+	}
+	Entity* flameEntity = nullptr;
+
+	switch ( race )
+	{
+		case HUMAN:
+			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->z += 2.5;
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = 0;
+
+			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			{
+				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				flameEntity->z -= 2;
+			}
+			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			{
+				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				flameEntity->z -= 2;
+			}
+			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			{
+				shieldLimb->z += 2;
+				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
+				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
+				flameEntity->z += 1;
+			}
+
+			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
+			{
+				if ( shieldLimb->sprite != items[TOOL_TORCH].index 
+					&& shieldLimb->sprite != items[TOOL_LANTERN].index
+					&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+				{
+					// shield, so rotate a little.
+					shieldLimb->roll += PI / 64;
+				}
+				else
+				{
+					shieldLimb->x += 0.25 * cos(this->yaw);
+					shieldLimb->y += 0.25 * sin(this->yaw);
+					shieldLimb->pitch += PI / 16;
+					if ( flameEntity )
+					{
+						flameEntity->x += 0.75 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 0.75 * sin(shieldArmLimb->yaw);
+					}
+				}
+			}
+			break;
+		case SKELETON:
+			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->z += 2.5;
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = 0;
+
+			if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+			{
+				shieldLimb->focalx = limbs[SKELETON][7][0];
+				shieldLimb->focaly = limbs[SKELETON][7][1];
+				shieldLimb->focalz = limbs[SKELETON][7][2];
+			}
+			else
+			{
+				shieldLimb->focalx = limbs[SKELETON][7][0] - 0.5;
+				shieldLimb->focaly = limbs[SKELETON][7][1] - 1;
+				shieldLimb->focalz = limbs[SKELETON][7][2];
+			}
+
+			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+			{
+				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				flameEntity->z -= 2;
+			}
+			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
+			{
+				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
+				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				flameEntity->z -= 2;
+			}
+			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			{
+				shieldLimb->z += 2;
+				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
+				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
+				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				flameEntity->z += 1;
+			}
+
+			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
+			{
+				if ( shieldLimb->sprite != items[TOOL_TORCH].index
+					&& shieldLimb->sprite != items[TOOL_LANTERN].index
+					&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+				{
+					// shield, so rotate a little.
+					shieldLimb->roll += PI / 64;
+				}
+				else
+				{
+					shieldLimb->x += 0.25 * cos(this->yaw);
+					shieldLimb->y += 0.25 * sin(this->yaw);
+					shieldLimb->pitch += PI / 16;
+					if ( flameEntity )
+					{
+						flameEntity->x += 0.75 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 0.75 * sin(shieldArmLimb->yaw);
+					}
+				}
+			}
+			break;
+		default:
+			break;
+	}
+
+	if ( flameEntity && player >= 0 )
+	{
+		if ( player == clientnum )
+		{
+			flameEntity->flags[GENIUS] = true;
+			flameEntity->setUID(-4);
+		}
+		else
+		{
+			flameEntity->setUID(-3);
+		}
 	}
 }
