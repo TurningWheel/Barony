@@ -297,6 +297,8 @@ void Entity::powerCrystalCreateElectricityNodes()
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 
+		TileEntityList.addEntity(*entity); // make sure new nodes are added to the tile list to properly update neighbors.
+
 		this->crystalGeneratedElectricityNodes = 1;
 	}
 	
