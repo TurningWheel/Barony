@@ -10839,7 +10839,9 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 void buttonLoadSingleplayerGame(button_t* button)
 {
 	loadGameSaveShowRectangle = 0;
-	savegamesList.clear();
+	if (button) {
+		savegamesList.clear();
+	}
 	loadingsavegame = getSaveGameUniqueGameKey(true);
 	int mul = getSaveGameType(true);
 
@@ -10933,7 +10935,9 @@ void buttonLoadSingleplayerGame(button_t* button)
 void buttonLoadMultiplayerGame(button_t* button)
 {
 	loadGameSaveShowRectangle = 0;
-	savegamesList.clear();
+	if (button) {
+		savegamesList.clear();
+	}
 	loadingsavegame = getSaveGameUniqueGameKey(false);
 	int mul = getSaveGameType(false);
 
