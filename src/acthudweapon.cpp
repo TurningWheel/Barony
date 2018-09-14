@@ -40,7 +40,7 @@ Sint32 pickaxeGimpTimer = 0; // player cannot swap weapons immediately after usi
 
 -------------------------------------------------------------------------------*/
 
-void actHudArm(Entity* my)
+bool actHudArm(Entity* my)
 {
 	hudarm = my;
 	Entity* parent = hudweapon;
@@ -49,21 +49,21 @@ void actHudArm(Entity* my)
 	{
 		hudarm = nullptr;
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if (stats[clientnum]->HP <= 0)
 	{
 		hudarm = nullptr;
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if (parent == nullptr)
 	{
 		hudarm = nullptr;
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// sprite
@@ -156,6 +156,7 @@ void actHudArm(Entity* my)
 	//my->pitch = atan2( my->z-camera.z*.5, my->fskill[0] );
 	my->pitch = -17 * PI / 32;
 	//messagePlayer(0, "my y: %f, my z: %f", my->y, my->z);
+	return true;
 }
 
 #ifdef USE_FMOD
@@ -190,7 +191,7 @@ bool bowFire = false;
 #define HUDWEAPON_OLDVIBRATEZ my->fskill[8]
 
 Uint32 hudweaponuid = 0;
-void actHudWeapon(Entity* my)
+bool actHudWeapon(Entity* my)
 {
 	double result = 0;
 	ItemType type;
@@ -202,7 +203,7 @@ void actHudWeapon(Entity* my)
 	if ( intro == true )
 	{
 		my->flags[INVISIBLE] = true;
-		return;
+		return true;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -210,7 +211,7 @@ void actHudWeapon(Entity* my)
 		if ( stats[clientnum]->HP <= 0 )
 		{
 			my->flags[INVISIBLE] = true;
-			return;
+			return true;
 		}
 	}
 
@@ -236,7 +237,7 @@ void actHudWeapon(Entity* my)
 	{
 		hudweapon = nullptr; //PLAYER DED. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// reduce throwGimpTimer (allows player to throw items again)
@@ -275,7 +276,7 @@ void actHudWeapon(Entity* my)
 				{
 					parent->flags[INVISIBLE] = true;
 				}
-				return;
+				return true;
 			}
 		}
 	}
@@ -519,7 +520,7 @@ void actHudWeapon(Entity* my)
 						if ( achievementBrawlerMode && conductGameChallenges[CONDUCT_BRAWLER] )
 						{
 							messagePlayer(clientnum, language[2997]); // prevent attack.
-							return;
+							return true;
 						}
 						if ( achievementBrawlerMode )
 						{
@@ -1405,7 +1406,7 @@ void actHudWeapon(Entity* my)
 	// move the weapon
 	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 	{
-		return;
+		return true;
 	}
 	double defaultpitch = PI / 8.f;
 	if (stats[clientnum]->weapon == nullptr)
@@ -1456,6 +1457,7 @@ void actHudWeapon(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
 #define HUDSHIELD_DEFEND my->skill[0]
@@ -1467,7 +1469,7 @@ void actHudWeapon(Entity* my)
 #define HUDSHIELD_PITCH my->fskill[4]
 #define HUDSHIELD_ROLL my->fskill[5]
 
-void actHudShield(Entity* my)
+bool actHudShield(Entity* my)
 {
 	my->flags[UNCLICKABLE] = true;
 
@@ -1475,7 +1477,7 @@ void actHudShield(Entity* my)
 	if (intro == true)
 	{
 		my->flags[INVISIBLE] = true;
-		return;
+		return true;
 	}
 
 	if (multiplayer == CLIENT)
@@ -1483,7 +1485,7 @@ void actHudShield(Entity* my)
 		if (stats[clientnum]->HP <= 0)
 		{
 			my->flags[INVISIBLE] = true;
-			return;
+			return true;
 		}
 	}
 
@@ -1491,7 +1493,7 @@ void actHudShield(Entity* my)
 	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !hudweapon)
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// check levitating value
@@ -1793,4 +1795,5 @@ void actHudShield(Entity* my)
 			}
 		}
 	}
+	return true;
 }

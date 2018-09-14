@@ -27,7 +27,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void actGoldBag(Entity* my)
+bool actGoldBag(Entity* my)
 {
 	int i;
 
@@ -41,7 +41,7 @@ void actGoldBag(Entity* my)
 				Entity* entity = (Entity*)node->element;
 				if ( entity->sprite == 245 )   // boulder.vox
 				{
-					return;
+					return true;
 				}
 			}
 			my->flags[INVISIBLE] = false;
@@ -56,7 +56,7 @@ void actGoldBag(Entity* my)
 		}
 		else
 		{
-			return;
+			return true;
 		}
 	}
 
@@ -107,7 +107,7 @@ void actGoldBag(Entity* my)
 
 					// remove gold entity
 					list_RemoveNode(my->mynode);
-					return;
+					return false;
 				}
 			}
 		}
@@ -116,4 +116,5 @@ void actGoldBag(Entity* my)
 	{
 		my->flags[NOUPDATE] = true;
 	}
+	return true;
 }

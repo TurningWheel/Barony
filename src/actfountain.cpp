@@ -36,7 +36,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void actFountain(Entity* my)
+bool actFountain(Entity* my)
 {
 	Entity* entity;
 
@@ -88,7 +88,7 @@ void actFountain(Entity* my)
 	// the rest of the function is server-side.
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	//Using the fountain (TODO: Monsters using it?).
@@ -351,8 +351,9 @@ void actFountain(Entity* my)
 					//TODO: messagePlayersInSight() instead.
 				}
 				//Then perform the effect randomly determined when the fountain was created.
-				return;
+				return true;
 			}
 		}
 	}
+	return true;
 }

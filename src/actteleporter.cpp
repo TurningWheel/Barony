@@ -28,17 +28,17 @@
 
 -------------------------------------------------------------------------------*/
 
-void actTeleporter(Entity* my)
+bool actTeleporter(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actTeleporter();
+	return my->actTeleporter();
 }
 
-void Entity::actTeleporter()
+bool Entity::actTeleporter()
 {
 	int i;
 
@@ -73,7 +73,7 @@ void Entity::actTeleporter()
 							break;
 					}
 					players[i]->entity->teleporterMove(teleporterX, teleporterY, teleporterType);
-					return;
+					return true;
 				}
 			}
 		}
@@ -88,4 +88,5 @@ void Entity::actTeleporter()
 		yaw += 0.01; // rotate slowly on my axis
 		sprite = 620;// +(this->ticks / 20) % 4; // animate
 	}
+	return true;
 }

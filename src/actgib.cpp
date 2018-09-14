@@ -32,20 +32,20 @@
 #define GIB_GRAVITY my->fskill[3]
 #define GIB_LIFESPAN my->skill[4]
 
-void actGib(Entity* my)
+bool actGib(Entity* my)
 {
 	// don't update gibs that have no velocity
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// remove gibs that have exceeded their life span
 	if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// horizontal motion
@@ -91,8 +91,9 @@ void actGib(Entity* my)
 	if ( my->z > 128 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
+	return true;
 }
 
 /*-------------------------------------------------------------------------------

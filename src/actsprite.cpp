@@ -31,7 +31,7 @@
 #define SPRITE_ANIMSPEED my->skill[2]
 #define SPRITE_LIT my->skill[5]
 
-void actSprite(Entity* my)
+bool actSprite(Entity* my)
 {
 	if ( !my->skill[6] && SPRITE_LIT )
 	{
@@ -56,13 +56,14 @@ void actSprite(Entity* my)
 			{
 				my->removeLightField();
 				list_RemoveNode(my->mynode);
-				return;
+				return false;
 			}
 		}
 	}
+	return true;
 }
 
-void actSpriteNametag(Entity* my)
+bool actSpriteNametag(Entity* my)
 {
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
@@ -77,11 +78,13 @@ void actSpriteNametag(Entity* my)
 		{
 			my->flags[INVISIBLE] = true;
 		}
+		return true;
 	}
 	else
 	{
 		my->flags[INVISIBLE] = true;
 		list_RemoveNode(my->mynode);
+		return false;
 	}
 }
 
@@ -200,7 +203,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	return explosion;
 }
 
-void actSleepZ(Entity* my)
+bool actSleepZ(Entity* my)
 {
 	// spin around
 	my->x -= my->fskill[0];
@@ -215,13 +218,14 @@ void actSleepZ(Entity* my)
 	if ( my->z < -128 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// scale up
 	my->scalex = fmin(my->scalex + 0.01, 0.75);
 	my->scaley = fmin(my->scaley + 0.01, 0.75);
 	my->scalez = fmin(my->scalez + 0.01, 0.75);
+	return true;
 }
 
 Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)

@@ -28,11 +28,11 @@
 
 -------------------------------------------------------------------------------*/
 
-void actDoor(Entity* my)
+bool actDoor(Entity* my)
 {
 	if (!my)
 	{
-		return;
+		return false;
 	}
 
 	Entity* entity;
@@ -115,7 +115,7 @@ void actDoor(Entity* my)
 				}
 				playSoundEntity(my, 177, 64);
 				list_RemoveNode(my->mynode);
-				return;
+				return false;
 			}
 
 			// using door
@@ -262,9 +262,10 @@ void actDoor(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
-void actDoorFrame(Entity* my)
+bool actDoorFrame(Entity* my)
 {
 	// dummy function
 	// intended to make it easier
@@ -274,6 +275,7 @@ void actDoorFrame(Entity* my)
 	{
 		my->flags[PASSABLE] = true; // the actual frame should ALWAYS be passable
 	}
+	return true;
 }
 
 void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)

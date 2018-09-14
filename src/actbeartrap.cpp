@@ -35,7 +35,7 @@
 #define BEARTRAP_APPEARANCE my->skill[14]
 #define BEARTRAP_IDENTIFIED my->skill[15]
 
-void actBeartrap(Entity* my)
+bool actBeartrap(Entity* my)
 {
 	int i;
 	if ( my->sprite == 667 )
@@ -46,7 +46,7 @@ void actBeartrap(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	// undo beartrap
@@ -79,14 +79,14 @@ void actBeartrap(Entity* my)
 				entity->itemNotMovingClient = 1;
 				messagePlayer(i, language[1300]);
 				list_RemoveNode(my->mynode);
-				return;
+				return false;
 			}
 		}
 	}
 
 	if ( BEARTRAP_CAUGHT == 1 )
 	{
-		return;
+		return true;
 	}
 
 	// launch beartrap
@@ -219,25 +219,27 @@ void actBeartrap(Entity* my)
 						entity->pitch = my->pitch;
 						entity->roll = PI;
 						list_RemoveNode(my->mynode);
+						return false;
 					}
 					else
 					{
 						BEARTRAP_CAUGHT = 1;
 						my->sprite = 667;
 						serverUpdateEntitySkill(my, 0);
+						return true;
 					}
-					return;
 				}
 			}
 		}
 	}
 }
 
-void actBeartrapLaunched(Entity* my)
+bool actBeartrapLaunched(Entity* my)
 {
 	if ( my->ticks >= 200 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
+	return true;
 }

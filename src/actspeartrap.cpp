@@ -33,7 +33,7 @@
 #define SPEARTRAP_STARTHEIGHT my->fskill[0]
 #define SPEARTRAP_VELZ my->vel_z
 
-void actSpearTrap(Entity* my)
+bool actSpearTrap(Entity* my)
 {
 	SPEARTRAP_AMBIENCE--;
 	if ( SPEARTRAP_AMBIENCE <= 0 )
@@ -46,7 +46,7 @@ void actSpearTrap(Entity* my)
 	{
 		if (!my->skill[28])
 		{
-			return;
+			return true;
 		}
 
 		if (my->skill[28] == 2)
@@ -159,4 +159,5 @@ void actSpearTrap(Entity* my)
 			}
 		}
 	}
+	return true;
 }

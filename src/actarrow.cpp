@@ -37,7 +37,7 @@
 #define ARROW_OLDY my->fskill[3]
 #define ARROW_MAXLIFE 600
 
-void actArrow(Entity* my)
+bool actArrow(Entity* my)
 {
 	double dist;
 	int damage;
@@ -57,7 +57,7 @@ void actArrow(Entity* my)
 	if ( ARROW_LIFE >= ARROW_MAXLIFE )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if ( !ARROW_STUCK )
@@ -97,7 +97,7 @@ void actArrow(Entity* my)
 						if ( parent && parent->checkFriend(hit.entity) )
 						{
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 					}
 
@@ -341,4 +341,6 @@ void actArrow(Entity* my)
 			}
 		}
 	}
+
+	return true;
 }

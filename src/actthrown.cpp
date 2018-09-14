@@ -42,7 +42,7 @@
 #define THROWN_LIFE my->skill[16]
 #define THROWN_BOUNCES my->skill[17]
 
-void actThrown(Entity* my)
+bool actThrown(Entity* my)
 {
 	Item* item = nullptr;
 	Category cat = GEM;
@@ -117,7 +117,7 @@ void actThrown(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	Entity* parent = uidToEntity(my->parent);
@@ -180,13 +180,13 @@ void actThrown(Entity* my)
 					playSoundEntity(my, 162, 64);
 					free(item);
 					list_RemoveNode(my->mynode);
-					return;
+					return false;
 				}
 				else if ( specialMonster )
 				{
 					free(item);
 					list_RemoveNode(my->mynode);
-					return;
+					return false;
 				}
 				else
 				{
@@ -219,7 +219,7 @@ void actThrown(Entity* my)
 					}
 					free(item);
 					list_RemoveNode(my->mynode);
-					return;
+					return false;
 				}
 			}
 			else
@@ -295,7 +295,7 @@ void actThrown(Entity* my)
 								free(item);
 							}
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 					}
 				}
@@ -307,7 +307,7 @@ void actThrown(Entity* my)
 	if ( my->z > 128 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// horizontal motion
@@ -359,7 +359,7 @@ void actThrown(Entity* my)
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
 					list_RemoveNode(my->mynode);
-					return;
+					return false;
 				}
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -679,7 +679,7 @@ void actThrown(Entity* my)
 				free(item);
 			}
 			list_RemoveNode(my->mynode);
-			return;
+			return false;
 		}
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) && hit.entity == NULL )
 		{
@@ -717,7 +717,7 @@ void actThrown(Entity* my)
 			}
 			free(item);
 			list_RemoveNode(my->mynode);
-			return;
+			return false;
 		}
 
 		if ( item )
@@ -738,4 +738,5 @@ void actThrown(Entity* my)
 		THROWN_VELY = THROWN_VELY * .99;
 		my->pitch += result * .01;
 	}
+	return true;
 }

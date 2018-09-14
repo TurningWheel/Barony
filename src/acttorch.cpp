@@ -33,7 +33,7 @@
 
 bool flickerLights = true;
 
-void actTorch(Entity* my)
+bool actTorch(Entity* my)
 {
 	int i;
 
@@ -60,7 +60,7 @@ void actTorch(Entity* my)
 	{
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// lighting
@@ -106,7 +106,7 @@ void actTorch(Entity* my)
 					Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
 					itemPickup(i, item);
 					free(item);
-					return;
+					return false;
 				}
 			}
 		}
@@ -124,13 +124,14 @@ void actTorch(Entity* my)
 			my->clearMonsterInteract();
 		}
 	}
+	return true;
 }
 
 #define TORCH_LIGHTING my->skill[0]
 #define TORCH_FLICKER my->skill[1]
 #define TORCH_FIRE my->skill[3]
 
-void actCrystalShard(Entity* my)
+bool actCrystalShard(Entity* my)
 {
 	int i;
 
@@ -157,7 +158,7 @@ void actCrystalShard(Entity* my)
 	{
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// lighting
@@ -204,28 +205,29 @@ void actCrystalShard(Entity* my)
 					Item* item = newItem(TOOL_CRYSTALSHARD, WORN, 0, 1, 0, true, NULL);
 					itemPickup(i, item);
 					free(item);
-					return;
+					return false;
 				}
 			}
 		}
 	}
+	return true;
 }
 
-void actLightSource(Entity* my)
+bool actLightSource(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actLightSource();
+	return my->actLightSource();
 }
 
 #define LIGHTSOURCE_LIGHT skill[8]
 #define LIGHTSOURCE_FLICKER skill[9]
 #define LIGHTSOURCE_ENABLED skill[10]
 
-void Entity::actLightSource()
+bool Entity::actLightSource()
 {
 	if ( multiplayer != CLIENT )
 	{
@@ -285,7 +287,7 @@ void Entity::actLightSource()
 						--lightSourceDelayCounter;
 						if ( lightSourceDelayCounter != 0 )
 						{
-							return;
+							return true;
 						}
 					}
 					else if ( lightSourceInvertPower == 0 && lightSourceDelay > 0 )
@@ -307,7 +309,7 @@ void Entity::actLightSource()
 		removeLightField();
 		if ( multiplayer == CLIENT )
 		{
-			return;
+			return true;
 		}
 
 		if ( lightSourceAlwaysOn == 1 || (circuit_status == CIRCUIT_ON && !lightSourceInvertPower)
@@ -320,7 +322,7 @@ void Entity::actLightSource()
 					--lightSourceDelayCounter;
 					if ( lightSourceDelayCounter != 0 )
 					{
-						return;
+						return true;
 					}
 				}
 				else if ( lightSourceInvertPower == 1 && lightSourceDelay > 0 )
@@ -336,4 +338,5 @@ void Entity::actLightSource()
 			}
 		}
 	}
+	return true;
 }

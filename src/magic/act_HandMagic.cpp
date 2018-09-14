@@ -135,13 +135,13 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 [12:49:46 PM] Sheridan Kane Rathbun: the first step is to get the hands visible on the screen when you cast. worry about moving them when that critical part is done.
 */
 
-void actLeftHandMagic(Entity* my)
+bool actLeftHandMagic(Entity* my)
 {
 	//int c = 0;
 	if (intro == true)
 	{
 		my->flags[INVISIBLE] = true;
-		return;
+		return true;
 	}
 
 	//Initialize
@@ -157,7 +157,7 @@ void actLeftHandMagic(Entity* my)
 		magicLeftHand = nullptr;
 		spellcastingAnimationManager_deactivate(&cast_animation);
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	//Set the initial values. (For the particle spray)
@@ -320,7 +320,7 @@ void actLeftHandMagic(Entity* my)
 	//Final position code.
 	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 	{
-		return;
+		return true;
 	}
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
@@ -337,14 +337,15 @@ void actLeftHandMagic(Entity* my)
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
+	return true;
 }
 
-void actRightHandMagic(Entity* my)
+bool actRightHandMagic(Entity* my)
 {
 	if (intro == true)
 	{
 		my->flags[INVISIBLE] = true;
-		return;
+		return true;
 	}
 
 	//Initialize
@@ -358,7 +359,7 @@ void actRightHandMagic(Entity* my)
 	{
 		magicRightHand = nullptr;
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	my->x = 8;
@@ -493,7 +494,7 @@ void actRightHandMagic(Entity* my)
 	//Final position code.
 	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 	{
-		return;
+		return true;
 	}
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
@@ -511,4 +512,5 @@ void actRightHandMagic(Entity* my)
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
+	return true;
 }
