@@ -351,9 +351,9 @@ void initIncubus(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actIncubusLimb(Entity* my)
+bool actIncubusLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void incubusDie(Entity* my)

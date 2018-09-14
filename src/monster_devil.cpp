@@ -156,9 +156,9 @@ void initDevil(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actDevilLimb(Entity* my)
+bool actDevilLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void devilDie(Entity* my)
@@ -611,8 +611,9 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-void actDevilTeleport(Entity* my)
+bool actDevilTeleport(Entity* my)
 {
 	// dummy function
 	my->flags[PASSABLE] = true;
+	return true;
 }

@@ -303,9 +303,9 @@ void initShadow(Entity* my, Stat* myStats)
 	}
 }
 
-void actShadowLimb(Entity* my)
+bool actShadowLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void shadowDie(Entity* my)

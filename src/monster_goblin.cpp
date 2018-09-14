@@ -443,9 +443,9 @@ void initGoblin(Entity* my, Stat* myStats)
 	}
 }
 
-void actGoblinLimb(Entity* my)
+bool actGoblinLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void goblinDie(Entity* my)

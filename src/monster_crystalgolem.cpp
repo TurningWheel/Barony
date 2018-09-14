@@ -241,9 +241,9 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actCrystalgolemLimb(Entity* my)
+bool actCrystalgolemLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void crystalgolemDie(Entity* my)

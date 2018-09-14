@@ -219,9 +219,9 @@ void initDemon(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actDemonLimb(Entity* my)
+bool actDemonLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void demonDie(Entity* my)
@@ -586,7 +586,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-void actDemonCeilingBuster(Entity* my)
+bool actDemonCeilingBuster(Entity* my)
 {
 	double x, y;
 
@@ -606,11 +606,11 @@ void actDemonCeilingBuster(Entity* my)
 						{
 							my->attack(MONSTER_POSE_MELEE_WINDUP2, 0, nullptr);
 						}
-						return;
+						return true;
 					}
 					else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 					{
-						return;
+						return true;
 					}
 					map.tiles[index] = 0;
 					if ( multiplayer != CLIENT )
@@ -663,4 +663,5 @@ void actDemonCeilingBuster(Entity* my)
 			}
 		}
 	}
+	return true;
 }

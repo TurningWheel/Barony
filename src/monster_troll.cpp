@@ -213,9 +213,9 @@ void initTroll(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actTrollLimb(Entity* my)
+bool actTrollLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void trollDie(Entity* my)

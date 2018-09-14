@@ -263,9 +263,9 @@ void lichIceDie(Entity* my)
 	return;
 }
 
-void actLichIceLimb(Entity* my)
+bool actLichIceLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void lichIceAnimate(Entity* my, Stat* myStats, double dist)

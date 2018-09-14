@@ -779,9 +779,9 @@ void initHuman(Entity* my, Stat* myStats)
 	}
 }
 
-void actHumanLimb(Entity* my)
+bool actHumanLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void humanDie(Entity* my)

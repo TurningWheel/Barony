@@ -290,14 +290,14 @@ int Entity::getMonsterTypeFromSprite()
 	return NOTHING;
 }
 
-void Entity::actMonsterLimb(bool processLight)
+bool Entity::actMonsterLimb(bool processLight)
 {
 	//If no longer part of a monster, delete the limb.
 	Entity *parentEnt = nullptr;
 	if ( (parentEnt = uidToEntity(skill[2])) == nullptr )
 	{
 		list_RemoveNode(mynode);
-		return;
+		return false;
 	}
 
 	//Do something magical beyond my comprehension.
@@ -359,6 +359,7 @@ void Entity::actMonsterLimb(bool processLight)
 	{
 		monsterEntityRenderAsTelepath = 0;
 	}
+	return true;
 }
 
 void Entity::removeMonsterDeathNodes()

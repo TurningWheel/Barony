@@ -686,9 +686,9 @@ void initGoatman(Entity* my, Stat* myStats)
 	}
 }
 
-void actGoatmanLimb(Entity* my)
+bool actGoatmanLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void goatmanDie(Entity* my)
