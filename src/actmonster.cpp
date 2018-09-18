@@ -810,13 +810,7 @@ void actMonster(Entity* my)
 			node->element = nullptr;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
-			if ( (my->sprite >= 113 && my->sprite < 118) ||
-			        (my->sprite >= 125 && my->sprite < 130) ||
-			        (my->sprite >= 332 && my->sprite < 334) ||
-			        (my->sprite >= 341 && my->sprite < 347) ||
-			        (my->sprite >= 354 && my->sprite < 360) ||
-			        (my->sprite >= 367 && my->sprite < 373) ||
-			        (my->sprite >= 380 && my->sprite < 386) )   // human heads
+			if ( my->isPlayerHeadSprite() )   // human heads
 			{
 				initHuman(my, nullptr);
 			}
@@ -932,13 +926,7 @@ void actMonster(Entity* my)
 		else
 		{
 			my->flags[BURNABLE] = true;
-			if ( (my->sprite >= 113 && my->sprite < 118) ||
-			        (my->sprite >= 125 && my->sprite < 130) ||
-			        (my->sprite >= 332 && my->sprite < 334) ||
-			        (my->sprite >= 341 && my->sprite < 347) ||
-			        (my->sprite >= 354 && my->sprite < 360) ||
-			        (my->sprite >= 367 && my->sprite < 373) ||
-			        (my->sprite >= 380 && my->sprite < 386) )   // human heads
+			if ( my->isPlayerHeadSprite() )   // human heads
 			{
 				humanMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}

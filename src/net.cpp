@@ -1210,51 +1210,6 @@ void clientActions(Entity* entity)
 			entity->behavior = &actTorch;
 			entity->flags[NOUPDATE] = 1;
 			break;
-		case 113:
-		case 114:
-		case 115:
-		case 116:
-		case 117:
-		case 125:
-		case 126:
-		case 127:
-		case 128:
-		case 129:
-		case 332:
-		case 333:
-		case 341:
-		case 342:
-		case 343:
-		case 344:
-		case 345:
-		case 346:
-		case 354:
-		case 355:
-		case 356:
-		case 357:
-		case 358:
-		case 359:
-		case 367:
-		case 368:
-		case 369:
-		case 370:
-		case 371:
-		case 372:
-		case 380:
-		case 381:
-		case 382:
-		case 383:
-		case 384:
-		case 385:
-			// these are all human heads
-			playernum = SDLNet_Read32(&net_packet->data[30]);
-			if ( playernum >= 0 && playernum < MAXPLAYERS )
-			{
-				players[playernum]->entity = entity;
-				entity->skill[2] = playernum;
-				entity->behavior = &actPlayer;
-			}
-			break;
 		case 160:
 		case 203:
 		case 212:
@@ -1341,6 +1296,17 @@ void clientActions(Entity* entity)
 			entity->flags[NOUPDATE] = true;
 			break;
 		default:
+			if ( entity->isPlayerHeadSprite() )
+			{
+				// these are all player heads
+				playernum = SDLNet_Read32(&net_packet->data[30]);
+				if ( playernum >= 0 && playernum < MAXPLAYERS )
+				{
+					players[playernum]->entity = entity;
+					entity->skill[2] = playernum;
+					entity->behavior = &actPlayer;
+				}
+			}
 			break;
 	}
 

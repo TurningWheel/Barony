@@ -466,14 +466,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			if ( multiplayer == CLIENT )
 			{
 				// fixes bug where clients can't move through humans
-				if ( (entity->sprite >= 113 && entity->sprite < 118) ||
-					(entity->sprite >= 125 && entity->sprite < 130) ||
-					(entity->sprite >= 332 && entity->sprite < 334) ||
-					(entity->sprite >= 341 && entity->sprite < 347) ||
-					(entity->sprite >= 354 && entity->sprite < 360) ||
-					(entity->sprite >= 367 && entity->sprite < 373) ||
-					(entity->sprite >= 380 && entity->sprite < 386) ||
-					entity->sprite == 217 )   // human heads
+				if ( my->isPlayerHeadSprite() || 
+					entity->sprite == 217 )   // human heads (217 is shopkeep)
 				{
 					continue;
 				}
