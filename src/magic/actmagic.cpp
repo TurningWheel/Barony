@@ -928,7 +928,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 							{
-								hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+								hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
 							}
 
 							// alert other monsters too
