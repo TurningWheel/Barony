@@ -230,7 +230,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 25;
 						playSoundEntity(&entity, 263, 128);
 						spawnMagicEffectParticles(entity.x, entity.y, entity.z, 170);
-						entity.monsterAcquireAttackTarget(*players[player]->entity, MONSTER_STATE_PATH);
+						entity.monsterAcquireAttackTarget(*players[player]->entity, MONSTER_STATE_PATH, true);
 
 						if ( rand() % 5 == 0 )
 						{
