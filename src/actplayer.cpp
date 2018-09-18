@@ -3092,15 +3092,33 @@ void actPlayer(Entity* my)
 					Entity* weapon = (Entity*)tempNode->element;
 					if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED )
 					{
-						entity->focalx = limbs[playerRace][4][0]; // 0
-						entity->focaly = limbs[playerRace][4][1]; // 0
-						entity->focalz = limbs[playerRace][4][2]; // 1.5
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][4][0] - 0.25;
+							entity->focaly = limbs[playerRace][4][1] - 0.25;
+							entity->focalz = limbs[playerRace][4][2];
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][4][0]; // 0
+							entity->focaly = limbs[playerRace][4][1]; // 0
+							entity->focalz = limbs[playerRace][4][2]; // 1.5
+						}
 					}
 					else
 					{
-						entity->focalx = limbs[playerRace][4][0] + 0.75;
-						entity->focaly = limbs[playerRace][4][1];
-						entity->focalz = limbs[playerRace][4][2] - 0.75;
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][4][0];
+							entity->focaly = limbs[playerRace][4][1];
+							entity->focalz = limbs[playerRace][4][2];
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][4][0] + 0.75;
+							entity->focaly = limbs[playerRace][4][1];
+							entity->focalz = limbs[playerRace][4][2] - 0.75;
+						}
 					}
 				}
 				entity->yaw += PLAYER_WEAPONYAW;
@@ -3175,15 +3193,33 @@ void actPlayer(Entity* my)
 					Entity* shield = (Entity*)tempNode->element;
 					if ( shield->flags[INVISIBLE] )
 					{
-						entity->focalx = limbs[playerRace][5][0]; // 0
-						entity->focaly = limbs[playerRace][5][1]; // 0
-						entity->focalz = limbs[playerRace][5][2]; // 1.5
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][5][0] - 0.25;
+							entity->focaly = limbs[playerRace][5][1] + 0.25;
+							entity->focalz = limbs[playerRace][5][2];
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][5][0]; // 0
+							entity->focaly = limbs[playerRace][5][1]; // 0
+							entity->focalz = limbs[playerRace][5][2]; // 1.5
+						}
 					}
 					else
 					{
-						entity->focalx = limbs[playerRace][5][0] + 0.75;
-						entity->focaly = limbs[playerRace][5][1];
-						entity->focalz = limbs[playerRace][5][2] - 0.75;
+						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						{
+							entity->focalx = limbs[playerRace][5][0];
+							entity->focaly = limbs[playerRace][5][1];
+							entity->focalz = limbs[playerRace][5][2];
+						}
+						else
+						{
+							entity->focalx = limbs[playerRace][5][0] + 0.75;
+							entity->focaly = limbs[playerRace][5][1];
+							entity->focalz = limbs[playerRace][5][2] - 0.75;
+						}
 					}
 				}
 				if ( multiplayer != CLIENT )
