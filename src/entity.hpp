@@ -773,6 +773,7 @@ public:
 	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
+	bool isPlayerHeadSprite(); // determines if model of entity is a human head.
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 };
