@@ -4801,7 +4801,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( attackTarget )
 							{
-								hit.entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+								hit.entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH, true);
 							}
 						}
 
@@ -9428,7 +9428,7 @@ void Entity::giveClientStats()
 	}
 }
 
-void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
+void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool monsterWasHit)
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -9485,7 +9485,14 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 				}
 				else if ( svFlags & SV_FLAG_HARDCORE )
 				{
-					monsterHitTime = HITRATE - 12;
+					if ( monsterWasHit ) // retaliating to an attack
+					{
+						monsterHitTime = HITRATE - 12; // 240 ms reaction time
+					}
+					else // monster find enemy in line of sight
+					{
+						monsterHitTime = HITRATE - 30; // 600 ms reaction time
+					}
 				}
 			}
 		}
