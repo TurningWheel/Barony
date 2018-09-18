@@ -670,8 +670,9 @@ public:
 
 	/*
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
+	 * @param monsterWasHit: monster is retaliating to an attack as opposed to finding an enemy. to set reaction time accordingly in hardcore
 	 */
-	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
+	void monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool monsterWasHit = false);
 
 	/*
 	 * Attempts to set the target to 0.

@@ -196,7 +196,7 @@ void actArrow(Entity* my)
 					{
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
-							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
 						}
 
 						// alert other monsters too
