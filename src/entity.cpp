@@ -9485,7 +9485,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 				}
 				else if ( svFlags & SV_FLAG_HARDCORE )
 				{
-					monsterHitTime = HITRATE - 25;
+					monsterHitTime = HITRATE - 12;
 				}
 			}
 		}
