@@ -11419,129 +11419,151 @@ Adjusts helmet offsets for all monsters, depending on the type of headwear.
 
 void Entity::setHelmetLimbOffset(Entity* helm)
 {
+	// for non-armor helmets, they are rotated so focaly acts as up/down postion.
 	int monster = getMonsterTypeFromSprite();
-	if ( helm->sprite != items[STEEL_HELM].index )
+	if ( helm->sprite == items[HAT_PHRYGIAN].index )
 	{
-		if ( helm->sprite == items[HAT_PHRYGIAN].index )
+		switch ( monster )
 		{
-			switch ( monster )
-			{
-				case AUTOMATON:
-				case SKELETON:
-					helm->focalx = limbs[monster][9][0] - .5;
-					helm->focaly = limbs[monster][9][1] - 3.25;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				case HUMAN:
-				case SHOPKEEPER:
-				case VAMPIRE:
-					helm->focalx = limbs[monster][9][0] - .5;
-					helm->focaly = limbs[monster][9][1] - 3.25;
-					helm->focalz = limbs[monster][9][2] + 2.25;
-					break;
-				case GOATMAN:
-				case GOBLIN:
-				case INSECTOID:
-				case SHADOW:
-					helm->focalx = limbs[monster][9][0] - .5;
-					helm->focaly = limbs[monster][9][1] - 3.55;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				default:
-					break;
-			}
-			helm->roll = PI / 2;
+			case AUTOMATON:
+			case SKELETON:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 3.25;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case HUMAN:
+			case SHOPKEEPER:
+			case VAMPIRE:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 3.25;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOATMAN:
+			case GOBLIN:
+			case INSECTOID:
+			case SHADOW:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 3.55;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case INCUBUS:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 3.2;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			default:
+				break;
 		}
-		else if ( helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
+		helm->roll = PI / 2;
+	}
+	else if ( helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
+	{
+		switch ( monster )
 		{
-			switch ( monster )
-			{
-				case AUTOMATON:
-				case SKELETON:
-					helm->focalx = limbs[monster][9][0] - .5;
-					helm->focaly = limbs[monster][9][1] - 2.5;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				case VAMPIRE:
-				case SHOPKEEPER:
-				case HUMAN:
-					helm->focalx = limbs[monster][9][0] - .5;
-					helm->focaly = limbs[monster][9][1] - 2.5;
-					helm->focalz = limbs[monster][9][2] + 2.25;
-					break;
-				case GOATMAN:
-				case GOBLIN:
-				case INSECTOID:
-				case SHADOW:
-					helm->focalx = limbs[monster][9][0] - .5;
-					helm->focaly = limbs[monster][9][1] - 2.75;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				default:
-					break;
-			}
-			helm->roll = PI / 2;
+			case AUTOMATON:
+			case SKELETON:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 2.5;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case INCUBUS:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 2.25;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				{
+					helm->focaly -= 0.5;
+				}
+				break;
+			case VAMPIRE:
+			case SHOPKEEPER:
+			case HUMAN:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 2.5;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOATMAN:
+			case GOBLIN:
+			case INSECTOID:
+			case SHADOW:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 2.75;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			default:
+				break;
 		}
-		else if ( helm->sprite == items[HAT_WIZARD].index || helm->sprite == items[HAT_JESTER].index )
+		helm->roll = PI / 2;
+	}
+	else if ( helm->sprite == items[HAT_WIZARD].index || helm->sprite == items[HAT_JESTER].index )
+	{
+		switch ( monster )
 		{
-			switch ( monster )
-			{
-				case AUTOMATON:
-				case SKELETON:
-					helm->focalx = limbs[monster][9][0];
-					helm->focaly = limbs[monster][9][1] - 4.75;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				case VAMPIRE:
-				case SHOPKEEPER:
-				case HUMAN:
-					helm->focalx = limbs[monster][9][0];
-					helm->focaly = limbs[monster][9][1] - 4.75;
-					helm->focalz = limbs[monster][9][2] + 2.25;
-					break;
-				case GOATMAN:
-				case GOBLIN:
-				case INSECTOID:
-				case SHADOW:
-					helm->focalx = limbs[monster][9][0];
-					helm->focaly = limbs[monster][9][1] - 5;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				default:
-					break;
-			}
-			helm->roll = PI / 2;
+			case AUTOMATON:
+			case SKELETON:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.75;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case INCUBUS:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.50;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case VAMPIRE:
+			case SHOPKEEPER:
+			case HUMAN:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.75;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOATMAN:
+			case GOBLIN:
+			case INSECTOID:
+			case SHADOW:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 5;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			default:
+				break;
 		}
-		else if ( helm->sprite == items[HAT_FEZ].index )
+		helm->roll = PI / 2;
+	}
+	else if ( helm->sprite == items[HAT_FEZ].index )
+	{
+		switch ( monster )
 		{
-			switch ( monster )
-			{
-				case AUTOMATON:
-				case SKELETON:
-					helm->focalx = limbs[monster][9][0];
-					helm->focaly = limbs[monster][9][1] - 4.0;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				case VAMPIRE:
-				case SHOPKEEPER:
-				case HUMAN:
-					helm->focalx = limbs[monster][9][0];
-					helm->focaly = limbs[monster][9][1] - 4.35;
-					helm->focalz = limbs[monster][9][2] + 2.25;
-					break;
-				case GOATMAN:
-				case GOBLIN:
-				case INSECTOID:
-				case SHADOW:
-					helm->focalx = limbs[monster][9][0];
-					helm->focaly = limbs[monster][9][1] - 4.5;
-					helm->focalz = limbs[monster][9][2] + 2.5;
-					break;
-				default:
-					break;
-			}
-			helm->roll = PI / 2;
+			case AUTOMATON:
+			case SKELETON:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.0;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case INCUBUS:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 3.75;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case VAMPIRE:
+			case SHOPKEEPER:
+			case HUMAN:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.35;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOATMAN:
+			case GOBLIN:
+			case INSECTOID:
+			case SHADOW:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.5;
+				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			default:
+				break;
 		}
+		helm->roll = PI / 2;
 	}
 }
 
