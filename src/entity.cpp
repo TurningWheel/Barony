@@ -12218,6 +12218,10 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	}
 	Entity* flameEntity = nullptr;
 
+	shieldLimb->focalx = limbs[race][7][0];
+	shieldLimb->focaly = limbs[race][7][1];
+	shieldLimb->focalz = limbs[race][7][2];
+
 	switch ( race )
 	{
 		case HUMAN:
@@ -12281,7 +12285,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->roll = 0;
 			shieldLimb->pitch = 0;
 
-			if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+			/*if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
 			{
 				shieldLimb->focalx = limbs[race][7][0];
 				shieldLimb->focaly = limbs[race][7][1];
@@ -12292,20 +12296,20 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->focalx = limbs[race][7][0] - 0.5;
 				shieldLimb->focaly = limbs[race][7][1] - 1;
 				shieldLimb->focalz = limbs[race][7][2];
-			}
+			}*/
 
 			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			{
 				flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+				flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
 				flameEntity->z -= 2;
 			}
 			else if ( shieldLimb->sprite == items[TOOL_CRYSTALSHARD].index )
 			{
 				flameEntity = spawnFlame(shieldLimb, SPRITE_CRYSTALFLAME);
-				flameEntity->x += 2.5 * cos(shieldLimb->yaw);
-				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
+				flameEntity->x += 2.5 * cos(shieldLimb->yaw + PI / 16);
+				flameEntity->y += 2.5 * sin(shieldLimb->yaw + PI / 16);
 				flameEntity->z -= 2;
 			}
 			else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
@@ -12336,6 +12340,13 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 						flameEntity->x += 0.75 * cos(shieldArmLimb->yaw);
 						flameEntity->y += 0.75 * sin(shieldArmLimb->yaw);
 					}
+				}
+			}
+			else
+			{
+				if ( !shieldLimb->flags[INVISIBLE] )
+				{
+					shieldArmLimb->yaw -= PI / 8;
 				}
 			}
 			break;
