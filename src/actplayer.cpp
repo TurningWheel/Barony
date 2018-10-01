@@ -1816,6 +1816,26 @@ void actPlayer(Entity* my)
 			{
 				my->sprite = 702;
 			}
+			else if ( playerRace == SUCCUBUS )
+			{
+				my->sprite = 710;
+			}
+			else if ( playerRace == VAMPIRE )
+			{
+				my->sprite = 718;
+			}
+			else if ( playerRace == INSECTOID )
+			{
+				my->sprite = 726;
+			}
+			else if ( playerRace == GOATMAN )
+			{
+				my->sprite = 732;
+			}
+			else if ( playerRace == AUTOMATON )
+			{
+				my->sprite = 738;
+			}
 		}
 		else if ( stats[PLAYER_NUM]->appearance < 5 )
 		{
@@ -2906,6 +2926,21 @@ void actPlayer(Entity* my)
 								case INCUBUS:
 									entity->sprite = 703;
 									break;
+								case SUCCUBUS:
+									entity->sprite = 711;
+									break;
+								case VAMPIRE:
+									entity->sprite = 719;
+									break;
+								case INSECTOID:
+									entity->sprite = 727;
+									break;
+								case GOATMAN:
+									entity->sprite = 735;
+									break;
+								case AUTOMATON:
+									entity->sprite = 743;
+									break;
 								default:
 									break;
 							}
@@ -2964,6 +2999,21 @@ void actPlayer(Entity* my)
 									break;
 								case INCUBUS:
 									entity->sprite = 709;
+									break;
+								case SUCCUBUS:
+									entity->sprite = 717;
+									break;
+								case VAMPIRE:
+									entity->sprite = 725;
+									break;
+								case INSECTOID:
+									entity->sprite = 733;
+									break;
+								case GOATMAN:
+									entity->sprite = 741;
+									break;
+								case AUTOMATON:
+									entity->sprite = 749;
 									break;
 								default:
 									break;
@@ -3024,6 +3074,21 @@ void actPlayer(Entity* my)
 								case INCUBUS:
 									entity->sprite = 708;
 									break;
+								case SUCCUBUS:
+									entity->sprite = 716;
+									break;
+								case VAMPIRE:
+									entity->sprite = 724;
+									break;
+								case INSECTOID:
+									entity->sprite = 732;
+									break;
+								case GOATMAN:
+									entity->sprite = 740;
+									break;
+								case AUTOMATON:
+									entity->sprite = 748;
+									break;
 								default:
 									break;
 							}
@@ -3083,6 +3148,21 @@ void actPlayer(Entity* my)
 									break;
 								case INCUBUS:
 									entity->sprite = 705;
+									break;
+								case SUCCUBUS:
+									entity->sprite = 713;
+									break;
+								case VAMPIRE:
+									entity->sprite = 721;
+									break;
+								case INSECTOID:
+									entity->sprite = 729;
+									break;
+								case GOATMAN:
+									entity->sprite = 737;
+									break;
+								case AUTOMATON:
+									entity->sprite = 745;
 									break;
 								default:
 									break;
@@ -3187,6 +3267,21 @@ void actPlayer(Entity* my)
 									break;
 								case INCUBUS:
 									entity->sprite = 704;
+									break;
+								case SUCCUBUS:
+									entity->sprite = 712;
+									break;
+								case VAMPIRE:
+									entity->sprite = 720;
+									break;
+								case INSECTOID:
+									entity->sprite = 728;
+									break;
+								case GOATMAN:
+									entity->sprite = 736;
+									break;
+								case AUTOMATON:
+									entity->sprite = 744;
 									break;
 								default:
 									break;
