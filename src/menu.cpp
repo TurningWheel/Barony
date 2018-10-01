@@ -70,7 +70,8 @@ int connect_window = 0;
 int charcreation_step = 0;
 int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
 int singleplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
-int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
+int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists.
+bool raceSelect = false;
 /*
  * settings_tab
  * valid values:
@@ -1614,7 +1615,7 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 		}
 
-		// sexes
+		// sexes/race
 		if ( charcreation_step == 1 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
@@ -1632,6 +1633,24 @@ void handleMainMenu(bool mode)
 
 				ttfPrintTextFormatted(ttf12, subx1 + 8, suby2 - 80, language[1320], language[1322]);
 			}
+
+			// race
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
+			int pady = suby1 + 108 + 24;
+			for ( int c = 0; c < NUMRACES; ++c )
+			{
+				if ( stats[0]->playerRace == c )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", language[3161 + c]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", language[3161 + c]);
+				}
+				pady += 16;
+			}
+
+			pady = suby1 + 108 + 24;
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
@@ -1645,6 +1664,18 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = FEMALE;
+					}
+					else if ( omousey >= pady && omousey < pady + NUMRACES * 16 )
+					{
+						for ( c = 0; c < NUMRACES; ++c )
+						{
+							if ( omousey >= pady && omousey < pady + 16 )
+							{
+								stats[0]->playerRace = c;
+								break;
+							}
+							pady += 16;
+						}
 					}
 				}
 			}

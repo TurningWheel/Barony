@@ -205,7 +205,10 @@ void Stat::clearStats()
 
 	for ( x = 0; x < 32; x++ )
 	{
-		this->MISC_FLAGS[x] = 0;
+		if ( x != 4 ) // MISC_FLAGS[4] is playerRace, don't reset, same as ->sex
+		{
+			this->MISC_FLAGS[x] = 0;
+		}
 	}
 
 	for ( x = 0; x < NUMSTATS; x++ )
