@@ -187,7 +187,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return SCORPION;
 	}
-	else if ( mySprite == 190 )     // succubus head
+	else if ( mySprite == 190 || mySprite == 710 )     // succubus head
 	{
 		return SUCCUBUS;
 	}
@@ -243,7 +243,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return COCKATRICE;
 	}
-	else if ( mySprite == 467 )     // automaton torso
+	else if ( mySprite == 467 || mySprite == 742 )     // automaton head
 	{
 		return AUTOMATON;
 	}
@@ -259,7 +259,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return SHADOW;
 	}
-	else if ( mySprite == 437 )     // vampire head
+	else if ( mySprite == 437 || mySprite == 718 )     // vampire head
 	{
 		return VAMPIRE;
 	}
@@ -267,11 +267,11 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return INCUBUS;
 	}
-	else if ( mySprite == 455 )     // insectoid head
+	else if ( mySprite == 455 || mySprite == 726 )     // insectoid head
 	{
 		return INSECTOID;
 	}
-	else if ( mySprite == 463 )     // goatman head
+	else if ( mySprite == 463 || mySprite == 734 )     // goatman head
 	{
 		return GOATMAN;
 	}

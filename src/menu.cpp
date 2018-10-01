@@ -1641,11 +1641,25 @@ void handleMainMenu(bool mode)
 			{
 				if ( stats[0]->playerRace == c )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", language[3161 + c]);
+					if ( c == RACE_INCUBUS && stats[0]->sex == FEMALE )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", language[3169]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", language[3161 + c]);
+					}
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", language[3161 + c]);
+					if ( c == RACE_INCUBUS && stats[0]->sex == FEMALE )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", language[3169]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", language[3161 + c]);
+					}
 				}
 				pady += 16;
 			}
