@@ -11429,7 +11429,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			case SKELETON:
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 3.25;
-				helm->focalz = limbs[monster][9][2] + 2.5;
+				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
 			case HUMAN:
 			case SHOPKEEPER:
@@ -11438,13 +11438,21 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focaly = limbs[monster][9][1] - 3.25;
 				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
-			case GOATMAN:
-			case GOBLIN:
 			case INSECTOID:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 3.05;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOBLIN:
 			case SHADOW:
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 3.55;
 				helm->focalz = limbs[monster][9][2] + 2.5;
+				break;
+			case GOATMAN:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 3.55;
+				helm->focalz = limbs[monster][9][2] + 2.75;
 				break;
 			case INCUBUS:
 			case SUCCUBUS:
@@ -11465,16 +11473,24 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			case SKELETON:
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.5;
-				helm->focalz = limbs[monster][9][2] + 2.5;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+				{
+					helm->focaly += 0.5; // black hood
+				}
+				else if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				{
+					helm->focaly -= 0.5; // purple hood
+				}
 				break;
 			case INCUBUS:
 			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0] - .5;
-				helm->focaly = limbs[monster][9][1] - 2.25;
+				helm->focaly = limbs[monster][9][1] - 2.5;
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				if ( helm->sprite == (items[HAT_HOOD].index + 3) )
 				{
-					helm->focaly -= 0.5;
+					helm->focaly -= 0.5; // purple hood
 				}
 				break;
 			case VAMPIRE:
@@ -11485,8 +11501,32 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
 			case GOATMAN:
-			case GOBLIN:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 2.75;
+				helm->focalz = limbs[monster][9][2] + 2.75;
+				if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+				{
+					helm->focaly -= 0.25; // black hood
+				}
+				else if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				{
+					helm->focaly -= 0.5; // purple hood
+				}
+				break;
 			case INSECTOID:
+				helm->focalx = limbs[monster][9][0] - .5;
+				helm->focaly = limbs[monster][9][1] - 2.15;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+				{
+					helm->focaly += 0.25; // black hood
+				}
+				else if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+				{
+					helm->focaly -= 0.5; // purple hood
+				}
+				break;
+			case GOBLIN:
 			case SHADOW:
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.75;
@@ -11504,13 +11544,13 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			case AUTOMATON:
 			case SKELETON:
 				helm->focalx = limbs[monster][9][0];
-				helm->focaly = limbs[monster][9][1] - 4.75;
-				helm->focalz = limbs[monster][9][2] + 2.5;
+				helm->focaly = limbs[monster][9][1] - 4.5;
+				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
 			case INCUBUS:
 			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0];
-				helm->focaly = limbs[monster][9][1] - 4.50;
+				helm->focaly = limbs[monster][9][1] - 4.75;
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				break;
 			case VAMPIRE:
@@ -11521,8 +11561,16 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
 			case GOATMAN:
-			case GOBLIN:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 5.f;
+				helm->focalz = limbs[monster][9][2] + 2.75;
+				break;
 			case INSECTOID:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.75;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOBLIN:
 			case SHADOW:
 				helm->focalx = limbs[monster][9][0];
 				helm->focaly = limbs[monster][9][1] - 5;
@@ -11540,13 +11588,13 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			case AUTOMATON:
 			case SKELETON:
 				helm->focalx = limbs[monster][9][0];
-				helm->focaly = limbs[monster][9][1] - 4.0;
-				helm->focalz = limbs[monster][9][2] + 2.5;
+				helm->focaly = limbs[monster][9][1] - 4.f;
+				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
 			case INCUBUS:
 			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0];
-				helm->focaly = limbs[monster][9][1] - 3.75;
+				helm->focaly = limbs[monster][9][1] - 4.0;
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				break;
 			case VAMPIRE:
@@ -11557,8 +11605,16 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.25;
 				break;
 			case GOATMAN:
-			case GOBLIN:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4.5;
+				helm->focalz = limbs[monster][9][2] + 2.75;
+				break;
 			case INSECTOID:
+				helm->focalx = limbs[monster][9][0];
+				helm->focaly = limbs[monster][9][1] - 4;
+				helm->focalz = limbs[monster][9][2] + 2.25;
+				break;
+			case GOBLIN:
 			case SHADOW:
 				helm->focalx = limbs[monster][9][0];
 				helm->focaly = limbs[monster][9][1] - 4.5;
@@ -12067,8 +12123,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
 			{
-				limb->x += 1.75 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
-				limb->y += 1.75 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->x += 2.f * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 2.f * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
 				limb->z += .5;
 				if ( this->z >= 1.9 && this->z <= 2.1 )
 				{
@@ -12077,8 +12133,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			else if ( limbType == LIMB_HUMANOID_LEFTARM )
 			{
-				limb->x -= 1.75 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
-				limb->y -= 1.75 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->x -= 2.f * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 2.f * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 				limb->z += .5;
 				if ( this->z >= 1.9 && this->z <= 2.1 )
 				{
@@ -12087,6 +12143,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			break;
 		case GOBLIN:
+		case GOATMAN:
+		case INSECTOID:
 			if ( limbType == LIMB_HUMANOID_TORSO )
 			{
 				limb->x -= .25 * cos(this->yaw);
@@ -12283,8 +12341,8 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			break;
 		case SKELETON:
-			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
-			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->x -= 3.f * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 3.f * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
 			shieldLimb->yaw = shieldArmLimb->yaw;
 			shieldLimb->roll = 0;
@@ -12356,6 +12414,8 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			break;
 		case GOBLIN:
+		case GOATMAN:
+		case INSECTOID:
 		case INCUBUS:
 		case SUCCUBUS:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
