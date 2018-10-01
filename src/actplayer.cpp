@@ -287,6 +287,10 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	my->focalx = limbs[playerRace][0][0];
+	my->focaly = limbs[playerRace][0][1];
+	my->focalz = limbs[playerRace][0][2];
+
 	if ( multiplayer == CLIENT )
 	{
 		if ( PLAYER_NUM != clientnum )
@@ -1841,11 +1845,11 @@ void actPlayer(Entity* my)
 			}
 			else if ( playerRace == GOATMAN )
 			{
-				my->sprite = 732;
+				my->sprite = 734;
 			}
 			else if ( playerRace == AUTOMATON )
 			{
-				my->sprite = 738;
+				my->sprite = 742;
 			}
 		}
 		else if ( stats[PLAYER_NUM]->appearance < 5 )
@@ -2646,6 +2650,19 @@ void actPlayer(Entity* my)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
+
+		if ( bodypart < 9 ) // don't shift helm/mask
+		{
+			if ( playerRace == GOBLIN || playerRace == INSECTOID || playerRace == GOATMAN )
+			{
+				entity->z += 0.5;
+			}
+			else if ( playerRace == SKELETON )
+			{
+				entity->z += 0.25;
+			}
+		}
+
 		entity->yaw = my->yaw;
 		if ( bodypart == 2 || bodypart == 5 )
 		{
