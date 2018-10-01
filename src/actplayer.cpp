@@ -257,18 +257,29 @@ void actPlayer(Entity* my)
 				playerRace = SKELETON;
 				break;
 			case RACE_INCUBUS:
-				playerRace = INCUBUS;
+				if ( stats[0]->sex == FEMALE )
+				{
+					playerRace = SUCCUBUS;
+				}
+				else
+				{
+					playerRace = INCUBUS;
+				}
 				break;
 			case RACE_GOBLIN:
 				playerRace = GOBLIN;
 				break;
 			case RACE_AUTOMATON:
+				playerRace = AUTOMATON;
 				break;
 			case RACE_INSECTOID:
+				playerRace = INSECTOID;
 				break;
 			case RACE_GOATMAN:
+				playerRace = GOATMAN;
 				break;
 			case RACE_VAMPIRE:
+				playerRace = VAMPIRE;
 				break;
 			default:
 				playerRace = HUMAN;

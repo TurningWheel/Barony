@@ -11447,6 +11447,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				break;
 			case INCUBUS:
+			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 3.2;
 				helm->focalz = limbs[monster][9][2] + 2.5;
@@ -11467,6 +11468,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				break;
 			case INCUBUS:
+			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.25;
 				helm->focalz = limbs[monster][9][2] + 2.5;
@@ -11506,6 +11508,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				break;
 			case INCUBUS:
+			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0];
 				helm->focaly = limbs[monster][9][1] - 4.50;
 				helm->focalz = limbs[monster][9][2] + 2.5;
@@ -11541,6 +11544,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][9][2] + 2.5;
 				break;
 			case INCUBUS:
+			case SUCCUBUS:
 				helm->focalx = limbs[monster][9][0];
 				helm->focaly = limbs[monster][9][1] - 3.75;
 				helm->focalz = limbs[monster][9][2] + 2.5;
@@ -12141,6 +12145,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			break;
 		case INCUBUS:
+		case SUCCUBUS:
 			if ( limbType == LIMB_HUMANOID_TORSO )
 			{
 				limb->x -= .5 * cos(this->yaw);
@@ -12352,6 +12357,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			break;
 		case GOBLIN:
 		case INCUBUS:
+		case SUCCUBUS:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
