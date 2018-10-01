@@ -246,6 +246,35 @@ void actPlayer(Entity* my)
 	{
 		playerRace = INCUBUS;
 	}
+	else if ( stats[PLAYER_NUM]->playerRace > 0 )
+	{
+		switch ( stats[PLAYER_NUM]->playerRace )
+		{
+			case RACE_HUMAN:
+				playerRace = HUMAN;
+				break;
+			case RACE_SKELETON:
+				playerRace = SKELETON;
+				break;
+			case RACE_INCUBUS:
+				playerRace = INCUBUS;
+				break;
+			case RACE_GOBLIN:
+				playerRace = GOBLIN;
+				break;
+			case RACE_AUTOMATON:
+				break;
+			case RACE_INSECTOID:
+				break;
+			case RACE_GOATMAN:
+				break;
+			case RACE_VAMPIRE:
+				break;
+			default:
+				playerRace = HUMAN;
+				break;
+		}
+	}
 
 	if ( multiplayer == CLIENT )
 	{

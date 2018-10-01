@@ -102,6 +102,7 @@ extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 14
+#define NUMRACES 8
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -114,6 +115,18 @@ extern SDL_Surface* title_bmp;
 extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
+
+enum PlayerRaces : int
+{
+	RACE_HUMAN,
+	RACE_SKELETON,
+	RACE_INCUBUS,
+	RACE_GOBLIN,
+	RACE_AUTOMATON,
+	RACE_INSECTOID,
+	RACE_GOATMAN,
+	RACE_VAMPIRE
+};
 
 enum ESteamStatTypes
 {
