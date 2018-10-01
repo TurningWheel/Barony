@@ -706,17 +706,17 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 					{
 						// if weapon invisible and I'm not attacking, relax arm.
-						entity->focalx = limbs[GOATMAN][4][0]; // 0
-						entity->focaly = limbs[GOATMAN][4][1]; // 0
-						entity->focalz = limbs[GOATMAN][4][2]; // 2
+						entity->focalx = limbs[GOBLIN][4][0]; // 0
+						entity->focaly = limbs[GOBLIN][4][1]; // 0
+						entity->focalz = limbs[GOBLIN][4][2]; // 2
 						entity->sprite = 178;
 					}
 					else
 					{
 						// else flex arm.
-						entity->focalx = limbs[GOATMAN][4][0] + 0.75;
-						entity->focaly = limbs[GOATMAN][4][1];
-						entity->focalz = limbs[GOATMAN][4][2] - 0.75;
+						entity->focalx = limbs[GOBLIN][4][0] + 0.75;
+						entity->focaly = limbs[GOBLIN][4][1];
+						entity->focalz = limbs[GOBLIN][4][2] - 0.75;
 						entity->sprite = 179;
 					}
 				}
@@ -734,16 +734,16 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					Entity* shield = (Entity*)shieldNode->element;
 					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
-						entity->focalx = limbs[GOATMAN][5][0]; // 0
-						entity->focaly = limbs[GOATMAN][5][1]; // 0
-						entity->focalz = limbs[GOATMAN][5][2]; // 2
+						entity->focalx = limbs[GOBLIN][5][0]; // 0
+						entity->focaly = limbs[GOBLIN][5][1]; // 0
+						entity->focalz = limbs[GOBLIN][5][2]; // 2
 						entity->sprite = 176;
 					}
 					else
 					{
-						entity->focalx = limbs[GOATMAN][5][0] + 0.75;
-						entity->focaly = limbs[GOATMAN][5][1];
-						entity->focalz = limbs[GOATMAN][5][2] - 0.75;
+						entity->focalx = limbs[GOBLIN][5][0] + 0.75;
+						entity->focaly = limbs[GOBLIN][5][1];
+						entity->focalz = limbs[GOBLIN][5][2] - 0.75;
 						entity->sprite = 177;
 					}
 				}
