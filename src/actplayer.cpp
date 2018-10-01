@@ -2695,13 +2695,14 @@ void actPlayer(Entity* my)
 		entity->y = my->y;
 		entity->z = my->z;
 
-		if ( bodypart < 9 ) // don't shift helm/mask
+		if ( bodypart < 9 ) // don't shift helm/mask. 
 		{
+			// these monsters are shorter than humans so extend the limbs down to floor, gives longer neck.
 			if ( playerRace == GOBLIN || playerRace == INSECTOID || playerRace == GOATMAN )
 			{
 				entity->z += 0.5;
 			}
-			else if ( playerRace == SKELETON )
+			else if ( playerRace == SKELETON || playerRace == AUTOMATON )
 			{
 				entity->z += 0.25;
 			}
@@ -3733,7 +3734,7 @@ void actPlayer(Entity* my)
 					{
 						if ( moving )
 						{
-							entity->fskill[0] += dist * PLAYERWALKSPEED; // move proportional to move speed
+							entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
 						}
 						else if ( PLAYER_ATTACK != 0 )
 						{
@@ -3754,7 +3755,7 @@ void actPlayer(Entity* my)
 					{
 						if ( moving )
 						{
-							entity->fskill[0] -= dist * PLAYERWALKSPEED;
+							entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
 						}
 						else if ( PLAYER_ATTACK != 0 )
 						{
