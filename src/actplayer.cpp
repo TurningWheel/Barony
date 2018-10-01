@@ -222,6 +222,7 @@ void actPlayer(Entity* my)
 	Entity* rightbody = nullptr;
 	Entity* weaponarm = nullptr;
 	Entity* shieldarm = nullptr;
+	Entity* additionalLimb = nullptr;
 	node_t* node;
 	Item* item;
 	int i, bodypart;
@@ -244,7 +245,7 @@ void actPlayer(Entity* my)
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 	if ( client_classes[PLAYER_NUM] == 13 )
 	{
-		playerRace = INCUBUS;
+		playerRace = INSECTOID;
 	}
 	else if ( stats[PLAYER_NUM]->playerRace > 0 )
 	{
@@ -601,6 +602,46 @@ void actPlayer(Entity* my)
 		entity->focalx = limbs[playerRace][10][0];
 		entity->focaly = limbs[playerRace][10][1];
 		entity->focalz = limbs[playerRace][10][2];
+		entity->behavior = &actPlayerLimb;
+		entity->parent = my->getUID();
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		// additional limb 1
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->skill[2] = PLAYER_NUM;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->focalx = limbs[playerRace][11][0];
+		entity->focaly = limbs[playerRace][11][1];
+		entity->focalz = limbs[playerRace][11][2];
+		entity->behavior = &actPlayerLimb;
+		entity->parent = my->getUID();
+		node = list_AddNodeLast(&my->children);
+		node->element = entity;
+		node->deconstructor = &emptyDeconstructor;
+		node->size = sizeof(Entity*);
+		my->bodyparts.push_back(entity);
+
+		// additional limb 2
+		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->skill[2] = PLAYER_NUM;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
+		entity->focalx = limbs[playerRace][12][0];
+		entity->focaly = limbs[playerRace][12][1];
+		entity->focalz = limbs[playerRace][12][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -1898,8 +1939,11 @@ void actPlayer(Entity* my)
 					if ( node->element )
 					{
 						Entity* tempEntity = (Entity*)node->element;
-						list_RemoveNode(tempEntity->mynode);
-						if ( i > 10 )
+						if ( tempEntity )
+						{
+							list_RemoveNode(tempEntity->mynode);
+						}
+						if ( i > 12 )
 						{
 							break;
 						}
@@ -2918,10 +2962,14 @@ void actPlayer(Entity* my)
 				entity->pitch = 0;
 			}
 		}
+
 		switch ( bodypart )
 		{
 			// torso
 			case 1:
+				entity->focalx = limbs[playerRace][1][0];
+				entity->focaly = limbs[playerRace][1][1];
+				entity->focalz = limbs[playerRace][1][2];
 				if ( multiplayer != CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->breastplate == NULL )
@@ -3662,6 +3710,87 @@ void actPlayer(Entity* my)
 					entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[playerRace][10][2]; // .5
 				}
+				break;
+			case 11:
+				additionalLimb = entity;
+				entity->focalx = limbs[playerRace][11][0];
+				entity->focaly = limbs[playerRace][11][1];
+				entity->focalz = limbs[playerRace][11][2];
+				entity->flags[INVISIBLE] = true;
+				if ( playerRace == INSECTOID )
+				{
+					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+					entity->sprite = 750;
+					entity->x -= 1.5 * cos(my->yaw);
+					entity->y -= 1.5 * sin(my->yaw);
+					bool moving = false;
+					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+					{
+						moving = true;
+					}
+
+					if ( entity->skill[0] == 0 )
+					{
+						if ( moving )
+						{
+							entity->fskill[0] += dist * PLAYERWALKSPEED; // move proportional to move speed
+						}
+						else if ( PLAYER_ATTACK != 0 )
+						{
+							entity->fskill[0] += PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+						}
+						else
+						{
+							entity->fskill[0] += 0.01; // otherwise move slow idle
+						}
+
+						if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) ) 
+						{
+							// switch direction if angle too great, angle is shorter if attacking or stationary
+							entity->skill[0] = 1;
+						}
+					}
+					else // reverse of the above
+					{
+						if ( moving )
+						{
+							entity->fskill[0] -= dist * PLAYERWALKSPEED;
+						}
+						else if ( PLAYER_ATTACK != 0 )
+						{
+							entity->fskill[0] -= PLAYERWALKSPEED;
+						}
+						else
+						{
+							entity->fskill[0] -= 0.007;
+						}
+
+						if ( entity->fskill[0] < -PI / 32 )
+						{
+							entity->skill[0] = 0;
+						}
+					}
+					entity->yaw += entity->fskill[0];
+				}
+				break;
+			case 12:
+				entity->focalx = limbs[playerRace][12][0];
+				entity->focaly = limbs[playerRace][12][1];
+				entity->focalz = limbs[playerRace][12][2];
+				entity->flags[INVISIBLE] = true;
+				if ( playerRace == INSECTOID )
+				{
+					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+					entity->sprite = 751;
+					if ( additionalLimb ) // follow the yaw of the previous limb.
+					{
+						entity->yaw -= additionalLimb->fskill[0];
+					}
+					entity->x -= 1.5 * cos(my->yaw);
+					entity->y -= 1.5 * sin(my->yaw);
+				}
+				break;
+			default:
 				break;
 		}
 	}
