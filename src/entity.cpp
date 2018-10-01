@@ -12035,6 +12035,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	switch ( race )
 	{
 		case HUMAN:
+		case VAMPIRE:
 			if ( limbType == LIMB_HUMANOID_TORSO )
 			{
 				limb->x -= .25 * cos(this->yaw);
@@ -12085,11 +12086,24 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			break;
 		case SKELETON:
+		case AUTOMATON:
 			if ( limbType == LIMB_HUMANOID_TORSO )
 			{
 				limb->x -= .25 * cos(this->yaw);
 				limb->y -= .25 * sin(this->yaw);
 				limb->z += 2;
+				if ( limb->sprite == items[WIZARD_DOUBLET].index
+					|| limb->sprite == items[HEALER_DOUBLET].index
+					|| limb->sprite == items[TUNIC].index
+					|| limb->sprite == items[TUNIC].index + 1 )
+				{
+					limb->z += 0.15;
+					limb->scalez = 0.9;
+				}
+				else
+				{
+					limb->scalez = 1.f;
+				}
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -12123,9 +12137,21 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
 			{
-				limb->x += 2.f * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
-				limb->y += 2.f * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
-				limb->z += .5;
+				if ( limb->sprite != 689 && limb->sprite != 691
+					&& limb->sprite != 233 && limb->sprite != 234
+					&& limb->sprite != 745 && limb->sprite != 747
+					&& limb->sprite != 471 && limb->sprite != 472 )
+				{
+					// wearing gloves (not default arms), position tighter to body.
+					limb->x += 1.75 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+					limb->y += 1.75 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				}
+				else
+				{
+					limb->x += 2.f * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+					limb->y += 2.f * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				}
+				limb->z += .6;
 				if ( this->z >= 1.9 && this->z <= 2.1 )
 				{
 					limb->pitch = 0;
@@ -12133,9 +12159,21 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 			}
 			else if ( limbType == LIMB_HUMANOID_LEFTARM )
 			{
-				limb->x -= 2.f * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
-				limb->y -= 2.f * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
-				limb->z += .5;
+				if ( limb->sprite != 688 && limb->sprite != 690
+					&& limb->sprite != 231 && limb->sprite != 232
+					&& limb->sprite != 744 && limb->sprite != 746
+					&& limb->sprite != 469 && limb->sprite != 470 )
+				{
+					// wearing gloves (not default arms), position tighter to body.
+					limb->x -= 1.75 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+					limb->y -= 1.75 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				}
+				else
+				{
+					limb->x -= 2.f * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+					limb->y -= 2.f * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				}
+				limb->z += .6;
 				if ( this->z >= 1.9 && this->z <= 2.1 )
 				{
 					limb->pitch = 0;
@@ -12296,6 +12334,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	switch ( race )
 	{
 		case HUMAN:
+		case VAMPIRE:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
@@ -12349,6 +12388,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			break;
 		case SKELETON:
+		case AUTOMATON:
 			shieldLimb->x -= 3.f * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 3.f * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
@@ -12356,18 +12396,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->roll = 0;
 			shieldLimb->pitch = 0;
 
-			/*if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+			if ( shieldLimb->sprite != items[TOOL_TORCH].index && shieldLimb->sprite != items[TOOL_LANTERN].index && shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
 			{
-				shieldLimb->focalx = limbs[race][7][0];
+				shieldLimb->focalx = limbs[race][7][0] - 0.65;
 				shieldLimb->focaly = limbs[race][7][1];
 				shieldLimb->focalz = limbs[race][7][2];
 			}
-			else
-			{
-				shieldLimb->focalx = limbs[race][7][0] - 0.5;
-				shieldLimb->focaly = limbs[race][7][1] - 1;
-				shieldLimb->focalz = limbs[race][7][2];
-			}*/
 
 			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			{
