@@ -624,6 +624,44 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
+	// additional limb 1
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INSECTOID][11][0];
+	entity->focaly = limbs[INSECTOID][11][1];
+	entity->focalz = limbs[INSECTOID][11][2];
+	entity->behavior = &actInsectoidLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// additional limb 2
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INSECTOID][12][0];
+	entity->focaly = limbs[INSECTOID][12][1];
+	entity->focalz = limbs[INSECTOID][12][2];
+	entity->behavior = &actInsectoidLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
 	if ( multiplayer == CLIENT || MONSTER_INIT )
 	{
 		return;
@@ -747,6 +785,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	Entity* shieldarm = nullptr;
+	Entity* additionalLimb = nullptr;
 
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
@@ -1355,6 +1394,82 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focaly = limbs[INSECTOID][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[INSECTOID][10][2]; // .25
 				}
+				break;
+			case 12:
+			{
+				additionalLimb = entity;
+				entity->focalx = limbs[INSECTOID][11][0];
+				entity->focaly = limbs[INSECTOID][11][1];
+				entity->focalz = limbs[INSECTOID][11][2];
+				entity->flags[INVISIBLE] = true;
+				
+				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+				entity->sprite = 750;
+				entity->x -= 1.5 * cos(my->yaw);
+				entity->y -= 1.5 * sin(my->yaw);
+				bool moving = false;
+				if ( fabs(my->vel_x) > 0.1 || fabs(my->vel_y) > 0.1 )
+				{
+					moving = true;
+				}
+
+				if ( entity->skill[0] == 0 )
+				{
+					if ( moving )
+					{
+						entity->fskill[0] += dist * INSECTOIDWALKSPEED; // move proportional to move speed
+					}
+					else if ( my->monsterAttack != 0 )
+					{
+						entity->fskill[0] += INSECTOIDWALKSPEED; // move fixed speed when attacking if stationary
+					}
+					else
+					{
+						entity->fskill[0] += 0.01; // otherwise move slow idle
+					}
+
+					if ( entity->fskill[0] > PI / 3 || ((!moving || my->monsterAttack != 0) && entity->fskill[0] > PI / 5) )
+					{
+						// switch direction if angle too great, angle is shorter if attacking or stationary
+						entity->skill[0] = 1;
+					}
+				}
+				else // reverse of the above
+				{
+					if ( moving )
+					{
+						entity->fskill[0] -= dist * INSECTOIDWALKSPEED;
+					}
+					else if ( my->monsterAttack != 0 )
+					{
+						entity->fskill[0] -= INSECTOIDWALKSPEED;
+					}
+					else
+					{
+						entity->fskill[0] -= 0.007;
+					}
+
+					if ( entity->fskill[0] < -PI / 32 )
+					{
+						entity->skill[0] = 0;
+					}
+				}
+				entity->yaw += entity->fskill[0];
+				break;
+			}
+			case 13:
+				entity->focalx = limbs[INSECTOID][12][0];
+				entity->focaly = limbs[INSECTOID][12][1];
+				entity->focalz = limbs[INSECTOID][12][2];
+				entity->flags[INVISIBLE] = true;
+				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+				entity->sprite = 751;
+				if ( additionalLimb ) // follow the yaw of the previous limb.
+				{
+					entity->yaw -= additionalLimb->fskill[0];
+				}
+				entity->x -= 1.5 * cos(my->yaw);
+				entity->y -= 1.5 * sin(my->yaw);
 				break;
 		}
 	}
