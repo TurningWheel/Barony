@@ -223,6 +223,7 @@ void actPlayer(Entity* my)
 	Entity* weaponarm = nullptr;
 	Entity* shieldarm = nullptr;
 	Entity* additionalLimb = nullptr;
+	Entity* torso = nullptr;
 	node_t* node;
 	Item* item;
 	int i, bodypart;
@@ -291,6 +292,11 @@ void actPlayer(Entity* my)
 	my->focalx = limbs[playerRace][0][0];
 	my->focaly = limbs[playerRace][0][1];
 	my->focalz = limbs[playerRace][0][2];
+
+	if ( playerRace == GOATMAN && my->sprite == 768 )
+	{
+		my->focalz = limbs[playerRace][0][2] - 0.5;
+	}
 
 	if ( multiplayer == CLIENT )
 	{
@@ -423,6 +429,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
 
 		// right leg
 		entity = newEntity(spriteLegRight, 1, map.entities, nullptr); //Limb entity.
@@ -442,6 +449,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
 
 		// left leg
 		entity = newEntity(spriteLegLeft, 1, map.entities, nullptr); //Limb entity.
@@ -461,6 +469,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
 
 		// right arm
 		entity = newEntity(spriteArmRight, 1, map.entities, nullptr); //Limb entity.
@@ -480,6 +489,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
 
 		// left arm
 		entity = newEntity(spriteArmLeft, 1, map.entities, nullptr); //Limb entity.
@@ -499,6 +509,7 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+		entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
 
 		// world weapon
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
@@ -1866,7 +1877,14 @@ void actPlayer(Entity* my)
 			}
 			else if ( playerRace == GOBLIN )
 			{
-				my->sprite = 694;
+				if ( stats[PLAYER_NUM]->sex == FEMALE )
+				{
+					my->sprite = 752;
+				}
+				else
+				{
+					my->sprite = 694;
+				}
 			}
 			else if ( playerRace == INCUBUS )
 			{
@@ -1878,19 +1896,47 @@ void actPlayer(Entity* my)
 			}
 			else if ( playerRace == VAMPIRE )
 			{
-				my->sprite = 718;
+				if ( stats[PLAYER_NUM]->sex == FEMALE )
+				{
+					my->sprite = 756;
+				}
+				else
+				{
+					my->sprite = 718;
+				}
 			}
 			else if ( playerRace == INSECTOID )
 			{
-				my->sprite = 726;
+				if ( stats[PLAYER_NUM]->sex == FEMALE )
+				{
+					my->sprite = 760;
+				}
+				else
+				{
+					my->sprite = 726;
+				}
 			}
 			else if ( playerRace == GOATMAN )
 			{
-				my->sprite = 734;
+				if ( stats[PLAYER_NUM]->sex == FEMALE )
+				{
+					my->sprite = 768;
+				}
+				else
+				{
+					my->sprite = 734;
+				}
 			}
 			else if ( playerRace == AUTOMATON )
 			{
-				my->sprite = 742;
+				if ( stats[PLAYER_NUM]->sex == FEMALE )
+				{
+					my->sprite = 770;
+				}
+				else
+				{
+					my->sprite = 742;
+				}
 			}
 		}
 		else if ( stats[PLAYER_NUM]->appearance < 5 )
@@ -2968,6 +3014,7 @@ void actPlayer(Entity* my)
 		{
 			// torso
 			case 1:
+				torso = entity;
 				entity->focalx = limbs[playerRace][1][0];
 				entity->focaly = limbs[playerRace][1][1];
 				entity->focalz = limbs[playerRace][1][2];
@@ -2975,53 +3022,7 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->breastplate == NULL )
 					{
-						if ( playerRace == HUMAN )
-						{
-							switch ( stats[PLAYER_NUM]->appearance / 6 )
-							{
-								case 1:
-									entity->sprite = 334 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								case 2:
-									entity->sprite = 360 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								default:
-									entity->sprite = 106 + 12 * stats[PLAYER_NUM]->sex;
-									break;
-							}
-						}
-						else
-						{
-							switch ( playerRace )
-							{
-								case SKELETON:
-									entity->sprite = 687;
-									break;
-								case GOBLIN:
-									entity->sprite = 695;
-									break;
-								case INCUBUS:
-									entity->sprite = 703;
-									break;
-								case SUCCUBUS:
-									entity->sprite = 711;
-									break;
-								case VAMPIRE:
-									entity->sprite = 719;
-									break;
-								case INSECTOID:
-									entity->sprite = 727;
-									break;
-								case GOATMAN:
-									entity->sprite = 735;
-									break;
-								case AUTOMATON:
-									entity->sprite = 743;
-									break;
-								default:
-									break;
-							}
-						}
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
 					}
 					else
 					{
@@ -3049,53 +3050,7 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->shoes == NULL )
 					{
-						if ( playerRace == HUMAN )
-						{
-							switch ( stats[PLAYER_NUM]->appearance / 6 )
-							{
-								case 1:
-									entity->sprite = 335 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								case 2:
-									entity->sprite = 361 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								default:
-									entity->sprite = 107 + 12 * stats[PLAYER_NUM]->sex;
-									break;
-							}
-						}
-						else
-						{
-							switch ( playerRace )
-							{
-								case SKELETON:
-									entity->sprite = 693;
-									break;
-								case GOBLIN:
-									entity->sprite = 701;
-									break;
-								case INCUBUS:
-									entity->sprite = 709;
-									break;
-								case SUCCUBUS:
-									entity->sprite = 717;
-									break;
-								case VAMPIRE:
-									entity->sprite = 725;
-									break;
-								case INSECTOID:
-									entity->sprite = 733;
-									break;
-								case GOATMAN:
-									entity->sprite = 741;
-									break;
-								case AUTOMATON:
-									entity->sprite = 749;
-									break;
-								default:
-									break;
-							}
-						}
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
 					}
 					else
 					{
@@ -3123,53 +3078,7 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->shoes == NULL )
 					{
-						if ( playerRace == HUMAN )
-						{
-							switch ( stats[PLAYER_NUM]->appearance / 6 )
-							{
-								case 1:
-									entity->sprite = 336 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								case 2:
-									entity->sprite = 362 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								default:
-									entity->sprite = 108 + 12 * stats[PLAYER_NUM]->sex;
-									break;
-							}
-						}
-						else
-						{
-							switch ( playerRace )
-							{
-								case SKELETON:
-									entity->sprite = 692;
-									break;
-								case GOBLIN:
-									entity->sprite = 700;
-									break;
-								case INCUBUS:
-									entity->sprite = 708;
-									break;
-								case SUCCUBUS:
-									entity->sprite = 716;
-									break;
-								case VAMPIRE:
-									entity->sprite = 724;
-									break;
-								case INSECTOID:
-									entity->sprite = 732;
-									break;
-								case GOATMAN:
-									entity->sprite = 740;
-									break;
-								case AUTOMATON:
-									entity->sprite = 748;
-									break;
-								default:
-									break;
-							}
-						}
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
 					}
 					else
 					{
@@ -3198,53 +3107,7 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->gloves == NULL )
 					{
-						if ( playerRace == HUMAN )
-						{
-							switch ( stats[PLAYER_NUM]->appearance / 6 )
-							{
-								case 1:
-									entity->sprite = 337 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								case 2:
-									entity->sprite = 363 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								default:
-									entity->sprite = 109 + 12 * stats[PLAYER_NUM]->sex;
-									break;
-							}
-						}
-						else
-						{
-							switch ( playerRace )
-							{
-								case SKELETON:
-									entity->sprite = 689;
-									break;
-								case GOBLIN:
-									entity->sprite = 697;
-									break;
-								case INCUBUS:
-									entity->sprite = 705;
-									break;
-								case SUCCUBUS:
-									entity->sprite = 713;
-									break;
-								case VAMPIRE:
-									entity->sprite = 721;
-									break;
-								case INSECTOID:
-									entity->sprite = 729;
-									break;
-								case GOATMAN:
-									entity->sprite = 737;
-									break;
-								case AUTOMATON:
-									entity->sprite = 745;
-									break;
-								default:
-									break;
-							}
-						}
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
 					}
 					else
 					{
@@ -3317,53 +3180,7 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->gloves == NULL )
 					{
-						if ( playerRace == HUMAN )
-						{
-							switch ( stats[PLAYER_NUM]->appearance / 6 )
-							{
-								case 1:
-									entity->sprite = 338 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								case 2:
-									entity->sprite = 364 + 13 * stats[PLAYER_NUM]->sex;
-									break;
-								default:
-									entity->sprite = 110 + 12 * stats[PLAYER_NUM]->sex;
-									break;
-							}
-						}
-						else
-						{
-							switch ( playerRace )
-							{
-								case SKELETON:
-									entity->sprite = 688;
-									break;
-								case GOBLIN:
-									entity->sprite = 696;
-									break;
-								case INCUBUS:
-									entity->sprite = 704;
-									break;
-								case SUCCUBUS:
-									entity->sprite = 712;
-									break;
-								case VAMPIRE:
-									entity->sprite = 720;
-									break;
-								case INSECTOID:
-									entity->sprite = 728;
-									break;
-								case GOATMAN:
-									entity->sprite = 736;
-									break;
-								case AUTOMATON:
-									entity->sprite = 744;
-									break;
-								default:
-									break;
-							}
-						}
+						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
 					}
 					else
 					{
@@ -3721,9 +3538,25 @@ void actPlayer(Entity* my)
 				if ( playerRace == INSECTOID )
 				{
 					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-					entity->sprite = 750;
-					entity->x -= 1.5 * cos(my->yaw);
-					entity->y -= 1.5 * sin(my->yaw);
+					if ( stats[PLAYER_NUM]->sex == FEMALE )
+					{
+						entity->sprite = 771;
+					}
+					else
+					{
+						entity->sprite = 750;
+					}
+					if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+					{
+						// wearing armor, offset more.
+						entity->x -= 2.25 * cos(my->yaw);
+						entity->y -= 2.25 * sin(my->yaw);
+					}
+					else
+					{
+						entity->x -= 1.5 * cos(my->yaw);
+						entity->y -= 1.5 * sin(my->yaw);
+					}
 					bool moving = false;
 					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
 					{
@@ -3782,13 +3615,29 @@ void actPlayer(Entity* my)
 				if ( playerRace == INSECTOID )
 				{
 					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-					entity->sprite = 751;
+					if ( stats[PLAYER_NUM]->sex == FEMALE )
+					{
+						entity->sprite = 772;
+					}
+					else
+					{
+						entity->sprite = 751;
+					}
 					if ( additionalLimb ) // follow the yaw of the previous limb.
 					{
 						entity->yaw -= additionalLimb->fskill[0];
 					}
-					entity->x -= 1.5 * cos(my->yaw);
-					entity->y -= 1.5 * sin(my->yaw);
+					if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+					{
+						// wearing armor, offset more.
+						entity->x -= 2.25 * cos(my->yaw);
+						entity->y -= 2.25 * sin(my->yaw);
+					}
+					else
+					{
+						entity->x -= 1.5 * cos(my->yaw);
+						entity->y -= 1.5 * sin(my->yaw);
+					}
 				}
 				break;
 			default:
@@ -4179,10 +4028,353 @@ bool Entity::isPlayerHeadSprite()
 		case 726:
 		case 734:
 		case 742:
+		case 752:
+		case 756:
+		case 760:
+		case 768:
+		case 770:
 			return true;
 			break;
 		default:
 			break;
 	}
 	return false;
+}
+
+void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType)
+{
+	if ( limbType == LIMB_HUMANOID_TORSO )
+	{
+		if ( playerRace == HUMAN )
+		{
+			switch ( stats[playernum]->appearance / 6 )
+			{
+				case 1:
+					this->sprite = 334 + 13 * stats[playernum]->sex;
+					break;
+				case 2:
+					this->sprite = 360 + 13 * stats[playernum]->sex;
+					break;
+				default:
+					this->sprite = 106 + 12 * stats[playernum]->sex;
+					break;
+			}
+		}
+		else
+		{
+			switch ( playerRace )
+			{
+				case SKELETON:
+					this->sprite = 687;
+					break;
+				case GOBLIN:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 753;
+					}
+					else
+					{
+						this->sprite = 695;
+					}
+					break;
+				case INCUBUS:
+					this->sprite = 703;
+					break;
+				case SUCCUBUS:
+					this->sprite = 711;
+					break;
+				case VAMPIRE:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 757;
+					}
+					else
+					{
+						this->sprite = 719;
+					}
+					break;
+				case INSECTOID:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 761;
+					}
+					else
+					{
+						this->sprite = 727;
+					}
+					break;
+				case GOATMAN:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 769;
+					}
+					else
+					{
+						this->sprite = 735;
+					}
+					break;
+				case AUTOMATON:
+					this->sprite = 743;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+	{
+		if ( playerRace == HUMAN )
+		{
+			switch ( stats[playernum]->appearance / 6 )
+			{
+				case 1:
+					this->sprite = 335 + 13 * stats[playernum]->sex;
+					break;
+				case 2:
+					this->sprite = 361 + 13 * stats[playernum]->sex;
+					break;
+				default:
+					this->sprite = 107 + 12 * stats[playernum]->sex;
+					break;
+			}
+		}
+		else
+		{
+			switch ( playerRace )
+			{
+				case SKELETON:
+					this->sprite = 693;
+					break;
+				case GOBLIN:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 755;
+					}
+					else
+					{
+						this->sprite = 701;
+					}
+					break;
+				case INCUBUS:
+					this->sprite = 709;
+					break;
+				case SUCCUBUS:
+					this->sprite = 717;
+					break;
+				case VAMPIRE:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 759;
+					}
+					else
+					{
+						this->sprite = 725;
+					}
+					break;
+				case INSECTOID:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 767;
+					}
+					else
+					{
+						this->sprite = 733;
+					}
+					break;
+				case GOATMAN:
+					this->sprite = 741;
+					break;
+				case AUTOMATON:
+					this->sprite = 749;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+	{
+		if ( playerRace == HUMAN )
+		{
+			switch ( stats[playernum]->appearance / 6 )
+			{
+				case 1:
+					this->sprite = 336 + 13 * stats[playernum]->sex;
+					break;
+				case 2:
+					this->sprite = 362 + 13 * stats[playernum]->sex;
+					break;
+				default:
+					this->sprite = 108 + 12 * stats[playernum]->sex;
+					break;
+			}
+		}
+		else
+		{
+			switch ( playerRace )
+			{
+				case SKELETON:
+					this->sprite = 692;
+					break;
+				case GOBLIN:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 754;
+					}
+					else
+					{
+						this->sprite = 700;
+					}
+					break;
+				case INCUBUS:
+					this->sprite = 708;
+					break;
+				case SUCCUBUS:
+					this->sprite = 716;
+					break;
+				case VAMPIRE:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 758;
+					}
+					else
+					{
+						this->sprite = 724;
+					}
+					break;
+				case INSECTOID:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 766;
+					}
+					else
+					{
+						this->sprite = 732;
+					}
+					break;
+				case GOATMAN:
+					this->sprite = 740;
+					break;
+				case AUTOMATON:
+					this->sprite = 748;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+	{
+		if ( playerRace == HUMAN )
+		{
+			switch ( stats[playernum]->appearance / 6 )
+			{
+				case 1:
+					this->sprite = 337 + 13 * stats[playernum]->sex;
+					break;
+				case 2:
+					this->sprite = 363 + 13 * stats[playernum]->sex;
+					break;
+				default:
+					this->sprite = 109 + 12 * stats[playernum]->sex;
+					break;
+			}
+		}
+		else
+		{
+			switch ( playerRace )
+			{
+				case SKELETON:
+					this->sprite = 689;
+					break;
+				case GOBLIN:
+					this->sprite = 697;
+					break;
+				case INCUBUS:
+					this->sprite = 705;
+					break;
+				case SUCCUBUS:
+					this->sprite = 713;
+					break;
+				case VAMPIRE:
+					this->sprite = 721;
+					break;
+				case INSECTOID:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 763;
+					}
+					else
+					{
+						this->sprite = 729;
+					}
+					break;
+				case GOATMAN:
+					this->sprite = 737;
+					break;
+				case AUTOMATON:
+					this->sprite = 745;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	else if ( limbType == LIMB_HUMANOID_LEFTARM )
+	{
+		if ( playerRace == HUMAN )
+		{
+			switch ( stats[playernum]->appearance / 6 )
+			{
+				case 1:
+					this->sprite = 338 + 13 * stats[playernum]->sex;
+					break;
+				case 2:
+					this->sprite = 364 + 13 * stats[playernum]->sex;
+					break;
+				default:
+					this->sprite = 110 + 12 * stats[playernum]->sex;
+					break;
+			}
+		}
+		else
+		{
+			switch ( playerRace )
+			{
+				case SKELETON:
+					this->sprite = 688;
+					break;
+				case GOBLIN:
+					this->sprite = 696;
+					break;
+				case INCUBUS:
+					this->sprite = 704;
+					break;
+				case SUCCUBUS:
+					this->sprite = 712;
+					break;
+				case VAMPIRE:
+					this->sprite = 720;
+					break;
+				case INSECTOID:
+					if ( stats[playernum]->sex == FEMALE )
+					{
+						this->sprite = 764;
+					}
+					else
+					{
+						this->sprite = 728;
+					}
+					break;
+				case GOATMAN:
+					this->sprite = 736;
+					break;
+				case AUTOMATON:
+					this->sprite = 744;
+					break;
+				default:
+					break;
+			}
+		}
+	}
 }

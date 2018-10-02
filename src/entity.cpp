@@ -11536,6 +11536,13 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.75;
 				helm->focalz = limbs[monster][9][2] + 2.5;
+				if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+				{
+					if ( helm->sprite == (items[HAT_HOOD].index + 3) )
+					{
+						helm->focaly -= 0.5; // purple hood
+					}
+				}
 				break;
 			default:
 				break;
@@ -11624,11 +11631,22 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0];
 				helm->focaly = limbs[monster][9][1] - 4.5;
 				helm->focalz = limbs[monster][9][2] + 2.5;
+				if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+				{
+					helm->focaly -= 0.25;
+				}
 				break;
 			default:
 				break;
 		}
 		helm->roll = PI / 2;
+	}
+	else
+	{
+		if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+		{
+			helm->focalz = limbs[monster][9][2] - 0.25; // all non-hat helms
+		}
 	}
 }
 
@@ -12195,7 +12213,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->z += 2;
 				if ( race == INSECTOID )
 				{
-					if ( limb->sprite != 727 && limb->sprite != 458 )
+					if ( limb->sprite != 727 && limb->sprite != 458 && limb->sprite != 761 )
 					{
 						// wearing armor, offset by 1.
 						limb->z -= 1;
