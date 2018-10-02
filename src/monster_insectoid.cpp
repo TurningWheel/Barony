@@ -700,6 +700,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* entity = nullptr, *entity2 = nullptr;
 	Entity* rightbody = nullptr;
 	Entity* weaponarm = nullptr;
+	Entity* torso = nullptr;
 	int bodypart;
 	bool wearingring = false;
 
@@ -980,6 +981,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == nullptr )
@@ -1405,8 +1407,17 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				
 				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 				entity->sprite = 750;
-				entity->x -= 1.5 * cos(my->yaw);
-				entity->y -= 1.5 * sin(my->yaw);
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				{
+					// wearing armor, offset more.
+					entity->x -= 2.25 * cos(my->yaw);
+					entity->y -= 2.25 * sin(my->yaw);
+				}
+				else
+				{
+					entity->x -= 1.5 * cos(my->yaw);
+					entity->y -= 1.5 * sin(my->yaw);
+				}
 				bool moving = false;
 				if ( fabs(my->vel_x) > 0.1 || fabs(my->vel_y) > 0.1 )
 				{
@@ -1468,8 +1479,17 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->yaw -= additionalLimb->fskill[0];
 				}
-				entity->x -= 1.5 * cos(my->yaw);
-				entity->y -= 1.5 * sin(my->yaw);
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				{
+					// wearing armor, offset more.
+					entity->x -= 2.25 * cos(my->yaw);
+					entity->y -= 2.25 * sin(my->yaw);
+				}
+				else
+				{
+					entity->x -= 1.5 * cos(my->yaw);
+					entity->y -= 1.5 * sin(my->yaw);
+				}
 				break;
 		}
 	}
