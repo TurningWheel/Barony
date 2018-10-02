@@ -259,7 +259,7 @@ void actPlayer(Entity* my)
 
 	if ( playerRace == GOATMAN && my->sprite == 768 )
 	{
-		my->focalz = limbs[playerRace][0][2] - 0.5;
+		my->focalz = limbs[playerRace][0][2] - 0.25; // minor head position fix to match male variant.
 	}
 
 	if ( multiplayer == CLIENT )
