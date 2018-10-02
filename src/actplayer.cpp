@@ -250,43 +250,7 @@ void actPlayer(Entity* my)
 	}
 	else if ( stats[PLAYER_NUM]->playerRace > 0 )
 	{
-		switch ( stats[PLAYER_NUM]->playerRace )
-		{
-			case RACE_HUMAN:
-				playerRace = HUMAN;
-				break;
-			case RACE_SKELETON:
-				playerRace = SKELETON;
-				break;
-			case RACE_INCUBUS:
-				if ( stats[PLAYER_NUM]->sex == FEMALE )
-				{
-					playerRace = SUCCUBUS;
-				}
-				else
-				{
-					playerRace = INCUBUS;
-				}
-				break;
-			case RACE_GOBLIN:
-				playerRace = GOBLIN;
-				break;
-			case RACE_AUTOMATON:
-				playerRace = AUTOMATON;
-				break;
-			case RACE_INSECTOID:
-				playerRace = INSECTOID;
-				break;
-			case RACE_GOATMAN:
-				playerRace = GOATMAN;
-				break;
-			case RACE_VAMPIRE:
-				playerRace = VAMPIRE;
-				break;
-			default:
-				playerRace = HUMAN;
-				break;
-		}
+		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
 	}
 
 	my->focalx = limbs[playerRace][0][0];
@@ -4039,6 +4003,48 @@ bool Entity::isPlayerHeadSprite()
 			break;
 	}
 	return false;
+}
+
+Monster Entity::getMonsterFromPlayerRace(int playerRace)
+{
+	switch ( playerRace )
+	{
+		case RACE_HUMAN:
+			return HUMAN;
+			break;
+		case RACE_SKELETON:
+			return SKELETON;
+			break;
+		case RACE_INCUBUS:
+			if ( stats[this->skill[2]]->sex == FEMALE )
+			{
+				return SUCCUBUS;
+			}
+			else
+			{
+				return INCUBUS;
+			}
+			break;
+		case RACE_GOBLIN:
+			return GOBLIN;
+			break;
+		case RACE_AUTOMATON:
+			return AUTOMATON;
+			break;
+		case RACE_INSECTOID:
+			return INSECTOID;
+			break;
+		case RACE_GOATMAN:
+			return GOATMAN;
+			break;
+		case RACE_VAMPIRE:
+			return VAMPIRE;
+			break;
+		default:
+			return HUMAN;
+			break;
+	}
+	return HUMAN;
 }
 
 void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType)
