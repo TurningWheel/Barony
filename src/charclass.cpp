@@ -49,6 +49,8 @@ void initClass(int player)
 		stats[player]->STR += 1;
 	}
 
+	stats[player]->type = HUMAN;
+
 	// CLASS LOADOUTS
 	// barbarian
 	if ( client_classes[player] == 0 )

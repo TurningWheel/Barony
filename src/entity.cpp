@@ -7073,7 +7073,7 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return true;
 	}
-	else if ( yourStats->type == HUMAN && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
+	else if ( (yourStats->type == HUMAN || your->behavior == &actPlayer) && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
 	{
 		return true;
 	}
@@ -11197,7 +11197,7 @@ handles text for monster interaction/damage/obituaries
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType)
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* monster)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -11206,6 +11206,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 
 	// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 	bool namedMonsterAsGeneric = monsterNameIsGeneric(monsterStats);
+	int monsterType = monsterStats.type;
+	if ( monster != nullptr && monster->behavior == &actPlayer )
+	{
+		monsterType = monster->getMonsterTypeFromSprite();
+	}
 
 	//char str[256] = { 0 };
 	if ( !strcmp(monsterStats.name, "") )
@@ -11221,48 +11226,48 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				}
 				if ( c == player )
 				{
-					if ( monsterStats.type < KOBOLD ) // Original monster count
+					if ( monsterType < KOBOLD ) // Original monster count
 					{
-						messagePlayerColor(c, color, msgNamed, language[90 + monsterStats.type], monsterStats.obituary);
+						messagePlayerColor(c, color, msgNamed, language[90 + monsterType], monsterStats.obituary);
 					}
-					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					else if ( monsterType >= KOBOLD ) //New monsters
 					{
-						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+						messagePlayerColor(c, color, msgNamed, language[2000 + (monsterType - KOBOLD)], monsterStats.obituary);
 					}
 				}
 				else
 				{
-					if ( monsterStats.type < KOBOLD ) // Original monster count
+					if ( monsterType < KOBOLD ) // Original monster count
 					{
-						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterStats.type], monsterStats.obituary);
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[90 + monsterType], monsterStats.obituary);
 					}
-					else if ( monsterStats.type >= KOBOLD ) //New monsters
+					else if ( monsterType >= KOBOLD ) //New monsters
 					{
-						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.obituary);
+						messagePlayerColor(c, color, msgGeneric, stats[player]->name, language[2000 + (monsterType - KOBOLD)], monsterStats.obituary);
 					}
 				}
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
 		{
-			if ( monsterStats.type < KOBOLD ) // Original monster count
+			if ( monsterType < KOBOLD ) // Original monster count
 			{
-				messagePlayerColor(player, color, msgGeneric, language[90 + monsterStats.type], language[132 + monsterStats.type]);
+				messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], language[132 + monsterType]);
 			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			else if ( monsterType >= KOBOLD ) //New monsters
 			{
-				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterStats.type - KOBOLD)], language[2100 + (monsterStats.type - KOBOLD)]);
+				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], language[2100 + (monsterType - KOBOLD)]);
 			}
 		}
 		else
 		{
-			if ( monsterStats.type < KOBOLD ) // Original monster count
+			if ( monsterType < KOBOLD ) // Original monster count
 			{
-				messagePlayerColor(player, color, msgGeneric, language[90 + monsterStats.type]);
+				messagePlayerColor(player, color, msgGeneric, language[90 + monsterType]);
 			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			else if ( monsterType >= KOBOLD ) //New monsters
 			{
-				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterStats.type - KOBOLD)]);
+				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)]);
 			}
 		}
 	}
@@ -11275,13 +11280,13 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterStats.type < KOBOLD ) //Original monster count
+			else if ( monsterType < KOBOLD ) //Original monster count
 			{
-				messagePlayerColor(player, color, msgNamed, language[90 + monsterStats.type], monsterStats.name);
+				messagePlayerColor(player, color, msgNamed, language[90 + monsterType], monsterStats.name);
 			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			else if ( monsterType >= KOBOLD ) //New monsters
 			{
-				messagePlayerColor(player, color, msgNamed, language[2000 + (monsterStats.type - KOBOLD)], monsterStats.name);
+				messagePlayerColor(player, color, msgNamed, language[2000 + (monsterType - KOBOLD)], monsterStats.name);
 			}
 		}
 		else if ( detailType == MSG_COMBAT )
@@ -11290,11 +11295,11 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterStats.type < KOBOLD ) //Original monster count
+			else if ( monsterType < KOBOLD ) //Original monster count
 			{
 				messagePlayerColor(player, color, msgNamed, monsterStats.name);
 			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			else if ( monsterType >= KOBOLD ) //New monsters
 			{
 				messagePlayerColor(player, color, msgNamed, monsterStats.name);
 			}
@@ -11326,39 +11331,39 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		}
 		else if ( detailType == MSG_GENERIC )
 		{
-			if ( namedMonsterAsGeneric || monsterStats.type == HUMAN )
+			if ( namedMonsterAsGeneric || monsterType == HUMAN )
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
-			else if ( monsterStats.type < KOBOLD ) // Original monster count
+			else if ( monsterType < KOBOLD ) // Original monster count
 			{
-				messagePlayerColor(player, color, msgGeneric, language[90 + monsterStats.type]);
+				messagePlayerColor(player, color, msgGeneric, language[90 + monsterType]);
 			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			else if ( monsterType >= KOBOLD ) //New monsters
 			{
-				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterStats.type - KOBOLD)]);
+				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)]);
 			}
 		}
 		else if ( detailType == MSG_ATTACKS )
 		{
 			if ( namedMonsterAsGeneric )
 			{
-				if ( monsterStats.type < KOBOLD ) // Original monster count
+				if ( monsterType < KOBOLD ) // Original monster count
 				{
-					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[132 + monsterStats.type]);
+					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[132 + monsterType]);
 				}
-				else if ( monsterStats.type >= KOBOLD ) //New monsters
+				else if ( monsterType >= KOBOLD ) //New monsters
 				{
-					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[2100 + (monsterStats.type - KOBOLD)]);
+					messagePlayerColor(player, color, msgGeneric, monsterStats.name, language[2100 + (monsterType - KOBOLD)]);
 				}
 			}
-			else if ( monsterStats.type < KOBOLD ) // Original monster count
+			else if ( monsterType < KOBOLD ) // Original monster count
 			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[132 + monsterStats.type]);
+				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[132 + monsterType]);
 			}
-			else if ( monsterStats.type >= KOBOLD ) //New monsters
+			else if ( monsterType >= KOBOLD ) //New monsters
 			{
-				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[2100 + (monsterStats.type - KOBOLD)]);
+				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[2100 + (monsterType - KOBOLD)]);
 			}
 		}
 	}

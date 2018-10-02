@@ -1619,22 +1619,36 @@ void handleMainMenu(bool mode)
 		if ( charcreation_step == 1 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
+			Uint32 colorStep1 = uint32ColorWhite(*mainsurface);
+			if ( raceSelect )
+			{
+				colorStep1 = uint32ColorGray(*mainsurface);
+			}
 			if ( stats[0]->sex == 0 )
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1321]);
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 72, "[ ] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[o] %s", language[1321]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 72, colorStep1, "[ ] %s", language[1322]);
 
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby2 - 80, language[1320], language[1321]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1321]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[ ] %s", language[1321]);
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 72, "[o] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[ ] %s", language[1321]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 72, colorStep1, "[o] %s", language[1322]);
 
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby2 - 80, language[1320], language[1322]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1322]);
 			}
+			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite(*mainsurface), language[3175]);
 
 			// race
+			if ( !raceSelect )
+			{
+				colorStep1 = uint32ColorGray(*mainsurface);
+			}
+			else
+			{
+				colorStep1 = uint32ColorWhite(*mainsurface);
+			}
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
 			int pady = suby1 + 108 + 24;
 			for ( int c = 0; c < NUMRACES; ++c )
@@ -1643,22 +1657,22 @@ void handleMainMenu(bool mode)
 				{
 					if ( c == RACE_INCUBUS && stats[0]->sex == FEMALE )
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", language[3169]);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3169]);
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[o] %s", language[3161 + c]);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3161 + c]);
 					}
 				}
 				else
 				{
 					if ( c == RACE_INCUBUS && stats[0]->sex == FEMALE )
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", language[3169]);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3169]);
 					}
 					else
 					{
-						ttfPrintTextFormatted(ttf16, subx1 + 32, pady, "[ ] %s", language[3161 + c]);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
 					}
 				}
 				pady += 16;
@@ -1671,16 +1685,19 @@ void handleMainMenu(bool mode)
 				{
 					if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
 					{
+						raceSelect = false;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = MALE;
 					}
 					else if ( omousey >= suby1 + 72 && omousey < suby1 + 88 )
 					{
+						raceSelect = false;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = FEMALE;
 					}
 					else if ( omousey >= pady && omousey < pady + NUMRACES * 16 )
 					{
+						raceSelect = true;
 						for ( c = 0; c < NUMRACES; ++c )
 						{
 							if ( omousey >= pady && omousey < pady + 16 )
@@ -1701,7 +1718,21 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				}
 				draw_cursor = false;
-				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				if ( raceSelect )
+				{
+					if ( stats[0]->playerRace <= 0 )
+					{
+						stats[0]->playerRace = NUMRACES - 1;
+					}
+					else
+					{
+						--stats[0]->playerRace;
+					}
+				}
+				else
+				{
+					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				}
 			}
 			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 			{
@@ -1711,7 +1742,41 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 				}
 				draw_cursor = false;
-				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				if ( raceSelect )
+				{
+					if ( stats[0]->playerRace >= NUMRACES - 1 )
+					{
+						stats[0]->playerRace = 0;
+					}
+					else
+					{
+						++stats[0]->playerRace;
+					}
+				}
+				else
+				{
+					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_RIGHT] || (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) && rebindaction == -1) )
+			{
+				keystatus[SDL_SCANCODE_RIGHT] = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+				}
+				draw_cursor = false;
+				raceSelect = !raceSelect;
+			}
+			if ( keystatus[SDL_SCANCODE_LEFT] || (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) && rebindaction == -1) )
+			{
+				keystatus[SDL_SCANCODE_LEFT] = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+				}
+				draw_cursor = false;
+				raceSelect = !raceSelect;
 			}
 		}
 
@@ -3537,7 +3602,9 @@ void handleMainMenu(bool mode)
 					client_disconnected[c] = false;
 					client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
 					stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
-					stats[c]->appearance = (int)SDLNet_Read32(&net_packet->data[50]);
+					Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[50]);
+					stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+					stats[c]->playerRace = (raceAndAppearance & 0xFF);
 					net_clients[c - 1].host = net_packet->address.host;
 					net_clients[c - 1].port = net_packet->address.port;
 					if ( directConnect )
@@ -3563,10 +3630,14 @@ void handleMainMenu(bool mode)
 						net_packet->data[9] = c; // clientnum
 						net_packet->data[10] = client_classes[c]; // class
 						net_packet->data[11] = stats[c]->sex; // sex
-						strcpy((char*)(&net_packet->data[12]), stats[c]->name);  // name
+						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
+						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
+						char shortname[16] = "";
+						strncpy(shortname, stats[x]->name, 15);
+						strcpy((char*)(&net_packet->data[14]), shortname);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;
-						net_packet->len = 12 + strlen(stats[c]->name) + 1;
+						net_packet->len = 14 + strlen(stats[c]->name) + 1;
 						sendPacketSafe(net_sock, -1, net_packet, x - 1);
 					}
 					char shortname[11] = { 0 };
@@ -3578,14 +3649,18 @@ void handleMainMenu(bool mode)
 					SDLNet_Write32(c, &net_packet->data[0]);
 					for ( x = 0; x < MAXPLAYERS; x++ )
 					{
-						net_packet->data[4 + x * (3 + 16)] = client_classes[x]; // class
-						net_packet->data[5 + x * (3 + 16)] = stats[x]->sex; // sex
-						net_packet->data[6 + x * (3 + 16)] = client_disconnected[x]; // connectedness :p
-						strcpy((char*)(&net_packet->data[7 + x * (3 + 16)]), stats[x]->name);  // name
+						net_packet->data[4 + x * (5 + 16)] = client_classes[x]; // class
+						net_packet->data[5 + x * (5 + 16)] = stats[x]->sex; // sex
+						net_packet->data[6 + x * (5 + 16)] = client_disconnected[x]; // connectedness :p
+						net_packet->data[7 + x * (5 + 16)] = (Uint8)stats[x]->appearance; // appearance
+						net_packet->data[8 + x * (5 + 16)] = (Uint8)stats[x]->playerRace; // player race
+						char shortname[16] = "";
+						strncpy(shortname, stats[x]->name, 15);
+						strcpy((char*)(&net_packet->data[9 + x * (5 + 16)]), shortname);  // name
 					}
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 4 + MAXPLAYERS * (3 + 16);
+					net_packet->len = 4 + MAXPLAYERS * (5 + 16);
 					if ( directConnect )
 					{
 						SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
@@ -3699,7 +3774,7 @@ void handleMainMenu(bool mode)
 			bool gotPacket = false;
 			if ( directConnect )
 			{
-				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (3 + 16)) )
+				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 16)) )
 				{
 					gotPacket = true;
 				}
@@ -3717,7 +3792,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (3 + 16) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 16) )
 					{
 						continue;
 					}
@@ -3852,10 +3927,12 @@ void handleMainMenu(bool mode)
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
 						client_disconnected[c] = false;
-						client_classes[c] = net_packet->data[4 + c * (3 + 16)]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (3 + 16)]); // sex
-						client_disconnected[c] = net_packet->data[6 + c * (3 + 16)]; // connectedness :p
-						strcpy(stats[c]->name, (char*)(&net_packet->data[7 + c * (3 + 16)]));  // name
+						client_classes[c] = net_packet->data[4 + c * (5 + 16)]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 16)]); // sex
+						client_disconnected[c] = net_packet->data[6 + c * (5 + 16)]; // connectedness :p
+						stats[c]->appearance = net_packet->data[7 + c * (5 + 16)]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (5 + 16)]; // player race
+						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 16)]));  // name
 					}
 
 					// request svFlags
@@ -4010,7 +4087,9 @@ void handleMainMenu(bool mode)
 					client_disconnected[net_packet->data[9]] = false;
 					client_classes[net_packet->data[9]] = net_packet->data[10];
 					stats[net_packet->data[9]]->sex = static_cast<sex_t>(net_packet->data[11]);
-					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[12]));
+					stats[net_packet->data[9]]->appearance = net_packet->data[12];
+					stats[net_packet->data[9]]->playerRace = net_packet->data[13];
+					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[14]));
 
 					char shortname[11] = { 0 };
 					strncpy(shortname, stats[net_packet->data[9]]->name, 10);
@@ -7128,6 +7207,7 @@ void handleMainMenu(bool mode)
 				stats[c]->appearance = 0;
 				strcpy(stats[c]->name, "");
 				stats[c]->type = HUMAN;
+				stats[c]->playerRace = RACE_HUMAN;
 				stats[c]->clearStats();
 				entitiesToDelete[c].first = NULL;
 				entitiesToDelete[c].last = NULL;
@@ -8757,6 +8837,7 @@ void buttonCloseSubwindow(button_t* my)
 		// reset class loadout
 		stats[0]->sex = static_cast<sex_t>(0);
 		stats[0]->appearance = 0;
+		stats[0]->playerRace = RACE_HUMAN;
 		strcpy(stats[0]->name, "");
 		stats[0]->type = HUMAN;
 		client_classes[0] = 0;
@@ -8837,6 +8918,10 @@ void buttonContinue(button_t* my)
 	}
 
 	charcreation_step++;
+	if ( charcreation_step == 3 && stats[0]->playerRace != RACE_HUMAN )
+	{
+		charcreation_step = 4; // skip appearance window
+	}
 	if ( charcreation_step == 4 )
 	{
 		inputstr = stats[0]->name;
@@ -9020,6 +9105,10 @@ void buttonBack(button_t* my)
 		// If we've backed out, save what name was input for later
 		lastname = (string)inputstr;
 		SDL_StopTextInput();
+		if ( stats[0]->playerRace != RACE_HUMAN )
+		{
+			charcreation_step = 2; // skip appearance window for non-human races.
+		}
 	}
 	else if ( charcreation_step == 0 )
 	{
@@ -9487,7 +9576,9 @@ void buttonJoinLobby(button_t* my)
 		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum(false)]->name, 22);
 		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[42]);
 		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->appearance, &net_packet->data[50]);
+		Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
+		appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
+		SDLNet_Write32(appearanceAndRace, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
 		net_packet->data[63] = getSaveGameClientnum(false);
@@ -9497,7 +9588,9 @@ void buttonJoinLobby(button_t* my)
 		strncpy((char*)net_packet->data + 19, stats[0]->name, 22);
 		SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[42]);
 		SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[0]->appearance, &net_packet->data[50]);
+		Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
+		appearanceAndRace |= ((Uint8)stats[0]->playerRace);
+		SDLNet_Write32(appearanceAndRace, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
 		net_packet->data[63] = 0;
@@ -10776,6 +10869,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	clientnum = 0;
 	stats[0]->sex = static_cast<sex_t>(0);
 	stats[0]->appearance = 0;
+	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
 	client_classes[0] = 0;
@@ -10792,6 +10886,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// create character creation window
 	charcreation_step = 1;
+	raceSelect = false;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;

@@ -258,7 +258,7 @@ void actPlayer(Entity* my)
 				playerRace = SKELETON;
 				break;
 			case RACE_INCUBUS:
-				if ( stats[0]->sex == FEMALE )
+				if ( stats[PLAYER_NUM]->sex == FEMALE )
 				{
 					playerRace = SUCCUBUS;
 				}
@@ -4174,6 +4174,11 @@ bool Entity::isPlayerHeadSprite()
 		case 686:
 		case 694:
 		case 702:
+		case 710:
+		case 718:
+		case 726:
+		case 734:
+		case 742:
 			return true;
 			break;
 		default:
