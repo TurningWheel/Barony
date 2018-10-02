@@ -1210,6 +1210,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 			// reset class loadout
 			stats[0]->sex = static_cast<sex_t>(0);
 			stats[0]->appearance = 0;
+			stats[0]->playerRace = RACE_HUMAN;
 			strcpy(stats[0]->name, "");
 			stats[0]->type = HUMAN;
 			client_classes[0] = 0;

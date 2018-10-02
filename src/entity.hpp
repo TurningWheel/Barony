@@ -933,7 +933,7 @@ static const int MSG_COMBAT = 1;
 static const int MSG_OBITUARY = 2;
 static const int MSG_GENERIC = 3;
 static const int MSG_ATTACKS = 4;
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType);
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* monster = nullptr);
 char* playerClassLangEntry(int classnum);
 char* playerClassDescription(int classnum);
 
