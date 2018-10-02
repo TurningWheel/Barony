@@ -126,7 +126,48 @@ void actHudArm(Entity* my)
 	}
 	if ( noGloves )
 	{
-		if ( stats[clientnum]->appearance / 6 == 0 )
+		if ( stats[clientnum]->playerRace > 0 )
+		{
+			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+			switch ( playerRace )
+			{
+				case SKELETON:
+					my->sprite = 774;
+					break;
+				case INCUBUS:
+					my->sprite = 776;
+					break;
+				case SUCCUBUS:
+					my->sprite = 778;
+					break;
+				case GOBLIN:
+					my->sprite = 780;
+					break;
+				case AUTOMATON:
+					my->sprite = 782;
+					break;
+				case INSECTOID:
+					if ( stats[clientnum]->sex == FEMALE )
+					{
+						my->sprite = 786;
+					}
+					else
+					{
+						my->sprite = 784;
+					}
+					break;
+				case GOATMAN:
+					my->sprite = 788;
+					break;
+				case VAMPIRE:
+					my->sprite = 790;
+					break;
+				default:
+					my->sprite = 634;
+					break;
+			}
+		}
+		else if ( stats[clientnum]->appearance / 6 == 0 )
 		{
 			my->sprite = 634;
 		}
