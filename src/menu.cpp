@@ -673,6 +673,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
+				client_classes[clientnum] = 13;
+				stats[0]->playerRace = RACE_SKELETON;
+				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
@@ -687,7 +690,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-
+				client_classes[clientnum] = 13;
+				stats[0]->playerRace = RACE_SKELETON;
+				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
 				keystatus[SDL_SCANCODE_RCTRL] = 0;

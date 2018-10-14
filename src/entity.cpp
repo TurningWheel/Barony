@@ -2999,6 +2999,64 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_fire = 0; // If not on fire, then reset fire counter TODOR: This seems unecessary, but is what poison does, this is happening every tick
 	}
 
+	if ( player >= 0 && stats[player]->type == SKELETON )
+	{
+		// life saving
+		if ( myStats->HP <= 0 )
+		{
+			if ( myStats->MP >= 75 )
+			{
+				playSoundEntity(this, 167, 128);
+				createParticleDropRising(this, 174, 1.0);
+				serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 174);
+				// convert MP to HP
+				if ( safeConsumeMP(75) )
+				{
+					this->setHP(std::min(75, myStats->MAXHP));
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)net_packet->data, "ATTR");
+						net_packet->data[4] = clientnum;
+						net_packet->data[5] = (Sint8)myStats->STR;
+						net_packet->data[6] = (Sint8)myStats->DEX;
+						net_packet->data[7] = (Sint8)myStats->CON;
+						net_packet->data[8] = (Sint8)myStats->INT;
+						net_packet->data[9] = (Sint8)myStats->PER;
+						net_packet->data[10] = (Sint8)myStats->CHR;
+						net_packet->data[11] = (Sint8)myStats->EXP;
+						net_packet->data[12] = (Sint8)myStats->LVL;
+						SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
+						SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
+						SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
+						SDLNet_Write16((Sint16)myStats->MAXMP, &net_packet->data[19]);
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 21;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
+				}
+				for ( c = 0; c < NUMEFFECTS; c++ )
+				{
+					myStats->EFFECTS[c] = false;
+					myStats->EFFECTS_TIMERS[c] = 0;
+				}
+
+				myStats->EFFECTS[EFF_LEVITATING] = true;
+				myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 5 * TICKS_PER_SECOND;
+
+				messagePlayer(player, "MP<>HP!");
+
+				this->flags[BURNING] = false;
+				serverUpdateEntityFlag(this, BURNING);
+				serverUpdateEffects(player);
+			}
+			else
+			{
+				messagePlayer(player, "not enough MP");
+			}
+		}
+	}
+
 	// amulet effects
 	if ( myStats->amulet != NULL )
 	{
@@ -3080,7 +3138,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 		// life saving
-		if ( myStats->amulet->type == AMULET_LIFESAVING )   //TODO: Doesn't save against boulder traps.
+		if ( myStats->amulet->type == AMULET_LIFESAVING )   //Fixed! (saves against boulder traps.) 
 		{
 			if ( myStats->HP <= 0 )
 			{
