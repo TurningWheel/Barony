@@ -2581,7 +2581,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
-			if ( healring > 0 || svFlags & SV_FLAG_HUNGER )
+			if ( healring > 0 || (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster )
 			{
 				if ( this->char_heal >= healthRegenInterval )
 				{
@@ -10925,6 +10925,13 @@ int Entity::getManaRegenInterval(Stat& myStats)
 {
 	int regenTime = getBaseManaRegen(myStats);
 	int manaring = 0;
+	if ( behavior == &actPlayer && myStats.type != HUMAN )
+	{
+		if ( myStats.type == SKELETON )
+		{
+			manaring = -1; // 0.25x regen speed.
+		}
+	}
 	if ( myStats.breastplate != nullptr )
 	{
 		if ( myStats.breastplate->type == VAMPIRE_DOUBLET )
@@ -10970,11 +10977,11 @@ int Entity::getManaRegenInterval(Stat& myStats)
 
 	if ( manaring > 0 )
 	{
-		return regenTime / (manaring * 2);
+		return regenTime / (manaring * 2); // 1 MP each 6 seconds base
 	}
 	else if ( manaring < 0 )
 	{
-		return regenTime * abs(manaring) * 4;
+		return regenTime * abs(manaring) * 4; // 1 MP each 24 seconds if negative regen
 	}
 	else if ( manaring == 0 )
 	{
@@ -10994,6 +11001,13 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 		return -1;
 	}
 	int healring = 0;
+	if ( behavior == &actPlayer && myStats.type != HUMAN )
+	{
+		if ( myStats.type == SKELETON )
+		{
+			healring = -1; // 0.25x regen speed.
+		}
+	}
 	if ( myStats.ring != nullptr )
 	{
 		if ( myStats.ring->type == RING_REGENERATION )
@@ -11052,11 +11066,11 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 
 	if ( healring > 0 )
 	{
-		return (HEAL_TIME / (healring * 6));
+		return (HEAL_TIME / (healring * 6)); // 1 HP each 12 sec base
 	}
 	else if ( healring < 0 )
 	{
-		return (abs(healring) * HEAL_TIME * 4);
+		return (abs(healring) * HEAL_TIME * 4); // 1 HP each 48 sec if negative regen
 	}
 	else if ( healring == 0 )
 	{
