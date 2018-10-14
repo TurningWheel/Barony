@@ -244,13 +244,13 @@ void actPlayer(Entity* my)
 	int spriteLegLeft = 108 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
-	if ( client_classes[PLAYER_NUM] == 13 )
-	{
-		playerRace = INSECTOID;
-	}
-	else if ( stats[PLAYER_NUM]->playerRace > 0 )
+	if ( stats[PLAYER_NUM]->playerRace > 0 )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
+	}
+	if ( client_classes[PLAYER_NUM] == 13 || client_classes[PLAYER_NUM] == 14 )
+	{
+		stats[PLAYER_NUM]->type = playerRace;
 	}
 
 	my->focalx = limbs[playerRace][0][0];
