@@ -2732,6 +2732,19 @@ void item_Food(Item*& item, int player)
 	int oldcount;
 	int pukeChance;
 
+	if ( player >= 0 && stats[player]->type != HUMAN && (svFlags & SV_FLAG_HUNGER) ) // hunger on
+	{
+		if ( stats[player]->type == SKELETON )
+		{
+			if ( player == clientnum )
+			{
+				dropItem(item, player); // client drop item
+				messagePlayer(clientnum, "no eat");
+			}
+			return;
+		}
+	}
+
 	if ( stats[player]->amulet != NULL )
 	{
 		if ( stats[player]->amulet->type == AMULET_STRANGULATION )
