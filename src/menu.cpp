@@ -11041,7 +11041,6 @@ void buttonReplayLastCharacter(button_t* my)
 	if ( lastCreatedCharacterClass >= 0 )
 	{
 		playing_random_char = false;
-		charcreation_step = 5;
 		camera_charsheet_offsetyaw = (330) * PI / 180;
 		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
 		client_classes[0] = lastCreatedCharacterClass;
@@ -11049,6 +11048,8 @@ void buttonReplayLastCharacter(button_t* my)
 		initClass(0);
 		stats[0]->appearance = lastCreatedCharacterAppearance;
 		strcpy(stats[0]->name, lastname.c_str());
+		charcreation_step = 4; // set the step to 4, so clicking continue advances to 5 (single/multiplayer select)
+		buttonContinue(nullptr);
 	}
 }
 
