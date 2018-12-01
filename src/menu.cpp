@@ -71,7 +71,7 @@ int charcreation_step = 0;
 int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
 int singleplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
 int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists.
-bool raceSelect = false;
+int raceSelect = 0;
 /*
  * settings_tab
  * valid values:
@@ -1625,7 +1625,7 @@ void handleMainMenu(bool mode)
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
 			Uint32 colorStep1 = uint32ColorWhite(*mainsurface);
-			if ( raceSelect )
+			if ( raceSelect != 0 )
 			{
 				colorStep1 = uint32ColorGray(*mainsurface);
 			}
@@ -1646,11 +1646,11 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite(*mainsurface), language[3175]);
 
 			// race
-			if ( !raceSelect )
+			if ( raceSelect != 1 )
 			{
 				colorStep1 = uint32ColorGray(*mainsurface);
 			}
-			else
+			else if ( raceSelect == 1 )
 			{
 				colorStep1 = uint32ColorWhite(*mainsurface);
 			}
@@ -1683,26 +1683,55 @@ void handleMainMenu(bool mode)
 				pady += 16;
 			}
 
+			pady += 24;
+			bool displayRaceOptions = false;
+			if ( raceSelect != 2 )
+			{
+				colorStep1 = uint32ColorGray(*mainsurface);
+			}
+			else
+			{
+				colorStep1 = uint32ColorWhite(*mainsurface);
+			}
+			if ( stats[0]->playerRace > 0 )
+			{
+				displayRaceOptions = true;
+				ttfPrintText(ttf16, subx1 + 24, pady, language[3176]);
+				pady += 24;
+				if ( stats[0]->appearance == 0 )
+				{
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3177]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 16, colorStep1, "[ ] %s", language[3178]);
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3177]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 16, colorStep1, "[o] %s", language[3178]);
+				}
+
+			}
+
 			pady = suby1 + 108 + 24;
+
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 				{
 					if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
 					{
-						raceSelect = false;
+						raceSelect = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = MALE;
 					}
 					else if ( omousey >= suby1 + 72 && omousey < suby1 + 88 )
 					{
-						raceSelect = false;
+						raceSelect = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = FEMALE;
 					}
 					else if ( omousey >= pady && omousey < pady + NUMRACES * 16 )
 					{
-						raceSelect = true;
+						raceSelect = 1;
 						for ( c = 0; c < NUMRACES; ++c )
 						{
 							if ( omousey >= pady && omousey < pady + 16 )
@@ -1723,7 +1752,7 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				}
 				draw_cursor = false;
-				if ( raceSelect )
+				if ( raceSelect == 1 )
 				{
 					if ( stats[0]->playerRace <= 0 )
 					{
@@ -1734,9 +1763,20 @@ void handleMainMenu(bool mode)
 						--stats[0]->playerRace;
 					}
 				}
-				else
+				else if ( raceSelect == 0 )
 				{
 					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				}
+				else if ( raceSelect == 2 )
+				{
+					if ( stats[0]->appearance != 0 )
+					{
+						stats[0]->appearance = 0;
+					}
+					else
+					{
+						stats[0]->appearance = 1;
+					}
 				}
 			}
 			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
@@ -1747,20 +1787,31 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 				}
 				draw_cursor = false;
-				if ( raceSelect )
+				if ( raceSelect == 1 )
 				{
 					if ( stats[0]->playerRace >= NUMRACES - 1 )
 					{
-						stats[0]->playerRace = 0;
+						stats[0]->playerRace = RACE_HUMAN;
 					}
 					else
 					{
 						++stats[0]->playerRace;
 					}
 				}
-				else
+				else if ( raceSelect == 0 )
 				{
 					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				}
+				else if ( raceSelect == 2 )
+				{
+					if ( stats[0]->appearance != 0 )
+					{
+						stats[0]->appearance = 0;
+					}
+					else
+					{
+						stats[0]->appearance = 1;
+					}
 				}
 			}
 			if ( keystatus[SDL_SCANCODE_RIGHT] || (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) && rebindaction == -1) )
@@ -1771,7 +1822,18 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
 				}
 				draw_cursor = false;
-				raceSelect = !raceSelect;
+				++raceSelect;
+				if ( stats[0]->playerRace == RACE_HUMAN )
+				{
+					if ( raceSelect > 1 )
+					{
+						raceSelect = 0;
+					}
+				}
+				else if ( raceSelect > 2 )
+				{
+					raceSelect = 0;
+				}
 			}
 			if ( keystatus[SDL_SCANCODE_LEFT] || (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) && rebindaction == -1) )
 			{
@@ -1781,7 +1843,18 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
 				}
 				draw_cursor = false;
-				raceSelect = !raceSelect;
+				--raceSelect;
+				if ( stats[0]->playerRace == RACE_HUMAN )
+				{
+					if ( raceSelect < 0 )
+					{
+						raceSelect = 1;
+					}
+				}
+				else if ( raceSelect < 0 )
+				{
+					raceSelect = 2;
+				}
 			}
 		}
 
@@ -10891,7 +10964,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// create character creation window
 	charcreation_step = 1;
-	raceSelect = false;
+	raceSelect = 0;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
