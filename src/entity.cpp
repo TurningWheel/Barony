@@ -3960,6 +3960,10 @@ returns a list of entities that are occupying the map tile specified at
 
 list_t* checkTileForEntity(int x, int y)
 {
+	if ( x < 0 || y < 0 || x > 255 || y > 255 )
+	{
+		return nullptr; // invalid grid reference!
+	}
 	return &TileEntityList.gridEntities[x][y];
 
 //	list_t* return_val = NULL;
