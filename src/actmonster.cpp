@@ -618,6 +618,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		return false;
 	}
 
+	if ( !players[monsterclicked] || !players[monsterclicked]->entity || !stats[monsterclicked] )
+	{
+		return false;
+	}
+
 	Monster race = my->getRace();
 
 	if ( myStats->leader_uid != 0 )
@@ -669,6 +674,14 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		}
 
 		//TODO: If enemies (e.g. goblin or an angry human), require the player to be unseen by this creature to gain control of it.
+
+		if ( stats[monsterclicked]->type == SKELETON )
+		{
+			if ( race == GHOUL )
+			{
+				canAlly = true;
+			}
+		}
 	}
 	else
 	{
@@ -2474,7 +2487,7 @@ void actMonster(Entity* my)
 		monsterclicked = MONSTER_CLICKED - 1;
 		MONSTER_CLICKED = 0;
 	}
-	if ( monsterclicked >= 0 )
+	if ( monsterclicked >= 0 && monsterclicked < MAXPLAYERS )
 	{
 		if ( !my->isMobile() )
 		{
@@ -2530,10 +2543,13 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( !swornenemies[SHOPKEEPER][HUMAN] )
+					if ( players[monsterclicked] && players[monsterclicked]->entity )
 					{
-						// shopkeepers start trading
-						startTradingServer(my, monsterclicked);
+						if ( !my->checkEnemy(players[monsterclicked]->entity) )
+						{
+							// shopkeepers start trading
+							startTradingServer(my, monsterclicked);
+						}
 					}
 				}
 			}
