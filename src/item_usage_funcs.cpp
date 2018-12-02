@@ -65,13 +65,34 @@ void item_PotionWater(Item*& item, Entity* entity)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( multiplayer != CLIENT ) // server/singleplayer
 	{
 		// play drink sound
-		playSoundEntity(entity, 52, 64);
 		if ( item->beatitude > 0 )
 		{
-			entity->modHP(5);
+			if ( stats->type == GHOUL ||
+				stats->type == LICH ||
+				stats->type == LICH_FIRE ||
+				stats->type == LICH_ICE ||
+				stats->type == SHADOW ||
+				stats->type == SKELETON ||
+				stats->type == VAMPIRE )
+			{
+				//Blessed water damages undead.
+				int damage = -(20 * item->beatitude);
+				entity->modHP(damage);
+				playSoundEntity(entity, 28, 64);
+				playSoundEntity(entity, 249, 64);
+			}
+			else
+			{
+				entity->modHP(5);
+				playSoundEntity(entity, 52, 64);
+			}
+		}
+		else
+		{
+			playSoundEntity(entity, 52, 64);
 		}
 		if ( player != clientnum )
 		{
@@ -86,9 +107,29 @@ void item_PotionWater(Item*& item, Entity* entity)
 	}
 	else if ( item->beatitude > 0 )
 	{
-		messagePlayer(player, language[753]);
-		stats->HUNGER += 50;
-		entity->modHP(2);
+		if ( stats->type == SKELETON )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			messagePlayerColor(player, color, language[3184]);
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
+		else if ( stats->type == GHOUL ||
+			stats->type == LICH ||
+			stats->type == LICH_FIRE ||
+			stats->type == LICH_ICE ||
+			stats->type == SHADOW ||
+			stats->type == VAMPIRE )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			messagePlayerColor(player, color, language[3183]);
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
+		else
+		{
+			messagePlayer(player, language[753]);
+		}
 	}
 	else if ( item->beatitude < 0 )
 	{
