@@ -2739,7 +2739,7 @@ void item_Food(Item*& item, int player)
 			if ( player == clientnum )
 			{
 				dropItem(item, player); // client drop item
-				messagePlayer(clientnum, "no eat");
+				messagePlayer(clientnum, language[3179]);
 			}
 			return;
 		}
