@@ -29,6 +29,7 @@
 
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
+bool swimDebuffMessageHasPlayed = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -2397,14 +2398,28 @@ void actPlayer(Entity* my)
 		// swimming slows you down
 		bool amuletwaterbreathing = false;
 		if ( stats[PLAYER_NUM]->amulet != NULL )
+		{
 			if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
 			{
 				amuletwaterbreathing = true;
 			}
+		}
 		if ( swimming && !amuletwaterbreathing )
 		{
 			PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
 			PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
+
+			if ( stats[PLAYER_NUM]->type == SKELETON )
+			{
+				if ( !swimDebuffMessageHasPlayed )
+				{
+					messagePlayer(PLAYER_NUM, language[3182]);
+					swimDebuffMessageHasPlayed = true;
+				}
+				// no swim good
+				PLAYER_VELX *= 0.5;
+				PLAYER_VELY *= 0.5;
+			}
 		}
 
 		// rotate
