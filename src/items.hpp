@@ -239,9 +239,10 @@ typedef enum ItemType
 	ARTIFACT_ORB_GREEN,
 	TUNIC,
 	HAT_FEZ,
-	MAGICSTAFF_CHARM
+	MAGICSTAFF_CHARM,
+	POTION_POLYMORPH
 } ItemType;
-const int NUMITEMS = 218;
+const int NUMITEMS = 219;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -402,6 +403,7 @@ void item_PotionLevitation(Item*& item, Entity* entity);
 void item_PotionSpeed(Item*& item, Entity* entity);
 void item_PotionAcid(Item*& item, Entity* entity);
 void item_PotionParalysis(Item*& item, Entity* entity);
+void item_PotionPolymorph(Item*& item, Entity* entity);
 void item_ScrollMail(Item* item, int player);
 void item_ScrollIdentify(Item* item, int player);
 void item_ScrollLight(Item* item, int player);

@@ -245,7 +245,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalTimerInterval(skill[2]),
 	signalTimerRepeatCount(skill[3]),
 	signalTimerLatchInput(skill[4]),
-	signalInputDirection(skill[5])
+	signalInputDirection(skill[5]),
+	effectPolymorph(skill[50])
 {
 	int c;
 	// add the entity to the entity list
@@ -1164,6 +1165,11 @@ void Entity::effectTimes()
 						break;
 					case EFF_SLOW:
 						messagePlayer(player, language[604]); // "You return to your normal speed."
+						break;
+					case EFF_POLYMORPH:
+						effectPolymorph = 0;
+						serverUpdateEntitySkill(this, 50);
+						messagePlayer(player, language[3185]);
 						break;
 					default:
 						break;

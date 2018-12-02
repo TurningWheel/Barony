@@ -1279,6 +1279,103 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
+void item_PotionPolymorph(Item*& item, Entity* entity)
+{
+	if ( !entity )
+	{
+		return;
+	}
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
+
+	if ( stats->amulet != NULL )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION )
+		{
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[750]);
+			}
+			return;
+		}
+	}
+	if ( stats->EFFECTS[EFF_VOMITING] )
+	{
+		if ( player == clientnum )
+		{
+			messagePlayer(player, language[751]);
+		}
+		return;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item);
+		return;
+	}
+
+	messagePlayer(player, language[3186]);
+	int effectDuration = 0;
+	effectDuration = TICKS_PER_SECOND * 5;
+	/*messagePlayer(player, language[771]);
+	if ( player >= 0 )
+	{
+		effectDuration = std::max(300, effectDuration - (entity->getCON()) * 5);
+	}
+	else
+	{
+		effectDuration = 420 + rand() % 180;
+	}*/
+	entity->setEffect(EFF_POLYMORPH, true, effectDuration, true);
+	spawnExplosion(entity->x, entity->y, entity->z);
+	createParticleDropRising(entity, 593, 1.f);
+	serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);
+
+	if ( entity->behavior == &actMonster )
+	{
+		Monster monsterSummon = static_cast<Monster>(rand() % NUMMONSTERS);
+		// pick a completely random monster (barring some exceptions).
+		while ( monsterSummon == LICH || monsterSummon == SHOPKEEPER || monsterSummon == DEVIL
+			|| monsterSummon == MIMIC || monsterSummon == BUGBEAR || monsterSummon == OCTOPUS
+			|| monsterSummon == MINOTAUR || monsterSummon == LICH_FIRE || monsterSummon == LICH_ICE
+			|| monsterSummon == NOTHING )
+		{
+			monsterSummon = static_cast<Monster>(rand() % NUMMONSTERS);
+		}
+		summonMonster(monsterSummon, entity->x, entity->y, true);
+		list_RemoveNode(entity->mynode);
+		entity = nullptr;
+		return;
+	}
+	else if ( entity->behavior == &actPlayer )
+	{
+		if ( stats->type == HUMAN )
+		{
+			entity->effectPolymorph = SKELETON;
+			serverUpdateEntitySkill(entity, 50);
+		}
+		else if ( stats->type == SKELETON )
+		{
+			entity->effectPolymorph = HUMAN;
+			serverUpdateEntitySkill(entity, 50);
+		}
+	}
+
+	// play drink sound
+	playSoundEntity(entity, 52, 64);
+	consumeItem(item);
+}
+
 void item_ScrollMail(Item* item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)

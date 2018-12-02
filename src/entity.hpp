@@ -194,6 +194,10 @@ public:
 	Sint32& monsterDefend; //skill[47]
 	Sint32& monsterAllySpecial; //skill[48]
 	Sint32& monsterAllySpecialCooldown; //skill[49]
+
+	//--EFFECTS--
+	Sint32& effectPolymorph; // skill[50]
+
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 
@@ -891,8 +895,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 221;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 95;
+static const int NUM_ITEM_STRINGS = 222;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 96;
 static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;
 

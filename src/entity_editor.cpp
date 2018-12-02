@@ -93,6 +93,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterDefend(skill[47]),
 	monsterAllySpecial(skill[48]),
 	monsterAllySpecialCooldown(skill[49]),
+	effectPolymorph(skill[50]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
