@@ -402,25 +402,7 @@ void actThrown(Entity* my)
 						{
 							case POTION_WATER:
 								usedpotion = true;
-								if ( item->beatitude > 0
-									 && hit.entity->behavior == &actMonster
-									 && (hit.entity->getRace() == GHOUL ||
-										 hit.entity->getRace() == LICH || //TODO: Won't work on liches.
-										 hit.entity->getRace() == LICH_FIRE ||
-										 hit.entity->getRace() == LICH_ICE ||
-										 hit.entity->getRace() == SHADOW ||
-										 hit.entity->getRace() == SKELETON ||
-										 hit.entity->getRace() == VAMPIRE) )
-								{
-									//Blessed water damages undead more.
-									int damage = -(20 * item->beatitude);
-									hit.entity->modHP(damage);
-									consumeItem(item);
-								}
-								else
-								{
-									item_PotionWater(item, hit.entity);
-								}
+								item_PotionWater(item, hit.entity);
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity);
