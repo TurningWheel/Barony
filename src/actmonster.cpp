@@ -160,7 +160,7 @@ void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 	entity->setUID(uid);
 }
 
-Entity* summonMonster(Monster creature, long x, long y)
+Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 {
 	Entity* entity = newEntity(-1, 1, map.entities, map.creatures); //Monster entity.
 	//Set the monster's variables.
@@ -205,7 +205,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 	}
 
 	// Find a free tile next to the source and then spawn it there.
-	if ( multiplayer != CLIENT )
+	if ( multiplayer != CLIENT && !forceLocation )
 	{
 		if ( entityInsideSomething(entity) )
 		{
