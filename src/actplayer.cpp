@@ -245,7 +245,8 @@ void actPlayer(Entity* my)
 	int spriteLegLeft = 108 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
-	if ( stats[PLAYER_NUM]->playerRace > 0 )
+
+	if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
 		if ( stats[PLAYER_NUM]->appearance == 0  )
@@ -4030,6 +4031,11 @@ bool Entity::isPlayerHeadSprite()
 
 Monster Entity::getMonsterFromPlayerRace(int playerRace)
 {
+	if ( effectPolymorph > 0 )
+	{
+		return static_cast<Monster>(effectPolymorph);
+	}
+
 	switch ( playerRace )
 	{
 		case RACE_HUMAN:

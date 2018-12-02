@@ -494,6 +494,10 @@ void actThrown(Entity* my)
 								item_PotionParalysis(item, hit.entity);
 								usedpotion = true;
 								break;
+							case POTION_POLYMORPH:
+								item_PotionPolymorph(item, hit.entity);
+								usedpotion = true;
+								break;
 							default:
 								break;
 						}

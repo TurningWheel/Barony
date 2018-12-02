@@ -48,6 +48,7 @@ static const int EFF_SHRINE_BLUE_BUFF = 21;
 static const int EFF_HP_REGEN = 22;
 static const int EFF_MP_REGEN = 23;
 static const int EFF_PACIFY = 24;
+static const int EFF_POLYMORPH = 25;
 static const int NUMEFFECTS = 32;
 
 // stats
