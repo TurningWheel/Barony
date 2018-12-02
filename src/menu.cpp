@@ -1737,9 +1737,26 @@ void handleMainMenu(bool mode)
 							if ( omousey >= pady && omousey < pady + 16 )
 							{
 								stats[0]->playerRace = c;
+								mousestatus[SDL_BUTTON_LEFT] = 0;
 								break;
 							}
 							pady += 16;
+						}
+					}
+					else if ( omousey >= pady + (NUMRACES * 16) + 48 && omousey < pady + (NUMRACES * 16) + 80 )
+					{
+						if ( stats[0]->playerRace > 0 )
+						{
+							if ( omousey < pady + (NUMRACES * 16) + 64 ) // first option
+							{
+								stats[0]->appearance = 0; // use racial passives
+							}
+							else
+							{
+								stats[0]->appearance = 1; // act as human
+							}
+							raceSelect = 2;
+							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
 					}
 				}
@@ -9178,7 +9195,7 @@ void buttonBack(button_t* my)
 	{
 		playing_random_char = false;
 	}
-	if (charcreation_step == 3)
+	else if (charcreation_step == 3)
 	{
 		// If we've backed out, save what name was input for later
 		lastname = (string)inputstr;
@@ -9187,6 +9204,10 @@ void buttonBack(button_t* my)
 		{
 			charcreation_step = 2; // skip appearance window for non-human races.
 		}
+	}
+	else if ( charcreation_step == 1 )
+	{
+		raceSelect = 0; // reset the race selection menu to select sex
 	}
 	else if ( charcreation_step == 0 )
 	{
