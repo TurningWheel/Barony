@@ -247,10 +247,18 @@ void actPlayer(Entity* my)
 	if ( stats[PLAYER_NUM]->playerRace > 0 )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
+		if ( stats[PLAYER_NUM]->appearance == 0  )
+		{
+			stats[PLAYER_NUM]->type = playerRace;
+		}
+		else
+		{
+			stats[PLAYER_NUM]->type = HUMAN; // appearance of 1 is aesthetic only
+		}
 	}
-	if ( client_classes[PLAYER_NUM] == 13 || client_classes[PLAYER_NUM] == 14 )
+	else
 	{
-		stats[PLAYER_NUM]->type = playerRace;
+		stats[PLAYER_NUM]->type = HUMAN;
 	}
 
 	my->focalx = limbs[playerRace][0][0];
