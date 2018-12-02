@@ -3115,6 +3115,7 @@ void item_FoodTin(Item*& item, int player)
 	{
 		messagePlayer(player, language[966]);
 		stats[player]->EFFECTS[EFF_GREASY] = true;
+		stats[player]->EFFECTS_TIMERS[EFF_GREASY] = TICKS_PER_SECOND * (60 + rand() % 60); // 1-2 minutes of greasy
 		serverUpdateEffects(player);
 	}
 
