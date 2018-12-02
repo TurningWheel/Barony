@@ -2387,20 +2387,29 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( ticks % hungerTickRate == 0 )
+	bool processHunger = (svFlags & SV_FLAG_HUNGER); // check server flags if hunger is enabled.
+	if ( player >= 0 )
+	{
+		if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
+		{
+			processHunger = false;
+		}
+	}
+
+	if ( !processHunger )
+	{
+		if ( myStats->HUNGER != 800 )
+		{
+			myStats->HUNGER = 800; // always set hunger to 800
+			serverUpdateHunger(player);
+		}
+	}
+	else if ( ticks % hungerTickRate == 0 )
 	{
 		//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 		if ( myStats->HUNGER > 0 )
 		{
-			if ( svFlags & SV_FLAG_HUNGER )
-			{
-				myStats->HUNGER--;
-			}
-			else if ( myStats->HUNGER != 800 )
-			{
-				myStats->HUNGER = 800;
-				serverUpdateHunger(player);
-			}
+			myStats->HUNGER--;
 			if ( myStats->HUNGER == 1500 )
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
@@ -3044,7 +3053,7 @@ void Entity::handleEffects(Stat* myStats)
 				myStats->EFFECTS[EFF_LEVITATING] = true;
 				myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 5 * TICKS_PER_SECOND;
 
-				messagePlayer(player, "MP<>HP!");
+				messagePlayer(player, language[3180]);
 
 				this->flags[BURNING] = false;
 				serverUpdateEntityFlag(this, BURNING);
@@ -3052,7 +3061,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, "not enough MP");
+				messagePlayer(player, language[3181]);
 			}
 		}
 	}
@@ -7206,6 +7215,59 @@ bool Entity::checkEnemy(Entity* your)
 		{
 			// no leader, default to allegiance table
 			result = swornenemies[myStats->type][yourStats->type];
+
+			// player exceptions to table go here.
+			if ( behavior == &actPlayer && myStats->type != HUMAN )
+			{
+				result = swornenemies[HUMAN][yourStats->type];
+				switch ( myStats->type )
+				{
+					case SKELETON:
+						if ( yourStats->type == GHOUL )
+						{
+							result = false;
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
+			{
+				result = swornenemies[myStats->type][HUMAN];
+				switch ( yourStats->type )
+				{
+					case SKELETON:
+						if ( myStats->type == GHOUL )
+						{
+							result = false;
+						}
+						else if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
+						{
+							result = true;
+							/*if ( yourStats->breastplate && yourStats->shoes && yourStats->helmet && yourStats->gloves )
+							{
+								switch ( yourStats->helmet->type )
+								{
+									case STEEL_HELM:
+									case CRYSTAL_HELM:
+									case ARTIFACT_HELM:
+										result = false;
+										break;
+									default:
+										result = true;
+										break;
+								}
+							}
+							else
+							{
+							}*/
+						}
+						break;
+					default:
+						break;
+				}
+			}
 		}
 	}
 
@@ -7256,11 +7318,11 @@ bool Entity::checkFriend(Entity* your)
 		return true;
 	}
 
-	if ( myStats->type == HUMAN && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
+	if ( (myStats->type == HUMAN || behavior == &actPlayer) && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
 	{
 		return false;
 	}
-	else if ( yourStats->type == HUMAN && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
+	else if ( (yourStats->type == HUMAN || your->behavior == &actPlayer) && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
 	{
 		return false;
 	}
@@ -7331,6 +7393,63 @@ bool Entity::checkFriend(Entity* your)
 		{
 			// no leader, default to allegiance table
 			result = monsterally[myStats->type][yourStats->type];
+
+			// player exceptions to table go here.
+			if ( behavior == &actPlayer && myStats->type != HUMAN )
+			{
+				result = monsterally[HUMAN][yourStats->type];
+				switch ( myStats->type )
+				{
+					case SKELETON:
+						if ( yourStats->type == GHOUL )
+						{
+							result = true;
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
+			{
+				result = monsterally[myStats->type][HUMAN];
+				switch ( yourStats->type )
+				{
+					case SKELETON:
+						if ( myStats->type == GHOUL )
+						{
+							result = true;
+						}
+						else if ( myStats->type == HUMAN )
+						{
+							result = false;
+							/*if ( yourStats->breastplate && yourStats->shoes && yourStats->helmet && yourStats->gloves )
+							{
+								switch ( yourStats->helmet->type )
+								{
+									case STEEL_HELM:
+									case CRYSTAL_HELM:
+									case ARTIFACT_HELM:
+										result = true;
+										break;
+									default:
+										result = false;
+										break;
+								}
+							}
+							else
+							{
+							}*/
+						}
+						else if ( myStats->type == SHOPKEEPER )
+						{
+							result = false;
+						}
+						break;
+					default:
+						break;
+				}
+			}
 		}
 	}
 
