@@ -315,7 +315,7 @@ enum MonsterDefendType : int
 #define MONSTER_SHIELDYAW my->fskill[8]
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
-Entity* summonMonster(Monster creature, long x, long y);
+Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);
 void summonManyMonster(Monster creature);
 bool monsterMoveAside(Entity* my, Entity* entity);
 
