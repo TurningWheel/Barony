@@ -151,7 +151,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			if ( rand() % 2 && boss == 0 && !minion )
 			{
 				isShaman = true;
-				if ( rand() % 2 == 0 )
+				if ( myStats->leader_uid == 0 && !my->flags[USERFLAG2] && rand() % 2 == 0 )
 				{
 					Entity* entity = summonMonster(GOATMAN, my->x, my->y);
 					if ( entity )
