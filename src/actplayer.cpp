@@ -4069,6 +4069,9 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 		case RACE_VAMPIRE:
 			return VAMPIRE;
 			break;
+		case RACE_SUCCUBUS:
+			return SUCCUBUS;
+			break;
 		default:
 			return HUMAN;
 			break;
