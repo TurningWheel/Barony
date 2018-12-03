@@ -125,7 +125,8 @@ enum PlayerRaces : int
 	RACE_AUTOMATON,
 	RACE_INSECTOID,
 	RACE_GOATMAN,
-	RACE_VAMPIRE
+	RACE_VAMPIRE,
+	RACE_SUCCUBUS
 };
 
 enum ESteamStatTypes
