@@ -1796,7 +1796,7 @@ void useItem(Item* item, int player)
 			messagePlayer(player, language[2359]);
 			break;
 		case POTION_POLYMORPH:
-			item_PotionPolymorph(item, players[player]->entity);
+			item_PotionPolymorph(item, players[player]->entity, nullptr);
 			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);

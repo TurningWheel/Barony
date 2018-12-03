@@ -1170,6 +1170,10 @@ void Entity::effectTimes()
 						effectPolymorph = 0;
 						serverUpdateEntitySkill(this, 50);
 						messagePlayer(player, language[3185]);
+
+						playSoundEntity(this, 400, 92);
+						createParticleDropRising(this, 593, 1.f);
+						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
 						break;
 					default:
 						break;
@@ -2888,6 +2892,14 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->EFFECTS[EFF_POLYMORPH] )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			spawnAmbientParticles(1, 593, 20 + rand() % 10, 0.5, true);
+		}
+	}
+
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && myStats->type == SHADOW )
 	{
 		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
@@ -3019,8 +3031,12 @@ void Entity::handleEffects(Stat* myStats)
 		// life saving
 		if ( myStats->HP <= 0 )
 		{
+			messagePlayer(player, language[651]);
 			if ( myStats->MP >= 75 )
 			{
+				messagePlayer(player, language[3180]);
+				messagePlayer(player, language[654]);
+
 				playSoundEntity(this, 167, 128);
 				createParticleDropRising(this, 174, 1.0);
 				serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 174);
@@ -3058,8 +3074,6 @@ void Entity::handleEffects(Stat* myStats)
 
 				myStats->EFFECTS[EFF_LEVITATING] = true;
 				myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 5 * TICKS_PER_SECOND;
-
-				messagePlayer(player, language[3180]);
 
 				this->flags[BURNING] = false;
 				serverUpdateEntityFlag(this, BURNING);
@@ -9494,6 +9508,14 @@ void Entity::handleEffectsClient()
 		spawnAmbientParticles(30, 685, 20 + rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->EFFECTS[EFF_POLYMORPH] )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			spawnAmbientParticles(1, 593, 20 + rand() % 10, 0.5, true);
+		}
+	}
+
 	if ( myStats->EFFECTS[EFF_INVISIBLE] && getMonsterTypeFromSprite() == SHADOW )
 	{
 		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
@@ -9577,6 +9599,12 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				{
 					return false;
 				}
+			}
+			break;
+		case EFF_POLYMORPH:
+			if ( myStats->EFFECTS[EFF_POLYMORPH] || effectPolymorph != 0 )
+			{
+				return false;
 			}
 			break;
 		default:

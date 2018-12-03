@@ -19,6 +19,7 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../collision.hpp"
 
 void freeSpells()
 {
@@ -1167,4 +1168,535 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
 	return;
+}
+
+Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
+{
+	int effectDuration = 0;
+	effectDuration = TICKS_PER_SECOND * 5;
+
+	if ( !target || !targetStats )
+	{
+		return false;
+	}
+
+	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
+		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE )
+	{
+		return false;
+	}
+
+	if ( target->behavior == &actMonster )
+	{
+		Monster monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
+		// pick a completely random monster (barring some exceptions).
+		while ( monsterSummonType == LICH || monsterSummonType == SHOPKEEPER || monsterSummonType == DEVIL
+			|| monsterSummonType == MIMIC || monsterSummonType == BUGBEAR || monsterSummonType == OCTOPUS
+			|| monsterSummonType == MINOTAUR || monsterSummonType == LICH_FIRE || monsterSummonType == LICH_ICE
+			|| monsterSummonType == NOTHING || monsterSummonType == targetStats->type || monsterSummonType == HUMAN )
+		{
+			monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
+		}
+
+		bool summonCanEquipItems = false;
+		bool hitMonsterCanTransferEquipment = false;
+
+		switch ( monsterSummonType )
+		{
+			case RAT:
+			case SLIME:
+			case TROLL:
+			case SPIDER:
+			case GHOUL:
+			case SCORPION:
+			case CREATURE_IMP:
+			case DEMON:
+			case SCARAB:
+			case CRYSTALGOLEM:
+			case SHADOW:
+			case COCKATRICE:
+				summonCanEquipItems = false;
+				break;
+			default:
+				summonCanEquipItems = true;
+				break;
+		}
+
+		switch ( targetStats->type )
+		{
+			case RAT:
+			case SLIME:
+			case TROLL:
+			case SPIDER:
+			case GHOUL:
+			case SCORPION:
+			case CREATURE_IMP:
+			case DEMON:
+			case SCARAB:
+			case CRYSTALGOLEM:
+			case SHADOW:
+			case COCKATRICE:
+				hitMonsterCanTransferEquipment = false;
+				break;
+			default:
+				hitMonsterCanTransferEquipment = true;
+				break;
+		}
+
+		bool fellToDeath = false;
+		bool tryReposition = false;
+
+		if ( targetStats->EFFECTS[EFF_LEVITATING]
+			&& (monsterSummonType != CREATURE_IMP && monsterSummonType != COCKATRICE && monsterSummonType != SHADOW) )
+		{
+			// check if there's a floor...
+			int x, y, u, v;
+			x = std::min(std::max<unsigned int>(1, target->x / 16), map.width - 2);
+			y = std::min(std::max<unsigned int>(1, target->y / 16), map.height - 2);
+			for ( u = x - 1; u <= x + 1; u++ )
+			{
+				for ( v = y - 1; v <= y + 1; v++ )
+				{
+					if ( entityInsideTile(target, u, v, 0) )   // no floor
+					{
+						if ( !map.tiles[0 + u * MAPLAYERS + v * MAPLAYERS * map.height] )
+						{
+							// no floor.
+							fellToDeath = true;
+						}
+						else
+						{
+							tryReposition = true; // water or lava
+						}
+						break;
+					}
+				}
+				if ( fellToDeath || tryReposition )
+				{
+					break;
+				}
+			}
+		}
+
+		Entity* summonedEntity = nullptr;
+		if ( tryReposition )
+		{
+			summonedEntity = summonMonster(monsterSummonType, target->x, target->y);
+		}
+		else
+		{
+			summonedEntity = summonMonster(monsterSummonType, target->x, target->y, true);
+		}
+
+		if ( !summonedEntity )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[3191]);
+			}
+			return false;
+		}
+
+		Stat* summonedStats = summonedEntity->getStats();
+		if ( !summonedStats )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[3191]);
+			}
+			return false;
+		}
+
+		// remove equipment from new monster
+		if ( summonCanEquipItems )
+		{
+			// monster does not have generated equipment yet, disable from generating.
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_RING] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 0;
+			summonedStats->EDITOR_ITEMS[ITEM_SLOT_AMULET] = 0;
+		}
+
+		// copy stats from target to new creature.
+		summonedStats->HP = targetStats->HP;
+		summonedStats->OLDHP = targetStats->OLDHP;
+		summonedStats->MP = targetStats->MP;
+		summonedStats->MAXHP = targetStats->MAXHP;
+		summonedStats->MAXMP = targetStats->MAXMP;
+		summonedStats->STR = targetStats->STR;
+		summonedStats->DEX = targetStats->DEX;
+		summonedStats->CON = targetStats->CON;
+		summonedStats->INT = targetStats->INT;
+		summonedStats->PER = targetStats->PER;
+		summonedStats->CHR = targetStats->CHR;
+		summonedStats->LVL = targetStats->LVL;
+		summonedStats->GOLD = targetStats->GOLD;
+
+		// don't apply random stats again
+		summonedStats->RANDOM_HP = 0;
+		summonedStats->RANDOM_MP = 0;
+		summonedStats->RANDOM_MAXHP = 0;
+		summonedStats->RANDOM_MAXMP = 0;
+		summonedStats->RANDOM_STR = 0;
+		summonedStats->RANDOM_DEX = 0;
+		summonedStats->RANDOM_CON = 0;
+		summonedStats->RANDOM_INT = 0;
+		summonedStats->RANDOM_PER = 0;
+		summonedStats->RANDOM_CHR = 0;
+		summonedStats->RANDOM_LVL = 0;
+		summonedStats->RANDOM_GOLD = 0;
+
+		summonedStats->leader_uid = targetStats->leader_uid;
+		if ( summonedStats->leader_uid != 0 && summonedStats->type != SHADOW )
+		{
+			Entity* leader = uidToEntity(summonedStats->leader_uid);
+			if ( leader )
+			{
+				// lose old ally
+				if ( target->monsterAllyIndex != -1 )
+				{
+					int playerFollower = MAXPLAYERS;
+					for ( int c = 0; c < MAXPLAYERS; c++ )
+					{
+						if ( players[c] && players[c]->entity )
+						{
+							if ( targetStats->leader_uid == players[c]->entity->getUID() )
+							{
+								playerFollower = c;
+								if ( stats[c] )
+								{
+									for ( node_t* allyNode = stats[c]->FOLLOWERS.first; allyNode != nullptr; allyNode = allyNode->next )
+									{
+										if ( *((Uint32*)allyNode->element) == target->getUID() )
+										{
+											list_RemoveNode(allyNode);
+											if ( c != clientnum )
+											{
+												serverRemoveClientFollower(c, target->getUID());
+											}
+											else
+											{
+												if ( FollowerMenu.recentEntity && (FollowerMenu.recentEntity->getUID() == 0
+													|| FollowerMenu.recentEntity->getUID() == target->getUID()) )
+												{
+													FollowerMenu.recentEntity = nullptr;
+												}
+											}
+											break;
+										}
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+
+				if ( forceFollower(*leader, *summonedEntity) )
+				{
+					if ( leader->behavior == &actPlayer )
+					{
+						summonedEntity->monsterAllyIndex = leader->skill[2];
+						if ( multiplayer == SERVER )
+						{
+							serverUpdateEntitySkill(summonedEntity, 42); // update monsterAllyIndex for clients.
+						}
+
+					}
+					// change the color of the hit entity.
+					if ( summonedStats->type != HUMAN && summonedStats->type != AUTOMATON )
+					{
+						summonedEntity->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(summonedEntity, USERFLAG2);
+						int bodypart = 0;
+						for ( node_t* node = summonedEntity->children.first; node != nullptr; node = node->next )
+						{
+							if ( bodypart >= LIMB_HUMANOID_TORSO )
+							{
+								Entity* tmp = (Entity*)node->element;
+								if ( tmp )
+								{
+									tmp->flags[USERFLAG2] = true;
+									serverUpdateEntityFlag(tmp, USERFLAG2);
+								}
+							}
+							++bodypart;
+						}
+					}
+				}
+			}
+		}
+		if ( targetStats->type == HUMAN )
+		{
+			strcpy(summonedStats->name, targetStats->name);
+		}
+
+		if ( hitMonsterCanTransferEquipment && summonCanEquipItems )
+		{
+			// weapon
+			Item** slot = itemSlot(targetStats, targetStats->weapon);
+			if ( slot )
+			{
+				summonedStats->weapon = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+			}
+
+			// shield
+			slot = itemSlot(targetStats, targetStats->shield);
+			if ( slot )
+			{
+				summonedStats->shield = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+			}
+
+			// breastplate
+			slot = itemSlot(targetStats, targetStats->breastplate);
+			if ( slot )
+			{
+				if ( monsterSummonType == KOBOLD || monsterSummonType == GNOME )
+				{
+					// kobold/gnomes can't equip breastplate, drop it!
+					Entity* dropped = dropItemMonster(targetStats->breastplate, target, targetStats);
+					if ( dropped )
+					{
+						dropped->flags[USERFLAG1] = true;
+					}
+				}
+				else
+				{
+					summonedStats->breastplate = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+						(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+				}
+			}
+
+			// shoes
+			slot = itemSlot(targetStats, targetStats->shoes);
+			if ( slot )
+			{
+				summonedStats->shoes = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+			}
+
+			// helm
+			slot = itemSlot(targetStats, targetStats->helmet);
+			if ( slot )
+			{
+				if ( monsterSummonType == KOBOLD || monsterSummonType == GNOME )
+				{
+					// kobold/gnomes can't equip non-hoods, drop the rest
+					if ( (*slot)->type == HAT_HOOD )
+					{
+						summonedStats->helmet = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+							(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+					}
+					else
+					{
+						Entity* dropped = dropItemMonster(targetStats->helmet, target, targetStats);
+						if ( dropped )
+						{
+							dropped->flags[USERFLAG1] = true;
+						}
+					}
+				}
+				else
+				{
+					summonedStats->helmet = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+						(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+				}
+			}
+
+			// amulet
+			slot = itemSlot(targetStats, targetStats->amulet);
+			if ( slot )
+			{
+				summonedStats->amulet = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+			}
+
+			// ring
+			slot = itemSlot(targetStats, targetStats->ring);
+			if ( slot )
+			{
+				summonedStats->ring = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+			}
+
+			// cloak
+			slot = itemSlot(targetStats, targetStats->cloak);
+			if ( slot )
+			{
+				summonedStats->cloak = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+					(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+			}
+
+			// gloves
+			slot = itemSlot(targetStats, targetStats->gloves);
+			if ( slot )
+			{
+				if ( monsterSummonType == KOBOLD || monsterSummonType == GNOME )
+				{
+					// kobold/gnomes can't equip gloves, drop it!
+					Entity* dropped = dropItemMonster(targetStats->gloves, target, targetStats);
+					if ( dropped )
+					{
+						dropped->flags[USERFLAG1] = true;
+					}
+				}
+				else
+				{
+					summonedStats->gloves = newItem((*slot)->type, (*slot)->status, (*slot)->beatitude,
+						(*slot)->count, (*slot)->appearance, (*slot)->identified, nullptr);
+				}
+			}
+		}
+		else if ( hitMonsterCanTransferEquipment && !summonCanEquipItems )
+		{
+			Entity* dropped = dropItemMonster(targetStats->weapon, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->shield, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->breastplate, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->shoes, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->gloves, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->ring, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->amulet, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->cloak, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+			dropped = dropItemMonster(targetStats->helmet, target, targetStats);
+			if ( dropped )
+			{
+				dropped->flags[USERFLAG1] = true;
+			}
+		}
+
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			bool namedMonsterAsGeneric = monsterNameIsGeneric(*targetStats);
+			// the %s polymorph into a %s!
+			if ( !strcmp((*targetStats).name, "") || namedMonsterAsGeneric )
+			{
+				if ( (*targetStats).type < KOBOLD ) //Original monster count
+				{
+					if ( summonedStats->type < KOBOLD )
+					{
+						messagePlayerColor(parent->skill[2], color, language[3187], language[90 + (*targetStats).type], language[90 + summonedStats->type]);
+					}
+					else
+					{
+						messagePlayerColor(parent->skill[2], color, language[3187], language[90 + (*targetStats).type], language[2000 + summonedStats->type - KOBOLD]);
+					}
+				}
+				else if ( (*targetStats).type >= KOBOLD ) //New monsters
+				{
+					if ( summonedStats->type < KOBOLD )
+					{
+						messagePlayerColor(parent->skill[2], color, language[3187], language[2000 + (*targetStats).type - KOBOLD], language[90 + summonedStats->type]);
+					}
+					else
+					{
+						messagePlayerColor(parent->skill[2], color, language[3187], language[2000 + (*targetStats).type - KOBOLD], language[2000 + summonedStats->type - KOBOLD]);
+					}
+				}
+			}
+			else
+			{
+				if ( summonedStats->type < KOBOLD )
+				{
+					messagePlayerColor(parent->skill[2], color, language[3188], (*targetStats).name, language[90 + summonedStats->type]);
+				}
+				else
+				{
+					messagePlayerColor(parent->skill[2], color, language[3188], (*targetStats).name, language[2000 + summonedStats->type - KOBOLD]);
+				}
+			}
+		}
+
+		playSoundEntity(target, 400, 92);
+		spawnExplosion(target->x, target->y, target->z);
+		createParticleDropRising(target, 593, 1.f);
+		serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
+
+		if ( fellToDeath )
+		{
+			summonedEntity->setObituary(language[3010]); // fell to their death.
+			summonedStats->HP = 0; // kill me instantly
+		}
+
+		list_RemoveNode(target->mynode);
+		target = nullptr;
+		return summonedEntity;
+	}
+	else if ( target->behavior == &actPlayer )
+	{
+		if ( target->setEffect(EFF_POLYMORPH, true, effectDuration, true) )
+		{
+			spawnExplosion(target->x, target->y, target->z);
+			playSoundEntity(target, 400, 92);
+			createParticleDropRising(target, 593, 1.f);
+			serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
+
+			if ( targetStats->type == HUMAN )
+			{
+				int roll = 1 + rand() % 8;
+				target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
+			}
+			else if ( targetStats->type != HUMAN )
+			{
+				target->effectPolymorph = HUMAN;
+			}
+			serverUpdateEntitySkill(target, 50);
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			if ( target->effectPolymorph < KOBOLD )
+			{
+				messagePlayerColor(target->skill[2], color, language[3186], language[90 + target->effectPolymorph]);
+			}
+			else
+			{
+				messagePlayerColor(target->skill[2], color, language[3186], language[2000 + target->effectPolymorph - KOBOLD]);
+			}
+		}
+		else
+		{
+			messagePlayer(target->skill[2], language[3189]);
+		}
+
+	}
+
+	return nullptr;
 }
