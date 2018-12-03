@@ -1279,11 +1279,11 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionPolymorph(Item*& item, Entity* entity)
+Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* parent)
 {
 	if ( !entity )
 	{
-		return;
+		return nullptr;
 	}
 
 	int player = -1;
@@ -1296,7 +1296,7 @@ void item_PotionPolymorph(Item*& item, Entity* entity)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return nullptr;
 	}
 
 	if ( stats->amulet != NULL )
@@ -1307,7 +1307,7 @@ void item_PotionPolymorph(Item*& item, Entity* entity)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return nullptr;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1316,64 +1316,33 @@ void item_PotionPolymorph(Item*& item, Entity* entity)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return nullptr;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item);
-		return;
-	}
-
-	messagePlayer(player, language[3186]);
-	int effectDuration = 0;
-	effectDuration = TICKS_PER_SECOND * 5;
-	/*messagePlayer(player, language[771]);
-	if ( player >= 0 )
-	{
-		effectDuration = std::max(300, effectDuration - (entity->getCON()) * 5);
-	}
-	else
-	{
-		effectDuration = 420 + rand() % 180;
-	}*/
-	entity->setEffect(EFF_POLYMORPH, true, effectDuration, true);
-	spawnExplosion(entity->x, entity->y, entity->z);
-	createParticleDropRising(entity, 593, 1.f);
-	serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);
-
-	if ( entity->behavior == &actMonster )
-	{
-		Monster monsterSummon = static_cast<Monster>(rand() % NUMMONSTERS);
-		// pick a completely random monster (barring some exceptions).
-		while ( monsterSummon == LICH || monsterSummon == SHOPKEEPER || monsterSummon == DEVIL
-			|| monsterSummon == MIMIC || monsterSummon == BUGBEAR || monsterSummon == OCTOPUS
-			|| monsterSummon == MINOTAUR || monsterSummon == LICH_FIRE || monsterSummon == LICH_ICE
-			|| monsterSummon == NOTHING )
-		{
-			monsterSummon = static_cast<Monster>(rand() % NUMMONSTERS);
-		}
-		summonMonster(monsterSummon, entity->x, entity->y, true);
-		list_RemoveNode(entity->mynode);
-		entity = nullptr;
-		return;
-	}
-	else if ( entity->behavior == &actPlayer )
-	{
-		if ( stats->type == HUMAN )
-		{
-			entity->effectPolymorph = SKELETON;
-			serverUpdateEntitySkill(entity, 50);
-		}
-		else if ( stats->type == SKELETON )
-		{
-			entity->effectPolymorph = HUMAN;
-			serverUpdateEntitySkill(entity, 50);
-		}
+		return nullptr;
 	}
 
 	// play drink sound
-	playSoundEntity(entity, 52, 64);
+	if ( !parent ) // drinking rather than throwing.
+	{
+		playSoundEntity(entity, 52, 64);
+		if ( player >= 0 )
+		{
+			messagePlayer(player, language[3190]);
+		}
+	}
+	Entity* transformedEntity = false;
+
+	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
+	{
+		transformedEntity = effectPolymorph(entity, stats, parent);
+	}
+
 	consumeItem(item);
+
+	return transformedEntity;
 }
 
 void item_ScrollMail(Item* item, int player)

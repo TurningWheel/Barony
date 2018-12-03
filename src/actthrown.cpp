@@ -393,6 +393,7 @@ void actThrown(Entity* my)
 				char whatever[256];
 				snprintf(whatever, 255, language[1508], itemname);
 				hit.entity->setObituary(whatever);
+				bool skipMessage = false;
 
 				if ( hitstats )
 				{
@@ -495,9 +496,37 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							case POTION_POLYMORPH:
-								item_PotionPolymorph(item, hit.entity);
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( hit.entity->behavior == &actMonster )
+								{
+									if ( parent->behavior == &actPlayer )
+									{
+										if ( !strcmp(hitstats->name, "") )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+										}
+										else
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+										}
+									}
+								}
+								else if ( hit.entity->behavior == &actPlayer )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
+								}
+								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
+								if ( newTarget )
+								{
+									hit.entity = newTarget;
+									hitstats = newTarget->getStats();
+								}
+								skipMessage = true;
 								usedpotion = true;
 								break;
+							}
 							default:
 								break;
 						}
@@ -618,7 +647,7 @@ void actThrown(Entity* my)
 					}
 					hit.entity = ohitentity;
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					if ( parent->behavior == &actPlayer )
+					if ( parent->behavior == &actPlayer && !skipMessage )
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
@@ -645,7 +674,7 @@ void actThrown(Entity* my)
 						}
 					}
 				}
-				else if ( hit.entity->behavior == &actPlayer )
+				else if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 					messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
