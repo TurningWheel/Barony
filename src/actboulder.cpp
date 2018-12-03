@@ -151,7 +151,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						}
 					}
 				}
-				if ( stats->HP > 0 || (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING) )
+				if ( stats->HP > 0 || (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING)
+					|| (stats->HP <= 0 && entity->behavior == &actPlayer && stats->type == SKELETON && stats->MP >= 75) )
 				{
 					// spawn several rock items
 					int i = 8 + rand() % 4;
