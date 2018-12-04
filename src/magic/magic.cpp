@@ -1198,10 +1198,12 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 	{
 		Monster monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
 		// pick a completely random monster (barring some exceptions).
+		// disable shadow spawning if the monster has a leader since it'll aggro the player and bad things
 		while ( monsterSummonType == LICH || monsterSummonType == SHOPKEEPER || monsterSummonType == DEVIL
 			|| monsterSummonType == MIMIC || monsterSummonType == BUGBEAR || monsterSummonType == OCTOPUS
 			|| monsterSummonType == MINOTAUR || monsterSummonType == LICH_FIRE || monsterSummonType == LICH_ICE
-			|| monsterSummonType == NOTHING || monsterSummonType == targetStats->type || monsterSummonType == HUMAN )
+			|| monsterSummonType == NOTHING || monsterSummonType == targetStats->type || monsterSummonType == HUMAN
+			|| (targetStats->leader_uid != 0 && monsterSummonType == SHADOW) )
 		{
 			monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
 		}
