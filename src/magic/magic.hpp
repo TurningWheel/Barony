@@ -531,6 +531,6 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
-Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent); // returns nullptr if target was monster, otherwise returns pointer to new creature
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent); // returns nullptr if target was monster, otherwise returns pointer to new creature
 
 void freeSpells();

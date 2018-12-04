@@ -20,6 +20,7 @@
 #include "../player.hpp"
 #include "magic.hpp"
 #include "../collision.hpp"
+#include "../classdescriptions.hpp"
 
 void freeSpells()
 {
@@ -1170,7 +1171,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 	return;
 }
 
-Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 {
 	int effectDuration = 0;
 	effectDuration = TICKS_PER_SECOND * ((60 * 3) + rand() & 120); // 3-5 minutes
@@ -1748,23 +1749,32 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			}
 			else if ( targetStats->playerRace != RACE_HUMAN )
 			{
-				target->effectPolymorph = HUMAN;
+				target->effectPolymorph = 100 + rand() % NUMAPPEARANCES;
 			}
 			serverUpdateEntitySkill(target, 50);
 
 			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-			if ( target->effectPolymorph < KOBOLD )
+			Monster race = NOTHING;
+			if ( target->effectPolymorph > NUMMONSTERS )
 			{
-				messagePlayerColor(target->skill[2], color, language[3186], language[90 + target->effectPolymorph]);
+				race = HUMAN;
 			}
 			else
 			{
-				messagePlayerColor(target->skill[2], color, language[3186], language[2000 + target->effectPolymorph - KOBOLD]);
+				race = static_cast<Monster>(target->effectPolymorph);
+			}
+			if ( race < KOBOLD )
+			{
+				messagePlayerColor(target->skill[2], color, language[3186], language[90 + race]);
+			}
+			else
+			{
+				messagePlayerColor(target->skill[2], color, language[3186], language[2000 + race - KOBOLD]);
 			}
 
 			// change player's type here, don't like this.. will get auto reset in actPlayer() though
 			// otherwise the below aggro check will still assume previous race since actPlayer() hasn't run yet.
-			targetStats->type = static_cast<Monster>(target->effectPolymorph); 
+			targetStats->type = race;
 
 			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
 			{

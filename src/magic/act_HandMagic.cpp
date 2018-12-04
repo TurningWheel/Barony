@@ -215,14 +215,25 @@ void actLeftHandMagic(Entity* my)
 			my->sprite = 665;
 		}
 	}
+
+	int playerAppearance = stats[clientnum]->appearance;
+
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->playerRace > 0 )
 		{
 			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
-			if ( my->effectPolymorph != NOTHING )
+			if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 			{
-				playerRace = static_cast<Monster>(my->effectPolymorph);
+				if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+				{
+					playerRace = HUMAN;
+					playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+				}
+				else
+				{
+					playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+				}
 			}
 			switch ( playerRace )
 			{
@@ -257,16 +268,30 @@ void actLeftHandMagic(Entity* my)
 				case VAMPIRE:
 					my->sprite = 789;
 					break;
+				case HUMAN:
+					if ( playerAppearance / 6 == 0 )
+					{
+						my->sprite = 656;
+					}
+					else if ( playerAppearance / 6 == 1 )
+					{
+						my->sprite = 657;
+					}
+					else
+					{
+						my->sprite = 658;
+					}
+					break;
 				default:
 					my->sprite = 656;
 					break;
 			}
 		}
-		else if ( stats[clientnum]->appearance / 6 == 0 )
+		else if ( playerAppearance / 6 == 0 )
 		{
 			my->sprite = 656;
 		}
-		else if ( stats[clientnum]->appearance / 6 == 1 )
+		else if ( playerAppearance / 6 == 1 )
 		{
 			my->sprite = 657;
 		}
@@ -460,14 +485,25 @@ void actRightHandMagic(Entity* my)
 			my->sprite = 590;
 		}
 	}
+
+	int playerAppearance = stats[clientnum]->appearance;
+
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->playerRace > 0 )
 		{
 			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
-			if ( my->effectPolymorph != NOTHING )
+			if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 			{
-				playerRace = static_cast<Monster>(my->effectPolymorph);
+				if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+				{
+					playerRace = HUMAN;
+					playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+				}
+				else
+				{
+					playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+				}
 			}
 			switch ( playerRace )
 			{
@@ -502,16 +538,30 @@ void actRightHandMagic(Entity* my)
 				case VAMPIRE:
 					my->sprite = 790;
 					break;
+				case HUMAN:
+					if ( playerAppearance / 6 == 0 )
+					{
+						my->sprite = 634;
+					}
+					else if ( playerAppearance / 6 == 1 )
+					{
+						my->sprite = 635;
+					}
+					else
+					{
+						my->sprite = 636;
+					}
+					break;
 				default:
 					my->sprite = 634;
 					break;
 			}
 		}
-		else if ( stats[clientnum]->appearance / 6 == 0 )
+		else if ( playerAppearance / 6 == 0 )
 		{
 			my->sprite = 634;
 		}
-		else if ( stats[clientnum]->appearance / 6 == 1 )
+		else if ( playerAppearance / 6 == 1 )
 		{
 			my->sprite = 635;
 		}
