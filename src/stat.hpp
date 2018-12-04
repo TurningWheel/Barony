@@ -139,6 +139,9 @@ static const int STAT_FLAG_ALLY_PICKUP = 2;
 static const int STAT_FLAG_ALLY_CLASS = 3;
 static const int STAT_FLAG_PLAYER_RACE = 4;
 static const int STAT_FLAG_POLYMORPH_STORAGE = 5;
+static const int STAT_FLAG_ALLY_SUMMON_LVLHP = 6;
+static const int STAT_FLAG_ALLY_SUMMON_STRDEXCONINT = 7;
+static const int STAT_FLAG_ALLY_SUMMON_PERCHR = 8;
 
 typedef enum
 {
@@ -184,6 +187,9 @@ public:
 	Sint32& allyClass; // MISC_FLAGS[3]
 	Sint32& playerRace; // MISC_FLAGS[4]
 	Sint32& playerPolymorphStorage; // MISC_FLAGS[5]
+	Sint32& playerSummonLVLHP; // MISC_FLAGS[6]
+	Sint32& playerSummonSTRDEXCONINT; // MISC_FLAGS[7]
+	Sint32& playerSummonPERCHR; // MISC_FLAGS[8]
 
 	// group think
 	Uint32 leader_uid;

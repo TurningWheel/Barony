@@ -23,7 +23,10 @@ Stat::Stat(Sint32 sprite) :
 	allyItemPickup(MISC_FLAGS[2]),
 	allyClass(MISC_FLAGS[3]),
 	playerRace(MISC_FLAGS[4]),
-	playerPolymorphStorage(MISC_FLAGS[5])
+	playerPolymorphStorage(MISC_FLAGS[5]),
+	playerSummonLVLHP(MISC_FLAGS[6]),
+	playerSummonSTRDEXCONINT(MISC_FLAGS[7]),
+	playerSummonPERCHR(MISC_FLAGS[8])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

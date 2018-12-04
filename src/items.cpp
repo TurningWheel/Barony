@@ -1131,6 +1131,11 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 				itemDroppable = false;
 			}
 
+			if ( monsterStats->type == SKELETON && monster->monsterAllySummonRank != 0 )
+			{
+				itemDroppable = false;
+			}
+
 			if ( (monsterStats->type == KOBOLD
 				|| monsterStats->type == COCKATRICE
 				|| monsterStats->type == INSECTOID
