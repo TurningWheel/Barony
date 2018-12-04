@@ -2802,6 +2802,10 @@ void createParticleSap(Entity* parent)
 				sprite = 599;
 			}
 		}
+		else if ( parent->skill[6] == SPELL_SUMMON )
+		{
+			sprite = parent->sprite;
+		}
 		else if ( multiplayer == CLIENT )
 		{
 			// client won't receive the sprite skill data in time, fix for this until a solution is found!
@@ -3067,6 +3071,10 @@ void actParticleTimer(Entity* my)
 				}
 				my->removeLightField();
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SPELL_SUMMON )
+			{
+				my->removeLightField();
+			}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHADOW_TELEPORT )
 			{
 				// teleport to target spell.
@@ -3260,6 +3268,43 @@ void actParticleTimer(Entity* my)
 					my->particleTimerCountdownAction = 0;
 				}
 			}
+			// continually fire
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SPELL_SUMMON )
+			{
+				if ( multiplayer != CLIENT && my->particleTimerPreDelay != -100 )
+				{
+					// once-off hack :)
+					spawnExplosion(my->x, my->y, -1);
+					playSoundEntity(my, 171, 128);
+					my->particleTimerPreDelay = -100;
+
+					createParticleErupt(my, my->particleTimerCountdownSprite);
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, my->particleTimerCountdownSprite);
+				}
+
+				// shoot drops to the sky
+				//if ( my->particleTimerCountdownSprite != 0 )
+				//{
+				//	Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr); //Particle entity.
+				//	entity->sizex = 1;
+				//	entity->sizey = 1;
+				//	entity->x = my->x - 4 + rand() % 9;
+				//	entity->y = my->y - 4 + rand() % 9;
+				//	entity->z = 7.5;
+				//	entity->vel_z = -1;
+				//	entity->yaw = (rand() % 360) * PI / 180.0;
+				//	entity->particleDuration = 10 + rand() % 30;
+				//	entity->behavior = &actParticleDot;
+				//	entity->flags[PASSABLE] = true;
+				//	entity->flags[NOUPDATE] = true;
+				//	entity->flags[UNCLICKABLE] = true;
+				//	if ( multiplayer != CLIENT )
+				//	{
+				//		entity_uids--;
+				//	}
+				//	entity->setUID(-3);
+				//}
+			}
 		}
 		else
 		{
@@ -3435,32 +3480,108 @@ void actParticleSapCenter(Entity* my)
 	}
 	else
 	{
-		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-		entity->flags[INVISIBLE] = true;
-		entity->flags[UPDATENEEDED] = true;
-		entity->x = my->x;
-		entity->y = my->y;
-		entity->sizex = 4;
-		entity->sizey = 4;
-		entity->yaw = my->yaw;
-		entity->vel_x = (rand() % 20 - 10) / 10.0;
-		entity->vel_y = (rand() % 20 - 10) / 10.0;
-		entity->vel_z = -.5;
-		entity->flags[PASSABLE] = true;
-		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
-		entity->behavior = &actItem;
-		entity->skill[10] = my->skill[10];
-		entity->skill[11] = my->skill[11];
-		entity->skill[12] = my->skill[12];
-		entity->skill[13] = my->skill[13];
-		entity->skill[14] = my->skill[14];
-		entity->skill[15] = my->skill[15];
-		entity->itemOriginalOwner = my->itemOriginalOwner;
-		entity->parent = 0;
+		if ( my->skill[6] == SPELL_SUMMON )
+		{
+			real_t dist = sqrt(pow(my->x - my->skill[8], 2) + pow(my->y - my->skill[9], 2));
+			if ( dist < 4 )
+			{
+				spawnMagicEffectParticles(my->skill[8], my->skill[9], 0, my->skill[5]);
+				Entity* caster = uidToEntity(my->skill[7]);
+				if ( caster )
+				{
+					Monster creature = SKELETON;
+					Entity* monster = summonMonster(creature, my->skill[8], my->skill[9]);
+					if ( monster )
+					{
+						Stat* monsterStats = monster->getStats();
+						monster->yaw = my->yaw - PI;
+						if ( monsterStats && forceFollower(*caster, *monster) )
+						{
+							monster->setEffect(EFF_STUNNED, true, 20, false);
 
-		// no parent, no target to travel to.
-		list_RemoveNode(my->mynode);
-		return;
+							if ( caster->behavior == &actPlayer )
+							{
+								int magicLevel = (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) / 20;
+								monster->monsterAllySummonRank = magicLevel;
+								strcpy(monsterStats->name, "skeleton warrior");
+								//parent->increaseSkill(PRO_LEADERSHIP);
+								monster->monsterAllyIndex = caster->skill[2];
+								if ( multiplayer == SERVER )
+								{
+									serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+								}
+							}
+
+							// change the color of the hit entity.
+							if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
+							{
+								monster->flags[USERFLAG2] = true;
+								serverUpdateEntityFlag(monster, USERFLAG2);
+								int bodypart = 0;
+								for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+								{
+									if ( bodypart >= LIMB_HUMANOID_TORSO )
+									{
+										Entity* tmp = (Entity*)node->element;
+										if ( tmp )
+										{
+											tmp->flags[USERFLAG2] = true;
+											serverUpdateEntityFlag(tmp, USERFLAG2);
+										}
+									}
+									++bodypart;
+								}
+							}
+						}
+					}
+				}
+				list_RemoveNode(my->mynode);
+				return;
+			}
+
+			// calculate direction to caster and move.
+			real_t tangent = atan2(my->skill[9] - my->y, my->skill[8] - my->x);
+			real_t speed = dist / PARTICLE_LIFE;
+			my->vel_x = speed * cos(tangent);
+			my->vel_y = speed * sin(tangent);
+			my->x += my->vel_x;
+			my->y += my->vel_y;
+		}
+		else if ( my->skill[6] == SPELL_STEAL_WEAPON )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = my->yaw;
+			entity->vel_x = (rand() % 20 - 10) / 10.0;
+			entity->vel_y = (rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.5;
+			entity->flags[PASSABLE] = true;
+			entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+			entity->behavior = &actItem;
+			entity->skill[10] = my->skill[10];
+			entity->skill[11] = my->skill[11];
+			entity->skill[12] = my->skill[12];
+			entity->skill[13] = my->skill[13];
+			entity->skill[14] = my->skill[14];
+			entity->skill[15] = my->skill[15];
+			entity->itemOriginalOwner = my->itemOriginalOwner;
+			entity->parent = 0;
+
+			// no parent, no target to travel to.
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		else
+		{
+			// no parent, no target to travel to.
+			list_RemoveNode(my->mynode);
+			return;
+		}
 	}
 
 	if ( PARTICLE_LIFE < 0 )

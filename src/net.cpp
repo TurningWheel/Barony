@@ -2575,6 +2575,18 @@ void clientHandlePacket()
 				spellTimer->z = particle_z;
 			}
 				break;
+			case PARTICLE_EFFECT_SPELL_SUMMON:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 55, sprite);
+				spellTimer->particleTimerCountdownSprite = 791;
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPELL_SUMMON;
+				spellTimer->particleTimerPreDelay = 40;
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SPELL_SUMMON;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+			}
+				break;
 			default:
 				break;
 		}

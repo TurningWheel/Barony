@@ -776,22 +776,64 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_summon.name) )
 		{
+			playSoundEntity(caster, 251, 128);
+			playSoundEntity(caster, 252, 128);
+			if ( caster->behavior == &actPlayer )
+			{
+				real_t startx = caster->x;
+				real_t starty = caster->y;
+				real_t startz = -4;
+				real_t pitch = caster->pitch;
+				if ( pitch < 0 )
+				{
+					pitch = 0;
+				}
+				// draw line from the players height and direction until we hit the ground.
+				real_t previousx = startx;
+				real_t previousy = starty;
+				int index = 0;
+				for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
+				{
+					startx += 0.1 * cos(caster->yaw);
+					starty += 0.1 * sin(caster->yaw);
+					index = (static_cast<int>(starty + 16 * sin(caster->yaw)) >> 4) * MAPLAYERS 
+						+ (static_cast<int>(startx + 16 * cos(caster->yaw)) >> 4) * MAPLAYERS * map.height;
+					if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+					{
+						// store the last known good coordinate
+						previousx = startx;
+						previousy = starty;
+					}
+					if ( map.tiles[OBSTACLELAYER + index] )
+					{
+						break;
+					}
+				}
+
+				Entity* timer = createParticleTimer(caster, 55, 0);
+				timer->x = static_cast<int>(previousx / 16) * 16 + 8;
+				timer->y = static_cast<int>(previousy / 16) * 16 + 8;
+				timer->sizex = 4;
+				timer->sizey = 4;
+				timer->particleTimerCountdownSprite = 791;
+				timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPELL_SUMMON;
+				timer->particleTimerPreDelay = 40;
+				timer->particleTimerEndAction == PARTICLE_EFFECT_SPELL_SUMMON;
+				timer->z = 0;
+				Entity* sapParticle = createParticleSapCenter(caster, caster, SPELL_SUMMON, 599, 599);
+				sapParticle->parent = 0;
+				sapParticle->yaw = caster->yaw;
+				sapParticle->skill[7] = caster->getUID();
+				sapParticle->skill[8] = timer->x;
+				sapParticle->skill[9] = timer->y;
+				serverSpawnMiscParticlesAtLocation(previousx / 16, previousy / 16, 0, PARTICLE_EFFECT_SPELL_SUMMON, 791);
+			}
 			for ( i = 0; i < numplayers; ++i )
 			{
 				if ( caster == players[i]->entity )
 				{
-					//caster->lichIceCreateCannon();
-					//caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
-					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					//createParticle1(caster, i);
-					//createParticleDropRising(caster);
 				}
 			}
-			//createParticleDropRising(caster, 593, 1.0);
-			//serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
-
-			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
-			playSoundEntity(caster, 167, 128);
 		}
 		else if ( !strcmp(element->name, spellElement_reflectMagic.name) )
 		{
