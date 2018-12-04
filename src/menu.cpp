@@ -6856,6 +6856,16 @@ void handleMainMenu(bool mode)
 						int c;
 						for ( c = 0; c < MAXPLAYERS; c++ )
 						{
+							if ( players[c] && players[c]->entity && !client_disconnected[c] )
+							{
+								if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+								{
+									players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+									serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+									serverUpdateEffects(c);
+								}
+							}
+
 							node_t* tempNode = list_Node(followers, c);
 							if ( tempNode )
 							{
