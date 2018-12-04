@@ -3465,6 +3465,17 @@ void actParticleSapCenter(Entity* my)
 				playSoundEntity(parent, 166, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
 			}
+			else if ( my->skill[6] == SPELL_SUMMON )
+			{
+				parent->modMP(my->skill[7]);
+				if ( parent->behavior == &actPlayer )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(parent->skill[2], color, language[774]);
+				}
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
+			}
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -3501,9 +3512,9 @@ void actParticleSapCenter(Entity* my)
 
 							if ( caster->behavior == &actPlayer )
 							{
-								int magicLevel = (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) / 20;
+								int magicLevel = 1 + (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) / 20;
 								monster->monsterAllySummonRank = magicLevel;
-								strcpy(monsterStats->name, "skeleton warrior");
+								strcpy(monsterStats->name, "skeleton knight");
 								//parent->increaseSkill(PRO_LEADERSHIP);
 								monster->monsterAllyIndex = caster->skill[2];
 								if ( multiplayer == SERVER )

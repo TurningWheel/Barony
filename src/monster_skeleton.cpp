@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initSkeleton(Entity* my, Stat* myStats)
 {
@@ -45,154 +46,264 @@ void initSkeleton(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
 
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, ""))
+			if ( my->monsterAllySummonRank != 0 )
 			{
-				// not boss if a follower, or name has already been set to something other than blank.
-				if ( strncmp(map.name, "Underworld", 10) )
+				int rank = std::min(my->monsterAllySummonRank, 7);
+				myStats->GOLD = 0;
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( leader )
 				{
-					//give weapon
-					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+					Stat* leaderStats = leader->getStats();
+					if ( leaderStats )
 					{
-						switch ( rand() % 10 )
+						if ( leaderStats->playerSummonLVLHP != 0 ) // first summon if equal to 0
 						{
-							case 0:
-							case 1:
-								myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 2:
-							case 3:
-								myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 4:
-							case 5:
-								myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 6:
-							case 7:
-								myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 8:
-							case 9:
-								myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
+							myStats->LVL = (leaderStats->playerSummonLVLHP & 0xFFFF0000) >> 16;
+							myStats->MAXHP = leaderStats->playerSummonLVLHP & 0x0000FFFF;
+							myStats->HP = myStats->MAXHP;
+							myStats->OLDHP = myStats->MAXHP;
+
+							myStats->STR = (leaderStats->playerSummonSTRDEXCONINT & 0xFF000000) >> 24;
+							myStats->DEX = (leaderStats->playerSummonSTRDEXCONINT & 0x00FF0000) >> 16;
+							myStats->CON = (leaderStats->playerSummonSTRDEXCONINT & 0x0000FF00) >> 8;
+							myStats->INT = (leaderStats->playerSummonSTRDEXCONINT & 0x000000FF) >> 0;
+
+							myStats->PER = (leaderStats->playerSummonPERCHR & 0xFF000000) >> 24;
+							myStats->CHR = (leaderStats->playerSummonPERCHR & 0x00FF0000) >> 16;
 						}
+						else
+						{
+							// set variables for first time cast
+							leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
+							leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
+
+							myStats->STR = std::max(0, myStats->STR);
+							myStats->DEX = std::max(0, myStats->DEX);
+							myStats->CON = std::max(0, myStats->CON);
+							myStats->INT = std::max(0, myStats->INT);
+							myStats->PER = std::max(0, myStats->PER);
+							myStats->CHR = std::max(0, myStats->CHR);
+							leaderStats->playerSummonSTRDEXCONINT = (myStats->STR << 24);
+							leaderStats->playerSummonSTRDEXCONINT |= (myStats->DEX << 16);
+							leaderStats->playerSummonSTRDEXCONINT |= (myStats->CON << 8);
+							leaderStats->playerSummonSTRDEXCONINT |= (myStats->INT);
+
+							leaderStats->playerSummonPERCHR = (myStats->PER << 24);
+							leaderStats->playerSummonPERCHR |= (myStats->CHR << 16);
+						}
+					}
+					else
+					{
+						myStats->HP = 0;
+					}
+				}
+				else
+				{
+					myStats->HP = 0;
+				}
+
+				if ( !strcmp(myStats->name, "skeleton knight") )
+				{
+					switch ( rank )
+					{
+						case 1:
+							myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						case 2:
+							myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						case 3:
+							myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						case 4:
+							myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shoes = newItem(STEEL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						case 5:
+							myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(STEEL_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(STEEL_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shoes = newItem(STEEL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						case 6:
+							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(STEEL_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(STEEL_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shoes = newItem(CRYSTAL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						case 7:
+							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(CRYSTAL_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							myStats->shoes = newItem(CRYSTAL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+							break;
+						default:
+							break;
 					}
 				}
 			}
 			else
 			{
-				myStats->HP = 100;
-				myStats->MAXHP = 100;
-				strcpy(myStats->name, "Funny Bones");
-				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
-			}
+				setRandomMonsterStats(myStats);
 
-			// random effects
+				// generate 6 items max, less if there are any forced items from boss variants
+				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
-
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
-
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
-
-														 // count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
-
-			my->setHardcoreStats(*myStats);
-
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
-			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-				case 2:
-				case 1:
-					break;
-				default:
-					break;
-			}
-
-			//give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
+				// boss variants
+				if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, ""))
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 4:
-					case 5:
+					// not boss if a follower, or name has already been set to something other than blank.
+					if ( strncmp(map.name, "Underworld", 10) )
+					{
+						//give weapon
+						if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+						{
+							switch ( rand() % 10 )
+							{
+								case 0:
+								case 1:
+									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 2:
+								case 3:
+									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 4:
+								case 5:
+									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 6:
+								case 7:
+									myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 8:
+								case 9:
+									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+							}
+						}
+					}
+				}
+				else
+				{
+					myStats->HP = 100;
+					myStats->MAXHP = 100;
+					strcpy(myStats->name, "Funny Bones");
+					myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
+					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+				}
+
+				// random effects
+
+				// generates equipment and weapons if available from editor
+				createMonsterEquipment(myStats);
+
+				// create any custom inventory items from editor if available
+				createCustomInventory(myStats, customItemsToGenerate);
+
+				// count if any custom inventory items from editor
+				int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+															 // count any inventory items set to default in edtior
+				int defaultItems = countDefaultItems(myStats);
+
+				my->setHardcoreStats(*myStats);
+
+				// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+				switch ( defaultItems )
+				{
 					case 6:
-					case 7:
-						myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+					case 5:
+					case 4:
+					case 3:
+					case 2:
+					case 1:
 						break;
-					case 8:
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+					default:
 						break;
 				}
-			}
 
-			//give helmet
-			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
+				//give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-						myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 8:
+						case 9:
+							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+					}
 				}
-			}
 
-			//give shield
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				switch ( rand() % 10 )
+				//give helmet
+				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 6:
+						case 7:
+						case 8:
+						case 9:
+							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+
+				//give shield
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+							break;
+						case 6:
+						case 7:
+							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 8:
+							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 		}
@@ -413,6 +524,26 @@ void actSkeletonLimb(Entity* my)
 
 void skeletonDie(Entity* my)
 {
+	if ( multiplayer != CLIENT && my->monsterAllySummonRank != 0 )
+	{
+		Stat* myStats = my->getStats();
+		Entity* leader = uidToEntity(myStats->leader_uid);
+		if ( leader )
+		{
+			Stat* leaderStats = leader->getStats();
+			if ( leaderStats )
+			{
+				// refund mana to caster.
+				Entity* spellEntity = createParticleSapCenter(leader, my, SPELL_SUMMON, 599, 791);
+				if ( spellEntity )
+				{
+					playSoundEntity(my, 167, 128); // succeeded spell sound
+					spellEntity->skill[7] = spellElement_summon.mana / 2; // MP to restore
+				}
+			}
+		}
+	}
+
 	my->removeMonsterDeathNodes();
 
 	int c;

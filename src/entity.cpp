@@ -119,6 +119,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterDefend(skill[47]),
 	monsterAllySpecial(skill[48]),
 	monsterAllySpecialCooldown(skill[49]),
+	monsterAllySummonRank(skill[50]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -2113,6 +2114,57 @@ void Entity::handleEffects(Stat* myStats)
 			// players only.
 			playerStatIncrease(client_classes[player], increasestat);
 		}
+		else if ( behavior == &actMonster && monsterAllySummonRank != 0 )
+		{
+			if ( !strcmp(myStats->name, "skeleton knight") )
+			{
+				playerStatIncrease(1, increasestat); // warrior weighting
+			}
+
+			for ( i = 0; i < 3; i++ )
+			{
+				switch ( increasestat[i] )
+				{
+					case STAT_STR:
+						myStats->STR++;
+						break;
+					case STAT_DEX:
+						myStats->DEX++;
+						break;
+					case STAT_CON:
+						myStats->CON++;
+						break;
+					case STAT_INT:
+						myStats->INT++;
+						break;
+					case STAT_PER:
+						myStats->PER++;
+						break;
+					case STAT_CHR:
+						myStats->CHR++;
+						break;
+				}
+
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( leader )
+				{
+					Stat* leaderStats = leader->getStats();
+					if ( leaderStats )
+					{
+						leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
+						leaderStats->playerSummonLVLHP |= (myStats->HP);
+
+						leaderStats->playerSummonSTRDEXCONINT = (myStats->STR << 24);
+						leaderStats->playerSummonSTRDEXCONINT |= (myStats->DEX << 16);
+						leaderStats->playerSummonSTRDEXCONINT |= (myStats->CON << 8);
+						leaderStats->playerSummonSTRDEXCONINT |= (myStats->INT);
+
+						leaderStats->playerSummonPERCHR = (myStats->STR << 24);
+						leaderStats->playerSummonPERCHR |= (myStats->DEX << 16);
+					}
+				}
+			}
+		}
 		else
 		{
 			// monsters use this.
@@ -2152,7 +2204,10 @@ void Entity::handleEffects(Stat* myStats)
 						break;
 				}
 			}
+		}
 
+		if ( behavior == &actMonster )
+		{
 			if ( myStats->leader_uid )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
