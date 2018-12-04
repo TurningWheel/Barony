@@ -19,7 +19,7 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.2.2"
+#define VERSION "v3.2.3"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
