@@ -245,13 +245,22 @@ void actPlayer(Entity* my)
 	int spriteLegLeft = 108 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
+	int playerAppearance = stats[PLAYER_NUM]->appearance;
 
 	if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || my->effectPolymorph != NOTHING )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
 		if ( my->effectPolymorph != NOTHING )
 		{
-			playerRace = static_cast<Monster>(my->effectPolymorph);
+			if ( my->effectPolymorph > NUMMONSTERS )
+			{
+				playerRace = HUMAN;
+				playerAppearance = my->effectPolymorph - 100;
+			}
+			else
+			{
+				playerRace = static_cast<Monster>(my->effectPolymorph);
+			}
 		}
 		if ( stats[PLAYER_NUM]->appearance == 0 || my->effectPolymorph != NOTHING )
 		{
@@ -1946,21 +1955,21 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
-		else if ( stats[PLAYER_NUM]->appearance < 5 )
+		else if ( playerAppearance < 5 )
 		{
-			my->sprite = 113 + 12 * stats[PLAYER_NUM]->sex + stats[PLAYER_NUM]->appearance;
+			my->sprite = 113 + 12 * stats[PLAYER_NUM]->sex + playerAppearance;
 		}
-		else if ( stats[PLAYER_NUM]->appearance == 5 )
+		else if ( playerAppearance == 5 )
 		{
 			my->sprite = 332 + stats[PLAYER_NUM]->sex;
 		}
-		else if ( stats[PLAYER_NUM]->appearance >= 6 && stats[PLAYER_NUM]->appearance < 12 )
+		else if ( playerAppearance >= 6 && playerAppearance < 12 )
 		{
-			my->sprite = 341 + stats[PLAYER_NUM]->sex * 13 + stats[PLAYER_NUM]->appearance - 6;
+			my->sprite = 341 + stats[PLAYER_NUM]->sex * 13 + playerAppearance - 6;
 		}
-		else if ( stats[PLAYER_NUM]->appearance >= 12 )
+		else if ( playerAppearance >= 12 )
 		{
-			my->sprite = 367 + stats[PLAYER_NUM]->sex * 13 + stats[PLAYER_NUM]->appearance - 12;
+			my->sprite = 367 + stats[PLAYER_NUM]->sex * 13 + playerAppearance - 12;
 		}
 		else
 		{
@@ -4109,11 +4118,22 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 
 void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbType)
 {
+	if ( !players[playernum] || !players[playernum]->entity )
+	{
+		return;
+	}
+
+	int playerAppearance = stats[playernum]->appearance;
+	if ( players[playernum] && players[playernum]->entity && players[playernum]->entity->effectPolymorph > NUMMONSTERS )
+	{
+		playerAppearance = players[playernum]->entity->effectPolymorph - 100;
+	}
+
 	if ( limbType == LIMB_HUMANOID_TORSO )
 	{
 		if ( playerRace == HUMAN )
 		{
-			switch ( stats[playernum]->appearance / 6 )
+			switch ( playerAppearance / 6 )
 			{
 				case 1:
 					this->sprite = 334 + 13 * stats[playernum]->sex;
@@ -4191,7 +4211,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 	{
 		if ( playerRace == HUMAN )
 		{
-			switch ( stats[playernum]->appearance / 6 )
+			switch ( playerAppearance / 6 )
 			{
 				case 1:
 					this->sprite = 335 + 13 * stats[playernum]->sex;
@@ -4262,7 +4282,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 	{
 		if ( playerRace == HUMAN )
 		{
-			switch ( stats[playernum]->appearance / 6 )
+			switch ( playerAppearance / 6 )
 			{
 				case 1:
 					this->sprite = 336 + 13 * stats[playernum]->sex;
@@ -4333,7 +4353,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 	{
 		if ( playerRace == HUMAN )
 		{
-			switch ( stats[playernum]->appearance / 6 )
+			switch ( playerAppearance / 6 )
 			{
 				case 1:
 					this->sprite = 337 + 13 * stats[playernum]->sex;
@@ -4390,7 +4410,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 	{
 		if ( playerRace == HUMAN )
 		{
-			switch ( stats[playernum]->appearance / 6 )
+			switch ( playerAppearance / 6 )
 			{
 				case 1:
 					this->sprite = 338 + 13 * stats[playernum]->sex;
