@@ -88,6 +88,8 @@ void item_PotionWater(Item*& item, Entity* entity)
 			{
 				entity->modHP(5);
 				playSoundEntity(entity, 52, 64);
+				playSoundEntity(entity, 168, 128);
+				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 			}
 		}
 		else
@@ -232,6 +234,8 @@ void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	playSoundEntity(entity, 168, 128);
+	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item);
@@ -312,6 +316,8 @@ void item_PotionJuice(Item*& item, Entity* entity)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	playSoundEntity(entity, 168, 128);
+	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	consumeItem(item);
 }
 
@@ -973,6 +979,8 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 	if ( stats->HP == stats->MAXHP )
 	{
 		playSoundEntity(entity, 52, 64);
+		playSoundEntity(entity, 168, 128);
+		spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 		if ( item->beatitude < 0 )
 		{
 			messagePlayer(player, language[2900]);
@@ -1030,6 +1038,8 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	playSoundEntity(entity, 168, 128);
+	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 
 	if ( item->beatitude < 0 )
@@ -1102,6 +1112,8 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 	if ( stats->HP == stats->MAXHP )
 	{
 		playSoundEntity(entity, 52, 64);
+		playSoundEntity(entity, 168, 128);
+		spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 		if ( item->beatitude < 0 )
 		{
 			messagePlayer(player, language[2900]);
@@ -1159,6 +1171,8 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
+	playSoundEntity(entity, 168, 128);
+	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 	if ( item->beatitude < 0 )
 	{

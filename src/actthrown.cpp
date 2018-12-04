@@ -394,9 +394,12 @@ void actThrown(Entity* my)
 				snprintf(whatever, 255, language[1508], itemname);
 				hit.entity->setObituary(whatever);
 				bool skipMessage = false;
+				Entity* polymorphedTarget = nullptr;
+				int oldHP = 0;
 
 				if ( hitstats )
 				{
+					oldHP = hit.entity->getHP();
 					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER )   // this makes it impossible to bork the end boss :)
 					{
 						switch ( item->type )
@@ -427,7 +430,6 @@ void actThrown(Entity* my)
 								break;
 							case POTION_EXTRAHEALING:
 							{
-								int oldHP = hit.entity->getHP();
 								item_PotionExtraHealing(item, hit.entity);
 								if ( parent && parent->behavior == &actPlayer )
 								{
@@ -446,7 +448,6 @@ void actThrown(Entity* my)
 								break;
 							case POTION_HEALING:
 							{
-								int oldHP = hit.entity->getHP();
 								item_PotionHealing(item, hit.entity);
 								if ( parent && parent->behavior == &actPlayer )
 								{
@@ -520,8 +521,10 @@ void actThrown(Entity* my)
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
 								if ( newTarget )
 								{
+									polymorphedTarget = hit.entity;
 									hit.entity = newTarget;
 									hitstats = newTarget->getStats();
+									hit.entity->setObituary(whatever);
 								}
 								skipMessage = true;
 								usedpotion = true;
@@ -617,11 +620,23 @@ void actThrown(Entity* my)
 				}
 
 				// alert the monster
-				if ( hit.entity->behavior == &actMonster && parent != nullptr )
+				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr )
 				{
 					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 					{
-						hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
+						if ( polymorphedTarget && hitstats->leader_uid == parent->getUID() )
+						{
+							// don't aggro your leader if they hit you
+						}
+						else if ( (hitstats->leader_uid == parent->getUID() || hit.entity->checkFriend(parent))
+							&& (hit.entity->getHP() - oldHP) >= 0 )
+						{
+							// don't aggro your leader or allies if they healed you
+						}
+						else
+						{
+							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
+						}
 					}
 					// alert other monsters too
 					Entity* ohitentity = hit.entity;
@@ -629,7 +644,7 @@ void actThrown(Entity* my)
 					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Searching for monsters? Creature list, not entity list.
 					{
 						Entity* entity = (Entity*)node->element;
-						if ( entity && entity->behavior == &actMonster && entity != ohitentity )
+						if ( entity && entity->behavior == &actMonster && entity != ohitentity && entity != polymorphedTarget )
 						{
 							if ( entity->checkFriend(hit.entity) )
 							{
