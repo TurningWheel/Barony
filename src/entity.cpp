@@ -11483,6 +11483,14 @@ void Entity::SetEntityOnFire()
 	// Check if the Entity can be set on fire
 	if ( this->flags[BURNABLE] )
 	{
+		if ( this->behavior == &actPlayer )
+		{
+			Stat* myStats = this->getStats();
+			if ( myStats && myStats->type == SKELETON )
+			{
+				return;
+			}
+		}
 		// Check if the Entity is already on fire
 		if ( !(this->flags[BURNING]) )
 		{
