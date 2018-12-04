@@ -137,6 +137,8 @@ static const int STAT_FLAG_NPC = 0;
 static const int STAT_FLAG_SNEAK = 1;
 static const int STAT_FLAG_ALLY_PICKUP = 2;
 static const int STAT_FLAG_ALLY_CLASS = 3;
+static const int STAT_FLAG_PLAYER_RACE = 4;
+static const int STAT_FLAG_POLYMORPH_STORAGE = 5;
 
 typedef enum
 {
