@@ -9195,7 +9195,9 @@ void buttonBack(button_t* my)
 	{
 		playing_random_char = false;
 	}
-	else if (charcreation_step == 3)
+	
+
+	if (charcreation_step == 3)
 	{
 		// If we've backed out, save what name was input for later
 		lastname = (string)inputstr;
