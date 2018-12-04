@@ -246,10 +246,14 @@ void actPlayer(Entity* my)
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 
-	if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+	if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || my->effectPolymorph != NOTHING )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
-		if ( stats[PLAYER_NUM]->appearance == 0  )
+		if ( my->effectPolymorph != NOTHING )
+		{
+			playerRace = static_cast<Monster>(my->effectPolymorph);
+		}
+		if ( stats[PLAYER_NUM]->appearance == 0 || my->effectPolymorph != NOTHING )
 		{
 			stats[PLAYER_NUM]->type = playerRace;
 		}
@@ -261,6 +265,11 @@ void actPlayer(Entity* my)
 	else
 	{
 		stats[PLAYER_NUM]->type = HUMAN;
+	}
+
+	if ( multiplayer != CLIENT && stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+	{
+		stats[PLAYER_NUM]->playerPolymorphStorage = my->effectPolymorph; // keep track of player polymorph effects
 	}
 
 	my->focalx = limbs[playerRace][0][0];
@@ -1329,6 +1338,19 @@ void actPlayer(Entity* my)
 							my->flags[BURNING] = false;
 							messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
 							serverUpdateEntityFlag(my, BURNING);
+						}
+						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+						{
+							my->setEffect(EFF_POLYMORPH, false, 0, true);
+							my->effectPolymorph = 0;
+							serverUpdateEntitySkill(my, 50);
+
+							messagePlayer(PLAYER_NUM, language[3192]);
+							messagePlayer(PLAYER_NUM, language[3185]);
+
+							playSoundEntity(my, 400, 92);
+							createParticleDropRising(my, 593, 1.f);
+							serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);
 						}
 					}
 					else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
@@ -4031,11 +4053,6 @@ bool Entity::isPlayerHeadSprite()
 
 Monster Entity::getMonsterFromPlayerRace(int playerRace)
 {
-	if ( effectPolymorph > 0 )
-	{
-		return static_cast<Monster>(effectPolymorph);
-	}
-
 	switch ( playerRace )
 	{
 		case RACE_HUMAN:

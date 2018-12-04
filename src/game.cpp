@@ -896,6 +896,12 @@ void gameLogic(void)
 					{
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
+							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							{
+								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+							}
+
 							node_t* node;
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
 							{

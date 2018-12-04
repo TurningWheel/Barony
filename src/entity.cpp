@@ -883,6 +883,14 @@ void Entity::effectTimes()
 		if ( myStats->EFFECTS_TIMERS[c] > 0 )
 		{
 			myStats->EFFECTS_TIMERS[c]--;
+			if ( c == EFF_POLYMORPH )
+			{
+				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
+				{
+					playSoundPlayer(player, 32, 128);
+					messagePlayer(player, language[3193]);
+				}
+			}
 			if ( myStats->EFFECTS_TIMERS[c] == 0 )
 			{
 				myStats->EFFECTS[c] = false;
@@ -7248,6 +7256,43 @@ bool Entity::checkEnemy(Entity* your)
 							result = false;
 						}
 						break;
+					case GOBLIN:
+						if ( yourStats->type == GOBLIN )
+						{
+							result = false;
+						}
+						break;
+					case GOATMAN:
+						if ( yourStats->type == GOATMAN )
+						{
+							result = false;
+						}
+						break;
+					case INCUBUS:
+					case SUCCUBUS:
+						if ( yourStats->type == SUCCUBUS || yourStats->type == INCUBUS )
+						{
+							result = false;
+						}
+						break;
+					case INSECTOID:
+						if ( yourStats->type == SCARAB || yourStats->type == SPIDER || yourStats->type == INSECTOID )
+						{
+							result = false;
+						}
+						break;
+					case VAMPIRE:
+						if ( yourStats->type == VAMPIRE )
+						{
+							result = false;
+						}
+						break;
+					case AUTOMATON:
+						if ( yourStats->type == KOBOLD )
+						{
+							result = false;
+						}
+						break;
 					default:
 						break;
 				}
@@ -7255,37 +7300,61 @@ bool Entity::checkEnemy(Entity* your)
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
 			{
 				result = swornenemies[myStats->type][HUMAN];
-				switch ( yourStats->type )
+				if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
 				{
-					case SKELETON:
-						if ( myStats->type == GHOUL )
-						{
-							result = false;
-						}
-						else if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
-						{
-							result = true;
-							/*if ( yourStats->breastplate && yourStats->shoes && yourStats->helmet && yourStats->gloves )
+					// enemies.
+					result = true;
+				}
+				else
+				{
+					switch ( yourStats->type )
+					{
+						case SKELETON:
+							if ( myStats->type == GHOUL )
 							{
-								switch ( yourStats->helmet->type )
-								{
-									case STEEL_HELM:
-									case CRYSTAL_HELM:
-									case ARTIFACT_HELM:
-										result = false;
-										break;
-									default:
-										result = true;
-										break;
-								}
+								result = false;
 							}
-							else
+							break;
+						case GOBLIN:
+							if ( myStats->type == GOBLIN )
 							{
-							}*/
-						}
-						break;
-					default:
-						break;
+								result = false;
+							}
+							break;
+						case GOATMAN:
+							if ( myStats->type == GOATMAN )
+							{
+								result = false;
+							}
+							break;
+						case INCUBUS:
+						case SUCCUBUS:
+							if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
+							{
+								result = false;
+							}
+							break;
+						case INSECTOID:
+							if ( myStats->type == SCARAB || myStats->type == SPIDER || myStats->type == INSECTOID )
+							{
+								result = false;
+							}
+							break;
+						case VAMPIRE:
+							if ( myStats->type == VAMPIRE )
+							{
+								result = false;
+							}
+							break;
+						case AUTOMATON:
+							if ( myStats->type == KOBOLD )
+							{
+								result = false;
+							}
+							break;
+						default:
+							break;
+					}
 				}
 			}
 		}
@@ -7418,56 +7487,119 @@ bool Entity::checkFriend(Entity* your)
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = monsterally[HUMAN][yourStats->type];
-				switch ( myStats->type )
+				if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
 				{
-					case SKELETON:
-						if ( yourStats->type == GHOUL )
-						{
-							result = true;
-						}
-						break;
-					default:
-						break;
+					result = false;
+				}
+				else
+				{
+					switch ( myStats->type )
+					{
+						case SKELETON:
+							if ( yourStats->type == GHOUL )
+							{
+								result = true;
+							}
+							break;
+						case GOBLIN:
+							if ( yourStats->type == GOBLIN )
+							{
+								result = true;
+							}
+							break;
+						case GOATMAN:
+							if ( yourStats->type == GOATMAN )
+							{
+								result = true;
+							}
+							break;
+						case INCUBUS:
+						case SUCCUBUS:
+							if ( yourStats->type == SUCCUBUS || yourStats->type == INCUBUS )
+							{
+								result = true;
+							}
+							break;
+						case INSECTOID:
+							if ( yourStats->type == SCARAB || yourStats->type == SPIDER || yourStats->type == INSECTOID )
+							{
+								result = true;
+							}
+							break;
+						case VAMPIRE:
+							if ( yourStats->type == VAMPIRE )
+							{
+								result = true;
+							}
+							break;
+						case AUTOMATON:
+							if ( yourStats->type == KOBOLD )
+							{
+								result = true;
+							}
+							break;
+						default:
+							break;
+					}
 				}
 			}
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
 			{
 				result = monsterally[myStats->type][HUMAN];
-				switch ( yourStats->type )
+				if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
 				{
-					case SKELETON:
-						if ( myStats->type == GHOUL )
-						{
-							result = true;
-						}
-						else if ( myStats->type == HUMAN )
-						{
-							result = false;
-							/*if ( yourStats->breastplate && yourStats->shoes && yourStats->helmet && yourStats->gloves )
+					result = false;
+				}
+				else
+				{
+					switch ( yourStats->type )
+					{
+						case SKELETON:
+							if ( myStats->type == GHOUL )
 							{
-								switch ( yourStats->helmet->type )
-								{
-									case STEEL_HELM:
-									case CRYSTAL_HELM:
-									case ARTIFACT_HELM:
-										result = true;
-										break;
-									default:
-										result = false;
-										break;
-								}
+								result = true;
 							}
-							else
+							break;
+						case GOBLIN:
+							if ( myStats->type == GOBLIN )
 							{
-							}*/
-						}
-						else if ( myStats->type == SHOPKEEPER )
-						{
-							result = false;
-						}
-						break;
-					default:
-						break;
+								result = true;
+							}
+							break;
+						case GOATMAN:
+							if ( myStats->type == GOATMAN )
+							{
+								result = true;
+							}
+							break;
+						case INCUBUS:
+						case SUCCUBUS:
+							if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
+							{
+								result = true;
+							}
+							break;
+						case INSECTOID:
+							if ( myStats->type == SCARAB || myStats->type == SPIDER || myStats->type == INSECTOID )
+							{
+								result = true;
+							}
+							break;
+						case VAMPIRE:
+							if ( myStats->type == VAMPIRE )
+							{
+								result = true;
+							}
+							break;
+						case AUTOMATON:
+							if ( myStats->type == KOBOLD )
+							{
+								result = true;
+							}
+							break;
+						default:
+							break;
+					}
 				}
 			}
 		}
@@ -9602,10 +9734,10 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			}
 			break;
 		case EFF_POLYMORPH:
-			if ( myStats->EFFECTS[EFF_POLYMORPH] || effectPolymorph != 0 )
-			{
-				return false;
-			}
+			//if ( myStats->EFFECTS[EFF_POLYMORPH] || effectPolymorph != 0 )
+			//{
+			//	return false;
+			//}
 			break;
 		default:
 			break;
