@@ -22,7 +22,8 @@ Stat::Stat(Sint32 sprite) :
 	sneaking(MISC_FLAGS[1]),
 	allyItemPickup(MISC_FLAGS[2]),
 	allyClass(MISC_FLAGS[3]),
-	playerRace(MISC_FLAGS[4])
+	playerRace(MISC_FLAGS[4]),
+	playerPolymorphStorage(MISC_FLAGS[5])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

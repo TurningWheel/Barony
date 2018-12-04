@@ -1173,16 +1173,24 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 {
 	int effectDuration = 0;
-	effectDuration = TICKS_PER_SECOND * 5;
+	effectDuration = TICKS_PER_SECOND * ((60 * 3) + rand() & 120); // 3-5 minutes
 
 	if ( !target || !targetStats )
 	{
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			messagePlayer(parent->skill[2], language[3191]); // had no effect
+		}
 		return false;
 	}
 
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE )
 	{
+		if ( parent && parent->behavior == &actPlayer )
+		{
+			messagePlayer(parent->skill[2], language[3191]); // had no effect
+		}
 		return false;
 	}
 
@@ -1245,6 +1253,8 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 
 		bool fellToDeath = false;
 		bool tryReposition = false;
+		bool fellInLava = false;
+		bool fellInWater = false;
 
 		if ( targetStats->EFFECTS[EFF_LEVITATING]
 			&& (monsterSummonType != CREATURE_IMP && monsterSummonType != COCKATRICE && monsterSummonType != SHADOW) )
@@ -1263,15 +1273,26 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 						{
 							// no floor.
 							fellToDeath = true;
+							tryReposition = true;
+						}
+						else if ( lavatiles[map.tiles[0 + u * MAPLAYERS + v * MAPLAYERS * map.height]] )
+						{
+							fellInLava = true;
+							tryReposition = true;
+						}
+						else if ( swimmingtiles[map.tiles[0 + u * MAPLAYERS + v * MAPLAYERS * map.height]] )
+						{
+							fellInWater = true;
+							tryReposition = true;
 						}
 						else
 						{
-							tryReposition = true; // water or lava
+							tryReposition = true; // something else??
 						}
 						break;
 					}
 				}
-				if ( fellToDeath || tryReposition )
+				if ( tryReposition )
 				{
 					break;
 				}
@@ -1282,6 +1303,10 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 		if ( tryReposition )
 		{
 			summonedEntity = summonMonster(monsterSummonType, target->x, target->y);
+			if ( !summonedEntity && (fellToDeath || fellInLava) )
+			{
+				summonedEntity = summonMonster(monsterSummonType, target->x, target->y, true); // force try, kill monster later.
+			}
 		}
 		else
 		{
@@ -1292,7 +1317,14 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 		{
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				messagePlayer(parent->skill[2], language[3191]);
+				if ( fellInWater )
+				{
+					messagePlayer(parent->skill[2], language[3192]); // water make no work :<
+				}
+				else
+				{
+					messagePlayer(parent->skill[2], language[3191]); // failed for some other reason
+				}
 			}
 			return false;
 		}
@@ -1656,6 +1688,32 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			summonedEntity->setObituary(language[3010]); // fell to their death.
 			summonedStats->HP = 0; // kill me instantly
 		}
+		else if ( fellInLava )
+		{
+			summonedEntity->setObituary(language[1506]); // goes for a swim in some lava.
+			summonedStats->HP = 0; // kill me instantly
+		}
+		else
+		{
+			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				Entity* creature = (Entity*)node->element;
+				if ( creature && creature->behavior == &actMonster && creature != target && creature != summonedEntity )
+				{
+					if ( creature->monsterTarget == target->getUID() )
+					{
+						if ( creature->checkEnemy(summonedEntity) )
+						{
+							creature->monsterAcquireAttackTarget(*summonedEntity, MONSTER_STATE_PATH); // re-acquire new target
+						}
+						else
+						{
+							creature->monsterReleaseAttackTarget(); // release if new target is ally.
+						}
+					}
+				}
+			}
+		}
 
 		list_RemoveNode(target->mynode);
 		target = nullptr;
@@ -1670,12 +1728,23 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			createParticleDropRising(target, 593, 1.f);
 			serverSpawnMiscParticles(target, PARTICLE_EFFECT_RISING_DROP, 593);
 
-			if ( targetStats->type == HUMAN )
+			if ( targetStats->playerRace == RACE_HUMAN )
 			{
-				int roll = 1 + rand() % 8;
-				target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
+				int roll = (RACE_HUMAN + 1) + rand() % 8;
+				if ( target->effectPolymorph == 0 )
+				{
+					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
+				}
+				else
+				{
+					while ( target->effectPolymorph == target->getMonsterFromPlayerRace(roll) )
+					{
+						roll = (RACE_HUMAN + 1) + rand() % 8; // re roll to not polymorph into the same thing
+					}
+					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
+				}
 			}
-			else if ( targetStats->type != HUMAN )
+			else if ( targetStats->playerRace != RACE_HUMAN )
 			{
 				target->effectPolymorph = HUMAN;
 			}
@@ -1689,6 +1758,29 @@ Entity* effectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			else
 			{
 				messagePlayerColor(target->skill[2], color, language[3186], language[2000 + target->effectPolymorph - KOBOLD]);
+			}
+
+			// change player's type here, don't like this.. will get auto reset in actPlayer() though
+			// otherwise the below aggro check will still assume previous race since actPlayer() hasn't run yet.
+			targetStats->type = static_cast<Monster>(target->effectPolymorph); 
+
+			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				Entity* creature = (Entity*)node->element;
+				if ( creature && creature->behavior == &actMonster && creature != target )
+				{
+					if ( creature->monsterTarget == target->getUID() )
+					{
+						if ( creature->checkEnemy(target) )
+						{
+							creature->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH); // re-acquire new target
+						}
+						else
+						{
+							creature->monsterReleaseAttackTarget(); // release if new target is ally.
+						}
+					}
+				}
 			}
 		}
 		else

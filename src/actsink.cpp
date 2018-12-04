@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -92,6 +93,19 @@ void actSink(Entity* my)
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
+					}
+					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] )
+					{
+						players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+						players[i]->entity->effectPolymorph = 0;
+						serverUpdateEntitySkill(players[i]->entity, 50);
+
+						messagePlayer(i, language[3192]);
+						messagePlayer(i, language[3185]);
+
+						playSoundEntity(players[i]->entity, 400, 92);
+						createParticleDropRising(players[i]->entity, 593, 1.f);
+						serverSpawnMiscParticles(players[i]->entity, PARTICLE_EFFECT_RISING_DROP, 593);
 					}
 					switch (my->skill[3])
 					{

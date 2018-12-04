@@ -129,6 +129,10 @@ void actHudArm(Entity* my)
 		if ( stats[clientnum]->playerRace > 0 )
 		{
 			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+			if ( my->effectPolymorph != NOTHING )
+			{
+				playerRace = static_cast<Monster>(my->effectPolymorph);
+			}
 			switch ( playerRace )
 			{
 				case SKELETON:

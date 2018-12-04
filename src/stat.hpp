@@ -181,6 +181,7 @@ public:
 	Sint32& allyItemPickup; // MISC_FLAGS[2]
 	Sint32& allyClass; // MISC_FLAGS[3]
 	Sint32& playerRace; // MISC_FLAGS[4]
+	Sint32& playerPolymorphStorage; // MISC_FLAGS[5]
 
 	// group think
 	Uint32 leader_uid;
