@@ -1235,7 +1235,11 @@ void actMonster(Entity* my)
 		} else {
 			MONSTER_TARGET = -1;
 		}*/
-		my->monsterTarget = 0;
+
+		if ( uidToEntity(my->monsterTarget) == nullptr )
+		{
+			my->monsterTarget = 0;
+		}
 
 		/*// create an empty first node for traversal purposes //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node = list_AddNodeFirst(my->children);
