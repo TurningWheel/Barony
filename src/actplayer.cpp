@@ -267,9 +267,20 @@ void actPlayer(Entity* my)
 		stats[PLAYER_NUM]->type = HUMAN;
 	}
 
-	if ( multiplayer != CLIENT && stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+	if ( multiplayer != CLIENT )
 	{
-		stats[PLAYER_NUM]->playerPolymorphStorage = my->effectPolymorph; // keep track of player polymorph effects
+		if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+		{
+			stats[PLAYER_NUM]->playerPolymorphStorage = my->effectPolymorph; // keep track of player polymorph effects
+		}
+		else
+		{
+			if ( my->effectPolymorph != NOTHING ) // just in case this was cleared other than normal progression ticking down
+			{
+				my->effectPolymorph = NOTHING;
+				serverUpdateEntitySkill(my, 50);
+			}
+		}
 	}
 
 	my->focalx = limbs[playerRace][0][0];

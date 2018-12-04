@@ -1263,6 +1263,10 @@ int saveGame(int saveIndex)
 			fwrite(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
 			fwrite(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
 		}
+		for ( c = 0; c < 32; c++ )
+		{
+			fwrite(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1, fp);
+		}
 
 		// inventory
 		if ( player == clientnum )
@@ -1923,6 +1927,10 @@ int loadGame(int player, int saveIndex)
 		fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32)*32, SEEK_CUR); // stat flags
+		}
 
 		if ( clientnum == 0 && c != 0 )
 		{
@@ -2005,6 +2013,17 @@ int loadGame(int player, int saveIndex)
 	{
 		fread(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
 		fread(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+	}
+	if ( versionNumber >= 323 )
+	{
+		for ( c = 0; c < 32; c++ )
+		{
+			fread(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1, fp);
+			if ( c != STAT_FLAG_PLAYER_RACE && c != STAT_FLAG_POLYMORPH_STORAGE )
+			{
+				stats[player]->MISC_FLAGS[c] = 0; // we don't really need these on load.
+			}
+		}
 	}
 
 	if ( player == clientnum )
@@ -2651,6 +2670,10 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32) * 32, SEEK_CUR); // stat flags
+		}
 
 		if ( plnum == 0 )
 		{
