@@ -125,7 +125,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 	else
 	{
-		magiccost = getCostOfSpell(spell);
+		magiccost = getCostOfSpell(spell, caster);
 	}
 
 	if ( magiccost > stat->MP )
@@ -228,7 +228,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				magiccost = cast_animation.mana_left;
 			}
-
 			caster->drainMP(magiccost);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
@@ -240,7 +239,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else
 			{
-				magiccost = getCostOfSpell(spell);
+				magiccost = getCostOfSpell(spell, caster);
 				caster->drainMP(magiccost);
 			}
 		}
@@ -778,8 +777,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			playSoundEntity(caster, 251, 128);
 			playSoundEntity(caster, 252, 128);
-			if ( caster->behavior == &actPlayer )
+			if ( caster->behavior == &actPlayer && stats[caster->skill[2]] )
 			{
+				// kill old summons.
+				for ( node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+				{
+					Entity* follower = uidToEntity(*((Uint32*)(node)->element));
+					if ( follower->monsterAllySummonRank != 0 )
+					{
+						Stat* followerStats = follower->getStats();
+						if ( followerStats )
+						{
+							follower->setMP(followerStats->MAXMP * (followerStats->HP / static_cast<float>(followerStats->MAXHP)));
+							follower->setHP(0);
+						}
+					}
+				}
+
 				real_t startx = caster->x;
 				real_t starty = caster->y;
 				real_t startz = -4;
@@ -827,12 +841,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				sapParticle->skill[8] = timer->x;
 				sapParticle->skill[9] = timer->y;
 				serverSpawnMiscParticlesAtLocation(previousx / 16, previousy / 16, 0, PARTICLE_EFFECT_SPELL_SUMMON, 791);
-			}
-			for ( i = 0; i < numplayers; ++i )
-			{
-				if ( caster == players[i]->entity )
-				{
-				}
 			}
 		}
 		else if ( !strcmp(element->name, spellElement_reflectMagic.name) )

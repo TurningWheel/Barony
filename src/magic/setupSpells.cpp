@@ -198,8 +198,8 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_removecurse.name, language[434]);
 
 	spellElementConstructor(&spellElement_summon);
-	spellElement_summon.mana = 20;
-	spellElement_summon.base_mana = 20;
+	spellElement_summon.mana = 17;
+	spellElement_summon.base_mana = 17;
 	spellElement_summon.overload_multiplier = 1;
 	spellElement_summon.damage = 0;
 	spellElement_summon.duration = 0;
@@ -696,7 +696,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_summon);
 	strcpy(spell_summon.name, language[2390]);
 	spell_summon.ID = SPELL_SUMMON;
-	spell_summon.difficulty = 80;
+	spell_summon.difficulty = 40;
 	spell_summon.elements.first = NULL;
 	spell_summon.elements.last = NULL;
 	node = list_AddNodeLast(&spell_summon.elements);

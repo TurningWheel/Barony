@@ -360,7 +360,7 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 	return result;
 }
 
-int getCostOfSpell(spell_t* spell)
+int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;
 
@@ -369,6 +369,16 @@ int getCostOfSpell(spell_t* spell)
 	{
 		spellElement_t* spellElement = (spellElement_t*)node->element;
 		cost += getCostOfSpellElement(spellElement);
+	}
+
+	if ( spell->ID == SPELL_SUMMON && caster )
+	{
+		Stat* casterStats = caster->getStats();
+		if ( casterStats )
+		{
+			int summonLevel = casterStats->playerSummonLVLHP >> 16;
+			cost += 5 * (summonLevel / 5);
+		}
 	}
 
 	return cost;

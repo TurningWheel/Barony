@@ -1079,7 +1079,14 @@ void updatePlayerInventory()
 								}
 								else
 								{
-									snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+									if ( players[clientnum] && players[clientnum]->entity )
+									{
+										snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[clientnum]->entity));
+									}
+									else
+									{
+										snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+									}
 								}
 								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 								src.h = TTF12_HEIGHT * 2 + 8;
