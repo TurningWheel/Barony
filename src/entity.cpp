@@ -4348,6 +4348,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
+		if ( behavior == &actMonster && monsterAllyIndex != -1 )
+		{
+			Entity* myTarget = uidToEntity(monsterTarget);
+			if ( myTarget )
+			{
+				if ( myTarget->monsterAllyIndex != -1 || myTarget->behavior == &actPlayer )
+				{
+					this->monsterReleaseAttackTarget(true); // stop attacking player allies or players after this hit executes.
+				}
+			}
+		}
+
 		if ( myStats->weapon != nullptr )
 		{
 			// magical weapons
@@ -4948,20 +4960,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						hitstats = (Stat*)hit.entity->children.first->next->element;
 
+						bool alertTarget = true;
+						if ( behavior == &actMonster && monsterAllyIndex != -1 && hit.entity->monsterAllyIndex != -1 )
+						{
+							// if we're both allies of players, don't alert the hit target.
+							alertTarget = false;
+						}
+
 						// alert the monster!
 						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
-							Entity* attackTarget = uidToEntity(uid);
-
-							if ( attackTarget )
+							if ( alertTarget )
 							{
-								hit.entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH, true);
+								hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH, true);
 							}
 						}
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
+						for ( node = map.creatures->first; node != nullptr && alertTarget; node = node->next ) //Only searching for monsters, so don't iterate full map.entities.
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
@@ -4997,9 +5014,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 				hitstats = stats[hit.entity->skill[2]];
 				playerhit = hit.entity->skill[2];
 
+				bool alertAllies = true;
+				if ( behavior == &actMonster && monsterAllyIndex != -1 )
+				{
+					// if I'm a player ally, don't alert other allies.
+					alertAllies = false;
+				}
+
 				// alert the player's followers!
 				//Maybe should send a signal to each follower, with some kind of attached priority, which determines if they change their target to bumrush the player's assailant.
-				for ( node = hitstats->FOLLOWERS.first; node != nullptr; node = node->next )
+				for ( node = hitstats->FOLLOWERS.first; node != nullptr && alertAllies; node = node->next )
 				{
 					Uint32* c = (Uint32*)node->element;
 					entity = uidToEntity(*c);
@@ -5403,6 +5427,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = false; //certain monster's weapons don't degrade.
 							}
 
+							if ( myStats->type == SKELETON && monsterAllySummonRank != 0 )
+							{
+								degradeWeapon = false;
+							}
+
 							if ( degradeWeapon )
 							{
 								if ( player == clientnum || player < 0 )
@@ -5486,7 +5515,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								break;
 						}
 
-						if ( armor != NULL )
+						if ( armor != NULL && armor->status > BROKEN )
 						{
 							switch ( armor->type )
 							{
@@ -5571,7 +5600,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// if nothing chosen to degrade, check extra shield chances to degrade
-					if ( hitstats->shield != NULL && armor == NULL )
+					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL )
 					{
 						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 						{
@@ -5609,7 +5638,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( armor != NULL )
+					if ( armor != NULL && armor->status > BROKEN )
 					{
 						hit.entity->degradeArmor(*hitstats, *armor, armornum);
 						if ( armor->status == BROKEN )
@@ -10790,6 +10819,11 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	if ( hitstats.type == SHADOW )
 	{
 		return; //Shadows' armor and shields don't break.
+	}
+
+	if ( hitstats.type == SKELETON && monsterAllySummonRank > 0 )
+	{
+		return; // conjured skeleton armor doesn't break.
 	}
 
 	if ( armor.type == ARTIFACT_BOOTS

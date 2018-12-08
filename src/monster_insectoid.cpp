@@ -1576,7 +1576,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	// occurs less often against fellow monsters.
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+		specialRoll = rand() % (40 + 40 * (target != nullptr && target->behavior == &actMonster));
 		//messagePlayer(0, "rolled: %d", specialRoll);
 		if ( myStats->HP <= myStats->MAXHP * 0.6 )
 		{
