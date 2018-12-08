@@ -364,6 +364,8 @@ void actThrown(Entity* my)
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
+				int oldHP = 0;
+				oldHP = hit.entity->getHP();
 				int damage = (BASE_THROWN_DAMAGE - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
 				if ( parentStats )
 				{
@@ -395,11 +397,11 @@ void actThrown(Entity* my)
 				hit.entity->setObituary(whatever);
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
-				int oldHP = 0;
+
 
 				if ( hitstats )
 				{
-					oldHP = hit.entity->getHP();
+					int postDmgHP = hit.entity->getHP();
 					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER )   // this makes it impossible to bork the end boss :)
 					{
 						switch ( item->type )
@@ -437,7 +439,7 @@ void actThrown(Entity* my)
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
 									}
-									int heal = std::max(hit.entity->getHP() - oldHP, 0);
+									int heal = std::max(hit.entity->getHP() - postDmgHP, 0);
 									if ( heal > 0 )
 									{
 										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
@@ -455,7 +457,7 @@ void actThrown(Entity* my)
 									{
 										steamAchievementClient(parent->skill[2], "BARONY_ACH_THANK_ME_LATER");
 									}
-									int heal = std::max(hit.entity->getHP() - oldHP, 0);
+									int heal = std::max(hit.entity->getHP() - postDmgHP, 0);
 									if ( heal > 0 )
 									{
 										serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_HEAL_BOT, heal);
@@ -622,26 +624,49 @@ void actThrown(Entity* my)
 				// alert the monster
 				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr )
 				{
-					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+					bool alertTarget = true;
+					bool targetHealed = false;
+					if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
+					{
+						if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
+						{
+							// if a player ally + hit another ally, don't aggro back
+							alertTarget = false;
+						}
+					}
+
+					if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 					{
 						if ( polymorphedTarget && hitstats->leader_uid == parent->getUID() )
 						{
-							// don't aggro your leader if they hit you
+							// don't aggro your leader if they hit you with polymorph
 						}
 						else if ( (hitstats->leader_uid == parent->getUID() || hit.entity->checkFriend(parent))
 							&& (hit.entity->getHP() - oldHP) >= 0 )
 						{
 							// don't aggro your leader or allies if they healed you
+							targetHealed = true;
 						}
 						else
 						{
 							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
 						}
 					}
+
+					bool alertAllies = true;
+					if ( parent->behavior == &actPlayer || parent->monsterAllyIndex != -1 )
+					{
+						if ( hit.entity->behavior == &actPlayer || (hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1) )
+						{
+							// if a player ally + hit another ally or player, don't alert other allies.
+							alertAllies = false;
+						}
+					}
+
 					// alert other monsters too
 					Entity* ohitentity = hit.entity;
 					node_t* node;
-					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Searching for monsters? Creature list, not entity list.
+					for ( node = map.creatures->first; node != nullptr && alertAllies && !targetHealed; node = node->next ) //Searching for monsters? Creature list, not entity list.
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity && entity != polymorphedTarget )
