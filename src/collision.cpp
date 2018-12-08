@@ -456,7 +456,17 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				}
 				if ( monsterally[myStats->type][yourStats->type] )
 				{
-					continue;
+					if ( my->behavior == &actPlayer && myStats->type != HUMAN )
+					{
+						if ( my->checkFriend(entity) )
+						{
+							continue;
+						}
+					}
+					else
+					{
+						continue;
+					}
 				}
 				if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
 				{
