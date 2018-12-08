@@ -2977,36 +2977,10 @@ void actMonster(Entity* my)
 					if ( dist > WAIT_FOLLOWDIST )
 					{
 						my->monsterReleaseAttackTarget();
-						x = ((int)floor(leader->x)) >> 4;
-						y = ((int)floor(leader->y)) >> 4;
-						int u, v;
-						bool foundplace = false;
-						for ( u = x - 1; u <= x + 1; u++ )
+						if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
 						{
-							for ( v = y - 1; v <= y + 1; v++ )
-							{
-								if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
-								{
-									x = u;
-									y = v;
-									foundplace = true;
-									break;
-								}
-							}
-							if ( foundplace )
-							{
-								break;
-							}
+							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 						}
-						path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
-						if ( my->children.first != NULL )
-						{
-							list_RemoveNode(my->children.first);
-						}
-						node = list_AddNodeFirst(&my->children);
-						node->element = path;
-						node->deconstructor = &listDeconstructor;
-						my->monsterState = MONSTER_STATE_HUNT; // hunt state
 						if ( previousMonsterState != my->monsterState )
 						{
 							serverUpdateEntitySkill(my, 0);
@@ -3024,36 +2998,10 @@ void actMonster(Entity* my)
 						if ( hit.entity != leader )
 						{
 							my->monsterReleaseAttackTarget();
-							x = ((int)floor(leader->x)) >> 4;
-							y = ((int)floor(leader->y)) >> 4;
-							int u, v;
-							bool foundplace = false;
-							for ( u = x - 1; u <= x + 1; u++ )
+							if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
 							{
-								for ( v = y - 1; v <= y + 1; v++ )
-								{
-									if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
-									{
-										x = u;
-										y = v;
-										foundplace = true;
-										break;
-									}
-								}
-								if ( foundplace )
-								{
-									break;
-								}
+								my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							}
-							path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
-							if ( my->children.first != NULL )
-							{
-								list_RemoveNode(my->children.first);
-							}
-							node = list_AddNodeFirst(&my->children);
-							node->element = path;
-							node->deconstructor = &listDeconstructor;
-							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							if ( previousMonsterState != my->monsterState )
 							{
 								serverUpdateEntitySkill(my, 0);
