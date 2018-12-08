@@ -941,7 +941,6 @@ void gameLogic(void)
 										}
 										else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
 										{
-											messagePlayer(0, "test2");
 											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
 										}
 										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
