@@ -2212,6 +2212,27 @@ void consoleCommand(char* command_str)
 				players[clientnum]->entity->setEffect(effect, true, 500, true);
 			}
 		}
+		else if ( !strncmp(command_str, "/levelsummon", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity && entity->monsterAllySummonRank != 0 )
+				{
+					Stat* entityStats = entity->getStats();
+					if ( entityStats )
+					{
+						entityStats->EXP += 100;
+					}
+				}
+			}
+			return;
+		}
 		else if ( !strncmp(command_str, "/brawlermode", 12) )
 		{
 			achievementBrawlerMode = !achievementBrawlerMode;
