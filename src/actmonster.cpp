@@ -668,7 +668,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		//No cap on # of followers.
 		//Can control humans & goblins both.
 		//TODO: Control humanoids in general? Or otherwise something from each tileset.
-		if ( race == HUMAN || race == GOBLIN || race == AUTOMATON )
+		if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN) || race == GOBLIN || race == AUTOMATON )
 		{
 			canAlly = true;
 		}
@@ -696,7 +696,21 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 				}
 				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 				{
-					canAlly = true;
+					if ( stats[monsterclicked]->type == HUMAN )
+					{
+						canAlly = true;
+					}
+					else if ( stats[monsterclicked]->type == SKELETON )
+					{
+						if ( race == GHOUL || race == AUTOMATON )
+						{
+							canAlly = true;
+						}
+						else
+						{
+							canAlly = false;
+						}
+					}
 				}
 			}
 		}
