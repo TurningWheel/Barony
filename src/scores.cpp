@@ -849,6 +849,17 @@ void loadAllScores(const std::string& scoresfilename)
 				usedClass[c] = false;
 			}
 		}
+		else if ( versionNumber < 323 )
+		{
+			if ( c < 13 )
+			{
+				fread(&usedClass[c], sizeof(bool), 1, fp);
+			}
+			else
+			{
+				usedClass[c] = false;
+			}
+		}
 		else
 		{
 			fread(&usedClass[c], sizeof(bool), 1, fp);
@@ -2019,7 +2030,7 @@ int loadGame(int player, int saveIndex)
 		for ( c = 0; c < 32; c++ )
 		{
 			fread(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1, fp);
-			if ( c < STAT_FLAG_PLAYER_RACE || c > STAT_FLAG_ALLY_SUMMON_PERCHR )
+			if ( c < STAT_FLAG_PLAYER_RACE || c > STAT_FLAG_ALLY_SUMMON2_PERCHR )
 			{
 				stats[player]->MISC_FLAGS[c] = 0; // we don't really need these on load.
 			}
