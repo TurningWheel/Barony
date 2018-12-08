@@ -472,7 +472,7 @@ spellElement_t* copySpellElement(spellElement_t* spellElement);
 void spellElementConstructor(spellElement_t* element);
 void spellElementDeconstructor(void* data);
 
-int getCostOfSpell(spell_t* spell);
+int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
 int getCostOfSpellElement(spellElement_t* spellElement);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);

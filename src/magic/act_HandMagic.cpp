@@ -81,8 +81,8 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->lefthand_movey = 0;
 
 	animation_manager->circle_count = 0;
-	animation_manager->times_to_circle = (getCostOfSpell(spell) / 10) + 1; //Circle once for every 10 mana the spell costs.
-	animation_manager->mana_left = getCostOfSpell(spell);
+	animation_manager->times_to_circle = (getCostOfSpell(spell, caster) / 10) + 1; //Circle once for every 10 mana the spell costs.
+	animation_manager->mana_left = getCostOfSpell(spell, caster);
 	animation_manager->consumeMana = true;
 	if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
@@ -99,7 +99,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 			animation_manager->times_to_circle += amount;
 		}
 	}
-	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / getCostOfSpell(spell);
+	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / getCostOfSpell(spell, caster);
 	animation_manager->consume_timer = animation_manager->consume_interval;
 }
 

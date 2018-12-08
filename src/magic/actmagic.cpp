@@ -3488,11 +3488,11 @@ void actParticleSapCenter(Entity* my)
 			else if ( my->skill[6] == SPELL_SUMMON )
 			{
 				parent->modMP(my->skill[7]);
-				if ( parent->behavior == &actPlayer )
+				/*if ( parent->behavior == &actPlayer )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(parent->skill[2], color, language[774]);
-				}
+				}*/
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
 			}
@@ -3518,29 +3518,52 @@ void actParticleSapCenter(Entity* my)
 			{
 				spawnMagicEffectParticles(my->skill[8], my->skill[9], 0, my->skill[5]);
 				Entity* caster = uidToEntity(my->skill[7]);
-				if ( caster )
+				if ( caster && caster->behavior == &actPlayer )
 				{
+					// kill old summons.
+					for ( node_t* node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = uidToEntity(*((Uint32*)(node)->element));
+						if ( follower->monsterAllySummonRank != 0 )
+						{
+							Stat* followerStats = follower->getStats();
+							if ( followerStats && followerStats->HP > 0 )
+							{
+								follower->setMP(followerStats->MAXMP * (followerStats->HP / static_cast<float>(followerStats->MAXHP)));
+								follower->setHP(0);
+							}
+						}
+					}
+
 					Monster creature = SKELETON;
 					Entity* monster = summonMonster(creature, my->skill[8], my->skill[9]);
 					if ( monster )
 					{
 						Stat* monsterStats = monster->getStats();
 						monster->yaw = my->yaw - PI;
-						if ( monsterStats && forceFollower(*caster, *monster) )
+						if ( monsterStats )
 						{
-							monster->setEffect(EFF_STUNNED, true, 20, false);
-
-							if ( caster->behavior == &actPlayer )
+							int magicLevel = 1;
+							if ( stats[caster->skill[2]] )
 							{
-								int magicLevel = 1 + (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) / 20;
-								monster->monsterAllySummonRank = magicLevel;
-								strcpy(monsterStats->name, "skeleton knight");
-								//parent->increaseSkill(PRO_LEADERSHIP);
-								monster->monsterAllyIndex = caster->skill[2];
-								if ( multiplayer == SERVER )
-								{
-									serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
-								}
+								magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummonLVLHP >> 16) / 5);
+							}
+							monster->monsterAllySummonRank = magicLevel;
+							strcpy(monsterStats->name, "skeleton knight");
+							forceFollower(*caster, *monster);
+
+							monster->setEffect(EFF_STUNNED, true, 20, false);
+							bool spawnSecondAlly = false;
+							 
+							if ( (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) > SKILL_LEVEL_EXPERT )
+							{
+								spawnSecondAlly = true;
+							}
+							//parent->increaseSkill(PRO_LEADERSHIP);
+							monster->monsterAllyIndex = caster->skill[2];
+							if ( multiplayer == SERVER )
+							{
+								serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 							}
 
 							// change the color of the hit entity.
@@ -3561,6 +3584,65 @@ void actParticleSapCenter(Entity* my)
 										}
 									}
 									++bodypart;
+								}
+							}
+
+							if ( spawnSecondAlly )
+							{
+								Entity* monster = summonMonster(creature, my->skill[8], my->skill[9]);
+								if ( monster )
+								{
+									if ( multiplayer != CLIENT )
+									{
+										spawnExplosion(monster->x, monster->y, -1);
+										playSoundEntity(monster, 171, 128);
+
+										createParticleErupt(monster, 791);
+										serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 791);
+									}
+
+									Stat* monsterStats = monster->getStats();
+									monster->yaw = my->yaw - PI;
+									if ( monsterStats )
+									{
+										strcpy(monsterStats->name, "skeleton sentinel");
+										magicLevel = 1;
+										if ( stats[caster->skill[2]] )
+										{
+											magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummon2LVLHP >> 16) / 5);
+										}
+										monster->monsterAllySummonRank = magicLevel;
+
+										forceFollower(*caster, *monster);
+										monster->setEffect(EFF_STUNNED, true, 20, false);
+
+										monster->monsterAllyIndex = caster->skill[2];
+										if ( multiplayer == SERVER )
+										{
+											serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+										}
+
+										// change the color of the hit entity.
+										if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
+										{
+											monster->flags[USERFLAG2] = true;
+											serverUpdateEntityFlag(monster, USERFLAG2);
+											int bodypart = 0;
+											for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+											{
+												if ( bodypart >= LIMB_HUMANOID_TORSO )
+												{
+													Entity* tmp = (Entity*)node->element;
+													if ( tmp )
+													{
+														tmp->flags[USERFLAG2] = true;
+														serverUpdateEntityFlag(tmp, USERFLAG2);
+													}
+												}
+												++bodypart;
+											}
+										}
+									}
 								}
 							}
 						}
