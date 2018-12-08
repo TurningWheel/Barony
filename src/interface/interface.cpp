@@ -1502,6 +1502,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	int disableOption = 0;
 	bool keepWheelOpen = false;
+
 	if ( followerToCommand )
 	{
 		if ( players[clientnum] && players[clientnum]->entity
@@ -1530,6 +1531,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+				if ( followerToCommand->monsterAllySummonRank != 0 )
+				{
+					skillLVL = SKILL_LEVEL_LEGENDARY;
+				}
 				if ( optionSelected == ALLY_CMD_ATTACK_SELECT )
 				{
 					if ( attackCommandOnly(followerStats->type) )
@@ -1591,6 +1596,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 					}
 					optionSelected = optionPrevious;
 				}
+			}
+
+			if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
+			{
+				optionSelected = ALLY_CMD_RETURN_SOUL;
 			}
 
 			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
@@ -1707,6 +1717,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 		if ( stats[clientnum] )
 		{
 			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+			if ( followerToCommand->monsterAllySummonRank != 0 )
+			{
+				skillLVL = SKILL_LEVEL_LEGENDARY;
+			}
 		}
 
 		SDL_Rect src;
@@ -1833,10 +1847,18 @@ void FollowerRadialMenu::drawFollowerMenu()
 				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
 				if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
-					// draw higher.
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
-					TTF_SizeUTF8(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+					if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+					{
+						TTF_SizeUTF8(ttf12, "Relinquish ", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
+					}
+					else
+					{
+						// draw higher.
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						TTF_SizeUTF8(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+					}
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
 				{
@@ -2229,6 +2251,10 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	bool interactWorld = allowedInteractWorld(followerStats->type);
 
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+	if ( followerToCommand->monsterAllySummonRank != 0 )
+	{
+		skillLVL = SKILL_LEVEL_LEGENDARY;
+	}
 	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
@@ -2371,6 +2397,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_DROP_EQUIP:
+			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			{
+				return -1;
+			}
 			if ( !allowedInteractItems(monsterType) )
 			{
 				return -1; // disabled due to creature.
@@ -2431,6 +2461,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_CLASS_TOGGLE:
+			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			{
+				return 0;
+			}
 			if ( !allowedClassToggle(monsterType) )
 			{
 				return -1; // disabled due to creature.
@@ -2564,6 +2598,10 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 		case SKELETON:
 		case VAMPIRE:
 		case SLIME:
+			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			{
+				return false;
+			}
 			return true;
 			break;
 		default:

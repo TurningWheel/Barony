@@ -725,7 +725,7 @@ public:
 	void vampireChooseWeapon(const Entity* target, double dist);
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
-
+	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);

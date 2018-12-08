@@ -1124,14 +1124,14 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	}*/
 	if ( monsterStats )
 	{
+		if ( monsterStats->type == SKELETON && monster->monsterAllySummonRank != 0 )
+		{
+			itemDroppable = false;
+		}
+
 		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 		{
 			if ( monsterStats->type == SHADOW || monsterStats->type == AUTOMATON )
-			{
-				itemDroppable = false;
-			}
-
-			if ( monsterStats->type == SKELETON && monster->monsterAllySummonRank != 0 )
 			{
 				itemDroppable = false;
 			}

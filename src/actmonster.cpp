@@ -2000,6 +2000,10 @@ void actMonster(Entity* my)
 									{
 										FollowerMenu.recentEntity = nullptr;
 									}
+									if ( FollowerMenu.followerToCommand == my )
+									{
+										FollowerMenu.closeFollowerMenuGUI();
+									}
 								}
 								break;
 							}
@@ -2009,7 +2013,14 @@ void actMonster(Entity* my)
 				}
 			}
 		}
-		if ( playerFollower < MAXPLAYERS )
+
+		bool skipObituary = false;
+		if ( my->monsterAllySummonRank != 0 && myStats->MP > 0 )
+		{
+			skipObituary = true;
+		}
+
+		if ( playerFollower < MAXPLAYERS && !skipObituary )
 		{
 			messagePlayerMonsterEvent(c, 0xFFFFFFFF, *myStats, language[1499], language[2589], MSG_OBITUARY);
 		}
@@ -3392,9 +3403,14 @@ timeToGoAgain:
 								tangent2 = tangent;
 							}
 
+							int myDex = my->getDEX();
+							if ( my->monsterAllyGetPlayerLeader() )
+							{
+								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP); // speed cap.
+							}
+							MONSTER_VELX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
+							MONSTER_VELY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
 
-							MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
-							MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
 							if ( (dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon) )
 							{
 								if ( my->shouldRetreat(*myStats) )
@@ -3549,16 +3565,26 @@ timeToGoAgain:
 									}
 									else
 									{
-										MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
-										MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
+										int myDex = my->getDEX();
+										if ( my->monsterAllyGetPlayerLeader() )
+										{
+											myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+										}
+										MONSTER_VELX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+										MONSTER_VELY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
 									}
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 								}
 								else
 								{
 									// this is just so that the monster rotates. it doesn't actually move
-									MONSTER_VELX = cos(tangent) * .02 * .045 * (my->getDEX() + 10) * weightratio;
-									MONSTER_VELY = sin(tangent) * .02 * .045 * (my->getDEX() + 10) * weightratio;
+									int myDex = my->getDEX();
+									if ( my->monsterAllyGetPlayerLeader() )
+									{
+										myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+									}
+									MONSTER_VELX = cos(tangent) * .02 * .045 * (myDex + 10) * weightratio;
+									MONSTER_VELY = sin(tangent) * .02 * .045 * (myDex + 10) * weightratio;
 								}
 							}
 
@@ -3575,8 +3601,13 @@ timeToGoAgain:
 							// rotate monster
 							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 							{
-								real_t tempVelX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
-								real_t tempVelY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
+								int myDex = my->getDEX();
+								if ( my->monsterAllyGetPlayerLeader() )
+								{
+									myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+								}
+								real_t tempVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+								real_t tempVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
 								if ( myStats->type == LICH_ICE )
 								{
 									// override if we're strafing, keep facing the target
@@ -4194,8 +4225,13 @@ timeToGoAgain:
 						{
 							// move monster
 							tangent = atan2( pathnode->y * 16 + 8 - my->y, pathnode->x * 16 + 8 - my->x );
-							MONSTER_VELX = cos(tangent) * .045 * (my->getDEX() + 10) * weightratio;
-							MONSTER_VELY = sin(tangent) * .045 * (my->getDEX() + 10) * weightratio;
+							int myDex = my->getDEX();
+							if ( my->monsterAllyGetPlayerLeader() )
+							{
+								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+							}
+							MONSTER_VELX = cos(tangent) * .045 * (myDex + 10) * weightratio;
+							MONSTER_VELY = sin(tangent) * .045 * (myDex + 10) * weightratio;
 							dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 							if ( hit.entity != NULL )
 							{
@@ -7232,6 +7268,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 	switch ( command )
 	{
+		case ALLY_CMD_RETURN_SOUL:
+			if ( monsterAllySummonRank != 0 )
+			{
+				float manaToRefund = myStats->MAXMP * (myStats->HP / static_cast<float>(myStats->MAXHP));
+				setMP(static_cast<int>(manaToRefund));
+				setHP(0);
+			}
+			break;
 		case ALLY_CMD_ATTACK_CONFIRM:
 			if ( uid != 0 && uid != getUID() )
 			{

@@ -2103,9 +2103,12 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->HP += HP_MOD;
 		myStats->MAXHP += HP_MOD;
 		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-		myStats->MP += MP_MOD;
-		myStats->MAXMP += MP_MOD;
-		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
+		{
+			myStats->MP += MP_MOD;
+			myStats->MAXMP += MP_MOD;
+			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+		}
 
 		// now pick three attributes to increase
 
@@ -2116,9 +2119,31 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( behavior == &actMonster && monsterAllySummonRank != 0 )
 		{
+			bool secondSummon = false;
 			if ( !strcmp(myStats->name, "skeleton knight") )
 			{
 				playerStatIncrease(1, increasestat); // warrior weighting
+			}
+			else if ( !strcmp(myStats->name, "skeleton sentinel") )
+			{
+				secondSummon = true;
+				playerStatIncrease(5, increasestat); // rogue weighting
+			}
+
+			bool rankUp = false;
+
+			if ( myStats->type == SKELETON )
+			{
+				int rank = myStats->LVL / 5;
+				if ( rank <= 6 && myStats->LVL % 5 == 0 )
+				{
+					// went up a rank (every 5 LVLs)
+					rank = std::min(1 + rank, 7);
+					rankUp = true;
+					createParticleDropRising(this, 791, 1.0);
+					serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 791);
+					skeletonSummonSetEquipment(myStats, std::min(7, 1 + (myStats->LVL / 5)));
+				}
 			}
 
 			for ( i = 0; i < 3; i++ )
@@ -2143,24 +2168,54 @@ void Entity::handleEffects(Stat* myStats)
 					case STAT_CHR:
 						myStats->CHR++;
 						break;
+					default:
+						break;
 				}
 
-				Entity* leader = uidToEntity(myStats->leader_uid);
-				if ( leader )
+			}
+			Entity* leader = uidToEntity(myStats->leader_uid);
+			if ( leader )
+			{
+				Stat* leaderStats = leader->getStats();
+				if ( leaderStats )
 				{
-					Stat* leaderStats = leader->getStats();
-					if ( leaderStats )
+					if ( !secondSummon )
 					{
 						leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
-						leaderStats->playerSummonLVLHP |= (myStats->HP);
+						leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
 
 						leaderStats->playerSummonSTRDEXCONINT = (myStats->STR << 24);
 						leaderStats->playerSummonSTRDEXCONINT |= (myStats->DEX << 16);
 						leaderStats->playerSummonSTRDEXCONINT |= (myStats->CON << 8);
 						leaderStats->playerSummonSTRDEXCONINT |= (myStats->INT);
 
-						leaderStats->playerSummonPERCHR = (myStats->STR << 24);
-						leaderStats->playerSummonPERCHR |= (myStats->DEX << 16);
+						leaderStats->playerSummonPERCHR = (myStats->PER << 24);
+						leaderStats->playerSummonPERCHR |= (myStats->CHR << 16);
+						leaderStats->playerSummonPERCHR |= (this->monsterAllySummonRank << 8);
+					}
+					else
+					{
+						leaderStats->playerSummon2LVLHP = (myStats->LVL << 16);
+						leaderStats->playerSummon2LVLHP |= (myStats->MAXHP);
+
+						leaderStats->playerSummon2STRDEXCONINT = (myStats->STR << 24);
+						leaderStats->playerSummon2STRDEXCONINT |= (myStats->DEX << 16);
+						leaderStats->playerSummon2STRDEXCONINT |= (myStats->CON << 8);
+						leaderStats->playerSummon2STRDEXCONINT |= (myStats->INT);
+
+						leaderStats->playerSummon2PERCHR = (myStats->PER << 24);
+						leaderStats->playerSummon2PERCHR |= (myStats->CHR << 16);
+						leaderStats->playerSummon2PERCHR |= (this->monsterAllySummonRank << 8);
+					}
+					if ( leader->behavior == &actPlayer )
+					{
+						serverUpdatePlayerSummonStrength(leader->skill[2]);
+						if ( rankUp )
+						{
+							color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							messagePlayerMonsterEvent(leader->skill[2], color, *myStats, language[3197], language[3197], MSG_GENERIC);
+							playSoundPlayer(leader->skill[2], 40, 64);
+						}
 					}
 				}
 			}
@@ -2694,7 +2749,7 @@ void Entity::handleEffects(Stat* myStats)
 	// regaining energy over time
 	int manaRegenInterval = getManaRegenInterval(*myStats);
 
-	if ( myStats->MP < myStats->MAXMP )
+	if ( myStats->MP < myStats->MAXMP && this->monsterAllySummonRank == 0 )
 	{
 		this->char_energize++;
 		if ( this->char_energize >= manaRegenInterval )
@@ -3094,19 +3149,72 @@ void Entity::handleEffects(Stat* myStats)
 		// life saving
 		if ( myStats->HP <= 0 )
 		{
-			messagePlayer(player, language[651]);
-			if ( myStats->MP >= 75 )
+			int spellCost = getCostOfSpell(&spell_summon, this);
+			int numSummonedAllies = 0;
+			int firstManaToRefund = 0;
+			int secondManaToRefund = 0;
+			for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
 			{
-				messagePlayer(player, language[3180]);
+				Uint32* c = (Uint32*)node->element;
+				Entity* mySummon = uidToEntity(*c);
+				if ( mySummon && mySummon->monsterAllySummonRank != 0 )
+				{
+					Stat* mySummonStats = mySummon->getStats();
+					if ( mySummonStats )
+					{
+						if ( numSummonedAllies == 0 )
+						{
+							mySummon->setMP(mySummonStats->MAXMP * (mySummonStats->HP / static_cast<float>(mySummonStats->MAXHP)));
+							firstManaToRefund += std::min(spellCost, static_cast<int>((mySummonStats->MP / static_cast<float>(mySummonStats->MAXMP)) * spellCost)); // MP to restore
+							mySummon->setHP(0); // sacrifice!
+							++numSummonedAllies;
+						}
+						else if ( numSummonedAllies == 1 )
+						{
+							mySummon->setMP(mySummonStats->MAXMP * (mySummonStats->HP / static_cast<float>(mySummonStats->MAXHP)));
+							secondManaToRefund += std::min(spellCost, static_cast<int>((mySummonStats->MP / static_cast<float>(mySummonStats->MAXMP)) * spellCost)); // MP to restore
+							mySummon->setHP(0); // for glorious leader!
+							++numSummonedAllies;
+							break;
+						}
+					}
+				}
+			}
+
+			if ( numSummonedAllies == 2 )
+			{
+				firstManaToRefund /= 2;
+				secondManaToRefund /= 2;
+			}
+			bool revivedWithFriendship = false;
+			if ( myStats->MP < 75 && numSummonedAllies > 0 )
+			{
+				revivedWithFriendship = true;
+			}
+
+			int manaTotal = myStats->MP + firstManaToRefund + secondManaToRefund;
+			
+			if ( manaTotal >= 75 )
+			{
+				messagePlayer(player, language[651]);
+				if ( revivedWithFriendship )
+				{
+					messagePlayer(player, language[3198]);
+				}
+				else
+				{
+					messagePlayer(player, language[3180]);
+				}
 				messagePlayer(player, language[654]);
 
 				playSoundEntity(this, 167, 128);
 				createParticleDropRising(this, 174, 1.0);
 				serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 174);
 				// convert MP to HP
-				if ( safeConsumeMP(75) )
+				manaTotal = myStats->MP;
+				if ( safeConsumeMP(myStats->MP) )
 				{
-					this->setHP(std::min(75, myStats->MAXHP));
+					this->setHP(std::min(manaTotal, myStats->MAXHP));
 					if ( player > 0 && multiplayer == SERVER )
 					{
 						strcpy((char*)net_packet->data, "ATTR");
@@ -6987,6 +7095,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	if ( !destStats || !srcStats )
 	{
 		return;
+	}
+
+	if ( src->monsterAllySummonRank != 0 )
+	{
+		return; // summoned monster, no XP!
 	}
 
 	int player = -1;
@@ -10925,6 +11038,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 		{
 			return false;
 		}
+	}
+	if ( monsterAllySummonRank != 0 )
+	{
+		return false;
 	}
 	if ( myStats.type == LICH_ICE )
 	{

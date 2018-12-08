@@ -50,47 +50,154 @@ void initSkeleton(Entity* my, Stat* myStats)
 			if ( my->monsterAllySummonRank != 0 )
 			{
 				int rank = std::min(my->monsterAllySummonRank, 7);
+				bool secondarySummon = true;
+				if ( !strcmp(myStats->name, "skeleton knight") )
+				{
+					secondarySummon = false;
+				}
+				my->skeletonSummonSetEquipment(myStats, rank);
+				myStats->sex = MALE;
 				myStats->GOLD = 0;
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 64);
+
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
 					Stat* leaderStats = leader->getStats();
 					if ( leaderStats )
 					{
-						if ( leaderStats->playerSummonLVLHP != 0 ) // first summon if equal to 0
+						if ( !secondarySummon )
 						{
-							myStats->LVL = (leaderStats->playerSummonLVLHP & 0xFFFF0000) >> 16;
-							myStats->MAXHP = leaderStats->playerSummonLVLHP & 0x0000FFFF;
-							myStats->HP = myStats->MAXHP;
-							myStats->OLDHP = myStats->MAXHP;
+							if ( leaderStats->playerSummonLVLHP != 0 ) // first stat initialisation if equal to 0
+							{
+								myStats->LVL = (leaderStats->playerSummonLVLHP & 0xFFFF0000) >> 16;
+								myStats->MAXHP = leaderStats->playerSummonLVLHP & 0x0000FFFF;
+								myStats->HP = myStats->MAXHP;
+								myStats->OLDHP = myStats->MAXHP;
 
-							myStats->STR = (leaderStats->playerSummonSTRDEXCONINT & 0xFF000000) >> 24;
-							myStats->DEX = (leaderStats->playerSummonSTRDEXCONINT & 0x00FF0000) >> 16;
-							myStats->CON = (leaderStats->playerSummonSTRDEXCONINT & 0x0000FF00) >> 8;
-							myStats->INT = (leaderStats->playerSummonSTRDEXCONINT & 0x000000FF) >> 0;
+								myStats->STR = (leaderStats->playerSummonSTRDEXCONINT & 0xFF000000) >> 24;
+								myStats->DEX = (leaderStats->playerSummonSTRDEXCONINT & 0x00FF0000) >> 16;
+								myStats->CON = (leaderStats->playerSummonSTRDEXCONINT & 0x0000FF00) >> 8;
+								myStats->INT = (leaderStats->playerSummonSTRDEXCONINT & 0x000000FF) >> 0;
 
-							myStats->PER = (leaderStats->playerSummonPERCHR & 0xFF000000) >> 24;
-							myStats->CHR = (leaderStats->playerSummonPERCHR & 0x00FF0000) >> 16;
+								myStats->PER = (leaderStats->playerSummonPERCHR & 0xFF000000) >> 24;
+								myStats->CHR = (leaderStats->playerSummonPERCHR & 0x00FF0000) >> 16;
+							}
+							else
+							{
+								// set variables for first time cast
+								leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
+								leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
+
+								myStats->STR = std::max(1, myStats->STR);
+								myStats->DEX = std::max(0, myStats->DEX);
+								myStats->CON = std::max(0, myStats->CON);
+								myStats->INT = std::max(0, myStats->INT);
+								myStats->PER = std::max(0, myStats->PER);
+								myStats->CHR = std::max(0, myStats->CHR);
+								leaderStats->playerSummonSTRDEXCONINT = (myStats->STR << 24);
+								leaderStats->playerSummonSTRDEXCONINT |= (myStats->DEX << 16);
+								leaderStats->playerSummonSTRDEXCONINT |= (myStats->CON << 8);
+								leaderStats->playerSummonSTRDEXCONINT |= (myStats->INT);
+
+								leaderStats->playerSummonPERCHR = (myStats->PER << 24);
+								leaderStats->playerSummonPERCHR |= (myStats->CHR << 16);
+								leaderStats->playerSummonPERCHR |= (my->monsterAllySummonRank << 8);
+							}
 						}
 						else
 						{
-							// set variables for first time cast
-							leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
-							leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
+							if ( leaderStats->playerSummon2LVLHP != 0 ) // first stat initialisation if equal to 0
+							{
+								myStats->LVL = (leaderStats->playerSummon2LVLHP & 0xFFFF0000) >> 16;
+								myStats->MAXHP = leaderStats->playerSummon2LVLHP & 0x0000FFFF;
+								myStats->HP = myStats->MAXHP;
+								myStats->OLDHP = myStats->MAXHP;
 
-							myStats->STR = std::max(0, myStats->STR);
-							myStats->DEX = std::max(0, myStats->DEX);
-							myStats->CON = std::max(0, myStats->CON);
-							myStats->INT = std::max(0, myStats->INT);
-							myStats->PER = std::max(0, myStats->PER);
-							myStats->CHR = std::max(0, myStats->CHR);
-							leaderStats->playerSummonSTRDEXCONINT = (myStats->STR << 24);
-							leaderStats->playerSummonSTRDEXCONINT |= (myStats->DEX << 16);
-							leaderStats->playerSummonSTRDEXCONINT |= (myStats->CON << 8);
-							leaderStats->playerSummonSTRDEXCONINT |= (myStats->INT);
+								myStats->STR = (leaderStats->playerSummon2STRDEXCONINT & 0xFF000000) >> 24;
+								myStats->DEX = (leaderStats->playerSummon2STRDEXCONINT & 0x00FF0000) >> 16;
+								myStats->CON = (leaderStats->playerSummon2STRDEXCONINT & 0x0000FF00) >> 8;
+								myStats->INT = (leaderStats->playerSummon2STRDEXCONINT & 0x000000FF) >> 0;
 
-							leaderStats->playerSummonPERCHR = (myStats->PER << 24);
-							leaderStats->playerSummonPERCHR |= (myStats->CHR << 16);
+								myStats->PER = (leaderStats->playerSummon2PERCHR & 0xFF000000) >> 24;
+								myStats->CHR = (leaderStats->playerSummon2PERCHR & 0x00FF0000) >> 16;
+							}
+							else
+							{
+								// set variables for first time cast
+								// make up level deficit from primary summon.
+								int levelUps = 0;
+								if ( leaderStats->playerSummonLVLHP > 0 )
+								{
+									levelUps = std::max(3, static_cast<int>((leaderStats->playerSummonLVLHP & 0xFFFF0000) >> 16) - 3);
+								}
+								levelUps = std::max(0, levelUps - myStats->LVL);
+								int increasestat[3] = { 0, 0, 0 };
+								for ( int i = 0; i < levelUps; ++i )
+								{
+									myStats->LVL++;
+									myStats->HP += HP_MOD;
+									myStats->MAXHP += HP_MOD;
+									myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+									playerStatIncrease(5, increasestat); // rogue weighting
+									for ( int j = 0; j < 3; j++ )
+									{
+										switch ( increasestat[j] )
+										{
+											case STAT_STR:
+												myStats->STR++;
+												break;
+											case STAT_DEX:
+												myStats->DEX++;
+												break;
+											case STAT_CON:
+												myStats->CON++;
+												break;
+											case STAT_INT:
+												myStats->INT++;
+												break;
+											case STAT_PER:
+												myStats->PER++;
+												break;
+											case STAT_CHR:
+												myStats->CHR++;
+												break;
+											default:
+												break;
+										}
+									}
+								}
+
+								if ( multiplayer == SERVER )
+								{
+									serverUpdateAllyStat(my->monsterAllyIndex, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
+								}
+
+								leaderStats->playerSummon2LVLHP = (myStats->LVL << 16);
+								leaderStats->playerSummon2LVLHP |= (myStats->MAXHP);
+
+								myStats->STR = std::max(0, myStats->STR);
+								myStats->DEX = std::max(1, myStats->DEX);
+								myStats->CON = std::max(0, myStats->CON);
+								myStats->INT = std::max(0, myStats->INT);
+								myStats->PER = std::max(0, myStats->PER);
+								myStats->CHR = std::max(0, myStats->CHR);
+								leaderStats->playerSummon2STRDEXCONINT = (myStats->STR << 24);
+								leaderStats->playerSummon2STRDEXCONINT |= (myStats->DEX << 16);
+								leaderStats->playerSummon2STRDEXCONINT |= (myStats->CON << 8);
+								leaderStats->playerSummon2STRDEXCONINT |= (myStats->INT);
+
+								leaderStats->playerSummon2PERCHR = (myStats->PER << 24);
+								leaderStats->playerSummon2PERCHR |= (myStats->CHR << 16);
+								leaderStats->playerSummon2PERCHR |= (my->monsterAllySummonRank << 8);
+							}
+						}
+						myStats->MAXMP = getCostOfSpell(&spell_summon, leader);
+						myStats->MP = 0;
+
+						if ( multiplayer == SERVER && leader->behavior == &actPlayer )
+						{
+							serverUpdateAllyStat(leader->skill[2], my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 						}
 					}
 					else
@@ -103,55 +210,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 					myStats->HP = 0;
 				}
 
-				if ( !strcmp(myStats->name, "skeleton knight") )
-				{
-					switch ( rank )
-					{
-						case 1:
-							myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						case 2:
-							myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						case 3:
-							myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						case 4:
-							myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shoes = newItem(STEEL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						case 5:
-							myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(STEEL_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(STEEL_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shoes = newItem(STEEL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						case 6:
-							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(STEEL_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(STEEL_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shoes = newItem(CRYSTAL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						case 7:
-							myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shield = newItem(CRYSTAL_SHIELD, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							myStats->shoes = newItem(CRYSTAL_BOOTS, WORN, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
-							break;
-						default:
-							break;
-					}
-				}
+				
 			}
 			else
 			{
@@ -534,11 +593,35 @@ void skeletonDie(Entity* my)
 			if ( leaderStats )
 			{
 				// refund mana to caster.
-				Entity* spellEntity = createParticleSapCenter(leader, my, SPELL_SUMMON, 599, 791);
-				if ( spellEntity )
+				int spellCost = getCostOfSpell(&spell_summon, leader);
+				for ( node_t* node = leaderStats->FOLLOWERS.first; node != nullptr; node = node->next )
 				{
-					playSoundEntity(my, 167, 128); // succeeded spell sound
-					spellEntity->skill[7] = spellElement_summon.mana / 2; // MP to restore
+					Uint32* c = (Uint32*)node->element;
+					Entity* otherSummon = uidToEntity(*c);
+					if ( otherSummon && otherSummon->monsterAllySummonRank != 0 && otherSummon->monsterAllyGetPlayerLeader() == leader )
+					{
+						spellCost /= 2;
+						break;
+					}
+				}
+				int manaToRefund = std::min(spellCost, static_cast<int>(myStats->MP / static_cast<float>(myStats->MAXMP) * spellCost)); // MP to restore
+				if ( manaToRefund > 0 )
+				{
+					manaToRefund -= rand() % (std::max(1, spellCost / 5));
+					if ( leaderStats->HP <= 0 )
+					{
+						manaToRefund = 0;
+					}
+					Entity* spellEntity = createParticleSapCenter(leader, my, SPELL_SUMMON, 599, 791);
+					if ( spellEntity )
+					{
+						playSoundEntity(my, 167, 128); // succeeded spell sound
+						spellEntity->skill[7] = manaToRefund;
+						if ( leader->behavior == &actPlayer )
+						{
+							messagePlayerMonsterEvent(leader->skill[2], 0xFFFFFFFF, *myStats, language[3194], language[3195], MSG_COMBAT);
+						}
+					}
 				}
 			}
 		}
@@ -1148,5 +1231,510 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		// do nothing, don't reset attacktime or increment it.
+	}
+}
+
+void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
+{
+	if ( !strcmp(myStats->name, "skeleton knight") )
+	{
+		switch ( rank )
+		{
+			case 1:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = BRONZE_SWORD;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = LEATHER_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = BRONZE_SHIELD;
+				}
+				break;
+			case 2:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = IRON_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = LEATHER_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = BRONZE_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 3:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = IRON_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = IRON_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(IRON_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = IRON_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 4:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = STEEL_HALBERD;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = IRON_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(IRON_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = IRON_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS;
+				}
+				break;
+			case 5:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = STEEL_HALBERD;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(STEEL_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = STEEL_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(STEEL_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = STEEL_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS;
+				}
+				break;
+			case 6:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CRYSTAL_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(STEEL_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = STEEL_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(STEEL_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = STEEL_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(CRYSTAL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = CRYSTAL_BOOTS;
+				}
+				break;
+			case 7:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CRYSTAL_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = CRYSTAL_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(CRYSTAL_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = CRYSTAL_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(CRYSTAL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = CRYSTAL_BOOTS;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	else if ( !strcmp(myStats->name, "skeleton sentinel") )
+	{
+		switch ( rank )
+		{
+			case 1:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SLING, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SLING;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				break;
+			case 2:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SLING, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SLING;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(LEATHER_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = LEATHER_BOOTS;
+				}
+				break;
+			case 3:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SHORTBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SHORTBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(LEATHER_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = LEATHER_BOOTS;
+				}
+				break;
+			case 4:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SHORTBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SHORTBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 5:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CROSSBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->gloves )
+				{
+					myStats->gloves = newItem(BRACERS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->gloves->type = BRACERS;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 6:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CROSSBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->gloves )
+				{
+					myStats->gloves = newItem(BRACERS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->gloves->type = BRACERS;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS_FEATHER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS_FEATHER;
+				}
+				break;
+			case 7:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CROSSBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 2, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+					myStats->helmet->appearance = 2;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK_BLACK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK_BLACK;
+				}
+				if ( !myStats->gloves )
+				{
+					myStats->gloves = newItem(CRYSTAL_GLOVES, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->gloves->type = CRYSTAL_GLOVES;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS_FEATHER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS_FEATHER;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 }

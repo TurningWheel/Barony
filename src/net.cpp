@@ -1011,6 +1011,33 @@ void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int M
 	}
 }
 
+void serverUpdatePlayerSummonStrength(int player)
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	if ( player < 0 || player > MAXPLAYERS )
+	{
+		return;
+	}
+	
+	if ( !client_disconnected[player] && stats[player] )
+	{
+		strcpy((char*)net_packet->data, "SUMS");
+		SDLNet_Write32(stats[player]->playerSummonLVLHP, &net_packet->data[4]);
+		SDLNet_Write32(stats[player]->playerSummonSTRDEXCONINT, &net_packet->data[8]);
+		SDLNet_Write32(stats[player]->playerSummonPERCHR, &net_packet->data[12]);
+		SDLNet_Write32(stats[player]->playerSummon2LVLHP, &net_packet->data[16]);
+		SDLNet_Write32(stats[player]->playerSummon2STRDEXCONINT, &net_packet->data[20]);
+		SDLNet_Write32(stats[player]->playerSummon2PERCHR, &net_packet->data[24]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 28;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
 void serverUpdateAllyHP(int player, Uint32 uidToUpdate, int HP, int MAXHP, bool guarantee)
 {
 	if ( multiplayer != SERVER )
@@ -2680,6 +2707,10 @@ void clientHandlePacket()
 					{
 						FollowerMenu.recentEntity = nullptr;
 					}
+					if ( FollowerMenu.followerToCommand == uidToEntity(uidnum) )
+					{
+						FollowerMenu.closeFollowerMenuGUI();
+					}
 					list_RemoveNode(allyNode);
 					break;
 				}
@@ -2892,6 +2923,21 @@ void clientHandlePacket()
 		Sint32 y = (Sint32)SDLNet_Read32(&net_packet->data[12]);
 		Uint32 uid = SDLNet_Read32(&net_packet->data[16]);
 		summonMonsterClient(monster, x, y, uid);
+		return;
+	}
+
+	// monster summon
+	else if ( !strncmp((char*)net_packet->data, "SUMS", 4) )
+	{
+		if ( stats[clientnum] )
+		{
+			stats[clientnum]->playerSummonLVLHP = (Sint32)SDLNet_Read32(&net_packet->data[4]);
+			stats[clientnum]->playerSummonSTRDEXCONINT = (Sint32)SDLNet_Read32(&net_packet->data[8]);
+			stats[clientnum]->playerSummonPERCHR = (Sint32)SDLNet_Read32(&net_packet->data[12]);
+			stats[clientnum]->playerSummon2LVLHP = (Sint32)SDLNet_Read32(&net_packet->data[16]);
+			stats[clientnum]->playerSummon2STRDEXCONINT = (Sint32)SDLNet_Read32(&net_packet->data[20]);
+			stats[clientnum]->playerSummon2PERCHR = (Sint32)SDLNet_Read32(&net_packet->data[24]);
+		}
 		return;
 	}
 
