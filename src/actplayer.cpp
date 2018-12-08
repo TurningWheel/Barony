@@ -2066,6 +2066,17 @@ void actPlayer(Entity* my)
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 					messagePlayerColor(PLAYER_NUM, color, language[577]);
 
+					for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Uint32* c = (Uint32*)node->element;
+						Entity* mySummon = uidToEntity(*c);
+						if ( mySummon && mySummon->monsterAllySummonRank != 0 )
+						{
+							mySummon->setMP(0);
+							mySummon->setHP(0); // rip
+						}
+					}
+
 					/* //TODO: Eventually.
 					{
 						strcpy((char *)net_packet->data,"UDIE");

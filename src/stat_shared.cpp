@@ -26,7 +26,10 @@ Stat::Stat(Sint32 sprite) :
 	playerPolymorphStorage(MISC_FLAGS[5]),
 	playerSummonLVLHP(MISC_FLAGS[6]),
 	playerSummonSTRDEXCONINT(MISC_FLAGS[7]),
-	playerSummonPERCHR(MISC_FLAGS[8])
+	playerSummonPERCHR(MISC_FLAGS[8]),
+	playerSummon2LVLHP(MISC_FLAGS[9]),
+	playerSummon2STRDEXCONINT(MISC_FLAGS[10]),
+	playerSummon2PERCHR(MISC_FLAGS[11])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

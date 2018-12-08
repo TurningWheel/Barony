@@ -935,8 +935,18 @@ void gameLogic(void)
 									{
 										monster->monsterAllyClass = monsterStats->allyClass;
 										monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
+										if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
+										{
+											monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
+										}
+										else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
+										{
+											messagePlayer(0, "test2");
+											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
+										}
 										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
 										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
+										serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
 									}
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -2737,6 +2747,10 @@ int main(int argc, char** argv)
 						stats[0]->appearance = rand() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
+						if ( stats[0]->playerRace != RACE_HUMAN )
+						{
+							stats[0]->appearance = 0;
+						}
 
 						strcpy(stats[0]->name, "Avatar");
 						multiplayer = SINGLE;

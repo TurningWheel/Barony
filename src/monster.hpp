@@ -207,6 +207,7 @@ enum AllyNPCCommand : int
 	ALLY_CMD_MOVETO_CONFIRM,
 	ALLY_CMD_CANCEL,
 	ALLY_CMD_ATTACK_CONFIRM,
+	ALLY_CMD_RETURN_SOUL,
 	ALLY_CMD_END
 };
 
@@ -313,6 +314,8 @@ enum MonsterDefendType : int
 #define MONSTER_WEAPONYAW my->fskill[5]
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
 #define MONSTER_SHIELDYAW my->fskill[8]
+
+static const int MONSTER_ALLY_DEXTERITY_SPEED_CAP = 15;
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
 Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);

@@ -142,6 +142,9 @@ static const int STAT_FLAG_POLYMORPH_STORAGE = 5;
 static const int STAT_FLAG_ALLY_SUMMON_LVLHP = 6;
 static const int STAT_FLAG_ALLY_SUMMON_STRDEXCONINT = 7;
 static const int STAT_FLAG_ALLY_SUMMON_PERCHR = 8;
+static const int STAT_FLAG_ALLY_SUMMON2_LVLHP = 9;
+static const int STAT_FLAG_ALLY_SUMMON2_STRDEXCONINT = 10;
+static const int STAT_FLAG_ALLY_SUMMON2_PERCHR = 11;
 
 typedef enum
 {
@@ -190,6 +193,9 @@ public:
 	Sint32& playerSummonLVLHP; // MISC_FLAGS[6]
 	Sint32& playerSummonSTRDEXCONINT; // MISC_FLAGS[7]
 	Sint32& playerSummonPERCHR; // MISC_FLAGS[8]
+	Sint32& playerSummon2LVLHP; // MISC_FLAGS[9]
+	Sint32& playerSummon2STRDEXCONINT; // MISC_FLAGS[10]
+	Sint32& playerSummon2PERCHR; // MISC_FLAGS[11]
 
 	// group think
 	Uint32 leader_uid;
