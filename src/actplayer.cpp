@@ -4093,14 +4093,14 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 			return SKELETON;
 			break;
 		case RACE_INCUBUS:
-			if ( stats[this->skill[2]]->sex == FEMALE )
+			return INCUBUS;
+			/*if ( stats[this->skill[2]]->sex == FEMALE )
 			{
 				return SUCCUBUS;
 			}
 			else
 			{
-				return INCUBUS;
-			}
+			}*/
 			break;
 		case RACE_GOBLIN:
 			return GOBLIN;
