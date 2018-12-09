@@ -1418,8 +1418,11 @@ void consoleCommand(char* command_str)
 
 		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
-			players[clientnum]->entity->getStats()->EFFECTS[c] = false;
-			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) )
+			{
+				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
+				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+			}
 		}
 	}
 	else if (!strncmp(command_str, "/summonall ", 11))

@@ -713,7 +713,7 @@ void handleMainMenu(bool mode)
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
 				client_classes[clientnum] = 13;
-				stats[0]->playerRace = RACE_SKELETON;
+				stats[0]->playerRace = RACE_VAMPIRE;
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -730,7 +730,7 @@ void handleMainMenu(bool mode)
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
 				client_classes[clientnum] = 13;
-				stats[0]->playerRace = RACE_SKELETON;
+				stats[0]->playerRace = RACE_VAMPIRE;
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -2244,7 +2244,12 @@ void handleMainMenu(bool mode)
 		else if ( charcreation_step == 2 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
-			for ( c = 0; c < NUMCLASSES; c++ )
+			int classesToDisplay = NUMCLASSES;
+			if ( stats[0]->playerRace == RACE_HUMAN )
+			{
+				classesToDisplay = NUMCLASSES - 1;
+			}
+			for ( c = 0; c < classesToDisplay; c++ )
 			{
 				if ( c == client_classes[0] )
 				{
@@ -2281,7 +2286,7 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						client_classes[0] = NUMCLASSES - 1;
+						client_classes[0] = classesToDisplay - 1;
 					}
 
 					// reset class loadout
@@ -2297,7 +2302,7 @@ void handleMainMenu(bool mode)
 					}
 					draw_cursor = false;
 					client_classes[0]++;
-					if ( client_classes[0] > NUMCLASSES - 1 )
+					if ( client_classes[0] > classesToDisplay - 1 )
 					{
 						client_classes[0] = 0;
 					}
@@ -7228,6 +7233,11 @@ void handleMainMenu(bool mode)
 									players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 									serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 									serverUpdateEffects(c);
+								}
+								if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+								{
+									players[c]->entity->playerVampireCurse = 1;
+									serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
 								}
 							}
 

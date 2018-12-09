@@ -88,6 +88,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterEntityRenderAsTelepath(skill[41]),
 	playerLevelEntrySpeech(skill[18]),
 	playerAliveTime(skill[12]),
+	playerVampireCurse(skill[51]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
@@ -1934,7 +1935,7 @@ Removes this much from MP. Anything over the entity's MP is subtracted from thei
 
 -------------------------------------------------------------------------------*/
 
-void Entity::drainMP(int amount)
+void Entity::drainMP(int amount, bool notifyOverexpend)
 {
 	//A pointer to the entity's stats.
 	Stat* entitystats = this->getStats();
@@ -1998,7 +1999,7 @@ void Entity::drainMP(int amount)
 
 	if ( overdrawn < 0 )
 	{
-		if ( player >= 0 )
+		if ( player >= 0 && notifyOverexpend )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 			messagePlayerColor(player, color, language[621]);
@@ -2466,10 +2467,17 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	bool vampiricHunger = false;
+	int vampiricHunger = 0;
 	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
 	{
-		vampiricHunger = true;
+		if ( myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+		{
+			vampiricHunger = 2;
+		}
+		else
+		{
+			vampiricHunger = 1;
+		}
 	}
 
 	if ( !strncmp(map.name, "Sanctum", 7) 
@@ -2481,9 +2489,9 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
-	if ( vampiricHunger )
+	if ( vampiricHunger > 0 )
 	{
-		hungerTickRate = 5;
+		hungerTickRate = 5 * vampiricHunger;
 	}
 	else if ( hungerring > 0 )
 	{
@@ -3239,8 +3247,11 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				for ( c = 0; c < NUMEFFECTS; c++ )
 				{
-					myStats->EFFECTS[c] = false;
-					myStats->EFFECTS_TIMERS[c] = 0;
+					if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) )
+					{
+						myStats->EFFECTS[c] = false;
+						myStats->EFFECTS_TIMERS[c] = 0;
+					}
 				}
 
 				myStats->EFFECTS[EFF_LEVITATING] = true;
@@ -3393,8 +3404,11 @@ void Entity::handleEffects(Stat* myStats)
 					this->setHP(std::max(myStats->MAXHP, 10));
 					for ( c = 0; c < NUMEFFECTS; c++ )
 					{
-						myStats->EFFECTS[c] = false;
-						myStats->EFFECTS_TIMERS[c] = 0;
+						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) )
+						{
+							myStats->EFFECTS[c] = false;
+							myStats->EFFECTS_TIMERS[c] = 0;
+						}
 					}
 					
 					// check if hovering over a pit
@@ -3651,7 +3665,7 @@ Sint32 Entity::getBonusAttackOnTarget(Stat& hitstats)
 
 	if ( entitystats->weapon )
 	{
-		if ( hitstats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] )
+		if ( hitstats.EFFECTS[EFF_VAMPIRICAURA] )
 		{
 			// blessed weapons deal more damage under this effect.
 			bonusAttack += entitystats->weapon->beatitude;
@@ -3774,10 +3788,17 @@ Sint32 statGetDEX(Stat* entitystats)
 	DEX = entitystats->DEX;
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
-		DEX += 5;
-		if ( entitystats->type == VAMPIRE )
+		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 && entitystats->playerRace == RACE_VAMPIRE )
 		{
-			DEX += 3;
+			DEX += 3; // player cursed vampiric bonus
+		}
+		else
+		{
+			DEX += 5;
+			if ( entitystats->type == VAMPIRE && entitystats->playerRace == RACE_HUMAN )
+			{
+				DEX += 3; // monster or polymorphed player vampires
+			}
 		}
 	}
 	else if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
@@ -6307,7 +6328,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
-								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
+								|| (rand() % 8 == 0 && myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
 							)
 							{
 								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
@@ -6315,7 +6336,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									heavyBleedEffect = true;
 								}
-								else if ( myStats->type == VAMPIRE || myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] )
+								else if ( (myStats->type == VAMPIRE && this->behavior == &actMonster) || myStats->EFFECTS[EFF_VAMPIRICAURA] )
 								{
 									if ( rand() % 2 == 0 ) // 50% for heavy bleed effect.
 									{
@@ -6504,12 +6525,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// lifesteal
-					if ( damage > 0 
-						&& ((myStats->EFFECTS[EFF_VAMPIRICAURA] 
-								&& (myStats->weapon == nullptr || myStats->type == LICH_FIRE)
-							) 
-							|| myStats->type == VAMPIRE) )
+					bool tryLifesteal = false;
+					if ( damage > 0 )
 					{
+						if ( (myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE)) )
+						{
+							tryLifesteal = true;
+							if ( myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								tryLifesteal = false;
+							}
+						}
+						else if ( myStats->type == VAMPIRE && behavior == &actMonster )
+						{
+							tryLifesteal = true;
+						}
+					}
+
+					if ( tryLifesteal )
+					{
+						int lifeStealAmount = damage;
+						if ( behavior == &actPlayer )
+						{
+							lifeStealAmount /= 4;
+						}
 						bool lifestealSuccess = false;
 						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
 						{
@@ -6519,7 +6558,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
 						}
-						else if ( (rand() % 4 == 0) && (myStats->type == VAMPIRE && myStats->EFFECTS[EFF_VAMPIRICAURA]) )
+						else if ( (rand() % 4 == 0) && (myStats->type == VAMPIRE && behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA]) )
 						{
 							// vampires under aura have higher chance.
 							this->modHP(damage);
@@ -6527,7 +6566,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
 						}
-						else if ( rand() % 8 == 0 )
+						else if ( rand() % 8 == 0 && behavior != actPlayer )
 						{
 							// else low chance for lifesteal.
 							this->modHP(damage);
@@ -6540,7 +6579,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( player >= 0 )
 							{
-								myStats->HUNGER += 100;
+								myStats->HUNGER = std::min(1500, myStats->HUNGER + 100);
+								serverUpdateHunger(player);
 							}
 							if ( playerhit >= 0 )
 							{

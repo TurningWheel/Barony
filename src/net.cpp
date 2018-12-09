@@ -2067,8 +2067,11 @@ void clientHandlePacket()
 			stats[clientnum]->HUNGER = 500;
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
-				stats[clientnum]->EFFECTS[c] = false;
-				stats[clientnum]->EFFECTS_TIMERS[c] = 0;
+				if ( !(c == EFF_VAMPIRICAURA && stats[clientnum]->EFFECTS_TIMERS[c] == -2) )
+				{
+					stats[clientnum]->EFFECTS[c] = false;
+					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
+				}
 			}
 		}
 		else if ( !strncmp((char*)(&net_packet->data[8]), language[1114], 28) )
@@ -3178,6 +3181,23 @@ void clientHandlePacket()
 					list_RemoveNode(node);
 					node = NULL;
 				}
+			}
+		}
+		return;
+	}
+
+	//Remove vampiric aura
+	else if ( !strncmp((char*)net_packet->data, "VAMP", 4) )
+	{
+		int player = net_packet->data[4];
+		int spellID = SDLNet_Read32(&net_packet->data[5]);
+		if ( players[player] && players[player]->entity )
+		{
+			if ( players[player]->entity->playerIsVampire() == 2 )
+			{
+				players[player]->entity->setEffect(EFF_VAMPIRICAURA, false, 1, false);
+				players[player]->entity->playerVampireCurse = 2; // cured.
+				serverUpdateEntitySkill(players[player]->entity, 51);
 			}
 		}
 		return;

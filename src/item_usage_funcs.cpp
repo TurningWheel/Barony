@@ -515,8 +515,11 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		stats->EFFECTS[c] = false;
-		stats->EFFECTS_TIMERS[c] = 0;
+		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) )
+		{
+			stats->EFFECTS[c] = false;
+			stats->EFFECTS_TIMERS[c] = 0;
+		}
 	}
 
 	if ( item->beatitude < 0 )
@@ -2891,7 +2894,7 @@ void item_Food(Item*& item, int player)
 	if ( player == clientnum )
 	{
 		conductFoodless = false;
-		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH || item->type == FOOD_TOMALLEY )
+		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH || item->type == FOOD_TOMALLEY || item->type == FOOD_BLOOD )
 		{
 			conductVegetarian = false;
 		}
@@ -2910,7 +2913,15 @@ void item_Food(Item*& item, int player)
 	item->count = oldcount;
 
 	// eating sound
-	playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
+	if ( item->type == FOOD_BLOOD )
+	{
+		// play drink sound
+		playSoundEntity(players[player]->entity, 52, 64);
+	}
+	else
+	{
+		playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
+	}
 
 	// chance of rottenness
 	switch ( item->status )
@@ -2931,13 +2942,41 @@ void item_Food(Item*& item, int player)
 			pukeChance = 100;
 			break;
 	}
+
+	if ( stats[player]->type == VAMPIRE )
+	{
+		if ( item->type == FOOD_BLOOD )
+		{
+			pukeChance = 100;
+		}
+		else
+		{
+			pukeChance = 1;
+		}
+	}
+	else if ( item->type == FOOD_BLOOD )
+	{
+		pukeChance = 1;
+	}
+
 	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (rand() % pukeChance == 0)) && pukeChance < 100)
 	{
-		if (players[player] && players[player]->entity && !svFlags & SV_FLAG_HUNGER)
+		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
 			players[player]->entity->modHP(-5);
 		}
-		messagePlayer(player, language[908]);
+		if ( stats[player]->type == VAMPIRE )
+		{
+			messagePlayer(player, language[3201]);
+		}
+		else if ( item->type == FOOD_BLOOD )
+		{
+			messagePlayer(player, language[3203]);
+		}
+		else
+		{
+			messagePlayer(player, language[908]);
+		}
 		players[player]->entity->skill[26] = 40 + rand() % 10;
 		consumeItem(item);
 		return;
@@ -2978,6 +3017,16 @@ void item_Food(Item*& item, int player)
 				break;
 			case FOOD_TOMALLEY:
 				stats[player]->HUNGER += 400;
+				break;
+			case FOOD_BLOOD:
+				if ( stats[player]->type == VAMPIRE )
+				{
+					stats[player]->HUNGER += 250;
+				}
+				else
+				{
+					stats[player]->HUNGER += 10;
+				}
 				break;
 			default:
 				stats[player]->HUNGER += 10;
@@ -3150,13 +3199,26 @@ void item_FoodTin(Item*& item, int player)
 			pukeChance = 100;
 			break;
 	}
+
+	if ( stats[player]->type == VAMPIRE )
+	{
+		pukeChance = 1;
+	}
+
 	if ((item->beatitude < 0 || rand() % pukeChance == 0) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !svFlags & SV_FLAG_HUNGER)
 		{
 			players[player]->entity->modHP(-5);
 		}
-		messagePlayer(player, language[908]);
+		if ( stats[player]->type == VAMPIRE )
+		{
+			messagePlayer(player, language[3201]);
+		}
+		else
+		{
+			messagePlayer(player, language[908]);
+		}
 		players[player]->entity->skill[26] = 40 + rand() % 10;
 		consumeItem(item);
 		return;

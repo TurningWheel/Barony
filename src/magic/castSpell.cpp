@@ -98,6 +98,28 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					}
 				}
 			}
+			if ( spell->ID == SPELL_VAMPIRIC_AURA && caster->playerIsVampire() == 2 )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					messagePlayer(player, language[408], spell->name);
+					strcpy((char*)net_packet->data, "VAMP");
+					net_packet->data[4] = clientnum;
+					SDLNet_Write32(spell->ID, &net_packet->data[5]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 9;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+					return;
+				}
+				else
+				{
+					messagePlayer(player, language[408], spell->name);
+					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false);
+					caster->playerVampireCurse = 2; // cured.
+					return;
+				}
+			}
 		}
 	}
 
@@ -128,7 +150,11 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		magiccost = getCostOfSpell(spell, caster);
 	}
 
-	if ( magiccost > stat->MP )
+	if ( caster->behavior == &actPlayer && stat->type == VAMPIRE )
+	{
+		// allow overexpending.
+	}
+	else if ( magiccost > stat->MP )
 	{
 		if (player >= 0)
 		{
@@ -719,8 +745,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else
 						{
-							stats[i]->EFFECTS[c] = false;
-							stats[i]->EFFECTS_TIMERS[c] = 0;
+							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) )
+							{
+								stats[i]->EFFECTS[c] = false;
+								stats[i]->EFFECTS_TIMERS[c] = 0;
+							}
 						}
 					}
 					if ( players[i]->entity->flags[BURNING] )
@@ -749,8 +778,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									target_stat->EFFECTS[c] = false;
-									target_stat->EFFECTS_TIMERS[c] = 0;
+									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) )
+									{
+										target_stat->EFFECTS[c] = false;
+										target_stat->EFFECTS_TIMERS[c] = 0;
+									}
 								}
 								if ( entity->behavior == &actPlayer )
 								{

@@ -2019,6 +2019,7 @@ void useItem(Item* item, int player)
 		case FOOD_MEAT:
 		case FOOD_FISH:
 		case FOOD_TOMALLEY:
+		case FOOD_BLOOD:
 			item_Food(item, player);
 			break;
 		case FOOD_TIN:
