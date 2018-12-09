@@ -2115,19 +2115,19 @@ void Entity::handleEffects(Stat* myStats)
 		if ( player >= 0 )
 		{
 			// players only.
-			playerStatIncrease(client_classes[player], increasestat);
+			this->playerStatIncrease(client_classes[player], increasestat);
 		}
 		else if ( behavior == &actMonster && monsterAllySummonRank != 0 )
 		{
 			bool secondSummon = false;
 			if ( !strcmp(myStats->name, "skeleton knight") )
 			{
-				playerStatIncrease(1, increasestat); // warrior weighting
+				this->playerStatIncrease(1, increasestat); // warrior weighting
 			}
 			else if ( !strcmp(myStats->name, "skeleton sentinel") )
 			{
 				secondSummon = true;
-				playerStatIncrease(5, increasestat); // rogue weighting
+				this->playerStatIncrease(5, increasestat); // rogue weighting
 			}
 
 			bool rankUp = false;
@@ -7187,7 +7187,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 							if ( followerStats )
 							{
 								int xpDivide = std::min(std::max(1, numFollowers), 4); // 1 - 4 depending on followers.
-								followerStats->EXP += (xpGain / xpDivide);
+								if ( follower->monsterAllySummonRank != 0 )
+								{
+									followerStats->EXP += (xpGain * numshares / xpDivide);
+								}
+								else
+								{
+									followerStats->EXP += (xpGain / xpDivide);
+								}
 								//messagePlayer(0, "monster got %d xp", xpGain);
 							}
 						}
@@ -11190,11 +11197,31 @@ char* Entity::getMonsterLangEntry()
 	return nullptr;
 }
 
-void playerStatIncrease(int playerClass, int chosenStats[3])
+void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 {
 	std::mt19937 seed(rand()); // seed of distribution.
 	
 	std::vector<int> statWeights = classStatGrowth[playerClass];
+	if ( behavior == &actPlayer && stats[skill[2]] && playerClass == 13 )
+	{
+		switch ( stats[skill[2]]->type )
+		{
+			case SKELETON:
+				statWeights = monsterClassStatGrowth[RACE_SKELETON];
+				break;
+			case VAMPIRE:
+				statWeights = monsterClassStatGrowth[RACE_VAMPIRE];
+				break;
+			case HUMAN:
+				if ( stats[skill[2]]->playerRace > 0 )
+				{
+					statWeights = monsterClassStatGrowth[RACE_HUMAN];
+				}
+				break;
+			default:
+				break;
+		}
+	}
 
 	// debug to print which vector values are being used.
 	//for ( std::vector<int>::const_iterator i = statWeights.begin(); i != statWeights.end(); ++i )

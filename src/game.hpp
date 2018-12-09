@@ -102,7 +102,7 @@ extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 14
-#define NUMRACES 8
+#define NUMRACES 9
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -120,13 +120,13 @@ enum PlayerRaces : int
 {
 	RACE_HUMAN,
 	RACE_SKELETON,
+	RACE_VAMPIRE,
+	RACE_SUCCUBUS,
+	RACE_GOATMAN,
+	RACE_AUTOMATON,
 	RACE_INCUBUS,
 	RACE_GOBLIN,
-	RACE_AUTOMATON,
-	RACE_INSECTOID,
-	RACE_GOATMAN,
-	RACE_VAMPIRE,
-	RACE_SUCCUBUS
+	RACE_INSECTOID
 };
 
 enum ESteamStatTypes
