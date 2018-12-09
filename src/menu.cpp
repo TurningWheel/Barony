@@ -137,6 +137,11 @@ bool gamemods_systemImagesReloadUnmodded = false;
 bool gamemods_customContentLoadedFirstTime = false;
 bool gamemods_disableSteamAchievements = false;
 bool gamemods_modPreload = false;
+
+sex_t lastSex = MALE;
+bool enabledDLCPack1 = false;
+bool enabledDLCPack2 = false;
+
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -484,6 +489,40 @@ void handleMainMenu(bool mode)
 	FILE* fp;
 	//SDL_Surface *sky_bmp;
 	button_t* button;
+
+#ifdef STEAMWORKS
+	if ( SteamUser()->BLoggedOn() )
+	{
+		if ( keystatus[SDL_SCANCODE_Z] )
+		{
+			keystatus[SDL_SCANCODE_Z] = 0;
+			if ( !enabledDLCPack1 && !enabledDLCPack2 )
+			{
+				enabledDLCPack1 = true;
+				enabledDLCPack2 = true;
+			}
+			else if ( enabledDLCPack1 && enabledDLCPack2 )
+			{
+				enabledDLCPack1 = true;
+				enabledDLCPack2 = false;
+			}
+			else if ( enabledDLCPack1 && !enabledDLCPack2 )
+			{
+				enabledDLCPack1 = false;
+				enabledDLCPack2 = true;
+			}
+			else if ( !enabledDLCPack1 && enabledDLCPack2 )
+			{
+				enabledDLCPack1 = false;
+				enabledDLCPack2 = false;
+			}
+		}
+	}
+#else
+	enabledDLCPack1 = true;
+	enabledDLCPack2 = true;
+#endif // STEAMWORKS
+
 
 	if ( !movie )
 	{
@@ -1623,6 +1662,28 @@ void handleMainMenu(bool mode)
 		// sexes/race
 		if ( charcreation_step == 1 )
 		{
+			bool skipFirstDLC = false;
+			bool skipSecondDLC = false;
+			if ( enabledDLCPack2 && !enabledDLCPack1 )
+			{
+				skipFirstDLC = true;
+				if ( stats[0]->playerRace > 0 && stats[0]->playerRace <= RACE_GOATMAN )
+				{
+					stats[0]->playerRace = RACE_HUMAN;
+				}
+			}
+			else if ( enabledDLCPack1 && !enabledDLCPack2 )
+			{
+				skipSecondDLC = true;
+				if ( stats[0]->playerRace > RACE_GOATMAN )
+				{
+					stats[0]->playerRace = RACE_HUMAN;
+				}
+			}
+			else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+			{
+				stats[0]->playerRace = RACE_HUMAN;
+			}
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
 			Uint32 colorStep1 = uint32ColorWhite(*mainsurface);
 			if ( raceSelect != 0 )
@@ -1632,14 +1693,14 @@ void handleMainMenu(bool mode)
 			if ( stats[0]->sex == 0 )
 			{
 				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[o] %s", language[1321]);
-				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 72, colorStep1, "[ ] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[ ] %s", language[1322]);
 
 				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1321]);
 			}
 			else
 			{
 				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[ ] %s", language[1321]);
-				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 72, colorStep1, "[o] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[o] %s", language[1322]);
 
 				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1322]);
 			}
@@ -1656,34 +1717,129 @@ void handleMainMenu(bool mode)
 			}
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
 			int pady = suby1 + 108 + 24;
-			for ( int c = 0; c < NUMRACES; ++c )
+			bool isLocked = false;
+			for ( int c = 0; c < NUMRACES; )
 			{
+				if ( raceSelect == 1 )
+				{
+					if ( skipSecondDLC )
+					{
+						if ( c > RACE_GOATMAN )
+						{
+							colorStep1 = uint32ColorGray(*mainsurface);
+						}
+						else
+						{
+							colorStep1 = uint32ColorWhite(*mainsurface);
+						}
+					}
+					else if ( skipFirstDLC )
+					{
+						if ( c > RACE_HUMAN && c <= RACE_GOATMAN )
+						{
+							colorStep1 = uint32ColorGray(*mainsurface);
+						}
+						else
+						{
+							colorStep1 = uint32ColorWhite(*mainsurface);
+						}
+					}
+					else if ( !(enabledDLCPack2 && enabledDLCPack1) )
+					{
+						if ( c > RACE_HUMAN )
+						{
+							colorStep1 = uint32ColorGray(*mainsurface);
+						}
+						else
+						{
+							colorStep1 = uint32ColorWhite(*mainsurface);
+						}
+					}
+					else if ( enabledDLCPack2 && enabledDLCPack1 )
+					{
+						colorStep1 = uint32ColorWhite(*mainsurface);
+					}
+				}
 				if ( stats[0]->playerRace == c )
 				{
-					if ( c == RACE_INCUBUS && stats[0]->sex == FEMALE )
-					{
-						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3169]);
-					}
-					else
-					{
-						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3161 + c]);
-					}
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3161 + c]);
 				}
 				else
 				{
-					if ( c == RACE_INCUBUS && stats[0]->sex == FEMALE )
+					if ( skipSecondDLC )
 					{
-						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3169]);
+						if ( c > RACE_GOATMAN )
+						{
+							isLocked = true;
+						}
+					}
+					else if ( skipFirstDLC )
+					{
+						if ( c >= RACE_SKELETON && c < RACE_AUTOMATON )
+						{
+							isLocked = true;
+						}
+					}
+					else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+					{
+						isLocked = true;
+					}
+					if ( isLocked )
+					{
+						SDL_Rect img;
+						img.x = subx1 + 32 + 10;
+						img.y = pady - 2;
+						img.w = 22;
+						img.h = 20;
+						drawImageScaled(sidebar_unlock_bmp, nullptr, &img);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
 					}
 					else
 					{
 						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
 					}
 				}
-				pady += 16;
+
+				if ( skipFirstDLC )
+				{
+					if ( c == RACE_HUMAN )
+					{
+						c = RACE_AUTOMATON;
+					}
+					else if ( c == RACE_INSECTOID )
+					{
+						c = RACE_SKELETON;
+						pady += 8;
+					}
+					else if ( c == RACE_GOATMAN )
+					{
+						c = NUMRACES;
+					}
+					else
+					{
+						++c;
+					}
+				}
+				else
+				{
+					if ( skipSecondDLC && c == RACE_GOATMAN )
+					{
+						pady += 8;
+					}
+					else if ( !enabledDLCPack1 && !enabledDLCPack2 && c == RACE_HUMAN )
+					{
+						pady += 8;
+					}
+					++c;
+				}
+				pady += 17;
 			}
 
 			pady += 24;
+			if ( isLocked )
+			{
+				pady -= 8;
+			}
 			bool displayRaceOptions = false;
 			if ( raceSelect != 2 )
 			{
@@ -1698,56 +1854,191 @@ void handleMainMenu(bool mode)
 				displayRaceOptions = true;
 				ttfPrintText(ttf16, subx1 + 24, pady, language[3176]);
 				pady += 24;
+				char raceOptionBuffer[64];
+				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
 				if ( stats[0]->appearance == 0 )
 				{
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3177]);
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 16, colorStep1, "[ ] %s", language[3178]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", raceOptionBuffer);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[ ] %s", language[3178]);
 				}
 				else
 				{
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3177]);
-					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 16, colorStep1, "[o] %s", language[3178]);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", raceOptionBuffer);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[o] %s", language[3178]);
 				}
 
 			}
 
 			pady = suby1 + 108 + 24;
 
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 			{
-				if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
+				if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
 				{
-					if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
+					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
 						raceSelect = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = MALE;
+						lastSex = MALE;
+						if ( stats[0]->playerRace == RACE_SUCCUBUS )
+						{
+							if ( enabledDLCPack2 )
+							{
+								stats[0]->playerRace = RACE_INCUBUS;
+							}
+							else
+							{
+								stats[0]->playerRace = RACE_HUMAN;
+							}
+						}
 					}
-					else if ( omousey >= suby1 + 72 && omousey < suby1 + 88 )
+				}
+				else if ( omousey >= suby1 + 72 && omousey < suby1 + 90 )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
 						raceSelect = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = FEMALE;
-					}
-					else if ( omousey >= pady && omousey < pady + NUMRACES * 16 )
-					{
-						raceSelect = 1;
-						for ( c = 0; c < NUMRACES; ++c )
+						lastSex = FEMALE;
+						if ( stats[0]->playerRace == RACE_INCUBUS )
 						{
-							if ( omousey >= pady && omousey < pady + 16 )
+							if ( enabledDLCPack1 )
 							{
-								stats[0]->playerRace = c;
-								mousestatus[SDL_BUTTON_LEFT] = 0;
-								break;
+								stats[0]->playerRace = RACE_SUCCUBUS;
 							}
-							pady += 16;
+							else
+							{
+								stats[0]->playerRace = RACE_HUMAN;
+							}
 						}
 					}
-					else if ( omousey >= pady + (NUMRACES * 16) + 48 && omousey < pady + (NUMRACES * 16) + 80 )
+				}
+				else if ( omousey >= pady && omousey < pady + NUMRACES * 17 + (isLocked ? 8 : 0) )
+				{
+					for ( c = 0; c < NUMRACES; ++c )
 					{
+						if ( omousey >= pady && omousey < pady + 17 )
+						{
+							bool disableSelect = false;
+							if ( skipSecondDLC )
+							{
+								if ( c > RACE_GOATMAN )
+								{
+									disableSelect = true;
+								}
+							}
+							else if ( skipFirstDLC )
+							{
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID ) // this is weird cause we're reordering the menu above...
+								{
+									disableSelect = true;
+								}
+							}
+							else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+							{
+								if ( c != RACE_HUMAN )
+								{
+									disableSelect = true;
+								}
+							}
+							if ( !disableSelect && mousestatus[SDL_BUTTON_LEFT] )
+							{
+								raceSelect = 1;
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+								if ( !disableSelect )
+								{
+									PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+									if ( skipFirstDLC )
+									{
+										// this is weird cause we're reordering the menu above...
+										if ( c > RACE_GOATMAN )
+										{
+											stats[0]->playerRace = c - 4;
+										}
+										else if ( c > RACE_HUMAN )
+										{
+											stats[0]->playerRace = c + 4;
+										}
+										else
+										{
+											stats[0]->playerRace = c;
+										}
+									}
+									else
+									{
+										stats[0]->playerRace = c;
+									}
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+									if ( stats[0]->playerRace == RACE_INCUBUS )
+									{
+										stats[0]->sex = MALE;
+									}
+									else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+									{
+										stats[0]->sex = FEMALE;
+									}
+									else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
+									{
+										stats[0]->sex = lastSex;
+									}
+								}
+								break;
+							}
+							else if ( disableSelect )
+							{
+								SDL_Rect tooltip;
+								tooltip.x = omousex + 16;
+								tooltip.y = omousey + 16;
+								tooltip.h = TTF12_HEIGHT + 8;
+#ifdef STEAMWORKS
+								if ( SteamUser()->BLoggedOn() )
+								{
+									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+									}
+								}
+#else
+								tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
+								drawTooltip(&tooltip);
+								ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+#endif // STEAMWORKS
+							}
+						}
+						pady += 17;
+						if ( isLocked )
+						{
+							if ( skipFirstDLC && c == RACE_INSECTOID )
+							{
+								pady += 8;
+							}
+							else
+							{
+								if ( skipSecondDLC && c == RACE_GOATMAN )
+								{
+									pady += 8;
+								}
+								else if ( !enabledDLCPack1 && !enabledDLCPack2 && c == RACE_HUMAN )
+								{
+									pady += 8;
+								}
+							}
+						}
+					}
+				}
+				else if ( omousey >= pady + (NUMRACES * 17) + 48 && omousey < pady + (NUMRACES * 17) + 82 )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 						if ( stats[0]->playerRace > 0 )
 						{
-							if ( omousey < pady + (NUMRACES * 16) + 64 ) // first option
+							if ( omousey < pady + (NUMRACES * 17) + 64 ) // first option
 							{
 								stats[0]->appearance = 0; // use racial passives
 							}
@@ -1771,18 +2062,44 @@ void handleMainMenu(bool mode)
 				draw_cursor = false;
 				if ( raceSelect == 1 )
 				{
-					if ( stats[0]->playerRace <= 0 )
+					PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+					if ( !enabledDLCPack1 && !enabledDLCPack2 )
 					{
-						stats[0]->playerRace = NUMRACES - 1;
+						// do nothing.
+						stats[0]->playerRace = RACE_HUMAN;
+					}
+					else if ( stats[0]->playerRace <= 0 )
+					{
+						if ( skipSecondDLC )
+						{
+							stats[0]->playerRace = NUMRACES - 5;
+						}
+						else if ( enabledDLCPack2 )
+						{
+							stats[0]->playerRace = NUMRACES - 1;
+						}
 					}
 					else
 					{
 						--stats[0]->playerRace;
 					}
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
+					else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = lastSex;
+					}
 				}
 				else if ( raceSelect == 0 )
 				{
 					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+					lastSex = stats[0]->sex;
 				}
 				else if ( raceSelect == 2 )
 				{
@@ -1806,18 +2123,66 @@ void handleMainMenu(bool mode)
 				draw_cursor = false;
 				if ( raceSelect == 1 )
 				{
-					if ( stats[0]->playerRace >= NUMRACES - 1 )
+					PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+					if ( !enabledDLCPack1 && !enabledDLCPack2 )
 					{
+						// do nothing.
 						stats[0]->playerRace = RACE_HUMAN;
+					}
+					else if ( skipSecondDLC )
+					{
+						if ( stats[0]->playerRace >= NUMRACES - 5 )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+						else
+						{
+							++stats[0]->playerRace;
+						}
+					}
+					else if ( skipFirstDLC )
+					{
+						if ( stats[0]->playerRace >= RACE_GOATMAN && stats[0]->playerRace < NUMRACES - 1 )
+						{
+							++stats[0]->playerRace;
+						}
+						else if ( stats[0]->playerRace == RACE_HUMAN )
+						{
+							stats[0]->playerRace = RACE_AUTOMATON;
+						}
+						else if ( stats[0]->playerRace == NUMRACES - 1 )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
 					}
 					else
 					{
-						++stats[0]->playerRace;
+						if ( stats[0]->playerRace >= NUMRACES - 1 )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+						else
+						{
+							++stats[0]->playerRace;
+						}
+					}
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
+					else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = lastSex;
 					}
 				}
 				else if ( raceSelect == 0 )
 				{
 					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+					lastSex = stats[0]->sex;
 				}
 				else if ( raceSelect == 2 )
 				{
