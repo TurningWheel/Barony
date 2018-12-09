@@ -213,13 +213,19 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		spellDeconstructor((void*)new_spell);
 		return false;
 	}
-	messagePlayer(player, language[441], new_spell->name);
+	if ( !intro )
+	{
+		messagePlayer(player, language[441], new_spell->name);
+	}
 	node = list_AddNodeLast(&spellList);
 	node->element = new_spell;
 	node->size = sizeof(spell_t);
 	node->deconstructor = &spellDeconstructor;
 
-	players[player]->entity->increaseSkill(PRO_MAGIC);
+	if ( !ignoreSkill )
+	{
+		players[player]->entity->increaseSkill(PRO_MAGIC);
+	}
 
 	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
 	itemPickup(player, item);

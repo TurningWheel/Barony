@@ -205,6 +205,7 @@ public:
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
 	Sint32& playerAliveTime; //skill[12]
+	Sint32& playerVampireCurse; //skill[51]
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]
@@ -453,7 +454,7 @@ public:
 	void modMP(int amount); //Adds amount to MP.
 	int getMP();
 
-	void drainMP(int amount); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
+	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
 	Sint32 getAttack();
@@ -784,6 +785,7 @@ public:
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
+	int playerIsVampire(); // 0 = not vampire, 1 = vampire, 2 = vampiric aura 3 = cursed vampire w/ perma aura
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -897,7 +899,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 222;
+static const int NUM_ITEM_STRINGS = 223;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 96;
 static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;

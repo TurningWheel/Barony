@@ -925,6 +925,41 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
+		if ( multiplayer != CLIENT )
+		{
+			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
+			{
+				if ( my->playerIsVampire() == 1 )
+				{
+					my->setEffect(EFF_VAMPIRICAURA, true, -2, true);
+					my->playerVampireCurse = 1;
+					serverUpdateEntitySkill(my, 51);
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(PLAYER_NUM, color, language[2477]);
+					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(PLAYER_NUM, color, language[3202]);
+
+					playSoundEntity(my, 167, 128);
+					createParticleDropRising(my, 600, 0.7);
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
+				}
+			}
+			/*if ( PLAYER_NUM == clientnum && my->playerIsVampire() > 0 && PLAYER_ALIVETIME % 50 == 0 )
+			{
+				messagePlayer(0, "hunger: %d", stats[PLAYER_NUM]->HUNGER);
+			}*/
+		}
+		if ( multiplayer == CLIENT && my->playerIsVampire() > 0 )
+		{
+			if ( PLAYER_NUM == clientnum && my->playerVampireCurse == 1 )
+			{
+				stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -2;
+			}
+			else
+			{
+				stats[PLAYER_NUM]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = 0;
+			}
+		}
 	}
 
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
@@ -4474,4 +4509,26 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 			}
 		}
 	}
+}
+
+int Entity::playerIsVampire()
+{
+	if ( behavior != &actPlayer )
+	{
+		return 0;
+	}
+	if ( !stats[skill[2]] )
+	{
+		return 0;
+	}
+
+	if ( stats[skill[2]]->type == VAMPIRE && client_classes[skill[2]] == 13 )
+	{
+		if ( stats[skill[2]]->EFFECTS[EFF_VAMPIRICAURA] && playerVampireCurse == 1 )
+		{
+			return 2;
+		}
+		return 1;
+	}
+
 }

@@ -349,6 +349,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"hat_fez",
 	"magicstaff_charm",
 	"potion_polymorph",
+	"food_blood",
 	""
 };
 

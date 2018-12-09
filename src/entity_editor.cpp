@@ -62,6 +62,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterEntityRenderAsTelepath(skill[41]),
 	playerLevelEntrySpeech(skill[18]),
 	playerAliveTime(skill[12]),
+	playerVampireCurse(skill[51]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),

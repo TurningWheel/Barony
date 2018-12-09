@@ -356,7 +356,14 @@ void actLeftHandMagic(Entity* my)
 					cast_animation.consume_timer = cast_animation.consume_interval;
 					if ( multiplayer == SINGLE && cast_animation.consumeMana )
 					{
-						players[clientnum]->entity->drainMP(1);
+						if ( cast_animation.mana_left == 1 )
+						{
+							players[clientnum]->entity->drainMP(1);
+						}
+						else
+						{
+							players[clientnum]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+						}
 					}
 					--cast_animation.mana_left;
 				}

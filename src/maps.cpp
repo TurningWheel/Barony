@@ -2419,8 +2419,11 @@ void assignActions(map_t* map)
 							stats[numplayers]->HUNGER = 500;
 							for ( c = 0; c < NUMEFFECTS; ++c )
 							{
-								stats[numplayers]->EFFECTS[c] = false;
-								stats[numplayers]->EFFECTS_TIMERS[c] = 0;
+								if ( !(c == EFF_VAMPIRICAURA && stats[numplayers]->EFFECTS_TIMERS[c] == -2) )
+								{
+									stats[numplayers]->EFFECTS[c] = false;
+									stats[numplayers]->EFFECTS_TIMERS[c] = 0;
+								}
 							}
 						}
 					}

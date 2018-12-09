@@ -901,6 +901,11 @@ void gameLogic(void)
 								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
 								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								players[c]->entity->playerVampireCurse = 1;
+								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
+							}
 
 							node_t* node;
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next)

@@ -51,6 +51,11 @@ void initClass(int player)
 
 	stats[player]->type = HUMAN;
 
+	//spellList = malloc(sizeof(list_t));
+	spellList.first = NULL;
+	spellList.last = NULL;
+
+
 	// CLASS LOADOUTS
 	// barbarian
 	if ( client_classes[player] == 0 )
@@ -1456,6 +1461,7 @@ void initClass(int player)
 	// test
 	else if ( client_classes[player] == 13 )
 	{
+		stats[player]->playerRace = RACE_VAMPIRE;
 		if ( stats[player]->playerRace == RACE_SKELETON )
 		{
 			stats[player]->playerRace = RACE_SKELETON;
@@ -1548,6 +1554,129 @@ void initClass(int player)
 				free(item);
 			}
 		}
+		else if ( stats[player]->playerRace == RACE_VAMPIRE )
+		{
+			stats[player]->playerRace = RACE_VAMPIRE;
+			// attributes
+			stats[player]->INT += 1;
+			stats[player]->STR += 1;
+			stats[player]->CON -= 1;
+			stats[player]->DEX -= 3;
+			stats[player]->PER -= 1;
+
+			stats[player]->MAXHP -= 0;
+			stats[player]->HP -= 0;
+			stats[player]->MAXMP += 0;
+			stats[player]->MP += 0;
+
+			// skills
+			stats[player]->PROFICIENCIES[PRO_MAGIC] = 80;
+			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+			stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
+
+			// weapon
+			/*item = newItem(MAGICSTAFF_BLEED, EXCELLENT, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[0].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}*/
+
+			/*item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[1].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}*/
+
+			// green hood
+			item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			// green cloak
+			item = newItem(CLOAK, SERVICABLE, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			// boots
+			item = newItem(IRON_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			if ( player == clientnum )
+			{
+				// lev book
+				item = newItem(SPELLBOOK_LEVITATION, DECREPIT, 0, 1, 4, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[9].item = item2->uid;
+				free(item);
+
+				// invis book
+				item = newItem(SPELLBOOK_INVISIBILITY, WORN, 0, 1, 2, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[8].item = item2->uid;
+				free(item);
+
+				addSpell(SPELL_BLEED, player, true);
+				for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+				{
+					Item* item = (Item*)node->element;
+					if ( item->type == SPELL_ITEM )
+					{
+						hotbar[0].item = item->uid;
+					}
+				}
+
+				// blood
+				item = newItem(FOOD_BLOOD, EXCELLENT, 0, 3, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[1].item = item2->uid;
+				free(item);
+
+				// restore magic
+				item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[2].item = item2->uid;
+				free(item);
+			}
+		}
 	}
 	// move default items to the right
 	if ( player == clientnum )
@@ -1559,8 +1688,4 @@ void initClass(int player)
 			item->x = INVENTORY_SIZEX - item->x - 1;
 		}
 	}
-
-	//spellList = malloc(sizeof(list_t));
-	spellList.first = NULL;
-	spellList.last = NULL;
 }
