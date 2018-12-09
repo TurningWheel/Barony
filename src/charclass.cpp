@@ -1456,95 +1456,97 @@ void initClass(int player)
 	// test
 	else if ( client_classes[player] == 13 )
 	{
-		// attributes
-		stats[player]->playerRace = RACE_SKELETON;
-		// attributes
-		stats[player]->INT += 1;
-		stats[player]->CON += 2;
-		stats[player]->DEX -= 1;
-		stats[player]->PER -= 1;
+		if ( stats[player]->playerRace == RACE_SKELETON )
+		{
+			stats[player]->playerRace = RACE_SKELETON;
+			// attributes
+			stats[player]->INT += 1;
+			stats[player]->CON += 2;
+			stats[player]->DEX -= 1;
+			stats[player]->PER -= 1;
 
-		stats[player]->MAXHP -= 10;
-		stats[player]->HP -= 10;
-		stats[player]->MAXMP += 15;
-		stats[player]->MP += 15;
+			stats[player]->MAXHP -= 0;
+			stats[player]->HP -= 0;
+			stats[player]->MAXMP += 15;
+			stats[player]->MP += 15;
 
-		// skills
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 80;
-		stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
-		stats[player]->PROFICIENCIES[PRO_SWORD] = 40;
+			// skills
+			stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
+			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+			stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 80;
+			stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
+			stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
+			stats[player]->PROFICIENCIES[PRO_SWORD] = 40;
 
-		// weapon
-		item = newItem(MAGICSTAFF_COLD, EXCELLENT, 0, 1, 0, true, NULL);
-		if ( player == clientnum )
-		{
-			item2 = itemPickup(player, item);
-			useItem(item2, player);
-			hotbar[0].item = item2->uid;
-			free(item);
-		}
-		else
-		{
-			useItem(item, player);
-		}
+			// weapon
+			item = newItem(MAGICSTAFF_COLD, EXCELLENT, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[0].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
 
-		item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, NULL);
-		if ( player == clientnum )
-		{
-			item2 = itemPickup(player, item);
-			useItem(item2, player);
-			hotbar[1].item = item2->uid;
-			free(item);
-		}
-		else
-		{
-			useItem(item, player);
-		}
+			item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[1].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
 
-		// brown hood
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
-		if ( player == clientnum )
-		{
-			item2 = itemPickup(player, item);
-			useItem(item2, player);
-			free(item);
-		}
-		else
-		{
-			useItem(item, player);
-		}
+			// brown hood
+			item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
 
-		// cloak
-		item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, NULL);
-		if ( player == clientnum )
-		{
-			item2 = itemPickup(player, item);
-			useItem(item2, player);
-			free(item);
-		}
-		else
-		{
-			useItem(item, player);
-		}
+			// cloak
+			item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
 
-		if ( player == clientnum )
-		{
-			// summon book
-			item = newItem(SPELLBOOK_SUMMON, WORN, 0, 1, 1, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
-			free(item);
-		}
-		if ( player == clientnum )
-		{
-			// confuse book
-			item = newItem(SPELLBOOK_CONFUSE, WORN, 0, 1, 8, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
-			free(item);
+			if ( player == clientnum )
+			{
+				// summon book
+				item = newItem(SPELLBOOK_SUMMON, WORN, 0, 1, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[9].item = item2->uid;
+				free(item);
+			}
+			if ( player == clientnum )
+			{
+				// slow book
+				item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[8].item = item2->uid;
+				free(item);
+			}
 		}
 	}
 	// move default items to the right
