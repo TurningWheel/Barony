@@ -187,10 +187,10 @@ void Entity::actGate()
 					break;
 				}
 			}
-			if ( !somebodyinside )
-			{
-				this->flags[PASSABLE] = false;
-			}
+		}
+		if ( !somebodyinside )
+		{
+			this->flags[PASSABLE] = false;
 		}
 	}
 	else if ( this->z < gateStartHeight - 9 && !this->flags[PASSABLE] )
