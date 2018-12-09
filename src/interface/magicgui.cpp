@@ -197,13 +197,7 @@ void updateMagicGUI()
 
 void drawSustainedSpells()
 {
-	if (!channeledSpells[clientnum].first)
-	{
-		return;    //No use continuing if there are no sustained spells.
-	}
-
 	SDL_Surface** sprite;
-
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
 	pos.y = SUST_SPELLS_Y;
@@ -220,6 +214,61 @@ void drawSustainedSpells()
 		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
 		//Draw under the skills sheet if inventory open or the sidebar lock has been enabled.
 		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
+	}
+
+	node_t* effectImageNode = nullptr;
+	for ( int i = 0; i < NUMEFFECTS && stats[clientnum]; ++i )
+	{
+		if ( stats[clientnum]->EFFECTS[i] )
+		{
+			switch ( i )
+			{
+				case EFF_SLOW:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
+					break;
+				case EFF_BLEEDING:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
+					break;
+				case EFF_ASLEEP:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
+					break;
+				case EFF_CONFUSED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
+					break;
+				case EFF_PACIFY:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_EXTRAHEALING);
+					break;
+				case EFF_VAMPIRICAURA:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
+					break;
+				case EFF_PARALYZED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
+					break;
+				default:
+					effectImageNode = nullptr;
+					break;
+			}
+		}
+		if ( effectImageNode )
+		{
+			sprite = (SDL_Surface**)effectImageNode->element;
+			drawImage(*sprite, NULL, &pos);
+			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
+			{
+				pos.x += sustained_spell_generic_icon->w;
+			}
+			else
+			{
+				//Vertical.
+				pos.y += (*sprite)->h;
+			}
+			effectImageNode = nullptr;
+		}
+	}
+
+	if (!channeledSpells[clientnum].first)
+	{
+		return;    //No use continuing if there are no sustained spells.
 	}
 
 	int count = 0; //This is just for debugging purposes.
