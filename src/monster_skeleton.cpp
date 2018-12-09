@@ -90,7 +90,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 								leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
 
 								myStats->STR = std::max(1, myStats->STR);
-								myStats->DEX = std::max(0, myStats->DEX);
+								myStats->DEX = std::max(2, myStats->DEX);
 								myStats->CON = std::max(0, myStats->CON);
 								myStats->INT = std::max(0, myStats->INT);
 								myStats->PER = std::max(0, myStats->PER);
@@ -139,7 +139,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 									myStats->HP += HP_MOD;
 									myStats->MAXHP += HP_MOD;
 									myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-									playerStatIncrease(5, increasestat); // rogue weighting
+									my->playerStatIncrease(5, increasestat); // rogue weighting
 									for ( int j = 0; j < 3; j++ )
 									{
 										switch ( increasestat[j] )
@@ -177,10 +177,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 								leaderStats->playerSummon2LVLHP |= (myStats->MAXHP);
 
 								myStats->STR = std::max(0, myStats->STR);
-								myStats->DEX = std::max(1, myStats->DEX);
+								myStats->DEX = std::max(3, myStats->DEX);
 								myStats->CON = std::max(0, myStats->CON);
 								myStats->INT = std::max(0, myStats->INT);
-								myStats->PER = std::max(0, myStats->PER);
+								myStats->PER = std::max(1, myStats->PER);
 								myStats->CHR = std::max(0, myStats->CHR);
 								leaderStats->playerSummon2STRDEXCONINT = (myStats->STR << 24);
 								leaderStats->playerSummon2STRDEXCONINT |= (myStats->DEX << 16);
