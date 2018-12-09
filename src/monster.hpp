@@ -190,7 +190,21 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
 	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
 	{	4,	2,	5,	3,	2,	2 },  // MONK 12
-	{	4,	4,	4,	4,	4,	4 }  // TEST 13
+	{	4,	4,	4,	4,	4,	4 }  // MONSTERS 13
+};
+
+static std::vector<std::vector<int>> monsterClassStatGrowth =
+{
+	// stat weightings for classes on level up
+	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
+	{   4,	4,	4,	4,	4,	4 }, // RACE_HUMAN 0
+	{   3,	2,	5,	6,	4,	4 }, // RACE_SKELETON 1
+	{   4,	4,	4,	4,	4,	4 }, // RACE_HUMAN 2
+	{   4,	4,	4,	4,	4,	4 }, // RACE_HUMAN 3
+	{   4,	4,	4,	4,	4,	4 }, // RACE_HUMAN 4
+	{   4,	4,	4,	4,	4,	4 }, // RACE_HUMAN 5
+	{   4,	4,	4,	4,	4,	4 }, // RACE_HUMAN 6
+	{   4,	4,	4,	4,	4,	4 }, // RACE_VAMPIRE 7
 };
 
 enum AllyNPCCommand : int

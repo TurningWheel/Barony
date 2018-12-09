@@ -783,6 +783,7 @@ public:
 	Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
+	void playerStatIncrease(int playerClass, int chosenStats[3]);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -933,7 +934,6 @@ bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
-void playerStatIncrease(int playerClass, int chosenStats[3]);
 
 static const int MSG_DESCRIPTION = 0;
 static const int MSG_COMBAT = 1;
