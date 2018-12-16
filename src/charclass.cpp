@@ -1482,7 +1482,7 @@ void initClass(int player)
 			stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 80;
 			stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
 			stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
-			stats[player]->PROFICIENCIES[PRO_SWORD] = 40;
+			stats[player]->PROFICIENCIES[PRO_SWORD] = 20;
 
 			// weapon
 			item = newItem(MAGICSTAFF_COLD, EXCELLENT, 0, 1, 0, true, NULL);
@@ -1544,62 +1544,40 @@ void initClass(int player)
 				item2 = itemPickup(player, item);
 				hotbar[9].item = item2->uid;
 				free(item);
-			}
-			if ( player == clientnum )
-			{
+
 				// slow book
 				item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, NULL);
 				item2 = itemPickup(player, item);
 				hotbar[8].item = item2->uid;
 				free(item);
+
+				// polymorph
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
 			}
+
 		}
 		else if ( stats[player]->playerRace == RACE_VAMPIRE )
 		{
 			stats[player]->playerRace = RACE_VAMPIRE;
 			// attributes
-			stats[player]->INT += 1;
+			stats[player]->INT += 10;
 			stats[player]->STR += 1;
-			stats[player]->CON -= 1;
+			stats[player]->CON -= 3;
 			stats[player]->DEX -= 3;
 			stats[player]->PER -= 1;
 
 			stats[player]->MAXHP -= 0;
 			stats[player]->HP -= 0;
-			stats[player]->MAXMP += 0;
-			stats[player]->MP += 0;
+			stats[player]->MAXMP += 10;
+			stats[player]->MP += 10;
 
 			// skills
-			stats[player]->PROFICIENCIES[PRO_MAGIC] = 80;
+			stats[player]->PROFICIENCIES[PRO_MAGIC] = 70;
 			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-			stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
-
-			// weapon
-			/*item = newItem(MAGICSTAFF_BLEED, EXCELLENT, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[0].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}*/
-
-			/*item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[1].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}*/
+			stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
+			stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
 
 			// green hood
 			item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1654,30 +1632,42 @@ void initClass(int player)
 				hotbar[8].item = item2->uid;
 				free(item);
 
-				addSpell(SPELL_BLEED, player, true);
-				for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
-				{
-					Item* item = (Item*)node->element;
-					if ( item->type == SPELL_ITEM )
-					{
-						hotbar[0].item = item->uid;
-					}
-				}
+				// bleed book
+				item = newItem(SPELLBOOK_BLEED, WORN, 0, 1, 2, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[7].item = item2->uid;
+				free(item);
 
 				// blood
 				item = newItem(FOOD_BLOOD, EXCELLENT, 0, 3, 0, true, NULL);
 				item2 = itemPickup(player, item);
-				hotbar[1].item = item2->uid;
+				hotbar[5].item = item2->uid;
 				free(item);
 
 				// restore magic
 				item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
 				item2 = itemPickup(player, item);
-				hotbar[2].item = item2->uid;
+				hotbar[6].item = item2->uid;
+				free(item);
+
+				// polymorph
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
+				item2 = itemPickup(player, item);
 				free(item);
 			}
 		}
 	}
+	if ( client_classes[player] != 13 && stats[player]->playerRace != RACE_HUMAN )
+	{
+		if ( player == clientnum )
+		{
+			// bonus polymorph potions
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+
 	// move default items to the right
 	if ( player == clientnum )
 	{
