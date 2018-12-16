@@ -2476,6 +2476,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("16 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
@@ -2487,6 +2488,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -2496,6 +2498,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("18 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
