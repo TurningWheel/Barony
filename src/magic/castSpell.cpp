@@ -98,7 +98,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					}
 				}
 			}
-			if ( spell->ID == SPELL_VAMPIRIC_AURA && caster->playerIsVampire() == 2 )
+			if ( spell->ID == SPELL_VAMPIRIC_AURA && caster->playerIsVampire() == PLAYER_VAMPIRE_CURSED )
 			{
 				if ( multiplayer == CLIENT )
 				{
@@ -254,7 +254,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				magiccost = cast_animation.mana_left;
 			}
-			caster->drainMP(magiccost);
+			caster->drainMP(magiccost, false);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
 		{
@@ -266,6 +266,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			else
 			{
 				magiccost = getCostOfSpell(spell, caster);
+				if ( magiccost > stat->MP )
+				{
+					// damage sound/effect due to overdraw.
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)net_packet->data, "SHAK");
+						net_packet->data[4] = 10; // turns into .1
+						net_packet->data[5] = 10;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						playSoundPlayer(player, 28, 92);
+					}
+					else if ( player == 0 )
+					{
+						camera_shakex += 0.1;
+						camera_shakey += 10;
+						playSoundPlayer(player, 28, 92);
+					}
+				}
 				caster->drainMP(magiccost);
 			}
 		}
@@ -519,11 +540,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_INVISIBLE, true, duration, false);
+			bool isPlayer = false;
 			for (i = 0; i < numplayers; ++i)
 			{
 				if (caster == players[i]->entity)
 				{
 					serverUpdateEffects(i);
+					isPlayer = true;
+				}
+			}
+
+			if ( isPlayer )
+			{
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && creature->behavior == &actMonster && creature->monsterTarget == caster->getUID() )
+					{
+						if ( !creature->isBossMonsterOrBossMap() )
+						{
+							//Abort if invalid creature (boss, shopkeep, etc).
+							real_t dist = entityDist(caster, creature);
+							if ( dist > STRIKERANGE * 3 )
+							{
+								// lose track of invis target.
+								creature->monsterReleaseAttackTarget();
+							}
+						}
+					}
 				}
 			}
 

@@ -25,6 +25,7 @@
 #define THROW 1 //Throw spell!
 
 spellcasting_animation_manager_t cast_animation;
+bool overDrawDamageNotify = false;
 Entity* magicLeftHand = NULL;
 Entity* magicRightHand = NULL;
 
@@ -356,13 +357,16 @@ void actLeftHandMagic(Entity* my)
 					cast_animation.consume_timer = cast_animation.consume_interval;
 					if ( multiplayer == SINGLE && cast_animation.consumeMana )
 					{
-						if ( cast_animation.mana_left == 1 )
+						int HP = stats[clientnum]->HP;
+						players[clientnum]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+						if ( (HP > stats[clientnum]->HP) && !overDrawDamageNotify )
 						{
-							players[clientnum]->entity->drainMP(1);
-						}
-						else
-						{
-							players[clientnum]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+							overDrawDamageNotify = true;
+							camera_shakex += 0.1;
+							camera_shakey += 10;
+							playSoundPlayer(clientnum, 28, 92);
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							messagePlayerColor(clientnum, color, language[621]);
 						}
 					}
 					--cast_animation.mana_left;
@@ -392,6 +396,10 @@ void actLeftHandMagic(Entity* my)
 				spellcastingAnimationManager_completeSpell(&cast_animation);
 				break;
 		}
+	}
+	else
+	{
+		overDrawDamageNotify = false;
 	}
 
 	//Final position code.

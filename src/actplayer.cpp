@@ -929,7 +929,7 @@ void actPlayer(Entity* my)
 		{
 			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
 			{
-				if ( my->playerIsVampire() == 1 )
+				if ( my->playerIsVampire() == PLAYER_VAMPIRE_CLASS )
 				{
 					my->setEffect(EFF_VAMPIRICAURA, true, -2, true);
 					my->playerVampireCurse = 1;
@@ -944,12 +944,12 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			/*if ( PLAYER_NUM == clientnum && my->playerIsVampire() > 0 && PLAYER_ALIVETIME % 50 == 0 )
+			/*if ( PLAYER_NUM == clientnum && my->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS && PLAYER_ALIVETIME % 50 == 0 )
 			{
 				messagePlayer(0, "hunger: %d", stats[PLAYER_NUM]->HUNGER);
 			}*/
 		}
-		if ( multiplayer == CLIENT && my->playerIsVampire() > 0 )
+		if ( multiplayer == CLIENT && my->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
 		{
 			if ( PLAYER_NUM == clientnum && my->playerVampireCurse == 1 )
 			{
@@ -4515,20 +4515,31 @@ int Entity::playerIsVampire()
 {
 	if ( behavior != &actPlayer )
 	{
-		return 0;
+		return PLAYER_NOT_VAMPIRE_CLASS;
 	}
 	if ( !stats[skill[2]] )
 	{
-		return 0;
+		return PLAYER_NOT_VAMPIRE_CLASS;
 	}
 
 	if ( stats[skill[2]]->type == VAMPIRE && client_classes[skill[2]] == 13 )
 	{
 		if ( stats[skill[2]]->EFFECTS[EFF_VAMPIRICAURA] && playerVampireCurse == 1 )
 		{
-			return 2;
+			return PLAYER_VAMPIRE_CURSED;
 		}
-		return 1;
+		return PLAYER_VAMPIRE_CLASS;
 	}
-
+	if ( stats[skill[2]]->type == VAMPIRE )
+	{
+		return PLAYER_VAMPIRE_TYPE;
+	}
+	else
+	{
+		if ( effectPolymorph != NOTHING && getMonsterFromPlayerRace(stats[skill[2]]->playerRace) == VAMPIRE )
+		{
+			return PLAYER_VAMPIRE_POLYMORPHED;
+		}
+	}
+	return PLAYER_NOT_VAMPIRE_CLASS;
 }

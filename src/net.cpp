@@ -3193,7 +3193,7 @@ void clientHandlePacket()
 		int spellID = SDLNet_Read32(&net_packet->data[5]);
 		if ( players[player] && players[player]->entity )
 		{
-			if ( players[player]->entity->playerIsVampire() == 2 )
+			if ( players[player]->entity->playerIsVampire() == PLAYER_VAMPIRE_CURSED )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, false, 1, false);
 				players[player]->entity->playerVampireCurse = 2; // cured.

@@ -2149,6 +2149,29 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent )
 							{
 								parent->awardXP(hit.entity, true, true);
+
+								if ( hit.entity->behavior == &actMonster )
+								{
+									bool tryBloodVial = false;
+									if ( gibtype[hitstats->type] == 1 || gibtype[hitstats->type] == 2 )
+									{
+										for ( c = 0; c < MAXPLAYERS; ++c )
+										{
+											if ( players[c] && players[c]->entity )
+											{
+												if ( players[c]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+												{
+													tryBloodVial = true;
+													break;
+												}
+											}
+										}
+										if ( tryBloodVial )
+										{
+											Item* blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[hitstats->type] - 1, true, &hitstats->inventory);
+										}
+									}
+								}
 							}
 
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
