@@ -392,7 +392,7 @@ void drawSkillsSheet()
 	//Draw skill names.
 	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (fontHeight /** 2*/) )
 	{
-		ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y, "%s:", language[236 + c]);
+		ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y, "%s:", getSkillLangEntry(c));
 	}
 
 	//Draw skill levels.
@@ -1118,10 +1118,14 @@ Sint32 displayAttackPower(Sint32 output[6])
 				attack += entity->getAttack();
 				output[0] = 0; // melee
 				output[1] = attack;
-				output[2] = 0; // bonus from weapon
+				output[2] = (stats[clientnum]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
 				output[3] = entity->getSTR(); // bonus from main attribute
-				output[4] = 0; // bonus from proficiency
-				output[5] = attack - entity->getSTR() - BASE_MELEE_DAMAGE; // bonus from equipment
+				output[5] = attack - entity->getSTR() - BASE_PLAYER_UNARMED_DAMAGE - output[2]; // bonus from equipment
+				// get damage variances.
+				output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
+				attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
+				output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
+				output[1] = attack;
 			}
 			else
 			{
@@ -1154,7 +1158,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 						output[5] = 0; // bonus from equipment
 					}
 				}
-				else if ( weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM )
+				else if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) )
 				{
 					// melee weapon
 					attack += entity->getAttack();
@@ -1244,7 +1248,7 @@ void attackHoverText(Sint32 input[6])
 			{
 				case 0: // fists
 					snprintf(tooltipHeader, strlen(language[2529]), language[2529]);
-					numInfoLines = 2;
+					numInfoLines = 4;
 					break;
 				case 1: // ranged
 					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
@@ -1304,11 +1308,16 @@ void attackHoverText(Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							snprintf(buf, longestline(language[3209]), language[3209], input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
 							break;
+						case 2:
+							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						case 3:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
 						default:
 							break;
 					}

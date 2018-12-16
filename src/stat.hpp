@@ -49,6 +49,7 @@ static const int EFF_HP_REGEN = 22;
 static const int EFF_MP_REGEN = 23;
 static const int EFF_PACIFY = 24;
 static const int EFF_POLYMORPH = 25;
+static const int EFF_KNOCKBACK = 26;
 static const int NUMEFFECTS = 32;
 
 // stats
@@ -76,7 +77,8 @@ static const int PRO_MACE = 10;         // base attribute: str
 static const int PRO_AXE = 11;          // base attribute: str
 static const int PRO_POLEARM = 12;      // base attribute: str
 static const int PRO_SHIELD = 13;       // base attribute: con
-static const int NUMPROFICIENCIES = 14;
+static const int PRO_UNARMED = 14;       // base attribute: str
+static const int NUMPROFICIENCIES = 15;
 
 //Start levels for the various proficiency ranges.
 //0 = "none"
@@ -98,6 +100,7 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		100,		//Leadership
 		100,		//Spellcasting
 		100,		//Magic
+		101,
 		101,
 		101,
 		101,
@@ -243,8 +246,4 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
-
-inline char* getSkillName(int skill)
-{
-	return language[236 + skill];
-}
+char* getSkillLangEntry(int skill);

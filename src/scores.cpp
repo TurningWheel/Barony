@@ -947,7 +947,14 @@ void loadAllScores(const std::string& scoresfilename)
 		fread(&score->stats->HUNGER, sizeof(Sint32), 1, fp);
 		for ( c = 0; c < NUMPROFICIENCIES; c++ )
 		{
-			fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+			if ( versionNumber < 323 && c >= PRO_UNARMED )
+			{
+				score->stats->PROFICIENCIES[c] = 0;
+			}
+			else
+			{
+				fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+			}
 		}
 		if ( versionNumber < 300 )
 		{
@@ -1935,7 +1942,14 @@ int loadGame(int player, int saveIndex)
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
-		fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		}
+		else
+		{
+			fseek(fp, sizeof(Sint32)*14, SEEK_CUR);
+		}
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
 		if ( versionNumber >= 323 )
@@ -2018,7 +2032,14 @@ int loadGame(int player, int saveIndex)
 	fread(&stats[player]->HUNGER, sizeof(Sint32), 1, fp);
 	for ( c = 0; c < NUMPROFICIENCIES; c++ )
 	{
-		fread(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+		if ( versionNumber < 323 && c >= PRO_UNARMED )
+		{
+			stats[player]->PROFICIENCIES[c] = 0;
+		}
+		else
+		{
+			fread(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+		}
 	}
 	for ( c = 0; c < NUMEFFECTS; c++ )
 	{
@@ -2376,7 +2397,14 @@ list_t* loadGameFollowers(int saveIndex)
 			int j;
 			for ( j = 0; j < NUMPROFICIENCIES; j++ )
 			{
-				fread(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1, fp);
+				if ( versionNumber < 323 && j >= PRO_UNARMED )
+				{
+					followerStats->PROFICIENCIES[j] = 0;
+				}
+				else
+				{
+					fread(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1, fp);
+				}
 			}
 			for ( j = 0; j < NUMEFFECTS; j++ )
 			{
@@ -2678,7 +2706,14 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
-		fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		}
+		else
+		{
+			fseek(fp, sizeof(Sint32)*14, SEEK_CUR);
+		}
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
 		if ( versionNumber >= 323 )

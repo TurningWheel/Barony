@@ -795,3 +795,12 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 	return equipNum[roll];
 }
 
+char* getSkillLangEntry(int skill)
+{
+	int langEntry = 236 + skill;
+	if ( skill == PRO_UNARMED )
+	{
+		langEntry = 3204;
+	}
+	return language[langEntry];
+}
