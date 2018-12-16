@@ -220,6 +220,10 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
 	}
+	else
+	{
+		enemy_bar_color[player] = 0;
+	}
 
 	if ( player >= 0 )
 	{

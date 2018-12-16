@@ -195,6 +195,8 @@ public:
 	Sint32& monsterAllySpecial; //skill[48]
 	Sint32& monsterAllySpecialCooldown; //skill[49]
 	Sint32& monsterAllySummonRank; //skill[50]
+	real_t& monsterKnockbackVelocity; //fskill[9]
+	Sint32& monsterKnockbackUID; //skill[52]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]

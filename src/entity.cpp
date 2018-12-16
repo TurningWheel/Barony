@@ -121,6 +121,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterAllySpecial(skill[48]),
 	monsterAllySpecialCooldown(skill[49]),
 	monsterAllySummonRank(skill[50]),
+	monsterKnockbackVelocity(fskill[9]),
+	monsterKnockbackUID(skill[51]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -1231,23 +1233,23 @@ void Entity::increaseSkill(int skill)
 	if ( myStats->PROFICIENCIES[skill] < 100 )
 	{
 		myStats->PROFICIENCIES[skill]++;
-		messagePlayerColor(player, color, language[615], language[236 + skill]);
+		messagePlayerColor(player, color, language[615], getSkillLangEntry(skill));
 		switch ( myStats->PROFICIENCIES[skill] )
 		{
 			case 20:
-				messagePlayerColor(player, color, language[616], language[236 + skill]);
+				messagePlayerColor(player, color, language[616], getSkillLangEntry(skill));
 				break;
 			case 40:
-				messagePlayerColor(player, color, language[617], language[236 + skill]);
+				messagePlayerColor(player, color, language[617], getSkillLangEntry(skill));
 				break;
 			case 60:
-				messagePlayerColor(player, color, language[618], language[236 + skill]);
+				messagePlayerColor(player, color, language[618], getSkillLangEntry(skill));
 				break;
 			case 80:
-				messagePlayerColor(player, color, language[619], language[236 + skill]);
+				messagePlayerColor(player, color, language[619], getSkillLangEntry(skill));
 				break;
 			case 100:
-				messagePlayerColor(player, color, language[620], language[236 + skill]);
+				messagePlayerColor(player, color, language[620], getSkillLangEntry(skill));
 				break;
 			default:
 				break;
@@ -3564,6 +3566,11 @@ Sint32 Entity::getAttack()
 	else if ( entitystats->weapon == nullptr )
 	{
 		// bare handed.
+		if ( behavior == &actPlayer )
+		{
+			attack = BASE_PLAYER_UNARMED_DAMAGE;
+			attack += (entitystats->PROFICIENCIES[PRO_UNARMED] / 20); // 0, 1, 2, 3, 4, 5 damage from total
+		}
 		if ( entitystats->gloves )
 		{
 			if ( entitystats->gloves->type == BRASS_KNUCKLES )
@@ -5376,7 +5383,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				//int hitskill=5; // for unarmed combat
 
 				weaponskill = getWeaponSkill(myStats->weapon);
-
+				if ( behavior == &actMonster && weaponskill == PRO_UNARMED )
+				{
+					weaponskill = -1;
+				}
 				/*if( weaponskill>=0 )
 				hitskill = myStats->PROFICIENCIES[weaponskill]/5;
 				c = rand()%20 + hitskill + (weaponskill==PRO_POLEARM);
@@ -5392,11 +5402,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if( hitsuccess )*/
 				{
 					// skill increase
-					if ( weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM )
+					if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED )
+					{
 						if ( rand() % 10 == 0 )
 						{
 							this->increaseSkill(weaponskill);
 						}
+					}
 
 					// calculate and perform damage to opponent
 					int damage = 0;
@@ -5408,7 +5420,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damagePreMultiplier = 2;
 					}
 
-					if ( weaponskill >= 0 )
+					if ( weaponskill == PRO_UNARMED )
+					{
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][PRO_UNARMED];
+					}
+					else if ( weaponskill >= 0 )
 					{
 						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
 					}
@@ -5472,11 +5488,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					bool gungnir = false;
 					if ( myStats->weapon )
+					{
 						if ( myStats->weapon->type == ARTIFACT_SPEAR )
 						{
 							gungnir = true;
 						}
-					if ( weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir )
+					}
+					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || weaponskill == PRO_UNARMED )
 					{
 						int chance = 0;
 						if ( weaponskill == PRO_POLEARM )
@@ -5512,33 +5530,41 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// write the obituary
 					killedByMonsterObituary(hit.entity);
 
-					// update enemy bar for attacker
-					if ( !strcmp(hitstats->name, "") )
-					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
-						}
-					}
-					else
-					{
-						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
-					}
-
 					// damage weapon if applicable
 
 					bool isWeakWeapon = false;
 					bool artifactWeapon = false;
 					bool degradeWeapon = false;
 					ItemType weaponType = static_cast<ItemType>(WOODEN_SHIELD);
-
-					if ( myStats->weapon != NULL )
+					bool hasMeleeGloves = false;
+					if ( myStats->gloves )
 					{
-						weaponType = myStats->weapon->type;
+						switch ( myStats->gloves->type )
+						{
+							case BRASS_KNUCKLES:
+							case IRON_KNUCKLES:
+							case SPIKED_GAUNTLETS:
+								hasMeleeGloves = true;
+								break;
+							default:
+								break;
+						}
+					}
+
+					Item** weaponToBreak = nullptr;
+					
+					if ( myStats->weapon )
+					{
+						weaponToBreak = &myStats->weapon;
+					}
+					else if ( hasMeleeGloves )
+					{
+						weaponToBreak = &myStats->gloves;
+					}
+
+					if ( weaponToBreak != nullptr )
+					{
+						weaponType = (*weaponToBreak)->type;
 						if ( weaponType == ARTIFACT_AXE || weaponType == ARTIFACT_MACE || weaponType == ARTIFACT_SPEAR || weaponType == ARTIFACT_SWORD )
 						{
 							artifactWeapon = true;
@@ -5551,8 +5577,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( !artifactWeapon )
 						{
+							if ( !myStats->weapon && (*weaponToBreak) )
+							{
+								// gloves degrade, 0 dmg is 12.5%, else 1.25%
+								if ( (rand() % 8 == 0 && damage == 0) || (rand() % 80 == 0 && damage > 0) )
+								{
+									degradeWeapon = true;
+								}
+							}
 							// crystal weapons chance to not degrade 66% chance on 0 dmg, else 96%
-							if ( isWeakWeapon && ((rand() % 3 == 0 && damage == 0) || (rand() % 25 == 0 && damage > 0)) )
+							else if ( isWeakWeapon && ((rand() % 3 == 0 && damage == 0) || (rand() % 25 == 0 && damage > 0)) )
 							{
 								degradeWeapon = true;
 							}
@@ -5576,14 +5610,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								if ( player == clientnum || player < 0 )
 								{
-									if ( myStats->weapon->count > 1 )
+									if ( (*weaponToBreak)->count > 1 )
 									{
-										newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
+										newItem((*weaponToBreak)->type, (*weaponToBreak)->status, (*weaponToBreak)->beatitude,
+											(*weaponToBreak)->count - 1, (*weaponToBreak)->appearance, (*weaponToBreak)->identified, &myStats->inventory);
 									}
 								}
-								myStats->weapon->count = 1;
-								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-								if ( myStats->weapon->status != BROKEN )
+								(*weaponToBreak)->count = 1;
+								(*weaponToBreak)->status = static_cast<Status>((*weaponToBreak)->status - 1);
+								if ( (*weaponToBreak)->status != BROKEN )
 								{
 									messagePlayer(player, language[679]);
 								}
@@ -5595,14 +5630,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( player > 0 && multiplayer == SERVER )
 								{
 									strcpy((char*)net_packet->data, "ARMR");
-									net_packet->data[4] = 5;
-									net_packet->data[5] = myStats->weapon->status;
+									if ( weaponToBreak == &myStats->weapon )
+									{
+										net_packet->data[4] = 5;
+									}
+									else
+									{
+										net_packet->data[4] = 2;
+									}
+									net_packet->data[5] = (*weaponToBreak)->status;
 									net_packet->address.host = net_clients[player - 1].host;
 									net_packet->address.port = net_clients[player - 1].port;
 									net_packet->len = 6;
 									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
-								if ( myStats->weapon->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
+								if ( (*weaponToBreak)->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
 								{
 									if ( playerhit > 0 )
 									{
@@ -5822,6 +5864,64 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					bool statusInflicted = false;
+					bool unarmedStatusInflicted = false;
+					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3)
+						&& (!myStats->shield || hasMeleeGloves) )
+					{
+						int chance = 0;
+						bool inflictParalyze = false;
+						switch ( myStats->PROFICIENCIES[PRO_UNARMED] / 20 )
+						{
+							case 0:
+								break;
+							case 1:
+								break;
+							case 2:
+								break;
+							case 3:
+								chance = 8;
+								break;
+							case 4:
+								chance = 6;
+								break;
+							case 5:
+								chance = 4;
+								break;
+							default:
+								break;
+						}
+						if ( chance > 0 && (rand() % chance) == 0 )
+						{
+							int duration = 100 - hit.entity->getCON() - ((myStats->shield && hasMeleeGloves) ? 50 : 0);
+							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, std::max(20, duration), true) )
+							{
+								unarmedStatusInflicted = true;
+								playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
+							}
+						}
+						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 50, false) )
+						{
+							real_t pushbackMultiplier = 0.5 + 0.1 * (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
+							if ( myStats->shield && hasMeleeGloves )
+							{
+								pushbackMultiplier /= 2;
+							}
+							if ( unarmedStatusInflicted )
+							{
+								pushbackMultiplier += 0.3;
+							}
+							real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
+							hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+							hit.entity->monsterKnockbackVelocity = 0.05;
+							hit.entity->monsterKnockbackUID = this->getUID();
+							hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+						}
+						/*Entity* ohitentity = hit.entity;
+						clipMove(&(hit.entity->x), &(hit.entity->y), hit.entity->vel_x, hit.entity->vel_y, hit.entity);
+						hit.entity = ohitentity;*/
+					}
 
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
@@ -5850,7 +5950,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY]) && rand() % 4 == 0 )
 					{
 						int armornum = 0;
-						Item* armor = NULL;
+						Item* armor = nullptr;
 						int armorstolen = rand() % 9;
 						switch ( myStats->type )
 						{
@@ -5910,7 +6010,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									default:
 										break;
 								}
-								if ( armor != NULL )
+								if ( behavior == &actPlayer )
+								{
+									armor = nullptr;
+								}
+								if ( armor != nullptr )
 								{
 									if ( playerhit == clientnum || playerhit < 0 )
 									{
@@ -6034,6 +6138,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
 								}
 							}
+							if ( unarmedStatusInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
+							}
 						}
 						else
 						{
@@ -6137,6 +6245,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									// backstab on unaware enemy
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
 								}
+							}
+							if ( unarmedStatusInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
 							}
 						}
 						else
@@ -6294,6 +6406,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
 							}
 							//messagePlayer(0, "took damage!");
+							if ( unarmedStatusInflicted )
+							{
+								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3208], language[3207], MSG_COMBAT);
+							}
 						}
 					}
 					else
@@ -6327,6 +6443,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					// update enemy bar for attacker
+					if ( !strcmp(hitstats->name, "") )
+					{
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						}
+					}
+					else
+					{
+						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+					}
+
+
 					playSoundEntity(hit.entity, 28, 64);
 
 					// chance of bleeding
@@ -6335,7 +6469,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hitstats->HP > 5 && damage > 0 )
 						{
-							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD)
+							if ( (rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
@@ -8554,7 +8688,7 @@ int getWeaponSkill(Item* weapon)
 {
 	if ( weapon == NULL )
 	{
-		return -1;
+		return PRO_UNARMED;
 	}
 
 	if ( weapon->type == QUARTERSTAFF || weapon->type == IRON_SPEAR || weapon->type == STEEL_HALBERD || weapon->type == ARTIFACT_SPEAR || weapon->type == CRYSTAL_SPEAR )
@@ -8602,6 +8736,7 @@ int getStatForProficiency(int skill)
 		case PRO_MACE:			// base attribute: str
 		case PRO_AXE:			// base attribute: str
 		case PRO_POLEARM:		// base attribute: str
+		case PRO_UNARMED:
 			statForProficiency = STAT_STR;
 			break;
 		case PRO_LOCKPICKING:	// base attribute: dex
@@ -10061,10 +10196,12 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 		case EFF_ASLEEP:
 		case EFF_PARALYZED:
 		case EFF_PACIFY:
+		case EFF_KNOCKBACK:
 			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 			{
-				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) )
+				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) &&
+					!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) )
 				{
 					return false;
 				}
@@ -11161,6 +11298,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 	// retreating monsters will not try path when losing sight of target
 
 	if ( myStats.EFFECTS[EFF_PACIFY] )
+	{
+		return true;
+	}
+	if ( myStats.EFFECTS[EFF_KNOCKBACK] )
 	{
 		return true;
 	}

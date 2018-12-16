@@ -1625,7 +1625,32 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
-	if (stats[player]->weapon == nullptr)
+	Item** toEnchant = nullptr;
+	bool hasMeleeGloves = false;
+	if ( stats[player]->gloves )
+	{
+		switch ( stats[player]->gloves->type )
+		{
+			case BRASS_KNUCKLES:
+			case IRON_KNUCKLES:
+			case SPIKED_GAUNTLETS:
+				hasMeleeGloves = true;
+				break;
+			default:
+				break;
+		}
+	}
+
+	if ( stats[player]->weapon )
+	{
+		toEnchant = &stats[player]->weapon;
+	}
+	else if ( hasMeleeGloves )
+	{
+		toEnchant = &stats[player]->gloves;
+	}
+
+	if ( toEnchant == nullptr)
 	{
 		if (player == clientnum)
 		{
@@ -1638,9 +1663,16 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		{
 			if (player == clientnum)
 			{
-				messagePlayer(player, language[854]);
+				if ( toEnchant == &stats[player]->gloves )
+				{
+					messagePlayer(player, language[858], (*toEnchant)->getName());
+				}
+				else
+				{
+					messagePlayer(player, language[854]);
+				}
 			}
-			stats[player]->weapon->beatitude -= 1;
+			(*toEnchant)->beatitude -= 1;
 		}
 		else
 		{
@@ -1648,14 +1680,28 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			{
 				if (item->beatitude == 0)
 				{
-					messagePlayer(player, language[855]);
+					if ( toEnchant == &stats[player]->gloves )
+					{
+						messagePlayer(player, language[859], (*toEnchant)->getName());
+					}
+					else
+					{
+						messagePlayer(player, language[855]);
+					}
 				}
 				else
 				{
-					messagePlayer(player, language[856]);
+					if ( toEnchant == &stats[player]->gloves )
+					{
+						messagePlayer(player, language[860], (*toEnchant)->getName());
+					}
+					else
+					{
+						messagePlayer(player, language[856]);
+					}
 				}
 			}
-			stats[player]->weapon->beatitude += 1 + item->beatitude;
+			(*toEnchant)->beatitude += 1 + item->beatitude;
 		}
 	}
 }

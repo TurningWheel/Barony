@@ -2739,7 +2739,7 @@ void actMonster(Entity* my)
 		}*/
 
 		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
-		//	|| myStats->type == LICH_ICE )
+		//	|| myStats->type == CRYSTALGOLEM )
 		//{
 		//	std::string state_string;
 
@@ -3374,10 +3374,16 @@ timeToGoAgain:
 							{
 								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP); // speed cap.
 							}
-							MONSTER_VELX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
-							MONSTER_VELY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
+							real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
+							real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
+							if ( !myStats->EFFECTS[EFF_KNOCKBACK] )
+							{
+								MONSTER_VELX = maxVelX;
+								MONSTER_VELY = maxVelY;
+							}
 
-							if ( (dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon) )
+							if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
+								((dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon)) )
 							{
 								if ( my->shouldRetreat(*myStats) )
 								{
@@ -3536,10 +3542,86 @@ timeToGoAgain:
 										{
 											myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 										}
-										MONSTER_VELX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
-										MONSTER_VELY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+
+										real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+										real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+										if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+										{
+											maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
+											maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
+											if ( maxVelX > 0 )
+											{
+												MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
+											}
+											else
+											{
+												MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
+											}
+											if ( maxVelY > 0 )
+											{
+												MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
+											}
+											else
+											{
+												MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
+											}
+											my->monsterKnockbackVelocity *= 1.1;
+										}
+										else
+										{
+											MONSTER_VELX = maxVelX;
+											MONSTER_VELY = maxVelY;
+										}
 									}
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+
+									if ( hit.entity != NULL && myStats->EFFECTS[EFF_KNOCKBACK] && myStats->HP > 0 )
+									{
+										int damageOnHit = 5 + rand() % 6;
+										if ( hit.entity->behavior == &actDoor )
+										{
+											playSoundEntity(my, 28, 64);
+											my->modHP(-damageOnHit);
+											if ( myStats->HP <= 0 )
+											{
+												Entity* whoKnockedMe = uidToEntity(my->monsterKnockbackUID);
+												if ( whoKnockedMe )
+												{
+													whoKnockedMe->awardXP(my, true, true);
+												}
+											}
+											hit.entity->doorHealth = 0;    // smash doors instantly
+											playSoundEntity(hit.entity, 28, 64);
+											if ( hit.entity->doorHealth <= 0 )
+											{
+												// set direction of splinters
+												if ( !hit.entity->doorDir )
+												{
+													hit.entity->doorSmacked = (my->x > hit.entity->x);
+												}
+												else
+												{
+													hit.entity->doorSmacked = (my->y < hit.entity->y);
+												}
+											}
+										}
+										else if ( hit.entity->behavior == &actFurniture )
+										{
+											// break it down!
+											playSoundEntity(my, 28, 64);
+											my->modHP(-damageOnHit);
+											if ( myStats->HP <= 0 )
+											{
+												Entity* whoKnockedMe = uidToEntity(my->monsterKnockbackUID);
+												if ( whoKnockedMe )
+												{
+													whoKnockedMe->awardXP(my, true, true);
+												}
+											}
+											hit.entity->furnitureHealth = 0;    // minotaurs smash furniture instantly
+											playSoundEntity(hit.entity, 28, 64);
+										}
+									}
 								}
 								else
 								{
@@ -3578,6 +3660,36 @@ timeToGoAgain:
 								{
 									// override if we're strafing, keep facing the target
 									dir = my->yaw - atan2(-tempVelY, -tempVelX);
+								}
+								else if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+								{
+									// in knockback, the velocitys change sign from negative/positive or positive/negative.
+									// this makes monsters moonwalk if the direction to rotate is assumed the same.
+									// so we compare goal velocity direction (sin or cos(tangent)) and see if we've reached that sign.
+
+									int multX = 1;
+									int multY = 1;
+									if ( cos(tangent2) >= 0 == MONSTER_VELX > 0 )
+									{
+										// same sign.
+										multX = 1;
+									}
+									else
+									{
+										// opposite signed.
+										multX = -1;
+									}
+									if ( sin(tangent2) >= 0 == MONSTER_VELY > 0 )
+									{
+										// same sign.
+										multY = 1;
+									}
+									else
+									{
+										// opposite signed.
+										multY = -1;
+									}
+									dir = my->yaw - atan2(multY * MONSTER_VELY, multX * MONSTER_VELX);
 								}
 								else
 								{
@@ -5666,8 +5778,37 @@ timeToGoAgain:
 	}
 	else
 	{
-		MONSTER_VELX = 0;
-		MONSTER_VELY = 0;
+		if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+		{
+			real_t maxVelX = cos(my->yaw) * .045 * 10 * weightratio;
+			real_t maxVelY = sin(my->yaw) * .045 * 10 * weightratio;
+			if ( maxVelX > 0 )
+			{
+				MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), (real_t)0);
+			}
+			else
+			{
+				MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), (real_t)0);
+			}
+			if ( maxVelY > 0 )
+			{
+				MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), (real_t)0);
+			}
+			else
+			{
+				MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), (real_t)0);
+			}
+			my->monsterKnockbackVelocity *= 1.1;
+			if ( abs(MONSTER_VELX) > 0.01 )
+			{
+				dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+			}
+		}
+		else
+		{
+			MONSTER_VELX = 0;
+			MONSTER_VELY = 0;
+		}
 	}
 
 	if ( previousMonsterState != my->monsterState )
