@@ -186,6 +186,19 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				}
 			}
 
+			bool sellVampireBlood = false;
+			for ( c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					if ( players[c]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+					{
+						sellVampireBlood = true;
+						break;
+					}
+				}
+			}
+
 			Item* tmpItem = nullptr;
 
 			switch ( my->monsterStoreType )
@@ -364,6 +377,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
 						}
 					}
+					if ( sellVampireBlood )
+					{
+						tmpItem = newItem(FOOD_BLOOD, EXCELLENT, 0, 2 + rand() % 3, rand(), false, &myStats->inventory);
+					}
 					break;
 				case 7:
 					// hardware store
@@ -412,6 +429,12 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							}
 						}
 					}
+					if ( sellVampireBlood )
+					{
+						tmpItem = newItem(FOOD_BLOOD, EXCELLENT, 0, 1 + rand() % 4, rand(), false, &myStats->inventory);
+					}
+					break;
+				default:
 					break;
 			}
 		}
