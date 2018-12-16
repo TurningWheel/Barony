@@ -684,6 +684,10 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			int damageHP = hitstats->HP;
 			int damageMP = hitstats->MP;
 			hit.entity->modHP(-damage);
+			if ( damage > hitstats->MP )
+			{
+				damage = hitstats->MP;
+			}
 			hit.entity->drainMP(damage);
 
 			damageHP -= hitstats->HP;

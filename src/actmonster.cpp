@@ -1974,49 +1974,6 @@ void actMonster(Entity* my)
 		myStats->mask = NULL;
 		node_t* nextnode = NULL;
 
-		if ( gibtype[myStats->type] == 1 || gibtype[myStats->type] == 2 )
-		{
-			for ( c = 0; c < MAXPLAYERS; ++c )
-			{
-				if ( players[c] && players[c]->entity )
-				{
-					if ( players[c]->entity->playerIsVampire() > 0 )
-					{
-						bool spawnBloodVial = false;
-						if ( myStats->EFFECTS[EFF_BLEEDING] )
-						{
-							if ( myStats->EFFECTS_TIMERS[EFF_BLEEDING] >= 250 )
-							{
-								spawnBloodVial = (rand() % 2 == 0);
-							}
-							else if ( myStats->EFFECTS_TIMERS[EFF_BLEEDING] >= 150 )
-							{
-								spawnBloodVial = (rand() % 4 == 0);
-							}
-							else
-							{
-								spawnBloodVial = (rand() % 8 == 0);
-							}
-						}
-						else
-						{
-							spawnBloodVial = (rand() % 10 == 0);
-						}
-
-						if ( spawnBloodVial )
-						{
-							Item* blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[myStats->type] - 1, true, &myStats->inventory);
-							if ( rand() % 8 == 0 )
-							{
-								blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[myStats->type] - 1, true, &myStats->inventory);
-							}
-						}
-						break;
-					}
-				}
-			}
-		}
-
 		for ( node = myStats->inventory.first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
@@ -3257,8 +3214,11 @@ void actMonster(Entity* my)
 					{
 						if ( my->monsterTarget == players[c]->entity->getUID() )
 						{
-							swornenemies[SHOPKEEPER][HUMAN] = true;
-							monsterally[SHOPKEEPER][HUMAN] = false;
+							if ( stats[c] && stats[c]->type == HUMAN )
+							{
+								swornenemies[SHOPKEEPER][HUMAN] = true;
+								monsterally[SHOPKEEPER][HUMAN] = false;
+							}
 							break;
 						}
 					}

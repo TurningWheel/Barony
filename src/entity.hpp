@@ -786,6 +786,7 @@ public:
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
 	int playerIsVampire(); // 0 = not vampire, 1 = vampire, 2 = vampiric aura 3 = cursed vampire w/ perma aura
+	bool isBossMonsterOrBossMap(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -957,3 +958,13 @@ void boulderSokobanOnDestroy(bool pushedOffLedge);
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
+
+enum PlayerVampireStatus : int
+{
+	PLAYER_NOT_VAMPIRE_CLASS,
+	PLAYER_VAMPIRE_CLASS,
+	PLAYER_VAMPIRE_WITH_AURA,
+	PLAYER_VAMPIRE_CURSED,
+	PLAYER_VAMPIRE_TYPE,
+	PLAYER_VAMPIRE_POLYMORPHED
+};

@@ -1129,7 +1129,7 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
-								bool deducted = caster->safeConsumeMP(3); //Consume 1 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(3); //Consume 3 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -2040,6 +2040,17 @@ bool Entity::safeConsumeMP(int amount)
 
 	if ( amount > stat->MP )
 	{
+		if ( behavior == &actPlayer && stat->type == VAMPIRE )
+		{
+			int HP = stat->HP;
+			this->drainMP(amount, false);
+			if ( (HP - stat->HP > 0) && (stat->HP % 5 == 0) )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+				messagePlayerColor(skill[2], color, language[621]);
+			}
+			return true;
+		}
 		return false;    //Not enough mana.
 	}
 	else
@@ -2482,7 +2493,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( !strncmp(map.name, "Sanctum", 7) 
 		|| !strncmp(map.name, "Boss", 4) 
-		|| !strncmp(map.name, "Hell Boss", 4)
+		|| !strncmp(map.name, "Hell Boss", 9)
 		|| !strncmp(map.name, "Hamlet", 6) )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
@@ -6526,15 +6537,36 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					// lifesteal
 					bool tryLifesteal = false;
+					bool forceLifesteal = false;
+					int lifeStealAmount = damage;
 					if ( damage > 0 )
 					{
-						if ( (myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE)) )
+						if ( behavior == &actPlayer )
+						{
+							if ( myStats->weapon == nullptr )
+							{
+								if ( myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+								{
+									if ( backstab || flanking )
+									{
+										if ( hitstats->HP <= 0 )
+										{
+											forceLifesteal = true;
+										}
+									}
+								}
+								else if ( myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
+								{
+									tryLifesteal = true;
+								}
+								lifeStealAmount = std::max(0, hitstats->OLDHP - hitstats->HP);
+								lifeStealAmount /= 4;
+								lifeStealAmount = std::max(3, lifeStealAmount);
+							}
+						}
+						else if ( (myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE)) )
 						{
 							tryLifesteal = true;
-							if ( myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-							{
-								tryLifesteal = false;
-							}
 						}
 						else if ( myStats->type == VAMPIRE && behavior == &actMonster )
 						{
@@ -6542,18 +6574,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( tryLifesteal )
+					if ( tryLifesteal || forceLifesteal )
 					{
-						int lifeStealAmount = damage;
-						if ( behavior == &actPlayer )
-						{
-							lifeStealAmount /= 4;
-						}
 						bool lifestealSuccess = false;
-						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
+						if ( forceLifesteal )
+						{
+							this->modHP(lifeStealAmount);
+							spawnMagicEffectParticles(x, y, z, 169);
+							playSoundEntity(this, 168, 128);
+							lifestealSuccess = true;
+						}
+						else if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
 						{
 							// attack caused the target to bleed, trigger lifesteal tick
-							this->modHP(damage);
+							this->modHP(lifeStealAmount);
 							spawnMagicEffectParticles(x, y, z, 169);
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
@@ -6561,15 +6595,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 						else if ( (rand() % 4 == 0) && (myStats->type == VAMPIRE && behavior == &actMonster && myStats->EFFECTS[EFF_VAMPIRICAURA]) )
 						{
 							// vampires under aura have higher chance.
-							this->modHP(damage);
+							this->modHP(lifeStealAmount);
 							spawnMagicEffectParticles(x, y, z, 169);
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
 						}
-						else if ( rand() % 8 == 0 && behavior != actPlayer )
+						else if ( rand() % 8 == 0 )
 						{
 							// else low chance for lifesteal.
-							this->modHP(damage);
+							this->modHP(lifeStealAmount);
 							spawnMagicEffectParticles(x, y, z, 169);
 							playSoundEntity(this, 168, 128);
 							lifestealSuccess = true;
@@ -6598,6 +6632,65 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									messagePlayerColor(player, color, language[2439], hitstats->name);
 								}
+							}
+						}
+					}
+					// vampire blood drops.
+					bool tryBloodVial = false;
+					if ( hitstats->HP <= 0 && hit.entity->behavior == &actMonster 
+						&& (gibtype[hitstats->type] == 1 || gibtype[hitstats->type] == 2) )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( players[c] && players[c]->entity )
+							{
+								if ( players[c]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+								{
+									tryBloodVial = true;
+									break;
+								}
+							}
+						}
+					}
+					if ( tryBloodVial )
+					{
+						bool spawnBloodVial = false;
+						bool spawnSecondVial = false;
+						if ( backstab && hitstats->HP <= 0 )
+						{
+							spawnBloodVial = true;
+						}
+						else if ( hitstats->EFFECTS[EFF_BLEEDING] || myStats->EFFECTS[EFF_VAMPIRICAURA] )
+						{
+							if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 250 )
+							{
+								spawnBloodVial = (rand() % 2 == 0);
+							}
+							else if ( hitstats->EFFECTS_TIMERS[EFF_BLEEDING] >= 150 )
+							{
+								spawnBloodVial = (rand() % 4 == 0);
+							}
+							else
+							{
+								spawnBloodVial = (rand() % 8 == 0);
+							}
+
+							if ( rand() % 5 == 0 )
+							{
+								spawnSecondVial = true;
+							}
+						}
+						else
+						{
+							spawnBloodVial = (rand() % 10 == 0);
+						}
+
+						if ( spawnBloodVial )
+						{
+							Item* blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[hitstats->type] - 1, true, &hitstats->inventory);
+							if ( spawnSecondVial )
+							{
+								blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[hitstats->type] - 1, true, &hitstats->inventory);
 							}
 						}
 					}
@@ -13206,4 +13299,29 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			flameEntity->setUID(-3);
 		}
 	}
+}
+
+bool Entity::isBossMonsterOrBossMap()
+{
+	Stat* myStats = getStats();
+	if ( myStats )
+	{
+		if ( myStats->type == MINOTAUR
+			|| myStats->type == SHOPKEEPER
+			|| myStats->type == SHADOW
+			|| (myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11))
+			|| (myStats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
+			|| !strncmp(map.name, "Sanctum", 7)
+			|| !strncmp(map.name, "Boss", 4)
+			|| !strncmp(map.name, "Hell Boss", 9)
+			)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
 }

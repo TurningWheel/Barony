@@ -645,6 +645,27 @@ void item_PotionInvisibility(Item*& item, Entity* entity)
 	}
 
 	messagePlayer(player, language[766]);
+
+	if ( !entity->isInvisible() )
+	{
+		for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+		{
+			Entity* creature = (Entity*)node->element;
+			if ( creature && creature->behavior == &actMonster && creature->monsterTarget == entity->getUID() )
+			{
+				if ( !creature->isBossMonsterOrBossMap() )
+				{
+					//Abort if invalid creature (boss, shopkeep, etc).
+					real_t dist = entityDist(entity, creature);
+					if ( dist > STRIKERANGE * 3 )
+					{
+						// lose track of invis target.
+						creature->monsterReleaseAttackTarget();
+					}
+				}
+			}
+		}
+	}
 	stats->EFFECTS[EFF_INVISIBLE] = true;
 	stats->EFFECTS_TIMERS[EFF_INVISIBLE] = 1800 + rand() % 1800;
 	serverUpdateEffects(player);
@@ -2669,6 +2690,11 @@ void item_ToolMirror(Item*& item, int player)
 		return;
 	}
 	messagePlayer(player, language[889]);
+	if ( players[player]->entity->isInvisible() || players[player]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+	{
+		messagePlayer(player, language[893]);
+		return;
+	}
 	if ( item->beatitude > 0 )
 	{
 		messagePlayer(player, language[890]);
@@ -2690,11 +2716,6 @@ void item_ToolMirror(Item*& item, int player)
 	if ( stats[player]->EFFECTS[EFF_BLIND] )
 	{
 		messagePlayer(player, language[892]);
-		return;
-	}
-	if ( players[player]->entity->isInvisible() )
-	{
-		messagePlayer(player, language[893]);
 		return;
 	}
 	if ( stats[player]->EFFECTS[EFF_DRUNK] )
