@@ -2350,6 +2350,7 @@ void assignActions(map_t* map)
 	Entity* entity, *childEntity;
 	Item* item;
 	bool itemsdonebefore = false;
+	Entity* vampireQuestChest = nullptr;
 
 	if ( map == nullptr )
 	{
@@ -3677,6 +3678,11 @@ void assignActions(map_t* map)
 				node_t* tempNode = list_AddNodeFirst(&entity->children);
 				tempNode->element = NULL;
 				tempNode->deconstructor = &emptyDeconstructor;
+
+				if ( !strcmp(map->name, "The Mystic Library") && !vampireQuestChest )
+				{
+					vampireQuestChest = entity;
+				}
 				break;
 			}
 			// liquid marker
@@ -5136,6 +5142,20 @@ void assignActions(map_t* map)
 							break;
 						}
 					}
+				}
+			}
+		}
+	}
+	if ( vampireQuestChest )
+	{
+		for ( c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c] && players[c]->entity )
+			{
+				if ( players[c]->entity->playerIsVampire() == PLAYER_VAMPIRE_CLASS || players[c]->entity->playerIsVampire() == PLAYER_VAMPIRE_CURSED )
+				{
+					vampireQuestChest->chestHasVampireBook = 1;
+					break;
 				}
 			}
 		}

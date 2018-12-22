@@ -159,6 +159,7 @@ public:
 	 * (e.g. you locked a chest with a spell...sorry, no gold for you)
 	 */
 	Sint32& chestPreventLockpickCapstoneExploit;
+	Sint32& chestHasVampireBook; // skill[11]
 
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState; //skill[0]

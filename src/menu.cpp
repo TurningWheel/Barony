@@ -7220,27 +7220,30 @@ void handleMainMenu(bool mode)
 
 				if ( loadingsavegame )
 				{
+					for ( c = 0; c < MAXPLAYERS; c++ )
+					{
+						if ( players[c] && players[c]->entity && !client_disconnected[c] )
+						{
+							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							{
+								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+								serverUpdateEffects(c);
+							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								players[c]->entity->playerVampireCurse = 1;
+								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
+							}
+						}
+					}
+
 					list_t* followers = loadGameFollowers();
 					if ( followers )
 					{
 						int c;
 						for ( c = 0; c < MAXPLAYERS; c++ )
 						{
-							if ( players[c] && players[c]->entity && !client_disconnected[c] )
-							{
-								if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
-								{
-									players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
-									serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
-									serverUpdateEffects(c);
-								}
-								if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
-								{
-									players[c]->entity->playerVampireCurse = 1;
-									serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
-								}
-							}
-
 							node_t* tempNode = list_Node(followers, c);
 							if ( tempNode )
 							{
