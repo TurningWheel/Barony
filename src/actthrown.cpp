@@ -352,14 +352,13 @@ void actThrown(Entity* my)
 				parentStats = parent->getStats();
 			}
 			Stat* hitstats = hit.entity->getStats();
-
+			bool friendlyHit = false;
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					list_RemoveNode(my->mynode);
-					return;
+					friendlyHit = true;
 				}
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -389,12 +388,14 @@ void actThrown(Entity* my)
 						break;
 				}
 				damage = std::max(0, damage);
-				hit.entity->modHP(-damage);
-
-				// set the obituary
-				char whatever[256];
-				snprintf(whatever, 255, language[1508], itemname);
-				hit.entity->setObituary(whatever);
+				char whatever[256] = "";
+				if ( !friendlyHit )
+				{
+					hit.entity->modHP(-damage);
+					// set the obituary
+					snprintf(whatever, 255, language[1508], itemname);
+					hit.entity->setObituary(whatever);
+				}
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
 
@@ -614,6 +615,12 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
+				}
+
+				if ( friendlyHit )
+				{
+					list_RemoveNode(my->mynode);
+					return;
 				}
 
 				if ( hitstats->HP <= 0 && parent )
