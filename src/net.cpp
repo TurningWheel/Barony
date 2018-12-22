@@ -4497,9 +4497,16 @@ bool NetHandler::getContinueMultithreadingSteamPackets()
 
 void NetHandler::addGamePacket(SteamPacketWrapper* packet)
 {
-	SDL_LockMutex(game_packets_lock);
-	game_packets.push(packet);
-	SDL_UnlockMutex(game_packets_lock);
+	if ( !disableMultithreadedSteamNetworking )
+	{
+		SDL_LockMutex(game_packets_lock);
+		game_packets.push(packet);
+		SDL_UnlockMutex(game_packets_lock);
+	}
+	else
+	{
+		game_packets.push(packet);
+	}
 }
 
 SteamPacketWrapper* NetHandler::getGamePacket()
