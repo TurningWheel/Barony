@@ -1138,7 +1138,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 						attack += entity->getRangedAttack();
 						output[0] = 1; // ranged
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
 						output[3] = entity->getDEX(); // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
@@ -1152,7 +1152,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 						attack += entity->getThrownAttack();
 						output[0] = 2; // thrown
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
 						output[3] = 0;
 						output[4] = attack - output[2] - BASE_THROWN_DAMAGE; // bonus from proficiency
 						output[5] = 0; // bonus from equipment
@@ -1164,7 +1164,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 					attack += entity->getAttack();
 					output[0] = 3; // melee
 					output[1] = attack;
-					output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+					output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
 					output[3] = entity->getSTR(); // bonus from main attribute
 					if ( weaponskill == PRO_AXE )
 					{

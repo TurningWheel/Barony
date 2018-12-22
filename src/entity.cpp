@@ -3562,7 +3562,7 @@ Sint32 Entity::getAttack()
 	attack = BASE_MELEE_DAMAGE; // base attack strength
 	if ( entitystats->weapon != nullptr )
 	{
-		attack += entitystats->weapon->weaponGetAttack();
+		attack += entitystats->weapon->weaponGetAttack(entitystats);
 	}
 	else if ( entitystats->weapon == nullptr )
 	{
@@ -3618,7 +3618,7 @@ Sint32 Entity::getRangedAttack()
 
 	if ( entitystats->weapon )
 	{
-		attack += entitystats->weapon->weaponGetAttack();
+		attack += entitystats->weapon->weaponGetAttack(entitystats);
 		attack += getDEX();
 		if ( behavior == &actMonster )
 		{
@@ -3654,7 +3654,7 @@ Sint32 Entity::getThrownAttack()
 
 	if ( entitystats->weapon )
 	{
-		attack += entitystats->weapon->weaponGetAttack();
+		attack += entitystats->weapon->weaponGetAttack(entitystats);
 		attack += entitystats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 bonus attack.
 	}
 	else
@@ -6896,7 +6896,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( player >= 0 )
 							{
-								myStats->HUNGER = std::min(1500, myStats->HUNGER + 100);
+								myStats->HUNGER = std::min(1499, myStats->HUNGER + 100);
 								serverUpdateHunger(player);
 							}
 							if ( playerhit >= 0 )
@@ -7182,31 +7182,31 @@ int AC(Stat* stat)
 
 	if ( stat->helmet )
 	{
-		armor += stat->helmet->armorGetAC();
+		armor += stat->helmet->armorGetAC(stat);
 	}
 	if ( stat->breastplate )
 	{
-		armor += stat->breastplate->armorGetAC();
+		armor += stat->breastplate->armorGetAC(stat);
 	}
 	if ( stat->gloves )
 	{
-		armor += stat->gloves->armorGetAC();
+		armor += stat->gloves->armorGetAC(stat);
 	}
 	if ( stat->shoes )
 	{
-		armor += stat->shoes->armorGetAC();
+		armor += stat->shoes->armorGetAC(stat);
 	}
 	if ( stat->shield )
 	{
-		armor += stat->shield->armorGetAC();
+		armor += stat->shield->armorGetAC(stat);
 	}
 	if ( stat->cloak )
 	{
-		armor += stat->cloak->armorGetAC();
+		armor += stat->cloak->armorGetAC(stat);
 	}
 	if ( stat->ring )
 	{
-		armor += stat->ring->armorGetAC();
+		armor += stat->ring->armorGetAC(stat);
 	}
 
 	if ( stat->shield )

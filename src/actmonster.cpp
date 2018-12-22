@@ -682,10 +682,43 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 				canAlly = true;
 			}
 		}
+		else if ( stats[monsterclicked]->type == VAMPIRE )
+		{
+			if ( race == VAMPIRE )
+			{
+				canAlly = true;
+			}
+		}
+		else if ( stats[monsterclicked]->type == INCUBUS || stats[monsterclicked]->type == SUCCUBUS )
+		{
+			if ( race == INCUBUS || race == SUCCUBUS )
+			{
+				canAlly = true;
+			}
+			else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+			{
+				canAlly = true;
+			}
+		}
+		else if ( stats[monsterclicked]->type == GOATMAN )
+		{
+			if ( race == GOATMAN )
+			{
+				canAlly = true;
+			}
+		}
 	}
 	else
 	{
-		if ( my->checkFriend(players[monsterclicked]->entity) )
+		bool tryAlly = my->checkFriend(players[monsterclicked]->entity);
+		if ( stats[monsterclicked]->type == SUCCUBUS || stats[monsterclicked]->type == INCUBUS )
+		{
+			if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+			{
+				tryAlly = true;
+			}
+		}
+		if ( tryAlly )
 		{
 			if ( myStats->leader_uid == 0 )
 			{
@@ -696,19 +729,44 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 				}
 				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 				{
+					if ( race == AUTOMATON )
+					{
+						canAlly = true;
+					}
 					if ( stats[monsterclicked]->type == HUMAN )
 					{
 						canAlly = true;
 					}
 					else if ( stats[monsterclicked]->type == SKELETON )
 					{
-						if ( race == GHOUL || race == AUTOMATON )
+						if ( race == GHOUL )
 						{
 							canAlly = true;
 						}
-						else
+					}
+					else if ( stats[monsterclicked]->type == VAMPIRE )
+					{
+						if ( race == VAMPIRE )
 						{
-							canAlly = false;
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == SUCCUBUS || stats[monsterclicked]->type == INCUBUS )
+					{
+						if ( race == INCUBUS || race == SUCCUBUS )
+						{
+							canAlly = true;
+						}
+						else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == GOATMAN )
+					{
+						if ( race == GOATMAN )
+						{
+							canAlly = true;
 						}
 					}
 				}

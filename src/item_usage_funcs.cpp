@@ -3378,11 +3378,18 @@ void item_AmuletSexChange(Item* item, int player)
 {
 	if ( stats[player]->amulet != NULL )
 	{
-		if ( !stats[player]->amulet->canUnequip() )
+		if ( !stats[player]->amulet->canUnequip(stats[player]) )
 		{
 			if ( player == clientnum )
 			{
-				messagePlayer(player, language[1087]);
+				if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+				{
+					messagePlayer(player, language[3218]);
+				}
+				else
+				{
+					messagePlayer(player, language[1087]);
+				}
 			}
 			return;
 		}
@@ -3423,7 +3430,7 @@ void item_Spellbook(Item*& item, int player)
 
 	conductIlliterate = false;
 
-	if ( item->beatitude < 0 )
+	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
 	{
 		messagePlayer(clientnum, language[971]);
 		if ( list_Size(&spellList) > 0 )

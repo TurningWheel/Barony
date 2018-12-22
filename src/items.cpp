@@ -999,9 +999,16 @@ void dropItem(Item* item, int player)
 	}
 	if ( itemIsEquipped(item, player) )
 	{
-		if (!item->canUnequip())
+		if (!item->canUnequip(stats[player]))
 		{
-			messagePlayer(player, language[1087]);
+			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+			{
+				messagePlayer(player, language[3218]);
+			}
+			else
+			{
+				messagePlayer(player, language[1087]);
+			}
 			return;
 		}
 	}
@@ -1339,11 +1346,18 @@ void equipItem(Item* item, Item** slot, int player)
 		// if items are different... (excluding the quantity of both item nodes)
 		if ( *slot != NULL )
 		{
-			if (!(*slot)->canUnequip())
+			if (!(*slot)->canUnequip(stats[player]))
 			{
 				if ( player == clientnum )
 				{
-					messagePlayer(player, language[1089], (*slot)->getName());
+					if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+					{
+						messagePlayer(player, language[3217], (*slot)->getName());
+					}
+					else
+					{
+						messagePlayer(player, language[1089], (*slot)->getName());
+					}
 				}
 				(*slot)->identified = true;
 				return;
@@ -1418,11 +1432,18 @@ void equipItem(Item* item, Item** slot, int player)
 		{
 			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 			{
-				if (!(*slot)->canUnequip())
+				if (!(*slot)->canUnequip(stats[player]))
 				{
 					if ( player == clientnum )
 					{
-						messagePlayer(player, language[1089], (*slot)->getName());
+						if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+						{
+							messagePlayer(player, language[3217], (*slot)->getName());
+						}
+						else
+						{
+							messagePlayer(player, language[1089], (*slot)->getName());
+						}
 					}
 					(*slot)->identified = true;
 					return;
@@ -2455,9 +2476,16 @@ bool itemIsEquipped(const Item* item, int player)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::weaponGetAttack() const
+Sint32 Item::weaponGetAttack(Stat* wielder) const
 {
 	Sint32 attack = beatitude;
+	if ( wielder )
+	{
+		if ( shouldInvertEquipmentBeatitude(wielder) )
+		{
+			attack = abs(beatitude);
+		}
+	}
 	if ( itemCategory(this) == MAGICSTAFF )
 	{
 		attack += 6;
@@ -2594,9 +2622,17 @@ Sint32 Item::weaponGetAttack() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::armorGetAC() const
+Sint32 Item::armorGetAC(Stat* wielder) const
 {
 	Sint32 armor = beatitude;
+	if ( wielder )
+	{
+		if ( shouldInvertEquipmentBeatitude(wielder) )
+		{
+			armor = abs(beatitude);
+		}
+	}
+
 	if ( type == LEATHER_HELM )
 	{
 		armor += 1;
@@ -2746,13 +2782,28 @@ Sint32 Item::armorGetAC() const
 
 -------------------------------------------------------------------------------*/
 
-bool Item::canUnequip()
+bool Item::canUnequip(Stat* wielder)
 {
 	/*
 	//Spellbooks are no longer equipable.
 	if (type >= 100 && type <= 121) { //Spellbooks always unequipable regardless of cursed.
 		return true;
 	}*/
+	if ( wielder )
+	{
+		if ( shouldInvertEquipmentBeatitude(wielder) )
+		{
+			if ( beatitude > 0 )
+			{
+				identified = true;
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+	}
 
 	if (beatitude < 0)
 	{
@@ -3490,6 +3541,17 @@ bool Item::shouldItemStack(int player)
 			// otherwise most equippables should not stack.
 			return true;
 		}
+	}
+	return false;
+}
+
+
+bool shouldInvertEquipmentBeatitude(Stat* wielder)
+{
+	if ( (wielder->playerRace == RACE_SUCCUBUS || wielder->playerRace == RACE_INCUBUS)
+		&& (wielder->type == SUCCUBUS || wielder->type == INCUBUS) )
+	{
+		return true;
 	}
 	return false;
 }

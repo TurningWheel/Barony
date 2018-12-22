@@ -248,9 +248,18 @@ void sellItemToShop(Item* item)
 	{
 		return;
 	}
-	if ( item->beatitude < 0 && itemIsEquipped(item, clientnum) )
+	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[clientnum])) 
+		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[clientnum]))) 
+		&& itemIsEquipped(item, clientnum) )
 	{
-		messagePlayer(clientnum, language[1124], item->getName());
+		if ( item->beatitude > 0 )
+		{
+			messagePlayer(clientnum, language[3219], item->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[1124], item->getName());
+		}
 		playSound(90, 64);
 		return;
 	}
