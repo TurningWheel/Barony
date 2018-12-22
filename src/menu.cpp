@@ -4885,10 +4885,22 @@ void handleMainMenu(bool mode)
 						hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
 					}
 #endif // STEAMWORKS
-					tooltip_box.x = mousex + 16;
+					tooltip_box.x = mousex - 256;
 					tooltip_box.y = mousey + 8;
-					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+					tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
+					if ( i == 2 || i == 3 || i == 5 || i == 6 )
+					{
+						tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					}
+					else if ( i == 4 )
+					{
+						tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					}
+					else
+					{
+						tooltip_box.h = TTF12_HEIGHT + 8;
+					}
 				}
 			}
 		}
