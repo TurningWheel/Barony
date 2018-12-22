@@ -1576,7 +1576,14 @@ void handleMainMenu(bool mode)
 		{
 			camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1.118 * cos(camera_charsheet_offsetyaw); // + 1
 			camera_charsheet.y = players[clientnum]->entity->y / 16.0 + 1.118 * sin(camera_charsheet_offsetyaw); // -.5
-			camera_charsheet.z = players[clientnum]->entity->z * 2;
+			if ( !stats[clientnum]->EFFECTS[EFF_ASLEEP] )
+			{
+				camera_charsheet.z = players[clientnum]->entity->z * 2;
+			}
+			else
+			{
+				camera_charsheet.z = 1.5;
+			}
 			camera_charsheet.ang = atan2(players[clientnum]->entity->y / 16.0 - camera_charsheet.y, players[clientnum]->entity->x / 16.0 - camera_charsheet.x);
 			camera_charsheet.vang = PI / 24;
 			camera_charsheet.winw = 360;
@@ -2286,11 +2293,11 @@ void handleMainMenu(bool mode)
 			{
 				if ( c == client_classes[0] )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c));
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c, 0));
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c));
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c, 0));
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -2347,7 +2354,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// class description
-			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0]));
+			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0], 0));
 		}
 
 		// faces
@@ -4753,11 +4760,11 @@ void handleMainMenu(bool mode)
 
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c]));
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c], c));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c]));
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c], c));
 			}
 		}
 
@@ -5738,7 +5745,7 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[32];
-				strcpy(classname, playerClassLangEntry(client_classes[0]));
+				strcpy(classname, playerClassLangEntry(client_classes[0], clientnum));
 				classname[0] -= 32;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
 			}
@@ -5767,7 +5774,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// print character stats
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
