@@ -1983,6 +1983,17 @@ void handleMainMenu(bool mode)
 									{
 										stats[0]->sex = lastSex;
 									}
+									if ( stats[0]->playerRace == RACE_HUMAN && client_classes[0] == 13 )
+									{
+										client_classes[0] = 0;
+										stats[0]->clearStats();
+										initClass(0);
+									}
+									else if ( client_classes[0] == 13 )
+									{
+										stats[0]->clearStats();
+										initClass(0);
+									}
 								}
 								break;
 							}
@@ -2095,6 +2106,17 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->sex = lastSex;
 					}
+					if ( stats[0]->playerRace == RACE_HUMAN && client_classes[0] == 13 )
+					{
+						client_classes[0] = 0;
+						stats[0]->clearStats();
+						initClass(0);
+					}
+					else if ( client_classes[0] == 13 )
+					{
+						stats[0]->clearStats();
+						initClass(0);
+					}
 				}
 				else if ( raceSelect == 0 )
 				{
@@ -2177,6 +2199,17 @@ void handleMainMenu(bool mode)
 					else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
 					{
 						stats[0]->sex = lastSex;
+					}
+					if ( stats[0]->playerRace == RACE_HUMAN && client_classes[0] == 13 )
+					{
+						client_classes[0] = 0;
+						stats[0]->clearStats();
+						initClass(0);
+					}
+					else if ( client_classes[0] == 13 )
+					{
+						stats[0]->clearStats();
+						initClass(0);
 					}
 				}
 				else if ( raceSelect == 0 )
@@ -9610,6 +9643,11 @@ void buttonBack(button_t* my)
 	else if ( charcreation_step == 1 )
 	{
 		raceSelect = 0; // reset the race selection menu to select sex
+		if ( stats[0]->playerRace != RACE_HUMAN && client_classes[0] == 13 )
+		{
+			stats[0]->clearStats();
+			initClass(0);
+		}
 	}
 	else if ( charcreation_step == 0 )
 	{
