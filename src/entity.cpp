@@ -6834,6 +6834,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else if ( myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
 								{
 									tryLifesteal = true;
+									if ( backstab || flanking )
+									{
+										if ( hitstats->HP <= 0 )
+										{
+											forceLifesteal = true;
+										}
+									}
 								}
 								lifeStealAmount = std::max(0, hitstats->OLDHP - hitstats->HP);
 								lifeStealAmount /= 4;
