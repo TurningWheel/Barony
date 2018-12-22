@@ -12435,13 +12435,17 @@ get text string for the different player chosen classes.
 
 -------------------------------------------------------------------------------*/
 
-char* playerClassLangEntry(int classnum)
+char* playerClassLangEntry(int classnum, int playernum)
 {
 	if ( classnum >= 0 && classnum <= 9 )
 	{
 		return language[1900 + classnum];
 	}
-	else if ( classnum >= 10 && classnum <= NUMCLASSES )
+	else if ( classnum == 13 && stats[playernum] && stats[playernum]->playerRace > RACE_HUMAN )
+	{
+		return language[3223 - 1 + stats[playernum]->playerRace];
+	}
+	else if ( classnum >= 10 && classnum <= 12 )
 	{
 		return language[2550 + classnum - 10];
 	}
@@ -12458,13 +12462,17 @@ get text string for the description of player chosen classes.
 
 -------------------------------------------------------------------------------*/
 
-char* playerClassDescription(int classnum)
+char* playerClassDescription(int classnum, int playernum)
 {
 	if ( classnum >= 0 && classnum <= 9 )
 	{
 		return language[10 + classnum];
 	}
-	else if ( classnum >= 10 && classnum <= NUMCLASSES )
+	else if ( classnum == 13 && stats[playernum] && stats[playernum]->playerRace > RACE_HUMAN )
+	{
+		return language[3227 - 1 + stats[playernum]->playerRace];
+	}
+	else if ( classnum >= 10 && classnum <= 12 )
 	{
 		return language[2560 + classnum - 10];
 	}

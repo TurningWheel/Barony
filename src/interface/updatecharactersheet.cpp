@@ -197,7 +197,7 @@ void updateCharacterSheet()
 	text_y = statWindowY + 6;
 	ttfPrintTextFormatted(fontStat, 8, text_y, "%s", stats[clientnum]->name);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[360], stats[clientnum]->EXP);
 	text_y += pad_y;
@@ -602,7 +602,7 @@ void drawPartySheet()
 			{
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
 
-				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i]));
+				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i], i));
 				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
 
 				playerBar.x = pos.x + 64;

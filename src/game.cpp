@@ -180,23 +180,56 @@ void gameLogic(void)
 	// drunkenness
 	if ( stats[clientnum]->EFFECTS[EFF_DRUNK] && !intro )
 	{
-		if ( drunkextend < 0.5 )
+		if ( stats[clientnum]->type != GOATMAN )
 		{
-			drunkextend += .005;
-			if ( drunkextend > 0.5 )
+			// goat no spin!
+			if ( drunkextend < 0.5 )
 			{
-				drunkextend = 0.5;
+				drunkextend += .005;
+				if ( drunkextend > 0.5 )
+				{
+					drunkextend = 0.5;
+				}
+			}
+		}
+		else
+		{
+			// return to normal.
+			if ( drunkextend > 0 )
+			{
+				drunkextend -= .005;
+				if ( drunkextend < 0 )
+				{
+					drunkextend = 0;
+				}
 			}
 		}
 	}
 	else
 	{
-		if ( drunkextend > 0 )
+		if ( !intro && !stats[clientnum]->EFFECTS[EFF_DRUNK]
+			&& stats[clientnum]->playerRace == RACE_GOATMAN && client_classes[clientnum] == 13 )
 		{
-			drunkextend -= .005;
-			if ( drunkextend < 0 )
+			// special class shakes without drunk
+			if ( drunkextend < 0.2 )
 			{
-				drunkextend = 0;
+				drunkextend += .005;
+				if ( drunkextend > 0.2 )
+				{
+					drunkextend = 0.2;
+				}
+			}
+		}
+		else
+		{
+			// return to normal.
+			if ( drunkextend > 0 )
+			{
+				drunkextend -= .005;
+				if ( drunkextend < 0 )
+				{
+					drunkextend = 0;
+				}
 			}
 		}
 	}
@@ -2724,7 +2757,7 @@ int main(int argc, char** argv)
 					{
 						for ( c = 0; c < NUMCLASSES; c++ )
 						{
-							if ( !strcmp(classtoquickstart, playerClassLangEntry(c)) )
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) )
 							{
 								client_classes[0] = c;
 								break;
