@@ -110,7 +110,7 @@ void Entity::actChest()
 
 		int chesttype = 0;
 
-		if (chestType >= 0) //If chest spawned by editor sprite 75-81, manually set the chest content category. Otherwise this value should be 0 (random).
+		if (chestType > 0) //If chest spawned by editor sprite, manually set the chest content category. Otherwise this value should be 0 (random).
 		{ 
 			chesttype = chestType; //Value between 0 and 7.
 		}
@@ -142,6 +142,11 @@ void Entity::actChest()
 		else if ( currentlevel >= 18 )
 		{
 			minimumQuality = 5;
+		}
+
+		if ( chestHasVampireBook )
+		{
+			newItem(SPELLBOOK_VAMPIRIC_AURA, EXCELLENT, 0, 1, rand(), true, inventory);
 		}
 
 		switch (chesttype)   //Note that all of this needs to be properly balanced over time.
@@ -551,6 +556,33 @@ void Entity::actChest()
 		}
 		list_RemoveNode(mynode); // remove me
 		return;
+	}
+	else
+	{
+		if ( multiplayer != CLIENT && chestHasVampireBook )
+		{
+			node = inventory->first;
+			if ( node )
+			{
+				item = (Item*)node->element;
+				if ( item )
+				{
+					if ( item->type == SPELLBOOK_VAMPIRIC_AURA )
+					{
+						spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
+					}
+					else
+					{
+						chestHasVampireBook = 0;
+						serverUpdateEntitySkill(this, 11);
+					}
+				}
+			}
+		}
+		if ( chestHasVampireBook )
+		{
+			spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
+		}
 	}
 
 	if ( chestStatus == 1 )

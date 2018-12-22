@@ -33,6 +33,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestMaxHealth(skill[8]),
 	chestType(skill[9]),
 	chestPreventLockpickCapstoneExploit(skill[10]),
+	chestHasVampireBook(skill[11]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),

@@ -59,6 +59,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestMaxHealth(skill[8]),
 	chestType(skill[9]),
 	chestPreventLockpickCapstoneExploit(skill[10]),
+	chestHasVampireBook(skill[11]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),
@@ -5936,7 +5937,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							case 2:
 								break;
 							case 3:
-								chance = 6;
+								chance = 8;
 								break;
 							case 4:
 								chance = 4;
@@ -6017,7 +6018,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else
 								{
 									swordExtraDamageInflicted = true;
-									int extraDamage = 3 + rand() % (myStats->PROFICIENCIES[weaponskill] / 20 + 1); // 3 - 7 extra damage.
+									int extraDamage = 3 + rand() % (myStats->PROFICIENCIES[weaponskill] / 20 + 1); // 3 - 8 extra damage.
 									hit.entity->modHP(-extraDamage); // do the damage
 								}
 							}

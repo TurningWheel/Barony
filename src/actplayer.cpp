@@ -962,6 +962,11 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	//if ( my->ticks % 50 == 0 )
+	//{
+	//	messagePlayer(clientnum, "%d", my->playerVampireCurse);
+	//}
+
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
 	{
 		Item* tempItem = uidToItem(appraisal_item);
