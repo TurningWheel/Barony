@@ -82,6 +82,7 @@ score_t* scoreConstructor()
 	score->stats->type = stats[clientnum]->type;
 	score->stats->sex = stats[clientnum]->sex;
 	score->stats->appearance = stats[clientnum]->appearance;
+	score->stats->appearance |= stats[clientnum]->playerRace << 8;
 	strcpy(score->stats->name, stats[clientnum]->name);
 	strcpy(score->stats->obituary, stats[clientnum]->obituary);
 	score->victory = victory;
@@ -270,6 +271,10 @@ int saveScore()
 		else
 		{
 			printlog("[STEAM]: Did not qualify for leaderboard score upload.");
+			if ( currentscore->gameStatistics[STATISTICS_DISABLE_UPLOAD] == 1 )
+			{
+				printlog("[STEAM]: Loaded data did not match hash as expected.");
+			}
 		}
 	}
 #endif // STEAMWORKS
@@ -410,6 +415,8 @@ void loadScore(int scorenum)
 	stats[0]->type = score->stats->type;
 	stats[0]->sex = score->stats->sex;
 	stats[0]->appearance = score->stats->appearance;
+	stats[0]->playerRace = ((stats[0]->appearance & 0xFF00) >> 8);
+	stats[0]->appearance = (stats[0]->appearance & 0xFF);
 	strcpy(stats[0]->name, score->stats->name);
 	client_classes[0] = score->classnum;
 	victory = score->victory;
@@ -594,7 +601,10 @@ void saveAllScores(const std::string& scoresfilename)
 		fwrite(&score->conductIlliterate, sizeof(bool), 1, fp);
 		fwrite(&score->stats->type, sizeof(Monster), 1, fp);
 		fwrite(&score->stats->sex, sizeof(sex_t), 1, fp);
-		fwrite(&score->stats->appearance, sizeof(Uint32), 1, fp);
+		Uint32 raceAndAppearance = 0;
+		raceAndAppearance |= (score->stats->playerRace << 8);
+		raceAndAppearance |= (score->stats->appearance);
+		fwrite(&raceAndAppearance, sizeof(Uint32), 1, fp);
 		fwrite(score->stats->name, sizeof(char), 32, fp);
 		fwrite(&score->classnum, sizeof(Sint32), 1, fp);
 		fwrite(&score->dungeonlevel, sizeof(Sint32), 1, fp);
@@ -927,6 +937,11 @@ void loadAllScores(const std::string& scoresfilename)
 		fread(&score->stats->type, sizeof(Monster), 1, fp);
 		fread(&score->stats->sex, sizeof(sex_t), 1, fp);
 		fread(&score->stats->appearance, sizeof(Uint32), 1, fp);
+		if ( versionNumber >= 323 )
+		{
+			score->stats->playerRace = ((score->stats->appearance & 0xFF00) >> 8);
+			score->stats->appearance = (score->stats->appearance & 0xFF);
+		}
 		fread(&score->stats->name, sizeof(char), 32, fp);
 		fread(&score->classnum, sizeof(Sint32), 1, fp);
 		fread(&score->dungeonlevel, sizeof(Sint32), 1, fp);
@@ -1207,9 +1222,38 @@ int saveGame(int saveIndex)
 	{
 		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
 	}
+	Uint32 hash = 0;
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#endif // WINDOWS
+	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
+	hash += (stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON);
+	hash += (stats[clientnum]->HP - stats[clientnum]->MP);
+	hash += (currentlevel);
+	Uint32 writeCurrentLevel = (hash << 8);
+	writeCurrentLevel |= (currentlevel & 0xFF);
+
 	fwrite(&clientnum, sizeof(Uint32), 1, fp);
 	fwrite(&mapseed, sizeof(Uint32), 1, fp);
-	fwrite(&currentlevel, sizeof(Uint32), 1, fp);
+	fwrite(&writeCurrentLevel, sizeof(Uint32), 1, fp);
 	fwrite(&secretlevel, sizeof(bool), 1, fp);
 	fwrite(&completionTime, sizeof(Uint32), 1, fp);
 	fwrite(&conductPenniless, sizeof(bool), 1, fp);
@@ -1246,6 +1290,7 @@ int saveGame(int saveIndex)
 		fwrite(&spell->ID, sizeof(Uint32), 1, fp);
 	}
 
+
 	// player data
 	for ( player = 0; player < MAXPLAYERS; player++ )
 	{
@@ -1256,7 +1301,10 @@ int saveGame(int saveIndex)
 		}
 		fwrite(&stats[player]->type, sizeof(Monster), 1, fp);
 		fwrite(&stats[player]->sex, sizeof(sex_t), 1, fp);
-		fwrite(&stats[player]->appearance, sizeof(Uint32), 1, fp);
+		Uint32 raceAndAppearance = 0;
+		raceAndAppearance |= (stats[player]->playerRace << 8);
+		raceAndAppearance |= (stats[player]->appearance);
+		fwrite(&raceAndAppearance, sizeof(Uint32), 1, fp);
 		fwrite(stats[player]->name, sizeof(char), 32, fp);
 		fwrite(&stats[player]->HP, sizeof(Sint32), 1, fp);
 		fwrite(&stats[player]->MAXHP, sizeof(Sint32), 1, fp);
@@ -1872,12 +1920,43 @@ int loadGame(int player, int saveIndex)
 		fclose(fp);
 		return 1;
 	}
+
+	// assemble string
+	Uint32 hash = 0;
+	Uint32 loadedHash = 0;
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#endif // WINDOWS
+
 	// read basic header info
 	fread(&uniqueGameKey, sizeof(Uint32), 1, fp);
 	fread(&mul, sizeof(Uint32), 1, fp);
 	fread(&clientnum, sizeof(Uint32), 1, fp);
 	fread(&mapseed, sizeof(Uint32), 1, fp);
 	fread(&currentlevel, sizeof(Uint32), 1, fp);
+	if ( versionNumber >= 323 )
+	{
+		loadedHash = (currentlevel & 0xFFFFFF00) >> 8;
+		currentlevel = currentlevel & 0xFF;
+	}
 	fread(&secretlevel, sizeof(bool), 1, fp);
 	fread(&completionTime, sizeof(Uint32), 1, fp);
 	fread(&conductPenniless, sizeof(bool), 1, fp);
@@ -2015,6 +2094,11 @@ int loadGame(int player, int saveIndex)
 	fread(&stats[player]->type, sizeof(Monster), 1, fp);
 	fread(&stats[player]->sex, sizeof(sex_t), 1, fp);
 	fread(&stats[player]->appearance, sizeof(Uint32), 1, fp);
+	if ( versionNumber >= 323 )
+	{
+		stats[player]->playerRace = ((stats[player]->appearance & 0xFF00) >> 8);
+		stats[player]->appearance = (stats[player]->appearance & 0xFF);
+	}
 	fread(&stats[player]->name, sizeof(char), 32, fp);
 	fread(&stats[player]->HP, sizeof(Sint32), 1, fp);
 	fread(&stats[player]->MAXHP, sizeof(Sint32), 1, fp);
@@ -2286,6 +2370,18 @@ int loadGame(int player, int saveIndex)
 	stats[player]->stache_x2 = 0;
 	stats[player]->stache_y1 = 0;
 	stats[player]->stache_y2 = 0;
+
+
+	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
+	hash += (stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON);
+	hash += (stats[clientnum]->HP - stats[clientnum]->MP);
+	hash += (currentlevel);
+
+	if ( hash != loadedHash )
+	{
+		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	}
+	//printlog("%d, %d", hash, loadedHash);
 
 	fclose(fp);
 	return 0;
@@ -2625,6 +2721,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 
 	int level, class_;
 	int mul, plnum, dungeonlevel;
+	int playerRace, playerAppearance;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[PATH_MAX] = "";
@@ -2667,6 +2764,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	fread(&plnum, sizeof(Uint32), 1, fp);
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&dungeonlevel, sizeof(Uint32), 1, fp);
+	dungeonlevel = dungeonlevel & 0xFF;
 	fseek(fp,  sizeof(bool), SEEK_CUR);
 	if ( versionNumber >= 310 )
 	{
@@ -2753,7 +2851,11 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	{
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 	}
-	fseek(fp, sizeof(Monster) + sizeof(sex_t) + sizeof(Uint32), SEEK_CUR);
+	fseek(fp, sizeof(Monster) + sizeof(sex_t), SEEK_CUR);
+	Uint32 raceAndAppearance = 0;
+	fread(&raceAndAppearance, sizeof(Uint32), 1, fp);
+	playerAppearance = raceAndAppearance & 0xFF;
+	playerRace = (raceAndAppearance & 0xFF00) >> 8;
 	fread(&name, sizeof(char), 32, fp);
 	name[32] = 0;
 	fseek(fp, sizeof(Sint32) * 11, SEEK_CUR);
@@ -2782,16 +2884,19 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		}
 	}
 #endif // WINDOWS
+	int oldRace = stats[plnum]->playerRace;
+	stats[plnum]->playerRace = playerRace;
 	if ( mul == DIRECTCLIENT || mul == CLIENT )
 	{
 		// include the player number in the printf.
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, plnum, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, plnum, timestamp);
 	}
 	else
 	{
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, timestamp);
 	}
 	// close file
+	stats[0]->playerRace = oldRace;
 	fclose(fp);
 
 	return tempstr;
@@ -3365,6 +3470,10 @@ bool steamLeaderboardSetScore(score_t* score)
 
 	if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| score->conductGameChallenges[CONDUCT_MODDED] )
+	{
+		return false;
+	}
+	if ( score->gameStatistics[STATISTICS_DISABLE_UPLOAD] == 1 )
 	{
 		return false;
 	}

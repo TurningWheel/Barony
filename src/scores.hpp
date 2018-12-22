@@ -36,6 +36,7 @@ static const int STATISTICS_FIRE_MAYBE_DIFFERENT = 3;
 static const int STATISTICS_HOT_TUB_TIME_MACHINE = 4;
 static const int STATISTICS_HEAL_BOT = 5;
 static const int STATISTICS_TEMPT_FATE = 6;
+static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 static const int STEAM_STAT_BOULDER_DEATHS = 0;
 static const int STEAM_STAT_RHINESTONE_COWBOY = 1;
@@ -108,7 +109,6 @@ int getSaveGameClientnum(bool singleplayer, int saveIndex = savegameCurrentFileI
 Uint32 getSaveGameMapSeed(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 Uint32 getSaveGameUniqueGameKey(bool singleplayer, int saveIndex = savegameCurrentFileIndex);
 int getSavegameVersion(char checkstr[64]); // returns -1 on invalid version, otherwise converts to 3 digit int
-
 void setDefaultPlayerConducts(); // init values for foodless, penniless etc.
 void updatePlayerConductsInMainLoop(); // check and update conduct flags throughout game that don't require a specific action. (tracking gold, server flags etc...)
 void updateGameplayStatisticsInMainLoop(); // check for achievement values for gameplay statistics.
