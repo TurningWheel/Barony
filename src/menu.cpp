@@ -5760,18 +5760,24 @@ void handleMainMenu(bool mode)
 #endif // STEAMWORKS
 			}
 
+			Entity* playerEntity = nullptr;
+			if ( players[clientnum] )
+			{
+				playerEntity = players[clientnum]->entity;
+			}
+
 			// print character stats
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
 
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188, language[1398], statGetSTR(stats[clientnum]), stats[clientnum]->STR);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 200, language[1399], statGetDEX(stats[clientnum]), stats[clientnum]->DEX);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 212, language[1400], statGetCON(stats[clientnum]), stats[clientnum]->CON);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 224, language[1401], statGetINT(stats[clientnum]), stats[clientnum]->INT);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 236, language[1402], statGetPER(stats[clientnum]), stats[clientnum]->PER);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 248, language[1403], statGetCHR(stats[clientnum]), stats[clientnum]->CHR);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188, language[1398], statGetSTR(stats[clientnum], playerEntity), stats[clientnum]->STR);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 200, language[1399], statGetDEX(stats[clientnum], playerEntity), stats[clientnum]->DEX);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 212, language[1400], statGetCON(stats[clientnum], playerEntity), stats[clientnum]->CON);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 224, language[1401], statGetINT(stats[clientnum], playerEntity), stats[clientnum]->INT);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 236, language[1402], statGetPER(stats[clientnum], playerEntity), stats[clientnum]->PER);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 248, language[1403], statGetCHR(stats[clientnum], playerEntity), stats[clientnum]->CHR);
 
 			// time
 			Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;

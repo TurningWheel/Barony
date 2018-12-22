@@ -790,8 +790,15 @@ public:
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
 	int playerIsVampire(); // 0 = not vampire, 1 = vampire, 2 = vampiric aura 3 = cursed vampire w/ perma aura
 	bool isBossMonsterOrBossMap(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
+
 };
 
+Sint32 statGetSTR(Stat* entitystats, Entity* my);
+Sint32 statGetDEX(Stat* entitystats, Entity* my);
+Sint32 statGetCON(Stat* entitystats, Entity* my);
+Sint32 statGetINT(Stat* entitystats, Entity* my);
+Sint32 statGetPER(Stat* entitystats, Entity* my);
+Sint32 statGetCHR(Stat* entitystats, Entity* my);
 extern list_t entitiesToDelete[MAXPLAYERS];
 extern Uint32 entity_uids, lastEntityUIDs;
 //extern Entity *players[4];
@@ -809,12 +816,6 @@ class Item;
 extern bool swornenemies[NUMMONSTERS][NUMMONSTERS];
 extern bool monsterally[NUMMONSTERS][NUMMONSTERS];
 
-Sint32 statGetSTR(Stat* entitystats);
-Sint32 statGetDEX(Stat* entitystats);
-Sint32 statGetCON(Stat* entitystats);
-Sint32 statGetINT(Stat* entitystats);
-Sint32 statGetPER(Stat* entitystats);
-Sint32 statGetCHR(Stat* entitystats);
 int AC(Stat* stat);
 
 Entity* uidToEntity(Sint32 uidnum);

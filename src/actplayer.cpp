@@ -2350,7 +2350,9 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// effects of drunkenness
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] == true )
+		bool goatmanClass = stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && client_classes[PLAYER_NUM] == 13;
+		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && stats[PLAYER_NUM]->type != GOATMAN)
+			|| (!stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && goatmanClass) )
 		{
 			CHAR_DRUNK++;
 			if ( CHAR_DRUNK >= 180 )

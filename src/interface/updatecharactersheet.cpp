@@ -203,6 +203,12 @@ void updateCharacterSheet()
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[361], currentlevel);
 
+	Entity* playerEntity = nullptr;
+	if ( players[clientnum] )
+	{
+		playerEntity = players[clientnum]->entity;
+	}
+
 	// attributes
 	Sint32 statModifier = 0;
 	char statText[64] = "";
@@ -210,32 +216,32 @@ void updateCharacterSheet()
 	text_y += pad_y * 2;
 	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
@@ -931,6 +937,12 @@ void statsHoverText(Stat* tmpStat)
 
 	SDL_Surface *tmp_bmp = NULL;
 
+	Entity* playerEntity = nullptr;
+	if ( players[clientnum] )
+	{
+		playerEntity = players[clientnum]->entity;
+	}
+
 	if ( attributespage == 0 )
 	{
 		for ( i = 0; i < 6; i++ ) // cycle through 6 stats.
@@ -942,37 +954,37 @@ void statsHoverText(Stat* tmpStat)
 					numInfoLines = 2;
 					tmp_bmp = str_bmp64;
 					statBase = tmpStat->STR;
-					statBonus = statGetSTR(tmpStat) - statBase;
+					statBonus = statGetSTR(tmpStat, playerEntity) - statBase;
 					break;
 				case 1:
 					numInfoLines = 2;
 					tmp_bmp = dex_bmp64;
 					statBase = tmpStat->DEX;
-					statBonus = statGetDEX(tmpStat) - statBase;
+					statBonus = statGetDEX(tmpStat, playerEntity) - statBase;
 					break;
 				case 2:
 					numInfoLines = 3;
 					tmp_bmp = con_bmp64;
 					statBase = tmpStat->CON;
-					statBonus = statGetCON(tmpStat) - statBase;
+					statBonus = statGetCON(tmpStat, playerEntity) - statBase;
 					break;
 				case 3:
 					numInfoLines = 4;
 					tmp_bmp = int_bmp64;
 					statBase = tmpStat->INT;
-					statBonus = statGetINT(tmpStat) - statBase;
+					statBonus = statGetINT(tmpStat, playerEntity) - statBase;
 					break;
 				case 4:
 					numInfoLines = 2;
 					tmp_bmp = per_bmp64;
 					statBase = tmpStat->PER;
-					statBonus = statGetPER(tmpStat) - statBase;
+					statBonus = statGetPER(tmpStat, playerEntity) - statBase;
 					break;
 				case 5:
 					numInfoLines = 2;
 					tmp_bmp = chr_bmp64;
 					statBase = tmpStat->CHR;
-					statBonus = statGetCHR(tmpStat) - statBase;
+					statBonus = statGetCHR(tmpStat, playerEntity) - statBase;
 					break;
 				default:
 					numInfoLines = 0;

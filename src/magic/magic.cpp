@@ -820,7 +820,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 		//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
 		int chance = rand() % 10;
 		// spellcasting power is 0 to 100, based on spellcasting and intelligence.
-		int spellcastingPower = std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats)), 100);
+		int spellcastingPower = std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats, caster)), 100);
 		if ( chance >= spellcastingPower / 10 )
 		{
 			duration -= rand() % (1000 / (spellcastingPower + 1)); // reduce the duration by 0-20 seconds

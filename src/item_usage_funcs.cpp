@@ -3239,7 +3239,14 @@ void item_FoodTin(Item*& item, int player)
 		mpBuff = true;
 	}
 
-	messagePlayer(player, language[764], tempstr);
+	if ( stats[player]->type == GOATMAN )
+	{
+		messagePlayer(player, language[3220], tempstr);
+	}
+	else
+	{
+		messagePlayer(player, language[764], tempstr);
+	}
 	item->count = oldcount;
 
 	// eating sound

@@ -486,7 +486,12 @@ void actBoulder(Entity* my)
 				{
 					if (inrange[i])
 					{
-						if ( statGetSTR(stats[i]) < 5 )
+						int playerSTR = 0;
+						if ( players[i] )
+						{
+							playerSTR = statGetSTR(stats[i], players[i]->entity);
+						}
+						if ( playerSTR < 5 )
 						{
 							messagePlayer(i, language[456]);
 						}
