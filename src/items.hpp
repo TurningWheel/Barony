@@ -336,9 +336,9 @@ public:
 	char* getName();
 
 	//General Functions.
-	Sint32 weaponGetAttack() const; //Returns the tohit of the weapon.
-	Sint32 armorGetAC() const;
-	bool canUnequip(); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
+	Sint32 weaponGetAttack(Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
+	Sint32 armorGetAC(Stat* wielder = nullptr) const;
+	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
 
@@ -449,6 +449,7 @@ void useItem(Item* item, int player);
 void equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
+bool shouldInvertEquipmentBeatitude(Stat* wielder);
 
 //-----ITEM COMPARISON FUNCS-----
 /*

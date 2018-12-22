@@ -1016,7 +1016,7 @@ void drawStatus()
 						{
 							if ( itemCategory(item) == WEAPON )
 							{
-								if ( item->weaponGetAttack() >= 0 )
+								if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 								}
@@ -1024,11 +1024,11 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
 							}
 							else if ( itemCategory(item) == ARMOR )
 							{
-								if ( item->armorGetAC() >= 0 )
+								if ( item->armorGetAC(stats[clientnum]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 								}
@@ -1036,7 +1036,7 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
 							}
 						}
 					}

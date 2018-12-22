@@ -1461,15 +1461,14 @@ void initClass(int player)
 	// test
 	else if ( client_classes[player] == 13 )
 	{
-		stats[player]->playerRace = RACE_VAMPIRE;
+		//stats[player]->playerRace = RACE_VAMPIRE;
 		if ( stats[player]->playerRace == RACE_SKELETON )
 		{
-			stats[player]->playerRace = RACE_SKELETON;
 			// attributes
 			stats[player]->INT += 1;
 			stats[player]->CON += 2;
 			stats[player]->DEX -= 1;
-			stats[player]->PER -= 1;
+			stats[player]->PER -= 2;
 
 			stats[player]->MAXHP -= 0;
 			stats[player]->HP -= 0;
@@ -1560,7 +1559,6 @@ void initClass(int player)
 		}
 		else if ( stats[player]->playerRace == RACE_VAMPIRE )
 		{
-			stats[player]->playerRace = RACE_VAMPIRE;
 			// attributes
 			stats[player]->INT += 10;
 			stats[player]->STR += 1;
@@ -1656,6 +1654,115 @@ void initClass(int player)
 				free(item);
 			}
 		}
+		else if ( stats[player]->playerRace == RACE_SUCCUBUS )
+		{
+			// attributes
+			stats[player]->INT += 2;
+			stats[player]->STR -= 3;
+			stats[player]->CON -= 3;
+			stats[player]->DEX -= 3;
+			stats[player]->PER += 2;
+			stats[player]->CHR += 4;
+
+			stats[player]->MAXHP -= 5;
+			stats[player]->HP -= 5;
+			stats[player]->MAXMP += 10;
+			stats[player]->MP += 10;
+
+			// skills
+			stats[player]->PROFICIENCIES[PRO_MAGIC] = 60;
+			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+			stats[player]->PROFICIENCIES[PRO_POLEARM] = 20;
+			stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+
+			// ring
+			item = newItem(RING_PROTECTION, EXCELLENT, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			// hood (green)
+			item = newItem(HAT_HOOD, WORN, -1, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			// weapon
+			item = newItem(MAGICSTAFF_CHARM, SERVICABLE, -1, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[0].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			if ( player == clientnum )
+			{
+				addSpell(SPELL_TELEPORTATION, player, true);
+				addSpell(SPELL_CHARM_MONSTER, player, true);
+				for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+				{
+					Item* item = (Item*)node->element;
+					if ( item->type == SPELL_ITEM )
+					{
+						if ( item->appearance == SPELL_TELEPORTATION )
+						{
+							hotbar[3].item = item->uid;
+						}
+						else if ( item->appearance == SPELL_CHARM_MONSTER )
+						{
+							hotbar[4].item = item->uid;
+						}
+					}
+				}
+
+				// spear
+				item = newItem(IRON_SPEAR, SERVICABLE, -2, 1, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[1].item = item2->uid;
+				free(item);
+
+				// restore magic
+				item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[2].item = item2->uid;
+				free(item);
+
+				// confusion
+				item = newItem(POTION_CONFUSION, EXCELLENT, 0, 1, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+
+				// polymorph
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+
+				// charm monster spellbook
+				item = newItem(SPELLBOOK_CHARM_MONSTER, WORN, 0, 1, 8, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
+		}
 	}
 	if ( client_classes[player] != 13 && stats[player]->playerRace != RACE_HUMAN )
 	{
@@ -1678,4 +1785,5 @@ void initClass(int player)
 			item->x = INVENTORY_SIZEX - item->x - 1;
 		}
 	}
+	//stats[clientnum]->printStats();
 }

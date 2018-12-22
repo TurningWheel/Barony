@@ -925,9 +925,16 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		return;
 	}
 
-	if ( itemIsEquipped(item, player) == true && !item->canUnequip() )
+	if ( itemIsEquipped(item, player) == true && !item->canUnequip(stats[player]) )
 	{
-		messagePlayer(player, language[1087]);
+		if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+		{
+			messagePlayer(player, language[3218]);
+		}
+		else
+		{
+			messagePlayer(player, language[1087]);
+		}
 		item->identified = true;
 		return;
 	}

@@ -382,7 +382,7 @@ void actThrown(Entity* my)
 					case IRON_DAGGER:
 					case STEEL_CHAKRAM:
 					case CRYSTAL_SHURIKEN:
-						damage += item->weaponGetAttack();
+						damage += item->weaponGetAttack(parentStats);
 						break;
 					default:
 						break;
