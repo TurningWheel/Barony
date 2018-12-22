@@ -5864,7 +5864,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					bool statusInflicted = false;
-					bool unarmedStatusInflicted = false;
+					bool paralyzeStatusInflicted = false;
+					bool slowStatusInflicted = false;
+					bool bleedStatusInflicted = false;
+					bool swordExtraDamageInflicted = false;
+					bool knockbackInflicted = false;
+					// player weapon skills
 					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3)
 						&& (!myStats->shield || hasMeleeGloves) )
 					{
@@ -5895,19 +5900,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 							int duration = 100 - hit.entity->getCON() - ((myStats->shield && hasMeleeGloves) ? 50 : 0);
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, std::max(20, duration), true) )
 							{
-								unarmedStatusInflicted = true;
+								paralyzeStatusInflicted = true;
 								playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
 							}
 						}
-						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 50, false) )
+						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t pushbackMultiplier = 0.5 + 0.1 * (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
 							if ( myStats->shield && hasMeleeGloves )
 							{
 								pushbackMultiplier /= 2;
 							}
-							if ( unarmedStatusInflicted )
+							if ( paralyzeStatusInflicted )
 							{
 								pushbackMultiplier += 0.3;
 							}
@@ -5917,6 +5922,105 @@ void Entity::attack(int pose, int charge, Entity* target)
 							hit.entity->monsterKnockbackVelocity = 0.05;
 							hit.entity->monsterKnockbackUID = this->getUID();
 							hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+							knockbackInflicted = true;
+						}
+					}
+					else if ( damage > 0 && behavior == &actPlayer && weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM && (charge >= MAXCHARGE - 3) )
+					{
+						// special weapon effects.
+						int chance = 0;
+						switch ( myStats->PROFICIENCIES[weaponskill] / 20 )
+						{
+							case 0:
+							case 1:
+							case 2:
+								break;
+							case 3:
+								chance = 6;
+								break;
+							case 4:
+								chance = 4;
+								break;
+							case 5:
+								chance = 3;
+								break;
+							default:
+								break;
+						}
+
+						if ( weaponskill == PRO_POLEARM )
+						{
+							// knockback.
+							if ( chance > 0 )
+							{
+								if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 10, false) )
+								{
+									real_t pushbackMultiplier = 0.3 + 0.075 * (myStats->PROFICIENCIES[PRO_POLEARM] / 20);
+									if ( rand() % chance > 0 )
+									{
+										pushbackMultiplier /= 2;
+									}
+									real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
+									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+									hit.entity->monsterKnockbackVelocity = 0.05;
+									hit.entity->monsterKnockbackUID = this->getUID();
+									hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+									knockbackInflicted = true;
+								}
+							}
+						}
+						else if ( weaponskill == PRO_MACE )
+						{
+							// paralyze.
+							if ( chance > 0 && (rand() % chance) == 0 )
+							{
+								int duration = std::max(50 - hit.entity->getCON(), 20);
+								if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, duration, true) )
+								{
+									paralyzeStatusInflicted = true;
+									playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
+									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
+								}
+							}
+						}
+						else if ( weaponskill == PRO_AXE )
+						{
+							// slow.
+							if ( chance > 0 && (rand() % chance) == 0 )
+							{
+								int duration = std::max(150 - hit.entity->getCON(), 50);
+								if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) )
+								{
+									slowStatusInflicted = true;
+									playSoundEntity(hit.entity, 396 + rand() % 3, 64);
+									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
+								}
+							}
+						}
+						else if ( weaponskill == PRO_SWORD && hitstats->HP > 0 )
+						{
+							// bleed.
+							if ( chance > 0 && (rand() % chance) == 0 )
+							{
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 643);
+								playSoundEntity(hit.entity, 173, 128);
+								if ( gibtype[hitstats->type] > 0 )
+								{
+									bleedStatusInflicted = true;
+									for ( int gibs = 0; gibs < 10; ++gibs )
+									{
+										Entity* gib = spawnGib(hit.entity);
+										serverSpawnGibForClient(gib);
+									}
+								}
+								else
+								{
+									swordExtraDamageInflicted = true;
+									int extraDamage = 3 + rand() % (myStats->PROFICIENCIES[weaponskill] / 20 + 1); // 3 - 7 extra damage.
+									hit.entity->modHP(-extraDamage); // do the damage
+								}
+							}
 						}
 					}
 
@@ -6135,9 +6239,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
 								}
 							}
-							if ( unarmedStatusInflicted )
+							if ( paralyzeStatusInflicted )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
+							}
+							else if ( slowStatusInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[394], language[393], MSG_COMBAT);
+							}
+							else if ( swordExtraDamageInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3211], language[3210], MSG_COMBAT);
+							}
+							else if ( knockbackInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3215], language[3214], MSG_COMBAT);
 							}
 						}
 						else
@@ -6243,9 +6359,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
 								}
 							}
-							if ( unarmedStatusInflicted )
+							if ( paralyzeStatusInflicted )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
+							}
+							else if ( slowStatusInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[394], language[393], MSG_COMBAT);
+							}
+							else if ( swordExtraDamageInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3211], language[3210], MSG_COMBAT);
+							}
+							else if ( knockbackInflicted )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3215], language[3214], MSG_COMBAT);
 							}
 						}
 						else
@@ -6403,9 +6531,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
 							}
 							//messagePlayer(0, "took damage!");
-							if ( unarmedStatusInflicted )
+							if ( paralyzeStatusInflicted )
 							{
 								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3208], language[3207], MSG_COMBAT);
+							}
+							else if ( slowStatusInflicted )
+							{
+								messagePlayerMonsterEvent(playerhit, color, *myStats, language[395], language[395], MSG_COMBAT);
+							}
+							else if ( swordExtraDamageInflicted )
+							{
+								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3213], language[3212], MSG_COMBAT);
+							}
+							else if ( knockbackInflicted )
+							{
+								messagePlayerMonsterEvent(playerhit, color, *myStats, language[3216], language[3216], MSG_COMBAT);
 							}
 						}
 					}
@@ -6462,11 +6602,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					// chance of bleeding
 					bool wasBleeding = hitstats->EFFECTS[EFF_BLEEDING]; // check if currently bleeding when this roll occurred.
-					if ( gibtype[(int)hitstats->type] == 1 )
+					if ( gibtype[(int)hitstats->type] > 0 )
 					{
-						if ( hitstats->HP > 5 && damage > 0 )
+						if ( bleedStatusInflicted || (hitstats->HP > 5 && damage > 0) )
 						{
-							if ( (rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
+							if ( bleedStatusInflicted || (rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
@@ -6477,6 +6617,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( pose == MONSTER_POSE_GOLEM_SMASH )
 								{
 									heavyBleedEffect = true;
+								}
+								else if ( bleedStatusInflicted )
+								{
+									heavyBleedEffect = false;
 								}
 								else if ( (myStats->type == VAMPIRE && this->behavior == &actMonster) || myStats->EFFECTS[EFF_VAMPIRICAURA] )
 								{
@@ -10209,6 +10353,12 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			//{
 			//	return false;
 			//}
+			break;
+		case EFF_BLEEDING:
+			if ( gibtype[(int)myStats->type] == 0 )
+			{
+				return false;
+			}
 			break;
 		default:
 			break;
