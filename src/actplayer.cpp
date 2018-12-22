@@ -944,6 +944,26 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
+			if ( stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && client_classes[PLAYER_NUM] == 13 )
+			{
+				if ( PLAYER_ALIVETIME == 330 && currentlevel == 0 )
+				{
+					my->setEffect(EFF_ASLEEP, false, 0, true);
+					playSoundPlayer(PLAYER_NUM, 32, 128);
+					stats[PLAYER_NUM]->HUNGER = 150;
+					serverUpdateHunger(PLAYER_NUM);
+				}
+				else if ( PLAYER_ALIVETIME == 500 && currentlevel == 0 )
+				{
+					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					messagePlayerColor(PLAYER_NUM, color, language[3221]);
+				}
+				else if ( PLAYER_ALIVETIME == 700 && currentlevel == 0 )
+				{
+					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					messagePlayerColor(PLAYER_NUM, color, language[3222]);
+				}
+			}
 			/*if ( PLAYER_NUM == clientnum && my->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS && PLAYER_ALIVETIME % 50 == 0 )
 			{
 				messagePlayer(0, "hunger: %d", stats[PLAYER_NUM]->HUNGER);
@@ -1311,12 +1331,36 @@ void actPlayer(Entity* my)
 		// sleeping
 		if ( stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
 		{
-			my->z = 1.5;
+			switch ( stats[PLAYER_NUM]->type )
+			{
+				case GOBLIN:
+				case GOATMAN:
+				case INSECTOID:
+					my->z = 2.5;
+					break;
+				case SKELETON:
+				case AUTOMATON:
+					my->z = 2.f;
+					break;
+				case HUMAN:
+				case VAMPIRE:
+				case INCUBUS:
+				case SUCCUBUS:
+					my->z = 1.5;
+					break;
+				default:
+					my->z = 1.5;
+					break;
+			}
 			my->pitch = PI / 4;
 		}
 		else if ( !noclip )
 		{
 			my->z = -1;
+			if ( intro )
+			{
+				my->pitch = 0;
+			}
 		}
 
 		// levitation
@@ -2355,7 +2399,13 @@ void actPlayer(Entity* my)
 			|| (!stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && goatmanClass) )
 		{
 			CHAR_DRUNK++;
-			if ( CHAR_DRUNK >= 180 )
+			int drunkInterval = 180;
+			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && goatmanClass )
+			{
+				drunkInterval = 500;
+			}
+
+			if ( CHAR_DRUNK >= drunkInterval )
 			{
 				CHAR_DRUNK = 0;
 				messagePlayer(PLAYER_NUM, language[579]);
