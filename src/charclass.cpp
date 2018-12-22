@@ -76,6 +76,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_SHIELD] = 25;
 		stats[player]->PROFICIENCIES[PRO_AXE] = 50;
 		stats[player]->PROFICIENCIES[PRO_MACE] = 50;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 20;
 
 		// iron axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, NULL);
@@ -174,6 +175,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 50;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 50;
 		stats[player]->PROFICIENCIES[PRO_SHIELD] = 50;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
 
 		// iron spear
 		item = newItem(IRON_SPEAR, SERVICABLE, 0, 1, 0, true, NULL);
@@ -510,6 +512,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, WORN, 0, 1, 0, true, NULL);
@@ -1576,6 +1579,7 @@ void initClass(int player)
 			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
 			stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
 			stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
+			stats[player]->PROFICIENCIES[PRO_UNARMED] = 40;
 
 			// green hood
 			item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1768,7 +1772,7 @@ void initClass(int player)
 			// attributes
 			stats[player]->EFFECTS[EFF_ASLEEP] = true;
 			stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
-			stats[player]->STR += -1;
+			stats[player]->STR += -3;
 			stats[player]->DEX += 0;
 			stats[player]->CON -= 2;
 			stats[player]->INT -= 1;
@@ -1783,7 +1787,8 @@ void initClass(int player)
 			// skills
 			stats[player]->PROFICIENCIES[PRO_MACE] = 60;
 			stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-			stats[player]->PROFICIENCIES[PRO_AXE] = 40;
+			stats[player]->PROFICIENCIES[PRO_AXE] = 20;
+			stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 			stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 			stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 
@@ -1874,6 +1879,8 @@ void initClass(int player)
 			}
 		}
 	}
+
+	stats[player]->OLDHP = stats[player]->HP;
 
 	if ( !(client_classes[player] == 13 && stats[player]->playerRace == RACE_GOATMAN) )
 	{

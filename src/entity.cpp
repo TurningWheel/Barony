@@ -3889,6 +3889,11 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_GOATMAN && client_classes[my->skill[2]] == 13 )
 		{
 			DEX -= 3; // hungover.
+			int minusDex = DEX;
+			if ( minusDex > 0 )
+			{
+				DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
+			}
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
