@@ -7451,7 +7451,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						if ( stats[monsterAllyIndex] ) // check owner's proficiency.
 						{
-							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[monsterAllyIndex]->entity);
 							if ( skillLVL >= SKILL_LEVEL_MASTER || myStats->type != HUMAN )
 							{
 								// attack anything except if FF is off + friend.
@@ -7545,7 +7545,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				bool confirmDropped = false;
 				bool dropWeaponOnly = false;
 				Uint32 owner = players[monsterAllyIndex]->entity->getUID();
-				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_MASTER )
+				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_MASTER )
 				{
 					dropped = dropItemMonster(myStats->helmet, this, myStats);
 					if ( dropped )
@@ -7572,7 +7572,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						dropped->itemOriginalOwner = owner;
 					}
 
-					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_LEGENDARY )
+					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_LEGENDARY )
 					{
 						dropped = dropItemMonster(myStats->ring, this, myStats);
 						if ( dropped )

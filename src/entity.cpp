@@ -2669,7 +2669,7 @@ void Entity::handleEffects(Stat* myStats)
 			messagePlayer(player, language[634]);
 			this->char_gonnavomit = 140 + rand() % 60;
 		}
-		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] )
+		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] && myStats->type != GOATMAN )
 		{
 			// drunkenness
 			messagePlayer(player, language[634]);
@@ -3710,10 +3710,10 @@ Sint32 Entity::getSTR()
 	{
 		return 0;
 	}
-	return statGetSTR(entitystats);
+	return statGetSTR(entitystats, this);
 }
 
-Sint32 statGetSTR(Stat* entitystats)
+Sint32 statGetSTR(Stat* entitystats, Entity* my)
 {
 	Sint32 STR;
 
@@ -3757,7 +3757,14 @@ Sint32 statGetSTR(Stat* entitystats)
 		switch ( entitystats->type )
 		{
 			case GOATMAN:
-				STR += 10; //Goatman love booze.
+				if ( my && my->behavior == &actMonster )
+				{
+					STR += 10; //Goatman love booze.
+				}
+				else if ( my && my->behavior == &actPlayer )
+				{
+					STR += 4;
+				}
 				break;
 			default:
 				++STR;
@@ -3787,10 +3794,10 @@ Sint32 Entity::getDEX()
 	{
 		return 0;
 	}
-	return statGetDEX(entitystats);
+	return statGetDEX(entitystats, this);
 }
 
-Sint32 statGetDEX(Stat* entitystats)
+Sint32 statGetDEX(Stat* entitystats, Entity* my)
 {
 	Sint32 DEX;
 
@@ -3814,9 +3821,9 @@ Sint32 statGetDEX(Stat* entitystats)
 		else
 		{
 			DEX += 5;
-			if ( entitystats->type == VAMPIRE && entitystats->playerRace == RACE_HUMAN )
+			if ( my && entitystats->type == VAMPIRE && my->behavior == &actMonster )
 			{
-				DEX += 3; // monster or polymorphed player vampires
+				DEX += 3; // monster vampires
 			}
 		}
 	}
@@ -3870,9 +3877,18 @@ Sint32 statGetDEX(Stat* entitystats)
 	{
 		switch ( entitystats->type )
 		{
+			case GOATMAN:
+				break;
 			default:
 				--DEX;
 				break;
+		}
+	}
+	if ( !entitystats->EFFECTS[EFF_DRUNK] )
+	{
+		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_GOATMAN && client_classes[my->skill[2]] == 13 )
+		{
+			DEX -= 3; // hungover.
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
@@ -3898,10 +3914,10 @@ Sint32 Entity::getCON()
 	{
 		return 0;
 	}
-	return statGetCON(entitystats);
+	return statGetCON(entitystats, this);
 }
 
-Sint32 statGetCON(Stat* entitystats)
+Sint32 statGetCON(Stat* entitystats, Entity* my)
 {
 	Sint32 CON;
 
@@ -3951,10 +3967,10 @@ Sint32 Entity::getINT()
 	{
 		return 0;
 	}
-	return statGetINT(entitystats);
+	return statGetINT(entitystats, this);
 }
 
-Sint32 statGetINT(Stat* entitystats)
+Sint32 statGetINT(Stat* entitystats, Entity* my)
 {
 	Sint32 INT;
 
@@ -3982,6 +3998,10 @@ Sint32 statGetINT(Stat* entitystats)
 			INT += entitystats->helmet->beatitude;
 		}
 	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
+	{
+		INT -= 8;
+	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
 	{
 		INT += 8;
@@ -4005,10 +4025,10 @@ Sint32 Entity::getPER()
 	{
 		return 0;
 	}
-	return statGetPER(entitystats);
+	return statGetPER(entitystats, this);
 }
 
-Sint32 statGetPER(Stat* entitystats)
+Sint32 statGetPER(Stat* entitystats, Entity* my)
 {
 	Sint32 PER;
 
@@ -4035,6 +4055,10 @@ Sint32 statGetPER(Stat* entitystats)
 			PER += entitystats->mask->beatitude;
 		}
 	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
+	{
+		PER += 4;
+	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 	{
 		PER += 8;
@@ -4058,10 +4082,10 @@ Sint32 Entity::getCHR()
 	{
 		return 0;
 	}
-	return statGetCHR(entitystats);
+	return statGetCHR(entitystats, this);
 }
 
-Sint32 statGetCHR(Stat* entitystats)
+Sint32 statGetCHR(Stat* entitystats, Entity* my)
 {
 	Sint32 CHR;
 
@@ -4087,6 +4111,10 @@ Sint32 statGetCHR(Stat* entitystats)
 			}
 			CHR += entitystats->ring->beatitude;
 		}
+	}
+	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
+	{
+		CHR += 4;
 	}
 	return CHR;
 }
@@ -4774,7 +4802,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
 			{
 				bool drankPotion = false;
-				if ( myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
+				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
 				{
 					//Goatmen chug potions & then toss them at you.
 					if ( myStats->weapon->type == POTION_BOOZE && !myStats->EFFECTS[EFF_DRUNK] )
@@ -11488,7 +11516,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 	if ( leader && stats[monsterAllyIndex] )
 	{
 		Stat* leaderStats = leader->getStats();
-		if ( leaderStats->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex]) >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM] )
+		if ( leaderStats->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], leader) >= AllyNPCSkillRequirements[ALLY_CMD_ATTACK_CONFIRM] )
 		{
 			// do not retreat for brave leader!
 			return false;

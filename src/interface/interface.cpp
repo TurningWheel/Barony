@@ -1526,11 +1526,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 			return;
 		}
 		int skillLVL = 0;
-		if ( stats[clientnum] )
+		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
 			{
-				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
 				if ( followerToCommand->monsterAllySummonRank != 0 )
 				{
 					skillLVL = SKILL_LEVEL_LEGENDARY;
@@ -1714,9 +1714,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
-		if ( stats[clientnum] )
+		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
-			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
 			if ( followerToCommand->monsterAllySummonRank != 0 )
 			{
 				skillLVL = SKILL_LEVEL_LEGENDARY;
@@ -2246,11 +2246,15 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	{
 		return false;
 	}
+	if ( !players[clientnum] || !players[clientnum]->entity )
+	{
+		return false;
+	}
 
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
 
-	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
 	if ( followerToCommand->monsterAllySummonRank != 0 )
 	{
 		skillLVL = SKILL_LEVEL_LEGENDARY;

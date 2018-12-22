@@ -1763,7 +1763,102 @@ void initClass(int player)
 				free(item);
 			}
 		}
+		else if ( stats[player]->playerRace == RACE_GOATMAN )
+		{
+			// attributes
+			stats[player]->STR += -1;
+			stats[player]->DEX += 0;
+			stats[player]->CON -= 2;
+			stats[player]->INT -= 1;
+			stats[player]->PER -= 2;
+			stats[player]->CHR += 1;
+
+			stats[player]->MAXMP -= 20;
+			stats[player]->MP -= 20;
+
+			// skills
+			stats[player]->PROFICIENCIES[PRO_MACE] = 60;
+			stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
+			stats[player]->PROFICIENCIES[PRO_AXE] = 40;
+
+			// iron spear
+			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[0].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			// bronze shield
+			item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				hotbar[1].item = item2->uid;
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			// boots
+			item = newItem(STEEL_BOOTS, WORN, 0, 1, 0, true, NULL);
+			if ( player == clientnum )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+
+			if ( player == clientnum )
+			{
+				// bread
+				item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+
+				// towel
+				item = newItem(TOOL_TOWEL, DECREPIT, 0, 1, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+
+				// fish
+				item = newItem(FOOD_TIN, EXCELLENT, 0, 3, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+
+				// booze
+				item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[2].item = item2->uid;
+				free(item);
+
+				// juice
+				item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 4, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[3].item = item2->uid;
+				free(item);
+
+				// polymorph
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
+		}
 	}
+
 	if ( client_classes[player] != 13 && stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )

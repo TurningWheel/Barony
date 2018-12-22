@@ -207,7 +207,7 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		spellDeconstructor((void*)new_spell);
 		return false;
 	}
-	if ( !ignoreSkill && stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
+	if ( !ignoreSkill && stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity) < new_spell->difficulty )
 	{
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void*)new_spell);

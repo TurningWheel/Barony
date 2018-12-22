@@ -95,7 +95,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		int chance = rand() % 10;
 		if (chance >= stat->PROFICIENCIES[PRO_SPELLCASTING] / 15)
 		{
-			int amount = (rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat), 1);
+			int amount = (rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
 			animation_manager->times_to_circle += amount;
 		}

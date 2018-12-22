@@ -745,7 +745,7 @@ void actHudWeapon(Entity* my)
 							}
 							else
 							{
-								if ( statGetINT(stats[clientnum]) <= 10 )
+								if ( statGetINT(stats[clientnum], player) <= 10 )
 								{
 									messagePlayer(clientnum, language[2373], item->getName());
 								}
