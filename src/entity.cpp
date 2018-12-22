@@ -5918,9 +5918,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 							hit.entity->monsterKnockbackUID = this->getUID();
 							hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
 						}
-						/*Entity* ohitentity = hit.entity;
-						clipMove(&(hit.entity->x), &(hit.entity->y), hit.entity->vel_x, hit.entity->vel_y, hit.entity);
-						hit.entity = ohitentity;*/
 					}
 
 					// special monster effects

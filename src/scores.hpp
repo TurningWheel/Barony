@@ -37,9 +37,12 @@ static const int STATISTICS_HOT_TUB_TIME_MACHINE = 4;
 static const int STATISTICS_HEAL_BOT = 5;
 static const int STATISTICS_TEMPT_FATE = 6;
 
+static const int STEAM_STAT_BOULDER_DEATHS = 0;
 static const int STEAM_STAT_RHINESTONE_COWBOY = 1;
 static const int STEAM_STAT_TOUGH_AS_NAILS = 2;
 static const int STEAM_STAT_UNSTOPPABLE_FORCE = 3;
+static const int STEAM_STAT_GAMES_STARTED = 4;
+static const int STEAM_STAT_GAMES_WON = 5;
 
 static const int STEAM_STAT_RHINESTONE_COWBOY_MAX = 50;
 static const int STEAM_STAT_TOUGH_AS_NAILS_MAX = 50;
