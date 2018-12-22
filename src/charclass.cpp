@@ -1766,6 +1766,8 @@ void initClass(int player)
 		else if ( stats[player]->playerRace == RACE_GOATMAN )
 		{
 			// attributes
+			stats[player]->EFFECTS[EFF_ASLEEP] = true;
+			stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
 			stats[player]->STR += -1;
 			stats[player]->DEX += 0;
 			stats[player]->CON -= 2;
@@ -1773,6 +1775,8 @@ void initClass(int player)
 			stats[player]->PER -= 2;
 			stats[player]->CHR += 1;
 
+			stats[player]->MAXHP += 10;
+			stats[player]->HP += 10;
 			stats[player]->MAXMP -= 20;
 			stats[player]->MP -= 20;
 
@@ -1780,28 +1784,30 @@ void initClass(int player)
 			stats[player]->PROFICIENCIES[PRO_MACE] = 60;
 			stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
 			stats[player]->PROFICIENCIES[PRO_AXE] = 40;
+			stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
+			stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 
-			// iron spear
-			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+			// booze
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
 			if ( player == clientnum )
 			{
 				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[0].item = item2->uid;
+				equipItem(item2, &stats[player]->weapon, player);
+				hotbar[1].item = item2->uid;
 				free(item);
 			}
 			else
 			{
-				useItem(item, player);
+				equipItem(item, &stats[player]->weapon, player);
 			}
-
+			
 			// bronze shield
 			item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
 			if ( player == clientnum )
 			{
 				item2 = itemPickup(player, item);
 				useItem(item2, player);
-				hotbar[1].item = item2->uid;
+				hotbar[2].item = item2->uid;
 				free(item);
 			}
 			else
@@ -1824,6 +1830,12 @@ void initClass(int player)
 
 			if ( player == clientnum )
 			{
+				// weapon
+				item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[0].item = item2->uid;
+				free(item);
+
 				// bread
 				item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
 				item2 = itemPickup(player, item);
@@ -1839,12 +1851,6 @@ void initClass(int player)
 				item2 = itemPickup(player, item);
 				free(item);
 
-				// booze
-				item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[2].item = item2->uid;
-				free(item);
-
 				// juice
 				item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 4, true, NULL);
 				item2 = itemPickup(player, item);
@@ -1855,10 +1861,25 @@ void initClass(int player)
 				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
 				item2 = itemPickup(player, item);
 				free(item);
+
+				item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("The Lusty Goblin Maid"), true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[8].item = item2->uid;
+				free(item);
+
+				item = newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("How to be Strong"), true, NULL);
+				item2 = itemPickup(player, item);
+				hotbar[9].item = item2->uid;
+				free(item);
 			}
 		}
 	}
 
+	if ( !(client_classes[player] == 13 && stats[player]->playerRace == RACE_GOATMAN) )
+	{
+		stats[player]->EFFECTS[EFF_ASLEEP] = false;
+		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+	}
 	if ( client_classes[player] != 13 && stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )
