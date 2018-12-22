@@ -281,6 +281,10 @@ void drawSustainedSpells()
 			break;
 		}
 		//Grab the sprite/
+		if ( spell->ID == SPELL_VAMPIRIC_AURA )
+		{
+			continue;
+		}
 		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
 		if (!node)
 		{
