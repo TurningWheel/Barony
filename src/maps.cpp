@@ -4365,7 +4365,7 @@ void assignActions(map_t* map)
 				childEntity->crystalMaxZVelocity = 0.02; //max velocity
 				childEntity->crystalMinZVelocity = 0.001; //min velocity
 				childEntity->crystalTurnVelocity = 0.2; //yaw turning velocity
-				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((prng_get_uint() % 100) * 0.01); // start the velocity randomly
+				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((prng_get_uint() % 99) * 0.01 + 0.01); // start the velocity randomly
 
 				childEntity->crystalNumElectricityNodes = entity->crystalNumElectricityNodes; //number of electricity nodes to generate in facing direction.
 				childEntity->crystalTurnReverse = entity->crystalTurnReverse;
