@@ -618,9 +618,9 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actShopkeeperLimb(Entity* my)
+bool actShopkeeperLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void shopkeeperDie(Entity* my)

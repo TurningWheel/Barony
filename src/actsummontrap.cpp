@@ -31,11 +31,11 @@ See LICENSE for details.
 #define SUMMONTRAP_FIRED my->skill[6]
 #define SUMMONTRAP_INITIALIZED my->skill[7]
 
-void actSummonTrap(Entity* my)
+bool actSummonTrap(Entity* my)
 {
 	if ( my->skill[28] == 0 || (SUMMONTRAP_INITIALIZED && SUMMONTRAP_FIRED) )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -95,7 +95,7 @@ void actSummonTrap(Entity* my)
 					// trap breaks!
 					SUMMONTRAP_FIRED = 1;
 					playSoundEntity(my, 76, 128);
-					return;
+					return true;
 				}
 
 				if ( SUMMONTRAP_SPAWNCYCLES > 0 )
@@ -116,5 +116,5 @@ void actSummonTrap(Entity* my)
 		}
 	}
 
-	return;
+	return true;
 }

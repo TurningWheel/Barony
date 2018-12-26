@@ -211,9 +211,9 @@ void spiderDie(Entity* my)
 	return;
 }
 
-void actSpiderLimb(Entity* my)
+bool actSpiderLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)

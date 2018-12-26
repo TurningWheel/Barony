@@ -338,9 +338,9 @@ void initGnome(Entity* my, Stat* myStats)
 	}
 }
 
-void actGnomeLimb(Entity* my)
+bool actGnomeLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void gnomeDie(Entity* my)

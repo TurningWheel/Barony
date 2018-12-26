@@ -23,12 +23,12 @@
 #include "../player.hpp"
 #include "magic.hpp"
 
-void actMagiclightBall(Entity* my)
+bool actMagiclightBall(Entity* my)
 {
 	Entity* caster = NULL;
 	if (!my)
 	{
-		return;
+		return false;
 	}
 
 	my->skill[2] = -10; // so the client sets the behavior of this entity
@@ -65,7 +65,7 @@ void actMagiclightBall(Entity* my)
 		}
 
 		lightball_timer--;
-		return;
+		return true;
 	}
 
 	my->yaw += .01;
@@ -93,7 +93,7 @@ void actMagiclightBall(Entity* my)
 	if (!my->children.first)
 	{
 		list_RemoveNode(my->mynode); //Delete the light spell.C
-		return;
+		return false;
 	}
 	node_t* node = NULL;
 
@@ -103,7 +103,7 @@ void actMagiclightBall(Entity* my)
 	if (!spell)
 	{
 		list_RemoveNode(my->mynode);
-		return; //We need the source spell!
+		return false; //We need the source spell!
 	}
 
 	caster = uidToEntity(spell->caster);
@@ -116,7 +116,7 @@ void actMagiclightBall(Entity* my)
 			{
 				my->removeLightField();
 				list_RemoveNode(my->mynode); //Delete the light spell.
-				return;
+				return false;
 			}
 		}
 	}
@@ -124,7 +124,7 @@ void actMagiclightBall(Entity* my)
 	{
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// if the spell has been unsustained, remove it
@@ -151,7 +151,7 @@ void actMagiclightBall(Entity* my)
 		}
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if (magic_init)
@@ -194,7 +194,7 @@ void actMagiclightBall(Entity* my)
 						}
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
-						return;
+						return false;
 					}
 				}
 			}
@@ -223,7 +223,7 @@ void actMagiclightBall(Entity* my)
 		Entity* parent = uidToEntity(my->parent);
 		if ( !parent )
 		{
-			return;
+			return true;
 		}
 		double distance = sqrt(pow(my->x - parent->x, 2) + pow(my->y - parent->y, 2));
 		if ( distance > MAGICLIGHT_BALL_FOLLOW_DISTANCE || my->path)
@@ -430,18 +430,19 @@ void actMagiclightBall(Entity* my)
 			lightball_movement_timer = 0; //Start off at 0 so that it moves towards the player as soon as it's created (since it's created farther away from the player).
 		}
 	}
+	return true;
 }
 
-void actMagicMissile(Entity* my)   //TODO: Verify this function.
+bool actMagicMissile(Entity* my)   //TODO: Verify this function.
 {
 	if (!my || !my->children.first || !my->children.first->element)
 	{
-		return;
+		return false;
 	}
 	spell_t* spell = (spell_t*)my->children.first->element;
 	if (!spell)
 	{
-		return;
+		return false;
 	}
 	//node_t *node = NULL;
 	spellElement_t* element = NULL;
@@ -465,7 +466,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			if (MAGIC_LIFE >= MAGIC_MAXLIFE)
 			{
 				list_RemoveNode(my->mynode);
-				return;
+				return false;
 			}
 
 			node = spell->elements.first;
@@ -844,7 +845,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 					}
-					return;
+					return true;
 				}
 
 				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
@@ -854,7 +855,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
-						return;
+						return false;
 					}
 				}
 
@@ -1034,7 +1035,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
@@ -1043,7 +1044,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -1144,7 +1145,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
@@ -1153,7 +1154,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -1197,7 +1198,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 					}
 				}
@@ -1272,7 +1273,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						} 
 						else if (hit.entity->behavior == &actChest) 
 						{
@@ -1281,7 +1282,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -1325,7 +1326,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 					}
 				}
@@ -1590,7 +1591,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if ( hit.entity->behavior == &actChest )
 						{
@@ -1599,7 +1600,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 						else if (hit.entity->behavior == &actFurniture )
 						{
@@ -2223,8 +2224,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( my->mynode )
 				{
 					list_RemoveNode(my->mynode);
+					return false;
 				}
-				return;
+				return true;
 			}
 		}
 
@@ -2286,9 +2288,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			MAGIC_MAXLIFE = 512;
 		}
 	}
+	return true;
 }
 
-void actMagicClient(Entity* my)
+bool actMagicClient(Entity* my)
 {
 	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
@@ -2319,14 +2322,16 @@ void actMagicClient(Entity* my)
 
 	// spawn particles
 	spawnMagicParticle(my);
+	return true;
 }
 
-void actMagicClientNoLight(Entity* my)
+bool actMagicClientNoLight(Entity* my)
 {
 	spawnMagicParticle(my); // simply spawn particles
+	return true;
 }
 
-void actMagicParticle(Entity* my)
+bool actMagicParticle(Entity* my)
 {
 	my->x += my->vel_x;
 	my->y += my->vel_y;
@@ -2340,8 +2345,9 @@ void actMagicParticle(Entity* my)
 		my->scaley = 0;
 		my->scalez = 0;
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
+	return true;
 }
 
 Entity* spawnMagicParticle(Entity* parentent)
@@ -2564,12 +2570,12 @@ void createParticleCircling(Entity* parent, int duration, int sprite)
 #define PARTICLE_LIFE my->skill[0]
 #define PARTICLE_CASTER my->skill[1]
 
-void actParticleCircle(Entity* my)
+bool actParticleCircle(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -2594,6 +2600,7 @@ void actParticleCircle(Entity* my)
 		my->scalex *= 0.995;
 		my->scaley *= 0.995;
 		my->scalez *= 0.995;
+		return true;
 	}
 }
 
@@ -2654,11 +2661,12 @@ void createParticleRock(Entity* parent)
 	}
 }
 
-void actParticleRock(Entity* my)
+bool actParticleRock(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 || my->z > 10 )
 	{
 		list_RemoveNode(my->mynode);
+		return false;
 	}
 	else
 	{
@@ -2684,31 +2692,32 @@ void actParticleRock(Entity* my)
 			my->z += my->vel_z;
 			my->vel_z *= 1.1;
 		}
+		return true;
 	}
-	return;
 }
 
-void actParticleDot(Entity* my)
+bool actParticleDot(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
+		return false;
 	}
 	else
 	{
 		--PARTICLE_LIFE;
 		my->z += my->vel_z;
 		//my->z -= 0.01;
+		return true;
 	}
-	return;
 }
 
-void actParticleTest(Entity* my)
+bool actParticleTest(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -2717,6 +2726,7 @@ void actParticleTest(Entity* my)
 		my->y += my->vel_y;
 		my->z += my->vel_z;
 		//my->z -= 0.01;
+		return true;
 	}
 }
 
@@ -2947,12 +2957,12 @@ Entity* createParticleTimer(Entity* parent, int duration, int sprite)
 	return entity;
 }
 
-void actParticleErupt(Entity* my)
+bool actParticleErupt(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -2983,10 +2993,11 @@ void actParticleErupt(Entity* my)
 			my->vel_z *= (1 / 0.8);
 			my->vel_z = std::max<real_t>(my->vel_z, -0.8);
 		}
+		return true;
 	}
 }
 
-void actParticleTimer(Entity* my)
+bool actParticleTimer(Entity* my)
 {
 	if( PARTICLE_LIFE < 0 )
 	{
@@ -3203,7 +3214,7 @@ void actParticleTimer(Entity* my)
 			}
 		}
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -3266,9 +3277,10 @@ void actParticleTimer(Entity* my)
 			--my->particleTimerPreDelay;
 		}
 	}
+	return true;
 }
 
-void actParticleSap(Entity* my)
+bool actParticleSap(Entity* my)
 {
 	real_t decel = 0.9;
 	real_t accel = 0.9;
@@ -3277,7 +3289,7 @@ void actParticleSap(Entity* my)
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -3291,7 +3303,7 @@ void actParticleSap(Entity* my)
 		else
 		{
 			list_RemoveNode(my->mynode);
-			return;
+			return false;
 		}
 
 		if ( my->skill[1] == 0 )
@@ -3346,9 +3358,10 @@ void actParticleSap(Entity* my)
 		my->scalez *= 0.99;
 		--PARTICLE_LIFE;
 	}
+	return true;
 }
 
-void actParticleSapCenter(Entity* my)
+bool actParticleSapCenter(Entity* my)
 {
 	// init
 	if ( my->skill[3] == 0 )
@@ -3360,7 +3373,7 @@ void actParticleSapCenter(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	Entity* parent = uidToEntity(my->parent);
@@ -3421,7 +3434,7 @@ void actParticleSapCenter(Entity* my)
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
 			}
 			list_RemoveNode(my->mynode);
-			return;
+			return false;
 		}
 
 		// calculate direction to caster and move.
@@ -3460,17 +3473,18 @@ void actParticleSapCenter(Entity* my)
 
 		// no parent, no target to travel to.
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
 		--PARTICLE_LIFE;
+		return true;
 	}
 }
 
@@ -3550,11 +3564,12 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 	}
 }
 
-void actParticleExplosionCharge(Entity* my)
+bool actParticleExplosionCharge(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 || (my->z < -4 && rand() % 4 == 0) || (ticks % 14 == 0 && uidToEntity(my->parent) == nullptr) )
 	{
 		list_RemoveNode(my->mynode);
+		return false;
 	}
 	else
 	{
@@ -3567,8 +3582,8 @@ void actParticleExplosionCharge(Entity* my)
 		my->scaley /= 0.99;
 		my->scalez /= 0.99;
 		//my->z -= 0.01;
+		return true;
 	}
-	return;
 }
 
 bool Entity::magicFallingCollision()
@@ -3752,12 +3767,12 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite)
 
 }
 
-void actParticleFollowerCommand(Entity* my)
+bool actParticleFollowerCommand(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -3768,6 +3783,7 @@ void actParticleFollowerCommand(Entity* my)
 		{
 			my->vel_z *= 0.9;
 		}
+		return true;
 	}
 }
 
@@ -3801,7 +3817,7 @@ void createParticleCharmMonster(Entity* parent)
 	entity->setUID(-3);
 }
 
-void actParticleCharmMonster(Entity* my)
+bool actParticleCharmMonster(Entity* my)
 {
 	if ( PARTICLE_LIFE < 0 )
 	{
@@ -3834,7 +3850,7 @@ void actParticleCharmMonster(Entity* my)
 			yaw += 2 * PI / numParticles;
 		}
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -3861,5 +3877,6 @@ void actParticleCharmMonster(Entity* my)
 		{
 			my->vel_z *= 0.9;
 		}
+		return true;
 	}
 }

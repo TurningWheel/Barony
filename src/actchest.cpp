@@ -34,17 +34,17 @@
 
 //chest->children->first is the chest's inventory.
 
-void actChest(Entity* my)
+bool actChest(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actChest();
+	return my->actChest();
 }
 
-void Entity::actChest()
+bool Entity::actChest()
 {
 	chestAmbience--;
 	if ( chestAmbience <= 0 )
@@ -55,7 +55,7 @@ void Entity::actChest()
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	int i;
@@ -550,7 +550,7 @@ void Entity::actChest()
 			list_RemoveNode(parentEntity->mynode);    // remove lid
 		}
 		list_RemoveNode(mynode); // remove me
-		return;
+		return false;
 	}
 
 	if ( chestStatus == 1 )
@@ -670,9 +670,10 @@ void Entity::actChest()
 			playSoundEntity(this, 152, 64);
 		}
 	}
+	return true;
 }
 
-void actChestLid(Entity* my)
+bool actChestLid(Entity* my)
 {
 	int i;
 
@@ -680,7 +681,7 @@ void actChestLid(Entity* my)
 	if ( !parent )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -753,6 +754,7 @@ void actChestLid(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
 void Entity::closeChest()
@@ -1090,7 +1092,7 @@ void closeChestClientside()
 	selectedChestSlot = -1;
 }
 
-void addItemToChestClientside(Item* item)
+bool addItemToChestClientside(Item* item)
 {
 	if (openedChest[clientnum])
 	{
@@ -1108,7 +1110,7 @@ void addItemToChestClientside(Item* item)
 			if (!itemCompare(item, item2, false))
 			{
 				item2->count += item->count;
-				return;
+				return true;
 			}
 		}
 
@@ -1117,6 +1119,7 @@ void addItemToChestClientside(Item* item)
 		item->node->deconstructor = &defaultDeconstructor;
 	}
 	//TODO: Else: Ruh-roh, error!
+	return true;
 }
 
 

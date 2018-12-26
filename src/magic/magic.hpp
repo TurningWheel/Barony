@@ -428,27 +428,27 @@ void equipSpell(spell_t* spell, int playernum);
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap);
 void castSpellInit(Uint32 caster_uid, spell_t* spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 
-void actMagicTrap(Entity* my);
-void actMagicStatusEffect(Entity* my);
-void actMagicMissile(Entity* my);
-void actMagicClient(Entity* my);
-void actMagicClientNoLight(Entity* my);
-void actMagicParticle(Entity* my);
+bool actMagicTrap(Entity* my);
+bool actMagicStatusEffect(Entity* my);
+bool actMagicMissile(Entity* my);
+bool actMagicClient(Entity* my);
+bool actMagicClientNoLight(Entity* my);
+bool actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
 void createParticle1(Entity* caster, int player);
 void createParticleCircling(Entity* parent, int duration, int sprite);
-void actParticleCircle(Entity* my);
-void actParticleDot(Entity* my);
-void actParticleRock(Entity* my);
-void actParticleTest(Entity* my);
-void actParticleErupt(Entity* my);
-void actParticleTimer(Entity* my);
-void actParticleSap(Entity* my);
-void actParticleSapCenter(Entity* my);
-void actParticleExplosionCharge(Entity* my);
-void actParticleFollowerCommand(Entity* my);
-void actParticleCharmMonster(Entity* my);
+bool actParticleCircle(Entity* my);
+bool actParticleDot(Entity* my);
+bool actParticleRock(Entity* my);
+bool actParticleTest(Entity* my);
+bool actParticleErupt(Entity* my);
+bool actParticleTimer(Entity* my);
+bool actParticleSap(Entity* my);
+bool actParticleSapCenter(Entity* my);
+bool actParticleExplosionCharge(Entity* my);
+bool actParticleFollowerCommand(Entity* my);
+bool actParticleCharmMonster(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -487,8 +487,8 @@ void spell_changeHealth(Entity* entity, int amount); //This function changes an 
 
 //-----Spell Casting Animation-----
 //The two hand animation functions.
-void actLeftHandMagic(Entity* my);
-void actRightHandMagic(Entity* my);
+bool actLeftHandMagic(Entity* my);
+bool actRightHandMagic(Entity* my);
 
 typedef struct spellcastingAnimationManager
 {

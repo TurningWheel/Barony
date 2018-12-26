@@ -9188,17 +9188,17 @@ spell_t* Entity::getActiveMagicEffect(int spellID)
 	return spell;
 }
 
-void actAmbientParticleEffectIdle(Entity* my)
+bool actAmbientParticleEffectIdle(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
 	if ( my->particleDuration < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -9218,7 +9218,7 @@ void actAmbientParticleEffectIdle(Entity* my)
 		}
 	}
 
-	return;
+	return true;
 }
 
 void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)

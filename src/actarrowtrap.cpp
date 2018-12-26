@@ -28,7 +28,7 @@
 #define ARROWTRAP_FIRED my->skill[0]
 #define ARROWTRAP_AMBIENCE my->skill[6]
 
-void actArrowTrap(Entity* my)
+bool actArrowTrap(Entity* my)
 {
 	int x, y;
 	int c;
@@ -40,12 +40,12 @@ void actArrowTrap(Entity* my)
 	if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	if ( ARROWTRAP_FIRED == 1 ) // shot my piece, time to die.
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	ARROWTRAP_AMBIENCE--;
@@ -57,7 +57,7 @@ void actArrowTrap(Entity* my)
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -111,4 +111,6 @@ void actArrowTrap(Entity* my)
 			}
 		}
 	}
+
+	return true;
 }

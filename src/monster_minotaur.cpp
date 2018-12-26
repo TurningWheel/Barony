@@ -239,9 +239,9 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actMinotaurLimb(Entity* my)
+bool actMinotaurLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void minotaurDie(Entity* my)
@@ -599,11 +599,11 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 #define MINOTAURTRAP_FIRED my->skill[0]
 
-void actMinotaurTrap(Entity* my)
+bool actMinotaurTrap(Entity* my)
 {
 	if ( !my->skill[28] )
 	{
-		return;
+		return false;
 	}
 
 	// received on signal
@@ -628,12 +628,13 @@ void actMinotaurTrap(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
 #define MINOTAURTIMER_LIFE my->skill[0]
 #define MINOTAURTIMER_ACTIVE my->skill[1]
 
-void actMinotaurTimer(Entity* my)
+bool actMinotaurTimer(Entity* my)
 {
 	node_t* node;
 
@@ -719,11 +720,12 @@ void actMinotaurTimer(Entity* my)
 			}
 		}
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
+	return true;
 }
 
-void actMinotaurCeilingBuster(Entity* my)
+bool actMinotaurCeilingBuster(Entity* my)
 {
 	double x, y;
 
@@ -774,11 +776,11 @@ void actMinotaurCeilingBuster(Entity* my)
 						{
 							my->attack(MONSTER_POSE_MELEE_WINDUP2, 0, nullptr);
 						}
-						return;
+						return true;
 					}
 					else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 					{
-						return;
+						return true;
 					}
 					map.tiles[index] = 0;
 					if ( multiplayer != CLIENT )
@@ -932,9 +934,11 @@ void actMinotaurCeilingBuster(Entity* my)
 						}
 					}
 				}
+				return false;
 			}
 		}
 	}
+	return true;
 }
 
 void createMinotaurTimer(Entity* entity, map_t* map)

@@ -34,7 +34,7 @@
 #define HEADSTONE_MESSAGE my->skill[4]
 #define HEADSTONE_AMBIENCE my->skill[5]
 
-void actHeadstone(Entity* my)
+bool actHeadstone(Entity* my)
 {
 	if ( my->flags[INVISIBLE] )
 	{
@@ -57,7 +57,7 @@ void actHeadstone(Entity* my)
 			}
 			if ( goldbags >= 9 && artifact )
 			{
-				return;
+				return true;
 			}
 			my->flags[INVISIBLE] = false;
 			my->flags[PASSABLE] = false;
@@ -66,7 +66,7 @@ void actHeadstone(Entity* my)
 		}
 		else
 		{
-			return;
+			return true;
 		}
 	}
 
@@ -79,7 +79,7 @@ void actHeadstone(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	if ( !HEADSTONE_INIT )
@@ -136,4 +136,5 @@ void actHeadstone(Entity* my)
 			}
 		}
 	}
+	return true;
 }

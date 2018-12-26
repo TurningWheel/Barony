@@ -32,7 +32,7 @@
 #define LADDER_AMBIENCE my->skill[1]
 #define LADDER_SECRET my->skill[3]
 
-void actLadder(Entity* my)
+bool actLadder(Entity* my)
 {
 	int playercount = 0;
 	double dist;
@@ -68,7 +68,7 @@ void actLadder(Entity* my)
 						if (dist > TOUCHRANGE)
 						{
 							messagePlayer(i, language[505]);
-							return;
+							return true;
 						}
 					}
 					if (playercount == 1)
@@ -100,14 +100,15 @@ void actLadder(Entity* my)
 					{
 						secretlevel = (secretlevel == false);    // toggle level lists
 					}
-					return;
+					return true;
 				}
 			}
 		}
 	}
+	return true;
 }
 
-void actLadderUp(Entity* my)
+bool actLadderUp(Entity* my)
 {
 	int i;
 
@@ -128,14 +129,15 @@ void actLadderUp(Entity* my)
 				if (inrange[i])
 				{
 					messagePlayer(i, language[508]);
-					return;
+					return true;
 				}
 			}
 		}
 	}
+	return true;
 }
 
-void actPortal(Entity* my)
+bool actPortal(Entity* my)
 {
 	int playercount = 0;
 	double dist;
@@ -170,7 +172,7 @@ void actPortal(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	// step through portal
@@ -194,7 +196,7 @@ void actPortal(Entity* my)
 					if (dist > TOUCHRANGE)
 					{
 						messagePlayer(i, language[505]);
-						return;
+						return true;
 					}
 				}
 				if (playercount == 1)
@@ -263,13 +265,14 @@ void actPortal(Entity* my)
 				{
 					secretlevel = (secretlevel == false);  // toggle level lists
 				}
-				return;
+				return true;
 			}
 		}
 	}
+	return true;
 }
 
-void actWinningPortal(Entity* my)
+bool actWinningPortal(Entity* my)
 {
 	int playercount = 0;
 	double dist;
@@ -283,7 +286,7 @@ void actWinningPortal(Entity* my)
 			{
 				if ( !(svFlags & SV_FLAG_CLASSIC) )
 				{
-					return; // classic mode disabled.
+					return true; // classic mode disabled.
 				}
 			}
 			node_t* node;
@@ -297,7 +300,7 @@ void actWinningPortal(Entity* my)
 					{
 						if ( stats->type == LICH || stats->type == DEVIL )
 						{
-							return;
+							return true;
 						}
 					}
 				}
@@ -341,7 +344,7 @@ void actWinningPortal(Entity* my)
 	{
 		if ( my->flags[INVISIBLE] )
 		{
-			return;
+			return true;
 		}
 	}
 
@@ -363,7 +366,7 @@ void actWinningPortal(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	// step through portal
@@ -387,7 +390,7 @@ void actWinningPortal(Entity* my)
 					if (dist > TOUCHRANGE)
 					{
 						messagePlayer(i, language[509]);
-						return;
+						return true;
 					}
 				}
 				victory = my->portalVictoryType;
@@ -414,23 +417,24 @@ void actWinningPortal(Entity* my)
 				{
 					pauseGame(2, false);
 				}
-				return;
+				return true;
 			}
 		}
 	}
+	return true;
 }
 
-void actExpansionEndGamePortal(Entity* my)
+bool actExpansionEndGamePortal(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actExpansionEndGamePortal();
+	return my->actExpansionEndGamePortal();
 }
 
-void Entity::actExpansionEndGamePortal()
+bool Entity::actExpansionEndGamePortal()
 {
 	int playercount = 0;
 	double dist;
@@ -453,7 +457,7 @@ void Entity::actExpansionEndGamePortal()
 						{
 							if ( stats->type == LICH_FIRE || stats->type == LICH_ICE )
 							{
-								return;
+								return true;
 							}
 						}
 					}
@@ -481,7 +485,7 @@ void Entity::actExpansionEndGamePortal()
 	{
 		if ( flags[INVISIBLE] )
 		{
-			return;
+			return true;
 		}
 	}
 
@@ -503,7 +507,7 @@ void Entity::actExpansionEndGamePortal()
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	// step through portal
@@ -527,7 +531,7 @@ void Entity::actExpansionEndGamePortal()
 					if ( dist > TOUCHRANGE )
 					{
 						messagePlayer(i, language[509]);
-						return;
+						return true;
 					}
 				}
 				victory = portalVictoryType;
@@ -554,23 +558,24 @@ void Entity::actExpansionEndGamePortal()
 				{
 					pauseGame(2, false);
 				}
-				return;
+				return true;
 			}
 		}
 	}
+	return true;
 }
 
-void actMidGamePortal(Entity* my)
+bool actMidGamePortal(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actMidGamePortal();
+	return my->actMidGamePortal();
 }
 
-void Entity::actMidGamePortal()
+bool Entity::actMidGamePortal()
 {
 	int playercount = 0;
 	double dist;
@@ -584,7 +589,7 @@ void Entity::actMidGamePortal()
 			{
 				if ( (svFlags & SV_FLAG_CLASSIC) )
 				{
-					return; // classic mode enabled, don't process.
+					return true; // classic mode enabled, don't process.
 				}
 			}
 			node_t* node;
@@ -600,7 +605,7 @@ void Entity::actMidGamePortal()
 						{
 							if ( stats->type == LICH )
 							{
-								return;
+								return true;
 							}
 						}
 					}
@@ -640,7 +645,7 @@ void Entity::actMidGamePortal()
 	{
 		if ( flags[INVISIBLE] )
 		{
-			return;
+			return true;
 		}
 	}
 
@@ -662,7 +667,7 @@ void Entity::actMidGamePortal()
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	// step through portal
@@ -686,7 +691,7 @@ void Entity::actMidGamePortal()
 					if ( dist > TOUCHRANGE )
 					{
 						messagePlayer(i, language[509]);
-						return;
+						return true;
 					}
 				}
 				//victory = portalVictoryType;
@@ -712,8 +717,9 @@ void Entity::actMidGamePortal()
 					pauseGame(2, false);
 				}
 				introstage = 9; // prepares mid game sequence
-				return;
+				return true;
 			}
 		}
 	}
+	return true;
 }

@@ -19,9 +19,10 @@
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 
-void actCircuit(Entity* my)
+bool actCircuit(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
+	return true;
 }
 
 void Entity::circuitPowerOn()
@@ -161,7 +162,7 @@ void Entity::mechanismPowerOff()
  */
 
 
-void actSwitch(Entity* my)
+bool actSwitch(Entity* my)
 {
 	//TODO: If powered on, and it detects a depowered neighbor, it should pulse that neighbor to turn on.
 	//Thus, this function needs to be called periodically.
@@ -225,9 +226,10 @@ void actSwitch(Entity* my)
 			my->roll = PI / 4;
 		}
 	}
+	return true;
 }
 
-void actSwitchWithTimer(Entity* my)
+bool actSwitchWithTimer(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
@@ -356,10 +358,11 @@ void actSwitchWithTimer(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
 #define TRAP_ON my->skill[0]
-void actTrap(Entity* my)
+bool actTrap(Entity* my)
 {
 	// activates circuit when certain entities are occupying its tile
 	node_t* node;
@@ -402,10 +405,11 @@ void actTrap(Entity* my)
 			TRAP_ON = 0;
 		}
 	}
+	return true;
 }
 
 #define TRAPPERMANENT_ON my->skill[0]
-void actTrapPermanent(Entity* my)
+bool actTrapPermanent(Entity* my)
 {
 	// activates circuit when certain entities are occupying its tile
 	// unlike actTrap, never deactivates
@@ -422,7 +426,7 @@ void actTrapPermanent(Entity* my)
 			{
 				if ( entity->x < 26 * 16 || entity->y < 6 * 16 || entity->y >= 26 * 16 )   // hardcoded, I know...
 				{
-					return;
+					return true;
 				}
 			}
 		}
@@ -461,7 +465,7 @@ void actTrapPermanent(Entity* my)
 				{
 					if ( entity->x < 29 * 16 )   // hardcoded, I know...
 					{
-						return;
+						return true;
 					}
 				}
 			}
@@ -492,6 +496,7 @@ void actTrapPermanent(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
 //This is called when the switch is toggled by the player.
@@ -716,22 +721,22 @@ list_t* Entity::getPowerableNeighbors()
 	return return_val;
 }
 
-void actSoundSource(Entity* my)
+bool actSoundSource(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actSoundSource();
+	return my->actSoundSource();
 }
 
-void Entity::actSoundSource()
+bool Entity::actSoundSource()
 {
 #ifdef SOUND
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	if ( soundSourceDelay > 0 && soundSourceDelayCounter == 0 )
@@ -747,7 +752,7 @@ void Entity::actSoundSource()
 			--soundSourceDelayCounter;
 			if ( soundSourceDelayCounter != 0 )
 			{
-				return;
+				return true;
 			}
 		}
 		if ( !soundSourceFired )
@@ -781,27 +786,28 @@ void Entity::actSoundSource()
 		}
 	}
 #endif // SOUND
+	return true;
 }
 
 #define SIGNALTIMER_DELAYCOUNT skill[6]
 #define SIGNALTIMER_TIMERCOUNT skill[7]
 #define SIGNALTIMER_REPEATCOUNT skill[8]
 
-void actSignalTimer(Entity* my)
+bool actSignalTimer(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actSignalTimer();
+	return my->actSignalTimer();
 }
 
-void Entity::actSignalTimer()
+bool Entity::actSignalTimer()
 {
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	int tx = x / 16;
@@ -824,7 +830,7 @@ void Entity::actSignalTimer()
 			--SIGNALTIMER_DELAYCOUNT;
 			if ( SIGNALTIMER_DELAYCOUNT != 0 )
 			{
-				return;
+				return true;
 			}
 		}
 		if ( switch_power == SWITCH_UNPOWERED )
@@ -847,7 +853,7 @@ void Entity::actSignalTimer()
 				--SIGNALTIMER_TIMERCOUNT;
 				if ( SIGNALTIMER_TIMERCOUNT != 0 )
 				{
-					return;
+					return true;
 				}
 			}
 			if ( switch_power == SWITCH_POWERED )
@@ -967,6 +973,8 @@ void Entity::actSignalTimer()
 			}
 			list_FreeAll(neighbors); //Free the list.
 			free(neighbors);
+			return false;
 		}
 	}
+	return true;
 }

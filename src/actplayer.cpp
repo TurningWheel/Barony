@@ -44,7 +44,7 @@ bool settings_smoothmouse = false;
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
 
-void actDeathCam(Entity* my)
+bool actDeathCam(Entity* my)
 {
 	DEATHCAM_TIME++;
 	if ( DEATHCAM_TIME == 1 )
@@ -155,6 +155,7 @@ void actDeathCam(Entity* my)
 	camera.x -= cos(my->yaw) * cos(my->pitch) * 1.5;
 	camera.y -= sin(my->yaw) * cos(my->pitch) * 1.5;
 	camera.z -= sin(my->pitch) * 16;
+	return true;
 }
 
 #define PLAYER_INIT my->skill[0]
@@ -182,11 +183,11 @@ void actDeathCam(Entity* my)
 #define PLAYER_SHIELDYAW my->fskill[8]
 #define PLAYERWALKSPEED .12
 
-void actPlayer(Entity* my)
+bool actPlayer(Entity* my)
 {
 	if (!my)
 	{
-		return;
+		return false;
 	}
 	if ( logCheckObstacle )
 	{
@@ -230,10 +231,11 @@ void actPlayer(Entity* my)
 	int weight;
 	bool wearingring = false;
 	bool levitating = false;
+	bool ret = true;
 
 	if ( PLAYER_NUM < 0 || PLAYER_NUM >= MAXPLAYERS )
 	{
-		return;
+		return true;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -864,11 +866,13 @@ void actPlayer(Entity* my)
 							if ( tempItem->node )
 							{
 								list_RemoveNode(tempItem->node);
+								ret = false;
 							}
 							else
 							{
 								free(tempItem);
 								tempItem = nullptr;
+								ret = false;
 							}
 							break;
 						}
@@ -1964,6 +1968,7 @@ void actPlayer(Entity* my)
 									continue;    // don't drop spells on death, stupid!
 								}
 								list_RemoveNode(node);
+								ret = false;
 							}
 							stats[0]->helmet = NULL;
 							stats[0]->breastplate = NULL;
@@ -2095,7 +2100,7 @@ void actPlayer(Entity* my)
 				}
 				my->removeLightField();
 				list_RemoveNode(my->mynode);
-				return;
+				return false;
 			}
 		}
 	}
@@ -3568,10 +3573,11 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
+	return ret;
 }
 
 // client function
-void actPlayerLimb(Entity* my)
+bool actPlayerLimb(Entity* my)
 {
 	int i;
 
@@ -3582,7 +3588,7 @@ void actPlayerLimb(Entity* my)
 		if ( stats[PLAYER_NUM]->HP <= 0 )
 		{
 			my->flags[INVISIBLE] = true;
-			return;
+			return true;
 		}
 	}
 
@@ -3615,17 +3621,17 @@ void actPlayerLimb(Entity* my)
 
 	if (multiplayer != CLIENT)
 	{
-		return;
+		return true;
 	}
 
 	if (my->skill[2] < 0 || my->skill[2] >= MAXPLAYERS )
 	{
-		return;
+		return true;
 	}
 	if (players[my->skill[2]] == nullptr || players[my->skill[2]]->entity == nullptr)
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	//TODO: These three are _NOT_ PLAYERSWAP

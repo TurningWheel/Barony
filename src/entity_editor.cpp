@@ -343,20 +343,20 @@ bool Entity::isInvisible() const
 	return false;
 }
 
-void actMonster(Entity* my)
+bool actMonster(Entity* my)
 {
-	return;
+	return true;
 }
 
-void actPlayer(Entity* my)
+bool actPlayer(Entity* my)
 {
-	return;
+	return true;
 }
 
-void actSpriteNametag(Entity* my)
+bool actSpriteNametag(Entity* my)
 {
 	// dummy function
-	return;
+	return true;
 }
 
 int playerEntityMatchesUid(Uint32 uid)

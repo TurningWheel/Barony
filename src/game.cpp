@@ -611,13 +611,13 @@ void gameLogic(void)
 								TileEntityList.addEntity(*entity);
 							}
 
-							(*entity->behavior)(entity);
-
-							if ( ox != static_cast<int>(entity->x) >> 4
-								|| oy != static_cast<int>(entity->y) >> 4 )
-							{
-								// if entity moved into a new tile, update it's tile position in global tile list.
-								TileEntityList.updateEntity(*entity);
+							if ((*entity->behavior)(entity)) {
+								if ( ox != static_cast<int>(entity->x) >> 4
+										|| oy != static_cast<int>(entity->y) >> 4 )
+								{
+									// if entity moved into a new tile, update it's tile position in global tile list.
+									TileEntityList.updateEntity(*entity);
+								}
 							}
 						}
 						if ( entitiesdeleted.first != nullptr )

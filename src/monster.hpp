@@ -350,33 +350,33 @@ void initLichFire(Entity* my, Stat* myStats);
 void initLichIce(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
-void actHumanLimb(Entity* my);
-void actGoblinLimb(Entity* my);
-void actScorpionTail(Entity* my);
-void actSuccubusLimb(Entity* my);
-void actTrollLimb(Entity* my);
-void actShopkeeperLimb(Entity* my);
-void actSkeletonLimb(Entity* my);
-void actMinotaurLimb(Entity* my);
-void actGhoulLimb(Entity* my);
-void actDemonLimb(Entity* my);
-void actSpiderLimb(Entity* my);
-void actLichLimb(Entity* my);
-void actImpLimb(Entity* my);
-void actGnomeLimb(Entity* my);
-void actDevilLimb(Entity* my);
-void actAutomatonLimb(Entity* my);
-void actCockatriceLimb(Entity* my);
-void actCrystalgolemLimb(Entity* my);
-void actKoboldLimb(Entity* my);
-void actShadowLimb(Entity* my);
-void actVampireLimb(Entity* my);
-void actIncubusLimb(Entity* my);
-void actInsectoidLimb(Entity* my);
-void actGoatmanLimb(Entity* my);
-void actScarabLimb(Entity* my);
-void actLichFireLimb(Entity* my);
-void actLichIceLimb(Entity* my);
+bool actHumanLimb(Entity* my);
+bool actGoblinLimb(Entity* my);
+bool actScorpionTail(Entity* my);
+bool actSuccubusLimb(Entity* my);
+bool actTrollLimb(Entity* my);
+bool actShopkeeperLimb(Entity* my);
+bool actSkeletonLimb(Entity* my);
+bool actMinotaurLimb(Entity* my);
+bool actGhoulLimb(Entity* my);
+bool actDemonLimb(Entity* my);
+bool actSpiderLimb(Entity* my);
+bool actLichLimb(Entity* my);
+bool actImpLimb(Entity* my);
+bool actGnomeLimb(Entity* my);
+bool actDevilLimb(Entity* my);
+bool actAutomatonLimb(Entity* my);
+bool actCockatriceLimb(Entity* my);
+bool actCrystalgolemLimb(Entity* my);
+bool actKoboldLimb(Entity* my);
+bool actShadowLimb(Entity* my);
+bool actVampireLimb(Entity* my);
+bool actIncubusLimb(Entity* my);
+bool actInsectoidLimb(Entity* my);
+bool actGoatmanLimb(Entity* my);
+bool actScarabLimb(Entity* my);
+bool actLichFireLimb(Entity* my);
+bool actLichIceLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -441,16 +441,16 @@ void lichFireAnimate(Entity* my, Stat* myStats, double dist);
 void lichIceAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
-void actMinotaurTrap(Entity* my);
-void actMinotaurTimer(Entity* my);
-void actMinotaurCeilingBuster(Entity* my);
-void actDemonCeilingBuster(Entity* my);
+bool actMinotaurTrap(Entity* my);
+bool actMinotaurTimer(Entity* my);
+bool actMinotaurCeilingBuster(Entity* my);
+bool actDemonCeilingBuster(Entity* my);
 
-void actDevilTeleport(Entity* my);
+bool actDevilTeleport(Entity* my);
 
 void createMinotaurTimer(Entity* entity, map_t* map);
 
-void actSummonTrap(Entity* my);
+bool actSummonTrap(Entity* my);
 int monsterCurve(int level);
 
 bool forceFollower(Entity& leader, Entity& follower);

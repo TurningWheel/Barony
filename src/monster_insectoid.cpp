@@ -630,9 +630,9 @@ void initInsectoid(Entity* my, Stat* myStats)
 	}
 }
 
-void actInsectoidLimb(Entity* my)
+bool actInsectoidLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void insectoidDie(Entity* my)

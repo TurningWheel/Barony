@@ -26,13 +26,13 @@
 
 -------------------------------------------------------------------------------*/
 
-void actWallBuster(Entity* my)
+bool actWallBuster(Entity* my)
 {
 	int c;
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return false;
 	}
 
 	// received on signal
@@ -61,16 +61,18 @@ void actWallBuster(Entity* my)
 			}
 		}
 		list_RemoveNode(my->mynode);
+		return false;
 	}
+	return true;
 }
 
-void actWallBuilder(Entity* my)
+bool actWallBuilder(Entity* my)
 {
 	int c;
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return false;
 	}
 
 	// received on signal
@@ -98,5 +100,7 @@ void actWallBuilder(Entity* my)
 			}
 		}
 		list_RemoveNode(my->mynode);
+		return false;
 	}
+	return true;
 }

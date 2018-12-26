@@ -484,9 +484,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	}
 }
 
-void actAutomatonLimb(Entity* my)
+bool actAutomatonLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void automatonDie(Entity* my)

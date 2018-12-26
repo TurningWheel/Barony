@@ -27,7 +27,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void actAnimator(Entity* my)
+bool actAnimator(Entity* my)
 {
 	if ( my->skill[4] == 0 )
 	{
@@ -38,7 +38,7 @@ void actAnimator(Entity* my)
 	if ( (int)floor(my->x) < 0 || (int)floor(my->x) >= map.width || (int)floor(my->y) < 0 || (int)floor(my->y) >= map.height )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	my->skill[3]++;
@@ -53,11 +53,12 @@ void actAnimator(Entity* my)
 			map.tiles[my->skill[0] + (int)floor(my->y)*MAPLAYERS + (int)floor(my->x)*MAPLAYERS * map.height] -= my->skill[1];
 		}
 	}
+	return true;
 }
 
 #define TESTSPRITES
 
-void actRotate(Entity* my)
+bool actRotate(Entity* my)
 {
 	my->yaw += 0.1;
 	my->flags[PASSABLE] = true; // this entity should always be passable
@@ -84,6 +85,7 @@ void actRotate(Entity* my)
 		messagePlayer(clientnum, "test sprite: %d", my->sprite);
 	}
 #endif
+	return true;
 }
 
 #define LIQUID_TIMER my->skill[0]
@@ -91,12 +93,12 @@ void actRotate(Entity* my)
 #define LIQUID_LAVA my->flags[USERFLAG1]
 #define LIQUID_LAVANOBUBBLE my->skill[4]
 
-void actLiquid(Entity* my)
+bool actLiquid(Entity* my)
 {
 	// as of 1.0.7 this function is DEPRECATED
 
 	list_RemoveNode(my->mynode);
-	return;
+	return false;
 
 	if ( !LIQUID_INIT )
 	{
@@ -141,19 +143,21 @@ void actLiquid(Entity* my)
 			}
 		}
 	}
+	return false;
 }
 
-void actEmpty(Entity* my)
+bool actEmpty(Entity* my)
 {
 	// an empty action
 	// used on clients to permit dead reckoning and other interpolation
+	return true;
 }
 
-void actFurniture(Entity* my)
+bool actFurniture(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
 	if ( !my->flags[BURNABLE] )
@@ -161,10 +165,10 @@ void actFurniture(Entity* my)
 		my->flags[BURNABLE] = true;
 	}
 
-	my->actFurniture();
+	return my->actFurniture();
 }
 
-void Entity::actFurniture()
+bool Entity::actFurniture()
 {
 	if ( !furnitureInit )
 	{
@@ -226,7 +230,7 @@ void Entity::actFurniture()
 					serverUpdateEntitySkill(entity, 19);
 				}
 				list_RemoveNode(mynode);
-				return;
+				return false;
 			}
 
 			// using
@@ -270,12 +274,13 @@ void Entity::actFurniture()
 			}
 		}
 	}
+	return true;
 }
 
 // an easter egg
 #define MCAXE_USED my->skill[0]
 
-void actMCaxe(Entity* my)
+bool actMCaxe(Entity* my)
 {
 	my->yaw += .05;
 	if ( my->yaw > PI * 2 )
@@ -317,82 +322,83 @@ void actMCaxe(Entity* my)
 		if ( my->z > 64 )
 		{
 			list_RemoveNode(my->mynode);
-			return;
+			return false;
 		}
 	}
+	return true;
 }
 
-void actStalagFloor(Entity* my)
+bool actStalagFloor(Entity* my)
 {
 	//TODO: something?
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actStalagFloor();
+	return my->actStalagFloor();
 }
 
-void Entity::actStalagFloor()
+bool Entity::actStalagFloor()
 {
-
+	return true;
 }
 
-void actStalagCeiling(Entity* my)
+bool actStalagCeiling(Entity* my)
 {
 	//TODO: something?
 	if ( !my )
 	{
-		return;
+		return false;
 	}
-	my->actStalagCeiling();
+	return my->actStalagCeiling();
 }
 
-void Entity::actStalagCeiling()
+bool Entity::actStalagCeiling()
 {
-
+	return true;
 }
 
-void actStalagColumn(Entity* my)
+bool actStalagColumn(Entity* my)
 {
 	//TODO: something?
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actStalagColumn();
+	return my->actStalagColumn();
 }
 
-void Entity::actStalagColumn()
+bool Entity::actStalagColumn()
 {
-
+	return true;
 }
 
-void actColumn(Entity* my)
+bool actColumn(Entity* my)
 {
 	//TODO: something?
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 	if ( my->flags[BLOCKSIGHT] ) // stop the compiler optimising into a different entity.
 	{
 		my->flags[BLOCKSIGHT] = false;
 	}
-	my->actColumn();
+	return my->actColumn();
 }
 
-void Entity::actColumn()
+bool Entity::actColumn()
 {
-
+	return true;
 }
 
-void actCeilingTile(Entity* my)
+bool actCeilingTile(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 	if ( !my->flags[PASSABLE] )
 	{
@@ -402,26 +408,28 @@ void actCeilingTile(Entity* my)
 	{
 		my->flags[BLOCKSIGHT] = false;
 	}
+	return true;
 }
 
-void actPistonBase(Entity* my)
+bool actPistonBase(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
+	return true;
 }
 
-void actPistonCam(Entity* my)
+bool actPistonCam(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
-	my->actPistonCam();
+	return my->actPistonCam();
 }
 
-void Entity::actPistonCam()
+bool Entity::actPistonCam()
 {
 	yaw += pistonCamRotateSpeed;
 	while ( yaw > 2 * PI )
@@ -480,34 +488,36 @@ void Entity::actPistonCam()
 			pistonCamDir = 0; // down
 		}
 	}
+	return true;
 }
 
-void actFloorDecoration(Entity* my)
+bool actFloorDecoration(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 	if ( !my->flags[PASSABLE] )
 	{
 		my->flags[PASSABLE] = true;
 	}
+	return true;
 }
 
-void actTextSource(Entity* my)
+bool actTextSource(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
-	my->actTextSource();
+	return my->actTextSource();
 }
 
-void Entity::actTextSource()
+bool Entity::actTextSource()
 {
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	if ( ((textSourceVariables4W >> 16) & 0xFFFF) == 0 ) // store the delay in the 16 leftmost bits.
@@ -521,7 +531,7 @@ void Entity::actTextSource()
 		if ( textSourceDelay > 0 )
 		{
 			--textSourceDelay;
-			return;
+			return true;
 		}
 		else
 		{
@@ -590,4 +600,5 @@ void Entity::actTextSource()
 			textSourceVariables4W -= 1;
 		}
 	}
+	return true;
 }

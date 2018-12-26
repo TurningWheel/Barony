@@ -18,17 +18,17 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void actGate(Entity* my)
+bool actGate(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actGate();
+	return my->actGate();
 }
 
-void Entity::actGate()
+bool Entity::actGate()
 {
 	int i;
 
@@ -36,7 +36,7 @@ void Entity::actGate()
 	{
 		if ( circuit_status == 0 )
 		{
-			return;    //Gate needs the mechanism powered state variable to be set.
+			return true;    //Gate needs the mechanism powered state variable to be set.
 		}
 
 		if ( gateInverted == 0 )
@@ -197,4 +197,5 @@ void Entity::actGate()
 	{
 		this->flags[PASSABLE] = true;
 	}
+	return true;
 }

@@ -462,9 +462,9 @@ void initVampire(Entity* my, Stat* myStats)
 	}
 }
 
-void actVampireLimb(Entity* my)
+bool actVampireLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void vampireDie(Entity* my)

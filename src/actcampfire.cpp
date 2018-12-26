@@ -32,7 +32,7 @@
 #define CAMPFIRE_INIT my->skill[4]
 #define CAMPFIRE_SOUNDTIME my->skill[5]
 
-void actCampfire(Entity* my)
+bool actCampfire(Entity* my)
 {
 	Entity* entity;
 	int i;
@@ -132,4 +132,5 @@ void actCampfire(Entity* my)
 			}
 		}
 	}
+	return true;
 }

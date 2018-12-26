@@ -143,7 +143,7 @@ void scorpionDie(Entity* my)
 	list_RemoveNode(my->mynode);
 	return;
 }
-void actScorpionTail(Entity* my)
+bool actScorpionTail(Entity* my)
 {
 	int i;
 
@@ -151,7 +151,7 @@ void actScorpionTail(Entity* my)
 	if ( (parent = uidToEntity(my->skill[2])) == NULL )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -171,7 +171,7 @@ void actScorpionTail(Entity* my)
 			}
 		}
 	}
-	return;
+	return true;
 }
 
 void scorpionAnimate(Entity* my, double dist)

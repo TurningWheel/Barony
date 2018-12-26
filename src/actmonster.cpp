@@ -766,11 +766,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 
 //int devilintro=0;
 
-void actMonster(Entity* my)
+bool actMonster(Entity* my)
 {
 	if (!my)
 	{
-		return;
+		return false;
 	}
 
 	int x, y, c, i;
@@ -785,12 +785,13 @@ void actMonster(Entity* my)
 	Stat* hitstats = NULL;
 	bool hasrangedweapon = false;
 	bool myReflex;
+	bool ret = true;
 	Sint32 previousMonsterState = my->monsterState;
 
 	// deactivate in menu
 	if ( intro )
 	{
-		return;
+		return true;
 	}
 
 	// this is mostly a SERVER function.
@@ -1081,7 +1082,7 @@ void actMonster(Entity* my)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
-		return;
+		return true;
 	}
 
 	if ( ticks % (TICKS_PER_SECOND) == my->getUID() % (TICKS_PER_SECOND / 2) )
@@ -1249,14 +1250,14 @@ void actMonster(Entity* my)
 		node->element = myStats;
 		node->deconstructor = &defaultDeconstructor;*/
 
-		return;
+		return true;
 	}
 
 	myStats = my->getStats();
 	if ( myStats == NULL )
 	{
 		printlog("ERROR: monster entity at %p has no stats struct!", my);
-		return;
+		return true;
 	}
 	myStats->defending = false;
 	myStats->sneaking = 0;
@@ -1314,6 +1315,7 @@ void actMonster(Entity* my)
 						tempEntity->light = nullptr;
 					}
 					list_RemoveNode(tempEntity->mynode);
+					ret = false;
 				}
 			}
 			if ( foundlights )
@@ -2044,6 +2046,7 @@ void actMonster(Entity* my)
 			OPENAL_Channel_Stop(MONSTER_SOUND);
 		}
 #endif
+		ret = false;
 		myStats = my->getStats();
 		switch ( myStats->type )
 		{
@@ -2185,7 +2188,7 @@ void actMonster(Entity* my)
 			default:
 				break; //This should never be reached.
 		}
-		return;
+		return false;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -2565,7 +2568,7 @@ void actMonster(Entity* my)
 					my->z = -.25;
 				}
 				ghoulMoveBodyparts(my, myStats, 0);
-				return;
+				return true;
 			}
 		}
 
@@ -2935,7 +2938,7 @@ void actMonster(Entity* my)
 					{
 						serverUpdateEntitySkill(my, 0);
 					}
-					return;
+					return true;
 				}
 				else if ( myStats->type == SHADOW && my->monsterTarget && my->monsterState != MONSTER_STATE_ATTACK )
 				{
@@ -2944,7 +2947,7 @@ void actMonster(Entity* my)
 					//my->monsterTargetX = my->monsterTarget.x;
 					//my->monsterTargetY = my->monsterTarget.y;
 					serverUpdateEntitySkill(my, 0); //Update monster state because it changed.
-					return;
+					return true;
 				}
 			}
 
@@ -2996,7 +2999,7 @@ void actMonster(Entity* my)
 								serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 							}
 						}
-						return;
+						return true;
 					}
 					else
 					{
@@ -3043,7 +3046,7 @@ void actMonster(Entity* my)
 									serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 								}
 							}
-							return;
+							return true;
 						}
 					}
 				}
@@ -3209,7 +3212,7 @@ void actMonster(Entity* my)
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
 				}
-				return;
+				return true;
 			}
 			if ( entity != nullptr )
 			{
@@ -3708,7 +3711,7 @@ timeToGoAgain:
 				{
 					serverUpdateEntitySkill(my, 0);
 				}
-				return;
+				return true;
 			}
 
 			//Don't path if your target dieded!
@@ -3720,7 +3723,7 @@ timeToGoAgain:
 				{
 					serverUpdateEntitySkill(my, 0);
 				}
-				return;
+				return true;
 			}
 
 			entity = uidToEntity(my->monsterTarget);
@@ -3759,7 +3762,7 @@ timeToGoAgain:
 			{
 				//messagePlayer(0, "Shadow in special state teleport only! Aborting hunt state.");
 				my->monsterState = MONSTER_STATE_WAIT;
-				return; //Don't do anything, yer casting a spell!
+				return true; //Don't do anything, yer casting a spell!
 			}
 			//Do the shadow's passive teleport to catch up to their target..
 			if ( myStats->type == SHADOW && my->monsterSpecialTimer == 0 && my->monsterTarget )
@@ -3770,7 +3773,7 @@ timeToGoAgain:
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
-					return;
+					return true;
 				}
 
 				//If shadow has no path to target, then should do the passive teleport.
@@ -3812,7 +3815,7 @@ timeToGoAgain:
 					{
 						messagePlayer(target->skill[2], language[2518]);
 					}
-					return;
+					return true;
 				}
 			}
 
@@ -4007,7 +4010,7 @@ timeToGoAgain:
 					{
 						serverUpdateEntitySkill(my, 0);
 					}
-					return;
+					return true;
 				}
 			}
 			else if ( myStats->type == SHADOW && my->monsterTarget && (ticks % 180 == 0) )
@@ -4021,7 +4024,7 @@ timeToGoAgain:
 					{
 						serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 					}
-					return;
+					return true;
 				}
 				my->monsterState = MONSTER_STATE_PATH;
 				serverUpdateEntitySkill(my, 0); //Update state.
@@ -4029,7 +4032,7 @@ timeToGoAgain:
 				{
 					serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
 				}
-				return;
+				return true;
 			}
 
 			// lich cooldown
@@ -4084,7 +4087,7 @@ timeToGoAgain:
 						{
 							serverUpdateEntitySkill(my, 0);
 						}
-						return;
+						return true;
 					}
 					else
 					{
@@ -4128,7 +4131,7 @@ timeToGoAgain:
 							{
 								serverUpdateEntitySkill(my, 0);
 							}
-							return;
+							return true;
 						}
 						hit.entity = ohitentity;
 					}
@@ -5792,6 +5795,7 @@ timeToGoAgain:
 			lichIceAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 	}
+	return ret;
 }
 
 void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)

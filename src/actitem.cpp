@@ -41,7 +41,7 @@
 #define ITEM_LIFE my->skill[16]
 #define ITEM_AMBIENCE my->skill[17]
 
-void actItem(Entity* my)
+bool actItem(Entity* my)
 {
 	Item* item;
 	int i;
@@ -146,7 +146,7 @@ void actItem(Entity* my)
 					}
 				}
 				my->clearMonsterInteract();
-				return;
+				return true;
 			}
 			my->clearMonsterInteract();
 		}
@@ -188,7 +188,7 @@ void actItem(Entity* my)
 							}
 							my->removeLightField();
 							list_RemoveNode(my->mynode);
-							return;
+							return false;
 						}
 					}
 				}
@@ -218,12 +218,12 @@ void actItem(Entity* my)
 			// let the client process some more gravity and make sure it isn't stopping early at an awkward angle.
 			if ( my->itemNotMovingClient == 1 )
 			{
-				return;
+				return true;
 			}
 		}
 		else
 		{
-			return;
+			return true;
 		}
 	}
 
@@ -311,7 +311,7 @@ void actItem(Entity* my)
 			steamAchievementEntity(uidToEntity(my->parent), "BARONY_ACH_STFU");
 		}
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
@@ -341,7 +341,7 @@ void actItem(Entity* my)
 		{
 			my->itemNotMovingClient = 1;
 		}
-		return;
+		return true;
 	}
 
 	// horizontal motion
@@ -379,4 +379,5 @@ void actItem(Entity* my)
 	}
 	ITEM_VELX = ITEM_VELX * .925;
 	ITEM_VELY = ITEM_VELY * .925;
+	return true;
 }

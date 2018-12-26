@@ -301,7 +301,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-void actBoulder(Entity* my)
+bool actBoulder(Entity* my)
 {
 	int i;
 
@@ -337,7 +337,7 @@ void actBoulder(Entity* my)
 			{
 				boulderSokobanOnDestroy(true);
 			}
-			return;
+			return false;
 		}
 		if ( !BOULDER_NOGROUND )
 		{
@@ -357,7 +357,7 @@ void actBoulder(Entity* my)
 						}
 						if ( boulderCheckAgainstEntity(my, entity) )
 						{
-							return;
+							return true;
 						}
 					}
 				}
@@ -465,7 +465,7 @@ void actBoulder(Entity* my)
 						}
 						if ( boulderCheckAgainstEntity(my, entity) )
 						{
-							return;
+							return true;
 						}
 					}
 				}
@@ -651,7 +651,7 @@ void actBoulder(Entity* my)
 							}
 							if ( boulderCheckAgainstEntity(my, entity) )
 							{
-								return;
+								return true;
 							}
 						}
 					}
@@ -730,12 +730,13 @@ void actBoulder(Entity* my)
 	{
 		--BOULDER_BLOODTIME;
 	}
+	return true;
 }
 
 #define BOULDERTRAP_FIRED my->skill[0]
 #define BOULDERTRAP_AMBIENCE my->skill[6]
 
-void actBoulderTrap(Entity* my)
+bool actBoulderTrap(Entity* my)
 {
 	int x, y;
 	int c;
@@ -749,7 +750,7 @@ void actBoulderTrap(Entity* my)
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -838,9 +839,10 @@ void actBoulderTrap(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
-void actBoulderTrapEast(Entity* my)
+bool actBoulderTrapEast(Entity* my)
 {
 	int x, y;
 	int c;
@@ -864,7 +866,7 @@ void actBoulderTrapEast(Entity* my)
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -875,7 +877,7 @@ void actBoulderTrapEast(Entity* my)
 			if ( my->boulderTrapPreDelay > 0 )
 			{
 				--my->boulderTrapPreDelay;
-				return;
+				return true;
 			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
@@ -926,9 +928,10 @@ void actBoulderTrapEast(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
-void actBoulderTrapSouth(Entity* my)
+bool actBoulderTrapSouth(Entity* my)
 {
 	int x, y;
 	int c;
@@ -952,7 +955,7 @@ void actBoulderTrapSouth(Entity* my)
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -963,7 +966,7 @@ void actBoulderTrapSouth(Entity* my)
 			if ( my->boulderTrapPreDelay > 0 )
 			{
 				--my->boulderTrapPreDelay;
-				return;
+				return true;
 			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
@@ -1014,9 +1017,10 @@ void actBoulderTrapSouth(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
-void actBoulderTrapWest(Entity* my)
+bool actBoulderTrapWest(Entity* my)
 {
 	int x, y;
 	int c;
@@ -1040,7 +1044,7 @@ void actBoulderTrapWest(Entity* my)
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -1051,7 +1055,7 @@ void actBoulderTrapWest(Entity* my)
 			if ( my->boulderTrapPreDelay > 0 )
 			{
 				--my->boulderTrapPreDelay;
-				return;
+				return true;
 			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
@@ -1103,9 +1107,10 @@ void actBoulderTrapWest(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
-void actBoulderTrapNorth(Entity* my)
+bool actBoulderTrapNorth(Entity* my)
 {
 	int x, y;
 	int c;
@@ -1129,7 +1134,7 @@ void actBoulderTrapNorth(Entity* my)
 
 	if ( !my->skill[28] )
 	{
-		return;
+		return true;
 	}
 
 	// received on signal
@@ -1140,7 +1145,7 @@ void actBoulderTrapNorth(Entity* my)
 			if ( my->boulderTrapPreDelay > 0 )
 			{
 				--my->boulderTrapPreDelay;
-				return;
+				return true;
 			}
 			playSoundEntity(my, 150, 128);
 			for ( c = 0; c < MAXPLAYERS; c++ )
@@ -1191,6 +1196,7 @@ void actBoulderTrapNorth(Entity* my)
 			}
 		}
 	}
+	return true;
 }
 
 void boulderSokobanOnDestroy(bool pushedOffLedge)

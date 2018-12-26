@@ -28,17 +28,18 @@
 #define FLAME_VELY my->vel_y
 #define FLAME_VELZ my->vel_z
 
-void actFlame(Entity* my)
+bool actFlame(Entity* my)
 {
 	if ( FLAME_LIFE <= 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	my->x += FLAME_VELX;
 	my->y += FLAME_VELY;
 	my->z += FLAME_VELZ;
 	FLAME_LIFE--;
+	return true;
 }
 
 /*-------------------------------------------------------------------------------

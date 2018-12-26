@@ -29,27 +29,27 @@ takes a pointer to the entity that uses it as an argument.
 
 -------------------------------------------------------------------------------*/
 
-void actPowerCrystalBase(Entity* my)
+bool actPowerCrystalBase(Entity* my)
 {
 	if ( my->flags[PASSABLE] ) // stop the compiler optimising into a different entity.
 	{
 		my->flags[PASSABLE] = false;
 	}
 
-	return;
+	return true;
 }
 
-void actPowerCrystal(Entity* my)
+bool actPowerCrystal(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actPowerCrystal();
+	return my->actPowerCrystal();
 }
 
-void Entity::actPowerCrystal()
+bool Entity::actPowerCrystal()
 {
 	//Entity* entity;
 	real_t upper_z = this->crystalStartZ - 0.4;
@@ -181,7 +181,7 @@ void Entity::actPowerCrystal()
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	// handle player turning the crystal
@@ -209,21 +209,21 @@ void Entity::actPowerCrystal()
 		}
 	}
 
-	return;
+	return true;
 }
 
 // ambient particle effects.
-void actPowerCrystalParticleIdle(Entity* my)
+bool actPowerCrystalParticleIdle(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
 	if ( my->skill[0] < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 	else
 	{
@@ -231,7 +231,7 @@ void actPowerCrystalParticleIdle(Entity* my)
 		my->z += my->vel_z;
 		//my->z -= 0.01;
 	}
-	return;
+	return true;
 }
 
 void Entity::powerCrystalCreateElectricityNodes()

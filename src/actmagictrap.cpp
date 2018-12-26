@@ -29,18 +29,18 @@ The following function describes an entity behavior. The function
 takes a pointer to the entity that uses it as an argument.
 
 -------------------------------------------------------------------------------*/
-void actMagicTrapCeiling(Entity* my)
+bool actMagicTrapCeiling(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actMagicTrapCeiling();
+	return my->actMagicTrapCeiling();
 }
 
 
-void Entity::actMagicTrapCeiling()
+bool Entity::actMagicTrapCeiling()
 {
 	spellTrapAmbience--;
 	if ( spellTrapAmbience <= 0 )
@@ -51,13 +51,13 @@ void Entity::actMagicTrapCeiling()
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 	if ( circuit_status != CIRCUIT_ON )
 	{
 		spellTrapReset = 0;
 		spellTrapCounter = spellTrapRefireRate; //shoost instantly!
-		return;
+		return true;
 	}
 
 	if ( !spellTrapInit )
@@ -154,6 +154,7 @@ void Entity::actMagicTrapCeiling()
 			entity->actmagicIsVertical = MAGIC_ISVERTICAL_Z;
 		}
 	}
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -169,7 +170,7 @@ takes a pointer to the entity that uses it as an argument.
 #define MAGICTRAP_SPELL my->skill[1]
 #define MAGICTRAP_DIRECTION my->skill[3]
 
-void actMagicTrap(Entity* my)
+bool actMagicTrap(Entity* my)
 {
 	if ( !MAGICTRAP_INIT )
 	{
@@ -215,12 +216,12 @@ void actMagicTrap(Entity* my)
 	{
 		my->removeLightField();
 		list_RemoveNode(my->mynode);
-		return;
+		return false;
 	}
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	if ( my->ticks % TICKS_PER_SECOND == 0 )
@@ -268,4 +269,5 @@ void actMagicTrap(Entity* my)
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 		}
 	}
+	return true;
 }

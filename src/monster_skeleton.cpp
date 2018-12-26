@@ -406,9 +406,9 @@ void initSkeleton(Entity* my, Stat* myStats)
 	}
 }
 
-void actSkeletonLimb(Entity* my)
+bool actSkeletonLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void skeletonDie(Entity* my)

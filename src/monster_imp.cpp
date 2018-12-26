@@ -236,9 +236,9 @@ void initImp(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actImpLimb(Entity* my)
+bool actImpLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void impDie(Entity* my)

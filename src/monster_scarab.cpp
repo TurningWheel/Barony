@@ -502,9 +502,9 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-void actScarabLimb(Entity* my)
+bool actScarabLimb(Entity* my)
 {
-	my->actMonsterLimb(true); //Can create light, but can't hold a lightsource.
+	return my->actMonsterLimb(true); //Can create light, but can't hold a lightsource.
 }
 
 void scarabDie(Entity* my)

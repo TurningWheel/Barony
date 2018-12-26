@@ -413,7 +413,7 @@ public:
 	void giveClientStats();
 
 	// behavior function pointer
-	void (*behavior)(class Entity* my);
+	bool (*behavior)(class Entity* my);
 	bool ranbehavior;
 
 	void setObituary(char* obituary);
@@ -536,27 +536,27 @@ public:
 	bool checkFriend(Entity* your);
 
 	//Act functions.
-	void actChest();
-	void actPowerCrystal();
-	void actGate();
-	void actPedestalBase();
-	void actPedestalOrb();
-	void actMidGamePortal();
-	void actExpansionEndGamePortal();
-	void actTeleporter();
-	void actMagicTrapCeiling();
+	bool actChest();
+	bool actPowerCrystal();
+	bool actGate();
+	bool actPedestalBase();
+	bool actPedestalOrb();
+	bool actMidGamePortal();
+	bool actExpansionEndGamePortal();
+	bool actTeleporter();
+	bool actMagicTrapCeiling();
 	bool magicFallingCollision();
 	bool magicOrbitingCollision();
-	void actFurniture();
-	void actPistonCam();
-	void actStalagCeiling();
-	void actStalagFloor();
-	void actStalagColumn();
-	void actColumn();
-	void actSoundSource();
-	void actLightSource();
-	void actTextSource();
-	void actSignalTimer();
+	bool actFurniture();
+	bool actPistonCam();
+	bool actStalagCeiling();
+	bool actStalagFloor();
+	bool actStalagColumn();
+	bool actColumn();
+	bool actSoundSource();
+	bool actLightSource();
+	bool actTextSource();
+	bool actSignalTimer();
 
 	Monster getRace() const
 	{
@@ -592,7 +592,7 @@ public:
 	//--monster helmet limb offsets
 	void setHelmetLimbOffset(Entity* helm);
 
-	void actMonsterLimb(bool processLight = false);
+	bool actMonsterLimb(bool processLight = false);
 
 	void removeMonsterDeathNodes();
 
@@ -811,8 +811,8 @@ list_t* checkTileForEntity(int x, int y); //Don't forget to free the list return
 void getItemsOnTile(int x, int y, list_t** list);
 
 //--- Entity act* functions ---
-void actMonster(Entity* my);
-void actPlayer(Entity* my);
+bool actMonster(Entity* my);
+bool actPlayer(Entity* my);
 
 /*
  * NOTE: Potion effects
@@ -833,18 +833,18 @@ void actPlayer(Entity* my);
  * value 14 = POTION_PARALYSIS
  */
 //TODO: Allow for cursed fountains. Any fountain that has a negative effect has, say, skill[4] set to 1 to indicate cursed. Used for monster behavior and for effects of things like healing potions.
-void actFountain(Entity* my);
-void actSink(Entity* my);
+bool actFountain(Entity* my);
+bool actSink(Entity* my);
 
 //--- Mechanism functions ---
-void actCircuit(Entity* my);
-void actSwitch(Entity* my); //Needs to be called periodically to ensure network's powered state is correct.
+bool actCircuit(Entity* my);
+bool actSwitch(Entity* my); //Needs to be called periodically to ensure network's powered state is correct.
 void getPowerablesOnTile(int x, int y, list_t** list); //Stores a list of all circuits and mechanisms, on the tile (in map coordinates), in list.
-void actGate(Entity* my);
-void actArrowTrap(Entity* my);
-void actTrap(Entity* my);
-void actTrapPermanent(Entity* my);
-void actSwitchWithTimer(Entity* my);
+bool actGate(Entity* my);
+bool actArrowTrap(Entity* my);
+bool actTrap(Entity* my);
+bool actTrapPermanent(Entity* my);
+bool actSwitchWithTimer(Entity* my);
 
 /*
  * Note: Circuits and mechanisms use skill[28] to signify powered state.
@@ -855,35 +855,35 @@ void actSwitchWithTimer(Entity* my);
  */
 
 //---Chest/container functions---
-void actChest(Entity* my);
-void actChestLid(Entity* my);
+bool actChest(Entity* my);
+bool actChestLid(Entity* my);
 void closeChestClientside(); //Called by the client to manage all clientside stuff relating to closing a chest.
-void addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
+bool addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
 
 //---Stalag functions---
-void actStalagFloor(Entity* my);
-void actStalagCeiling(Entity* my);
-void actStalagColumn(Entity* my);
+bool actStalagFloor(Entity* my);
+bool actStalagCeiling(Entity* my);
+bool actStalagColumn(Entity* my);
 
 //---Ceiling Tile functions---
-void actCeilingTile(Entity* my);
+bool actCeilingTile(Entity* my);
 
 //--Piston functions--
-void actPistonBase(Entity* my);
-void actPistonCam(Entity* my);
+bool actPistonBase(Entity* my);
+bool actPistonCam(Entity* my);
 
-void actColumn(Entity* my);
+bool actColumn(Entity* my);
 
 //--Floor vegetation--
-void actFloorDecoration(Entity* my);
+bool actFloorDecoration(Entity* my);
 
 //---Magic entity functions---
-void actMagiclightBall(Entity* my);
+bool actMagiclightBall(Entity* my);
 
 //---Misc act functions---
-void actAmbientParticleEffectIdle(Entity* my);
+bool actAmbientParticleEffectIdle(Entity* my);
 
-void actTextSource(Entity* my);
+bool actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 

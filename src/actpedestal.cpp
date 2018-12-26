@@ -30,27 +30,27 @@ takes a pointer to the entity that uses it as an argument.
 
 -------------------------------------------------------------------------------*/
 
-void actPedestalBase(Entity* my)
+bool actPedestalBase(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actPedestalBase();
+	return my->actPedestalBase();
 }
 
-void actPedestalOrb(Entity* my)
+bool actPedestalOrb(Entity* my)
 {
 	if ( !my )
 	{
-		return;
+		return false;
 	}
 
-	my->actPedestalOrb();
+	return my->actPedestalOrb();
 }
 
-void Entity::actPedestalBase()
+bool Entity::actPedestalBase()
 {
 	node_t* node = children.first;
 	Entity* orbEntity = (Entity*)(node->element);
@@ -78,7 +78,7 @@ void Entity::actPedestalBase()
 		{
 			if ( this->ticks < 50 )
 			{
-				return;
+				return true;
 			}
 			// wait for external source to trigger the initialisation.
 			if ( multiplayer != CLIENT )
@@ -94,7 +94,7 @@ void Entity::actPedestalBase()
 						{
 							if ( stats->type == LICH )
 							{
-								return;
+								return true;
 							}
 						}
 					}
@@ -102,7 +102,7 @@ void Entity::actPedestalBase()
 				pedestalInit = 1;
 				serverUpdateEntitySkill(this, 5);
 			}
-			return;
+			return true;
 		}
 
 		if ( z > 4.5 )
@@ -142,7 +142,7 @@ void Entity::actPedestalBase()
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	if ( circuit_status < CIRCUIT_OFF )
@@ -309,9 +309,10 @@ void Entity::actPedestalBase()
 			}	
 		}
 	}
+	return true;
 }
 
-void Entity::actPedestalOrb()
+bool Entity::actPedestalOrb()
 {
 	real_t upper_z = orbStartZ - 0.4;
 	real_t lower_z = orbStartZ + 0.4;
@@ -322,7 +323,7 @@ void Entity::actPedestalOrb()
 	Entity* parent = uidToEntity(this->parent);
 	if ( !parent )
 	{
-		return;
+		return false;
 	}
 
 	if ( !parent->pedestalInGround )
@@ -337,7 +338,7 @@ void Entity::actPedestalOrb()
 		flags[PASSABLE] = true;
 		orbTurnVelocity = 0.5; // reset the speed of the orb.
 		removeLightField();
-		return;
+		return true;
 	}
 	else if ( orbInitialised )
 	{
@@ -395,7 +396,7 @@ void Entity::actPedestalOrb()
 			flags[INVISIBLE] = false;
 			flags[UNCLICKABLE] = false;
 			flags[PASSABLE] = false;
-			return;
+			return true;
 		}
 		else if ( parent->pedestalHasOrb == parent->pedestalOrbType )
 		{
@@ -410,7 +411,7 @@ void Entity::actPedestalOrb()
 	}
 	else
 	{
-		return;
+		return true;
 	}
 
 	if ( orbHoverDirection == CRYSTAL_HOVER_UP ) //rise state
@@ -497,6 +498,7 @@ void Entity::actPedestalOrb()
 			break;
 	}
 	spawnAmbientParticles(40, particleSprite, 10 + rand() % 40, 1.0, false);
+	return true;
 }
 
 void Entity::pedestalOrbInit()

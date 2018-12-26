@@ -268,9 +268,9 @@ void lichDie(Entity* my)
 	return;
 }
 
-void actLichLimb(Entity* my)
+bool actLichLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void lichAnimate(Entity* my, double dist)

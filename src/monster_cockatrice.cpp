@@ -274,9 +274,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actCockatriceLimb(Entity* my)
+bool actCockatriceLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void cockatriceDie(Entity* my)

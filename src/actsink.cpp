@@ -31,7 +31,7 @@
 
 #define SINK_AMBIENCE my->skill[7]
 
-void actSink(Entity* my)
+bool actSink(Entity* my)
 {
 	SINK_AMBIENCE--;
 	if ( SINK_AMBIENCE <= 0 )
@@ -67,7 +67,7 @@ void actSink(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		return;
+		return true;
 	}
 
 	//Using the sink. //TODO: Monsters using it?
@@ -217,4 +217,5 @@ void actSink(Entity* my)
 			}
 		}
 	}
+	return true;
 }

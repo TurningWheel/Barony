@@ -450,9 +450,9 @@ void initKobold(Entity* my, Stat* myStats)
 	}
 }
 
-void actKoboldLimb(Entity* my)
+bool actKoboldLimb(Entity* my)
 {
-	my->actMonsterLimb(true);
+	return my->actMonsterLimb(true);
 }
 
 void koboldDie(Entity* my)

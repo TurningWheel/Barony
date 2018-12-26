@@ -262,9 +262,9 @@ void lichFireDie(Entity* my)
 	return;
 }
 
-void actLichFireLimb(Entity* my)
+bool actLichFireLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void lichFireAnimate(Entity* my, Stat* myStats, double dist)

@@ -251,9 +251,9 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 }
 
-void actGhoulLimb(Entity* my)
+bool actGhoulLimb(Entity* my)
 {
-	my->actMonsterLimb();
+	return my->actMonsterLimb();
 }
 
 void ghoulDie(Entity* my)
