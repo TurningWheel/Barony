@@ -178,57 +178,59 @@ void gameLogic(void)
 	}
 
 	// drunkenness
-	if ( stats[clientnum]->EFFECTS[EFF_DRUNK] && !intro )
+	if ( !intro )
 	{
-		if ( stats[clientnum]->type != GOATMAN )
+		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
 		{
-			// goat no spin!
-			if ( drunkextend < 0.5 )
+			// goat/addicts no spin!
+			if ( stats[clientnum]->type == GOATMAN || stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL] != 0 )
 			{
-				drunkextend += .005;
-				if ( drunkextend > 0.5 )
+				// return to normal.
+				if ( drunkextend > 0 )
 				{
-					drunkextend = 0.5;
+					drunkextend -= .005;
+					if ( drunkextend < 0 )
+					{
+						drunkextend = 0;
+					}
+				}
+			}
+			else
+			{
+				if ( drunkextend < 0.5 )
+				{
+					drunkextend += .005;
+					if ( drunkextend > 0.5 )
+					{
+						drunkextend = 0.5;
+					}
 				}
 			}
 		}
 		else
 		{
-			// return to normal.
-			if ( drunkextend > 0 )
+			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] )
 			{
-				drunkextend -= .005;
-				if ( drunkextend < 0 )
+				// special widthdrawal shakes
+				if ( drunkextend < 0.2 )
 				{
-					drunkextend = 0;
+					drunkextend += .005;
+					if ( drunkextend > 0.2 )
+					{
+						drunkextend = 0.2;
+					}
 				}
 			}
-		}
-	}
-	else
-	{
-		if ( !intro && !stats[clientnum]->EFFECTS[EFF_DRUNK]
-			&& stats[clientnum]->playerRace == RACE_GOATMAN && client_classes[clientnum] == 13 )
-		{
-			// special class shakes without drunk
-			if ( drunkextend < 0.2 )
+			else
 			{
-				drunkextend += .005;
-				if ( drunkextend > 0.2 )
+				// return to normal.
+				if ( drunkextend > 0 )
 				{
-					drunkextend = 0.2;
-				}
-			}
-		}
-		else
-		{
-			// return to normal.
-			if ( drunkextend > 0 )
-			{
-				drunkextend -= .005;
-				if ( drunkextend < 0 )
-				{
-					drunkextend = 0;
+					drunkextend -= .005;
+					if ( drunkextend < 0 )
+					{
+						drunkextend = 0;
+					}
 				}
 			}
 		}

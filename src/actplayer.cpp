@@ -929,7 +929,7 @@ void actPlayer(Entity* my)
 		{
 			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
 			{
-				if ( my->playerIsVampire() == PLAYER_VAMPIRE_CLASS )
+				if ( client_classes[PLAYER_NUM] == CLASS_ACCURSED )
 				{
 					my->setEffect(EFF_VAMPIRICAURA, true, -2, true);
 					my->playerVampireCurse = 1;
@@ -944,7 +944,7 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			if ( stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && client_classes[PLAYER_NUM] == 13 )
+			if ( stats[PLAYER_NUM]->playerRace == RACE_GOATMAN || client_classes[PLAYER_NUM] == CLASS_DRUNKARD )
 			{
 				if ( PLAYER_ALIVETIME == 330 && currentlevel == 0 )
 				{
@@ -964,12 +964,8 @@ void actPlayer(Entity* my)
 					messagePlayerColor(PLAYER_NUM, color, language[3222]);
 				}
 			}
-			/*if ( PLAYER_NUM == clientnum && my->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS && PLAYER_ALIVETIME % 50 == 0 )
-			{
-				messagePlayer(0, "hunger: %d", stats[PLAYER_NUM]->HUNGER);
-			}*/
 		}
-		if ( multiplayer == CLIENT && my->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+		if ( multiplayer == CLIENT && client_classes[PLAYER_NUM] == CLASS_ACCURSED )
 		{
 			if ( PLAYER_NUM == clientnum && my->playerVampireCurse == 1 )
 			{
@@ -2394,13 +2390,12 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// effects of drunkenness
-		bool goatmanClass = stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && client_classes[PLAYER_NUM] == 13;
 		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && stats[PLAYER_NUM]->type != GOATMAN)
-			|| (!stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && goatmanClass) )
+			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 		{
 			CHAR_DRUNK++;
 			int drunkInterval = 180;
-			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && goatmanClass )
+			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 			{
 				drunkInterval = 500;
 			}
@@ -4568,35 +4563,29 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 	}
 }
 
-int Entity::playerIsVampire()
+bool Entity::playerRequiresBloodToSustain()
 {
 	if ( behavior != &actPlayer )
 	{
-		return PLAYER_NOT_VAMPIRE_CLASS;
+		return false;
 	}
 	if ( !stats[skill[2]] )
 	{
-		return PLAYER_NOT_VAMPIRE_CLASS;
+		return false;
 	}
 
-	if ( stats[skill[2]]->type == VAMPIRE && client_classes[skill[2]] == 13 )
-	{
-		if ( stats[skill[2]]->EFFECTS[EFF_VAMPIRICAURA] && playerVampireCurse == 1 )
-		{
-			return PLAYER_VAMPIRE_CURSED;
-		}
-		return PLAYER_VAMPIRE_CLASS;
-	}
 	if ( stats[skill[2]]->type == VAMPIRE )
 	{
-		return PLAYER_VAMPIRE_TYPE;
+		return true;
 	}
-	else
+	if ( stats[skill[2]]->EFFECTS[EFF_VAMPIRICAURA] || client_classes[skill[2]] == CLASS_ACCURSED )
 	{
-		if ( effectPolymorph != NOTHING && getMonsterFromPlayerRace(stats[skill[2]]->playerRace) == VAMPIRE )
-		{
-			return PLAYER_VAMPIRE_POLYMORPHED;
-		}
+		return true;
 	}
-	return PLAYER_NOT_VAMPIRE_CLASS;
+	if ( stats[skill[2]]->playerRace )
+	{
+		return true;
+	}
+	
+	return false;
 }

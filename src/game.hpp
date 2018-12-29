@@ -101,7 +101,7 @@ extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
-#define NUMCLASSES 14
+#define NUMCLASSES 21
 #define NUMRACES 9
 extern char address[64];
 extern bool loadnextlevel;
@@ -115,6 +115,31 @@ extern SDL_Surface* title_bmp;
 extern SDL_Surface* logo_bmp;
 extern SDL_Surface* cursor_bmp;
 extern SDL_Surface* cross_bmp;
+
+enum PlayerClasses : int
+{
+	CLASS_BARBARIAN,
+	CLASS_WARRIOR,
+	CLASS_HEALER,
+	CLASS_ROGUE,
+	CLASS_WANDERER,
+	CLASS_CLERIC,
+	CLASS_MERCHANT,
+	CLASS_WIZARD,
+	CLASS_ARCANIST,
+	CLASS_JOKER,
+	CLASS_SEXTON,
+	CLASS_NINJA,
+	CLASS_MONK,
+	CLASS_CONJURER,
+	CLASS_ACCURSED,
+	CLASS_MESMER,
+	CLASS_DRUNKARD,
+	CLASS_UNDEF1,
+	CLASS_UNDEF2,
+	CLASS_UNDEF3,
+	CLASS_UNDEF4
+};
 
 enum PlayerRaces : int
 {

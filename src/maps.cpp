@@ -5150,13 +5150,10 @@ void assignActions(map_t* map)
 	{
 		for ( c = 0; c < MAXPLAYERS; ++c )
 		{
-			if ( players[c] && players[c]->entity )
+			if ( client_classes[c] == CLASS_ACCURSED )
 			{
-				if ( players[c]->entity->playerIsVampire() == PLAYER_VAMPIRE_CLASS || players[c]->entity->playerIsVampire() == PLAYER_VAMPIRE_CURSED )
-				{
-					vampireQuestChest->chestHasVampireBook = 1;
-					break;
-				}
+				vampireQuestChest->chestHasVampireBook = 1;
+				break;
 			}
 		}
 	}
