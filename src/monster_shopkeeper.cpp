@@ -346,6 +346,10 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
 						}
 					}
+					if ( sellVampireBlood )
+					{
+						tmpItem = newItem(FOOD_BLOOD, EXCELLENT, 0, 2 + rand() % 3, rand(), false, &myStats->inventory);
+					}
 					break;
 				case 5:
 					// staff shop
@@ -376,10 +380,6 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
 						}
-					}
-					if ( sellVampireBlood )
-					{
-						tmpItem = newItem(FOOD_BLOOD, EXCELLENT, 0, 2 + rand() % 3, rand(), false, &myStats->inventory);
 					}
 					break;
 				case 7:
