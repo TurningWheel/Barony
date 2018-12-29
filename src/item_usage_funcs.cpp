@@ -3027,10 +3027,6 @@ void item_Food(Item*& item, int player)
 			{
 				pukeChance = 1;
 			}
-			else
-			{
-				pukeChance = 100;
-			}
 		}
 	}
 	else if ( item->type == FOOD_BLOOD )
