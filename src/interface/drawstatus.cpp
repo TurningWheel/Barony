@@ -641,7 +641,7 @@ void drawStatus()
 	int xoffset = pos.x;
 
 	// hunger icon
-	if ( stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	if ( (svFlags & SV_FLAG_HUNGER) && stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
 		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = yres - 160;

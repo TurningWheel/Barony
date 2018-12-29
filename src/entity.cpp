@@ -2548,9 +2548,13 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( !processHunger )
 	{
-		if ( myStats->HUNGER != 800 )
+		if ( behavior == &actMonster )
 		{
-			myStats->HUNGER = 800; // always set hunger to 800
+			myStats->HUNGER = 500;
+		}
+		else if ( myStats->HUNGER <= 100 )
+		{
+			myStats->HUNGER = 100;
 			serverUpdateHunger(player);
 		}
 	}
@@ -3718,17 +3722,20 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	Sint32 STR;
 
 	STR = entitystats->STR;
-	if ( entitystats->HUNGER >= 1500 )
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		STR--;
-	}
-	if ( entitystats->HUNGER <= 150 )
-	{
-		STR--;
-	}
-	if ( entitystats->HUNGER <= 50 )
-	{
-		STR--;
+		if ( entitystats->HUNGER >= 1500 )
+		{
+			STR--;
+		}
+		if ( entitystats->HUNGER <= 150 )
+		{
+			STR--;
+		}
+		if ( entitystats->HUNGER <= 50 )
+		{
+			STR--;
+		}
 	}
 	if ( entitystats->gloves != nullptr )
 	{
@@ -3814,7 +3821,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	DEX = entitystats->DEX;
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
-		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 && entitystats->playerRace == RACE_VAMPIRE )
+		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 		{
 			DEX += 3; // player cursed vampiric bonus
 		}
@@ -3835,17 +3842,20 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		//DEX -= 5;
 	}
-	if ( entitystats->HUNGER >= 1500 )
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		DEX--;
-	}
-	if ( entitystats->HUNGER <= 150 )
-	{
-		DEX--;
-	}
-	if ( entitystats->HUNGER <= 50 )
-	{
-		DEX--;
+		if ( entitystats->HUNGER >= 1500 )
+		{
+			DEX--;
+		}
+		if ( entitystats->HUNGER <= 150 )
+		{
+			DEX--;
+		}
+		if ( entitystats->HUNGER <= 50 )
+		{
+			DEX--;
+		}
 	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{
@@ -3977,9 +3987,12 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	Sint32 INT;
 
 	INT = entitystats->INT;
-	if ( entitystats->HUNGER <= 50 )
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		INT--;
+		if ( entitystats->HUNGER <= 50 )
+		{
+			INT--;
+		}
 	}
 	if ( entitystats->helmet != nullptr )
 	{
@@ -4035,9 +4048,12 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	Sint32 PER;
 
 	PER = entitystats->PER;
-	if ( entitystats->HUNGER <= 50 )
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		PER--;
+		if ( entitystats->HUNGER <= 50 )
+		{
+			PER--;
+		}
 	}
 	if ( entitystats->mask )
 	{
