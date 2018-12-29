@@ -712,7 +712,7 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = 13;
+				client_classes[clientnum] = CLASS_ACCURSED;
 				stats[0]->playerRace = RACE_VAMPIRE;
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
@@ -729,7 +729,7 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = 13;
+				client_classes[clientnum] = CLASS_ACCURSED;
 				stats[0]->playerRace = RACE_VAMPIRE;
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
@@ -1666,31 +1666,33 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 		}
 
-		// sexes/race
-		if ( charcreation_step == 1 )
+		// skin DLC check flags.
+		bool skipFirstDLC = false;
+		bool skipSecondDLC = false;
+		if ( enabledDLCPack2 && !enabledDLCPack1 )
 		{
-			bool skipFirstDLC = false;
-			bool skipSecondDLC = false;
-			if ( enabledDLCPack2 && !enabledDLCPack1 )
-			{
-				skipFirstDLC = true;
-				if ( stats[0]->playerRace > 0 && stats[0]->playerRace <= RACE_GOATMAN )
-				{
-					stats[0]->playerRace = RACE_HUMAN;
-				}
-			}
-			else if ( enabledDLCPack1 && !enabledDLCPack2 )
-			{
-				skipSecondDLC = true;
-				if ( stats[0]->playerRace > RACE_GOATMAN )
-				{
-					stats[0]->playerRace = RACE_HUMAN;
-				}
-			}
-			else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+			skipFirstDLC = true;
+			if ( stats[0]->playerRace > 0 && stats[0]->playerRace <= RACE_GOATMAN )
 			{
 				stats[0]->playerRace = RACE_HUMAN;
 			}
+		}
+		else if ( enabledDLCPack1 && !enabledDLCPack2 )
+		{
+			skipSecondDLC = true;
+			if ( stats[0]->playerRace > RACE_GOATMAN )
+			{
+				stats[0]->playerRace = RACE_HUMAN;
+			}
+		}
+		else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+		{
+			stats[0]->playerRace = RACE_HUMAN;
+		}
+
+		// sexes/race
+		if ( charcreation_step == 1 )
+		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
 			Uint32 colorStep1 = uint32ColorWhite(*mainsurface);
 			if ( raceSelect != 0 )
@@ -1863,12 +1865,16 @@ void handleMainMenu(bool mode)
 				pady += 24;
 				char raceOptionBuffer[64];
 				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
+				if ( stats[0]->appearance > 1 )
+				{
+					stats[0]->appearance = 0;
+				}
 				if ( stats[0]->appearance == 0 )
 				{
 					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", raceOptionBuffer);
 					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[ ] %s", language[3178]);
 				}
-				else
+				else if ( stats[0]->appearance == 1 )
 				{
 					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", raceOptionBuffer);
 					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[o] %s", language[3178]);
@@ -1990,16 +1996,27 @@ void handleMainMenu(bool mode)
 									{
 										stats[0]->sex = lastSex;
 									}
-									if ( stats[0]->playerRace == RACE_HUMAN && client_classes[0] == 13 )
+									// convert human class to monster special classes on reselect.
+									if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
 									{
-										client_classes[0] = 0;
+										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 										stats[0]->clearStats();
 										initClass(0);
 									}
-									else if ( client_classes[0] == 13 )
+									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
 									{
+										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 										stats[0]->clearStats();
 										initClass(0);
+									}
+									// appearance reset.
+									if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
+									{
+										stats[0]->appearance = rand() % NUMAPPEARANCES;
+									}
+									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
+									{
+										stats[0]->appearance = 0;
 									}
 								}
 								break;
@@ -2099,7 +2116,14 @@ void handleMainMenu(bool mode)
 					}
 					else
 					{
-						--stats[0]->playerRace;
+						if ( skipFirstDLC && stats[0]->playerRace == RACE_AUTOMATON )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+						else
+						{
+							--stats[0]->playerRace;
+						}
 					}
 					if ( stats[0]->playerRace == RACE_INCUBUS )
 					{
@@ -2113,22 +2137,41 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->sex = lastSex;
 					}
-					if ( stats[0]->playerRace == RACE_HUMAN && client_classes[0] == 13 )
+					// convert human class to monster special classes on reselect.
+					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
 					{
-						client_classes[0] = 0;
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
 						initClass(0);
 					}
-					else if ( client_classes[0] == 13 )
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
 					{
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
 						initClass(0);
+					}
+					// appearance reset.
+					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
+					{
+						stats[0]->appearance = rand() % NUMAPPEARANCES;
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
+					{
+						stats[0]->appearance = 0;
 					}
 				}
 				else if ( raceSelect == 0 )
 				{
 					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 					lastSex = stats[0]->sex;
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
 				}
 				else if ( raceSelect == 2 )
 				{
@@ -2207,22 +2250,41 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->sex = lastSex;
 					}
-					if ( stats[0]->playerRace == RACE_HUMAN && client_classes[0] == 13 )
+					// convert human class to monster special classes on reselect.
+					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
 					{
-						client_classes[0] = 0;
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
 						initClass(0);
 					}
-					else if ( client_classes[0] == 13 )
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
 					{
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
 						initClass(0);
+					}
+					// appearance reset.
+					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
+					{
+						stats[0]->appearance = rand() % NUMAPPEARANCES;
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
+					{
+						stats[0]->appearance = 0;
 					}
 				}
 				else if ( raceSelect == 0 )
 				{
 					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 					lastSex = stats[0]->sex;
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
 				}
 				else if ( raceSelect == 2 )
 				{
@@ -2284,20 +2346,56 @@ void handleMainMenu(bool mode)
 		else if ( charcreation_step == 2 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
-			int classesToDisplay = NUMCLASSES;
-			if ( stats[0]->playerRace == RACE_HUMAN )
+			int entriesToDisplay = NUMCLASSES;
+			int lastClassInList = NUMCLASSES - 1;
+			if ( stats[0]->playerRace != RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) )
 			{
-				classesToDisplay = NUMCLASSES - 1;
+				entriesToDisplay = CLASS_MONK + 2;
+				lastClassInList = CLASS_MONK + stats[0]->playerRace;
 			}
-			for ( c = 0; c < classesToDisplay; c++ )
+			else if ( stats[0]->playerRace == RACE_HUMAN )
 			{
-				if ( c == client_classes[0] )
+				if ( enabledDLCPack1 && enabledDLCPack2 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c, 0));
+					entriesToDisplay = NUMCLASSES;
+				}
+				else if ( enabledDLCPack1 || enabledDLCPack2 )
+				{
+					entriesToDisplay = NUMCLASSES - 4;
+					if ( skipFirstDLC )
+					{
+						lastClassInList = CLASS_UNDEF4;
+					}
+					else if ( skipSecondDLC )
+					{
+						lastClassInList = CLASS_DRUNKARD;
+					}
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c, 0));
+					entriesToDisplay = CLASS_MONK + 1;
+					lastClassInList = CLASS_MONK;
+				}
+			}
+
+			for ( c = 0; c < entriesToDisplay; c++ )
+			{
+				int classToPick = c;
+				if ( stats[0]->playerRace != RACE_HUMAN && c == entriesToDisplay - 1 )
+				{
+					// monsters only get to choose their particular class, while humans can choose all new classes.
+					// so the 'last' entry is the monster's class, advance to the appropriate index.
+					classToPick = CLASS_MONK + stats[0]->playerRace;
+				}
+				else if ( stats[0]->playerRace == RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) )
+				{
+					if ( skipFirstDLC )
+					{
+						if ( c > CLASS_MONK && (c < entriesToDisplay) )
+						{
+							classToPick = c + 4; // classToPick refers to the descriptions of the second half of the DLC classes.
+						}
+					}
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -2307,7 +2405,7 @@ void handleMainMenu(bool mode)
 						if ( omousey >= suby1 + 56 + 16 * c && omousey < suby1 + 72 + 16 * c )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							client_classes[0] = c;
+							client_classes[0] = classToPick;
 
 							// reset class loadout
 							stats[0]->clearStats();
@@ -2315,6 +2413,16 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
+
+				if ( classToPick == client_classes[0] )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(classToPick, 0));
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(classToPick, 0));
+				}
+
 				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
@@ -2326,7 +2434,28 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						client_classes[0] = classesToDisplay - 1;
+						if ( stats[0]->playerRace != RACE_HUMAN )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						}
+						else
+						{
+							client_classes[0] = lastClassInList;
+						}
+					}
+					else if ( stats[0]->playerRace == RACE_HUMAN )
+					{
+						if ( client_classes[0] == CLASS_DRUNKARD && skipFirstDLC )
+						{
+							client_classes[0] = CLASS_MONK;
+						}
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN )
+					{
+						if ( client_classes[0] > CLASS_MONK )
+						{
+							client_classes[0] = CLASS_MONK;
+						}
 					}
 
 					// reset class loadout
@@ -2342,9 +2471,23 @@ void handleMainMenu(bool mode)
 					}
 					draw_cursor = false;
 					client_classes[0]++;
-					if ( client_classes[0] > classesToDisplay - 1 )
+					if ( client_classes[0] > lastClassInList )
 					{
 						client_classes[0] = 0;
+					}
+					else if ( stats[0]->playerRace == RACE_HUMAN )
+					{
+						if ( client_classes[0] == CLASS_MONK + 1 && skipFirstDLC )
+						{
+							client_classes[0] = CLASS_UNDEF1;
+						}
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN )
+					{
+						if ( client_classes[0] == CLASS_MONK + 1 )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace; // jump ahead to the monster specific class.
+						}
 					}
 
 					// reset class loadout
@@ -9656,7 +9799,7 @@ void buttonBack(button_t* my)
 	else if ( charcreation_step == 1 )
 	{
 		raceSelect = 0; // reset the race selection menu to select sex
-		if ( stats[0]->playerRace != RACE_HUMAN && client_classes[0] == 13 )
+		if ( stats[0]->playerRace != RACE_HUMAN )
 		{
 			stats[0]->clearStats();
 			initClass(0);
@@ -11419,8 +11562,8 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;
-	stats[0]->sex = static_cast<sex_t>(0);
-	stats[0]->appearance = 0;
+	stats[0]->sex = static_cast<sex_t>(0 + rand() % 2);
+	stats[0]->appearance = 0 + rand() % NUMAPPEARANCES;
 	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
@@ -11443,8 +11586,8 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
 	subx2 = xres / 2 + 400;
-	suby1 = yres / 2 - 240;
-	suby2 = yres / 2 + 240;
+	suby1 = yres / 2 - 260;
+	suby2 = yres / 2 + 260;
 	strcpy(subtext, "");
 
 	// close button

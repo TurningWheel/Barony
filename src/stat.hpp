@@ -50,6 +50,7 @@ static const int EFF_MP_REGEN = 23;
 static const int EFF_PACIFY = 24;
 static const int EFF_POLYMORPH = 25;
 static const int EFF_KNOCKBACK = 26;
+static const int EFF_WITHDRAWAL = 27;
 static const int NUMEFFECTS = 32;
 
 // stats

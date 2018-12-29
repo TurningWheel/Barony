@@ -58,7 +58,7 @@ void initClass(int player)
 
 	// CLASS LOADOUTS
 	// barbarian
-	if ( client_classes[player] == 0 )
+	if ( client_classes[player] == CLASS_BARBARIAN )
 	{
 		// attributes
 		stats[player]->STR += 1;
@@ -156,7 +156,7 @@ void initClass(int player)
 		}
 	}
 	// warrior
-	else if ( client_classes[player] == 1 )
+	else if ( client_classes[player] == CLASS_WARRIOR )
 	{
 		// attributes
 		stats[player]->STR += 1;
@@ -270,7 +270,7 @@ void initClass(int player)
 		}
 	}
 	// healer
-	else if ( client_classes[player] == 2 )
+	else if ( client_classes[player] == CLASS_HEALER )
 	{
 		// attributes
 		stats[player]->CON += 2;
@@ -386,7 +386,7 @@ void initClass(int player)
 		}
 	}
 	// rogue
-	else if ( client_classes[player] == 3 )
+	else if ( client_classes[player] == CLASS_ROGUE )
 	{
 		// attributes
 		stats[player]->DEX += 2;
@@ -494,7 +494,7 @@ void initClass(int player)
 		}
 	}
 	// wanderer
-	else if ( client_classes[player] == 4 )
+	else if ( client_classes[player] == CLASS_WANDERER )
 	{
 		// attributes
 		stats[player]->CON += 1;
@@ -614,7 +614,7 @@ void initClass(int player)
 		}
 	}
 	// cleric
-	else if ( client_classes[player] == 5 )
+	else if ( client_classes[player] == CLASS_CLERIC )
 	{
 		// attributes
 		stats[player]->PER += 2;
@@ -723,7 +723,7 @@ void initClass(int player)
 		}
 	}
 	// merchant
-	else if ( client_classes[player] == 6 )
+	else if ( client_classes[player] == CLASS_MERCHANT )
 	{
 		// attributes
 		stats[player]->CHR += 1;
@@ -825,7 +825,7 @@ void initClass(int player)
 		}
 	}
 	// wizard
-	else if ( client_classes[player] == 7 )
+	else if ( client_classes[player] == CLASS_WIZARD )
 	{
 		// attributes
 		stats[player]->INT += 1;
@@ -955,7 +955,7 @@ void initClass(int player)
 		}
 	}
 	// arcanist
-	else if ( client_classes[player] == 8 )
+	else if ( client_classes[player] == CLASS_ARCANIST )
 	{
 		// attributes
 		stats[player]->INT += 1;
@@ -1076,7 +1076,7 @@ void initClass(int player)
 		}
 	}
 	// joker
-	else if ( client_classes[player] == 9 )
+	else if ( client_classes[player] == CLASS_JOKER )
 	{
 		// attributes
 		stats[player]->INT += 1;
@@ -1157,7 +1157,7 @@ void initClass(int player)
 		}
 	}
 	// sexton
-	else if ( client_classes[player] == 10 )
+	else if ( client_classes[player] == CLASS_SEXTON )
 	{
 		// attributes
 		stats[player]->STR -= 1;
@@ -1279,7 +1279,7 @@ void initClass(int player)
 		}
 	}
 	// ninja
-	else if ( client_classes[player] == 11 )
+	else if ( client_classes[player] == CLASS_NINJA )
 	{
 		// attributes
 		stats[player]->STR -= 1;
@@ -1393,7 +1393,7 @@ void initClass(int player)
 		}
 	}
 	// monk
-	else if ( client_classes[player] == 12 )
+	else if ( client_classes[player] == CLASS_MONK )
 	{
 		// attributes
 		stats[player]->STR += 1;
@@ -1461,438 +1461,431 @@ void initClass(int player)
 			free(item);
 		}
 	}
-	// test
-	else if ( client_classes[player] == 13 )
+	// start DLC
+	else if ( client_classes[player] == CLASS_CONJURER )
 	{
-		//stats[player]->playerRace = RACE_VAMPIRE;
-		if ( stats[player]->playerRace == RACE_SKELETON )
+		// attributes
+		stats[player]->INT += 1;
+		stats[player]->CON += 2;
+		stats[player]->DEX -= 1;
+		stats[player]->PER -= 2;
+
+		stats[player]->MAXHP -= 0;
+		stats[player]->HP -= 0;
+		stats[player]->MAXMP += 15;
+		stats[player]->MP += 15;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		//stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 80;
+		//stats[player]->PROFICIENCIES[PRO_SWORD] = 20;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
+
+		// weapon
+		item = newItem(MAGICSTAFF_COLD, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
 		{
-			// attributes
-			stats[player]->INT += 1;
-			stats[player]->CON += 2;
-			stats[player]->DEX -= 1;
-			stats[player]->PER -= 2;
-
-			stats[player]->MAXHP -= 0;
-			stats[player]->HP -= 0;
-			stats[player]->MAXMP += 15;
-			stats[player]->MP += 15;
-
-			// skills
-			stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
-			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-			stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 80;
-			stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
-			stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
-			stats[player]->PROFICIENCIES[PRO_SWORD] = 20;
-
-			// weapon
-			item = newItem(MAGICSTAFF_COLD, EXCELLENT, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[0].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[1].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			// brown hood
-			item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			// cloak
-			item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			if ( player == clientnum )
-			{
-				// summon book
-				item = newItem(SPELLBOOK_SUMMON, WORN, 0, 1, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[9].item = item2->uid;
-				free(item);
-
-				// slow book
-				item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[8].item = item2->uid;
-				free(item);
-
-				// polymorph
-				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
-			}
-
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
 		}
-		else if ( stats[player]->playerRace == RACE_VAMPIRE )
+		else
 		{
-			// attributes
+			useItem(item, player);
+		}
+
+		item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[1].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// brown hood
+		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// cloak
+		item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( player == clientnum )
+		{
+			// summon book
+			item = newItem(SPELLBOOK_SUMMON, WORN, 0, 1, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
+			free(item);
+
+			// slow book
+			item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
+			free(item);
+		}
+	}
+	else if ( client_classes[player] == CLASS_ACCURSED )
+	{
+		// attributes
+		if ( stats[player]->playerRace == RACE_VAMPIRE )
+		{
 			stats[player]->INT += 10;
-			stats[player]->STR += 1;
-			stats[player]->CON -= 3;
-			stats[player]->DEX -= 3;
-			stats[player]->PER -= 1;
-
-			stats[player]->MAXHP -= 0;
-			stats[player]->HP -= 0;
-			stats[player]->MAXMP += 10;
-			stats[player]->MP += 10;
-
-			// skills
-			stats[player]->PROFICIENCIES[PRO_MAGIC] = 70;
-			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-			stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
-			stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
-			stats[player]->PROFICIENCIES[PRO_UNARMED] = 40;
-
-			// green hood
-			item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			// green cloak
-			item = newItem(CLOAK, SERVICABLE, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			// boots
-			item = newItem(IRON_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
-
-			if ( player == clientnum )
-			{
-				// lev book
-				item = newItem(SPELLBOOK_LEVITATION, DECREPIT, 0, 1, 4, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[9].item = item2->uid;
-				free(item);
-
-				// invis book
-				item = newItem(SPELLBOOK_INVISIBILITY, WORN, 0, 1, 2, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[8].item = item2->uid;
-				free(item);
-
-				// bleed book
-				item = newItem(SPELLBOOK_BLEED, WORN, 0, 1, 2, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[7].item = item2->uid;
-				free(item);
-
-				// blood
-				item = newItem(FOOD_BLOOD, EXCELLENT, 0, 3, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[5].item = item2->uid;
-				free(item);
-
-				// restore magic
-				item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[6].item = item2->uid;
-				free(item);
-
-				// polymorph
-				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
-			}
 		}
-		else if ( stats[player]->playerRace == RACE_SUCCUBUS )
+		else
 		{
-			// attributes
 			stats[player]->INT += 2;
-			stats[player]->STR -= 3;
-			stats[player]->CON -= 3;
-			stats[player]->DEX -= 3;
-			stats[player]->PER += 2;
-			stats[player]->CHR += 4;
+		}
+		stats[player]->STR += 1;
+		stats[player]->CON -= 3;
+		stats[player]->DEX -= 3;
+		stats[player]->PER -= 1;
 
-			stats[player]->MAXHP -= 5;
-			stats[player]->HP -= 5;
-			stats[player]->MAXMP += 10;
-			stats[player]->MP += 10;
+		stats[player]->MAXHP -= 0;
+		stats[player]->HP -= 0;
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;
 
-			// skills
-			stats[player]->PROFICIENCIES[PRO_MAGIC] = 60;
-			stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-			stats[player]->PROFICIENCIES[PRO_POLEARM] = 20;
-			stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+		// skills
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 70;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 40;
+		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 40;
 
-			// ring
-			item = newItem(RING_PROTECTION, EXCELLENT, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
+		// green hood
+		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
-			// hood (green)
-			item = newItem(HAT_HOOD, WORN, -1, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
+		// green cloak
+		item = newItem(CLOAK, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
-			// weapon
-			item = newItem(MAGICSTAFF_CHARM, SERVICABLE, -1, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[0].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
+		// boots
+		item = newItem(IRON_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
-			if ( player == clientnum )
+		if ( player == clientnum )
+		{
+			// lev book
+			item = newItem(SPELLBOOK_LEVITATION, DECREPIT, 0, 1, 4, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
+			free(item);
+
+			// invis book
+			item = newItem(SPELLBOOK_INVISIBILITY, WORN, 0, 1, 2, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
+			free(item);
+
+			// bleed book
+			item = newItem(SPELLBOOK_BLEED, WORN, 0, 1, 2, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[7].item = item2->uid;
+			free(item);
+
+			// blood
+			item = newItem(FOOD_BLOOD, EXCELLENT, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[5].item = item2->uid;
+			free(item);
+
+			// restore magic
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[6].item = item2->uid;
+			free(item);
+		}
+	}
+	else if ( client_classes[player] == CLASS_MESMER )
+	{
+		// attributes
+		stats[player]->INT += 2;
+		stats[player]->STR -= 3;
+		stats[player]->CON -= 3;
+		stats[player]->DEX -= 3;
+		stats[player]->PER += 2;
+		stats[player]->CHR += 4;
+
+		stats[player]->MAXHP -= 5;
+		stats[player]->HP -= 5;
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 60;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 20;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 60;
+
+		// ring
+		item = newItem(RING_PROTECTION, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// hood (green)
+		item = newItem(HAT_HOOD, WORN, -1, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// weapon
+		item = newItem(MAGICSTAFF_CHARM, SERVICABLE, -1, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( player == clientnum )
+		{
+			addSpell(SPELL_TELEPORTATION, player, true);
+			addSpell(SPELL_CHARM_MONSTER, player, true);
+			for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 			{
-				addSpell(SPELL_TELEPORTATION, player, true);
-				addSpell(SPELL_CHARM_MONSTER, player, true);
-				for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
+				Item* item = (Item*)node->element;
+				if ( item->type == SPELL_ITEM )
 				{
-					Item* item = (Item*)node->element;
-					if ( item->type == SPELL_ITEM )
+					if ( item->appearance == SPELL_TELEPORTATION )
 					{
-						if ( item->appearance == SPELL_TELEPORTATION )
-						{
-							hotbar[3].item = item->uid;
-						}
-						else if ( item->appearance == SPELL_CHARM_MONSTER )
-						{
-							hotbar[4].item = item->uid;
-						}
+						hotbar[3].item = item->uid;
+					}
+					else if ( item->appearance == SPELL_CHARM_MONSTER )
+					{
+						hotbar[4].item = item->uid;
 					}
 				}
-
-				// spear
-				item = newItem(IRON_SPEAR, SERVICABLE, -2, 1, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[1].item = item2->uid;
-				free(item);
-
-				// restore magic
-				item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[2].item = item2->uid;
-				free(item);
-
-				// confusion
-				item = newItem(POTION_CONFUSION, EXCELLENT, 0, 1, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
-
-				// polymorph
-				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
-
-				// charm monster spellbook
-				item = newItem(SPELLBOOK_CHARM_MONSTER, WORN, 0, 1, 8, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
 			}
+
+			// spear
+			item = newItem(IRON_SPEAR, SERVICABLE, -2, 1, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			// restore magic
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+
+			// confusion
+			item = newItem(POTION_CONFUSION, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// charm monster spellbook
+			item = newItem(SPELLBOOK_CHARM_MONSTER, WORN, 0, 1, 8, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
 		}
-		else if ( stats[player]->playerRace == RACE_GOATMAN )
+	}
+	else if ( client_classes[player] == CLASS_DRUNKARD )
+	{
+		// attributes
+		stats[player]->EFFECTS[EFF_ASLEEP] = true;
+		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
+		stats[player]->STR += -3;
+		stats[player]->DEX += 0;
+		stats[player]->CON -= 2;
+		stats[player]->INT -= 1;
+		stats[player]->PER -= 2;
+		stats[player]->CHR += 1;
+
+		stats[player]->MAXHP += 10;
+		stats[player]->HP += 10;
+		stats[player]->MAXMP -= 20;
+		stats[player]->MP -= 20;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_MACE] = 60;
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
+		stats[player]->PROFICIENCIES[PRO_AXE] = 20;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
+		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+
+		// booze
+		item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
+		if ( player == clientnum )
 		{
-			// attributes
-			stats[player]->EFFECTS[EFF_ASLEEP] = true;
-			stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
-			stats[player]->STR += -3;
-			stats[player]->DEX += 0;
-			stats[player]->CON -= 2;
-			stats[player]->INT -= 1;
-			stats[player]->PER -= 2;
-			stats[player]->CHR += 1;
-
-			stats[player]->MAXHP += 10;
-			stats[player]->HP += 10;
-			stats[player]->MAXMP -= 20;
-			stats[player]->MP -= 20;
-
-			// skills
-			stats[player]->PROFICIENCIES[PRO_MACE] = 60;
-			stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-			stats[player]->PROFICIENCIES[PRO_AXE] = 20;
-			stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-			stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
-			stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-
-			// booze
-			item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				equipItem(item2, &stats[player]->weapon, player);
-				hotbar[1].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				equipItem(item, &stats[player]->weapon, player);
-			}
+			item2 = itemPickup(player, item);
+			equipItem(item2, &stats[player]->weapon, player);
+			hotbar[1].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			equipItem(item, &stats[player]->weapon, player);
+		}
 			
-			// bronze shield
-			item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				hotbar[2].item = item2->uid;
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
+		// bronze shield
+		item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[2].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
-			// boots
-			item = newItem(STEEL_BOOTS, WORN, 0, 1, 0, true, NULL);
-			if ( player == clientnum )
-			{
-				item2 = itemPickup(player, item);
-				useItem(item2, player);
-				free(item);
-			}
-			else
-			{
-				useItem(item, player);
-			}
+		// boots
+		item = newItem(STEEL_BOOTS, WORN, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
-			if ( player == clientnum )
-			{
-				// weapon
-				item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[0].item = item2->uid;
-				free(item);
+		if ( player == clientnum )
+		{
+			// weapon
+			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[0].item = item2->uid;
+			free(item);
 
-				// bread
-				item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
+			// bread
+			item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
 
-				// towel
-				item = newItem(TOOL_TOWEL, DECREPIT, 0, 1, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
+			// towel
+			item = newItem(TOOL_TOWEL, DECREPIT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
 
-				// fish
-				item = newItem(FOOD_TIN, EXCELLENT, 0, 3, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
+			// fish
+			item = newItem(FOOD_TIN, EXCELLENT, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
 
-				// juice
-				item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 4, true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[3].item = item2->uid;
-				free(item);
+			// juice
+			item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 4, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
 
-				// polymorph
-				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
+			item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("The Lusty Goblin Maid"), true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
+			free(item);
 
-				item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("The Lusty Goblin Maid"), true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[8].item = item2->uid;
-				free(item);
-
-				item = newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("How to be Strong"), true, NULL);
-				item2 = itemPickup(player, item);
-				hotbar[9].item = item2->uid;
-				free(item);
-			}
+			item = newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("How to be Strong"), true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
+			free(item);
 		}
 	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 
-	if ( !(client_classes[player] == 13 && stats[player]->playerRace == RACE_GOATMAN) )
+	if ( stats[player]->playerRace != RACE_GOATMAN )
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = false;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 	}
-	if ( client_classes[player] != 13 && stats[player]->playerRace != RACE_HUMAN )
+	if ( client_classes[player] <= CLASS_MONK && stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )
 		{
 			// bonus polymorph potions
 			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	if ( client_classes[player] >= CLASS_CONJURER && client_classes[player] <= CLASS_DRUNKARD && stats[player]->playerRace != RACE_HUMAN )
+	{
+		if ( player == clientnum )
+		{
+			// bonus polymorph potions
+			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 		}

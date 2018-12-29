@@ -98,7 +98,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					}
 				}
 			}
-			if ( spell->ID == SPELL_VAMPIRIC_AURA && caster->playerIsVampire() == PLAYER_VAMPIRE_CURSED )
+			if ( spell->ID == SPELL_VAMPIRIC_AURA && client_classes[player] == CLASS_ACCURSED && 
+				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				if ( multiplayer == CLIENT )
 				{
@@ -115,7 +116,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 				else
 				{
 					messagePlayer(player, language[408], spell->name);
-					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false);
+					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
 					return;
 				}

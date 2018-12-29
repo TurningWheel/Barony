@@ -191,7 +191,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			{
 				if ( players[c] && players[c]->entity )
 				{
-					if ( players[c]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+					if ( players[c]->entity->playerRequiresBloodToSustain() )
 					{
 						sellVampireBlood = true;
 						break;

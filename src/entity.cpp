@@ -2740,7 +2740,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
-			if ( healring > 0 || (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster )
+			if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster )
 			{
 				if ( this->char_heal >= healthRegenInterval )
 				{
@@ -3884,16 +3884,13 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 				break;
 		}
 	}
-	if ( !entitystats->EFFECTS[EFF_DRUNK] )
+	if ( entitystats->EFFECTS[EFF_WITHDRAWAL] )
 	{
-		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_GOATMAN && client_classes[my->skill[2]] == 13 )
+		DEX -= 3; // hungover.
+		int minusDex = DEX;
+		if ( minusDex > 0 )
 		{
-			DEX -= 3; // hungover.
-			int minusDex = DEX;
-			if ( minusDex > 0 )
-			{
-				DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
-			}
+			DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
@@ -6960,7 +6957,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( players[c] && players[c]->entity )
 							{
-								if ( players[c]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+								if ( players[c]->entity->playerRequiresBloodToSustain() )
 								{
 									tryBloodVial = true;
 									break;
@@ -6972,7 +6969,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						bool spawnBloodVial = false;
 						bool spawnSecondVial = false;
-						if ( backstab && hitstats->HP <= 0 )
+						if ( (backstab || flanking) && hitstats->HP <= 0 )
 						{
 							spawnBloodVial = true;
 						}
@@ -11664,26 +11661,6 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	std::mt19937 seed(rand()); // seed of distribution.
 	
 	std::vector<int> statWeights = classStatGrowth[playerClass];
-	if ( behavior == &actPlayer && stats[skill[2]] && playerClass == 13 )
-	{
-		switch ( stats[skill[2]]->type )
-		{
-			case SKELETON:
-				statWeights = monsterClassStatGrowth[RACE_SKELETON];
-				break;
-			case VAMPIRE:
-				statWeights = monsterClassStatGrowth[RACE_VAMPIRE];
-				break;
-			case HUMAN:
-				if ( stats[skill[2]]->playerRace > 0 )
-				{
-					statWeights = monsterClassStatGrowth[RACE_HUMAN];
-				}
-				break;
-			default:
-				break;
-		}
-	}
 
 	// debug to print which vector values are being used.
 	//for ( std::vector<int>::const_iterator i = statWeights.begin(); i != statWeights.end(); ++i )
@@ -12036,7 +12013,14 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 {
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{
-		return -1;
+		if ( behavior == &actPlayer && client_classes[skill[2]] != CLASS_ACCURSED )
+		{
+			return -1;
+		}
+		else if ( myStats.type != VAMPIRE )
+		{
+			return -1;
+		}
 	}
 	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
 	{
@@ -12442,17 +12426,17 @@ get text string for the different player chosen classes.
 
 char* playerClassLangEntry(int classnum, int playernum)
 {
-	if ( classnum >= 0 && classnum <= 9 )
+	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
 		return language[1900 + classnum];
 	}
-	else if ( classnum == 13 && stats[playernum] && stats[playernum]->playerRace > RACE_HUMAN )
+	else if ( classnum >= CLASS_CONJURER )
 	{
-		return language[3223 - 1 + stats[playernum]->playerRace];
+		return language[3223 + classnum - CLASS_CONJURER];
 	}
-	else if ( classnum >= 10 && classnum <= 12 )
+	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
 	{
-		return language[2550 + classnum - 10];
+		return language[2550 + classnum - CLASS_SEXTON];
 	}
 	else
 	{
@@ -12469,17 +12453,17 @@ get text string for the description of player chosen classes.
 
 char* playerClassDescription(int classnum, int playernum)
 {
-	if ( classnum >= 0 && classnum <= 9 )
+	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
 		return language[10 + classnum];
 	}
-	else if ( classnum == 13 && stats[playernum] && stats[playernum]->playerRace > RACE_HUMAN )
+	else if ( classnum >= CLASS_CONJURER )
 	{
-		return language[3227 - 1 + stats[playernum]->playerRace];
+		return language[3231 + classnum - CLASS_CONJURER];
 	}
-	else if ( classnum >= 10 && classnum <= 12 )
+	else if ( classnum >= CLASS_SEXTON && classnum <= CLASS_MONK )
 	{
-		return language[2560 + classnum - 10];
+		return language[2560 + classnum - CLASS_SEXTON];
 	}
 	else
 	{

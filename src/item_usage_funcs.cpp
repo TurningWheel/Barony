@@ -2736,7 +2736,7 @@ void item_ToolMirror(Item*& item, int player)
 		return;
 	}
 	messagePlayer(player, language[889]);
-	if ( players[player]->entity->isInvisible() || players[player]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
+	if ( players[player]->entity->isInvisible() || (stats[player] && stats[player]->type == VAMPIRE) )
 	{
 		messagePlayer(player, language[893]);
 		return;
@@ -2923,6 +2923,11 @@ void item_Food(Item*& item, int player)
 	int oldcount;
 	int pukeChance;
 
+	if ( !stats[player] )
+	{
+		return;
+	}
+
 	if ( player >= 0 && stats[player]->type != HUMAN && (svFlags & SV_FLAG_HUNGER) ) // hunger on
 	{
 		if ( stats[player]->type == SKELETON )
@@ -3010,15 +3015,22 @@ void item_Food(Item*& item, int player)
 			break;
 	}
 
-	if ( stats[player]->type == VAMPIRE )
+	if ( stats[player]->type == VAMPIRE || stats[player]->EFFECTS[EFF_VAMPIRICAURA] )
 	{
 		if ( item->type == FOOD_BLOOD )
 		{
 			pukeChance = 100;
 		}
-		else
+		else if ( item->type != FOOD_BLOOD )
 		{
-			pukeChance = 1;
+			if ( stats[player]->type == VAMPIRE )
+			{
+				pukeChance = 1;
+			}
+			else
+			{
+				pukeChance = 100;
+			}
 		}
 	}
 	else if ( item->type == FOOD_BLOOD )
@@ -3086,7 +3098,7 @@ void item_Food(Item*& item, int player)
 				stats[player]->HUNGER += 400;
 				break;
 			case FOOD_BLOOD:
-				if ( stats[player]->type == VAMPIRE )
+				if ( stats[player]->type == VAMPIRE || stats[player]->EFFECTS[EFF_VAMPIRICAURA] )
 				{
 					stats[player]->HUNGER += 250;
 				}

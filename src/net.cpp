@@ -3191,9 +3191,10 @@ void clientHandlePacket()
 	{
 		int player = net_packet->data[4];
 		int spellID = SDLNet_Read32(&net_packet->data[5]);
-		if ( players[player] && players[player]->entity )
+		if ( players[player] && players[player]->entity && stats[player] )
 		{
-			if ( players[player]->entity->playerIsVampire() == PLAYER_VAMPIRE_CURSED )
+			if ( client_classes[player] == CLASS_ACCURSED &&
+				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
 			{
 				players[player]->entity->setEffect(EFF_VAMPIRICAURA, false, 1, false);
 				players[player]->entity->playerVampireCurse = 2; // cured.

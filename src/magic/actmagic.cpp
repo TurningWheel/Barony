@@ -2157,13 +2157,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										for ( c = 0; c < MAXPLAYERS; ++c )
 										{
-											if ( players[c] && players[c]->entity )
+											if ( players[c]->entity->playerRequiresBloodToSustain() )
 											{
-												if ( players[c]->entity->playerIsVampire() != PLAYER_NOT_VAMPIRE_CLASS )
-												{
-													tryBloodVial = true;
-													break;
-												}
+												tryBloodVial = true;
+												break;
 											}
 										}
 										if ( tryBloodVial )
