@@ -941,10 +941,14 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				casterStats = parent->getStats();
 				if ( casterStats )
 				{
-					chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
-					if ( !magicstaff )
+					if ( magicstaff )
 					{
-						chance += ((parent->getINT() + casterStats->PROFICIENCIES[PRO_MAGIC]) / 20) * 10;
+						chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+					}
+					else
+					{
+						chance += ((parent->getCHR() + casterStats->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 5;
+						chance += (parent->getINT() * 2);
 					}
 
 					if ( parent->behavior == &actMonster )
