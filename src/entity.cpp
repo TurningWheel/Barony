@@ -3737,6 +3737,14 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR--;
 		}
 	}
+	bool cursedItemIsBuff = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
+		{
+			cursedItemIsBuff = true;
+		}
+	}
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
 	{
 		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
@@ -3752,22 +3760,22 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
 		{
-			if ( entitystats->gloves->beatitude >= 0 )
+			if ( entitystats->gloves->beatitude >= 0 || cursedItemIsBuff )
 			{
 				STR++;
 			}
-			STR += entitystats->gloves->beatitude;
+			STR += (cursedItemIsBuff ? abs(entitystats->gloves->beatitude) : entitystats->gloves->beatitude);
 		}
 	}
 	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_STRENGTH )
 		{
-			if ( entitystats->ring->beatitude >= 0 )
+			if ( entitystats->ring->beatitude >= 0 || cursedItemIsBuff )
 			{
 				STR++;
 			}
-			STR += entitystats->ring->beatitude;
+			STR += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
@@ -3830,6 +3838,16 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	}
 
 	DEX = entitystats->DEX;
+
+	bool cursedItemIsBuff = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
+		{
+			cursedItemIsBuff = true;
+		}
+	}
+
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
 		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
@@ -3852,6 +3870,14 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
 	{
 		//DEX -= 5;
+	}
+
+	if ( my && my->monsterAllyGetPlayerLeader() )
+	{
+		if ( stats[my->monsterAllyIndex] )
+		{
+			DEX += 1 + (stats[my->monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
+		}
 	}
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
@@ -3876,22 +3902,22 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
-			if ( entitystats->shoes->beatitude >= 0 )
+			if ( entitystats->shoes->beatitude >= 0 || cursedItemIsBuff )
 			{
 				DEX++;
 			}
-			DEX += entitystats->shoes->beatitude;
+			DEX += (cursedItemIsBuff ? abs(entitystats->shoes->beatitude) : entitystats->shoes->beatitude);
 		}
 	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
-			if ( entitystats->gloves->beatitude >= 0 )
+			if ( entitystats->gloves->beatitude >= 0 || cursedItemIsBuff )
 			{
 				DEX++;
 			}
-			DEX += entitystats->gloves->beatitude;
+			DEX += (cursedItemIsBuff ? abs(entitystats->gloves->beatitude) : entitystats->gloves->beatitude);
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
@@ -3945,26 +3971,36 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	Sint32 CON;
 
 	CON = entitystats->CON;
+
+	bool cursedItemIsBuff = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
+		{
+			cursedItemIsBuff = true;
+		}
+	}
+
 	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_CONSTITUTION )
 		{
-			if ( entitystats->ring->beatitude >= 0 )
+			if ( entitystats->ring->beatitude >= 0 || cursedItemIsBuff )
 			{
 				CON++;
 			}
-			CON += entitystats->ring->beatitude;
+			CON += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == BRACERS_CONSTITUTION )
 		{
-			if ( entitystats->gloves->beatitude >= 0 )
+			if ( entitystats->gloves->beatitude >= 0 || cursedItemIsBuff )
 			{
 				CON++;
 			}
-			CON += entitystats->gloves->beatitude;
+			CON += (cursedItemIsBuff ? abs(entitystats->gloves->beatitude) : entitystats->gloves->beatitude);
 		}
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_RED_BUFF] )
@@ -3998,6 +4034,16 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	Sint32 INT;
 
 	INT = entitystats->INT;
+
+	bool cursedItemIsBuff = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
+		{
+			cursedItemIsBuff = true;
+		}
+	}
+
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
 		if ( entitystats->HUNGER <= 50 )
@@ -4009,19 +4055,19 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
-			if ( entitystats->helmet->beatitude >= 0 )
+			if ( entitystats->helmet->beatitude >= 0 || cursedItemIsBuff )
 			{
 				INT++;
 			}
-			INT += entitystats->helmet->beatitude;
+			INT += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 		else if ( entitystats->helmet->type == ARTIFACT_HELM )
 		{
-			if ( entitystats->helmet->beatitude >= 0 )
+			if ( entitystats->helmet->beatitude >= 0 || cursedItemIsBuff )
 			{
 				INT += 8;
 			}
-			INT += entitystats->helmet->beatitude;
+			INT += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
@@ -4059,6 +4105,16 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	Sint32 PER;
 
 	PER = entitystats->PER;
+
+	bool cursedItemIsBuff = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
+		{
+			cursedItemIsBuff = true;
+		}
+	}
+
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
 		if ( entitystats->HUNGER <= 50 )
@@ -4070,18 +4126,18 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	{
 		if ( entitystats->mask->type == TOOL_GLASSES )
 		{
-			if ( entitystats->mask->beatitude >= 0 )
+			if ( entitystats->mask->beatitude >= 0 || cursedItemIsBuff )
 			{
 				PER++;
 			}
-			PER += entitystats->mask->beatitude;
+			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
 		else if ( entitystats->mask->type == TOOL_BLINDFOLD
 					|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
 					|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			PER -= 10;
-			PER += entitystats->mask->beatitude;
+			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
 	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
@@ -4119,26 +4175,36 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	Sint32 CHR;
 
 	CHR = entitystats->CHR;
+
+	bool cursedItemIsBuff = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
+		{
+			cursedItemIsBuff = true;
+		}
+	}
+
 	if ( entitystats->helmet != nullptr )
 	{
 		if ( entitystats->helmet->type == HAT_JESTER )
 		{
-			if ( entitystats->helmet->beatitude >= 0 )
+			if ( entitystats->helmet->beatitude >= 0 || cursedItemIsBuff )
 			{
 				CHR++;
 			}
-			CHR += entitystats->helmet->beatitude;
+			CHR += (cursedItemIsBuff ? abs(entitystats->helmet->beatitude) : entitystats->helmet->beatitude);
 		}
 	}
 	if ( entitystats->ring != nullptr )
 	{
 		if ( entitystats->ring->type == RING_ADORNMENT )
 		{
-			if ( entitystats->ring->beatitude >= 0 )
+			if ( entitystats->ring->beatitude >= 0 || cursedItemIsBuff )
 			{
 				CHR++;
 			}
-			CHR += entitystats->ring->beatitude;
+			CHR += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
