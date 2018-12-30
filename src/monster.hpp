@@ -190,7 +190,7 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
 	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
 	{	4,	2,	5,	3,	2,	2 }, // MONK 12
-	{   3,	2,	5,	6,	4,	4 }, // CONJURER 13
+	{	3,	2,	5,	6,	4,	4 }, // CONJURER 13
 	{	4,	4,	4,	4,	4,	4 }, // ACCURSED 14
 	{	4,	4,	4,	4,	4,	4 }, // MESMER 15
 	{	4,	4,	4,	4,	4,	4 }, // DRUNKARD 16
