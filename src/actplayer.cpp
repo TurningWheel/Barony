@@ -4582,7 +4582,7 @@ bool Entity::playerRequiresBloodToSustain()
 	{
 		return true;
 	}
-	if ( stats[skill[2]]->playerRace )
+	if ( stats[skill[2]]->playerRace == VAMPIRE )
 	{
 		return true;
 	}
