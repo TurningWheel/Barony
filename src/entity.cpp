@@ -3737,6 +3737,17 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR--;
 		}
 	}
+	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
+	{
+		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+		{
+			STR += 3; // player cursed vampiric bonus
+		}
+		else
+		{
+			STR += 5;
+		}
+	}
 	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
@@ -5968,7 +5979,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 							hit.entity->monsterKnockbackVelocity = 0.05;
 							hit.entity->monsterKnockbackUID = this->getUID();
-							hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+							if ( rand() % 3 > 0 )
+							{
+								hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+							}
+							else
+							{
+								hit.entity->monsterHitTime = std::max(HITRATE - 1, hit.entity->monsterHitTime);
+							}
 							knockbackInflicted = true;
 						}
 					}
@@ -6012,7 +6030,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 									hit.entity->monsterKnockbackVelocity = 0.05;
 									hit.entity->monsterKnockbackUID = this->getUID();
-									hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+									if ( rand() % 3 > 0 )
+									{
+										hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+									}
+									else
+									{
+										hit.entity->monsterHitTime = std::max(HITRATE - 1, hit.entity->monsterHitTime);
+									}
 									knockbackInflicted = true;
 								}
 							}
