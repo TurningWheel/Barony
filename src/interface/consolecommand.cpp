@@ -1882,7 +1882,7 @@ void consoleCommand(char* command_str)
 		int skill = atoi(&command_str[12]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
-			messagePlayer(clientnum, language[2451]); //Skill out of range.
+			messagePlayer(clientnum, language[3239]); //Skill out of range.
 		}
 		else
 		{
