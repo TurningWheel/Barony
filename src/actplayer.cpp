@@ -1076,7 +1076,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						messagePlayer(clientnum, language[571], tempItem->description());
+						messagePlayer(clientnum, language[3240], tempItem->description());
 					}
 
 					//Attempt a level up.
