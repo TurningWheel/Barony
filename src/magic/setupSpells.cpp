@@ -803,7 +803,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_vampiricAura);
 	strcpy(spell_vampiricAura.name, language[2398]);
 	spell_vampiricAura.ID = SPELL_VAMPIRIC_AURA;
-	spell_vampiricAura.difficulty = 60;
+	spell_vampiricAura.difficulty = 80;
 	spell_vampiricAura.elements.first = nullptr;
 	spell_vampiricAura.elements.last = nullptr;
 	node = list_AddNodeLast(&spell_vampiricAura.elements);
