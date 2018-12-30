@@ -2095,6 +2095,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 						else
 						{
 							entity = newEntity(8, 1, map.entities, nullptr);  // item
+							setSpriteAttributes(entity, nullptr, nullptr);
 							numGenItems++;
 						}
 					}
@@ -2118,6 +2119,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Sink
 							case 3:
 								entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								entity->chestLocked = -1;
 								break; //Chest
 							case 4:
@@ -2142,6 +2144,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 							if ( prng_get_uint() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
+								setSpriteAttributes(entity, nullptr, nullptr);
 							}
 							else
 							{
@@ -2204,6 +2207,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								else
 								{
 									entity = newEntity(8, 1, map.entities, nullptr);  // item
+									setSpriteAttributes(entity, nullptr, nullptr);
 									numGenItems++;
 								}
 							}
@@ -2259,6 +2263,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Sink
 							case 3:
 								entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								entity->chestLocked = -1;
 								break; //Chest
 							case 4:
@@ -2283,6 +2288,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 							if ( prng_get_uint() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
+								setSpriteAttributes(entity, nullptr, nullptr);
 							}
 							else
 							{
@@ -3953,6 +3959,7 @@ void assignActions(map_t* map)
 				{
 					// put an item on the table
 					childEntity = newEntity(8, 1, map->entities, nullptr);
+					setSpriteAttributes(childEntity, nullptr, nullptr);
 					childEntity->x = entity->x - 8;
 					childEntity->y = entity->y - 8;
 					TileEntityList.addEntity(*childEntity);

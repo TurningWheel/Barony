@@ -1102,6 +1102,10 @@ int canWearEquip(Entity* entity, int category)
 void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entityStatToCopy)
 {
 	Stat* tmpStats = nullptr;
+	if ( !entityNew )
+	{
+		return;
+	}
 
 	if ( entityStatToCopy != nullptr )
 	{
