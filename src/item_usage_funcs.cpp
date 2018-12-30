@@ -1672,7 +1672,14 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 					messagePlayer(player, language[854]);
 				}
 			}
-			(*toEnchant)->beatitude -= 1;
+			if ( (*toEnchant)->beatitude > 0 )
+			{
+				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
+			}
+			else
+			{
+				(*toEnchant)->beatitude -= 1;
+			}
 		}
 		else
 		{
@@ -1815,7 +1822,14 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			{
 				messagePlayer(player, language[858], armor->getName());
 			}
-			armor->beatitude -= 1;
+			if ( armor->beatitude > 0 )
+			{
+				armor->beatitude = -armor->beatitude;
+			}
+			else
+			{
+				armor->beatitude -= 1;
+			}
 		}
 		else
 		{
