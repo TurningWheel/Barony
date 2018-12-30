@@ -343,10 +343,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	parent = 0;
 	path = nullptr;
 	monsterAllyIndex = -1; // set to -1 to not reference player indices 0-3.
-	if ( checkSpriteType(this->sprite) > 1 )
+	/*if ( checkSpriteType(this->sprite) > 1 )
 	{
 		setSpriteAttributes(this, nullptr, nullptr);
-	}
+	}*/
 
 	clientStats = nullptr;
 	clientsHaveItsStats = false;
@@ -12747,6 +12747,7 @@ Entity* summonChest(long x, long y)
 	{
 		return nullptr;
 	}
+	setSpriteAttributes(entity, nullptr, nullptr);
 	entity->chestLocked = -1;
 
 	// Find a free tile next to the source and then spawn it there.

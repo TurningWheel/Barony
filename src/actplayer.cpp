@@ -2883,7 +2883,7 @@ void actPlayer(Entity* my)
 		}
 
 		entity->yaw = my->yaw;
-		if ( bodypart == 2 || bodypart == 5 )
+		if ( bodypart == 2 || bodypart == 5 ) // right leg, left arm
 		{
 			if ( bodypart == 2 )
 			{
@@ -2977,7 +2977,7 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
-		else if ( bodypart == 3 || bodypart == 4 || bodypart == 8 )
+		else if ( bodypart == 3 || bodypart == 4 || bodypart == 8 ) // left leg, right arm, cloak
 		{
 			if ( bodypart == 4 )
 			{
