@@ -278,8 +278,8 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_vampiricAura.name, language[2398]);
 
 	spellElementConstructor(&spellElement_charmMonster);
-	spellElement_charmMonster.mana = 39;
-	spellElement_charmMonster.base_mana = 39;
+	spellElement_charmMonster.mana = 79;
+	spellElement_charmMonster.base_mana = 79;
 	spellElement_charmMonster.overload_multiplier = 1;
 	spellElement_charmMonster.damage = 0;
 	spellElement_charmMonster.duration = 300;
