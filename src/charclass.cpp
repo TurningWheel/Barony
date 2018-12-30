@@ -1416,6 +1416,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 10;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 
 		// knuckles
 		item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, NULL);
@@ -1641,10 +1642,16 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_MESMER )
 	{
 		// attributes
-		stats[player]->INT += 2;
-		stats[player]->STR -= 3;
+		bool curseItems = false;
+		if ( stats[player]->playerRace == RACE_SUCCUBUS )
+		{
+			curseItems = true;
+		}
+
+		stats[player]->STR -= 2;
 		stats[player]->CON -= 3;
-		stats[player]->DEX -= 3;
+		stats[player]->INT += 2;
+		stats[player]->DEX -= 2;
 		stats[player]->PER += 2;
 		stats[player]->CHR += 4;
 
@@ -1660,7 +1667,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 60;
 
 		// ring
-		item = newItem(RING_PROTECTION, EXCELLENT, 0, 1, 0, true, NULL);
+		item = newItem(RING_PROTECTION, EXCELLENT, curseItems ? -2 : 2, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1673,7 +1680,7 @@ void initClass(int player)
 		}
 
 		// hood (green)
-		item = newItem(HAT_HOOD, WORN, -1, 1, 0, true, NULL);
+		item = newItem(HAT_HOOD, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1686,7 +1693,7 @@ void initClass(int player)
 		}
 
 		// weapon
-		item = newItem(MAGICSTAFF_CHARM, WORN, -1, 1, 0, true, NULL);
+		item = newItem(MAGICSTAFF_CHARM, EXCELLENT, curseItems ? -1 : 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1702,7 +1709,7 @@ void initClass(int player)
 		if ( player == clientnum )
 		{
 			// spear
-			item = newItem(IRON_SPEAR, SERVICABLE, -2, 1, 1, true, NULL);
+			item = newItem(IRON_SPEAR, SERVICABLE, curseItems ? -2 : 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
@@ -1714,9 +1721,15 @@ void initClass(int player)
 			free(item);
 
 			// confusion
-			item = newItem(POTION_CONFUSION, EXCELLENT, 0, 2, 0, true, NULL);
+			item = newItem(POTION_CONFUSION, EXCELLENT, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
+			free(item);
+
+			// cold spellbook
+			item = newItem(SPELLBOOK_COLD, SERVICABLE, 0, 1, 4, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[8].item = item2->uid;
 			free(item);
 
 			// charm monster spellbook
