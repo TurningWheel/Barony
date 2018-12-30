@@ -3548,8 +3548,7 @@ bool Item::shouldItemStack(int player)
 
 bool shouldInvertEquipmentBeatitude(Stat* wielder)
 {
-	if ( (wielder->playerRace == RACE_SUCCUBUS || wielder->playerRace == RACE_INCUBUS)
-		&& (wielder->type == SUCCUBUS || wielder->type == INCUBUS) )
+	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
 	{
 		return true;
 	}

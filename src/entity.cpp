@@ -3740,10 +3740,7 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	bool cursedItemIsBuff = false;
 	if ( my && my->behavior == &actPlayer )
 	{
-		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
-		{
-			cursedItemIsBuff = true;
-		}
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
 	}
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
 	{
@@ -3842,10 +3839,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	bool cursedItemIsBuff = false;
 	if ( my && my->behavior == &actPlayer )
 	{
-		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
-		{
-			cursedItemIsBuff = true;
-		}
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
 	}
 
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
@@ -3975,10 +3969,7 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	bool cursedItemIsBuff = false;
 	if ( my && my->behavior == &actPlayer )
 	{
-		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
-		{
-			cursedItemIsBuff = true;
-		}
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
 	}
 
 	if ( entitystats->ring != nullptr )
@@ -4038,10 +4029,7 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	bool cursedItemIsBuff = false;
 	if ( my && my->behavior == &actPlayer )
 	{
-		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
-		{
-			cursedItemIsBuff = true;
-		}
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
 	}
 
 	if ( svFlags & SV_FLAG_HUNGER )
@@ -4109,10 +4097,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	bool cursedItemIsBuff = false;
 	if ( my && my->behavior == &actPlayer )
 	{
-		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
-		{
-			cursedItemIsBuff = true;
-		}
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
 	}
 
 	if ( svFlags & SV_FLAG_HUNGER )
@@ -4179,10 +4164,7 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	bool cursedItemIsBuff = false;
 	if ( my && my->behavior == &actPlayer )
 	{
-		if ( entitystats->playerRace == RACE_SUCCUBUS || entitystats->playerRace == RACE_INCUBUS )
-		{
-			cursedItemIsBuff = true;
-		}
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
 	}
 
 	if ( entitystats->helmet != nullptr )
