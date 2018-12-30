@@ -36,6 +36,11 @@ void initClass(int player)
 		selected_inventory_slot_x = 0;
 		selected_inventory_slot_y = 0;
 		current_hotbar = 0;
+
+		for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+		{
+			hotbar[i].item = 0;
+		}
 	}
 
 	// SEX MODIFIER
@@ -1555,15 +1560,8 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_ACCURSED )
 	{
 		// attributes
-		if ( stats[player]->playerRace == RACE_VAMPIRE )
-		{
-			stats[player]->INT += 10;
-		}
-		else
-		{
-			stats[player]->INT += 2;
-		}
-		stats[player]->STR += 1;
+		stats[player]->INT += 10;
+		stats[player]->STR -= 2;
 		stats[player]->CON -= 3;
 		stats[player]->DEX -= 3;
 		stats[player]->PER -= 1;
@@ -1621,34 +1619,22 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// lev book
-			item = newItem(SPELLBOOK_LEVITATION, DECREPIT, 0, 1, 4, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
-			free(item);
-
 			// invis book
 			item = newItem(SPELLBOOK_INVISIBILITY, WORN, 0, 1, 2, true, NULL);
 			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
-			free(item);
-
-			// bleed book
-			item = newItem(SPELLBOOK_BLEED, WORN, 0, 1, 2, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[7].item = item2->uid;
+			hotbar[9].item = item2->uid;
 			free(item);
 
 			// blood
 			item = newItem(FOOD_BLOOD, EXCELLENT, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
-			hotbar[5].item = item2->uid;
+			hotbar[0].item = item2->uid;
 			free(item);
 
 			// restore magic
-			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 1, true, NULL);
 			item2 = itemPickup(player, item);
-			hotbar[6].item = item2->uid;
+			hotbar[1].item = item2->uid;
 			free(item);
 		}
 	}
@@ -1700,7 +1686,7 @@ void initClass(int player)
 		}
 
 		// weapon
-		item = newItem(MAGICSTAFF_CHARM, SERVICABLE, -1, 1, 0, true, NULL);
+		item = newItem(MAGICSTAFF_CHARM, WORN, -1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1715,24 +1701,6 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			addSpell(SPELL_TELEPORTATION, player, true);
-			addSpell(SPELL_CHARM_MONSTER, player, true);
-			for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
-			{
-				Item* item = (Item*)node->element;
-				if ( item->type == SPELL_ITEM )
-				{
-					if ( item->appearance == SPELL_TELEPORTATION )
-					{
-						hotbar[3].item = item->uid;
-					}
-					else if ( item->appearance == SPELL_CHARM_MONSTER )
-					{
-						hotbar[4].item = item->uid;
-					}
-				}
-			}
-
 			// spear
 			item = newItem(IRON_SPEAR, SERVICABLE, -2, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
@@ -1746,13 +1714,15 @@ void initClass(int player)
 			free(item);
 
 			// confusion
-			item = newItem(POTION_CONFUSION, EXCELLENT, 0, 1, 0, true, NULL);
+			item = newItem(POTION_CONFUSION, EXCELLENT, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
 			free(item);
 
 			// charm monster spellbook
 			item = newItem(SPELLBOOK_CHARM_MONSTER, WORN, 0, 1, 8, true, NULL);
 			item2 = itemPickup(player, item);
+			hotbar[9].item = item2->uid;
 			free(item);
 		}
 	}
@@ -1891,14 +1861,39 @@ void initClass(int player)
 		}
 	}
 
-	// move default items to the right
 	if ( player == clientnum )
 	{
-		node_t* node;
-		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+		if ( stats[player]->playerRace == RACE_VAMPIRE )
+		{
+			addSpell(SPELL_LEVITATION, player, true);
+			addSpell(SPELL_BLEED, player, true);
+		}
+		else if ( stats[player]->playerRace == RACE_SUCCUBUS )
+		{
+			addSpell(SPELL_TELEPORTATION, player, true);
+		}
+
+		//printlog("spell size: %d", list_Size(&spellList));
+		// move default items to the right
+		for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			Item* item = (Item*)node->element;
-			item->x = INVENTORY_SIZEX - item->x - 1;
+			if ( item )
+			{
+				item->x = INVENTORY_SIZEX - item->x - 1;
+				if ( item->type == SPELL_ITEM )
+				{
+					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+					{
+						if ( hotbar[i].item == 0 )
+						{
+							//printlog("%d %s", i, item->getName());
+							hotbar[i].item = item->uid;
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 	//stats[clientnum]->printStats();
