@@ -12040,11 +12040,16 @@ int Entity::getManaRegenInterval(Stat& myStats)
 			manaring = -1; // 0.25x regen speed.
 		}
 	}
+	bool cursedItemIsBuff = false;
+	if ( behavior == &actPlayer )
+	{
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(&myStats);
+	}
 	if ( myStats.breastplate != nullptr )
 	{
 		if ( myStats.breastplate->type == VAMPIRE_DOUBLET )
 		{
-			if ( myStats.breastplate->beatitude >= 0 )
+			if ( myStats.breastplate->beatitude >= 0 || cursedItemIsBuff )
 			{
 				manaring++;
 			}
@@ -12058,7 +12063,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 	{
 		if ( myStats.cloak->type == ARTIFACT_CLOAK )
 		{
-			if ( myStats.cloak->beatitude >= 0 )
+			if ( myStats.cloak->beatitude >= 0 || cursedItemIsBuff )
 			{
 				manaring++;
 			}
@@ -12102,14 +12107,15 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 {
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{
-		if ( behavior == &actPlayer && client_classes[skill[2]] != CLASS_ACCURSED )
+		if ( behavior == &actPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )
 		{
 			return -1;
 		}
-		else if ( myStats.type != VAMPIRE )
-		{
-			return -1;
-		}
+	}
+	bool cursedItemIsBuff = false;
+	if ( behavior == &actPlayer )
+	{
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(&myStats);
 	}
 	if ( myStats.breastplate && myStats.breastplate->type == VAMPIRE_DOUBLET )
 	{
@@ -12127,10 +12133,17 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	{
 		if ( myStats.ring->type == RING_REGENERATION )
 		{
-			if ( myStats.ring->beatitude >= 0 )
+			if ( myStats.ring->beatitude >= 0  || cursedItemIsBuff )
 			{
 				healring++;
-				healring += std::min(static_cast<int>(myStats.ring->beatitude), 1);
+				if ( cursedItemIsBuff )
+				{
+					healring += std::min(static_cast<int>(abs(myStats.ring->beatitude)), 1);
+				}
+				else
+				{
+					healring += std::min(static_cast<int>(myStats.ring->beatitude), 1);
+				}
 			}
 			else
 			{
@@ -12142,7 +12155,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	{
 		if ( myStats.breastplate->type == ARTIFACT_BREASTPIECE )
 		{
-			if ( myStats.breastplate->beatitude >= 0 )
+			if ( myStats.breastplate->beatitude >= 0 || cursedItemIsBuff )
 			{
 				healring++;
 			}
