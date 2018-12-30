@@ -4680,7 +4680,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( myStats->weapon->type == MAGICSTAFF_CHARM )
 						{
-							if ( myStats->weapon->beatitude <= SERVICABLE )
+							if ( myStats->weapon->status <= SERVICABLE )
 							{
 								forceDegrade = true;
 							}
