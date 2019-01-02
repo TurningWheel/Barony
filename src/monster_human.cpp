@@ -999,6 +999,32 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 106 )
+						{
+							// this is the default torso
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 2.5;
@@ -1040,6 +1066,33 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 108 || entity->sprite == 107 )
+						{
+							// these are the default legs
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 5;
@@ -1086,6 +1139,33 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 108 || entity->sprite == 107 )
+						{
+							// these are the default legs
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 5;
