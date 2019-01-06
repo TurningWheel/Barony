@@ -2137,12 +2137,12 @@ void Entity::handleEffects(Stat* myStats)
 			bool secondSummon = false;
 			if ( !strcmp(myStats->name, "skeleton knight") )
 			{
-				this->playerStatIncrease(1, increasestat); // warrior weighting
+				this->playerStatIncrease(CLASS_WARRIOR, increasestat); // warrior weighting
 			}
 			else if ( !strcmp(myStats->name, "skeleton sentinel") )
 			{
 				secondSummon = true;
-				this->playerStatIncrease(5, increasestat); // rogue weighting
+				this->playerStatIncrease(CLASS_ROGUE, increasestat); // rogue weighting
 			}
 
 			bool rankUp = false;
@@ -2775,13 +2775,21 @@ void Entity::handleEffects(Stat* myStats)
 	// regaining energy over time
 	int manaRegenInterval = getManaRegenInterval(*myStats);
 
-	if ( myStats->MP < myStats->MAXMP && this->monsterAllySummonRank == 0 )
+	if ( myStats->MP < myStats->MAXMP )
 	{
-		this->char_energize++;
-		if ( this->char_energize >= manaRegenInterval )
+		// summons don't regen MP. we use this to refund mana to the caster.
+		if ( !(this->behavior == &actMonster && this->monsterAllySummonRank != 0) )
+		{
+			this->char_energize++;
+			if ( this->char_energize >= manaRegenInterval )
+			{
+				this->char_energize = 0;
+				this->modMP(1);
+			}
+		}
+		else
 		{
 			this->char_energize = 0;
-			this->modMP(1);
 		}
 	}
 	else
@@ -3170,7 +3178,7 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_fire = 0; // If not on fire, then reset fire counter TODOR: This seems unecessary, but is what poison does, this is happening every tick
 	}
 
-	if ( player >= 0 && stats[player]->type == SKELETON )
+	if ( player >= 0 && (stats[player]->type == SKELETON || stats[player]->playerRace == RACE_SKELETON) )
 	{
 		// life saving
 		if ( myStats->HP <= 0 )
@@ -7722,9 +7730,9 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 							if ( followerStats )
 							{
 								int xpDivide = std::min(std::max(1, numFollowers), 4); // 1 - 4 depending on followers.
-								if ( follower->monsterAllySummonRank != 0 )
+								if ( follower->monsterAllySummonRank != 0 && numshares > 0 )
 								{
-									followerStats->EXP += (xpGain * numshares / xpDivide);
+									followerStats->EXP += (xpGain * numshares / xpDivide); // summoned monsters aren't penalised XP in multiplayer.
 								}
 								else
 								{
