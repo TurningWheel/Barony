@@ -21,6 +21,7 @@
 #include "../player.hpp"
 #include "magic.hpp"
 #include "../scores.hpp"
+#include "../colors.hpp"
 
 void castSpellInit(Uint32 caster_uid, spell_t* spell)
 {
@@ -103,7 +104,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 			{
 				if ( multiplayer == CLIENT )
 				{
-					messagePlayer(player, language[408], spell->name);
+					//messagePlayer(player, language[408], spell->name);
 					strcpy((char*)net_packet->data, "VAMP");
 					net_packet->data[4] = clientnum;
 					SDLNet_Write32(spell->ID, &net_packet->data[5]);
@@ -115,7 +116,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 				}
 				else
 				{
-					messagePlayer(player, language[408], spell->name);
+					messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3241]);
+					messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
+					//messagePlayer(player, language[408], spell->name);
 					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
 					return;
