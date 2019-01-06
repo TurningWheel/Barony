@@ -712,9 +712,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_CONJURER;
+				client_classes[clientnum] = CLASS_ACCURSED;
 				stats[0]->appearance = 0;
-				stats[0]->playerRace = RACE_SKELETON;
+				stats[0]->playerRace = RACE_VAMPIRE;
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -730,9 +730,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_CONJURER;
+				client_classes[clientnum] = CLASS_ACCURSED;
 				stats[0]->appearance = 0;
-				stats[0]->playerRace = RACE_SKELETON;
+				stats[0]->playerRace = RACE_VAMPIRE;
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
