@@ -647,7 +647,14 @@ void drawStatus()
 		pos.y = yres - 160;
 		pos.w = 64;
 		pos.h = 64;
-		drawImageScaled(hunger_bmp, NULL, &pos);
+		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerRequiresBloodToSustain() )
+		{
+			drawImageScaled(hunger_blood_bmp, NULL, &pos);
+		}
+		else
+		{
+			drawImageScaled(hunger_bmp, NULL, &pos);
+		}
 	}
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
