@@ -216,9 +216,10 @@ void drawSustainedSpells()
 		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
 	}
 
-	node_t* effectImageNode = nullptr;
 	for ( int i = 0; i < NUMEFFECTS && stats[clientnum]; ++i )
 	{
+		node_t* effectImageNode = nullptr;
+		sprite = nullptr;
 		if ( stats[clientnum]->EFFECTS[i] )
 		{
 			switch ( i )
@@ -236,7 +237,7 @@ void drawSustainedSpells()
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
 					break;
 				case EFF_PACIFY:
-					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_EXTRAHEALING);
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
 					break;
 				case EFF_VAMPIRICAURA:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
@@ -244,14 +245,35 @@ void drawSustainedSpells()
 				case EFF_PARALYZED:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
 					break;
+				case EFF_DRUNK:
+					if ( effect_drunk_bmp )
+					{
+						sprite = &effect_drunk_bmp;
+					}
+					break;
+				case EFF_POLYMORPH:
+					if ( effect_polymorph_bmp )
+					{
+						sprite = &effect_polymorph_bmp;
+					}
+					break;
+				case EFF_WITHDRAWAL:
+					if ( effect_hungover_bmp )
+					{
+						sprite = &effect_hungover_bmp;
+					}
+					break;
 				default:
 					effectImageNode = nullptr;
 					break;
 			}
 		}
-		if ( effectImageNode )
+		if ( effectImageNode || sprite )
 		{
-			sprite = (SDL_Surface**)effectImageNode->element;
+			if ( !sprite )
+			{
+				sprite = (SDL_Surface**)effectImageNode->element;
+			}
 			drawImage(*sprite, NULL, &pos);
 			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
 			{

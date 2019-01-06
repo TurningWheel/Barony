@@ -35,6 +35,7 @@ SDL_Surface* backdrop_cursed_bmp = nullptr;
 SDL_Surface* status_bmp = nullptr;
 SDL_Surface* character_bmp = nullptr;
 SDL_Surface* hunger_bmp = nullptr;
+SDL_Surface* hunger_blood_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
@@ -122,6 +123,9 @@ SDL_Surface *per_bmp64 = NULL;
 SDL_Surface *chr_bmp64 = NULL;
 SDL_Surface *sidebar_lock_bmp = nullptr;
 SDL_Surface *sidebar_unlock_bmp = nullptr;
+SDL_Surface *effect_drunk_bmp = nullptr;
+SDL_Surface *effect_polymorph_bmp = nullptr;
+SDL_Surface *effect_hungover_bmp = nullptr;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
@@ -192,6 +196,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&status_bmp, "images/system/StatusBar.png"),
 	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
 	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
+	std::make_pair(&hunger_blood_bmp, "images/system/Hunger_blood.png"),
 	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
 	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
 	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
@@ -250,7 +255,12 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&sidebar_lock_bmp, "images/system/locksidebar.png"),
 	std::make_pair(&sidebar_unlock_bmp, "images/system/unlocksidebar.png"),
 	std::make_pair(&hotbar_img, "images/system/hotbar_slot.png"),
-	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png")
+	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png"),
+
+	//Misc effect images.
+	std::make_pair(&effect_drunk_bmp, "images/system/drunk.png"),
+	std::make_pair(&effect_polymorph_bmp, "images/system/polymorph.png"),
+	std::make_pair(&effect_hungover_bmp, "images/system/hungover.png")
 };
 
 bool loadInterfaceResources()
@@ -267,6 +277,7 @@ bool loadInterfaceResources()
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
+	hunger_blood_bmp = loadImage("images/system/Hunger_blood.png");
 	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
@@ -359,6 +370,11 @@ bool loadInterfaceResources()
 	sidebar_unlock_bmp = loadImage("images/system/unlocksidebar.png");
 	hotbar_img = loadImage("images/system/hotbar_slot.png");
 	hotbar_spell_img = loadImage("images/system/magic/hotbar_spell.png");
+
+	effect_drunk_bmp = loadImage("images/system/drunk.png");
+	effect_polymorph_bmp = loadImage("images/system/polymorph.png");
+	effect_hungover_bmp = loadImage("images/system/hungover.png");
+
 	int i = 0;
 	for (i = 0; i < NUM_HOTBAR_SLOTS; ++i)
 	{
@@ -402,6 +418,10 @@ void freeInterfaceResources()
 	if (hunger_bmp)
 	{
 		SDL_FreeSurface(hunger_bmp);
+	}
+	if ( hunger_blood_bmp )
+	{
+		SDL_FreeSurface(hunger_blood_bmp);
 	}
 	if ( minotaur_bmp )
 	{
@@ -617,6 +637,18 @@ void freeInterfaceResources()
 	if ( sidebar_unlock_bmp )
 	{
 		SDL_FreeSurface(sidebar_unlock_bmp);
+	}
+	if ( effect_drunk_bmp )
+	{
+		SDL_FreeSurface(effect_drunk_bmp);
+	}
+	if ( effect_polymorph_bmp )
+	{
+		SDL_FreeSurface(effect_polymorph_bmp);
+	}
+	if ( effect_hungover_bmp )
+	{
+		SDL_FreeSurface(effect_hungover_bmp);
 	}
 	list_FreeAll(&damageIndicators);
 }

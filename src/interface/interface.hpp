@@ -69,6 +69,7 @@ extern SDL_Surface* backdrop_cursed_bmp;
 extern SDL_Surface* status_bmp;
 extern SDL_Surface* character_bmp;
 extern SDL_Surface* hunger_bmp;
+extern SDL_Surface* hunger_blood_bmp;
 extern SDL_Surface* minotaur_bmp;
 extern SDL_Surface* textup_bmp;
 extern SDL_Surface* textdown_bmp;
@@ -420,6 +421,10 @@ extern SDL_Surface *chr_bmp64;
 
 extern SDL_Surface *sidebar_lock_bmp;
 extern SDL_Surface *sidebar_unlock_bmp;
+
+extern SDL_Surface *effect_drunk_bmp;
+extern SDL_Surface *effect_polymorph_bmp;
+extern SDL_Surface *effect_hungover_bmp;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
 void attackHoverText(Sint32 input[6]);
