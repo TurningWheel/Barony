@@ -369,3 +369,9 @@ int playerEntityMatchesUid(Uint32 uid)
 {
 	return -1;
 }
+
+bool Entity::isPlayerHeadSprite()
+{
+	// dummy function
+	return false;
+}

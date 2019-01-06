@@ -86,6 +86,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 							else
 							{
 								// set variables for first time cast
+								myStats->HP = 60;
+								myStats->MAXHP = myStats->HP;
+								myStats->OLDHP = myStats->HP;
+
 								leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
 								leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
 
@@ -139,7 +143,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 									myStats->HP += HP_MOD;
 									myStats->MAXHP += HP_MOD;
 									myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-									my->playerStatIncrease(5, increasestat); // rogue weighting
+									my->playerStatIncrease(CLASS_ROGUE, increasestat); // rogue weighting
 									for ( int j = 0; j < 3; j++ )
 									{
 										switch ( increasestat[j] )
@@ -168,10 +172,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 									}
 								}
 
-								if ( multiplayer == SERVER )
-								{
-									serverUpdateAllyStat(my->monsterAllyIndex, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
-								}
+								my->skeletonSummonSetEquipment(myStats, std::min(7, 1 + (myStats->LVL / 5)));
 
 								leaderStats->playerSummon2LVLHP = (myStats->LVL << 16);
 								leaderStats->playerSummon2LVLHP |= (myStats->MAXHP);
@@ -192,12 +193,15 @@ void initSkeleton(Entity* my, Stat* myStats)
 								leaderStats->playerSummon2PERCHR |= (my->monsterAllySummonRank << 8);
 							}
 						}
+
 						myStats->MAXMP = getCostOfSpell(&spell_summon, leader);
 						myStats->MP = 0;
 
 						if ( multiplayer == SERVER && leader->behavior == &actPlayer )
 						{
 							serverUpdateAllyStat(leader->skill[2], my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
+							serverUpdatePlayerSummonStrength(leader->skill[2]);
+							serverUpdateEntitySkill(my, 50); // update the rank of the monster.
 						}
 					}
 					else
@@ -594,16 +598,28 @@ void skeletonDie(Entity* my)
 			{
 				// refund mana to caster.
 				int spellCost = getCostOfSpell(&spell_summon, leader);
-				for ( node_t* node = leaderStats->FOLLOWERS.first; node != nullptr; node = node->next )
+				if ( (leader->getINT() + leaderStats->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
 				{
-					Uint32* c = (Uint32*)node->element;
-					Entity* otherSummon = uidToEntity(*c);
-					if ( otherSummon && otherSummon->monsterAllySummonRank != 0 && otherSummon->monsterAllyGetPlayerLeader() == leader )
-					{
-						spellCost /= 2;
-						break;
-					}
+					// we summoned 2 units, halve the return rate.
+					spellCost /= 2;
 				}
+				//for ( node_t* node = leaderStats->FOLLOWERS.first; node != nullptr; node = node->next )
+				//{
+				//	Uint32* c = (Uint32*)node->element;
+				//	Entity* otherSummon = uidToEntity(*c);
+				//	if ( otherSummon && otherSummon->monsterAllySummonRank != 0 && otherSummon->monsterAllyGetPlayerLeader() == leader )
+				//	{
+				//		spellCost /= 2;
+				//		Stat* otherSummonStat = otherSummon->getStats();
+				//		if ( !strcmp(otherSummonStat->name, "skeleton sentinel") )
+				//		{
+				//			otherSummonStat->MAXMP /= 2; // halve the other summon's possible return MP.
+				//			otherSummonStat->MAXMP = std::max(1, otherSummonStat->MAXMP);
+				//			otherSummonStat->MP /= 2;
+				//		}
+				//		break;
+				//	}
+				//}
 				int manaToRefund = std::min(spellCost, static_cast<int>(myStats->MP / static_cast<float>(myStats->MAXMP) * spellCost)); // MP to restore
 				if ( manaToRefund > 0 )
 				{
