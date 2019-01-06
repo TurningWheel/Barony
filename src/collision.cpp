@@ -444,6 +444,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			Stat* myStats = stats; //my->getStats();	//SEB <<<
 			Stat* yourStats = entity->getStats();
+			if ( my->behavior == &actPlayer && entity->behavior == &actPlayer )
+			{
+				continue;
+			}
 			if ( myStats && yourStats )
 			{
 				if ( yourStats->leader_uid == my->getUID() )
@@ -464,6 +468,13 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						}
 					}
 					else
+					{
+						continue;
+					}
+				}
+				else if ( my->behavior == &actPlayer )
+				{
+					if ( my->checkFriend(entity) )
 					{
 						continue;
 					}
