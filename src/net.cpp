@@ -33,6 +33,7 @@
 #endif
 #include "player.hpp"
 #include "scores.hpp"
+#include "colors.hpp"
 
 NetHandler* net_handler = nullptr;
 
@@ -3206,24 +3207,6 @@ void clientHandlePacket()
 		return;
 	}
 
-	//Remove vampiric aura
-	else if ( !strncmp((char*)net_packet->data, "VAMP", 4) )
-	{
-		int player = net_packet->data[4];
-		int spellID = SDLNet_Read32(&net_packet->data[5]);
-		if ( players[player] && players[player]->entity && stats[player] )
-		{
-			if ( client_classes[player] == CLASS_ACCURSED &&
-				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
-			{
-				players[player]->entity->setEffect(EFF_VAMPIRICAURA, false, 1, false);
-				players[player]->entity->playerVampireCurse = 2; // cured.
-				serverUpdateEntitySkill(players[player]->entity, 51);
-			}
-		}
-		return;
-	}
-
 	//Map the magic. I mean magic the map. I mean magically map the level (client).
 	else if (!strncmp((char*)net_packet->data, "MMAP", 4))
 	{
@@ -4164,6 +4147,26 @@ void serverHandlePacket()
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		minimapPingAdd(newPing);
 		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay to other clients.
+	}
+
+	//Remove vampiric aura
+	else if ( !strncmp((char*)net_packet->data, "VAMP", 4) )
+	{
+		int player = net_packet->data[4];
+		int spellID = SDLNet_Read32(&net_packet->data[5]);
+		if ( players[player] && players[player]->entity && stats[player] )
+		{
+			if ( client_classes[player] == CLASS_ACCURSED &&
+				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
+			{
+				players[player]->entity->setEffect(EFF_VAMPIRICAURA, true, 1, true);
+				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3241]);
+				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
+				players[player]->entity->playerVampireCurse = 2; // cured.
+				serverUpdateEntitySkill(players[player]->entity, 51);
+			}
+		}
+		return;
 	}
 
 	// the client sent a monster command.
