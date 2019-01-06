@@ -283,7 +283,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][1][0]; // 0
 	entity->focaly = limbs[AUTOMATON][1][1]; // 0
 	entity->focalz = limbs[AUTOMATON][1][2]; // 0
@@ -302,7 +302,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][2][0]; // 0
 	entity->focaly = limbs[AUTOMATON][2][1]; // 0
 	entity->focalz = limbs[AUTOMATON][2][2]; // 2
@@ -321,7 +321,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][3][0]; // 0
 	entity->focaly = limbs[AUTOMATON][3][1]; // 0
 	entity->focalz = limbs[AUTOMATON][3][2]; // 2
@@ -340,7 +340,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][4][0]; // 0
 	entity->focaly = limbs[AUTOMATON][4][1]; // 0
 	entity->focalz = limbs[AUTOMATON][4][2]; // 2
@@ -359,7 +359,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][5][0]; // 0
 	entity->focaly = limbs[AUTOMATON][5][1]; // 0
 	entity->focalz = limbs[AUTOMATON][5][2]; // 2
@@ -379,7 +379,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
 	entity->focaly = limbs[AUTOMATON][6][1]; // 0
 	entity->focalz = limbs[AUTOMATON][6][2]; // 0
@@ -400,7 +400,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][7][0]; // 2
 	entity->focaly = limbs[AUTOMATON][7][1]; // 0
 	entity->focalz = limbs[AUTOMATON][7][2]; // 0
@@ -423,7 +423,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][8][0]; // 0
 	entity->focaly = limbs[AUTOMATON][8][1]; // 0
 	entity->focalz = limbs[AUTOMATON][8][2]; // 4
@@ -446,7 +446,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][9][0]; // 0
 	entity->focaly = limbs[AUTOMATON][9][1]; // 0
 	entity->focalz = limbs[AUTOMATON][9][2]; // -2
@@ -466,7 +466,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[AUTOMATON][10][0]; // 0
 	entity->focaly = limbs[AUTOMATON][10][1]; // 0
 	entity->focalz = limbs[AUTOMATON][10][2]; // .5

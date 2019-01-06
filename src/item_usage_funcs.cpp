@@ -2567,10 +2567,10 @@ void item_ScrollSummon(Item* item, int player)
 			if ( item->beatitude >= 0 && monsterStats )
 			{
 				monsterStats->leader_uid = players[player]->entity->getUID();
-				if ( !monsterally[HUMAN][monsterStats->type] )
+				monster->flags[USERFLAG2] = true;
+				/*if ( !monsterally[HUMAN][monsterStats->type] )
 				{
-					monster->flags[USERFLAG2] = true;
-				}
+				}*/
 				monster->monsterAllyIndex = player;
 				if ( multiplayer == SERVER )
 				{

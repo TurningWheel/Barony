@@ -3575,7 +3575,7 @@ void actParticleSapCenter(Entity* my)
 							monster->setEffect(EFF_STUNNED, true, 20, false);
 							bool spawnSecondAlly = false;
 							 
-							if ( (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) > SKILL_LEVEL_EXPERT )
+							if ( (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
 							{
 								spawnSecondAlly = true;
 							}
@@ -3587,10 +3587,10 @@ void actParticleSapCenter(Entity* my)
 							}
 
 							// change the color of the hit entity.
+							monster->flags[USERFLAG2] = true;
+							serverUpdateEntityFlag(monster, USERFLAG2);
 							if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
 							{
-								monster->flags[USERFLAG2] = true;
-								serverUpdateEntityFlag(monster, USERFLAG2);
 								int bodypart = 0;
 								for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
 								{
@@ -3643,10 +3643,10 @@ void actParticleSapCenter(Entity* my)
 										}
 
 										// change the color of the hit entity.
+										monster->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(monster, USERFLAG2);
 										if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
 										{
-											monster->flags[USERFLAG2] = true;
-											serverUpdateEntityFlag(monster, USERFLAG2);
 											int bodypart = 0;
 											for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
 											{

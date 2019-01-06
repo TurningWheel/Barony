@@ -2149,11 +2149,25 @@ void actPlayer(Entity* my)
 					for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Uint32* c = (Uint32*)node->element;
-						Entity* mySummon = uidToEntity(*c);
-						if ( mySummon && mySummon->monsterAllySummonRank != 0 )
+						Entity* myFollower = uidToEntity(*c);
+						if ( myFollower )
 						{
-							mySummon->setMP(0);
-							mySummon->setHP(0); // rip
+							if ( myFollower->monsterAllySummonRank != 0 )
+							{
+								myFollower->setMP(0);
+								myFollower->setHP(0); // rip
+							}
+							else if ( myFollower->flags[USERFLAG2] )
+							{
+								// our leader died, let's undo the color change since we're now rabid.
+								myFollower->flags[USERFLAG2] = false;
+								serverUpdateEntityFlag(myFollower, USERFLAG2);
+								Stat* followerStats = myFollower->getStats();
+								if ( followerStats )
+								{
+									followerStats->leader_uid = 0;
+								}
+							}
 						}
 					}
 

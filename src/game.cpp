@@ -960,11 +960,11 @@ void gameLogic(void)
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
 									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT);
-									if (!monsterally[HUMAN][monsterStats->type])
+									monster->flags[USERFLAG2] = true;
+									serverUpdateEntityFlag(monster, USERFLAG2);
+									/*if (!monsterally[HUMAN][monsterStats->type])
 									{
-										monster->flags[USERFLAG2] = true;
-										serverUpdateEntityFlag(monster, USERFLAG2);
-									}
+									}*/
 									monster->monsterAllyIndex = c;
 									if ( multiplayer == SERVER )
 									{
