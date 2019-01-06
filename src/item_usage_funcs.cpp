@@ -3029,7 +3029,7 @@ void item_Food(Item*& item, int player)
 			break;
 	}
 
-	if ( stats[player]->type == VAMPIRE || stats[player]->EFFECTS[EFF_VAMPIRICAURA] )
+	if ( players[player]->entity->playerRequiresBloodToSustain() )
 	{
 		if ( item->type == FOOD_BLOOD )
 		{
@@ -3108,7 +3108,7 @@ void item_Food(Item*& item, int player)
 				stats[player]->HUNGER += 400;
 				break;
 			case FOOD_BLOOD:
-				if ( stats[player]->type == VAMPIRE || stats[player]->EFFECTS[EFF_VAMPIRICAURA] )
+				if ( players[player]->entity->playerRequiresBloodToSustain() )
 				{
 					stats[player]->HUNGER += 250;
 				}
