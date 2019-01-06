@@ -936,7 +936,7 @@ void actPlayer(Entity* my)
 					serverUpdateEntitySkill(my, 51);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(PLAYER_NUM, color, language[2477]);
-					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 					messagePlayerColor(PLAYER_NUM, color, language[3202]);
 
 					playSoundEntity(my, 167, 128);
@@ -978,10 +978,10 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	//if ( my->ticks % 50 == 0 )
-	//{
-	//	messagePlayer(clientnum, "%d", my->playerVampireCurse);
-	//}
+	/*if ( my->ticks % 50 == 0 )
+	{
+		messagePlayer(clientnum, "%d", stats[clientnum]->HUNGER);
+	}*/
 
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
 	{
