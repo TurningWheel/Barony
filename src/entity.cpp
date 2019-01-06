@@ -1063,12 +1063,12 @@ void Entity::effectTimes()
 							messagePlayer(player, language[611]);
 							playSoundPlayer(player, 32, 128);
 						}
-						else if ( myStats->HUNGER > 50 )
+						else if ( myStats->HUNGER > 50 && myStats->HUNGER <= 150 )
 						{
 							messagePlayer(player, language[612]);
 							playSoundPlayer(player, 32, 128);
 						}
-						else
+						else if ( myStats->HUNGER <= 50 )
 						{
 							myStats->HUNGER = 50;
 							messagePlayer(player, language[613]);
