@@ -2991,6 +2991,26 @@ void clientHandlePacket()
 		if ( entity )
 		{
 			entity->flags[net_packet->data[8]] = net_packet->data[9];
+			if ( entity->behavior == &actMonster && net_packet->data[8] == USERFLAG2 )
+			{
+				// we should update the flags for all bodyparts (except for human and automaton heads, don't update the other bodyparts).
+				if ( !(entity->isPlayerHeadSprite() || entity->sprite == 467) )
+				{
+					int bodypart = 0;
+					for ( node_t* node = entity->children.first; node != nullptr; node = node->next )
+					{
+						if ( bodypart >= LIMB_HUMANOID_TORSO )
+						{
+							Entity* tmp = (Entity*)node->element;
+							if ( tmp )
+							{
+								tmp->flags[USERFLAG2] = entity->flags[net_packet->data[8]];
+							}
+						}
+						++bodypart;
+					}
+				}
+			}
 		}
 		return;
 	}

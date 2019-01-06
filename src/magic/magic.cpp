@@ -187,10 +187,7 @@ void spell_summonFamiliar(int player)
 			if ( monsterStats )
 			{
 				monsterStats->leader_uid = players[player]->entity->getUID();
-				if ( !monsterally[HUMAN][monsterStats->type] )
-				{
-					monster->flags[USERFLAG2] = true;
-				}
+				monster->flags[USERFLAG2] = true;
 				monster->monsterAllyIndex = player;
 				if ( multiplayer == SERVER )
 				{
@@ -320,10 +317,11 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 			serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
 		}
 		// change the color of the hit entity.
+
+		hit.entity->flags[USERFLAG2] = true;
+		serverUpdateEntityFlag(hit.entity, USERFLAG2);
 		if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
 		{
-			hit.entity->flags[USERFLAG2] = true;
-			serverUpdateEntityFlag(hit.entity, USERFLAG2);
 			int bodypart = 0;
 			for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
 			{
@@ -333,7 +331,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 					if ( tmp )
 					{
 						tmp->flags[USERFLAG2] = true;
-						serverUpdateEntityFlag(tmp, USERFLAG2);
+						//serverUpdateEntityFlag(tmp, USERFLAG2);
 					}
 				}
 				++bodypart;
@@ -1067,10 +1065,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					}
 
 					// change the color of the hit entity.
+					hit.entity->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(hit.entity, USERFLAG2);
 					if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
 					{
-						hit.entity->flags[USERFLAG2] = true;
-						serverUpdateEntityFlag(hit.entity, USERFLAG2);
 						int bodypart = 0;
 						for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
 						{
@@ -1080,7 +1078,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 								if ( tmp )
 								{
 									tmp->flags[USERFLAG2] = true;
-									serverUpdateEntityFlag(tmp, USERFLAG2);
+									//serverUpdateEntityFlag(tmp, USERFLAG2);
 								}
 							}
 							++bodypart;
@@ -1452,10 +1450,10 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 
 					}
 					// change the color of the hit entity.
+					summonedEntity->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(summonedEntity, USERFLAG2);
 					if ( summonedStats->type != HUMAN && summonedStats->type != AUTOMATON )
 					{
-						summonedEntity->flags[USERFLAG2] = true;
-						serverUpdateEntityFlag(summonedEntity, USERFLAG2);
 						int bodypart = 0;
 						for ( node_t* node = summonedEntity->children.first; node != nullptr; node = node->next )
 						{
@@ -1465,7 +1463,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 								if ( tmp )
 								{
 									tmp->flags[USERFLAG2] = true;
-									serverUpdateEntityFlag(tmp, USERFLAG2);
+									//serverUpdateEntityFlag(tmp, USERFLAG2);
 								}
 							}
 							++bodypart;

@@ -712,8 +712,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_ACCURSED;
-				stats[0]->playerRace = RACE_VAMPIRE;
+				client_classes[clientnum] = CLASS_CONJURER;
+				stats[0]->appearance = 0;
+				stats[0]->playerRace = RACE_SKELETON;
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -729,8 +730,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_ACCURSED;
-				stats[0]->playerRace = RACE_VAMPIRE;
+				client_classes[clientnum] = CLASS_CONJURER;
+				stats[0]->appearance = 0;
+				stats[0]->playerRace = RACE_SKELETON;
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -7468,10 +7470,10 @@ void handleMainMenu(bool mode)
 
 											Stat* monsterStats = (Stat*)newNode->element;
 											monsterStats->leader_uid = players[c]->entity->getUID();
-											if ( !monsterally[HUMAN][monsterStats->type] )
+											monster->flags[USERFLAG2] = true;
+											/*if ( !monsterally[HUMAN][monsterStats->type] )
 											{
-												monster->flags[USERFLAG2] = true;
-											}
+											}*/
 											monster->monsterAllyIndex = c;
 											if ( multiplayer == SERVER )
 											{

@@ -557,7 +557,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][1][0]; // 0
 	entity->focaly = limbs[HUMAN][1][1]; // 0
 	entity->focalz = limbs[HUMAN][1][2]; // 0
@@ -576,7 +576,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][2][0]; // 0
 	entity->focaly = limbs[HUMAN][2][1]; // 0
 	entity->focalz = limbs[HUMAN][2][2]; // 2
@@ -595,7 +595,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][3][0]; // 0
 	entity->focaly = limbs[HUMAN][3][1]; // 0
 	entity->focalz = limbs[HUMAN][3][2]; // 2
@@ -614,7 +614,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][4][0]; // 0
 	entity->focaly = limbs[HUMAN][4][1]; // 0
 	entity->focalz = limbs[HUMAN][4][2]; // 1.5
@@ -633,7 +633,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][5][0]; // 0
 	entity->focaly = limbs[HUMAN][5][1]; // 0
 	entity->focalz = limbs[HUMAN][5][2]; // 1.5
@@ -652,7 +652,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][6][0]; // 1.5
 	entity->focaly = limbs[HUMAN][6][1]; // 0
 	entity->focalz = limbs[HUMAN][6][2]; // -.5
@@ -672,7 +672,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][7][0]; // 2
 	entity->focaly = limbs[HUMAN][7][1]; // 0
 	entity->focalz = limbs[HUMAN][7][2]; // 0
@@ -694,7 +694,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->scalez = 1.01;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][8][0]; // 0
 	entity->focaly = limbs[HUMAN][8][1]; // 0
 	entity->focalz = limbs[HUMAN][8][2]; // 4
@@ -716,7 +716,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->scalez = 1.01;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][9][0]; // 0
 	entity->focaly = limbs[HUMAN][9][1]; // 0
 	entity->focalz = limbs[HUMAN][9][2]; // -1.75
@@ -738,7 +738,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->scalez = .99;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][10][0]; // 0
 	entity->focaly = limbs[HUMAN][10][1]; // 0
 	entity->focalz = limbs[HUMAN][10][2]; // .5

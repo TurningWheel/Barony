@@ -832,6 +832,27 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 	}
 
+		// update flags for colors.
+	my->flags[USERFLAG2] = true;
+	serverUpdateEntityFlag(my, USERFLAG2);
+	if ( !monsterally[HUMAN][myStats->type] )
+	{
+		int bodypart = 0;
+		for ( node_t* node = my->children.first; node != nullptr; node = node->next )
+		{
+			if ( bodypart >= LIMB_HUMANOID_TORSO )
+			{
+				Entity* tmp = (Entity*)node->element;
+				if ( tmp )
+				{
+					tmp->flags[USERFLAG2] = true;
+					//serverUpdateEntityFlag(tmp, USERFLAG2);
+				}
+			}
+			++bodypart;
+		}
+	}
+
 	for ( node_t* node = stats[monsterclicked]->FOLLOWERS.first; node != nullptr; node = node->next )
 	{
 		Uint32* c = (Uint32*)node->element;
