@@ -578,7 +578,28 @@ void Entity::killedByMonsterObituary(Entity* victim)
 				victim->setObituary(language[1526]);
 				break;
 			case SHOPKEEPER:
-				victim->setObituary(language[1527]);
+				if ( victim->behavior == &actPlayer )
+				{
+					if ( hitstats->type != HUMAN )
+					{
+						if ( hitstats->type < KOBOLD )
+						{
+							snprintf(hitstats->obituary, 127, language[3244], language[111 + hitstats->type], myStats->name);
+						}
+						else if ( hitstats->type >= KOBOLD )
+						{
+							snprintf(hitstats->obituary, 127, language[3244], language[2050 + hitstats->type - KOBOLD], myStats->name);
+						}
+					}
+					else
+					{
+						victim->setObituary(language[1527]); // attempts a robbery.
+					}
+				}
+				else
+				{
+					victim->setObituary(language[1527]); // attempts a robbery.
+				}
 				break;
 			case KOBOLD:
 				victim->setObituary(language[2150]);
@@ -10615,6 +10636,41 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	{
 		monsterState = state;
 	}
+
+	if ( myStats->type == SHOPKEEPER && monsterTarget != target.getUID() && target.behavior == &actPlayer )
+	{
+		Stat* targetStats = target.getStats();
+		if ( targetStats )
+		{
+			char namesays[32];
+			if ( !strcmp(myStats->name, "") )
+			{
+				snprintf(namesays, 31, language[513], SHOPKEEPER);
+			}
+			else
+			{
+				snprintf(namesays, 31, language[1302], myStats->name);
+			}
+			if ( targetStats->type != HUMAN )
+			{
+				if ( targetStats->type < KOBOLD ) //Original monster count
+				{
+					messagePlayer(target.skill[2], language[3243],
+						namesays, language[90 + targetStats->type]);
+				}
+				else if ( targetStats->type >= KOBOLD ) //New monsters
+				{
+					messagePlayer(target.skill[2], language[3243], namesays,
+						language[2000 + (targetStats->type - KOBOLD)]);
+				}
+			}
+			else
+			{
+				messagePlayer(target.skill[2], language[516 + rand() % 4], namesays);
+			}
+		}
+	}
+
 	monsterTarget = target.getUID();
 	monsterTargetX = target.x;
 	monsterTargetY = target.y;
@@ -10633,6 +10689,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 		}
 	}
+
 
 	if ( monsterAllyIndex > 0 && monsterAllyIndex < MAXPLAYERS )
 	{
