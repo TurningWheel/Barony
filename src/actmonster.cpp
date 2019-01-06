@@ -2610,9 +2610,34 @@ void actMonster(Entity* my)
 				// angry at the player, "En Guarde!"
 				switch (myStats->type)
 				{
-					case SHOPKEEPER:
 					case HUMAN:
 						messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+						break;
+					case SHOPKEEPER:
+						if ( stats[monsterclicked] )
+						{
+							if ( stats[monsterclicked]->type != HUMAN )
+							{
+								if ( stats[monsterclicked]->type < KOBOLD ) //Original monster count
+								{
+									messagePlayer(monsterclicked, language[3243], 
+										namesays, language[90 + stats[monsterclicked]->type]);
+								}
+								else if ( stats[monsterclicked]->type >= KOBOLD ) //New monsters
+								{
+									messagePlayer(monsterclicked, language[3243], namesays,
+										language[2000 + (stats[monsterclicked]->type - KOBOLD)]);
+								}
+							}
+							else
+							{
+								messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+							}
+						}
+						else
+						{
+							messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+						}
 						break;
 					default:
 						break;
