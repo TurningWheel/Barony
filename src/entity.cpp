@@ -7421,6 +7421,10 @@ bool Entity::teleport(int tele_x, int tele_y)
 		}
 		return false;
 	}
+	if ( multiplayer != CLIENT )
+	{
+		TileEntityList.updateEntity(*this);
+	}
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "TELE");
@@ -7614,6 +7618,10 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 		}
 		return false;
 	}*/
+	if ( multiplayer != CLIENT )
+	{
+		TileEntityList.updateEntity(*this);
+	}
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "TELM");
