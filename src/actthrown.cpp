@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "scores.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -416,6 +417,53 @@ void actThrown(Entity* my)
 								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
 								{
 									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
+									if ( hit.entity->behavior == &actMonster && parent->behavior == &actPlayer )
+									{
+										if ( parentStats->type == GOATMAN
+											&& (hitstats->type == HUMAN || hitstats->type == GOBLIN)
+											&& hitstats->leader_uid == 0 )
+										{
+											if ( forceFollower(*parent, *hit.entity) )
+											{
+												serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_CHARM_MONSTER, 0);
+												parent->increaseSkill(PRO_LEADERSHIP);
+												messagePlayerMonsterEvent(parent->skill[2], SDL_MapRGB(mainsurface->format, 0, 255, 0), 
+													*hitstats, language[3252], language[3251], MSG_COMBAT);
+												hit.entity->monsterAllyIndex = parent->skill[2];
+												if ( multiplayer == SERVER )
+												{
+													serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
+												}
+
+												if ( hit.entity->monsterTarget == parent->getUID() )
+												{
+													hit.entity->monsterReleaseAttackTarget();
+												}
+
+												// change the color of the hit entity.
+												hit.entity->flags[USERFLAG2] = true;
+												serverUpdateEntityFlag(hit.entity, USERFLAG2);
+												if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+												{
+													int bodypart = 0;
+													for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
+													{
+														if ( bodypart >= LIMB_HUMANOID_TORSO )
+														{
+															Entity* tmp = (Entity*)node->element;
+															if ( tmp )
+															{
+																tmp->flags[USERFLAG2] = true;
+																//serverUpdateEntityFlag(tmp, USERFLAG2);
+															}
+														}
+														++bodypart;
+													}
+												}
+												friendlyHit = true;
+											}
+										}
+									}
 								}
 								usedpotion = true;
 								break;
