@@ -2596,6 +2596,43 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->HUNGER = 100;
 			serverUpdateHunger(player);
 		}
+		if ( vampiricHunger > 0 )
+		{
+			if ( ticks % (TICKS_PER_SECOND * 30) == 0 )
+			{
+				this->modHP(-1);
+				if ( myStats->HP <= 0 )
+				{
+					this->setObituary(language[1530]);
+				}
+
+				// Give the Player feedback on being hurt
+				playSoundEntity(this, 28, 64); // "Damage.ogg"
+
+				if ( myStats->HP > 0 )
+				{
+					messagePlayer(player, language[3253]);
+				}
+
+				// Shake the Host's screen
+				if ( player == clientnum )
+				{
+					camera_shakex += .1;
+					camera_shakey += 10;
+				}
+				else if ( player > 0 && multiplayer == SERVER )
+				{
+					// Shake the Client's screen
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = 10; // turns into .1
+					net_packet->data[5] = 10;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+			}
+		}
 	}
 	else if ( ticks % hungerTickRate == 0 )
 	{
