@@ -182,8 +182,8 @@ void gameLogic(void)
 	{
 		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
 		{
-			// goat/addicts no spin!
-			if ( stats[clientnum]->type == GOATMAN || stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL] != 0 )
+			// goat/drunkards no spin!
+			if ( stats[clientnum]->type == GOATMAN || client_classes[clientnum] == CLASS_DRUNKARD )
 			{
 				// return to normal.
 				if ( drunkextend > 0 )

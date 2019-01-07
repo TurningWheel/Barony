@@ -793,12 +793,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else
 						{
-							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) )
+							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
 							{
 								stats[i]->EFFECTS[c] = false;
 								stats[i]->EFFECTS_TIMERS[c] = 0;
 							}
 						}
+					}
+					if ( stats[i]->EFFECTS[EFF_WITHDRAWAL] )
+					{
+						players[i]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 					}
 					if ( players[i]->entity->flags[BURNING] )
 					{
@@ -826,11 +830,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) )
+									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
 									{
 										target_stat->EFFECTS[c] = false;
 										target_stat->EFFECTS_TIMERS[c] = 0;
 									}
+								}
+								if ( target_stat->EFFECTS[EFF_WITHDRAWAL] )
+								{
+									entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 								}
 								if ( entity->behavior == &actPlayer )
 								{

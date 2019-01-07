@@ -1209,6 +1209,24 @@ void Entity::effectTimes()
 						createParticleDropRising(this, 593, 1.f);
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
 						break;
+					case EFF_WITHDRAWAL:
+						if ( player >= 0 && player < MAXPLAYERS )
+						{
+							if ( myStats->EFFECTS[EFF_DRUNK] )
+							{
+								// we still drunk! no need for hangover just yet...
+								// extend another 15 seconds.
+								myStats->EFFECTS_TIMERS[EFF_WITHDRAWAL] = TICKS_PER_SECOND * 15; 
+							}
+							else
+							{
+								playSoundPlayer(player, 32, 128);
+								messagePlayer(player, language[3247 + rand() % 3]);
+								messagePlayer(player, language[3222]);
+								this->setEffect(EFF_WITHDRAWAL, true, -2, true); // set effect as "active"
+							}
+						}
+						break;
 					default:
 						break;
 				}
@@ -3294,7 +3312,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				for ( c = 0; c < NUMEFFECTS; c++ )
 				{
-					if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) )
+					if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
 					{
 						myStats->EFFECTS[c] = false;
 						myStats->EFFECTS_TIMERS[c] = 0;
@@ -3451,7 +3469,7 @@ void Entity::handleEffects(Stat* myStats)
 					this->setHP(std::max(myStats->MAXHP, 10));
 					for ( c = 0; c < NUMEFFECTS; c++ )
 					{
-						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) )
+						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
 						{
 							myStats->EFFECTS[c] = false;
 							myStats->EFFECTS_TIMERS[c] = 0;

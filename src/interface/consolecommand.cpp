@@ -1418,11 +1418,15 @@ void consoleCommand(char* command_str)
 
 		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
-			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) )
+			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
 			{
 				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
 				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
 			}
+		}
+		if ( players[clientnum]->entity->getStats()->EFFECTS[EFF_WITHDRAWAL] )
+		{
+			players[clientnum]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 		}
 	}
 	else if (!strncmp(command_str, "/summonall ", 11))
@@ -2251,6 +2255,19 @@ void consoleCommand(char* command_str)
 			{
 				messagePlayer(clientnum, language[2996]);
 			}
+		}
+		else if ( !strncmp(command_str, "/hungoverstats", 14) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			messagePlayer(clientnum, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
+				stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
+				stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+			return;
 		}
 		else
 		{
