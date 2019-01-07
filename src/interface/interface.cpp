@@ -989,7 +989,7 @@ int loadConfig(char* filename)
 		// reset to default arrow key to avoid overlapping keybinds on first launch.
 		// due to legacy keybind, now we have useful things to assign to q,e,z,c
 		impulses[IN_UP] = 82;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_UP: %d (Right arrow key)\n", impulses[IN_UP]);
 	}
 	if ( impulses[IN_FOLLOWERMENU_LASTCMD] == impulses[IN_TURNL]
 		&& impulses[IN_TURNL] == 20 )
@@ -997,7 +997,7 @@ int loadConfig(char* filename)
 		// reset to default arrow key to avoid overlapping keybinds on first launch.
 		// due to legacy keybind, now we have useful things to assign to q,e,z,c
 		impulses[IN_TURNL] = 80;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNL: %d (Right arrow key)\n", impulses[IN_TURNL]);
 	}
 
 	return 0;
