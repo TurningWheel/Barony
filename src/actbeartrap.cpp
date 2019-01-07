@@ -177,10 +177,7 @@ void actBeartrap(Entity* my)
 							{
 								messagePlayer(player, language[2522]);
 							}
-							if ( rand() % 2 == 0 )
-							{
-								parent->increaseSkill(PRO_LOCKPICKING);
-							}
+							parent->increaseSkill(PRO_LOCKPICKING);
 							if ( rand() % 2 == 0 )
 							{
 								parent->increaseSkill(PRO_RANGED);
