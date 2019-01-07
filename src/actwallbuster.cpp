@@ -84,7 +84,7 @@ void actWallBuilder(Entity* my)
 			for ( node_t* node = currentList->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 )
+				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 || entity->behavior != &actMonster || entity->behavior != &actPlayer )
 				{
 					continue;
 				}
