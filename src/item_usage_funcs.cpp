@@ -1032,7 +1032,7 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier / 5.f;
-	if ( stats->type == GOATMAN )
+	if ( stats->type == GOATMAN && entity->behavior == &actMonster )
 	{
 		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
 		stats->EFFECTS[EFF_FAST] = true;
@@ -1165,7 +1165,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier;
-	if ( stats->type == GOATMAN )
+	if ( stats->type == GOATMAN && entity->behavior == &actMonster )
 	{
 		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
 		stats->EFFECTS[EFF_FAST] = true;

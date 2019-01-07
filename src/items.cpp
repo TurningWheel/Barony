@@ -1608,7 +1608,7 @@ void useItem(Item* item, int player)
 	}
 
 	// tins need a tin opener to open...
-	if ( player == clientnum && !(stats[player]->type == GOATMAN && stats[player]->EFFECTS[EFF_DRUNK]) )
+	if ( player == clientnum && !(stats[player]->type == GOATMAN) )
 	{
 		if ( item->type == FOOD_TIN )
 		{
