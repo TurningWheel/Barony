@@ -3149,6 +3149,32 @@ void actMonster(Entity* my)
 				{
 					my->monsterLookDir = (rand() % 360) * PI / 180;
 				}
+				if ( my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT )
+				{
+					// allies should try intelligently scan for enemies in radius.
+					if ( my->monsterAllyGetPlayerLeader() )
+					{
+						for ( node = map.creatures->first; node != nullptr; node = node->next )
+						{
+							Entity* target = (Entity*)node->element;
+							if ( target->behavior == &actMonster && my->checkEnemy(target) )
+							{
+								dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+								if ( dist < sightranges[myStats->type] )
+								{
+									double tangent = atan2(target->y - my->y, target->x - my->x);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									if ( hit.entity == target )
+									{
+										//my->monsterLookTime = 1;
+										//my->monsterMoveTime = rand() % 10 + 1;
+										my->monsterLookDir = tangent;
+									}
+								}
+							}
+						}
+					}
+				}
 				if ( rand() % 3 == 0 )
 				{
 					if ( !MONSTER_SOUND )
@@ -4634,9 +4660,13 @@ timeToGoAgain:
 										if ( dist < sightranges[myStats->type] )
 										{
 											double tangent = atan2(target->y - my->y, target->x - my->x);
-											my->monsterLookTime = 1;
-											my->monsterMoveTime = rand() % 10 + 1;
-											my->monsterLookDir = tangent;
+											lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+											if ( hit.entity == target )
+											{
+												my->monsterLookTime = 1;
+												my->monsterMoveTime = rand() % 10 + 1;
+												my->monsterLookDir = tangent;
+											}
 										}
 									}
 								}
