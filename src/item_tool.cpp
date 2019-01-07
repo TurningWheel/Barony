@@ -64,7 +64,7 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.chestLocked )
 		{
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
 			{
 				//Unlock chest.
 				playSoundEntity(&entity, 91, 64);
@@ -131,7 +131,7 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.skill[5] )
 		{
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
@@ -214,10 +214,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, language[2527], entity.getMonsterLangEntry());
 
-						if ( rand() % 3 == 0 )
-						{
-							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-						}
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						serverUpdatePlayerGameplayStats(player, STATISTICS_BOMB_SQUAD, 1);
 						players[player]->entity->awardXP(&entity, true, true);
 					}
