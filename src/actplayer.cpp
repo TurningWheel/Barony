@@ -1424,6 +1424,14 @@ void actPlayer(Entity* my)
 					{
 						messagePlayer(PLAYER_NUM, language[573]);
 					}
+					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
+					{
+						messagePlayerColor(PLAYER_NUM, SDL_MapRGB(mainsurface->format, 255, 0, 0), language[3183]);
+						playSoundPlayer(PLAYER_NUM, 28, 128);
+						playSoundPlayer(PLAYER_NUM, 249, 128);
+						camera_shakex += .1;
+						camera_shakey += 10;
+					}
 					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						playSound(136, 128);
@@ -1452,6 +1460,18 @@ void actPlayer(Entity* my)
 							playSoundEntity(my, 400, 92);
 							createParticleDropRising(my, 593, 1.f);
 							serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);
+						}
+						if ( stats[PLAYER_NUM]->type == VAMPIRE )
+						{
+							if ( ticks % 10 == 0 ) // Water deals damage every 10 ticks
+							{
+								my->modHP(-2 - rand() % 2);
+								if ( ticks % 20 == 0 )
+								{
+									playSoundPlayer(PLAYER_NUM, 28, 92);
+								}
+								my->setObituary(language[3254]); // "goes for a swim in some water."
+							}
 						}
 					}
 					else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks

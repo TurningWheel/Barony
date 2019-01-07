@@ -82,7 +82,8 @@ void item_PotionWater(Item*& item, Entity* entity)
 				int damage = -(20 * item->beatitude);
 				entity->modHP(damage);
 				playSoundEntity(entity, 28, 64);
-				playSoundEntity(entity, 249, 64);
+				playSoundEntity(entity, 249, 128);
+				entity->setObituary(language[1533]);
 			}
 			else
 			{
@@ -94,7 +95,17 @@ void item_PotionWater(Item*& item, Entity* entity)
 		}
 		else
 		{
-			playSoundEntity(entity, 52, 64);
+			if ( stats->type == VAMPIRE )
+			{
+				entity->modHP(-5);
+				playSoundEntity(entity, 28, 64);
+				playSoundEntity(entity, 249, 128);
+				entity->setObituary(language[1533]);
+			}
+			else
+			{
+				playSoundEntity(entity, 52, 64);
+			}
 		}
 		if ( player != clientnum )
 		{
@@ -105,7 +116,17 @@ void item_PotionWater(Item*& item, Entity* entity)
 
 	if ( item->beatitude == 0 )
 	{
-		messagePlayer(player, language[752]);
+		if ( stats->type == VAMPIRE )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			messagePlayerColor(player, color, language[3183]);
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
+		else
+		{
+			messagePlayer(player, language[752]);
+		}
 	}
 	else if ( item->beatitude > 0 )
 	{
@@ -135,6 +156,13 @@ void item_PotionWater(Item*& item, Entity* entity)
 	}
 	else if ( item->beatitude < 0 )
 	{
+		if ( stats->type == VAMPIRE )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			messagePlayerColor(player, color, language[3183]);
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
 		messagePlayer(player, language[755]);
 
 		// randomly curse an unidentified item in the entity's inventory
