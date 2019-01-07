@@ -217,7 +217,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_bleed.mana = 10;
 	spellElement_bleed.base_mana = 10;
 	spellElement_bleed.overload_multiplier = 1;
-	spellElement_bleed.damage = 25;
+	spellElement_bleed.damage = 30;
 	spellElement_bleed.duration = TICKS_PER_SECOND * SPELLELEMENT_BLEED_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_bleed.name, language[2392]);
 
@@ -249,7 +249,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_acidSpray.mana = 20;
 	spellElement_acidSpray.base_mana = 20;
 	spellElement_acidSpray.overload_multiplier = 1;
-	spellElement_acidSpray.damage = 7;
+	spellElement_acidSpray.damage = 10;
 	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_acidSpray.name, language[2395]);
 
