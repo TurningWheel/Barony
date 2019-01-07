@@ -2068,7 +2068,8 @@ void clientHandlePacket()
 			stats[clientnum]->HUNGER = 500;
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
-				if ( !(c == EFF_VAMPIRICAURA && stats[clientnum]->EFFECTS_TIMERS[c] == -2) )
+				if ( !(c == EFF_VAMPIRICAURA && stats[clientnum]->EFFECTS_TIMERS[c] == -2)
+					&& c != EFF_WITHDRAWAL )
 				{
 					stats[clientnum]->EFFECTS[c] = false;
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;

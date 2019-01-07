@@ -222,7 +222,33 @@ void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
 	if ( player >= 0 )
 	{
 		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
-		stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+		if ( stats->type != GOATMAN )
+		{
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+		}
+		if ( stats->EFFECTS[EFF_WITHDRAWAL] )
+		{
+			int hangoverReliefDuration = EFFECT_WITHDRAWAL_BASE_TIME; // 8 minutes
+			switch ( rand() % 3 )
+			{
+				case 0:
+					hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 8); // 8 + 8 minutes
+					break;
+				case 1:
+					hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 4); // 8 + 4 minutes
+					break;
+				case 2:
+					// intentional fall through
+				default:
+					break;
+			}
+			entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
+			messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
+		}
+		else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
+		{
+			stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] = EFFECT_WITHDRAWAL_BASE_TIME;
+		}
 	}
 	else
 	{
@@ -515,11 +541,16 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) )
+		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
 		{
 			stats->EFFECTS[c] = false;
 			stats->EFFECTS_TIMERS[c] = 0;
 		}
+	}
+
+	if ( stats->EFFECTS[EFF_WITHDRAWAL] )
+	{
+		entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 	}
 
 	if ( item->beatitude < 0 )
