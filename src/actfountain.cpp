@@ -20,6 +20,57 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "colors.hpp"
+
+const std::vector<int> potionDropChances =
+{
+	5,	//POTION_WATER,
+	20,	//POTION_BOOZE,
+	10,	//POTION_JUICE,
+	10,	//POTION_SICKNESS,
+	5,	//POTION_CONFUSION,
+	2,	//POTION_EXTRAHEALING,
+	5,	//POTION_HEALING,
+	5,	//POTION_CUREAILMENT,
+	10,	//POTION_BLINDNESS,
+	5,	//POTION_RESTOREMAGIC,
+	2,	//POTION_INVISIBILITY,
+	2,	//POTION_LEVITATION,
+	5,	//POTION_SPEED,
+	10,	//POTION_ACID,
+	2,	//POTION_PARALYSIS,
+	2	//POTION_POLYMORPH
+};
+
+const std::vector<std::pair<ItemType, int>> potionMap =
+{
+	// second element is appearance.
+	{ POTION_WATER, 0 },
+	{ POTION_BOOZE, 2 },
+	{ POTION_JUICE, 3 },
+	{ POTION_SICKNESS, 1 },
+	{ POTION_CONFUSION, 0 },
+	{ POTION_EXTRAHEALING, 0 },
+	{ POTION_HEALING, 0 },
+	{ POTION_CUREAILMENT, 0 },
+	{ POTION_BLINDNESS, 0 },
+	{ POTION_RESTOREMAGIC, 1 },
+	{ POTION_INVISIBILITY, 0 },
+	{ POTION_LEVITATION, 0 },
+	{ POTION_SPEED, 0 },
+	{ POTION_ACID, 0 },
+	{ POTION_PARALYSIS, 1 },
+	{ POTION_POLYMORPH, 0 }
+};
+
+std::mt19937 fountainSeed(rand());
+std::discrete_distribution<> fountainDistribution(potionDropChances.begin(), potionDropChances.end());
+
+std::pair<ItemType, int> fountainGeneratePotionDrop()
+{
+	std::pair<ItemType, int> generatedPotion = potionMap.at(fountainDistribution(fountainSeed));
+	return generatedPotion;
+}
 
 /*-------------------------------------------------------------------------------
 
@@ -113,6 +164,49 @@ void actFountain(Entity* my)
 						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
+					}
+					int potionDropQuantity = 0;
+					if ( stats[i] && (stats[i]->type == GOATMAN || stats[i]->playerRace == RACE_GOATMAN) )
+					{
+						// drop some random potions.
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+								potionDropQuantity = 1;
+								break;
+							case 4:
+							case 5:
+								potionDropQuantity = 2;
+								break;
+							case 6:
+								potionDropQuantity = 3;
+								break;
+							case 7:
+							case 8:
+							case 9:
+								// nothing
+								potionDropQuantity = 0;
+								break;
+							default:
+								break;
+						}
+
+						for ( int j = 0; j < potionDropQuantity; ++j )
+						{
+							std::pair<ItemType, int> generatedPotion = fountainGeneratePotionDrop();
+							ItemType type = generatedPotion.first;
+							int appearance = generatedPotion.second;
+							Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
+							Entity* dropped = dropItemMonster(item, my, NULL);
+							dropped->yaw = ((0 + rand() % 360) / 180.f) * PI;
+							dropped->vel_x = (0.75 + .025 * (rand() % 11)) * cos(dropped->yaw);
+							dropped->vel_y = (0.75 + .025 * (rand() % 11)) * sin(dropped->yaw);
+							dropped->vel_z = (-10 - rand() % 20) * .01;
+							dropped->flags[USERFLAG1] = false;
+						}
 					}
 					switch (my->skill[1])
 					{
@@ -218,9 +312,10 @@ void actFountain(Entity* my)
 						{
 							// bless all equipment
 							playSoundEntity(players[i]->entity, 52, 64);
+							//playSoundEntity(players[i]->entity, 167, 64);
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
-							messagePlayer(i, language[473]);
+							messagePlayerColor(i, textcolor, language[473]);
 							if ( stats[i]->helmet )
 							{
 								stats[i]->helmet->beatitude++;
@@ -275,6 +370,7 @@ void actFountain(Entity* my)
 						{
 							// bless one piece of equipment
 							playSoundEntity(players[i]->entity, 52, 64);
+							//playSoundEntity(players[i]->entity, 167, 64);
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
 							//Choose only one piece of equipment to bless.
@@ -324,7 +420,7 @@ void actFountain(Entity* my)
 
 							if ( items.size() )
 							{
-								messagePlayer(i, language[2592]); //"The fountain blesses a piece of equipment"
+								messagePlayerColor(i, textcolor, language[2592]); //"The fountain blesses a piece of equipment"
 								//Randomly choose a piece of equipment.
 								std::pair<Item*, Uint32> chosen = items[rand()%items.size()];
 								chosen.first->beatitude++;
@@ -345,9 +441,21 @@ void actFountain(Entity* my)
 						default:
 							break;
 					}
+					if ( potionDropQuantity > 0 )
+					{
+						playSoundEntity(my, 47 + rand() % 3, 64);
+					}
+					if ( potionDropQuantity > 1 )
+					{
+						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3245], potionDropQuantity);
+					}
+					else if ( potionDropQuantity == 1 )
+					{
+						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3246]);
+					}
 					messagePlayer(i, language[474]);
 					my->skill[0] = 0; //Dry up fountain.
-					serverUpdateEntitySkill(my, my->skill[0]);
+					serverUpdateEntitySkill(my, 0);
 					//TODO: messagePlayersInSight() instead.
 				}
 				//Then perform the effect randomly determined when the fountain was created.
