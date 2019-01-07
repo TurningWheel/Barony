@@ -4724,7 +4724,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( (rand() % 3 == 0 && degradeWeapon) || forceDegrade )
+					if ( (rand() % 3 == 0 && degradeWeapon && !(svFlags & SV_FLAG_HARDCORE)) || forceDegrade
+						|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 6 == 0 && degradeWeapon) )
 					{
 						if ( player == clientnum )
 						{
@@ -5722,19 +5723,29 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( !myStats->weapon && (*weaponToBreak) )
 							{
-								// gloves degrade, 0 dmg is 12.5%, else 1.25%
-								if ( (rand() % 8 == 0 && damage == 0) || (rand() % 80 == 0 && damage > 0) )
+								// gloves degrade, 0 dmg is 12.5%, else 1.00%
+								if ( (rand() % 8 == 0 && damage == 0) 
+									|| (rand() % 100 == 0 && damage > 0 && !(svFlags & SV_FLAG_HARDCORE))
+									|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 150 == 0 && damage > 0)
+									)
 								{
 									degradeWeapon = true;
 								}
 							}
-							// crystal weapons chance to not degrade 66% chance on 0 dmg, else 96%
-							else if ( isWeakWeapon && ((rand() % 3 == 0 && damage == 0) || (rand() % 25 == 0 && damage > 0)) )
+							// crystal weapons chance to not degrade 66% chance on 0 dmg, else 97.5%
+							else if ( isWeakWeapon 
+								&& ((rand() % 3 == 0 && damage == 0) 
+									|| (rand() % 40 == 0 && damage > 0 && !(svFlags & SV_FLAG_HARDCORE))
+									|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 80 == 0 && damage > 0))
+									)
 							{
 								degradeWeapon = true;
 							}
 							// other weapons chance to not degrade 75% chance on 0 dmg, else 98%
-							else if ( !isWeakWeapon && ((rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0)) )
+							else if ( !isWeakWeapon 
+								&& ((rand() % 4 == 0 && damage == 0) 
+									|| (rand() % 50 == 0 && damage > 0 && !(svFlags & SV_FLAG_HARDCORE))
+									|| ((svFlags & SV_FLAG_HARDCORE) && rand() % 100 == 0 && damage > 0)) )
 							{
 								degradeWeapon = true;
 							}
@@ -5953,9 +5964,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// shield still has chance to degrade after raising skill.
 							// crystal golem special attack increase chance for shield to break if defended. (33%)
 							// special attack only degrades shields if primary target.
-							if ( (hitstats->defending && rand() % 10 == 0)
-								|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
-								&& armor == NULL )
+							if ( armor == NULL &&
+								(	(hitstats->defending && rand() % 10 == 0 && !(svFlags & SV_FLAG_HARDCORE))
+									|| ((svFlags & SV_FLAG_HARDCORE) && hitstats->defending && rand() % 40 == 0)
+									|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
+								)
+								)
 							{
 								armor = hitstats->shield;
 								armornum = 4;
