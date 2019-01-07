@@ -944,10 +944,11 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			if ( stats[PLAYER_NUM]->playerRace == RACE_GOATMAN || client_classes[PLAYER_NUM] == CLASS_DRUNKARD )
+			if ( client_classes[PLAYER_NUM] == CLASS_DRUNKARD )
 			{
 				if ( PLAYER_ALIVETIME == 330 && currentlevel == 0 )
 				{
+					my->setEffect(EFF_WITHDRAWAL, true, -2, true);
 					my->setEffect(EFF_ASLEEP, false, 0, true);
 					playSoundPlayer(PLAYER_NUM, 32, 128);
 					stats[PLAYER_NUM]->HUNGER = 150;
@@ -2411,7 +2412,14 @@ void actPlayer(Entity* my)
 			int drunkInterval = 180;
 			if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 			{
-				drunkInterval = 500;
+				if ( PLAYER_ALIVETIME < 800 )
+				{
+					drunkInterval = 300;
+				}
+				else
+				{
+					drunkInterval = TICKS_PER_SECOND * 30;
+				}
 			}
 
 			if ( CHAR_DRUNK >= drunkInterval )
