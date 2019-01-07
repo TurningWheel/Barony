@@ -3722,7 +3722,7 @@ timeToGoAgain:
 													whoKnockedMe->awardXP(my, true, true);
 												}
 											}
-											hit.entity->furnitureHealth = 0;    // minotaurs smash furniture instantly
+											hit.entity->furnitureHealth = 0;    // smash furniture instantly
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
