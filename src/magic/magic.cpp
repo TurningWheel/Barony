@@ -1062,6 +1062,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						{
 							serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
 						}
+						if ( hit.entity->monsterTarget == parent->getUID() )
+						{
+							hit.entity->monsterReleaseAttackTarget();
+						}
 					}
 
 					// change the color of the hit entity.
@@ -1180,7 +1184,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 {
 	int effectDuration = 0;
-	effectDuration = TICKS_PER_SECOND * ((60 * 3) + rand() & 120); // 3-5 minutes
+	effectDuration = TICKS_PER_SECOND * 60 * (4 + rand() % 3); // 4-6 minutes
 
 	if ( !target || !targetStats )
 	{
