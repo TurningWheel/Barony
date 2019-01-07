@@ -1484,14 +1484,12 @@ void initClass(int player)
 		// skills
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		//stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 80;
-		//stats[player]->PROFICIENCIES[PRO_SWORD] = 20;
 		stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
 
 		// weapon
-		item = newItem(MAGICSTAFF_COLD, EXCELLENT, 0, 1, 0, true, NULL);
+		item = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);

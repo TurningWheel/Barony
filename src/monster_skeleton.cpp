@@ -623,7 +623,7 @@ void skeletonDie(Entity* my)
 				int manaToRefund = std::min(spellCost, static_cast<int>(myStats->MP / static_cast<float>(myStats->MAXMP) * spellCost)); // MP to restore
 				if ( manaToRefund > 0 )
 				{
-					manaToRefund -= rand() % (std::max(1, spellCost / 5));
+					manaToRefund -= rand() % (std::max(1, manaToRefund / 3));
 					if ( leaderStats->HP <= 0 )
 					{
 						manaToRefund = 0;
