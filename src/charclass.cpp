@@ -1742,10 +1742,10 @@ void initClass(int player)
 		// attributes
 		stats[player]->EFFECTS[EFF_ASLEEP] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
-		stats[player]->STR += -3;
-		stats[player]->DEX += 0;
+		stats[player]->STR += -1;
+		stats[player]->DEX += 1;
 		stats[player]->CON -= 2;
-		stats[player]->INT -= 1;
+		stats[player]->INT -= 2;
 		stats[player]->PER -= 2;
 		stats[player]->CHR += 1;
 
@@ -1821,7 +1821,7 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// fish
+			// tins
 			item = newItem(FOOD_TIN, EXCELLENT, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
