@@ -712,9 +712,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_ACCURSED;
+				client_classes[clientnum] = CLASS_DRUNKARD;
 				stats[0]->appearance = 0;
-				stats[0]->playerRace = RACE_VAMPIRE;
+				stats[0]->playerRace = RACE_GOATMAN;
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -730,9 +730,9 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_ACCURSED;
+				client_classes[clientnum] = CLASS_DRUNKARD;
 				stats[0]->appearance = 0;
-				stats[0]->playerRace = RACE_VAMPIRE;
+				stats[0]->playerRace = RACE_GOATMAN;
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
