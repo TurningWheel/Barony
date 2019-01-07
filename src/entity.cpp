@@ -5402,6 +5402,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 						axe = 1; // axes do extra damage to doors :)
 					}
 				}
+				else
+				{
+					axe = (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
+					if ( myStats->PROFICIENCIES[PRO_UNARMED] >= SKILL_LEVEL_LEGENDARY )
+					{
+						axe = 7;
+					}
+					if ( charge > MAXCHARGE / 2 )
+					{
+						axe *= 3;
+					}
+				}
 				if ( hit.entity->behavior != &::actChest )
 				{
 					if ( charge < MAXCHARGE / 2 )
