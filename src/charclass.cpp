@@ -1846,7 +1846,7 @@ void initClass(int player)
 
 	stats[player]->OLDHP = stats[player]->HP;
 
-	if ( stats[player]->playerRace != RACE_GOATMAN )
+	if ( client_classes[clientnum] != CLASS_DRUNKARD )
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = false;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
