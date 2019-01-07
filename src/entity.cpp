@@ -3948,6 +3948,14 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		switch ( entitystats->type )
 		{
 			case GOATMAN:
+			{
+				DEX -= 2;
+				int minusDex = DEX;
+				if ( minusDex > 0 )
+				{
+					DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
+				}
+			}
 				break;
 			default:
 				--DEX;
@@ -4156,7 +4164,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
-		PER += 4;
+		PER -= 4;
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 	{
