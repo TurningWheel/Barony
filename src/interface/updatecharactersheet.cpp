@@ -757,8 +757,27 @@ void drawPartySheet()
 						{
 							if ( strlen(followerStats->name) > 10 )
 							{
-								strncpy(name, followerStats->name, 8);
-								strcat(name, "..");
+								if ( followerStats->type == SKELETON )
+								{
+									if ( !strcmp(followerStats->name, "skeleton sentinel") )
+									{
+										strncpy(name, "sentinel", 8);
+									}
+									else if ( !strcmp(followerStats->name, "skeleton knight") )
+									{
+										strncpy(name, "knight", 6);
+									}
+									else
+									{
+										strncpy(name, followerStats->name, 8);
+										strcat(name, "..");
+									}
+								}
+								else
+								{
+									strncpy(name, followerStats->name, 8);
+									strcat(name, "..");
+								}
 								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", name);
 							}
 							else
