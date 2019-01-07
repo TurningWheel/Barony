@@ -6108,18 +6108,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 							case 2:
 								break;
 							case 3:
-								chance = 8;
-								break;
-							case 4:
 								chance = 6;
 								break;
-							case 5:
+							case 4:
 								chance = 4;
+								break;
+							case 5:
+								chance = 3;
 								break;
 							default:
 								break;
 						}
-						if ( chance > 0 && (rand() % chance) == 0 )
+						if ( chance > 0 && (rand() % chance) == 0 && (backstab || flanking) )
 						{
 							int duration = 100 - hit.entity->getCON() - ((myStats->shield && hasMeleeGloves) ? 50 : 0);
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, std::max(20, duration), true) )
@@ -6129,7 +6129,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
 							}
 						}
-						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						else if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t pushbackMultiplier = 0.5 + 0.1 * (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
 							if ( myStats->shield && hasMeleeGloves )
