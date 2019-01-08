@@ -676,7 +676,7 @@ after reductions depending on the entity stats and another entity observing
 
 -------------------------------------------------------------------------------*/
 
-int Entity::entityLightAfterReductions(Stat& myStats, Entity& observer)
+int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 {
 	int player = -1;
 	int light = entityLight(); // max 255 light to start with.
@@ -698,15 +698,22 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity& observer)
 				{
 					light -= 95;
 				}
-				if ( stats[player]->sneaking == 1 )
+				if ( stats[player]->sneaking == 1 && !stats[player]->defending )
 				{
-					light -= 64;
+					light -= 92;
 				}
 			}
 		}
 		// reduce light level 0-200 depending on target's stealth.
 		// add light level 0-150 for PER 0-30
-		light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer.getPER() * 5;
+		if ( observer )
+		{
+			light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer->getPER() * 5;
+		}
+		else
+		{
+			light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2;
+		}
 	}
 	else
 	{
@@ -5133,7 +5140,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return;
 			}
 
-			bool previousMonsterState = -1;
+			Sint32 previousMonsterState = -1;
 
 			if ( hit.entity->behavior == &actBoulder )
 			{

@@ -2905,7 +2905,7 @@ void actMonster(Entity* my)
 							}
 
 							// skip if light level is too low and distance is too high
-							int light = entity->entityLightAfterReductions(*hitstats, *my);
+							int light = entity->entityLightAfterReductions(*hitstats, my);
 							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
 								//See invisible.
@@ -3358,7 +3358,7 @@ void actMonster(Entity* my)
 			if ( myStats->type != DEVIL )
 			{
 				// skip if light level is too low and distance is too high
-				int light = entity->entityLightAfterReductions(*hitstats, *my);
+				int light = entity->entityLightAfterReductions(*hitstats, my);
 				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 				{
 					//See invisible.
@@ -4089,7 +4089,7 @@ timeToGoAgain:
 							}
 
 							// skip if light level is too low and distance is too high
-							int light = entity->entityLightAfterReductions(*hitstats, *my);
+							int light = entity->entityLightAfterReductions(*hitstats, my);
 							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
 								//See invisible.
