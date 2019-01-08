@@ -425,7 +425,7 @@ void actThrown(Entity* my)
 										{
 											if ( forceFollower(*parent, *hit.entity) )
 											{
-												serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_CHARM_MONSTER, 0);
+												spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 685);
 												parent->increaseSkill(PRO_LEADERSHIP);
 												messagePlayerMonsterEvent(parent->skill[2], SDL_MapRGB(mainsurface->format, 0, 255, 0), 
 													*hitstats, language[3252], language[3251], MSG_COMBAT);
