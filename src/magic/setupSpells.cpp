@@ -14,6 +14,8 @@
 #include "../stat.hpp"
 #include "magic.hpp"
 
+std::vector<spell_t*> allGameSpells;
+
 void setupSpells()   ///TODO: Verify this function.
 {
 	node_t* node = NULL;

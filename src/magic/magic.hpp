@@ -380,6 +380,7 @@ typedef struct spell_t
 extern list_t spellList; //All of the player's spells are stored here.
 extern spell_t* selected_spell; //The spell the player's currently selected.
 extern list_t channeledSpells[4]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
+extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
 
 //TODO: Add stock spells.
 
