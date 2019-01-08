@@ -665,46 +665,53 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	bool canAlly = false;
 	if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
 	{
-		//No cap on # of followers.
-		//Can control humans & goblins both.
-		//TODO: Control humanoids in general? Or otherwise something from each tileset.
-		if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN) || race == GOBLIN || race == AUTOMATON )
+		int allowedFollowers = 8;
+		if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 		{
-			canAlly = true;
-		}
+			//Can control humans & goblins & goatmen & insectoids.
+			//TODO: Control humanoids in general? Or otherwise something from each tileset.
+			if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN) 
+				|| race == GOBLIN
+				|| race == AUTOMATON
+				|| race == GOATMAN
+				|| race == INSECTOID )
+			{
+				canAlly = true;
+			}
 
-		//TODO: If enemies (e.g. goblin or an angry human), require the player to be unseen by this creature to gain control of it.
+			//TODO: If enemies (e.g. goblin or an angry human), require the player to be unseen by this creature to gain control of it.
 
-		if ( stats[monsterclicked]->type == SKELETON )
-		{
-			if ( race == GHOUL )
+			if ( stats[monsterclicked]->type == SKELETON )
 			{
-				canAlly = true;
+				if ( race == GHOUL )
+				{
+					canAlly = true;
+				}
 			}
-		}
-		else if ( stats[monsterclicked]->type == VAMPIRE )
-		{
-			if ( race == VAMPIRE )
+			else if ( stats[monsterclicked]->type == VAMPIRE )
 			{
-				canAlly = true;
+				if ( race == VAMPIRE )
+				{
+					canAlly = true;
+				}
 			}
-		}
-		else if ( stats[monsterclicked]->type == INCUBUS || stats[monsterclicked]->type == SUCCUBUS )
-		{
-			if ( race == INCUBUS || race == SUCCUBUS )
+			else if ( stats[monsterclicked]->type == INCUBUS || stats[monsterclicked]->type == SUCCUBUS )
 			{
-				canAlly = true;
+				if ( race == INCUBUS || race == SUCCUBUS )
+				{
+					canAlly = true;
+				}
+				else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+				{
+					canAlly = true;
+				}
 			}
-			else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+			else if ( stats[monsterclicked]->type == GOATMAN )
 			{
-				canAlly = true;
-			}
-		}
-		else if ( stats[monsterclicked]->type == GOATMAN )
-		{
-			if ( race == GOATMAN )
-			{
-				canAlly = true;
+				if ( race == GOATMAN )
+				{
+					canAlly = true;
+				}
 			}
 		}
 	}
@@ -722,11 +729,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		{
 			if ( myStats->leader_uid == 0 )
 			{
-				int allowedFollowers = std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20));
-				if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
-				{
-					allowedFollowers = 25;
-				}
+				int allowedFollowers = std::min(8, std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20)));
 				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 				{
 					if ( race == AUTOMATON )
@@ -807,7 +810,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		//This one can't speak, so generic "The %s decides to follow you!" message.
 		messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[529], language[529], MSG_COMBAT);
 	}
-
+	spawnMagicEffectParticles(my->x, my->y, my->z, 685);
 	monsterMoveAside(my, players[monsterclicked]->entity);
 	players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 	my->monsterState = MONSTER_STATE_WAIT; // be ready to follow
