@@ -1627,7 +1627,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots) //TODO: Swimming capstone?
+		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
 		{
 			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
