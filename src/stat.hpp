@@ -101,13 +101,13 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		100,		//Leadership
 		100,		//Spellcasting
 		100,		//Magic
-		101,
-		101,
-		101,
-		101,
-		101,
-		101,
-		101
+		101,		//Ranged
+		100,		//Sword
+		100,		//Mace
+		100,		//Axe
+		100,		//Polearm
+		101,		//Shield
+		100			//Unarmed
 };
 
 static const int CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT = 100;
