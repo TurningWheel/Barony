@@ -790,6 +790,7 @@ public:
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
 	bool playerRequiresBloodToSustain(); // vampire type or accursed class
 	bool isBossMonsterOrBossMap(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
+	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);
