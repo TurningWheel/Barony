@@ -369,6 +369,88 @@ std::unordered_map<std::string, int> mapHashes =
 	{  "warpzone.lmp", 3133088  }
 };
 
+const std::vector<std::string> officialLevelsTxtOrder =
+{
+	"start",
+	"mine",
+	"mine",
+	"mine",
+	"mine",
+	"minetoswamp",
+	"swamp",
+	"swamp",
+	"swamp",
+	"swamp",
+	"swamptolabyrinth",
+	"labyrinth",
+	"labyrinth",
+	"labyrinth",
+	"labyrinth",
+	"labyrinthtoruins",
+	"ruins",
+	"ruins",
+	"ruins",
+	"ruins",
+	"boss",
+	"hell",
+	"hell",
+	"hell",
+	"hellboss",
+	"hamlet",
+	"caves",
+	"caves",
+	"caves",
+	"caves",
+	"cavestocitadel",
+	"citadel",
+	"citadel",
+	"citadel",
+	"citadel",
+	"sanctum"
+};
+
+const std::vector<std::string> officialSecretlevelsTxtOrder = 
+{
+	"warpzone",
+	"warpzone",
+	"warpzone",
+	"gnomishmines",
+	"minetown",
+	"warpzone",
+	"underworld",
+	"underworld",
+	"temple",
+	"greatcastle",
+	"warpzone",
+	"warpzone",
+	"sokoban",
+	"warpzone",
+	"minotaur",
+	"warpzone",
+	"warpzone",
+	"mysticlibrary",
+	"warpzone",
+	"underworld",
+	"underworld",
+	"warpzone",
+	"warpzone",
+	"warpzone",
+	"boss",
+	"warpzone",
+	"warpzone",
+	"warpzone",
+	"warpzone",
+	"caveslair",
+	"warpzone",
+	"warpzone",
+	"warpzone",
+	"warpzone",
+	"bramscastle",
+	"warpzone",
+	"warpzone",
+	"warpzone"
+};
+
 /*-------------------------------------------------------------------------------
 
 	glLoadTexture
@@ -1982,7 +2064,7 @@ bool physfsIsMapLevelListModded()
 	std::string mapsDirectory = PHYSFS_getRealDir(LEVELSFILE);
 	if ( mapsDirectory.compare("./") != 0 )
 	{
-		return true;
+		//return true;
 	}
 	mapsDirectory.append(PHYSFS_getDirSeparator()).append(LEVELSFILE);
 
@@ -2014,6 +2096,10 @@ bool physfsIsMapLevelListModded()
 				mapName.erase(carriageReturn);
 			}
 			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
+			if ( mapName.compare(officialLevelsTxtOrder.at(levelsCounted)) != 0 )
+			{
+				return true;
+			}
 			mapName = "maps/" + mapName + ".lmp";
 			//printlog("%s", mapName.c_str());
 			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
@@ -2031,7 +2117,7 @@ bool physfsIsMapLevelListModded()
 	mapsDirectory = PHYSFS_getRealDir(SECRETLEVELSFILE);
 	if ( mapsDirectory.compare("./") != 0 )
 	{
-		return true;
+		//return true;
 	}
 	mapsDirectory.append(PHYSFS_getDirSeparator()).append(SECRETLEVELSFILE);
 
@@ -2063,6 +2149,10 @@ bool physfsIsMapLevelListModded()
 				mapName.erase(carriageReturn);
 			}
 			mapName = mapName.substr(0, mapName.find_first_of(" \0"));
+			if ( mapName.compare(officialSecretlevelsTxtOrder.at(levelsCounted)) != 0 )
+			{
+				return true;
+			}
 			mapName = "maps/" + mapName + ".lmp";
 			//printlog("%s", mapName.c_str());
 			if ( PHYSFS_getRealDir(mapName.c_str()) != NULL )
