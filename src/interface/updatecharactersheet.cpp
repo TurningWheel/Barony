@@ -517,10 +517,10 @@ void drawSkillsSheet()
 				case PRO_MAGIC:
 					break;
 				case PRO_RANGED:
+					skillTooltipRect.h += 2 * fontHeight + 4;
 					drawTooltip(&skillTooltipRect);
-					//skillTooltipRect.h += 3 * fontHeight;
-					//ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-					//	capstoneTextColor, language[3277]);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3284]);
 					break;
 				case PRO_SWORD:
 				{
@@ -535,7 +535,7 @@ void drawSkillsSheet()
 					skillTooltipRect.h += 3 * fontHeight + 4;
 					drawTooltip(&skillTooltipRect);
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-						capstoneTextColor, language[3279], language[3282]);
+						capstoneTextColor, language[3279]);
 					break;
 				}
 				case PRO_AXE:
@@ -543,14 +543,26 @@ void drawSkillsSheet()
 					skillTooltipRect.h += 3 * fontHeight + 4;
 					drawTooltip(&skillTooltipRect);
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-						capstoneTextColor, language[3280], language[3281]);
+						capstoneTextColor, language[3280]);
 					break;
 				}
 				case PRO_POLEARM:
 					skillTooltipRect.h += 3 * fontHeight + 4;
 					drawTooltip(&skillTooltipRect);
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-						capstoneTextColor, language[3281], language[3281]);
+						capstoneTextColor, language[3281]);
+					break;
+				case PRO_UNARMED:
+					skillTooltipRect.h += 3 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3282]);
+					break;
+				case PRO_SHIELD:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3283]);
 					break;
 				default:
 					drawTooltip(&skillTooltipRect);
@@ -756,14 +768,24 @@ void drawSkillsSheet()
 				}
 				case PRO_RANGED:
 					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
+					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
-						skillDetails[1] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
+						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
 					}
-					skillDetails[2] = (stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 5); // thrown dmg bonus
-					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3255 + i],
-						skillDetails[0], skillDetails[1], skillDetails[2]);
+					skillDetails[3] = (stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 5); // thrown dmg bonus
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, skillDetails[2], skillDetails[3]);
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], skillDetails[2], skillDetails[3]);
+					}
 					break;
 				case PRO_SWORD:
 				case PRO_AXE:
@@ -779,7 +801,6 @@ void drawSkillsSheet()
 					}
 					if ( skillCapstoneUnlocked(clientnum, i) )
 					{
-						skillDetails[3] *= 2;
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
 							skillDetails[0], 0.f, 0.f);
@@ -794,6 +815,55 @@ void drawSkillsSheet()
 						{
 							skillDetails[1] *= 2;
 							skillDetails[2] *= 2;
+						}
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
+					}
+					break;
+				case PRO_UNARMED:
+					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+					skillDetails[4] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 20;
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, 0.f, skillDetails[3], skillDetails[4]);
+					}
+					else
+					{
+						skillDetails[1] = 100; // chance to degrade on > 0 dmg
+						skillDetails[2] = 8; // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						if ( svFlags & SV_FLAG_HARDCORE )
+						{
+							skillDetails[1] *= 2;
+							skillDetails[2] *= 2;
+						}
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2], skillDetails[3], skillDetails[4]);
+					}
+					break;
+				case PRO_SHIELD:
+					skillDetails[0] = 5 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5);
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, 0.f);
+					}
+					else
+					{
+						skillDetails[1] = 25; // degrade > 0 dmg taken
+						skillDetails[2] = 10; // degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
+						skillDetails[2] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
+						if ( svFlags & SV_FLAG_HARDCORE )
+						{
+							skillDetails[2] = 40;
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],
