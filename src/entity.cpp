@@ -4910,7 +4910,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( myStats->weapon->type == SHORTBOW || myStats->weapon->type == CROSSBOW || myStats->weapon->type == SLING || myStats->weapon->type == ARTIFACT_BOW )
 			{
 				// damage weapon if applicable
-				if ( rand() % 50 == 0 && myStats->weapon->type != ARTIFACT_BOW )
+				int bowDegradeChance = 50;
+				if ( behavior == &actPlayer )
+				{
+					bowDegradeChance += (stats[skill[2]]->PROFICIENCIES[PRO_RANGED] / 20) * 10;
+				}
+				if ( bowDegradeChance < 100 && rand() % 50 == 0 && myStats->weapon->type != ARTIFACT_BOW )
 				{
 					if ( myStats->weapon != NULL )
 					{
@@ -5404,7 +5409,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				int axe = 0;
 				if ( myStats->weapon )
 				{
-					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE )
+					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE
+						|| myStats->weapon->type == CRYSTAL_BATTLEAXE )
 					{
 						axe = 1; // axes do extra damage to doors :)
 					}
@@ -5954,30 +5960,35 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 
-						if ( weaponskill == PRO_MACE )
+						int armorDegradeChance = 25;
+						if ( isWeakArmor )
 						{
-							if ( isWeakArmor )
+							armorDegradeChance = 15;
+							if ( weaponskill == PRO_MACE )
 							{
-								// 80% chance to be deselected from degrading.
-								if ( rand() % 5 > 0 )
-								{
-									armor = NULL;
-									armornum = 0;
-								}
-							}
-							else
-							{
-								// 90% chance to be deselected from degrading.
-								if ( rand() % 10 > 0 )
-								{
-									armor = NULL;
-									armornum = 0;
-								}
+								armorDegradeChance = 5;
 							}
 						}
+						else
+						{
+							if ( weaponskill == PRO_MACE )
+							{
+								armorDegradeChance = 10;
+							}
+						}
+
+						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
+						{
+							armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
+							if ( skillCapstoneUnlocked(skill[2], PRO_SHIELD) )
+							{
+								armorDegradeChance = 100; // don't break.
+							}
+						}
+
 						// crystal golem special attack increase chance for armor to break if hit. (25-33%)
 						// special attack only degrades armor if primary target.
-						else if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
+						if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
 						{
 							if ( isWeakArmor )
 							{
@@ -6000,23 +6011,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							if ( isWeakArmor )
+							if ( armorDegradeChance < 100 && rand() % armorDegradeChance > 0 )
 							{
-								// 93% chance to be deselected from degrading.
-								if ( rand() % 15 > 0 )
-								{
-									armor = NULL;
-									armornum = 0;
-								}
-							}
-							else
-							{
-								// 96% chance to be deselected from degrading.
-								if ( rand() % 25 > 0 )
-								{
-									armor = NULL;
-									armornum = 0;
-								}
+								armor = NULL;
+								armornum = 0;
 							}
 						}
 					}
@@ -6050,9 +6048,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// shield still has chance to degrade after raising skill.
 							// crystal golem special attack increase chance for shield to break if defended. (33%)
 							// special attack only degrades shields if primary target.
-							if ( armor == NULL &&
-								(	(hitstats->defending && rand() % 10 == 0 && !(svFlags & SV_FLAG_HARDCORE))
-									|| ((svFlags & SV_FLAG_HARDCORE) && hitstats->defending && rand() % 40 == 0)
+							int shieldDegradeChance = 10;
+							if ( svFlags & SV_FLAG_HARDCORE )
+							{
+								shieldDegradeChance = 40;
+							}
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								shieldDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
+								if ( skillCapstoneUnlocked(skill[2], PRO_SHIELD) )
+								{
+									shieldDegradeChance = 100; // don't break.
+								}
+							}
+							if ( shieldDegradeChance < 100 && armor == NULL &&
+								(	(hitstats->defending && rand() % shieldDegradeChance == 0)
 									|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
 								)
 								)
@@ -6114,7 +6124,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool knockbackInflicted = false;
 					// player weapon skills
 					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3)
-						&& (!myStats->shield || hasMeleeGloves) )
+						&& (hasMeleeGloves) )
 					{
 						int chance = 0;
 						bool inflictParalyze = false;
@@ -6136,7 +6146,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							default:
 								break;
 						}
-						if ( chance > 0 && (backstab || flanking) && !hitstats->EFFECTS[EFF_PARALYZED] )
+						if ( chance > 0 && backstab && !hitstats->EFFECTS[EFF_PARALYZED] )
 						{
 							int duration = 50;
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, duration, true) )
