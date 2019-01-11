@@ -738,6 +738,42 @@ bool GameController::handleRemoveCurseMovement()
 	return false;
 }
 
+bool GameController::handleRepairGUIMovement()
+{
+	bool dpad_moved = false;
+
+	if ( itemMenuOpen )
+	{
+		return false;
+	}
+
+	if ( *inputPressed(joyimpulses[INJOY_DPAD_UP]) )
+	{
+		RepairGUI.selectSlot(RepairGUI.selectedSlot - 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if ( *inputPressed(joyimpulses[INJOY_DPAD_DOWN]) )
+	{
+		RepairGUI.selectSlot(RepairGUI.selectedSlot + 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if ( dpad_moved )
+	{
+		dpad_moved = false;
+		draw_cursor = false;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool GameController::handleItemContextMenu(const Item& item)
 {
 	bool dpad_moved = false;

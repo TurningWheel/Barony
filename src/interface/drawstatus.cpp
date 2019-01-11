@@ -788,7 +788,14 @@ void drawStatus()
 			{
 				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
+					if ( (mousestatus[SDL_BUTTON_LEFT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
+							&& !openedChest[clientnum] 
+							&& gui_mode != (GUI_MODE_SHOP) 
+							&& !identifygui_active
+							&& !removecursegui_active
+							&& !RepairGUI.isGUIOpen())) 
+						&& !selectedItem )
 					{
 						toggleclick = false;
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -815,7 +822,13 @@ void drawStatus()
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active) )
+					if ( mousestatus[SDL_BUTTON_RIGHT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
+							&& !openedChest[clientnum] 
+							&& gui_mode != (GUI_MODE_SHOP) 
+							&& !identifygui_active 
+							&& !removecursegui_active
+							&& !RepairGUI.isGUIOpen()) )
 					{
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -1254,14 +1267,20 @@ void drawStatus()
 			bumper_moved = true;
 		}
 
-		if ( bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
+		if ( bumper_moved && !itemMenuOpen 
+			&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
+			&& !book_open && !identifygui_active 
+			&& !removecursegui_active && !RepairGUI.isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) 
+				&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
+				&& !book_open && !identifygui_active 
+				&& !removecursegui_active && !RepairGUI.isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
