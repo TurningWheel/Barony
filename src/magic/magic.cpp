@@ -1757,7 +1757,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 					target->effectPolymorph = target->getMonsterFromPlayerRace(roll);
 				}
 			}
-			else if ( targetStats->playerRace != RACE_HUMAN )
+			else if ( (targetStats->playerRace != RACE_HUMAN && targetStats->appearance == 0) )
 			{
 				target->effectPolymorph = 100 + rand() % NUMAPPEARANCES;
 			}

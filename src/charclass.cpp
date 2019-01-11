@@ -1641,7 +1641,7 @@ void initClass(int player)
 	{
 		// attributes
 		bool curseItems = false;
-		if ( stats[player]->playerRace == RACE_SUCCUBUS )
+		if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
 		{
 			curseItems = true;
 		}
@@ -1851,7 +1851,9 @@ void initClass(int player)
 		stats[player]->EFFECTS[EFF_ASLEEP] = false;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 	}
-	if ( client_classes[player] <= CLASS_MONK && stats[player]->playerRace != RACE_HUMAN )
+	if ( stats[player]->appearance == 0 
+		&& client_classes[player] <= CLASS_MONK 
+		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )
 		{
@@ -1861,7 +1863,10 @@ void initClass(int player)
 			free(item);
 		}
 	}
-	if ( client_classes[player] >= CLASS_CONJURER && client_classes[player] <= CLASS_DRUNKARD && stats[player]->playerRace != RACE_HUMAN )
+	if ( stats[player]->appearance == 0 
+		&& client_classes[player] >= CLASS_CONJURER 
+		&& client_classes[player] <= CLASS_DRUNKARD 
+		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )
 		{
@@ -1874,12 +1879,12 @@ void initClass(int player)
 
 	if ( player == clientnum )
 	{
-		if ( stats[player]->playerRace == RACE_VAMPIRE )
+		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_LEVITATION, player, true);
 			addSpell(SPELL_BLEED, player, true);
 		}
-		else if ( stats[player]->playerRace == RACE_SUCCUBUS )
+		else if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
 		}
