@@ -491,7 +491,7 @@ void handleMainMenu(bool mode)
 	button_t* button;
 
 #ifdef STEAMWORKS
-	if ( SteamUser()->BLoggedOn() )
+	if ( ticks % 50 == 0 && SteamUser()->BLoggedOn() )
 	{
 		if ( keystatus[SDL_SCANCODE_Z] )
 		{
@@ -669,7 +669,7 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
 				}
 			}
-			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			if ( ticks % 250 == 0 && SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 			}

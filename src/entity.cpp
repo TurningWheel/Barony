@@ -3261,7 +3261,7 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_fire = 0; // If not on fire, then reset fire counter TODOR: This seems unecessary, but is what poison does, this is happening every tick
 	}
 
-	if ( player >= 0 && (stats[player]->type == SKELETON || stats[player]->playerRace == RACE_SKELETON) )
+	if ( player >= 0 && (stats[player]->type == SKELETON || (stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0)) )
 	{
 		// life saving
 		if ( myStats->HP <= 0 )
