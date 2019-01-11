@@ -3308,14 +3308,6 @@ int main(int argc, char** argv)
 					if ( shootmode == false )
 					{
 						SDL_SetRelativeMouseMode(SDL_FALSE);
-						if ( proficienciesPage == 1 )
-						{
-							drawPartySheet();
-						}
-						else
-						{
-							drawSkillsSheet();
-						}
 					}
 					else
 					{
@@ -3348,17 +3340,6 @@ int main(int argc, char** argv)
 							SDL_SetRelativeMouseMode(SDL_TRUE);
 						}
 
-						if ( lock_right_sidebar )
-						{
-							if ( proficienciesPage == 1 )
-							{
-								drawPartySheet();
-							}
-							else
-							{
-								drawSkillsSheet();
-							}
-						}
 					}
 
 					// Draw the static HUD elements
@@ -3395,6 +3376,29 @@ int main(int argc, char** argv)
 							updateCharacterSheet();
 							updatePlayerInventory();
 							updateShopWindow();
+						}
+
+						if ( proficienciesPage == 1 )
+						{
+							drawPartySheet();
+						}
+						else
+						{
+							drawSkillsSheet();
+						}
+					}
+					else
+					{
+						if ( lock_right_sidebar )
+						{
+							if ( proficienciesPage == 1 )
+							{
+								drawPartySheet();
+							}
+							else
+							{
+								drawSkillsSheet();
+							}
 						}
 					}
 					if ( (shootmode == false && gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
