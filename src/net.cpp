@@ -1922,7 +1922,7 @@ void clientHandlePacket()
 		shopitemscroll = 0;
 		identifygui_active = false; //Really need a centralized function to open up whatever screen/inventory.
 		closeRemoveCurseGUI();
-
+		RepairGUI.closeGUI();
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
 		{
@@ -3085,6 +3085,7 @@ void clientHandlePacket()
 			{
 				closeRemoveCurseGUI();
 			}
+			RepairGUI.closeGUI();
 			identifygui_active = false;
 			list_FreeAll(&chestInv);
 			chestInv.first = nullptr;
@@ -3141,6 +3142,7 @@ void clientHandlePacket()
 		{
 			closeRemoveCurseGUI();
 		}
+		RepairGUI.closeGUI();
 		if ( openedChest[clientnum] )
 		{
 			openedChest[clientnum]->closeChest();
@@ -3163,6 +3165,7 @@ void clientHandlePacket()
 		{
 			CloseIdentifyGUI();
 		}
+		RepairGUI.closeGUI();
 
 		if ( openedChest[clientnum] )
 		{
@@ -4097,6 +4100,47 @@ void serverHandlePacket()
 		if ( item != nullptr )
 		{
 			item->beatitude = 0;
+		}
+		return;
+	}
+
+	// the client repaired equipment
+	else if ( !strncmp((char*)net_packet->data, "REPA", 4) )
+	{
+		int player = net_packet->data[4];
+		switch ( net_packet->data[5] )
+		{
+			case 0:
+				item = stats[player]->weapon;
+				break;
+			case 1:
+				item = stats[player]->helmet;
+				break;
+			case 2:
+				item = stats[player]->breastplate;
+				break;
+			case 3:
+				item = stats[player]->gloves;
+				break;
+			case 4:
+				item = stats[player]->shoes;
+				break;
+			case 5:
+				item = stats[player]->shield;
+				break;
+			case 6:
+				item = stats[player]->cloak;
+				break;
+			case 7:
+				item = stats[player]->mask;
+				break;
+			default:
+				item = nullptr;
+				break;
+		}
+		if ( item != nullptr )
+		{
+			item->status = static_cast<Status>(net_packet->data[6]);
 		}
 		return;
 	}

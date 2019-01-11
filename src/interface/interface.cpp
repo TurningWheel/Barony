@@ -170,6 +170,7 @@ bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
 FollowerRadialMenu FollowerMenu;
+RepairGUIMenu RepairGUI;
 SDL_Rect interfaceSkillsSheet;
 SDL_Rect interfacePartySheet;
 
@@ -1543,6 +1544,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			shootmode = true;
 			CloseIdentifyGUI();
 			closeRemoveCurseGUI();
+			RepairGUI.closeGUI();
 			if ( openedChest[clientnum] )
 			{
 				openedChest[clientnum]->closeChest();
@@ -1678,6 +1680,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							openedChest[clientnum]->closeChest();
 						}
+						RepairGUI.closeGUI();
 						gui_mode = GUI_MODE_NONE;
 					}
 				}
@@ -2649,4 +2652,561 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 {
 	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
+}
+
+bool RepairGUIMenu::isItemRepairable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+	if ( item->status == EXCELLENT )
+	{
+		return false;
+	}
+	Category cat = itemCategory(item);
+	switch ( cat )
+	{
+		case WEAPON:
+			return true;
+		case ARMOR:
+			return true;
+		case MAGICSTAFF:
+			return true;
+		case THROWN:
+			return true;
+		case TOOL:
+			switch ( item->type )
+			{
+				case TOOL_TOWEL:
+				case TOOL_MIRROR:
+				case TOOL_SKELETONKEY:
+				case TOOL_TINOPENER:
+					return false;
+					break;
+				default:
+					return true;
+					break;
+			}
+			break;
+		default:
+			return false;
+	}
+}
+
+// Repair GUI Code
+void RepairGUIMenu::rebuildGUIInventory()
+{
+	list_t* repair_inventory = &stats[clientnum]->inventory;
+	node_t* node = nullptr;
+	Item* item = nullptr;
+	int c = 0;
+
+	if ( repair_inventory )
+	{
+		//Count the number of items in the Repair GUI "inventory".
+		for ( node = repair_inventory->first; node != nullptr; node = node->next )
+		{
+			item = (Item*)node->element;
+			if ( isItemRepairable(item) )
+			{
+				++c;
+			}
+		}
+		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
+		for ( c = 0; c < kNumShownItems; ++c )
+		{
+			itemsDisplayed[c] = nullptr;
+		}
+		c = 0;
+
+		//Assign the visible items to the GUI slots.
+		for ( node = repair_inventory->first; node != nullptr; node = node->next )
+		{
+			if ( node->element )
+			{
+				item = (Item*)node->element;
+				if ( isItemRepairable(item) ) //Skip over all non-repairable items.
+				{
+					++c;
+					if ( c <= scroll )
+					{
+						continue;
+					}
+					itemsDisplayed[c - scroll - 1] = item;
+					if ( c > 3 + scroll )
+					{
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void RepairGUIMenu::updateGUI()
+{
+	SDL_Rect pos;
+	node_t* node;
+	int y, c;
+
+	//Repair GUI.
+	if ( guiActive )
+	{
+		//Center the GUI.
+		pos.x = gui_starty;
+		pos.y = gui_startx;
+		drawImage(identifyGUI_img, NULL, &pos);
+
+		//Buttons
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			//GUI scroll up button.
+			if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
+			{
+				if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+				{
+					buttonclick = 7;
+					scroll--;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+			//GUI scroll down button.
+			else if ( omousey >= gui_startx + 52 && omousey < gui_startx + 88 )
+			{
+				if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+				{
+					buttonclick = 8;
+					scroll++;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+			else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
+			{
+				//GUI close button.
+				if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
+				{
+					buttonclick = 9;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+				{
+					gui_clickdrag = true;
+					draggingRepairGUI = true;
+					offsetx = omousex - gui_starty;
+					offsety = omousey - gui_startx;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+		}
+
+		// mousewheel
+		if ( omousex >= gui_starty + 12 && omousex < gui_starty + (identifyGUI_img->w - 28) )
+		{
+			if ( omousey >= gui_startx + 16 && omousey < gui_startx + (identifyGUI_img->h - 8) )
+			{
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				{
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					scroll++;
+				}
+				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				{
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					scroll--;
+				}
+			}
+		}
+
+		if ( draggingRepairGUI )
+		{
+			if ( gui_clickdrag )
+			{
+				offsetx = (omousex - dragoffset_x) - (gui_starty - offsetx);
+				offsety = (omousey - dragoffset_y) - (gui_startx - offsety);
+				if ( gui_starty <= camera.winx )
+				{
+					offsetx = camera.winx - (gui_starty - offsetx);
+				}
+				if ( gui_starty > camera.winx + camera.winw - identifyGUI_img->w )
+				{
+					offsetx = (camera.winx + camera.winw - identifyGUI_img->w) - (gui_starty - offsetx);
+				}
+				if ( gui_startx <= camera.winy )
+				{
+					offsety = camera.winy - (gui_startx - offsety);
+				}
+				if ( gui_startx > camera.winy + camera.winh - identifyGUI_img->h )
+				{
+					offsety = (camera.winy + camera.winh - identifyGUI_img->h) - (gui_startx - offsety);
+				}
+			}
+			else
+			{
+				draggingRepairGUI = false;
+			}
+		}
+
+		list_t* repair_inventory = &stats[clientnum]->inventory;
+
+		if ( !repair_inventory )
+		{
+			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
+		}
+		else
+		{
+			//Print the window label signifying this as the repair GUI.
+			char* window_name;
+			window_name = language[3286];
+			ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+
+			//GUI up button.
+			if ( buttonclick == 7 )
+			{
+				pos.x = gui_starty + (identifyGUI_img->w - 28);
+				pos.y = gui_startx + 16;
+				pos.w = 0;
+				pos.h = 0;
+				drawImage(invup_bmp, NULL, &pos);
+			}
+			//GUI down button.
+			if ( buttonclick == 8 )
+			{
+				pos.x = gui_starty + (identifyGUI_img->w - 28);
+				pos.y = gui_startx + 52;
+				pos.w = 0;
+				pos.h = 0;
+				drawImage(invdown_bmp, NULL, &pos);
+			}
+			//GUI close button.
+			if ( buttonclick == 9 )
+			{
+				pos.x = gui_starty + 393;
+				pos.y = gui_startx;
+				pos.w = 0;
+				pos.h = 0;
+				drawImage(invclose_bmp, NULL, &pos);
+				closeGUI();
+			}
+
+			Item *item = nullptr;
+
+			bool selectingSlot = false;
+			SDL_Rect slotPos;
+			slotPos.x = gui_starty;
+			slotPos.w = inventoryoptionChest_bmp->w;
+			slotPos.y = gui_startx + 16;
+			slotPos.h = inventoryoptionChest_bmp->h;
+
+			for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
+			{
+				pos.x = slotPos.x + 12;
+				pos.w = 0;
+				pos.h = 0;
+
+				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+				{
+					pos.y = slotPos.y;
+					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+					selectedSlot = i;
+					selectingSlot = true;
+					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						repairItem(itemsDisplayed[i]);
+
+						rebuildGUIInventory();
+						if ( itemsDisplayed[i] == nullptr )
+						{
+							if ( itemsDisplayed[0] == nullptr )
+							{
+								//Go back to inventory.
+								selectedSlot = -1;
+								warpMouseToSelectedInventorySlot();
+							}
+							else
+							{
+								//Move up one slot.
+								--selectedSlot;
+								warpMouseToSelectedSlot();
+							}
+						}
+					}
+				}
+			}
+
+			if ( !selectingSlot )
+			{
+				selectedSlot = -1;
+			}
+
+			//Okay, now prepare to render all the items.
+			y = gui_startx + 22;
+			c = 0;
+			if ( repair_inventory )
+			{
+				rebuildGUIInventory();
+
+				//Actually render the items.
+				c = 0;
+				for ( node = repair_inventory->first; node != NULL; node = node->next )
+				{
+					if ( node->element )
+					{
+						item = (Item*)node->element;
+						if ( item && item->identified && item->status < EXCELLENT )   //Skip over all unidentified or non-broken items.
+						{
+							c++;
+							if ( c <= scroll )
+							{
+								continue;
+							}
+							char tempstr[64] = { 0 };
+							strncpy(tempstr, item->description(), 46);
+							if ( strlen(tempstr) == 46 )
+							{
+								strcat(tempstr, " ...");
+							}
+							ttfPrintText(ttf8, gui_starty + 36, y, tempstr);
+							pos.x = gui_starty + 16;
+							pos.y = gui_startx + 17 + 18 * (c - scroll - 1);
+							pos.w = 16;
+							pos.h = 16;
+							drawImageScaled(itemSprite(item), NULL, &pos);
+							y += 18;
+							if ( c > 3 + scroll )
+							{
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void RepairGUIMenu::repairItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !isItemRepairable(item) )
+	{
+		messagePlayer(clientnum, language[3287], item->getName());
+		return;
+	}
+
+	if ( item->status == BROKEN )
+	{
+		item->status = WORN;
+	}
+	else
+	{
+		item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+	}
+	messagePlayer(clientnum, language[872], item->getName());
+	closeGUI();
+	if ( multiplayer == CLIENT && itemIsEquipped(item, clientnum) )
+	{
+		// the client needs to inform the server that their equipment was repaired.
+		int armornum = 0;
+		if ( item == stats[clientnum]->weapon )
+		{
+			armornum = 0;
+		}
+		else if ( item == stats[clientnum]->helmet )
+		{
+			armornum = 1;
+		}
+		else if ( item == stats[clientnum]->breastplate )
+		{
+			armornum = 2;
+		}
+		else if ( item == stats[clientnum]->gloves )
+		{
+			armornum = 3;
+		}
+		else if ( item == stats[clientnum]->shoes )
+		{
+			armornum = 4;
+		}
+		else if ( item == stats[clientnum]->shield )
+		{
+			armornum = 5;
+		}
+		else if ( item == stats[clientnum]->cloak )
+		{
+			armornum = 6;
+		}
+		else if ( item == stats[clientnum]->mask )
+		{
+			armornum = 7;
+		}
+		strcpy((char*)net_packet->data, "REPA");
+		net_packet->data[4] = clientnum;
+		net_packet->data[5] = armornum;
+		net_packet->data[6] = item->status;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+}
+
+void RepairGUIMenu::closeGUI()
+{
+	guiActive = false;
+	selectedSlot = -1;
+}
+
+inline Item* RepairGUIMenu::getItemInfo(int slot)
+{
+	if ( slot >= kNumShownItems )
+	{
+		return nullptr; //Out of bounds,
+	}
+
+	return itemsDisplayed[slot];
+}
+
+void RepairGUIMenu::selectSlot(int slot)
+{
+	if ( slot < selectedSlot )
+	{
+		//Moving up.
+
+		/*
+		* Possible cases:
+		* * 1) Move cursor up the GUI through different selectedSlot.
+		* * 2) Page up through scroll--
+		* * 3) Scrolling up past top of Repair GUI, no scroll (move back to inventory)
+		*/
+
+		if ( selectedSlot <= 0 )
+		{
+			//Covers cases 2 & 3.
+
+			/*
+			* Possible cases:
+			* * A) Hit very top of Repair "inventory", can't go any further. Return to inventory.
+			* * B) Page up, scrolling through scroll.
+			*/
+
+			if ( scroll <= 0 )
+			{
+				//Case 3/A: Return to inventory.
+				selectedSlot = -1;
+			}
+			else
+			{
+				//Case 2/B: Page up through Repair "inventory".
+				--scroll;
+			}
+		}
+		else
+		{
+			//Covers case 1.
+
+			//Move cursor up the GUI through different selectedSlot (--selectedSlot).
+			--selectedSlot;
+			warpMouseToSelectedSlot();
+		}
+	}
+	else if ( slot > selectedSlot )
+	{
+		//Moving down.
+
+		/*
+		* Possible cases:
+		* * 1) Moving cursor down through GUI through different selectedSlot.
+		* * 2) Scrolling down past bottom of Repair GUI through scroll++
+		* * 3) Scrolling down past bottom of Repair GUI, max Repair scroll (revoke move -- can't go beyond limit of Repair GUI).
+		*/
+
+		if ( selectedSlot >= kNumShownItems - 1 )
+		{
+			//Covers cases 2 & 3.
+			++scroll; //scroll is automatically sanitized in updateGUI().
+		}
+		else
+		{
+			//Covers case 1.
+			//Move cursor down through the GUI through different selectedSlot (++selectedSlot).
+			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
+
+			/*
+			* Two possible cases:
+			* * A) Items below this. Advance selectedSlot to them.
+			* * B) On last item already. Do nothing (revoke movement).
+			*/
+
+			Item* item = getItemInfo(selectedSlot + 1);
+
+			if ( item )
+			{
+				++selectedSlot;
+				warpMouseToSelectedSlot();
+			}
+			else
+			{
+				//No more items. Stop.
+			}
+		}
+	}
+}
+
+void RepairGUIMenu::warpMouseToSelectedSlot()
+{
+	SDL_Rect slotPos;
+	slotPos.x = gui_starty;
+	slotPos.w = inventoryoptionChest_bmp->w;
+	slotPos.h = inventoryoptionChest_bmp->h;
+	slotPos.y = gui_startx + 16 + (slotPos.h * selectedSlot);
+
+	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
+}
+
+void RepairGUIMenu::initGUIControllerCode()
+{
+	if ( itemsDisplayed[0] )
+	{
+		selectedSlot = 0;
+		this->warpMouseToSelectedSlot();
+	}
+	else
+	{
+		selectedSlot = -1;
+	}
+}
+
+void RepairGUIMenu::openGUI(int scrollBeatitude)
+{
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	guiActive = true;
+	usingScrollBeatitude = scrollBeatitude;
+
+	if ( removecursegui_active )
+	{
+		closeRemoveCurseGUI();
+	}
+	if ( identifygui_active )
+	{
+		CloseIdentifyGUI();
+	}
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+
+	RepairGUI.initGUIControllerCode();
 }

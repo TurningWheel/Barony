@@ -2915,6 +2915,7 @@ int main(int argc, char** argv)
 						gui_mode = GUI_MODE_INVENTORY;
 						CloseIdentifyGUI();
 						closeRemoveCurseGUI();
+						RepairGUI.closeGUI();
 						FollowerMenu.closeFollowerMenuGUI();
 						if ( shopkeeper != 0 )
 						{
@@ -3032,6 +3033,7 @@ int main(int argc, char** argv)
 							gui_mode = GUI_MODE_INVENTORY;
 							CloseIdentifyGUI();
 							closeRemoveCurseGUI();
+							RepairGUI.closeGUI();
 							FollowerMenu.closeFollowerMenuGUI();
 						}
 
@@ -3328,6 +3330,8 @@ int main(int argc, char** argv)
 							closeRemoveCurseGUI();
 						}
 
+						RepairGUI.closeGUI();
+
 						if ( book_open )
 						{
 							closeBookGUI();
@@ -3362,6 +3366,7 @@ int main(int argc, char** argv)
 							updateChestInventory();
 							updateIdentifyGUI();
 							updateRemoveCurseGUI();
+							RepairGUI.closeGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 

@@ -155,6 +155,12 @@ public:
 	 * Returns true if moved.
 	 */
 	bool handleItemContextMenu(const Item& item);
+
+	/*
+	* Uses dpad to move the cursor through the item context menu and select entries.
+	* Returns true if moved.
+	*/
+	bool handleRepairGUIMovement();
 };
 
 extern GameController* game_controller;

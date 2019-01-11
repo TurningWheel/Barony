@@ -266,6 +266,52 @@ extern int selectedRemoveCurseSlot;
 void selectRemoveCurseSlot(int slot);
 void warpMouseToSelectedRemoveCurseSlot();
 
+// Repair GUI Stuff
+class RepairGUIMenu
+{
+	int gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	int gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+	int usingScrollBeatitude = 0;
+public:
+	static const int kNumShownItems = 4;
+	bool guiActive;
+	int offsetx;
+	int offsety;
+	int selectedSlot;
+	int scroll;
+	Item* itemsDisplayed[kNumShownItems];
+	bool draggingRepairGUI; // if gui is being dragged
+
+	RepairGUIMenu() :
+		guiActive(false),
+		offsetx(0),
+		offsety(0),
+		selectedSlot(-1),
+		scroll(0),
+		draggingRepairGUI(false)
+	{
+		for ( int i = 0; i < kNumShownItems; ++i )
+		{
+			itemsDisplayed[i] = nullptr;
+		}
+	};
+
+	void warpMouseToSelectedSlot();
+	void selectSlot(int slot);
+	void closeGUI();
+	void openGUI(int scrollBeatitude);
+	inline Item* getItemInfo(int slot);
+	void repairItem(Item* item);
+	void updateGUI();
+	void rebuildGUIInventory();
+	bool isItemRepairable(const Item* item);
+	void initGUIControllerCode();
+	inline bool isGUIOpen()
+	{
+		return guiActive;
+	};
+};
+extern RepairGUIMenu RepairGUI;
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
@@ -403,7 +449,11 @@ static const int SCANCODE_UNASSIGNED_BINDING = 399;
 
 inline bool hotbarGamepadControlEnabled()
 {
-	return ( !openedChest[clientnum] && gui_mode != GUI_MODE_SHOP && !identifygui_active && !removecursegui_active );
+	return ( !openedChest[clientnum] 
+		&& gui_mode != GUI_MODE_SHOP 
+		&& !identifygui_active 
+		&& !removecursegui_active
+		&& !RepairGUI.isGUIOpen() );
 }
 
 extern SDL_Surface *str_bmp64u;

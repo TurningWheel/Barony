@@ -631,6 +631,7 @@ void Entity::actChest()
 				{
 					closeRemoveCurseGUI();
 				}
+				RepairGUI.closeGUI();
 				identifygui_active = false;
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{

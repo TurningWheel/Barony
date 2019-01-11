@@ -647,6 +647,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							closeRemoveCurseGUI();
 						}
+						RepairGUI.closeGUI();
 						if ( openedChest[i] )
 						{
 							openedChest[i]->closeChest();
@@ -689,6 +690,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							CloseIdentifyGUI();
 						}
+
+						RepairGUI.closeGUI();
 
 						if ( openedChest[i] )
 						{

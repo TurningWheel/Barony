@@ -377,6 +377,18 @@ void select_inventory_slot(int x, int y)
 				warpMouseToSelectedRemoveCurseSlot();
 			}
 		}
+		else if ( RepairGUI.isGUIOpen() )
+		{
+			warpInv = false;
+			y = INVENTORY_SIZEY - 1;
+
+			//Warp into Remove Curse GUI "inventory"...if there is anything there.
+			if ( RepairGUI.itemsDisplayed[0] )
+			{
+				RepairGUI.selectedSlot = 0;
+				RepairGUI.warpMouseToSelectedSlot();
+			}
+		}
 
 		if ( warpInv )   //Wrap around to top.
 		{
@@ -706,9 +718,14 @@ void updatePlayerInventory()
 			}
 		}
 
-		if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() )
+		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
+			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
+			&& !itemMenuOpen && game_controller->handleInventoryMovement()
+			&& RepairGUI.selectedSlot < 0 )
 		{
-			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 ) //This second check prevents the extra mouse warp.
+			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
+				&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+				&& RepairGUI.selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbarHasFocus )
 				{
@@ -747,6 +764,13 @@ void updatePlayerInventory()
 			if ( selectedRemoveCurseSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
+			}
+		}
+		else if ( RepairGUI.selectedSlot >= 0 && !itemMenuOpen && game_controller->handleRepairGUIMovement() )
+		{
+			if ( RepairGUI.selectedSlot < 0 )
+			{
+				RepairGUI.warpMouseToSelectedSlot();
 			}
 		}
 
@@ -792,7 +816,10 @@ void updatePlayerInventory()
 		drawLine(pos.x, pos.y + y * INVENTORY_SLOTSIZE, pos.x + pos.w, pos.y + y * INVENTORY_SLOTSIZE, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	}
 
-	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 )
+	if ( !itemMenuOpen 
+		&& selectedChestSlot < 0 && selectedShopSlot < 0 
+		&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+		&& RepairGUI.selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open, no chest slot is selected, no shop slot is selected, no Identify GUI slot is selected, and no Remove Curse GUI slot is selected.
@@ -1190,14 +1217,22 @@ void updatePlayerInventory()
 						break;
 					}
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 )
+					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) 
+						&& !itemMenuOpen && !selectedItem && selectedChestSlot < 0 
+						&& selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+						&& RepairGUI.selectedSlot < 0 )
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0)) && !selectedItem && !itemMenuOpen )
+					if ( (mousestatus[SDL_BUTTON_LEFT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
+							&& selectedChestSlot < 0 && selectedShopSlot < 0 
+							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+							&& RepairGUI.selectedSlot < 0)) 
+						&& !selectedItem && !itemMenuOpen )
 					{
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 						{
@@ -1221,7 +1256,12 @@ void updatePlayerInventory()
 							}
 						}
 					}
-					else if ( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0)) && !itemMenuOpen && !selectedItem )
+					else if ( (mousestatus[SDL_BUTTON_RIGHT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
+							&& selectedChestSlot < 0 && selectedShopSlot < 0 
+							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+							&& RepairGUI.selectedSlot < 0)) 
+						&& !itemMenuOpen && !selectedItem )
 					{
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{

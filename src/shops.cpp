@@ -78,6 +78,7 @@ void startTradingServer(Entity* entity, int player)
 		shopitemscroll = 0;
 		identifygui_active = false;
 		closeRemoveCurseGUI();
+		RepairGUI.closeGUI();
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )

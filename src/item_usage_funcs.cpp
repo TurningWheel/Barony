@@ -1571,6 +1571,8 @@ void item_ScrollIdentify(Item* item, int player)
 		closeRemoveCurseGUI();
 	}
 
+	RepairGUI.closeGUI();
+
 	if ( openedChest[clientnum] )
 	{
 		openedChest[clientnum]->closeChest();
@@ -1937,12 +1939,11 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		shootmode = false;
 		gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
 		removecursegui_active = true;
-		identifygui_active = false;
-
 		if ( identifygui_active )
 		{
 			CloseIdentifyGUI();
 		}
+		RepairGUI.closeGUI();
 
 		if ( openedChest[player] )
 		{
@@ -2225,6 +2226,12 @@ void item_ScrollRepair(Item* item, int player)
 		return;
 	}
 
+	// client function only
+	if ( player != clientnum )
+	{
+		return;
+	}
+
 	if ( player == clientnum )
 	{
 		conductIlliterate = false;
@@ -2235,92 +2242,108 @@ void item_ScrollRepair(Item* item, int player)
 		messagePlayer(player, language[848]);
 	}
 
+
 	int armornum = rand() % 7;
 	int startIndex = armornum;
 	bool breakloop = false;
-	while ( !armor && !breakloop )
+	if ( item->beatitude < 0 )
 	{
-		switch ( armornum )
+		// degrade random equipped item.
+		while ( !armor && !breakloop )
 		{
-			// intentional fall throughs...
-			case 0:
-				if ( stats[player]->weapon != nullptr && stats[player]->weapon->status != EXCELLENT )
-				{
-					armor = stats[player]->weapon;
+			switch ( armornum )
+			{
+				// intentional fall throughs...
+				case 0:
+					if ( stats[player]->weapon != nullptr && stats[player]->weapon->status != EXCELLENT )
+					{
+						armor = stats[player]->weapon;
+						break;
+					}
+				case 1:
+					if ( stats[player]->helmet != nullptr && stats[player]->helmet->status != EXCELLENT )
+					{
+						armor = stats[player]->helmet;
+						break;
+					}
+				case 2:
+					if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->status != EXCELLENT )
+					{
+						armor = stats[player]->breastplate;
+						break;
+					}
+				case 3:
+					if ( stats[player]->gloves != nullptr && stats[player]->gloves->status != EXCELLENT )
+					{
+						armor = stats[player]->gloves;
+						break;
+					}
+				case 4:
+					if ( stats[player]->shoes != nullptr && stats[player]->shoes->status != EXCELLENT )
+					{
+						armor = stats[player]->shoes;
+						break;
+					}
+				case 5:
+					if ( stats[player]->shield != nullptr && stats[player]->shield->status != EXCELLENT )
+					{
+						armor = stats[player]->shield;
+						break;
+					}
+				case 6:
+					if ( stats[player]->cloak != nullptr && stats[player]->cloak->status != EXCELLENT )
+					{
+						armor = stats[player]->cloak;
+						break;
+					}
+				case 7:
+					if ( stats[player]->mask != nullptr && stats[player]->mask->status != EXCELLENT )
+					{
+						armor = stats[player]->mask;
+						break;
+					}
+					++armornum;
+					if ( armornum > 7 )
+					{
+						// loop back around.
+						armornum = 0;
+					}
+					if ( armornum == startIndex )
+					{
+						// couldn't find a piece of armor, break.
+						breakloop = true;
+						armor = nullptr;
+						break;
+					}
+				default:
 					break;
-				}
-			case 1:
-				if ( stats[player]->helmet != nullptr && stats[player]->helmet->status != EXCELLENT )
-				{
-					armor = stats[player]->helmet;
-					break;
-				}
-			case 2:
-				if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->status != EXCELLENT )
-				{
-					armor = stats[player]->breastplate;
-					break;
-				}
-			case 3:
-				if ( stats[player]->gloves != nullptr && stats[player]->gloves->status != EXCELLENT )
-				{
-					armor = stats[player]->gloves;
-					break;
-				}
-			case 4:
-				if ( stats[player]->shoes != nullptr && stats[player]->shoes->status != EXCELLENT )
-				{
-					armor = stats[player]->shoes;
-					break;
-				}
-			case 5:
-				if ( stats[player]->shield != nullptr && stats[player]->shield->status != EXCELLENT )
-				{
-					armor = stats[player]->shield;
-					break;
-				}
-			case 6:
-				if ( stats[player]->cloak != nullptr && stats[player]->cloak->status != EXCELLENT )
-				{
-					armor = stats[player]->cloak;
-					break;
-				}
-				++armornum;
-				if ( armornum > 6 )
-				{
-					// loop back around.
-					armornum = 0;
-				}
-				if ( armornum == startIndex )
-				{
-					// couldn't find a piece of armor, break.
-					breakloop = true;
-					armor = nullptr;
-					break;
-				}
-			default:
-				break;
+			}
 		}
-	}
-
-	if ( armor == nullptr && player == clientnum )
-	{
-		messagePlayer(player, language[870]);
-	}
-	else if ( armor != nullptr )
-	{
-		if ( item->beatitude < 0 && player == clientnum )
+		if ( armor == nullptr )
+		{
+			messagePlayer(player, language[870]); // you feel a tingling sensation
+		}
+		else if ( armor != nullptr )
 		{
 			messagePlayer(player, language[871], armor->getName());
-		}
-		else
-		{
-			if ( player == clientnum )
+			if ( multiplayer == CLIENT )
 			{
-				messagePlayer(player, language[872], armor->getName());
+				strcpy((char*)net_packet->data, "REPA");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = armor->status;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 7;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			armor->status = static_cast<Status>(std::min(armor->status + 1 + item->beatitude, static_cast<int>(EXCELLENT)));
 		}
+	}
+	else
+	{
+		// Repair an item
+		RepairGUI.openGUI(item->beatitude);
+		return;
 	}
 }
 
