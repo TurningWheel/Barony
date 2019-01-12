@@ -269,18 +269,18 @@ void warpMouseToSelectedRemoveCurseSlot();
 // Repair GUI Stuff
 class RepairGUIMenu
 {
-	int gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
-	int gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
+	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
 	int usingScrollBeatitude = 0;
-public:
-	static const int kNumShownItems = 4;
-	bool guiActive;
 	int offsetx;
 	int offsety;
-	int selectedSlot;
 	int scroll;
-	Item* itemsDisplayed[kNumShownItems];
+public:
+	static const int kNumShownItems = 4;
 	bool draggingRepairGUI; // if gui is being dragged
+	Item* itemsDisplayed[kNumShownItems];
+	bool guiActive;
+	int selectedSlot;
 
 	RepairGUIMenu() :
 		guiActive(false),

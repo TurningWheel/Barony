@@ -2960,7 +2960,7 @@ void RepairGUIMenu::updateGUI()
 					if ( node->element )
 					{
 						item = (Item*)node->element;
-						if ( item && item->identified && item->status < EXCELLENT )   //Skip over all unidentified or non-broken items.
+						if ( isItemRepairable(item) )   //Skip over all unidentified or non-broken items.
 						{
 							c++;
 							if ( c <= scroll )
@@ -3004,9 +3004,11 @@ void RepairGUIMenu::repairItem(Item* item)
 		return;
 	}
 
+	bool isEquipped = itemIsEquipped(item, clientnum);
+
 	if ( item->status == BROKEN )
 	{
-		item->status = WORN;
+		item->status = DECREPIT;
 	}
 	else
 	{
@@ -3014,7 +3016,7 @@ void RepairGUIMenu::repairItem(Item* item)
 	}
 	messagePlayer(clientnum, language[872], item->getName());
 	closeGUI();
-	if ( multiplayer == CLIENT && itemIsEquipped(item, clientnum) )
+	if ( multiplayer == CLIENT && isEquipped )
 	{
 		// the client needs to inform the server that their equipment was repaired.
 		int armornum = 0;
@@ -3193,6 +3195,9 @@ void RepairGUIMenu::openGUI(int scrollBeatitude)
 	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
+
+	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
 
 	if ( removecursegui_active )
 	{

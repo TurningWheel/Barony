@@ -2217,6 +2217,13 @@ void item_ScrollRepair(Item* item, int player)
 		return;
 	}
 
+	// client function only
+	if ( player != clientnum && multiplayer == SERVER )
+	{
+		consumeItem(item);
+		return;
+	}
+
 	if (players[player]->entity->isBlind())
 	{
 		if (player == clientnum)
@@ -2226,22 +2233,29 @@ void item_ScrollRepair(Item* item, int player)
 		return;
 	}
 
-	// client function only
-	if ( player != clientnum )
+	conductIlliterate = false;
+	if ( item->identified && item->beatitude >= 0 )
 	{
-		return;
+		// quickly check if we have any items available so we don't waste our scroll
+		bool foundRepairableItem = false;
+		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
+		{
+			Item* inventoryItem = (Item*)node->element;
+			if ( RepairGUI.isItemRepairable(inventoryItem) )
+			{
+				foundRepairableItem = true;
+				break;
+			}
+		}
+		if ( !foundRepairableItem )
+		{
+			messagePlayer(player, language[3288]);
+			return;
+		}
 	}
 
-	if ( player == clientnum )
-	{
-		conductIlliterate = false;
-	}
-	item->identified = 1;
-	if ( player == clientnum )
-	{
-		messagePlayer(player, language[848]);
-	}
-
+	item->identified = true;
+	messagePlayer(player, language[848]);
 
 	int armornum = rand() % 7;
 	int startIndex = armornum;
@@ -2255,55 +2269,49 @@ void item_ScrollRepair(Item* item, int player)
 			{
 				// intentional fall throughs...
 				case 0:
-					if ( stats[player]->weapon != nullptr && stats[player]->weapon->status != EXCELLENT )
+					if ( stats[player]->weapon != nullptr && itemCategory(stats[player]->weapon) != POTION )
 					{
 						armor = stats[player]->weapon;
 						break;
 					}
 				case 1:
-					if ( stats[player]->helmet != nullptr && stats[player]->helmet->status != EXCELLENT )
+					if ( stats[player]->helmet != nullptr )
 					{
 						armor = stats[player]->helmet;
 						break;
 					}
 				case 2:
-					if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->status != EXCELLENT )
+					if ( stats[player]->breastplate != nullptr )
 					{
 						armor = stats[player]->breastplate;
 						break;
 					}
 				case 3:
-					if ( stats[player]->gloves != nullptr && stats[player]->gloves->status != EXCELLENT )
+					if ( stats[player]->gloves != nullptr )
 					{
 						armor = stats[player]->gloves;
 						break;
 					}
 				case 4:
-					if ( stats[player]->shoes != nullptr && stats[player]->shoes->status != EXCELLENT )
+					if ( stats[player]->shoes != nullptr )
 					{
 						armor = stats[player]->shoes;
 						break;
 					}
 				case 5:
-					if ( stats[player]->shield != nullptr && stats[player]->shield->status != EXCELLENT )
+					if ( stats[player]->shield != nullptr )
 					{
 						armor = stats[player]->shield;
 						break;
 					}
 				case 6:
-					if ( stats[player]->cloak != nullptr && stats[player]->cloak->status != EXCELLENT )
+					if ( stats[player]->cloak != nullptr )
 					{
 						armor = stats[player]->cloak;
 						break;
 					}
-				case 7:
-					if ( stats[player]->mask != nullptr && stats[player]->mask->status != EXCELLENT )
-					{
-						armor = stats[player]->mask;
-						break;
-					}
 					++armornum;
-					if ( armornum > 7 )
+					if ( armornum > 6 )
 					{
 						// loop back around.
 						armornum = 0;
@@ -2326,6 +2334,7 @@ void item_ScrollRepair(Item* item, int player)
 		else if ( armor != nullptr )
 		{
 			messagePlayer(player, language[871], armor->getName());
+			armor->status = static_cast<Status>(std::max(armor->status - 2, static_cast<int>(BROKEN)));
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "REPA");
@@ -2336,6 +2345,32 @@ void item_ScrollRepair(Item* item, int player)
 				net_packet->address.port = net_server.port;
 				net_packet->len = 7;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
+
+				messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
+			if ( armor->status > BROKEN )
+			{
+				if ( armor->type == TOOL_CRYSTALSHARD )
+				{
+					messagePlayer(player, language[2350], armor->getName());
+				}
+				else
+				{
+					messagePlayer(player, language[681], armor->getName());
+				}
+			}
+			else
+			{
+				if ( armor->type == TOOL_CRYSTALSHARD )
+				{
+					playSoundPlayer(player, 162, 64);
+					messagePlayer(player, language[2351], armor->getName());
+				}
+				else
+				{
+					playSoundPlayer(player, 76, 64);
+					messagePlayer(player, language[682], armor->getName());
+				}
 			}
 		}
 	}
@@ -2343,8 +2378,8 @@ void item_ScrollRepair(Item* item, int player)
 	{
 		// Repair an item
 		RepairGUI.openGUI(item->beatitude);
-		return;
 	}
+	consumeItem(item);
 }
 
 void item_ScrollDestroyArmor(Item* item, int player)
@@ -2466,6 +2501,19 @@ void item_ScrollDestroyArmor(Item* item, int player)
 				}
 				armor->status = static_cast<Status>(0);
 				armor->count = 1;
+			}
+			if ( armor->status == BROKEN && player == clientnum )
+			{
+				if ( armor->type == TOOL_CRYSTALSHARD )
+				{
+					playSoundPlayer(player, 162, 64);
+					messagePlayer(player, language[2351], armor->getName());
+				}
+				else
+				{
+					playSoundPlayer(player, 76, 64);
+					messagePlayer(player, language[682], armor->getName());
+				}
 			}
 		}
 	}
