@@ -3366,7 +3366,7 @@ int main(int argc, char** argv)
 							updateChestInventory();
 							updateIdentifyGUI();
 							updateRemoveCurseGUI();
-							RepairGUI.closeGUI();
+							RepairGUI.updateGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 

@@ -4108,40 +4108,58 @@ void serverHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "REPA", 4) )
 	{
 		int player = net_packet->data[4];
+		Item** equipment = nullptr;
+		messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
+
 		switch ( net_packet->data[5] )
 		{
 			case 0:
-				item = stats[player]->weapon;
+				equipment = &stats[player]->weapon;
 				break;
 			case 1:
-				item = stats[player]->helmet;
+				equipment = &stats[player]->helmet;
 				break;
 			case 2:
-				item = stats[player]->breastplate;
+				equipment = &stats[player]->breastplate;
 				break;
 			case 3:
-				item = stats[player]->gloves;
+				equipment = &stats[player]->gloves;
 				break;
 			case 4:
-				item = stats[player]->shoes;
+				equipment = &stats[player]->shoes;
 				break;
 			case 5:
-				item = stats[player]->shield;
+				equipment = &stats[player]->shield;
 				break;
 			case 6:
-				item = stats[player]->cloak;
+				equipment = &stats[player]->cloak;
 				break;
 			case 7:
-				item = stats[player]->mask;
+				equipment = &stats[player]->mask;
 				break;
 			default:
 				item = nullptr;
 				break;
 		}
-		if ( item != nullptr )
+
+		if ( !equipment )
 		{
-			item->status = static_cast<Status>(net_packet->data[6]);
+			return;
 		}
+		if ( !(*equipment) )
+		{
+			return;
+		}
+
+		if ( static_cast<int>(net_packet->data[6]) > EXCELLENT )
+		{
+			(*equipment)->status = EXCELLENT;
+		}
+		else if ( static_cast<int>(net_packet->data[6]) < BROKEN )
+		{
+			(*equipment)->status = BROKEN;
+		}
+		(*equipment)->status = static_cast<Status>(net_packet->data[6]);
 		return;
 	}
 

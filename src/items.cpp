@@ -1888,10 +1888,6 @@ void useItem(Item* item, int player)
 			break;
 		case SCROLL_REPAIR:
 			item_ScrollRepair(item, player);
-			if ( !players[player]->entity->isBlind() )
-			{
-				consumeItem(item);
-			}
 			break;
 		case SCROLL_DESTROYARMOR:
 			item_ScrollDestroyArmor(item, player);
