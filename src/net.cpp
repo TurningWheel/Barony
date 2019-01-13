@@ -4104,41 +4104,41 @@ void serverHandlePacket()
 		return;
 	}
 
-	// the client repaired equipment
+	// the client repaired equipment or otherwise modified status of equipment.
 	else if ( !strncmp((char*)net_packet->data, "REPA", 4) )
 	{
 		int player = net_packet->data[4];
-		Item** equipment = nullptr;
-		messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
+		Item* equipment = nullptr;
+		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
 
 		switch ( net_packet->data[5] )
 		{
 			case 0:
-				equipment = &stats[player]->weapon;
+				equipment = stats[player]->weapon;
 				break;
 			case 1:
-				equipment = &stats[player]->helmet;
+				equipment = stats[player]->helmet;
 				break;
 			case 2:
-				equipment = &stats[player]->breastplate;
+				equipment = stats[player]->breastplate;
 				break;
 			case 3:
-				equipment = &stats[player]->gloves;
+				equipment = stats[player]->gloves;
 				break;
 			case 4:
-				equipment = &stats[player]->shoes;
+				equipment = stats[player]->shoes;
 				break;
 			case 5:
-				equipment = &stats[player]->shield;
+				equipment = stats[player]->shield;
 				break;
 			case 6:
-				equipment = &stats[player]->cloak;
+				equipment = stats[player]->cloak;
 				break;
 			case 7:
-				equipment = &stats[player]->mask;
+				equipment = stats[player]->mask;
 				break;
 			default:
-				item = nullptr;
+				equipment = nullptr;
 				break;
 		}
 
@@ -4146,20 +4146,16 @@ void serverHandlePacket()
 		{
 			return;
 		}
-		if ( !(*equipment) )
-		{
-			return;
-		}
 
 		if ( static_cast<int>(net_packet->data[6]) > EXCELLENT )
 		{
-			(*equipment)->status = EXCELLENT;
+			equipment->status = EXCELLENT;
 		}
 		else if ( static_cast<int>(net_packet->data[6]) < BROKEN )
 		{
-			(*equipment)->status = BROKEN;
+			equipment->status = BROKEN;
 		}
-		(*equipment)->status = static_cast<Status>(net_packet->data[6]);
+		equipment->status = static_cast<Status>(net_packet->data[6]);
 		return;
 	}
 
