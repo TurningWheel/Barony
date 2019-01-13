@@ -24,6 +24,7 @@
 #include "../player.hpp"
 #include "interface.hpp"
 #include "../scores.hpp"
+#include "../magic/magic.hpp"
 
 bool spamming = false;
 bool showfirst = false;
@@ -2264,9 +2265,55 @@ void consoleCommand(char* command_str)
 				return;
 			}
 
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+
 			messagePlayer(clientnum, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
 				stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
 				stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+			return;
+		}
+		else if ( !strncmp(command_str, "/allspells", 10) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			bool learned = addSpell(SPELL_FORCEBOLT, clientnum, true);
+			learned = addSpell(SPELL_MAGICMISSILE, clientnum, true);
+			learned = addSpell(SPELL_COLD, clientnum, true);
+			learned = addSpell(SPELL_FIREBALL, clientnum, true);
+			learned = addSpell(SPELL_LIGHTNING, clientnum, true);
+			learned = addSpell(SPELL_REMOVECURSE, clientnum, true);
+			learned = addSpell(SPELL_LIGHT, clientnum, true);
+			learned = addSpell(SPELL_IDENTIFY, clientnum, true);
+			learned = addSpell(SPELL_MAGICMAPPING, clientnum, true);
+			learned = addSpell(SPELL_SLEEP, clientnum, true);
+			learned = addSpell(SPELL_CONFUSE, clientnum, true);
+			learned = addSpell(SPELL_SLOW, clientnum, true);
+			learned = addSpell(SPELL_OPENING, clientnum, true);
+			learned = addSpell(SPELL_LOCKING, clientnum, true);
+			learned = addSpell(SPELL_LEVITATION, clientnum, true);
+			learned = addSpell(SPELL_INVISIBILITY, clientnum, true);
+			learned = addSpell(SPELL_TELEPORTATION, clientnum, true);
+			learned = addSpell(SPELL_HEALING, clientnum, true);
+			learned = addSpell(SPELL_EXTRAHEALING, clientnum, true);
+			learned = addSpell(SPELL_CUREAILMENT, clientnum, true);
+			learned = addSpell(SPELL_DIG, clientnum, true);
+			learned = addSpell(SPELL_SUMMON, clientnum, true);
+			learned = addSpell(SPELL_STONEBLOOD, clientnum, true);
+			learned = addSpell(SPELL_BLEED, clientnum, true);
+			learned = addSpell(SPELL_REFLECT_MAGIC, clientnum, true);
+			learned = addSpell(SPELL_ACID_SPRAY, clientnum, true);
+			learned = addSpell(SPELL_STEAL_WEAPON, clientnum, true);
+			learned = addSpell(SPELL_DRAIN_SOUL, clientnum, true);
+			learned = addSpell(SPELL_VAMPIRIC_AURA, clientnum, true);
+			learned = addSpell(SPELL_CHARM_MONSTER, clientnum, true);
 			return;
 		}
 		else
