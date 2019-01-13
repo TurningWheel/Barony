@@ -2218,7 +2218,7 @@ void item_ScrollRepair(Item* item, int player)
 	}
 
 	// client function only
-	if ( player != clientnum && multiplayer == SERVER )
+	if ( player != clientnum )
 	{
 		consumeItem(item);
 		return;
@@ -2226,10 +2226,7 @@ void item_ScrollRepair(Item* item, int player)
 
 	if (players[player]->entity->isBlind())
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[775]);
-		}
+		messagePlayer(player, language[775]);
 		return;
 	}
 
@@ -2256,67 +2253,74 @@ void item_ScrollRepair(Item* item, int player)
 
 	item->identified = true;
 	messagePlayer(player, language[848]);
-
-	int armornum = rand() % 7;
-	int startIndex = armornum;
-	bool breakloop = false;
 	if ( item->beatitude < 0 )
 	{
+		int tryIndex = rand() % 7;
+		int startIndex = tryIndex;
+		int armornum = 0;
+		bool breakloop = false;
 		// degrade random equipped item.
 		while ( !armor && !breakloop )
 		{
-			switch ( armornum )
+			switch ( tryIndex )
 			{
 				// intentional fall throughs...
 				case 0:
 					if ( stats[player]->weapon != nullptr && itemCategory(stats[player]->weapon) != POTION )
 					{
 						armor = stats[player]->weapon;
+						armornum = 0;
 						break;
 					}
 				case 1:
 					if ( stats[player]->helmet != nullptr )
 					{
 						armor = stats[player]->helmet;
+						armornum = 1;
 						break;
 					}
 				case 2:
 					if ( stats[player]->breastplate != nullptr )
 					{
 						armor = stats[player]->breastplate;
+						armornum = 2;
 						break;
 					}
 				case 3:
 					if ( stats[player]->gloves != nullptr )
 					{
 						armor = stats[player]->gloves;
+						armornum = 3;
 						break;
 					}
 				case 4:
 					if ( stats[player]->shoes != nullptr )
 					{
 						armor = stats[player]->shoes;
+						armornum = 4;
 						break;
 					}
 				case 5:
 					if ( stats[player]->shield != nullptr )
 					{
 						armor = stats[player]->shield;
+						armornum = 5;
 						break;
 					}
 				case 6:
 					if ( stats[player]->cloak != nullptr )
 					{
 						armor = stats[player]->cloak;
+						armornum = 6;
 						break;
 					}
-					++armornum;
-					if ( armornum > 6 )
+					++tryIndex;
+					if ( tryIndex > 6 )
 					{
 						// loop back around.
-						armornum = 0;
+						tryIndex = 0;
 					}
-					if ( armornum == startIndex )
+					if ( tryIndex == startIndex )
 					{
 						// couldn't find a piece of armor, break.
 						breakloop = true;
@@ -2346,7 +2350,7 @@ void item_ScrollRepair(Item* item, int player)
 				net_packet->len = 7;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 
-				messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 			if ( armor->status > BROKEN )
 			{
@@ -2390,76 +2394,90 @@ void item_ScrollDestroyArmor(Item* item, int player)
 		return;
 	}
 
-	if (players[player]->entity->isBlind())
+	// client function only
+	if ( player != clientnum )
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[775]);
-		}
+		consumeItem(item);
 		return;
 	}
 
-	if ( player == clientnum )
+	if (players[player]->entity->isBlind())
 	{
-		conductIlliterate = false;
-	}
-	item->identified = 1;
-	if ( player == clientnum )
-	{
-		messagePlayer(player, language[848]);
+		messagePlayer(player, language[775]);
+		return;
 	}
 
-	int armornum = rand() % 6;
-	int startIndex = armornum;
+	conductIlliterate = false;
+	item->identified = 1;
+	
+	messagePlayer(player, language[848]);
+
+	int armornum = 0;
+	int tryIndex = 1 + rand() % 6;
+	int startIndex = tryIndex;
 	bool breakloop = false;
 	while ( !armor && !breakloop )
 	{
-		switch ( armornum )
+		switch ( tryIndex )
 		{
 			// intentional fall throughs...
 			case 0:
+				// shouldn't occur
+				/*if ( stats[player]->weapon != nullptr )
+				{
+					armor = stats[player]->weapon;
+					armornum = 0;
+					break;
+				}*/
+			case 1:
 				if ( stats[player]->helmet != nullptr )
 				{
 					armor = stats[player]->helmet;
-					break;
-				}
-			case 1:
-				if ( stats[player]->breastplate != nullptr )
-				{
-					armor = stats[player]->breastplate;
+					armornum = 1;
 					break;
 				}
 			case 2:
-				if ( stats[player]->gloves != nullptr )
+				if ( stats[player]->breastplate != nullptr )
 				{
-					armor = stats[player]->gloves;
+					armor = stats[player]->breastplate;
+					armornum = 2;
 					break;
 				}
 			case 3:
-				if ( stats[player]->shoes != nullptr )
+				if ( stats[player]->gloves != nullptr )
 				{
-					armor = stats[player]->shoes;
+					armor = stats[player]->gloves;
+					armornum = 3;
 					break;
 				}
 			case 4:
-				if ( stats[player]->shield != nullptr )
+				if ( stats[player]->shoes != nullptr )
 				{
-					armor = stats[player]->shield;
+					armor = stats[player]->shoes;
+					armornum = 4;
 					break;
 				}
 			case 5:
+				if ( stats[player]->shield != nullptr )
+				{
+					armor = stats[player]->shield;
+					armornum = 5;
+					break;
+				}
+			case 6:
 				if ( stats[player]->cloak != nullptr )
 				{
 					armor = stats[player]->cloak;
+					armornum = 6;
 					break;
 				}
-				++armornum;
-				if ( armornum > 5 )
+				++tryIndex;
+				if ( tryIndex > 6 )
 				{
 					// loop back around.
-					armornum = 0;
+					tryIndex = 1;
 				}
-				if ( armornum == startIndex )
+				if ( tryIndex == startIndex )
 				{
 					// couldn't find a piece of armor, break.
 					breakloop = true;
@@ -2471,38 +2489,37 @@ void item_ScrollDestroyArmor(Item* item, int player)
 		}
 	}
 
-	if ( armor == nullptr && player == clientnum )
+	if ( armor == nullptr )
 	{
 		messagePlayer(player, language[873]);
 	}
 	else if ( armor != nullptr )
 	{
-		if ( item->beatitude < 0 && player == clientnum )
+		if ( item->beatitude < 0 )
 		{
 			messagePlayer(player, language[874], armor->getName());
 		}
 		else
 		{
-			if ( player == clientnum )
+			messagePlayer(player, language[875], armor->getName());
+
+			armor->status = static_cast<Status>(0);
+
+			if ( multiplayer == CLIENT )
 			{
-				messagePlayer(player, language[875], armor->getName());
+				strcpy((char*)net_packet->data, "REPA");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = armor->status;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 7;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+
+				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
-			if ( armor->count <= 1 )
-			{
-				armor->status = static_cast<Status>(0);
-			}
-			else
-			{
-				if ( player == clientnum )
-				{
-					Item* item = newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, NULL);
-					itemPickup(player, item);
-					free(item);
-				}
-				armor->status = static_cast<Status>(0);
-				armor->count = 1;
-			}
-			if ( armor->status == BROKEN && player == clientnum )
+
+			if ( armor->status == BROKEN )
 			{
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
