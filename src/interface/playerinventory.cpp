@@ -1097,36 +1097,7 @@ void updatePlayerInventory()
 						if (itemCategory(item) == SPELL_CAT)
 						{
 							spell_t* spell = getSpellFromItem(item);
-							if (spell)
-							{
-								char tempstr[64];
-								if ( spell->ID == SPELL_DOMINATE )
-								{
-									snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
-								}
-								else
-								{
-									if ( players[clientnum] && players[clientnum]->entity )
-									{
-										snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[clientnum]->entity));
-									}
-									else
-									{
-										snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
-									}
-								}
-								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
-								src.h = TTF12_HEIGHT * 2 + 8;
-								drawTooltip(&src);
-								ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
-							}
-							else
-							{
-								src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
-								src.h = TTF12_HEIGHT + 8;
-								drawTooltip(&src);
-								ttfPrintText( ttf12, src.x + 4, src.y + 4, "Error: Spell doesn't exist!");
-							}
+							drawSpellTooltip(spell);
 						}
 						else
 						{
