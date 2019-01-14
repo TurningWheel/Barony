@@ -576,7 +576,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+							if ( strcmp(element->name, spellElement_charmMonster.name) )
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+							}
 						}
 					}
 				}
@@ -657,6 +660,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.entity->behavior == &actPlayer )
 						{
+							if ( !strcmp(element->name, spellElement_charmMonster.name) )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+							}
 							if ( !spellIsReflectingMagic )
 							{
 								messagePlayer(player, language[379]);

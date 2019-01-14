@@ -1160,7 +1160,7 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
-								bool deducted = caster->safeConsumeMP(3); //Consume 3 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(1); //Consume 3 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
@@ -3122,6 +3122,13 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EFFECTS[EFF_PACIFY] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			spawnAmbientParticles(1, 685, 20 + rand() % 10, 0.5, true);
+		}
+	}
+	else if ( myStats->monsterIsCharmed == 1 )
+	{
+		if ( ticks % 80 == 0 || ticks % 100 == 0 )
 		{
 			spawnAmbientParticles(1, 685, 20 + rand() % 10, 0.5, true);
 		}

@@ -276,12 +276,12 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_vampiricAura.base_mana = 30;
 	spellElement_vampiricAura.overload_multiplier = 1;
 	spellElement_vampiricAura.damage = 0;
-	spellElement_vampiricAura.duration = 1500; //TODO: Decide on something.
+	spellElement_vampiricAura.duration = 500; //TODO: Decide on something.
 	strcpy(spellElement_vampiricAura.name, language[2398]);
 
 	spellElementConstructor(&spellElement_charmMonster);
-	spellElement_charmMonster.mana = 79;
-	spellElement_charmMonster.base_mana = 79;
+	spellElement_charmMonster.mana = 49;
+	spellElement_charmMonster.base_mana = 49;
 	spellElement_charmMonster.overload_multiplier = 1;
 	spellElement_charmMonster.damage = 0;
 	spellElement_charmMonster.duration = 300;

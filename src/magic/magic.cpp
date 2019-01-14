@@ -923,6 +923,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			int chance = 80;
 			bool allowStealFollowers = false;
 			Stat* casterStats = nullptr;
+			int currentCharmedFollowerCount = 0;
 
 			/************** CHANCE CALCULATION ***********/
 			if ( hitstats->EFFECTS[EFF_CONFUSED] || hitstats->EFFECTS[EFF_DRUNK] || player >= 0 )
@@ -968,6 +969,22 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						else if ( difficulty <= 2 )
 						{
 							chance = 60; // special base chance for monsters.
+						}
+					}
+					else if ( parent->behavior == &actPlayer )
+					{
+						// search followers for charmed.
+						for ( node_t* node = casterStats->FOLLOWERS.first; node != NULL; node = node->next )
+						{
+							Uint32* c = (Uint32*)node->element;
+							Entity* follower = uidToEntity(*c);
+							if ( Stat* followerStats = follower->getStats() )
+							{
+								if ( followerStats->monsterIsCharmed == 1 )
+								{
+									++currentCharmedFollowerCount;
+								}
+							}
 						}
 					}
 				}
@@ -1043,6 +1060,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				&& (hitstats->leader_uid == 0 || (allowStealFollowers && hitstats->leader_uid != parent->getUID()) )
 				&& player < 0 
 				&& hitstats->type != SHOPKEEPER
+				&& currentCharmedFollowerCount == 0
 				)
 			{
 				// fully charmed. (players not affected here.)
@@ -1071,6 +1089,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					// change the color of the hit entity.
 					hit.entity->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(hit.entity, USERFLAG2);
+					hitstats->monsterIsCharmed = 1;
 					if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
 					{
 						int bodypart = 0;
@@ -1130,6 +1149,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 						if ( parent->behavior == &actPlayer )
 						{
 							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3139], language[3140], MSG_COMBAT);
+							if ( currentCharmedFollowerCount > 0 )
+							{
+								messagePlayer(parent->skill[2], language[3327]);
+							}
 						}
 						// update enemy bar for attacker
 						if ( !strcmp(hitstats->name, "") )
