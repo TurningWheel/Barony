@@ -1689,6 +1689,10 @@ int saveGame(int saveIndex)
 						fwrite(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
 						fwrite(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
 					}
+					for ( j = 0; j < 32; ++j )
+					{
+						fwrite(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1, fp);
+					}
 
 					// record follower inventory
 					Uint32 invSize = list_Size(&followerStats->inventory);
@@ -2506,6 +2510,13 @@ list_t* loadGameFollowers(int saveIndex)
 			{
 				fread(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
 				fread(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
+			}
+			if ( versionNumber >= 323 )
+			{
+				for ( j = 0; j < 32; ++j )
+				{
+					fread(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1, fp);
+				}
 			}
 
 			/*printlog("\n\n ** FOLLOWER #%d **\n", i + 1);
