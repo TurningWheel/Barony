@@ -491,36 +491,14 @@ void handleMainMenu(bool mode)
 	button_t* button;
 
 #ifdef STEAMWORKS
-	if ( ticks % 50 == 0 && SteamUser()->BLoggedOn() )
+	if ( SteamUser()->BLoggedOn() )
 	{
-		if ( keystatus[SDL_SCANCODE_Z] )
+		if ( SteamApps()->BIsDlcInstalled(1010820) )
 		{
-			keystatus[SDL_SCANCODE_Z] = 0;
-			if ( !enabledDLCPack1 && !enabledDLCPack2 )
-			{
-				enabledDLCPack1 = true;
-				enabledDLCPack2 = true;
-			}
-			else if ( enabledDLCPack1 && enabledDLCPack2 )
-			{
-				enabledDLCPack1 = true;
-				enabledDLCPack2 = false;
-			}
-			else if ( enabledDLCPack1 && !enabledDLCPack2 )
-			{
-				enabledDLCPack1 = false;
-				enabledDLCPack2 = true;
-			}
-			else if ( !enabledDLCPack1 && enabledDLCPack2 )
-			{
-				enabledDLCPack1 = false;
-				enabledDLCPack2 = false;
-			}
+			enabledDLCPack1 = true;
 		}
 	}
 #else
-	enabledDLCPack1 = true;
-	enabledDLCPack2 = true;
 #endif // STEAMWORKS
 
 
@@ -2038,6 +2016,7 @@ void handleMainMenu(bool mode)
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
 										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+										mousestatus[SDL_BUTTON_LEFT] = 0;
 									}
 								}
 #else

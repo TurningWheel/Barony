@@ -200,6 +200,7 @@ public:
 	Sint32& playerSummon2LVLHP; // MISC_FLAGS[9]
 	Sint32& playerSummon2STRDEXCONINT; // MISC_FLAGS[10]
 	Sint32& playerSummon2PERCHR; // MISC_FLAGS[11]
+	Sint32& monsterIsCharmed; // MISC_FLAGS[12]
 
 	// group think
 	Uint32 leader_uid;
