@@ -1165,6 +1165,15 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK )
+			{
+				INVENTORY_SIZEY = 4;
+			}
+			else
+			{
+				INVENTORY_SIZEY = 3;
+			}
+
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1574,6 +1583,15 @@ void gameLogic(void)
 			{
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
+			}
+
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK )
+			{
+				INVENTORY_SIZEY = 4;
+			}
+			else
+			{
+				INVENTORY_SIZEY = 3;
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )

@@ -241,9 +241,10 @@ typedef enum ItemType
 	HAT_FEZ,
 	MAGICSTAFF_CHARM,
 	POTION_POLYMORPH,
-	FOOD_BLOOD
+	FOOD_BLOOD,
+	CLOAK_BACKPACK
 } ItemType;
-const int NUMITEMS = 220;
+const int NUMITEMS = 221;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -348,6 +349,7 @@ public:
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
 	void applyOrb(int player, ItemType type, Entity& entity);
+	void applyEmptyPotion(int player, Entity& entity);
 
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*
@@ -363,7 +365,7 @@ public:
 extern Uint32 itemuids;
 
 static const int INVENTORY_SIZEX = 12;
-static const int INVENTORY_SIZEY = 3;
+extern int INVENTORY_SIZEY;
 #define INVENTORY_SIZE ((INVENTORY_SIZEX)*(INVENTORY_SIZEY))
 #define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
 static const int INVENTORY_STARTY = 10;

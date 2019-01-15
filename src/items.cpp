@@ -27,6 +27,7 @@
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
+int INVENTORY_SIZEY = 3;
 
 /*-------------------------------------------------------------------------------
 
@@ -1716,6 +1717,7 @@ void useItem(Item* item, int player)
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
 		case ARTIFACT_CLOAK:
+		case CLOAK_BACKPACK:
 			equipItem(item, &stats[player]->cloak, player);
 			break;
 		case LEATHER_BOOTS:
@@ -2942,6 +2944,10 @@ void Item::apply(int player, Entity* entity)
 		{
 			applyOrb(player, type, *entity);
 		}
+		if ( type == POTION_EMPTY )
+		{
+			applyEmptyPotion(player, *entity);
+		}
 		return;
 	}
 
@@ -2957,6 +2963,10 @@ void Item::apply(int player, Entity* entity)
 	else if ( type == TOOL_LOCKPICK )
 	{
 		applyLockpick(player, *entity);
+	}
+	else if ( type == POTION_EMPTY )
+	{
+		applyEmptyPotion(player, *entity);
 	}
 }
 

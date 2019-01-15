@@ -350,6 +350,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"magicstaff_charm",
 	"potion_polymorph",
 	"food_blood",
+	"cloak_backpack",
 	""
 };
 
@@ -548,6 +549,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"cloak_invisibility",
 		"cloak_protection",
 		"artifact_cloak",
+		"cloak_backpack",
 		""
 	},
 	{
