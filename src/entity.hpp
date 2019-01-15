@@ -904,7 +904,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 223;
+static const int NUM_ITEM_STRINGS = 224;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 96;
 static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;
@@ -962,3 +962,8 @@ void boulderSokobanOnDestroy(bool pushedOffLedge);
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
+
+//Fountain potion drop chance variables.
+extern const std::vector<int> fountainPotionDropChances;
+extern const std::vector<std::pair<int, int>> fountainPotionMap;
+extern std::mt19937 fountainSeed;

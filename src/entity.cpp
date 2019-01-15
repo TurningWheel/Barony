@@ -8877,6 +8877,7 @@ int checkEquipType(const Item *item)
 		case CLOAK_PROTECTION:
 		case ARTIFACT_CLOAK:
 		case CLOAK_BLACK:
+		case CLOAK_BACKPACK:
 			return TYPE_CLOAK;
 			break;
 
@@ -10382,8 +10383,8 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 
 	weaponLimb->yaw = weaponArmLimb->yaw;
-
-	if ( myAttack == MONSTER_POSE_RANGED_WINDUP3 && monsterType == GOATMAN )
+	bool isPotion = false;
+	if ( myAttack == MONSTER_POSE_RANGED_WINDUP3 && monsterType == GOATMAN && !isPlayer )
 	{
 		// specific for potion throwing goatmen.
 		limbAnimateToLimit(weaponLimb, ANIMATE_ROLL, 0.25, 1 * PI / 4, false, 0.0);
@@ -10393,9 +10394,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		weaponLimb->roll = weaponArmLimb->roll;
 		if ( isPlayer )
 		{
-			if ( weaponLimb->sprite >= 50 && weaponLimb->sprite < 58 )
+			if ( (weaponLimb->sprite >= 50 && weaponLimb->sprite < 58)
+				|| weaponLimb->sprite == 795 )
 			{
 				weaponLimb->roll += (PI / 2); // potion sprites rotated
+				isPotion = true;
 			}
 		}
 	}
@@ -10411,6 +10414,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 		weaponLimb->focalz = limbs[monsterType][6][2]; // -.5
+		if ( isPotion )
+		{
+			weaponLimb->focalz += 1;
+		}
 	}
 	else
 	{

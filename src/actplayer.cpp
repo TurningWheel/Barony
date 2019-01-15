@@ -3542,6 +3542,11 @@ void actPlayer(Entity* my)
 				break;
 			// cloak
 			case 8:
+				entity->focalx = limbs[playerRace][8][0];
+				entity->focaly = limbs[playerRace][8][1];
+				entity->focalz = limbs[playerRace][8][2];
+				entity->scalex = 1.01;
+				entity->scaley = 1.01;
 				if ( multiplayer != CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
@@ -3578,6 +3583,40 @@ void actPlayer(Entity* my)
 					{
 						entity->flags[INVISIBLE] = true;
 					}
+				}
+
+				if ( entity->sprite == items[CLOAK_BACKPACK].index )
+				{
+					// human
+					if ( playerRace == HUMAN || playerRace == VAMPIRE )
+					{
+						entity->focaly = limbs[playerRace][8][1] + 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.3;
+					}
+					else if ( playerRace == SUCCUBUS || playerRace == INCUBUS )
+					{
+						// succubus/incubus
+						entity->focaly = limbs[playerRace][8][1] + 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.7;
+					}
+					else if ( playerRace == SKELETON )
+					{
+						entity->focaly = limbs[playerRace][8][1] + 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.5;
+					}
+					else if ( playerRace == AUTOMATON )
+					{
+						entity->focaly = limbs[playerRace][8][1] - 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.5;
+					}
+					else if ( playerRace == GOATMAN || playerRace == INSECTOID || playerRace == GOBLIN )
+					{
+						entity->focaly = limbs[playerRace][8][1] - 0.25;
+						entity->focalz = limbs[playerRace][8][2] - 0.5;
+					}
+
+					entity->scalex = 0.99;
+					entity->scaley = 0.99;
 				}
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
