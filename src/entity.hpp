@@ -965,5 +965,5 @@ bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's na
 
 //Fountain potion drop chance variables.
 extern const std::vector<int> fountainPotionDropChances;
-extern const std::vector<std::pair<int, int>> fountainPotionMap;
+extern const std::vector<std::pair<int, int>> potionStandardAppearanceMap;
 extern std::mt19937 fountainSeed;

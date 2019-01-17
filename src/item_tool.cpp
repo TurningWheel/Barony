@@ -339,3 +339,166 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 		messagePlayer(player, language[2371]);
 	}
 }
+
+void Item::applyEmptyPotion(int player, Entity& entity)
+{
+	if ( entity.behavior == &actFountain )
+	{
+		if ( entity.skill[0] == 0 )
+		{
+			// fountain is dry, no bueno.
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[467]);
+			}
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			Item* item = stats[player]->weapon;
+			consumeItem(item);
+			return;
+		}
+
+		Item* item = stats[player]->weapon;
+		consumeItem(item);
+
+		int skillLVL = 2; // 0 to 5
+		if ( stats[player] )
+		{
+			// int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+		}
+
+		std::vector<int> potionChances =
+		{
+			20,	//POTION_WATER,
+			20,	//POTION_BOOZE,
+			20,	//POTION_JUICE,
+			20,	//POTION_SICKNESS,
+			10,	//POTION_CONFUSION,
+			0,	//POTION_EXTRAHEALING,
+			4,	//POTION_HEALING,
+			4,	//POTION_CUREAILMENT,
+			10,	//POTION_BLINDNESS,
+			4,	//POTION_RESTOREMAGIC,
+			1,	//POTION_INVISIBILITY,
+			1,	//POTION_LEVITATION,
+			4,	//POTION_SPEED,
+			10,	//POTION_ACID,
+			1,	//POTION_PARALYSIS,
+			1,	//POTION_POLYMORPH
+		};
+		if ( skillLVL == 2 ) // 40 skill
+		{
+			potionChances =
+			{
+				4,	//POTION_WATER,
+				5,	//POTION_BOOZE,
+				5,	//POTION_JUICE,
+				5,	//POTION_SICKNESS,
+				5,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				5,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				5,	//POTION_SPEED,
+				5,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+		else if ( skillLVL == 3 ) // 60 skill
+		{
+			potionChances =
+			{
+				2,	//POTION_WATER,
+				4,	//POTION_BOOZE,
+				4,	//POTION_JUICE,
+				4,	//POTION_SICKNESS,
+				4,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				4,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				4,	//POTION_SPEED,
+				4,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+		else if ( skillLVL == 4 ) // 80 skill
+		{
+			potionChances =
+			{
+				0,	//POTION_WATER,
+				2,	//POTION_BOOZE,
+				2,	//POTION_JUICE,
+				2,	//POTION_SICKNESS,
+				3,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				3,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				3,	//POTION_SPEED,
+				3,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+		else if ( skillLVL == 5 ) // 100 skill
+		{
+			potionChances =
+			{
+				0,	//POTION_WATER,
+				1,	//POTION_BOOZE,
+				1,	//POTION_JUICE,
+				1,	//POTION_SICKNESS,
+				1,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				2,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				2,	//POTION_SPEED,
+				2,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+
+
+		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+		auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+		item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
+		if ( item )
+		{
+			itemPickup(player, item);
+			free(item);
+		}
+
+		if ( stats[player] )
+		{
+			if ( skillLVL < 3 || (skillLVL >= 3 && rand() % (skillLVL - 1) == 0 ) )
+			{
+				entity.skill[0] = 0;
+				serverUpdateEntitySkill(&entity, 0);
+				messagePlayer(player, language[474]);
+			}
+		}
+	}
+	else
+	{
+		messagePlayer(player, language[2371]);
+	}
+}

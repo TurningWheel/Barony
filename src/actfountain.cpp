@@ -22,7 +22,8 @@
 #include "player.hpp"
 #include "colors.hpp"
 
-const std::vector<int> potionDropChances =
+//Fountain functions.
+const std::vector<int> fountainPotionDropChances =
 {
 	5,	//POTION_WATER,
 	20,	//POTION_BOOZE,
@@ -42,7 +43,7 @@ const std::vector<int> potionDropChances =
 	2	//POTION_POLYMORPH
 };
 
-const std::vector<std::pair<ItemType, int>> potionMap =
+const std::vector<std::pair<int, int>> potionStandardAppearanceMap =
 {
 	// second element is appearance.
 	{ POTION_WATER, 0 },
@@ -64,12 +65,12 @@ const std::vector<std::pair<ItemType, int>> potionMap =
 };
 
 std::mt19937 fountainSeed(rand());
-std::discrete_distribution<> fountainDistribution(potionDropChances.begin(), potionDropChances.end());
+std::discrete_distribution<> fountainDistribution(fountainPotionDropChances.begin(), fountainPotionDropChances.end());
 
-std::pair<ItemType, int> fountainGeneratePotionDrop()
+std::pair<int, int> fountainGeneratePotionDrop()
 {
-	std::pair<ItemType, int> generatedPotion = potionMap.at(fountainDistribution(fountainSeed));
-	return generatedPotion;
+	auto keyPair = potionStandardAppearanceMap.at(fountainDistribution(fountainSeed));
+	return std::make_pair(keyPair.first, keyPair.second);
 }
 
 /*-------------------------------------------------------------------------------
@@ -196,8 +197,8 @@ void actFountain(Entity* my)
 
 						for ( int j = 0; j < potionDropQuantity; ++j )
 						{
-							std::pair<ItemType, int> generatedPotion = fountainGeneratePotionDrop();
-							ItemType type = generatedPotion.first;
+							std::pair<int, int> generatedPotion = fountainGeneratePotionDrop();
+							ItemType type = static_cast<ItemType>(generatedPotion.first);
 							int appearance = generatedPotion.second;
 							Item* item = newItem(type, EXCELLENT, 0, 1, appearance, false, NULL);
 							Entity* dropped = dropItemMonster(item, my, NULL);

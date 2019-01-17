@@ -266,8 +266,15 @@ extern int selectedRemoveCurseSlot;
 void selectRemoveCurseSlot(int slot);
 void warpMouseToSelectedRemoveCurseSlot();
 
-// Repair GUI Stuff
-class RepairGUIMenu
+enum GUICurrentType
+{
+	GUI_TYPE_NONE,
+	GUI_TYPE_REPAIR,
+	GUI_TYPE_ALCHEMY
+};
+
+// Generic GUI Stuff (repair/alchemy)
+class GenericGUIMenu
 {
 	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
 	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
@@ -275,20 +282,27 @@ class RepairGUIMenu
 	int offsetx;
 	int offsety;
 	int scroll;
+	GUICurrentType guiType;
 public:
 	static const int kNumShownItems = 4;
-	bool draggingRepairGUI; // if gui is being dragged
+	bool draggingGUI; // if gui is being dragged
 	Item* itemsDisplayed[kNumShownItems];
 	bool guiActive;
 	int selectedSlot;
 
-	RepairGUIMenu() :
+	// Alchemy
+	Item* basePotion;
+	Item* secondaryPotion;
+
+	GenericGUIMenu() :
 		guiActive(false),
 		offsetx(0),
 		offsety(0),
 		selectedSlot(-1),
 		scroll(0),
-		draggingRepairGUI(false)
+		draggingGUI(false),
+		basePotion(nullptr),
+		secondaryPotion(nullptr)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -299,19 +313,28 @@ public:
 	void warpMouseToSelectedSlot();
 	void selectSlot(int slot);
 	void closeGUI();
-	void openGUI(int scrollBeatitude);
+	void openGUI(int type, int scrollBeatitude);
 	inline Item* getItemInfo(int slot);
-	void repairItem(Item* item);
 	void updateGUI();
 	void rebuildGUIInventory();
-	bool isItemRepairable(const Item* item);
 	void initGUIControllerCode();
+	bool shouldDisplayItemInGUI(Item* item);
+	bool executeOnItemClick(Item* item);
+
+	// repair menu funcs
+	void repairItem(Item* item);
+	bool isItemRepairable(const Item* item);
+
+	//alchemy menu funcs
+	bool isItemMixable(const Item* item);
+	void alchemyCombinePotions();
+
 	inline bool isGUIOpen()
 	{
 		return guiActive;
 	};
 };
-extern RepairGUIMenu RepairGUI;
+extern GenericGUIMenu GenericGUI;
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
@@ -453,7 +476,7 @@ inline bool hotbarGamepadControlEnabled()
 		&& gui_mode != GUI_MODE_SHOP 
 		&& !identifygui_active 
 		&& !removecursegui_active
-		&& !RepairGUI.isGUIOpen() );
+		&& !GenericGUI.isGUIOpen() );
 }
 
 extern SDL_Surface *str_bmp64u;

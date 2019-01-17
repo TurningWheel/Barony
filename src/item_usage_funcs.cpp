@@ -1571,7 +1571,7 @@ void item_ScrollIdentify(Item* item, int player)
 		closeRemoveCurseGUI();
 	}
 
-	RepairGUI.closeGUI();
+	GenericGUI.closeGUI();
 
 	if ( openedChest[clientnum] )
 	{
@@ -1943,7 +1943,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		{
 			CloseIdentifyGUI();
 		}
-		RepairGUI.closeGUI();
+		GenericGUI.closeGUI();
 
 		if ( openedChest[player] )
 		{
@@ -2238,7 +2238,7 @@ void item_ScrollRepair(Item* item, int player)
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* inventoryItem = (Item*)node->element;
-			if ( RepairGUI.isItemRepairable(inventoryItem) )
+			if ( GenericGUI.isItemRepairable(inventoryItem) )
 			{
 				foundRepairableItem = true;
 				break;
@@ -2381,7 +2381,7 @@ void item_ScrollRepair(Item* item, int player)
 	else
 	{
 		// Repair an item
-		RepairGUI.openGUI(item->beatitude);
+		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude);
 	}
 	consumeItem(item);
 }

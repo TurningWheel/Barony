@@ -170,7 +170,7 @@ bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
 FollowerRadialMenu FollowerMenu;
-RepairGUIMenu RepairGUI;
+GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
 SDL_Rect interfacePartySheet;
 
@@ -1544,7 +1544,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			shootmode = true;
 			CloseIdentifyGUI();
 			closeRemoveCurseGUI();
-			RepairGUI.closeGUI();
+			GenericGUI.closeGUI();
 			if ( openedChest[clientnum] )
 			{
 				openedChest[clientnum]->closeChest();
@@ -1680,7 +1680,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							openedChest[clientnum]->closeChest();
 						}
-						RepairGUI.closeGUI();
+						GenericGUI.closeGUI();
 						gui_mode = GUI_MODE_NONE;
 					}
 				}
@@ -2654,7 +2654,7 @@ bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
 }
 
-bool RepairGUIMenu::isItemRepairable(const Item* item)
+bool GenericGUIMenu::isItemRepairable(const Item* item)
 {
 	if ( !item )
 	{
@@ -2698,21 +2698,21 @@ bool RepairGUIMenu::isItemRepairable(const Item* item)
 	}
 }
 
-// Repair GUI Code
-void RepairGUIMenu::rebuildGUIInventory()
+// Generic GUI Code
+void GenericGUIMenu::rebuildGUIInventory()
 {
-	list_t* repair_inventory = &stats[clientnum]->inventory;
+	list_t* player_inventory = &stats[clientnum]->inventory;
 	node_t* node = nullptr;
 	Item* item = nullptr;
 	int c = 0;
 
-	if ( repair_inventory )
+	if ( player_inventory )
 	{
-		//Count the number of items in the Repair GUI "inventory".
-		for ( node = repair_inventory->first; node != nullptr; node = node->next )
+		//Count the number of items in the GUI "inventory".
+		for ( node = player_inventory->first; node != nullptr; node = node->next )
 		{
 			item = (Item*)node->element;
-			if ( isItemRepairable(item) )
+			if ( shouldDisplayItemInGUI(item) )
 			{
 				++c;
 			}
@@ -2725,12 +2725,12 @@ void RepairGUIMenu::rebuildGUIInventory()
 		c = 0;
 
 		//Assign the visible items to the GUI slots.
-		for ( node = repair_inventory->first; node != nullptr; node = node->next )
+		for ( node = player_inventory->first; node != nullptr; node = node->next )
 		{
 			if ( node->element )
 			{
 				item = (Item*)node->element;
-				if ( isItemRepairable(item) ) //Skip over all non-repairable items.
+				if ( shouldDisplayItemInGUI(item) ) //Skip over all non-applicable items.
 				{
 					++c;
 					if ( c <= scroll )
@@ -2749,15 +2749,18 @@ void RepairGUIMenu::rebuildGUIInventory()
 }
 
 
-void RepairGUIMenu::updateGUI()
+void GenericGUIMenu::updateGUI()
 {
 	SDL_Rect pos;
 	node_t* node;
 	int y, c;
 
-	//Repair GUI.
+	//Generic GUI.
 	if ( guiActive )
 	{
+		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+		gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
 		//Center the GUI.
 		pos.x = gui_starty;
 		pos.y = gui_startx;
@@ -2797,9 +2800,9 @@ void RepairGUIMenu::updateGUI()
 				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
 				{
 					gui_clickdrag = true;
-					draggingRepairGUI = true;
-					offsetx = omousex - gui_starty;
-					offsety = omousey - gui_startx;
+					draggingGUI = true;
+					dragoffset_x = omousex - gui_starty;
+					dragoffset_y = omousey - gui_startx;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
@@ -2823,7 +2826,7 @@ void RepairGUIMenu::updateGUI()
 			}
 		}
 
-		if ( draggingRepairGUI )
+		if ( draggingGUI )
 		{
 			if ( gui_clickdrag )
 			{
@@ -2848,22 +2851,45 @@ void RepairGUIMenu::updateGUI()
 			}
 			else
 			{
-				draggingRepairGUI = false;
+				draggingGUI = false;
 			}
 		}
 
-		list_t* repair_inventory = &stats[clientnum]->inventory;
+		list_t* player_inventory = &stats[clientnum]->inventory;
 
-		if ( !repair_inventory )
+		if ( !player_inventory )
 		{
 			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
 		}
 		else
 		{
-			//Print the window label signifying this as the repair GUI.
+			//Print the window label signifying this GUI.
 			char* window_name;
-			window_name = language[3286];
-			ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+			if ( guiType == GUI_TYPE_REPAIR )
+			{
+				window_name = language[3286];
+				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+			}
+			else if ( guiType == GUI_TYPE_ALCHEMY )
+			{
+				if ( !basePotion )
+				{
+					window_name = language[3328];
+					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+				}
+				else
+				{
+					window_name = language[3329];
+					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
+						gui_startx + 4 - TTF8_HEIGHT - 4, window_name);
+					int count = basePotion->count;
+					basePotion->count = 1;
+					char *description = basePotion->description();
+					basePotion->count = count;
+					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(description)) / 2))),
+						gui_startx + 4, description);
+				}
+			}
 
 			//GUI up button.
 			if ( buttonclick == 7 )
@@ -2919,7 +2945,8 @@ void RepairGUIMenu::updateGUI()
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						repairItem(itemsDisplayed[i]);
+
+						executeOnItemClick(itemsDisplayed[i]);
 
 						rebuildGUIInventory();
 						if ( itemsDisplayed[i] == nullptr )
@@ -2949,25 +2976,26 @@ void RepairGUIMenu::updateGUI()
 			//Okay, now prepare to render all the items.
 			y = gui_startx + 22;
 			c = 0;
-			if ( repair_inventory )
+			if ( player_inventory )
 			{
 				rebuildGUIInventory();
 
 				//Actually render the items.
 				c = 0;
-				for ( node = repair_inventory->first; node != NULL; node = node->next )
+				for ( node = player_inventory->first; node != NULL; node = node->next )
 				{
 					if ( node->element )
 					{
 						item = (Item*)node->element;
-						if ( isItemRepairable(item) )   //Skip over all unidentified or non-broken items.
+						bool displayItem = shouldDisplayItemInGUI(item);
+						if ( displayItem )   //Skip over all non-used items
 						{
 							c++;
 							if ( c <= scroll )
 							{
 								continue;
 							}
-							char tempstr[64] = { 0 };
+							char tempstr[256] = { 0 };
 							strncpy(tempstr, item->description(), 46);
 							if ( strlen(tempstr) == 46 )
 							{
@@ -2992,13 +3020,30 @@ void RepairGUIMenu::updateGUI()
 	}
 }
 
-void RepairGUIMenu::repairItem(Item* item)
+bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( guiType == GUI_TYPE_REPAIR )
+	{
+		return isItemRepairable(item);
+	}
+	else if ( guiType == GUI_TYPE_ALCHEMY )
+	{
+		return isItemMixable(item);
+	}
+	return false;
+}
+
+void GenericGUIMenu::repairItem(Item* item)
 {
 	if ( !item )
 	{
 		return;
 	}
-	if ( !isItemRepairable(item) )
+	if ( !shouldDisplayItemInGUI(item) )
 	{
 		messagePlayer(clientnum, language[3287], item->getName());
 		return;
@@ -3063,13 +3108,16 @@ void RepairGUIMenu::repairItem(Item* item)
 	}
 }
 
-void RepairGUIMenu::closeGUI()
+void GenericGUIMenu::closeGUI()
 {
 	guiActive = false;
 	selectedSlot = -1;
+	guiType = GUI_TYPE_NONE;
+	basePotion = nullptr;
+	secondaryPotion = nullptr;
 }
 
-inline Item* RepairGUIMenu::getItemInfo(int slot)
+inline Item* GenericGUIMenu::getItemInfo(int slot)
 {
 	if ( slot >= kNumShownItems )
 	{
@@ -3079,7 +3127,7 @@ inline Item* RepairGUIMenu::getItemInfo(int slot)
 	return itemsDisplayed[slot];
 }
 
-void RepairGUIMenu::selectSlot(int slot)
+void GenericGUIMenu::selectSlot(int slot)
 {
 	if ( slot < selectedSlot )
 	{
@@ -3089,7 +3137,7 @@ void RepairGUIMenu::selectSlot(int slot)
 		* Possible cases:
 		* * 1) Move cursor up the GUI through different selectedSlot.
 		* * 2) Page up through scroll--
-		* * 3) Scrolling up past top of Repair GUI, no scroll (move back to inventory)
+		* * 3) Scrolling up past top of GUI, no scroll (move back to inventory)
 		*/
 
 		if ( selectedSlot <= 0 )
@@ -3098,7 +3146,7 @@ void RepairGUIMenu::selectSlot(int slot)
 
 			/*
 			* Possible cases:
-			* * A) Hit very top of Repair "inventory", can't go any further. Return to inventory.
+			* * A) Hit very top of "inventory", can't go any further. Return to inventory.
 			* * B) Page up, scrolling through scroll.
 			*/
 
@@ -3109,7 +3157,7 @@ void RepairGUIMenu::selectSlot(int slot)
 			}
 			else
 			{
-				//Case 2/B: Page up through Repair "inventory".
+				//Case 2/B: Page up through "inventory".
 				--scroll;
 			}
 		}
@@ -3129,8 +3177,8 @@ void RepairGUIMenu::selectSlot(int slot)
 		/*
 		* Possible cases:
 		* * 1) Moving cursor down through GUI through different selectedSlot.
-		* * 2) Scrolling down past bottom of Repair GUI through scroll++
-		* * 3) Scrolling down past bottom of Repair GUI, max Repair scroll (revoke move -- can't go beyond limit of Repair GUI).
+		* * 2) Scrolling down past bottom of GUI through scroll++
+		* * 3) Scrolling down past bottom of GUI, max scroll (revoke move -- can't go beyond limit of GUI).
 		*/
 
 		if ( selectedSlot >= kNumShownItems - 1 )
@@ -3165,7 +3213,7 @@ void RepairGUIMenu::selectSlot(int slot)
 	}
 }
 
-void RepairGUIMenu::warpMouseToSelectedSlot()
+void GenericGUIMenu::warpMouseToSelectedSlot()
 {
 	SDL_Rect slotPos;
 	slotPos.x = gui_starty;
@@ -3176,7 +3224,7 @@ void RepairGUIMenu::warpMouseToSelectedSlot()
 	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }
 
-void RepairGUIMenu::initGUIControllerCode()
+void GenericGUIMenu::initGUIControllerCode()
 {
 	if ( itemsDisplayed[0] )
 	{
@@ -3189,12 +3237,14 @@ void RepairGUIMenu::initGUIControllerCode()
 	}
 }
 
-void RepairGUIMenu::openGUI(int scrollBeatitude)
+void GenericGUIMenu::openGUI(int type, int scrollBeatitude)
 {
+	this->closeGUI();
 	shootmode = false;
 	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
+	guiType = static_cast<GUICurrentType>(type);
 
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
@@ -3207,11 +3257,376 @@ void RepairGUIMenu::openGUI(int scrollBeatitude)
 	{
 		CloseIdentifyGUI();
 	}
+	FollowerMenu.closeFollowerMenuGUI();
 
 	if ( openedChest[clientnum] )
 	{
 		openedChest[clientnum]->closeChest();
 	}
 
-	RepairGUI.initGUIControllerCode();
+	this->initGUIControllerCode();
+}
+
+bool GenericGUIMenu::executeOnItemClick(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( guiType == GUI_TYPE_REPAIR )
+	{
+		repairItem(item);
+		return true;
+	}
+	else if ( guiType == GUI_TYPE_ALCHEMY )
+	{
+		if ( !basePotion )
+		{
+			if ( isItemMixable(item) )
+			{
+				basePotion = item;
+			}
+		}
+		else if ( !secondaryPotion )
+		{
+			if ( isItemMixable(item) )
+			{
+				secondaryPotion = item;
+				if ( secondaryPotion && basePotion )
+				{
+					alchemyCombinePotions();
+					basePotion = nullptr;
+					secondaryPotion = nullptr;
+				}
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::isItemMixable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( !item->identified )
+	{
+		if ( item == basePotion )
+		{
+			return false;
+		}
+		return true; // what's the worst that could happen?
+	}
+
+	if ( players[clientnum] && players[clientnum]->entity )
+	{
+		if ( players[clientnum]->entity->isBlind() )
+		{
+			return true; // I can't see! it's all good to mix.
+		}
+	}
+
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		return false; // don't want to deal with client/server desync problems here.
+	}
+
+	if ( !basePotion )
+	{
+		// we're selecting the first potion.
+		switch ( item->type )
+		{
+			case POTION_WATER:
+			case POTION_BOOZE:
+			case POTION_JUICE:
+			case POTION_ACID:
+			case POTION_INVISIBILITY:
+			case POTION_POLYMORPH:
+				return true;
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
+
+	if ( !secondaryPotion )
+	{
+		// we're selecting the second potion.
+		switch ( item->type )
+		{
+			case POTION_SICKNESS:
+			case POTION_CONFUSION:
+			case POTION_CUREAILMENT:
+			case POTION_BLINDNESS:
+			case POTION_RESTOREMAGIC:
+			case POTION_SPEED:
+			case POTION_POLYMORPH:
+			case POTION_LEVITATION:
+				if ( item == basePotion )
+				{
+					return false;
+				}
+				return true;
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::alchemyCombinePotions()
+{
+	if ( !basePotion || !secondaryPotion )
+	{
+		return;
+	}
+
+	bool tryDuplicatePotion = false;
+	ItemType result = POTION_SICKNESS;
+	bool randomResult = false;
+	bool explodeSelf = false;
+
+	switch ( basePotion->type )
+	{
+		case POTION_WATER:
+			tryDuplicatePotion = true;
+			break;
+		case POTION_BOOZE:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_WATER:
+					tryDuplicatePotion = true;
+					break;
+				case POTION_SICKNESS:
+					result = POTION_CONFUSION;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_ACID;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_SPEED;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_CONFUSION;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_BLINDNESS;
+					break;
+				case POTION_SPEED:
+					result = POTION_PARALYSIS;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case POTION_JUICE:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_WATER:
+					tryDuplicatePotion = true;
+					break;
+				case POTION_SICKNESS:
+					result = POTION_BOOZE;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_CONFUSION;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_RESTOREMAGIC;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_CUREAILMENT;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_HEALING;
+					break;
+				case POTION_SPEED:
+					result = POTION_INVISIBILITY;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case POTION_ACID:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_WATER:
+					explodeSelf = true; // oh no. don't do that.
+					break;
+				case POTION_SICKNESS:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_CONFUSION:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_CUREAILMENT:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_BLINDNESS:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_RESTOREMAGIC:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_SPEED:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_LEVITATION:
+					//result = POTION_EXPLOSIVE;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case POTION_INVISIBILITY:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_WATER:
+					tryDuplicatePotion = true;
+					break;
+				case POTION_SICKNESS:
+					result = POTION_BLINDNESS;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_PARALYSIS;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_LEVITATION;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_SICKNESS;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_EXTRAHEALING;
+					break;
+				case POTION_SPEED:
+					result = POTION_RESTOREMAGIC;
+					break;
+				case POTION_LEVITATION:
+					result = POTION_POLYMORPH;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case POTION_POLYMORPH:
+			randomResult = true;
+			break;
+		default:
+			break;
+	}
+
+	if ( basePotion->beatitude < 0 || secondaryPotion->beatitude < 0 )
+	{
+		explodeSelf = true;
+	}
+
+	Status status = basePotion->status;
+	if ( tryDuplicatePotion )
+	{
+		// do duplicate.
+		if ( basePotion->type == POTION_WATER )
+		{
+			result = secondaryPotion->type;
+			status = secondaryPotion->status;
+		}
+		else if ( secondaryPotion->type == POTION_WATER )
+		{
+			result = basePotion->type;
+			status = basePotion->status;
+		}
+		else
+		{
+			result = POTION_WATER;
+		}
+	}
+
+	if ( randomResult )
+	{
+		std::vector<int> potionChances =
+		{
+			0,	//POTION_WATER,
+			1,	//POTION_BOOZE,
+			1,	//POTION_JUICE,
+			1,	//POTION_SICKNESS,
+			1,	//POTION_CONFUSION,
+			1,	//POTION_EXTRAHEALING,
+			1,	//POTION_HEALING,
+			1,	//POTION_CUREAILMENT,
+			1,	//POTION_BLINDNESS,
+			1,	//POTION_RESTOREMAGIC,
+			1,	//POTION_INVISIBILITY,
+			1,	//POTION_LEVITATION,
+			1,	//POTION_SPEED,
+			1,	//POTION_ACID,
+			1,	//POTION_PARALYSIS,
+			0,	//POTION_POLYMORPH
+		};
+		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+		auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+		result = static_cast<ItemType>(generatedPotion.first);
+	}
+
+	if ( basePotion->identified && secondaryPotion->identified )
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3332],
+			items[basePotion->type].name_identified, items[secondaryPotion->type].name_identified);
+	}
+	else if ( basePotion->identified )
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3334],
+			items[basePotion->type].name_identified);
+	}
+	else if ( secondaryPotion->identified )
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3333],
+			items[secondaryPotion->type].name_identified);
+	}
+	else
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3335]);
+	}
+
+	consumeItem(basePotion);
+	consumeItem(secondaryPotion);
+
+	if ( explodeSelf )
+	{
+		// hurt.
+		closeGUI();
+		return;
+	}
+
+	for ( auto it = potionStandardAppearanceMap.begin(); it != potionStandardAppearanceMap.end(); ++it )
+	{
+		if ( (*it).first == result )
+		{
+			Item* newPotion = newItem(result, status, 0, 1, (*it).second, false, nullptr);
+			itemPickup(clientnum, newPotion);
+			free(newPotion);
+			break;
+		}
+	}
+	closeGUI();
 }

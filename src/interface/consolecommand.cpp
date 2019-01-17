@@ -2257,6 +2257,50 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[2996]);
 			}
 		}
+		else if ( !strncmp(command_str, "/gimmepotions", 13) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+
+			std::vector<int> potionChances =
+			{
+				1,	//POTION_WATER,
+				1,	//POTION_BOOZE,
+				1,	//POTION_JUICE,
+				1,	//POTION_SICKNESS,
+				1,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				1,	//POTION_HEALING,
+				1,	//POTION_CUREAILMENT,
+				1,	//POTION_BLINDNESS,
+				1,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				1,	//POTION_SPEED,
+				1,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+
+			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+			for ( int i = 0; i < 10; ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					0, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
 		else if ( !strncmp(command_str, "/hungoverstats", 14) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )

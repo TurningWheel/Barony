@@ -794,7 +794,7 @@ void drawStatus()
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active
 							&& !removecursegui_active
-							&& !RepairGUI.isGUIOpen())) 
+							&& !GenericGUI.isGUIOpen())) 
 						&& !selectedItem )
 					{
 						toggleclick = false;
@@ -828,7 +828,7 @@ void drawStatus()
 							&& gui_mode != (GUI_MODE_SHOP) 
 							&& !identifygui_active 
 							&& !removecursegui_active
-							&& !RepairGUI.isGUIOpen()) )
+							&& !GenericGUI.isGUIOpen()) )
 					{
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -1229,7 +1229,7 @@ void drawStatus()
 			&& !itemMenuOpen && !openedChest[clientnum] 
 			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 			&& !identifygui_active && !removecursegui_active
-			&& !RepairGUI.isGUIOpen() )
+			&& !GenericGUI.isGUIOpen() )
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
@@ -1239,7 +1239,7 @@ void drawStatus()
 			&& !itemMenuOpen && !openedChest[clientnum] 
 			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
 			&& !identifygui_active && !removecursegui_active
-			&& !RepairGUI.isGUIOpen() )
+			&& !GenericGUI.isGUIOpen() )
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
@@ -1249,7 +1249,7 @@ void drawStatus()
 		if ( bumper_moved && !itemMenuOpen 
 			&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
 			&& !book_open && !identifygui_active 
-			&& !removecursegui_active && !RepairGUI.isGUIOpen() )
+			&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot();
 		}
@@ -1259,7 +1259,7 @@ void drawStatus()
 			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) 
 				&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
 				&& !book_open && !identifygui_active 
-				&& !removecursegui_active && !RepairGUI.isGUIOpen() )
+				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
