@@ -9196,6 +9196,7 @@ int getStatForProficiency(int skill)
 			break;
 		case PRO_SPELLCASTING:  // base attribute: int
 		case PRO_MAGIC:         // base attribute: int
+		case PRO_ALCHEMY:       // base attribute: int
 			statForProficiency = STAT_INT;
 			break;
 		case PRO_APPRAISAL:		// base attribute: per

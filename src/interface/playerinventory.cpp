@@ -223,6 +223,8 @@ char* itemUseString(const Item* item)
 				}
 			case TOOL_BEARTRAP:
 				return language[337];
+			case TOOL_ALEMBIC:
+				return language[3339];
 			default:
 				break;
 		}

@@ -351,6 +351,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"potion_polymorph",
 	"food_blood",
 	"cloak_backpack",
+	"tool_alembic",
 	""
 };
 
@@ -558,7 +559,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_blindfold",
 		"tool_glasses",
 		"tool_blindfold_focus",
-		"tool_blindfold_telepathy"
+		"tool_blindfold_telepathy",
+		"tool_alembic",
 		""
 	},
 	{
