@@ -1922,7 +1922,7 @@ void clientHandlePacket()
 		shopitemscroll = 0;
 		identifygui_active = false; //Really need a centralized function to open up whatever screen/inventory.
 		closeRemoveCurseGUI();
-		RepairGUI.closeGUI();
+		GenericGUI.closeGUI();
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
 		{
@@ -3085,7 +3085,7 @@ void clientHandlePacket()
 			{
 				closeRemoveCurseGUI();
 			}
-			RepairGUI.closeGUI();
+			GenericGUI.closeGUI();
 			identifygui_active = false;
 			list_FreeAll(&chestInv);
 			chestInv.first = nullptr;
@@ -3142,7 +3142,7 @@ void clientHandlePacket()
 		{
 			closeRemoveCurseGUI();
 		}
-		RepairGUI.closeGUI();
+		GenericGUI.closeGUI();
 		if ( openedChest[clientnum] )
 		{
 			openedChest[clientnum]->closeChest();
@@ -3165,7 +3165,7 @@ void clientHandlePacket()
 		{
 			CloseIdentifyGUI();
 		}
-		RepairGUI.closeGUI();
+		GenericGUI.closeGUI();
 
 		if ( openedChest[clientnum] )
 		{

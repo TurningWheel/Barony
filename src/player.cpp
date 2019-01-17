@@ -749,7 +749,7 @@ bool GameController::handleRepairGUIMovement()
 
 	if ( *inputPressed(joyimpulses[INJOY_DPAD_UP]) )
 	{
-		RepairGUI.selectSlot(RepairGUI.selectedSlot - 1);
+		GenericGUI.selectSlot(GenericGUI.selectedSlot - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
@@ -757,7 +757,7 @@ bool GameController::handleRepairGUIMovement()
 
 	if ( *inputPressed(joyimpulses[INJOY_DPAD_DOWN]) )
 	{
-		RepairGUI.selectSlot(RepairGUI.selectedSlot + 1);
+		GenericGUI.selectSlot(GenericGUI.selectedSlot + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;

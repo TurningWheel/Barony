@@ -755,6 +755,21 @@ void actHudWeapon(Entity* my)
 								}
 							}
 						}
+						else if ( item->type == POTION_EMPTY )
+						{
+							HUDWEAPON_MOVEX = 5;
+							HUDWEAPON_CHOP = 3;
+							Entity* player = players[clientnum]->entity;
+							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+							if ( hit.entity && stats[clientnum]->weapon )
+							{
+								stats[clientnum]->weapon->apply(clientnum, hit.entity);
+							}
+							else
+							{
+								messagePlayer(clientnum, language[3336]);
+							}
+						}
 						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
 						{
 							if ( itemCategory(item) == THROWN )
