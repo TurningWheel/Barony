@@ -802,5 +802,9 @@ char* getSkillLangEntry(int skill)
 	{
 		langEntry = 3204;
 	}
+	else if ( skill == PRO_ALCHEMY )
+	{
+		langEntry = 3340;
+	}
 	return language[langEntry];
 }

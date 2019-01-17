@@ -79,7 +79,8 @@ static const int PRO_AXE = 11;          // base attribute: str
 static const int PRO_POLEARM = 12;      // base attribute: str
 static const int PRO_SHIELD = 13;       // base attribute: con
 static const int PRO_UNARMED = 14;       // base attribute: str
-static const int NUMPROFICIENCIES = 15;
+static const int PRO_ALCHEMY = 15;       // base attribute: int
+static const int NUMPROFICIENCIES = 16;
 
 //Start levels for the various proficiency ranges.
 //0 = "none"
@@ -107,7 +108,8 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		100,		//Axe
 		100,		//Polearm
 		100,		//Shield
-		100			//Unarmed
+		100,		//Unarmed
+		100			//Alchemy
 };
 
 static const int CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT = 100;

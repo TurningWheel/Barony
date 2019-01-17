@@ -564,6 +564,12 @@ void drawSkillsSheet()
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
 						capstoneTextColor, language[3283]);
 					break;
+				case PRO_ALCHEMY:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3283]);
+					break;
 				default:
 					drawTooltip(&skillTooltipRect);
 					break;
@@ -869,6 +875,8 @@ void drawSkillsSheet()
 							uint32ColorWhite(*mainsurface), language[3255 + i],
 							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
 					}
+					break;
+				case PRO_ALCHEMY:
 					break;
 				default:
 					break;

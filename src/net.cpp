@@ -4198,6 +4198,22 @@ void serverHandlePacket()
 		{
 			players[player]->entity->getStats()->EXP += 100;
 		}
+		return;
+	}
+
+	// the client asked for a level up
+	else if ( !strncmp((char*)net_packet->data, "CSKL", 4) )
+	{
+		int player = net_packet->data[4];
+		int skill = net_packet->data[5];
+		if ( player > 0 && player < MAXPLAYERS && players[player] && players[player]->entity )
+		{
+			if ( skill >= 0 && skill < NUMPROFICIENCIES )
+			{
+				players[player]->entity->increaseSkill(skill);
+			}
+		}
+		return;
 	}
 
 	// the client sent a minimap ping packet.
@@ -4206,6 +4222,7 @@ void serverHandlePacket()
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		minimapPingAdd(newPing);
 		sendMinimapPing(net_packet->data[4], newPing.x, newPing.y); // relay to other clients.
+		return;
 	}
 
 	//Remove vampiric aura

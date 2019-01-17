@@ -2031,6 +2031,16 @@ void useItem(Item* item, int player)
 		case TOOL_BEARTRAP:
 			item_ToolBeartrap(item, player);
 			break;
+		case TOOL_ALEMBIC:
+			if ( player != clientnum )
+			{
+				consumeItem(item);
+			}
+			else
+			{
+				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, 0);
+			}
+			break;
 		case FOOD_BREAD:
 		case FOOD_CREAMPIE:
 		case FOOD_CHEESE:

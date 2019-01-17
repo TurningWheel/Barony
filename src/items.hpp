@@ -242,9 +242,10 @@ typedef enum ItemType
 	MAGICSTAFF_CHARM,
 	POTION_POLYMORPH,
 	FOOD_BLOOD,
-	CLOAK_BACKPACK
+	CLOAK_BACKPACK,
+	TOOL_ALEMBIC
 } ItemType;
-const int NUMITEMS = 221;
+const int NUMITEMS = 222;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

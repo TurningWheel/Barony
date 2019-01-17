@@ -2717,6 +2717,13 @@ void GenericGUIMenu::rebuildGUIInventory()
 				++c;
 			}
 		}
+		if ( c == 0 && guiType == GUI_TYPE_ALCHEMY )
+		{
+			// did not find mixable item... close GUI
+			messagePlayer(clientnum, language[3338]);
+			closeGUI();
+			return;
+		}
 		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
 		for ( c = 0; c < kNumShownItems; ++c )
 		{
@@ -2946,10 +2953,15 @@ void GenericGUIMenu::updateGUI()
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 
-						executeOnItemClick(itemsDisplayed[i]);
-
+						bool result = executeOnItemClick(itemsDisplayed[i]);
+						GUICurrentType oldType = guiType;
 						rebuildGUIInventory();
-						if ( itemsDisplayed[i] == nullptr )
+						
+						if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
+						{
+							// do nothing
+						}
+						else if ( itemsDisplayed[i] == nullptr )
 						{
 							if ( itemsDisplayed[0] == nullptr )
 							{
@@ -3263,7 +3275,7 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude)
 	{
 		openedChest[clientnum]->closeChest();
 	}
-
+	rebuildGUIInventory();
 	this->initGUIControllerCode();
 }
 
@@ -3286,6 +3298,23 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			if ( isItemMixable(item) )
 			{
 				basePotion = item;
+				// check if secondary potion available.
+				list_t* player_inventory = &stats[clientnum]->inventory;
+				for ( node_t* node = player_inventory->first; node != nullptr; node = node->next )
+				{
+					if ( node->element )
+					{
+						Item* checkItem = (Item*)node->element;
+						if ( checkItem && isItemMixable(checkItem) )
+						{
+							return true;
+						}
+					}
+				}
+				// did not find mixable item... close GUI
+				messagePlayer(clientnum, language[3337]);
+				closeGUI();
+				return false;
 			}
 		}
 		else if ( !secondaryPotion )
@@ -3357,6 +3386,11 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 
 	if ( !secondaryPotion )
 	{
+		if ( item == basePotion )
+		{
+			return false;
+		}
+
 		// we're selecting the second potion.
 		switch ( item->type )
 		{
@@ -3367,11 +3401,6 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_RESTOREMAGIC:
 			case POTION_SPEED:
 			case POTION_POLYMORPH:
-			case POTION_LEVITATION:
-				if ( item == basePotion )
-				{
-					return false;
-				}
 				return true;
 				break;
 			default:
@@ -3512,16 +3541,13 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_LEVITATION;
 					break;
 				case POTION_BLINDNESS:
-					result = POTION_SICKNESS;
+					result = POTION_POLYMORPH;
 					break;
 				case POTION_RESTOREMAGIC:
 					result = POTION_EXTRAHEALING;
 					break;
 				case POTION_SPEED:
 					result = POTION_RESTOREMAGIC;
-					break;
-				case POTION_LEVITATION:
-					result = POTION_POLYMORPH;
 					break;
 				case POTION_POLYMORPH:
 					randomResult = true;
@@ -3625,6 +3651,27 @@ void GenericGUIMenu::alchemyCombinePotions()
 			Item* newPotion = newItem(result, status, 0, 1, (*it).second, false, nullptr);
 			itemPickup(clientnum, newPotion);
 			free(newPotion);
+			if ( rand() % 2 == 0 )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					// request level up
+					strcpy((char*)net_packet->data, "CSKL");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = PRO_ALCHEMY;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				else
+				{
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+					}
+				}
+			}
 			break;
 		}
 	}
