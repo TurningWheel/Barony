@@ -1518,11 +1518,17 @@ void equipItem(Item* item, Item** slot, int player)
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, int player)
+void useItem(Item* item, int player, Entity* usedBy)
 {
 	if ( item == NULL )
 	{
 		return;
+	}
+
+	if ( !usedBy && players[player] && players[player]->entity )
+	{
+		// assume used by the player unless otherwise (a fountain potion effect e.g)
+		usedBy = players[player]->entity;
 	}
 
 	if ( openedChest[player] && itemCategory(item) != SPELL_CAT ) //TODO: What if fountain called this function for its potion effect?
@@ -1776,49 +1782,49 @@ void useItem(Item* item, int player)
 			equipItem(item, &stats[player]->amulet, player);
 			break;
 		case POTION_WATER:
-			item_PotionWater(item, players[player]->entity);
+			item_PotionWater(item, players[player]->entity, usedBy);
 			break;
 		case POTION_BOOZE:
-			item_PotionBooze(item, players[player]->entity);
+			item_PotionBooze(item, players[player]->entity, usedBy);
 			break;
 		case POTION_JUICE:
-			item_PotionJuice(item, players[player]->entity);
+			item_PotionJuice(item, players[player]->entity, usedBy);
 			break;
 		case POTION_SICKNESS:
-			item_PotionSickness(item, players[player]->entity);
+			item_PotionSickness(item, players[player]->entity, usedBy);
 			break;
 		case POTION_CONFUSION:
-			item_PotionConfusion(item, players[player]->entity);
+			item_PotionConfusion(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EXTRAHEALING:
-			item_PotionExtraHealing(item, players[player]->entity);
+			item_PotionExtraHealing(item, players[player]->entity, usedBy);
 			break;
 		case POTION_HEALING:
-			item_PotionHealing(item, players[player]->entity);
+			item_PotionHealing(item, players[player]->entity, usedBy);
 			break;
 		case POTION_CUREAILMENT:
-			item_PotionCureAilment(item, players[player]->entity);
+			item_PotionCureAilment(item, players[player]->entity, usedBy);
 			break;
 		case POTION_BLINDNESS:
-			item_PotionBlindness(item, players[player]->entity);
+			item_PotionBlindness(item, players[player]->entity, usedBy);
 			break;
 		case POTION_RESTOREMAGIC:
-			item_PotionRestoreMagic(item, players[player]->entity);
+			item_PotionRestoreMagic(item, players[player]->entity, usedBy);
 			break;
 		case POTION_INVISIBILITY:
-			item_PotionInvisibility(item, players[player]->entity);
+			item_PotionInvisibility(item, players[player]->entity, usedBy);
 			break;
 		case POTION_LEVITATION:
-			item_PotionLevitation(item, players[player]->entity);
+			item_PotionLevitation(item, players[player]->entity, usedBy);
 			break;
 		case POTION_SPEED:
-			item_PotionSpeed(item, players[player]->entity);
+			item_PotionSpeed(item, players[player]->entity, usedBy);
 			break;
 		case POTION_ACID:
-			item_PotionAcid(item, players[player]->entity);
+			item_PotionAcid(item, players[player]->entity, usedBy);
 			break;
 		case POTION_PARALYSIS:
-			item_PotionParalysis(item, players[player]->entity);
+			item_PotionParalysis(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EMPTY:
 			messagePlayer(player, language[2359]);

@@ -24,11 +24,21 @@
 #include "player.hpp"
 #include "collision.hpp"
 
-void item_PotionWater(Item*& item, Entity* entity)
+void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if ( !entity )
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	node_t* node;
@@ -199,11 +209,21 @@ void item_PotionWater(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
+void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -296,11 +316,21 @@ void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem)
 	}
 }
 
-void item_PotionJuice(Item*& item, Entity* entity)
+void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -375,11 +405,21 @@ void item_PotionJuice(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionSickness(Item*& item, Entity* entity)
+void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -443,11 +483,21 @@ void item_PotionSickness(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionConfusion(Item*& item, Entity* entity)
+void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -509,11 +559,21 @@ void item_PotionConfusion(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionCureAilment(Item*& item, Entity* entity)
+void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -595,11 +655,21 @@ void item_PotionCureAilment(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionBlindness(Item*& item, Entity* entity)
+void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -658,11 +728,21 @@ void item_PotionBlindness(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionInvisibility(Item*& item, Entity* entity)
+void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -734,11 +814,21 @@ void item_PotionInvisibility(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionLevitation(Item*& item, Entity* entity)
+void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -800,11 +890,21 @@ void item_PotionLevitation(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionSpeed(Item*& item, Entity* entity)
+void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -885,11 +985,21 @@ void item_PotionSpeed(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionAcid(Item*& item, Entity* entity)
+void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -946,16 +1056,34 @@ void item_PotionAcid(Item*& item, Entity* entity)
 	// set obituary
 	entity->setObituary(language[1535]);
 
+	if ( usedBy )
+	{
+		Entity* orbit = usedBy->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, entity->x, entity->y, 16.0, 0.0, 40);
+		orbit = usedBy->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, entity->x, entity->y, 16.0, 2 * PI / 3, 40);
+		orbit = usedBy->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, entity->x, entity->y, 16.0, 4 * PI / 3, 40);
+		spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+	}
+
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item);
 }
 
-void item_PotionParalysis(Item*& item, Entity* entity)
+void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -1015,11 +1143,21 @@ void item_PotionParalysis(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
+void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -1148,11 +1286,21 @@ void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
 	}
 }
 
-void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem)
+void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -1280,11 +1428,21 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem
 	}
 }
 
-void item_PotionRestoreMagic(Item*& item, Entity* entity)
+void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
 		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -1376,11 +1534,21 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity)
 	consumeItem(item);
 }
 
-Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* parent)
+Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if ( !entity )
 	{
 		return nullptr;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
 	}
 
 	int player = -1;
@@ -1422,7 +1590,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* parent)
 	}
 
 	// play drink sound
-	if ( !parent ) // drinking rather than throwing.
+	if ( !usedBy ) // drinking rather than throwing.
 	{
 		playSoundEntity(entity, 52, 64);
 		if ( player >= 0 )
@@ -1434,7 +1602,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* parent)
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
 	{
-		transformedEntity = spellEffectPolymorph(entity, stats, parent);
+		transformedEntity = spellEffectPolymorph(entity, stats, usedBy);
 	}
 
 	consumeItem(item);
