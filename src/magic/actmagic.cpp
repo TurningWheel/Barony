@@ -464,6 +464,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 			if (MAGIC_LIFE >= MAGIC_MAXLIFE)
 			{
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -484,24 +485,46 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					// nothing hit yet, let's keep trying...
 				}
 			}
-			else if ( parent && my->actmagicIsOrbiting )
+			else if ( my->actmagicIsOrbiting != 0 )
 			{
-				my->yaw += 0.1;
-				my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
-				my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+				int turnRate = 4;
+				if ( parent && my->actmagicIsOrbiting == 1 )
+				{
+					my->yaw += 0.1;
+					my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
+					my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+				}
+				else if ( my->actmagicIsOrbiting == 2 )
+				{
+					my->yaw += 0.2;
+					turnRate = 4;
+					my->x = my->actmagicOrbitStationaryX + my->actmagicOrbitStationaryCurrentDist * cos(my->yaw);
+					my->y = my->actmagicOrbitStationaryY + my->actmagicOrbitStationaryCurrentDist * sin(my->yaw);
+					my->actmagicOrbitStationaryCurrentDist =
+						std::min(my->actmagicOrbitStationaryCurrentDist + 0.5, static_cast<real_t>(my->actmagicOrbitDist));
+				}
 				hitFromAbove = my->magicOrbitingCollision();
 				my->z += my->vel_z * my->actmagicOrbitVerticalDirection;
-				if ( my->z > my->actmagicOrbitStartZ )
+
+				if ( my->actmagicIsOrbiting == 2 )
+				{
+					// we don't change direction, upwards we go!
+					// target speed is actmagicOrbitVerticalSpeed.
+					my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+					my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
+					my->roll = std::max(my->roll, -PI / 4);
+				}
+				else if ( my->z > my->actmagicOrbitStartZ )
 				{
 					if ( my->actmagicOrbitVerticalDirection == 1 )
 					{
 						my->vel_z = std::max(0.01, my->vel_z * 0.95);
-						my->roll -= (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll -= (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 					else
 					{
 						my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
-						my->roll += (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 				}
 				else
@@ -509,22 +532,25 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( my->actmagicOrbitVerticalDirection == 1 )
 					{
 						my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
-						my->roll += (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 					else
 					{
 						my->vel_z = std::max(0.01, my->vel_z * 0.95);
-						my->roll -= (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll -= (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 				}
 				
-				if ( (my->z > my->actmagicOrbitStartZ + 4) && my->actmagicOrbitVerticalDirection == 1 )
+				if ( my->actmagicIsOrbiting == 1 )
 				{
-					my->actmagicOrbitVerticalDirection = -1;
-				}
-				else if ( (my->z < my->actmagicOrbitStartZ - 4) && my->actmagicOrbitVerticalDirection != 1 )
-				{
-					my->actmagicOrbitVerticalDirection = 1;
+					if ( (my->z > my->actmagicOrbitStartZ + 4) && my->actmagicOrbitVerticalDirection == 1 )
+					{
+						my->actmagicOrbitVerticalDirection = -1;
+					}
+					else if ( (my->z < my->actmagicOrbitStartZ - 4) && my->actmagicOrbitVerticalDirection != 1 )
+					{
+						my->actmagicOrbitVerticalDirection = 1;
+					}
 				}
 			}
 			else
@@ -1231,7 +1257,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				else if (!strcmp(element->name, spellElement_fire.name))
 				{
-					spawnExplosion(my->x, my->y, my->z);
+					if ( !(my->actmagicIsOrbiting == 2) )
+					{
+						spawnExplosion(my->x, my->y, my->z);
+					}
 					if (hit.entity)
 					{
 						// Attempt to set the Entity on fire
@@ -1239,6 +1268,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
@@ -1297,9 +1330,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						} 
 						else if (hit.entity->behavior == &actChest) 
@@ -1307,8 +1346,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
@@ -1351,8 +1397,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 					}
@@ -2267,10 +2320,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
-				my->removeLightField();
-				if ( my->mynode )
+				if ( !(my->actmagicIsOrbiting == 2) )
 				{
-					list_RemoveNode(my->mynode);
+					my->removeLightField();
+					if ( my->mynode )
+					{
+						list_RemoveNode(my->mynode);
+					}
 				}
 				return;
 			}
@@ -2325,7 +2381,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		//Any init stuff that needs to happen goes here.
 		magic_init = 1;
 		my->skill[2] = -7; // ordinarily the client won't do anything with this entity
-		if ( my->actmagicIsOrbiting == 1 )
+		if ( my->actmagicIsOrbiting == 1 || my->actmagicIsOrbiting == 2 )
 		{
 			MAGIC_MAXLIFE = my->actmagicOrbitLifetime;
 		}
@@ -3881,10 +3937,27 @@ bool Entity::magicOrbitingCollision()
 {
 	hit.entity = nullptr;
 
-	if ( this->z < -10 )
+	if ( this->actmagicIsOrbiting == 2 )
+	{
+		if ( this->z < -8 || this->z > 2 )
+		{
+			return false;
+		}
+	}
+	else if ( this->z < -10 )
 	{
 		return false;
 	}
+
+	if ( this->actmagicIsOrbiting == 2 )
+	{
+		if ( this->actmagicOrbitStationaryHitTarget == 1 )
+		{
+			return false;
+		}
+	}
+
+	Entity* caster = uidToEntity(parent);
 
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -3898,9 +3971,21 @@ bool Entity::magicOrbitingCollision()
 			{
 				continue;
 			}
+			if ( caster && !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) )
+			{
+				continue;
+			}
+			if ( entity->behavior == &actMagicMissile )
+			{
+				continue;
+			}
 			if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
 			{
 				hit.entity = entity;
+				if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+				{
+					this->actmagicOrbitStationaryHitTarget = 1;
+				}
 				return true;
 			}
 		}
@@ -3960,6 +4045,45 @@ Entity* Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, rea
 		entity->actmagicOrbitVerticalDirection = 1;
 		entity->actmagicOrbitLifetime = duration;
 		entity->vel_z = entity->actmagicOrbitVerticalSpeed;
+		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+	}
+	return entity;
+}
+
+Entity* Entity::castStationaryOrbitingMagicMissile(int spellID, real_t centerx, real_t centery,
+	real_t distFromCenter, real_t angleFromCenterDirection, int duration)
+{
+	spell_t* spell = getSpellFromID(spellID);
+	Entity* entity = castSpell(getUID(), spell, false, true);
+	if ( entity )
+	{
+		if ( spellID == SPELL_FIREBALL )
+		{
+			entity->sprite = 671;
+		}
+		else if ( spellID == SPELL_MAGICMISSILE )
+		{
+			entity->sprite = 679;
+		}
+		entity->yaw = angleFromCenterDirection;
+		entity->x = centerx;
+		entity->y = centery;
+		entity->z = 4;
+		double missile_speed = 4 * ((double)(((spellElement_t*)(spell->elements.first->element))->mana)
+			/ ((spellElement_t*)(spell->elements.first->element))->overload_multiplier);
+		entity->vel_x = 0.0;
+		entity->vel_y = 0.0;
+		entity->actmagicIsOrbiting = 2;
+		entity->actmagicOrbitDist = distFromCenter;
+		entity->actmagicOrbitStationaryCurrentDist = 0.0;
+		entity->actmagicOrbitStartZ = entity->z;
+		//entity->roll -= (PI / 8);
+		entity->actmagicOrbitVerticalSpeed = -0.3;
+		entity->actmagicOrbitVerticalDirection = 1;
+		entity->actmagicOrbitLifetime = duration;
+		entity->actmagicOrbitStationaryX = centerx;
+		entity->actmagicOrbitStationaryY = centery;
+		entity->vel_z = -0.1;
 		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
 	return entity;
