@@ -3857,7 +3857,7 @@ void serverHandlePacket()
 			if (!itemCompare(item, item2, false))
 			{
 				printlog("client %d bought item from shop (uid=%d)\n", client, uidnum);
-				consumeItem(item2);
+				consumeItem(item2, client);
 				break;
 			}
 		}

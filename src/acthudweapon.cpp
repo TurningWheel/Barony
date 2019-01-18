@@ -783,7 +783,7 @@ void actHudWeapon(Entity* my)
 							}
 							HUDWEAPON_MOVEZ = 3;
 							HUDWEAPON_CHOP = 3;
-							players[clientnum]->entity->attack(0, 0, nullptr);
+							players[clientnum]->entity->attack(1, 0, nullptr);
 							if (multiplayer == CLIENT)
 							{
 								item->count--;

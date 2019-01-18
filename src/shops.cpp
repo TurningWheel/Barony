@@ -225,7 +225,7 @@ void buyItemFromShop(Item* item)
 			net_packet->len = 26;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
-		consumeItem(item);
+		consumeItem(item, clientnum);
 	}
 	else
 	{
@@ -393,6 +393,6 @@ void sellItemToShop(Item* item)
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
-	consumeItem(item);
+	consumeItem(item, clientnum);
 	sellitem = NULL;
 }

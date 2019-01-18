@@ -1268,15 +1268,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
-							if ( my->actmagicIsOrbiting == 2 )
-							{
-								spawnExplosion(my->x, my->y, my->z);
-							}
 							//playSoundEntity(my, 153, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								spawnExplosion(my->x, my->y, my->z);
+								damage = 10;
+							}
 							damage *= damagetables[hitstats->type][5];
 							if ( parent )
 							{
@@ -1286,6 +1287,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									damage *= 2;
 								}
 							}
+							int oldHP = hitstats->HP;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
@@ -1319,7 +1321,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 							}
-							if ( hitstats->HP <= 0 && parent)
+							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
@@ -1464,6 +1466,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int damage = element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								damage = 12;
+							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
@@ -1629,6 +1635,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								damage = 15;
+							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
@@ -1669,8 +1679,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
 							return;
 						}
 						else if ( hit.entity->behavior == &actChest )
@@ -1678,8 +1691,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
 							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
@@ -3939,7 +3955,7 @@ bool Entity::magicOrbitingCollision()
 
 	if ( this->actmagicIsOrbiting == 2 )
 	{
-		if ( this->z < -8 || this->z > 2 )
+		if ( this->z < -8 || this->z > 3 )
 		{
 			return false;
 		}
@@ -3951,7 +3967,7 @@ bool Entity::magicOrbitingCollision()
 
 	if ( this->actmagicIsOrbiting == 2 )
 	{
-		if ( this->actmagicOrbitStationaryHitTarget == 1 )
+		if ( this->actmagicOrbitStationaryHitTarget >= 2 )
 		{
 			return false;
 		}
@@ -3960,6 +3976,7 @@ bool Entity::magicOrbitingCollision()
 	Entity* caster = uidToEntity(parent);
 
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;
@@ -3971,20 +3988,44 @@ bool Entity::magicOrbitingCollision()
 			{
 				continue;
 			}
+			if ( entity->behavior != &actMonster 
+				&& entity->behavior != &actPlayer
+				&& entity->behavior != &actDoor
+				&& entity->behavior != &::actChest 
+				&& entity->behavior != &::actFurniture )
+			{
+				continue;
+			}
 			if ( caster && !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) )
 			{
 				continue;
 			}
-			if ( entity->behavior == &actMagicMissile )
+			if ( actmagicIsOrbiting == 2 )
 			{
-				continue;
+				if ( static_cast<Uint32>(actmagicOrbitHitTargetUID1) == entity->getUID()
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID2) == entity->getUID() )
+				{
+					// we already hit these guys.
+					continue;
+				}
 			}
 			if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
 			{
 				hit.entity = entity;
 				if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 				{
-					this->actmagicOrbitStationaryHitTarget = 1;
+					if ( actmagicIsOrbiting == 2 )
+					{
+						++actmagicOrbitStationaryHitTarget;
+						if ( actmagicOrbitHitTargetUID1 == 0 )
+						{
+							actmagicOrbitHitTargetUID1 = entity->getUID();
+						}
+						else if ( actmagicOrbitHitTargetUID2 == 0 )
+						{
+							actmagicOrbitHitTargetUID2 = entity->getUID();
+						}
+					}
 				}
 				return true;
 			}
@@ -4050,16 +4091,28 @@ Entity* Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, rea
 	return entity;
 }
 
-Entity* Entity::castStationaryOrbitingMagicMissile(int spellID, real_t centerx, real_t centery,
+Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t centerx, real_t centery,
 	real_t distFromCenter, real_t angleFromCenterDirection, int duration)
 {
 	spell_t* spell = getSpellFromID(spellID);
-	Entity* entity = castSpell(getUID(), spell, false, true);
+	if ( !parent )
+	{
+		return nullptr;
+	}
+	Entity* entity = castSpell(parent->getUID(), spell, false, true);
 	if ( entity )
 	{
 		if ( spellID == SPELL_FIREBALL )
 		{
 			entity->sprite = 671;
+		}
+		else if ( spellID == SPELL_COLD )
+		{
+			entity->sprite = 797;
+		}
+		else if ( spellID == SPELL_LIGHTNING )
+		{
+			entity->sprite = 798;
 		}
 		else if ( spellID == SPELL_MAGICMISSILE )
 		{
@@ -4248,4 +4301,13 @@ void actParticleCharmMonster(Entity* my)
 			my->vel_z *= 0.9;
 		}
 	}
+}
+
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID)
+{
+	Entity* orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 0.0, 40);
+	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 2 * PI / 3, 40);
+	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 4 * PI / 3, 40);
+	spawnMagicEffectParticles(x, y, 0, 174);
+	spawnExplosion(x, y, -4 + rand() % 8);
 }

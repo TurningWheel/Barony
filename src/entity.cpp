@@ -226,6 +226,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitStationaryY(fskill[5]),
 	actmagicOrbitStationaryCurrentDist(fskill[6]),
 	actmagicOrbitStationaryHitTarget(skill[14]),
+	actmagicOrbitHitTargetUID1(skill[15]),
+	actmagicOrbitHitTargetUID2(skill[16]),
+	actmagicOrbitHitTargetUID3(skill[17]),
+	actmagicOrbitHitTargetUID4(skill[18]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -3225,7 +3229,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->cloak != nullptr )
 				{
 					// 1 in 10 chance of dealing damage to Entity's cloak
-					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK )
+					if ( rand() % 10 == 0 && myStats->cloak->type != ARTIFACT_CLOAK && myStats->cloak->type != CLOAK_BACKPACK )
 					{
 						if ( player == clientnum )
 						{
@@ -10419,7 +10423,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 		weaponLimb->focalz = limbs[monsterType][6][2]; // -.5
-		if ( isPotion )
+		if ( isPlayer && isPotion )
 		{
 			weaponLimb->focalz += 1;
 		}
@@ -10431,18 +10435,30 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->focalx = limbs[monsterType][6][0] + 2; // 3.5
 			weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 			weaponLimb->focalz = limbs[monsterType][6][2] - 3.5; // -2.5
+			if ( isPlayer && isPotion )
+			{
+				weaponLimb->focalz += 4.5;
+			}
 		}
 		else if ( isPlayer && monsterType == HUMAN )
 		{
 			weaponLimb->focalx = limbs[monsterType][6][0] + 1.5;
 			weaponLimb->focaly = limbs[monsterType][6][1];
 			weaponLimb->focalz = limbs[monsterType][6][2] - 2;
+			if ( isPlayer && isPotion )
+			{
+				weaponLimb->focalz += 3;
+			}
 		}
 		else
 		{
 			weaponLimb->focalx = limbs[monsterType][6][0] + 1; // 3.5
 			weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 			weaponLimb->focalz = limbs[monsterType][6][2] - 2; // -2.5
+			if ( isPlayer && isPotion )
+			{
+				weaponLimb->focalz += 3;
+			}
 		}
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
 		weaponLimb->pitch += cos(weaponArmLimb->roll) * PI / 2;

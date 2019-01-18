@@ -352,6 +352,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"food_blood",
 	"cloak_backpack",
 	"tool_alembic",
+	"potion_firestorm",
+	"potion_icestorm",
+	"potion_thunderstorm",
 	""
 };
 
@@ -414,6 +417,9 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"potion_acid",
 		"potion_paralysis",
 		"potion_polymorph",
+		"potion_firestorm",
+		"potion_icestorm",
+		"potion_thunderstorm",
 		"magicstaff_light",
 		"magicstaff_digging",
 		"magicstaff_locking",

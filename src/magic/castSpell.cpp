@@ -1025,7 +1025,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_cold.name) )
 			{
-				playSoundEntity(entity, 172, 64);
+				if ( caster && caster->behavior == &actPlayer && trap )
+				{
+					playSoundEntity(entity, 172, 48);
+				}
+				else
+				{
+					playSoundEntity(entity, 172, 64);
+				}
 			}
 			else if ( !strcmp(spell->name, spell_bleed.name) )
 			{

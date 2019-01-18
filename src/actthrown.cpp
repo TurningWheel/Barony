@@ -178,6 +178,20 @@ void actThrown(Entity* my)
 				item = newItemFromEntity(my);
 				if ( itemCategory(item) == POTION )
 				{
+					switch ( item->type )
+					{
+						case POTION_FIRESTORM:
+							spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
+							break;
+						case POTION_ICESTORM:
+							spawnMagicTower(parent, my->x, my->y, SPELL_COLD);
+							break;
+						case POTION_THUNDERSTORM:
+							spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING);
+							break;
+						default:
+							break;
+					}
 					playSoundEntity(my, 162, 64);
 					free(item);
 					list_RemoveNode(my->mynode);
@@ -543,6 +557,12 @@ void actThrown(Entity* my)
 								item_PotionAcid(item, hit.entity, parent);
 								usedpotion = true;
 								break;
+							case POTION_FIRESTORM:
+							case POTION_ICESTORM:
+							case POTION_THUNDERSTORM:
+								item_PotionUnstableStorm(item, hit.entity, parent, my);
+								usedpotion = true;
+								break;
 							case POTION_PARALYSIS:
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
@@ -778,6 +798,40 @@ void actThrown(Entity* my)
 						messagePlayer(hit.entity->skill[2], language[452]);
 					}
 				}
+			}
+			else
+			{
+				switch ( item->type )
+				{
+					case POTION_FIRESTORM:
+						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
+						break;
+					case POTION_ICESTORM:
+						spawnMagicTower(parent, my->x, my->y, SPELL_COLD);
+						break;
+					case POTION_THUNDERSTORM:
+						spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING);
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		else
+		{
+			switch ( item->type )
+			{
+				case POTION_FIRESTORM:
+					spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
+					break;
+				case POTION_ICESTORM:
+					spawnMagicTower(parent, my->x, my->y, SPELL_COLD);
+					break;
+				case POTION_THUNDERSTORM:
+					spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING);
+					break;
+				default:
+					break;
 			}
 		}
 		if ( cat == POTION )

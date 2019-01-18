@@ -290,7 +290,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 		{
 			Item* item = stats[player]->weapon;
 			stats[player]->weapon = nullptr;
-			consumeItem(item);
+			consumeItem(item, player);
 			return;
 		}
 		messagePlayer(player, language[2368]);
@@ -330,7 +330,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
 			serverUpdateEntitySkill(&entity, 0); // update orb status.
 			Item* item = stats[player]->weapon;
-			consumeItem(item);
+			consumeItem(item, player);
 			stats[player]->weapon = nullptr;
 		}
 	}
@@ -356,12 +356,12 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		if ( multiplayer == CLIENT )
 		{
 			Item* item = stats[player]->weapon;
-			consumeItem(item);
+			consumeItem(item, player);
 			return;
 		}
 
 		Item* item = stats[player]->weapon;
-		consumeItem(item);
+		consumeItem(item, player);
 
 		int skillLVL = 2; // 0 to 5
 		if ( stats[player] )

@@ -243,9 +243,12 @@ typedef enum ItemType
 	POTION_POLYMORPH,
 	FOOD_BLOOD,
 	CLOAK_BACKPACK,
-	TOOL_ALEMBIC
+	TOOL_ALEMBIC,
+	POTION_FIRESTORM,
+	POTION_ICESTORM,
+	POTION_THUNDERSTORM
 } ItemType;
-const int NUMITEMS = 222;
+const int NUMITEMS = 225;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -406,6 +409,7 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion);
 void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy);
 Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy);
 void item_ScrollMail(Item* item, int player);
@@ -446,7 +450,7 @@ enum Category itemCategory(const Item* item);
 Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
-void consumeItem(Item*& item); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
+void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 void dropItem(Item* item, int player);
 void useItem(Item* item, int player, Entity* usedBy = nullptr);
 void equipItem(Item* item, Item** slot, int player);
