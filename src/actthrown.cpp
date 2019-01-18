@@ -410,10 +410,10 @@ void actThrown(Entity* my)
 						{
 							case POTION_WATER:
 								usedpotion = true;
-								item_PotionWater(item, hit.entity);
+								item_PotionWater(item, hit.entity, parent);
 								break;
 							case POTION_BOOZE:
-								item_PotionBooze(item, hit.entity);
+								item_PotionBooze(item, hit.entity, parent);
 								if ( parentStats && parentStats->EFFECTS[EFF_DRUNK] )
 								{
 									steamAchievementEntity(parent, "BARONY_ACH_CHEERS");
@@ -468,20 +468,20 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							case POTION_JUICE:
-								item_PotionJuice(item, hit.entity);
+								item_PotionJuice(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_SICKNESS:
-								item_PotionSickness(item, hit.entity);
+								item_PotionSickness(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_CONFUSION:
-								item_PotionConfusion(item, hit.entity);
+								item_PotionConfusion(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_EXTRAHEALING:
 							{
-								item_PotionExtraHealing(item, hit.entity);
+								item_PotionExtraHealing(item, hit.entity, parent);
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									if ( parent->checkFriend(hit.entity) )
@@ -499,7 +499,7 @@ void actThrown(Entity* my)
 								break;
 							case POTION_HEALING:
 							{
-								item_PotionHealing(item, hit.entity);
+								item_PotionHealing(item, hit.entity, parent);
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									if ( parent->checkFriend(hit.entity) )
@@ -516,35 +516,35 @@ void actThrown(Entity* my)
 							}
 								break;
 							case POTION_CUREAILMENT:
-								item_PotionCureAilment(item, hit.entity);
+								item_PotionCureAilment(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_BLINDNESS:
-								item_PotionBlindness(item, hit.entity);
+								item_PotionBlindness(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_RESTOREMAGIC:
-								item_PotionRestoreMagic(item, hit.entity);
+								item_PotionRestoreMagic(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_INVISIBILITY:
-								item_PotionInvisibility(item, hit.entity);
+								item_PotionInvisibility(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_LEVITATION:
-								item_PotionLevitation(item, hit.entity);
+								item_PotionLevitation(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_SPEED:
-								item_PotionSpeed(item, hit.entity);
+								item_PotionSpeed(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_ACID:
-								item_PotionAcid(item, hit.entity);
+								item_PotionAcid(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_PARALYSIS:
-								item_PotionParalysis(item, hit.entity);
+								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
 								break;
 							case POTION_POLYMORPH:

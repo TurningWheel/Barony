@@ -222,6 +222,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicCastByMagicstaff(skill[13]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3]),
+	actmagicOrbitStationaryX(fskill[4]),
+	actmagicOrbitStationaryY(fskill[5]),
+	actmagicOrbitStationaryCurrentDist(fskill[6]),
+	actmagicOrbitStationaryHitTarget(skill[14]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -4996,17 +5000,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 					//Goatmen chug potions & then toss them at you.
 					if ( myStats->weapon->type == POTION_BOOZE && !myStats->EFFECTS[EFF_DRUNK] )
 					{
-						item_PotionBooze(myStats->weapon, this, false);
+						item_PotionBooze(myStats->weapon, this, this, false);
 						drankPotion = true;
 					}
 					else if ( myStats->weapon->type == POTION_HEALING )
 					{
-						item_PotionHealing(myStats->weapon, this, false);
+						item_PotionHealing(myStats->weapon, this, this, false);
 						drankPotion = true;
 					}
 					else if ( myStats->weapon->type == POTION_EXTRAHEALING )
 					{
-						item_PotionExtraHealing(myStats->weapon, this, false);
+						item_PotionExtraHealing(myStats->weapon, this, this, false);
 						drankPotion = true;
 					}
 				}

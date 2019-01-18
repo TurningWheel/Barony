@@ -366,8 +366,12 @@ public:
 	Sint32& actmagicMirrorReflected; //skill[11]
 	Sint32& actmagicMirrorReflectedCaster; //skill[12]
 	Sint32& actmagicCastByMagicstaff; //skill[13]
-	real_t actmagicOrbitVerticalSpeed; //fskill[2]
-	real_t actmagicOrbitStartZ; //fskill[3]
+	real_t& actmagicOrbitVerticalSpeed; //fskill[2]
+	real_t& actmagicOrbitStartZ; //fskill[3]
+	real_t& actmagicOrbitStationaryX; // fskill[4]
+	real_t& actmagicOrbitStationaryY; // fskill[5]
+	real_t& actmagicOrbitStationaryCurrentDist; // fskill[6]
+	Sint32& actmagicOrbitStationaryHitTarget; // skill[14]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -770,6 +774,8 @@ public:
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
 	Entity* castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration);
+	Entity* Entity::castStationaryOrbitingMagicMissile(int spellID, real_t centerx, real_t centery, 
+		real_t distFromCenter, real_t angleFromCenterDirection, int duration);
 	void lichFireSetNextAttack(Stat& myStats);
 	void lichIceSetNextAttack(Stat& myStats);
 

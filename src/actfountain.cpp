@@ -305,7 +305,7 @@ void actFountain(Entity* my)
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
 							messagePlayer(i, language[470]);
 							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
-							useItem(item, i);
+							useItem(item, i, my);
 							// Long live the mystical fountain of TODO.
 							break;
 						}
