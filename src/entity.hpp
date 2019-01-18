@@ -372,6 +372,10 @@ public:
 	real_t& actmagicOrbitStationaryY; // fskill[5]
 	real_t& actmagicOrbitStationaryCurrentDist; // fskill[6]
 	Sint32& actmagicOrbitStationaryHitTarget; // skill[14]
+	Sint32& actmagicOrbitHitTargetUID1; // skill[15]
+	Sint32& actmagicOrbitHitTargetUID2; // skill[16]
+	Sint32& actmagicOrbitHitTargetUID3; // skill[17]
+	Sint32& actmagicOrbitHitTargetUID4; // skill[17]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -774,7 +778,7 @@ public:
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
 	Entity* castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration);
-	Entity* Entity::castStationaryOrbitingMagicMissile(int spellID, real_t centerx, real_t centery, 
+	Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t centerx, real_t centery, 
 		real_t distFromCenter, real_t angleFromCenterDirection, int duration);
 	void lichFireSetNextAttack(Stat& myStats);
 	void lichIceSetNextAttack(Stat& myStats);
@@ -910,8 +914,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 225;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 96;
+static const int NUM_ITEM_STRINGS = 228;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 99;
 static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;
 

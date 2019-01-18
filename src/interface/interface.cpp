@@ -3634,8 +3634,8 @@ void GenericGUIMenu::alchemyCombinePotions()
 		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3335]);
 	}
 
-	consumeItem(basePotion);
-	consumeItem(secondaryPotion);
+	consumeItem(basePotion, clientnum);
+	consumeItem(secondaryPotion, clientnum);
 
 	if ( explodeSelf )
 	{

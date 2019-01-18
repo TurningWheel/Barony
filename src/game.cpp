@@ -3177,18 +3177,6 @@ int main(int argc, char** argv)
 						*inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_CYCLE]) = 0;
 					}
 
-					if ( keystatus[SDL_SCANCODE_P] )
-					{
-						keystatus[SDL_SCANCODE_P] = 0;
-						real_t x = players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw);
-						real_t y = players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw);
-						Entity* orbit = players[clientnum]->entity->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, x, y, 16.0, 0.0, 40);
-						orbit = players[clientnum]->entity->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, x, y, 16.0, 2 * PI / 3, 40);
-						orbit = players[clientnum]->entity->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, x, y, 16.0, 4 * PI / 3, 40);
-						spawnMagicEffectParticles(x, y, 0, 174);
-						//spawnExplosion(x, y, -1);
-					}
-
 					// commands
 					if ( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command )
 					{

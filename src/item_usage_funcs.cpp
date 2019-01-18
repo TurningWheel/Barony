@@ -119,7 +119,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( player != clientnum )
 		{
-			consumeItem(item);
+			consumeItem(item, player);
 			return;
 		}
 	}
@@ -187,7 +187,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( items == 0 )
 		{
-			consumeItem(item);
+			consumeItem(item, player);
 			return;
 		}
 		int itemToCurse = rand() % items;
@@ -206,7 +206,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 		}
 	}
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
@@ -260,7 +260,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -312,7 +312,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	if ( shouldConsumeItem )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 	}
 }
 
@@ -367,7 +367,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -402,7 +402,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	playSoundEntity(entity, 52, 64);
 	playSoundEntity(entity, 168, 128);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
@@ -464,7 +464,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		camera_shakey += 10;
 		if ( multiplayer == CLIENT )
 		{
-			consumeItem(item);
+			consumeItem(item, player);
 			return;
 		}
 	}
@@ -480,7 +480,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
@@ -534,7 +534,7 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -556,7 +556,7 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
@@ -616,7 +616,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -652,7 +652,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
@@ -706,7 +706,7 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -725,7 +725,7 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
@@ -779,7 +779,7 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -811,7 +811,7 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
@@ -865,7 +865,7 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -887,7 +887,7 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
@@ -941,7 +941,7 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -982,7 +982,7 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
@@ -1044,7 +1044,83 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		camera_shakey += 10;
 		if ( multiplayer == CLIENT )
 		{
-			consumeItem(item);
+			consumeItem(item, player);
+			return;
+		}
+	}
+
+	messagePlayer(player, language[770]);
+	entity->modHP(-8 - rand() % 3);
+	playSoundEntity(entity, 28, 64);
+
+	// set obituary
+	entity->setObituary(language[1535]);
+
+	// play drink sound
+	playSoundEntity(entity, 52, 64);
+	consumeItem(item, player);
+}
+
+void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion)
+{
+	if ( !entity )
+	{
+		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+		}
+	}
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
+
+	if ( entity == NULL )
+	{
+		return;
+	}
+	if ( stats->amulet != NULL )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION )
+		{
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[750]);
+			}
+			return;
+		}
+	}
+	if ( stats->EFFECTS[EFF_VOMITING] )
+	{
+		if ( player == clientnum )
+		{
+			messagePlayer(player, language[751]);
+		}
+		return;
+	}
+	if ( multiplayer == CLIENT || player == 0 )
+	{
+		camera_shakex += .1;
+		camera_shakey += 10;
+		if ( multiplayer == CLIENT )
+		{
+			consumeItem(item, player);
 			return;
 		}
 	}
@@ -1058,15 +1134,31 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( usedBy )
 	{
-		Entity* orbit = usedBy->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, entity->x, entity->y, 16.0, 0.0, 40);
-		orbit = usedBy->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, entity->x, entity->y, 16.0, 2 * PI / 3, 40);
-		orbit = usedBy->castStationaryOrbitingMagicMissile(SPELL_FIREBALL, entity->x, entity->y, 16.0, 4 * PI / 3, 40);
-		spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+		real_t x = entity->x;
+		real_t y = entity->y;
+		if ( thrownPotion )
+		{
+			// rather spawn at the potion impact rather than on the hit entity's coords.
+			x = thrownPotion->x;
+			y = thrownPotion->y;
+		}
+		if ( item->type == POTION_FIRESTORM )
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL);
+		}
+		else if ( item->type == POTION_ICESTORM )
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_COLD);
+		}
+		else if ( item->type == POTION_THUNDERSTORM )
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_LIGHTNING);
+		}
 	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
@@ -1120,7 +1212,7 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -1140,7 +1232,7 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
@@ -1194,7 +1286,7 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	if ( stats->HP == stats->MAXHP )
@@ -1220,7 +1312,7 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		}
 		if ( shouldConsumeItem )
 		{
-			consumeItem(item);
+			consumeItem(item, player);
 		}
 		return;
 	}
@@ -1282,7 +1374,7 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 
 	if ( shouldConsumeItem )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 	}
 }
 
@@ -1337,7 +1429,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	if ( stats->HP == stats->MAXHP )
@@ -1363,7 +1455,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		}
 		if ( shouldConsumeItem )
 		{
-			consumeItem(item);
+			consumeItem(item, player);
 		}
 		return;
 	}
@@ -1424,7 +1516,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 
 	if ( shouldConsumeItem )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 	}
 }
 
@@ -1483,7 +1575,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	if ( stats->MP == stats->MAXMP )
@@ -1500,7 +1592,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[772]);
 		}
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -1531,7 +1623,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
@@ -1585,7 +1677,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return nullptr;
 	}
 
@@ -1605,7 +1697,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		transformedEntity = spellEffectPolymorph(entity, stats, usedBy);
 	}
 
-	consumeItem(item);
+	consumeItem(item, player);
 
 	return transformedEntity;
 }
@@ -2316,7 +2408,7 @@ void item_ScrollFood(Item* item, int player)
 			{
 				if ( rand() % 2 == 0 )   // 50% chance of destroying that food item
 				{
-					consumeItem(target);
+					consumeItem(target, player);
 				}
 				foundfood = 1;
 			}
@@ -2388,7 +2480,7 @@ void item_ScrollRepair(Item* item, int player)
 	// client function only
 	if ( player != clientnum )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -2551,7 +2643,7 @@ void item_ScrollRepair(Item* item, int player)
 		// Repair an item
 		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude);
 	}
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_ScrollDestroyArmor(Item* item, int player)
@@ -2565,7 +2657,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	// client function only
 	if ( player != clientnum )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -3019,7 +3111,7 @@ void item_ToolTowel(Item*& item, int player)
 			stats[player]->EFFECTS[EFF_BLEEDING] = false;
 			stats[player]->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		}
-		consumeItem(item);
+		consumeItem(item, player);
 	}
 
 	if ( multiplayer != CLIENT )
@@ -3061,7 +3153,7 @@ void item_ToolMirror(Item*& item, int player)
 	{
 		messagePlayer(player, language[887]);
 		messagePlayer(player, language[888]);
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	messagePlayer(player, language[889]);
@@ -3085,7 +3177,7 @@ void item_ToolMirror(Item*& item, int player)
 		{
 			messagePlayer(player, language[891]);
 		}
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	if ( stats[player]->EFFECTS[EFF_BLIND] )
@@ -3182,7 +3274,7 @@ void item_ToolBeartrap(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	bool failed = false;
@@ -3219,7 +3311,7 @@ void item_ToolBeartrap(Item*& item, int player)
 		{
 			playSoundEntity(players[player]->entity, 76, 64);
 		}
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	if ( multiplayer != CLIENT )
@@ -3243,7 +3335,7 @@ void item_ToolBeartrap(Item*& item, int player)
 	entity->skill[14] = item->appearance;
 	entity->skill[15] = item->identified;
 	messagePlayer(player, language[906]);
-	consumeItem(item);
+	consumeItem(item, player);
 	return;
 }
 
@@ -3303,7 +3395,7 @@ void item_Food(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -3382,7 +3474,7 @@ void item_Food(Item*& item, int player)
 			messagePlayer(player, language[908]);
 		}
 		players[player]->entity->skill[26] = 40 + rand() % 10;
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
@@ -3392,7 +3484,7 @@ void item_Food(Item*& item, int player)
 		stats[player]->EFFECTS[EFF_MESSY] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
 		serverUpdateEffects(player);
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -3488,7 +3580,7 @@ void item_Food(Item*& item, int player)
 
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
 	serverUpdateHunger(player);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_FoodTin(Item*& item, int player)
@@ -3527,7 +3619,7 @@ void item_FoodTin(Item*& item, int player)
 
 	if ( multiplayer == CLIENT )
 	{
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -3631,7 +3723,7 @@ void item_FoodTin(Item*& item, int player)
 			messagePlayer(player, language[908]);
 		}
 		players[player]->entity->skill[26] = 40 + rand() % 10;
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -3715,7 +3807,7 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	serverUpdateHunger(player);
-	consumeItem(item);
+	consumeItem(item, player);
 }
 
 void item_AmuletSexChange(Item* item, int player)
@@ -3810,7 +3902,7 @@ void item_Spellbook(Item*& item, int player)
 		{
 			messagePlayer(clientnum, language[973]);
 		}
-		consumeItem(item);
+		consumeItem(item, player);
 		return;
 	}
 	else
@@ -3923,7 +4015,7 @@ void item_Spellbook(Item*& item, int player)
 			else
 			{
 				messagePlayer(player, language[2596]);
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 
 			if ( list_Size(&spellList) >= 20 )

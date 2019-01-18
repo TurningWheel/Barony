@@ -456,6 +456,20 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 							break;
 					}
 				}
+				else if ( cat == ARMOR )
+				{
+					switch ( (ItemType)c )
+					{
+						case CLOAK_BACKPACK:
+							if ( prng_get_uint() % 2 )   // 50% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						default:
+							break;
+					}
+				}
 			}
 		}
 	}
@@ -1282,7 +1296,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item*& item)
+void consumeItem(Item*& item, int player)
 {
 	if ( item == nullptr )
 	{
@@ -1293,6 +1307,20 @@ void consumeItem(Item*& item)
 		appraisal_item = 0;
 		appraisal_timer = 0;
 	}
+
+	if ( multiplayer == SERVER && item->node != nullptr )
+	{
+		int i;
+		for ( i = 0; i < MAXPLAYERS; i++ )
+		{
+			Item** slot;
+			if ( (slot = itemSlot(stats[i], item)) != nullptr )
+			{
+				(*slot)->count--;
+			}
+		}
+	}
+
 	item->count--;
 	if ( item->count <= 0 )
 	{
@@ -1318,6 +1346,7 @@ void consumeItem(Item*& item)
 		}
 		item = nullptr;
 	}
+	// TODO: fix clients eating potions when in hand.
 }
 
 /*-------------------------------------------------------------------------------
@@ -1763,7 +1792,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case AMULET_SEXCHANGE:
 			messagePlayer(player, language[1094]);
 			item_AmuletSexChange(item, player);
-			consumeItem(item);
+			consumeItem(item, player);
 			break;
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
@@ -1832,6 +1861,11 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case POTION_POLYMORPH:
 			item_PotionPolymorph(item, players[player]->entity, nullptr);
 			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			item_PotionUnstableStorm(item, players[player]->entity, usedBy, nullptr);
+			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;
@@ -1839,14 +1873,14 @@ void useItem(Item* item, int player, Entity* usedBy)
 			item_ScrollIdentify(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_LIGHT:
 			item_ScrollLight(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_BLANK:
@@ -1856,42 +1890,42 @@ void useItem(Item* item, int player, Entity* usedBy)
 			item_ScrollEnchantWeapon(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_ENCHANTARMOR:
 			item_ScrollEnchantArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_REMOVECURSE:
 			item_ScrollRemoveCurse(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_FIRE:
 			item_ScrollFire(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_FOOD:
 			item_ScrollFood(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_MAGICMAPPING:
 			item_ScrollMagicMapping(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_REPAIR:
@@ -1901,21 +1935,21 @@ void useItem(Item* item, int player, Entity* usedBy)
 			item_ScrollDestroyArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_TELEPORTATION:
 			item_ScrollTeleportation(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_SUMMON:
 			item_ScrollSummon(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case MAGICSTAFF_LIGHT:
@@ -2028,7 +2062,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			if ( multiplayer == CLIENT )
 				if ( stats[player]->EFFECTS[EFF_BLEEDING] )
 				{
-					consumeItem(item);
+					consumeItem(item, player);
 				}
 			break;
 		case TOOL_GLASSES:
@@ -2040,7 +2074,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_ALEMBIC:
 			if ( player != clientnum )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			else
 			{
@@ -2338,6 +2372,12 @@ Item* itemPickup(int player, Item* item)
 					}
 					item2->ownerUid = item->ownerUid;
 					return item2;
+				}
+				else if ( !itemCompare(item, item2, true) )
+				{
+					// items are the same (incl. appearance!)
+					// if they shouldn't stack, we need to change appearance of the new item.
+					item->appearance = rand();
 				}
 			}
 		}
@@ -3003,7 +3043,14 @@ bool isPotionBad(const Item& potion)
 		return false;
 	}
 
-	if (potion.type == POTION_SICKNESS || potion.type == POTION_CONFUSION || potion.type == POTION_BLINDNESS || potion.type == POTION_ACID || potion.type == POTION_PARALYSIS)
+	if (potion.type == POTION_SICKNESS 
+		|| potion.type == POTION_CONFUSION 
+		|| potion.type == POTION_BLINDNESS 
+		|| potion.type == POTION_ACID 
+		|| potion.type == POTION_PARALYSIS
+		|| potion.type == POTION_FIRESTORM 
+		|| potion.type == POTION_ICESTORM 
+		|| potion.type == POTION_THUNDERSTORM )
 	{
 		return true;
 	}
@@ -3556,7 +3603,7 @@ bool Item::shouldItemStack(int player)
 				&& this->type != TOOL_PICKAXE)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
-			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE)
+			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE && this->type != TOOL_ALEMBIC)
 			)
 		{
 			// THROWN, GEM, TOOLS should stack when equipped.
