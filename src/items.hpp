@@ -392,22 +392,22 @@ public:
 extern ItemGeneric items[NUMITEMS];
 
 //----------Item usage functions----------
-void item_PotionWater(Item*& item, Entity* entity);
-void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem = true);
-void item_PotionJuice(Item*& item, Entity* entity);
-void item_PotionSickness(Item*& item, Entity* entity);
-void item_PotionConfusion(Item*& item, Entity* entity);
-void item_PotionCureAilment(Item*& item, Entity* entity);
-void item_PotionBlindness(Item*& item, Entity* entity);
-void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem = true);
-void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem = true);
-void item_PotionRestoreMagic(Item*& item, Entity* entity);
-void item_PotionInvisibility(Item*& item, Entity* entity);
-void item_PotionLevitation(Item*& item, Entity* entity);
-void item_PotionSpeed(Item*& item, Entity* entity);
-void item_PotionAcid(Item*& item, Entity* entity);
-void item_PotionParalysis(Item*& item, Entity* entity);
-Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* parent);
+void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy);
+Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy);
 void item_ScrollMail(Item* item, int player);
 void item_ScrollIdentify(Item* item, int player);
 void item_ScrollLight(Item* item, int player);
@@ -448,7 +448,7 @@ Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 void dropItem(Item* item, int player);
-void useItem(Item* item, int player);
+void useItem(Item* item, int player, Entity* usedBy = nullptr);
 void equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
