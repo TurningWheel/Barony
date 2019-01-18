@@ -366,7 +366,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		int skillLVL = 2; // 0 to 5
 		if ( stats[player] )
 		{
-			// int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 
 		std::vector<int> potionChances =
