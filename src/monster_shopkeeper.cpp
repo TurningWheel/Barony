@@ -200,6 +200,8 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			}
 
 			Item* tmpItem = nullptr;
+			bool doneAlembic = false;
+			bool doneLockpick = false;
 
 			switch ( my->monsterStoreType )
 			{
@@ -339,7 +341,31 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					// apothecary
 					for ( c = 0; c < numitems; c++ )
 					{
-						tmpItem = newItem(static_cast<ItemType>(POTION_WATER + rand() % 15), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 5, rand(), true, &myStats->inventory);
+						if ( !doneAlembic && rand() % 2 == 0 )
+						{
+							if ( rand() % 2 == 0 )
+							{
+								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+								if ( rand() % blessedShopkeeper > 0 )
+								{
+									tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+								}
+							}
+							if ( rand() % 2 == 0 )
+							{
+								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+								if ( rand() % blessedShopkeeper > 0 )
+								{
+									tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+								}
+							}
+							tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+							doneAlembic = true;
+						}
+						else
+						{
+							tmpItem = newItem(static_cast<ItemType>(POTION_WATER + rand() % 15), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 5, rand(), true, &myStats->inventory);
+						}
 						// post-processing
 						if ( rand() % blessedShopkeeper > 0 )
 						{
@@ -388,7 +414,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					{
 						if ( rand() % 6 == 0 )
 						{
-							tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+							tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(SERVICABLE + rand() % 2), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
 						}
 						else
 						{
@@ -398,6 +424,42 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						if ( rand() % blessedShopkeeper > 0 )
 						{
 							tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+						}
+
+						if ( !doneLockpick && rand() % 2 == 0 )
+						{
+							tmpItem = newItem(TOOL_LOCKPICK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), true, &myStats->inventory);
+							if ( rand() % blessedShopkeeper > 0 )
+							{
+								tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+							}
+							doneLockpick = true;
+						}
+
+						if ( !doneAlembic && rand() % 2 == 0 )
+						{
+							tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+							if ( rand() % blessedShopkeeper > 0 )
+							{
+								tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+							}
+							if ( rand() % 2 == 0 )
+							{
+								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+								if ( rand() % blessedShopkeeper > 0 )
+								{
+									tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+								}
+							}
+							if ( rand() % 2 == 0 )
+							{
+								tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+								if ( rand() % blessedShopkeeper > 0 )
+								{
+									tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+								}
+							}
+							doneAlembic = true;
 						}
 					}
 					break;
