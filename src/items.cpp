@@ -1308,16 +1308,12 @@ void consumeItem(Item*& item, int player)
 		appraisal_timer = 0;
 	}
 
-	if ( multiplayer == SERVER && item->node != nullptr )
+	if ( player > 0 && multiplayer == SERVER )
 	{
-		int i;
-		for ( i = 0; i < MAXPLAYERS; i++ )
+		Item** slot = nullptr;
+		if ( (slot = itemSlot(stats[player], item)) != nullptr )
 		{
-			Item** slot;
-			if ( (slot = itemSlot(stats[i], item)) != nullptr )
-			{
-				(*slot)->count--;
-			}
+			(*slot)->count--; // if client had consumed item equipped, this'll update the count.
 		}
 	}
 
