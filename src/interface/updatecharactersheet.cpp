@@ -21,6 +21,7 @@
 #include "../magic/magic.hpp"
 #include "../menu.hpp"
 #include "../net.hpp"
+#include "../scores.hpp"
 
 void statsHoverText(Stat* tmpStat);
 
@@ -565,10 +566,8 @@ void drawSkillsSheet()
 						capstoneTextColor, language[3283]);
 					break;
 				case PRO_ALCHEMY:
-					skillTooltipRect.h += 2 * fontHeight;
-					drawTooltip(&skillTooltipRect);
-					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
-						capstoneTextColor, language[3283]);
+					skillTooltipRect.w = (longestline(language[3248]) * fontWidth) + 8;
+					skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
 					break;
 				default:
 					drawTooltip(&skillTooltipRect);
@@ -581,7 +580,7 @@ void drawSkillsSheet()
 				headerColor = uint32ColorGreen(*mainsurface);
 			}
 
-			if ( i != PRO_MAGIC )
+			if ( i != PRO_MAGIC && i != PRO_ALCHEMY )
 			{
 				ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8, 
 					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
@@ -877,7 +876,83 @@ void drawSkillsSheet()
 					}
 					break;
 				case PRO_ALCHEMY:
+				{
+					std::string baseIngredients;
+					std::string secondaryIngredients;
+					int lines = 0;
+					int lines2 = 0;
+					for ( auto it = clientLearnedAlchemyIngredients.begin(); it != clientLearnedAlchemyIngredients.end(); ++it )
+					{
+						auto alchemyEntry = *it;
+						if ( GenericGUI.isItemBaseIngredient(alchemyEntry) )
+						{
+							baseIngredients += " -[";
+							std::string itemName = items[alchemyEntry].name_identified;
+							itemName = itemName.substr(10);
+							baseIngredients += itemName;
+							baseIngredients += "]\n";
+							++lines;
+						}
+						if ( GenericGUI.isItemSecondaryIngredient(alchemyEntry) )
+						{
+							secondaryIngredients += " -[";
+							std::string itemName = items[alchemyEntry].name_identified;
+							itemName = itemName.substr(10);
+							secondaryIngredients += itemName;
+							secondaryIngredients += "]\n";
+							++lines2;
+						}
+					}
+					lines = std::max(lines, lines2);
+
+					switch ( stats[clientnum]->PROFICIENCIES[i] / 20 )
+					{
+						case 0:
+							skillDetails[0] = 100.f;
+							break;
+						case 1:
+							skillDetails[0] = 110.f;
+							break;
+						case 2:
+							skillDetails[0] = 125.f;
+							break;
+						case 3:
+							skillDetails[0] = 150.f;
+							break;
+						case 4:
+							skillDetails[0] = 200.f;
+							break;
+						case 5:
+							skillDetails[0] = 300.f;
+							break;
+						default:
+							break;
+					}
+					skillDetails[1] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+
+					skillTooltipRect.h += 4 + (4 + lines) * (fontHeight + lines / 6);
+					drawTooltip(&skillTooltipRect);
+					// legendary text
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
+						capstoneTextColor, language[3247]);
+					// header text
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+					// effect text
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3248], skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3]);
+					// base potions
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 7, // print potion list
+						uint32ColorBaronyBlue(*mainsurface), "%s",
+						baseIngredients.c_str());
+					// secondary potions
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 7, // print potion list
+						uint32ColorBaronyBlue(*mainsurface), "%s",
+						secondaryIngredients.c_str());
 					break;
+				}
 				default:
 					break;
 			}

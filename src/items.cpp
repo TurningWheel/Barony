@@ -1634,7 +1634,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		return;
 	}
 
-	if ( !usedBy && players[player] && players[player]->entity )
+	if ( !usedBy && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity )
 	{
 		// assume used by the player unless otherwise (a fountain potion effect e.g)
 		usedBy = players[player]->entity;
@@ -1765,6 +1765,17 @@ void useItem(Item* item, int player, Entity* usedBy)
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
+
+	if ( player == clientnum )
+	{
+		if ( itemCategory(item) == POTION && usedBy
+			&& (players[clientnum] && players[clientnum]->entity)
+			&& players[clientnum]->entity == usedBy )
+		{
+			GenericGUI.alchemyLearnRecipe(item->type, true);
+		}
+	}
+
 	switch ( item->type )
 	{
 		case WOODEN_SHIELD:
@@ -2158,7 +2169,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			}
 			else
 			{
-				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, 0);
+				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, false, item);
 			}
 			break;
 		case FOOD_BREAD:

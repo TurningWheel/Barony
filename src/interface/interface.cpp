@@ -27,6 +27,7 @@
 #include "../colors.hpp"
 #include "../net.hpp"
 #include "../draw.hpp"
+#include "../scores.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -2720,7 +2721,14 @@ void GenericGUIMenu::rebuildGUIInventory()
 		if ( c == 0 && guiType == GUI_TYPE_ALCHEMY )
 		{
 			// did not find mixable item... close GUI
-			messagePlayer(clientnum, language[3338]);
+			if ( !experimentingAlchemy )
+			{
+				messagePlayer(clientnum, language[3338]);
+			}
+			else
+			{
+				messagePlayer(clientnum, language[3343]);
+			}
 			closeGUI();
 			return;
 		}
@@ -2765,6 +2773,23 @@ void GenericGUIMenu::updateGUI()
 	//Generic GUI.
 	if ( guiActive )
 	{
+		if ( !alembicItem )
+		{
+			closeGUI();
+			return;
+		}
+		if ( !alembicItem->node )
+		{
+			closeGUI();
+			return;
+		}
+		if ( alembicItem->node->list != &stats[clientnum]->inventory )
+		{
+			// dropped out of inventory or something.
+			closeGUI();
+			return;
+		}
+
 		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 		gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
 
@@ -2881,12 +2906,26 @@ void GenericGUIMenu::updateGUI()
 			{
 				if ( !basePotion )
 				{
-					window_name = language[3328];
+					if ( !experimentingAlchemy )
+					{
+						window_name = language[3328];
+					}
+					else
+					{
+						window_name = language[3344];
+					}
 					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 				}
 				else
 				{
-					window_name = language[3329];
+					if ( !experimentingAlchemy )
+					{
+						window_name = language[3329];
+					}
+					else
+					{
+						window_name = language[3345];
+					}
 					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
 						gui_startx + 4 - TTF8_HEIGHT - 4, window_name);
 					int count = basePotion->count;
@@ -3127,6 +3166,7 @@ void GenericGUIMenu::closeGUI()
 	guiType = GUI_TYPE_NONE;
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
+	alembicItem = nullptr;
 }
 
 inline Item* GenericGUIMenu::getItemInfo(int slot)
@@ -3279,6 +3319,37 @@ void GenericGUIMenu::openGUI(int type, int scrollBeatitude)
 	this->initGUIControllerCode();
 }
 
+void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
+{
+	this->closeGUI();
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	guiActive = true;
+	alembicItem = itemOpenedWith;
+	experimentingAlchemy = experimenting;
+	guiType = static_cast<GUICurrentType>(type);
+
+	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+	if ( removecursegui_active )
+	{
+		closeRemoveCurseGUI();
+	}
+	if ( identifygui_active )
+	{
+		CloseIdentifyGUI();
+	}
+	FollowerMenu.closeFollowerMenuGUI();
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+	rebuildGUIInventory();
+	this->initGUIControllerCode();
+}
+
 bool GenericGUIMenu::executeOnItemClick(Item* item)
 {
 	if ( !item )
@@ -3312,7 +3383,14 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 					}
 				}
 				// did not find mixable item... close GUI
-				messagePlayer(clientnum, language[3337]);
+				if ( !experimentingAlchemy )
+				{
+					messagePlayer(clientnum, language[3337]);
+				}
+				else
+				{
+					messagePlayer(clientnum, language[3342]);
+				}
 				closeGUI();
 				return false;
 			}
@@ -3343,26 +3421,64 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		return false;
 	}
 
-	if ( !item->identified )
+	if ( itemCategory(item) != POTION )
 	{
-		if ( item == basePotion )
-		{
-			return false;
-		}
-		return true; // what's the worst that could happen?
+		return false;
+	}
+	if ( item->type == POTION_EMPTY )
+	{
+		return false;
 	}
 
 	if ( players[clientnum] && players[clientnum]->entity )
 	{
 		if ( players[clientnum]->entity->isBlind() )
 		{
-			return true; // I can't see! it's all good to mix.
+			messagePlayer(clientnum, language[892]);
+			closeGUI();
+			return false; // I can't see!
 		}
 	}
+
+
+	if ( !experimentingAlchemy && !item->identified )
+	{
+		if ( !basePotion )
+		{
+			return false;
+		}
+		else if ( item != basePotion )
+		{
+			return true;
+		}
+		return false;
+	}
+
 
 	if ( itemIsEquipped(item, clientnum) )
 	{
 		return false; // don't want to deal with client/server desync problems here.
+	}
+
+	//int skillLVL = 0;
+	//if ( stats[clientnum] )
+	//{
+	//	skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+	//}
+
+	if ( experimentingAlchemy )
+	{
+		if ( !basePotion )
+		{
+			return true;
+		}
+		else if ( !secondaryPotion )
+		{
+			if ( item != basePotion )
+			{
+				return true;
+			}
+		}
 	}
 
 	if ( !basePotion )
@@ -3371,11 +3487,11 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		switch ( item->type )
 		{
 			case POTION_WATER:
+			case POTION_POLYMORPH:
 			case POTION_BOOZE:
 			case POTION_JUICE:
 			case POTION_ACID:
 			case POTION_INVISIBILITY:
-			case POTION_POLYMORPH:
 				return true;
 				break;
 			default:
@@ -3608,6 +3724,9 @@ void GenericGUIMenu::alchemyCombinePotions()
 			1,	//POTION_ACID,
 			1,	//POTION_PARALYSIS,
 			0,	//POTION_POLYMORPH
+			0,	//POTION_FIRESTORM
+			0,	//POTION_ICESTORM
+			0	//POTION_THUNDERSTORM
 		};
 		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
 		auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
@@ -3634,6 +3753,12 @@ void GenericGUIMenu::alchemyCombinePotions()
 		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3335]);
 	}
 
+	if ( !explodeSelf && result != POTION_SICKNESS )
+	{
+		alchemyLearnRecipe(basePotion->type, true);
+		alchemyLearnRecipe(secondaryPotion->type, true);
+	}
+
 	consumeItem(basePotion, clientnum);
 	consumeItem(secondaryPotion, clientnum);
 
@@ -3648,7 +3773,12 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( (*it).first == result )
 		{
-			Item* newPotion = newItem(result, status, 0, 1, (*it).second, false, nullptr);
+			int appearance = (*it).second;
+			if ( result == POTION_SICKNESS )
+			{
+				appearance = 0 + rand() % 3;
+			}
+			Item* newPotion = newItem(result, status, 0, 1, appearance, false, nullptr);
 			itemPickup(clientnum, newPotion);
 			free(newPotion);
 			if ( rand() % 2 == 0 )
@@ -3676,4 +3806,138 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 	}
 	closeGUI();
+}
+
+bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notify)
+{
+	int index = 0;
+	for ( auto it = potionStandardAppearanceMap.begin(); it != potionStandardAppearanceMap.end(); ++it )
+	{
+		// loop through to get the index number to insert into gameStatistics[STATISTICS_ALCHEMY_RECIPES]
+		if ( (*it).first == type )
+		{
+			if ( clientLearnedAlchemyIngredients.find(type) == clientLearnedAlchemyIngredients.end() )
+			{
+				// new recipe!
+				clientLearnedAlchemyIngredients.insert(type);
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+				if ( notify )
+				{
+					if ( isItemBaseIngredient(type) )
+					{
+						messagePlayerColor(clientnum, color, language[3346], items[type].name_identified);
+					}
+					else if ( isItemSecondaryIngredient(type) )
+					{
+						messagePlayerColor(clientnum, color, language[3349], items[type].name_identified);
+					}
+				}
+				if ( increaseskill )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						// request level up
+						strcpy((char*)net_packet->data, "CSKL");
+						net_packet->data[4] = clientnum;
+						net_packet->data[5] = PRO_ALCHEMY;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						if ( players[clientnum] && players[clientnum]->entity )
+						{
+							players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+						}
+					}
+				}
+				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index);
+				return true;
+			}
+			else
+			{
+				// store the potion index into here for game saves, just in case we don't have it set the element in anyway.
+				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index); 
+			}
+			break;
+		}
+		++index;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::isItemBaseIngredient(int type)
+{
+	switch ( type )
+	{
+		case POTION_WATER:
+		case POTION_POLYMORPH:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_ACID:
+		case POTION_INVISIBILITY:
+			return true;
+		default:
+			return false;
+			break;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::isItemSecondaryIngredient(int type)
+{
+	switch ( type )
+	{
+		case POTION_WATER:
+		case POTION_SICKNESS:
+		case POTION_CONFUSION:
+		case POTION_CUREAILMENT:
+		case POTION_BLINDNESS:
+		case POTION_RESTOREMAGIC:
+		case POTION_SPEED:
+		case POTION_POLYMORPH:
+			return true;
+		default:
+			return false;
+			break;
+	}
+	return false;
+}
+
+void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
+{
+	bool learned = false;
+	if ( skill > 0 )
+	{
+		ItemType potion = POTION_WATER;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+	
+	if ( skill == 20 )
+	{
+		ItemType potion = POTION_JUICE;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		potion = POTION_BOOZE;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+	else if ( skill == 40 )
+	{
+		ItemType potion = POTION_ACID;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+	else if ( skill == 60 )
+	{
+		ItemType potion = POTION_INVISIBILITY;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		potion = POTION_POLYMORPH;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+
+	if ( !learned && skill % 5 == 0 )
+	{
+		ItemType potion = itemLevelCurve(POTION, 0, currentlevel);
+		GenericGUI.alchemyLearnRecipe(potion, false);
+	}
 }

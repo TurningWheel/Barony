@@ -1761,6 +1761,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 60;
 
 		// booze
 		item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
@@ -1887,6 +1888,35 @@ void initClass(int player)
 		else if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
+		}
+
+		if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] > 0 )
+		{
+			bool learned = false;
+			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] > 0 )
+			{
+				ItemType potion = POTION_WATER;
+				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+			}
+			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 20 )
+			{
+				ItemType potion = POTION_JUICE;
+				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				potion = POTION_BOOZE;
+				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+			}
+			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 40 )
+			{
+				ItemType potion = POTION_ACID;
+				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+			}
+			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 60 )
+			{
+				ItemType potion = POTION_INVISIBILITY;
+				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+				potion = POTION_POLYMORPH;
+				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);
+			}
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

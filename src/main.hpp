@@ -24,7 +24,7 @@ typedef double real_t;
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <unordered_map>
-
+#include <unordered_set>
 #include "Config.hpp"
 #include "physfs.h"
 

@@ -2689,6 +2689,7 @@ int main(int argc, char** argv)
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
 		srand(time(NULL));
+		fountainSeed.seed(rand());
 
 		// play splash sound
 #ifdef MUSIC

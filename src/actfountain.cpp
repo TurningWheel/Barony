@@ -61,7 +61,10 @@ const std::vector<std::pair<int, int>> potionStandardAppearanceMap =
 	{ POTION_SPEED, 0 },
 	{ POTION_ACID, 0 },
 	{ POTION_PARALYSIS, 1 },
-	{ POTION_POLYMORPH, 0 }
+	{ POTION_POLYMORPH, 0 },
+	{ POTION_FIRESTORM, 0 },
+	{ POTION_ICESTORM, 0 },
+	{ POTION_THUNDERSTORM, 0 }
 };
 
 std::mt19937 fountainSeed(rand());
