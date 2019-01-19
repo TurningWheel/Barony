@@ -1165,7 +1165,7 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK )
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
 			{
 				INVENTORY_SIZEY = 4;
 			}
@@ -1207,7 +1207,7 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					while ( item->count > 1 )
@@ -1585,7 +1585,7 @@ void gameLogic(void)
 				entity->ranbehavior = false;
 			}
 
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK )
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
 			{
 				INVENTORY_SIZEY = 4;
 			}
@@ -1627,7 +1627,7 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					while ( item->count > 1 )

@@ -384,7 +384,7 @@ void select_inventory_slot(int x, int y)
 			warpInv = false;
 			y = INVENTORY_SIZEY - 1;
 
-			//Warp into Remove Curse GUI "inventory"...if there is anything there.
+			//Warp into GUI "inventory"...if there is anything there.
 			if ( GenericGUI.itemsDisplayed[0] )
 			{
 				GenericGUI.selectedSlot = 0;
@@ -2173,9 +2173,11 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 			bool notfree = false, foundaspot = false;
 
 			bool is_spell = false;
+			int inventory_y = std::min(std::max(INVENTORY_SIZEY, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
 			{
 				is_spell = true;
+				inventory_y = std::min(inventory_y, 3);
 			}
 
 			if ( sortRightToLeft )
@@ -2188,7 +2190,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 			}
 			while ( 1 )
 			{
-				for ( y = 0; y < INVENTORY_SIZEY; y++ )
+				for ( y = 0; y < inventory_y; y++ )
 				{
 					node_t* node2 = nullptr;
 					for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
@@ -2234,6 +2236,71 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 				else
 				{
 					++x; // fill leftmost first.
+				}
+			}
+
+			// backpack sorting, sort into here as last priority.
+			if ( (x < 0 || x > INVENTORY_SIZEX - 1) && INVENTORY_SIZEY > 3 )
+			{
+				foundaspot = false;
+				notfree = false;
+				if ( sortRightToLeft )
+				{
+					x = INVENTORY_SIZEX - 1; // fill rightmost first.
+				}
+				else
+				{
+					x = 0; // fill leftmost first.
+				}
+				while ( 1 )
+				{
+					for ( y = 3; y < INVENTORY_SIZEY; y++ )
+					{
+						node_t* node2 = nullptr;
+						for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+						{
+							Item* tempItem = (Item*)node2->element;
+							if ( tempItem == itemBeingSorted )
+							{
+								continue;
+							}
+							if ( tempItem )
+							{
+								if ( tempItem->x == x && tempItem->y == y )
+								{
+									if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+									{
+										notfree = true;  //Both spells. Can't fit in the same slot.
+									}
+									else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+									{
+										notfree = true;  //Both not spells. Can't fit in the same slot.
+									}
+								}
+							}
+						}
+						if ( notfree )
+						{
+							notfree = false;
+							continue;
+						}
+						itemBeingSorted->x = x;
+						itemBeingSorted->y = y;
+						foundaspot = true;
+						break;
+					}
+					if ( foundaspot )
+					{
+						break;
+					}
+					if ( sortRightToLeft )
+					{
+						--x; // fill rightmost first.
+					}
+					else
+					{
+						++x; // fill leftmost first.
+					}
 				}
 			}
 		}
