@@ -1171,6 +1171,61 @@ void gameLogic(void)
 			}
 			else
 			{
+				if ( INVENTORY_SIZEY > 3 )
+				{
+					// we should rearrange our spells.
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						int scanx = 0;
+						int scany = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						Item* item = (Item*)node->element;
+						if ( itemCategory(item) != SPELL_CAT )
+						{
+							continue;
+						}
+						while ( 1 )
+						{
+							for ( scany = 0; scany < 3; scany++ )
+							{
+								node_t* node2;
+								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == scanx && tempItem->y == scany )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = scanx;
+								item->y = scany;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							scanx++;
+						}
+					}
+				}
 				INVENTORY_SIZEY = 3;
 			}
 
@@ -1591,6 +1646,61 @@ void gameLogic(void)
 			}
 			else
 			{
+				if ( INVENTORY_SIZEY > 3 )
+				{
+					// we should rearrange our spells.
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						int scanx = 0;
+						int scany = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						Item* item = (Item*)node->element;
+						if ( itemCategory(item) != SPELL_CAT )
+						{
+							continue;
+						}
+						while ( 1 )
+						{
+							for ( scany = 0; scany < 3; scany++ )
+							{
+								node_t* node2;
+								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == scanx && tempItem->y == scany )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = scanx;
+								item->y = scany;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							scanx++;
+						}
+					}
+				}
 				INVENTORY_SIZEY = 3;
 			}
 
