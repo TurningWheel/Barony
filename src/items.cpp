@@ -84,9 +84,41 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		}
 
 		x = 0;
+		int inventory_y = INVENTORY_SIZEY;
+		if ( is_spell )
+		{
+			inventory_y = 3;
+		}
+		else if ( multiplayer != CLIENT )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( stats[i] && &stats[i]->inventory == inventory )
+				{
+					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK && stats[i]->cloak->beatitude >= 0 )
+					{
+						inventory_y = 4;
+						break;
+					}
+					break;
+				}
+			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			if ( stats[clientnum] && &stats[clientnum]->inventory == inventory )
+			{
+				if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+				{
+					inventory_y = 4;
+				}
+			}
+		}
+		int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+
 		while ( 1 )
 		{
-			for ( y = 0; y < INVENTORY_SIZEY; y++ )
+			for ( y = 0; y < sort_y; y++ )
 			{
 				node_t* node;
 				for ( node = inventory->first; node != NULL; node = node->next )
@@ -126,6 +158,58 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 				break;
 			}
 			x++;
+		}
+
+
+		// backpack sorting, sort into here as last priority.
+		if ( x > INVENTORY_SIZEX - 1 && inventory_y > 3 )
+		{
+			x = 0;
+			foundaspot = false;
+			notfree = false;
+			while ( 1 )
+			{
+				for ( y = 3; y < inventory_y; y++ )
+				{
+					node_t* node;
+					for ( node = inventory->first; node != NULL; node = node->next )
+					{
+						Item* tempItem = (Item*)node->element;
+						if ( tempItem == item )
+						{
+							continue;
+						}
+						if ( tempItem )
+						{
+							if ( tempItem->x == x && tempItem->y == y )
+							{
+								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+								{
+									notfree = true;  //Both spells. Can't fit in the same slot.
+								}
+								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+								{
+									notfree = true;  //Both not spells. Can't fit in the same slot.
+								}
+							}
+						}
+					}
+					if ( notfree )
+					{
+						notfree = false;
+						continue;
+					}
+					item->x = x;
+					item->y = y;
+					foundaspot = true;
+					break;
+				}
+				if ( foundaspot )
+				{
+					break;
+				}
+				x++;
+			}
 		}
 
 		// add the item to the hotbar automatically
