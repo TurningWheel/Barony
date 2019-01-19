@@ -1330,6 +1330,14 @@ void Entity::increaseSkill(int skill)
 			}
 		}
 
+		if ( skill == PRO_ALCHEMY )
+		{
+			if ( player == clientnum )
+			{
+				GenericGUI.alchemyLearnRecipeOnLevelUp(myStats->PROFICIENCIES[skill]);
+			}
+		}
+
 		if ( skill == PRO_SWIMMING && !(svFlags & SV_FLAG_HUNGER) )
 		{
 			// hunger off and swimming is raised.
@@ -1365,6 +1373,8 @@ void Entity::increaseSkill(int skill)
 		// write the last proficiency that effected the skill.
 		myStats->PLAYER_LVL_STAT_BONUS[statBonusSkill] = skill;
 	}
+
+
 
 	if ( player > 0 && multiplayer == SERVER )
 	{

@@ -2205,6 +2205,10 @@ void clientHandlePacket()
 			stats[clientnum]->PLAYER_LVL_STAT_BONUS[statBonusSkill] = net_packet->data[5];
 		}
 
+		if ( net_packet->data[5] == PRO_ALCHEMY )
+		{
+			GenericGUI.alchemyLearnRecipeOnLevelUp(stats[clientnum]->PROFICIENCIES[net_packet->data[5]]);
+		}
 		return;
 	}
 

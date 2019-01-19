@@ -37,6 +37,7 @@ Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game st
 std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
 std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+std::unordered_set<int> clientLearnedAlchemyIngredients;
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
@@ -3177,6 +3178,7 @@ void setDefaultPlayerConducts()
 		achievementThankTheTankPair[c].second = 0;
 		achievementStrobeVec[c].clear();
 	}
+	clientLearnedAlchemyIngredients.clear();
 }
 
 void updatePlayerConductsInMainLoop()
@@ -3264,6 +3266,21 @@ void updateGameplayStatisticsInMainLoop()
 		if ( gameStatistics[STATISTICS_TEMPT_FATE] < 0 )
 		{
 			gameStatistics[STATISTICS_TEMPT_FATE] = 0;
+		}
+	}
+
+	if ( gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 && clientLearnedAlchemyIngredients.empty() )
+	{
+		int numpotions = potionStandardAppearanceMap.size();
+		for ( int i = 0; i < numpotions; ++i )
+		{
+			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
+			if ( learned )
+			{
+				auto typeAppearance = potionStandardAppearanceMap.at(i);
+				int type = typeAppearance.first;
+				clientLearnedAlchemyIngredients.insert(type);
+			}
 		}
 	}
 }

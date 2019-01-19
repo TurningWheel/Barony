@@ -36,6 +36,7 @@ static const int STATISTICS_FIRE_MAYBE_DIFFERENT = 3;
 static const int STATISTICS_HOT_TUB_TIME_MACHINE = 4;
 static const int STATISTICS_HEAL_BOT = 5;
 static const int STATISTICS_TEMPT_FATE = 6;
+static const int STATISTICS_ALCHEMY_RECIPES = 7;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 static const int STEAM_STAT_BOULDER_DEATHS = 0;
@@ -82,6 +83,7 @@ extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS];
 extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
 extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
+extern std::unordered_set<int> clientLearnedAlchemyIngredients;
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
 extern bool achievementStatusStrobe[MAXPLAYERS];

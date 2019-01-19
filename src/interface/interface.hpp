@@ -293,6 +293,8 @@ public:
 	// Alchemy
 	Item* basePotion;
 	Item* secondaryPotion;
+	Item* alembicItem;
+	bool experimentingAlchemy;
 
 	GenericGUIMenu() :
 		guiActive(false),
@@ -302,7 +304,9 @@ public:
 		scroll(0),
 		draggingGUI(false),
 		basePotion(nullptr),
-		secondaryPotion(nullptr)
+		secondaryPotion(nullptr),
+		alembicItem(nullptr),
+		experimentingAlchemy(false)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -314,6 +318,7 @@ public:
 	void selectSlot(int slot);
 	void closeGUI();
 	void openGUI(int type, int scrollBeatitude);
+	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
 	void updateGUI();
 	void rebuildGUIInventory();
@@ -328,6 +333,10 @@ public:
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
 	void alchemyCombinePotions();
+	bool alchemyLearnRecipe(int type, bool increaseskill, bool notify = true);
+	bool isItemBaseIngredient(int type);
+	bool isItemSecondaryIngredient(int type);
+	void alchemyLearnRecipeOnLevelUp(int skill);
 
 	inline bool isGUIOpen()
 	{

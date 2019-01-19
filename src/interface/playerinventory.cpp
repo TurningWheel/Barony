@@ -1364,7 +1364,7 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
 
-		if (itemCategory(&item) == POTION)
+		if (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC)
 		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
@@ -1444,7 +1444,7 @@ inline void drawItemMenuOptionSpell(const Item& item, int x, int y)
  */
 inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false)
 {
-	if (itemCategory(&item) != POTION)
+	if (itemCategory(&item) != POTION && item.type != TOOL_ALEMBIC )
 	{
 		return;
 	}
@@ -1483,7 +1483,12 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	//Option 1.
 	if (!is_potion_bad)
 	{
-		if (itemIsEquipped(&item, clientnum))
+		if ( item.type == TOOL_ALEMBIC )
+		{
+			TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
+			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
+		}
+		else if (itemIsEquipped(&item, clientnum))
 		{
 			drawOptionUnwield(x, y);
 		}
@@ -1653,7 +1658,12 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 		return;
 	}
 
-	if (itemCategory(item) != POTION)
+	if ( item->type == TOOL_ALEMBIC )
+	{
+		// experimenting!
+		GenericGUI.openGUI(GUI_TYPE_ALCHEMY, true, item);
+	}
+	else if (itemCategory(item) != POTION)
 	{
 		//Option 1 = appraise.
 		identifygui_active = false;
@@ -1701,7 +1711,7 @@ inline void executeItemMenuOption2(Item* item)
 		return;
 	}
 
-	if (itemCategory(item) != POTION)
+	if (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC)
 	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
@@ -1721,7 +1731,7 @@ inline void executeItemMenuOption2(Item* item)
 
 inline void executeItemMenuOption3(Item* item)
 {
-	if (!item || itemCategory(item) != POTION)
+	if (!item || (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC))
 	{
 		return;
 	}
@@ -1781,7 +1791,11 @@ void itemContextMenu()
 	}
 	else
 	{
-		if (itemCategory(current_item) == POTION)
+		if ( current_item->type == TOOL_ALEMBIC )
+		{
+			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, false);
+		}
+		else if (itemCategory(current_item) == POTION || current_item->type == TOOL_ALEMBIC)
 		{
 			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
 		}
