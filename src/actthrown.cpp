@@ -389,6 +389,7 @@ void actThrown(Entity* my)
 						//int dex = parent->getDEX() / 4;
 						//damage += dex;
 						damage = damage * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+						damage -= rand() % ((damage / 4) + 1);
 					}
 					else
 					{
