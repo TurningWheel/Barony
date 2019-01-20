@@ -1298,7 +1298,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								if ( my->actmagicIsOrbiting == 2 
+									&& parent->behavior == &actParticleDot
+									&& parent->skill[1] == 1 )
+								{
+									hit.entity->setObituary(language[3350]);
+								}
+								else
+								{
+									parent->killedByMonsterObituary(hit.entity);
+								}
 							}
 							if ( hitstats )
 							{
@@ -4097,7 +4106,22 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 	spell_t* spell = getSpellFromID(spellID);
 	if ( !parent )
 	{
-		return nullptr;
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Particle entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = centerx;
+		entity->y = centery;
+		entity->z = 15;
+		entity->vel_z = 0;
+		//entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->skill[0] = 100;
+		entity->skill[1] = 1;
+		entity->behavior = &actParticleDot;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[INVISIBLE] = true;
+		parent = entity;
 	}
 	Entity* entity = castSpell(parent->getUID(), spell, false, true);
 	if ( entity )

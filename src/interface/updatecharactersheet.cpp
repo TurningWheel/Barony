@@ -928,7 +928,7 @@ void drawSkillsSheet()
 						default:
 							break;
 					}
-					skillDetails[1] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[1] = skillDetails[0];
 					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
 					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
 

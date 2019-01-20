@@ -3492,7 +3492,14 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_JUICE:
 			case POTION_ACID:
 			case POTION_INVISIBILITY:
-				return true;
+				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 				break;
 			default:
 				return false;
@@ -3510,6 +3517,7 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		// we're selecting the second potion.
 		switch ( item->type )
 		{
+			case POTION_WATER:
 			case POTION_SICKNESS:
 			case POTION_CONFUSION:
 			case POTION_CUREAILMENT:
@@ -3517,7 +3525,14 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			case POTION_RESTOREMAGIC:
 			case POTION_SPEED:
 			case POTION_POLYMORPH:
-				return true;
+				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 				break;
 			default:
 				return false;
@@ -3543,14 +3558,18 @@ void GenericGUIMenu::alchemyCombinePotions()
 	switch ( basePotion->type )
 	{
 		case POTION_WATER:
-			tryDuplicatePotion = true;
+			if ( secondaryPotion->type == POTION_ACID )
+			{
+				explodeSelf = true;
+			}
+			else
+			{
+				tryDuplicatePotion = true;
+			}
 			break;
 		case POTION_BOOZE:
 			switch ( secondaryPotion->type )
 			{
-				case POTION_WATER:
-					tryDuplicatePotion = true;
-					break;
 				case POTION_SICKNESS:
 					result = POTION_CONFUSION;
 					break;
@@ -3579,9 +3598,6 @@ void GenericGUIMenu::alchemyCombinePotions()
 		case POTION_JUICE:
 			switch ( secondaryPotion->type )
 			{
-				case POTION_WATER:
-					tryDuplicatePotion = true;
-					break;
 				case POTION_SICKNESS:
 					result = POTION_BOOZE;
 					break;
@@ -3614,39 +3630,34 @@ void GenericGUIMenu::alchemyCombinePotions()
 					explodeSelf = true; // oh no. don't do that.
 					break;
 				case POTION_SICKNESS:
-					//result = POTION_EXPLOSIVE;
+					result = POTION_FIRESTORM;
 					break;
 				case POTION_CONFUSION:
-					//result = POTION_EXPLOSIVE;
+					result = POTION_JUICE;
 					break;
 				case POTION_CUREAILMENT:
-					//result = POTION_EXPLOSIVE;
+					result = POTION_FIRESTORM;
 					break;
 				case POTION_BLINDNESS:
-					//result = POTION_EXPLOSIVE;
+					result = POTION_ICESTORM;
 					break;
 				case POTION_RESTOREMAGIC:
-					//result = POTION_EXPLOSIVE;
+					result = POTION_ICESTORM;
 					break;
 				case POTION_SPEED:
-					//result = POTION_EXPLOSIVE;
-					break;
-				case POTION_LEVITATION:
-					//result = POTION_EXPLOSIVE;
+					result = POTION_THUNDERSTORM;
 					break;
 				case POTION_POLYMORPH:
 					randomResult = true;
 					break;
 				default:
+					explodeSelf = true;
 					break;
 			}
 			break;
 		case POTION_INVISIBILITY:
 			switch ( secondaryPotion->type )
 			{
-				case POTION_WATER:
-					tryDuplicatePotion = true;
-					break;
 				case POTION_SICKNESS:
 					result = POTION_BLINDNESS;
 					break;
@@ -3672,31 +3683,178 @@ void GenericGUIMenu::alchemyCombinePotions()
 					break;
 			}
 			break;
-		case POTION_POLYMORPH:
-			randomResult = true;
-			break;
 		default:
 			break;
 	}
 
-	if ( basePotion->beatitude < 0 || secondaryPotion->beatitude < 0 )
+	if ( result == POTION_SICKNESS ) // didn't get a result, try flip the potion order
 	{
-		explodeSelf = true;
+		switch ( secondaryPotion->type )
+		{
+			case POTION_WATER:
+				if ( basePotion->type == POTION_ACID )
+				{
+					explodeSelf = true;
+				}
+				else
+				{
+					tryDuplicatePotion = true;
+				}
+				break;
+			case POTION_BOOZE:
+				switch ( basePotion->type )
+				{
+					case POTION_SICKNESS:
+						result = POTION_CONFUSION;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_ACID;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_SPEED;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_CONFUSION;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_BLINDNESS;
+						break;
+					case POTION_SPEED:
+						result = POTION_PARALYSIS;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						break;
+				}
+				break;
+			case POTION_JUICE:
+				switch ( basePotion->type )
+				{
+					case POTION_SICKNESS:
+						result = POTION_BOOZE;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_CONFUSION;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_RESTOREMAGIC;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_CUREAILMENT;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_HEALING;
+						break;
+					case POTION_SPEED:
+						result = POTION_INVISIBILITY;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						break;
+				}
+				break;
+			case POTION_ACID:
+				switch ( basePotion->type )
+				{
+					case POTION_WATER:
+						explodeSelf = true; // oh no. don't do that.
+						break;
+					case POTION_SICKNESS:
+						result = POTION_FIRESTORM;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_JUICE;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_FIRESTORM;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_ICESTORM;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_ICESTORM;
+						break;
+					case POTION_SPEED:
+						result = POTION_THUNDERSTORM;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						explodeSelf = true;
+						break;
+				}
+				break;
+			case POTION_INVISIBILITY:
+				switch ( basePotion->type )
+				{
+					case POTION_SICKNESS:
+						result = POTION_BLINDNESS;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_PARALYSIS;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_LEVITATION;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_POLYMORPH;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_EXTRAHEALING;
+						break;
+					case POTION_SPEED:
+						result = POTION_RESTOREMAGIC;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						break;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 
-	Status status = basePotion->status;
-	if ( tryDuplicatePotion )
+	if ( basePotion->type == POTION_POLYMORPH || secondaryPotion->type == POTION_POLYMORPH )
+	{
+		randomResult = true;
+	}
+
+	int skillLVL = 0;
+	if ( stats[clientnum] )
+	{
+		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+	}
+
+	Status status = SERVICABLE;
+	bool duplicateSucceed = false;
+	if ( tryDuplicatePotion && !explodeSelf )
 	{
 		// do duplicate.
-		if ( basePotion->type == POTION_WATER )
+		if ( rand() % 100 < (50 + skillLVL * 10) ) // 50 - 100% chance
 		{
-			result = secondaryPotion->type;
-			status = secondaryPotion->status;
-		}
-		else if ( secondaryPotion->type == POTION_WATER )
-		{
-			result = basePotion->type;
-			status = basePotion->status;
+			duplicateSucceed = true;
+			if ( basePotion->type == POTION_WATER )
+			{
+				result = secondaryPotion->type;
+				status = secondaryPotion->status;
+			}
+			else if ( secondaryPotion->type == POTION_WATER )
+			{
+				result = basePotion->type;
+				status = basePotion->status;
+			}
+			else
+			{
+				result = POTION_WATER;
+			}
 		}
 		else
 		{
@@ -3753,18 +3911,115 @@ void GenericGUIMenu::alchemyCombinePotions()
 		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3335]);
 	}
 
-	if ( !explodeSelf && result != POTION_SICKNESS )
+	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
 	{
-		alchemyLearnRecipe(basePotion->type, true);
-		alchemyLearnRecipe(secondaryPotion->type, true);
+		if ( !(alchemyLearnRecipe(basePotion->type, true)) )
+		{
+			alchemyLearnRecipe(secondaryPotion->type, true);
+		}
 	}
 
-	consumeItem(basePotion, clientnum);
-	consumeItem(secondaryPotion, clientnum);
-
+	bool degradeAlembic = false;
 	if ( explodeSelf )
 	{
+		degradeAlembic = true;
+	}
+	else
+	{
+		if ( basePotion->type == POTION_ACID || secondaryPotion->type == POTION_ACID )
+		{
+			if ( rand() % 5 == 0 )
+			{
+				degradeAlembic = true;
+			}
+		}
+		else
+		{
+			if ( rand() % 20 == 0 )
+			{
+				degradeAlembic = true;
+			}
+		}
+	}
+
+	int appearance = 0;
+	int blessing = std::min(static_cast<int>(std::min(basePotion->beatitude, secondaryPotion->beatitude)), 0);
+	if ( basePotion->type == secondaryPotion->type )
+	{
+		// same potion, keep the second potion only.
+		result = secondaryPotion->type;
+		blessing = secondaryPotion->beatitude;
+		appearance = secondaryPotion->appearance;
+	}
+
+	if ( duplicateSucceed )
+	{
+		if ( basePotion->type == POTION_WATER )
+		{
+			consumeItem(basePotion, clientnum);
+		}
+		else if ( secondaryPotion->type == POTION_WATER )
+		{
+			consumeItem(secondaryPotion, clientnum);
+		}
+	}
+	else
+	{
+		consumeItem(basePotion, clientnum);
+		consumeItem(secondaryPotion, clientnum);
+	}
+
+	if ( alembicItem )
+	{
+		if ( alembicItem->beatitude >= 1 )
+		{
+			blessing = 1;
+		}
+		else if ( alembicItem->beatitude <= -1 )
+		{
+			blessing = alembicItem->beatitude;
+		}
+	}
+
+	if ( skillCapstoneUnlocked(clientnum, PRO_ALCHEMY) )
+	{
+		blessing = 2;
+		degradeAlembic = false;
+	}
+
+	if ( degradeAlembic && alembicItem )
+	{
+		alembicItem->status = static_cast<Status>(alembicItem->status - 1);
+		if ( alembicItem->status > BROKEN )
+		{
+			messagePlayer(clientnum, language[681], alembicItem->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[2351], alembicItem->getName());
+			playSoundPlayer(clientnum, 162, 64);
+			consumeItem(alembicItem, clientnum);
+			alembicItem = nullptr;
+		}
+	}
+
+	if ( explodeSelf && players[clientnum] && players[clientnum]->entity )
+	{
 		// hurt.
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "BOOM");
+			net_packet->data[4] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 5;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else
+		{
+			spawnMagicTower(nullptr, players[clientnum]->entity->x, players[clientnum]->entity->y, SPELL_FIREBALL);
+			players[clientnum]->entity->setObituary(language[3350]);
+		}
 		closeGUI();
 		return;
 	}
@@ -3773,15 +4028,28 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( (*it).first == result )
 		{
-			int appearance = (*it).second;
+			if ( appearance == 0 )
+			{
+				appearance = (*it).second;
+			}
+			bool raiseSkill = true;
 			if ( result == POTION_SICKNESS )
 			{
 				appearance = 0 + rand() % 3;
+				if ( rand() % 10 > 0 )
+				{
+					raiseSkill = false;
+				}
 			}
-			Item* newPotion = newItem(result, status, 0, 1, appearance, false, nullptr);
+			else if ( result == POTION_WATER )
+			{
+				raiseSkill = false;
+			}
+
+			Item* newPotion = newItem(result, status, blessing, 1, appearance, false, nullptr);
 			itemPickup(clientnum, newPotion);
 			free(newPotion);
-			if ( rand() % 2 == 0 )
+			if ( raiseSkill && rand() % 2 == 0 )
 			{
 				if ( multiplayer == CLIENT )
 				{

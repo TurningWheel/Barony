@@ -1132,28 +1132,25 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	// set obituary
 	entity->setObituary(language[1535]);
 
-	if ( usedBy )
+	real_t x = entity->x;
+	real_t y = entity->y;
+	if ( thrownPotion )
 	{
-		real_t x = entity->x;
-		real_t y = entity->y;
-		if ( thrownPotion )
-		{
-			// rather spawn at the potion impact rather than on the hit entity's coords.
-			x = thrownPotion->x;
-			y = thrownPotion->y;
-		}
-		if ( item->type == POTION_FIRESTORM )
-		{
-			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL);
-		}
-		else if ( item->type == POTION_ICESTORM )
-		{
-			spawnMagicTower(usedBy, x, y, SPELL_COLD);
-		}
-		else if ( item->type == POTION_THUNDERSTORM )
-		{
-			spawnMagicTower(usedBy, x, y, SPELL_LIGHTNING);
-		}
+		// rather spawn at the potion impact rather than on the hit entity's coords.
+		x = thrownPotion->x;
+		y = thrownPotion->y;
+	}
+	if ( item->type == POTION_FIRESTORM )
+	{
+		spawnMagicTower(usedBy, x, y, SPELL_FIREBALL);
+	}
+	else if ( item->type == POTION_ICESTORM )
+	{
+		spawnMagicTower(usedBy, x, y, SPELL_COLD);
+	}
+	else if ( item->type == POTION_THUNDERSTORM )
+	{
+		spawnMagicTower(usedBy, x, y, SPELL_LIGHTNING);
 	}
 
 	// play drink sound
