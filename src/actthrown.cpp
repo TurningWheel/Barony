@@ -429,15 +429,34 @@ void actThrown(Entity* my)
 						break;
 				}
 				damage = std::max(0, damage);
-				messagePlayer(0, "damage: %d", damage);
+				//messagePlayer(0, "damage: %d", damage);
+				if ( parent && parent->behavior == &actPlayer && parent->checkFriend(hit.entity) && itemCategory(item) == POTION )
+				{
+					switch ( item->type )
+					{
+						case POTION_HEALING:
+						case POTION_EXTRAHEALING:
+						case POTION_RESTOREMAGIC:
+						case POTION_CUREAILMENT:
+						case POTION_WATER:
+						case POTION_BOOZE:
+						case POTION_JUICE:
+							damage = 0;
+							break;
+						default:
+							break;
+					}
+					damage = std::min(10, damage); // impact damage is 10 max on allies.
+				}
+
 				char whatever[256] = "";
 				if ( !friendlyHit )
 				{
 					hit.entity->modHP(-damage);
-					// set the obituary
-					snprintf(whatever, 255, language[1508], itemname);
-					hit.entity->setObituary(whatever);
 				}
+				// set the obituary
+				snprintf(whatever, 255, language[1508], itemname);
+				hit.entity->setObituary(whatever);
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
 
