@@ -37,7 +37,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -97,7 +97,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 			else
 			{
-				entity->modHP(5);
+				entity->modHP(5 * item->beatitude);
 				playSoundEntity(entity, 52, 64);
 				playSoundEntity(entity, 168, 128);
 				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
@@ -222,7 +222,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -303,7 +303,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
 	}
 	stats->HUNGER += 100;
-	entity->modHP(5);
+	entity->modHP(5 * (1 + item->beatitude));
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -329,7 +329,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -395,7 +395,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		messagePlayer(player, language[760]);
 		stats->HUNGER += 50;
-		entity->modHP(5);
+		entity->modHP(5 * (1 + item->beatitude));
 	}
 
 	// play drink sound
@@ -418,7 +418,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -469,8 +469,18 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
+	int damage = (5 + 3 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int chance = damage / 4;
+	if ( player >= 0 && usedBy == entity )
+	{
+		damage /= 2;
+	}
+	else
+	{
+		damage -= (rand() % (1 + chance));
+	}
 	messagePlayer(player, language[761]);
-	entity->modHP(-2);
+	entity->modHP(-damage);
 	stats->EFFECTS[EFF_POISONED] = true;
 	playSoundEntity(entity, 28, 64);
 	serverUpdateEffects(player);
@@ -496,7 +506,7 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -572,7 +582,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -647,6 +657,13 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		stats->EFFECTS[EFF_POISONED] = true;
 		stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
 	}
+	else if ( item->beatitude > 0 )
+	{
+		stats->EFFECTS[EFF_HP_REGEN] = true;
+		stats->EFFECTS[EFF_MP_REGEN] = true;
+		stats->EFFECTS_TIMERS[EFF_HP_REGEN] = 4 * item->beatitude * TICKS_PER_SECOND;
+		stats->EFFECTS_TIMERS[EFF_MP_REGEN] = 4 * item->beatitude * TICKS_PER_SECOND;
+	}
 
 	serverUpdateEffects(player);
 
@@ -668,7 +685,7 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -741,7 +758,7 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -807,6 +824,10 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	stats->EFFECTS[EFF_INVISIBLE] = true;
 	stats->EFFECTS_TIMERS[EFF_INVISIBLE] = 1800 + rand() % 1800;
+	if ( item->beatitude > 0 )
+	{
+		stats->EFFECTS_TIMERS[EFF_INVISIBLE] += item->beatitude * 600;
+	}
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -827,7 +848,7 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -881,7 +902,7 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		messagePlayer(player, language[767]);
 		stats->EFFECTS[EFF_LEVITATING] = true;
-		stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800;
+		stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800 + item->beatitude * 600;
 	}
 	serverUpdateEffects(player);
 
@@ -903,7 +924,7 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -970,6 +991,10 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 			messagePlayer(player, language[768]);
 			stats->EFFECTS[EFF_FAST] = true;
 			stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+			if ( item->beatitude > 0 )
+			{
+				stats->EFFECTS_TIMERS[EFF_FAST] += 600 * item->beatitude;
+			}
 		}
 		else
 		{
@@ -998,7 +1023,7 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -1049,8 +1074,18 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
+	int damage = (10 + 3 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int chance = damage / 4;
+	if ( player >= 0 && usedBy == entity )
+	{
+		damage /= 2;
+	}
+	else
+	{
+		damage -= (rand() % (1 + chance));
+	}
 	messagePlayer(player, language[770]);
-	entity->modHP(-8 - rand() % 3);
+	entity->modHP(-damage);
 	playSoundEntity(entity, 28, 64);
 
 	// set obituary
@@ -1074,7 +1109,7 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -1125,8 +1160,18 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		}
 	}
 
+	int damage = (10 + 3 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int chance = damage / 4;
+	if ( player >= 0 && usedBy == entity )
+	{
+		damage /= 2;
+	}
+	else
+	{
+		damage -= (rand() % (1 + chance));
+	}
 	messagePlayer(player, language[770]);
-	entity->modHP(-8 - rand() % 3);
+	entity->modHP(-damage);
 	playSoundEntity(entity, 28, 64);
 
 	// set obituary
@@ -1171,7 +1216,7 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -1224,6 +1269,11 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		effectDuration = 420 + rand() % 180;
 	}
+	if ( item->beatitude != 0 )
+	{
+		effectDuration += (abs(item->beatitude) * 100);
+	}
+
 	entity->setEffect(EFF_PARALYZED, true, effectDuration, false);
 	serverUpdateEffects(player);
 
@@ -1245,7 +1295,7 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -1388,7 +1438,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -1530,7 +1580,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
@@ -1636,7 +1686,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		Stat* usedByStats = usedBy->getStats();
 		if ( usedByStats )
 		{
-			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY];
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
 		}
 	}
 
