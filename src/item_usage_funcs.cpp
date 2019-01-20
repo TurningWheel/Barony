@@ -727,6 +727,10 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		return;
 	}
 
+	if ( entity->behavior == &actMonster && !entity->isBossMonsterOrBossMap() )
+	{
+		entity->monsterReleaseAttackTarget();
+	}
 	messagePlayer(player, language[765]);
 	stats->EFFECTS[EFF_BLIND] = true;
 	if ( player >= 0 )
