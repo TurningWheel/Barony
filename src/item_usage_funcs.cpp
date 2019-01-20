@@ -740,7 +740,7 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	else
 	{
-		stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+		entity->setEffect(EFF_BLIND, true, 660 + rand() % 240, true);
 	}
 	serverUpdateEffects(player);
 

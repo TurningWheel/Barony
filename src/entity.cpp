@@ -717,6 +717,11 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		if ( observer )
 		{
 			light -= myStats.PROFICIENCIES[PRO_STEALTH] * 2 - observer->getPER() * 5;
+			Stat* observerStats = observer->getStats();
+			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
+			{
+				light = TOUCHRANGE;
+			}
 		}
 		else
 		{
@@ -10701,11 +10706,14 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 		case EFF_PARALYZED:
 		case EFF_PACIFY:
 		case EFF_KNOCKBACK:
+		case EFF_BLIND:
 			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 			{
 				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) &&
-					!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) )
+					!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) &&
+					!(effect == EFF_BLIND && myStats->type == COCKATRICE) &&
+					!(effect == EFF_BLIND && myStats->type == SHOPKEEPER) )
 				{
 					return false;
 				}

@@ -460,7 +460,7 @@ void actThrown(Entity* my)
 				hit.entity->setObituary(whatever);
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
-
+				bool disableAlertBlindStatus = false;
 
 				if ( hitstats )
 				{
@@ -586,9 +586,16 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							case POTION_BLINDNESS:
+							{
+								bool wasBlind = hit.entity->isBlind();
 								item_PotionBlindness(item, hit.entity, parent);
+								if ( hit.entity->isBlind() && !wasBlind )
+								{
+									disableAlertBlindStatus = true; // don't aggro target.
+								}
 								usedpotion = true;
 								break;
+							}
 							case POTION_RESTOREMAGIC:
 								item_PotionRestoreMagic(item, hit.entity, parent);
 								usedpotion = true;
@@ -760,6 +767,11 @@ void actThrown(Entity* my)
 							// if a player ally + hit another ally, don't aggro back
 							alertTarget = false;
 						}
+					}
+
+					if ( disableAlertBlindStatus )
+					{
+						alertTarget = false;
 					}
 
 					if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
