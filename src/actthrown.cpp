@@ -383,6 +383,10 @@ void actThrown(Entity* my)
 				int damage = (BASE_THROWN_DAMAGE - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
 				if ( parentStats )
 				{
+					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					{
+
+					}
 					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 increase.
 				}
 				if ( hitstats && !hitstats->defending )
@@ -417,6 +421,11 @@ void actThrown(Entity* my)
 
 				if ( hitstats )
 				{
+					if ( rand() % 5 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					{
+						parent->increaseSkill(PRO_ALCHEMY);
+					}
+
 					int postDmgHP = hit.entity->getHP();
 					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER )   // this makes it impossible to bork the end boss :)
 					{

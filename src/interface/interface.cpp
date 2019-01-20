@@ -3915,7 +3915,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		if ( !(alchemyLearnRecipe(basePotion->type, true)) )
 		{
-			alchemyLearnRecipe(secondaryPotion->type, true);
+			if ( secondaryPotion->identified )
+			{
+				alchemyLearnRecipe(secondaryPotion->type, true);
+			}
 		}
 	}
 
@@ -3952,6 +3955,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 		appearance = secondaryPotion->appearance;
 	}
 
+	bool knewBothBaseIngredients = false;
+	if ( clientLearnedAlchemyIngredients.find(basePotion->type) != clientLearnedAlchemyIngredients.end() )
+	{
+		if ( clientLearnedAlchemyIngredients.find(secondaryPotion->type) != clientLearnedAlchemyIngredients.end() )
+		{
+			// knew about both combinations.
+			if ( !tryDuplicatePotion && !explodeSelf && result != POTION_SICKNESS )
+			{
+				if ( skillLVL >= 3 )
+				{
+					knewBothBaseIngredients = true; // auto ID the new potion.
+				}
+			}
+		}
+	}
+
 	if ( duplicateSucceed )
 	{
 		if ( basePotion->type == POTION_WATER )
@@ -3967,6 +3986,13 @@ void GenericGUIMenu::alchemyCombinePotions()
 	{
 		consumeItem(basePotion, clientnum);
 		consumeItem(secondaryPotion, clientnum);
+		if ( rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+		{
+			Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+			itemPickup(clientnum, emptyBottle);
+			messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+			free(emptyBottle);
+		}
 	}
 
 	if ( alembicItem )
@@ -4045,9 +4071,17 @@ void GenericGUIMenu::alchemyCombinePotions()
 			{
 				raiseSkill = false;
 			}
+			else if ( duplicateSucceed )
+			{
+				if ( rand() % 10 > 0 )
+				{
+					raiseSkill = false;
+				}
+			}
 
-			Item* newPotion = newItem(result, status, blessing, 1, appearance, false, nullptr);
+			Item* newPotion = newItem(result, status, blessing, 1, appearance, knewBothBaseIngredients, nullptr);
 			itemPickup(clientnum, newPotion);
+			messagePlayer(clientnum, language[3352], newPotion->description());
 			free(newPotion);
 			if ( raiseSkill && rand() % 2 == 0 )
 			{
@@ -4088,7 +4122,7 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 			{
 				// new recipe!
 				clientLearnedAlchemyIngredients.insert(type);
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( notify )
 				{
 					if ( isItemBaseIngredient(type) )
