@@ -3982,6 +3982,18 @@ void serverHandlePacket()
 		}
 	}
 
+	//The client failed some alchemy.
+	else if ( !strncmp((char*)net_packet->data, "BOOM", 4) )
+	{
+		int the_client = net_packet->data[4];
+		if ( players[the_client] && players[the_client]->entity )
+		{
+			spawnMagicTower(nullptr, players[the_client]->entity->x, players[the_client]->entity->y, SPELL_FIREBALL);
+			players[the_client]->entity->setObituary(language[3350]);
+		}
+		return;
+	}
+
 	//The client cast a spell.
 	else if (!strncmp((char*)net_packet->data, "SPEL", 4))
 	{

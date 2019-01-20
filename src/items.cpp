@@ -1426,7 +1426,6 @@ void consumeItem(Item*& item, int player)
 		}
 		item = nullptr;
 	}
-	// TODO: fix clients eating potions when in hand.
 }
 
 /*-------------------------------------------------------------------------------
