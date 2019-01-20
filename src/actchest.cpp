@@ -496,10 +496,12 @@ void Entity::actChest()
 				if ( rand() % 2 == 0 )
 				{
 					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, inventory);
+					newItem(POTION_EMPTY, SERVICABLE, 0, 2 + rand() % 3, 0, true, inventory);
 				}
 				if ( rand() % 4 == 0 )
 				{
 					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, inventory);
+					newItem(POTION_EMPTY, SERVICABLE, 0, 0 + rand() % 3, 0, true, inventory);
 				}
 				break;
 			default:
