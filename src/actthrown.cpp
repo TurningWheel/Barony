@@ -380,14 +380,33 @@ void actThrown(Entity* my)
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
-				int damage = (BASE_THROWN_DAMAGE - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
+				int damage = (BASE_THROWN_DAMAGE + item->beatitude); // thrown takes half of armor into account.
 				if ( parentStats )
 				{
-					if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					if ( itemCategory(item) == POTION )
 					{
-
+						int skillLVL = parentStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+						//int dex = parent->getDEX() / 4;
+						//damage += dex;
+						damage = damage * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 					}
-					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 increase.
+					else
+					{
+						if ( itemCategory(item) == THROWN )
+						{
+							int skillLVL = parentStats->PROFICIENCIES[PRO_RANGED] / 20;
+							int dex = parent->getDEX() / 4;
+							damage = (damage + dex) * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
+							damage -= (AC(hit.entity->getStats()) / 4);
+						}
+						else
+						{
+							int dex = parent->getDEX() / 4;
+							damage += dex;
+							damage += parentStats->PROFICIENCIES[PRO_RANGED] / 10; // 0 to 10 bonus attack.
+							damage -= (AC(hit.entity->getStats()) / 2);
+						}
+					}
 				}
 				if ( hitstats && !hitstats->defending )
 				{
@@ -401,12 +420,16 @@ void actThrown(Entity* my)
 					case IRON_DAGGER:
 					case STEEL_CHAKRAM:
 					case CRYSTAL_SHURIKEN:
-						damage += item->weaponGetAttack(parentStats);
+					{
+						int skillLVL = parentStats->PROFICIENCIES[PRO_RANGED] / 20;
+						damage += (thrownDamageSkillMultipliers[std::min(skillLVL, 5)] * item->weaponGetAttack(parentStats));
 						break;
+					}
 					default:
 						break;
 				}
 				damage = std::max(0, damage);
+				messagePlayer(0, "damage: %d", damage);
 				char whatever[256] = "";
 				if ( !friendlyHit )
 				{

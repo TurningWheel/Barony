@@ -772,13 +772,15 @@ void drawSkillsSheet()
 					break;
 				}
 				case PRO_RANGED:
+				{
 					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
 					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
 						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
 					}
-					skillDetails[3] = (stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 5); // thrown dmg bonus
+					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20; // thrown dmg bonus
+					skillDetails[3] = 100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
 					if ( skillCapstoneUnlocked(clientnum, i) )
 					{
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
@@ -792,6 +794,7 @@ void drawSkillsSheet()
 							skillDetails[0], 100 / skillDetails[1], skillDetails[2], skillDetails[3]);
 					}
 					break;
+				}
 				case PRO_SWORD:
 				case PRO_AXE:
 				case PRO_MACE:
@@ -904,30 +907,8 @@ void drawSkillsSheet()
 						}
 					}
 					lines = std::max(lines, lines2);
-
-					switch ( stats[clientnum]->PROFICIENCIES[i] / 20 )
-					{
-						case 0:
-							skillDetails[0] = 100.f;
-							break;
-						case 1:
-							skillDetails[0] = 110.f;
-							break;
-						case 2:
-							skillDetails[0] = 125.f;
-							break;
-						case 3:
-							skillDetails[0] = 150.f;
-							break;
-						case 4:
-							skillDetails[0] = 200.f;
-							break;
-						case 5:
-							skillDetails[0] = 300.f;
-							break;
-						default:
-							break;
-					}
+					int skillLVL = stats[clientnum]->PROFICIENCIES[i] / 20;
+					skillDetails[0] = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 					skillDetails[1] = skillDetails[0];
 					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
 					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
@@ -1692,12 +1673,23 @@ Sint32 displayAttackPower(Sint32 output[6])
 					}
 					else
 					{
+						int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20;
 						attack += entity->getThrownAttack();
 						output[0] = 2; // thrown
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
-						output[3] = 0;
-						output[4] = attack - output[2] - BASE_THROWN_DAMAGE; // bonus from proficiency
+						// bonus from weapon
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]);
+						// bonus from dex
+						if ( itemCategory(stats[clientnum]->weapon) != POTION )
+						{
+							output[3] = entity->getDEX() / 4;
+						}
+						else
+						{
+							output[3] = 0.f;
+						}
+						// bonus from proficiency
+						output[4] = attack - output[2] - output[3] - BASE_THROWN_DAMAGE;
 						output[5] = 0; // bonus from equipment
 					}
 				}
@@ -1799,7 +1791,7 @@ void attackHoverText(Sint32 input[6])
 					break;
 				case 2: // thrown
 					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
-					numInfoLines = 2;
+					numInfoLines = 3;
 					break;
 				case 3: // melee
 					snprintf(tooltipHeader, strlen(language[2532]), language[2532]);
@@ -1890,6 +1882,9 @@ void attackHoverText(Sint32 input[6])
 							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
 							break;
 						case 1:
+							snprintf(buf, longestline(language[2535]), language[2535], input[3]);
+							break;
+						case 2:
 							snprintf(buf, longestline(language[2537]), language[2537], input[4]);
 							break;
 						default:
