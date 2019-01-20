@@ -1276,7 +1276,31 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								spawnExplosion(my->x, my->y, my->z);
-								damage = 10;
+								if ( parent )
+								{
+									if ( parent->behavior == &actParticleDot )
+									{
+										damage = parent->skill[1];
+									}
+									else if ( parent->behavior == &actPlayer )
+									{
+										Stat* playerStats = parent->getStats();
+										if ( playerStats )
+										{
+											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											damage = (10 + skillLVL);
+										}
+									}
+									else
+									{
+										damage = 10;
+									}
+								}
+								else
+								{
+									damage = 10;
+								}
+								damage = damage - rand() % ((damage / 4) + 1);
 							}
 							damage *= damagetables[hitstats->type][5];
 							if ( parent )
@@ -1300,7 +1324,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( my->actmagicIsOrbiting == 2 
 									&& parent->behavior == &actParticleDot
-									&& parent->skill[1] == 1 )
+									&& parent->skill[1] > 0 )
 								{
 									hit.entity->setObituary(language[3350]);
 								}
@@ -1477,7 +1501,31 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
-								damage = 12;
+								if ( parent )
+								{
+									if ( parent->behavior == &actParticleDot )
+									{
+										damage = parent->skill[1];
+									}
+									else if ( parent->behavior == &actPlayer )
+									{
+										Stat* playerStats = parent->getStats();
+										if ( playerStats )
+										{
+											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											damage = (12 + skillLVL);
+										}
+									}
+									else
+									{
+										damage = 12;
+									}
+								}
+								else
+								{
+									damage = 12;
+								}
+								damage = damage - rand() % ((damage / 4) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
@@ -1646,7 +1694,31 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
-								damage = 15;
+								if ( parent )
+								{
+									if ( parent->behavior == &actParticleDot )
+									{
+										damage = parent->skill[1];
+									}
+									else if ( parent->behavior == &actPlayer )
+									{
+										Stat* playerStats = parent->getStats();
+										if ( playerStats )
+										{
+											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											damage = (15 + skillLVL);
+										}
+									}
+									else
+									{
+										damage = 15;
+									}
+								}
+								else
+								{
+									damage = 15;
+								}
+								damage = damage - rand() % ((damage / 4) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
@@ -4115,7 +4187,7 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->vel_z = 0;
 		//entity->yaw = (rand() % 360) * PI / 180.0;
 		entity->skill[0] = 100;
-		entity->skill[1] = 1;
+		entity->skill[1] = 10;
 		entity->behavior = &actParticleDot;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
