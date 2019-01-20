@@ -1346,7 +1346,6 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 			messagePlayer(player, language[2900]);
 			messagePlayer(player, language[2903]);
 			stats->EFFECTS[EFF_POISONED] = true;
-			stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
 		}
 		else
 		{
@@ -1489,7 +1488,6 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 			messagePlayer(player, language[2900]);
 			messagePlayer(player, language[2903]);
 			stats->EFFECTS[EFF_POISONED] = true;
-			stats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - entity->getCON() * 20);
 		}
 		else
 		{
