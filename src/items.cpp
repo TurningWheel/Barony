@@ -1767,11 +1767,22 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 	if ( player == clientnum )
 	{
-		if ( itemCategory(item) == POTION && usedBy
+		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
 			&& (players[clientnum] && players[clientnum]->entity)
 			&& players[clientnum]->entity == usedBy )
 		{
-			GenericGUI.alchemyLearnRecipe(item->type, true);
+			if ( item->identified )
+			{
+				GenericGUI.alchemyLearnRecipe(item->type, true);
+			}
+			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			if ( rand() % 100 < (0 + skillLVL * 5) ) // 0 - 25% chance
+			{
+				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+				itemPickup(clientnum, emptyBottle);
+				messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+				free(emptyBottle);
+			}
 		}
 	}
 

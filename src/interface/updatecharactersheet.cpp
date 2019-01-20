@@ -930,9 +930,10 @@ void drawSkillsSheet()
 					}
 					skillDetails[1] = skillDetails[0];
 					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
-					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
+					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
 
-					skillTooltipRect.h += 4 + (4 + lines) * (fontHeight + lines / 6);
+					skillTooltipRect.h += 4 + (5 + lines) * (fontHeight + lines / 6);
 					drawTooltip(&skillTooltipRect);
 					// legendary text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
@@ -942,13 +943,14 @@ void drawSkillsSheet()
 						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
 					// effect text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3248], skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3]);
+						uint32ColorWhite(*mainsurface), language[3248], 
+						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[4]);
 					// base potions
-					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 7, // print potion list
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 8, // print potion list
 						uint32ColorBaronyBlue(*mainsurface), "%s",
 						baseIngredients.c_str());
 					// secondary potions
-					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 7, // print potion list
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 8, // print potion list
 						uint32ColorBaronyBlue(*mainsurface), "%s",
 						secondaryIngredients.c_str());
 					break;
