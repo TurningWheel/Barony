@@ -493,6 +493,14 @@ void Entity::actChest()
 					//newItem(static_cast<ItemType>(POTION_WATER + (rand() % 15)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					newItem(itemLevelCurve(POTION, 0, currentlevel + 7), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
+				if ( rand() % 2 == 0 )
+				{
+					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, inventory);
+				}
+				if ( rand() % 4 == 0 )
+				{
+					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, inventory);
+				}
 				break;
 			default:
 				//Default case. Should never be reached.
