@@ -150,6 +150,10 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
 	}
+	else if ( targetStats.EFFECTS[EFF_BLIND] )
+	{
+		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 64, 64, 64);
+	}
 	else
 	{
 		enemy_bar_color[player] = 0;
