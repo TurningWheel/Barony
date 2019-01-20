@@ -3772,10 +3772,31 @@ Sint32 Entity::getThrownAttack()
 		return attack;
 	}
 
+	int skillLVL = entitystats->PROFICIENCIES[PRO_RANGED] / 20;
+
 	if ( entitystats->weapon )
 	{
-		attack += entitystats->weapon->weaponGetAttack(entitystats);
-		attack += entitystats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 20 bonus attack.
+		if ( itemCategory(entitystats->weapon) == THROWN )
+		{
+			int dex = getDEX() / 4;
+			attack += dex;
+			attack += entitystats->weapon->weaponGetAttack(entitystats);
+			attack *= thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
+		}
+		else if ( itemCategory(entitystats->weapon) == POTION )
+		{
+			int skillLVL = entitystats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			/*int dex = getDEX() / 4;
+			attack += dex;*/
+			attack *= potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+		}
+		else
+		{
+			int dex = getDEX() / 4;
+			attack += dex;
+			attack += entitystats->weapon->weaponGetAttack(entitystats);
+			attack += entitystats->PROFICIENCIES[PRO_RANGED] / 10; // 0 to 10 bonus attack.
+		}
 	}
 	else
 	{

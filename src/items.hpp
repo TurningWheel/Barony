@@ -458,6 +458,9 @@ Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(Stat* wielder);
 
+extern const real_t potionDamageSkillMultipliers[6];
+extern const real_t thrownDamageSkillMultipliers[6];
+
 //-----ITEM COMPARISON FUNCS-----
 /*
  * Only compares items of the same type.

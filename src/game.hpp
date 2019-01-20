@@ -289,7 +289,7 @@ extern char last_port[64];
 
 static const int BASE_MELEE_DAMAGE = 8;
 static const int BASE_RANGED_DAMAGE = 7;
-static const int BASE_THROWN_DAMAGE = 9;
+static const int BASE_THROWN_DAMAGE = 10;
 static const int BASE_PLAYER_UNARMED_DAMAGE = 6;
 
 extern bool spawn_blood;
