@@ -4085,7 +4085,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			free(newPotion);
 			if ( players[clientnum] && players[clientnum]->entity )
 			{
-				playSoundEntityLocal(players[clientnum]->entity, 52, 64);
+				playSoundEntityLocal(players[clientnum]->entity, 401, 64);
 			}
 			if ( raiseSkill && rand() % 2 == 0 )
 			{
