@@ -491,14 +491,14 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			messagePlayer(clientnum, language[3353], item->description());
 			if ( players[player] && players[player]->entity )
 			{
-				playSoundEntity(players[player]->entity, 52, 64);
+				playSoundEntity(players[player]->entity, 401, 64);
 			}
 			free(item);
 		}
 
 		if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // would spawn potions
 		{
-			messagePlayer(player, language[474]);
+			//messagePlayer(player, language[474]);
 			entity.skill[0] = 0; //Dry up fountain.
 			serverUpdateEntitySkill(&entity, 0);
 		}
