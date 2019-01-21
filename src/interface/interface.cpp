@@ -4083,6 +4083,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 			itemPickup(clientnum, newPotion);
 			messagePlayer(clientnum, language[3352], newPotion->description());
 			free(newPotion);
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				playSoundEntityLocal(players[clientnum]->entity, 52, 64);
+			}
 			if ( raiseSkill && rand() % 2 == 0 )
 			{
 				if ( multiplayer == CLIENT )
