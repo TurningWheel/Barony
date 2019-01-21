@@ -483,17 +483,36 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
 		if ( item )
 		{
+			if ( entity.skill[1] == 1 ) // would be water
+			{
+				item->type = POTION_WATER;
+			}
 			itemPickup(player, item);
+			messagePlayer(clientnum, language[3353], item->description());
+			if ( players[player] && players[player]->entity )
+			{
+				playSoundEntity(players[player]->entity, 52, 64);
+			}
 			free(item);
 		}
 
-		if ( stats[player] )
+		if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // would spawn potions
 		{
-			if ( skillLVL < 3 || (skillLVL >= 3 && rand() % (skillLVL - 1) == 0 ) )
+			messagePlayer(player, language[474]);
+			entity.skill[0] = 0; //Dry up fountain.
+			serverUpdateEntitySkill(&entity, 0);
+		}
+		else if ( skillLVL < 3 || (skillLVL >= 3 && rand() % (skillLVL - 1) == 0 ) )
+		{
+			if ( player > 0 )
 			{
-				entity.skill[0] = 0;
-				serverUpdateEntitySkill(&entity, 0);
-				messagePlayer(player, language[474]);
+				client_selected[player] = &entity;
+				actFountain(&entity);
+			}
+			else if ( player == 0 )
+			{
+				selectedEntity = &entity;
+				actFountain(&entity);
 			}
 		}
 	}
