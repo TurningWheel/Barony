@@ -30,6 +30,7 @@ bool spamming = false;
 bool showfirst = false;
 bool logCheckObstacle = false;
 int logCheckObstacleCount = 0;
+bool logCheckMainLoopTimers = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -2319,6 +2320,10 @@ void consoleCommand(char* command_str)
 				stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
 				stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
 			return;
+		}
+		else if ( !strncmp(command_str, "/debugtimers", 12) )
+		{
+			logCheckMainLoopTimers = !logCheckMainLoopTimers;
 		}
 		else if ( !strncmp(command_str, "/allspells", 10) )
 		{

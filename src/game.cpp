@@ -37,6 +37,7 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include <limits>
+#include <chrono>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -183,7 +184,7 @@ void gameLogic(void)
 		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
 		{
 			// goat/drunkards no spin!
-			if ( stats[clientnum]->type == GOATMAN || client_classes[clientnum] == CLASS_DRUNKARD )
+			if ( stats[clientnum]->type == GOATMAN || client_classes[clientnum] == CLASS_BREWER )
 			{
 				// return to normal.
 				if ( drunkextend > 0 )
@@ -2700,12 +2701,23 @@ int main(int argc, char** argv)
 		int indev_timer = 0;
 
 		// main loop
+		std::chrono::high_resolution_clock::time_point t1StartLoop;
+		std::chrono::high_resolution_clock::time_point t2PostEvents;
+		std::chrono::high_resolution_clock::time_point t3SteamCallbacks;
+		std::chrono::high_resolution_clock::time_point t4Music;
+		std::chrono::high_resolution_clock::time_point t5MainDraw;
+		std::chrono::high_resolution_clock::time_point t6Messages;
+		std::chrono::high_resolution_clock::time_point t7Inputs;
+		std::chrono::high_resolution_clock::time_point t8Status;
+		std::chrono::high_resolution_clock::time_point t9GUI;
+		std::chrono::high_resolution_clock::time_point t10FrameLimiter;
+		std::chrono::high_resolution_clock::time_point t11End;
 		printlog("running main loop.\n");
 		while (mainloop)
 		{
 			// record the time at the start of this cycle
 			lastGameTickCount = SDL_GetPerformanceCounter();
-
+			t1StartLoop = std::chrono::high_resolution_clock::now();
 			// game logic
 			if ( !intro )
 			{
@@ -2720,7 +2732,7 @@ int main(int argc, char** argv)
 				}
 			}
 			handleEvents();
-
+			t2PostEvents = std::chrono::high_resolution_clock::now();
 			// handle steam callbacks
 #ifdef STEAMWORKS
 			if ( g_SteamLeaderboards )
@@ -2729,7 +2741,7 @@ int main(int argc, char** argv)
 			}
 			SteamAPI_RunCallbacks();
 #endif
-
+			t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
 				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
@@ -3032,6 +3044,7 @@ int main(int argc, char** argv)
 #ifdef MUSIC
 				handleLevelMusic();
 #endif
+				t4Music = std::chrono::high_resolution_clock::now();
 
 				// toggling the game menu
 				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
@@ -3137,12 +3150,16 @@ int main(int argc, char** argv)
 				camera.ang -= camera_shakex2;
 				camera.vang -= camera_shakey2 / 200.0;
 
+				t5MainDraw = std::chrono::high_resolution_clock::now();
+
 				updateMessages();
 				if ( !nohud )
 				{
 					handleDamageIndicators();
 					drawMessages();
 				}
+
+				t6Messages = std::chrono::high_resolution_clock::now();
 
 				if ( !gamePaused )
 				{
@@ -3475,12 +3492,16 @@ int main(int argc, char** argv)
 
 					}
 
+					t7Inputs = std::chrono::high_resolution_clock::now();
+
 					// Draw the static HUD elements
 					if ( !nohud )
 					{
 						drawMinimap(); // Draw the Minimap
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
+
+					t8Status = std::chrono::high_resolution_clock::now();
 
 					drawSustainedSpells();
 					updateAppraisalItemBox();
@@ -3542,6 +3563,8 @@ int main(int argc, char** argv)
 						Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 					}
+
+					t9GUI = std::chrono::high_resolution_clock::now();
 
 					// pointer in inventory screen
 					if (shootmode == false)
@@ -3749,6 +3772,25 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
 			}
 
+			//if ( logCheckMainLoopTimers )
+			//{
+			//	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t10FrameLimiter - t1StartLoop);
+			//	double timer = time_span.count() * 1000;
+			//	messagePlayer(clientnum, "Timers: %f total.", timer);
+
+			//	/*printTextFormatted(font8x8_bmp, 8, 20,
+			//		"Events: %4.5fs\nSteamCallbacks: %4.5fs\nMainDraw: %4.5fs\nMessages: %4.5fs\nInputs: %4.5fs\nStatus: %4.5fs\nGUI: %4.5fs\nFrameLimiter: %4.5fs\nEnd: %4.5fs\n",
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t2PostEvents - t1StartLoop),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t3SteamCallbacks - t2PostEvents),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t5MainDraw - t4Music),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t6Messages - t5MainDraw),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t7Inputs - t6Messages),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t8Status - t7Inputs),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t9GUI - t8Status),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t10FrameLimiter - t9GUI),
+			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t11End - t10FrameLimiter));*/
+			//}
+
 			// update screen
 			GO_SwapBuffers(screen);
 
@@ -3758,6 +3800,8 @@ int main(int argc, char** argv)
 				keystatus[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
+
+			t10FrameLimiter = std::chrono::high_resolution_clock::now();
 
 			// frame rate limiter
 			while ( frameRateLimit(fpsLimit) )
@@ -3775,6 +3819,8 @@ int main(int argc, char** argv)
 					}
 				}
 			}
+
+			t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
 			cycles++;
