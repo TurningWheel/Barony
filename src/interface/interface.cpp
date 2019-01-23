@@ -3580,7 +3580,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_SPEED;
 					break;
 				case POTION_BLINDNESS:
-					result = POTION_CONFUSION;
+					result = POTION_STRENGTH;
 					break;
 				case POTION_RESTOREMAGIC:
 					result = POTION_BLINDNESS;
@@ -3714,7 +3714,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 						result = POTION_SPEED;
 						break;
 					case POTION_BLINDNESS:
-						result = POTION_CONFUSION;
+						result = POTION_STRENGTH;
 						break;
 					case POTION_RESTOREMAGIC:
 						result = POTION_BLINDNESS;

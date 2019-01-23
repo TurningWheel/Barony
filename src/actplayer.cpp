@@ -944,7 +944,7 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			if ( currentlevel == 0 && client_classes[PLAYER_NUM] == CLASS_DRUNKARD )
+			if ( currentlevel == 0 && client_classes[PLAYER_NUM] == CLASS_BREWER )
 			{
 				if ( PLAYER_ALIVETIME == 1 )
 				{
@@ -1080,7 +1080,10 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						messagePlayer(clientnum, language[3240], tempItem->description());
+						if ( itemCategory(tempItem) == GEM )
+						{
+							messagePlayer(clientnum, language[3240], tempItem->description());
+						}
 					}
 
 					//Attempt a level up.
@@ -2428,7 +2431,7 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// effects of drunkenness
-		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN && client_classes[PLAYER_NUM] != CLASS_DRUNKARD))
+		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN && client_classes[PLAYER_NUM] != CLASS_BREWER))
 			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 		{
 			CHAR_DRUNK++;

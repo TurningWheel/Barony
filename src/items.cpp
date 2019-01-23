@@ -1969,6 +1969,9 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case POTION_THUNDERSTORM:
 			item_PotionUnstableStorm(item, players[player]->entity, usedBy, nullptr);
 			break;
+		case POTION_STRENGTH:
+			item_PotionStrength(item, players[player]->entity, usedBy);
+			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;
@@ -3153,7 +3156,8 @@ bool isPotionBad(const Item& potion)
 		|| potion.type == POTION_PARALYSIS
 		|| potion.type == POTION_FIRESTORM 
 		|| potion.type == POTION_ICESTORM 
-		|| potion.type == POTION_THUNDERSTORM )
+		|| potion.type == POTION_THUNDERSTORM
+		|| potion.type == POTION_POLYMORPH )
 	{
 		return true;
 	}

@@ -690,7 +690,7 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_DRUNKARD;
+				client_classes[clientnum] = CLASS_BREWER;
 				stats[0]->appearance = 0;
 				stats[0]->playerRace = RACE_GOATMAN;
 				strcpy(stats[0]->name, "The Server");
@@ -708,7 +708,7 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-				client_classes[clientnum] = CLASS_DRUNKARD;
+				client_classes[clientnum] = CLASS_BREWER;
 				stats[0]->appearance = 0;
 				stats[0]->playerRace = RACE_GOATMAN;
 				strcpy(stats[0]->name, "The Client");
@@ -2349,7 +2349,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( skipSecondDLC )
 					{
-						lastClassInList = CLASS_DRUNKARD;
+						lastClassInList = CLASS_BREWER;
 					}
 				}
 				else
@@ -2426,7 +2426,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( stats[0]->playerRace == RACE_HUMAN )
 					{
-						if ( client_classes[0] == CLASS_DRUNKARD && skipFirstDLC )
+						if ( client_classes[0] == CLASS_BREWER && skipFirstDLC )
 						{
 							client_classes[0] = CLASS_MONK;
 						}
