@@ -263,6 +263,9 @@ void drawSustainedSpells()
 						sprite = &effect_hungover_bmp;
 					}
 					break;
+				case EFF_POTION_STR:
+					sprite = &str_bmp64u;
+					break;
 				default:
 					effectImageNode = nullptr;
 					break;
@@ -274,7 +277,17 @@ void drawSustainedSpells()
 			{
 				sprite = (SDL_Surface**)effectImageNode->element;
 			}
-			drawImage(*sprite, NULL, &pos);
+
+			if ( sprite == &str_bmp64u )
+			{
+				pos.h = 32;
+				pos.w = 32;
+				drawImageScaled(*sprite, NULL, &pos);
+			}
+			else
+			{
+				drawImage(*sprite, NULL, &pos);
+			}
 			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
 			{
 				pos.x += sustained_spell_generic_icon->w;

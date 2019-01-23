@@ -246,9 +246,10 @@ typedef enum ItemType
 	TOOL_ALEMBIC,
 	POTION_FIRESTORM,
 	POTION_ICESTORM,
-	POTION_THUNDERSTORM
+	POTION_THUNDERSTORM,
+	POTION_STRENGTH
 } ItemType;
-const int NUMITEMS = 225;
+const int NUMITEMS = 226;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -408,6 +409,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy);
 void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion);
 void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy);

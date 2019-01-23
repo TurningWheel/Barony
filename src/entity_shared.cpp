@@ -355,6 +355,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"potion_firestorm",
 	"potion_icestorm",
 	"potion_thunderstorm",
+	"potion_strength",
 	""
 };
 
@@ -420,6 +421,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"potion_firestorm",
 		"potion_icestorm",
 		"potion_thunderstorm",
+		"potion_strength",
 		"magicstaff_light",
 		"magicstaff_digging",
 		"magicstaff_locking",

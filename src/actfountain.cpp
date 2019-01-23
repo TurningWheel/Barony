@@ -64,7 +64,8 @@ const std::vector<std::pair<int, int>> potionStandardAppearanceMap =
 	{ POTION_POLYMORPH, 0 },
 	{ POTION_FIRESTORM, 0 },
 	{ POTION_ICESTORM, 0 },
-	{ POTION_THUNDERSTORM, 0 }
+	{ POTION_THUNDERSTORM, 0 },
+	{ POTION_STRENGTH, 0 }
 };
 
 std::mt19937 fountainSeed(rand());
@@ -401,7 +402,7 @@ void actFountain(Entity* my)
 							{
 								items.push_back(std::pair<Item*,int>(stats[i]->shield, 4));
 							}
-							if ( stats[i]->weapon )
+							if ( stats[i]->weapon && stats[i]->weapon->type != POTION_EMPTY )
 							{
 								items.push_back(std::pair<Item*,int>(stats[i]->weapon, 5));
 							}

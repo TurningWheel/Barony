@@ -1014,6 +1014,95 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	consumeItem(item, player);
 }
 
+void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
+{
+	if ( !entity )
+	{
+		return;
+	}
+
+	int skillLVL = 0;
+	if ( multiplayer != CLIENT && usedBy && usedBy->behavior == &actPlayer )
+	{
+		Stat* usedByStats = usedBy->getStats();
+		if ( usedByStats )
+		{
+			skillLVL = usedByStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+		}
+	}
+
+	int player = -1;
+	Stat* stats;
+
+	if ( entity->behavior == &actPlayer )
+	{
+		player = entity->skill[2];
+	}
+	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
+
+	if ( stats->amulet != NULL )
+	{
+		if ( stats->amulet->type == AMULET_STRANGULATION )
+		{
+			if ( player == clientnum )
+			{
+				messagePlayer(player, language[750]);
+			}
+			return;
+		}
+	}
+	if ( stats->EFFECTS[EFF_VOMITING] )
+	{
+		if ( player == clientnum )
+		{
+			messagePlayer(player, language[751]);
+		}
+		return;
+	}
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return;
+	}
+
+
+	if ( item->beatitude < 0 )
+	{
+		messagePlayer(player, language[2900]);
+		//Cursed effect blinds you.
+		messagePlayer(player, language[765]);
+		stats->EFFECTS[EFF_BLIND] = true;
+		if ( player >= 0 )
+		{
+			stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
+			stats->EFFECTS_TIMERS[EFF_BLIND] = std::max(300, stats->EFFECTS_TIMERS[EFF_BLIND] - (entity->getPER() + entity->getCON()) * 5);
+		}
+		else
+		{
+			entity->setEffect(EFF_BLIND, true, 660 + rand() % 240, true);
+		}
+	}
+	else
+	{
+		messagePlayer(player, language[3354]);
+		stats->EFFECTS[EFF_POTION_STR] = true;
+		stats->EFFECTS_TIMERS[EFF_POTION_STR] = 1500; // 30 seconds
+		if ( item->beatitude > 0 )
+		{
+			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 750 * item->beatitude;
+		}
+	}
+	serverUpdateEffects(player);
+
+	// play drink sound
+	playSoundEntity(entity, 52, 64);
+	consumeItem(item, player);
+}
+
 void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)

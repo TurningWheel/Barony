@@ -1029,6 +1029,9 @@ void Entity::effectTimes()
 					case EFF_PARALYZED:
 						messagePlayer(player, language[605]);
 						break;
+					case EFF_POTION_STR:
+						messagePlayer(player, language[3355]);
+						break;
 					case EFF_LEVITATING:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
 						dissipate = true; //Remove the effect by default.
@@ -3940,6 +3943,10 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	{
 		STR += 8;
 	}
+	if ( entitystats->EFFECTS[EFF_POTION_STR] )
+	{
+		STR += 5;
+	}
 	return STR;
 }
 
@@ -4282,6 +4289,10 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 	{
 		PER += 8;
+	}
+	if ( entitystats->EFFECTS[EFF_POTION_STR] )
+	{
+		PER -= 5;
 	}
 	return PER;
 }
@@ -6031,7 +6042,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
 						{
 							armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
-							if ( skillCapstoneUnlocked(skill[2], PRO_SHIELD) )
+							if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 							{
 								armorDegradeChance = 100; // don't break.
 							}
@@ -6107,7 +6118,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( hit.entity->behavior == &actPlayer )
 							{
 								shieldDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
-								if ( skillCapstoneUnlocked(skill[2], PRO_SHIELD) )
+								if ( skillCapstoneUnlocked(hit.entity->skill[2], PRO_SHIELD) )
 								{
 									shieldDegradeChance = 100; // don't break.
 								}

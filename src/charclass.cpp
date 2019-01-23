@@ -1737,34 +1737,46 @@ void initClass(int player)
 			free(item);
 		}
 	}
-	else if ( client_classes[player] == CLASS_DRUNKARD )
+	else if ( client_classes[player] == CLASS_BREWER )
 	{
 		// attributes
-		stats[player]->EFFECTS[EFF_ASLEEP] = true;
-		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
-		stats[player]->STR += -1;
+		/*stats[player]->EFFECTS[EFF_ASLEEP] = true;
+		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;*/
+		stats[player]->STR += -2;
 		stats[player]->DEX += 1;
 		stats[player]->CON -= 2;
 		stats[player]->INT -= 2;
-		stats[player]->PER -= 2;
+		stats[player]->PER += 1;
 		stats[player]->CHR += 1;
 
 		stats[player]->MAXHP += 10;
 		stats[player]->HP += 10;
-		stats[player]->MAXMP -= 20;
-		stats[player]->MP -= 20;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
+
+		stats[player]->GOLD = 100;
 
 		// skills
-		stats[player]->PROFICIENCIES[PRO_MACE] = 60;
-		stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-		stats[player]->PROFICIENCIES[PRO_AXE] = 20;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 60;
+		/*stats[player]->PROFICIENCIES[PRO_MACE] = 60;
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;*/
+		stats[player]->PROFICIENCIES[PRO_AXE] = 10;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 25;
+		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
+		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 10;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 25;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 40;
 
 		// booze
-		item = newItem(POTION_BOOZE, EXCELLENT, 0, 4, 2, true, NULL);
+		item = newItem(IRON_AXE, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+
+		// empty bottles
+		item = newItem(POTION_EMPTY, SERVICABLE, 0, 3, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1776,23 +1788,22 @@ void initClass(int player)
 		{
 			equipItem(item, &stats[player]->weapon, player);
 		}
-			
-		// bronze shield
-		item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
-		if ( player == clientnum )
-		{
-			item2 = itemPickup(player, item);
-			useItem(item2, player);
-			hotbar[2].item = item2->uid;
-			free(item);
-		}
-		else
-		{
-			useItem(item, player);
-		}
 
 		// boots
-		item = newItem(STEEL_BOOTS, WORN, 0, 1, 0, true, NULL);
+		item = newItem(IRON_BOOTS, WORN, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// backpack
+		item = newItem(CLOAK_BACKPACK, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1806,39 +1817,42 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// weapon
-			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+			//// weapon
+			//item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
+			//item2 = itemPickup(player, item);
+			//hotbar[1].item = item2->uid;
+			//free(item);
+
+			// blindness
+			item = newItem(POTION_BLINDNESS, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
-			hotbar[0].item = item2->uid;
+			hotbar[5].item = item2->uid;
 			free(item);
 
-			// bread
-			item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
+			// booze
+			item = newItem(POTION_BOOZE, SERVICABLE, 0, 2, 2, true, NULL);
 			item2 = itemPickup(player, item);
-			free(item);
-
-			// towel
-			item = newItem(TOOL_TOWEL, DECREPIT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
-
-			// tins
-			item = newItem(FOOD_TIN, EXCELLENT, 0, 3, 0, true, NULL);
-			item2 = itemPickup(player, item);
+			hotbar[6].item = item2->uid;
 			free(item);
 
 			// juice
-			item = newItem(POTION_JUICE, EXCELLENT, 0, 2, 4, true, NULL);
+			item = newItem(POTION_JUICE, SERVICABLE, 0, 2, 3, true, NULL);
 			item2 = itemPickup(player, item);
-			hotbar[3].item = item2->uid;
+			hotbar[7].item = item2->uid;
 			free(item);
-
-			item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("The Lusty Goblin Maid"), true, NULL);
+			
+			// alembic
+			item = newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[8].item = item2->uid;
 			free(item);
 
-			item = newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("How to be Strong"), true, NULL);
+			// polymorph
+			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("Bottle Book"), true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[9].item = item2->uid;
 			free(item);
@@ -1847,7 +1861,7 @@ void initClass(int player)
 
 	stats[player]->OLDHP = stats[player]->HP;
 
-	if ( client_classes[clientnum] != CLASS_DRUNKARD )
+	if ( client_classes[clientnum] != CLASS_BREWER )
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = false;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
@@ -1866,7 +1880,7 @@ void initClass(int player)
 	}
 	if ( stats[player]->appearance == 0 
 		&& client_classes[player] >= CLASS_CONJURER 
-		&& client_classes[player] <= CLASS_DRUNKARD 
+		&& client_classes[player] <= CLASS_BREWER 
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )

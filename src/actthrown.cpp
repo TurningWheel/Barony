@@ -622,6 +622,10 @@ void actThrown(Entity* my)
 								item_PotionUnstableStorm(item, hit.entity, parent, my);
 								usedpotion = true;
 								break;
+							case POTION_STRENGTH:
+								item_PotionStrength(item, hit.entity, parent);
+								usedpotion = true;
+								break;
 							case POTION_PARALYSIS:
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
