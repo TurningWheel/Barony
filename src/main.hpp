@@ -36,6 +36,7 @@ extern bool spamming;
 extern bool showfirst;
 extern bool logCheckObstacle;
 extern int logCheckObstacleCount;
+extern bool logCheckMainLoopTimers;
 
 #include <dirent.h>
 #include <stdlib.h>
