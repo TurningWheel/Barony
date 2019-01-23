@@ -342,14 +342,21 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 
 void Item::applyEmptyPotion(int player, Entity& entity)
 {
-	if ( entity.behavior == &actFountain )
+	if ( entity.behavior == &actFountain || entity.behavior == &actSink )
 	{
 		if ( entity.skill[0] == 0 )
 		{
 			// fountain is dry, no bueno.
 			if ( player == clientnum )
 			{
-				messagePlayer(player, language[467]);
+				if ( entity.behavior == &actFountain )
+				{
+					messagePlayer(player, language[467]);
+				}
+				else
+				{
+					messagePlayer(player, language[580]);
+				}
 			}
 			return;
 		}
@@ -478,12 +485,26 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		}
 
 
-		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
-		auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
-		item = newItem(static_cast<ItemType>(generatedPotion.first), EXCELLENT, 0, 1, generatedPotion.second, false, NULL);
+		if ( entity.behavior == &actFountain )
+		{
+			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+			item = newItem(static_cast<ItemType>(generatedPotion.first), SERVICABLE, 0, 1, generatedPotion.second, false, NULL);
+		}
+		else
+		{
+			if ( entity.skill[3] == 1 ) // slime
+			{
+				item = newItem(POTION_ACID, SERVICABLE, 0, 1, 0, false, NULL);
+			}
+			else
+			{
+				item = newItem(POTION_WATER, SERVICABLE, 0, 1, 0, false, NULL);
+			}
+		}
 		if ( item )
 		{
-			if ( entity.skill[1] == 1 ) // would be water
+			if ( entity.behavior == &actFountain && entity.skill[1] == 1 ) // would be water
 			{
 				item->type = POTION_WATER;
 			}
@@ -496,7 +517,59 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			free(item);
 		}
 
-		if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // would spawn potions
+		if ( entity.behavior == &actSink )
+		{
+			if ( entity.skill[3] == 1 || entity.skill[3] == 0 ) // ring or a slime
+			{
+				if ( player > 0 )
+				{
+					client_selected[player] = &entity;
+					actSink(&entity);
+				}
+				else if ( player == 0 )
+				{
+					selectedEntity = &entity;
+					actSink(&entity);
+				}
+			}
+			else if ( entity.skill[0] > 1 )
+			{
+				--entity.skill[0];
+				// Randomly choose second usage stats.
+				int effect = rand() % 10; //4 possible effects.
+				switch ( effect )
+				{
+					case 0:
+						//10% chance.
+						entity.skill[3] = 0; //Player will find a ring.
+					case 1:
+						//10% chance.
+						entity.skill[3] = 1; //Will spawn a slime.
+						break;
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						//60% chance.
+						entity.skill[3] = 2; //Will raise nutrition.
+						break;
+					case 8:
+					case 9:
+						//20% chance.
+						entity.skill[3] = 3; //Player will lose 1 HP.
+						break;
+					default:
+						break; //Should never happen.
+				}
+			}
+			else
+			{
+				--entity.skill[0];
+			}
+		}
+		else if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // fountain would spawn potions
 		{
 			//messagePlayer(player, language[474]);
 			entity.skill[0] = 0; //Dry up fountain.
