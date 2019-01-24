@@ -37,7 +37,6 @@
 #include "paths.hpp"
 #include "player.hpp"
 #include <limits>
-#include <chrono>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -88,6 +87,7 @@ TileEntityListHandler TileEntityList;
 int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
+DebugStatsClass DebugStats;
 
 /*-------------------------------------------------------------------------------
 
@@ -135,8 +135,10 @@ void gameLogic(void)
 		fourthendmovietime++;
 	}
 
+	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
+
 #ifdef SOUND
-	sound_update(); //Update FMOD and whatnot.
+	// sound_update(); //Update FMOD and whatnot.
 #endif
 
 	// camera shaking
@@ -453,6 +455,7 @@ void gameLogic(void)
 		}
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
+			DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( assailantTimer[c] > 0 )
@@ -626,6 +629,7 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
+			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1037,7 +1041,7 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
-
+			DebugStats.eventsT4 = std::chrono::high_resolution_clock::now();
 			if ( multiplayer == SERVER )
 			{
 				// periodically remind clients of the current level
@@ -1230,6 +1234,8 @@ void gameLogic(void)
 				INVENTORY_SIZEY = 3;
 			}
 
+			DebugStats.eventsT5 = std::chrono::high_resolution_clock::now();
+
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1285,6 +1291,8 @@ void gameLogic(void)
 					}
 				}
 			}
+
+			DebugStats.eventsT6 = std::chrono::high_resolution_clock::now();
 
 			if ( kills[SHOPKEEPER] >= 3 )
 			{
@@ -2002,34 +2010,34 @@ void handleEvents(void)
 			case SDL_KEYDOWN: // if a key is pressed...
 				if ( command )
 				{
-					if (event.key.keysym.sym == SDLK_UP)
+					if ( event.key.keysym.sym == SDLK_UP )
 					{
-						if (!chosen_command && command_history.last)   //If no command is chosen (user has not tried to go up through the commands yet...
+						if ( !chosen_command && command_history.last )   //If no command is chosen (user has not tried to go up through the commands yet...
 						{
 							//Assign the chosen command as the last thing the user typed.
 							chosen_command = command_history.last;
-							strcpy(command_str, ((string_t* )chosen_command->element)->data);
+							strcpy(command_str, ((string_t*)chosen_command->element)->data);
 						}
-						else if (chosen_command)
+						else if ( chosen_command )
 						{
 							//Scroll up through the list. Do nothing if already at the top.
-							if (chosen_command->prev)
+							if ( chosen_command->prev )
 							{
 								chosen_command = chosen_command->prev;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
+								strcpy(command_str, ((string_t*)chosen_command->element)->data);
 							}
 						}
 					}
-					else if (event.key.keysym.sym == SDLK_DOWN)
+					else if ( event.key.keysym.sym == SDLK_DOWN )
 					{
-						if (chosen_command)   //If a command is chosen...
+						if ( chosen_command )   //If a command is chosen...
 						{
 							//Scroll down through the history, back to the latest command.
-							if (chosen_command->next)
+							if ( chosen_command->next )
 							{
 								//Move on to the newer command.
 								chosen_command = chosen_command->next;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
+								strcpy(command_str, ((string_t*)chosen_command->element)->data);
 							}
 							else
 							{
@@ -2068,13 +2076,15 @@ void handleEvents(void)
 				}
 #ifdef PANDORA
 				// Pandora Shoulder as Mouse Button handling
-				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_LEFT;
-				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+				}
+				else if ( event.key.keysym.sym == SDLK_RSHIFT ) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else
+				}
+				else
 #endif
 				{
 					lastkeypressed = event.key.keysym.scancode;
@@ -2083,13 +2093,15 @@ void handleEvents(void)
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
 #ifdef PANDORA
-				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_LEFT;
-				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+				}
+				else if ( event.key.keysym.sym == SDLK_RSHIFT ) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else
+				}
+				else
 #endif
 				{
 					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
@@ -2136,15 +2148,15 @@ void handleEvents(void)
 				mousex = event.motion.x;
 				mousey = event.motion.y;
 #ifdef PANDORA
-				if(xres!=800 || yres!=480) {	// SEB Pandora
-					mousex = (mousex*xres)/800;
-					mousey = (mousey*yres)/480;
+				if ( xres != 800 || yres != 480 ) {	// SEB Pandora
+					mousex = (mousex*xres) / 800;
+					mousey = (mousey*yres) / 480;
 				}
 #endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
-				if (!draw_cursor)
+				if ( !draw_cursor )
 				{
 					draw_cursor = true;
 				}
@@ -2152,7 +2164,7 @@ void handleEvents(void)
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ( (!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
 					//Generate a mouse click.
 					SDL_Event e;
@@ -2165,7 +2177,7 @@ void handleEvents(void)
 				break;
 			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
 				joystatus[event.cbutton.button] = 0; // set this button's index to 0
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK])
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
 				{
 					//Generate a mouse lift.
 					SDL_Event e;
@@ -2180,6 +2192,12 @@ void handleEvents(void)
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if ( runtimes < 5 )
 				{
+					if ( runtimes == 0 )
+					{
+#ifdef SOUND
+						sound_update(); //Update FMOD and whatnot.
+#endif
+					}
 					runtimes++;
 					gameLogic();
 					mousexrel = 0;
@@ -2701,23 +2719,13 @@ int main(int argc, char** argv)
 		int indev_timer = 0;
 
 		// main loop
-		std::chrono::high_resolution_clock::time_point t1StartLoop;
-		std::chrono::high_resolution_clock::time_point t2PostEvents;
-		std::chrono::high_resolution_clock::time_point t3SteamCallbacks;
-		std::chrono::high_resolution_clock::time_point t4Music;
-		std::chrono::high_resolution_clock::time_point t5MainDraw;
-		std::chrono::high_resolution_clock::time_point t6Messages;
-		std::chrono::high_resolution_clock::time_point t7Inputs;
-		std::chrono::high_resolution_clock::time_point t8Status;
-		std::chrono::high_resolution_clock::time_point t9GUI;
-		std::chrono::high_resolution_clock::time_point t10FrameLimiter;
-		std::chrono::high_resolution_clock::time_point t11End;
+
 		printlog("running main loop.\n");
 		while (mainloop)
 		{
 			// record the time at the start of this cycle
 			lastGameTickCount = SDL_GetPerformanceCounter();
-			t1StartLoop = std::chrono::high_resolution_clock::now();
+			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
 			// game logic
 			if ( !intro )
 			{
@@ -2731,8 +2739,9 @@ int main(int argc, char** argv)
 					serverHandleMessages();
 				}
 			}
+			DebugStats.t21PostHandleMessages = std::chrono::high_resolution_clock::now();
 			handleEvents();
-			t2PostEvents = std::chrono::high_resolution_clock::now();
+			DebugStats.t2PostEvents = std::chrono::high_resolution_clock::now();
 			// handle steam callbacks
 #ifdef STEAMWORKS
 			if ( g_SteamLeaderboards )
@@ -2741,7 +2750,7 @@ int main(int argc, char** argv)
 			}
 			SteamAPI_RunCallbacks();
 #endif
-			t3SteamCallbacks = std::chrono::high_resolution_clock::now();
+			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
 				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
@@ -3044,7 +3053,7 @@ int main(int argc, char** argv)
 #ifdef MUSIC
 				handleLevelMusic();
 #endif
-				t4Music = std::chrono::high_resolution_clock::now();
+				DebugStats.t4Music = std::chrono::high_resolution_clock::now();
 
 				// toggling the game menu
 				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
@@ -3150,7 +3159,7 @@ int main(int argc, char** argv)
 				camera.ang -= camera_shakex2;
 				camera.vang -= camera_shakey2 / 200.0;
 
-				t5MainDraw = std::chrono::high_resolution_clock::now();
+				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
 
 				updateMessages();
 				if ( !nohud )
@@ -3159,7 +3168,7 @@ int main(int argc, char** argv)
 					drawMessages();
 				}
 
-				t6Messages = std::chrono::high_resolution_clock::now();
+				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
 				if ( !gamePaused )
 				{
@@ -3492,7 +3501,7 @@ int main(int argc, char** argv)
 
 					}
 
-					t7Inputs = std::chrono::high_resolution_clock::now();
+					DebugStats.t7Inputs = std::chrono::high_resolution_clock::now();
 
 					// Draw the static HUD elements
 					if ( !nohud )
@@ -3501,7 +3510,7 @@ int main(int argc, char** argv)
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
 
-					t8Status = std::chrono::high_resolution_clock::now();
+					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
 					drawSustainedSpells();
 					updateAppraisalItemBox();
@@ -3564,7 +3573,7 @@ int main(int argc, char** argv)
 						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 					}
 
-					t9GUI = std::chrono::high_resolution_clock::now();
+					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
 					// pointer in inventory screen
 					if (shootmode == false)
@@ -3772,24 +3781,25 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
 			}
 
-			//if ( logCheckMainLoopTimers )
-			//{
-			//	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t10FrameLimiter - t1StartLoop);
-			//	double timer = time_span.count() * 1000;
-			//	messagePlayer(clientnum, "Timers: %f total.", timer);
-
-			//	/*printTextFormatted(font8x8_bmp, 8, 20,
-			//		"Events: %4.5fs\nSteamCallbacks: %4.5fs\nMainDraw: %4.5fs\nMessages: %4.5fs\nInputs: %4.5fs\nStatus: %4.5fs\nGUI: %4.5fs\nFrameLimiter: %4.5fs\nEnd: %4.5fs\n",
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t2PostEvents - t1StartLoop),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t3SteamCallbacks - t2PostEvents),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t5MainDraw - t4Music),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t6Messages - t5MainDraw),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t7Inputs - t6Messages),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t8Status - t7Inputs),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t9GUI - t8Status),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t10FrameLimiter - t9GUI),
-			//		1000 * std::chrono::duration_cast<std::chrono::duration<real_t>>(t11End - t10FrameLimiter));*/
-			//}
+			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
+			if ( logCheckMainLoopTimers )
+			{
+				std::chrono::duration<double> time_span = 
+					std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t10FrameLimiter - DebugStats.t11End);
+				double timer = time_span.count() * 1000;
+				if ( timer > 10.f )
+				{
+					DebugStats.displayStats = true;
+					DebugStats.storeStats();
+					DebugStats.storeEventStats();
+					messagePlayer(clientnum, "Timers: %f total.", timer);
+				}
+				if ( DebugStats.displayStats )
+				{
+					printTextFormatted(font8x8_bmp, 8, 20, DebugStats.debugOutput);
+					printTextFormatted(font8x8_bmp, 8, 100, DebugStats.debugEventOutput);
+				}
+			}
 
 			// update screen
 			GO_SwapBuffers(screen);
@@ -3801,7 +3811,6 @@ int main(int argc, char** argv)
 				takeScreenshot();
 			}
 
-			t10FrameLimiter = std::chrono::high_resolution_clock::now();
 
 			// frame rate limiter
 			while ( frameRateLimit(fpsLimit) )
@@ -3820,7 +3829,7 @@ int main(int argc, char** argv)
 				}
 			}
 
-			t11End = std::chrono::high_resolution_clock::now();
+			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
 			cycles++;
