@@ -944,28 +944,34 @@ void actPlayer(Entity* my)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
 			}
-			if ( currentlevel == 0 && client_classes[PLAYER_NUM] == CLASS_BREWER )
+			if ( currentlevel == 0 && stats[PLAYER_NUM]->playerRace == RACE_GOATMAN && stats[PLAYER_NUM]->appearance == 0 )
 			{
 				if ( PLAYER_ALIVETIME == 1 )
 				{
 					my->setEffect(EFF_WITHDRAWAL, true, -2, true);
 				}
-				else if ( PLAYER_ALIVETIME == 330 )
+				if ( PLAYER_ALIVETIME == 330 )
 				{
 					my->setEffect(EFF_ASLEEP, false, 0, true);
-					playSoundPlayer(PLAYER_NUM, 32, 128);
-					stats[PLAYER_NUM]->HUNGER = 150;
-					serverUpdateHunger(PLAYER_NUM);
+					if ( svFlags & SV_FLAG_HUNGER )
+					{
+						playSoundPlayer(PLAYER_NUM, 32, 128);
+						stats[PLAYER_NUM]->HUNGER = 150;
+						serverUpdateHunger(PLAYER_NUM);
+					}
 				}
-				else if ( PLAYER_ALIVETIME == 500 )
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 				{
-					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-					messagePlayerColor(PLAYER_NUM, color, language[3221]);
-				}
-				else if ( PLAYER_ALIVETIME == 700 )
-				{
-					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-					messagePlayerColor(PLAYER_NUM, color, language[3222]);
+					if ( PLAYER_ALIVETIME == 500 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+						messagePlayerColor(PLAYER_NUM, color, language[3221]);
+					}
+					else if ( PLAYER_ALIVETIME == 700 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+						messagePlayerColor(PLAYER_NUM, color, language[3222]);
+					}
 				}
 			}
 		}
@@ -2431,7 +2437,7 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// effects of drunkenness
-		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN && client_classes[PLAYER_NUM] != CLASS_BREWER))
+		if ( (stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] && (stats[PLAYER_NUM]->type != GOATMAN))
 			|| stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
 		{
 			CHAR_DRUNK++;

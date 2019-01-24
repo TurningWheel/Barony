@@ -1778,7 +1778,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 				GenericGUI.alchemyLearnRecipe(item->type, true);
 			}
 			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
-			if ( rand() % 100 < (0 + skillLVL * 5) ) // 0 - 25% chance
+			if ( item->status >= SERVICABLE && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
 				itemPickup(clientnum, emptyBottle);

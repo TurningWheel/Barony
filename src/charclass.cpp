@@ -149,7 +149,7 @@ void initClass(int player)
 			free(item);
 
 			// booze
-			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 1, true, NULL);
+			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
@@ -1740,8 +1740,6 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_BREWER )
 	{
 		// attributes
-		/*stats[player]->EFFECTS[EFF_ASLEEP] = true;
-		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;*/
 		stats[player]->STR += -2;
 		stats[player]->DEX += 1;
 		stats[player]->CON -= 2;
@@ -1852,6 +1850,11 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
+			// bread
+			item = newItem(FOOD_BREAD, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
 			item = newItem(READABLE_BOOK, DECREPIT, 0, 1, getBook("Bottle Book"), true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[9].item = item2->uid;
@@ -1861,11 +1864,24 @@ void initClass(int player)
 
 	stats[player]->OLDHP = stats[player]->HP;
 
-	if ( client_classes[clientnum] != CLASS_BREWER )
+	if ( stats[player]->appearance == 0 && stats[player]->playerRace == RACE_GOATMAN )
+	{
+		stats[player]->EFFECTS[EFF_ASLEEP] = true;
+		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = -1;
+		if ( player == clientnum )
+		{
+			// extra booze for hangover :)
+			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 2, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	else
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = false;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 	}
+
 	if ( stats[player]->appearance == 0 
 		&& client_classes[player] <= CLASS_MONK 
 		&& stats[player]->playerRace != RACE_HUMAN )
@@ -1873,7 +1889,7 @@ void initClass(int player)
 		if ( player == clientnum )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 2, 1, true, NULL);
+			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -1886,7 +1902,7 @@ void initClass(int player)
 		if ( player == clientnum )
 		{
 			// bonus polymorph potions
-			item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 1, true, NULL);
+			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -1904,10 +1920,10 @@ void initClass(int player)
 			addSpell(SPELL_TELEPORTATION, player, true);
 		}
 
-		if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] > 0 )
+		if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
 		{
 			bool learned = false;
-			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] > 0 )
+			if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
 			{
 				ItemType potion = POTION_WATER;
 				learned = GenericGUI.alchemyLearnRecipe(potion, false, false);

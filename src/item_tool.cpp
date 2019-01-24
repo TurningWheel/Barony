@@ -504,10 +504,6 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		}
 		if ( item )
 		{
-			if ( entity.behavior == &actFountain && entity.skill[1] == 1 ) // would be water
-			{
-				item->type = POTION_WATER;
-			}
 			itemPickup(player, item);
 			messagePlayer(clientnum, language[3353], item->description());
 			if ( players[player] && players[player]->entity )
@@ -575,7 +571,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			entity.skill[0] = 0; //Dry up fountain.
 			serverUpdateEntitySkill(&entity, 0);
 		}
-		else if ( skillLVL < 3 || (skillLVL >= 3 && rand() % (skillLVL - 1) == 0 ) )
+		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL == 0) ) )
 		{
 			if ( player > 0 )
 			{
