@@ -139,6 +139,7 @@ bool gamemods_disableSteamAchievements = false;
 bool gamemods_modPreload = false;
 
 sex_t lastSex = MALE;
+PlayerRaces lastRace = RACE_HUMAN;
 bool enabledDLCPack1 = false;
 bool enabledDLCPack2 = false;
 
@@ -1863,7 +1864,7 @@ void handleMainMenu(bool mode)
 			}
 
 			pady = suby1 + 108 + 24;
-
+			lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
 			if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
 			{
 				if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
@@ -2320,6 +2321,11 @@ void handleMainMenu(bool mode)
 				{
 					raceSelect = 2;
 				}
+			}
+			if ( lastRace != RACE_GOATMAN && stats[0]->playerRace == RACE_GOATMAN && stats[0]->appearance == 0 )
+			{
+				stats[0]->clearStats();
+				initClass(0);
 			}
 		}
 

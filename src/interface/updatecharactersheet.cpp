@@ -911,27 +911,27 @@ void drawSkillsSheet()
 					skillDetails[0] = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
 					skillDetails[1] = skillDetails[0];
 					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
-					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
+					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10));
 					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
 
-					skillTooltipRect.h += 4 + (5 + lines) * (fontHeight + lines / 6);
+					skillTooltipRect.h += 4 + (6 + lines) * (fontHeight + lines / 6);
 					drawTooltip(&skillTooltipRect);
 					// legendary text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
-						capstoneTextColor, language[3247]);
+						capstoneTextColor, language[3347]);
 					// header text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
 						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
 					// effect text
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
-						uint32ColorWhite(*mainsurface), language[3248], 
+						uint32ColorWhite(*mainsurface), language[3348], 
 						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[4]);
 					// base potions
-					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 8, // print potion list
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
 						uint32ColorBaronyBlue(*mainsurface), "%s",
 						baseIngredients.c_str());
 					// secondary potions
-					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 8, // print potion list
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
 						uint32ColorBaronyBlue(*mainsurface), "%s",
 						secondaryIngredients.c_str());
 					break;

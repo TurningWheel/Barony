@@ -1090,10 +1090,10 @@ void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	{
 		messagePlayer(player, language[3354]);
 		stats->EFFECTS[EFF_POTION_STR] = true;
-		stats->EFFECTS_TIMERS[EFF_POTION_STR] = 1500; // 30 seconds
+		stats->EFFECTS_TIMERS[EFF_POTION_STR] = 3000; // 60 seconds
 		if ( item->beatitude > 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 750 * item->beatitude;
+			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 1500 * item->beatitude; // 30 seconds each blessing
 		}
 	}
 	serverUpdateEffects(player);

@@ -191,9 +191,9 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
 	{	4,	2,	5,	3,	2,	2 }, // MONK 12
 	{	3,	2,	5,	6,	4,	4 }, // CONJURER 13
-	{	4,	4,	4,	4,	4,	4 }, // ACCURSED 14
-	{	4,	4,	4,	4,	4,	4 }, // MESMER 15
-	{	4,	4,	4,	4,	4,	4 }, // DRUNKARD 16
+	{	3,	3,	1,	6,	6,	3 }, // ACCURSED 14
+	{	3,	3,	1,	6,	4,	7 }, // MESMER 15
+	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
 	{	4,	4,	4,	4,	4,	4 }, // RESERVED 17
 	{	4,	4,	4,	4,	4,	4 }, // RESERVED 18
 	{	4,	4,	4,	4,	4,	4 }, // RESERVED 19

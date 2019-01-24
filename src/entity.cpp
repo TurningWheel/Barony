@@ -4082,7 +4082,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 				break;
 		}
 	}
-	if ( entitystats->EFFECTS[EFF_WITHDRAWAL] )
+	if ( entitystats->EFFECTS[EFF_WITHDRAWAL] && !entitystats->EFFECTS[EFF_DRUNK] )
 	{
 		DEX -= 3; // hungover.
 		int minusDex = DEX;
@@ -4281,10 +4281,6 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			PER -= 10;
 			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
-	}
-	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
-	{
-		PER -= 4;
 	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 	{
@@ -6221,7 +6217,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
-							real_t pushbackMultiplier = 0.5 + 0.1 * (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
+							real_t baseMultiplier = 0.5;
+							if ( myStats->gloves )
+							{
+								switch ( myStats->gloves->type )
+								{
+									case BRASS_KNUCKLES:
+										baseMultiplier = 0.25;
+										break;
+									case IRON_KNUCKLES:
+										baseMultiplier = 0.35;
+										break;
+									case SPIKED_GAUNTLETS:
+										baseMultiplier = 0.5;
+										break;
+									default:
+										break;
+								}
+							}
+							real_t pushbackMultiplier = baseMultiplier + 0.1 * (myStats->PROFICIENCIES[PRO_UNARMED] / 20);
 							/*if ( myStats->shield && hasMeleeGloves )
 							{
 								pushbackMultiplier /= 2;
