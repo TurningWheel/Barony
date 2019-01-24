@@ -13,6 +13,8 @@
 
 #include <vector>
 #include <random>
+#include <chrono>
+
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
@@ -352,4 +354,112 @@ public:
 };
 extern TileEntityListHandler TileEntityList;
 
+class DebugStatsClass
+{
+public:
+	std::chrono::high_resolution_clock::time_point t1StartLoop;
+	std::chrono::high_resolution_clock::time_point t2PostEvents;
+	std::chrono::high_resolution_clock::time_point t21PostHandleMessages;
+	std::chrono::high_resolution_clock::time_point t3SteamCallbacks;
+	std::chrono::high_resolution_clock::time_point t4Music;
+	std::chrono::high_resolution_clock::time_point t5MainDraw;
+	std::chrono::high_resolution_clock::time_point t6Messages;
+	std::chrono::high_resolution_clock::time_point t7Inputs;
+	std::chrono::high_resolution_clock::time_point t8Status;
+	std::chrono::high_resolution_clock::time_point t9GUI;
+	std::chrono::high_resolution_clock::time_point t10FrameLimiter;
+	std::chrono::high_resolution_clock::time_point t11End;
+
+	std::chrono::high_resolution_clock::time_point eventsT1;
+	std::chrono::high_resolution_clock::time_point eventsT2;
+	std::chrono::high_resolution_clock::time_point eventsT3;
+	std::chrono::high_resolution_clock::time_point eventsT4;
+	std::chrono::high_resolution_clock::time_point eventsT5;
+	std::chrono::high_resolution_clock::time_point eventsT6;
+
+	std::chrono::high_resolution_clock::time_point t1Stored;
+	std::chrono::high_resolution_clock::time_point t2Stored;
+	std::chrono::high_resolution_clock::time_point t21Stored;
+	std::chrono::high_resolution_clock::time_point t3Stored;
+	std::chrono::high_resolution_clock::time_point t4Stored;
+	std::chrono::high_resolution_clock::time_point t5Stored;
+	std::chrono::high_resolution_clock::time_point t6Stored;
+	std::chrono::high_resolution_clock::time_point t7Stored;
+	std::chrono::high_resolution_clock::time_point t8Stored;
+	std::chrono::high_resolution_clock::time_point t9Stored;
+	std::chrono::high_resolution_clock::time_point t10Stored;
+	std::chrono::high_resolution_clock::time_point t11Stored;
+
+	std::chrono::high_resolution_clock::time_point eventsT1stored;
+	std::chrono::high_resolution_clock::time_point eventsT2stored;
+	std::chrono::high_resolution_clock::time_point eventsT3stored;
+	std::chrono::high_resolution_clock::time_point eventsT4stored;
+	std::chrono::high_resolution_clock::time_point eventsT5stored;
+	std::chrono::high_resolution_clock::time_point eventsT6stored;
+
+	bool displayStats = false;
+	char debugOutput[1024];
+	char debugEventOutput[1024];
+
+	DebugStatsClass()
+	{};
+
+	void inline storeOldTimePoints()
+	{
+		t1Stored = t1StartLoop;
+		t2Stored = t2PostEvents;
+		t21Stored = t21PostHandleMessages;
+		t3Stored = t3SteamCallbacks;
+		t4Stored = t4Music;
+		t5Stored = t5MainDraw;
+		t6Stored = t6Messages;
+		t7Stored = t7Inputs;
+		t8Stored = t8Status;
+		t9Stored = t9GUI;
+		t10Stored = t10FrameLimiter;
+		t11Stored = t11End;
+		eventsT1stored = eventsT1;
+		eventsT2stored = eventsT2;
+		eventsT3stored = eventsT3;
+		eventsT4stored = eventsT4;
+		eventsT5stored = eventsT5;
+		eventsT6stored = eventsT6;
+	};
+
+	void storeStats()
+	{
+		if ( !displayStats )
+		{
+			return;
+		}
+		storeOldTimePoints();
+		double out1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2Stored - t21Stored).count();
+		double out2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t3Stored - t2Stored).count();
+		double out3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t5Stored - t4Stored).count();
+		double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t6Stored - t5Stored).count();
+		double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t7Stored - t6Messages).count();
+		double out6 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t8Stored - t7Stored).count();
+		double out7 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t9Stored - t8Stored).count();
+		double out8 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t10Stored - t9Stored).count();
+		double out9 = -1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t11Stored - t10Stored).count();
+		double out10 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t21Stored - t1Stored).count();
+		snprintf(debugOutput, 1023,
+			"Messages: %4.5fms\nEvents: %4.5fms\nSteamCallbacks: %4.5fms\nMainDraw: %4.5fms\nMessages: %4.5fms\nInputs: %4.5fms\nStatus: %4.5fms\nGUI: %4.5fms\nFrameLimiter: %4.5fms\nEnd: %4.5fms\n",
+			out10, out1, out2, out3, out4, out5, out6, out7, out8, out9);
+	};
+
+	void storeEventStats()
+	{
+		double out1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT2stored - eventsT1stored).count();
+		double out2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT3stored - eventsT2stored).count();
+		double out3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT4stored - eventsT3stored).count();
+		double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT5stored - eventsT4stored).count();
+		double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT6stored - eventsT5stored).count();
+
+		snprintf(debugEventOutput, 1023,
+			"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\n",
+			out1, out2, out3, out4, out5);
+	};
+};
+extern DebugStatsClass DebugStats;
 
