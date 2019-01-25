@@ -443,6 +443,8 @@ void actThrown(Entity* my)
 						case POTION_WATER:
 						case POTION_BOOZE:
 						case POTION_JUICE:
+						case POTION_STRENGTH:
+						case POTION_SPEED:
 							damage = 0;
 							break;
 						default:
