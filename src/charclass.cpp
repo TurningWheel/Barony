@@ -1822,7 +1822,7 @@ void initClass(int player)
 			//free(item);
 
 			// blindness
-			item = newItem(POTION_BLINDNESS, SERVICABLE, 0, 2, 0, true, NULL);
+			item = newItem(POTION_ACID, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[5].item = item2->uid;
 			free(item);
@@ -1847,6 +1847,16 @@ void initClass(int player)
 
 			// polymorph
 			item = newItem(POTION_POLYMORPH, SERVICABLE, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// blindness
+			item = newItem(POTION_BLINDNESS, SERVICABLE, 0, 2, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// speed
+			item = newItem(POTION_SPEED, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 

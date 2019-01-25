@@ -3710,10 +3710,11 @@ bool Item::shouldItemStack(int player)
 				&& this->type != TOOL_PICKAXE)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
+			|| itemCategory(this) == POTION
 			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE && this->type != TOOL_ALEMBIC)
 			)
 		{
-			// THROWN, GEM, TOOLS should stack when equipped.
+			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
 			return true;
 		}

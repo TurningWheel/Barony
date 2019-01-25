@@ -2032,142 +2032,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
-							if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
-							{
-								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
-								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
-								}
-								else
-								{
-									playSoundEntity(my, 66, 128);
-									playSoundEntity(my, 67, 128);
-
-									// spawn several rock items //TODO: This should really be its own function.
-									i = 8 + rand() % 4;
-									for ( c = 0; c < i; c++ )
-									{
-										entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
-										entity->flags[INVISIBLE] = true;
-										entity->flags[UPDATENEEDED] = true;
-										entity->x = hit.mapx * 16 + 4 + rand() % 8;
-										entity->y = hit.mapy * 16 + 4 + rand() % 8;
-										entity->z = -6 + rand() % 12;
-										entity->sizex = 4;
-										entity->sizey = 4;
-										entity->yaw = rand() % 360 * PI / 180;
-										entity->vel_x = (rand() % 20 - 10) / 10.0;
-										entity->vel_y = (rand() % 20 - 10) / 10.0;
-										entity->vel_z = -.25 - (rand() % 5) / 10.0;
-										entity->flags[PASSABLE] = true;
-										entity->behavior = &actItem;
-										entity->flags[USERFLAG1] = true; // no collision: helps performance
-										entity->skill[10] = GEM_ROCK;    // type
-										entity->skill[11] = WORN;        // status
-										entity->skill[12] = 0;           // beatitude
-										entity->skill[13] = 1;           // count
-										entity->skill[14] = 0;           // appearance
-										entity->skill[15] = false;       // identified
-									}
-
-									if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] >= 41
-										&& map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] <= 49 )
-									{
-										steamAchievementEntity(parent, "BARONY_ACH_BAD_REVIEW");
-									}
-
-									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
-
-									// send wall destroy info to clients
-									for ( c = 1; c < MAXPLAYERS; c++ )
-									{
-										if ( client_disconnected[c] == true )
-										{
-											continue;
-										}
-										strcpy((char*)net_packet->data, "WALD");
-										SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-										SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-										net_packet->address.host = net_clients[c - 1].host;
-										net_packet->address.port = net_clients[c - 1].port;
-										net_packet->len = 8;
-										sendPacketSafe(net_sock, -1, net_packet, c - 1);
-									}
-
-									generatePathMaps();
-								}
-							}
+							magicDig(parent, my, 8);
 						}
 					}
 					else
 					{
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							int i = 8 + rand() % 4;
-
-							// spawn several rock items //TODO: This should really be its own function.
-							int c;
-							for ( c = 0; c < i; c++ )
-							{
-								Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
-								entity->flags[INVISIBLE] = true;
-								entity->flags[UPDATENEEDED] = true;
-								entity->x = hit.entity->x - 4 + rand() % 8;
-								entity->y = hit.entity->y - 4 + rand() % 8;
-								entity->z = -6 + rand() % 12;
-								entity->sizex = 4;
-								entity->sizey = 4;
-								entity->yaw = rand() % 360 * PI / 180;
-								entity->vel_x = (rand() % 20 - 10) / 10.0;
-								entity->vel_y = (rand() % 20 - 10) / 10.0;
-								entity->vel_z = -.25 - (rand() % 5) / 10.0;
-								entity->flags[PASSABLE] = true;
-								entity->behavior = &actItem;
-								entity->flags[USERFLAG1] = true; // no collision: helps performance
-								entity->skill[10] = GEM_ROCK;    // type
-								entity->skill[11] = WORN;        // status
-								entity->skill[12] = 0;           // beatitude
-								entity->skill[13] = 1;           // count
-								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = false;       // identified
-							}
-
-							double ox = hit.entity->x;
-							double oy = hit.entity->y;
-
-							// destroy the boulder
-							playSoundEntity(hit.entity, 67, 128);
-							list_RemoveNode(hit.entity->mynode);
-							if ( parent )
-								if ( parent->behavior == &actPlayer )
-								{
-									messagePlayer(parent->skill[2], language[405]);
-								}
-
-							// on sokoban, destroying boulders spawns scorpions
-							if ( !strcmp(map.name, "Sokoban") )
-							{
-								Entity* monster = nullptr;
-								if ( rand() % 2 == 0 )
-								{
-									monster = summonMonster(INSECTOID, ox, oy);
-								}
-								else
-								{
-									monster = summonMonster(SCORPION, ox, oy);
-								}
-								if ( monster )
-								{
-									int c;
-									for ( c = 0; c < MAXPLAYERS; c++ )
-									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-										messagePlayerColor(c, color, language[406]);
-									}
-								}
-								boulderSokobanOnDestroy(false);
-							}
+							magicDig(parent, my, 8);
 						}
 						else
 						{
@@ -4040,6 +3912,10 @@ bool Entity::magicOrbitingCollision()
 		{
 			return false;
 		}
+		else if ( this->ticks >= 12 && this->ticks % 4 != 0 ) // check once every 4 ticks, after the missile is alive for a bit
+		{
+			return false;
+		}
 	}
 	else if ( this->z < -10 )
 	{
@@ -4048,7 +3924,7 @@ bool Entity::magicOrbitingCollision()
 
 	if ( this->actmagicIsOrbiting == 2 )
 	{
-		if ( this->actmagicOrbitStationaryHitTarget >= 2 )
+		if ( this->actmagicOrbitStationaryHitTarget >= 3 )
 		{
 			return false;
 		}
@@ -4084,7 +3960,8 @@ bool Entity::magicOrbitingCollision()
 			if ( actmagicIsOrbiting == 2 )
 			{
 				if ( static_cast<Uint32>(actmagicOrbitHitTargetUID1) == entity->getUID()
-					|| static_cast<Uint32>(actmagicOrbitHitTargetUID2) == entity->getUID() )
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID2) == entity->getUID()
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID3) == entity->getUID() )
 				{
 					// we already hit these guys.
 					continue;
@@ -4105,6 +3982,10 @@ bool Entity::magicOrbitingCollision()
 						else if ( actmagicOrbitHitTargetUID2 == 0 )
 						{
 							actmagicOrbitHitTargetUID2 = entity->getUID();
+						}
+						else if ( actmagicOrbitHitTargetUID3 == 0 )
+						{
+							actmagicOrbitHitTargetUID3 = entity->getUID();
 						}
 					}
 				}
@@ -4406,4 +4287,145 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID)
 	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 4 * PI / 3, 40);
 	spawnMagicEffectParticles(x, y, 0, 174);
 	spawnExplosion(x, y, -4 + rand() % 8);
+}
+
+void magicDig(Entity* parent, Entity* projectile, int numRocks)
+{
+	if ( !hit.entity )
+	{
+		if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
+		{
+			if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
+			}
+			else
+			{
+				playSoundEntity(projectile, 66, 128);
+				playSoundEntity(projectile, 67, 128);
+				// spawn several rock items
+				int i = numRocks + rand() % 4;
+				for ( int c = 0; c < i; c++ )
+				{
+					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+					rock->flags[INVISIBLE] = true;
+					rock->flags[UPDATENEEDED] = true;
+					rock->x = hit.mapx * 16 + 4 + rand() % 8;
+					rock->y = hit.mapy * 16 + 4 + rand() % 8;
+					rock->z = -6 + rand() % 12;
+					rock->sizex = 4;
+					rock->sizey = 4;
+					rock->yaw = rand() % 360 * PI / 180;
+					rock->vel_x = (rand() % 20 - 10) / 10.0;
+					rock->vel_y = (rand() % 20 - 10) / 10.0;
+					rock->vel_z = -.25 - (rand() % 5) / 10.0;
+					rock->flags[PASSABLE] = true;
+					rock->behavior = &actItem;
+					rock->flags[USERFLAG1] = true; // no collision: helps performance
+					rock->skill[10] = GEM_ROCK;    // type
+					rock->skill[11] = WORN;        // status
+					rock->skill[12] = 0;           // beatitude
+					rock->skill[13] = 1;           // count
+					rock->skill[14] = 0;           // appearance
+					rock->skill[15] = false;       // identified
+				}
+
+				if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] >= 41
+					&& map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] <= 49 )
+				{
+					steamAchievementEntity(parent, "BARONY_ACH_BAD_REVIEW");
+				}
+
+				map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
+
+				// send wall destroy info to clients
+				for ( int c = 1; c < MAXPLAYERS; c++ )
+				{
+					if ( client_disconnected[c] == true )
+					{
+						continue;
+					}
+					strcpy((char*)net_packet->data, "WALD");
+					SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+					SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 8;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+
+				generatePathMaps();
+			}
+		}
+	}
+	else if ( hit.entity->behavior == &actBoulder )
+	{
+		int i = numRocks + rand() % 4;
+
+		// spawn several rock items //TODO: This should really be its own function.
+		int c;
+		for ( c = 0; c < i; c++ )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = hit.entity->x - 4 + rand() % 8;
+			entity->y = hit.entity->y - 4 + rand() % 8;
+			entity->z = -6 + rand() % 12;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = rand() % 360 * PI / 180;
+			entity->vel_x = (rand() % 20 - 10) / 10.0;
+			entity->vel_y = (rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.25 - (rand() % 5) / 10.0;
+			entity->flags[PASSABLE] = true;
+			entity->behavior = &actItem;
+			entity->flags[USERFLAG1] = true; // no collision: helps performance
+			entity->skill[10] = GEM_ROCK;    // type
+			entity->skill[11] = WORN;        // status
+			entity->skill[12] = 0;           // beatitude
+			entity->skill[13] = 1;           // count
+			entity->skill[14] = 0;           // appearance
+			entity->skill[15] = false;       // identified
+		}
+
+		double ox = hit.entity->x;
+		double oy = hit.entity->y;
+
+		// destroy the boulder
+		playSoundEntity(hit.entity, 67, 128);
+		list_RemoveNode(hit.entity->mynode);
+		if ( parent )
+		{
+			if ( parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[405]);
+			}
+		}
+
+		// on sokoban, destroying boulders spawns scorpions
+		if ( !strcmp(map.name, "Sokoban") )
+		{
+			Entity* monster = nullptr;
+			if ( rand() % 2 == 0 )
+			{
+				monster = summonMonster(INSECTOID, ox, oy);
+			}
+			else
+			{
+				monster = summonMonster(SCORPION, ox, oy);
+			}
+			if ( monster )
+			{
+				int c;
+				for ( c = 0; c < MAXPLAYERS; c++ )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+					messagePlayerColor(c, color, language[406]);
+				}
+			}
+			boulderSokobanOnDestroy(false);
+		}
+	}
 }

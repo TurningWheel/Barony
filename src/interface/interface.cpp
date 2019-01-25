@@ -3971,15 +3971,19 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 	}
 
+	Item* duplicatedPotion = nullptr;
+
 	if ( duplicateSucceed )
 	{
 		if ( basePotion->type == POTION_WATER )
 		{
 			consumeItem(basePotion, clientnum);
+			duplicatedPotion = secondaryPotion;
 		}
 		else if ( secondaryPotion->type == POTION_WATER )
 		{
 			consumeItem(secondaryPotion, clientnum);
+			duplicatedPotion = basePotion;
 		}
 	}
 	else
@@ -4080,8 +4084,30 @@ void GenericGUIMenu::alchemyCombinePotions()
 			}
 
 			Item* newPotion = newItem(result, status, blessing, 1, appearance, knewBothBaseIngredients, nullptr);
+			if ( tryDuplicatePotion )
+			{
+				if ( result == POTION_WATER && !duplicateSucceed )
+				{
+					messagePlayer(clientnum, language[3356]);
+					newPotion->identified = true;
+				}
+				else
+				{
+					if ( duplicatedPotion )
+					{
+						newPotion->appearance = duplicatedPotion->appearance;
+						newPotion->beatitude = duplicatedPotion->beatitude;
+						newPotion->identified = duplicatedPotion->identified;
+						newPotion->status = duplicatedPotion->status;
+					}
+					messagePlayer(clientnum, language[3352], newPotion->description());
+				}
+			}
+			else
+			{
+				messagePlayer(clientnum, language[3352], newPotion->description());
+			}
 			itemPickup(clientnum, newPotion);
-			messagePlayer(clientnum, language[3352], newPotion->description());
 			free(newPotion);
 			if ( players[clientnum] && players[clientnum]->entity )
 			{

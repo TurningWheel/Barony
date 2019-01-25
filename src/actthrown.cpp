@@ -21,6 +21,7 @@
 #include "scores.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -872,6 +873,10 @@ void actThrown(Entity* my)
 				switch ( item->type )
 				{
 					case POTION_FIRESTORM:
+						if ( hit.entity->behavior == &actBoulder )
+						{
+							magicDig(parent, my, 2);
+						}
 						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
 						break;
 					case POTION_ICESTORM:
@@ -887,9 +892,14 @@ void actThrown(Entity* my)
 		}
 		else
 		{
+			//!hit.entity
 			switch ( item->type )
 			{
 				case POTION_FIRESTORM:
+					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
+					{
+						magicDig(parent, my, 2);
+					}
 					spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
 					break;
 				case POTION_ICESTORM:

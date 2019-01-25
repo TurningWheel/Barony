@@ -571,7 +571,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			entity.skill[0] = 0; //Dry up fountain.
 			serverUpdateEntitySkill(&entity, 0);
 		}
-		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL == 0) ) )
+		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL) == 0 ) )
 		{
 			if ( player > 0 )
 			{

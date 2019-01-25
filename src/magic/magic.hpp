@@ -465,6 +465,7 @@ void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
 void createParticleCharmMonster(Entity* parent);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID);
+void magicDig(Entity* parent, Entity* projectile, int numRocks);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
