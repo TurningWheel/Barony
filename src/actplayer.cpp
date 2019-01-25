@@ -955,9 +955,17 @@ void actPlayer(Entity* my)
 					my->setEffect(EFF_ASLEEP, false, 0, true);
 					if ( svFlags & SV_FLAG_HUNGER )
 					{
-						playSoundPlayer(PLAYER_NUM, 32, 128);
-						stats[PLAYER_NUM]->HUNGER = 150;
-						serverUpdateHunger(PLAYER_NUM);
+						if ( stats[PLAYER_NUM]->HUNGER <= 1000 ) // just in case you ate before scripted sequence
+						{
+							playSoundPlayer(PLAYER_NUM, 32, 128);
+							stats[PLAYER_NUM]->HUNGER = 150;
+							serverUpdateHunger(PLAYER_NUM);
+						}
+						else
+						{
+							stats[PLAYER_NUM]->HUNGER -= 850;
+							serverUpdateHunger(PLAYER_NUM);
+						}
 					}
 				}
 				if ( stats[PLAYER_NUM]->EFFECTS[EFF_WITHDRAWAL] )
