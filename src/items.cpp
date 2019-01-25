@@ -3156,8 +3156,7 @@ bool isPotionBad(const Item& potion)
 		|| potion.type == POTION_PARALYSIS
 		|| potion.type == POTION_FIRESTORM 
 		|| potion.type == POTION_ICESTORM 
-		|| potion.type == POTION_THUNDERSTORM
-		|| potion.type == POTION_POLYMORPH )
+		|| potion.type == POTION_THUNDERSTORM )
 	{
 		return true;
 	}
