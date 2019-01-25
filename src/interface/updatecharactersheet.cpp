@@ -566,7 +566,7 @@ void drawSkillsSheet()
 						capstoneTextColor, language[3283]);
 					break;
 				case PRO_ALCHEMY:
-					skillTooltipRect.w = (longestline(language[3248]) * fontWidth) + 8;
+					skillTooltipRect.w = (longestline(language[3348]) * fontWidth) + 8;
 					skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
 					break;
 				default:
