@@ -380,8 +380,34 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		stats->EFFECTS[EFF_DRUNK] = true;
 		if ( player >= 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
-			stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+			stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
+			if ( stats->type != GOATMAN )
+			{
+				stats->EFFECTS_TIMERS[EFF_DRUNK] = std::max(300, stats->EFFECTS_TIMERS[EFF_DRUNK] - (entity->getPER() + entity->getCON()) * 40);
+			}
+			if ( stats->EFFECTS[EFF_WITHDRAWAL] )
+			{
+				int hangoverReliefDuration = EFFECT_WITHDRAWAL_BASE_TIME; // 8 minutes
+				switch ( rand() % 3 )
+				{
+					case 0:
+						hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 8); // 8 + 8 minutes
+						break;
+					case 1:
+						hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 4); // 8 + 4 minutes
+						break;
+					case 2:
+						// intentional fall through
+					default:
+						break;
+				}
+				entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
+				messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
+			}
+			else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
+			{
+				stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] = EFFECT_WITHDRAWAL_BASE_TIME;
+			}
 		}
 		else
 		{
