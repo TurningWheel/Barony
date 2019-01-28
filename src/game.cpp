@@ -1785,7 +1785,7 @@ void gameLogic(void)
 			//Cleanup identify GUI gamecontroller code here.
 			selectedIdentifySlot = -1;
 
-			identifygui_active = false;
+			//identifygui_active = false;
 			identifygui_appraising = true;
 			identifyGUIIdentify(auto_appraise_target);
 		}
