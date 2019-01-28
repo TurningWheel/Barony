@@ -2773,21 +2773,24 @@ void GenericGUIMenu::updateGUI()
 	//Generic GUI.
 	if ( guiActive )
 	{
-		if ( !alembicItem )
+		if ( guiType == GUI_TYPE_ALCHEMY )
 		{
-			closeGUI();
-			return;
-		}
-		if ( !alembicItem->node )
-		{
-			closeGUI();
-			return;
-		}
-		if ( alembicItem->node->list != &stats[clientnum]->inventory )
-		{
-			// dropped out of inventory or something.
-			closeGUI();
-			return;
+			if ( !alembicItem )
+			{
+				closeGUI();
+				return;
+			}
+			if ( !alembicItem->node )
+			{
+				closeGUI();
+				return;
+			}
+			if ( alembicItem->node->list != &stats[clientnum]->inventory )
+			{
+				// dropped out of inventory or something.
+				closeGUI();
+				return;
+			}
 		}
 
 		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
