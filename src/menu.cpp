@@ -94,6 +94,7 @@ button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
 int score_window_to_delete = 0;
+bool score_window_delete_multiplayer = false;
 int score_leaderboard_window = 0;
 
 int savegames_window = 0;
@@ -10953,7 +10954,7 @@ void buttonOpenScoresWindow(button_t* my)
 void buttonDeleteCurrentScore(button_t* my)
 {
 	node_t* node = nullptr;
-	if ( scoreDisplayMultiplayer )
+	if ( score_window_delete_multiplayer )
 	{
 		node = list_Node(&topscoresMultiplayer, score_window_to_delete - 1);
 		if ( node )
@@ -11475,7 +11476,9 @@ void buttonDeleteScoreCancel(button_t* my)
 
 	buttonOpenScoresWindow(nullptr);
 	score_window = score_window_to_delete;
+	scoreDisplayMultiplayer = score_window_delete_multiplayer;
 	score_window_to_delete = 0;
+	score_window_delete_multiplayer = false;
 
 	loadScore(score_window - 1);
 }
@@ -11489,6 +11492,7 @@ void buttonDeleteScoreConfirm(button_t* my)
 void buttonDeleteScoreWindow(button_t* my)
 {
 	score_window_to_delete = score_window;
+	score_window_delete_multiplayer = scoreDisplayMultiplayer;
 
 	// close current window
 	buttonCloseSubwindow(nullptr);
