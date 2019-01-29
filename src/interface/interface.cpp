@@ -1120,6 +1120,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/vsync\n");
 	}
+	if ( !showStatusEffectIcons )
+	{
+		fprintf(fp, "/hidestatusicons\n");
+	}
 	if ( minimapPingMute )
 	{
 		fprintf(fp, "/muteping\n");

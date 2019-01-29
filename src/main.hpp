@@ -483,6 +483,7 @@ extern char subtext[1024];
 extern int rscale;
 extern real_t vidgamma;
 extern bool verticalSync;
+extern bool showStatusEffectIcons;
 extern bool minimapPingMute;
 extern bool mute_audio_on_focus_lost;
 extern int minimapTransparencyForeground;
