@@ -909,6 +909,10 @@ void consoleCommand(char* command_str)
 	{
 		verticalSync = (verticalSync == false);
 	}
+	else if ( !strncmp(command_str, "/hidestatusicons", 16) )
+	{
+		showStatusEffectIcons = (showStatusEffectIcons == false);
+	}
 	else if ( !strncmp(command_str, "/muteping", 9) )
 	{
 		minimapPingMute = (minimapPingMute == false);

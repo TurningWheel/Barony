@@ -216,7 +216,7 @@ void drawSustainedSpells()
 		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
 	}
 
-	for ( int i = 0; i < NUMEFFECTS && stats[clientnum]; ++i )
+	for ( int i = 0; showStatusEffectIcons && i < NUMEFFECTS && stats[clientnum]; ++i )
 	{
 		node_t* effectImageNode = nullptr;
 		sprite = nullptr;

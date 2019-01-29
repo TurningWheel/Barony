@@ -171,6 +171,7 @@ bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
 bool settings_vsync;
+bool settings_status_effect_icons = true;
 bool settings_minimap_ping_mute = false;
 bool settings_mute_audio_on_focus_lost = false;
 int settings_minimap_transparency_foreground = 0;
@@ -2979,6 +2980,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[ ] %s", language[3011]);
 			}
+			if ( settings_status_effect_icons )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[x] %s", language[3357]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[ ] %s", language[3357]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -3023,6 +3032,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_vsync = (settings_vsync == false);
+					}
+					else if ( omousey >= suby1 + 276 && omousey < suby1 + 276 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_status_effect_icons = (settings_status_effect_icons == false);
 					}
 				}
 			}
@@ -8901,6 +8915,7 @@ void openSettingsWindow()
 	settings_spawn_blood = spawn_blood;
 	settings_light_flicker = flickerLights;
 	settings_vsync = verticalSync;
+	settings_status_effect_icons = showStatusEffectIcons;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
@@ -10492,6 +10507,7 @@ void applySettings()
 	flickerLights = settings_light_flicker;
 	oldVerticalSync = verticalSync;
 	verticalSync = settings_vsync;
+	showStatusEffectIcons = settings_status_effect_icons;
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;

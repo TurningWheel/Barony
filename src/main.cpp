@@ -225,6 +225,7 @@ Sint32* lightmap = nullptr;
 bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;
+bool showStatusEffectIcons = true;
 bool minimapPingMute = false;
 bool mute_audio_on_focus_lost = false;
 int minimapTransparencyForeground = 0;
