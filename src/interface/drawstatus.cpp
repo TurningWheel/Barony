@@ -969,10 +969,35 @@ void drawStatus()
 						src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 						src.h = TTF12_HEIGHT * 4 + 8;
 						if ( item->identified )
+						{
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
 							{
 								src.h += TTF12_HEIGHT;
 							}
+						}
+						int furthestX = xres;
+						if ( proficienciesPage == 0 )
+						{
+							if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+							{
+								furthestX = xres - interfaceSkillsSheet.w;
+							}
+						}
+						else
+						{
+							if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+							{
+								furthestX = xres - interfacePartySheet.w;
+							}
+						}
+						if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
+						{
+							src.x -= (src.w + 32);
+						}
+						if ( src.y + src.h + 16 > yres ) // overflow bottom of screen
+						{
+							src.y -= (src.y + src.h + 16 - yres);
+						}
 						drawTooltip(&src);
 
 						Uint32 color = 0xFFFFFFFF;
