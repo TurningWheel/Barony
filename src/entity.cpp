@@ -1258,6 +1258,13 @@ void Entity::effectTimes()
 					serverUpdateEffects(player);
 				}
 			}
+			else if ( myStats->EFFECTS_TIMERS[c] == ((TICKS_PER_SECOND * 5) - 1) )
+			{
+				if ( player > 0 && multiplayer == SERVER )
+				{
+					serverUpdateEffects(player);
+				}
+			}
 		}
 	}
 
@@ -5742,7 +5749,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								stealthCapstoneBonus = 2;
 							}
-							
+
 							if ( previousMonsterState == MONSTER_STATE_WAIT
 								|| previousMonsterState == MONSTER_STATE_PATH )
 							{
