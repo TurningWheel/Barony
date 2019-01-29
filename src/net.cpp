@@ -792,16 +792,25 @@ void serverUpdateEffects(int player)
 	net_packet->data[5] = 0;
 	net_packet->data[6] = 0;
 	net_packet->data[7] = 0;
+	net_packet->data[8] = 0;
+	net_packet->data[9] = 0;
+	net_packet->data[10] = 0;
+	net_packet->data[11] = 0;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
 		if ( stats[player]->EFFECTS[j] == true )
 		{
 			net_packet->data[4 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
+		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
+		{
+			// use these bits to denote if duration is low.
+			net_packet->data[8 + j / 8] |= power(2, j - (j / 8) * 8);
+		}
 	}
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 8;
+	net_packet->len = 12;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -2138,10 +2147,18 @@ void clientHandlePacket()
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
 				stats[clientnum]->EFFECTS[c] = true;
+				if ( net_packet->data[8 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
+				{
+					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
+				}
 			}
 			else
 			{
 				stats[clientnum]->EFFECTS[c] = false;
+				if ( stats[clientnum]->EFFECTS_TIMERS[c] > 0 )
+				{
+					stats[clientnum]->EFFECTS_TIMERS[c] = 0;
+				}
 			}
 		}
 		return;

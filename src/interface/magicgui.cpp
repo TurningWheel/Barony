@@ -278,15 +278,21 @@ void drawSustainedSpells()
 				sprite = (SDL_Surface**)effectImageNode->element;
 			}
 
-			if ( sprite == &str_bmp64u )
+			bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+			bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[i] > 0 && 
+				(stats[clientnum]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
+			if ( (lowDuration && !lowDurationFlash) || !lowDuration )
 			{
-				pos.h = 32;
-				pos.w = 32;
-				drawImageScaled(*sprite, NULL, &pos);
-			}
-			else
-			{
-				drawImage(*sprite, NULL, &pos);
+				if ( sprite == &str_bmp64u )
+				{
+					pos.h = 32;
+					pos.w = 32;
+					drawImageScaled(*sprite, NULL, &pos);
+				}
+				else
+				{
+					drawImage(*sprite, NULL, &pos);
+				}
 			}
 			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
 			{
