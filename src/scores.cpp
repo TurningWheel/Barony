@@ -83,7 +83,8 @@ score_t* scoreConstructor()
 	score->stats->type = stats[clientnum]->type;
 	score->stats->sex = stats[clientnum]->sex;
 	score->stats->appearance = stats[clientnum]->appearance;
-	score->stats->appearance |= stats[clientnum]->playerRace << 8;
+	score->stats->playerRace = stats[clientnum]->playerRace;
+	//score->stats->appearance |= stats[clientnum]->playerRace << 8;
 	strcpy(score->stats->name, stats[clientnum]->name);
 	strcpy(score->stats->obituary, stats[clientnum]->obituary);
 	score->victory = victory;
@@ -416,8 +417,9 @@ void loadScore(int scorenum)
 	stats[0]->type = score->stats->type;
 	stats[0]->sex = score->stats->sex;
 	stats[0]->appearance = score->stats->appearance;
-	stats[0]->playerRace = ((stats[0]->appearance & 0xFF00) >> 8);
-	stats[0]->appearance = (stats[0]->appearance & 0xFF);
+	stats[0]->playerRace = score->stats->playerRace;
+	//((stats[0]->appearance & 0xFF00) >> 8);
+	//stats[0]->appearance = (stats[0]->appearance & 0xFF);
 	strcpy(stats[0]->name, score->stats->name);
 	client_classes[0] = score->classnum;
 	victory = score->victory;
@@ -3624,7 +3626,9 @@ bool steamLeaderboardSetScore(score_t* score)
 			++tag;
 		}
 	}
-	// conducts TAG_CONDUCT_4W_1 to TAG_CONDUCT_4W_4 unused.
+
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_CONDUCT_4W_1] |= (Uint8)(score->stats->playerRace); // store in right-most 8 bits.
+	// conducts TAG_CONDUCT_4W_2 to TAG_CONDUCT_4W_4 unused.
 
 	// store new gameplay stats as required. not many to start with.
 	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_GAMEPLAY_STATS_2W_1] |= std::min(3, score->gameStatistics[STATISTICS_FIRE_MAYBE_DIFFERENT]);
@@ -3785,9 +3789,9 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	victory = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 0) & 0xFF;
 	currentlevel = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 1) & 0xFF;
 	conductPenniless = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2) & 1;
-	conductFoodless = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2 + 1) & 1;
-	conductVegetarian = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2 + 2) & 1;
-	conductIlliterate = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2 + 3) & 1;
+	conductFoodless = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> (tagWidth * 2 + 1)) & 1;
+	conductVegetarian = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> (tagWidth * 2 + 2)) & 1;
+	conductIlliterate = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> (tagWidth * 2 + 3)) & 1;
 
 	tag = TAG_CONDUCT_2W_1;
 	tagWidth = 2;
@@ -3807,7 +3811,10 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 			++tag;
 		}
 	}
-	// conducts TAG_CONDUCT_4W_1 to TAG_CONDUCT_4W_4 unused.
+
+	stats[0]->playerRace = (tags[TAG_CONDUCT_4W_1] & 0xFF);
+
+	// conducts TAG_CONDUCT_4W_2 to TAG_CONDUCT_4W_4 unused.
 
 	// store new gameplay stats as required. not many to start with.
 	gameStatistics[STATISTICS_FIRE_MAYBE_DIFFERENT] = tags[TAG_GAMEPLAY_STATS_2W_1] & 0b11;
