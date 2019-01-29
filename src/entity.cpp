@@ -2556,7 +2556,14 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				hungerring = -1;
+				if ( behavior == &actPlayer && shouldInvertEquipmentBeatitude(myStats) )
+				{
+					hungerring = 1;
+				}
+				else
+				{
+					hungerring = -1;
+				}
 			}
 		}
 	}
