@@ -8934,6 +8934,7 @@ int checkEquipType(const Item *item)
 		case STEEL_BOOTS_FEATHER:
 		case CRYSTAL_BOOTS:
 		case ARTIFACT_BOOTS:
+		case SUEDE_BOOTS:
 			return TYPE_BOOTS;
 			break;
 
@@ -8993,6 +8994,7 @@ int checkEquipType(const Item *item)
 		case SPIKED_GAUNTLETS:
 		case IRON_KNUCKLES:
 		case BRASS_KNUCKLES:
+		case SUEDE_GLOVES:
 			return TYPE_GLOVES;
 			break;
 
@@ -9048,6 +9050,10 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 		ent->sprite = 539 + myStats->sex + spriteOffset;
 	}
 	else if ( myStats->gloves->type == SPIKED_GAUNTLETS )
+	{
+		ent->sprite = 547 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == SUEDE_GLOVES )
 	{
 		ent->sprite = 547 + myStats->sex + spriteOffset;
 	}
@@ -9108,6 +9114,10 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 			{
 				leg->sprite = 521 + myStats->sex + spriteOffset;
 			}
+			else if ( myStats->shoes->type == SUEDE_BOOTS )
+			{
+				leg->sprite = 156 + myStats->sex + spriteOffset;
+			}
 			else
 			{
 				return false;
@@ -9145,6 +9155,10 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
 			{
 				leg->sprite = 521 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == SUEDE_BOOTS )
+			{
+				leg->sprite = 156 + spriteOffset;
 			}
 			else
 			{

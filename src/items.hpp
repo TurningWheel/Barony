@@ -247,9 +247,11 @@ typedef enum ItemType
 	POTION_FIRESTORM,
 	POTION_ICESTORM,
 	POTION_THUNDERSTORM,
-	POTION_STRENGTH
+	POTION_STRENGTH,
+	SUEDE_BOOTS,
+	SUEDE_GLOVES
 } ItemType;
-const int NUMITEMS = 226;
+const int NUMITEMS = 228;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

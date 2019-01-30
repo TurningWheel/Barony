@@ -356,6 +356,8 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"potion_icestorm",
 	"potion_thunderstorm",
 	"potion_strength",
+	"suede_boots",
+	"suede_gloves",
 	""
 };
 
@@ -519,6 +521,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"steel_boots_feather",
 		"crystal_boots",
 		"artifact_boots",
+		"suede_boots",
 		""
 	},
 	{
@@ -568,7 +571,6 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
-		"tool_alembic",
 		""
 	},
 	{
@@ -584,7 +586,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_gloves",
 		"brass_knuckles",
 		"iron_knuckles",
-		"spiked_gauntlets"
+		"spiked_gauntlets",
+		"suede_gloves",
 		""
 	}
 	

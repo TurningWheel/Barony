@@ -114,6 +114,10 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 590;
 		}
+		else if ( stats[clientnum]->gloves->type == SUEDE_GLOVES )
+		{
+			my->sprite = 802;
+		}
 		if ( stats[clientnum]->weapon == nullptr )
 		{
 			my->scalex = 0.5f;
