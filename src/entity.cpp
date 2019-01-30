@@ -5465,10 +5465,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( entity->monsterState == MONSTER_STATE_WAIT || (entity->monsterState == MONSTER_STATE_HUNT && entity->monsterTarget != uid) ) // monster is waiting or hunting
 							{
-								Entity* attackTarget = uidToEntity(uid);
-								if ( attackTarget )
+								if ( entity->monsterAllyState == ALLY_STATE_DEFEND )
 								{
-									entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+									// monster is defending, make em stay put unless line of sight.
+									tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
+									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
+									if ( hit.entity == entity )
+									{
+										Entity* attackTarget = uidToEntity(uid);
+										if ( attackTarget )
+										{
+											entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+										}
+									}
+								}
+								else
+								{
+									Entity* attackTarget = uidToEntity(uid);
+									if ( attackTarget )
+									{
+										entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+									}
 								}
 							}
 						}
