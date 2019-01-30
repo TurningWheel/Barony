@@ -2619,6 +2619,7 @@ bool FollowerRadialMenu::allowedInteractWorld(int monsterType)
 		case GNOME:
 		case KOBOLD:
 		case GOATMAN:
+		case SKELETON:
 			return true;
 			break;
 		default:
