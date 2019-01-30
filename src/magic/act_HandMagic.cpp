@@ -215,6 +215,10 @@ void actLeftHandMagic(Entity* my)
 		{
 			my->sprite = 665;
 		}
+		else if ( stats[clientnum]->gloves->type == SUEDE_GLOVES )
+		{
+			my->sprite = 803;
+		}
 	}
 
 	int playerAppearance = stats[clientnum]->appearance;
@@ -498,6 +502,10 @@ void actRightHandMagic(Entity* my)
 		else if ( stats[clientnum]->gloves->type == ARTIFACT_GLOVES )
 		{
 			my->sprite = 590;
+		}
+		else if ( stats[clientnum]->gloves->type == SUEDE_GLOVES )
+		{
+			my->sprite = 802;
 		}
 	}
 

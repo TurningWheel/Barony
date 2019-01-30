@@ -1847,6 +1847,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case BRASS_KNUCKLES:
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
+		case SUEDE_GLOVES:
 			equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
@@ -1867,6 +1868,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case STEEL_BOOTS_FEATHER:
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
+		case SUEDE_BOOTS:
 			equipItem(item, &stats[player]->shoes, player);
 			break;
 		case LEATHER_BREASTPIECE:

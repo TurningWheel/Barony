@@ -3745,16 +3745,16 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				if ( entity->sprite != 165 )
+				if ( entity->sprite == 165 )
 				{
-					entity->focalx = limbs[playerRace][10][0] + .35; // .35
-					entity->focaly = limbs[playerRace][10][1] - 2; // -2
+					entity->focalx = limbs[playerRace][10][0] + .25; // .25
+					entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
 					entity->focalz = limbs[playerRace][10][2]; // .5
 				}
 				else
 				{
-					entity->focalx = limbs[playerRace][10][0] + .25; // .25
-					entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
+					entity->focalx = limbs[playerRace][10][0] + .35; // .35
+					entity->focaly = limbs[playerRace][10][1] - 2; // -2
 					entity->focalz = limbs[playerRace][10][2]; // .5
 				}
 				break;
