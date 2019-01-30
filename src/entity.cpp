@@ -5758,7 +5758,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 
 							if ( previousMonsterState == MONSTER_STATE_WAIT
-								|| previousMonsterState == MONSTER_STATE_PATH )
+								|| previousMonsterState == MONSTER_STATE_PATH
+								|| (previousMonsterState == MONSTER_STATE_HUNT && uidToEntity(monsterTarget) == nullptr) )
 							{
 								// unaware monster, get backstab damage.
 								backstab = true;
