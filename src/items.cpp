@@ -1857,6 +1857,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case CLOAK_PROTECTION:
 		case ARTIFACT_CLOAK:
 		case CLOAK_BACKPACK:
+		case CLOAK_SILVER:
 			equipItem(item, &stats[player]->cloak, player);
 			break;
 		case LEATHER_BOOTS:
@@ -1878,6 +1879,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case VAMPIRE_DOUBLET:
 		case WIZARD_DOUBLET:
 		case HEALER_DOUBLET:
+		case SILVER_DOUBLET:
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 			equipItem(item, &stats[player]->breastplate, player);
@@ -1892,6 +1894,8 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case CRYSTAL_HELM:
 		case ARTIFACT_HELM:
 		case HAT_FEZ:
+		case HAT_HOOD_RED:
+		case HAT_HOOD_SILVER:
 			equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
