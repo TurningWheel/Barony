@@ -8980,6 +8980,7 @@ int checkEquipType(const Item *item)
 		case ARTIFACT_CLOAK:
 		case CLOAK_BLACK:
 		case CLOAK_BACKPACK:
+		case CLOAK_SILVER:
 			return TYPE_CLOAK;
 			break;
 
@@ -9003,6 +9004,7 @@ int checkEquipType(const Item *item)
 		case HAT_PHRYGIAN:
 		case HAT_WIZARD:
 		case HAT_FEZ:
+		case HAT_HOOD_RED:
 			return TYPE_HAT;
 			break;
 
@@ -9055,7 +9057,7 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	}
 	else if ( myStats->gloves->type == SUEDE_GLOVES )
 	{
-		ent->sprite = 547 + myStats->sex + spriteOffset;
+		ent->sprite = 804 + (spriteOffset > 0 ? 1 : 0);
 	}
 	else
 	{
@@ -9116,7 +9118,7 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 			}
 			else if ( myStats->shoes->type == SUEDE_BOOTS )
 			{
-				leg->sprite = 156 + myStats->sex + spriteOffset;
+				leg->sprite = 808 + (spriteOffset > 0 ? 1 : 0);
 			}
 			else
 			{
@@ -9158,7 +9160,7 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 			}
 			else if ( myStats->shoes->type == SUEDE_BOOTS )
 			{
-				leg->sprite = 156 + spriteOffset;
+				leg->sprite = 808 + (spriteOffset > 0 ? 1 : 0);
 			}
 			else
 			{
@@ -12979,7 +12981,8 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 		}
 		helm->roll = PI / 2;
 	}
-	else if ( helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
+	else if ( (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
+		|| helm->sprite == items[HAT_HOOD_RED].index || helm->sprite == items[HAT_HOOD_SILVER].index )
 	{
 		switch ( monster )
 		{

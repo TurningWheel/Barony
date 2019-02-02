@@ -358,6 +358,10 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"potion_strength",
 	"suede_boots",
 	"suede_gloves",
+	"cloak_silver",
+	"hat_hood_silver",
+	"hat_hood_red",
+	"silver_doublet",
 	""
 };
 
@@ -371,6 +375,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_wizard",
 		"hat_jester",
 		"hat_fez",
+		"hat_hood_silver",
+		"hat_hood_red",
 		"leather_helm",
 		"iron_helm",
 		"steel_helm",
@@ -507,6 +513,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"wizard_doublet",
 		"healer_doublet",
 		"tunic",
+		"silver_doublet",
 		""
 	},
 	{
@@ -557,6 +564,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"random_item",
 		"cloak",
 		"cloak_black",
+		"cloak_silver",
 		"cloak_magicreflection",
 		"cloak_invisibility",
 		"cloak_protection",
