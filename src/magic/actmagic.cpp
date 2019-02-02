@@ -1288,19 +1288,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( playerStats )
 										{
 											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
-											damage = (10 + skillLVL);
+											damage = (14 + skillLVL);
 										}
 									}
 									else
 									{
-										damage = 10;
+										damage = 14;
 									}
 								}
 								else
 								{
-									damage = 10;
+									damage = 14;
 								}
-								damage = damage - rand() % ((damage / 4) + 1);
+								damage = damage - rand() % ((damage / 8) + 1);
 							}
 							damage *= damagetables[hitstats->type][5];
 							if ( parent )
@@ -1513,19 +1513,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( playerStats )
 										{
 											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
-											damage = (12 + skillLVL);
+											damage = (18 + skillLVL);
 										}
 									}
 									else
 									{
-										damage = 12;
+										damage = 18;
 									}
 								}
 								else
 								{
-									damage = 12;
+									damage = 18;
 								}
-								damage = damage - rand() % ((damage / 4) + 1);
+								damage = damage - rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
@@ -1706,19 +1706,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( playerStats )
 										{
 											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
-											damage = (15 + skillLVL);
+											damage = (22 + skillLVL);
 										}
 									}
 									else
 									{
-										damage = 15;
+										damage = 22;
 									}
 								}
 								else
 								{
-									damage = 15;
+									damage = 22;
 								}
-								damage = damage - rand() % ((damage / 4) + 1);
+								damage = damage - rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];

@@ -496,7 +496,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 
 	int damage = (5 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
-	int chance = damage / 4;
+	int chance = damage / 8;
 	if ( player >= 0 && usedBy == entity )
 	{
 		damage /= 2;
@@ -1194,7 +1194,7 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	}
 
 	int damage = (10 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
-	int chance = damage / 4;
+	int chance = damage / 8;
 	if ( player >= 0 && usedBy == entity )
 	{
 		damage /= 2;
@@ -1279,8 +1279,8 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		}
 	}
 
-	int damage = (5 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
-	int chance = damage / 4;
+	int damage = (10 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+	int chance = damage / 8;
 	if ( player >= 0 && usedBy == entity )
 	{
 		damage /= 2;
