@@ -91,7 +91,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = -2;
 							myStats->PER = -2;
 							myStats->CHR = 4;
-							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_HOOD_RED, EXCELLENT, 1, 1, rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, nullptr);
 							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
