@@ -3301,6 +3301,19 @@ void item_ToolMirror(Item*& item, int player)
 		return;
 	}
 
+	if ( player == clientnum )
+	{
+		messagePlayer(player, language[889]);
+	}
+	if ( players[player]->entity->isInvisible() || (stats[player] && stats[player]->type == VAMPIRE) )
+	{
+		if ( player == clientnum )
+		{
+			messagePlayer(player, language[893]);
+		}
+		return;
+	}
+
 	if (item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY])
 	{
 		if (multiplayer != CLIENT)
@@ -3320,10 +3333,9 @@ void item_ToolMirror(Item*& item, int player)
 		consumeItem(item, player);
 		return;
 	}
-	messagePlayer(player, language[889]);
-	if ( players[player]->entity->isInvisible() || (stats[player] && stats[player]->type == VAMPIRE) )
+	if ( stats[player]->EFFECTS[EFF_BLIND] )
 	{
-		messagePlayer(player, language[893]);
+		messagePlayer(player, language[892]);
 		return;
 	}
 	if ( item->beatitude > 0 )
@@ -3342,11 +3354,6 @@ void item_ToolMirror(Item*& item, int player)
 			messagePlayer(player, language[891]);
 		}
 		consumeItem(item, player);
-		return;
-	}
-	if ( stats[player]->EFFECTS[EFF_BLIND] )
-	{
-		messagePlayer(player, language[892]);
 		return;
 	}
 	if ( stats[player]->EFFECTS[EFF_DRUNK] )
