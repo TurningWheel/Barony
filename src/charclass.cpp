@@ -82,6 +82,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_AXE] = 50;
 		stats[player]->PROFICIENCIES[PRO_MACE] = 50;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 20;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
 		// iron axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, NULL);
@@ -293,6 +294,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 30;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, NULL);
@@ -411,6 +413,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
 		// bronze sword
 		item = newItem(BRONZE_SWORD, SERVICABLE, 0, 1, 0, true, NULL);
@@ -518,6 +521,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 30;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, WORN, 0, 1, 0, true, NULL);
@@ -633,6 +637,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
 		// iron mace
 		item = newItem(IRON_MACE, SERVICABLE, 1, 1, 0, true, NULL);
@@ -745,6 +750,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 50;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 50;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
 		// bronze axe
 		item = newItem(BRONZE_AXE, SERVICABLE, 0, 1, 0, true, NULL);
@@ -847,6 +853,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1096,6 +1103,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 
 		// jester hat
 		item = newItem(HAT_JESTER, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1180,6 +1188,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
 		// bronze mace
 		item = newItem(BRONZE_MACE, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1417,6 +1426,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 10;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
 		// knuckles
 		item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, NULL);
@@ -1487,6 +1497,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_STEALTH] = 20;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
 		// weapon
 		item = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 0, 1, 0, true, NULL);
@@ -1775,7 +1786,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 10;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 25;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 40;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 50;
 
 		// booze
 		item = newItem(IRON_AXE, EXCELLENT, 0, 1, 0, true, NULL);
