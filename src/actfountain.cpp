@@ -298,11 +298,39 @@ void actFountain(Entity* my)
 							break;
 						}
 						case 1:
-							messagePlayer(i, language[470]);
-							messagePlayer(i, language[471]);
-							playSoundEntity(players[i]->entity, 52, 64);
-							stats[i]->HUNGER += 100;
-							players[i]->entity->modHP(5);
+							if ( stats[i]->type != VAMPIRE )
+							{
+								messagePlayer(i, language[470]);
+								messagePlayer(i, language[471]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER += 100;
+								players[i]->entity->modHP(5);
+							}
+							else
+							{
+								players[i]->entity->modHP(-3);
+								playSoundEntity(players[i]->entity, 28, 64);
+								playSoundEntity(players[i]->entity, 249, 128);
+								players[i]->entity->setObituary(language[1533]);
+
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(i, color, language[3183]);
+								if ( i == 0 )
+								{
+									camera_shakex += .1;
+									camera_shakey += 10;
+								}
+								else if ( multiplayer == SERVER && i > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
 							break;
 						case 2:
 						{
