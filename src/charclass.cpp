@@ -1515,8 +1515,8 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// brown hood
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
+		// red hood
+		item = newItem(HAT_HOOD_RED, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1528,8 +1528,8 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak
-		item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, NULL);
+		// red cloak
+		item = newItem(CLOAK, SERVICABLE, 0, 1, 2, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1561,7 +1561,7 @@ void initClass(int player)
 		// attributes
 		stats[player]->INT += 10;
 		stats[player]->STR -= 2;
-		stats[player]->CON -= 3;
+		stats[player]->CON -= 2;
 		stats[player]->DEX -= 3;
 		stats[player]->PER -= 1;
 
@@ -1577,8 +1577,8 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 40;
 
-		// green hood
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 0, true, NULL);
+		// doublet
+		item = newItem(SILVER_DOUBLET, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1590,8 +1590,8 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// green cloak
-		item = newItem(CLOAK, SERVICABLE, 0, 1, 0, true, NULL);
+		// gloves
+		item = newItem(SUEDE_GLOVES, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1604,7 +1604,7 @@ void initClass(int player)
 		}
 
 		// boots
-		item = newItem(IRON_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
+		item = newItem(SUEDE_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1677,8 +1677,21 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// hood (green)
-		item = newItem(HAT_HOOD, WORN, 0, 1, 0, true, NULL);
+		// hood silver
+		item = newItem(HAT_HOOD_SILVER, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// cloak silver
+		item = newItem(CLOAK_SILVER, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
