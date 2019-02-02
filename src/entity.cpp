@@ -2645,7 +2645,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		if ( vampiricHunger > 0 )
 		{
-			if ( ticks % (TICKS_PER_SECOND * 30) == 0 )
+			if ( ticks % (TICKS_PER_SECOND * 25) == 0 )
 			{
 				this->modHP(-1);
 				if ( myStats->HP <= 0 )
@@ -2659,24 +2659,27 @@ void Entity::handleEffects(Stat* myStats)
 				if ( myStats->HP > 0 )
 				{
 					messagePlayer(player, language[3253]);
-				}
 
-				// Shake the Host's screen
-				if ( player == clientnum )
-				{
-					camera_shakex += .1;
-					camera_shakey += 10;
-				}
-				else if ( player > 0 && multiplayer == SERVER )
-				{
-					// Shake the Client's screen
-					strcpy((char*)net_packet->data, "SHAK");
-					net_packet->data[4] = 10; // turns into .1
-					net_packet->data[5] = 10;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					// Shake the Host's screen
+					if ( myStats->HP <= 10 )
+					{
+						if ( player == clientnum )
+						{
+							camera_shakex += .1;
+							camera_shakey += 10;
+						}
+						else if ( player > 0 && multiplayer == SERVER )
+						{
+							// Shake the Client's screen
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
 				}
 			}
 		}
@@ -12458,6 +12461,10 @@ int Entity::getManaRegenInterval(Stat& myStats)
 
 int Entity::getHealthRegenInterval(Stat& myStats)
 {
+	if ( !(svFlags & SV_FLAG_HUNGER) )
+	{
+		return -1;
+	}
 	if ( myStats.EFFECTS[EFF_VAMPIRICAURA] )
 	{
 		if ( behavior == &actPlayer && myStats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] > 0 )

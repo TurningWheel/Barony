@@ -3630,6 +3630,7 @@ void item_Food(Item*& item, int player)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
+			playSoundEntity(players[player]->entity, 28, 64);
 			players[player]->entity->modHP(-5);
 		}
 		if ( stats[player]->type == VAMPIRE )
@@ -3715,38 +3716,41 @@ void item_Food(Item*& item, int player)
 	}
 
 	// results of eating
-	if ( stats[player]->HUNGER <= 250 )
+	if ( (svFlags & SV_FLAG_HUNGER) )
 	{
-		messagePlayer(player, language[912]);
-	}
-	else if ( stats[player]->HUNGER < 500 )
-	{
-		messagePlayer(player, language[913]);
-	}
-	else if ( stats[player]->HUNGER < 1000 )
-	{
-		messagePlayer(player, language[914], item->getName());
-	}
-	else if ( stats[player]->HUNGER < 1500 )
-	{
-		messagePlayer(player, language[915]);
-	}
-	else if ( stats[player]->HUNGER < 2000 )
-	{
-		if (rand() % 3)
+		if ( stats[player]->HUNGER <= 250 )
 		{
-			messagePlayer(player, language[916]);
+			messagePlayer(player, language[912]);
+		}
+		else if ( stats[player]->HUNGER < 500 )
+		{
+			messagePlayer(player, language[913]);
+		}
+		else if ( stats[player]->HUNGER < 1000 )
+		{
+			messagePlayer(player, language[914], item->getName());
+		}
+		else if ( stats[player]->HUNGER < 1500 )
+		{
+			messagePlayer(player, language[915]);
+		}
+		else if ( stats[player]->HUNGER < 2000 )
+		{
+			if (rand() % 3)
+			{
+				messagePlayer(player, language[916]);
+			}
+			else
+			{
+				messagePlayer(player, language[917]);
+				players[player]->entity->skill[26] = 40 + rand() % 10;
+			}
 		}
 		else
 		{
 			messagePlayer(player, language[917]);
 			players[player]->entity->skill[26] = 40 + rand() % 10;
 		}
-	}
-	else
-	{
-		messagePlayer(player, language[917]);
-		players[player]->entity->skill[26] = 40 + rand() % 10;
 	}
 
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
