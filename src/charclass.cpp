@@ -1691,7 +1691,7 @@ void initClass(int player)
 		}
 
 		// weapon
-		item = newItem(MAGICSTAFF_CHARM, EXCELLENT, curseItems ? -1 : 0, 1, 0, true, NULL);
+		item = newItem(MAGICSTAFF_CHARM, EXCELLENT, curseItems ? -1 : 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1707,7 +1707,7 @@ void initClass(int player)
 		if ( player == clientnum )
 		{
 			// spear
-			item = newItem(IRON_SPEAR, SERVICABLE, curseItems ? -2 : 0, 1, 1, true, NULL);
+			item = newItem(IRON_SPEAR, SERVICABLE, curseItems ? -1 : 1, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
