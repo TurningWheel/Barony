@@ -439,11 +439,11 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/thirdperson", 12))
 	{
-		if (!(svFlags & SV_FLAG_CHEATS))
+		/*if (!(svFlags & SV_FLAG_CHEATS))
 		{
 			messagePlayer(clientnum, language[277]);
 			return;
-		}
+		}*/
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
