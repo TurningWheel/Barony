@@ -2415,7 +2415,6 @@ void clientHandlePacket()
 		darkmap = false;
 		secretlevel = net_packet->data[4];
 		mapseed = SDLNet_Read32(&net_packet->data[5]);
-		int result = 0;
 		/*Uint32 oldtime = SDL_GetTicks();
 		while( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4)!=4 ) {
 			if( SDL_GetTicks()-oldtime>10000 )
@@ -2467,7 +2466,7 @@ void clientHandlePacket()
 		{
 			messagePlayer(clientnum, language[711], map.name);
 		}
-		if ( !secretlevel && result )
+		if ( !secretlevel )
 		{
 			switch ( currentlevel )
 			{
