@@ -373,6 +373,14 @@ int totalScore(score_t* score)
 		{
 			amount *= 2;
 		}
+		if ( score->conductGameChallenges[CONDUCT_KEEPINVENTORY] )
+		{
+			amount /= 2;
+		}
+		if ( score->conductGameChallenges[CONDUCT_LIFESAVING] )
+		{
+			amount /= 4;
+		}
 	}
 	if ( amount < 0 )
 	{
@@ -3165,6 +3173,8 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
 	conductGameChallenges[CONDUCT_BRAWLER] = 1;
 	conductGameChallenges[CONDUCT_MODDED] = 0;
+	conductGameChallenges[CONDUCT_LIFESAVING] = 0;
+	conductGameChallenges[CONDUCT_KEEPINVENTORY] = 0;
 
 	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 	{
@@ -3192,7 +3202,23 @@ void updatePlayerConductsInMainLoop()
 			conductPenniless = false;
 		}
 	}
-
+	if ( !conductGameChallenges[CONDUCT_KEEPINVENTORY] )
+	{
+		if ( (svFlags & SV_FLAG_KEEPINVENTORY) )
+		{
+			if ( multiplayer != SINGLE )
+			{
+				conductGameChallenges[CONDUCT_KEEPINVENTORY] = 1;
+			}
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_LIFESAVING] )
+	{
+		if ( (svFlags & SV_FLAG_LIFESAVING) )
+		{
+			conductGameChallenges[CONDUCT_LIFESAVING] = 1;
+		}
+	}
 	if ( conductGameChallenges[CONDUCT_HARDCORE] )
 	{
 		if ( !(svFlags & SV_FLAG_HARDCORE) )
@@ -3499,7 +3525,8 @@ bool steamLeaderboardSetScore(score_t* score)
 	}
 
 	if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| score->conductGameChallenges[CONDUCT_MODDED] )
+		|| score->conductGameChallenges[CONDUCT_MODDED]
+		|| score->conductGameChallenges[CONDUCT_LIFESAVING] )
 	{
 		return false;
 	}

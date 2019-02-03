@@ -16,6 +16,7 @@
 #include "magic/magic.hpp"
 #include "items.hpp"
 #include "book.hpp"
+#include "net.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1944,6 +1945,14 @@ void initClass(int player)
 
 	if ( player == clientnum )
 	{
+		if ( svFlags & SV_FLAG_LIFESAVING )
+		{
+			item = newItem(AMULET_LIFESAVING, WORN, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+
 		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_LEVITATION, player, true);
