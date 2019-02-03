@@ -266,6 +266,36 @@ void drawSustainedSpells()
 				case EFF_POTION_STR:
 					sprite = &str_bmp64u;
 					break;
+				case EFF_LEVITATING:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_LEVITATION )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					break;
+				}
+				case EFF_INVISIBLE:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_LEVITATION )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					break;
+				}
 				default:
 					effectImageNode = nullptr;
 					break;
