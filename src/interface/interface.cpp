@@ -4055,7 +4055,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		}
 		else
 		{
-			spawnMagicTower(nullptr, players[clientnum]->entity->x, players[clientnum]->entity->y, SPELL_FIREBALL);
+			spawnMagicTower(nullptr, players[clientnum]->entity->x, players[clientnum]->entity->y, SPELL_FIREBALL, nullptr);
 			players[clientnum]->entity->setObituary(language[3350]);
 		}
 		closeGUI();

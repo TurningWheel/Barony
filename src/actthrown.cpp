@@ -182,13 +182,13 @@ void actThrown(Entity* my)
 					switch ( item->type )
 					{
 						case POTION_FIRESTORM:
-							spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
+							spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, nullptr);
 							break;
 						case POTION_ICESTORM:
-							spawnMagicTower(parent, my->x, my->y, SPELL_COLD);
+							spawnMagicTower(parent, my->x, my->y, SPELL_COLD, nullptr);
 							break;
 						case POTION_THUNDERSTORM:
-							spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING);
+							spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, nullptr);
 							break;
 						default:
 							break;
@@ -879,13 +879,13 @@ void actThrown(Entity* my)
 						{
 							magicDig(parent, my, 2);
 						}
-						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
+						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						break;
 					case POTION_ICESTORM:
-						spawnMagicTower(parent, my->x, my->y, SPELL_COLD);
+						spawnMagicTower(parent, my->x, my->y, SPELL_COLD, hit.entity);
 						break;
 					case POTION_THUNDERSTORM:
-						spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING);
+						spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, hit.entity);
 						break;
 					default:
 						break;
@@ -902,13 +902,13 @@ void actThrown(Entity* my)
 					{
 						magicDig(parent, my, 2);
 					}
-					spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL);
+					spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, nullptr);
 					break;
 				case POTION_ICESTORM:
-					spawnMagicTower(parent, my->x, my->y, SPELL_COLD);
+					spawnMagicTower(parent, my->x, my->y, SPELL_COLD, nullptr);
 					break;
 				case POTION_THUNDERSTORM:
-					spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING);
+					spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, nullptr);
 					break;
 				default:
 					break;

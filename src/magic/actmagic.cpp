@@ -1288,7 +1288,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( playerStats )
 										{
 											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
-											damage = (14 + skillLVL);
+											damage = (14 + skillLVL * 1.5);
 										}
 									}
 									else
@@ -1513,7 +1513,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( playerStats )
 										{
 											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
-											damage = (18 + skillLVL);
+											damage = (18 + skillLVL * 1.5);
 										}
 									}
 									else
@@ -1706,7 +1706,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( playerStats )
 										{
 											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
-											damage = (22 + skillLVL);
+											damage = (22 + skillLVL * 1.5);
 										}
 									}
 									else
@@ -3908,6 +3908,16 @@ bool Entity::magicOrbitingCollision()
 
 	if ( this->actmagicIsOrbiting == 2 )
 	{
+		if ( this->ticks == 5 && this->actmagicOrbitHitTargetUID4 != 0 )
+		{
+			// hit this target automatically
+			Entity* tmp = uidToEntity(actmagicOrbitHitTargetUID4);
+			if ( tmp )
+			{
+				hit.entity = tmp;
+				return true;
+			}
+		}
 		if ( this->z < -8 || this->z > 3 )
 		{
 			return false;
@@ -3961,7 +3971,8 @@ bool Entity::magicOrbitingCollision()
 			{
 				if ( static_cast<Uint32>(actmagicOrbitHitTargetUID1) == entity->getUID()
 					|| static_cast<Uint32>(actmagicOrbitHitTargetUID2) == entity->getUID()
-					|| static_cast<Uint32>(actmagicOrbitHitTargetUID3) == entity->getUID() )
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID3) == entity->getUID()
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID4) == entity->getUID() )
 				{
 					// we already hit these guys.
 					continue;
@@ -4280,11 +4291,35 @@ void actParticleCharmMonster(Entity* my)
 	}
 }
 
-void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID)
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget)
 {
+	bool autoHit = false;
+	if ( autoHitTarget && (autoHitTarget->behavior == &actPlayer || autoHitTarget->behavior == &actMonster) )
+	{
+		autoHit = true;
+		if ( parent )
+		{
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && parent->checkFriend(autoHitTarget) )
+			{
+				autoHit = false; // don't hit friendlies
+			}
+		}
+	}
 	Entity* orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 0.0, 40);
+	if ( autoHit )
+	{
+		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+	}
 	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 2 * PI / 3, 40);
+	if ( autoHit )
+	{
+		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+	}
 	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 4 * PI / 3, 40);
+	if ( autoHit )
+	{
+		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+	}
 	spawnMagicEffectParticles(x, y, 0, 174);
 	spawnExplosion(x, y, -4 + rand() % 8);
 }
