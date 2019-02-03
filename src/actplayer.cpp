@@ -2321,7 +2321,43 @@ void actPlayer(Entity* my)
 								stats[0]->mask = NULL;
 							}
 						}
-
+						else
+						{
+							// to not soft lock at Herx
+							for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
+							{
+								nextnode = node->next;
+								Item* item = (Item*)node->element;
+								if ( item->type == ARTIFACT_ORB_PURPLE )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+										entity->flags[INVISIBLE] = true;
+										entity->flags[UPDATENEEDED] = true;
+										entity->x = my->x;
+										entity->y = my->y;
+										entity->sizex = 4;
+										entity->sizey = 4;
+										entity->yaw = (rand() % 360) * (PI / 180.f);
+										entity->vel_x = (rand() % 20 - 10) / 10.0;
+										entity->vel_y = (rand() % 20 - 10) / 10.0;
+										entity->vel_z = -.5;
+										entity->flags[PASSABLE] = true;
+										entity->flags[USERFLAG1] = true;
+										entity->behavior = &actItem;
+										entity->skill[10] = item->type;
+										entity->skill[11] = item->status;
+										entity->skill[12] = item->beatitude;
+										entity->skill[13] = 1;
+										entity->skill[14] = item->appearance;
+										entity->skill[15] = item->identified;
+									}
+									break;
+								}
+							}
+						}
 						for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 						{
 							Entity* mapCreature = (Entity*)mapNode->element;

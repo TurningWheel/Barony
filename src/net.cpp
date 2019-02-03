@@ -2062,6 +2062,34 @@ void clientHandlePacket()
 				stats[clientnum]->ring = NULL;
 				stats[clientnum]->mask = NULL;
 			}
+			else
+			{
+				// to not soft lock at Herx
+				for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+				{
+					nextnode = node->next;
+					Item* item = (Item*)node->element;
+					if ( item->type == ARTIFACT_ORB_PURPLE )
+					{
+						strcpy((char*)net_packet->data, "DIEI");
+						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+						net_packet->data[24] = item->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->data[26] = (Uint8)camera.x;
+						net_packet->data[27] = (Uint8)camera.y;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 28;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+						list_RemoveNode(node);
+						break;
+					}
+				}
+			}
 
 			for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 			{
