@@ -28,7 +28,7 @@
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
 int INVENTORY_SIZEY = 3;
-const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
+const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
 
 /*-------------------------------------------------------------------------------
