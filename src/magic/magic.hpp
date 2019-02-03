@@ -464,7 +464,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
 void createParticleCharmMonster(Entity* parent);
 
-void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID);
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 void magicDig(Entity* parent, Entity* projectile, int numRocks);
 
 spell_t* newSpell();

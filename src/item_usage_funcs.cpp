@@ -1306,15 +1306,15 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( item->type == POTION_FIRESTORM )
 	{
-		spawnMagicTower(usedBy, x, y, SPELL_FIREBALL);
+		spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, entity);
 	}
 	else if ( item->type == POTION_ICESTORM )
 	{
-		spawnMagicTower(usedBy, x, y, SPELL_COLD);
+		spawnMagicTower(usedBy, x, y, SPELL_COLD, entity);
 	}
 	else if ( item->type == POTION_THUNDERSTORM )
 	{
-		spawnMagicTower(usedBy, x, y, SPELL_LIGHTNING);
+		spawnMagicTower(usedBy, x, y, SPELL_LIGHTNING, entity);
 	}
 
 	// play drink sound
