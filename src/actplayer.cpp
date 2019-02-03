@@ -2255,47 +2255,7 @@ void actPlayer(Entity* my)
 						playmusic(sounds[209], false, true, false);
 #endif
 						combat = false;
-						for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
-						{
-							nextnode = node->next;
-							Item* item = (Item*)node->element;
-							if (itemCategory(item) == SPELL_CAT)
-							{
-								continue;    // don't drop spells on death, stupid!
-							}
-							if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
-							{
-								if ( itemIsEquipped(item, clientnum) )
-								{
-									steamAchievement("BARONY_ACH_CHOSEN_ONE");
-								}
-							}
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
-							{
-								entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-								entity->flags[INVISIBLE] = true;
-								entity->flags[UPDATENEEDED] = true;
-								entity->x = my->x;
-								entity->y = my->y;
-								entity->sizex = 4;
-								entity->sizey = 4;
-								entity->yaw = (rand() % 360) * (PI / 180.f);
-								entity->vel_x = (rand() % 20 - 10) / 10.0;
-								entity->vel_y = (rand() % 20 - 10) / 10.0;
-								entity->vel_z = -.5;
-								entity->flags[PASSABLE] = true;
-								entity->flags[USERFLAG1] = true;
-								entity->behavior = &actItem;
-								entity->skill[10] = item->type;
-								entity->skill[11] = item->status;
-								entity->skill[12] = item->beatitude;
-								entity->skill[13] = 1;
-								entity->skill[14] = item->appearance;
-								entity->skill[15] = item->identified;
-							}
-						}
-						if (multiplayer != SINGLE)
+						if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
 						{
 							for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
 							{
@@ -2305,18 +2265,61 @@ void actPlayer(Entity* my)
 								{
 									continue;    // don't drop spells on death, stupid!
 								}
-								list_RemoveNode(node);
+								if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
+								{
+									if ( itemIsEquipped(item, clientnum) )
+									{
+										steamAchievement("BARONY_ACH_CHOSEN_ONE");
+									}
+								}
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+									entity->flags[INVISIBLE] = true;
+									entity->flags[UPDATENEEDED] = true;
+									entity->x = my->x;
+									entity->y = my->y;
+									entity->sizex = 4;
+									entity->sizey = 4;
+									entity->yaw = (rand() % 360) * (PI / 180.f);
+									entity->vel_x = (rand() % 20 - 10) / 10.0;
+									entity->vel_y = (rand() % 20 - 10) / 10.0;
+									entity->vel_z = -.5;
+									entity->flags[PASSABLE] = true;
+									entity->flags[USERFLAG1] = true;
+									entity->behavior = &actItem;
+									entity->skill[10] = item->type;
+									entity->skill[11] = item->status;
+									entity->skill[12] = item->beatitude;
+									entity->skill[13] = 1;
+									entity->skill[14] = item->appearance;
+									entity->skill[15] = item->identified;
+								}
 							}
-							stats[0]->helmet = NULL;
-							stats[0]->breastplate = NULL;
-							stats[0]->gloves = NULL;
-							stats[0]->shoes = NULL;
-							stats[0]->shield = NULL;
-							stats[0]->weapon = NULL;
-							stats[0]->cloak = NULL;
-							stats[0]->amulet = NULL;
-							stats[0]->ring = NULL;
-							stats[0]->mask = NULL;
+							if (multiplayer != SINGLE)
+							{
+								for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
+								{
+									nextnode = node->next;
+									Item* item = (Item*)node->element;
+									if (itemCategory(item) == SPELL_CAT)
+									{
+										continue;    // don't drop spells on death, stupid!
+									}
+									list_RemoveNode(node);
+								}
+								stats[0]->helmet = NULL;
+								stats[0]->breastplate = NULL;
+								stats[0]->gloves = NULL;
+								stats[0]->shoes = NULL;
+								stats[0]->shield = NULL;
+								stats[0]->weapon = NULL;
+								stats[0]->cloak = NULL;
+								stats[0]->amulet = NULL;
+								stats[0]->ring = NULL;
+								stats[0]->mask = NULL;
+							}
 						}
 
 						for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
@@ -2330,99 +2333,102 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						my->x = ((int)(my->x / 16)) * 16 + 8;
-						my->y = ((int)(my->y / 16)) * 16 + 8;
-						item = stats[PLAYER_NUM]->helmet;
-						if (item)
+						if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
 						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							my->x = ((int)(my->x / 16)) * 16 + 8;
+							my->y = ((int)(my->y / 16)) * 16 + 8;
+							item = stats[PLAYER_NUM]->helmet;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->breastplate;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->breastplate;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->gloves;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->gloves;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->shoes;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->shoes;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->shield;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->shield;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->weapon;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->weapon;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->cloak;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->cloak;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->amulet;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->amulet;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->ring;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->ring;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
-						}
-						item = stats[PLAYER_NUM]->mask;
-						if (item)
-						{
-							int c = item->count;
-							for (c = item->count; c > 0; c--)
+							item = stats[PLAYER_NUM]->mask;
+							if (item)
 							{
-								dropItemMonster(item, my, stats[PLAYER_NUM]);
+								int c = item->count;
+								for (c = item->count; c > 0; c--)
+								{
+									dropItemMonster(item, my, stats[PLAYER_NUM]);
+								}
 							}
+							list_FreeAll(&stats[PLAYER_NUM]->inventory);
 						}
-						list_FreeAll(&stats[PLAYER_NUM]->inventory);
 
 						deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
 					}

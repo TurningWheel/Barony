@@ -612,7 +612,10 @@ void handleMainMenu(bool mode)
 				}
 			}
 #ifdef STEAMWORKS
-			if ( gamemods_disableSteamAchievements || (intro == false && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) )
+			if ( gamemods_disableSteamAchievements 
+				|| (intro == false && 
+					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
 			{
 				TTF_SizeUTF8(ttf8, language[3003], &w, &h);
 				if ( gamemods_numCurrentModsLoaded < 0 && !conductGameChallenges[CONDUCT_MODDED] )
@@ -3739,11 +3742,11 @@ void handleMainMenu(bool mode)
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
 						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
-						if ( i == 2 || i == 3 || i == 5 || i == 6 )
+						if ( i == 2 || i == 3 || i == 5 || i == 6 || i == 7 )
 						{
 							tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 						}
-						else if ( i == 4 )
+						else if ( i == 4 || i == 8 )
 						{
 							tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 						}
@@ -5074,11 +5077,11 @@ void handleMainMenu(bool mode)
 					tooltip_box.y = mousey + 8;
 					tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
-					if ( i == 2 || i == 3 || i == 5 || i == 6 )
+					if ( i == 2 || i == 3 || i == 5 || i == 6 || i == 7 )
 					{
 						tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 					}
-					else if ( i == 4 )
+					else if ( i == 4 || i == 8)
 					{
 						tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 					}
@@ -5939,6 +5942,8 @@ void handleMainMenu(bool mode)
 			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
 				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 				&& !conductGameChallenges[CONDUCT_MODDED]
+				&& !conductGameChallenges[CONDUCT_LIFESAVING]
+				&& !conductGameChallenges[CONDUCT_KEEPINVENTORY]
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]

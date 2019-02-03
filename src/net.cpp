@@ -2015,50 +2015,53 @@ void clientHandlePacket()
 			assailant[clientnum] = false;
 			assailantTimer[clientnum] = 0;
 
-			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+			if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
 			{
-				nextnode = node->next;
-				Item* item = (Item*)node->element;
-				if ( itemCategory(item) == SPELL_CAT )
+				for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 				{
-					continue;    // don't drop spells on death, stupid!
-				}
-				if ( itemIsEquipped(item, clientnum) )
-				{
-					Item** slot = itemSlot(stats[clientnum], item);
-					if ( slot != NULL )
+					nextnode = node->next;
+					Item* item = (Item*)node->element;
+					if ( itemCategory(item) == SPELL_CAT )
 					{
-						*slot = NULL;
+						continue;    // don't drop spells on death, stupid!
 					}
+					if ( itemIsEquipped(item, clientnum) )
+					{
+						Item** slot = itemSlot(stats[clientnum], item);
+						if ( slot != NULL )
+						{
+							*slot = NULL;
+						}
+						list_RemoveNode(node);
+						continue;
+					}
+					strcpy((char*)net_packet->data, "DIEI");
+					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+					SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+					SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+					net_packet->data[24] = item->identified;
+					net_packet->data[25] = clientnum;
+					net_packet->data[26] = (Uint8)camera.x;
+					net_packet->data[27] = (Uint8)camera.y;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 28;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
 					list_RemoveNode(node);
-					continue;
 				}
-				strcpy((char*)net_packet->data, "DIEI");
-				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-				net_packet->data[24] = item->identified;
-				net_packet->data[25] = clientnum;
-				net_packet->data[26] = (Uint8)camera.x;
-				net_packet->data[27] = (Uint8)camera.y;
-				net_packet->address.host = net_server.host;
-				net_packet->address.port = net_server.port;
-				net_packet->len = 28;
-				sendPacketSafe(net_sock, -1, net_packet, 0);
-				list_RemoveNode(node);
+				stats[clientnum]->helmet = NULL;
+				stats[clientnum]->breastplate = NULL;
+				stats[clientnum]->gloves = NULL;
+				stats[clientnum]->shoes = NULL;
+				stats[clientnum]->shield = NULL;
+				stats[clientnum]->weapon = NULL;
+				stats[clientnum]->cloak = NULL;
+				stats[clientnum]->amulet = NULL;
+				stats[clientnum]->ring = NULL;
+				stats[clientnum]->mask = NULL;
 			}
-			stats[clientnum]->helmet = NULL;
-			stats[clientnum]->breastplate = NULL;
-			stats[clientnum]->gloves = NULL;
-			stats[clientnum]->shoes = NULL;
-			stats[clientnum]->shield = NULL;
-			stats[clientnum]->weapon = NULL;
-			stats[clientnum]->cloak = NULL;
-			stats[clientnum]->amulet = NULL;
-			stats[clientnum]->ring = NULL;
-			stats[clientnum]->mask = NULL;
 
 			for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
 			{
@@ -4005,7 +4008,7 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 		if ( players[the_client] && players[the_client]->entity )
 		{
-			spawnMagicTower(nullptr, players[the_client]->entity->x, players[the_client]->entity->y, SPELL_FIREBALL);
+			spawnMagicTower(nullptr, players[the_client]->entity->x, players[the_client]->entity->y, SPELL_FIREBALL, nullptr);
 			players[the_client]->entity->setObituary(language[3350]);
 		}
 		return;
