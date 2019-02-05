@@ -188,6 +188,14 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		}
 	}
 
+	if ( player == -1 )
+	{
+		if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0 )
+		{
+			player = source->monsterAllyIndex;
+		}
+	}
+
 	int playertarget = -1;
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
