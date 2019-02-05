@@ -1211,11 +1211,11 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
-							if ( myStats->HUNGER > 250 )
-							{
-								myStats->HUNGER = 252; // set to above 250 to trigger the hunger sound/messages when it decrements to 250.
-								serverUpdateHunger(player);
-							}
+							//if ( myStats->HUNGER > 250 )
+							//{
+							//	myStats->HUNGER = 252; // set to above 250 to trigger the hunger sound/messages when it decrements to 250.
+							//	serverUpdateHunger(player);
+							//}
 							messagePlayer(player, language[2449]);
 							updateClient = true;
 						}
