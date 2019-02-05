@@ -2135,6 +2135,11 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 			}
 		}
 
+		if (!surf)
+		{
+			printlog("warning: failed to create the surface\n");
+			return errorRect;
+		}
 		// create the text surface
 		TTF_SetFontOutline(font, 0);
 		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
