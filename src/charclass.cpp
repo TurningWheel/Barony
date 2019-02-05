@@ -1566,6 +1566,12 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			hotbar[8].item = item2->uid;
 			free(item);
+
+			// restore magic
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
 		}
 	}
 	else if ( client_classes[player] == CLASS_ACCURSED )
