@@ -1587,7 +1587,7 @@ void drawSpellTooltip(spell_t* spell)
 				snprintf(spellType, 31, language[3302]);
 				snprintf(spellEffectText, 255, language[3324]);
 				spellInfoLines = 4;
-				sustainCostPerSecond = 0.16;
+				sustainCostPerSecond = 0.33;
 				break;
 			case SPELL_CHARM_MONSTER:
 				snprintf(spellType, 31, language[3303]);
