@@ -240,8 +240,20 @@ void drawSustainedSpells()
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
 					break;
 				case EFF_VAMPIRICAURA:
+				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
+					/*node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}*/
 					break;
+				}
 				case EFF_PARALYZED:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
 					break;
@@ -288,7 +300,7 @@ void drawSustainedSpells()
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
-						if ( spell && spell->ID == SPELL_LEVITATION )
+						if ( spell && spell->ID == SPELL_INVISIBILITY )
 						{
 							effectImageNode = nullptr;
 							break;
@@ -311,6 +323,10 @@ void drawSustainedSpells()
 			bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
 			bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[i] > 0 && 
 				(stats[clientnum]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
+			if ( i == EFF_VAMPIRICAURA )
+			{
+				lowDuration = false;
+			}
 			if ( (lowDuration && !lowDurationFlash) || !lowDuration )
 			{
 				if ( sprite == &str_bmp64u )
