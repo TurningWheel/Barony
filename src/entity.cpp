@@ -8426,7 +8426,7 @@ Returns true if my and your are friends, otherwise returns false
 
 bool Entity::checkFriend(Entity* your)
 {
-	bool result;
+	bool result = false;
 
 	if ( !your )
 	{
@@ -8532,6 +8532,7 @@ bool Entity::checkFriend(Entity* your)
 				}
 				else
 				{
+					result = false;
 					switch ( myStats->type )
 					{
 						case SKELETON:
