@@ -5717,15 +5717,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if( hitsuccess )*/
 				{
-					// skill increase
-					if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED )
-					{
-						if ( rand() % 10 == 0 )
-						{
-							this->increaseSkill(weaponskill);
-						}
-					}
-
 					// calculate and perform damage to opponent
 					int damage = 0;
 					int damagePreMultiplier = 1;
@@ -5843,6 +5834,34 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					hit.entity->modHP(-damage); // do the damage
+
+					// skill increase
+					if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED )
+					{
+						if ( myStats->weapon &&
+							(myStats->weapon->type == CRYSTAL_BATTLEAXE
+								|| myStats->weapon->type == CRYSTAL_MACE
+								|| myStats->weapon->type == CRYSTAL_SWORD
+								|| myStats->weapon->type == CRYSTAL_SPEAR) )
+						{
+							if ( rand() % 6 == 0 )
+							{
+								this->increaseSkill(weaponskill);
+							}
+						}
+						else if ( hitstats->HP <= 0 )
+						{
+							if ( rand() % 8 == 0 )
+							{
+								this->increaseSkill(weaponskill);
+							}
+						}
+						else if ( rand() % 10 == 0 )
+						{
+							this->increaseSkill(weaponskill);
+						}
+					}
+
 
 					// write the obituary
 					killedByMonsterObituary(hit.entity);
