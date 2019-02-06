@@ -645,10 +645,10 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		return;
 	}
-	if ( players[player]->entity->flags[BURNING] )
+	if ( entity->flags[BURNING] )
 	{
-		players[player]->entity->flags[BURNING] = false;
-		serverUpdateEntityFlag(players[player]->entity, BURNING);
+		entity->flags[BURNING] = false;
+		serverUpdateEntityFlag(entity, BURNING);
 	}
 	if ( multiplayer == CLIENT )
 	{
