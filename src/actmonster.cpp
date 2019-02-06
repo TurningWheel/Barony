@@ -4245,7 +4245,8 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( uidToEntity(my->monsterTarget) == nullptr 
+				&& myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
