@@ -2187,7 +2187,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										for ( c = 0; c < MAXPLAYERS; ++c )
 										{
-											if ( players[c]->entity->playerRequiresBloodToSustain() )
+											if ( players[c]->entity && players[c]->entity->playerRequiresBloodToSustain() )
 											{
 												tryBloodVial = true;
 												break;
