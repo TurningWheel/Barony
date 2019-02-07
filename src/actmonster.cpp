@@ -3184,7 +3184,11 @@ void actMonster(Entity* my)
 					{
 						if ( myStats->type != MINOTAUR )
 						{
-							MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) )
+							{
+								// idle sounds. if player follower, reduce noise frequency by 66%.
+								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+							}
 						}
 						else
 						{
@@ -4366,7 +4370,10 @@ timeToGoAgain:
 								{
 									if ( myStats->type != MINOTAUR )
 									{
-										MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+										if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) )
+										{
+											MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+										}
 									}
 									else
 									{
