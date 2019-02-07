@@ -1556,7 +1556,7 @@ void initClass(int player)
 		if ( player == clientnum )
 		{
 			// summon book
-			item = newItem(SPELLBOOK_SUMMON, WORN, 0, 1, 1, true, NULL);
+			item = newItem(SPELLBOOK_SUMMON, DECREPIT, 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[9].item = item2->uid;
 			free(item);
@@ -1762,7 +1762,7 @@ void initClass(int player)
 			free(item);
 
 			// charm monster spellbook
-			item = newItem(SPELLBOOK_CHARM_MONSTER, WORN, 0, 1, 8, true, NULL);
+			item = newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, 8, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[9].item = item2->uid;
 			free(item);
