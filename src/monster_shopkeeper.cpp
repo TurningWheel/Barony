@@ -202,6 +202,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			Item* tmpItem = nullptr;
 			bool doneAlembic = false;
 			bool doneLockpick = false;
+			bool doneBackpack = false;
 
 			switch ( my->monsterStoreType )
 			{
@@ -462,6 +463,12 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							}
 							doneAlembic = true;
 						}
+
+					}
+					if ( !doneBackpack && rand() % 10 == 0 )
+					{
+						newItem(CLOAK_BACKPACK, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
+						doneBackpack = true;
 					}
 					break;
 				case 8:

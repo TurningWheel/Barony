@@ -380,6 +380,10 @@ void Entity::actChest()
 						{
 							newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
+						if ( rand() % 20 == 0 )
+						{
+							newItem(CLOAK_BACKPACK, durability, 0, 1, rand(), false, inventory);
+						}
 						break;
 					case 2:
 						itemcount = 1 + rand() % 2;

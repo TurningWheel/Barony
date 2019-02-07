@@ -547,7 +547,7 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 					switch ( (ItemType)c )
 					{
 						case CLOAK_BACKPACK:
-							if ( prng_get_uint() % 2 )   // 50% chance
+							if ( prng_get_uint() % 4 )   // 25% chance
 							{
 								chances[c] = false;
 							}
