@@ -696,7 +696,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, language[1008 + status], beatitude);
 				}
 				else
 				{
@@ -816,7 +816,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, language[1060 + status], beatitude);
 				}
 				else
 				{
