@@ -4222,6 +4222,54 @@ void serverHandlePacket()
 		return;
 	}
 
+	// the client changed beatitude of equipment.
+	else if ( !strncmp((char*)net_packet->data, "BEAT", 4) )
+	{
+		int player = net_packet->data[4];
+		Item* equipment = nullptr;
+		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
+
+		switch ( net_packet->data[5] )
+		{
+			case 0:
+				equipment = stats[player]->weapon;
+				break;
+			case 1:
+				equipment = stats[player]->helmet;
+				break;
+			case 2:
+				equipment = stats[player]->breastplate;
+				break;
+			case 3:
+				equipment = stats[player]->gloves;
+				break;
+			case 4:
+				equipment = stats[player]->shoes;
+				break;
+			case 5:
+				equipment = stats[player]->shield;
+				break;
+			case 6:
+				equipment = stats[player]->cloak;
+				break;
+			case 7:
+				equipment = stats[player]->mask;
+				break;
+			default:
+				equipment = nullptr;
+				break;
+		}
+
+		if ( !equipment )
+		{
+			return;
+		}
+
+		equipment->beatitude = net_packet->data[6] - 100; // we sent the data beatitude + 100
+		//messagePlayer(0, "%d", equipment->beatitude);
+		return;
+	}
+
 	// client dropped gold
 	else if (!strncmp((char*)net_packet->data, "DGLD", 4))
 	{

@@ -124,6 +124,9 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 
+	// code below is only run by the player that drank the potion.
+	// if it was thrown, then the function returns in the above code as processed by the server.
+
 	if ( item->beatitude == 0 )
 	{
 		if ( stats->type == VAMPIRE )
@@ -175,12 +178,126 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		messagePlayer(player, language[755]);
 
-		// randomly curse an unidentified item in the entity's inventory
+		// choose a random piece of worn equipment to curse!
+		int tryIndex = rand() % 8;
+		int startIndex = tryIndex;
+		int armornum = 0;
+		bool breakloop = false;
+		Item* toCurse = nullptr;
+		// curse random item.
+		while ( !toCurse && !breakloop )
+		{
+			switch ( tryIndex )
+			{
+				// intentional fall throughs...
+				case 0:
+					if ( stats->weapon != nullptr && itemCategory(stats->weapon) != POTION
+						&& stats->weapon->beatitude >= 0 )
+					{
+						toCurse = stats->weapon;
+						armornum = 0;
+						break;
+					}
+				case 1:
+					if ( stats->helmet != nullptr && stats->helmet->beatitude >= 0 )
+					{
+						toCurse = stats->helmet;
+						armornum = 1;
+						break;
+					}
+				case 2:
+					if ( stats->breastplate != nullptr && stats->breastplate->beatitude >= 0 )
+					{
+						toCurse = stats->breastplate;
+						armornum = 2;
+						break;
+					}
+				case 3:
+					if ( stats->gloves != nullptr && stats->gloves->beatitude >= 0 )
+					{
+						toCurse = stats->gloves;
+						armornum = 3;
+						break;
+					}
+				case 4:
+					if ( stats->shoes != nullptr && stats->shoes->beatitude >= 0 )
+					{
+						toCurse = stats->shoes;
+						armornum = 4;
+						break;
+					}
+				case 5:
+					if ( stats->shield != nullptr && stats->shield->beatitude >= 0 )
+					{
+						toCurse = stats->shield;
+						armornum = 5;
+						break;
+					}
+				case 6:
+					if ( stats->cloak != nullptr && stats->cloak->beatitude >= 0 )
+					{
+						toCurse = stats->cloak;
+						armornum = 6;
+						break;
+					}
+				case 7:
+					if ( stats->mask != nullptr && stats->mask->beatitude >= 0 )
+					{
+						toCurse = stats->mask;
+						armornum = 7;
+						break;
+					}
+					++tryIndex;
+					if ( tryIndex > 7 )
+					{
+						// loop back around.
+						tryIndex = 0;
+					}
+					if ( tryIndex == startIndex )
+					{
+						// couldn't find a piece of armor, break.
+						breakloop = true;
+						toCurse = nullptr;
+						break;
+					}
+				default:
+					break;
+			}
+		}
+
+		if ( toCurse )
+		{
+			if ( toCurse->beatitude <= 0 )
+			{
+				--toCurse->beatitude;
+			}
+			else
+			{
+				toCurse->beatitude = -toCurse->beatitude;
+			}
+			messagePlayer(player, language[858], toCurse->getName());
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = toCurse->beatitude + 100;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 7;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
+			}
+			consumeItem(item, player);
+			return;
+		}
+
+		// else randomly curse an item in the entity's inventory, item must be +0 or higher.
 		int items = 0;
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
 			Item* target = (Item*)node->element;
-			if ( target->identified == false )
+			if ( target && !itemIsEquipped(target, player) && target->beatitude >= 0 )
 			{
 				items++;
 			}
@@ -195,11 +312,19 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
 			Item* target = (Item*)node->element;
-			if ( target->identified == false )
+			if ( target && !itemIsEquipped(target, player) && target->beatitude >= 0 )
 			{
 				if ( items == itemToCurse )
 				{
-					target->beatitude = std::max<Sint16>(-1, target->beatitude);
+					messagePlayer(player, language[858], target->getName());
+					if ( target->beatitude <= 0 )
+					{
+						--target->beatitude;
+					}
+					else
+					{
+						target->beatitude = -target->beatitude;
+					}
 					break;
 				}
 				items++;
@@ -2091,24 +2216,23 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		return;
 	}
 
-	if (players[player]->entity->isBlind())
+	if ( player != clientnum )
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[775]);
-		}
+		consumeItem(item, player);
 		return;
 	}
 
-	if (player == clientnum)
+	if (players[player]->entity->isBlind())
 	{
-		conductIlliterate = false;
+		messagePlayer(player, language[775]);
+		return;
 	}
+
+	conductIlliterate = false;
+
 	item->identified = 1;
-	if (player == clientnum)
-	{
-		messagePlayer(player, language[848]);
-	}
+
+	messagePlayer(player, language[848]);
 
 	Item** toEnchant = nullptr;
 	bool hasMeleeGloves = false;
@@ -2137,26 +2261,21 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 
 	if ( toEnchant == nullptr)
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[853]);
-		}
+		messagePlayer(player, language[853]);
 	}
 	else
 	{
 		if (item->beatitude < 0)
 		{
-			if (player == clientnum)
+			if ( toEnchant == &stats[player]->gloves )
 			{
-				if ( toEnchant == &stats[player]->gloves )
-				{
-					messagePlayer(player, language[858], (*toEnchant)->getName());
-				}
-				else
-				{
-					messagePlayer(player, language[854]);
-				}
+				messagePlayer(player, language[858], (*toEnchant)->getName());
 			}
+			else
+			{
+				messagePlayer(player, language[854]);
+			}
+
 			if ( (*toEnchant)->beatitude > 0 )
 			{
 				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
@@ -2168,32 +2287,42 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 		}
 		else
 		{
-			if (player == clientnum)
+			if (item->beatitude == 0)
 			{
-				if (item->beatitude == 0)
+				if ( toEnchant == &stats[player]->gloves )
 				{
-					if ( toEnchant == &stats[player]->gloves )
-					{
-						messagePlayer(player, language[859], (*toEnchant)->getName());
-					}
-					else
-					{
-						messagePlayer(player, language[855]);
-					}
+					messagePlayer(player, language[859], (*toEnchant)->getName());
 				}
 				else
 				{
-					if ( toEnchant == &stats[player]->gloves )
-					{
-						messagePlayer(player, language[860], (*toEnchant)->getName());
-					}
-					else
-					{
-						messagePlayer(player, language[856]);
-					}
+					messagePlayer(player, language[855]);
+				}
+			}
+			else
+			{
+				if ( toEnchant == &stats[player]->gloves )
+				{
+					messagePlayer(player, language[860], (*toEnchant)->getName());
+				}
+				else
+				{
+					messagePlayer(player, language[856]);
 				}
 			}
 			(*toEnchant)->beatitude += 1 + item->beatitude;
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "BEAT");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = 0; // weapon index
+			net_packet->data[6] = (*toEnchant)->beatitude + 100;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
 }
@@ -2211,6 +2340,12 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		return;
 	}
 
+	if ( player != clientnum )
+	{
+		consumeItem(item, player);
+		return;
+	}
+
 	if (players[player]->entity->isBlind())
 	{
 		if (player == clientnum)
@@ -2220,67 +2355,89 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		return;
 	}
 
-	if (player == clientnum)
-	{
-		conductIlliterate = false;
-	}
+	conductIlliterate = false;
+
 	item->identified = 1;
 	if (player == clientnum)
 	{
 		messagePlayer(player, language[848]);
 	}
 
-	int armornum = rand() % 6;
-	int startIndex = armornum;
+	// choose a random piece of worn equipment to curse!
+	int tryIndex = 1 + rand() % 7;
+	int startIndex = tryIndex;
+	int armornum = 0;
 	bool breakloop = false;
+
+	// curse random item.
 	while ( !armor && !breakloop )
 	{
-		switch ( armornum )
+		switch ( tryIndex )
 		{
 			// intentional fall throughs...
 			case 0:
+				/*if ( stats[player]->weapon != nullptr && itemCategory(stats[player]->weapon) != POTION )
+				{
+					toCurse = stats[player]->weapon;
+					armornum = 0;
+					break;
+				}*/
+			case 1:
 				if ( stats[player]->helmet != nullptr )
 				{
 					armor = stats[player]->helmet;
-					break;
-				}
-			case 1:
-				if ( stats[player]->breastplate != nullptr )
-				{
-					armor = stats[player]->breastplate;
+					armornum = 1;
 					break;
 				}
 			case 2:
-				if ( stats[player]->gloves != nullptr )
+				if ( stats[player]->breastplate != nullptr )
 				{
-					armor = stats[player]->gloves;
+					armor = stats[player]->breastplate;
+					armornum = 2;
 					break;
 				}
 			case 3:
-				if ( stats[player]->shoes != nullptr )
+				if ( stats[player]->gloves != nullptr )
 				{
-					armor = stats[player]->shoes;
+					armor = stats[player]->gloves;
+					armornum = 3;
 					break;
 				}
 			case 4:
-				if ( stats[player]->shield != nullptr )
+				if ( stats[player]->shoes != nullptr )
 				{
-					armor = stats[player]->shield;
+					armor = stats[player]->shoes;
+					armornum = 4;
 					break;
 				}
 			case 5:
+				if ( stats[player]->shield != nullptr )
+				{
+					armor = stats[player]->shield;
+					armornum = 5;
+					break;
+				}
+			case 6:
 				if ( stats[player]->cloak != nullptr )
 				{
 					armor = stats[player]->cloak;
+					armornum = 6;
 					break;
 				}
-				++armornum;
-				if ( armornum > 5 )
+			case 7:
+				if ( stats[player]->mask != nullptr )
+				{
+					armor = stats[player]->mask;
+					armornum = 7;
+					break;
+				}
+				++tryIndex;
+				if ( tryIndex > 7 )
 				{
 					// loop back around.
-					armornum = 0;
+					tryIndex = 0;
 				}
-				if ( armornum == startIndex )
+				if ( tryIndex == startIndex )
 				{
 					// couldn't find a piece of armor, break.
 					breakloop = true;
@@ -2294,19 +2451,14 @@ void item_ScrollEnchantArmor(Item* item, int player)
 
 	if (armor == nullptr)
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[857]);
-		}
+		messagePlayer(player, language[857]);
 	}
 	else if ( armor != nullptr )
 	{
 		if (item->beatitude < 0)
 		{
-			if (player == clientnum)
-			{
-				messagePlayer(player, language[858], armor->getName());
-			}
+			messagePlayer(player, language[858], armor->getName());
+
 			if ( armor->beatitude > 0 )
 			{
 				armor->beatitude = -armor->beatitude;
@@ -2318,26 +2470,34 @@ void item_ScrollEnchantArmor(Item* item, int player)
 		}
 		else
 		{
-			if (player == clientnum)
+			if (item->beatitude == 0)
 			{
-				if (item->beatitude == 0)
-				{
-					messagePlayer(player, language[859], armor->getName());
-				}
-				else
-				{
-					messagePlayer(player, language[860], armor->getName());
-				}
+				messagePlayer(player, language[859], armor->getName());
+			}
+			else
+			{
+				messagePlayer(player, language[860], armor->getName());
 			}
 			armor->beatitude += 1 + item->beatitude;
+		}
+
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "BEAT");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = armor->beatitude + 100;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
 }
 
 void item_ScrollRemoveCurse(Item* item, int player)
 {
-	Item* target = nullptr;
-
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
 		return;
@@ -2345,15 +2505,13 @@ void item_ScrollRemoveCurse(Item* item, int player)
 
 	if ( player != clientnum )
 	{
+		consumeItem(item, player);
 		return;
 	}
 
 	if (players[player]->entity->isBlind())
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[775]);
-		}
+		messagePlayer(player, language[775]);
 		return;
 	}
 
@@ -2381,90 +2539,115 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	else
 	{
 		// choose a random piece of worn equipment to curse!
-		int armornum = rand() % 7;
-		int startIndex = armornum;
+		int tryIndex = rand() % 8;
+		int startIndex = tryIndex;
+		int armornum = 0;
 		bool breakloop = false;
-		target = nullptr;
-		while ( !target && !breakloop )
+		Item* toCurse = nullptr;
+		// curse random item.
+		while ( !toCurse && !breakloop )
 		{
-			switch ( armornum )
+			switch ( tryIndex )
 			{
 				// intentional fall throughs...
 				case 0:
-					if ( stats[player]->helmet != nullptr && stats[player]->helmet->beatitude >= 0 )
+					if ( stats[player]->weapon != nullptr && itemCategory(stats[player]->weapon) != POTION )
 					{
-						target = stats[player]->helmet;
+						toCurse = stats[player]->weapon;
+						armornum = 0;
 						break;
 					}
 				case 1:
-					if ( stats[player]->breastplate != nullptr && stats[player]->breastplate->beatitude >= 0 )
+					if ( stats[player]->helmet != nullptr )
 					{
-						target = stats[player]->breastplate;
+						toCurse = stats[player]->helmet;
+						armornum = 1;
 						break;
 					}
 				case 2:
-					if ( stats[player]->gloves != nullptr && stats[player]->gloves->beatitude >= 0 )
+					if ( stats[player]->breastplate != nullptr )
 					{
-						target = stats[player]->gloves;
+						toCurse = stats[player]->breastplate;
+						armornum = 2;
 						break;
 					}
 				case 3:
-					if ( stats[player]->shoes != nullptr && stats[player]->shoes->beatitude >= 0 )
+					if ( stats[player]->gloves != nullptr )
 					{
-						target = stats[player]->shoes;
+						toCurse = stats[player]->gloves;
+						armornum = 3;
 						break;
 					}
 				case 4:
-					if ( stats[player]->shield != nullptr && stats[player]->shield->beatitude >= 0 )
+					if ( stats[player]->shoes != nullptr )
 					{
-						target = stats[player]->shield;
+						toCurse = stats[player]->shoes;
+						armornum = 4;
 						break;
 					}
 				case 5:
-					if ( stats[player]->cloak != nullptr && stats[player]->cloak->beatitude >= 0 )
+					if ( stats[player]->shield != nullptr )
 					{
-						target = stats[player]->cloak;
+						toCurse = stats[player]->shield;
+						armornum = 5;
 						break;
 					}
 				case 6:
-					if ( stats[player]->weapon != nullptr && stats[player]->weapon->beatitude >= 0 )
+					if ( stats[player]->cloak != nullptr )
 					{
-						target = stats[player]->weapon;
+						toCurse = stats[player]->cloak;
+						armornum = 6;
 						break;
 					}
-					++armornum;
-					if ( armornum > 6 )
+				case 7:
+					if ( stats[player]->mask != nullptr )
+					{
+						toCurse = stats[player]->mask;
+						armornum = 7;
+						break;
+					}
+					++tryIndex;
+					if ( tryIndex > 7 )
 					{
 						// loop back around.
-						armornum = 0;
+						tryIndex = 0;
 					}
-					if ( armornum == startIndex )
+					if ( tryIndex == startIndex )
 					{
 						// couldn't find a piece of armor, break.
 						breakloop = true;
-						target = nullptr;
+						toCurse = nullptr;
 						break;
 					}
 				default:
 					break;
 			}
 		}
-		if ( target )
+		if ( toCurse )
 		{
-			if ( target->beatitude == 0 )
+			if ( toCurse->beatitude <= 0 )
 			{
-				--target->beatitude;
+				--toCurse->beatitude;
 			}
 			else
 			{
-				target->beatitude = -target->beatitude;
+				toCurse->beatitude = -toCurse->beatitude;
 			}
-			if ( player == clientnum )
+			messagePlayer(player, language[858], toCurse->getName());
+			if ( multiplayer == CLIENT )
 			{
-				messagePlayer(player, language[858], target->getName());
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = armornum;
+				net_packet->data[6] = toCurse->beatitude + 100;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 7;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 		}
-		else if (player == clientnum)
+		else
 		{
 			messagePlayer(player, language[862]);
 		}
