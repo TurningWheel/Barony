@@ -3887,7 +3887,7 @@ void item_FoodTin(Item*& item, int player)
 
 	if ((item->beatitude < 0 || rand() % pukeChance == 0) && pukeChance < 100)
 	{
-		if (players[player] && players[player]->entity && !svFlags & SV_FLAG_HUNGER)
+		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
 		{
 			players[player]->entity->modHP(-5);
 		}
