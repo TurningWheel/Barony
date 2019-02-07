@@ -3607,7 +3607,8 @@ void item_Food(Item*& item, int player)
 			break;
 	}
 
-	if ( players[player]->entity->playerRequiresBloodToSustain() )
+	if ( players[player] 
+		&& players[player]->entity && players[player]->entity->playerRequiresBloodToSustain() )
 	{
 		if ( item->type == FOOD_BLOOD )
 		{
@@ -3687,7 +3688,8 @@ void item_Food(Item*& item, int player)
 				stats[player]->HUNGER += 400;
 				break;
 			case FOOD_BLOOD:
-				if ( players[player]->entity->playerRequiresBloodToSustain() )
+				if ( players[player] && players[player]->entity 
+					&& players[player]->entity->playerRequiresBloodToSustain() )
 				{
 					stats[player]->HUNGER += 250;
 				}
