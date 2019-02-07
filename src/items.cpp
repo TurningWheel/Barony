@@ -696,7 +696,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1008 + status], beatitude);
+					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
 				}
 				else
 				{
@@ -754,7 +754,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, language[1034 + status], beatitude);
 				}
 				else
 				{
@@ -816,7 +816,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[1060 + status], beatitude);
+					snprintf(tempstr, 1024, language[1060 + status], count);
 				}
 				else
 				{
@@ -2002,14 +2002,14 @@ void useItem(Item* item, int player, Entity* usedBy)
 			item_ScrollEnchantWeapon(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item, player);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_ENCHANTARMOR:
 			item_ScrollEnchantArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item, player);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_REMOVECURSE:
@@ -2047,7 +2047,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			item_ScrollDestroyArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item, player);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_TELEPORTATION:
