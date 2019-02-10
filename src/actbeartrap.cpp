@@ -177,13 +177,26 @@ void actBeartrap(Entity* my)
 							{
 								messagePlayer(player, language[2522]);
 							}
-							if ( rand() % 2 == 0 )
-							{
-								parent->increaseSkill(PRO_LOCKPICKING);
-							}
+							parent->increaseSkill(PRO_LOCKPICKING);
 							if ( rand() % 2 == 0 )
 							{
 								parent->increaseSkill(PRO_RANGED);
+							}
+							// update enemy bar for attacker
+							if ( !strcmp(stat->name, "") )
+							{
+								if ( stat->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, entity, language[90 + stat->type], stat->HP, stat->MAXHP);
+								}
+								else if ( stat->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, entity, language[2000 + (stat->type - KOBOLD)], stat->HP, stat->MAXHP);
+								}
+							}
+							else
+							{
+								updateEnemyBar(parent, entity, stat->name, stat->HP, stat->MAXHP);
 							}
 						}
 					}

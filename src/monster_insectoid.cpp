@@ -624,6 +624,44 @@ void initInsectoid(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
+	// additional limb 1
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INSECTOID][11][0];
+	entity->focaly = limbs[INSECTOID][11][1];
+	entity->focalz = limbs[INSECTOID][11][2];
+	entity->behavior = &actInsectoidLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// additional limb 2
+	entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INSECTOID][12][0];
+	entity->focaly = limbs[INSECTOID][12][1];
+	entity->focalz = limbs[INSECTOID][12][2];
+	entity->behavior = &actInsectoidLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
 	if ( multiplayer == CLIENT || MONSTER_INIT )
 	{
 		return;
@@ -662,6 +700,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* entity = nullptr, *entity2 = nullptr;
 	Entity* rightbody = nullptr;
 	Entity* weaponarm = nullptr;
+	Entity* torso = nullptr;
 	int bodypart;
 	bool wearingring = false;
 
@@ -747,6 +786,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	Entity* shieldarm = nullptr;
+	Entity* additionalLimb = nullptr;
 
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
@@ -941,6 +981,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
+				torso = entity;
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == nullptr )
@@ -982,9 +1023,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->scaley = 1;
 					}
 				}
-				entity->x -= .25 * cos(my->yaw);
-				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2;
+				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -1012,14 +1051,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->yaw += PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
@@ -1047,14 +1079,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->yaw -= PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm
 			case LIMB_HUMANOID_RIGHTARM:
@@ -1080,14 +1105,8 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 454;
 					}
 				}
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += .5;
+				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			}
 			// left arm
@@ -1113,13 +1132,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 452;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += .5;
-				if ( my->z >= 2.4 && my->z <= 2.6 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, INSECTOID, LIMB_HUMANOID_LEFTARM);
 				if ( my->monsterDefend && my->monsterAttack == 0 )
 				{
 					MONSTER_SHIELDYAW = PI / 5;
@@ -1226,55 +1239,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 2.5;
-				entity->yaw = shieldarm->yaw;
-				entity->roll = 0;
-				entity->pitch = 0;
-				if ( entity->sprite == items[TOOL_TORCH].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z += 1;
-				}
-				if ( MONSTER_SHIELDYAW > PI / 32 )
-				{
-					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
-					{
-						// shield, so rotate a little.
-						entity->roll += PI / 64;
-						entity->x += 0.5 * cos(my->yaw); // stick out shield a bit when defending to minimise model clipping
-						entity->y += 0.5 * sin(my->yaw);
-					}
-					else
-					{
-						entity->x += 0.25 * cos(my->yaw);
-						entity->y += 0.25 * sin(my->yaw);
-						entity->pitch += PI / 16;
-						if ( entity2 )
-						{
-							entity2->x += 0.75 * cos(shieldarm->yaw);
-							entity2->y += 0.75 * sin(shieldarm->yaw);
-						}
-					}
-				}
+				my->handleHumanoidShieldLimb(entity, shieldarm);
 				break;
 			// cloak
 			case LIMB_HUMANOID_CLOAK:
@@ -1432,6 +1397,100 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->focalz = limbs[INSECTOID][10][2]; // .25
 				}
 				break;
+			case 12:
+			{
+				additionalLimb = entity;
+				entity->focalx = limbs[INSECTOID][11][0];
+				entity->focaly = limbs[INSECTOID][11][1];
+				entity->focalz = limbs[INSECTOID][11][2];
+				entity->flags[INVISIBLE] = true;
+				
+				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+				entity->sprite = 750;
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				{
+					// wearing armor, offset more.
+					entity->x -= 2.25 * cos(my->yaw);
+					entity->y -= 2.25 * sin(my->yaw);
+				}
+				else
+				{
+					entity->x -= 1.5 * cos(my->yaw);
+					entity->y -= 1.5 * sin(my->yaw);
+				}
+				bool moving = false;
+				if ( fabs(my->vel_x) > 0.1 || fabs(my->vel_y) > 0.1 )
+				{
+					moving = true;
+				}
+
+				if ( entity->skill[0] == 0 )
+				{
+					if ( moving )
+					{
+						entity->fskill[0] += std::min(dist * INSECTOIDWALKSPEED, 2.f * INSECTOIDWALKSPEED); // move proportional to move speed
+					}
+					else if ( my->monsterAttack != 0 )
+					{
+						entity->fskill[0] += INSECTOIDWALKSPEED; // move fixed speed when attacking if stationary
+					}
+					else
+					{
+						entity->fskill[0] += 0.01; // otherwise move slow idle
+					}
+
+					if ( entity->fskill[0] > PI / 3 || ((!moving || my->monsterAttack != 0) && entity->fskill[0] > PI / 5) )
+					{
+						// switch direction if angle too great, angle is shorter if attacking or stationary
+						entity->skill[0] = 1;
+					}
+				}
+				else // reverse of the above
+				{
+					if ( moving )
+					{
+						entity->fskill[0] -= std::min(dist * INSECTOIDWALKSPEED, 2.f * INSECTOIDWALKSPEED);
+					}
+					else if ( my->monsterAttack != 0 )
+					{
+						entity->fskill[0] -= INSECTOIDWALKSPEED;
+					}
+					else
+					{
+						entity->fskill[0] -= 0.007;
+					}
+
+					if ( entity->fskill[0] < -PI / 32 )
+					{
+						entity->skill[0] = 0;
+					}
+				}
+				entity->yaw += entity->fskill[0];
+				break;
+			}
+			case 13:
+				entity->focalx = limbs[INSECTOID][12][0];
+				entity->focaly = limbs[INSECTOID][12][1];
+				entity->focalz = limbs[INSECTOID][12][2];
+				entity->flags[INVISIBLE] = true;
+				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+				entity->sprite = 751;
+				if ( additionalLimb ) // follow the yaw of the previous limb.
+				{
+					entity->yaw -= additionalLimb->fskill[0];
+				}
+				if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+				{
+					// wearing armor, offset more.
+					entity->x -= 2.25 * cos(my->yaw);
+					entity->y -= 2.25 * sin(my->yaw);
+				}
+				else
+				{
+					entity->x -= 1.5 * cos(my->yaw);
+					entity->y -= 1.5 * sin(my->yaw);
+				}
+				break;
 		}
 	}
 	// rotate shield a bit
@@ -1517,7 +1576,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	// occurs less often against fellow monsters.
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+		specialRoll = rand() % (40 + 40 * (target != nullptr && target->behavior == &actMonster));
 		//messagePlayer(0, "rolled: %d", specialRoll);
 		if ( myStats->HP <= myStats->MAXHP * 0.6 )
 		{

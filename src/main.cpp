@@ -61,7 +61,9 @@ SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 	{1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS"},
 	{2, STEAM_STAT_INT, "STAT_WORTHLESS_GLASS"},
 	{3, STEAM_STAT_INT, "STAT_TOUGH_AS_NAILS"},
-	{4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE"}
+	{4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE"},
+	{5, STEAM_STAT_INT, "STAT_GAMES_STARTED"},
+	{6, STEAM_STAT_INT, "STAT_GAMES_WON"}
 };
 CSteamStatistics* g_SteamStatistics = NULL;
 #else
@@ -223,6 +225,7 @@ Sint32* lightmap = nullptr;
 bool* vismap = nullptr;
 bool mode3d = false;
 bool verticalSync = false;
+bool showStatusEffectIcons = true;
 bool minimapPingMute = false;
 bool mute_audio_on_focus_lost = false;
 int minimapTransparencyForeground = 0;

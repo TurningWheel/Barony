@@ -87,6 +87,7 @@ TileEntityListHandler TileEntityList;
 int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
+DebugStatsClass DebugStats;
 
 /*-------------------------------------------------------------------------------
 
@@ -134,8 +135,10 @@ void gameLogic(void)
 		fourthendmovietime++;
 	}
 
+	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
+
 #ifdef SOUND
-	sound_update(); //Update FMOD and whatnot.
+	// sound_update(); //Update FMOD and whatnot.
 #endif
 
 	// camera shaking
@@ -178,25 +181,60 @@ void gameLogic(void)
 	}
 
 	// drunkenness
-	if ( stats[clientnum]->EFFECTS[EFF_DRUNK] && !intro )
+	if ( !intro )
 	{
-		if ( drunkextend < 0.5 )
+		if ( stats[clientnum]->EFFECTS[EFF_DRUNK] )
 		{
-			drunkextend += .005;
-			if ( drunkextend > 0.5 )
+			// goat/drunkards no spin!
+			if ( stats[clientnum]->type == GOATMAN )
 			{
-				drunkextend = 0.5;
+				// return to normal.
+				if ( drunkextend > 0 )
+				{
+					drunkextend -= .005;
+					if ( drunkextend < 0 )
+					{
+						drunkextend = 0;
+					}
+				}
+			}
+			else
+			{
+				if ( drunkextend < 0.5 )
+				{
+					drunkextend += .005;
+					if ( drunkextend > 0.5 )
+					{
+						drunkextend = 0.5;
+					}
+				}
 			}
 		}
-	}
-	else
-	{
-		if ( drunkextend > 0 )
+		else
 		{
-			drunkextend -= .005;
-			if ( drunkextend < 0 )
+			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] )
 			{
-				drunkextend = 0;
+				// special widthdrawal shakes
+				if ( drunkextend < 0.2 )
+				{
+					drunkextend += .005;
+					if ( drunkextend > 0.2 )
+					{
+						drunkextend = 0.2;
+					}
+				}
+			}
+			else
+			{
+				// return to normal.
+				if ( drunkextend > 0 )
+				{
+					drunkextend -= .005;
+					if ( drunkextend < 0 )
+					{
+						drunkextend = 0;
+					}
+				}
 			}
 		}
 	}
@@ -417,6 +455,7 @@ void gameLogic(void)
 		}
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
+			DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( assailantTimer[c] > 0 )
@@ -590,6 +629,7 @@ void gameLogic(void)
 
 			//if( TICKS_PER_SECOND )
 			//generatePathMaps();
+			DebugStats.eventsT3 = std::chrono::high_resolution_clock::now();
 			for ( node = map.entities->first; node != nullptr; node = nextnode )
 			{
 				nextnode = node->next;
@@ -896,6 +936,17 @@ void gameLogic(void)
 					{
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
+							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							{
+								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								players[c]->entity->playerVampireCurse = 1;
+								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
+							}
+
 							node_t* node;
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
 							{
@@ -914,11 +965,11 @@ void gameLogic(void)
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
 									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT);
-									if (!monsterally[HUMAN][monsterStats->type])
+									monster->flags[USERFLAG2] = true;
+									serverUpdateEntityFlag(monster, USERFLAG2);
+									/*if (!monsterally[HUMAN][monsterStats->type])
 									{
-										monster->flags[USERFLAG2] = true;
-										serverUpdateEntityFlag(monster, USERFLAG2);
-									}
+									}*/
 									monster->monsterAllyIndex = c;
 									if ( multiplayer == SERVER )
 									{
@@ -929,8 +980,17 @@ void gameLogic(void)
 									{
 										monster->monsterAllyClass = monsterStats->allyClass;
 										monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
+										if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
+										{
+											monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
+										}
+										else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
+										{
+											monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
+										}
 										serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
 										serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
+										serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
 									}
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -981,7 +1041,7 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
-
+			DebugStats.eventsT4 = std::chrono::high_resolution_clock::now();
 			if ( multiplayer == SERVER )
 			{
 				// periodically remind clients of the current level
@@ -1110,6 +1170,72 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+			{
+				INVENTORY_SIZEY = 4;
+			}
+			else
+			{
+				if ( INVENTORY_SIZEY > 3 )
+				{
+					// we should rearrange our spells.
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						int scanx = 0;
+						int scany = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						Item* item = (Item*)node->element;
+						if ( itemCategory(item) != SPELL_CAT )
+						{
+							continue;
+						}
+						while ( 1 )
+						{
+							for ( scany = 0; scany < 3; scany++ )
+							{
+								node_t* node2;
+								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == scanx && tempItem->y == scany )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = scanx;
+								item->y = scany;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							scanx++;
+						}
+					}
+				}
+				INVENTORY_SIZEY = 3;
+			}
+
+			DebugStats.eventsT5 = std::chrono::high_resolution_clock::now();
+
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1143,7 +1269,7 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					while ( item->count > 1 )
@@ -1165,6 +1291,8 @@ void gameLogic(void)
 					}
 				}
 			}
+
+			DebugStats.eventsT6 = std::chrono::high_resolution_clock::now();
 
 			if ( kills[SHOPKEEPER] >= 3 )
 			{
@@ -1521,6 +1649,70 @@ void gameLogic(void)
 				entity->ranbehavior = false;
 			}
 
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+			{
+				INVENTORY_SIZEY = 4;
+			}
+			else
+			{
+				if ( INVENTORY_SIZEY > 3 )
+				{
+					// we should rearrange our spells.
+					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+					{
+						int scanx = 0;
+						int scany = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						Item* item = (Item*)node->element;
+						if ( itemCategory(item) != SPELL_CAT )
+						{
+							continue;
+						}
+						while ( 1 )
+						{
+							for ( scany = 0; scany < 3; scany++ )
+							{
+								node_t* node2;
+								for ( node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == scanx && tempItem->y == scany )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = scanx;
+								item->y = scany;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							scanx++;
+						}
+					}
+				}
+				INVENTORY_SIZEY = 3;
+			}
+
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1554,7 +1746,7 @@ void gameLogic(void)
 				}
 
 				// drop any inventory items you don't have room for
-				if ( item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY )
+				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					while ( item->count > 1 )
@@ -1593,7 +1785,7 @@ void gameLogic(void)
 			//Cleanup identify GUI gamecontroller code here.
 			selectedIdentifySlot = -1;
 
-			identifygui_active = false;
+			//identifygui_active = false;
 			identifygui_appraising = true;
 			identifyGUIIdentify(auto_appraise_target);
 		}
@@ -1818,34 +2010,34 @@ void handleEvents(void)
 			case SDL_KEYDOWN: // if a key is pressed...
 				if ( command )
 				{
-					if (event.key.keysym.sym == SDLK_UP)
+					if ( event.key.keysym.sym == SDLK_UP )
 					{
-						if (!chosen_command && command_history.last)   //If no command is chosen (user has not tried to go up through the commands yet...
+						if ( !chosen_command && command_history.last )   //If no command is chosen (user has not tried to go up through the commands yet...
 						{
 							//Assign the chosen command as the last thing the user typed.
 							chosen_command = command_history.last;
-							strcpy(command_str, ((string_t* )chosen_command->element)->data);
+							strcpy(command_str, ((string_t*)chosen_command->element)->data);
 						}
-						else if (chosen_command)
+						else if ( chosen_command )
 						{
 							//Scroll up through the list. Do nothing if already at the top.
-							if (chosen_command->prev)
+							if ( chosen_command->prev )
 							{
 								chosen_command = chosen_command->prev;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
+								strcpy(command_str, ((string_t*)chosen_command->element)->data);
 							}
 						}
 					}
-					else if (event.key.keysym.sym == SDLK_DOWN)
+					else if ( event.key.keysym.sym == SDLK_DOWN )
 					{
-						if (chosen_command)   //If a command is chosen...
+						if ( chosen_command )   //If a command is chosen...
 						{
 							//Scroll down through the history, back to the latest command.
-							if (chosen_command->next)
+							if ( chosen_command->next )
 							{
 								//Move on to the newer command.
 								chosen_command = chosen_command->next;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
+								strcpy(command_str, ((string_t*)chosen_command->element)->data);
 							}
 							else
 							{
@@ -1884,13 +2076,15 @@ void handleEvents(void)
 				}
 #ifdef PANDORA
 				// Pandora Shoulder as Mouse Button handling
-				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_LEFT;
-				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+				}
+				else if ( event.key.keysym.sym == SDLK_RSHIFT ) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else
+				}
+				else
 #endif
 				{
 					lastkeypressed = event.key.keysym.scancode;
@@ -1899,13 +2093,15 @@ void handleEvents(void)
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
 #ifdef PANDORA
-				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+				if ( event.key.keysym.sym == SDLK_RCTRL ) { // L
 					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_LEFT;
-				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+				}
+				else if ( event.key.keysym.sym == SDLK_RSHIFT ) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else
+				}
+				else
 #endif
 				{
 					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
@@ -1952,15 +2148,15 @@ void handleEvents(void)
 				mousex = event.motion.x;
 				mousey = event.motion.y;
 #ifdef PANDORA
-				if(xres!=800 || yres!=480) {	// SEB Pandora
-					mousex = (mousex*xres)/800;
-					mousey = (mousey*yres)/480;
+				if ( xres != 800 || yres != 480 ) {	// SEB Pandora
+					mousex = (mousex*xres) / 800;
+					mousey = (mousey*yres) / 480;
 				}
 #endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
-				if (!draw_cursor)
+				if ( !draw_cursor )
 				{
 					draw_cursor = true;
 				}
@@ -1968,7 +2164,7 @@ void handleEvents(void)
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ( (!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ((!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
 					//Generate a mouse click.
 					SDL_Event e;
@@ -1981,7 +2177,7 @@ void handleEvents(void)
 				break;
 			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
 				joystatus[event.cbutton.button] = 0; // set this button's index to 0
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK])
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] )
 				{
 					//Generate a mouse lift.
 					SDL_Event e;
@@ -1996,6 +2192,12 @@ void handleEvents(void)
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if ( runtimes < 5 )
 				{
+					if ( runtimes == 0 )
+					{
+#ifdef SOUND
+						sound_update(); //Update FMOD and whatnot.
+#endif
+					}
 					runtimes++;
 					gameLogic();
 					mousexrel = 0;
@@ -2506,6 +2708,7 @@ int main(int argc, char** argv)
 		// instantiate a timer
 		timer = SDL_AddTimer(1000 / TICKS_PER_SECOND, timerCallback, NULL);
 		srand(time(NULL));
+		fountainSeed.seed(rand());
 
 		// play splash sound
 #ifdef MUSIC
@@ -2516,12 +2719,13 @@ int main(int argc, char** argv)
 		int indev_timer = 0;
 
 		// main loop
+
 		printlog("running main loop.\n");
 		while (mainloop)
 		{
 			// record the time at the start of this cycle
 			lastGameTickCount = SDL_GetPerformanceCounter();
-
+			DebugStats.t1StartLoop = std::chrono::high_resolution_clock::now();
 			// game logic
 			if ( !intro )
 			{
@@ -2535,8 +2739,9 @@ int main(int argc, char** argv)
 					serverHandleMessages();
 				}
 			}
+			DebugStats.t21PostHandleMessages = std::chrono::high_resolution_clock::now();
 			handleEvents();
-
+			DebugStats.t2PostEvents = std::chrono::high_resolution_clock::now();
 			// handle steam callbacks
 #ifdef STEAMWORKS
 			if ( g_SteamLeaderboards )
@@ -2545,7 +2750,7 @@ int main(int argc, char** argv)
 			}
 			SteamAPI_RunCallbacks();
 #endif
-
+			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
 				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
@@ -2704,7 +2909,7 @@ int main(int argc, char** argv)
 					{
 						for ( c = 0; c < NUMCLASSES; c++ )
 						{
-							if ( !strcmp(classtoquickstart, playerClassLangEntry(c)) )
+							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) )
 							{
 								client_classes[0] = c;
 								break;
@@ -2731,6 +2936,10 @@ int main(int argc, char** argv)
 						stats[0]->appearance = rand() % NUMAPPEARANCES;
 						stats[0]->clearStats();
 						initClass(0);
+						if ( stats[0]->playerRace != RACE_HUMAN )
+						{
+							stats[0]->appearance = 0;
+						}
 
 						strcpy(stats[0]->name, "Avatar");
 						multiplayer = SINGLE;
@@ -2844,6 +3053,7 @@ int main(int argc, char** argv)
 #ifdef MUSIC
 				handleLevelMusic();
 #endif
+				DebugStats.t4Music = std::chrono::high_resolution_clock::now();
 
 				// toggling the game menu
 				if ( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command )
@@ -2856,6 +3066,7 @@ int main(int argc, char** argv)
 						gui_mode = GUI_MODE_INVENTORY;
 						CloseIdentifyGUI();
 						closeRemoveCurseGUI();
+						GenericGUI.closeGUI();
 						FollowerMenu.closeFollowerMenuGUI();
 						if ( shopkeeper != 0 )
 						{
@@ -2948,12 +3159,16 @@ int main(int argc, char** argv)
 				camera.ang -= camera_shakex2;
 				camera.vang -= camera_shakey2 / 200.0;
 
+				DebugStats.t5MainDraw = std::chrono::high_resolution_clock::now();
+
 				updateMessages();
 				if ( !nohud )
 				{
 					handleDamageIndicators();
 					drawMessages();
 				}
+
+				DebugStats.t6Messages = std::chrono::high_resolution_clock::now();
 
 				if ( !gamePaused )
 				{
@@ -2973,6 +3188,7 @@ int main(int argc, char** argv)
 							gui_mode = GUI_MODE_INVENTORY;
 							CloseIdentifyGUI();
 							closeRemoveCurseGUI();
+							GenericGUI.closeGUI();
 							FollowerMenu.closeFollowerMenuGUI();
 						}
 
@@ -3249,14 +3465,6 @@ int main(int argc, char** argv)
 					if ( shootmode == false )
 					{
 						SDL_SetRelativeMouseMode(SDL_FALSE);
-						if ( proficienciesPage == 1 )
-						{
-							drawPartySheet();
-						}
-						else
-						{
-							drawSkillsSheet();
-						}
 					}
 					else
 					{
@@ -3277,6 +3485,8 @@ int main(int argc, char** argv)
 							closeRemoveCurseGUI();
 						}
 
+						GenericGUI.closeGUI();
+
 						if ( book_open )
 						{
 							closeBookGUI();
@@ -3289,18 +3499,9 @@ int main(int argc, char** argv)
 							SDL_SetRelativeMouseMode(SDL_TRUE);
 						}
 
-						if ( lock_right_sidebar )
-						{
-							if ( proficienciesPage == 1 )
-							{
-								drawPartySheet();
-							}
-							else
-							{
-								drawSkillsSheet();
-							}
-						}
 					}
+
+					DebugStats.t7Inputs = std::chrono::high_resolution_clock::now();
 
 					// Draw the static HUD elements
 					if ( !nohud )
@@ -3308,6 +3509,8 @@ int main(int argc, char** argv)
 						drawMinimap(); // Draw the Minimap
 						drawStatus(); // Draw the Status Bar (Hotbar, Hungry/Minotaur Icons, Tooltips, etc.)
 					}
+
+					DebugStats.t8Status = std::chrono::high_resolution_clock::now();
 
 					drawSustainedSpells();
 					updateAppraisalItemBox();
@@ -3322,6 +3525,7 @@ int main(int argc, char** argv)
 							updateChestInventory();
 							updateIdentifyGUI();
 							updateRemoveCurseGUI();
+							GenericGUI.updateGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 
@@ -3337,6 +3541,29 @@ int main(int argc, char** argv)
 							updatePlayerInventory();
 							updateShopWindow();
 						}
+
+						if ( proficienciesPage == 1 )
+						{
+							drawPartySheet();
+						}
+						else
+						{
+							drawSkillsSheet();
+						}
+					}
+					else
+					{
+						if ( lock_right_sidebar )
+						{
+							if ( proficienciesPage == 1 )
+							{
+								drawPartySheet();
+							}
+							else
+							{
+								drawSkillsSheet();
+							}
+						}
 					}
 					if ( (shootmode == false && gui_mode == GUI_MODE_INVENTORY) || show_game_timer_always )
 					{
@@ -3345,6 +3572,8 @@ int main(int argc, char** argv)
 						Uint32 hour = ((completionTime / TICKS_PER_SECOND) / 60) / 60;
 						printTextFormatted(font12x12_bmp, xres - 12 * 9, 12, "%02d:%02d:%02d", hour, min, sec);
 					}
+
+					DebugStats.t9GUI = std::chrono::high_resolution_clock::now();
 
 					// pointer in inventory screen
 					if (shootmode == false)
@@ -3552,6 +3781,26 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
 			}
 
+			DebugStats.t10FrameLimiter = std::chrono::high_resolution_clock::now();
+			if ( logCheckMainLoopTimers )
+			{
+				std::chrono::duration<double> time_span = 
+					std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t10FrameLimiter - DebugStats.t11End);
+				double timer = time_span.count() * 1000;
+				if ( timer > 10.f )
+				{
+					DebugStats.displayStats = true;
+					DebugStats.storeStats();
+					DebugStats.storeEventStats();
+					messagePlayer(clientnum, "Timers: %f total.", timer);
+				}
+				if ( DebugStats.displayStats )
+				{
+					printTextFormatted(font8x8_bmp, 8, 20, DebugStats.debugOutput);
+					printTextFormatted(font8x8_bmp, 8, 100, DebugStats.debugEventOutput);
+				}
+			}
+
 			// update screen
 			GO_SwapBuffers(screen);
 
@@ -3561,6 +3810,7 @@ int main(int argc, char** argv)
 				keystatus[SDL_SCANCODE_F6] = 0;
 				takeScreenshot();
 			}
+
 
 			// frame rate limiter
 			while ( frameRateLimit(fpsLimit) )
@@ -3578,6 +3828,8 @@ int main(int argc, char** argv)
 					}
 				}
 			}
+
+			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
 			cycles++;

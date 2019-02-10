@@ -205,7 +205,10 @@ void Stat::clearStats()
 
 	for ( x = 0; x < 32; x++ )
 	{
-		this->MISC_FLAGS[x] = 0;
+		if ( x != 4 ) // MISC_FLAGS[4] is playerRace, don't reset, same as ->sex
+		{
+			this->MISC_FLAGS[x] = 0;
+		}
 	}
 
 	for ( x = 0; x < NUMSTATS; x++ )
@@ -792,3 +795,16 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 	return equipNum[roll];
 }
 
+char* getSkillLangEntry(int skill)
+{
+	int langEntry = 236 + skill;
+	if ( skill == PRO_UNARMED )
+	{
+		langEntry = 3204;
+	}
+	else if ( skill == PRO_ALCHEMY )
+	{
+		langEntry = 3340;
+	}
+	return language[langEntry];
+}

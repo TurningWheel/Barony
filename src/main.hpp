@@ -24,7 +24,7 @@ typedef double real_t;
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <unordered_map>
-
+#include <unordered_set>
 #include "Config.hpp"
 #include "physfs.h"
 
@@ -36,6 +36,7 @@ extern bool spamming;
 extern bool showfirst;
 extern bool logCheckObstacle;
 extern int logCheckObstacleCount;
+extern bool logCheckMainLoopTimers;
 
 #include <dirent.h>
 #include <stdlib.h>
@@ -482,6 +483,7 @@ extern char subtext[1024];
 extern int rscale;
 extern real_t vidgamma;
 extern bool verticalSync;
+extern bool showStatusEffectIcons;
 extern bool minimapPingMute;
 extern bool mute_audio_on_focus_lost;
 extern int minimapTransparencyForeground;
@@ -506,7 +508,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 3200
+#define NUMLANGENTRIES 3400
 extern char languageCode[32];
 extern char** language;
 
@@ -661,7 +663,7 @@ static const Uint32 cacheLimit = 8096;
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
-static const int NUM_STEAM_STATISTICS = 4;
+static const int NUM_STEAM_STATISTICS = 6;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];

@@ -27,6 +27,7 @@
 #include "../colors.hpp"
 #include "../net.hpp"
 #include "../draw.hpp"
+#include "../scores.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -35,6 +36,7 @@ SDL_Surface* backdrop_cursed_bmp = nullptr;
 SDL_Surface* status_bmp = nullptr;
 SDL_Surface* character_bmp = nullptr;
 SDL_Surface* hunger_bmp = nullptr;
+SDL_Surface* hunger_blood_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
@@ -122,6 +124,9 @@ SDL_Surface *per_bmp64 = NULL;
 SDL_Surface *chr_bmp64 = NULL;
 SDL_Surface *sidebar_lock_bmp = nullptr;
 SDL_Surface *sidebar_unlock_bmp = nullptr;
+SDL_Surface *effect_drunk_bmp = nullptr;
+SDL_Surface *effect_polymorph_bmp = nullptr;
+SDL_Surface *effect_hungover_bmp = nullptr;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
@@ -166,6 +171,7 @@ bool uiscale_charactersheet = false;
 bool uiscale_skillspage = false;
 
 FollowerRadialMenu FollowerMenu;
+GenericGUIMenu GenericGUI;
 SDL_Rect interfaceSkillsSheet;
 SDL_Rect interfacePartySheet;
 
@@ -192,6 +198,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&status_bmp, "images/system/StatusBar.png"),
 	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
 	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
+	std::make_pair(&hunger_blood_bmp, "images/system/Hunger_blood.png"),
 	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
 	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
 	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
@@ -250,7 +257,12 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&sidebar_lock_bmp, "images/system/locksidebar.png"),
 	std::make_pair(&sidebar_unlock_bmp, "images/system/unlocksidebar.png"),
 	std::make_pair(&hotbar_img, "images/system/hotbar_slot.png"),
-	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png")
+	std::make_pair(&hotbar_spell_img, "images/system/magic/hotbar_spell.png"),
+
+	//Misc effect images.
+	std::make_pair(&effect_drunk_bmp, "images/system/drunk.png"),
+	std::make_pair(&effect_polymorph_bmp, "images/system/polymorph.png"),
+	std::make_pair(&effect_hungover_bmp, "images/system/hungover.png")
 };
 
 bool loadInterfaceResources()
@@ -267,6 +279,7 @@ bool loadInterfaceResources()
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
+	hunger_blood_bmp = loadImage("images/system/Hunger_blood.png");
 	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
@@ -359,6 +372,11 @@ bool loadInterfaceResources()
 	sidebar_unlock_bmp = loadImage("images/system/unlocksidebar.png");
 	hotbar_img = loadImage("images/system/hotbar_slot.png");
 	hotbar_spell_img = loadImage("images/system/magic/hotbar_spell.png");
+
+	effect_drunk_bmp = loadImage("images/system/drunk.png");
+	effect_polymorph_bmp = loadImage("images/system/polymorph.png");
+	effect_hungover_bmp = loadImage("images/system/hungover.png");
+
 	int i = 0;
 	for (i = 0; i < NUM_HOTBAR_SLOTS; ++i)
 	{
@@ -402,6 +420,10 @@ void freeInterfaceResources()
 	if (hunger_bmp)
 	{
 		SDL_FreeSurface(hunger_bmp);
+	}
+	if ( hunger_blood_bmp )
+	{
+		SDL_FreeSurface(hunger_blood_bmp);
 	}
 	if ( minotaur_bmp )
 	{
@@ -617,6 +639,18 @@ void freeInterfaceResources()
 	if ( sidebar_unlock_bmp )
 	{
 		SDL_FreeSurface(sidebar_unlock_bmp);
+	}
+	if ( effect_drunk_bmp )
+	{
+		SDL_FreeSurface(effect_drunk_bmp);
+	}
+	if ( effect_polymorph_bmp )
+	{
+		SDL_FreeSurface(effect_polymorph_bmp);
+	}
+	if ( effect_hungover_bmp )
+	{
+		SDL_FreeSurface(effect_hungover_bmp);
 	}
 	list_FreeAll(&damageIndicators);
 }
@@ -957,7 +991,7 @@ int loadConfig(char* filename)
 		// reset to default arrow key to avoid overlapping keybinds on first launch.
 		// due to legacy keybind, now we have useful things to assign to q,e,z,c
 		impulses[IN_UP] = 82;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_UP: %d (Right arrow key)\n", impulses[IN_UP]);
 	}
 	if ( impulses[IN_FOLLOWERMENU_LASTCMD] == impulses[IN_TURNL]
 		&& impulses[IN_TURNL] == 20 )
@@ -965,7 +999,7 @@ int loadConfig(char* filename)
 		// reset to default arrow key to avoid overlapping keybinds on first launch.
 		// due to legacy keybind, now we have useful things to assign to q,e,z,c
 		impulses[IN_TURNL] = 80;
-		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNR: %d (Right arrow key)\n", impulses[IN_TURNR]);
+		printlog("Legacy keys detected, conflict with IN_FOLLOWERMENU_CYCLENEXT. Automatically rebound IN_TURNL: %d (Right arrow key)\n", impulses[IN_TURNL]);
 	}
 
 	return 0;
@@ -1085,6 +1119,10 @@ int saveConfig(char* filename)
 	if ( verticalSync )
 	{
 		fprintf(fp, "/vsync\n");
+	}
+	if ( !showStatusEffectIcons )
+	{
+		fprintf(fp, "/hidestatusicons\n");
 	}
 	if ( minimapPingMute )
 	{
@@ -1502,6 +1540,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 
 	int disableOption = 0;
 	bool keepWheelOpen = false;
+
 	if ( followerToCommand )
 	{
 		if ( players[clientnum] && players[clientnum]->entity
@@ -1510,6 +1549,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			shootmode = true;
 			CloseIdentifyGUI();
 			closeRemoveCurseGUI();
+			GenericGUI.closeGUI();
 			if ( openedChest[clientnum] )
 			{
 				openedChest[clientnum]->closeChest();
@@ -1525,11 +1565,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 			return;
 		}
 		int skillLVL = 0;
-		if ( stats[clientnum] )
+		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
 			{
-				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+				if ( followerToCommand->monsterAllySummonRank != 0 )
+				{
+					skillLVL = SKILL_LEVEL_LEGENDARY;
+				}
 				if ( optionSelected == ALLY_CMD_ATTACK_SELECT )
 				{
 					if ( attackCommandOnly(followerStats->type) )
@@ -1593,6 +1637,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 
+			if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
+			{
+				optionSelected = ALLY_CMD_RETURN_SOUL;
+			}
+
 			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
 			if ( disableOption != 0 )
 			{
@@ -1636,6 +1685,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						{
 							openedChest[clientnum]->closeChest();
 						}
+						GenericGUI.closeGUI();
 						gui_mode = GUI_MODE_NONE;
 					}
 				}
@@ -1704,9 +1754,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
-		if ( stats[clientnum] )
+		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
-			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+			if ( followerToCommand->monsterAllySummonRank != 0 )
+			{
+				skillLVL = SKILL_LEVEL_LEGENDARY;
+			}
 		}
 
 		SDL_Rect src;
@@ -1833,10 +1887,18 @@ void FollowerRadialMenu::drawFollowerMenu()
 				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
 				if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
-					// draw higher.
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
-					TTF_SizeUTF8(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+					if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+					{
+						TTF_SizeUTF8(ttf12, "Relinquish ", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
+					}
+					else
+					{
+						// draw higher.
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						TTF_SizeUTF8(ttf12, language[3053 + followerToCommand->monsterAllyClass], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3053 + followerToCommand->monsterAllyClass]);
+					}
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
 				{
@@ -2224,11 +2286,19 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	{
 		return false;
 	}
+	if ( !players[clientnum] || !players[clientnum]->entity )
+	{
+		return false;
+	}
 
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
 
-	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+	if ( followerToCommand->monsterAllySummonRank != 0 )
+	{
+		skillLVL = SKILL_LEVEL_LEGENDARY;
+	}
 	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
@@ -2371,6 +2441,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_DROP_EQUIP:
+			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			{
+				return -1;
+			}
 			if ( !allowedInteractItems(monsterType) )
 			{
 				return -1; // disabled due to creature.
@@ -2431,6 +2505,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_CLASS_TOGGLE:
+			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			{
+				return 0;
+			}
 			if ( !allowedClassToggle(monsterType) )
 			{
 				return -1; // disabled due to creature.
@@ -2541,6 +2619,7 @@ bool FollowerRadialMenu::allowedInteractWorld(int monsterType)
 		case GNOME:
 		case KOBOLD:
 		case GOATMAN:
+		case SKELETON:
 			return true;
 			break;
 		default:
@@ -2564,6 +2643,10 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 		case SKELETON:
 		case VAMPIRE:
 		case SLIME:
+			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+			{
+				return false;
+			}
 			return true;
 			break;
 		default:
@@ -2575,4 +2658,1626 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 {
 	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
+}
+
+bool GenericGUIMenu::isItemRepairable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( !item->identified )
+	{
+		return false;
+	}
+	if ( item->status == EXCELLENT )
+	{
+		return false;
+	}
+	Category cat = itemCategory(item);
+	switch ( cat )
+	{
+		case WEAPON:
+			return true;
+		case ARMOR:
+			return true;
+		case MAGICSTAFF:
+			return true;
+		case THROWN:
+			return true;
+		case TOOL:
+			switch ( item->type )
+			{
+				case TOOL_TOWEL:
+				case TOOL_MIRROR:
+				case TOOL_SKELETONKEY:
+				case TOOL_TINOPENER:
+					return false;
+					break;
+				default:
+					return true;
+					break;
+			}
+			break;
+		default:
+			return false;
+	}
+}
+
+// Generic GUI Code
+void GenericGUIMenu::rebuildGUIInventory()
+{
+	list_t* player_inventory = &stats[clientnum]->inventory;
+	node_t* node = nullptr;
+	Item* item = nullptr;
+	int c = 0;
+
+	if ( player_inventory )
+	{
+		//Count the number of items in the GUI "inventory".
+		for ( node = player_inventory->first; node != nullptr; node = node->next )
+		{
+			item = (Item*)node->element;
+			if ( shouldDisplayItemInGUI(item) )
+			{
+				++c;
+			}
+		}
+		if ( c == 0 && guiType == GUI_TYPE_ALCHEMY )
+		{
+			// did not find mixable item... close GUI
+			if ( !experimentingAlchemy )
+			{
+				messagePlayer(clientnum, language[3338]);
+			}
+			else
+			{
+				messagePlayer(clientnum, language[3343]);
+			}
+			closeGUI();
+			return;
+		}
+		scroll = std::max(0, std::min(scroll, c - kNumShownItems));
+		for ( c = 0; c < kNumShownItems; ++c )
+		{
+			itemsDisplayed[c] = nullptr;
+		}
+		c = 0;
+
+		//Assign the visible items to the GUI slots.
+		for ( node = player_inventory->first; node != nullptr; node = node->next )
+		{
+			if ( node->element )
+			{
+				item = (Item*)node->element;
+				if ( shouldDisplayItemInGUI(item) ) //Skip over all non-applicable items.
+				{
+					++c;
+					if ( c <= scroll )
+					{
+						continue;
+					}
+					itemsDisplayed[c - scroll - 1] = item;
+					if ( c > 3 + scroll )
+					{
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void GenericGUIMenu::updateGUI()
+{
+	SDL_Rect pos;
+	node_t* node;
+	int y, c;
+
+	//Generic GUI.
+	if ( guiActive )
+	{
+		if ( guiType == GUI_TYPE_ALCHEMY )
+		{
+			if ( !alembicItem )
+			{
+				closeGUI();
+				return;
+			}
+			if ( !alembicItem->node )
+			{
+				closeGUI();
+				return;
+			}
+			if ( alembicItem->node->list != &stats[clientnum]->inventory )
+			{
+				// dropped out of inventory or something.
+				closeGUI();
+				return;
+			}
+		}
+
+		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+		gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+		//Center the GUI.
+		pos.x = gui_starty;
+		pos.y = gui_startx;
+		drawImage(identifyGUI_img, NULL, &pos);
+
+		//Buttons
+		if ( mousestatus[SDL_BUTTON_LEFT] )
+		{
+			//GUI scroll up button.
+			if ( omousey >= gui_startx + 16 && omousey < gui_startx + 52 )
+			{
+				if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+				{
+					buttonclick = 7;
+					scroll--;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+			//GUI scroll down button.
+			else if ( omousey >= gui_startx + 52 && omousey < gui_startx + 88 )
+			{
+				if ( omousex >= gui_starty + (identifyGUI_img->w - 28) && omousex < gui_starty + (identifyGUI_img->w - 12) )
+				{
+					buttonclick = 8;
+					scroll++;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+			else if ( omousey >= gui_startx && omousey < gui_startx + 15 )
+			{
+				//GUI close button.
+				if ( omousex >= gui_starty + 393 && omousex < gui_starty + 407 )
+				{
+					buttonclick = 9;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+				if ( omousex >= gui_starty && omousex < gui_starty + 377 && omousey >= gui_startx && omousey < gui_startx + 15 )
+				{
+					gui_clickdrag = true;
+					draggingGUI = true;
+					dragoffset_x = omousex - gui_starty;
+					dragoffset_y = omousey - gui_startx;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+			}
+		}
+
+		// mousewheel
+		if ( omousex >= gui_starty + 12 && omousex < gui_starty + (identifyGUI_img->w - 28) )
+		{
+			if ( omousey >= gui_startx + 16 && omousey < gui_startx + (identifyGUI_img->h - 8) )
+			{
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+				{
+					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+					scroll++;
+				}
+				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+				{
+					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					scroll--;
+				}
+			}
+		}
+
+		if ( draggingGUI )
+		{
+			if ( gui_clickdrag )
+			{
+				offsetx = (omousex - dragoffset_x) - (gui_starty - offsetx);
+				offsety = (omousey - dragoffset_y) - (gui_startx - offsety);
+				if ( gui_starty <= camera.winx )
+				{
+					offsetx = camera.winx - (gui_starty - offsetx);
+				}
+				if ( gui_starty > camera.winx + camera.winw - identifyGUI_img->w )
+				{
+					offsetx = (camera.winx + camera.winw - identifyGUI_img->w) - (gui_starty - offsetx);
+				}
+				if ( gui_startx <= camera.winy )
+				{
+					offsety = camera.winy - (gui_startx - offsety);
+				}
+				if ( gui_startx > camera.winy + camera.winh - identifyGUI_img->h )
+				{
+					offsety = (camera.winy + camera.winh - identifyGUI_img->h) - (gui_startx - offsety);
+				}
+			}
+			else
+			{
+				draggingGUI = false;
+			}
+		}
+
+		list_t* player_inventory = &stats[clientnum]->inventory;
+
+		if ( !player_inventory )
+		{
+			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
+		}
+		else
+		{
+			//Print the window label signifying this GUI.
+			char* window_name;
+			if ( guiType == GUI_TYPE_REPAIR )
+			{
+				window_name = language[3286];
+				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+			}
+			else if ( guiType == GUI_TYPE_ALCHEMY )
+			{
+				if ( !basePotion )
+				{
+					if ( !experimentingAlchemy )
+					{
+						window_name = language[3328];
+					}
+					else
+					{
+						window_name = language[3344];
+					}
+					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
+				}
+				else
+				{
+					if ( !experimentingAlchemy )
+					{
+						window_name = language[3329];
+					}
+					else
+					{
+						window_name = language[3345];
+					}
+					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), 
+						gui_startx + 4 - TTF8_HEIGHT - 4, window_name);
+					int count = basePotion->count;
+					basePotion->count = 1;
+					char *description = basePotion->description();
+					basePotion->count = count;
+					ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(description)) / 2))),
+						gui_startx + 4, description);
+				}
+			}
+
+			//GUI up button.
+			if ( buttonclick == 7 )
+			{
+				pos.x = gui_starty + (identifyGUI_img->w - 28);
+				pos.y = gui_startx + 16;
+				pos.w = 0;
+				pos.h = 0;
+				drawImage(invup_bmp, NULL, &pos);
+			}
+			//GUI down button.
+			if ( buttonclick == 8 )
+			{
+				pos.x = gui_starty + (identifyGUI_img->w - 28);
+				pos.y = gui_startx + 52;
+				pos.w = 0;
+				pos.h = 0;
+				drawImage(invdown_bmp, NULL, &pos);
+			}
+			//GUI close button.
+			if ( buttonclick == 9 )
+			{
+				pos.x = gui_starty + 393;
+				pos.y = gui_startx;
+				pos.w = 0;
+				pos.h = 0;
+				drawImage(invclose_bmp, NULL, &pos);
+				closeGUI();
+			}
+
+			Item *item = nullptr;
+
+			bool selectingSlot = false;
+			SDL_Rect slotPos;
+			slotPos.x = gui_starty;
+			slotPos.w = inventoryoptionChest_bmp->w;
+			slotPos.y = gui_startx + 16;
+			slotPos.h = inventoryoptionChest_bmp->h;
+
+			for ( int i = 0; i < kNumShownItems; ++i, slotPos.y += slotPos.h )
+			{
+				pos.x = slotPos.x + 12;
+				pos.w = 0;
+				pos.h = 0;
+
+				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && itemsDisplayed[i] )
+				{
+					pos.y = slotPos.y;
+					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+					selectedSlot = i;
+					selectingSlot = true;
+					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+
+						bool result = executeOnItemClick(itemsDisplayed[i]);
+						GUICurrentType oldType = guiType;
+						rebuildGUIInventory();
+						
+						if ( oldType == GUI_TYPE_ALCHEMY && !guiActive )
+						{
+							// do nothing
+						}
+						else if ( itemsDisplayed[i] == nullptr )
+						{
+							if ( itemsDisplayed[0] == nullptr )
+							{
+								//Go back to inventory.
+								selectedSlot = -1;
+								warpMouseToSelectedInventorySlot();
+							}
+							else
+							{
+								//Move up one slot.
+								--selectedSlot;
+								warpMouseToSelectedSlot();
+							}
+						}
+					}
+				}
+			}
+
+			if ( !selectingSlot )
+			{
+				selectedSlot = -1;
+			}
+
+			//Okay, now prepare to render all the items.
+			y = gui_startx + 22;
+			c = 0;
+			if ( player_inventory )
+			{
+				rebuildGUIInventory();
+
+				//Actually render the items.
+				c = 0;
+				for ( node = player_inventory->first; node != NULL; node = node->next )
+				{
+					if ( node->element )
+					{
+						item = (Item*)node->element;
+						bool displayItem = shouldDisplayItemInGUI(item);
+						if ( displayItem )   //Skip over all non-used items
+						{
+							c++;
+							if ( c <= scroll )
+							{
+								continue;
+							}
+							char tempstr[256] = { 0 };
+							strncpy(tempstr, item->description(), 46);
+							if ( strlen(tempstr) == 46 )
+							{
+								strcat(tempstr, " ...");
+							}
+							ttfPrintText(ttf8, gui_starty + 36, y, tempstr);
+							pos.x = gui_starty + 16;
+							pos.y = gui_startx + 17 + 18 * (c - scroll - 1);
+							pos.w = 16;
+							pos.h = 16;
+							drawImageScaled(itemSprite(item), NULL, &pos);
+							y += 18;
+							if ( c > 3 + scroll )
+							{
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( guiType == GUI_TYPE_REPAIR )
+	{
+		return isItemRepairable(item);
+	}
+	else if ( guiType == GUI_TYPE_ALCHEMY )
+	{
+		return isItemMixable(item);
+	}
+	return false;
+}
+
+void GenericGUIMenu::repairItem(Item* item)
+{
+	if ( !item )
+	{
+		return;
+	}
+	if ( !shouldDisplayItemInGUI(item) )
+	{
+		messagePlayer(clientnum, language[3287], item->getName());
+		return;
+	}
+
+	bool isEquipped = itemIsEquipped(item, clientnum);
+
+	if ( item->status == BROKEN )
+	{
+		item->status = DECREPIT;
+	}
+	else
+	{
+		item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+	}
+	messagePlayer(clientnum, language[872], item->getName());
+	closeGUI();
+	if ( multiplayer == CLIENT && isEquipped )
+	{
+		// the client needs to inform the server that their equipment was repaired.
+		int armornum = 0;
+		if ( item == stats[clientnum]->weapon )
+		{
+			armornum = 0;
+		}
+		else if ( item == stats[clientnum]->helmet )
+		{
+			armornum = 1;
+		}
+		else if ( item == stats[clientnum]->breastplate )
+		{
+			armornum = 2;
+		}
+		else if ( item == stats[clientnum]->gloves )
+		{
+			armornum = 3;
+		}
+		else if ( item == stats[clientnum]->shoes )
+		{
+			armornum = 4;
+		}
+		else if ( item == stats[clientnum]->shield )
+		{
+			armornum = 5;
+		}
+		else if ( item == stats[clientnum]->cloak )
+		{
+			armornum = 6;
+		}
+		else if ( item == stats[clientnum]->mask )
+		{
+			armornum = 7;
+		}
+		strcpy((char*)net_packet->data, "REPA");
+		net_packet->data[4] = clientnum;
+		net_packet->data[5] = armornum;
+		net_packet->data[6] = item->status;
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+}
+
+void GenericGUIMenu::closeGUI()
+{
+	guiActive = false;
+	selectedSlot = -1;
+	guiType = GUI_TYPE_NONE;
+	basePotion = nullptr;
+	secondaryPotion = nullptr;
+	alembicItem = nullptr;
+}
+
+inline Item* GenericGUIMenu::getItemInfo(int slot)
+{
+	if ( slot >= kNumShownItems )
+	{
+		return nullptr; //Out of bounds,
+	}
+
+	return itemsDisplayed[slot];
+}
+
+void GenericGUIMenu::selectSlot(int slot)
+{
+	if ( slot < selectedSlot )
+	{
+		//Moving up.
+
+		/*
+		* Possible cases:
+		* * 1) Move cursor up the GUI through different selectedSlot.
+		* * 2) Page up through scroll--
+		* * 3) Scrolling up past top of GUI, no scroll (move back to inventory)
+		*/
+
+		if ( selectedSlot <= 0 )
+		{
+			//Covers cases 2 & 3.
+
+			/*
+			* Possible cases:
+			* * A) Hit very top of "inventory", can't go any further. Return to inventory.
+			* * B) Page up, scrolling through scroll.
+			*/
+
+			if ( scroll <= 0 )
+			{
+				//Case 3/A: Return to inventory.
+				selectedSlot = -1;
+			}
+			else
+			{
+				//Case 2/B: Page up through "inventory".
+				--scroll;
+			}
+		}
+		else
+		{
+			//Covers case 1.
+
+			//Move cursor up the GUI through different selectedSlot (--selectedSlot).
+			--selectedSlot;
+			warpMouseToSelectedSlot();
+		}
+	}
+	else if ( slot > selectedSlot )
+	{
+		//Moving down.
+
+		/*
+		* Possible cases:
+		* * 1) Moving cursor down through GUI through different selectedSlot.
+		* * 2) Scrolling down past bottom of GUI through scroll++
+		* * 3) Scrolling down past bottom of GUI, max scroll (revoke move -- can't go beyond limit of GUI).
+		*/
+
+		if ( selectedSlot >= kNumShownItems - 1 )
+		{
+			//Covers cases 2 & 3.
+			++scroll; //scroll is automatically sanitized in updateGUI().
+		}
+		else
+		{
+			//Covers case 1.
+			//Move cursor down through the GUI through different selectedSlot (++selectedSlot).
+			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
+
+			/*
+			* Two possible cases:
+			* * A) Items below this. Advance selectedSlot to them.
+			* * B) On last item already. Do nothing (revoke movement).
+			*/
+
+			Item* item = getItemInfo(selectedSlot + 1);
+
+			if ( item )
+			{
+				++selectedSlot;
+				warpMouseToSelectedSlot();
+			}
+			else
+			{
+				//No more items. Stop.
+			}
+		}
+	}
+}
+
+void GenericGUIMenu::warpMouseToSelectedSlot()
+{
+	SDL_Rect slotPos;
+	slotPos.x = gui_starty;
+	slotPos.w = inventoryoptionChest_bmp->w;
+	slotPos.h = inventoryoptionChest_bmp->h;
+	slotPos.y = gui_startx + 16 + (slotPos.h * selectedSlot);
+
+	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
+}
+
+void GenericGUIMenu::initGUIControllerCode()
+{
+	if ( itemsDisplayed[0] )
+	{
+		selectedSlot = 0;
+		this->warpMouseToSelectedSlot();
+	}
+	else
+	{
+		selectedSlot = -1;
+	}
+}
+
+void GenericGUIMenu::openGUI(int type, int scrollBeatitude)
+{
+	this->closeGUI();
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	guiActive = true;
+	usingScrollBeatitude = scrollBeatitude;
+	guiType = static_cast<GUICurrentType>(type);
+
+	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+	if ( removecursegui_active )
+	{
+		closeRemoveCurseGUI();
+	}
+	if ( identifygui_active )
+	{
+		CloseIdentifyGUI();
+	}
+	FollowerMenu.closeFollowerMenuGUI();
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+	rebuildGUIInventory();
+	this->initGUIControllerCode();
+}
+
+void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
+{
+	this->closeGUI();
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	guiActive = true;
+	alembicItem = itemOpenedWith;
+	experimentingAlchemy = experimenting;
+	guiType = static_cast<GUICurrentType>(type);
+
+	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+	if ( removecursegui_active )
+	{
+		closeRemoveCurseGUI();
+	}
+	if ( identifygui_active )
+	{
+		CloseIdentifyGUI();
+	}
+	FollowerMenu.closeFollowerMenuGUI();
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+	rebuildGUIInventory();
+	this->initGUIControllerCode();
+}
+
+bool GenericGUIMenu::executeOnItemClick(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( guiType == GUI_TYPE_REPAIR )
+	{
+		repairItem(item);
+		return true;
+	}
+	else if ( guiType == GUI_TYPE_ALCHEMY )
+	{
+		if ( !basePotion )
+		{
+			if ( isItemMixable(item) )
+			{
+				basePotion = item;
+				// check if secondary potion available.
+				list_t* player_inventory = &stats[clientnum]->inventory;
+				for ( node_t* node = player_inventory->first; node != nullptr; node = node->next )
+				{
+					if ( node->element )
+					{
+						Item* checkItem = (Item*)node->element;
+						if ( checkItem && isItemMixable(checkItem) )
+						{
+							return true;
+						}
+					}
+				}
+				// did not find mixable item... close GUI
+				if ( !experimentingAlchemy )
+				{
+					messagePlayer(clientnum, language[3337]);
+				}
+				else
+				{
+					messagePlayer(clientnum, language[3342]);
+				}
+				closeGUI();
+				return false;
+			}
+		}
+		else if ( !secondaryPotion )
+		{
+			if ( isItemMixable(item) )
+			{
+				secondaryPotion = item;
+				if ( secondaryPotion && basePotion )
+				{
+					alchemyCombinePotions();
+					basePotion = nullptr;
+					secondaryPotion = nullptr;
+				}
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool GenericGUIMenu::isItemMixable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) != POTION )
+	{
+		return false;
+	}
+	if ( item->type == POTION_EMPTY )
+	{
+		return false;
+	}
+
+	if ( players[clientnum] && players[clientnum]->entity )
+	{
+		if ( players[clientnum]->entity->isBlind() )
+		{
+			messagePlayer(clientnum, language[892]);
+			closeGUI();
+			return false; // I can't see!
+		}
+	}
+
+
+	if ( !experimentingAlchemy && !item->identified )
+	{
+		if ( !basePotion )
+		{
+			return false;
+		}
+		else if ( item != basePotion )
+		{
+			return true;
+		}
+		return false;
+	}
+
+
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		return false; // don't want to deal with client/server desync problems here.
+	}
+
+	//int skillLVL = 0;
+	//if ( stats[clientnum] )
+	//{
+	//	skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+	//}
+
+	if ( experimentingAlchemy )
+	{
+		if ( !basePotion )
+		{
+			return true;
+		}
+		else if ( !secondaryPotion )
+		{
+			if ( item != basePotion )
+			{
+				return true;
+			}
+		}
+	}
+
+	if ( !basePotion )
+	{
+		// we're selecting the first potion.
+		switch ( item->type )
+		{
+			case POTION_WATER:
+			case POTION_POLYMORPH:
+			case POTION_BOOZE:
+			case POTION_JUICE:
+			case POTION_ACID:
+			case POTION_INVISIBILITY:
+				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
+
+	if ( !secondaryPotion )
+	{
+		if ( item == basePotion )
+		{
+			return false;
+		}
+
+		// we're selecting the second potion.
+		switch ( item->type )
+		{
+			case POTION_WATER:
+			case POTION_SICKNESS:
+			case POTION_CONFUSION:
+			case POTION_CUREAILMENT:
+			case POTION_BLINDNESS:
+			case POTION_RESTOREMAGIC:
+			case POTION_SPEED:
+			case POTION_POLYMORPH:
+				if ( clientLearnedAlchemyIngredients.find(item->type) != clientLearnedAlchemyIngredients.end() )
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			default:
+				return false;
+				break;
+		}
+	}
+
+	return false;
+}
+
+void GenericGUIMenu::alchemyCombinePotions()
+{
+	if ( !basePotion || !secondaryPotion )
+	{
+		return;
+	}
+
+	bool tryDuplicatePotion = false;
+	ItemType result = POTION_SICKNESS;
+	bool randomResult = false;
+	bool explodeSelf = false;
+
+	switch ( basePotion->type )
+	{
+		case POTION_WATER:
+			if ( secondaryPotion->type == POTION_ACID )
+			{
+				explodeSelf = true;
+			}
+			else
+			{
+				tryDuplicatePotion = true;
+			}
+			break;
+		case POTION_BOOZE:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_SICKNESS:
+					result = POTION_CONFUSION;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_ACID;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_SPEED;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_STRENGTH;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_BLINDNESS;
+					break;
+				case POTION_SPEED:
+					result = POTION_PARALYSIS;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case POTION_JUICE:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_SICKNESS:
+					result = POTION_BOOZE;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_CONFUSION;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_RESTOREMAGIC;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_CUREAILMENT;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_HEALING;
+					break;
+				case POTION_SPEED:
+					result = POTION_INVISIBILITY;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		case POTION_ACID:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_WATER:
+					explodeSelf = true; // oh no. don't do that.
+					break;
+				case POTION_SICKNESS:
+					result = POTION_FIRESTORM;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_JUICE;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_FIRESTORM;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_ICESTORM;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_ICESTORM;
+					break;
+				case POTION_SPEED:
+					result = POTION_THUNDERSTORM;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					explodeSelf = true;
+					break;
+			}
+			break;
+		case POTION_INVISIBILITY:
+			switch ( secondaryPotion->type )
+			{
+				case POTION_SICKNESS:
+					result = POTION_BLINDNESS;
+					break;
+				case POTION_CONFUSION:
+					result = POTION_PARALYSIS;
+					break;
+				case POTION_CUREAILMENT:
+					result = POTION_LEVITATION;
+					break;
+				case POTION_BLINDNESS:
+					result = POTION_POLYMORPH;
+					break;
+				case POTION_RESTOREMAGIC:
+					result = POTION_EXTRAHEALING;
+					break;
+				case POTION_SPEED:
+					result = POTION_RESTOREMAGIC;
+					break;
+				case POTION_POLYMORPH:
+					randomResult = true;
+					break;
+				default:
+					break;
+			}
+			break;
+		default:
+			break;
+	}
+
+	if ( result == POTION_SICKNESS ) // didn't get a result, try flip the potion order
+	{
+		switch ( secondaryPotion->type )
+		{
+			case POTION_WATER:
+				if ( basePotion->type == POTION_ACID )
+				{
+					explodeSelf = true;
+				}
+				else
+				{
+					tryDuplicatePotion = true;
+				}
+				break;
+			case POTION_BOOZE:
+				switch ( basePotion->type )
+				{
+					case POTION_SICKNESS:
+						result = POTION_CONFUSION;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_ACID;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_SPEED;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_STRENGTH;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_BLINDNESS;
+						break;
+					case POTION_SPEED:
+						result = POTION_PARALYSIS;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						break;
+				}
+				break;
+			case POTION_JUICE:
+				switch ( basePotion->type )
+				{
+					case POTION_SICKNESS:
+						result = POTION_BOOZE;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_CONFUSION;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_RESTOREMAGIC;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_CUREAILMENT;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_HEALING;
+						break;
+					case POTION_SPEED:
+						result = POTION_INVISIBILITY;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						break;
+				}
+				break;
+			case POTION_ACID:
+				switch ( basePotion->type )
+				{
+					case POTION_WATER:
+						explodeSelf = true; // oh no. don't do that.
+						break;
+					case POTION_SICKNESS:
+						result = POTION_FIRESTORM;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_JUICE;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_FIRESTORM;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_ICESTORM;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_ICESTORM;
+						break;
+					case POTION_SPEED:
+						result = POTION_THUNDERSTORM;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						explodeSelf = true;
+						break;
+				}
+				break;
+			case POTION_INVISIBILITY:
+				switch ( basePotion->type )
+				{
+					case POTION_SICKNESS:
+						result = POTION_BLINDNESS;
+						break;
+					case POTION_CONFUSION:
+						result = POTION_PARALYSIS;
+						break;
+					case POTION_CUREAILMENT:
+						result = POTION_LEVITATION;
+						break;
+					case POTION_BLINDNESS:
+						result = POTION_POLYMORPH;
+						break;
+					case POTION_RESTOREMAGIC:
+						result = POTION_EXTRAHEALING;
+						break;
+					case POTION_SPEED:
+						result = POTION_RESTOREMAGIC;
+						break;
+					case POTION_POLYMORPH:
+						randomResult = true;
+						break;
+					default:
+						break;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	if ( basePotion->type == POTION_POLYMORPH || secondaryPotion->type == POTION_POLYMORPH )
+	{
+		randomResult = true;
+	}
+
+	int skillLVL = 0;
+	if ( stats[clientnum] )
+	{
+		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20; // 0 to 5;
+	}
+
+	Status status = SERVICABLE;
+	bool duplicateSucceed = false;
+	if ( tryDuplicatePotion && !explodeSelf )
+	{
+		// do duplicate.
+		if ( rand() % 100 < (50 + skillLVL * 10) ) // 50 - 100% chance
+		{
+			duplicateSucceed = true;
+			if ( basePotion->type == POTION_WATER )
+			{
+				result = secondaryPotion->type;
+				status = secondaryPotion->status;
+			}
+			else if ( secondaryPotion->type == POTION_WATER )
+			{
+				result = basePotion->type;
+				status = basePotion->status;
+			}
+			else
+			{
+				result = POTION_WATER;
+			}
+		}
+		else
+		{
+			result = POTION_WATER;
+		}
+	}
+
+	if ( randomResult )
+	{
+		std::vector<int> potionChances =
+		{
+			0,	//POTION_WATER,
+			1,	//POTION_BOOZE,
+			1,	//POTION_JUICE,
+			1,	//POTION_SICKNESS,
+			1,	//POTION_CONFUSION,
+			1,	//POTION_EXTRAHEALING,
+			1,	//POTION_HEALING,
+			1,	//POTION_CUREAILMENT,
+			1,	//POTION_BLINDNESS,
+			1,	//POTION_RESTOREMAGIC,
+			1,	//POTION_INVISIBILITY,
+			1,	//POTION_LEVITATION,
+			1,	//POTION_SPEED,
+			1,	//POTION_ACID,
+			1,	//POTION_PARALYSIS,
+			0,	//POTION_POLYMORPH
+			0,	//POTION_FIRESTORM
+			0,	//POTION_ICESTORM
+			0	//POTION_THUNDERSTORM
+		};
+		std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+		auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+		result = static_cast<ItemType>(generatedPotion.first);
+	}
+
+	if ( basePotion->identified && secondaryPotion->identified )
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3332],
+			items[basePotion->type].name_identified, items[secondaryPotion->type].name_identified);
+	}
+	else if ( basePotion->identified )
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3334],
+			items[basePotion->type].name_identified);
+	}
+	else if ( secondaryPotion->identified )
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3333],
+			items[secondaryPotion->type].name_identified);
+	}
+	else
+	{
+		messagePlayerColor(clientnum, uint32ColorWhite(*mainsurface), language[3335]);
+	}
+
+	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion )
+	{
+		if ( !(alchemyLearnRecipe(basePotion->type, true)) )
+		{
+			if ( secondaryPotion->identified )
+			{
+				alchemyLearnRecipe(secondaryPotion->type, true);
+			}
+		}
+	}
+
+	bool degradeAlembic = false;
+	if ( explodeSelf )
+	{
+		degradeAlembic = true;
+	}
+	else
+	{
+		if ( basePotion->type == POTION_ACID || secondaryPotion->type == POTION_ACID )
+		{
+			if ( rand() % 5 == 0 )
+			{
+				degradeAlembic = true;
+			}
+		}
+		else
+		{
+			if ( rand() % 20 == 0 )
+			{
+				degradeAlembic = true;
+			}
+		}
+	}
+
+	int appearance = 0;
+	int blessing = std::min(static_cast<int>(std::min(basePotion->beatitude, secondaryPotion->beatitude)), 0);
+	if ( basePotion->type == secondaryPotion->type )
+	{
+		// same potion, keep the second potion only.
+		result = secondaryPotion->type;
+		blessing = secondaryPotion->beatitude;
+		appearance = secondaryPotion->appearance;
+	}
+
+	bool knewBothBaseIngredients = false;
+	if ( clientLearnedAlchemyIngredients.find(basePotion->type) != clientLearnedAlchemyIngredients.end() )
+	{
+		if ( clientLearnedAlchemyIngredients.find(secondaryPotion->type) != clientLearnedAlchemyIngredients.end() )
+		{
+			// knew about both combinations.
+			if ( !tryDuplicatePotion && !explodeSelf && result != POTION_SICKNESS )
+			{
+				if ( skillLVL >= 3 )
+				{
+					knewBothBaseIngredients = true; // auto ID the new potion.
+				}
+			}
+		}
+	}
+
+	Item* duplicatedPotion = nullptr;
+
+	if ( duplicateSucceed )
+	{
+		if ( basePotion->type == POTION_WATER )
+		{
+			consumeItem(basePotion, clientnum);
+			duplicatedPotion = secondaryPotion;
+		}
+		else if ( secondaryPotion->type == POTION_WATER )
+		{
+			consumeItem(secondaryPotion, clientnum);
+			duplicatedPotion = basePotion;
+		}
+	}
+	else
+	{
+		consumeItem(basePotion, clientnum);
+		consumeItem(secondaryPotion, clientnum);
+		if ( rand() % 100 < (50 + skillLVL * 5) ) // 50 - 75% chance
+		{
+			Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+			itemPickup(clientnum, emptyBottle);
+			messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+			free(emptyBottle);
+		}
+	}
+
+	if ( alembicItem )
+	{
+		if ( alembicItem->beatitude >= 1 )
+		{
+			blessing = 1;
+		}
+		else if ( alembicItem->beatitude <= -1 )
+		{
+			blessing = alembicItem->beatitude;
+		}
+	}
+
+	if ( skillCapstoneUnlocked(clientnum, PRO_ALCHEMY) )
+	{
+		blessing = 2;
+		degradeAlembic = false;
+	}
+
+	if ( degradeAlembic && alembicItem )
+	{
+		alembicItem->status = static_cast<Status>(alembicItem->status - 1);
+		if ( alembicItem->status > BROKEN )
+		{
+			messagePlayer(clientnum, language[681], alembicItem->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[2351], alembicItem->getName());
+			playSoundPlayer(clientnum, 162, 64);
+			consumeItem(alembicItem, clientnum);
+			alembicItem = nullptr;
+		}
+	}
+
+	if ( explodeSelf && players[clientnum] && players[clientnum]->entity )
+	{
+		// hurt.
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "BOOM");
+			net_packet->data[4] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 5;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else
+		{
+			spawnMagicTower(nullptr, players[clientnum]->entity->x, players[clientnum]->entity->y, SPELL_FIREBALL, nullptr);
+			players[clientnum]->entity->setObituary(language[3350]);
+		}
+		closeGUI();
+		return;
+	}
+
+	for ( auto it = potionStandardAppearanceMap.begin(); it != potionStandardAppearanceMap.end(); ++it )
+	{
+		if ( (*it).first == result )
+		{
+			if ( appearance == 0 )
+			{
+				appearance = (*it).second;
+			}
+			bool raiseSkill = true;
+			if ( result == POTION_SICKNESS )
+			{
+				appearance = 0 + rand() % 3;
+				if ( rand() % 10 > 0 )
+				{
+					raiseSkill = false;
+				}
+			}
+			else if ( result == POTION_WATER )
+			{
+				raiseSkill = false;
+			}
+			else if ( duplicateSucceed )
+			{
+				if ( rand() % 10 > 0 )
+				{
+					raiseSkill = false;
+				}
+			}
+
+			Item* newPotion = newItem(result, status, blessing, 1, appearance, knewBothBaseIngredients, nullptr);
+			if ( tryDuplicatePotion )
+			{
+				if ( result == POTION_WATER && !duplicateSucceed )
+				{
+					messagePlayer(clientnum, language[3356]);
+					newPotion->identified = true;
+				}
+				else
+				{
+					if ( duplicatedPotion )
+					{
+						newPotion->appearance = duplicatedPotion->appearance;
+						newPotion->beatitude = duplicatedPotion->beatitude;
+						newPotion->identified = duplicatedPotion->identified;
+						newPotion->status = duplicatedPotion->status;
+					}
+					messagePlayer(clientnum, language[3352], newPotion->description());
+				}
+			}
+			else
+			{
+				messagePlayer(clientnum, language[3352], newPotion->description());
+			}
+			itemPickup(clientnum, newPotion);
+			free(newPotion);
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				playSoundEntityLocal(players[clientnum]->entity, 401, 64);
+			}
+			if ( raiseSkill && rand() % 2 == 0 )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					// request level up
+					strcpy((char*)net_packet->data, "CSKL");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = PRO_ALCHEMY;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				else
+				{
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+					}
+				}
+			}
+			break;
+		}
+	}
+	closeGUI();
+}
+
+bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notify)
+{
+	int index = 0;
+	for ( auto it = potionStandardAppearanceMap.begin(); it != potionStandardAppearanceMap.end(); ++it )
+	{
+		// loop through to get the index number to insert into gameStatistics[STATISTICS_ALCHEMY_RECIPES]
+		if ( (*it).first == type )
+		{
+			if ( clientLearnedAlchemyIngredients.find(type) == clientLearnedAlchemyIngredients.end() )
+			{
+				// new recipe!
+				clientLearnedAlchemyIngredients.insert(type);
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( notify )
+				{
+					if ( isItemBaseIngredient(type) )
+					{
+						messagePlayerColor(clientnum, color, language[3346], items[type].name_identified);
+					}
+					else if ( isItemSecondaryIngredient(type) )
+					{
+						messagePlayerColor(clientnum, color, language[3349], items[type].name_identified);
+					}
+				}
+				if ( increaseskill )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						// request level up
+						strcpy((char*)net_packet->data, "CSKL");
+						net_packet->data[4] = clientnum;
+						net_packet->data[5] = PRO_ALCHEMY;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						if ( players[clientnum] && players[clientnum]->entity )
+						{
+							players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+						}
+					}
+				}
+				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index);
+				return true;
+			}
+			else
+			{
+				// store the potion index into here for game saves, just in case we don't have it set the element in anyway.
+				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index); 
+			}
+			break;
+		}
+		++index;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::isItemBaseIngredient(int type)
+{
+	switch ( type )
+	{
+		case POTION_WATER:
+		case POTION_POLYMORPH:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_ACID:
+		case POTION_INVISIBILITY:
+			return true;
+		default:
+			return false;
+			break;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::isItemSecondaryIngredient(int type)
+{
+	switch ( type )
+	{
+		case POTION_WATER:
+		case POTION_SICKNESS:
+		case POTION_CONFUSION:
+		case POTION_CUREAILMENT:
+		case POTION_BLINDNESS:
+		case POTION_RESTOREMAGIC:
+		case POTION_SPEED:
+		case POTION_POLYMORPH:
+			return true;
+		default:
+			return false;
+			break;
+	}
+	return false;
+}
+
+void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
+{
+	bool learned = false;
+	if ( skill > 0 )
+	{
+		ItemType potion = POTION_WATER;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+	
+	if ( skill == 20 )
+	{
+		ItemType potion = POTION_JUICE;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		potion = POTION_BOOZE;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+	else if ( skill == 40 )
+	{
+		ItemType potion = POTION_ACID;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+	else if ( skill == 60 )
+	{
+		ItemType potion = POTION_INVISIBILITY;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+		potion = POTION_POLYMORPH;
+		learned = GenericGUI.alchemyLearnRecipe(potion, false);
+	}
+
+	if ( !learned && skill % 5 == 0 )
+	{
+		ItemType potion = itemLevelCurve(POTION, 0, currentlevel);
+		GenericGUI.alchemyLearnRecipe(potion, false);
+	}
 }

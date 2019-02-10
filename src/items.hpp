@@ -239,9 +239,23 @@ typedef enum ItemType
 	ARTIFACT_ORB_GREEN,
 	TUNIC,
 	HAT_FEZ,
-	MAGICSTAFF_CHARM
+	MAGICSTAFF_CHARM,
+	POTION_POLYMORPH,
+	FOOD_BLOOD,
+	CLOAK_BACKPACK,
+	TOOL_ALEMBIC,
+	POTION_FIRESTORM,
+	POTION_ICESTORM,
+	POTION_THUNDERSTORM,
+	POTION_STRENGTH,
+	SUEDE_BOOTS,
+	SUEDE_GLOVES,
+	CLOAK_SILVER,
+	HAT_HOOD_SILVER,
+	HAT_HOOD_RED,
+	SILVER_DOUBLET
 } ItemType;
-const int NUMITEMS = 218;
+const int NUMITEMS = 232;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -334,9 +348,9 @@ public:
 	char* getName();
 
 	//General Functions.
-	Sint32 weaponGetAttack() const; //Returns the tohit of the weapon.
-	Sint32 armorGetAC() const;
-	bool canUnequip(); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
+	Sint32 weaponGetAttack(Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
+	Sint32 armorGetAC(Stat* wielder = nullptr) const;
+	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
 
@@ -346,6 +360,7 @@ public:
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
 	void applyOrb(int player, ItemType type, Entity& entity);
+	void applyEmptyPotion(int player, Entity& entity);
 
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*
@@ -361,7 +376,7 @@ public:
 extern Uint32 itemuids;
 
 static const int INVENTORY_SIZEX = 12;
-static const int INVENTORY_SIZEY = 3;
+extern int INVENTORY_SIZEY;
 #define INVENTORY_SIZE ((INVENTORY_SIZEX)*(INVENTORY_SIZEY))
 #define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
 static const int INVENTORY_STARTY = 10;
@@ -387,21 +402,24 @@ public:
 extern ItemGeneric items[NUMITEMS];
 
 //----------Item usage functions----------
-void item_PotionWater(Item*& item, Entity* entity);
-void item_PotionBooze(Item*& item, Entity* entity, bool shouldConsumeItem = true);
-void item_PotionJuice(Item*& item, Entity* entity);
-void item_PotionSickness(Item*& item, Entity* entity);
-void item_PotionConfusion(Item*& item, Entity* entity);
-void item_PotionCureAilment(Item*& item, Entity* entity);
-void item_PotionBlindness(Item*& item, Entity* entity);
-void item_PotionHealing(Item*& item, Entity* entity, bool shouldConsumeItem = true);
-void item_PotionExtraHealing(Item*& item, Entity* entity, bool shouldConsumeItem = true);
-void item_PotionRestoreMagic(Item*& item, Entity* entity);
-void item_PotionInvisibility(Item*& item, Entity* entity);
-void item_PotionLevitation(Item*& item, Entity* entity);
-void item_PotionSpeed(Item*& item, Entity* entity);
-void item_PotionAcid(Item*& item, Entity* entity);
-void item_PotionParalysis(Item*& item, Entity* entity);
+void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem = true);
+void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy);
+void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion);
+void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy);
+Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy);
 void item_ScrollMail(Item* item, int player);
 void item_ScrollIdentify(Item* item, int player);
 void item_ScrollLight(Item* item, int player);
@@ -440,12 +458,16 @@ enum Category itemCategory(const Item* item);
 Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
-void consumeItem(Item*& item); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
+void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 void dropItem(Item* item, int player);
-void useItem(Item* item, int player);
+void useItem(Item* item, int player, Entity* usedBy = nullptr);
 void equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
+bool shouldInvertEquipmentBeatitude(Stat* wielder);
+
+extern const real_t potionDamageSkillMultipliers[6];
+extern const real_t thrownDamageSkillMultipliers[6];
 
 //-----ITEM COMPARISON FUNCS-----
 /*
