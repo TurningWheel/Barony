@@ -2016,7 +2016,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			item_ScrollRemoveCurse(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item, player);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_FIRE:
