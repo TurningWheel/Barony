@@ -78,6 +78,7 @@ void startTradingServer(Entity* entity, int player)
 		shopitemscroll = 0;
 		identifygui_active = false;
 		closeRemoveCurseGUI();
+		GenericGUI.closeGUI();
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
@@ -224,7 +225,7 @@ void buyItemFromShop(Item* item)
 			net_packet->len = 26;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
-		consumeItem(item);
+		consumeItem(item, clientnum);
 	}
 	else
 	{
@@ -248,9 +249,18 @@ void sellItemToShop(Item* item)
 	{
 		return;
 	}
-	if ( item->beatitude < 0 && itemIsEquipped(item, clientnum) )
+	if ( ((item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[clientnum])) 
+		|| (item->beatitude > 0 && shouldInvertEquipmentBeatitude(stats[clientnum]))) 
+		&& itemIsEquipped(item, clientnum) )
 	{
-		messagePlayer(clientnum, language[1124], item->getName());
+		if ( item->beatitude > 0 )
+		{
+			messagePlayer(clientnum, language[3219], item->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[1124], item->getName());
+		}
 		playSound(90, 64);
 		return;
 	}
@@ -383,6 +393,6 @@ void sellItemToShop(Item* item)
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
-	consumeItem(item);
+	consumeItem(item, clientnum);
 	sellitem = NULL;
 }

@@ -348,6 +348,20 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tunic",
 	"hat_fez",
 	"magicstaff_charm",
+	"potion_polymorph",
+	"food_blood",
+	"cloak_backpack",
+	"tool_alembic",
+	"potion_firestorm",
+	"potion_icestorm",
+	"potion_thunderstorm",
+	"potion_strength",
+	"suede_boots",
+	"suede_gloves",
+	"cloak_silver",
+	"hat_hood_silver",
+	"hat_hood_red",
+	"silver_doublet",
 	""
 };
 
@@ -361,6 +375,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_wizard",
 		"hat_jester",
 		"hat_fez",
+		"hat_hood_silver",
+		"hat_hood_red",
 		"leather_helm",
 		"iron_helm",
 		"steel_helm",
@@ -409,6 +425,11 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"potion_speed",
 		"potion_acid",
 		"potion_paralysis",
+		"potion_polymorph",
+		"potion_firestorm",
+		"potion_icestorm",
+		"potion_thunderstorm",
+		"potion_strength",
 		"magicstaff_light",
 		"magicstaff_digging",
 		"magicstaff_locking",
@@ -492,6 +513,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"wizard_doublet",
 		"healer_doublet",
 		"tunic",
+		"silver_doublet",
 		""
 	},
 	{
@@ -506,6 +528,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"steel_boots_feather",
 		"crystal_boots",
 		"artifact_boots",
+		"suede_boots",
 		""
 	},
 	{
@@ -541,10 +564,12 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"random_item",
 		"cloak",
 		"cloak_black",
+		"cloak_silver",
 		"cloak_magicreflection",
 		"cloak_invisibility",
 		"cloak_protection",
 		"artifact_cloak",
+		"cloak_backpack",
 		""
 	},
 	{
@@ -553,7 +578,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_blindfold",
 		"tool_glasses",
 		"tool_blindfold_focus",
-		"tool_blindfold_telepathy"
+		"tool_blindfold_telepathy",
 		""
 	},
 	{
@@ -569,7 +594,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"artifact_gloves",
 		"brass_knuckles",
 		"iron_knuckles",
-		"spiked_gauntlets"
+		"spiked_gauntlets",
+		"suede_gloves",
 		""
 	}
 	
@@ -1099,6 +1125,10 @@ int canWearEquip(Entity* entity, int category)
 void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entityStatToCopy)
 {
 	Stat* tmpStats = nullptr;
+	if ( !entityNew )
+	{
+		return;
+	}
 
 	if ( entityStatToCopy != nullptr )
 	{

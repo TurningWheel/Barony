@@ -110,6 +110,7 @@ static const int PARTICLE_EFFECT_LICH_TELEPORT_ROAMING = 13;
 static const int PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY = 14;
 static const int PARTICLE_EFFECT_SUMMON_MONSTER = 15;
 static const int PARTICLE_EFFECT_CHARM_MONSTER = 16;
+static const int PARTICLE_EFFECT_SPELL_SUMMON = 17;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -120,6 +121,7 @@ static const int MAGIC_ISVERTICAL_XYZ = 2;
 static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
 static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
 static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
+static const int PARTICLE_TIMER_ACTION_SPELL_SUMMON = 4;
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -378,6 +380,7 @@ typedef struct spell_t
 extern list_t spellList; //All of the player's spells are stored here.
 extern spell_t* selected_spell; //The spell the player's currently selected.
 extern list_t channeledSpells[4]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
+extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
 
 //TODO: Add stock spells.
 
@@ -461,6 +464,9 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
 void createParticleCharmMonster(Entity* parent);
 
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
+void magicDig(Entity* parent, Entity* projectile, int numRocks);
+
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
 void spellConstructor(spell_t* spell);
@@ -470,7 +476,7 @@ spellElement_t* copySpellElement(spellElement_t* spellElement);
 void spellElementConstructor(spellElement_t* element);
 void spellElementDeconstructor(void* data);
 
-int getCostOfSpell(spell_t* spell);
+int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
 int getCostOfSpellElement(spellElement_t* spellElement);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
@@ -531,5 +537,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent); // returns nullptr if target was monster, otherwise returns pointer to new creature
 
 void freeSpells();
+void drawSpellTooltip(spell_t* spell);

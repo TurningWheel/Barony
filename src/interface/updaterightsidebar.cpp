@@ -69,6 +69,7 @@ void updateRightSidebar()
 			{
 				closeRemoveCurseGUI();
 			}
+			GenericGUI.closeGUI();
 			if ( openedChest[clientnum] )
 			{
 				openedChest[clientnum]->closeChest();

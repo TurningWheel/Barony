@@ -114,6 +114,10 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 590;
 		}
+		else if ( stats[clientnum]->gloves->type == SUEDE_GLOVES )
+		{
+			my->sprite = 802;
+		}
 		if ( stats[clientnum]->weapon == nullptr )
 		{
 			my->scalex = 0.5f;
@@ -124,13 +128,83 @@ void actHudArm(Entity* my)
 			//my->y += 0.5 * sin(parent->yaw);
 		}
 	}
+
+	int playerAppearance = stats[clientnum]->appearance;
+
 	if ( noGloves )
 	{
-		if ( stats[clientnum]->appearance / 6 == 0 )
+		if ( stats[clientnum]->playerRace > 0 )
+		{
+			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+			if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+			{
+				if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+				{
+					playerRace = HUMAN;
+					playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+				}
+				else
+				{
+					playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+				}
+			}
+			switch ( playerRace )
+			{
+				case SKELETON:
+					my->sprite = 774;
+					break;
+				case INCUBUS:
+					my->sprite = 776;
+					break;
+				case SUCCUBUS:
+					my->sprite = 778;
+					break;
+				case GOBLIN:
+					my->sprite = 780;
+					break;
+				case AUTOMATON:
+					my->sprite = 782;
+					break;
+				case INSECTOID:
+					if ( stats[clientnum]->sex == FEMALE )
+					{
+						my->sprite = 786;
+					}
+					else
+					{
+						my->sprite = 784;
+					}
+					break;
+				case GOATMAN:
+					my->sprite = 788;
+					break;
+				case VAMPIRE:
+					my->sprite = 790;
+					break;
+				case HUMAN:
+					if ( playerAppearance / 6 == 0 )
+					{
+						my->sprite = 634;
+					}
+					else if ( playerAppearance / 6 == 1 )
+					{
+						my->sprite = 635;
+					}
+					else
+					{
+						my->sprite = 636;
+					}
+					break;
+				default:
+					my->sprite = 634;
+					break;
+			}
+		}
+		else if ( playerAppearance / 6 == 0 )
 		{
 			my->sprite = 634;
 		}
-		else if ( stats[clientnum]->appearance / 6 == 1 )
+		else if ( playerAppearance / 6 == 1 )
 		{
 			my->sprite = 635;
 		}
@@ -675,7 +749,7 @@ void actHudWeapon(Entity* my)
 							}
 							else
 							{
-								if ( statGetINT(stats[clientnum]) <= 10 )
+								if ( statGetINT(stats[clientnum], player) <= 10 )
 								{
 									messagePlayer(clientnum, language[2373], item->getName());
 								}
@@ -683,6 +757,21 @@ void actHudWeapon(Entity* my)
 								{
 									messagePlayer(clientnum, language[2372], item->getName());
 								}
+							}
+						}
+						else if ( item->type == POTION_EMPTY )
+						{
+							HUDWEAPON_MOVEX = 5;
+							HUDWEAPON_CHOP = 3;
+							Entity* player = players[clientnum]->entity;
+							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+							if ( hit.entity && stats[clientnum]->weapon )
+							{
+								stats[clientnum]->weapon->apply(clientnum, hit.entity);
+							}
+							else
+							{
+								messagePlayer(clientnum, language[3336]);
 							}
 						}
 						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
@@ -698,7 +787,7 @@ void actHudWeapon(Entity* my)
 							}
 							HUDWEAPON_MOVEZ = 3;
 							HUDWEAPON_CHOP = 3;
-							players[clientnum]->entity->attack(0, 0, nullptr);
+							players[clientnum]->entity->attack(1, 0, nullptr);
 							if (multiplayer == CLIENT)
 							{
 								item->count--;
@@ -1557,7 +1646,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots) //TODO: Swimming capstone?
+		if (!levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
 		{
 			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);

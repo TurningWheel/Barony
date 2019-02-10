@@ -33,6 +33,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	chestMaxHealth(skill[8]),
 	chestType(skill[9]),
 	chestPreventLockpickCapstoneExploit(skill[10]),
+	chestHasVampireBook(skill[11]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
 	monsterTargetX(fskill[2]),
@@ -62,6 +63,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterEntityRenderAsTelepath(skill[41]),
 	playerLevelEntrySpeech(skill[18]),
 	playerAliveTime(skill[12]),
+	playerVampireCurse(skill[51]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
@@ -93,6 +95,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterDefend(skill[47]),
 	monsterAllySpecial(skill[48]),
 	monsterAllySpecialCooldown(skill[49]),
+	monsterAllySummonRank(skill[50]),
+	monsterKnockbackVelocity(fskill[9]),
+	monsterKnockbackUID(skill[51]),
+	effectPolymorph(skill[50]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -191,6 +197,14 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicCastByMagicstaff(skill[13]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
 	actmagicOrbitStartZ(fskill[3]),
+	actmagicOrbitStationaryX(fskill[4]),
+	actmagicOrbitStationaryY(fskill[5]),
+	actmagicOrbitStationaryCurrentDist(fskill[6]),
+	actmagicOrbitStationaryHitTarget(skill[14]),
+	actmagicOrbitHitTargetUID1(skill[15]),
+	actmagicOrbitHitTargetUID2(skill[16]),
+	actmagicOrbitHitTargetUID3(skill[17]),
+	actmagicOrbitHitTargetUID4(skill[18]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -362,4 +376,10 @@ void actSpriteNametag(Entity* my)
 int playerEntityMatchesUid(Uint32 uid)
 {
 	return -1;
+}
+
+bool Entity::isPlayerHeadSprite()
+{
+	// dummy function
+	return false;
 }

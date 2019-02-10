@@ -20,6 +20,8 @@
 #include "../sound.hpp"
 #include "../magic/magic.hpp"
 #include "../menu.hpp"
+#include "../net.hpp"
+#include "../scores.hpp"
 
 void statsHoverText(Stat* tmpStat);
 
@@ -197,11 +199,17 @@ void updateCharacterSheet()
 	text_y = statWindowY + 6;
 	ttfPrintTextFormatted(fontStat, 8, text_y, "%s", stats[clientnum]->name);
 	text_y += pad_y;
-	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[360], stats[clientnum]->EXP);
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[361], currentlevel);
+
+	Entity* playerEntity = nullptr;
+	if ( players[clientnum] )
+	{
+		playerEntity = players[clientnum]->entity;
+	}
 
 	// attributes
 	Sint32 statModifier = 0;
@@ -210,32 +218,32 @@ void updateCharacterSheet()
 	text_y += pad_y * 2;
 	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->STR, statGetSTR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->DEX, statGetDEX(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->CON, statGetCON(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->INT, statGetINT(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->PER, statGetPER(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	text_y += pad_y;
 	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
 	ttfPrintTextFormatted(fontStat, 8, text_y, statText);
-	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * fontWidth, text_y);
+	printStatBonus(fontStat, stats[clientnum]->CHR, statGetCHR(stats[clientnum], playerEntity), 8 + longestline(statText) * fontWidth, text_y);
 
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
@@ -264,12 +272,12 @@ void updateCharacterSheet()
 	SDL_Rect src;
 	src.x = mousex + 16;
 	src.y = mousey + 16;
-	src.h = TTF12_HEIGHT + 4;
+	src.h = TTF12_HEIGHT + 8;
 	src.w = ( longestline(language[2968]) + strlen(getInputName(impulses[IN_USE])) ) * TTF12_WIDTH + 4;
 	if ( mouseInBounds(pos.x + 4, pos.x + pos.w, text_y - pad_y, text_y) )
 	{
 		drawTooltip(&src);
-		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, language[2968], getInputName(impulses[IN_USE]));
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 6, language[2968], getInputName(impulses[IN_USE]));
 		if ( *inputPressed(impulses[IN_USE]) )
 		{
 			consoleCommand("/dropgold");
@@ -392,7 +400,7 @@ void drawSkillsSheet()
 	//Draw skill names.
 	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (fontHeight /** 2*/) )
 	{
-		ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y, "%s:", language[236 + c]);
+		ttfPrintTextFormatted(fontSkill, pos.x + 4, pos.y, "%s:", getSkillLangEntry(c));
 	}
 
 	//Draw skill levels.
@@ -408,6 +416,7 @@ void drawSkillsSheet()
 		{
 			color = uint32ColorWhite(*mainsurface);
 		}
+
 
 		if ( show_skill_values )
 		{
@@ -440,6 +449,496 @@ void drawSkillsSheet()
 		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormattedColor(fontSkill, pos.x + 4, pos.y, color, language[369]);
+		}
+	}
+	pos = initialSkillPos;
+	SDL_Rect skillTooltipRect;
+	std::string skillTooltip;
+	for ( int i = 0; !shootmode && i < (NUMPROFICIENCIES); ++i, pos.y += (fontHeight /** 2*/) )
+	{
+		if ( mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + fontHeight) && stats[clientnum] )
+		{
+			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
+			skillTooltip = language[3255 + i];
+			size_t n = std::count(skillTooltip.begin(), skillTooltip.end(), '\n'); // count newlines
+			skillTooltipRect.h = fontHeight * (n + 2) + 8;
+			skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
+			skillTooltipRect.y = mousey + 16;
+
+			Uint32 capstoneTextColor = uint32ColorGray(*mainsurface);
+			if ( skillCapstoneUnlocked(clientnum, i) )
+			{
+				capstoneTextColor = uint32ColorGreen(*mainsurface);
+			}
+
+			switch ( i )
+			{
+				case PRO_LOCKPICKING:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3270], CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT);
+					break;
+				case PRO_STEALTH:
+					skillTooltipRect.h += 4 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3271]);
+					break;
+				case PRO_TRADING:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3272]);
+					break;
+				case PRO_APPRAISAL:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3273]);
+					break;
+				case PRO_SWIMMING:
+					skillTooltipRect.h += fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3274]);
+					break;
+				case PRO_LEADERSHIP:
+					skillTooltipRect.h += 2 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3275]);
+					break;
+				case PRO_SPELLCASTING:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3276]);
+					break;
+				case PRO_MAGIC:
+					break;
+				case PRO_RANGED:
+					skillTooltipRect.h += 2 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3284]);
+					break;
+				case PRO_SWORD:
+				{
+					skillTooltipRect.h += 5 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3278], language[3283]);
+					break;
+				}
+				case PRO_MACE:
+				{
+					skillTooltipRect.h += 3 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3279]);
+					break;
+				}
+				case PRO_AXE:
+				{
+					skillTooltipRect.h += 3 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3280]);
+					break;
+				}
+				case PRO_POLEARM:
+					skillTooltipRect.h += 3 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3281]);
+					break;
+				case PRO_UNARMED:
+					skillTooltipRect.h += 3 * fontHeight + 4;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3282]);
+					break;
+				case PRO_SHIELD:
+					skillTooltipRect.h += 2 * fontHeight;
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
+						capstoneTextColor, language[3283]);
+					break;
+				case PRO_ALCHEMY:
+					skillTooltipRect.w = (longestline(language[3348]) * fontWidth) + 8;
+					skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
+					break;
+				default:
+					drawTooltip(&skillTooltipRect);
+					break;
+			}
+
+			Uint32 headerColor = uint32ColorBaronyBlue(*mainsurface);
+			if ( skillCapstoneUnlocked(clientnum, i) )
+			{
+				headerColor = uint32ColorGreen(*mainsurface);
+			}
+
+			if ( i != PRO_MAGIC && i != PRO_ALCHEMY )
+			{
+				ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8, 
+					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+			}
+
+			real_t skillDetails[5] = { 0.f };
+
+			switch ( i )
+			{
+				case PRO_LOCKPICKING:
+					skillDetails[0] = stats[clientnum]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
+					if ( stats[clientnum]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
+					{
+						skillDetails[0] = 100.f;
+					}
+					skillDetails[1] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
+					skillDetails[2] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5); // beartrap dmg
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3255 + i],
+						skillDetails[0], skillDetails[1], skillDetails[2]
+					);
+					break;
+				case PRO_STEALTH:
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						skillDetails[0] = players[clientnum]->entity->entityLightAfterReductions(*stats[clientnum], nullptr); 
+						skillDetails[0] = std::max(1, (static_cast<int>(skillDetails[0] / 32))); // general visibility
+						skillDetails[1] = stats[clientnum]->PROFICIENCIES[i] * 2 * 100 / 512.f; // % visibility reduction of above
+						skillDetails[2] = (2 + (stats[clientnum]->PROFICIENCIES[PRO_STEALTH] / 40)); // night vision when sneaking
+						skillDetails[3] = (stats[clientnum]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * 2; // backstab dmg
+						if ( skillCapstoneUnlocked(clientnum, i) )
+						{
+							skillDetails[3] *= 2;
+						}
+					}
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3255 + i],
+						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3]);
+					
+					break;
+				case PRO_TRADING:
+					skillDetails[0] = 1 / ((50 + stats[clientnum]->PROFICIENCIES[PRO_TRADING]) / 150.f); // buy value
+					skillDetails[1] = (50 + stats[clientnum]->PROFICIENCIES[PRO_TRADING]) / 150.f; // sell value
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3255 + i],
+						skillDetails[0], skillDetails[1]);
+					break;
+				case PRO_APPRAISAL:
+					skillDetails[0] = (60.f / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1)) / (TICKS_PER_SECOND); // appraisal time per gold value
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						skillDetails[1] = 10 * (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + players[clientnum]->entity->getPER() * 5); // max gold value can appraise
+						if ( skillDetails[1] < 0.1 )
+						{
+							skillDetails[1] = 9;
+						}
+						if ( (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + players[clientnum]->entity->getPER() * 5) >= 100 )
+						{
+							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+								uint32ColorWhite(*mainsurface), language[3255 + i],
+								skillDetails[0], skillDetails[1], "yes");
+						}
+						else
+						{
+							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+								uint32ColorWhite(*mainsurface), language[3255 + i],
+								skillDetails[0], skillDetails[1], "no");
+						}
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], skillDetails[1], "no");
+					}
+					break;
+				case PRO_SWIMMING:
+					skillDetails[0] = (((stats[clientnum]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50); // water movement speed
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3255 + i],
+						skillDetails[0]);
+					break;
+				case PRO_LEADERSHIP:
+					skillDetails[0] = std::min(8, std::max(4, 2 * (stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] / 20))); // max followers
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						skillDetails[1] = 1 + (stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
+						skillDetails[2] = 80 + ((players[clientnum]->entity->getCHR() + stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP]) / 20) * 10;
+					}
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3255 + i],
+						getInputName(impulses[IN_USE]),skillDetails[0], skillDetails[1], skillDetails[2], getInputName(impulses[IN_FOLLOWERMENU]));
+					break;
+				case PRO_SPELLCASTING:
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						skillDetails[0] = players[clientnum]->entity->getBaseManaRegen(*(stats[clientnum])) / (TICKS_PER_SECOND * 1.f);
+						if ( players[clientnum]->entity->isSpellcasterBeginner() )
+						{
+							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+								uint32ColorWhite(*mainsurface), language[3255 + i],
+								skillDetails[0], "yes");
+						}
+						else
+						{
+							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+								uint32ColorWhite(*mainsurface), language[3255 + i],
+								skillDetails[0], "no");
+						}
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], "");
+					}
+					break;
+				case PRO_MAGIC:
+				{
+					int skillLVL = 0;
+					std::string magics = "";
+					int lines = 0;
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + players[clientnum]->entity->getINT());
+						if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+						{
+							skillLVL = 100;
+						}
+					}
+					if ( skillLVL < 0 )
+					{
+						skillTooltip = "none";
+					}
+					else
+					{
+						skillLVL = skillLVL / 20;
+						skillTooltip = "tier ";
+						if ( skillLVL == 0 )
+						{
+							skillTooltip += "I";
+						}
+						else if ( skillLVL == 1 )
+						{
+							skillTooltip += "II";
+						}
+						else if ( skillLVL == 2 )
+						{
+							skillTooltip += "III";
+						}
+						else if ( skillLVL == 3 )
+						{
+							skillTooltip += "IV";
+						}
+						else if ( skillLVL == 4 )
+						{
+							skillTooltip += "V";
+						}
+						else if ( skillLVL >= 5 )
+						{
+							skillTooltip += "VI";
+						}
+						for ( auto it = allGameSpells.begin(); it != allGameSpells.end(); ++it )
+						{
+							auto spellEntry = *it;
+							if ( spellEntry && spellEntry->difficulty == (skillLVL * 20) )
+							{
+								magics += " -[";
+								magics += spellEntry->name;
+								magics += "]\n";
+								++lines;
+							}
+						}
+					}
+					skillTooltipRect.h += (1 + lines) * (fontHeight + lines / 6);
+					drawTooltip(&skillTooltipRect);
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
+						capstoneTextColor, language[3277]);
+
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3255 + i],
+						skillTooltip.c_str());
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (fontHeight) * 3, // print magic list
+						uint32ColorBaronyBlue(*mainsurface), "%s",
+						magics.c_str());
+					break;
+				}
+				case PRO_RANGED:
+				{
+					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
+					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
+					}
+					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20; // thrown dmg bonus
+					skillDetails[3] = 100 * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, skillDetails[2], skillDetails[3]);
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], skillDetails[2], skillDetails[3]);
+					}
+					break;
+				}
+				case PRO_SWORD:
+				case PRO_AXE:
+				case PRO_MACE:
+				case PRO_POLEARM:
+					if ( i == PRO_POLEARM )
+					{
+						skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 3.f; // lowest damage roll
+					}
+					else
+					{
+						skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+					}
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, 0.f);
+					}
+					else
+					{
+						skillDetails[1] = 50; // chance to degrade on > 0 dmg
+						skillDetails[2] = 4; // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						if ( svFlags & SV_FLAG_HARDCORE )
+						{
+							skillDetails[1] *= 2;
+							skillDetails[2] *= 2;
+						}
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
+					}
+					break;
+				case PRO_UNARMED:
+					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[i]) / 2.f; // lowest damage roll
+					skillDetails[3] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+					skillDetails[4] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 20;
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, 0.f, skillDetails[3], skillDetails[4]);
+					}
+					else
+					{
+						skillDetails[1] = 100; // chance to degrade on > 0 dmg
+						skillDetails[2] = 8; // chance to degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
+						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
+						if ( svFlags & SV_FLAG_HARDCORE )
+						{
+							skillDetails[1] *= 2;
+							skillDetails[2] *= 2;
+						}
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2], skillDetails[3], skillDetails[4]);
+					}
+					break;
+				case PRO_SHIELD:
+					skillDetails[0] = 5 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5);
+					if ( skillCapstoneUnlocked(clientnum, i) )
+					{
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 0.f, 0.f);
+					}
+					else
+					{
+						skillDetails[1] = 25; // degrade > 0 dmg taken
+						skillDetails[2] = 10; // degrade on 0 dmg
+						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
+						skillDetails[2] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
+						if ( svFlags & SV_FLAG_HARDCORE )
+						{
+							skillDetails[2] = 40;
+						}
+						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+							uint32ColorWhite(*mainsurface), language[3255 + i],
+							skillDetails[0], 100 / skillDetails[1], 100 / skillDetails[2]);
+					}
+					break;
+				case PRO_ALCHEMY:
+				{
+					std::string baseIngredients;
+					std::string secondaryIngredients;
+					int lines = 0;
+					int lines2 = 0;
+					for ( auto it = clientLearnedAlchemyIngredients.begin(); it != clientLearnedAlchemyIngredients.end(); ++it )
+					{
+						auto alchemyEntry = *it;
+						if ( GenericGUI.isItemBaseIngredient(alchemyEntry) )
+						{
+							baseIngredients += " -[";
+							std::string itemName = items[alchemyEntry].name_identified;
+							itemName = itemName.substr(10);
+							baseIngredients += itemName;
+							baseIngredients += "]\n";
+							++lines;
+						}
+						if ( GenericGUI.isItemSecondaryIngredient(alchemyEntry) )
+						{
+							secondaryIngredients += " -[";
+							std::string itemName = items[alchemyEntry].name_identified;
+							itemName = itemName.substr(10);
+							secondaryIngredients += itemName;
+							secondaryIngredients += "]\n";
+							++lines2;
+						}
+					}
+					lines = std::max(lines, lines2);
+					int skillLVL = stats[clientnum]->PROFICIENCIES[i] / 20;
+					skillDetails[0] = 100 * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
+					skillDetails[1] = skillDetails[0];
+					skillDetails[2] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10));
+					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
+
+					skillTooltipRect.h += 4 + (6 + lines) * (fontHeight + lines / 6);
+					drawTooltip(&skillTooltipRect);
+					// legendary text
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16 + (lines * (fontHeight + lines / 6)),
+						capstoneTextColor, language[3347]);
+					// header text
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 4, skillTooltipRect.y + 8,
+						headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
+					// effect text
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
+						uint32ColorWhite(*mainsurface), language[3348], 
+						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[4]);
+					// base potions
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
+						uint32ColorBaronyBlue(*mainsurface), "%s",
+						baseIngredients.c_str());
+					// secondary potions
+					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8 + 18 * fontWidth, skillTooltipRect.y + 20 + (fontHeight) * 9, // print potion list
+						uint32ColorBaronyBlue(*mainsurface), "%s",
+						secondaryIngredients.c_str());
+					break;
+				}
+				default:
+					break;
+			}
 		}
 	}
 }
@@ -596,7 +1095,7 @@ void drawPartySheet()
 			{
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
 
-				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i]));
+				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i], i));
 				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
 
 				playerBar.x = pos.x + 64;
@@ -751,8 +1250,27 @@ void drawPartySheet()
 						{
 							if ( strlen(followerStats->name) > 10 )
 							{
-								strncpy(name, followerStats->name, 8);
-								strcat(name, "..");
+								if ( followerStats->type == SKELETON )
+								{
+									if ( !strcmp(followerStats->name, "skeleton sentinel") )
+									{
+										strncpy(name, "sentinel", 8);
+									}
+									else if ( !strcmp(followerStats->name, "skeleton knight") )
+									{
+										strncpy(name, "knight", 6);
+									}
+									else
+									{
+										strncpy(name, followerStats->name, 8);
+										strcat(name, "..");
+									}
+								}
+								else
+								{
+									strncpy(name, followerStats->name, 8);
+									strcat(name, "..");
+								}
 								ttfPrintTextFormattedColor(fontPlayer, pos.x + 20, pos.y, color, "%s", name);
 							}
 							else
@@ -931,6 +1449,12 @@ void statsHoverText(Stat* tmpStat)
 
 	SDL_Surface *tmp_bmp = NULL;
 
+	Entity* playerEntity = nullptr;
+	if ( players[clientnum] )
+	{
+		playerEntity = players[clientnum]->entity;
+	}
+
 	if ( attributespage == 0 )
 	{
 		for ( i = 0; i < 6; i++ ) // cycle through 6 stats.
@@ -942,37 +1466,37 @@ void statsHoverText(Stat* tmpStat)
 					numInfoLines = 2;
 					tmp_bmp = str_bmp64;
 					statBase = tmpStat->STR;
-					statBonus = statGetSTR(tmpStat) - statBase;
+					statBonus = statGetSTR(tmpStat, playerEntity) - statBase;
 					break;
 				case 1:
 					numInfoLines = 2;
 					tmp_bmp = dex_bmp64;
 					statBase = tmpStat->DEX;
-					statBonus = statGetDEX(tmpStat) - statBase;
+					statBonus = statGetDEX(tmpStat, playerEntity) - statBase;
 					break;
 				case 2:
 					numInfoLines = 3;
 					tmp_bmp = con_bmp64;
 					statBase = tmpStat->CON;
-					statBonus = statGetCON(tmpStat) - statBase;
+					statBonus = statGetCON(tmpStat, playerEntity) - statBase;
 					break;
 				case 3:
 					numInfoLines = 4;
 					tmp_bmp = int_bmp64;
 					statBase = tmpStat->INT;
-					statBonus = statGetINT(tmpStat) - statBase;
+					statBonus = statGetINT(tmpStat, playerEntity) - statBase;
 					break;
 				case 4:
 					numInfoLines = 2;
 					tmp_bmp = per_bmp64;
 					statBase = tmpStat->PER;
-					statBonus = statGetPER(tmpStat) - statBase;
+					statBonus = statGetPER(tmpStat, playerEntity) - statBase;
 					break;
 				case 5:
 					numInfoLines = 2;
 					tmp_bmp = chr_bmp64;
 					statBase = tmpStat->CHR;
-					statBonus = statGetCHR(tmpStat) - statBase;
+					statBonus = statGetCHR(tmpStat, playerEntity) - statBase;
 					break;
 				default:
 					numInfoLines = 0;
@@ -1118,10 +1642,14 @@ Sint32 displayAttackPower(Sint32 output[6])
 				attack += entity->getAttack();
 				output[0] = 0; // melee
 				output[1] = attack;
-				output[2] = 0; // bonus from weapon
+				output[2] = (stats[clientnum]->PROFICIENCIES[PRO_UNARMED] / 20); // bonus from proficiency
 				output[3] = entity->getSTR(); // bonus from main attribute
-				output[4] = 0; // bonus from proficiency
-				output[5] = attack - entity->getSTR() - BASE_MELEE_DAMAGE; // bonus from equipment
+				output[5] = attack - entity->getSTR() - BASE_PLAYER_UNARMED_DAMAGE - output[2]; // bonus from equipment
+				// get damage variances.
+				output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[PRO_UNARMED]) / 100.f;
+				attack -= (output[4] / 2); // attack is the midpoint between max and min damage.
+				output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
+				output[1] = attack;
 			}
 			else
 			{
@@ -1134,7 +1662,7 @@ Sint32 displayAttackPower(Sint32 output[6])
 						attack += entity->getRangedAttack();
 						output[0] = 1; // ranged
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
 						output[3] = entity->getDEX(); // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
@@ -1145,22 +1673,33 @@ Sint32 displayAttackPower(Sint32 output[6])
 					}
 					else
 					{
+						int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20;
 						attack += entity->getThrownAttack();
 						output[0] = 2; // thrown
 						output[1] = attack;
-						output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
-						output[3] = 0;
-						output[4] = attack - output[2] - BASE_THROWN_DAMAGE; // bonus from proficiency
+						// bonus from weapon
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]);
+						// bonus from dex
+						if ( itemCategory(stats[clientnum]->weapon) != POTION )
+						{
+							output[3] = entity->getDEX() / 4;
+						}
+						else
+						{
+							output[3] = 0.f;
+						}
+						// bonus from proficiency
+						output[4] = attack - output[2] - output[3] - BASE_THROWN_DAMAGE;
 						output[5] = 0; // bonus from equipment
 					}
 				}
-				else if ( weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM )
+				else if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) )
 				{
 					// melee weapon
 					attack += entity->getAttack();
 					output[0] = 3; // melee
 					output[1] = attack;
-					output[2] = stats[clientnum]->weapon->weaponGetAttack(); // bonus from weapon
+					output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
 					output[3] = entity->getSTR(); // bonus from main attribute
 					if ( weaponskill == PRO_AXE )
 					{
@@ -1244,7 +1783,7 @@ void attackHoverText(Sint32 input[6])
 			{
 				case 0: // fists
 					snprintf(tooltipHeader, strlen(language[2529]), language[2529]);
-					numInfoLines = 2;
+					numInfoLines = 4;
 					break;
 				case 1: // ranged
 					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
@@ -1252,7 +1791,7 @@ void attackHoverText(Sint32 input[6])
 					break;
 				case 2: // thrown
 					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
-					numInfoLines = 2;
+					numInfoLines = 3;
 					break;
 				case 3: // melee
 					snprintf(tooltipHeader, strlen(language[2532]), language[2532]);
@@ -1304,11 +1843,16 @@ void attackHoverText(Sint32 input[6])
 					switch ( j )
 					{
 						case 0:
-							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
+							snprintf(buf, longestline(language[3209]), language[3209], input[2]);
 							break;
 						case 1:
-							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
+							snprintf(buf, longestline(language[2534]), language[2534], input[3]);
 							break;
+						case 2:
+							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						case 3:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
 						default:
 							break;
 					}
@@ -1338,6 +1882,9 @@ void attackHoverText(Sint32 input[6])
 							snprintf(buf, longestline(language[2538]), language[2538], input[2]);
 							break;
 						case 1:
+							snprintf(buf, longestline(language[2535]), language[2535], input[3]);
+							break;
+						case 2:
 							snprintf(buf, longestline(language[2537]), language[2537], input[4]);
 							break;
 						default:

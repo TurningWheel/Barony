@@ -26,6 +26,7 @@ prowess.
 Difficulty: Normal#
 
 11 The trained soldier. They are heavily armored and make capable leaders.
+
 Difficulty: Beginner#
 
 12 A talented physician. Though they are poor fighters, they come stocked with medical
@@ -34,9 +35,11 @@ Difficulty: Normal#
 
 13 The professional hooligan. Dextrous and skilled thieves, though lacking in power and
 equipment.
+
 Difficulty: Hard#
 
 14 Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.
+
 Difficulty: Normal#
 
 15 Students of the church. Fairly well equipped and able in many ways, they are
@@ -48,6 +51,7 @@ artifacts.
 Difficulty: Hard#
 
 17 The wise magician. Though frail, they are extremely well-versed in magic.
+
 Difficulty: Hard#
 
 18 A cunning spellcaster. Less magically adept than the Wizard, but hardier and better
@@ -227,7 +231,7 @@ Difficulty: Extreme#
 # server flags
 
 153 Cheats#
-154 Friendly fire#
+154 Friendly Fire#
 155 Minotaurs#
 156 Hunger#
 157 Traps#
@@ -2911,13 +2915,13 @@ been designed to contain them.#
 2257 magicstaff#
 2258 magicstaff of bloodletting#
 2259 magicstaff#
-2260 magicstaff of conjure familiar#
+2260 magicstaff of conjure skeleton#
 2261 magicstaff#
 2262 blindfold of focus#
 2263 blindfold#
 2264 blindfold of telepathy#
 2265 blindfold#
-2266 spellbook of conjure familiar#
+2266 spellbook of conjure skeleton#
 2267 spellbook#
 2268 spellbook of stoneblood#
 2269 spellbook#
@@ -2951,6 +2955,34 @@ been designed to contain them.#
 2297 fez#
 2298 magicstaff of charm monster#
 2299 magicstaff#
+2300 potion of polymorph#
+2301 potion#
+2302 vial of blood#
+2303 potion#
+2304 backpack#
+2305 backpack#
+2306 alembic#
+2307 alembic#
+2308 potion of firestorm#
+2309 unstable potion#
+2310 potion of icestorm#
+2311 unstable potion#
+2312 potion of thunderstorm#
+2313 unstable potion#
+2314 potion of strength#
+2315 potion#
+2316 suede boots#
+2317 suede boots#
+2318 suede gloves#
+2319 suede gloves#
+2320 silver cloak#
+2321 silver cloak#
+2322 silver hood#
+2323 silver hood#
+2324 red hood#
+2325 red hood#
+2326 silver doublet#
+2327 silver doublet#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2998,7 +3030,7 @@ but it retracts beyond your might!#
 2389 You slip on the ring and feel your skin harden slightly.#
 
 #New spells (2390-2399)
-2390 Conjure Familiar#
+2390 Conjure Skeleton#
 2391 Stone Blood#
 2392 Bloodletting#
 2393 Dominate#
@@ -3068,7 +3100,7 @@ dominate the %s into your service!#
 2446 Your spell (reflect magic) was interrupted!#
 2447 Your spell (vampiric aura) was interrupted!#
 2448 Failed to sustain spell (vampiric aura).#
-2449 You begin to feel faint as your thirst for blood settles...#
+2449 Your thirst for blood settles...#
 2450 The craftsmanship of the walls here is immaculate.#
 
 #New effects (contd.)
@@ -3179,7 +3211,7 @@ last of your magic is drained!#
 2550 sexton#
 2551 ninja#
 2552 monk#
-2553 blank#
+2553 test#
 2554 blank#
 2555 blank#
 2556 blank#
@@ -3619,18 +3651,21 @@ anyone seeking that power again, deep underground. #
 # New server flags.
 2917 Hardcore#
 2918 Classic#
-2919 Reserved#
-2920 Reserved#
+2919 Keep Inventory On Death#
+2920 +1 Life#
 # Hardcore.
 2921 NOTE: Experimental! Increases the stats of all enemies and improves their reaction 
 time. For experienced adventurers who wish for a more difficult challenge! #
-# CURRENTLY UNUSED
+# Classic
 2922 Cursed Edition levels only. For those wanting a shorter playthrough, or trying their 
 hand at conquering the Classic leaderboard categories.#
-# CURRENTLY UNUSED
-2923 #
-# CURRENTLY UNUSED
-2924 #
+# Keep Inventory
+2923 Disable players dropping inventory items on death. (Multiplayer only)
+Enjoy the dungeon without having to loot your allies! #
+# Life Saving
+2924 Spawn at the start of the game with an amulet of life saving, granting you 
+an additional life.
+NOTE: Enabling this will disable Steam Achievements on your save files! #
 
 # 2925 - 2957 New conducts.
 2925 Hardcore#
@@ -3641,6 +3676,8 @@ hand at conquering the Classic leaderboard categories.#
 2930 Brawler#
 2931 Ultra Speedrunner#
 2932 Speedrunner#
+2933 Inventory Keeper#
+2934 +1 Lifer#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#
@@ -3656,7 +3693,7 @@ hand at conquering the Classic leaderboard categories.#
 2965 WARNING: CONTINUING WILL OVERWRITE YOUR OLDEST SINGLEPLAYER SAVEFILE!#
 2966 WARNING: CONTINUING WILL OVERWRITE YOUR OLDEST MULTIPLAYER SAVEFILE!#
 2967 light flicker#
-2968 press %s to drop gold#
+2968 press [%s] to drop gold#
 2969 The gods of Sokoban greatly reward your abilities!#
 2970 The gods of Sokoban were mildly entertained.#
 2971 The gods of Sokoban were less than impressed.#
@@ -3899,4 +3936,414 @@ current food situation will last.#
 3158 mute audio when game window focus is lost#
 3159 Show Numerical Skill Values#
 
-3199 end#
+3160 Race:#
+3161 human#
+3162 skeleton#
+3163 vampire#
+3164 succubus#
+3165 goatman#
+3166 automaton#
+3167 incubus#
+3168 goblin#
+3169 insectoid#
+
+3175 Use left click or press left/right to toggle between active customization type.#
+
+3176 Gameplay Options:#
+3177 use %s abilities#
+3178 aesthetic skin only#
+
+3179 Skeletons have no use for food!#
+3180 But wait! You expend your mana into new life!#
+3181 You did not have enough mana to revive yourself...#
+3182 You struggle to fight the current as a skeleton!#
+3183 Your flesh sears in pain as you make contact with the water!#
+3184 Your bones sear in pain as you make contact with the water!#
+3185 The polymorph wears out and you return to your normal form.#
+3186 You polymorph into a %s!#
+3187 The %s polymorphs into a %s!#
+3188 %s polymorphs into a %s!#
+3189 But you feel no different...#
+3190 You quaff the potion of polymorph...#
+3191 The polymorph had no effect!#
+3192 The polymorph is washed away by the water!#
+3193 Your skin cracks as you feel the polymorph start to dissipate...#
+3194 Your %s's soul returns to you.#
+3195 %s's soul returns to you.#
+3196 Relinquish
+   soul#
+3197 Your summoned %s gained a new rank!#
+3198 But wait! Your summoned allies imbue you with new life!#
+
+3199 Locked - DLC Required!#
+3200 Locked - DLC Required! Left click to view on the store page in Steam overlay.#
+
+3201 Bleh! Your body rejects the solids in your stomach!#
+3202 What a horrible night to have a curse...#
+3203 Blecch! This is disgusting!#
+3204 Unarmed#
+3205 %s is stunned from your blow!#
+3206 The %s is stunned from your blow!#
+3207 You are stunned from %s's blow!#
+3208 You are stunned from the %s's blow!#
+3209 %+3d from skill#
+3210 Your blade cuts deep into %s!#
+3211 Your blade cuts deep into the %s!#
+3212 %s's blade cuts deep into you!#
+3213 The %s's blade cuts deep into you!#
+3214 %s staggers backwards!#
+3215 The %s staggers backwards!#
+3216 You get knocked back!#
+3217 You can't remove the %s.
+ It's blessed!#
+3218 You can't. It's blessed!#
+3219 You can't sell the %s.
+ It's blessed!#
+3220 You ravage the tin of
+ %s.#
+3221 You awaken with no idea of your whereabouts...
+ accompanied by a splitting headache.#
+3222 Maybe a drink will take the edge off...#
+
+3223 conjurer#
+3224 accursed#
+3225 mesmer#
+3226 brewer#
+3227 automaton class#
+3228 incubus class#
+3229 goblin class#
+3230 insectoid class#
+
+3231 A frail but adept spellcaster able to conjure allies with mana.
+
+Difficulty: Normal#
+3232 The Accursed found themselves damned with a seemingly incurable thirst for blood. 
+Their search to dispel this curse leads to an arcane library deep within the dungeon.
+Difficulty: Hard#
+3233 The mesmer is capable of turning even the most powerful of foes onto her side.
+
+Difficulty: Hard#
+3234 Waking up in the dungeons of Hamlet with a foggy memory of nights past, the Drunkard
+ambles their way through in search of a good meal and drunken companionship.
+Difficulty: Normal#
+
+3235 automaton
+
+Difficulty: Normal#
+3236 incubus
+
+Difficulty: Normal#
+3237 goblin
+
+Difficulty: Normal#
+3238 insectoid
+
+Difficulty: Normal#
+
+3239 Skill number invalid!#
+3240 Your appraisal is not high enough to identify "%s".#
+3241 You feel the curse lift as you incant the spell...#
+3242 The tomes' knowledge grants you control over the curse!#
+3243 %s Begone from my shop, foul %s!#
+3244 learns about the "no %s allowed" policy of %s's shop.#
+3245 %d potions dropped from the fountain!#
+3246 A potion dropped from the fountain!#
+3247 You start breaking into a cold sweat...#
+3248 Your hands begin to feel unsteady...#
+3249 You feel a headache coming on...#
+3250 Your hangover feels better now.#
+3251 %s decides to be your drinking buddy!#
+3252 The %s decides to be your drinking buddy!#
+3253 Your health fades due to the curse!#
+3254 goes for a swim in some water.#
+
+# Skill tooltips
+3255 
+Chance to lockpick chests and doors: %5.1f%%
+Chance to lockpick Automatons:       %5.1f%%
+Increased damage dealt by beartraps:   +%2.0f #
+3256 
+Player current visibility:       %2.0f tile(s)
+Visibility reduction from skill:%3.0f%%
+Night vision when sneaking:     +%2.0f Light
+Backstab bonus damage:          +%2.0f ATK#
+3257 
+Item buy price from shop:  %3.2fx gold value
+Item sell price to shop:   %3.2fx gold value  #
+3258 
+Time to appraise per item gold value:      %3.2fs
+Max item gold value that can be appraised: %4.0fG
+Can appraise worthless glass:                %3s   #
+3259 
+Player movement speed in water/lava:  %3.1f%% 
+#
+3260 
+Maximum followers (via [%-7s] recruiting):  %2.0f   
+Bonus movement speed for followers:       +%2.0f DEX
+Charm Monster spell base chance:             %3.0f%%
+Available follower commands shown on NPC menu [%s]#
+3261 
+MP Regeneration base time:         1 MP / %1.1fs 
+Spellcasting beginner:                     %3s
+(Beginners fumble spells and expend more mana)#
+3262 
+Highest skill level magic that can be learnt: %8s
+Current tier spells:                                     
+#
+3263 
+Ranged damage output:              %3.0f - 100%%
+Ranged weapon degrade chance on use:   %5.2f%%
+Armor piercing arrow chance:             %3.0f%%
+ (Piercing based on PER only)
+Thrown weapon damage:                    %3.0f%%#
+3264 
+Sword damage output:           %7.0f - 100%%
+Normal sword usage degrade chance:      %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3265 
+Mace damage output:            %7.0f - 100%%
+Normal mace usage degrade chance:       %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3266 
+Axe damage output:             %7.0f - 100%%
+Normal axe usage degrade chance:        %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3267 
+Polearm damage output:         %7.0f - 100%%
+Normal polearm usage degrade chance:    %1.2f%% 
+Degrade chance when 0 damage is dealt: %5.2f%%#
+3268 
+Blocking armor increase:                +%3.0f AC 
+Shield normal degrade chance on hit:     %5.2f%%
+Shield degrade chance when defending:    %5.2f%%#
+3269 
+Unarmed damage output:             %7.0f - 100%%    
+Melee glove normal degrade chance:          %1.2f%%
+Degrade chance when 0 damage is dealt:     %5.2f%%
+Bonus unarmed ATK:                        +%2.0f ATK
+Knockback distance on fully charged strike:  %3.0f%%
+ (Requires melee gloves equipped)#
+
+# Additional skill tooltip text
+3270 
+
+
+
+Legendary: 
+ Bonus %d gold upon unlocking chests#
+3271 
+
+
+
+
+Legendary: 
+ Sneaking (using block key without a shield)
+  grants invisibility.
+ Backstab bonus damage is doubled#
+3272 
+
+
+Legendary: 
+ Sell item of any kind to any shop type#
+3273 
+
+
+
+Legendary: 
+ Appraise all items instantly#
+3274 
+
+Legendary: 
+ Permanent water-walking over water and lava#
+3275 
+
+
+
+
+Legendary: 
+ Can recruit goblins, goatmen and insectoids#
+3276 
+
+
+
+Legendary: 
+ Auto learn [Forcebolt] spell, mana cost is 0#
+3277 
+
+
+Legendary: 
+ Auto learn [Dominate] spell#
+3278 
+
+
+
+Legendary: 
+ +5 ATK and inflict 5s [bleeding] status 
+  on fully charged strike.
+ (Targets invulnerable to bleeding take 
+  +5 additional ATK)#
+3279 
+
+
+
+Legendary: 
+ +5 ATK and 25%% chance to inflict 1.5s
+  [paralyze] status on fully charged strike#
+3280 
+
+
+
+Legendary: 
+ +10 ATK and inflict 3s [slow] status 
+  on fully charged strike#
+3281 
+
+
+
+Legendary: 
+ +5 ATK and inflict [knockback] status 
+  on fully charged strike#
+3282 
+
+
+
+
+
+
+Legendary: 
+ +5 ATK and inflict 1s [paralyze] status 
+  on fully charged stealth backstab strike#
+3283 
+
+
+
+Legendary: 
+ Shields never degrade on hit#
+3284 
+
+
+
+
+
+Legendary: 
+ Ranged weapons never degrade on use#
+
+3285 The ZAP Brigade has arrived!
+ "The minotaur is coming! Let us slay any other foul beasts here as well!"#
+3286 Repair Item#
+3287 This %s
+ is unable to be repaired.#
+3288 You have no items able to be repaired!#
+3289 Deals %d magic damage#
+3290 Deals %d magic damage
+ and inflicts [%s] status#
+3291 Deals %d magic damage and inflicts
+ [%s] and [%s] status#
+3292 Inflicts [%s] status#
+3293 Deals %d magic damage
+ and inflicts [%s] status#
+3294 slow#
+3295 burning#
+3296 paralyze#
+3297 bleeding#
+3298 sleep#
+3299 confuse#
+3300 poison#
+3301 Type: Area#
+3302 Type: Sustained#
+3303 Type: Projectile#
+3304 Type: Short Projectile (x3)#
+3305 Type: Self#
+3306 Type: Point Target#
+3307 Restores %d HP to caster 
+ and nearby allies#
+3308 Grants magic reflection while sustained
+Magic damage reflected is subtracted from caster's MP#
+3309 Grants levitation while sustained#
+3310 Grants invisibility while sustained#
+3311 Grants light while sustained#
+3312 Removes a curse from an item#
+3313 Identifies an item#
+3314 Reveals the level layout on
+ the current dungeon floor#
+3315 Teleports caster to a random location#
+3316 Opens doors, gates and locked containers#
+3317 Locks doors and chests#
+3318 Removes status effects from
+ caster and nearby allies#
+3319 Breaks down a wall#
+3320 Summons a skeleton ally that can be recalled
+Expert Magic skill summons a second skeleton
+Summon level is kept between casts#
+3321 Dominates a target into servitude
+MP Cost is based on the target's current HP
+Caster's HP is consumed if spell cost is 
+ greater than the caster's MP#
+3322 Steals the weapon of a target and
+ adds it to the caster's inventory#
+3323 Deals %d magic damage to HP and MP 
+HP/MP damage inflicted is restored to the caster#
+3324 Grants unarmed attacks a chance to inflict
+ [lifesteal] and [bleeding] while sustained
+HP regeneration is paused
+Movement speed and hunger depletion is increased#
+3325 Cost: %d MP (1 MP / %1.2fs)#
+3326 Attempts to charm a monster into servitude
+Only 1 monster may be charmed at one time
+Inflicts [pacify] status on failure#
+3327 You are unable to charm any more monsters into your service!#
+3328 Alchemy: Choose a base potion#
+3329 Alchemy: Choose a potion to mix with#
+3330 a %+2d #
+3331 %d %+2d #
+3332 You combine the %s with a %s...#
+3333 You combine the unidentified potion with a %s...#
+3334 You combine the %s with the unidentified potion...#
+3335 You combine the 2 unidentified potions...#
+3336 The empty flask looks ideal for tapping liquids into.#
+3337 You have no familiar potions to combine!#
+3338 You have no familiar base potions to start mixing!#
+3339 Brew#
+3340 Alchemy#
+3341 Experiment#
+3342 You have no potions left to mix!#
+3343 You have no potions to mix!#
+3344 Experimenting Alchemy: Choose a base potion#
+3345 Experimenting Alchemy: Choose a potion to mix with#
+3346 You learn about the %s 
+ base alchemy ingredient.#
+3347 
+
+
+
+
+
+
+
+
+Legendary: 
+ Brewed potions have +2 blessing
+ Alembics never degrade#
+3348 
+Thrown potion impact damage:          %3.0f%%
+Potion effect damage:                 %3.0f%%
+Water brewing duplication chance:     %3.0f%%
+Empty bottle %% on consume:           %4.0f%%
+ (Plain or bubbly potions only)
+Empty bottle %% on brew:              %4.0f%%
+Learnt alchemy ingredients:
+ Base              Secondary
+#
+3349 You learn about the %s 
+ secondary alchemy ingredient.#
+3350 blew the brew.#
+3351 You recover an %s.#
+3352 Brewed %s.#
+3353 Bottled %s.#
+3354 You suddenly feel much stronger!#
+3355 Your strength returns back to normal.#
+3356 The brew dissolves into water...#
+
+3357 status effect icons#
+
+3399 end#

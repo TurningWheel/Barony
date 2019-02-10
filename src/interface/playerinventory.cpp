@@ -223,6 +223,8 @@ char* itemUseString(const Item* item)
 				}
 			case TOOL_BEARTRAP:
 				return language[337];
+			case TOOL_ALEMBIC:
+				return language[3339];
 			default:
 				break;
 		}
@@ -375,6 +377,18 @@ void select_inventory_slot(int x, int y)
 			{
 				selectedRemoveCurseSlot = 0;
 				warpMouseToSelectedRemoveCurseSlot();
+			}
+		}
+		else if ( GenericGUI.isGUIOpen() )
+		{
+			warpInv = false;
+			y = INVENTORY_SIZEY - 1;
+
+			//Warp into GUI "inventory"...if there is anything there.
+			if ( GenericGUI.itemsDisplayed[0] )
+			{
+				GenericGUI.selectedSlot = 0;
+				GenericGUI.warpMouseToSelectedSlot();
 			}
 		}
 
@@ -706,9 +720,14 @@ void updatePlayerInventory()
 			}
 		}
 
-		if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() )
+		if ( selectedChestSlot < 0 && selectedShopSlot < 0 
+			&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 
+			&& !itemMenuOpen && game_controller->handleInventoryMovement()
+			&& GenericGUI.selectedSlot < 0 )
 		{
-			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 ) //This second check prevents the extra mouse warp.
+			if ( selectedChestSlot < 0 && selectedShopSlot < 0 
+				&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+				&& GenericGUI.selectedSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
 				if ( !hotbarHasFocus )
 				{
@@ -747,6 +766,13 @@ void updatePlayerInventory()
 			if ( selectedRemoveCurseSlot < 0 )
 			{
 				warpMouseToSelectedInventorySlot();
+			}
+		}
+		else if ( GenericGUI.selectedSlot >= 0 && !itemMenuOpen && game_controller->handleRepairGUIMovement() )
+		{
+			if ( GenericGUI.selectedSlot < 0 )
+			{
+				GenericGUI.warpMouseToSelectedSlot();
 			}
 		}
 
@@ -792,7 +818,10 @@ void updatePlayerInventory()
 		drawLine(pos.x, pos.y + y * INVENTORY_SLOTSIZE, pos.x + pos.w, pos.y + y * INVENTORY_SLOTSIZE, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	}
 
-	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 )
+	if ( !itemMenuOpen 
+		&& selectedChestSlot < 0 && selectedShopSlot < 0 
+		&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+		&& GenericGUI.selectedSlot < 0 )
 	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open, no chest slot is selected, no shop slot is selected, no Identify GUI slot is selected, and no Remove Curse GUI slot is selected.
@@ -1070,39 +1099,38 @@ void updatePlayerInventory()
 						if (itemCategory(item) == SPELL_CAT)
 						{
 							spell_t* spell = getSpellFromItem(item);
-							if (spell)
-							{
-								char tempstr[64];
-								if ( spell->ID == SPELL_DOMINATE )
-								{
-									snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
-								}
-								else
-								{
-									snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
-								}
-								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
-								src.h = TTF12_HEIGHT * 2 + 8;
-								drawTooltip(&src);
-								ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
-							}
-							else
-							{
-								src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
-								src.h = TTF12_HEIGHT + 8;
-								drawTooltip(&src);
-								ttfPrintText( ttf12, src.x + 4, src.y + 4, "Error: Spell doesn't exist!");
-							}
+							drawSpellTooltip(spell);
 						}
 						else
 						{
 							src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 4 + 8;
 							if ( item->identified )
+							{
 								if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
 								{
 									src.h += TTF12_HEIGHT;
 								}
+							}
+							int furthestX = xres;
+							if ( proficienciesPage == 0 )
+							{
+								if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+								{
+									furthestX = xres - interfaceSkillsSheet.w;
+								}
+							}
+							else
+							{
+								if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+								{
+									furthestX = xres - interfacePartySheet.w;
+								}
+							}
+							if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
+							{
+								src.x -= (src.w + 32);
+							}
 							drawTooltip(&src);
 
 							Uint32 color = 0xFFFFFFFF;
@@ -1152,7 +1180,7 @@ void updatePlayerInventory()
 							{
 								if ( itemCategory(item) == WEAPON )
 								{
-									if ( item->weaponGetAttack() >= 0 )
+									if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									}
@@ -1160,11 +1188,11 @@ void updatePlayerInventory()
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
-									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
+									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
 								}
 								else if ( itemCategory(item) == ARMOR )
 								{
-									if ( item->armorGetAC() >= 0 )
+									if ( item->armorGetAC(stats[clientnum]) >= 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									}
@@ -1172,7 +1200,7 @@ void updatePlayerInventory()
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
-									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
+									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
 								}
 							}
 						}
@@ -1183,14 +1211,22 @@ void updatePlayerInventory()
 						break;
 					}
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 )
+					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) 
+						&& !itemMenuOpen && !selectedItem && selectedChestSlot < 0 
+						&& selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+						&& GenericGUI.selectedSlot < 0 )
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0)) && !selectedItem && !itemMenuOpen )
+					if ( (mousestatus[SDL_BUTTON_LEFT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
+							&& selectedChestSlot < 0 && selectedShopSlot < 0 
+							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+							&& GenericGUI.selectedSlot < 0)) 
+						&& !selectedItem && !itemMenuOpen )
 					{
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 						{
@@ -1214,7 +1250,12 @@ void updatePlayerInventory()
 							}
 						}
 					}
-					else if ( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0)) && !itemMenuOpen && !selectedItem )
+					else if ( (mousestatus[SDL_BUTTON_RIGHT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
+							&& selectedChestSlot < 0 && selectedShopSlot < 0 
+							&& selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0
+							&& GenericGUI.selectedSlot < 0)) 
+						&& !itemMenuOpen && !selectedItem )
 					{
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
@@ -1344,7 +1385,7 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
 
-		if (itemCategory(&item) == POTION)
+		if (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC)
 		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
@@ -1424,7 +1465,7 @@ inline void drawItemMenuOptionSpell(const Item& item, int x, int y)
  */
 inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false)
 {
-	if (itemCategory(&item) != POTION)
+	if (itemCategory(&item) != POTION && item.type != TOOL_ALEMBIC )
 	{
 		return;
 	}
@@ -1463,7 +1504,12 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	//Option 1.
 	if (!is_potion_bad)
 	{
-		if (itemIsEquipped(&item, clientnum))
+		if ( item.type == TOOL_ALEMBIC )
+		{
+			TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
+			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
+		}
+		else if (itemIsEquipped(&item, clientnum))
 		{
 			drawOptionUnwield(x, y);
 		}
@@ -1633,7 +1679,12 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 		return;
 	}
 
-	if (itemCategory(item) != POTION)
+	if ( item->type == TOOL_ALEMBIC )
+	{
+		// experimenting!
+		GenericGUI.openGUI(GUI_TYPE_ALCHEMY, true, item);
+	}
+	else if (itemCategory(item) != POTION)
 	{
 		//Option 1 = appraise.
 		identifygui_active = false;
@@ -1681,7 +1732,7 @@ inline void executeItemMenuOption2(Item* item)
 		return;
 	}
 
-	if (itemCategory(item) != POTION)
+	if (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC)
 	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
@@ -1701,7 +1752,7 @@ inline void executeItemMenuOption2(Item* item)
 
 inline void executeItemMenuOption3(Item* item)
 {
-	if (!item || itemCategory(item) != POTION)
+	if (!item || (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC))
 	{
 		return;
 	}
@@ -1761,7 +1812,11 @@ void itemContextMenu()
 	}
 	else
 	{
-		if (itemCategory(current_item) == POTION)
+		if ( current_item->type == TOOL_ALEMBIC )
+		{
+			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, false);
+		}
+		else if (itemCategory(current_item) == POTION || current_item->type == TOOL_ALEMBIC)
 		{
 			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
 		}
@@ -2153,9 +2208,11 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 			bool notfree = false, foundaspot = false;
 
 			bool is_spell = false;
+			int inventory_y = std::min(std::max(INVENTORY_SIZEY, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
 			if ( itemCategory(itemBeingSorted) == SPELL_CAT )
 			{
 				is_spell = true;
+				inventory_y = std::min(inventory_y, 3);
 			}
 
 			if ( sortRightToLeft )
@@ -2168,7 +2225,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 			}
 			while ( 1 )
 			{
-				for ( y = 0; y < INVENTORY_SIZEY; y++ )
+				for ( y = 0; y < inventory_y; y++ )
 				{
 					node_t* node2 = nullptr;
 					for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
@@ -2214,6 +2271,71 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft)
 				else
 				{
 					++x; // fill leftmost first.
+				}
+			}
+
+			// backpack sorting, sort into here as last priority.
+			if ( (x < 0 || x > INVENTORY_SIZEX - 1) && INVENTORY_SIZEY > 3 )
+			{
+				foundaspot = false;
+				notfree = false;
+				if ( sortRightToLeft )
+				{
+					x = INVENTORY_SIZEX - 1; // fill rightmost first.
+				}
+				else
+				{
+					x = 0; // fill leftmost first.
+				}
+				while ( 1 )
+				{
+					for ( y = 3; y < INVENTORY_SIZEY; y++ )
+					{
+						node_t* node2 = nullptr;
+						for ( node2 = stats[clientnum]->inventory.first; node2 != nullptr; node2 = node2->next )
+						{
+							Item* tempItem = (Item*)node2->element;
+							if ( tempItem == itemBeingSorted )
+							{
+								continue;
+							}
+							if ( tempItem )
+							{
+								if ( tempItem->x == x && tempItem->y == y )
+								{
+									if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+									{
+										notfree = true;  //Both spells. Can't fit in the same slot.
+									}
+									else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+									{
+										notfree = true;  //Both not spells. Can't fit in the same slot.
+									}
+								}
+							}
+						}
+						if ( notfree )
+						{
+							notfree = false;
+							continue;
+						}
+						itemBeingSorted->x = x;
+						itemBeingSorted->y = y;
+						foundaspot = true;
+						break;
+					}
+					if ( foundaspot )
+					{
+						break;
+					}
+					if ( sortRightToLeft )
+					{
+						--x; // fill rightmost first.
+					}
+					else
+					{
+						++x; // fill leftmost first.
+					}
 				}
 			}
 		}

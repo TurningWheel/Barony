@@ -19,6 +19,7 @@
 #include "monster.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 #define BOULDER_STOPPED my->skill[0]
 #define BOULDER_AMBIENCE my->skill[1]
@@ -151,7 +152,65 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						}
 					}
 				}
-				if ( stats->HP > 0 || (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING) )
+
+				bool lifeSaving = (stats->HP <= 0 && stats->amulet && stats->amulet->type == AMULET_LIFESAVING);
+				if ( !lifeSaving )
+				{
+					if ( stats->HP <= 0 && entity->behavior == &actPlayer 
+						&& ((stats->playerRace == RACE_SKELETON && stats->appearance == 0) || stats->type == SKELETON) )
+					{
+						if ( stats->MP >= 75 )
+						{
+							lifeSaving = true;
+						}
+						else
+						{
+							int spellCost = getCostOfSpell(&spell_summon, entity);
+							int numSummonedAllies = 0;
+							int firstManaToRefund = 0;
+							int secondManaToRefund = 0;
+							for ( node_t* node = stats->FOLLOWERS.first; node != nullptr; node = node->next )
+							{
+								Uint32* c = (Uint32*)node->element;
+								Entity* mySummon = uidToEntity(*c);
+								if ( mySummon && mySummon->monsterAllySummonRank != 0 )
+								{
+									Stat* mySummonStats = mySummon->getStats();
+									if ( mySummonStats )
+									{
+										int mp = (mySummonStats->MAXMP * (mySummonStats->HP / static_cast<float>(mySummonStats->MAXHP)));
+										if ( numSummonedAllies == 0 )
+										{
+											firstManaToRefund += std::min(spellCost, static_cast<int>((mp / static_cast<float>(mySummonStats->MAXMP)) * spellCost)); // MP to restore
+											++numSummonedAllies;
+										}
+										else if ( numSummonedAllies == 1 )
+										{
+											mySummon->setMP(mySummonStats->MAXMP * (mySummonStats->HP / static_cast<float>(mySummonStats->MAXHP)));
+											secondManaToRefund += std::min(spellCost, static_cast<int>((mp / static_cast<float>(mySummonStats->MAXMP)) * spellCost)); // MP to restore
+											++numSummonedAllies;
+											break;
+										}
+									}
+								}
+							}
+
+							if ( numSummonedAllies == 2 )
+							{
+								firstManaToRefund /= 2;
+								secondManaToRefund /= 2;
+							}
+
+							int manaTotal = stats->MP + firstManaToRefund + secondManaToRefund;
+							if ( manaTotal >= 75 )
+							{
+								lifeSaving = true;
+							}
+						}
+					}
+				}
+
+				if ( lifeSaving )
 				{
 					// spawn several rock items
 					int i = 8 + rand() % 4;
@@ -485,7 +544,12 @@ void actBoulder(Entity* my)
 				{
 					if (inrange[i])
 					{
-						if ( statGetSTR(stats[i]) < 5 )
+						int playerSTR = 0;
+						if ( players[i] )
+						{
+							playerSTR = statGetSTR(stats[i], players[i]->entity);
+						}
+						if ( playerSTR < 5 )
 						{
 							messagePlayer(i, language[456]);
 						}

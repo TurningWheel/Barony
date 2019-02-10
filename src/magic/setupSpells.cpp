@@ -14,6 +14,8 @@
 #include "../stat.hpp"
 #include "magic.hpp"
 
+std::vector<spell_t*> allGameSpells;
+
 void setupSpells()   ///TODO: Verify this function.
 {
 	node_t* node = NULL;
@@ -198,8 +200,8 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_removecurse.name, language[434]);
 
 	spellElementConstructor(&spellElement_summon);
-	spellElement_summon.mana = 20;
-	spellElement_summon.base_mana = 20;
+	spellElement_summon.mana = 17;
+	spellElement_summon.base_mana = 17;
 	spellElement_summon.overload_multiplier = 1;
 	spellElement_summon.damage = 0;
 	spellElement_summon.duration = 0;
@@ -217,7 +219,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_bleed.mana = 10;
 	spellElement_bleed.base_mana = 10;
 	spellElement_bleed.overload_multiplier = 1;
-	spellElement_bleed.damage = 25;
+	spellElement_bleed.damage = 30;
 	spellElement_bleed.duration = TICKS_PER_SECOND * SPELLELEMENT_BLEED_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_bleed.name, language[2392]);
 
@@ -249,7 +251,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_acidSpray.mana = 20;
 	spellElement_acidSpray.base_mana = 20;
 	spellElement_acidSpray.overload_multiplier = 1;
-	spellElement_acidSpray.damage = 7;
+	spellElement_acidSpray.damage = 10;
 	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_acidSpray.name, language[2395]);
 
@@ -270,11 +272,11 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_drainSoul.name, language[2397]);
 
 	spellElementConstructor(&spellElement_vampiricAura);
-	spellElement_vampiricAura.mana = 30;
-	spellElement_vampiricAura.base_mana = 30;
+	spellElement_vampiricAura.mana = 5;
+	spellElement_vampiricAura.base_mana = 5;
 	spellElement_vampiricAura.overload_multiplier = 1;
 	spellElement_vampiricAura.damage = 0;
-	spellElement_vampiricAura.duration = 1500; //TODO: Decide on something.
+	spellElement_vampiricAura.duration = 85; //TODO: Decide on something.
 	strcpy(spellElement_vampiricAura.name, language[2398]);
 
 	spellElementConstructor(&spellElement_charmMonster);
@@ -696,7 +698,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_summon);
 	strcpy(spell_summon.name, language[2390]);
 	spell_summon.ID = SPELL_SUMMON;
-	spell_summon.difficulty = 80;
+	spell_summon.difficulty = 40;
 	spell_summon.elements.first = NULL;
 	spell_summon.elements.last = NULL;
 	node = list_AddNodeLast(&spell_summon.elements);
@@ -803,7 +805,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_vampiricAura);
 	strcpy(spell_vampiricAura.name, language[2398]);
 	spell_vampiricAura.ID = SPELL_VAMPIRIC_AURA;
-	spell_vampiricAura.difficulty = 60;
+	spell_vampiricAura.difficulty = 80;
 	spell_vampiricAura.elements.first = nullptr;
 	spell_vampiricAura.elements.last = nullptr;
 	node = list_AddNodeLast(&spell_vampiricAura.elements);

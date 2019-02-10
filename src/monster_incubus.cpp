@@ -349,6 +349,72 @@ void initIncubus(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
+
+	// cloak
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INCUBUS][8][0]; // 0
+	entity->focaly = limbs[INCUBUS][8][1]; // 0
+	entity->focalz = limbs[INCUBUS][8][2]; // 4
+	entity->behavior = &actIncubusLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// helmet
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INCUBUS][9][0]; // 0
+	entity->focaly = limbs[INCUBUS][9][1]; // 0
+	entity->focalz = limbs[INCUBUS][9][2]; // -2
+	entity->behavior = &actIncubusLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// mask
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[INCUBUS][10][0]; // 0
+	entity->focaly = limbs[INCUBUS][10][1]; // 0
+	entity->focalz = limbs[INCUBUS][10][2]; // .5
+	entity->behavior = &actIncubusLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
 }
 
 void actIncubusLimb(Entity* my)
@@ -716,9 +782,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case LIMB_HUMANOID_TORSO:
-				entity->x -= .5 * cos(my->yaw);
-				entity->y -= .5 * sin(my->yaw);
-				entity->z += 2.5;
+				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -746,14 +810,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x += 1 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) - .75 * sin(my->yaw);
-				entity->z += 5;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->yaw += PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
@@ -781,14 +838,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 1 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) + .75 * sin(my->yaw);
-				entity->z += 5;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->yaw -= PI / 8;
-					entity->pitch = -PI / 2;
-				}
+				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm
 			case LIMB_HUMANOID_RIGHTARM:
@@ -818,14 +868,8 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 595;
 					}
 				}
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += 0.5;
+				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			}
 			// left arm
@@ -861,13 +905,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 0.5;
-				if ( my->z >= 1.4 && my->z <= 1.6 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, INCUBUS, LIMB_HUMANOID_LEFTARM);
 				if ( my->monsterDefend && my->monsterAttack == 0 )
 				{
 					MONSTER_SHIELDYAW = PI / 5;
@@ -977,52 +1015,162 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 2.5;
-				entity->yaw = shieldarm->yaw;
-				entity->roll = 0;
-				entity->pitch = 0;
-				if ( entity->sprite == items[TOOL_TORCH].index )
+				my->handleHumanoidShieldLimb(entity, shieldarm);
+				break;
+				// cloak
+			case LIMB_HUMANOID_CLOAK:
+				if ( multiplayer != CLIENT )
 				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2 * cos(entity->yaw);
-					entity2->y += 2 * sin(entity->yaw);
-					entity2->z += 1;
-				}
-				if ( MONSTER_SHIELDYAW > PI / 32 )
-				{
-					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
+					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
-						// shield, so rotate a little.
-						entity->roll += PI / 64;
+						entity->flags[INVISIBLE] = true;
 					}
 					else
 					{
-						entity->x += 0.25 * cos(my->yaw);
-						entity->y += 0.25 * sin(my->yaw);
-						entity->pitch += PI / 16;
-						if ( entity2 )
+						entity->flags[INVISIBLE] = false;
+						entity->sprite = itemModel(myStats->cloak);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
 						{
-							entity2->x += 0.75 * cos(shieldarm->yaw);
-							entity2->y += 0.75 * sin(shieldarm->yaw);
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
 						}
 					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				entity->x -= cos(my->yaw);
+				entity->y -= sin(my->yaw);
+				entity->yaw += PI / 2;
+				break;
+				// helm
+			case LIMB_HUMANOID_HELMET:
+				entity->focalx = limbs[INCUBUS][9][0]; // 0
+				entity->focaly = limbs[INCUBUS][9][1]; // 0
+				entity->focalz = limbs[INCUBUS][9][2]; // -2
+				entity->pitch = my->pitch;
+				entity->roll = 0;
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = itemModel(myStats->helmet);
+					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				my->setHelmetLimbOffset(entity);
+				break;
+				// mask
+			case LIMB_HUMANOID_MASK:
+				entity->focalx = limbs[INCUBUS][10][0]; // 0
+				entity->focaly = limbs[INCUBUS][10][1]; // 0
+				entity->focalz = limbs[INCUBUS][10][2]; // .5
+				entity->pitch = my->pitch;
+				entity->roll = PI / 2;
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = false;
+					}
+					if ( myStats->mask != nullptr )
+					{
+						if ( myStats->mask->type == TOOL_GLASSES )
+						{
+							entity->sprite = 165; // GlassesWorn.vox
+						}
+						else
+						{
+							entity->sprite = itemModel(myStats->mask);
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
+						{
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+				if ( entity->sprite != 165 )
+				{
+					entity->focalx = limbs[INCUBUS][10][0] + .35; // .35
+					entity->focaly = limbs[INCUBUS][10][1] - 2; // -2
+					entity->focalz = limbs[INCUBUS][10][2]; // .5
+				}
+				else
+				{
+					entity->focalx = limbs[INCUBUS][10][0] + .25; // .25
+					entity->focaly = limbs[INCUBUS][10][1] - 2.25; // -2.25
+					entity->focalz = limbs[INCUBUS][10][2]; // .5
 				}
 				break;
 			}
