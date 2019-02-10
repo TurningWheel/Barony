@@ -1979,7 +1979,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 			messagePlayer(player, language[3190]);
 		}
 	}
-	Entity* transformedEntity = false;
+	Entity* transformedEntity = nullptr;
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
 	{
