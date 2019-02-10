@@ -37,6 +37,7 @@ Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game st
 std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
 std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+std::unordered_set<int> clientLearnedAlchemyIngredients;
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
@@ -82,6 +83,8 @@ score_t* scoreConstructor()
 	score->stats->type = stats[clientnum]->type;
 	score->stats->sex = stats[clientnum]->sex;
 	score->stats->appearance = stats[clientnum]->appearance;
+	score->stats->playerRace = stats[clientnum]->playerRace;
+	//score->stats->appearance |= stats[clientnum]->playerRace << 8;
 	strcpy(score->stats->name, stats[clientnum]->name);
 	strcpy(score->stats->obituary, stats[clientnum]->obituary);
 	score->victory = victory;
@@ -270,6 +273,10 @@ int saveScore()
 		else
 		{
 			printlog("[STEAM]: Did not qualify for leaderboard score upload.");
+			if ( currentscore->gameStatistics[STATISTICS_DISABLE_UPLOAD] == 1 )
+			{
+				printlog("[STEAM]: Loaded data did not match hash as expected.");
+			}
 		}
 	}
 #endif // STEAMWORKS
@@ -366,6 +373,14 @@ int totalScore(score_t* score)
 		{
 			amount *= 2;
 		}
+		if ( score->conductGameChallenges[CONDUCT_KEEPINVENTORY] )
+		{
+			amount /= 2;
+		}
+		if ( score->conductGameChallenges[CONDUCT_LIFESAVING] )
+		{
+			amount /= 4;
+		}
 	}
 	if ( amount < 0 )
 	{
@@ -410,6 +425,9 @@ void loadScore(int scorenum)
 	stats[0]->type = score->stats->type;
 	stats[0]->sex = score->stats->sex;
 	stats[0]->appearance = score->stats->appearance;
+	stats[0]->playerRace = score->stats->playerRace;
+	//((stats[0]->appearance & 0xFF00) >> 8);
+	//stats[0]->appearance = (stats[0]->appearance & 0xFF);
 	strcpy(stats[0]->name, score->stats->name);
 	client_classes[0] = score->classnum;
 	victory = score->victory;
@@ -594,7 +612,10 @@ void saveAllScores(const std::string& scoresfilename)
 		fwrite(&score->conductIlliterate, sizeof(bool), 1, fp);
 		fwrite(&score->stats->type, sizeof(Monster), 1, fp);
 		fwrite(&score->stats->sex, sizeof(sex_t), 1, fp);
-		fwrite(&score->stats->appearance, sizeof(Uint32), 1, fp);
+		Uint32 raceAndAppearance = 0;
+		raceAndAppearance |= (score->stats->playerRace << 8);
+		raceAndAppearance |= (score->stats->appearance);
+		fwrite(&raceAndAppearance, sizeof(Uint32), 1, fp);
 		fwrite(score->stats->name, sizeof(char), 32, fp);
 		fwrite(&score->classnum, sizeof(Sint32), 1, fp);
 		fwrite(&score->dungeonlevel, sizeof(Sint32), 1, fp);
@@ -849,6 +870,17 @@ void loadAllScores(const std::string& scoresfilename)
 				usedClass[c] = false;
 			}
 		}
+		else if ( versionNumber < 323 )
+		{
+			if ( c < 13 )
+			{
+				fread(&usedClass[c], sizeof(bool), 1, fp);
+			}
+			else
+			{
+				usedClass[c] = false;
+			}
+		}
 		else
 		{
 			fread(&usedClass[c], sizeof(bool), 1, fp);
@@ -916,6 +948,11 @@ void loadAllScores(const std::string& scoresfilename)
 		fread(&score->stats->type, sizeof(Monster), 1, fp);
 		fread(&score->stats->sex, sizeof(sex_t), 1, fp);
 		fread(&score->stats->appearance, sizeof(Uint32), 1, fp);
+		if ( versionNumber >= 323 )
+		{
+			score->stats->playerRace = ((score->stats->appearance & 0xFF00) >> 8);
+			score->stats->appearance = (score->stats->appearance & 0xFF);
+		}
 		fread(&score->stats->name, sizeof(char), 32, fp);
 		fread(&score->classnum, sizeof(Sint32), 1, fp);
 		fread(&score->dungeonlevel, sizeof(Sint32), 1, fp);
@@ -936,7 +973,14 @@ void loadAllScores(const std::string& scoresfilename)
 		fread(&score->stats->HUNGER, sizeof(Sint32), 1, fp);
 		for ( c = 0; c < NUMPROFICIENCIES; c++ )
 		{
-			fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+			if ( versionNumber < 323 && c >= PRO_UNARMED )
+			{
+				score->stats->PROFICIENCIES[c] = 0;
+			}
+			else
+			{
+				fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+			}
 		}
 		if ( versionNumber < 300 )
 		{
@@ -1189,9 +1233,38 @@ int saveGame(int saveIndex)
 	{
 		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
 	}
+	Uint32 hash = 0;
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#endif // WINDOWS
+	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
+	hash += (stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON);
+	hash += (stats[clientnum]->HP - stats[clientnum]->MP);
+	hash += (currentlevel);
+	Uint32 writeCurrentLevel = (hash << 8);
+	writeCurrentLevel |= (currentlevel & 0xFF);
+
 	fwrite(&clientnum, sizeof(Uint32), 1, fp);
 	fwrite(&mapseed, sizeof(Uint32), 1, fp);
-	fwrite(&currentlevel, sizeof(Uint32), 1, fp);
+	fwrite(&writeCurrentLevel, sizeof(Uint32), 1, fp);
 	fwrite(&secretlevel, sizeof(bool), 1, fp);
 	fwrite(&completionTime, sizeof(Uint32), 1, fp);
 	fwrite(&conductPenniless, sizeof(bool), 1, fp);
@@ -1228,6 +1301,7 @@ int saveGame(int saveIndex)
 		fwrite(&spell->ID, sizeof(Uint32), 1, fp);
 	}
 
+
 	// player data
 	for ( player = 0; player < MAXPLAYERS; player++ )
 	{
@@ -1238,7 +1312,10 @@ int saveGame(int saveIndex)
 		}
 		fwrite(&stats[player]->type, sizeof(Monster), 1, fp);
 		fwrite(&stats[player]->sex, sizeof(sex_t), 1, fp);
-		fwrite(&stats[player]->appearance, sizeof(Uint32), 1, fp);
+		Uint32 raceAndAppearance = 0;
+		raceAndAppearance |= (stats[player]->playerRace << 8);
+		raceAndAppearance |= (stats[player]->appearance);
+		fwrite(&raceAndAppearance, sizeof(Uint32), 1, fp);
 		fwrite(stats[player]->name, sizeof(char), 32, fp);
 		fwrite(&stats[player]->HP, sizeof(Sint32), 1, fp);
 		fwrite(&stats[player]->MAXHP, sizeof(Sint32), 1, fp);
@@ -1262,6 +1339,10 @@ int saveGame(int saveIndex)
 		{
 			fwrite(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
 			fwrite(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+		}
+		for ( c = 0; c < 32; c++ )
+		{
+			fwrite(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1, fp);
 		}
 
 		// inventory
@@ -1619,6 +1700,10 @@ int saveGame(int saveIndex)
 						fwrite(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
 						fwrite(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
 					}
+					for ( j = 0; j < 32; ++j )
+					{
+						fwrite(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1, fp);
+					}
 
 					// record follower inventory
 					Uint32 invSize = list_Size(&followerStats->inventory);
@@ -1850,12 +1935,43 @@ int loadGame(int player, int saveIndex)
 		fclose(fp);
 		return 1;
 	}
+
+	// assemble string
+	Uint32 hash = 0;
+	Uint32 loadedHash = 0;
+#ifdef WINDOWS
+	struct _stat result;
+	if ( _stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#else
+	struct stat result;
+	if ( stat(path, &result) == 0 )
+	{
+		struct tm *tm = localtime(&result.st_mtime);
+		if ( tm )
+		{
+			hash = tm->tm_hour + tm->tm_mday * tm->tm_year + tm->tm_wday + tm->tm_yday;
+		}
+	}
+#endif // WINDOWS
+
 	// read basic header info
 	fread(&uniqueGameKey, sizeof(Uint32), 1, fp);
 	fread(&mul, sizeof(Uint32), 1, fp);
 	fread(&clientnum, sizeof(Uint32), 1, fp);
 	fread(&mapseed, sizeof(Uint32), 1, fp);
 	fread(&currentlevel, sizeof(Uint32), 1, fp);
+	if ( versionNumber >= 323 )
+	{
+		loadedHash = (currentlevel & 0xFFFFFF00) >> 8;
+		currentlevel = currentlevel & 0xFF;
+	}
 	fread(&secretlevel, sizeof(bool), 1, fp);
 	fread(&completionTime, sizeof(Uint32), 1, fp);
 	fread(&conductPenniless, sizeof(bool), 1, fp);
@@ -1920,9 +2036,20 @@ int loadGame(int player, int saveIndex)
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
-		fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		}
+		else
+		{
+			fseek(fp, sizeof(Sint32)*14, SEEK_CUR);
+		}
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32)*32, SEEK_CUR); // stat flags
+		}
 
 		if ( clientnum == 0 && c != 0 )
 		{
@@ -1982,6 +2109,11 @@ int loadGame(int player, int saveIndex)
 	fread(&stats[player]->type, sizeof(Monster), 1, fp);
 	fread(&stats[player]->sex, sizeof(sex_t), 1, fp);
 	fread(&stats[player]->appearance, sizeof(Uint32), 1, fp);
+	if ( versionNumber >= 323 )
+	{
+		stats[player]->playerRace = ((stats[player]->appearance & 0xFF00) >> 8);
+		stats[player]->appearance = (stats[player]->appearance & 0xFF);
+	}
 	fread(&stats[player]->name, sizeof(char), 32, fp);
 	fread(&stats[player]->HP, sizeof(Sint32), 1, fp);
 	fread(&stats[player]->MAXHP, sizeof(Sint32), 1, fp);
@@ -1999,12 +2131,30 @@ int loadGame(int player, int saveIndex)
 	fread(&stats[player]->HUNGER, sizeof(Sint32), 1, fp);
 	for ( c = 0; c < NUMPROFICIENCIES; c++ )
 	{
-		fread(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+		if ( versionNumber < 323 && c >= PRO_UNARMED )
+		{
+			stats[player]->PROFICIENCIES[c] = 0;
+		}
+		else
+		{
+			fread(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
+		}
 	}
 	for ( c = 0; c < NUMEFFECTS; c++ )
 	{
 		fread(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
 		fread(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+	}
+	if ( versionNumber >= 323 )
+	{
+		for ( c = 0; c < 32; c++ )
+		{
+			fread(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1, fp);
+			if ( c < STAT_FLAG_PLAYER_RACE || c > STAT_FLAG_ALLY_SUMMON2_PERCHR )
+			{
+				stats[player]->MISC_FLAGS[c] = 0; // we don't really need these on load.
+			}
+		}
 	}
 
 	if ( player == clientnum )
@@ -2236,6 +2386,18 @@ int loadGame(int player, int saveIndex)
 	stats[player]->stache_y1 = 0;
 	stats[player]->stache_y2 = 0;
 
+
+	hash += (stats[clientnum]->STR + stats[clientnum]->LVL + stats[clientnum]->DEX * stats[clientnum]->INT);
+	hash += (stats[clientnum]->CON * stats[clientnum]->PER + std::min(stats[clientnum]->GOLD, 5000) - stats[clientnum]->CON);
+	hash += (stats[clientnum]->HP - stats[clientnum]->MP);
+	hash += (currentlevel);
+
+	if ( hash != loadedHash )
+	{
+		gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
+	}
+	//printlog("%d, %d", hash, loadedHash);
+
 	fclose(fp);
 	return 0;
 }
@@ -2346,12 +2508,26 @@ list_t* loadGameFollowers(int saveIndex)
 			int j;
 			for ( j = 0; j < NUMPROFICIENCIES; j++ )
 			{
-				fread(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1, fp);
+				if ( versionNumber < 323 && j >= PRO_UNARMED )
+				{
+					followerStats->PROFICIENCIES[j] = 0;
+				}
+				else
+				{
+					fread(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1, fp);
+				}
 			}
 			for ( j = 0; j < NUMEFFECTS; j++ )
 			{
 				fread(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
 				fread(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
+			}
+			if ( versionNumber >= 323 )
+			{
+				for ( j = 0; j < 32; ++j )
+				{
+					fread(&followerStats->MISC_FLAGS[j], sizeof(Sint32), 1, fp);
+				}
 			}
 
 			/*printlog("\n\n ** FOLLOWER #%d **\n", i + 1);
@@ -2567,6 +2743,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 
 	int level, class_;
 	int mul, plnum, dungeonlevel;
+	int playerRace, playerAppearance;
 
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 	char savefile[PATH_MAX] = "";
@@ -2609,6 +2786,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	fread(&plnum, sizeof(Uint32), 1, fp);
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&dungeonlevel, sizeof(Uint32), 1, fp);
+	dungeonlevel = dungeonlevel & 0xFF;
 	fseek(fp,  sizeof(bool), SEEK_CUR);
 	if ( versionNumber >= 310 )
 	{
@@ -2648,9 +2826,20 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
-		fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32)*NUMPROFICIENCIES, SEEK_CUR);
+		}
+		else
+		{
+			fseek(fp, sizeof(Sint32)*14, SEEK_CUR);
+		}
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		if ( versionNumber >= 323 )
+		{
+			fseek(fp, sizeof(Sint32) * 32, SEEK_CUR); // stat flags
+		}
 
 		if ( plnum == 0 )
 		{
@@ -2684,7 +2873,11 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 	{
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 	}
-	fseek(fp, sizeof(Monster) + sizeof(sex_t) + sizeof(Uint32), SEEK_CUR);
+	fseek(fp, sizeof(Monster) + sizeof(sex_t), SEEK_CUR);
+	Uint32 raceAndAppearance = 0;
+	fread(&raceAndAppearance, sizeof(Uint32), 1, fp);
+	playerAppearance = raceAndAppearance & 0xFF;
+	playerRace = (raceAndAppearance & 0xFF00) >> 8;
 	fread(&name, sizeof(char), 32, fp);
 	name[32] = 0;
 	fseek(fp, sizeof(Sint32) * 11, SEEK_CUR);
@@ -2713,16 +2906,19 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		}
 	}
 #endif // WINDOWS
+	int oldRace = stats[plnum]->playerRace;
+	stats[plnum]->playerRace = playerRace;
 	if ( mul == DIRECTCLIENT || mul == CLIENT )
 	{
 		// include the player number in the printf.
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, plnum, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, plnum, timestamp);
 	}
 	else
 	{
-		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_), dungeonlevel, timestamp);
+		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, timestamp);
 	}
 	// close file
+	stats[0]->playerRace = oldRace;
 	fclose(fp);
 
 	return tempstr;
@@ -2977,6 +3173,8 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
 	conductGameChallenges[CONDUCT_BRAWLER] = 1;
 	conductGameChallenges[CONDUCT_MODDED] = 0;
+	conductGameChallenges[CONDUCT_LIFESAVING] = 0;
+	conductGameChallenges[CONDUCT_KEEPINVENTORY] = 0;
 
 	for ( int c = 0; c < NUM_GAMEPLAY_STATISTICS; ++c )
 	{
@@ -2992,6 +3190,7 @@ void setDefaultPlayerConducts()
 		achievementThankTheTankPair[c].second = 0;
 		achievementStrobeVec[c].clear();
 	}
+	clientLearnedAlchemyIngredients.clear();
 }
 
 void updatePlayerConductsInMainLoop()
@@ -3003,7 +3202,23 @@ void updatePlayerConductsInMainLoop()
 			conductPenniless = false;
 		}
 	}
-
+	if ( !conductGameChallenges[CONDUCT_KEEPINVENTORY] )
+	{
+		if ( (svFlags & SV_FLAG_KEEPINVENTORY) )
+		{
+			if ( multiplayer != SINGLE )
+			{
+				conductGameChallenges[CONDUCT_KEEPINVENTORY] = 1;
+			}
+		}
+	}
+	if ( !conductGameChallenges[CONDUCT_LIFESAVING] )
+	{
+		if ( (svFlags & SV_FLAG_LIFESAVING) )
+		{
+			conductGameChallenges[CONDUCT_LIFESAVING] = 1;
+		}
+	}
 	if ( conductGameChallenges[CONDUCT_HARDCORE] )
 	{
 		if ( !(svFlags & SV_FLAG_HARDCORE) )
@@ -3079,6 +3294,21 @@ void updateGameplayStatisticsInMainLoop()
 		if ( gameStatistics[STATISTICS_TEMPT_FATE] < 0 )
 		{
 			gameStatistics[STATISTICS_TEMPT_FATE] = 0;
+		}
+	}
+
+	if ( gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 && clientLearnedAlchemyIngredients.empty() )
+	{
+		int numpotions = potionStandardAppearanceMap.size();
+		for ( int i = 0; i < numpotions; ++i )
+		{
+			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
+			if ( learned )
+			{
+				auto typeAppearance = potionStandardAppearanceMap.at(i);
+				int type = typeAppearance.first;
+				clientLearnedAlchemyIngredients.insert(type);
+			}
 		}
 	}
 }
@@ -3295,7 +3525,12 @@ bool steamLeaderboardSetScore(score_t* score)
 	}
 
 	if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| score->conductGameChallenges[CONDUCT_MODDED] )
+		|| score->conductGameChallenges[CONDUCT_MODDED]
+		|| score->conductGameChallenges[CONDUCT_LIFESAVING] )
+	{
+		return false;
+	}
+	if ( score->gameStatistics[STATISTICS_DISABLE_UPLOAD] == 1 )
 	{
 		return false;
 	}
@@ -3418,7 +3653,9 @@ bool steamLeaderboardSetScore(score_t* score)
 			++tag;
 		}
 	}
-	// conducts TAG_CONDUCT_4W_1 to TAG_CONDUCT_4W_4 unused.
+
+	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_CONDUCT_4W_1] |= (Uint8)(score->stats->playerRace); // store in right-most 8 bits.
+	// conducts TAG_CONDUCT_4W_2 to TAG_CONDUCT_4W_4 unused.
 
 	// store new gameplay stats as required. not many to start with.
 	g_SteamLeaderboards->LeaderboardUpload.tags[TAG_GAMEPLAY_STATS_2W_1] |= std::min(3, score->gameStatistics[STATISTICS_FIRE_MAYBE_DIFFERENT]);
@@ -3579,9 +3816,9 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 	victory = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 0) & 0xFF;
 	currentlevel = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 1) & 0xFF;
 	conductPenniless = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2) & 1;
-	conductFoodless = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2 + 1) & 1;
-	conductVegetarian = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2 + 2) & 1;
-	conductIlliterate = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> tagWidth * 2 + 3) & 1;
+	conductFoodless = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> (tagWidth * 2 + 1)) & 1;
+	conductVegetarian = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> (tagWidth * 2 + 2)) & 1;
+	conductIlliterate = (tags[TAG_VICTORYDUNGEONLEVELCONDUCTORIGINAL] >> (tagWidth * 2 + 3)) & 1;
 
 	tag = TAG_CONDUCT_2W_1;
 	tagWidth = 2;
@@ -3601,7 +3838,10 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 			++tag;
 		}
 	}
-	// conducts TAG_CONDUCT_4W_1 to TAG_CONDUCT_4W_4 unused.
+
+	stats[0]->playerRace = (tags[TAG_CONDUCT_4W_1] & 0xFF);
+
+	// conducts TAG_CONDUCT_4W_2 to TAG_CONDUCT_4W_4 unused.
 
 	// store new gameplay stats as required. not many to start with.
 	gameStatistics[STATISTICS_FIRE_MAYBE_DIFFERENT] = tags[TAG_GAMEPLAY_STATS_2W_1] & 0b11;

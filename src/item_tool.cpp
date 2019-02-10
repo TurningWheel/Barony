@@ -64,7 +64,7 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.chestLocked )
 		{
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
 			{
 				//Unlock chest.
 				playSoundEntity(&entity, 91, 64);
@@ -131,7 +131,7 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.skill[5] )
 		{
-			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 200 )
 			{
 				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
@@ -214,10 +214,7 @@ void Item::applyLockpick(int player, Entity& entity)
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, language[2527], entity.getMonsterLangEntry());
 
-						if ( rand() % 3 == 0 )
-						{
-							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-						}
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 						serverUpdatePlayerGameplayStats(player, STATISTICS_BOMB_SQUAD, 1);
 						players[player]->entity->awardXP(&entity, true, true);
 					}
@@ -293,7 +290,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 		{
 			Item* item = stats[player]->weapon;
 			stats[player]->weapon = nullptr;
-			consumeItem(item);
+			consumeItem(item, player);
 			return;
 		}
 		messagePlayer(player, language[2368]);
@@ -333,8 +330,259 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
 			serverUpdateEntitySkill(&entity, 0); // update orb status.
 			Item* item = stats[player]->weapon;
-			consumeItem(item);
+			consumeItem(item, player);
 			stats[player]->weapon = nullptr;
+		}
+	}
+	else
+	{
+		messagePlayer(player, language[2371]);
+	}
+}
+
+void Item::applyEmptyPotion(int player, Entity& entity)
+{
+	if ( entity.behavior == &actFountain || entity.behavior == &actSink )
+	{
+		if ( entity.skill[0] == 0 )
+		{
+			// fountain is dry, no bueno.
+			if ( player == clientnum )
+			{
+				if ( entity.behavior == &actFountain )
+				{
+					messagePlayer(player, language[467]);
+				}
+				else
+				{
+					messagePlayer(player, language[580]);
+				}
+			}
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			Item* item = stats[player]->weapon;
+			consumeItem(item, player);
+			return;
+		}
+
+		Item* item = stats[player]->weapon;
+		consumeItem(item, player);
+
+		int skillLVL = 2; // 0 to 5
+		if ( stats[player] )
+		{
+			int skillLVL = stats[player]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+		}
+
+		std::vector<int> potionChances =
+		{
+			20,	//POTION_WATER,
+			20,	//POTION_BOOZE,
+			20,	//POTION_JUICE,
+			20,	//POTION_SICKNESS,
+			10,	//POTION_CONFUSION,
+			0,	//POTION_EXTRAHEALING,
+			4,	//POTION_HEALING,
+			4,	//POTION_CUREAILMENT,
+			10,	//POTION_BLINDNESS,
+			4,	//POTION_RESTOREMAGIC,
+			1,	//POTION_INVISIBILITY,
+			1,	//POTION_LEVITATION,
+			4,	//POTION_SPEED,
+			10,	//POTION_ACID,
+			1,	//POTION_PARALYSIS,
+			1,	//POTION_POLYMORPH
+		};
+		if ( skillLVL == 2 ) // 40 skill
+		{
+			potionChances =
+			{
+				4,	//POTION_WATER,
+				5,	//POTION_BOOZE,
+				5,	//POTION_JUICE,
+				5,	//POTION_SICKNESS,
+				5,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				5,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				5,	//POTION_SPEED,
+				5,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+		else if ( skillLVL == 3 ) // 60 skill
+		{
+			potionChances =
+			{
+				2,	//POTION_WATER,
+				4,	//POTION_BOOZE,
+				4,	//POTION_JUICE,
+				4,	//POTION_SICKNESS,
+				4,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				4,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				4,	//POTION_SPEED,
+				4,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+		else if ( skillLVL == 4 ) // 80 skill
+		{
+			potionChances =
+			{
+				0,	//POTION_WATER,
+				2,	//POTION_BOOZE,
+				2,	//POTION_JUICE,
+				2,	//POTION_SICKNESS,
+				3,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				3,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				3,	//POTION_SPEED,
+				3,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+		else if ( skillLVL == 5 ) // 100 skill
+		{
+			potionChances =
+			{
+				0,	//POTION_WATER,
+				1,	//POTION_BOOZE,
+				1,	//POTION_JUICE,
+				1,	//POTION_SICKNESS,
+				1,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				2,	//POTION_HEALING,
+				2,	//POTION_CUREAILMENT,
+				2,	//POTION_BLINDNESS,
+				2,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				2,	//POTION_SPEED,
+				2,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+		}
+
+
+		if ( entity.behavior == &actFountain )
+		{
+			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+			auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+			item = newItem(static_cast<ItemType>(generatedPotion.first), SERVICABLE, 0, 1, generatedPotion.second, false, NULL);
+		}
+		else
+		{
+			if ( entity.skill[3] == 1 ) // slime
+			{
+				item = newItem(POTION_ACID, SERVICABLE, 0, 1, 0, false, NULL);
+			}
+			else
+			{
+				item = newItem(POTION_WATER, SERVICABLE, 0, 1, 0, false, NULL);
+			}
+		}
+		if ( item )
+		{
+			itemPickup(player, item);
+			messagePlayer(clientnum, language[3353], item->description());
+			if ( players[player] && players[player]->entity )
+			{
+				playSoundEntity(players[player]->entity, 401, 64);
+			}
+			free(item);
+		}
+
+		if ( entity.behavior == &actSink )
+		{
+			if ( entity.skill[3] == 1 || entity.skill[3] == 0 ) // ring or a slime
+			{
+				if ( player > 0 )
+				{
+					client_selected[player] = &entity;
+					actSink(&entity);
+				}
+				else if ( player == 0 )
+				{
+					selectedEntity = &entity;
+					actSink(&entity);
+				}
+			}
+			else if ( entity.skill[0] > 1 )
+			{
+				--entity.skill[0];
+				// Randomly choose second usage stats.
+				int effect = rand() % 10; //4 possible effects.
+				switch ( effect )
+				{
+					case 0:
+						//10% chance.
+						entity.skill[3] = 0; //Player will find a ring.
+					case 1:
+						//10% chance.
+						entity.skill[3] = 1; //Will spawn a slime.
+						break;
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						//60% chance.
+						entity.skill[3] = 2; //Will raise nutrition.
+						break;
+					case 8:
+					case 9:
+						//20% chance.
+						entity.skill[3] = 3; //Player will lose 1 HP.
+						break;
+					default:
+						break; //Should never happen.
+				}
+			}
+			else
+			{
+				--entity.skill[0];
+			}
+		}
+		else if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // fountain would spawn potions
+		{
+			//messagePlayer(player, language[474]);
+			entity.skill[0] = 0; //Dry up fountain.
+			serverUpdateEntitySkill(&entity, 0);
+		}
+		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL) == 0 ) )
+		{
+			if ( player > 0 )
+			{
+				client_selected[player] = &entity;
+				actFountain(&entity);
+			}
+			else if ( player == 0 )
+			{
+				selectedEntity = &entity;
+				actFountain(&entity);
+			}
 		}
 	}
 	else

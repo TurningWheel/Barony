@@ -179,6 +179,7 @@ extern bool settings_colorblind;
 extern bool settings_spawn_blood;
 extern bool settings_light_flicker;
 extern bool settings_vsync;
+extern bool settings_status_effect_icons;
 extern bool settings_minimap_ping_mute;
 extern bool settings_mute_audio_on_focus_lost;
 extern int settings_minimap_transparency_foreground;

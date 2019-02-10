@@ -207,19 +207,30 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		spellDeconstructor((void*)new_spell);
 		return false;
 	}
-	if ( !ignoreSkill && stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
+	int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
+	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+	{
+		skillLVL = 100;
+	}
+	if ( !ignoreSkill && skillLVL < new_spell->difficulty )
 	{
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void*)new_spell);
 		return false;
 	}
-	messagePlayer(player, language[441], new_spell->name);
+	if ( !intro )
+	{
+		messagePlayer(player, language[441], new_spell->name);
+	}
 	node = list_AddNodeLast(&spellList);
 	node->element = new_spell;
 	node->size = sizeof(spell_t);
 	node->deconstructor = &spellDeconstructor;
 
-	players[player]->entity->increaseSkill(PRO_MAGIC);
+	if ( !ignoreSkill )
+	{
+		players[player]->entity->increaseSkill(PRO_MAGIC);
+	}
 
 	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, nullptr);
 	itemPickup(player, item);
@@ -248,6 +259,7 @@ void spellConstructor(spell_t* spell)
 	spell->caster = -1;
 	spell->channel_duration = 0;
 	//spell->timer = 0;
+	allGameSpells.push_back(spell);
 }
 
 void spellDeconstructor(void* data)
@@ -360,7 +372,7 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 	return result;
 }
 
-int getCostOfSpell(spell_t* spell)
+int getCostOfSpell(spell_t* spell, Entity* caster)
 {
 	int cost = 0;
 
@@ -369,6 +381,20 @@ int getCostOfSpell(spell_t* spell)
 	{
 		spellElement_t* spellElement = (spellElement_t*)node->element;
 		cost += getCostOfSpellElement(spellElement);
+	}
+
+	if ( spell->ID == SPELL_FORCEBOLT && caster && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	{
+		cost = 0;
+	}
+	else if ( spell->ID == SPELL_SUMMON && caster )
+	{
+		Stat* casterStats = caster->getStats();
+		if ( casterStats )
+		{
+			int summonLevel = casterStats->playerSummonLVLHP >> 16;
+			cost += 5 * (summonLevel / 5);
+		}
 	}
 
 	return cost;

@@ -25,6 +25,7 @@
 #define THROW 1 //Throw spell!
 
 spellcasting_animation_manager_t cast_animation;
+bool overDrawDamageNotify = false;
 Entity* magicLeftHand = NULL;
 Entity* magicRightHand = NULL;
 
@@ -81,8 +82,8 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->lefthand_movey = 0;
 
 	animation_manager->circle_count = 0;
-	animation_manager->times_to_circle = (getCostOfSpell(spell) / 10) + 1; //Circle once for every 10 mana the spell costs.
-	animation_manager->mana_left = getCostOfSpell(spell);
+	animation_manager->times_to_circle = (getCostOfSpell(spell, caster) / 10) + 1; //Circle once for every 10 mana the spell costs.
+	animation_manager->mana_left = getCostOfSpell(spell, caster);
 	animation_manager->consumeMana = true;
 	if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 	{
@@ -94,12 +95,12 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 		int chance = rand() % 10;
 		if (chance >= stat->PROFICIENCIES[PRO_SPELLCASTING] / 15)
 		{
-			int amount = (rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat), 1);
+			int amount = (rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
 			animation_manager->times_to_circle += amount;
 		}
 	}
-	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / getCostOfSpell(spell);
+	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / getCostOfSpell(spell, caster);
 	animation_manager->consume_timer = animation_manager->consume_interval;
 }
 
@@ -214,14 +215,88 @@ void actLeftHandMagic(Entity* my)
 		{
 			my->sprite = 665;
 		}
+		else if ( stats[clientnum]->gloves->type == SUEDE_GLOVES )
+		{
+			my->sprite = 803;
+		}
 	}
+
+	int playerAppearance = stats[clientnum]->appearance;
+
 	if ( noGloves )
 	{
-		if ( stats[clientnum]->appearance / 6 == 0 )
+		if ( stats[clientnum]->playerRace > 0 )
+		{
+			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+			if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+			{
+				if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+				{
+					playerRace = HUMAN;
+					playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+				}
+				else
+				{
+					playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+				}
+			}
+			switch ( playerRace )
+			{
+				case SKELETON:
+					my->sprite = 773;
+					break;
+				case INCUBUS:
+					my->sprite = 775;
+					break;
+				case SUCCUBUS:
+					my->sprite = 777;
+					break;
+				case GOBLIN:
+					my->sprite = 779;
+					break;
+				case AUTOMATON:
+					my->sprite = 781;
+					break;
+				case INSECTOID:
+					if ( stats[clientnum]->sex == FEMALE )
+					{
+						my->sprite = 785;
+					}
+					else
+					{
+						my->sprite = 783;
+					}
+					break;
+				case GOATMAN:
+					my->sprite = 787;
+					break;
+				case VAMPIRE:
+					my->sprite = 789;
+					break;
+				case HUMAN:
+					if ( playerAppearance / 6 == 0 )
+					{
+						my->sprite = 656;
+					}
+					else if ( playerAppearance / 6 == 1 )
+					{
+						my->sprite = 657;
+					}
+					else
+					{
+						my->sprite = 658;
+					}
+					break;
+				default:
+					my->sprite = 656;
+					break;
+			}
+		}
+		else if ( playerAppearance / 6 == 0 )
 		{
 			my->sprite = 656;
 		}
-		else if ( stats[clientnum]->appearance / 6 == 1 )
+		else if ( playerAppearance / 6 == 1 )
 		{
 			my->sprite = 657;
 		}
@@ -286,7 +361,17 @@ void actLeftHandMagic(Entity* my)
 					cast_animation.consume_timer = cast_animation.consume_interval;
 					if ( multiplayer == SINGLE && cast_animation.consumeMana )
 					{
-						players[clientnum]->entity->drainMP(1);
+						int HP = stats[clientnum]->HP;
+						players[clientnum]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+						if ( (HP > stats[clientnum]->HP) && !overDrawDamageNotify )
+						{
+							overDrawDamageNotify = true;
+							camera_shakex += 0.1;
+							camera_shakey += 10;
+							playSoundPlayer(clientnum, 28, 92);
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							messagePlayerColor(clientnum, color, language[621]);
+						}
 					}
 					--cast_animation.mana_left;
 				}
@@ -315,6 +400,10 @@ void actLeftHandMagic(Entity* my)
 				spellcastingAnimationManager_completeSpell(&cast_animation);
 				break;
 		}
+	}
+	else
+	{
+		overDrawDamageNotify = false;
 	}
 
 	//Final position code.
@@ -414,14 +503,88 @@ void actRightHandMagic(Entity* my)
 		{
 			my->sprite = 590;
 		}
+		else if ( stats[clientnum]->gloves->type == SUEDE_GLOVES )
+		{
+			my->sprite = 802;
+		}
 	}
+
+	int playerAppearance = stats[clientnum]->appearance;
+
 	if ( noGloves )
 	{
-		if ( stats[clientnum]->appearance / 6 == 0 )
+		if ( stats[clientnum]->playerRace > 0 )
+		{
+			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+			if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+			{
+				if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+				{
+					playerRace = HUMAN;
+					playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+				}
+				else
+				{
+					playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+				}
+			}
+			switch ( playerRace )
+			{
+				case SKELETON:
+					my->sprite = 774;
+					break;
+				case INCUBUS:
+					my->sprite = 776;
+					break;
+				case SUCCUBUS:
+					my->sprite = 778;
+					break;
+				case GOBLIN:
+					my->sprite = 780;
+					break;
+				case AUTOMATON:
+					my->sprite = 782;
+					break;
+				case INSECTOID:
+					if ( stats[clientnum]->sex == FEMALE )
+					{
+						my->sprite = 786;
+					}
+					else
+					{
+						my->sprite = 784;
+					}
+					break;
+				case GOATMAN:
+					my->sprite = 788;
+					break;
+				case VAMPIRE:
+					my->sprite = 790;
+					break;
+				case HUMAN:
+					if ( playerAppearance / 6 == 0 )
+					{
+						my->sprite = 634;
+					}
+					else if ( playerAppearance / 6 == 1 )
+					{
+						my->sprite = 635;
+					}
+					else
+					{
+						my->sprite = 636;
+					}
+					break;
+				default:
+					my->sprite = 634;
+					break;
+			}
+		}
+		else if ( playerAppearance / 6 == 0 )
 		{
 			my->sprite = 634;
 		}
-		else if ( stats[clientnum]->appearance / 6 == 1 )
+		else if ( playerAppearance / 6 == 1 )
 		{
 			my->sprite = 635;
 		}

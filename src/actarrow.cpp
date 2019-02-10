@@ -194,14 +194,34 @@ void actArrow(Entity* my)
 					// alert the monster
 					if ( hit.entity->behavior == &actMonster && parent != nullptr )
 					{
-						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+						bool alertTarget = true;
+						if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
+						{
+							if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
+							{
+								// if a player ally + hit another ally, don't aggro back
+								alertTarget = false;
+							}
+						}
+
+						if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
 						}
 
+						bool alertAllies = true;
+						if ( parent->behavior == &actPlayer || parent->monsterAllyIndex != -1 )
+						{
+							if ( hit.entity->behavior == &actPlayer || (hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1) )
+							{
+								// if a player ally + hit another ally or player, don't alert other allies.
+								alertAllies = false;
+							}
+						}
+
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.creatures->first; node != nullptr; node = node->next )
+						for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )

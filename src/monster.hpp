@@ -133,43 +133,43 @@ static char gibtype[NUMMONSTERS] =
 };
 
 // columns go like this:
-// sword, mace, axe, polearm, ranged, magic
+// sword, mace, axe, polearm, ranged, magic, unarmed
 // lower number means less effective, higher number means more effective
-static double damagetables[NUMMONSTERS][6] =
+static double damagetables[NUMMONSTERS][7] =
 {
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // nothing
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // human
-	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f }, // rat
-	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goblin
-	{ 1.4, 0.5, 1.3, 0.7, 0.5, 1.3 }, // slime
-	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f }, // troll
-	{ 1.2, 1.f, 1.1, 0.9, 1.1, 1.f }, // octopus
-	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f }, // spider
-	{ 1.f, 1.2, 0.8, 1.1, 0.6, 0.8 }, // ghoul
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // skeleton
-	{ 0.9, 1.1, 1.f, 1.3, 1.f, 1.f }, // scorpion
-	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2 }, // imp
-	{ 1.1, 1.f, 1.1, 0.9, 1.1, 1.f }, // bugbear
-	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1 }, // gnome
-	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1 }, // demon
-	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // succubus
-	{ 0.8, 1.1, 1.3, 1.f, 0.7, 1.2 }, // mimic
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }, // lich
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
-	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
-	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
-	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2 }, // kobold
-	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
-	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
-	{ 1.2, 1.f, 1.f, 0.9, 1.3, 0.8 }, // incubus
-	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8 }, // vampire
-	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0 }, // shadow
-	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5 }, // cockatrice
-	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
-	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // automaton
-	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7 }, // lich ice
-	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f }  // lich fire
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // nothing
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // human
+	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f, 1.2 }, // rat
+	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // goblin
+	{ 1.4, 0.5, 1.3, 0.7, 0.5, 1.3, 0.5 }, // slime
+	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f, 0.8 }, // troll
+	{ 1.2, 1.f, 1.1, 0.9, 1.1, 1.f, 1.f }, // octopus
+	{ 1.f, 1.1, 1.f, 1.2, 1.1, 1.f, 1.1 }, // spider
+	{ 1.f, 1.2, 0.8, 1.1, 0.6, 0.8, 1.1 }, // ghoul
+	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 1.1 }, // skeleton
+	{ 0.9, 1.1, 1.f, 1.3, 1.f, 1.f, 1.2 }, // scorpion
+	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2, 1.f }, // imp
+	{ 1.1, 1.f, 1.1, 0.9, 1.1, 1.f, 1.f }, // bugbear
+	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1, 1.f }, // gnome
+	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
+	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus
+	{ 0.8, 1.1, 1.3, 1.f, 0.7, 1.2, 1.f }, // mimic
+	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f, 1.f }, // lich
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
+	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f, 1.f }, // devil
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.f }, // shopkeeper
+	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2, 0.8 }, // kobold
+	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2, 1.4 }, // scarab
+	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6, 0.6 }, // crystal golem
+	{ 1.2, 1.f, 1.f, 0.9, 1.3, 0.8, 1.f }, // incubus
+	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8, 1.f }, // vampire
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0, 0.5 }, // shadow
+	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5, 0.8 }, // cockatrice
+	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // insectoid
+	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.4, 1.f }, // goatman
+	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 0.7 }, // automaton
+	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7, 1.f }, // lich ice
+	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f, 1.f }  // lich fire
 
 };
 
@@ -189,7 +189,15 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	4,	4,	4,	4,	4,	4 }, // JOKER 9
 	{	4,	4,	2,	4,	2,	2 }, // SEXTON 10
 	{	5,	5,	3,	2,	2,	1 }, // NINJA 11
-	{	4,	2,	5,	3,	2,	2 }  // MONK 12
+	{	4,	2,	5,	3,	2,	2 }, // MONK 12
+	{	3,	2,	4,	6,	4,	4 }, // CONJURER 13
+	{	3,	3,	1,	6,	6,	3 }, // ACCURSED 14
+	{	3,	3,	1,	6,	4,	7 }, // MESMER 15
+	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
+	{	4,	4,	4,	4,	4,	4 }, // RESERVED 17
+	{	4,	4,	4,	4,	4,	4 }, // RESERVED 18
+	{	4,	4,	4,	4,	4,	4 }, // RESERVED 19
+	{	4,	4,	4,	4,	4,	4 }, // RESERVED 20
 };
 
 enum AllyNPCCommand : int
@@ -206,6 +214,7 @@ enum AllyNPCCommand : int
 	ALLY_CMD_MOVETO_CONFIRM,
 	ALLY_CMD_CANCEL,
 	ALLY_CMD_ATTACK_CONFIRM,
+	ALLY_CMD_RETURN_SOUL,
 	ALLY_CMD_END
 };
 
@@ -313,8 +322,10 @@ enum MonsterDefendType : int
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
 #define MONSTER_SHIELDYAW my->fskill[8]
 
+static const int MONSTER_ALLY_DEXTERITY_SPEED_CAP = 15;
+
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid);
-Entity* summonMonster(Monster creature, long x, long y);
+Entity* summonMonster(Monster creature, long x, long y, bool forceLocation = false);
 void summonManyMonster(Monster creature);
 bool monsterMoveAside(Entity* my, Entity* entity);
 

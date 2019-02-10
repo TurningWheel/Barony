@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -93,11 +94,24 @@ void actSink(Entity* my)
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
+					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] )
+					{
+						players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+						players[i]->entity->effectPolymorph = 0;
+						serverUpdateEntitySkill(players[i]->entity, 50);
+
+						messagePlayer(i, language[3192]);
+						messagePlayer(i, language[3185]);
+
+						playSoundEntity(players[i]->entity, 400, 92);
+						createParticleDropRising(players[i]->entity, 593, 1.f);
+						serverSpawnMiscParticles(players[i]->entity, PARTICLE_EFFECT_RISING_DROP, 593);
+					}
 					switch (my->skill[3])
 					{
 						case 0:
 						{
-							playSoundEntity(players[i]->entity, 52, 64);
+							//playSoundEntity(players[i]->entity, 52, 64);
 							messagePlayer(i, language[581]);
 
 							//Randomly choose a ring.
@@ -141,7 +155,7 @@ void actSink(Entity* my)
 						}
 						case 1:
 						{
-							playSoundEntity(players[i]->entity, 52, 64);
+							//playSoundEntity(players[i]->entity, 52, 64);
 
 							// spawn slime
 							Entity* monster = summonMonster(SLIME, my->x, my->y);
@@ -157,15 +171,75 @@ void actSink(Entity* my)
 							break;
 						}
 						case 2:
-							playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, language[583]);
-							stats[i]->HUNGER += 30; //Less nutrition than the refreshing fountain.
+						{
+							if ( stats[i]->type != VAMPIRE )
+							{
+								messagePlayer(i, language[583]);
+								playSoundEntity(players[i]->entity, 52, 64);
+								stats[i]->HUNGER += 50; //Less nutrition than the refreshing fountain.
+								players[i]->entity->modHP(1);
+							}
+							else
+							{
+								players[i]->entity->modHP(-2);
+								playSoundEntity(players[i]->entity, 28, 64);
+								playSoundEntity(players[i]->entity, 249, 128);
+								players[i]->entity->setObituary(language[1533]);
+
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(i, color, language[3183]);
+								if ( i == 0 )
+								{
+									camera_shakex += .1;
+									camera_shakey += 10;
+								}
+								else if ( multiplayer == SERVER && i > 0 )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[i - 1].host;
+									net_packet->address.port = net_clients[i - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, i - 1);
+								}
+							}
 							break;
+						}
 						case 3:
-							playSoundEntity(players[i]->entity, 52, 64);
-							messagePlayer(i, language[584]);
-							players[i]->entity->modHP(-1);
+						{
+							if ( stats[i]->type != VAMPIRE )
+							{
+								players[i]->entity->modHP(-2);
+							}
+							else
+							{
+								players[i]->entity->modHP(-2);
+								playSoundEntity(players[i]->entity, 249, 128);
+							}
+							playSoundEntity(players[i]->entity, 28, 64);
+							players[i]->entity->setObituary(language[1533]);
+
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							messagePlayerColor(i, color, language[584]);
+
+							if ( i == 0 )
+							{
+								camera_shakex += .1;
+								camera_shakey += 10;
+							}
+							else if ( multiplayer == SERVER && i > 0 )
+							{
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
 							break;
+						}
 						default:
 							break;
 					}

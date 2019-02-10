@@ -464,6 +464,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 			if (MAGIC_LIFE >= MAGIC_MAXLIFE)
 			{
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -484,24 +485,46 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					// nothing hit yet, let's keep trying...
 				}
 			}
-			else if ( parent && my->actmagicIsOrbiting )
+			else if ( my->actmagicIsOrbiting != 0 )
 			{
-				my->yaw += 0.1;
-				my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
-				my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+				int turnRate = 4;
+				if ( parent && my->actmagicIsOrbiting == 1 )
+				{
+					my->yaw += 0.1;
+					my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
+					my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
+				}
+				else if ( my->actmagicIsOrbiting == 2 )
+				{
+					my->yaw += 0.2;
+					turnRate = 4;
+					my->x = my->actmagicOrbitStationaryX + my->actmagicOrbitStationaryCurrentDist * cos(my->yaw);
+					my->y = my->actmagicOrbitStationaryY + my->actmagicOrbitStationaryCurrentDist * sin(my->yaw);
+					my->actmagicOrbitStationaryCurrentDist =
+						std::min(my->actmagicOrbitStationaryCurrentDist + 0.5, static_cast<real_t>(my->actmagicOrbitDist));
+				}
 				hitFromAbove = my->magicOrbitingCollision();
 				my->z += my->vel_z * my->actmagicOrbitVerticalDirection;
-				if ( my->z > my->actmagicOrbitStartZ )
+
+				if ( my->actmagicIsOrbiting == 2 )
+				{
+					// we don't change direction, upwards we go!
+					// target speed is actmagicOrbitVerticalSpeed.
+					my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
+					my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
+					my->roll = std::max(my->roll, -PI / 4);
+				}
+				else if ( my->z > my->actmagicOrbitStartZ )
 				{
 					if ( my->actmagicOrbitVerticalDirection == 1 )
 					{
 						my->vel_z = std::max(0.01, my->vel_z * 0.95);
-						my->roll -= (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll -= (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 					else
 					{
 						my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
-						my->roll += (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 				}
 				else
@@ -509,22 +532,25 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( my->actmagicOrbitVerticalDirection == 1 )
 					{
 						my->vel_z = std::min(my->actmagicOrbitVerticalSpeed, my->vel_z / 0.95);
-						my->roll += (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll += (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 					else
 					{
 						my->vel_z = std::max(0.01, my->vel_z * 0.95);
-						my->roll -= (PI / 8) / (4 / my->vel_z) * my->actmagicOrbitVerticalDirection;
+						my->roll -= (PI / 8) / (turnRate / my->vel_z) * my->actmagicOrbitVerticalDirection;
 					}
 				}
 				
-				if ( (my->z > my->actmagicOrbitStartZ + 4) && my->actmagicOrbitVerticalDirection == 1 )
+				if ( my->actmagicIsOrbiting == 1 )
 				{
-					my->actmagicOrbitVerticalDirection = -1;
-				}
-				else if ( (my->z < my->actmagicOrbitStartZ - 4) && my->actmagicOrbitVerticalDirection != 1 )
-				{
-					my->actmagicOrbitVerticalDirection = 1;
+					if ( (my->z > my->actmagicOrbitStartZ + 4) && my->actmagicOrbitVerticalDirection == 1 )
+					{
+						my->actmagicOrbitVerticalDirection = -1;
+					}
+					else if ( (my->z < my->actmagicOrbitStartZ - 4) && my->actmagicOrbitVerticalDirection != 1 )
+					{
+						my->actmagicOrbitVerticalDirection = 1;
+					}
 				}
 			}
 			else
@@ -576,7 +602,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+							if ( strcmp(element->name, spellElement_charmMonster.name) )
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+							}
 						}
 					}
 				}
@@ -657,6 +686,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.entity->behavior == &actPlayer )
 						{
+							if ( !strcmp(element->name, spellElement_charmMonster.name) )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+							}
 							if ( !spellIsReflectingMagic )
 							{
 								messagePlayer(player, language[379]);
@@ -926,14 +960,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else
 						{
-							if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+							bool alertTarget = true;
+							if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
+							{
+								if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
+								{
+									// if a player ally + hit another ally, don't aggro back
+									alertTarget = false;
+								}
+							}
+
+							if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 							{
 								hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
 							}
 
+							bool alertAllies = true;
+							if ( parent->behavior == &actPlayer || parent->monsterAllyIndex != -1 )
+							{
+								if ( hit.entity->behavior == &actPlayer || (hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1) )
+								{
+									// if a player ally + hit another ally or player, don't alert other allies.
+									alertAllies = false;
+								}
+							}
+
 							// alert other monsters too
 							Entity* ohitentity = hit.entity;
-							for ( node = map.creatures->first; node != nullptr; node = node->next )
+							for ( node = map.creatures->first; node != nullptr && alertAllies; node = node->next )
 							{
 								entity = (Entity*)node->element;
 								if ( entity->behavior == &actMonster && entity != ohitentity )
@@ -1203,7 +1257,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				else if (!strcmp(element->name, spellElement_fire.name))
 				{
-					spawnExplosion(my->x, my->y, my->z);
+					if ( !(my->actmagicIsOrbiting == 2) )
+					{
+						spawnExplosion(my->x, my->y, my->z);
+					}
 					if (hit.entity)
 					{
 						// Attempt to set the Entity on fire
@@ -1216,6 +1273,35 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//TODO: Apply fire resistances/weaknesses.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								spawnExplosion(my->x, my->y, my->z);
+								if ( parent )
+								{
+									if ( parent->behavior == &actParticleDot )
+									{
+										damage = parent->skill[1];
+									}
+									else if ( parent->behavior == &actPlayer )
+									{
+										Stat* playerStats = parent->getStats();
+										if ( playerStats )
+										{
+											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											damage = (14 + skillLVL * 1.5);
+										}
+									}
+									else
+									{
+										damage = 14;
+									}
+								}
+								else
+								{
+									damage = 14;
+								}
+								damage = damage - rand() % ((damage / 8) + 1);
+							}
 							damage *= damagetables[hitstats->type][5];
 							if ( parent )
 							{
@@ -1225,6 +1311,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									damage *= 2;
 								}
 							}
+							int oldHP = hitstats->HP;
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
@@ -1235,7 +1322,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// write the obituary
 							if ( parent )
 							{
-								parent->killedByMonsterObituary(hit.entity);
+								if ( my->actmagicIsOrbiting == 2 
+									&& parent->behavior == &actParticleDot
+									&& parent->skill[1] > 0 )
+								{
+									hit.entity->setObituary(language[3350]);
+								}
+								else
+								{
+									parent->killedByMonsterObituary(hit.entity);
+								}
 							}
 							if ( hitstats )
 							{
@@ -1258,7 +1354,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 							}
-							if ( hitstats->HP <= 0 && parent)
+							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
@@ -1269,9 +1365,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						} 
 						else if (hit.entity->behavior == &actChest) 
@@ -1279,8 +1381,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
@@ -1323,8 +1432,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 					}
@@ -1383,6 +1499,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int damage = element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								if ( parent )
+								{
+									if ( parent->behavior == &actParticleDot )
+									{
+										damage = parent->skill[1];
+									}
+									else if ( parent->behavior == &actPlayer )
+									{
+										Stat* playerStats = parent->getStats();
+										if ( playerStats )
+										{
+											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											damage = (18 + skillLVL * 1.5);
+										}
+									}
+									else
+									{
+										damage = 18;
+									}
+								}
+								else
+								{
+									damage = 18;
+								}
+								damage = damage - rand() % ((damage / 8) + 1);
+							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
@@ -1548,6 +1692,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								if ( parent )
+								{
+									if ( parent->behavior == &actParticleDot )
+									{
+										damage = parent->skill[1];
+									}
+									else if ( parent->behavior == &actPlayer )
+									{
+										Stat* playerStats = parent->getStats();
+										if ( playerStats )
+										{
+											int skillLVL = playerStats->PROFICIENCIES[PRO_ALCHEMY] / 20;
+											damage = (22 + skillLVL * 1.5);
+										}
+									}
+									else
+									{
+										damage = 22;
+									}
+								}
+								else
+								{
+									damage = 22;
+								}
+								damage = damage - rand() % ((damage / 8) + 1);
+							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
@@ -1588,8 +1760,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
 							return;
 						}
 						else if ( hit.entity->behavior == &actChest )
@@ -1597,8 +1772,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
 							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
@@ -1854,142 +2032,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
-							if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
-							{
-								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
-								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
-								}
-								else
-								{
-									playSoundEntity(my, 66, 128);
-									playSoundEntity(my, 67, 128);
-
-									// spawn several rock items //TODO: This should really be its own function.
-									i = 8 + rand() % 4;
-									for ( c = 0; c < i; c++ )
-									{
-										entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
-										entity->flags[INVISIBLE] = true;
-										entity->flags[UPDATENEEDED] = true;
-										entity->x = hit.mapx * 16 + 4 + rand() % 8;
-										entity->y = hit.mapy * 16 + 4 + rand() % 8;
-										entity->z = -6 + rand() % 12;
-										entity->sizex = 4;
-										entity->sizey = 4;
-										entity->yaw = rand() % 360 * PI / 180;
-										entity->vel_x = (rand() % 20 - 10) / 10.0;
-										entity->vel_y = (rand() % 20 - 10) / 10.0;
-										entity->vel_z = -.25 - (rand() % 5) / 10.0;
-										entity->flags[PASSABLE] = true;
-										entity->behavior = &actItem;
-										entity->flags[USERFLAG1] = true; // no collision: helps performance
-										entity->skill[10] = GEM_ROCK;    // type
-										entity->skill[11] = WORN;        // status
-										entity->skill[12] = 0;           // beatitude
-										entity->skill[13] = 1;           // count
-										entity->skill[14] = 0;           // appearance
-										entity->skill[15] = false;       // identified
-									}
-
-									if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] >= 41
-										&& map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] <= 49 )
-									{
-										steamAchievementEntity(parent, "BARONY_ACH_BAD_REVIEW");
-									}
-
-									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
-
-									// send wall destroy info to clients
-									for ( c = 1; c < MAXPLAYERS; c++ )
-									{
-										if ( client_disconnected[c] == true )
-										{
-											continue;
-										}
-										strcpy((char*)net_packet->data, "WALD");
-										SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-										SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-										net_packet->address.host = net_clients[c - 1].host;
-										net_packet->address.port = net_clients[c - 1].port;
-										net_packet->len = 8;
-										sendPacketSafe(net_sock, -1, net_packet, c - 1);
-									}
-
-									generatePathMaps();
-								}
-							}
+							magicDig(parent, my, 8);
 						}
 					}
 					else
 					{
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							int i = 8 + rand() % 4;
-
-							// spawn several rock items //TODO: This should really be its own function.
-							int c;
-							for ( c = 0; c < i; c++ )
-							{
-								Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
-								entity->flags[INVISIBLE] = true;
-								entity->flags[UPDATENEEDED] = true;
-								entity->x = hit.entity->x - 4 + rand() % 8;
-								entity->y = hit.entity->y - 4 + rand() % 8;
-								entity->z = -6 + rand() % 12;
-								entity->sizex = 4;
-								entity->sizey = 4;
-								entity->yaw = rand() % 360 * PI / 180;
-								entity->vel_x = (rand() % 20 - 10) / 10.0;
-								entity->vel_y = (rand() % 20 - 10) / 10.0;
-								entity->vel_z = -.25 - (rand() % 5) / 10.0;
-								entity->flags[PASSABLE] = true;
-								entity->behavior = &actItem;
-								entity->flags[USERFLAG1] = true; // no collision: helps performance
-								entity->skill[10] = GEM_ROCK;    // type
-								entity->skill[11] = WORN;        // status
-								entity->skill[12] = 0;           // beatitude
-								entity->skill[13] = 1;           // count
-								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = false;       // identified
-							}
-
-							double ox = hit.entity->x;
-							double oy = hit.entity->y;
-
-							// destroy the boulder
-							playSoundEntity(hit.entity, 67, 128);
-							list_RemoveNode(hit.entity->mynode);
-							if ( parent )
-								if ( parent->behavior == &actPlayer )
-								{
-									messagePlayer(parent->skill[2], language[405]);
-								}
-
-							// on sokoban, destroying boulders spawns scorpions
-							if ( !strcmp(map.name, "Sokoban") )
-							{
-								Entity* monster = nullptr;
-								if ( rand() % 2 == 0 )
-								{
-									monster = summonMonster(INSECTOID, ox, oy);
-								}
-								else
-								{
-									monster = summonMonster(SCORPION, ox, oy);
-								}
-								if ( monster )
-								{
-									int c;
-									for ( c = 0; c < MAXPLAYERS; c++ )
-									{
-										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-										messagePlayerColor(c, color, language[406]);
-									}
-								}
-								boulderSokobanOnDestroy(false);
-							}
+							magicDig(parent, my, 8);
 						}
 						else
 						{
@@ -2129,6 +2179,26 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent )
 							{
 								parent->awardXP(hit.entity, true, true);
+
+								if ( hit.entity->behavior == &actMonster )
+								{
+									bool tryBloodVial = false;
+									if ( gibtype[hitstats->type] == 1 || gibtype[hitstats->type] == 2 )
+									{
+										for ( c = 0; c < MAXPLAYERS; ++c )
+										{
+											if ( players[c]->entity && players[c]->entity->playerRequiresBloodToSustain() )
+											{
+												tryBloodVial = true;
+												break;
+											}
+										}
+										if ( tryBloodVial )
+										{
+											Item* blood = newItem(FOOD_BLOOD, EXCELLENT, 0, 1, gibtype[hitstats->type] - 1, true, &hitstats->inventory);
+										}
+									}
+								}
 							}
 
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -2219,10 +2289,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
-				my->removeLightField();
-				if ( my->mynode )
+				if ( !(my->actmagicIsOrbiting == 2) )
 				{
-					list_RemoveNode(my->mynode);
+					my->removeLightField();
+					if ( my->mynode )
+					{
+						list_RemoveNode(my->mynode);
+					}
 				}
 				return;
 			}
@@ -2277,7 +2350,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 		//Any init stuff that needs to happen goes here.
 		magic_init = 1;
 		my->skill[2] = -7; // ordinarily the client won't do anything with this entity
-		if ( my->actmagicIsOrbiting == 1 )
+		if ( my->actmagicIsOrbiting == 1 || my->actmagicIsOrbiting == 2 )
 		{
 			MAGIC_MAXLIFE = my->actmagicOrbitLifetime;
 		}
@@ -2802,6 +2875,10 @@ void createParticleSap(Entity* parent)
 				sprite = 599;
 			}
 		}
+		else if ( parent->skill[6] == SPELL_SUMMON )
+		{
+			sprite = parent->sprite;
+		}
 		else if ( multiplayer == CLIENT )
 		{
 			// client won't receive the sprite skill data in time, fix for this until a solution is found!
@@ -3067,6 +3144,10 @@ void actParticleTimer(Entity* my)
 				}
 				my->removeLightField();
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SPELL_SUMMON )
+			{
+				my->removeLightField();
+			}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHADOW_TELEPORT )
 			{
 				// teleport to target spell.
@@ -3260,6 +3341,43 @@ void actParticleTimer(Entity* my)
 					my->particleTimerCountdownAction = 0;
 				}
 			}
+			// continually fire
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SPELL_SUMMON )
+			{
+				if ( multiplayer != CLIENT && my->particleTimerPreDelay != -100 )
+				{
+					// once-off hack :)
+					spawnExplosion(my->x, my->y, -1);
+					playSoundEntity(my, 171, 128);
+					my->particleTimerPreDelay = -100;
+
+					createParticleErupt(my, my->particleTimerCountdownSprite);
+					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, my->particleTimerCountdownSprite);
+				}
+
+				// shoot drops to the sky
+				//if ( my->particleTimerCountdownSprite != 0 )
+				//{
+				//	Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr); //Particle entity.
+				//	entity->sizex = 1;
+				//	entity->sizey = 1;
+				//	entity->x = my->x - 4 + rand() % 9;
+				//	entity->y = my->y - 4 + rand() % 9;
+				//	entity->z = 7.5;
+				//	entity->vel_z = -1;
+				//	entity->yaw = (rand() % 360) * PI / 180.0;
+				//	entity->particleDuration = 10 + rand() % 30;
+				//	entity->behavior = &actParticleDot;
+				//	entity->flags[PASSABLE] = true;
+				//	entity->flags[NOUPDATE] = true;
+				//	entity->flags[UNCLICKABLE] = true;
+				//	if ( multiplayer != CLIENT )
+				//	{
+				//		entity_uids--;
+				//	}
+				//	entity->setUID(-3);
+				//}
+			}
 		}
 		else
 		{
@@ -3420,6 +3538,17 @@ void actParticleSapCenter(Entity* my)
 				playSoundEntity(parent, 166, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
 			}
+			else if ( my->skill[6] == SPELL_SUMMON )
+			{
+				parent->modMP(my->skill[7]);
+				/*if ( parent->behavior == &actPlayer )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(parent->skill[2], color, language[774]);
+				}*/
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
+			}
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -3435,32 +3564,190 @@ void actParticleSapCenter(Entity* my)
 	}
 	else
 	{
-		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-		entity->flags[INVISIBLE] = true;
-		entity->flags[UPDATENEEDED] = true;
-		entity->x = my->x;
-		entity->y = my->y;
-		entity->sizex = 4;
-		entity->sizey = 4;
-		entity->yaw = my->yaw;
-		entity->vel_x = (rand() % 20 - 10) / 10.0;
-		entity->vel_y = (rand() % 20 - 10) / 10.0;
-		entity->vel_z = -.5;
-		entity->flags[PASSABLE] = true;
-		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
-		entity->behavior = &actItem;
-		entity->skill[10] = my->skill[10];
-		entity->skill[11] = my->skill[11];
-		entity->skill[12] = my->skill[12];
-		entity->skill[13] = my->skill[13];
-		entity->skill[14] = my->skill[14];
-		entity->skill[15] = my->skill[15];
-		entity->itemOriginalOwner = my->itemOriginalOwner;
-		entity->parent = 0;
+		if ( my->skill[6] == SPELL_SUMMON )
+		{
+			real_t dist = sqrt(pow(my->x - my->skill[8], 2) + pow(my->y - my->skill[9], 2));
+			if ( dist < 4 )
+			{
+				spawnMagicEffectParticles(my->skill[8], my->skill[9], 0, my->skill[5]);
+				Entity* caster = uidToEntity(my->skill[7]);
+				if ( caster && caster->behavior == &actPlayer )
+				{
+					// kill old summons.
+					for ( node_t* node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
+					{
+						Entity* follower = uidToEntity(*((Uint32*)(node)->element));
+						if ( follower->monsterAllySummonRank != 0 )
+						{
+							Stat* followerStats = follower->getStats();
+							if ( followerStats && followerStats->HP > 0 )
+							{
+								follower->setMP(followerStats->MAXMP * (followerStats->HP / static_cast<float>(followerStats->MAXHP)));
+								follower->setHP(0);
+							}
+						}
+					}
 
-		// no parent, no target to travel to.
-		list_RemoveNode(my->mynode);
-		return;
+					Monster creature = SKELETON;
+					Entity* monster = summonMonster(creature, my->skill[8], my->skill[9]);
+					if ( monster )
+					{
+						Stat* monsterStats = monster->getStats();
+						monster->yaw = my->yaw - PI;
+						if ( monsterStats )
+						{
+							int magicLevel = 1;
+							if ( stats[caster->skill[2]] )
+							{
+								magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummonLVLHP >> 16) / 5);
+							}
+							monster->monsterAllySummonRank = magicLevel;
+							strcpy(monsterStats->name, "skeleton knight");
+							forceFollower(*caster, *monster);
+
+							monster->setEffect(EFF_STUNNED, true, 20, false);
+							bool spawnSecondAlly = false;
+							 
+							if ( (caster->getINT() + stats[caster->skill[2]]->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+							{
+								spawnSecondAlly = true;
+							}
+							//parent->increaseSkill(PRO_LEADERSHIP);
+							monster->monsterAllyIndex = caster->skill[2];
+							if ( multiplayer == SERVER )
+							{
+								serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+							}
+
+							// change the color of the hit entity.
+							monster->flags[USERFLAG2] = true;
+							serverUpdateEntityFlag(monster, USERFLAG2);
+							if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
+							{
+								int bodypart = 0;
+								for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+								{
+									if ( bodypart >= LIMB_HUMANOID_TORSO )
+									{
+										Entity* tmp = (Entity*)node->element;
+										if ( tmp )
+										{
+											tmp->flags[USERFLAG2] = true;
+											serverUpdateEntityFlag(tmp, USERFLAG2);
+										}
+									}
+									++bodypart;
+								}
+							}
+
+							if ( spawnSecondAlly )
+							{
+								Entity* monster = summonMonster(creature, my->skill[8], my->skill[9]);
+								if ( monster )
+								{
+									if ( multiplayer != CLIENT )
+									{
+										spawnExplosion(monster->x, monster->y, -1);
+										playSoundEntity(monster, 171, 128);
+
+										createParticleErupt(monster, 791);
+										serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 791);
+									}
+
+									Stat* monsterStats = monster->getStats();
+									monster->yaw = my->yaw - PI;
+									if ( monsterStats )
+									{
+										strcpy(monsterStats->name, "skeleton sentinel");
+										magicLevel = 1;
+										if ( stats[caster->skill[2]] )
+										{
+											magicLevel = std::min(7, 1 + (stats[caster->skill[2]]->playerSummon2LVLHP >> 16) / 5);
+										}
+										monster->monsterAllySummonRank = magicLevel;
+
+										forceFollower(*caster, *monster);
+										monster->setEffect(EFF_STUNNED, true, 20, false);
+
+										monster->monsterAllyIndex = caster->skill[2];
+										if ( multiplayer == SERVER )
+										{
+											serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
+										}
+
+										// change the color of the hit entity.
+										monster->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(monster, USERFLAG2);
+										if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
+										{
+											int bodypart = 0;
+											for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+											{
+												if ( bodypart >= LIMB_HUMANOID_TORSO )
+												{
+													Entity* tmp = (Entity*)node->element;
+													if ( tmp )
+													{
+														tmp->flags[USERFLAG2] = true;
+														serverUpdateEntityFlag(tmp, USERFLAG2);
+													}
+												}
+												++bodypart;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				list_RemoveNode(my->mynode);
+				return;
+			}
+
+			// calculate direction to caster and move.
+			real_t tangent = atan2(my->skill[9] - my->y, my->skill[8] - my->x);
+			real_t speed = dist / PARTICLE_LIFE;
+			my->vel_x = speed * cos(tangent);
+			my->vel_y = speed * sin(tangent);
+			my->x += my->vel_x;
+			my->y += my->vel_y;
+		}
+		else if ( my->skill[6] == SPELL_STEAL_WEAPON )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = my->yaw;
+			entity->vel_x = (rand() % 20 - 10) / 10.0;
+			entity->vel_y = (rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.5;
+			entity->flags[PASSABLE] = true;
+			entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+			entity->behavior = &actItem;
+			entity->skill[10] = my->skill[10];
+			entity->skill[11] = my->skill[11];
+			entity->skill[12] = my->skill[12];
+			entity->skill[13] = my->skill[13];
+			entity->skill[14] = my->skill[14];
+			entity->skill[15] = my->skill[15];
+			entity->itemOriginalOwner = my->itemOriginalOwner;
+			entity->parent = 0;
+
+			// no parent, no target to travel to.
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		else
+		{
+			// no parent, no target to travel to.
+			list_RemoveNode(my->mynode);
+			return;
+		}
 	}
 
 	if ( PARTICLE_LIFE < 0 )
@@ -3619,12 +3906,44 @@ bool Entity::magicOrbitingCollision()
 {
 	hit.entity = nullptr;
 
-	if ( this->z < -10 )
+	if ( this->actmagicIsOrbiting == 2 )
+	{
+		if ( this->ticks == 5 && this->actmagicOrbitHitTargetUID4 != 0 )
+		{
+			// hit this target automatically
+			Entity* tmp = uidToEntity(actmagicOrbitHitTargetUID4);
+			if ( tmp )
+			{
+				hit.entity = tmp;
+				return true;
+			}
+		}
+		if ( this->z < -8 || this->z > 3 )
+		{
+			return false;
+		}
+		else if ( this->ticks >= 12 && this->ticks % 4 != 0 ) // check once every 4 ticks, after the missile is alive for a bit
+		{
+			return false;
+		}
+	}
+	else if ( this->z < -10 )
 	{
 		return false;
 	}
 
+	if ( this->actmagicIsOrbiting == 2 )
+	{
+		if ( this->actmagicOrbitStationaryHitTarget >= 3 )
+		{
+			return false;
+		}
+	}
+
+	Entity* caster = uidToEntity(parent);
+
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;
@@ -3636,9 +3955,51 @@ bool Entity::magicOrbitingCollision()
 			{
 				continue;
 			}
+			if ( entity->behavior != &actMonster 
+				&& entity->behavior != &actPlayer
+				&& entity->behavior != &actDoor
+				&& entity->behavior != &::actChest 
+				&& entity->behavior != &::actFurniture )
+			{
+				continue;
+			}
+			if ( caster && !(svFlags & SV_FLAG_FRIENDLYFIRE) && caster->checkFriend(entity) )
+			{
+				continue;
+			}
+			if ( actmagicIsOrbiting == 2 )
+			{
+				if ( static_cast<Uint32>(actmagicOrbitHitTargetUID1) == entity->getUID()
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID2) == entity->getUID()
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID3) == entity->getUID()
+					|| static_cast<Uint32>(actmagicOrbitHitTargetUID4) == entity->getUID() )
+				{
+					// we already hit these guys.
+					continue;
+				}
+			}
 			if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] && (entity->getUID() != this->parent) )
 			{
 				hit.entity = entity;
+				if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+				{
+					if ( actmagicIsOrbiting == 2 )
+					{
+						++actmagicOrbitStationaryHitTarget;
+						if ( actmagicOrbitHitTargetUID1 == 0 )
+						{
+							actmagicOrbitHitTargetUID1 = entity->getUID();
+						}
+						else if ( actmagicOrbitHitTargetUID2 == 0 )
+						{
+							actmagicOrbitHitTargetUID2 = entity->getUID();
+						}
+						else if ( actmagicOrbitHitTargetUID3 == 0 )
+						{
+							actmagicOrbitHitTargetUID3 = entity->getUID();
+						}
+					}
+				}
 				return true;
 			}
 		}
@@ -3698,6 +4059,72 @@ Entity* Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, rea
 		entity->actmagicOrbitVerticalDirection = 1;
 		entity->actmagicOrbitLifetime = duration;
 		entity->vel_z = entity->actmagicOrbitVerticalSpeed;
+		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+	}
+	return entity;
+}
+
+Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t centerx, real_t centery,
+	real_t distFromCenter, real_t angleFromCenterDirection, int duration)
+{
+	spell_t* spell = getSpellFromID(spellID);
+	if ( !parent )
+	{
+		Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Particle entity.
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = centerx;
+		entity->y = centery;
+		entity->z = 15;
+		entity->vel_z = 0;
+		//entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->skill[0] = 100;
+		entity->skill[1] = 10;
+		entity->behavior = &actParticleDot;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[INVISIBLE] = true;
+		parent = entity;
+	}
+	Entity* entity = castSpell(parent->getUID(), spell, false, true);
+	if ( entity )
+	{
+		if ( spellID == SPELL_FIREBALL )
+		{
+			entity->sprite = 671;
+		}
+		else if ( spellID == SPELL_COLD )
+		{
+			entity->sprite = 797;
+		}
+		else if ( spellID == SPELL_LIGHTNING )
+		{
+			entity->sprite = 798;
+		}
+		else if ( spellID == SPELL_MAGICMISSILE )
+		{
+			entity->sprite = 679;
+		}
+		entity->yaw = angleFromCenterDirection;
+		entity->x = centerx;
+		entity->y = centery;
+		entity->z = 4;
+		double missile_speed = 4 * ((double)(((spellElement_t*)(spell->elements.first->element))->mana)
+			/ ((spellElement_t*)(spell->elements.first->element))->overload_multiplier);
+		entity->vel_x = 0.0;
+		entity->vel_y = 0.0;
+		entity->actmagicIsOrbiting = 2;
+		entity->actmagicOrbitDist = distFromCenter;
+		entity->actmagicOrbitStationaryCurrentDist = 0.0;
+		entity->actmagicOrbitStartZ = entity->z;
+		//entity->roll -= (PI / 8);
+		entity->actmagicOrbitVerticalSpeed = -0.3;
+		entity->actmagicOrbitVerticalDirection = 1;
+		entity->actmagicOrbitLifetime = duration;
+		entity->actmagicOrbitStationaryX = centerx;
+		entity->actmagicOrbitStationaryY = centery;
+		entity->vel_z = -0.1;
 		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
 	return entity;
@@ -3860,6 +4287,180 @@ void actParticleCharmMonster(Entity* my)
 		if ( my->z < -3 )
 		{
 			my->vel_z *= 0.9;
+		}
+	}
+}
+
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget)
+{
+	bool autoHit = false;
+	if ( autoHitTarget && (autoHitTarget->behavior == &actPlayer || autoHitTarget->behavior == &actMonster) )
+	{
+		autoHit = true;
+		if ( parent )
+		{
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && parent->checkFriend(autoHitTarget) )
+			{
+				autoHit = false; // don't hit friendlies
+			}
+		}
+	}
+	Entity* orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 0.0, 40);
+	if ( autoHit )
+	{
+		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+	}
+	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 2 * PI / 3, 40);
+	if ( autoHit )
+	{
+		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+	}
+	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 4 * PI / 3, 40);
+	if ( autoHit )
+	{
+		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+	}
+	spawnMagicEffectParticles(x, y, 0, 174);
+	spawnExplosion(x, y, -4 + rand() % 8);
+}
+
+void magicDig(Entity* parent, Entity* projectile, int numRocks)
+{
+	if ( !hit.entity )
+	{
+		if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
+		{
+			if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
+			}
+			else
+			{
+				playSoundEntity(projectile, 66, 128);
+				playSoundEntity(projectile, 67, 128);
+				// spawn several rock items
+				int i = numRocks + rand() % 4;
+				for ( int c = 0; c < i; c++ )
+				{
+					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+					rock->flags[INVISIBLE] = true;
+					rock->flags[UPDATENEEDED] = true;
+					rock->x = hit.mapx * 16 + 4 + rand() % 8;
+					rock->y = hit.mapy * 16 + 4 + rand() % 8;
+					rock->z = -6 + rand() % 12;
+					rock->sizex = 4;
+					rock->sizey = 4;
+					rock->yaw = rand() % 360 * PI / 180;
+					rock->vel_x = (rand() % 20 - 10) / 10.0;
+					rock->vel_y = (rand() % 20 - 10) / 10.0;
+					rock->vel_z = -.25 - (rand() % 5) / 10.0;
+					rock->flags[PASSABLE] = true;
+					rock->behavior = &actItem;
+					rock->flags[USERFLAG1] = true; // no collision: helps performance
+					rock->skill[10] = GEM_ROCK;    // type
+					rock->skill[11] = WORN;        // status
+					rock->skill[12] = 0;           // beatitude
+					rock->skill[13] = 1;           // count
+					rock->skill[14] = 0;           // appearance
+					rock->skill[15] = false;       // identified
+				}
+
+				if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] >= 41
+					&& map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] <= 49 )
+				{
+					steamAchievementEntity(parent, "BARONY_ACH_BAD_REVIEW");
+				}
+
+				map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
+
+				// send wall destroy info to clients
+				for ( int c = 1; c < MAXPLAYERS; c++ )
+				{
+					if ( client_disconnected[c] == true )
+					{
+						continue;
+					}
+					strcpy((char*)net_packet->data, "WALD");
+					SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+					SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 8;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+
+				generatePathMaps();
+			}
+		}
+	}
+	else if ( hit.entity->behavior == &actBoulder )
+	{
+		int i = numRocks + rand() % 4;
+
+		// spawn several rock items //TODO: This should really be its own function.
+		int c;
+		for ( c = 0; c < i; c++ )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = hit.entity->x - 4 + rand() % 8;
+			entity->y = hit.entity->y - 4 + rand() % 8;
+			entity->z = -6 + rand() % 12;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = rand() % 360 * PI / 180;
+			entity->vel_x = (rand() % 20 - 10) / 10.0;
+			entity->vel_y = (rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.25 - (rand() % 5) / 10.0;
+			entity->flags[PASSABLE] = true;
+			entity->behavior = &actItem;
+			entity->flags[USERFLAG1] = true; // no collision: helps performance
+			entity->skill[10] = GEM_ROCK;    // type
+			entity->skill[11] = WORN;        // status
+			entity->skill[12] = 0;           // beatitude
+			entity->skill[13] = 1;           // count
+			entity->skill[14] = 0;           // appearance
+			entity->skill[15] = false;       // identified
+		}
+
+		double ox = hit.entity->x;
+		double oy = hit.entity->y;
+
+		// destroy the boulder
+		playSoundEntity(hit.entity, 67, 128);
+		list_RemoveNode(hit.entity->mynode);
+		if ( parent )
+		{
+			if ( parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[405]);
+			}
+		}
+
+		// on sokoban, destroying boulders spawns scorpions
+		if ( !strcmp(map.name, "Sokoban") )
+		{
+			Entity* monster = nullptr;
+			if ( rand() % 2 == 0 )
+			{
+				monster = summonMonster(INSECTOID, ox, oy);
+			}
+			else
+			{
+				monster = summonMonster(SCORPION, ox, oy);
+			}
+			if ( monster )
+			{
+				int c;
+				for ( c = 0; c < MAXPLAYERS; c++ )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+					messagePlayerColor(c, color, language[406]);
+				}
+			}
+			boulderSokobanOnDestroy(false);
 		}
 	}
 }

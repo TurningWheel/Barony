@@ -48,6 +48,10 @@ static const int EFF_SHRINE_BLUE_BUFF = 21;
 static const int EFF_HP_REGEN = 22;
 static const int EFF_MP_REGEN = 23;
 static const int EFF_PACIFY = 24;
+static const int EFF_POLYMORPH = 25;
+static const int EFF_KNOCKBACK = 26;
+static const int EFF_WITHDRAWAL = 27;
+static const int EFF_POTION_STR = 28;
 static const int NUMEFFECTS = 32;
 
 // stats
@@ -75,7 +79,9 @@ static const int PRO_MACE = 10;         // base attribute: str
 static const int PRO_AXE = 11;          // base attribute: str
 static const int PRO_POLEARM = 12;      // base attribute: str
 static const int PRO_SHIELD = 13;       // base attribute: con
-static const int NUMPROFICIENCIES = 14;
+static const int PRO_UNARMED = 14;       // base attribute: str
+static const int PRO_ALCHEMY = 15;       // base attribute: int
+static const int NUMPROFICIENCIES = 16;
 
 //Start levels for the various proficiency ranges.
 //0 = "none"
@@ -97,15 +103,17 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		100,		//Leadership
 		100,		//Spellcasting
 		100,		//Magic
-		101,
-		101,
-		101,
-		101,
-		101,
-		101
+		100,		//Ranged
+		100,		//Sword
+		100,		//Mace
+		100,		//Axe
+		100,		//Polearm
+		100,		//Shield
+		100,		//Unarmed
+		100			//Alchemy
 };
 
-static const int CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT = 25;
+static const int CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT = 100;
 
 static const int NUMCATEGORIES = 14;
 
@@ -136,6 +144,14 @@ static const int STAT_FLAG_NPC = 0;
 static const int STAT_FLAG_SNEAK = 1;
 static const int STAT_FLAG_ALLY_PICKUP = 2;
 static const int STAT_FLAG_ALLY_CLASS = 3;
+static const int STAT_FLAG_PLAYER_RACE = 4;
+static const int STAT_FLAG_POLYMORPH_STORAGE = 5;
+static const int STAT_FLAG_ALLY_SUMMON_LVLHP = 6;
+static const int STAT_FLAG_ALLY_SUMMON_STRDEXCONINT = 7;
+static const int STAT_FLAG_ALLY_SUMMON_PERCHR = 8;
+static const int STAT_FLAG_ALLY_SUMMON2_LVLHP = 9;
+static const int STAT_FLAG_ALLY_SUMMON2_STRDEXCONINT = 10;
+static const int STAT_FLAG_ALLY_SUMMON2_PERCHR = 11;
 
 typedef enum
 {
@@ -179,6 +195,15 @@ public:
 	Sint32& sneaking; // MISC_FLAGS[1]
 	Sint32& allyItemPickup; // MISC_FLAGS[2]
 	Sint32& allyClass; // MISC_FLAGS[3]
+	Sint32& playerRace; // MISC_FLAGS[4]
+	Sint32& playerPolymorphStorage; // MISC_FLAGS[5]
+	Sint32& playerSummonLVLHP; // MISC_FLAGS[6]
+	Sint32& playerSummonSTRDEXCONINT; // MISC_FLAGS[7]
+	Sint32& playerSummonPERCHR; // MISC_FLAGS[8]
+	Sint32& playerSummon2LVLHP; // MISC_FLAGS[9]
+	Sint32& playerSummon2STRDEXCONINT; // MISC_FLAGS[10]
+	Sint32& playerSummon2PERCHR; // MISC_FLAGS[11]
+	Sint32& monsterIsCharmed; // MISC_FLAGS[12]
 
 	// group think
 	Uint32 leader_uid;
@@ -226,8 +251,4 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
 bool isMonsterStatsDefault(Stat& myStats);
-
-inline char* getSkillName(int skill)
-{
-	return language[236 + skill];
-}
+char* getSkillLangEntry(int skill);

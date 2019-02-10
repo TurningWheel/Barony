@@ -70,7 +70,8 @@ int connect_window = 0;
 int charcreation_step = 0;
 int loadGameSaveShowRectangle = 0; // stores the current amount of savegames available, to use when drawing load game window boxes.
 int singleplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
-int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists. 
+int multiplayerSavegameFreeSlot = -1; // used on multiplayer/single player select window to store if savefile exists.
+int raceSelect = 0;
 /*
  * settings_tab
  * valid values:
@@ -93,6 +94,7 @@ button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
 int score_window_to_delete = 0;
+bool score_window_delete_multiplayer = false;
 int score_leaderboard_window = 0;
 
 int savegames_window = 0;
@@ -136,6 +138,12 @@ bool gamemods_systemImagesReloadUnmodded = false;
 bool gamemods_customContentLoadedFirstTime = false;
 bool gamemods_disableSteamAchievements = false;
 bool gamemods_modPreload = false;
+
+sex_t lastSex = MALE;
+PlayerRaces lastRace = RACE_HUMAN;
+bool enabledDLCPack1 = false;
+bool enabledDLCPack2 = false;
+
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -163,6 +171,7 @@ bool settings_colorblind;
 bool settings_spawn_blood;
 bool settings_light_flicker;
 bool settings_vsync;
+bool settings_status_effect_icons = true;
 bool settings_minimap_ping_mute = false;
 bool settings_mute_audio_on_focus_lost = false;
 int settings_minimap_transparency_foreground = 0;
@@ -484,6 +493,18 @@ void handleMainMenu(bool mode)
 	//SDL_Surface *sky_bmp;
 	button_t* button;
 
+#ifdef STEAMWORKS
+	if ( SteamUser()->BLoggedOn() )
+	{
+		if ( SteamApps()->BIsDlcInstalled(1010820) )
+		{
+			enabledDLCPack1 = true;
+		}
+	}
+#else
+#endif // STEAMWORKS
+
+
 	if ( !movie )
 	{
 		// title pic
@@ -591,7 +612,10 @@ void handleMainMenu(bool mode)
 				}
 			}
 #ifdef STEAMWORKS
-			if ( gamemods_disableSteamAchievements || (intro == false && conductGameChallenges[CONDUCT_CHEATS_ENABLED]) )
+			if ( gamemods_disableSteamAchievements 
+				|| (intro == false && 
+					(conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+					|| conductGameChallenges[CONDUCT_LIFESAVING])) )
 			{
 				TTF_SizeUTF8(ttf8, language[3003], &w, &h);
 				if ( gamemods_numCurrentModsLoaded < 0 && !conductGameChallenges[CONDUCT_MODDED] )
@@ -629,7 +653,7 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
 				}
 			}
-			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 && ticks % 250 == 0 )
+			if ( ticks % 250 == 0 && SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 			}
@@ -672,6 +696,10 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
+				client_classes[clientnum] = CLASS_BARBARIAN;
+				stats[0]->appearance = 0;
+				stats[0]->playerRace = RACE_HUMAN;
+				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
@@ -686,7 +714,10 @@ void handleMainMenu(bool mode)
 			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
 			{
 				buttonOpenCharacterCreationWindow(nullptr);
-
+				client_classes[clientnum] = CLASS_BARBARIAN;
+				stats[0]->appearance = 0;
+				stats[0]->playerRace = RACE_HUMAN;
+				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
 				keystatus[SDL_SCANCODE_RCTRL] = 0;
@@ -1531,7 +1562,14 @@ void handleMainMenu(bool mode)
 		{
 			camera_charsheet.x = players[clientnum]->entity->x / 16.0 + 1.118 * cos(camera_charsheet_offsetyaw); // + 1
 			camera_charsheet.y = players[clientnum]->entity->y / 16.0 + 1.118 * sin(camera_charsheet_offsetyaw); // -.5
-			camera_charsheet.z = players[clientnum]->entity->z * 2;
+			if ( !stats[clientnum]->EFFECTS[EFF_ASLEEP] )
+			{
+				camera_charsheet.z = players[clientnum]->entity->z * 2;
+			}
+			else
+			{
+				camera_charsheet.z = 1.5;
+			}
 			camera_charsheet.ang = atan2(players[clientnum]->entity->y / 16.0 - camera_charsheet.y, players[clientnum]->entity->x / 16.0 - camera_charsheet.x);
 			camera_charsheet.vang = PI / 24;
 			camera_charsheet.winw = 360;
@@ -1614,37 +1652,425 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
 		}
 
-		// sexes
+		// skin DLC check flags.
+		bool skipFirstDLC = false;
+		bool skipSecondDLC = false;
+		if ( enabledDLCPack2 && !enabledDLCPack1 )
+		{
+			skipFirstDLC = true;
+			if ( stats[0]->playerRace > 0 && stats[0]->playerRace <= RACE_GOATMAN )
+			{
+				stats[0]->playerRace = RACE_HUMAN;
+			}
+		}
+		else if ( enabledDLCPack1 && !enabledDLCPack2 )
+		{
+			skipSecondDLC = true;
+			if ( stats[0]->playerRace > RACE_GOATMAN )
+			{
+				stats[0]->playerRace = RACE_HUMAN;
+			}
+		}
+		else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+		{
+			stats[0]->playerRace = RACE_HUMAN;
+		}
+
+		// sexes/race
 		if ( charcreation_step == 1 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1319]);
+			Uint32 colorStep1 = uint32ColorWhite(*mainsurface);
+			if ( raceSelect != 0 )
+			{
+				colorStep1 = uint32ColorGray(*mainsurface);
+			}
 			if ( stats[0]->sex == 0 )
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1321]);
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 72, "[ ] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[o] %s", language[1321]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[ ] %s", language[1322]);
 
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby2 - 80, language[1320], language[1321]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1321]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[ ] %s", language[1321]);
-				ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 72, "[o] %s", language[1322]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 56, colorStep1, "[ ] %s", language[1321]);
+				ttfPrintTextFormattedColor(ttf16, subx1 + 32, suby1 + 73, colorStep1, "[o] %s", language[1322]);
 
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby2 - 80, language[1320], language[1322]);
+				ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 80, uint32ColorWhite(*mainsurface), language[1320], language[1322]);
 			}
-			if ( mousestatus[SDL_BUTTON_LEFT] )
+			ttfPrintTextFormattedColor(ttf12, subx1 + 8, suby2 - 56, uint32ColorWhite(*mainsurface), language[3175]);
+
+			// race
+			if ( raceSelect != 1 )
 			{
-				if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
+				colorStep1 = uint32ColorGray(*mainsurface);
+			}
+			else if ( raceSelect == 1 )
+			{
+				colorStep1 = uint32ColorWhite(*mainsurface);
+			}
+			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
+			int pady = suby1 + 108 + 24;
+			bool isLocked = false;
+			for ( int c = 0; c < NUMRACES; )
+			{
+				if ( raceSelect == 1 )
 				{
-					if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
+					if ( skipSecondDLC )
 					{
+						if ( c > RACE_GOATMAN )
+						{
+							colorStep1 = uint32ColorGray(*mainsurface);
+						}
+						else
+						{
+							colorStep1 = uint32ColorWhite(*mainsurface);
+						}
+					}
+					else if ( skipFirstDLC )
+					{
+						if ( c > RACE_HUMAN && c <= RACE_GOATMAN )
+						{
+							colorStep1 = uint32ColorGray(*mainsurface);
+						}
+						else
+						{
+							colorStep1 = uint32ColorWhite(*mainsurface);
+						}
+					}
+					else if ( !(enabledDLCPack2 && enabledDLCPack1) )
+					{
+						if ( c > RACE_HUMAN )
+						{
+							colorStep1 = uint32ColorGray(*mainsurface);
+						}
+						else
+						{
+							colorStep1 = uint32ColorWhite(*mainsurface);
+						}
+					}
+					else if ( enabledDLCPack2 && enabledDLCPack1 )
+					{
+						colorStep1 = uint32ColorWhite(*mainsurface);
+					}
+				}
+				if ( stats[0]->playerRace == c )
+				{
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", language[3161 + c]);
+				}
+				else
+				{
+					if ( skipSecondDLC )
+					{
+						if ( c > RACE_GOATMAN )
+						{
+							isLocked = true;
+						}
+					}
+					else if ( skipFirstDLC )
+					{
+						if ( c >= RACE_SKELETON && c < RACE_AUTOMATON )
+						{
+							isLocked = true;
+						}
+					}
+					else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+					{
+						isLocked = true;
+					}
+					if ( isLocked )
+					{
+						SDL_Rect img;
+						img.x = subx1 + 32 + 10;
+						img.y = pady - 2;
+						img.w = 22;
+						img.h = 20;
+						drawImageScaled(sidebar_unlock_bmp, nullptr, &img);
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", language[3161 + c]);
+					}
+				}
+
+				if ( skipFirstDLC )
+				{
+					if ( c == RACE_HUMAN )
+					{
+						c = RACE_AUTOMATON;
+					}
+					else if ( c == RACE_INSECTOID )
+					{
+						c = RACE_SKELETON;
+						pady += 8;
+					}
+					else if ( c == RACE_GOATMAN )
+					{
+						c = NUMRACES;
+					}
+					else
+					{
+						++c;
+					}
+				}
+				else
+				{
+					if ( skipSecondDLC && c == RACE_GOATMAN )
+					{
+						pady += 8;
+					}
+					else if ( !enabledDLCPack1 && !enabledDLCPack2 && c == RACE_HUMAN )
+					{
+						pady += 8;
+					}
+					++c;
+				}
+				pady += 17;
+			}
+
+			pady += 24;
+			if ( isLocked )
+			{
+				pady -= 8;
+			}
+			bool displayRaceOptions = false;
+			if ( raceSelect != 2 )
+			{
+				colorStep1 = uint32ColorGray(*mainsurface);
+			}
+			else
+			{
+				colorStep1 = uint32ColorWhite(*mainsurface);
+			}
+			if ( stats[0]->playerRace > 0 )
+			{
+				displayRaceOptions = true;
+				ttfPrintText(ttf16, subx1 + 24, pady, language[3176]);
+				pady += 24;
+				char raceOptionBuffer[64];
+				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
+				if ( stats[0]->appearance > 1 )
+				{
+					stats[0]->appearance = 0;
+				}
+				if ( stats[0]->appearance == 0 )
+				{
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[o] %s", raceOptionBuffer);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[ ] %s", language[3178]);
+				}
+				else if ( stats[0]->appearance == 1 )
+				{
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady, colorStep1, "[ ] %s", raceOptionBuffer);
+					ttfPrintTextFormattedColor(ttf16, subx1 + 32, pady + 17, colorStep1, "[o] %s", language[3178]);
+				}
+
+			}
+
+			pady = suby1 + 108 + 24;
+			lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+			if ( omousex >= subx1 + 40 && omousex < subx1 + 72 )
+			{
+				if ( omousey >= suby1 + 56 && omousey < suby1 + 72 )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						raceSelect = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = MALE;
+						lastSex = MALE;
+						if ( stats[0]->playerRace == RACE_SUCCUBUS )
+						{
+							if ( enabledDLCPack2 )
+							{
+								stats[0]->playerRace = RACE_INCUBUS;
+							}
+							else
+							{
+								stats[0]->playerRace = RACE_HUMAN;
+							}
+						}
 					}
-					else if ( omousey >= suby1 + 72 && omousey < suby1 + 88 )
+				}
+				else if ( omousey >= suby1 + 72 && omousey < suby1 + 90 )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
+						raceSelect = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = FEMALE;
+						lastSex = FEMALE;
+						if ( stats[0]->playerRace == RACE_INCUBUS )
+						{
+							if ( enabledDLCPack1 )
+							{
+								stats[0]->playerRace = RACE_SUCCUBUS;
+							}
+							else
+							{
+								stats[0]->playerRace = RACE_HUMAN;
+							}
+						}
+					}
+				}
+				else if ( omousey >= pady && omousey < pady + NUMRACES * 17 + (isLocked ? 8 : 0) )
+				{
+					for ( c = 0; c < NUMRACES; ++c )
+					{
+						if ( omousey >= pady && omousey < pady + 17 )
+						{
+							bool disableSelect = false;
+							if ( skipSecondDLC )
+							{
+								if ( c > RACE_GOATMAN )
+								{
+									disableSelect = true;
+								}
+							}
+							else if ( skipFirstDLC )
+							{
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID ) // this is weird cause we're reordering the menu above...
+								{
+									disableSelect = true;
+								}
+							}
+							else if ( !enabledDLCPack1 && !enabledDLCPack2 )
+							{
+								if ( c != RACE_HUMAN )
+								{
+									disableSelect = true;
+								}
+							}
+							if ( !disableSelect && mousestatus[SDL_BUTTON_LEFT] )
+							{
+								raceSelect = 1;
+								mousestatus[SDL_BUTTON_LEFT] = 0;
+								if ( !disableSelect )
+								{
+									PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+									if ( skipFirstDLC )
+									{
+										// this is weird cause we're reordering the menu above...
+										if ( c > RACE_GOATMAN )
+										{
+											stats[0]->playerRace = c - 4;
+										}
+										else if ( c > RACE_HUMAN )
+										{
+											stats[0]->playerRace = c + 4;
+										}
+										else
+										{
+											stats[0]->playerRace = c;
+										}
+									}
+									else
+									{
+										stats[0]->playerRace = c;
+									}
+									mousestatus[SDL_BUTTON_LEFT] = 0;
+									if ( stats[0]->playerRace == RACE_INCUBUS )
+									{
+										stats[0]->sex = MALE;
+									}
+									else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+									{
+										stats[0]->sex = FEMALE;
+									}
+									else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
+									{
+										stats[0]->sex = lastSex;
+									}
+									// convert human class to monster special classes on reselect.
+									if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+									{
+										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										stats[0]->clearStats();
+										initClass(0);
+									}
+									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
+									{
+										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+										stats[0]->clearStats();
+										initClass(0);
+									}
+									// appearance reset.
+									if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
+									{
+										stats[0]->appearance = rand() % NUMAPPEARANCES;
+									}
+									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
+									{
+										stats[0]->appearance = 0;
+									}
+								}
+								break;
+							}
+							else if ( disableSelect )
+							{
+								SDL_Rect tooltip;
+								tooltip.x = omousex + 16;
+								tooltip.y = omousey + 16;
+								tooltip.h = TTF12_HEIGHT + 8;
+#ifdef STEAMWORKS
+								if ( SteamUser()->BLoggedOn() )
+								{
+									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
+									if ( mousestatus[SDL_BUTTON_LEFT] )
+									{
+										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
+										mousestatus[SDL_BUTTON_LEFT] = 0;
+									}
+								}
+#else
+								tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
+								drawTooltip(&tooltip);
+								ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+#endif // STEAMWORKS
+							}
+						}
+						pady += 17;
+						if ( isLocked )
+						{
+							if ( skipFirstDLC && c == RACE_INSECTOID )
+							{
+								pady += 8;
+							}
+							else
+							{
+								if ( skipSecondDLC && c == RACE_GOATMAN )
+								{
+									pady += 8;
+								}
+								else if ( !enabledDLCPack1 && !enabledDLCPack2 && c == RACE_HUMAN )
+								{
+									pady += 8;
+								}
+							}
+						}
+					}
+				}
+				else if ( omousey >= pady + (NUMRACES * 17) + 48 && omousey < pady + (NUMRACES * 17) + 82 )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						if ( stats[0]->playerRace > 0 )
+						{
+							if ( omousey < pady + (NUMRACES * 17) + 64 ) // first option
+							{
+								stats[0]->appearance = 0; // use racial passives
+							}
+							else
+							{
+								stats[0]->appearance = 1; // act as human
+							}
+							raceSelect = 2;
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
 					}
 				}
 			}
@@ -1656,7 +2082,95 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				}
 				draw_cursor = false;
-				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				if ( raceSelect == 1 )
+				{
+					PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+					if ( !enabledDLCPack1 && !enabledDLCPack2 )
+					{
+						// do nothing.
+						stats[0]->playerRace = RACE_HUMAN;
+					}
+					else if ( stats[0]->playerRace <= 0 )
+					{
+						if ( skipSecondDLC )
+						{
+							stats[0]->playerRace = NUMRACES - 5;
+						}
+						else if ( enabledDLCPack2 )
+						{
+							stats[0]->playerRace = NUMRACES - 1;
+						}
+					}
+					else
+					{
+						if ( skipFirstDLC && stats[0]->playerRace == RACE_AUTOMATON )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+						else
+						{
+							--stats[0]->playerRace;
+						}
+					}
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
+					else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = lastSex;
+					}
+					// convert human class to monster special classes on reselect.
+					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					{
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						stats[0]->clearStats();
+						initClass(0);
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					{
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						stats[0]->clearStats();
+						initClass(0);
+					}
+					// appearance reset.
+					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
+					{
+						stats[0]->appearance = rand() % NUMAPPEARANCES;
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
+					{
+						stats[0]->appearance = 0;
+					}
+				}
+				else if ( raceSelect == 0 )
+				{
+					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+					lastSex = stats[0]->sex;
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
+				}
+				else if ( raceSelect == 2 )
+				{
+					if ( stats[0]->appearance != 0 )
+					{
+						stats[0]->appearance = 0;
+					}
+					else
+					{
+						stats[0]->appearance = 1;
+					}
+				}
 			}
 			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 			{
@@ -1666,7 +2180,157 @@ void handleMainMenu(bool mode)
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 				}
 				draw_cursor = false;
-				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+				if ( raceSelect == 1 )
+				{
+					PlayerRaces lastRace = static_cast<PlayerRaces>(stats[0]->playerRace);
+					if ( !enabledDLCPack1 && !enabledDLCPack2 )
+					{
+						// do nothing.
+						stats[0]->playerRace = RACE_HUMAN;
+					}
+					else if ( skipSecondDLC )
+					{
+						if ( stats[0]->playerRace >= NUMRACES - 5 )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+						else
+						{
+							++stats[0]->playerRace;
+						}
+					}
+					else if ( skipFirstDLC )
+					{
+						if ( stats[0]->playerRace >= RACE_GOATMAN && stats[0]->playerRace < NUMRACES - 1 )
+						{
+							++stats[0]->playerRace;
+						}
+						else if ( stats[0]->playerRace == RACE_HUMAN )
+						{
+							stats[0]->playerRace = RACE_AUTOMATON;
+						}
+						else if ( stats[0]->playerRace == NUMRACES - 1 )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+					}
+					else
+					{
+						if ( stats[0]->playerRace >= NUMRACES - 1 )
+						{
+							stats[0]->playerRace = RACE_HUMAN;
+						}
+						else
+						{
+							++stats[0]->playerRace;
+						}
+					}
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
+					else if ( lastRace == RACE_SUCCUBUS || lastRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = lastSex;
+					}
+					// convert human class to monster special classes on reselect.
+					if ( stats[0]->playerRace != RACE_HUMAN && lastRace != RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					{
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						stats[0]->clearStats();
+						initClass(0);
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK )
+					{
+						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						stats[0]->clearStats();
+						initClass(0);
+					}
+					// appearance reset.
+					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
+					{
+						stats[0]->appearance = rand() % NUMAPPEARANCES;
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN )
+					{
+						stats[0]->appearance = 0;
+					}
+				}
+				else if ( raceSelect == 0 )
+				{
+					stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
+					lastSex = stats[0]->sex;
+					if ( stats[0]->playerRace == RACE_INCUBUS )
+					{
+						stats[0]->sex = MALE;
+					}
+					else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+					{
+						stats[0]->sex = FEMALE;
+					}
+				}
+				else if ( raceSelect == 2 )
+				{
+					if ( stats[0]->appearance != 0 )
+					{
+						stats[0]->appearance = 0;
+					}
+					else
+					{
+						stats[0]->appearance = 1;
+					}
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_RIGHT] || (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) && rebindaction == -1) )
+			{
+				keystatus[SDL_SCANCODE_RIGHT] = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+				}
+				draw_cursor = false;
+				++raceSelect;
+				if ( stats[0]->playerRace == RACE_HUMAN )
+				{
+					if ( raceSelect > 1 )
+					{
+						raceSelect = 0;
+					}
+				}
+				else if ( raceSelect > 2 )
+				{
+					raceSelect = 0;
+				}
+			}
+			if ( keystatus[SDL_SCANCODE_LEFT] || (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) && rebindaction == -1) )
+			{
+				keystatus[SDL_SCANCODE_LEFT] = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+				}
+				draw_cursor = false;
+				--raceSelect;
+				if ( stats[0]->playerRace == RACE_HUMAN )
+				{
+					if ( raceSelect < 0 )
+					{
+						raceSelect = 1;
+					}
+				}
+				else if ( raceSelect < 0 )
+				{
+					raceSelect = 2;
+				}
+			}
+			if ( lastRace != RACE_GOATMAN && stats[0]->playerRace == RACE_GOATMAN && stats[0]->appearance == 0 )
+			{
+				stats[0]->clearStats();
+				initClass(0);
 			}
 		}
 
@@ -1674,15 +2338,56 @@ void handleMainMenu(bool mode)
 		else if ( charcreation_step == 2 )
 		{
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 32, language[1323]);
-			for ( c = 0; c < NUMCLASSES; c++ )
+			int entriesToDisplay = NUMCLASSES;
+			int lastClassInList = NUMCLASSES - 1;
+			if ( stats[0]->playerRace != RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) )
 			{
-				if ( c == client_classes[0] )
+				entriesToDisplay = CLASS_MONK + 2;
+				lastClassInList = CLASS_MONK + stats[0]->playerRace;
+			}
+			else if ( stats[0]->playerRace == RACE_HUMAN )
+			{
+				if ( enabledDLCPack1 && enabledDLCPack2 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(c));
+					entriesToDisplay = NUMCLASSES;
+				}
+				else if ( enabledDLCPack1 || enabledDLCPack2 )
+				{
+					entriesToDisplay = NUMCLASSES - 4;
+					if ( skipFirstDLC )
+					{
+						lastClassInList = CLASS_UNDEF4;
+					}
+					else if ( skipSecondDLC )
+					{
+						lastClassInList = CLASS_BREWER;
+					}
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(c));
+					entriesToDisplay = CLASS_MONK + 1;
+					lastClassInList = CLASS_MONK;
+				}
+			}
+
+			for ( c = 0; c < entriesToDisplay; c++ )
+			{
+				int classToPick = c;
+				if ( stats[0]->playerRace != RACE_HUMAN && c == entriesToDisplay - 1 )
+				{
+					// monsters only get to choose their particular class, while humans can choose all new classes.
+					// so the 'last' entry is the monster's class, advance to the appropriate index.
+					classToPick = CLASS_MONK + stats[0]->playerRace;
+				}
+				else if ( stats[0]->playerRace == RACE_HUMAN && (enabledDLCPack1 || enabledDLCPack2) )
+				{
+					if ( skipFirstDLC )
+					{
+						if ( c > CLASS_MONK && (c < entriesToDisplay) )
+						{
+							classToPick = c + 4; // classToPick refers to the descriptions of the second half of the DLC classes.
+						}
+					}
 				}
 
 				if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -1692,7 +2397,7 @@ void handleMainMenu(bool mode)
 						if ( omousey >= suby1 + 56 + 16 * c && omousey < suby1 + 72 + 16 * c )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							client_classes[0] = c;
+							client_classes[0] = classToPick;
 
 							// reset class loadout
 							stats[0]->clearStats();
@@ -1700,6 +2405,16 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
+
+				if ( classToPick == client_classes[0] )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[o] %s", playerClassLangEntry(classToPick, 0));
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56 + 16 * c, "[ ] %s", playerClassLangEntry(classToPick, 0));
+				}
+
 				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
@@ -1711,7 +2426,28 @@ void handleMainMenu(bool mode)
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 					{
-						client_classes[0] = NUMCLASSES - 1;
+						if ( stats[0]->playerRace != RACE_HUMAN )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+						}
+						else
+						{
+							client_classes[0] = lastClassInList;
+						}
+					}
+					else if ( stats[0]->playerRace == RACE_HUMAN )
+					{
+						if ( client_classes[0] == CLASS_BREWER && skipFirstDLC )
+						{
+							client_classes[0] = CLASS_MONK;
+						}
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN )
+					{
+						if ( client_classes[0] > CLASS_MONK )
+						{
+							client_classes[0] = CLASS_MONK;
+						}
 					}
 
 					// reset class loadout
@@ -1727,9 +2463,23 @@ void handleMainMenu(bool mode)
 					}
 					draw_cursor = false;
 					client_classes[0]++;
-					if ( client_classes[0] > NUMCLASSES - 1 )
+					if ( client_classes[0] > lastClassInList )
 					{
 						client_classes[0] = 0;
+					}
+					else if ( stats[0]->playerRace == RACE_HUMAN )
+					{
+						if ( client_classes[0] == CLASS_MONK + 1 && skipFirstDLC )
+						{
+							client_classes[0] = CLASS_UNDEF1;
+						}
+					}
+					else if ( stats[0]->playerRace != RACE_HUMAN )
+					{
+						if ( client_classes[0] == CLASS_MONK + 1 )
+						{
+							client_classes[0] = CLASS_MONK + stats[0]->playerRace; // jump ahead to the monster specific class.
+						}
 					}
 
 					// reset class loadout
@@ -1739,7 +2489,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// class description
-			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0]));
+			ttfPrintText(ttf12, subx1 + 8, suby2 - 80, playerClassDescription(client_classes[0], 0));
 		}
 
 		// faces
@@ -2233,6 +2983,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 252, "[ ] %s", language[3011]);
 			}
+			if ( settings_status_effect_icons )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[x] %s", language[3357]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 236, suby1 + 276, "[ ] %s", language[3357]);
+			}
 
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -2277,6 +3035,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_vsync = (settings_vsync == false);
+					}
+					else if ( omousey >= suby1 + 276 && omousey < suby1 + 276 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_status_effect_icons = (settings_status_effect_icons == false);
 					}
 				}
 			}
@@ -2979,11 +3742,11 @@ void handleMainMenu(bool mode)
 						tooltip_box.x = omousex + 16;
 						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
 						tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
-						if ( i == 2 || i == 3 || i == 5 || i == 6 )
+						if ( i == 2 || i == 3 || i == 5 || i == 6 || i == 7 )
 						{
 							tooltip_box.h = TTF12_HEIGHT * 2 + 8;
 						}
-						else if ( i == 4 )
+						else if ( i == 4 || i == 8 )
 						{
 							tooltip_box.h = TTF12_HEIGHT * 3 + 8;
 						}
@@ -3492,7 +4255,9 @@ void handleMainMenu(bool mode)
 					client_disconnected[c] = false;
 					client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
 					stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
-					stats[c]->appearance = (int)SDLNet_Read32(&net_packet->data[50]);
+					Uint32 raceAndAppearance = (Uint32)SDLNet_Read32(&net_packet->data[50]);
+					stats[c]->appearance = (raceAndAppearance & 0xFF00) >> 8;
+					stats[c]->playerRace = (raceAndAppearance & 0xFF);
 					net_clients[c - 1].host = net_packet->address.host;
 					net_clients[c - 1].port = net_packet->address.port;
 					if ( directConnect )
@@ -3518,10 +4283,14 @@ void handleMainMenu(bool mode)
 						net_packet->data[9] = c; // clientnum
 						net_packet->data[10] = client_classes[c]; // class
 						net_packet->data[11] = stats[c]->sex; // sex
-						strcpy((char*)(&net_packet->data[12]), stats[c]->name);  // name
+						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
+						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
+						char shortname[16] = "";
+						strncpy(shortname, stats[x]->name, 15);
+						strcpy((char*)(&net_packet->data[14]), shortname);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;
-						net_packet->len = 12 + strlen(stats[c]->name) + 1;
+						net_packet->len = 14 + strlen(stats[c]->name) + 1;
 						sendPacketSafe(net_sock, -1, net_packet, x - 1);
 					}
 					char shortname[11] = { 0 };
@@ -3533,14 +4302,18 @@ void handleMainMenu(bool mode)
 					SDLNet_Write32(c, &net_packet->data[0]);
 					for ( x = 0; x < MAXPLAYERS; x++ )
 					{
-						net_packet->data[4 + x * (3 + 16)] = client_classes[x]; // class
-						net_packet->data[5 + x * (3 + 16)] = stats[x]->sex; // sex
-						net_packet->data[6 + x * (3 + 16)] = client_disconnected[x]; // connectedness :p
-						strcpy((char*)(&net_packet->data[7 + x * (3 + 16)]), stats[x]->name);  // name
+						net_packet->data[4 + x * (5 + 16)] = client_classes[x]; // class
+						net_packet->data[5 + x * (5 + 16)] = stats[x]->sex; // sex
+						net_packet->data[6 + x * (5 + 16)] = client_disconnected[x]; // connectedness :p
+						net_packet->data[7 + x * (5 + 16)] = (Uint8)stats[x]->appearance; // appearance
+						net_packet->data[8 + x * (5 + 16)] = (Uint8)stats[x]->playerRace; // player race
+						char shortname[16] = "";
+						strncpy(shortname, stats[x]->name, 15);
+						strcpy((char*)(&net_packet->data[9 + x * (5 + 16)]), shortname);  // name
 					}
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 4 + MAXPLAYERS * (3 + 16);
+					net_packet->len = 4 + MAXPLAYERS * (5 + 16);
 					if ( directConnect )
 					{
 						SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
@@ -3654,7 +4427,7 @@ void handleMainMenu(bool mode)
 			bool gotPacket = false;
 			if ( directConnect )
 			{
-				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (3 + 16)) )
+				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 16)) )
 				{
 					gotPacket = true;
 				}
@@ -3672,7 +4445,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (3 + 16) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 16) )
 					{
 						continue;
 					}
@@ -3807,10 +4580,12 @@ void handleMainMenu(bool mode)
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
 						client_disconnected[c] = false;
-						client_classes[c] = net_packet->data[4 + c * (3 + 16)]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (3 + 16)]); // sex
-						client_disconnected[c] = net_packet->data[6 + c * (3 + 16)]; // connectedness :p
-						strcpy(stats[c]->name, (char*)(&net_packet->data[7 + c * (3 + 16)]));  // name
+						client_classes[c] = net_packet->data[4 + c * (5 + 16)]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 16)]); // sex
+						client_disconnected[c] = net_packet->data[6 + c * (5 + 16)]; // connectedness :p
+						stats[c]->appearance = net_packet->data[7 + c * (5 + 16)]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (5 + 16)]; // player race
+						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 16)]));  // name
 					}
 
 					// request svFlags
@@ -3965,7 +4740,9 @@ void handleMainMenu(bool mode)
 					client_disconnected[net_packet->data[9]] = false;
 					client_classes[net_packet->data[9]] = net_packet->data[10];
 					stats[net_packet->data[9]]->sex = static_cast<sex_t>(net_packet->data[11]);
-					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[12]));
+					stats[net_packet->data[9]]->appearance = net_packet->data[12];
+					stats[net_packet->data[9]]->playerRace = net_packet->data[13];
+					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[14]));
 
 					char shortname[11] = { 0 };
 					strncpy(shortname, stats[net_packet->data[9]]->name, 10);
@@ -4131,11 +4908,11 @@ void handleMainMenu(bool mode)
 
 			if ( stats[c]->sex )
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c]));
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], playerClassLangEntry(client_classes[c], c));
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c]));
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60 * c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], playerClassLangEntry(client_classes[c], c));
 			}
 		}
 
@@ -4296,10 +5073,22 @@ void handleMainMenu(bool mode)
 						hovering_selection = -1; // don't show cheats tooltip about disabling achievements.
 					}
 #endif // STEAMWORKS
-					tooltip_box.x = mousex + 16;
+					tooltip_box.x = mousex - 256;
 					tooltip_box.y = mousey + 8;
-					tooltip_box.w = strlen(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
+					tooltip_box.w = longestline(flagStringBuffer) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
+					if ( i == 2 || i == 3 || i == 5 || i == 6 || i == 7 )
+					{
+						tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					}
+					else if ( i == 4 || i == 8)
+					{
+						tooltip_box.h = TTF12_HEIGHT * 3 + 8;
+					}
+					else
+					{
+						tooltip_box.h = TTF12_HEIGHT + 8;
+					}
 				}
 			}
 		}
@@ -5104,7 +5893,7 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
 				char classname[32];
-				strcpy(classname, playerClassLangEntry(client_classes[0]));
+				strcpy(classname, playerClassLangEntry(client_classes[0], clientnum));
 				classname[0] -= 32;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
 			}
@@ -5126,18 +5915,24 @@ void handleMainMenu(bool mode)
 #endif // STEAMWORKS
 			}
 
+			Entity* playerEntity = nullptr;
+			if ( players[clientnum] )
+			{
+				playerEntity = players[clientnum]->entity;
+			}
+
 			// print character stats
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum]));
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 128, language[359], stats[clientnum]->LVL, playerClassLangEntry(client_classes[clientnum], clientnum));
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 140, language[1396], stats[clientnum]->EXP);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 152, language[1397], stats[clientnum]->GOLD);
 			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 164, language[361], currentlevel);
 
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188, language[1398], statGetSTR(stats[clientnum]), stats[clientnum]->STR);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 200, language[1399], statGetDEX(stats[clientnum]), stats[clientnum]->DEX);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 212, language[1400], statGetCON(stats[clientnum]), stats[clientnum]->CON);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 224, language[1401], statGetINT(stats[clientnum]), stats[clientnum]->INT);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 236, language[1402], statGetPER(stats[clientnum]), stats[clientnum]->PER);
-			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 248, language[1403], statGetCHR(stats[clientnum]), stats[clientnum]->CHR);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 188, language[1398], statGetSTR(stats[clientnum], playerEntity), stats[clientnum]->STR);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 200, language[1399], statGetDEX(stats[clientnum], playerEntity), stats[clientnum]->DEX);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 212, language[1400], statGetCON(stats[clientnum], playerEntity), stats[clientnum]->CON);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 224, language[1401], statGetINT(stats[clientnum], playerEntity), stats[clientnum]->INT);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 236, language[1402], statGetPER(stats[clientnum], playerEntity), stats[clientnum]->PER);
+			ttfPrintTextFormatted(ttf12, subx1 + 456, suby1 + 248, language[1403], statGetCHR(stats[clientnum], playerEntity), stats[clientnum]->CHR);
 
 			// time
 			Uint32 sec = (completionTime / TICKS_PER_SECOND) % 60;
@@ -5147,6 +5942,8 @@ void handleMainMenu(bool mode)
 			if ( !conductPenniless && !conductFoodless && !conductVegetarian && !conductIlliterate && !conductGameChallenges[CONDUCT_HARDCORE]
 				&& !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
 				&& !conductGameChallenges[CONDUCT_MODDED]
+				&& !conductGameChallenges[CONDUCT_LIFESAVING]
+				&& !conductGameChallenges[CONDUCT_KEEPINVENTORY]
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]
@@ -6631,6 +7428,24 @@ void handleMainMenu(bool mode)
 
 				if ( loadingsavegame )
 				{
+					for ( c = 0; c < MAXPLAYERS; c++ )
+					{
+						if ( players[c] && players[c]->entity && !client_disconnected[c] )
+						{
+							if ( stats[c] && stats[c]->EFFECTS[EFF_POLYMORPH] && stats[c]->playerPolymorphStorage != NOTHING )
+							{
+								players[c]->entity->effectPolymorph = stats[c]->playerPolymorphStorage;
+								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
+								serverUpdateEffects(c);
+							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								players[c]->entity->playerVampireCurse = 1;
+								serverUpdateEntitySkill(players[c]->entity, 51); // update curse progression
+							}
+						}
+					}
+
 					list_t* followers = loadGameFollowers();
 					if ( followers )
 					{
@@ -6660,10 +7475,10 @@ void handleMainMenu(bool mode)
 
 											Stat* monsterStats = (Stat*)newNode->element;
 											monsterStats->leader_uid = players[c]->entity->getUID();
-											if ( !monsterally[HUMAN][monsterStats->type] )
+											monster->flags[USERFLAG2] = true;
+											/*if ( !monsterally[HUMAN][monsterStats->type] )
 											{
-												monster->flags[USERFLAG2] = true;
-											}
+											}*/
 											monster->monsterAllyIndex = c;
 											if ( multiplayer == SERVER )
 											{
@@ -7083,6 +7898,7 @@ void handleMainMenu(bool mode)
 				stats[c]->appearance = 0;
 				strcpy(stats[c]->name, "");
 				stats[c]->type = HUMAN;
+				stats[c]->playerRace = RACE_HUMAN;
 				stats[c]->clearStats();
 				entitiesToDelete[c].first = NULL;
 				entitiesToDelete[c].last = NULL;
@@ -8104,6 +8920,7 @@ void openSettingsWindow()
 	settings_spawn_blood = spawn_blood;
 	settings_light_flicker = flickerLights;
 	settings_vsync = verticalSync;
+	settings_status_effect_icons = showStatusEffectIcons;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
 	settings_fps = fpsLimit;
@@ -8712,6 +9529,7 @@ void buttonCloseSubwindow(button_t* my)
 		// reset class loadout
 		stats[0]->sex = static_cast<sex_t>(0);
 		stats[0]->appearance = 0;
+		stats[0]->playerRace = RACE_HUMAN;
 		strcpy(stats[0]->name, "");
 		stats[0]->type = HUMAN;
 		client_classes[0] = 0;
@@ -8792,6 +9610,10 @@ void buttonContinue(button_t* my)
 	}
 
 	charcreation_step++;
+	if ( charcreation_step == 3 && stats[0]->playerRace != RACE_HUMAN )
+	{
+		charcreation_step = 4; // skip appearance window
+	}
 	if ( charcreation_step == 4 )
 	{
 		inputstr = stats[0]->name;
@@ -8970,11 +9792,26 @@ void buttonBack(button_t* my)
 	{
 		playing_random_char = false;
 	}
+	
+
 	if (charcreation_step == 3)
 	{
 		// If we've backed out, save what name was input for later
 		lastname = (string)inputstr;
 		SDL_StopTextInput();
+		if ( stats[0]->playerRace != RACE_HUMAN )
+		{
+			charcreation_step = 2; // skip appearance window for non-human races.
+		}
+	}
+	else if ( charcreation_step == 1 )
+	{
+		raceSelect = 0; // reset the race selection menu to select sex
+		if ( stats[0]->playerRace != RACE_HUMAN )
+		{
+			stats[0]->clearStats();
+			initClass(0);
+		}
 	}
 	else if ( charcreation_step == 0 )
 	{
@@ -9442,7 +10279,9 @@ void buttonJoinLobby(button_t* my)
 		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum(false)]->name, 22);
 		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum(false)], &net_packet->data[42]);
 		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[getSaveGameClientnum(false)]->appearance, &net_packet->data[50]);
+		Uint32 appearanceAndRace = ((Uint8)stats[getSaveGameClientnum(false)]->appearance << 8); // store in bits 8 - 15
+		appearanceAndRace |= (Uint8)stats[getSaveGameClientnum(false)]->playerRace; // store in bits 0 - 7
+		SDLNet_Write32(appearanceAndRace, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
 		net_packet->data[63] = getSaveGameClientnum(false);
@@ -9452,7 +10291,9 @@ void buttonJoinLobby(button_t* my)
 		strncpy((char*)net_packet->data + 19, stats[0]->name, 22);
 		SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[42]);
 		SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[46]);
-		SDLNet_Write32((Uint32)stats[0]->appearance, &net_packet->data[50]);
+		Uint32 appearanceAndRace = ((Uint8)stats[0]->appearance << 8);
+		appearanceAndRace |= ((Uint8)stats[0]->playerRace);
+		SDLNet_Write32(appearanceAndRace, &net_packet->data[50]);
 		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
 		net_packet->data[63] = 0;
@@ -9671,6 +10512,7 @@ void applySettings()
 	flickerLights = settings_light_flicker;
 	oldVerticalSync = verticalSync;
 	verticalSync = settings_vsync;
+	showStatusEffectIcons = settings_status_effect_icons;
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
@@ -10133,7 +10975,7 @@ void buttonOpenScoresWindow(button_t* my)
 void buttonDeleteCurrentScore(button_t* my)
 {
 	node_t* node = nullptr;
-	if ( scoreDisplayMultiplayer )
+	if ( score_window_delete_multiplayer )
 	{
 		node = list_Node(&topscoresMultiplayer, score_window_to_delete - 1);
 		if ( node )
@@ -10655,7 +11497,9 @@ void buttonDeleteScoreCancel(button_t* my)
 
 	buttonOpenScoresWindow(nullptr);
 	score_window = score_window_to_delete;
+	scoreDisplayMultiplayer = score_window_delete_multiplayer;
 	score_window_to_delete = 0;
+	score_window_delete_multiplayer = false;
 
 	loadScore(score_window - 1);
 }
@@ -10669,6 +11513,7 @@ void buttonDeleteScoreConfirm(button_t* my)
 void buttonDeleteScoreWindow(button_t* my)
 {
 	score_window_to_delete = score_window;
+	score_window_delete_multiplayer = scoreDisplayMultiplayer;
 
 	// close current window
 	buttonCloseSubwindow(nullptr);
@@ -10729,8 +11574,9 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	loadGameSaveShowRectangle = 0;
 	// reset class loadout
 	clientnum = 0;
-	stats[0]->sex = static_cast<sex_t>(0);
-	stats[0]->appearance = 0;
+	stats[0]->sex = static_cast<sex_t>(0 + rand() % 2);
+	stats[0]->appearance = 0 + rand() % NUMAPPEARANCES;
+	stats[0]->playerRace = RACE_HUMAN;
 	strcpy(stats[0]->name, "");
 	stats[0]->type = HUMAN;
 	client_classes[0] = 0;
@@ -10747,12 +11593,13 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	// create character creation window
 	charcreation_step = 1;
+	raceSelect = 0;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
 	subx2 = xres / 2 + 400;
-	suby1 = yres / 2 - 240;
-	suby2 = yres / 2 + 240;
+	suby1 = yres / 2 - 260;
+	suby2 = yres / 2 + 260;
 	strcpy(subtext, "");
 
 	// close button

@@ -364,6 +364,7 @@ void identifyGUIIdentify(Item* item)
 			appraisal_timer = 0;
 			appraisal_item = 0;
 		}
+		identifygui_active = false;
 	}
 	else
 	{
@@ -398,7 +399,6 @@ void identifyGUIIdentify(Item* item)
 			appraisal_item = item->uid;
 		}
 	}
-	identifygui_active = false;
 
 	//Cleanup identify GUI gamecontroller code here.
 	selectedIdentifySlot = -1;

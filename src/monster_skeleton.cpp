@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initSkeleton(Entity* my, Stat* myStats)
 {
@@ -45,154 +46,327 @@ void initSkeleton(Entity* my, Stat* myStats)
 			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
 
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, ""))
+			if ( my->monsterAllySummonRank != 0 )
 			{
-				// not boss if a follower, or name has already been set to something other than blank.
-				if ( strncmp(map.name, "Underworld", 10) )
+				int rank = std::min(my->monsterAllySummonRank, 7);
+				bool secondarySummon = true;
+				if ( !strcmp(myStats->name, "skeleton knight") )
 				{
-					//give weapon
-					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+					secondarySummon = false;
+				}
+				my->skeletonSummonSetEquipment(myStats, rank);
+				myStats->sex = MALE;
+				myStats->GOLD = 0;
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 64);
+
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( leader )
+				{
+					Stat* leaderStats = leader->getStats();
+					if ( leaderStats )
 					{
-						switch ( rand() % 10 )
+						if ( !secondarySummon )
 						{
-							case 0:
-							case 1:
-								myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 2:
-							case 3:
-								myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 4:
-							case 5:
-								myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 6:
-							case 7:
-								myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
-							case 8:
-							case 9:
-								myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-								break;
+							if ( leaderStats->playerSummonLVLHP != 0 ) // first stat initialisation if equal to 0
+							{
+								myStats->LVL = (leaderStats->playerSummonLVLHP & 0xFFFF0000) >> 16;
+								myStats->MAXHP = leaderStats->playerSummonLVLHP & 0x0000FFFF;
+								myStats->HP = myStats->MAXHP;
+								myStats->OLDHP = myStats->MAXHP;
+
+								myStats->STR = (leaderStats->playerSummonSTRDEXCONINT & 0xFF000000) >> 24;
+								myStats->DEX = (leaderStats->playerSummonSTRDEXCONINT & 0x00FF0000) >> 16;
+								myStats->CON = (leaderStats->playerSummonSTRDEXCONINT & 0x0000FF00) >> 8;
+								myStats->INT = (leaderStats->playerSummonSTRDEXCONINT & 0x000000FF) >> 0;
+
+								myStats->PER = (leaderStats->playerSummonPERCHR & 0xFF000000) >> 24;
+								myStats->CHR = (leaderStats->playerSummonPERCHR & 0x00FF0000) >> 16;
+							}
+							else
+							{
+								// set variables for first time cast
+								myStats->HP = 60;
+								myStats->MAXHP = myStats->HP;
+								myStats->OLDHP = myStats->HP;
+
+								leaderStats->playerSummonLVLHP = (myStats->LVL << 16);
+								leaderStats->playerSummonLVLHP |= (myStats->MAXHP);
+
+								myStats->STR = std::max(1, myStats->STR);
+								myStats->DEX = std::max(2, myStats->DEX);
+								myStats->CON = std::max(0, myStats->CON);
+								myStats->INT = std::max(0, myStats->INT);
+								myStats->PER = std::max(0, myStats->PER);
+								myStats->CHR = std::max(0, myStats->CHR);
+								leaderStats->playerSummonSTRDEXCONINT = (myStats->STR << 24);
+								leaderStats->playerSummonSTRDEXCONINT |= (myStats->DEX << 16);
+								leaderStats->playerSummonSTRDEXCONINT |= (myStats->CON << 8);
+								leaderStats->playerSummonSTRDEXCONINT |= (myStats->INT);
+
+								leaderStats->playerSummonPERCHR = (myStats->PER << 24);
+								leaderStats->playerSummonPERCHR |= (myStats->CHR << 16);
+								leaderStats->playerSummonPERCHR |= (my->monsterAllySummonRank << 8);
+							}
+						}
+						else
+						{
+							if ( leaderStats->playerSummon2LVLHP != 0 ) // first stat initialisation if equal to 0
+							{
+								myStats->LVL = (leaderStats->playerSummon2LVLHP & 0xFFFF0000) >> 16;
+								myStats->MAXHP = leaderStats->playerSummon2LVLHP & 0x0000FFFF;
+								myStats->HP = myStats->MAXHP;
+								myStats->OLDHP = myStats->MAXHP;
+
+								myStats->STR = (leaderStats->playerSummon2STRDEXCONINT & 0xFF000000) >> 24;
+								myStats->DEX = (leaderStats->playerSummon2STRDEXCONINT & 0x00FF0000) >> 16;
+								myStats->CON = (leaderStats->playerSummon2STRDEXCONINT & 0x0000FF00) >> 8;
+								myStats->INT = (leaderStats->playerSummon2STRDEXCONINT & 0x000000FF) >> 0;
+
+								myStats->PER = (leaderStats->playerSummon2PERCHR & 0xFF000000) >> 24;
+								myStats->CHR = (leaderStats->playerSummon2PERCHR & 0x00FF0000) >> 16;
+							}
+							else
+							{
+								// set variables for first time cast
+								// make up level deficit from primary summon.
+								int levelUps = 0;
+								if ( leaderStats->playerSummonLVLHP > 0 )
+								{
+									levelUps = std::max(3, static_cast<int>((leaderStats->playerSummonLVLHP & 0xFFFF0000) >> 16) - 3);
+								}
+								levelUps = std::max(0, levelUps - myStats->LVL);
+								int increasestat[3] = { 0, 0, 0 };
+								for ( int i = 0; i < levelUps; ++i )
+								{
+									myStats->LVL++;
+									myStats->HP += HP_MOD;
+									myStats->MAXHP += HP_MOD;
+									myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+									my->playerStatIncrease(CLASS_ROGUE, increasestat); // rogue weighting
+									for ( int j = 0; j < 3; j++ )
+									{
+										switch ( increasestat[j] )
+										{
+											case STAT_STR:
+												myStats->STR++;
+												break;
+											case STAT_DEX:
+												myStats->DEX++;
+												break;
+											case STAT_CON:
+												myStats->CON++;
+												break;
+											case STAT_INT:
+												myStats->INT++;
+												break;
+											case STAT_PER:
+												myStats->PER++;
+												break;
+											case STAT_CHR:
+												myStats->CHR++;
+												break;
+											default:
+												break;
+										}
+									}
+								}
+
+								my->skeletonSummonSetEquipment(myStats, std::min(7, 1 + (myStats->LVL / 5)));
+
+								leaderStats->playerSummon2LVLHP = (myStats->LVL << 16);
+								leaderStats->playerSummon2LVLHP |= (myStats->MAXHP);
+
+								myStats->STR = std::max(0, myStats->STR);
+								myStats->DEX = std::max(3, myStats->DEX);
+								myStats->CON = std::max(0, myStats->CON);
+								myStats->INT = std::max(0, myStats->INT);
+								myStats->PER = std::max(1, myStats->PER);
+								myStats->CHR = std::max(0, myStats->CHR);
+								leaderStats->playerSummon2STRDEXCONINT = (myStats->STR << 24);
+								leaderStats->playerSummon2STRDEXCONINT |= (myStats->DEX << 16);
+								leaderStats->playerSummon2STRDEXCONINT |= (myStats->CON << 8);
+								leaderStats->playerSummon2STRDEXCONINT |= (myStats->INT);
+
+								leaderStats->playerSummon2PERCHR = (myStats->PER << 24);
+								leaderStats->playerSummon2PERCHR |= (myStats->CHR << 16);
+								leaderStats->playerSummon2PERCHR |= (my->monsterAllySummonRank << 8);
+							}
+						}
+
+						myStats->MAXMP = getCostOfSpell(&spell_summon, leader);
+						myStats->MP = 0;
+
+						if ( multiplayer == SERVER && leader->behavior == &actPlayer )
+						{
+							serverUpdateAllyStat(leader->skill[2], my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
+							serverUpdatePlayerSummonStrength(leader->skill[2]);
+							serverUpdateEntitySkill(my, 50); // update the rank of the monster.
 						}
 					}
+					else
+					{
+						myStats->HP = 0;
+					}
 				}
+				else
+				{
+					myStats->HP = 0;
+				}
+
+				
 			}
 			else
 			{
-				myStats->HP = 100;
-				myStats->MAXHP = 100;
-				strcpy(myStats->name, "Funny Bones");
-				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
-			}
+				setRandomMonsterStats(myStats);
 
-			// random effects
+				// generate 6 items max, less if there are any forced items from boss variants
+				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
-
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
-
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
-
-														 // count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
-
-			my->setHardcoreStats(*myStats);
-
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
-			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-				case 2:
-				case 1:
-					break;
-				default:
-					break;
-			}
-
-			//give weapon
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
+				// boss variants
+				if ( rand() % 50 > 0 || my->flags[USERFLAG2] || strcmp(myStats->name, ""))
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 4:
-					case 5:
+					// not boss if a follower, or name has already been set to something other than blank.
+					if ( strncmp(map.name, "Underworld", 10) )
+					{
+						//give weapon
+						if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+						{
+							switch ( rand() % 10 )
+							{
+								case 0:
+								case 1:
+									myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 2:
+								case 3:
+									myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 4:
+								case 5:
+									myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 6:
+								case 7:
+									myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+								case 8:
+								case 9:
+									myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+									break;
+							}
+						}
+					}
+				}
+				else
+				{
+					myStats->HP = 100;
+					myStats->MAXHP = 100;
+					strcpy(myStats->name, "Funny Bones");
+					myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
+					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+				}
+
+				// random effects
+
+				// generates equipment and weapons if available from editor
+				createMonsterEquipment(myStats);
+
+				// create any custom inventory items from editor if available
+				createCustomInventory(myStats, customItemsToGenerate);
+
+				// count if any custom inventory items from editor
+				int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+															 // count any inventory items set to default in edtior
+				int defaultItems = countDefaultItems(myStats);
+
+				my->setHardcoreStats(*myStats);
+
+				// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+				switch ( defaultItems )
+				{
 					case 6:
-					case 7:
-						myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+					case 5:
+					case 4:
+					case 3:
+					case 2:
+					case 1:
 						break;
-					case 8:
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+					default:
 						break;
 				}
-			}
 
-			//give helmet
-			if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
+				//give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-						myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 8:
+						case 9:
+							myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+					}
 				}
-			}
 
-			//give shield
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				switch ( rand() % 10 )
+				//give helmet
+				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+							myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 6:
+						case 7:
+						case 8:
+						case 9:
+							myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+
+				//give shield
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+							break;
+						case 6:
+						case 7:
+							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 8:
+							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 		}
@@ -413,6 +587,62 @@ void actSkeletonLimb(Entity* my)
 
 void skeletonDie(Entity* my)
 {
+	if ( multiplayer != CLIENT && my->monsterAllySummonRank != 0 )
+	{
+		Stat* myStats = my->getStats();
+		Entity* leader = uidToEntity(myStats->leader_uid);
+		if ( leader )
+		{
+			Stat* leaderStats = leader->getStats();
+			if ( leaderStats )
+			{
+				// refund mana to caster.
+				int spellCost = getCostOfSpell(&spell_summon, leader);
+				if ( (leader->getINT() + leaderStats->PROFICIENCIES[PRO_MAGIC]) >= SKILL_LEVEL_EXPERT )
+				{
+					// we summoned 2 units, halve the return rate.
+					spellCost /= 2;
+				}
+				//for ( node_t* node = leaderStats->FOLLOWERS.first; node != nullptr; node = node->next )
+				//{
+				//	Uint32* c = (Uint32*)node->element;
+				//	Entity* otherSummon = uidToEntity(*c);
+				//	if ( otherSummon && otherSummon->monsterAllySummonRank != 0 && otherSummon->monsterAllyGetPlayerLeader() == leader )
+				//	{
+				//		spellCost /= 2;
+				//		Stat* otherSummonStat = otherSummon->getStats();
+				//		if ( !strcmp(otherSummonStat->name, "skeleton sentinel") )
+				//		{
+				//			otherSummonStat->MAXMP /= 2; // halve the other summon's possible return MP.
+				//			otherSummonStat->MAXMP = std::max(1, otherSummonStat->MAXMP);
+				//			otherSummonStat->MP /= 2;
+				//		}
+				//		break;
+				//	}
+				//}
+				int manaToRefund = std::min(spellCost, static_cast<int>(myStats->MP / static_cast<float>(myStats->MAXMP) * spellCost)); // MP to restore
+				if ( manaToRefund > 0 )
+				{
+					manaToRefund -= rand() % (std::max(1, manaToRefund / 3));
+					if ( leaderStats->HP <= 0 )
+					{
+						manaToRefund = 0;
+					}
+					Entity* spellEntity = createParticleSapCenter(leader, my, SPELL_SUMMON, 599, 791);
+					if ( spellEntity )
+					{
+						playSoundEntity(my, 167, 128); // succeeded spell sound
+						spellEntity->skill[7] = manaToRefund;
+						if ( leader->behavior == &actPlayer )
+						{
+							messagePlayerMonsterEvent(leader->skill[2], 0xFFFFFFFF, *myStats, language[3194], language[3195], MSG_COMBAT);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	my->removeMonsterDeathNodes();
 
 	int c;
@@ -617,9 +847,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= .25 * cos(my->yaw);
-				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2;
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_TORSO);
 				break;
 			// right leg
 			case LIMB_HUMANOID_RIGHTLEG:
@@ -647,18 +875,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->yaw += PI / 8;
-					entity->pitch = -PI / 2;
-				}
-				else if ( entity->pitch <= -PI / 3 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			// left leg
 			case LIMB_HUMANOID_LEFTLEG:
@@ -686,18 +903,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->yaw -= PI / 8;
-					entity->pitch = -PI / 2;
-				}
-				else if ( entity->pitch <= -PI / 3 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_LEFTLEG);
 				break;
 			// right arm
 			case LIMB_HUMANOID_RIGHTARM:
@@ -723,14 +929,8 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = 234;
 					}
 				}
-				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 1.75 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += .5;
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->pitch = 0;
-				}
 				break;
 			// left arm
 			}
@@ -759,13 +959,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
 					}
 				}
-				entity->x -= 1.75 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 1.75 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += .5;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
-				{
-					entity->pitch = 0;
-				}
+				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_LEFTARM);
 				if ( my->monsterDefend && my->monsterAttack == 0 )
 				{
 					MONSTER_SHIELDYAW = PI / 5;
@@ -872,67 +1066,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = true;
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 2.5;
-				entity->yaw = shieldarm->yaw;
-				entity->roll = 0;
-				entity->pitch = 0;
-
-				if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
-				{
-					entity->focalx = limbs[SKELETON][7][0];
-					entity->focaly = limbs[SKELETON][7][1];
-					entity->focalz = limbs[SKELETON][7][2];
-				}
-				else
-				{
-					entity->focalx = limbs[SKELETON][7][0] - 0.5;
-					entity->focaly = limbs[SKELETON][7][1] - 1;
-					entity->focalz = limbs[SKELETON][7][2];
-				}
-
-				if ( entity->sprite == items[TOOL_TORCH].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2.5 * cos(entity->yaw);
-					entity2->y += 2.5 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
-				{
-					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
-					entity2->x += 2.5 * cos(entity->yaw);
-					entity2->y += 2.5 * sin(entity->yaw);
-					entity2->z -= 2;
-				}
-				else if ( entity->sprite == items[TOOL_LANTERN].index )
-				{
-					entity->z += 2;
-					entity2 = spawnFlame(entity, SPRITE_FLAME);
-					entity2->x += 2.5 * cos(entity->yaw);
-					entity2->y += 2.5 * sin(entity->yaw);
-					entity2->z += 1;
-				}
-				if ( MONSTER_SHIELDYAW > PI / 32 )
-				{
-					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
-					{
-						// shield, so rotate a little.
-						entity->roll += PI / 64;
-					}
-					else
-					{
-						entity->x += 0.25 * cos(my->yaw);
-						entity->y += 0.25 * sin(my->yaw);
-						entity->pitch += PI / 16;
-						if ( entity2 )
-						{
-							entity2->x += 0.75 * cos(shieldarm->yaw);
-							entity2->y += 0.75 * sin(shieldarm->yaw);
-						}
-					}
-				}
+				my->handleHumanoidShieldLimb(entity, shieldarm);
 				break;
 			// cloak
 			case LIMB_HUMANOID_CLOAK:
@@ -1113,5 +1247,510 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		// do nothing, don't reset attacktime or increment it.
+	}
+}
+
+void Entity::skeletonSummonSetEquipment(Stat* myStats, int rank)
+{
+	if ( !strcmp(myStats->name, "skeleton knight") )
+	{
+		switch ( rank )
+		{
+			case 1:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = BRONZE_SWORD;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = LEATHER_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = BRONZE_SHIELD;
+				}
+				break;
+			case 2:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = IRON_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = LEATHER_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = BRONZE_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 3:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(IRON_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = IRON_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = IRON_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(IRON_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = IRON_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 4:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = STEEL_HALBERD;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = IRON_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(IRON_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = IRON_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS;
+				}
+				break;
+			case 5:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(STEEL_HALBERD, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = STEEL_HALBERD;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(STEEL_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = STEEL_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(STEEL_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = STEEL_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS;
+				}
+				break;
+			case 6:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CRYSTAL_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(STEEL_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = STEEL_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(STEEL_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = STEEL_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(CRYSTAL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = CRYSTAL_BOOTS;
+				}
+				break;
+			case 7:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CRYSTAL_SPEAR, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CRYSTAL_SPEAR;
+				}
+				if ( !myStats->breastplate )
+				{
+					myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->breastplate->type = CRYSTAL_BREASTPIECE;
+				}
+				if ( !myStats->shield )
+				{
+					myStats->shield = newItem(CRYSTAL_SHIELD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shield->type = CRYSTAL_SHIELD;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(CRYSTAL_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = CRYSTAL_BOOTS;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	else if ( !strcmp(myStats->name, "skeleton sentinel") )
+	{
+		switch ( rank )
+		{
+			case 1:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SLING, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SLING;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				break;
+			case 2:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SLING, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SLING;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(LEATHER_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = LEATHER_BOOTS;
+				}
+				break;
+			case 3:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SHORTBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SHORTBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(LEATHER_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = LEATHER_BOOTS;
+				}
+				break;
+			case 4:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(SHORTBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = SHORTBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 5:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CROSSBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->gloves )
+				{
+					myStats->gloves = newItem(BRACERS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->gloves->type = BRACERS;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(IRON_BOOTS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = IRON_BOOTS;
+				}
+				break;
+			case 6:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CROSSBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK;
+				}
+				if ( !myStats->gloves )
+				{
+					myStats->gloves = newItem(BRACERS, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->gloves->type = BRACERS;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS_FEATHER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS_FEATHER;
+				}
+				break;
+			case 7:
+				if ( !myStats->weapon )
+				{
+					myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon->type = CROSSBOW;
+				}
+				if ( !myStats->helmet )
+				{
+					myStats->helmet = newItem(HAT_HOOD, DECREPIT, 0, 1, 2, false, nullptr);
+				}
+				else
+				{
+					myStats->helmet->type = HAT_HOOD;
+					myStats->helmet->appearance = 2;
+				}
+				if ( !myStats->cloak )
+				{
+					myStats->cloak = newItem(CLOAK_BLACK, DECREPIT, 0, 1, 1, false, nullptr);
+				}
+				else
+				{
+					myStats->cloak->type = CLOAK_BLACK;
+				}
+				if ( !myStats->gloves )
+				{
+					myStats->gloves = newItem(CRYSTAL_GLOVES, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->gloves->type = CRYSTAL_GLOVES;
+				}
+				if ( !myStats->shoes )
+				{
+					myStats->shoes = newItem(STEEL_BOOTS_FEATHER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->shoes->type = STEEL_BOOTS_FEATHER;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 }

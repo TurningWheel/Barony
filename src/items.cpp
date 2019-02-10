@@ -27,6 +27,9 @@
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
+int INVENTORY_SIZEY = 3;
+const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
+const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
 
 /*-------------------------------------------------------------------------------
 
@@ -83,9 +86,41 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		}
 
 		x = 0;
+		int inventory_y = INVENTORY_SIZEY;
+		if ( is_spell )
+		{
+			inventory_y = 3;
+		}
+		else if ( multiplayer != CLIENT )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( stats[i] && &stats[i]->inventory == inventory )
+				{
+					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK && stats[i]->cloak->beatitude >= 0 )
+					{
+						inventory_y = 4;
+						break;
+					}
+					break;
+				}
+			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			if ( stats[clientnum] && &stats[clientnum]->inventory == inventory )
+			{
+				if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+				{
+					inventory_y = 4;
+				}
+			}
+		}
+		int sort_y = std::min(std::max(inventory_y, 2), 3); // only sort y values of 2-3, if extra row don't auto sort into it.
+
 		while ( 1 )
 		{
-			for ( y = 0; y < INVENTORY_SIZEY; y++ )
+			for ( y = 0; y < sort_y; y++ )
 			{
 				node_t* node;
 				for ( node = inventory->first; node != NULL; node = node->next )
@@ -125,6 +160,58 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 				break;
 			}
 			x++;
+		}
+
+
+		// backpack sorting, sort into here as last priority.
+		if ( x > INVENTORY_SIZEX - 1 && inventory_y > 3 )
+		{
+			x = 0;
+			foundaspot = false;
+			notfree = false;
+			while ( 1 )
+			{
+				for ( y = 3; y < inventory_y; y++ )
+				{
+					node_t* node;
+					for ( node = inventory->first; node != NULL; node = node->next )
+					{
+						Item* tempItem = (Item*)node->element;
+						if ( tempItem == item )
+						{
+							continue;
+						}
+						if ( tempItem )
+						{
+							if ( tempItem->x == x && tempItem->y == y )
+							{
+								if ( is_spell && itemCategory(tempItem) == SPELL_CAT )
+								{
+									notfree = true;  //Both spells. Can't fit in the same slot.
+								}
+								else if ( !is_spell && itemCategory(tempItem) != SPELL_CAT )
+								{
+									notfree = true;  //Both not spells. Can't fit in the same slot.
+								}
+							}
+						}
+					}
+					if ( notfree )
+					{
+						notfree = false;
+						continue;
+					}
+					item->x = x;
+					item->y = y;
+					foundaspot = true;
+					break;
+				}
+				if ( foundaspot )
+				{
+					break;
+				}
+				x++;
+			}
 		}
 
 		// add the item to the hotbar automatically
@@ -455,6 +542,20 @@ ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel)
 							break;
 					}
 				}
+				else if ( cat == ARMOR )
+				{
+					switch ( (ItemType)c )
+					{
+						case CLOAK_BACKPACK:
+							if ( prng_get_uint() % 4 )   // 25% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						default:
+							break;
+					}
+				}
 			}
 		}
 	}
@@ -595,7 +696,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
 				}
 				else
 				{
@@ -653,7 +754,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, language[1034 + status], beatitude);
 				}
 				else
 				{
@@ -715,7 +816,7 @@ char* Item::description()
 				if ( type == POTION_EMPTY )
 				{
 					//No fancy descriptives for empty potions.
-					snprintf(tempstr, 1024, language[982 + status], beatitude);
+					snprintf(tempstr, 1024, language[1060 + status], count);
 				}
 				else
 				{
@@ -999,9 +1100,16 @@ void dropItem(Item* item, int player)
 	}
 	if ( itemIsEquipped(item, player) )
 	{
-		if (!item->canUnequip())
+		if (!item->canUnequip(stats[player]))
 		{
-			messagePlayer(player, language[1087]);
+			if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+			{
+				messagePlayer(player, language[3218]);
+			}
+			else
+			{
+				messagePlayer(player, language[1087]);
+			}
 			return;
 		}
 	}
@@ -1124,6 +1232,11 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	}*/
 	if ( monsterStats )
 	{
+		if ( monsterStats->type == SKELETON && monster->monsterAllySummonRank != 0 )
+		{
+			itemDroppable = false;
+		}
+
 		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 		{
 			if ( monsterStats->type == SHADOW || monsterStats->type == AUTOMATON )
@@ -1269,7 +1382,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item*& item)
+void consumeItem(Item*& item, int player)
 {
 	if ( item == nullptr )
 	{
@@ -1280,6 +1393,16 @@ void consumeItem(Item*& item)
 		appraisal_item = 0;
 		appraisal_timer = 0;
 	}
+
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		Item** slot = nullptr;
+		if ( (slot = itemSlot(stats[player], item)) != nullptr )
+		{
+			(*slot)->count--; // if client had consumed item equipped, this'll update the count.
+		}
+	}
+
 	item->count--;
 	if ( item->count <= 0 )
 	{
@@ -1334,11 +1457,18 @@ void equipItem(Item* item, Item** slot, int player)
 		// if items are different... (excluding the quantity of both item nodes)
 		if ( *slot != NULL )
 		{
-			if (!(*slot)->canUnequip())
+			if (!(*slot)->canUnequip(stats[player]))
 			{
 				if ( player == clientnum )
 				{
-					messagePlayer(player, language[1089], (*slot)->getName());
+					if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+					{
+						messagePlayer(player, language[3217], (*slot)->getName());
+					}
+					else
+					{
+						messagePlayer(player, language[1089], (*slot)->getName());
+					}
 				}
 				(*slot)->identified = true;
 				return;
@@ -1413,11 +1543,18 @@ void equipItem(Item* item, Item** slot, int player)
 		{
 			if ( (*slot)->count == item->count ) // if quantity is the same then it's the same item, can unequip
 			{
-				if (!(*slot)->canUnequip())
+				if (!(*slot)->canUnequip(stats[player]))
 				{
 					if ( player == clientnum )
 					{
-						messagePlayer(player, language[1089], (*slot)->getName());
+						if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+						{
+							messagePlayer(player, language[3217], (*slot)->getName());
+						}
+						else
+						{
+							messagePlayer(player, language[1089], (*slot)->getName());
+						}
 					}
 					(*slot)->identified = true;
 					return;
@@ -1491,11 +1628,17 @@ void equipItem(Item* item, Item** slot, int player)
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, int player)
+void useItem(Item* item, int player, Entity* usedBy)
 {
 	if ( item == NULL )
 	{
 		return;
+	}
+
+	if ( !usedBy && player >= 0 && player < MAXPLAYERS && players[player] && players[player]->entity )
+	{
+		// assume used by the player unless otherwise (a fountain potion effect e.g)
+		usedBy = players[player]->entity;
 	}
 
 	if ( openedChest[player] && itemCategory(item) != SPELL_CAT ) //TODO: What if fountain called this function for its potion effect?
@@ -1582,7 +1725,7 @@ void useItem(Item* item, int player)
 	}
 
 	// tins need a tin opener to open...
-	if ( player == clientnum )
+	if ( player == clientnum && !(stats[player]->type == GOATMAN) )
 	{
 		if ( item->type == FOOD_TIN )
 		{
@@ -1623,6 +1766,28 @@ void useItem(Item* item, int player)
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
+
+	if ( player == clientnum )
+	{
+		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
+			&& (players[clientnum] && players[clientnum]->entity)
+			&& players[clientnum]->entity == usedBy )
+		{
+			if ( item->identified )
+			{
+				GenericGUI.alchemyLearnRecipe(item->type, true);
+			}
+			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			if ( item->status >= SERVICABLE && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
+			{
+				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+				itemPickup(clientnum, emptyBottle);
+				messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+				free(emptyBottle);
+			}
+		}
+	}
+
 	switch ( item->type )
 	{
 		case WOODEN_SHIELD:
@@ -1682,6 +1847,7 @@ void useItem(Item* item, int player)
 		case BRASS_KNUCKLES:
 		case IRON_KNUCKLES:
 		case SPIKED_GAUNTLETS:
+		case SUEDE_GLOVES:
 			equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
@@ -1690,6 +1856,8 @@ void useItem(Item* item, int player)
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
 		case ARTIFACT_CLOAK:
+		case CLOAK_BACKPACK:
+		case CLOAK_SILVER:
 			equipItem(item, &stats[player]->cloak, player);
 			break;
 		case LEATHER_BOOTS:
@@ -1701,6 +1869,7 @@ void useItem(Item* item, int player)
 		case STEEL_BOOTS_FEATHER:
 		case ARTIFACT_BOOTS:
 		case CRYSTAL_BOOTS:
+		case SUEDE_BOOTS:
 			equipItem(item, &stats[player]->shoes, player);
 			break;
 		case LEATHER_BREASTPIECE:
@@ -1710,6 +1879,7 @@ void useItem(Item* item, int player)
 		case VAMPIRE_DOUBLET:
 		case WIZARD_DOUBLET:
 		case HEALER_DOUBLET:
+		case SILVER_DOUBLET:
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
 			equipItem(item, &stats[player]->breastplate, player);
@@ -1724,12 +1894,14 @@ void useItem(Item* item, int player)
 		case CRYSTAL_HELM:
 		case ARTIFACT_HELM:
 		case HAT_FEZ:
+		case HAT_HOOD_RED:
+		case HAT_HOOD_SILVER:
 			equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
 			messagePlayer(player, language[1094]);
 			item_AmuletSexChange(item, player);
-			consumeItem(item);
+			consumeItem(item, player);
 			break;
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
@@ -1748,52 +1920,63 @@ void useItem(Item* item, int player)
 			equipItem(item, &stats[player]->amulet, player);
 			break;
 		case POTION_WATER:
-			item_PotionWater(item, players[player]->entity);
+			item_PotionWater(item, players[player]->entity, usedBy);
 			break;
 		case POTION_BOOZE:
-			item_PotionBooze(item, players[player]->entity);
+			item_PotionBooze(item, players[player]->entity, usedBy);
 			break;
 		case POTION_JUICE:
-			item_PotionJuice(item, players[player]->entity);
+			item_PotionJuice(item, players[player]->entity, usedBy);
 			break;
 		case POTION_SICKNESS:
-			item_PotionSickness(item, players[player]->entity);
+			item_PotionSickness(item, players[player]->entity, usedBy);
 			break;
 		case POTION_CONFUSION:
-			item_PotionConfusion(item, players[player]->entity);
+			item_PotionConfusion(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EXTRAHEALING:
-			item_PotionExtraHealing(item, players[player]->entity);
+			item_PotionExtraHealing(item, players[player]->entity, usedBy);
 			break;
 		case POTION_HEALING:
-			item_PotionHealing(item, players[player]->entity);
+			item_PotionHealing(item, players[player]->entity, usedBy);
 			break;
 		case POTION_CUREAILMENT:
-			item_PotionCureAilment(item, players[player]->entity);
+			item_PotionCureAilment(item, players[player]->entity, usedBy);
 			break;
 		case POTION_BLINDNESS:
-			item_PotionBlindness(item, players[player]->entity);
+			item_PotionBlindness(item, players[player]->entity, usedBy);
 			break;
 		case POTION_RESTOREMAGIC:
-			item_PotionRestoreMagic(item, players[player]->entity);
+			item_PotionRestoreMagic(item, players[player]->entity, usedBy);
 			break;
 		case POTION_INVISIBILITY:
-			item_PotionInvisibility(item, players[player]->entity);
+			item_PotionInvisibility(item, players[player]->entity, usedBy);
 			break;
 		case POTION_LEVITATION:
-			item_PotionLevitation(item, players[player]->entity);
+			item_PotionLevitation(item, players[player]->entity, usedBy);
 			break;
 		case POTION_SPEED:
-			item_PotionSpeed(item, players[player]->entity);
+			item_PotionSpeed(item, players[player]->entity, usedBy);
 			break;
 		case POTION_ACID:
-			item_PotionAcid(item, players[player]->entity);
+			item_PotionAcid(item, players[player]->entity, usedBy);
 			break;
 		case POTION_PARALYSIS:
-			item_PotionParalysis(item, players[player]->entity);
+			item_PotionParalysis(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EMPTY:
 			messagePlayer(player, language[2359]);
+			break;
+		case POTION_POLYMORPH:
+			item_PotionPolymorph(item, players[player]->entity, nullptr);
+			break;
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+			item_PotionUnstableStorm(item, players[player]->entity, usedBy, nullptr);
+			break;
+		case POTION_STRENGTH:
+			item_PotionStrength(item, players[player]->entity, usedBy);
 			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
@@ -1802,14 +1985,14 @@ void useItem(Item* item, int player)
 			item_ScrollIdentify(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_LIGHT:
 			item_ScrollLight(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_BLANK:
@@ -1819,70 +2002,66 @@ void useItem(Item* item, int player)
 			item_ScrollEnchantWeapon(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_ENCHANTARMOR:
 			item_ScrollEnchantArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_REMOVECURSE:
 			item_ScrollRemoveCurse(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_FIRE:
 			item_ScrollFire(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_FOOD:
 			item_ScrollFood(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_MAGICMAPPING:
 			item_ScrollMagicMapping(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_REPAIR:
 			item_ScrollRepair(item, player);
-			if ( !players[player]->entity->isBlind() )
-			{
-				consumeItem(item);
-			}
 			break;
 		case SCROLL_DESTROYARMOR:
 			item_ScrollDestroyArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				//consumeItem(item, player);
 			}
 			break;
 		case SCROLL_TELEPORTATION:
 			item_ScrollTeleportation(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case SCROLL_SUMMON:
 			item_ScrollSummon(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+				consumeItem(item, player);
 			}
 			break;
 		case MAGICSTAFF_LIGHT:
@@ -1995,7 +2174,7 @@ void useItem(Item* item, int player)
 			if ( multiplayer == CLIENT )
 				if ( stats[player]->EFFECTS[EFF_BLEEDING] )
 				{
-					consumeItem(item);
+					consumeItem(item, player);
 				}
 			break;
 		case TOOL_GLASSES:
@@ -2004,6 +2183,16 @@ void useItem(Item* item, int player)
 		case TOOL_BEARTRAP:
 			item_ToolBeartrap(item, player);
 			break;
+		case TOOL_ALEMBIC:
+			if ( player != clientnum )
+			{
+				consumeItem(item, player);
+			}
+			else
+			{
+				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, false, item);
+			}
+			break;
 		case FOOD_BREAD:
 		case FOOD_CREAMPIE:
 		case FOOD_CHEESE:
@@ -2011,6 +2200,7 @@ void useItem(Item* item, int player)
 		case FOOD_MEAT:
 		case FOOD_FISH:
 		case FOOD_TOMALLEY:
+		case FOOD_BLOOD:
 			item_Food(item, player);
 			break;
 		case FOOD_TIN:
@@ -2295,6 +2485,12 @@ Item* itemPickup(int player, Item* item)
 					item2->ownerUid = item->ownerUid;
 					return item2;
 				}
+				else if ( !itemCompare(item, item2, true) )
+				{
+					// items are the same (incl. appearance!)
+					// if they shouldn't stack, we need to change appearance of the new item.
+					item->appearance = rand();
+				}
 			}
 		}
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
@@ -2446,9 +2642,16 @@ bool itemIsEquipped(const Item* item, int player)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::weaponGetAttack() const
+Sint32 Item::weaponGetAttack(Stat* wielder) const
 {
 	Sint32 attack = beatitude;
+	if ( wielder )
+	{
+		if ( shouldInvertEquipmentBeatitude(wielder) )
+		{
+			attack = abs(beatitude);
+		}
+	}
 	if ( itemCategory(this) == MAGICSTAFF )
 	{
 		attack += 6;
@@ -2585,9 +2788,17 @@ Sint32 Item::weaponGetAttack() const
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::armorGetAC() const
+Sint32 Item::armorGetAC(Stat* wielder) const
 {
 	Sint32 armor = beatitude;
+	if ( wielder )
+	{
+		if ( shouldInvertEquipmentBeatitude(wielder) )
+		{
+			armor = abs(beatitude);
+		}
+	}
+
 	if ( type == LEATHER_HELM )
 	{
 		armor += 1;
@@ -2737,13 +2948,28 @@ Sint32 Item::armorGetAC() const
 
 -------------------------------------------------------------------------------*/
 
-bool Item::canUnequip()
+bool Item::canUnequip(Stat* wielder)
 {
 	/*
 	//Spellbooks are no longer equipable.
 	if (type >= 100 && type <= 121) { //Spellbooks always unequipable regardless of cursed.
 		return true;
 	}*/
+	if ( wielder )
+	{
+		if ( shouldInvertEquipmentBeatitude(wielder) )
+		{
+			if ( beatitude > 0 )
+			{
+				identified = true;
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+	}
 
 	if (beatitude < 0)
 	{
@@ -2886,6 +3112,10 @@ void Item::apply(int player, Entity* entity)
 		{
 			applyOrb(player, type, *entity);
 		}
+		if ( type == POTION_EMPTY )
+		{
+			applyEmptyPotion(player, *entity);
+		}
 		return;
 	}
 
@@ -2901,6 +3131,10 @@ void Item::apply(int player, Entity* entity)
 	else if ( type == TOOL_LOCKPICK )
 	{
 		applyLockpick(player, *entity);
+	}
+	else if ( type == POTION_EMPTY )
+	{
+		applyEmptyPotion(player, *entity);
 	}
 }
 
@@ -2921,7 +3155,14 @@ bool isPotionBad(const Item& potion)
 		return false;
 	}
 
-	if (potion.type == POTION_SICKNESS || potion.type == POTION_CONFUSION || potion.type == POTION_BLINDNESS || potion.type == POTION_ACID || potion.type == POTION_PARALYSIS)
+	if (potion.type == POTION_SICKNESS 
+		|| potion.type == POTION_CONFUSION 
+		|| potion.type == POTION_BLINDNESS 
+		|| potion.type == POTION_ACID 
+		|| potion.type == POTION_PARALYSIS
+		|| potion.type == POTION_FIRESTORM 
+		|| potion.type == POTION_ICESTORM 
+		|| potion.type == POTION_THUNDERSTORM )
 	{
 		return true;
 	}
@@ -3474,13 +3715,24 @@ bool Item::shouldItemStack(int player)
 				&& this->type != TOOL_PICKAXE)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
-			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE)
+			|| itemCategory(this) == POTION
+			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE && this->type != TOOL_ALEMBIC)
 			)
 		{
-			// THROWN, GEM, TOOLS should stack when equipped.
+			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
 			return true;
 		}
+	}
+	return false;
+}
+
+
+bool shouldInvertEquipmentBeatitude(Stat* wielder)
+{
+	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
+	{
+		return true;
 	}
 	return false;
 }
