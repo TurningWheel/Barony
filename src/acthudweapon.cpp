@@ -133,74 +133,72 @@ void actHudArm(Entity* my)
 
 	if ( noGloves )
 	{
-		if ( stats[clientnum]->playerRace > 0 )
+		Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+		if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 		{
-			Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
-			if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+			if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
 			{
-				if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+				playerRace = HUMAN;
+				playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+			}
+			else
+			{
+				playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+			}
+		}
+
+		switch ( playerRace )
+		{
+			case SKELETON:
+				my->sprite = 774;
+				break;
+			case INCUBUS:
+				my->sprite = 776;
+				break;
+			case SUCCUBUS:
+				my->sprite = 778;
+				break;
+			case GOBLIN:
+				my->sprite = 780;
+				break;
+			case AUTOMATON:
+				my->sprite = 782;
+				break;
+			case INSECTOID:
+				if ( stats[clientnum]->sex == FEMALE )
 				{
-					playerRace = HUMAN;
-					playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+					my->sprite = 786;
 				}
 				else
 				{
-					playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+					my->sprite = 784;
 				}
-			}
-			switch ( playerRace )
-			{
-				case SKELETON:
-					my->sprite = 774;
-					break;
-				case INCUBUS:
-					my->sprite = 776;
-					break;
-				case SUCCUBUS:
-					my->sprite = 778;
-					break;
-				case GOBLIN:
-					my->sprite = 780;
-					break;
-				case AUTOMATON:
-					my->sprite = 782;
-					break;
-				case INSECTOID:
-					if ( stats[clientnum]->sex == FEMALE )
-					{
-						my->sprite = 786;
-					}
-					else
-					{
-						my->sprite = 784;
-					}
-					break;
-				case GOATMAN:
-					my->sprite = 788;
-					break;
-				case VAMPIRE:
-					my->sprite = 790;
-					break;
-				case HUMAN:
-					if ( playerAppearance / 6 == 0 )
-					{
-						my->sprite = 634;
-					}
-					else if ( playerAppearance / 6 == 1 )
-					{
-						my->sprite = 635;
-					}
-					else
-					{
-						my->sprite = 636;
-					}
-					break;
-				default:
+				break;
+			case GOATMAN:
+				my->sprite = 788;
+				break;
+			case VAMPIRE:
+				my->sprite = 790;
+				break;
+			case HUMAN:
+				if ( playerAppearance / 6 == 0 )
+				{
 					my->sprite = 634;
-					break;
-			}
+				}
+				else if ( playerAppearance / 6 == 1 )
+				{
+					my->sprite = 635;
+				}
+				else
+				{
+					my->sprite = 636;
+				}
+				break;
+			default:
+				my->sprite = 634;
+				break;
 		}
-		else if ( playerAppearance / 6 == 0 )
+		/*else if ( playerAppearance / 6 == 0 )
 		{
 			my->sprite = 634;
 		}
@@ -211,7 +209,7 @@ void actHudArm(Entity* my)
 		else
 		{
 			my->sprite = 636;
-		}
+		}*/
 		if ( stats[clientnum]->weapon == nullptr )
 		{
 			my->scalex = 0.5f;
