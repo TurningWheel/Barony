@@ -21,7 +21,16 @@ See LICENSE for details.
 Stat::Stat(Sint32 sprite) :
 	sneaking(MISC_FLAGS[1]),
 	allyItemPickup(MISC_FLAGS[2]),
-	allyClass(MISC_FLAGS[3])
+	allyClass(MISC_FLAGS[3]),
+	playerRace(MISC_FLAGS[4]),
+	playerPolymorphStorage(MISC_FLAGS[5]),
+	playerSummonLVLHP(MISC_FLAGS[6]),
+	playerSummonSTRDEXCONINT(MISC_FLAGS[7]),
+	playerSummonPERCHR(MISC_FLAGS[8]),
+	playerSummon2LVLHP(MISC_FLAGS[9]),
+	playerSummon2STRDEXCONINT(MISC_FLAGS[10]),
+	playerSummon2PERCHR(MISC_FLAGS[11]),
+	monsterIsCharmed(MISC_FLAGS[12])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

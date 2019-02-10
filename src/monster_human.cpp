@@ -91,7 +91,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = -2;
 							myStats->PER = -2;
 							myStats->CHR = 4;
-							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->helmet = newItem(HAT_HOOD_RED, EXCELLENT, 1, 1, rand(), false, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, nullptr);
 							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
@@ -557,7 +557,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][1][0]; // 0
 	entity->focaly = limbs[HUMAN][1][1]; // 0
 	entity->focalz = limbs[HUMAN][1][2]; // 0
@@ -576,7 +576,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][2][0]; // 0
 	entity->focaly = limbs[HUMAN][2][1]; // 0
 	entity->focalz = limbs[HUMAN][2][2]; // 2
@@ -595,7 +595,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][3][0]; // 0
 	entity->focaly = limbs[HUMAN][3][1]; // 0
 	entity->focalz = limbs[HUMAN][3][2]; // 2
@@ -614,7 +614,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][4][0]; // 0
 	entity->focaly = limbs[HUMAN][4][1]; // 0
 	entity->focalz = limbs[HUMAN][4][2]; // 1.5
@@ -633,7 +633,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][5][0]; // 0
 	entity->focaly = limbs[HUMAN][5][1]; // 0
 	entity->focalz = limbs[HUMAN][5][2]; // 1.5
@@ -652,7 +652,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][6][0]; // 1.5
 	entity->focaly = limbs[HUMAN][6][1]; // 0
 	entity->focalz = limbs[HUMAN][6][2]; // -.5
@@ -672,7 +672,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][7][0]; // 2
 	entity->focaly = limbs[HUMAN][7][1]; // 0
 	entity->focalz = limbs[HUMAN][7][2]; // 0
@@ -694,7 +694,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->scalez = 1.01;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][8][0]; // 0
 	entity->focaly = limbs[HUMAN][8][1]; // 0
 	entity->focalz = limbs[HUMAN][8][2]; // 4
@@ -716,7 +716,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->scalez = 1.01;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][9][0]; // 0
 	entity->focaly = limbs[HUMAN][9][1]; // 0
 	entity->focalz = limbs[HUMAN][9][2]; // -1.75
@@ -738,7 +738,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->scalez = .99;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[HUMAN][10][0]; // 0
 	entity->focaly = limbs[HUMAN][10][1]; // 0
 	entity->focalz = limbs[HUMAN][10][2]; // .5
@@ -999,6 +999,32 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 				}
 
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 106 )
+						{
+							// this is the default torso
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 2.5;
@@ -1040,6 +1066,33 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 108 || entity->sprite == 107 )
+						{
+							// these are the default legs
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 5;
@@ -1086,6 +1139,33 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 108 || entity->sprite == 107 )
+						{
+							// these are the default legs
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 5;

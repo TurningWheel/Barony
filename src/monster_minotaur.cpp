@@ -675,7 +675,14 @@ void actMinotaurTimer(Entity* my)
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-				messagePlayerColor(c, color, language[1114], stats[c]->name);
+				if ( stats[c]->type == HUMAN )
+				{
+					messagePlayerColor(c, color, language[1114], stats[c]->name);
+				}
+				else
+				{
+					messagePlayerColor(c, color, language[3285]);
+				}
 			}
 		}
 	}

@@ -179,7 +179,7 @@ void clickDescription(int player, Entity* entity)
 							Stat* stats = parent->getStats();
 							if ( stats )
 							{
-								messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, language[254], language[253], MSG_DESCRIPTION);
+								messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stats, language[254], language[253], MSG_DESCRIPTION, parent);
 							}
 						}
 					}
@@ -317,7 +317,18 @@ void clickDescription(int player, Entity* entity)
 			}
 			else
 			{
-				messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION);
+				if ( entity->behavior == &actPlayerLimb )
+				{
+					Entity* parent = uidToEntity(entity->parent);
+					if ( parent )
+					{
+						messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION, parent);
+					}
+				}
+				else
+				{
+					messagePlayerMonsterEvent(player, 0xFFFFFFFF, *stat, language[254], language[253], MSG_DESCRIPTION, entity);
+				}
 			}
 		}
 		else

@@ -73,11 +73,6 @@ void initGhoul(Entity* my, Stat* myStats)
 				}
 			}
 
-			if ( !strncmp(map.name, "Bram's Castle", 13) )
-			{
-				myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
-				myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
-			}
 
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
@@ -88,6 +83,11 @@ void initGhoul(Entity* my, Stat* myStats)
 			// boss variants
 			if ( rand() % 50 || my->flags[USERFLAG2] )
 			{
+				if ( !strncmp(map.name, "Bram's Castle", 13) )
+				{
+					myStats->EFFECTS[EFF_VAMPIRICAURA] = true;
+					myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] = -1;
+				}
 			}
 			else if ( !lesserMonster )
 			{

@@ -160,7 +160,7 @@ void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 	entity->setUID(uid);
 }
 
-Entity* summonMonster(Monster creature, long x, long y)
+Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 {
 	Entity* entity = newEntity(-1, 1, map.entities, map.creatures); //Monster entity.
 	//Set the monster's variables.
@@ -205,7 +205,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 	}
 
 	// Find a free tile next to the source and then spawn it there.
-	if ( multiplayer != CLIENT )
+	if ( multiplayer != CLIENT && !forceLocation )
 	{
 		if ( entityInsideSomething(entity) )
 		{
@@ -618,6 +618,11 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		return false;
 	}
 
+	if ( !players[monsterclicked] || !players[monsterclicked]->entity || !stats[monsterclicked] )
+	{
+		return false;
+	}
+
 	Monster race = my->getRace();
 
 	if ( myStats->leader_uid != 0 )
@@ -660,30 +665,113 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	bool canAlly = false;
 	if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
 	{
-		//No cap on # of followers.
-		//Can control humans & goblins both.
-		//TODO: Control humanoids in general? Or otherwise something from each tileset.
-		if ( race == HUMAN || race == GOBLIN || race == AUTOMATON )
+		int allowedFollowers = 8;
+		if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 		{
-			canAlly = true;
-		}
+			//Can control humans & goblins & goatmen & insectoids.
+			//TODO: Control humanoids in general? Or otherwise something from each tileset.
+			if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN) 
+				|| race == GOBLIN
+				|| race == AUTOMATON
+				|| race == GOATMAN
+				|| race == INSECTOID )
+			{
+				canAlly = true;
+			}
 
-		//TODO: If enemies (e.g. goblin or an angry human), require the player to be unseen by this creature to gain control of it.
+			//TODO: If enemies (e.g. goblin or an angry human), require the player to be unseen by this creature to gain control of it.
+
+			if ( stats[monsterclicked]->type == SKELETON )
+			{
+				if ( race == GHOUL )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == VAMPIRE )
+			{
+				if ( race == VAMPIRE )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == INCUBUS || stats[monsterclicked]->type == SUCCUBUS )
+			{
+				if ( race == INCUBUS || race == SUCCUBUS )
+				{
+					canAlly = true;
+				}
+				else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == GOATMAN )
+			{
+				if ( race == GOATMAN )
+				{
+					canAlly = true;
+				}
+			}
+		}
 	}
 	else
 	{
-		if ( my->checkFriend(players[monsterclicked]->entity) )
+		bool tryAlly = my->checkFriend(players[monsterclicked]->entity);
+		if ( stats[monsterclicked]->type == SUCCUBUS || stats[monsterclicked]->type == INCUBUS )
+		{
+			if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+			{
+				tryAlly = true;
+			}
+		}
+		if ( tryAlly )
 		{
 			if ( myStats->leader_uid == 0 )
 			{
-				int allowedFollowers = std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20));
-				if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
-				{
-					allowedFollowers = 25;
-				}
+				int allowedFollowers = std::min(8, std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20)));
 				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 				{
-					canAlly = true;
+					if ( race == AUTOMATON )
+					{
+						canAlly = true;
+					}
+					if ( stats[monsterclicked]->type == HUMAN )
+					{
+						canAlly = true;
+					}
+					else if ( stats[monsterclicked]->type == SKELETON )
+					{
+						if ( race == GHOUL )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == VAMPIRE )
+					{
+						if ( race == VAMPIRE )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == SUCCUBUS || stats[monsterclicked]->type == INCUBUS )
+					{
+						if ( race == INCUBUS || race == SUCCUBUS )
+						{
+							canAlly = true;
+						}
+						else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == GOATMAN )
+					{
+						if ( race == GOATMAN )
+						{
+							canAlly = true;
+						}
+					}
 				}
 			}
 		}
@@ -722,7 +810,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		//This one can't speak, so generic "The %s decides to follow you!" message.
 		messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[529], language[529], MSG_COMBAT);
 	}
-
+	spawnMagicEffectParticles(my->x, my->y, my->z, 685);
 	monsterMoveAside(my, players[monsterclicked]->entity);
 	players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 	my->monsterState = MONSTER_STATE_WAIT; // be ready to follow
@@ -745,6 +833,27 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
+	}
+
+		// update flags for colors.
+	my->flags[USERFLAG2] = true;
+	serverUpdateEntityFlag(my, USERFLAG2);
+	if ( !monsterally[HUMAN][myStats->type] )
+	{
+		int bodypart = 0;
+		for ( node_t* node = my->children.first; node != nullptr; node = node->next )
+		{
+			if ( bodypart >= LIMB_HUMANOID_TORSO )
+			{
+				Entity* tmp = (Entity*)node->element;
+				if ( tmp )
+				{
+					tmp->flags[USERFLAG2] = true;
+					//serverUpdateEntityFlag(tmp, USERFLAG2);
+				}
+			}
+			++bodypart;
+		}
 	}
 
 	for ( node_t* node = stats[monsterclicked]->FOLLOWERS.first; node != nullptr; node = node->next )
@@ -810,13 +919,7 @@ void actMonster(Entity* my)
 			node->element = nullptr;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
-			if ( (my->sprite >= 113 && my->sprite < 118) ||
-			        (my->sprite >= 125 && my->sprite < 130) ||
-			        (my->sprite >= 332 && my->sprite < 334) ||
-			        (my->sprite >= 341 && my->sprite < 347) ||
-			        (my->sprite >= 354 && my->sprite < 360) ||
-			        (my->sprite >= 367 && my->sprite < 373) ||
-			        (my->sprite >= 380 && my->sprite < 386) )   // human heads
+			if ( my->isPlayerHeadSprite() )   // human heads
 			{
 				initHuman(my, nullptr);
 			}
@@ -932,13 +1035,7 @@ void actMonster(Entity* my)
 		else
 		{
 			my->flags[BURNABLE] = true;
-			if ( (my->sprite >= 113 && my->sprite < 118) ||
-			        (my->sprite >= 125 && my->sprite < 130) ||
-			        (my->sprite >= 332 && my->sprite < 334) ||
-			        (my->sprite >= 341 && my->sprite < 347) ||
-			        (my->sprite >= 354 && my->sprite < 360) ||
-			        (my->sprite >= 367 && my->sprite < 373) ||
-			        (my->sprite >= 380 && my->sprite < 386) )   // human heads
+			if ( my->isPlayerHeadSprite() )   // human heads
 			{
 				humanMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
@@ -1234,7 +1331,11 @@ void actMonster(Entity* my)
 		} else {
 			MONSTER_TARGET = -1;
 		}*/
-		my->monsterTarget = 0;
+
+		if ( uidToEntity(my->monsterTarget) == nullptr )
+		{
+			my->monsterTarget = 0;
+		}
 
 		/*// create an empty first node for traversal purposes //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node = list_AddNodeFirst(my->children);
@@ -1954,6 +2055,7 @@ void actMonster(Entity* my)
 		}
 		myStats->mask = NULL;
 		node_t* nextnode = NULL;
+
 		for ( node = myStats->inventory.first; node != NULL; node = nextnode )
 		{
 			nextnode = node->next;
@@ -1995,6 +2097,10 @@ void actMonster(Entity* my)
 									{
 										FollowerMenu.recentEntity = nullptr;
 									}
+									if ( FollowerMenu.followerToCommand == my )
+									{
+										FollowerMenu.closeFollowerMenuGUI();
+									}
 								}
 								break;
 							}
@@ -2004,7 +2110,14 @@ void actMonster(Entity* my)
 				}
 			}
 		}
-		if ( playerFollower < MAXPLAYERS )
+
+		bool skipObituary = false;
+		if ( my->monsterAllySummonRank != 0 && myStats->MP > 0 )
+		{
+			skipObituary = true;
+		}
+
+		if ( playerFollower < MAXPLAYERS && !skipObituary )
 		{
 			messagePlayerMonsterEvent(c, 0xFFFFFFFF, *myStats, language[1499], language[2589], MSG_OBITUARY);
 		}
@@ -2486,7 +2599,7 @@ void actMonster(Entity* my)
 		monsterclicked = MONSTER_CLICKED - 1;
 		MONSTER_CLICKED = 0;
 	}
-	if ( monsterclicked >= 0 )
+	if ( monsterclicked >= 0 && monsterclicked < MAXPLAYERS )
 	{
 		if ( !my->isMobile() )
 		{
@@ -2500,9 +2613,34 @@ void actMonster(Entity* my)
 				// angry at the player, "En Guarde!"
 				switch (myStats->type)
 				{
-					case SHOPKEEPER:
 					case HUMAN:
 						messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+						break;
+					case SHOPKEEPER:
+						if ( stats[monsterclicked] )
+						{
+							if ( stats[monsterclicked]->type != HUMAN )
+							{
+								if ( stats[monsterclicked]->type < KOBOLD ) //Original monster count
+								{
+									messagePlayer(monsterclicked, language[3243], 
+										namesays, language[90 + stats[monsterclicked]->type]);
+								}
+								else if ( stats[monsterclicked]->type >= KOBOLD ) //New monsters
+								{
+									messagePlayer(monsterclicked, language[3243], namesays,
+										language[2000 + (stats[monsterclicked]->type - KOBOLD)]);
+								}
+							}
+							else
+							{
+								messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+							}
+						}
+						else
+						{
+							messagePlayer(monsterclicked, language[516 + rand() % 4], namesays);
+						}
 						break;
 					default:
 						break;
@@ -2542,10 +2680,13 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( !swornenemies[SHOPKEEPER][HUMAN] )
+					if ( players[monsterclicked] && players[monsterclicked]->entity )
 					{
-						// shopkeepers start trading
-						startTradingServer(my, monsterclicked);
+						if ( !my->checkEnemy(players[monsterclicked]->entity) )
+						{
+							// shopkeepers start trading
+							startTradingServer(my, monsterclicked);
+						}
 					}
 				}
 			}
@@ -2705,7 +2846,7 @@ void actMonster(Entity* my)
 		}*/
 
 		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
-		//	|| myStats->type == LICH_ICE )
+		//	|| myStats->type == CRYSTALGOLEM )
 		//{
 		//	std::string state_string;
 
@@ -2767,7 +2908,7 @@ void actMonster(Entity* my)
 							}
 
 							// skip if light level is too low and distance is too high
-							int light = entity->entityLightAfterReductions(*hitstats, *my);
+							int light = entity->entityLightAfterReductions(*hitstats, my);
 							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
 								//See invisible.
@@ -2958,36 +3099,10 @@ void actMonster(Entity* my)
 					if ( dist > WAIT_FOLLOWDIST )
 					{
 						my->monsterReleaseAttackTarget();
-						x = ((int)floor(leader->x)) >> 4;
-						y = ((int)floor(leader->y)) >> 4;
-						int u, v;
-						bool foundplace = false;
-						for ( u = x - 1; u <= x + 1; u++ )
+						if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
 						{
-							for ( v = y - 1; v <= y + 1; v++ )
-							{
-								if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
-								{
-									x = u;
-									y = v;
-									foundplace = true;
-									break;
-								}
-							}
-							if ( foundplace )
-							{
-								break;
-							}
+							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 						}
-						path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
-						if ( my->children.first != NULL )
-						{
-							list_RemoveNode(my->children.first);
-						}
-						node = list_AddNodeFirst(&my->children);
-						node->element = path;
-						node->deconstructor = &listDeconstructor;
-						my->monsterState = MONSTER_STATE_HUNT; // hunt state
 						if ( previousMonsterState != my->monsterState )
 						{
 							serverUpdateEntitySkill(my, 0);
@@ -3005,36 +3120,10 @@ void actMonster(Entity* my)
 						if ( hit.entity != leader )
 						{
 							my->monsterReleaseAttackTarget();
-							x = ((int)floor(leader->x)) >> 4;
-							y = ((int)floor(leader->y)) >> 4;
-							int u, v;
-							bool foundplace = false;
-							for ( u = x - 1; u <= x + 1; u++ )
+							if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
 							{
-								for ( v = y - 1; v <= y + 1; v++ )
-								{
-									if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
-									{
-										x = u;
-										y = v;
-										foundplace = true;
-										break;
-									}
-								}
-								if ( foundplace )
-								{
-									break;
-								}
+								my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							}
-							path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
-							if ( my->children.first != NULL )
-							{
-								list_RemoveNode(my->children.first);
-							}
-							node = list_AddNodeFirst(&my->children);
-							node->element = path;
-							node->deconstructor = &listDeconstructor;
-							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							if ( previousMonsterState != my->monsterState )
 							{
 								serverUpdateEntitySkill(my, 0);
@@ -3063,13 +3152,43 @@ void actMonster(Entity* my)
 				{
 					my->monsterLookDir = (rand() % 360) * PI / 180;
 				}
+				if ( my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT )
+				{
+					// allies should try intelligently scan for enemies in radius.
+					if ( my->monsterAllyGetPlayerLeader() )
+					{
+						for ( node = map.creatures->first; node != nullptr; node = node->next )
+						{
+							Entity* target = (Entity*)node->element;
+							if ( target->behavior == &actMonster && my->checkEnemy(target) )
+							{
+								dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+								if ( dist < sightranges[myStats->type] )
+								{
+									double tangent = atan2(target->y - my->y, target->x - my->x);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									if ( hit.entity == target )
+									{
+										//my->monsterLookTime = 1;
+										//my->monsterMoveTime = rand() % 10 + 1;
+										my->monsterLookDir = tangent;
+									}
+								}
+							}
+						}
+					}
+				}
 				if ( rand() % 3 == 0 )
 				{
 					if ( !MONSTER_SOUND )
 					{
 						if ( myStats->type != MINOTAUR )
 						{
-							MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) )
+							{
+								// idle sounds. if player follower, reduce noise frequency by 66%.
+								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+							}
 						}
 						else
 						{
@@ -3232,8 +3351,11 @@ void actMonster(Entity* my)
 					{
 						if ( my->monsterTarget == players[c]->entity->getUID() )
 						{
-							swornenemies[SHOPKEEPER][HUMAN] = true;
-							monsterally[SHOPKEEPER][HUMAN] = false;
+							if ( stats[c] && stats[c]->type == HUMAN )
+							{
+								swornenemies[SHOPKEEPER][HUMAN] = true;
+								monsterally[SHOPKEEPER][HUMAN] = false;
+							}
 							break;
 						}
 					}
@@ -3243,7 +3365,7 @@ void actMonster(Entity* my)
 			if ( myStats->type != DEVIL )
 			{
 				// skip if light level is too low and distance is too high
-				int light = entity->entityLightAfterReductions(*hitstats, *my);
+				int light = entity->entityLightAfterReductions(*hitstats, my);
 				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 				{
 					//See invisible.
@@ -3384,10 +3506,21 @@ timeToGoAgain:
 								tangent2 = tangent;
 							}
 
+							int myDex = my->getDEX();
+							if ( my->monsterAllyGetPlayerLeader() )
+							{
+								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP); // speed cap.
+							}
+							real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
+							real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
+							if ( !myStats->EFFECTS[EFF_KNOCKBACK] )
+							{
+								MONSTER_VELX = maxVelX;
+								MONSTER_VELY = maxVelY;
+							}
 
-							MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
-							MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
-							if ( (dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon) )
+							if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
+								((dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon)) )
 							{
 								if ( my->shouldRetreat(*myStats) )
 								{
@@ -3541,16 +3674,55 @@ timeToGoAgain:
 									}
 									else
 									{
-										MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
-										MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
+										int myDex = my->getDEX();
+										if ( my->monsterAllyGetPlayerLeader() )
+										{
+											myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+										}
+
+										real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+										real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+										if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+										{
+											maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
+											maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
+											if ( maxVelX > 0 )
+											{
+												MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
+											}
+											else
+											{
+												MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
+											}
+											if ( maxVelY > 0 )
+											{
+												MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
+											}
+											else
+											{
+												MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
+											}
+											my->monsterKnockbackVelocity *= 1.1;
+										}
+										else
+										{
+											MONSTER_VELX = maxVelX;
+											MONSTER_VELY = maxVelY;
+										}
 									}
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+									my->handleKnockbackDamage(*myStats, hit.entity);
 								}
 								else
 								{
 									// this is just so that the monster rotates. it doesn't actually move
-									MONSTER_VELX = cos(tangent) * .02 * .045 * (my->getDEX() + 10) * weightratio;
-									MONSTER_VELY = sin(tangent) * .02 * .045 * (my->getDEX() + 10) * weightratio;
+									int myDex = my->getDEX();
+									if ( my->monsterAllyGetPlayerLeader() )
+									{
+										myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+									}
+									MONSTER_VELX = cos(tangent) * .02 * .045 * (myDex + 10) * weightratio;
+									MONSTER_VELY = sin(tangent) * .02 * .045 * (myDex + 10) * weightratio;
 								}
 							}
 
@@ -3567,12 +3739,47 @@ timeToGoAgain:
 							// rotate monster
 							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 							{
-								real_t tempVelX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
-								real_t tempVelY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
+								int myDex = my->getDEX();
+								if ( my->monsterAllyGetPlayerLeader() )
+								{
+									myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+								}
+								real_t tempVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
+								real_t tempVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
 								if ( myStats->type == LICH_ICE )
 								{
 									// override if we're strafing, keep facing the target
 									dir = my->yaw - atan2(-tempVelY, -tempVelX);
+								}
+								else if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+								{
+									// in knockback, the velocitys change sign from negative/positive or positive/negative.
+									// this makes monsters moonwalk if the direction to rotate is assumed the same.
+									// so we compare goal velocity direction (sin or cos(tangent)) and see if we've reached that sign.
+
+									int multX = 1;
+									int multY = 1;
+									if ( cos(tangent2) >= 0 == MONSTER_VELX > 0 )
+									{
+										// same sign.
+										multX = 1;
+									}
+									else
+									{
+										// opposite signed.
+										multX = -1;
+									}
+									if ( sin(tangent2) >= 0 == MONSTER_VELY > 0 )
+									{
+										// same sign.
+										multY = 1;
+									}
+									else
+									{
+										// opposite signed.
+										multY = -1;
+									}
+									dir = my->yaw - atan2(multY * MONSTER_VELY, multX * MONSTER_VELX);
 								}
 								else
 								{
@@ -3842,7 +4049,7 @@ timeToGoAgain:
 							}
 
 							// skip if light level is too low and distance is too high
-							int light = entity->entityLightAfterReductions(*hitstats, *my);
+							int light = entity->entityLightAfterReductions(*hitstats, my);
 							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
 								//See invisible.
@@ -4042,7 +4249,8 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( uidToEntity(my->monsterTarget) == nullptr 
+				&& myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -4162,7 +4370,10 @@ timeToGoAgain:
 								{
 									if ( myStats->type != MINOTAUR )
 									{
-										MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+										if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) )
+										{
+											MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
+										}
 									}
 									else
 									{
@@ -4186,8 +4397,13 @@ timeToGoAgain:
 						{
 							// move monster
 							tangent = atan2( pathnode->y * 16 + 8 - my->y, pathnode->x * 16 + 8 - my->x );
-							MONSTER_VELX = cos(tangent) * .045 * (my->getDEX() + 10) * weightratio;
-							MONSTER_VELY = sin(tangent) * .045 * (my->getDEX() + 10) * weightratio;
+							int myDex = my->getDEX();
+							if ( my->monsterAllyGetPlayerLeader() )
+							{
+								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+							}
+							MONSTER_VELX = cos(tangent) * .045 * (myDex + 10) * weightratio;
+							MONSTER_VELY = sin(tangent) * .045 * (myDex + 10) * weightratio;
 							dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 							if ( hit.entity != NULL )
 							{
@@ -4408,9 +4624,13 @@ timeToGoAgain:
 										if ( dist < sightranges[myStats->type] )
 										{
 											double tangent = atan2(target->y - my->y, target->x - my->x);
-											my->monsterLookTime = 1;
-											my->monsterMoveTime = rand() % 10 + 1;
-											my->monsterLookDir = tangent;
+											lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+											if ( hit.entity == target )
+											{
+												my->monsterLookTime = 1;
+												my->monsterMoveTime = rand() % 10 + 1;
+												my->monsterLookDir = tangent;
+											}
 										}
 									}
 								}
@@ -5656,8 +5876,38 @@ timeToGoAgain:
 	}
 	else
 	{
-		MONSTER_VELX = 0;
-		MONSTER_VELY = 0;
+		if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+		{
+			real_t maxVelX = cos(my->monsterLookDir) * .045 * 10 * weightratio;
+			real_t maxVelY = sin(my->monsterLookDir) * .045 * 10 * weightratio;
+			if ( maxVelX > 0 )
+			{
+				MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), (real_t)0);
+			}
+			else
+			{
+				MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), (real_t)0);
+			}
+			if ( maxVelY > 0 )
+			{
+				MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), (real_t)0);
+			}
+			else
+			{
+				MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), (real_t)0);
+			}
+			my->monsterKnockbackVelocity *= 1.1;
+			if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
+			{
+				dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+				my->handleKnockbackDamage(*myStats, hit.entity);
+			}
+		}
+		else
+		{
+			MONSTER_VELX = 0;
+			MONSTER_VELY = 0;
+		}
 	}
 
 	if ( previousMonsterState != my->monsterState )
@@ -7224,6 +7474,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 	switch ( command )
 	{
+		case ALLY_CMD_RETURN_SOUL:
+			if ( monsterAllySummonRank != 0 )
+			{
+				float manaToRefund = myStats->MAXMP * (myStats->HP / static_cast<float>(myStats->MAXHP));
+				setMP(static_cast<int>(manaToRefund));
+				setHP(0);
+			}
+			break;
 		case ALLY_CMD_ATTACK_CONFIRM:
 			if ( uid != 0 && uid != getUID() )
 			{
@@ -7234,7 +7492,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						if ( stats[monsterAllyIndex] ) // check owner's proficiency.
 						{
-							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum]);
+							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[monsterAllyIndex]->entity);
 							if ( skillLVL >= SKILL_LEVEL_MASTER || myStats->type != HUMAN )
 							{
 								// attack anything except if FF is off + friend.
@@ -7328,7 +7586,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				bool confirmDropped = false;
 				bool dropWeaponOnly = false;
 				Uint32 owner = players[monsterAllyIndex]->entity->getUID();
-				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_MASTER )
+				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_MASTER )
 				{
 					dropped = dropItemMonster(myStats->helmet, this, myStats);
 					if ( dropped )
@@ -7355,7 +7613,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						dropped->itemOriginalOwner = owner;
 					}
 
-					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex])) >= SKILL_LEVEL_LEGENDARY )
+					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_LEGENDARY )
 					{
 						dropped = dropItemMonster(myStats->ring, this, myStats);
 						if ( dropped )

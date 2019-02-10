@@ -110,7 +110,7 @@ void Entity::actChest()
 
 		int chesttype = 0;
 
-		if (chestType >= 0) //If chest spawned by editor sprite 75-81, manually set the chest content category. Otherwise this value should be 0 (random).
+		if (chestType > 0) //If chest spawned by editor sprite, manually set the chest content category. Otherwise this value should be 0 (random).
 		{ 
 			chesttype = chestType; //Value between 0 and 7.
 		}
@@ -142,6 +142,11 @@ void Entity::actChest()
 		else if ( currentlevel >= 18 )
 		{
 			minimumQuality = 5;
+		}
+
+		if ( chestHasVampireBook )
+		{
+			newItem(SPELLBOOK_VAMPIRIC_AURA, EXCELLENT, 0, 1, rand(), true, inventory);
 		}
 
 		switch (chesttype)   //Note that all of this needs to be properly balanced over time.
@@ -375,6 +380,10 @@ void Entity::actChest()
 						{
 							newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
+						if ( rand() % 20 == 0 )
+						{
+							newItem(CLOAK_BACKPACK, durability, 0, 1, rand(), false, inventory);
+						}
 						break;
 					case 2:
 						itemcount = 1 + rand() % 2;
@@ -488,6 +497,16 @@ void Entity::actChest()
 					//newItem(static_cast<ItemType>(POTION_WATER + (rand() % 15)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					newItem(itemLevelCurve(POTION, 0, currentlevel + 7), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 				}
+				if ( rand() % 2 == 0 )
+				{
+					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, inventory);
+					newItem(POTION_EMPTY, SERVICABLE, 0, 2 + rand() % 3, 0, true, inventory);
+				}
+				if ( rand() % 4 == 0 )
+				{
+					newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, inventory);
+					newItem(POTION_EMPTY, SERVICABLE, 0, 0 + rand() % 3, 0, true, inventory);
+				}
 				break;
 			default:
 				//Default case. Should never be reached.
@@ -552,6 +571,33 @@ void Entity::actChest()
 		list_RemoveNode(mynode); // remove me
 		return;
 	}
+	else
+	{
+		if ( multiplayer != CLIENT && chestHasVampireBook )
+		{
+			node = inventory->first;
+			if ( node )
+			{
+				item = (Item*)node->element;
+				if ( item )
+				{
+					if ( item->type == SPELLBOOK_VAMPIRIC_AURA )
+					{
+						spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
+					}
+					else
+					{
+						chestHasVampireBook = 0;
+						serverUpdateEntitySkill(this, 11);
+					}
+				}
+			}
+		}
+		if ( chestHasVampireBook )
+		{
+			spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
+		}
+	}
 
 	if ( chestStatus == 1 )
 	{
@@ -599,6 +645,7 @@ void Entity::actChest()
 				{
 					closeRemoveCurseGUI();
 				}
+				GenericGUI.closeGUI();
 				identifygui_active = false;
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{
@@ -893,9 +940,16 @@ void Entity::addItemToChestFromInventory(int player, Item* item, bool all)
 		return;
 	}
 
-	if ( itemIsEquipped(item, player) == true && !item->canUnequip() )
+	if ( itemIsEquipped(item, player) == true && !item->canUnequip(stats[player]) )
 	{
-		messagePlayer(player, language[1087]);
+		if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+		{
+			messagePlayer(player, language[3218]);
+		}
+		else
+		{
+			messagePlayer(player, language[1087]);
+		}
 		item->identified = true;
 		return;
 	}

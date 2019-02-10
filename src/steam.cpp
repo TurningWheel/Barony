@@ -668,7 +668,9 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+		|| conductGameChallenges[CONDUCT_LIFESAVING]
+		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow achievements.
 		return;
@@ -753,7 +755,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 #ifndef STEAMWORKS
 	return;
 #else
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+		|| conductGameChallenges[CONDUCT_LIFESAVING]
+		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 		return;
@@ -801,7 +805,9 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 #ifndef STEAMWORKS
 	return;
 #else
-	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] || gamemods_disableSteamAchievements )
+	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
+		|| conductGameChallenges[CONDUCT_LIFESAVING]
+		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
 		return;
@@ -1210,6 +1216,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 			// reset class loadout
 			stats[0]->sex = static_cast<sex_t>(0);
 			stats[0]->appearance = 0;
+			stats[0]->playerRace = RACE_HUMAN;
 			strcpy(stats[0]->name, "");
 			stats[0]->type = HUMAN;
 			client_classes[0] = 0;

@@ -150,6 +150,10 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 128, 32, 80);
 	}
+	else if ( targetStats.EFFECTS[EFF_BLIND] )
+	{
+		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 64, 64, 64);
+	}
 	else
 	{
 		enemy_bar_color[player] = 0;
@@ -181,6 +185,18 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		{
 			player = c;
 			break;
+		}
+	}
+
+	if ( player == -1 )
+	{
+		if ( source->behavior == &actMonster && source->monsterAllySummonRank != 0
+			&& (target->behavior == &actMonster || target->behavior == &actPlayer) )
+		{
+			if ( source->monsterAllyGetPlayerLeader() && source->monsterAllyGetPlayerLeader() != target )
+			{
+				player = source->monsterAllyIndex; // don't update enemy bar if attacking leader.
+			}
 		}
 	}
 
@@ -219,6 +235,10 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		{
 			updateEnemyBarStatusEffectColor(player, *target, *stats); // set color depending on status effects of the target.
 		}
+	}
+	else
+	{
+		enemy_bar_color[player] = 0;
 	}
 
 	if ( player >= 0 )
@@ -637,13 +657,20 @@ void drawStatus()
 	int xoffset = pos.x;
 
 	// hunger icon
-	if ( stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	if ( (svFlags & SV_FLAG_HUNGER) && stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
 		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = yres - 160;
 		pos.w = 64;
 		pos.h = 64;
-		drawImageScaled(hunger_bmp, NULL, &pos);
+		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerRequiresBloodToSustain() )
+		{
+			drawImageScaled(hunger_blood_bmp, NULL, &pos);
+		}
+		else
+		{
+			drawImageScaled(hunger_bmp, NULL, &pos);
+		}
 	}
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
@@ -777,7 +804,14 @@ void drawStatus()
 			{
 				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w * uiscale_hotbar, pos.y, pos.y + hotbar_img->h * uiscale_hotbar) )
 				{
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
+					if ( (mousestatus[SDL_BUTTON_LEFT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
+							&& !openedChest[clientnum] 
+							&& gui_mode != (GUI_MODE_SHOP) 
+							&& !identifygui_active
+							&& !removecursegui_active
+							&& !GenericGUI.isGUIOpen())) 
+						&& !selectedItem )
 					{
 						toggleclick = false;
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -804,7 +838,13 @@ void drawStatus()
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active) )
+					if ( mousestatus[SDL_BUTTON_RIGHT] 
+						|| (*inputPressed(joyimpulses[INJOY_MENU_USE]) 
+							&& !openedChest[clientnum] 
+							&& gui_mode != (GUI_MODE_SHOP) 
+							&& !identifygui_active 
+							&& !removecursegui_active
+							&& !GenericGUI.isGUIOpen()) )
 					{
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -934,39 +974,42 @@ void drawStatus()
 					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
-						if ( spell )
-						{
-							char tempstr[64];
-							if ( spell->ID == SPELL_DOMINATE )
-							{
-								snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
-							}
-							else
-							{
-								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
-							}
-							src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
-							src.h = TTF12_HEIGHT * 2 + 8;
-							drawTooltip(&src);
-							ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
-						}
-						else
-						{
-							src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
-							src.h = TTF12_HEIGHT + 8;
-							drawTooltip(&src);
-							ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
-						}
+						drawSpellTooltip(spell);
 					}
 					else
 					{
 						src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 						src.h = TTF12_HEIGHT * 4 + 8;
 						if ( item->identified )
+						{
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
 							{
 								src.h += TTF12_HEIGHT;
 							}
+						}
+						int furthestX = xres;
+						if ( proficienciesPage == 0 )
+						{
+							if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+							{
+								furthestX = xres - interfaceSkillsSheet.w;
+							}
+						}
+						else
+						{
+							if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+							{
+								furthestX = xres - interfacePartySheet.w;
+							}
+						}
+						if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
+						{
+							src.x -= (src.w + 32);
+						}
+						if ( src.y + src.h + 16 > yres ) // overflow bottom of screen
+						{
+							src.y -= (src.y + src.h + 16 - yres);
+						}
 						drawTooltip(&src);
 
 						Uint32 color = 0xFFFFFFFF;
@@ -1005,7 +1048,7 @@ void drawStatus()
 						{
 							if ( itemCategory(item) == WEAPON )
 							{
-								if ( item->weaponGetAttack() >= 0 )
+								if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 								}
@@ -1013,11 +1056,11 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
 							}
 							else if ( itemCategory(item) == ARMOR )
 							{
-								if ( item->armorGetAC() >= 0 )
+								if ( item->armorGetAC(stats[clientnum]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 								}
@@ -1025,7 +1068,7 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
 							}
 						}
 					}
@@ -1223,27 +1266,41 @@ void drawStatus()
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
+		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) 
+			&& !itemMenuOpen && !openedChest[clientnum] 
+			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+			&& !identifygui_active && !removecursegui_active
+			&& !GenericGUI.isGUIOpen() )
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
+		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) 
+			&& !itemMenuOpen && !openedChest[clientnum] 
+			&& gui_mode != (GUI_MODE_SHOP) && !book_open 
+			&& !identifygui_active && !removecursegui_active
+			&& !GenericGUI.isGUIOpen() )
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if ( bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
+		if ( bumper_moved && !itemMenuOpen 
+			&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
+			&& !book_open && !identifygui_active 
+			&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 		{
 			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) 
+				&& !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) 
+				&& !book_open && !identifygui_active 
+				&& !removecursegui_active && !GenericGUI.isGUIOpen() )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
@@ -1373,5 +1430,271 @@ void drawStatus()
 
 			pos.x += pos.h + 3;
 		}
+	}
+}
+
+void drawSpellTooltip(spell_t* spell)
+{
+	SDL_Rect src;
+	src.x = mousex + 16;
+	src.y = mousey + 8;
+
+	if ( spell )
+	{
+		node_t* rootNode = spell->elements.first;
+		spellElement_t* elementRoot = nullptr;
+		if ( rootNode )
+		{
+			elementRoot = (spellElement_t*)(rootNode->element);
+		}
+		int damage = 0;
+		int mana = 0;
+		spellElement_t* primaryElement = nullptr;
+		if ( elementRoot )
+		{
+			node_t* primaryNode = elementRoot->elements.first;
+			mana = elementRoot->mana;
+			if ( primaryNode )
+			{
+				primaryElement = (spellElement_t*)(primaryNode->element);
+				if ( primaryElement )
+				{
+					damage = primaryElement->damage;
+				}
+			}
+		}
+		int spellInfoLines = 1;
+		char spellType[32] = "";
+		char spellEffectText[256] = "";
+		real_t sustainCostPerSecond = 0.f;
+		switch ( spell->ID )
+		{
+			case SPELL_FORCEBOLT:
+			case SPELL_MAGICMISSILE:
+			case SPELL_LIGHTNING:
+				snprintf(spellEffectText, 255, language[3289], damage);
+				snprintf(spellType, 31, language[3303]);
+				break;
+			case SPELL_COLD:
+				snprintf(spellEffectText, 255, language[3290], damage, language[3294]);
+				snprintf(spellType, 31, language[3303]);
+				spellInfoLines = 2;
+				break;
+			case SPELL_FIREBALL:
+				snprintf(spellEffectText, 255, language[3290], damage, language[3295]);
+				snprintf(spellType, 31, language[3303]);
+				spellInfoLines = 2;
+				break;
+			case SPELL_BLEED:
+				snprintf(spellEffectText, 255, language[3291], damage, language[3297], language[3294]);
+				spellInfoLines = 2;
+				snprintf(spellType, 31, language[3303]);
+				break;
+			case SPELL_SLOW:
+				snprintf(spellEffectText, 255, language[3292], language[3294]);
+				snprintf(spellType, 31, language[3303]);
+				break;
+			case SPELL_SLEEP:
+				snprintf(spellEffectText, 255, language[3292], language[3298]);
+				snprintf(spellType, 31, language[3303]);
+				break;
+			case SPELL_CONFUSE:
+				snprintf(spellEffectText, 255, language[3292], language[3299]);
+				snprintf(spellType, 31, language[3303]);
+				break;
+			case SPELL_ACID_SPRAY:
+				snprintf(spellEffectText, 255, language[3293], damage, language[3300]);
+				snprintf(spellType, 31, language[3304]);
+				spellInfoLines = 2;
+				break;
+			case SPELL_HEALING:
+			case SPELL_EXTRAHEALING:
+			{
+				int heal = mana;
+				snprintf(spellType, 31, language[3301]);
+				snprintf(spellEffectText, 255, language[3307], heal);
+				spellInfoLines = 2;
+				break;
+			}
+			case SPELL_REFLECT_MAGIC:
+				snprintf(spellType, 31, language[3302]);
+				snprintf(spellEffectText, 255, language[3308]);
+				spellInfoLines = 2;
+				sustainCostPerSecond = 6.f;
+				break;
+			case SPELL_LEVITATION:
+				snprintf(spellType, 31, language[3302]);
+				snprintf(spellEffectText, 255, language[3309]);
+				sustainCostPerSecond = 0.6;
+				break;
+			case SPELL_INVISIBILITY:
+				snprintf(spellType, 31, language[3302]);
+				snprintf(spellEffectText, 255, language[3310]);
+				sustainCostPerSecond = 1.f;
+				break;
+			case SPELL_LIGHT:
+				snprintf(spellType, 31, language[3302]);
+				snprintf(spellEffectText, 255, language[3311]);
+				sustainCostPerSecond = 15.f;
+				break;
+			case SPELL_REMOVECURSE:
+				snprintf(spellType, 31, language[3305]);
+				snprintf(spellEffectText, 255, language[3312]);
+				break;
+			case SPELL_IDENTIFY:
+				snprintf(spellType, 31, language[3305]);
+				snprintf(spellEffectText, 255, language[3313]);
+				break;
+			case SPELL_MAGICMAPPING:
+				snprintf(spellType, 31, language[3305]);
+				snprintf(spellEffectText, 255, language[3314]);
+				spellInfoLines = 2;
+				break;
+			case SPELL_TELEPORTATION:
+				snprintf(spellType, 31, language[3305]);
+				snprintf(spellEffectText, 255, language[3315]);
+				break;
+			case SPELL_OPENING:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3316]);
+				break;
+			case SPELL_LOCKING:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3317]);
+				break;
+			case SPELL_CUREAILMENT:
+				snprintf(spellType, 31, language[3301]);
+				snprintf(spellEffectText, 255, language[3318]);
+				spellInfoLines = 2;
+				break;
+			case SPELL_DIG:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3319]);
+				break;
+			case SPELL_SUMMON:
+				snprintf(spellType, 31, language[3306]);
+				snprintf(spellEffectText, 255, language[3320]);
+				spellInfoLines = 3;
+				break;
+			case SPELL_STONEBLOOD:
+				snprintf(spellType, 31, language[3304]);
+				snprintf(spellEffectText, 255, language[3292], language[3296]);
+				break;
+			case SPELL_DOMINATE:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3321]);
+				spellInfoLines = 4;
+				break;
+			case SPELL_STEAL_WEAPON:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3322]);
+				spellInfoLines = 2;
+				break;
+			case SPELL_DRAIN_SOUL:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3323], damage);
+				spellInfoLines = 2;
+				break;
+			case SPELL_VAMPIRIC_AURA:
+				snprintf(spellType, 31, language[3302]);
+				snprintf(spellEffectText, 255, language[3324]);
+				spellInfoLines = 4;
+				sustainCostPerSecond = 0.33;
+				break;
+			case SPELL_CHARM_MONSTER:
+				snprintf(spellType, 31, language[3303]);
+				snprintf(spellEffectText, 255, language[3326]);
+				spellInfoLines = 3;
+				break;
+			default:
+				break;
+		}
+		char tempstr[64] = "";
+		if ( spell->ID == SPELL_DOMINATE )
+		{
+			snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
+		}
+		else
+		{
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				if ( sustainCostPerSecond > 0.01 )
+				{
+					snprintf(tempstr, 31, language[3325],
+						getCostOfSpell(spell, players[clientnum]->entity), sustainCostPerSecond);
+				}
+				else
+				{
+					snprintf(tempstr, 31, language[308], getCostOfSpell(spell, players[clientnum]->entity));
+				}
+			}
+			else
+			{
+				if ( sustainCostPerSecond > 0.01 )
+				{
+					snprintf(tempstr, 31, language[3325],
+						getCostOfSpell(spell), sustainCostPerSecond);
+				}
+				else
+				{
+					snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
+				}
+			}
+		}
+		if ( strcmp(spellEffectText, "") )
+		{
+			src.w = (longestline(spellEffectText) + 1) * TTF12_WIDTH + 8;
+		}
+		else
+		{
+			src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
+		}
+
+		int furthestX = xres;
+		if ( proficienciesPage == 0 )
+		{
+			if ( src.y < interfaceSkillsSheet.y + interfaceSkillsSheet.h )
+			{
+				furthestX = xres - interfaceSkillsSheet.w;
+			}
+		}
+		else
+		{
+			if ( src.y < interfacePartySheet.y + interfacePartySheet.h )
+			{
+				furthestX = xres - interfacePartySheet.w;
+			}
+		}
+
+		if ( src.x + src.w + 16 > furthestX ) // overflow right side of screen
+		{
+			src.x -= (src.w + 32);
+		}
+		src.h = TTF12_HEIGHT * (2 + spellInfoLines + 1) + 8;
+		if ( spellInfoLines >= 4 )
+		{
+			src.h += 4;
+		}
+		else if ( spellInfoLines == 3 )
+		{
+			src.h += 2;
+		}
+		if ( src.y + src.h + 16 > yres ) // overflow bottom of screen
+		{
+			src.y -= (src.y + src.h + 16 - yres);
+		}
+		drawTooltip(&src);
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s\n%s",
+			spell->name, tempstr, spellType);
+		Uint32 effectColor = uint32ColorLightBlue(*mainsurface);
+		ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, effectColor,
+			"\n\n\n%s", spellEffectText);
+	}
+	else
+	{
+		src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
+		src.h = TTF12_HEIGHT + 8;
+		drawTooltip(&src);
+		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
 	}
 }

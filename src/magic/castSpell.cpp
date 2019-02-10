@@ -21,6 +21,7 @@
 #include "../player.hpp"
 #include "magic.hpp"
 #include "../scores.hpp"
+#include "../colors.hpp"
 
 void castSpellInit(Uint32 caster_uid, spell_t* spell)
 {
@@ -98,6 +99,31 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					}
 				}
 			}
+			if ( spell->ID == SPELL_VAMPIRIC_AURA && client_classes[player] == CLASS_ACCURSED && 
+				stats[player]->EFFECTS[EFF_VAMPIRICAURA] && players[player]->entity->playerVampireCurse == 1 )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					//messagePlayer(player, language[408], spell->name);
+					strcpy((char*)net_packet->data, "VAMP");
+					net_packet->data[4] = clientnum;
+					SDLNet_Write32(spell->ID, &net_packet->data[5]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 9;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+					return;
+				}
+				else
+				{
+					messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3241]);
+					messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
+					//messagePlayer(player, language[408], spell->name);
+					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
+					caster->playerVampireCurse = 2; // cured.
+					return;
+				}
+			}
 		}
 	}
 
@@ -125,10 +151,14 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 	else
 	{
-		magiccost = getCostOfSpell(spell);
+		magiccost = getCostOfSpell(spell, caster);
 	}
 
-	if ( magiccost > stat->MP )
+	if ( caster->behavior == &actPlayer && stat->type == VAMPIRE )
+	{
+		// allow overexpending.
+	}
+	else if ( magiccost > stat->MP )
 	{
 		if (player >= 0)
 		{
@@ -162,7 +192,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
-#define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat)),100) //Shortcut!
+#define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat, caster)),100) //Shortcut!
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
@@ -228,8 +258,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				magiccost = cast_animation.mana_left;
 			}
-
-			caster->drainMP(magiccost);
+			caster->drainMP(magiccost, false);
 		}
 		else // Calculate the cost of the Spell for Multiplayer
 		{
@@ -240,7 +269,28 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else
 			{
-				magiccost = getCostOfSpell(spell);
+				magiccost = getCostOfSpell(spell, caster);
+				if ( magiccost > stat->MP )
+				{
+					// damage sound/effect due to overdraw.
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)net_packet->data, "SHAK");
+						net_packet->data[4] = 10; // turns into .1
+						net_packet->data[5] = 10;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						playSoundPlayer(player, 28, 92);
+					}
+					else if ( player == 0 )
+					{
+						camera_shakex += 0.1;
+						camera_shakey += 10;
+						playSoundPlayer(player, 28, 92);
+					}
+				}
 				caster->drainMP(magiccost);
 			}
 		}
@@ -494,11 +544,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_INVISIBLE, true, duration, false);
+			bool isPlayer = false;
 			for (i = 0; i < numplayers; ++i)
 			{
 				if (caster == players[i]->entity)
 				{
 					serverUpdateEffects(i);
+					isPlayer = true;
+				}
+			}
+
+			if ( isPlayer )
+			{
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					Entity* creature = (Entity*)node->element;
+					if ( creature && creature->behavior == &actMonster && creature->monsterTarget == caster->getUID() )
+					{
+						if ( !creature->isBossMonsterOrBossMap() )
+						{
+							//Abort if invalid creature (boss, shopkeep, etc).
+							real_t dist = entityDist(caster, creature);
+							if ( dist > STRIKERANGE * 3 )
+							{
+								// lose track of invis target.
+								creature->monsterReleaseAttackTarget();
+							}
+						}
+					}
 				}
 			}
 
@@ -574,6 +647,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							closeRemoveCurseGUI();
 						}
+						GenericGUI.closeGUI();
 						if ( openedChest[i] )
 						{
 							openedChest[i]->closeChest();
@@ -616,6 +690,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							CloseIdentifyGUI();
 						}
+
+						GenericGUI.closeGUI();
 
 						if ( openedChest[i] )
 						{
@@ -720,9 +796,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else
 						{
-							stats[i]->EFFECTS[c] = false;
-							stats[i]->EFFECTS_TIMERS[c] = 0;
+							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+							{
+								stats[i]->EFFECTS[c] = false;
+								stats[i]->EFFECTS_TIMERS[c] = 0;
+							}
 						}
+					}
+					if ( stats[i]->EFFECTS[EFF_WITHDRAWAL] )
+					{
+						players[i]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 					}
 					if ( players[i]->entity->flags[BURNING] )
 					{
@@ -750,8 +833,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									target_stat->EFFECTS[c] = false;
-									target_stat->EFFECTS_TIMERS[c] = 0;
+									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+									{
+										target_stat->EFFECTS[c] = false;
+										target_stat->EFFECTS_TIMERS[c] = 0;
+									}
+								}
+								if ( target_stat->EFFECTS[EFF_WITHDRAWAL] )
+								{
+									entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 								}
 								if ( entity->behavior == &actPlayer )
 								{
@@ -776,22 +866,73 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_summon.name) )
 		{
-			for ( i = 0; i < numplayers; ++i )
+			playSoundEntity(caster, 251, 128);
+			playSoundEntity(caster, 252, 128);
+			if ( caster->behavior == &actPlayer && stats[caster->skill[2]] )
 			{
-				if ( caster == players[i]->entity )
+				// kill old summons.
+				for ( node = stats[caster->skill[2]]->FOLLOWERS.first; node != nullptr; node = node->next )
 				{
-					//caster->lichIceCreateCannon();
-					//caster->castOrbitingMagicMissile(SPELL_FIREBALL, 8.0, 0.0, 500);
-					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					//createParticle1(caster, i);
-					//createParticleDropRising(caster);
+					Entity* follower = uidToEntity(*((Uint32*)(node)->element));
+					if ( follower->monsterAllySummonRank != 0 )
+					{
+						Stat* followerStats = follower->getStats();
+						if ( followerStats )
+						{
+							follower->setMP(followerStats->MAXMP * (followerStats->HP / static_cast<float>(followerStats->MAXHP)));
+							follower->setHP(0);
+						}
+					}
 				}
-			}
-			//createParticleDropRising(caster, 593, 1.0);
-			//serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
 
-			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
-			playSoundEntity(caster, 167, 128);
+				real_t startx = caster->x;
+				real_t starty = caster->y;
+				real_t startz = -4;
+				real_t pitch = caster->pitch;
+				if ( pitch < 0 )
+				{
+					pitch = 0;
+				}
+				// draw line from the players height and direction until we hit the ground.
+				real_t previousx = startx;
+				real_t previousy = starty;
+				int index = 0;
+				for ( ; startz < 0.f; startz += abs(0.05 * tan(pitch)) )
+				{
+					startx += 0.1 * cos(caster->yaw);
+					starty += 0.1 * sin(caster->yaw);
+					index = (static_cast<int>(starty + 16 * sin(caster->yaw)) >> 4) * MAPLAYERS 
+						+ (static_cast<int>(startx + 16 * cos(caster->yaw)) >> 4) * MAPLAYERS * map.height;
+					if ( map.tiles[index] && !map.tiles[OBSTACLELAYER + index] )
+					{
+						// store the last known good coordinate
+						previousx = startx;
+						previousy = starty;
+					}
+					if ( map.tiles[OBSTACLELAYER + index] )
+					{
+						break;
+					}
+				}
+
+				Entity* timer = createParticleTimer(caster, 55, 0);
+				timer->x = static_cast<int>(previousx / 16) * 16 + 8;
+				timer->y = static_cast<int>(previousy / 16) * 16 + 8;
+				timer->sizex = 4;
+				timer->sizey = 4;
+				timer->particleTimerCountdownSprite = 791;
+				timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPELL_SUMMON;
+				timer->particleTimerPreDelay = 40;
+				timer->particleTimerEndAction == PARTICLE_EFFECT_SPELL_SUMMON;
+				timer->z = 0;
+				Entity* sapParticle = createParticleSapCenter(caster, caster, SPELL_SUMMON, 599, 599);
+				sapParticle->parent = 0;
+				sapParticle->yaw = caster->yaw;
+				sapParticle->skill[7] = caster->getUID();
+				sapParticle->skill[8] = timer->x;
+				sapParticle->skill[9] = timer->y;
+				serverSpawnMiscParticlesAtLocation(previousx / 16, previousy / 16, 0, PARTICLE_EFFECT_SPELL_SUMMON, 791);
+			}
 		}
 		else if ( !strcmp(element->name, spellElement_reflectMagic.name) )
 		{
@@ -884,7 +1025,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_cold.name) )
 			{
-				playSoundEntity(entity, 172, 64);
+				if ( caster && caster->behavior == &actPlayer && trap )
+				{
+					playSoundEntity(entity, 172, 48);
+				}
+				else
+				{
+					playSoundEntity(entity, 172, 64);
+				}
 			}
 			else if ( !strcmp(spell->name, spell_bleed.name) )
 			{
@@ -1347,7 +1495,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 		}
-		
 	}
 
 	if (spell_isChanneled(spell) && !using_magicstaff)   //TODO: What about magic traps and channeled spells?

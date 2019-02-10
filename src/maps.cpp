@@ -2095,6 +2095,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 						else
 						{
 							entity = newEntity(8, 1, map.entities, nullptr);  // item
+							setSpriteAttributes(entity, nullptr, nullptr);
 							numGenItems++;
 						}
 					}
@@ -2118,6 +2119,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Sink
 							case 3:
 								entity = newEntity(21, 1, map.entities, nullptr); //Chest.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								entity->chestLocked = -1;
 								break; //Chest
 							case 4:
@@ -2142,6 +2144,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 							if ( prng_get_uint() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
+								setSpriteAttributes(entity, nullptr, nullptr);
 							}
 							else
 							{
@@ -2204,6 +2207,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								else
 								{
 									entity = newEntity(8, 1, map.entities, nullptr);  // item
+									setSpriteAttributes(entity, nullptr, nullptr);
 									numGenItems++;
 								}
 							}
@@ -2259,6 +2263,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								break; //Sink
 							case 3:
 								entity = newEntity(21, 1, map.entities, nullptr); //Chest entity.
+								setSpriteAttributes(entity, nullptr, nullptr);
 								entity->chestLocked = -1;
 								break; //Chest
 							case 4:
@@ -2283,6 +2288,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 							if ( prng_get_uint() % 2 == 0 )
 							{
 								entity = newEntity(120, 1, map.entities, nullptr); // vertical spell trap.
+								setSpriteAttributes(entity, nullptr, nullptr);
 							}
 							else
 							{
@@ -2350,6 +2356,7 @@ void assignActions(map_t* map)
 	Entity* entity, *childEntity;
 	Item* item;
 	bool itemsdonebefore = false;
+	Entity* vampireQuestChest = nullptr;
 
 	if ( map == nullptr )
 	{
@@ -2419,8 +2426,12 @@ void assignActions(map_t* map)
 							stats[numplayers]->HUNGER = 500;
 							for ( c = 0; c < NUMEFFECTS; ++c )
 							{
-								stats[numplayers]->EFFECTS[c] = false;
-								stats[numplayers]->EFFECTS_TIMERS[c] = 0;
+								if ( !(c == EFF_VAMPIRICAURA && stats[numplayers]->EFFECTS_TIMERS[c] == -2) 
+									&& c != EFF_WITHDRAWAL )
+								{
+									stats[numplayers]->EFFECTS[c] = false;
+									stats[numplayers]->EFFECTS_TIMERS[c] = 0;
+								}
 							}
 						}
 					}
@@ -2473,6 +2484,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(2, 0, map->entities, nullptr); //Door frame entity.
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("16 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
@@ -2484,6 +2496,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -2493,6 +2506,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
+				TileEntityList.addEntity(*childEntity);
 				//printlog("18 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
@@ -3671,6 +3685,11 @@ void assignActions(map_t* map)
 				node_t* tempNode = list_AddNodeFirst(&entity->children);
 				tempNode->element = NULL;
 				tempNode->deconstructor = &emptyDeconstructor;
+
+				if ( !strcmp(map->name, "The Mystic Library") && !vampireQuestChest )
+				{
+					vampireQuestChest = entity;
+				}
 				break;
 			}
 			// liquid marker
@@ -3941,6 +3960,7 @@ void assignActions(map_t* map)
 				{
 					// put an item on the table
 					childEntity = newEntity(8, 1, map->entities, nullptr);
+					setSpriteAttributes(childEntity, nullptr, nullptr);
 					childEntity->x = entity->x - 8;
 					childEntity->y = entity->y - 8;
 					TileEntityList.addEntity(*childEntity);
@@ -5131,6 +5151,17 @@ void assignActions(map_t* map)
 						}
 					}
 				}
+			}
+		}
+	}
+	if ( vampireQuestChest )
+	{
+		for ( c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( client_classes[c] == CLASS_ACCURSED )
+			{
+				vampireQuestChest->chestHasVampireBook = 1;
+				break;
 			}
 		}
 	}

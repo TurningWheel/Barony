@@ -69,6 +69,7 @@ extern SDL_Surface* backdrop_cursed_bmp;
 extern SDL_Surface* status_bmp;
 extern SDL_Surface* character_bmp;
 extern SDL_Surface* hunger_bmp;
+extern SDL_Surface* hunger_blood_bmp;
 extern SDL_Surface* minotaur_bmp;
 extern SDL_Surface* textup_bmp;
 extern SDL_Surface* textdown_bmp;
@@ -265,6 +266,84 @@ extern int selectedRemoveCurseSlot;
 void selectRemoveCurseSlot(int slot);
 void warpMouseToSelectedRemoveCurseSlot();
 
+enum GUICurrentType
+{
+	GUI_TYPE_NONE,
+	GUI_TYPE_REPAIR,
+	GUI_TYPE_ALCHEMY
+};
+
+// Generic GUI Stuff (repair/alchemy)
+class GenericGUIMenu
+{
+	int gui_starty = ((xres / 2) - (420 / 2)) + offsetx;
+	int gui_startx = ((yres / 2) - (96 / 2)) + offsety;
+	int usingScrollBeatitude = 0;
+	int offsetx;
+	int offsety;
+	int scroll;
+	GUICurrentType guiType;
+public:
+	static const int kNumShownItems = 4;
+	bool draggingGUI; // if gui is being dragged
+	Item* itemsDisplayed[kNumShownItems];
+	bool guiActive;
+	int selectedSlot;
+
+	// Alchemy
+	Item* basePotion;
+	Item* secondaryPotion;
+	Item* alembicItem;
+	bool experimentingAlchemy;
+
+	GenericGUIMenu() :
+		guiActive(false),
+		offsetx(0),
+		offsety(0),
+		selectedSlot(-1),
+		scroll(0),
+		draggingGUI(false),
+		basePotion(nullptr),
+		secondaryPotion(nullptr),
+		alembicItem(nullptr),
+		experimentingAlchemy(false)
+	{
+		for ( int i = 0; i < kNumShownItems; ++i )
+		{
+			itemsDisplayed[i] = nullptr;
+		}
+	};
+
+	void warpMouseToSelectedSlot();
+	void selectSlot(int slot);
+	void closeGUI();
+	void openGUI(int type, int scrollBeatitude);
+	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
+	inline Item* getItemInfo(int slot);
+	void updateGUI();
+	void rebuildGUIInventory();
+	void initGUIControllerCode();
+	bool shouldDisplayItemInGUI(Item* item);
+	bool executeOnItemClick(Item* item);
+
+	// repair menu funcs
+	void repairItem(Item* item);
+	bool isItemRepairable(const Item* item);
+
+	//alchemy menu funcs
+	bool isItemMixable(const Item* item);
+	void alchemyCombinePotions();
+	bool alchemyLearnRecipe(int type, bool increaseskill, bool notify = true);
+	bool isItemBaseIngredient(int type);
+	bool isItemSecondaryIngredient(int type);
+	void alchemyLearnRecipeOnLevelUp(int skill);
+
+	inline bool isGUIOpen()
+	{
+		return guiActive;
+	};
+};
+extern GenericGUIMenu GenericGUI;
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
@@ -402,7 +481,11 @@ static const int SCANCODE_UNASSIGNED_BINDING = 399;
 
 inline bool hotbarGamepadControlEnabled()
 {
-	return ( !openedChest[clientnum] && gui_mode != GUI_MODE_SHOP && !identifygui_active && !removecursegui_active );
+	return ( !openedChest[clientnum] 
+		&& gui_mode != GUI_MODE_SHOP 
+		&& !identifygui_active 
+		&& !removecursegui_active
+		&& !GenericGUI.isGUIOpen() );
 }
 
 extern SDL_Surface *str_bmp64u;
@@ -420,6 +503,10 @@ extern SDL_Surface *chr_bmp64;
 
 extern SDL_Surface *sidebar_lock_bmp;
 extern SDL_Surface *sidebar_unlock_bmp;
+
+extern SDL_Surface *effect_drunk_bmp;
+extern SDL_Surface *effect_polymorph_bmp;
+extern SDL_Surface *effect_hungover_bmp;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
 void attackHoverText(Sint32 input[6]);

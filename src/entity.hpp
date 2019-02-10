@@ -159,6 +159,7 @@ public:
 	 * (e.g. you locked a chest with a spell...sorry, no gold for you)
 	 */
 	Sint32& chestPreventLockpickCapstoneExploit;
+	Sint32& chestHasVampireBook; // skill[11]
 
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState; //skill[0]
@@ -194,12 +195,20 @@ public:
 	Sint32& monsterDefend; //skill[47]
 	Sint32& monsterAllySpecial; //skill[48]
 	Sint32& monsterAllySpecialCooldown; //skill[49]
+	Sint32& monsterAllySummonRank; //skill[50]
+	real_t& monsterKnockbackVelocity; //fskill[9]
+	Sint32& monsterKnockbackUID; //skill[52]
+
+	//--EFFECTS--
+	Sint32& effectPolymorph; // skill[50]
+
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
 
 	//--PUBLIC PLAYER SKILLS--
 	Sint32& playerLevelEntrySpeech; //skill[18]
 	Sint32& playerAliveTime; //skill[12]
+	Sint32& playerVampireCurse; //skill[51]
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]
@@ -357,8 +366,16 @@ public:
 	Sint32& actmagicMirrorReflected; //skill[11]
 	Sint32& actmagicMirrorReflectedCaster; //skill[12]
 	Sint32& actmagicCastByMagicstaff; //skill[13]
-	real_t actmagicOrbitVerticalSpeed; //fskill[2]
-	real_t actmagicOrbitStartZ; //fskill[3]
+	real_t& actmagicOrbitVerticalSpeed; //fskill[2]
+	real_t& actmagicOrbitStartZ; //fskill[3]
+	real_t& actmagicOrbitStationaryX; // fskill[4]
+	real_t& actmagicOrbitStationaryY; // fskill[5]
+	real_t& actmagicOrbitStationaryCurrentDist; // fskill[6]
+	Sint32& actmagicOrbitStationaryHitTarget; // skill[14]
+	Sint32& actmagicOrbitHitTargetUID1; // skill[15]
+	Sint32& actmagicOrbitHitTargetUID2; // skill[16]
+	Sint32& actmagicOrbitHitTargetUID3; // skill[17]
+	Sint32& actmagicOrbitHitTargetUID4; // skill[17]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -430,7 +447,7 @@ public:
 	Sint32 getCHR();
 
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
-	int entityLightAfterReductions(Stat& myStats, Entity& observer);
+	int entityLightAfterReductions(Stat& myStats, Entity* observer);
 
 	void handleEffects(Stat* myStats);
 	void handleEffectsClient();
@@ -448,7 +465,7 @@ public:
 	void modMP(int amount); //Adds amount to MP.
 	int getMP();
 
-	void drainMP(int amount); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
+	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
 	Sint32 getAttack();
@@ -589,9 +606,9 @@ public:
 
 	//--monster type from sprite
 	int getMonsterTypeFromSprite();
-	//--monster helmet limb offsets
+	//--monster limb offsets
 	void setHelmetLimbOffset(Entity* helm);
-
+	void setHumanoidLimbOffset(Entity* limb, Monster race, int limbType);
 	void actMonsterLimb(bool processLight = false);
 
 	void removeMonsterDeathNodes();
@@ -612,6 +629,7 @@ public:
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
+	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
 	// monster special attack handler, returns true if monster should attack after calling this function.
@@ -719,7 +737,7 @@ public:
 	void vampireChooseWeapon(const Entity* target, double dist);
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
-
+	void skeletonSummonSetEquipment(Stat* myStats, int rank);
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);
@@ -760,6 +778,8 @@ public:
 	// special magic functions/trickery
 	void castFallingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int heightDelay);
 	Entity* castOrbitingMagicMissile(int spellID, real_t distFromCaster, real_t angleFromCasterDirection, int duration);
+	Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t centerx, real_t centery, 
+		real_t distFromCenter, real_t angleFromCenterDirection, int duration);
 	void lichFireSetNextAttack(Stat& myStats);
 	void lichIceSetNextAttack(Stat& myStats);
 
@@ -772,10 +792,23 @@ public:
 	bool monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck); // monster create path to destination, search adjacent tiles if specified target is inaccessible.
 	int getMagicResistance(); // returns the value of magic resistance of a monster.
 	void playerLevelEntrySpeechSecond(); // handle secondary voice lines for post-herx content
+	bool isPlayerHeadSprite(); // determines if model of entity is a human head.
+	void setDefaultPlayerModel(int playernum, Monster playerRace, int limbType); // sets correct base color/model of limbs for player characters.
+	Monster getMonsterFromPlayerRace(int playerRace); // convert playerRace into the relevant monster type
 	void setHardcoreStats(Stat& stats); // set monster stats for hardcore mode.
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
+	void playerStatIncrease(int playerClass, int chosenStats[3]);
+	bool playerRequiresBloodToSustain(); // vampire type or accursed class
+	bool isBossMonsterOrBossMap(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
+	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 };
 
+Sint32 statGetSTR(Stat* entitystats, Entity* my);
+Sint32 statGetDEX(Stat* entitystats, Entity* my);
+Sint32 statGetCON(Stat* entitystats, Entity* my);
+Sint32 statGetINT(Stat* entitystats, Entity* my);
+Sint32 statGetPER(Stat* entitystats, Entity* my);
+Sint32 statGetCHR(Stat* entitystats, Entity* my);
 extern list_t entitiesToDelete[MAXPLAYERS];
 extern Uint32 entity_uids, lastEntityUIDs;
 //extern Entity *players[4];
@@ -793,12 +826,6 @@ class Item;
 extern bool swornenemies[NUMMONSTERS][NUMMONSTERS];
 extern bool monsterally[NUMMONSTERS][NUMMONSTERS];
 
-Sint32 statGetSTR(Stat* entitystats);
-Sint32 statGetDEX(Stat* entitystats);
-Sint32 statGetCON(Stat* entitystats);
-Sint32 statGetINT(Stat* entitystats);
-Sint32 statGetPER(Stat* entitystats);
-Sint32 statGetCHR(Stat* entitystats);
 int AC(Stat* stat);
 
 Entity* uidToEntity(Sint32 uidnum);
@@ -887,8 +914,8 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 221;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 95;
+static const int NUM_ITEM_STRINGS = 235;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 100;
 static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;
 
@@ -924,16 +951,15 @@ bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
-void playerStatIncrease(int playerClass, int chosenStats[3]);
 
 static const int MSG_DESCRIPTION = 0;
 static const int MSG_COMBAT = 1;
 static const int MSG_OBITUARY = 2;
 static const int MSG_GENERIC = 3;
 static const int MSG_ATTACKS = 4;
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType);
-char* playerClassLangEntry(int classnum);
-char* playerClassDescription(int classnum);
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* monster = nullptr);
+char* playerClassLangEntry(int classnum, int playernum);
+char* playerClassDescription(int classnum, int playernum);
 
 //Some testing functions/commands.
 Entity* summonChest(long x, long y);
@@ -946,3 +972,8 @@ void boulderSokobanOnDestroy(bool pushedOffLedge);
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.
+
+//Fountain potion drop chance variables.
+extern const std::vector<int> fountainPotionDropChances;
+extern const std::vector<std::pair<int, int>> potionStandardAppearanceMap;
+extern std::mt19937 fountainSeed;

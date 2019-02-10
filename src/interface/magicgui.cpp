@@ -197,13 +197,7 @@ void updateMagicGUI()
 
 void drawSustainedSpells()
 {
-	if (!channeledSpells[clientnum].first)
-	{
-		return;    //No use continuing if there are no sustained spells.
-	}
-
 	SDL_Surface** sprite;
-
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
 	pos.y = SUST_SPELLS_Y;
@@ -222,6 +216,148 @@ void drawSustainedSpells()
 		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
 	}
 
+	for ( int i = 0; showStatusEffectIcons && i < NUMEFFECTS && stats[clientnum]; ++i )
+	{
+		node_t* effectImageNode = nullptr;
+		sprite = nullptr;
+		if ( stats[clientnum]->EFFECTS[i] )
+		{
+			switch ( i )
+			{
+				case EFF_SLOW:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
+					break;
+				case EFF_BLEEDING:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
+					break;
+				case EFF_ASLEEP:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
+					break;
+				case EFF_CONFUSED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
+					break;
+				case EFF_PACIFY:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
+					break;
+				case EFF_VAMPIRICAURA:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
+					/*node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}*/
+					break;
+				}
+				case EFF_PARALYZED:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
+					break;
+				case EFF_DRUNK:
+					if ( effect_drunk_bmp )
+					{
+						sprite = &effect_drunk_bmp;
+					}
+					break;
+				case EFF_POLYMORPH:
+					if ( effect_polymorph_bmp )
+					{
+						sprite = &effect_polymorph_bmp;
+					}
+					break;
+				case EFF_WITHDRAWAL:
+					if ( effect_hungover_bmp )
+					{
+						sprite = &effect_hungover_bmp;
+					}
+					break;
+				case EFF_POTION_STR:
+					sprite = &str_bmp64u;
+					break;
+				case EFF_LEVITATING:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LEVITATION);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_LEVITATION )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					break;
+				}
+				case EFF_INVISIBLE:
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_INVISIBILITY);
+					node_t* node = channeledSpells[clientnum].first;
+					for ( ; node != nullptr; node = node->next )
+					{
+						spell_t* spell = (spell_t*)node->element;
+						if ( spell && spell->ID == SPELL_INVISIBILITY )
+						{
+							effectImageNode = nullptr;
+							break;
+						}
+					}
+					break;
+				}
+				default:
+					effectImageNode = nullptr;
+					break;
+			}
+		}
+		if ( effectImageNode || sprite )
+		{
+			if ( !sprite )
+			{
+				sprite = (SDL_Surface**)effectImageNode->element;
+			}
+
+			bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+			bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[i] > 0 && 
+				(stats[clientnum]->EFFECTS_TIMERS[i] < TICKS_PER_SECOND * 5);
+			if ( i == EFF_VAMPIRICAURA )
+			{
+				lowDuration = false;
+			}
+			if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+			{
+				if ( sprite == &str_bmp64u )
+				{
+					pos.h = 32;
+					pos.w = 32;
+					drawImageScaled(*sprite, NULL, &pos);
+				}
+				else
+				{
+					drawImage(*sprite, NULL, &pos);
+				}
+			}
+			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
+			{
+				pos.x += sustained_spell_generic_icon->w;
+			}
+			else
+			{
+				//Vertical.
+				pos.y += (*sprite)->h;
+			}
+			effectImageNode = nullptr;
+		}
+	}
+
+	if (!channeledSpells[clientnum].first)
+	{
+		return;    //No use continuing if there are no sustained spells.
+	}
+
 	int count = 0; //This is just for debugging purposes.
 	node_t* node = channeledSpells[clientnum].first;
 	for (; node; node = node->next, count++)
@@ -232,6 +368,10 @@ void drawSustainedSpells()
 			break;
 		}
 		//Grab the sprite/
+		if ( spell->ID == SPELL_VAMPIRIC_AURA )
+		{
+			continue;
+		}
 		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
 		if (!node)
 		{

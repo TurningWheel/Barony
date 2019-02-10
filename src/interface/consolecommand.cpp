@@ -24,11 +24,13 @@
 #include "../player.hpp"
 #include "interface.hpp"
 #include "../scores.hpp"
+#include "../magic/magic.hpp"
 
 bool spamming = false;
 bool showfirst = false;
 bool logCheckObstacle = false;
 int logCheckObstacleCount = 0;
+bool logCheckMainLoopTimers = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -320,6 +322,11 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/noclip", 7) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[287]);
@@ -432,11 +439,11 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/thirdperson", 12))
 	{
-		if (!(svFlags & SV_FLAG_CHEATS))
+		/*if (!(svFlags & SV_FLAG_CHEATS))
 		{
 			messagePlayer(clientnum, language[277]);
 			return;
-		}
+		}*/
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
 		{
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
@@ -901,6 +908,10 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/vsync", 6) )
 	{
 		verticalSync = (verticalSync == false);
+	}
+	else if ( !strncmp(command_str, "/hidestatusicons", 16) )
+	{
+		showStatusEffectIcons = (showStatusEffectIcons == false);
 	}
 	else if ( !strncmp(command_str, "/muteping", 9) )
 	{
@@ -1413,8 +1424,15 @@ void consoleCommand(char* command_str)
 
 		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
-			players[clientnum]->entity->getStats()->EFFECTS[c] = false;
-			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+			{
+				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
+				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;
+			}
+		}
+		if ( players[clientnum]->entity->getStats()->EFFECTS[EFF_WITHDRAWAL] )
+		{
+			players[clientnum]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 		}
 	}
 	else if (!strncmp(command_str, "/summonall ", 11))
@@ -1874,7 +1892,7 @@ void consoleCommand(char* command_str)
 		int skill = atoi(&command_str[12]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
-			messagePlayer(clientnum, language[2451]); //Skill out of range.
+			messagePlayer(clientnum, language[3239]); //Skill out of range.
 		}
 		else
 		{
@@ -2207,6 +2225,27 @@ void consoleCommand(char* command_str)
 				players[clientnum]->entity->setEffect(effect, true, 500, true);
 			}
 		}
+		else if ( !strncmp(command_str, "/levelsummon", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity && entity->monsterAllySummonRank != 0 )
+				{
+					Stat* entityStats = entity->getStats();
+					if ( entityStats )
+					{
+						entityStats->EXP += 100;
+					}
+				}
+			}
+			return;
+		}
 		else if ( !strncmp(command_str, "/brawlermode", 12) )
 		{
 			achievementBrawlerMode = !achievementBrawlerMode;
@@ -2222,6 +2261,113 @@ void consoleCommand(char* command_str)
 			{
 				messagePlayer(clientnum, language[2996]);
 			}
+		}
+		else if ( !strncmp(command_str, "/gimmepotions", 13) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+
+			std::vector<int> potionChances =
+			{
+				1,	//POTION_WATER,
+				1,	//POTION_BOOZE,
+				1,	//POTION_JUICE,
+				1,	//POTION_SICKNESS,
+				1,	//POTION_CONFUSION,
+				1,	//POTION_EXTRAHEALING,
+				1,	//POTION_HEALING,
+				1,	//POTION_CUREAILMENT,
+				1,	//POTION_BLINDNESS,
+				1,	//POTION_RESTOREMAGIC,
+				1,	//POTION_INVISIBILITY,
+				1,	//POTION_LEVITATION,
+				1,	//POTION_SPEED,
+				1,	//POTION_ACID,
+				1,	//POTION_PARALYSIS,
+				1,	//POTION_POLYMORPH
+			};
+
+			std::discrete_distribution<> potionDistribution(potionChances.begin(), potionChances.end());
+			for ( int i = 0; i < 10; ++i )
+			{
+				auto generatedPotion = potionStandardAppearanceMap.at(potionDistribution(fountainSeed));
+				Item* potion = newItem(static_cast<ItemType>(generatedPotion.first), static_cast<Status>(SERVICABLE + rand() % 2),
+					0, 1, generatedPotion.second, true, nullptr);
+				itemPickup(clientnum, potion);
+				//free(potion);
+			}
+		}
+		else if ( !strncmp(command_str, "/hungoverstats", 14) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			if ( multiplayer != SINGLE )
+			{
+				messagePlayer(clientnum, language[299]);
+				return;
+			}
+
+			messagePlayer(clientnum, "Hungover Active: %d, Time to go: %d, Drunk Active: %d, Drunk time: %d",
+				stats[clientnum]->EFFECTS[EFF_WITHDRAWAL], stats[clientnum]->EFFECTS_TIMERS[EFF_WITHDRAWAL],
+				stats[clientnum]->EFFECTS[EFF_DRUNK], stats[clientnum]->EFFECTS_TIMERS[EFF_DRUNK]);
+			return;
+		}
+		else if ( !strncmp(command_str, "/debugtimers", 12) )
+		{
+			logCheckMainLoopTimers = !logCheckMainLoopTimers;
+		}
+		else if ( !strncmp(command_str, "/allspells", 10) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			bool learned = addSpell(SPELL_FORCEBOLT, clientnum, true);
+			learned = addSpell(SPELL_MAGICMISSILE, clientnum, true);
+			learned = addSpell(SPELL_COLD, clientnum, true);
+			learned = addSpell(SPELL_FIREBALL, clientnum, true);
+			learned = addSpell(SPELL_LIGHTNING, clientnum, true);
+			learned = addSpell(SPELL_REMOVECURSE, clientnum, true);
+			learned = addSpell(SPELL_LIGHT, clientnum, true);
+			learned = addSpell(SPELL_IDENTIFY, clientnum, true);
+			learned = addSpell(SPELL_MAGICMAPPING, clientnum, true);
+			learned = addSpell(SPELL_SLEEP, clientnum, true);
+			learned = addSpell(SPELL_CONFUSE, clientnum, true);
+			learned = addSpell(SPELL_SLOW, clientnum, true);
+			learned = addSpell(SPELL_OPENING, clientnum, true);
+			learned = addSpell(SPELL_LOCKING, clientnum, true);
+			learned = addSpell(SPELL_LEVITATION, clientnum, true);
+			learned = addSpell(SPELL_INVISIBILITY, clientnum, true);
+			learned = addSpell(SPELL_TELEPORTATION, clientnum, true);
+			learned = addSpell(SPELL_HEALING, clientnum, true);
+			learned = addSpell(SPELL_EXTRAHEALING, clientnum, true);
+			learned = addSpell(SPELL_CUREAILMENT, clientnum, true);
+			learned = addSpell(SPELL_DIG, clientnum, true);
+			learned = addSpell(SPELL_SUMMON, clientnum, true);
+			learned = addSpell(SPELL_STONEBLOOD, clientnum, true);
+			learned = addSpell(SPELL_BLEED, clientnum, true);
+			learned = addSpell(SPELL_REFLECT_MAGIC, clientnum, true);
+			learned = addSpell(SPELL_ACID_SPRAY, clientnum, true);
+			learned = addSpell(SPELL_STEAL_WEAPON, clientnum, true);
+			learned = addSpell(SPELL_DRAIN_SOUL, clientnum, true);
+			learned = addSpell(SPELL_VAMPIRIC_AURA, clientnum, true);
+			learned = addSpell(SPELL_CHARM_MONSTER, clientnum, true);
+			return;
 		}
 		else
 		{
