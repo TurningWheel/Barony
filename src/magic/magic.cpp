@@ -1215,7 +1215,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 		{
 			messagePlayer(parent->skill[2], language[3191]); // had no effect
 		}
-		return false;
+		return nullptr;
 	}
 
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
@@ -1225,7 +1225,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 		{
 			messagePlayer(parent->skill[2], language[3191]); // had no effect
 		}
-		return false;
+		return nullptr;
 	}
 
 	if ( target->behavior == &actMonster )
@@ -1362,7 +1362,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 					messagePlayer(parent->skill[2], language[3191]); // failed for some other reason
 				}
 			}
-			return false;
+			return nullptr;
 		}
 
 		Stat* summonedStats = summonedEntity->getStats();
@@ -1372,7 +1372,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			{
 				messagePlayer(parent->skill[2], language[3191]);
 			}
-			return false;
+			return nullptr;
 		}
 
 		// remove equipment from new monster
