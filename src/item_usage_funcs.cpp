@@ -2325,6 +2325,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
+	consumeItem(item, player);
 }
 
 void item_ScrollEnchantArmor(Item* item, int player)
@@ -2348,20 +2349,14 @@ void item_ScrollEnchantArmor(Item* item, int player)
 
 	if (players[player]->entity->isBlind())
 	{
-		if (player == clientnum)
-		{
-			messagePlayer(player, language[775]);
-		}
+		messagePlayer(player, language[775]);
 		return;
 	}
 
 	conductIlliterate = false;
 
 	item->identified = 1;
-	if (player == clientnum)
-	{
-		messagePlayer(player, language[848]);
-	}
+	messagePlayer(player, language[848]);
 
 	// choose a random piece of worn equipment to curse!
 	int tryIndex = 1 + rand() % 7;
@@ -2494,6 +2489,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 			//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		}
 	}
+	consumeItem(item, player);
 }
 
 void item_ScrollRemoveCurse(Item* item, int player)
@@ -2533,7 +2529,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 		}
 
 		initRemoveCurseGUIControllerCode();
-
+		consumeItem(item, player);
 		return;
 	}
 	else
@@ -2652,6 +2648,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 			messagePlayer(player, language[862]);
 		}
 	}
+	consumeItem(item, player);
 }
 
 void item_ScrollFire(Item* item, int player)

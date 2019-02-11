@@ -210,7 +210,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					}
 				}
 
-				if ( lifeSaving )
+				if ( stats->HP > 0 || lifeSaving )
 				{
 					// spawn several rock items
 					int i = 8 + rand() % 4;
