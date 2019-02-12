@@ -11877,7 +11877,7 @@ void buttonRandomCharacter(button_t* my)
 	charcreation_step = 4;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
-	client_classes[0] = rand() % NUMCLASSES;
+	client_classes[0] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
@@ -11890,7 +11890,7 @@ void buttonReplayLastCharacter(button_t* my)
 		playing_random_char = false;
 		camera_charsheet_offsetyaw = (330) * PI / 180;
 		stats[0]->sex = static_cast<sex_t>(lastCreatedCharacterSex);
-		client_classes[0] = lastCreatedCharacterClass;
+		client_classes[0] = std::min(lastCreatedCharacterClass, static_cast<int>(CLASS_MONK));
 		stats[0]->clearStats();
 		initClass(0);
 		stats[0]->appearance = lastCreatedCharacterAppearance;
