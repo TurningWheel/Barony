@@ -11877,7 +11877,7 @@ void buttonRandomCharacter(button_t* my)
 	charcreation_step = 4;
 	camera_charsheet_offsetyaw = (330) * PI / 180;
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
-	client_classes[0] = rand() % CLASS_MONK + 1;//NUMCLASSES;
+	client_classes[0] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
