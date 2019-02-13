@@ -3712,7 +3712,8 @@ bool Item::shouldItemStack(int player)
 				&& itemCategory(this) != RING
 				&& itemCategory(this) != AMULET
 				&& itemCategory(this) != SPELLBOOK
-				&& this->type != TOOL_PICKAXE)
+				&& this->type != TOOL_PICKAXE
+				&& this->type != TOOL_ALEMBIC)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
