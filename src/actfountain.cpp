@@ -349,44 +349,85 @@ void actFountain(Entity* my)
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayerColor(i, textcolor, language[473]);
+							bool stuckOnYouSuccess = false;
 							if ( stats[i]->helmet )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->helmet->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->helmet->beatitude++;
 							}
 							if ( stats[i]->breastplate )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->breastplate->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->breastplate->beatitude++;
 							}
 							if ( stats[i]->gloves )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->gloves->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->gloves->beatitude++;
 							}
 							if ( stats[i]->shoes )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->shoes->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->shoes->beatitude++;
 							}
 							if ( stats[i]->shield )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->shield->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->shield->beatitude++;
 							}
 							if ( stats[i]->weapon )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->weapon->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->weapon->beatitude++;
 							}
 							if ( stats[i]->cloak )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->cloak->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->cloak->beatitude++;
 							}
 							if ( stats[i]->amulet )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->amulet->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->amulet->beatitude++;
 							}
 							if ( stats[i]->ring )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->ring->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->ring->beatitude++;
 							}
 							if ( stats[i]->mask )
 							{
+								if ( stats[i]->type == SUCCUBUS && stats[i]->mask->beatitude == 0 )
+								{
+									stuckOnYouSuccess = true;
+								}
 								stats[i]->mask->beatitude++;
 							}
 							if ( multiplayer == SERVER && i > 0 )
@@ -396,6 +437,10 @@ void actFountain(Entity* my)
 								net_packet->address.port = net_clients[i - 1].port;
 								net_packet->len = 4;
 								sendPacketSafe(net_sock, -1, net_packet, i - 1);
+							}
+							if ( stuckOnYouSuccess )
+							{
+								steamAchievementClient(i, "BARONY_ACH_STUCK_ON_YOU");
 							}
 							break;
 						}
@@ -456,6 +501,13 @@ void actFountain(Entity* my)
 								messagePlayerColor(i, textcolor, language[2592]); //"The fountain blesses a piece of equipment"
 								//Randomly choose a piece of equipment.
 								std::pair<Item*, Uint32> chosen = items[rand()%items.size()];
+								if ( chosen.first->beatitude == 0 )
+								{
+									if ( stats[i]->type == SUCCUBUS )
+									{
+										steamAchievementClient(i, "BARONY_ACH_STUCK_ON_YOU");
+									}
+								}
 								chosen.first->beatitude++;
 
 								if ( multiplayer == SERVER && i > 0 )

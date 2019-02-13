@@ -1345,6 +1345,14 @@ void Entity::increaseSkill(int skill)
 			}
 		}
 
+		if ( skill == PRO_STEALTH && myStats->PROFICIENCIES[skill] == 100 )
+		{
+			if ( client_classes[player] == CLASS_ACCURSED )
+			{
+				steamAchievementClient(player, "BARONY_ACH_BLOOD_RUNS_CLEAR");
+			}
+		}
+
 		if ( skill == PRO_ALCHEMY )
 		{
 			if ( player == clientnum )
@@ -2237,6 +2245,10 @@ void Entity::handleEffects(Stat* myStats)
 					createParticleDropRising(this, 791, 1.0);
 					serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 791);
 					skeletonSummonSetEquipment(myStats, std::min(7, 1 + (myStats->LVL / 5)));
+				}
+				else if ( myStats->LVL == 35 )
+				{
+					steamAchievementClient(this->monsterAllyIndex, "BARONY_ACH_BONE_TO_PICK");
 				}
 			}
 
@@ -3373,6 +3385,8 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, language[3180]);
 				}
 				messagePlayer(player, language[654]);
+
+				steamAchievementClient(player, "BARONY_ACH_SECOND_CHANCE");
 
 				playSoundEntity(this, 167, 128);
 				createParticleDropRising(this, 174, 1.0);
@@ -4854,7 +4868,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( myStats->weapon->type == MAGICSTAFF_CHARM )
 						{
-							if ( myStats->weapon->status <= SERVICABLE )
+							if ( myStats->weapon->status <= WORN )
 							{
 								forceDegrade = true;
 							}
@@ -4884,6 +4898,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
 							messagePlayer(player, language[660]);
+							if ( player == clientnum && client_classes[player] == CLASS_MESMER )
+							{
+								if ( myStats->weapon->type == MAGICSTAFF_CHARM )
+								{
+									bool foundCharmSpell = false;
+									for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
+									{
+										Item* item = (Item*)node->element;
+										if ( item && itemCategory(item) == SPELL_CAT )
+										{
+											spell_t* spell = getSpellFromItem(item);
+											if ( spell && spell->ID == SPELL_CHARM_MONSTER )
+											{
+												foundCharmSpell = true;
+												break;
+											}
+										}
+									}
+									if ( !foundCharmSpell )
+									{
+										steamAchievement("BARONY_ACH_WHAT_NOW");
+									}
+								}
+							}
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
@@ -6266,6 +6304,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								paralyzeStatusInflicted = true;
 								playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
+								if ( behavior == &actPlayer ) // redundant; but if this code ever changes...
+								{
+									steamAchievementClient(skill[2], "BARONY_ACH_ONE_PUNCH_MAN");
+								}
 							}
 							hit.entity->modHP(-5); // do extra damage.
 						}
@@ -10974,6 +11016,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 					messagePlayer(target.skill[2], language[3243], namesays,
 						language[2000 + (targetStats->type - KOBOLD)]);
 				}
+				steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 			}
 			else
 			{

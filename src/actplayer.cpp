@@ -929,6 +929,21 @@ void actPlayer(Entity* my)
 		{
 			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
 			{
+				int monsterSquad = 0;
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					if ( players[c] && players[c]->entity && stats[c]->playerRace > 0 )
+					{
+						++monsterSquad;
+					}
+				}
+				if ( monsterSquad >= 3 )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						steamAchievementClient(c, "BARONY_ACH_MONSTER_SQUAD");
+					}
+				}
 				if ( client_classes[PLAYER_NUM] == CLASS_ACCURSED )
 				{
 					my->setEffect(EFF_VAMPIRICAURA, true, -2, true);
@@ -1491,6 +1506,7 @@ void actPlayer(Entity* my)
 									playSoundPlayer(PLAYER_NUM, 28, 92);
 								}
 								my->setObituary(language[3254]); // "goes for a swim in some water."
+								steamAchievementClient(PLAYER_NUM, "BARONY_ACH_BLOOD_BOIL");
 							}
 						}
 					}
@@ -2519,10 +2535,12 @@ void actPlayer(Entity* my)
 		{
 			item = (Item*)node->element;
 			if ( item != NULL )
+			{
 				if ( item->type >= 0 && item->type < NUMITEMS )
 				{
 					weight += items[item->type].weight * item->count;
 				}
+			}
 		}
 		weight += stats[PLAYER_NUM]->GOLD / 100;
 		weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);

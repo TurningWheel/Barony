@@ -1054,6 +1054,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				{
 					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(player, color, language[3141]);
+
+					if ( difficulty == 666 )
+					{
+						steamAchievementClient(player, "BARONY_ACH_OFF_LIMITS");
+					}
 				}
 			}
 			else if ( parent && rand() % 100 < chance

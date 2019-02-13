@@ -3675,6 +3675,11 @@ void actParticleSapCenter(Entity* my)
 											serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 										}
 
+										if ( caster && caster->behavior == &actPlayer )
+										{
+											steamAchievementClient(caster->skill[2], "BARONY_ACH_SKELETON_CREW");
+										}
+
 										// change the color of the hit entity.
 										monster->flags[USERFLAG2] = true;
 										serverUpdateEntityFlag(monster, USERFLAG2);

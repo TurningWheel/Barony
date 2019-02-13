@@ -121,6 +121,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					//messagePlayer(player, language[408], spell->name);
 					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
+					steamAchievement("BARONY_ACH_REVERSE_THIS_CURSE");
 					return;
 				}
 			}

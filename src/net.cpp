@@ -1677,6 +1677,33 @@ void clientHandlePacket()
 			else if ( static_cast<int>(net_packet->data[5]) < BROKEN )
 			{
 				item->status = BROKEN;
+				if ( net_packet->data[4] == 5 )
+				{
+					if ( client_classes[clientnum] == CLASS_MESMER )
+					{
+						if ( stats[clientnum]->weapon->type == MAGICSTAFF_CHARM )
+						{
+							bool foundCharmSpell = false;
+							for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
+							{
+								Item* item = (Item*)node->element;
+								if ( item && itemCategory(item) == SPELL_CAT )
+								{
+									spell_t* spell = getSpellFromItem(item);
+									if ( spell && spell->ID == SPELL_CHARM_MONSTER )
+									{
+										foundCharmSpell = true;
+										break;
+									}
+								}
+							}
+							if ( !foundCharmSpell )
+							{
+								steamAchievement("BARONY_ACH_WHAT_NOW");
+							}
+						}
+					}
+				}
 			}
 			else
 			{
@@ -4351,6 +4378,7 @@ void serverHandlePacket()
 				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
+				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");
 			}
 		}
 		return;

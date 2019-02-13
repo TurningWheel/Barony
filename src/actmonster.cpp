@@ -763,6 +763,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 						else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
 						{
 							canAlly = true;
+							if ( stats[monsterclicked]->type == SUCCUBUS )
+							{
+								steamAchievementClient(monsterclicked, "BARONY_ACH_TEMPTRESS");
+							}
 						}
 					}
 					else if ( stats[monsterclicked]->type == GOATMAN )
@@ -870,6 +874,19 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	{
 		FollowerMenu.recentEntity = my;
 	}
+
+	if ( stats[monsterclicked]->type != HUMAN && myStats->type == HUMAN )
+	{
+		steamAchievementClient(monsterclicked, "BARONY_ACH_PITY_FRIEND");
+	}
+	else if ( stats[monsterclicked]->type == VAMPIRE && myStats->type == VAMPIRE )
+	{
+		if ( !strncmp(myStats->name, "young vampire", strlen("young vampire")) )
+		{
+			steamAchievementClient(monsterclicked, "BARONY_ACH_YOUNG_BLOOD");
+		}
+	}
+
 	return true;
 }
 
@@ -6696,6 +6713,22 @@ bool forceFollower(Entity& leader, Entity& follower)
 	{
 		FollowerMenu.recentEntity = &follower;
 	}
+
+	if ( player >= 0 )
+	{
+		if ( leaderStats->type != HUMAN && followerStats->type == HUMAN )
+		{
+			steamAchievementClient(player, "BARONY_ACH_PITY_FRIEND");
+		}
+		else if ( leaderStats->type == VAMPIRE && followerStats->type == VAMPIRE )
+		{
+			if ( !strncmp(followerStats->name, "young vampire", strlen("young vampire")) )
+			{
+				steamAchievementClient(player, "BARONY_ACH_YOUNG_BLOOD");
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -7480,6 +7513,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				float manaToRefund = myStats->MAXMP * (myStats->HP / static_cast<float>(myStats->MAXHP));
 				setMP(static_cast<int>(manaToRefund));
 				setHP(0);
+				if ( stats[monsterAllyIndex] && stats[monsterAllyIndex]->MP == 0 )
+				{
+					steamAchievementClient(monsterAllyIndex, "BARONY_ACH_EXTERNAL_BATTERY");
+				}
 			}
 			break;
 		case ALLY_CMD_ATTACK_CONFIRM:
