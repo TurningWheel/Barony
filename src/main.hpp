@@ -663,7 +663,7 @@ static const Uint32 cacheLimit = 8096;
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
-static const int NUM_STEAM_STATISTICS = 6;
+static const int NUM_STEAM_STATISTICS = 19;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];

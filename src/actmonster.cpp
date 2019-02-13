@@ -25,6 +25,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "colors.hpp"
+#include "scores.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -2103,6 +2104,10 @@ void actMonster(Entity* my)
 							if ( *((Uint32*)allyNode->element) == my->getUID() )
 							{
 								list_RemoveNode(allyNode);
+								if ( myStats->monsterIsCharmed == 1 && client_classes[c] == CLASS_MESMER )
+								{
+									steamStatisticUpdateClient(c, STEAM_STAT_SURROGATES, STEAM_STAT_INT, 1);
+								}
 								if ( c != clientnum )
 								{
 									serverRemoveClientFollower(c, my->getUID());

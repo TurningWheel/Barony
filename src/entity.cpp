@@ -5889,6 +5889,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else if ( hitstats->HP <= 0 )
 						{
+							if ( player >= 0 && weaponskill == PRO_UNARMED 
+								&& stats[player]->type == GOATMAN
+								&& stats[player]->EFFECTS[EFF_DRUNK] )
+							{
+								steamStatisticUpdateClient(player, STEAM_STAT_BARFIGHT_CHAMP, STEAM_STAT_INT, 1);
+							}
+
 							if ( rand() % 8 == 0 )
 							{
 								this->increaseSkill(weaponskill);
@@ -6042,14 +6049,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( (*weaponToBreak)->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
 								{
-									if ( playerhit > 0 )
-									{
-										steamStatisticUpdateClient(playerhit, STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
-									}
-									else
-									{
-										steamStatisticUpdate(STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
-									}
+									steamStatisticUpdateClient(playerhit, STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
 								}
 							}
 						}
@@ -6230,14 +6230,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( player >= 0 && hit.entity->behavior == &actMonster )
 							{
-								if ( player > 0 )
-								{
-									steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
-								}
-								else
-								{
-									steamStatisticUpdate(STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
-								}
+								steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
 							}
 						}
 					}
@@ -6713,6 +6706,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
 								}
+								if ( player >= 0 && stats[player]->type == VAMPIRE && isInvisible() )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_BLOOD_SPORT, STEAM_STAT_INT, 1);
+								}
 							}
 							else
 							{
@@ -6832,6 +6829,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( hitstats->type == COCKATRICE )
 								{
 									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
+								}
+								if ( player >= 0 && stats[player]->type == VAMPIRE && isInvisible() )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_BLOOD_SPORT, STEAM_STAT_INT, 1);
 								}
 							}
 							else
@@ -7351,6 +7352,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								myStats->HUNGER = std::min(1499, myStats->HUNGER + 100);
 								serverUpdateHunger(player);
+								if ( stats[player]->type == VAMPIRE )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_BAD_BLOOD, STEAM_STAT_INT, lifeStealAmount);
+								}
 							}
 							if ( playerhit >= 0 )
 							{
@@ -8193,13 +8198,19 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 	else
 	{
-		Entity* leader;
+		Entity* leader = nullptr;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
 		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL )
 		{
 			leader->increaseSkill(PRO_LEADERSHIP);
 			leader->awardXP(src, true, false);
+
+			if ( leader->behavior == &actPlayer && destStats->monsterIsCharmed == 1 )
+			{
+				// charmed follower killed something.
+				steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_KILL_COMMAND, STEAM_STAT_INT, 1);
+			}
 		}
 	}
 
@@ -14183,13 +14194,17 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 		{
 			playSoundEntity(this, 28, 64);
 			this->modHP(-damageOnHit);
+			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 			if ( myStats.HP <= 0 )
 			{
-				Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 				if ( whoKnockedMe )
 				{
 					whoKnockedMe->awardXP(this, true, true);
 				}
+			}
+			if ( whoKnockedMe && whoKnockedMe->behavior == &actPlayer )
+			{
+				steamStatisticUpdateClient(whoKnockedMe->skill[2], STEAM_STAT_TAKE_THIS_OUTSIDE, STEAM_STAT_INT, 1);
 			}
 			knockedInto->doorHealth = 0;    // smash doors instantly
 			playSoundEntity(knockedInto, 28, 64);

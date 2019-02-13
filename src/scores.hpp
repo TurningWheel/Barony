@@ -30,6 +30,7 @@ static const int CONDUCT_BLESSED_BOOTS_SPEED = 6; // 2 state, 1 = reached Sanctu
 static const int CONDUCT_BOOTS_SPEED = 7; // 2 state, 1 = beat Herx/Baphy in < 20 mins, 0 = not.
 static const int CONDUCT_KEEPINVENTORY = 8; // 1 = keep inventory server flag, 0 = not.
 static const int CONDUCT_LIFESAVING = 9; // 1 = lifesaving server flag, 0 = not.
+static const int CONDUCT_ACCURSED = 10; // 1 = cursed, 0 = not
 
 static const int STATISTICS_BOMB_SQUAD = 0;
 static const int STATISTICS_SITTING_DUCK = 1;
@@ -64,22 +65,30 @@ enum SteamStatIndexes : int
 	STEAM_STAT_KILL_COMMAND
 };
 
-static const int STEAM_STAT_RHINESTONE_COWBOY_MAX = 50;
-static const int STEAM_STAT_TOUGH_AS_NAILS_MAX = 50;
-static const int STEAM_STAT_UNSTOPPABLE_FORCE_MAX = 50;
-static const int STEAM_STAT_BOMBARDIER_MAX = 50;
-static const int STEAM_STAT_IN_THE_MIX_MAX = 50;
-static const int STEAM_STAT_FREE_REFILLS_MAX = 50;
-static const int STEAM_STAT_TAKE_THIS_OUTSIDE_MAX = 10;
-static const int STEAM_STAT_ALTER_EGO_MAX = 50000;
-static const int STEAM_STAT_BLOOD_SPORT_MAX = 50;
-static const int STEAM_STAT_BAD_BLOOD_MAX = 500;
-static const int STEAM_STAT_IRON_GUT_MAX = 20;
-static const int STEAM_STAT_BOTTLE_NOSED_MAX = 20;
-static const int STEAM_STAT_BARFIGHT_CHAMP_MAX = 50;
-static const int STEAM_STAT_VOLATILE_MAX = 20;
-static const int STEAM_STAT_SURROGATES_MAX = 50;
-static const int STEAM_STAT_KILL_COMMAND_MAX = 50;
+#ifdef STEAMWORKS
+static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] = 
+{
+	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_BOULDER_DEATHS,
+	std::make_pair("BARONY_ACH_RHINESTONE_COWBOY", 50),		// STEAM_STAT_RHINESTONE_COWBOY,
+	std::make_pair("BARONY_ACH_TOUGH_AS_NAILS", 50),		// STEAM_STAT_TOUGH_AS_NAILS,
+	std::make_pair("BARONY_ACH_UNSTOPPABLE_FORCE",50),		// STEAM_STAT_UNSTOPPABLE_FORCE,
+	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_GAMES_STARTED,
+	std::make_pair("BARONY_ACH_NONE", 0),					// STEAM_STAT_GAMES_WON,
+	std::make_pair("BARONY_ACH_BOMBARDIER", 50),			// STEAM_STAT_BOMBARDIER,
+	std::make_pair("BARONY_ACH_IN_THE_MIX", 50),			// STEAM_STAT_IN_THE_MIX,
+	std::make_pair("BARONY_ACH_FREE_REFILLS", 50),			// STEAM_STAT_FREE_REFILLS,
+	std::make_pair("BARONY_ACH_TAKE_THIS_OUTSIDE", 10),		// STEAM_STAT_TAKE_THIS_OUTSIDE,
+	std::make_pair("BARONY_ACH_RICH_ALTER_EGO", 50000),		// STEAM_STAT_ALTER_EGO,
+	std::make_pair("BARONY_ACH_BLOOD_SPORT", 50),			// STEAM_STAT_BLOOD_SPORT,
+	std::make_pair("BARONY_ACH_BAD_BLOOD", 500),			// STEAM_STAT_BAD_BLOOD,
+	std::make_pair("BARONY_ACH_IRON_GUT", 20),				// STEAM_STAT_IRON_GUT,
+	std::make_pair("BARONY_ACH_BOTTLE_NOSED", 20),			// STEAM_STAT_BOTTLE_NOSED,
+	std::make_pair("BARONY_ACH_BARFIGHT_CHAMP", 50),		// STEAM_STAT_BARFIGHT_CHAMP,
+	std::make_pair("BARONY_ACH_VOLATILE", 20),				// STEAM_STAT_VOLATILE,
+	std::make_pair("BARONY_ACH_SURROGATES", 50),			// STEAM_STAT_SURROGATES,
+	std::make_pair("BARONY_ACH_KILL_COMMAND", 50)			// STEAM_STAT_KILL_COMMAND
+};
+#endif // STEAMWORKS
 
 typedef struct score_t
 {

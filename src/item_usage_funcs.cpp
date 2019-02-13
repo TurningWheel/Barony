@@ -4021,6 +4021,10 @@ void item_FoodTin(Item*& item, int player)
 		{
 			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
 		}
+		if ( stats[player]->type == GOATMAN )
+		{
+			steamStatisticUpdate(STEAM_STAT_IRON_GUT, STEAM_STAT_INT, 1);
+		}
 	}
 
 	if ( multiplayer == CLIENT )

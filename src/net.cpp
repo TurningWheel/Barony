@@ -1447,8 +1447,9 @@ void clientHandlePacket()
 	// update steam statistic
 	else if ( !strncmp((char*)net_packet->data, "SSTA", 4) )
 	{
+		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
 		steamStatisticUpdate(static_cast<int>(net_packet->data[4]), 
-			static_cast<ESteamStatTypes>(net_packet->data[5]), static_cast<int>(net_packet->data[6]));
+			static_cast<ESteamStatTypes>(net_packet->data[5]), value);
 		return;
 	}
 
@@ -1686,7 +1687,7 @@ void clientHandlePacket()
 							bool foundCharmSpell = false;
 							for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
 							{
-								Item* item = (Item*)node->element;
+								Item* item = (Item*)spellnode->element;
 								if ( item && itemCategory(item) == SPELL_CAT )
 								{
 									spell_t* spell = getSpellFromItem(item);

@@ -21,6 +21,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "colors.hpp"
+#include "scores.hpp"
 
 //Fountain functions.
 const std::vector<int> fountainPotionDropChances =
@@ -197,6 +198,11 @@ void actFountain(Entity* my)
 								break;
 							default:
 								break;
+						}
+
+						if ( potionDropQuantity > 0 )
+						{
+							steamStatisticUpdateClient(i, STEAM_STAT_BOTTLE_NOSED, STEAM_STAT_INT, 1);
 						}
 
 						for ( int j = 0; j < potionDropQuantity; ++j )
