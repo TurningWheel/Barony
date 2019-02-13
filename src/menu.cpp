@@ -7844,6 +7844,56 @@ void handleMainMenu(bool mode)
 						{
 							steamAchievement("BARONY_ACH_POST_HARDCORE");
 						}
+
+						if ( client_classes[clientnum] == CLASS_MESMER )
+						{
+							steamAchievement("BARONY_ACH_COMMANDER_CHIEF");
+						}
+						else if ( client_classes[clientnum] == CLASS_BREWER )
+						{
+							steamAchievement("BARONY_ACH_DRUNK_POWER");
+						}
+						else if ( client_classes[clientnum] == CLASS_ACCURSED )
+						{
+							steamAchievement("BARONY_ACH_POWER_HUNGRY");
+							if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
+							{
+								if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+								{
+									steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
+								}
+							}
+						}
+						else if ( client_classes[clientnum] == CLASS_CONJURER )
+						{
+							steamAchievement("BARONY_ACH_TURN_UNDEAD");
+						}
+
+						if ( stats[clientnum] )
+						{
+							switch ( stats[clientnum]->playerRace )
+							{
+								case RACE_SKELETON:
+									steamAchievement("BARONY_ACH_BONY_BARON");
+									break;
+								case RACE_SUCCUBUS:
+									steamAchievement("BARONY_ACH_BOMBSHELL_BARON");
+									break;
+								case RACE_GOATMAN:
+									steamAchievement("BARONY_ACH_BLEATING_BARON");
+									break;
+								case RACE_VAMPIRE:
+									steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+									break;
+								case RACE_INCUBUS:
+								case RACE_INSECTOID:
+								case RACE_AUTOMATON:
+								case RACE_GOBLIN:
+									break;
+								default:
+									break;
+							}
+						}
 					}
 				}
 			}

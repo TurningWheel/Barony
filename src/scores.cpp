@@ -3258,6 +3258,7 @@ void updatePlayerConductsInMainLoop()
 
 void updateGameplayStatisticsInMainLoop()
 {
+	// local player only here.
 	if ( gameStatistics[STATISTICS_BOMB_SQUAD] >= 5 )
 	{
 		steamAchievement("BARONY_ACH_BOMB_SQUAD");
@@ -3309,6 +3310,53 @@ void updateGameplayStatisticsInMainLoop()
 				int type = typeAppearance.first;
 				clientLearnedAlchemyIngredients.insert(type);
 			}
+		}
+	}
+
+	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) && gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 )
+	{
+		int numpotions = potionStandardAppearanceMap.size();
+		for ( int i = 0; i < numpotions; ++i )
+		{
+			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
+			auto typeAppearance = potionStandardAppearanceMap.at(i);
+			int type = typeAppearance.first;
+			if ( !learned && (GenericGUI.isItemBaseIngredient(type) || GenericGUI.isItemSecondaryIngredient(type)) )
+			{
+				break;
+			}
+			steamAchievement("BARONY_ACH_MIXOLOGIST");
+		}
+	}
+	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
+	{
+		std::unordered_set<int> potionList;
+		for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( itemCategory(item) == POTION )
+				{
+					switch ( item->type )
+					{
+						case POTION_EMPTY:
+						case POTION_THUNDERSTORM:
+						case POTION_ICESTORM:
+						case POTION_STRENGTH:
+						case POTION_FIRESTORM:
+							// do nothing, these are brewed only potions
+							break;
+						default:
+							potionList.insert(item->type);
+							break;
+					}
+				}
+			}
+		}
+		if ( potionList.size() >= 16 )
+		{
+			steamAchievement("BARONY_ACH_PERFECT_PREPARATION");
 		}
 	}
 }
