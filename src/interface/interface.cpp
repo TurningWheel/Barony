@@ -4114,6 +4114,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			else
 			{
 				messagePlayer(clientnum, language[3352], newPotion->description());
+				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 			}
 			itemPickup(clientnum, newPotion);
 			free(newPotion);

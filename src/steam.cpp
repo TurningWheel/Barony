@@ -763,40 +763,94 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		return;
 	}
 
+	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
+	{
+		return;
+	}
+	bool indicateProgress = true;
 	bool result = false;
 	switch ( type )
 	{
 		case STEAM_STAT_INT:
+		{
+			int oldValue = g_SteamStats[statisticNum].m_iValue;
 			g_SteamStats[statisticNum].m_iValue += value;
 			switch ( statisticNum )
 			{
 				case STEAM_STAT_RHINESTONE_COWBOY:
-					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_RHINESTONE_COWBOY_MAX )
-					{
-						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_RHINESTONE_COWBOY_MAX;
-					}
 				case STEAM_STAT_TOUGH_AS_NAILS:
-					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_TOUGH_AS_NAILS_MAX )
-					{
-						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_TOUGH_AS_NAILS_MAX;
-					}
 				case STEAM_STAT_UNSTOPPABLE_FORCE:
-					if ( g_SteamStats[statisticNum].m_iValue > STEAM_STAT_UNSTOPPABLE_FORCE_MAX )
+				case STEAM_STAT_BOMBARDIER:
+				case STEAM_STAT_IN_THE_MIX:
+				case STEAM_STAT_FREE_REFILLS:
+				case STEAM_STAT_TAKE_THIS_OUTSIDE:
+				case STEAM_STAT_BLOOD_SPORT:
+				case STEAM_STAT_IRON_GUT:
+				case STEAM_STAT_BOTTLE_NOSED:
+				case STEAM_STAT_BARFIGHT_CHAMP:
+				case STEAM_STAT_VOLATILE:
+				case STEAM_STAT_SURROGATES:
+				case STEAM_STAT_KILL_COMMAND:
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					break;
+				case STEAM_STAT_ALTER_EGO:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
 					{
-						g_SteamStats[statisticNum].m_iValue = STEAM_STAT_UNSTOPPABLE_FORCE_MAX;
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 1000 && ((oldValue / 1000) < (g_SteamStats[statisticNum].m_iValue / 1000)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 5000) < (g_SteamStats[statisticNum].m_iValue / 5000)) )
+					{
+						indicateProgress = true;
+					}
+					break;
+				case STEAM_STAT_BAD_BLOOD:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 20 && ((oldValue / 20) < (g_SteamStats[statisticNum].m_iValue / 20)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 50) < (g_SteamStats[statisticNum].m_iValue / 50)) )
+					{
+						indicateProgress = true;
 					}
 					break;
 				default:
 					break;
 			}
 			break;
+		}
 		case STEAM_STAT_FLOAT:
 			break;
 		default:
 			break;
 	}
 	g_SteamStatistics->StoreStats(); // update server's stat counter.
-	steamIndicateStatisticProgress(statisticNum, type);
+	if ( indicateProgress )
+	{
+		steamIndicateStatisticProgress(statisticNum, type);
+	}
 #endif
 }
 
@@ -813,12 +867,22 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		return;
 	}
 
+	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
+	{
+		return;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		return;
 	}
 
-	if ( player <= 0 || player >= MAXPLAYERS )
+	if ( player == 0 )
+	{
+		steamStatisticUpdate(statisticNum, type, value);
+		return;
+	}
+	else if ( player < 0 || player >= MAXPLAYERS )
 	{
 		return;
 	}
@@ -831,10 +895,10 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		strcpy((char*)net_packet->data, "SSTA");
 		net_packet->data[4] = static_cast<Uint8>(statisticNum);
 		net_packet->data[5] = static_cast<Uint8>(type);
-		net_packet->data[6] = static_cast<Uint8>(value);
+		SDLNet_Write16(value, &net_packet->data[6]);
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 7;
+		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 #endif
@@ -847,6 +911,11 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 	return;
 #else
 
+	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
+	{
+		return;
+	}
+
 	int iVal = g_SteamStats[statisticNum].m_iValue;
 	float fVal = g_SteamStats[statisticNum].m_flValue;
 	if ( type == STEAM_STAT_INT )
@@ -854,50 +923,75 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 		switch ( statisticNum )
 		{
 			case STEAM_STAT_RHINESTONE_COWBOY:
-				if ( !achievementUnlocked("BARONY_ACH_RHINESTONE_COWBOY") )
-				{
-					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
-					{
-						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
-						if ( iVal == STEAM_STAT_RHINESTONE_COWBOY_MAX )
-						{
-							steamAchievement("BARONY_ACH_RHINESTONE_COWBOY");
-						}
-					}
-				}
-				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_RHINESTONE_COWBOY", iVal, STEAM_STAT_RHINESTONE_COWBOY_MAX);
-				break;
 			case STEAM_STAT_TOUGH_AS_NAILS:
-				if ( !achievementUnlocked("BARONY_ACH_TOUGH_AS_NAILS") )
-				{
-					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
-					{
-						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
-						if ( iVal == STEAM_STAT_TOUGH_AS_NAILS_MAX )
-						{
-							steamAchievement("BARONY_ACH_TOUGH_AS_NAILS");
-						}
-					}
-				}
-				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_TOUGH_AS_NAILS", iVal, STEAM_STAT_TOUGH_AS_NAILS_MAX);
-				break;
 			case STEAM_STAT_UNSTOPPABLE_FORCE:
-				if ( !achievementUnlocked("BARONY_ACH_UNSTOPPABLE_FORCE") )
+			case STEAM_STAT_BOMBARDIER:
+			case STEAM_STAT_IN_THE_MIX:
+			case STEAM_STAT_FREE_REFILLS:
+			case STEAM_STAT_BLOOD_SPORT:
+			case STEAM_STAT_BARFIGHT_CHAMP:
+			case STEAM_STAT_SURROGATES:
+			case STEAM_STAT_KILL_COMMAND:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
-					if ( iVal == 1 || (iVal > 0 && iVal % 10 == 0) )
+					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
 					{
-						SteamUserStats()->IndicateAchievementProgress("BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
-						if ( iVal == STEAM_STAT_UNSTOPPABLE_FORCE_MAX )
+						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 						{
-							steamAchievement("BARONY_ACH_UNSTOPPABLE_FORCE");
+							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
 						}
 					}
 				}
-				//messagePlayer(clientnum, "%s: %d, %d", "BARONY_ACH_UNSTOPPABLE_FORCE", iVal, STEAM_STAT_UNSTOPPABLE_FORCE_MAX);
+				break;
+			case STEAM_STAT_IRON_GUT:
+			case STEAM_STAT_BOTTLE_NOSED:
+			case STEAM_STAT_VOLATILE:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 4 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+						{
+							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
+						}
+					}
+				}
+				break;
+			case STEAM_STAT_BAD_BLOOD:
+			case STEAM_STAT_ALTER_EGO:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
+					}
+				}
+				break;
+			case STEAM_STAT_TAKE_THIS_OUTSIDE:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					if ( iVal == 1 || (iVal > 0 && iVal % 2 == 0) )
+					{
+						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+						{
+							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
+						}
+					}
+				}
 				break;
 			default:
 				break;
 		}
+		//messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
+			//iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
 	}
 #endif // !STEAMWORKS
 }

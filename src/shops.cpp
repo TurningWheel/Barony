@@ -18,6 +18,7 @@
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 list_t* shopInv = NULL;
 Uint32 shopkeeper = 0;
@@ -165,6 +166,12 @@ void buyItemFromShop(Item* item)
 		itemPickup(clientnum, itemToPickup);
 
 		stats[clientnum]->GOLD -= item->buyValue(clientnum);
+
+		if ( stats[clientnum]->playerRace > 0 && players[clientnum] && players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			steamStatisticUpdate(STEAM_STAT_ALTER_EGO, STEAM_STAT_INT, item->buyValue(clientnum));
+		}
+		
 		playSound(89, 64);
 		int ocount = item->count;
 		item->count = 1;
@@ -346,6 +353,12 @@ void sellItemToShop(Item* item)
 	shoptimer = ticks - 1;
 	newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv);
 	stats[clientnum]->GOLD += item->sellValue(clientnum);
+
+	if ( stats[clientnum]->playerRace > 0 && players[clientnum] && players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+	{
+		steamStatisticUpdate(STEAM_STAT_ALTER_EGO, STEAM_STAT_INT, item->sellValue(clientnum));
+	}
+
 	playSound(89, 64);
 	int ocount = item->count;
 	item->count = 1;
