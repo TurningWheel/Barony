@@ -453,9 +453,9 @@ void gameLogic(void)
 				}
 			}
 		}
+		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
-			DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( assailantTimer[c] > 0 )
