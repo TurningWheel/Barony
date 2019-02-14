@@ -4704,7 +4704,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case INSECTOID:
 					if ( stats[playernum]->sex == FEMALE )
 					{
-						this->sprite = 764;
+						this->sprite = 762;
 					}
 					else
 					{
