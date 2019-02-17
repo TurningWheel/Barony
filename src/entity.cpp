@@ -3453,6 +3453,16 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					messagePlayer(player, language[648]);
 					this->modHP(-(2 + rand() % 3));
+					playSoundEntity(this, 28, 64); // "Damage.ogg"
+					if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
+					{
+						if ( rand() % 3 > 0 )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							messagePlayerColor(player, color, language[3358]);
+							this->modMP(2);
+						}
+					}
 					this->setObituary(language[1534]);
 					if ( myStats->HP <= 0 )
 					{
