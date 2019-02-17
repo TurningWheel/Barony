@@ -5767,7 +5767,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( weaponskill == PRO_UNARMED )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][PRO_UNARMED];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][6];
 					}
 					else if ( weaponskill >= 0 )
 					{
@@ -5870,7 +5870,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-
+					
 					hit.entity->modHP(-damage); // do the damage
 
 					// skill increase
