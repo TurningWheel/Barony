@@ -2219,6 +2219,21 @@ void actPlayer(Entity* my)
 								// our leader died, let's undo the color change since we're now rabid.
 								myFollower->flags[USERFLAG2] = false;
 								serverUpdateEntityFlag(myFollower, USERFLAG2);
+
+								int bodypart = 0;
+								for ( node_t* node = myFollower->children.first; node != nullptr; node = node->next )
+								{
+									if ( bodypart >= LIMB_HUMANOID_TORSO )
+									{
+										Entity* tmp = (Entity*)node->element;
+										if ( tmp )
+										{
+											tmp->flags[USERFLAG2] = false;
+										}
+									}
+									++bodypart;
+								}
+
 								Stat* followerStats = myFollower->getStats();
 								if ( followerStats )
 								{
