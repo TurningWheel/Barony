@@ -1910,7 +1910,10 @@ void useItem(Item* item, int player, Entity* usedBy)
 			break;
 		case AMULET_STRANGULATION:
 			equipItem(item, &stats[player]->amulet, player);
-			messagePlayer(player, language[1095]);
+			if ( stats[player]->amulet )
+			{
+				messagePlayer(player, language[1095]);
+			}
 			if ( item->beatitude >= 0 )
 			{
 				item->beatitude = -1;
