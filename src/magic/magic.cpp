@@ -516,6 +516,11 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				return;
 			}
 
+			if ( hit.entity->monsterAllySummonRank != 0 )
+			{
+				return;
+			}
+
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
@@ -1003,6 +1008,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			{
 				chance = 0;
 			}
+			else if ( hit.entity->monsterAllySummonRank != 0 )
+			{
+				difficulty = 0; // not allowed to control summons
+			}
 
 			if ( hit.entity == parent )
 			{
@@ -1245,6 +1254,11 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			|| (targetStats->leader_uid != 0 && monsterSummonType == SHADOW) )
 		{
 			monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
+		}
+
+		if ( targetStats->type == SHADOW )
+		{
+			monsterSummonType = CREATURE_IMP; // shadows turn to imps
 		}
 
 		bool summonCanEquipItems = false;
