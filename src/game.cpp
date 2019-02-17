@@ -754,10 +754,27 @@ void gameLogic(void)
 					}
 #endif
 					// stop combat music
+					// close chests
 					for ( c = 0; c < MAXPLAYERS; ++c )
 					{
 						assailantTimer[c] = 0;
+						if ( c > 0 && !client_disconnected[c] )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChestServer();
+							}
+						}
+						else if ( c == 0 )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChest();
+							}
+						}
 					}
+
+
 
 					// show loading message
 					loading = true;

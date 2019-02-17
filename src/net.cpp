@@ -2400,6 +2400,10 @@ void clientHandlePacket()
 			OPENAL_ChannelGroup_Stop(sound_group);
 		}
 #endif
+		if ( openedChest[clientnum] )
+		{
+			closeChestClientside();
+		}
 
 		// show loading message
 #define LOADSTR language[709]
