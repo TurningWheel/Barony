@@ -6014,7 +6014,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false; //certain monster's weapons don't degrade.
 							}
-							else if ( myStats->type == SKELETON && monsterAllySummonRank != 0 )
+							else if ( myStats->type == SKELETON && behavior == &actMonster && monsterAllySummonRank != 0 )
 							{
 								degradeWeapon = false;
 							}
@@ -7989,7 +7989,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		return;
 	}
 
-	if ( src->monsterAllySummonRank != 0 )
+	if ( src->behavior == &actMonster && src->monsterAllySummonRank != 0 )
 	{
 		return; // summoned monster, no XP!
 	}
@@ -11925,7 +11925,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		return; //Shadows' armor and shields don't break.
 	}
 
-	if ( hitstats.type == SKELETON && monsterAllySummonRank > 0 )
+	if ( hitstats.type == SKELETON && behavior == &actMonster && monsterAllySummonRank > 0 )
 	{
 		return; // conjured skeleton armor doesn't break.
 	}

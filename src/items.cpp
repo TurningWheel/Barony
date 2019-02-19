@@ -1232,7 +1232,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	}*/
 	if ( monsterStats )
 	{
-		if ( monsterStats->type == SKELETON && monster->monsterAllySummonRank != 0 )
+		if ( monsterStats->type == SKELETON && monster->behavior == &actMonster && monster->monsterAllySummonRank != 0 )
 		{
 			itemDroppable = false;
 		}
