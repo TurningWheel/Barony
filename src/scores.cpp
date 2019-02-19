@@ -3567,6 +3567,11 @@ bool steamLeaderboardSetScore(score_t* score)
 		return false;
 	}
 
+	if ( !score )
+	{
+		return false;
+	}
+
 	if ( score->victory == 0 )
 	{
 		return false;
@@ -3582,6 +3587,12 @@ bool steamLeaderboardSetScore(score_t* score)
 	{
 		return false;
 	}
+	
+	bool monster = false;
+	if ( score->stats && score->stats->playerRace > 0 )
+	{
+		monster = true;
+	}
 
 	if ( !score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
@@ -3590,26 +3601,61 @@ bool steamLeaderboardSetScore(score_t* score)
 		{
 			if ( score->victory == 2 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HELL_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_HELL_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HELL_TIME;
+				}
 			}
 			else if ( score->victory == 3 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_NORMAL_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_NORMAL_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_NORMAL_TIME;
+				}
 			}
 			else if ( score->victory == 1 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_CLASSIC_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_TIME;
+				}
 			}
 		}
 		else if ( score->conductGameChallenges[CONDUCT_HARDCORE] )
 		{
 			if ( score->victory == 3 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HARDCORE_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_HARDCORE_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HARDCORE_TIME;
+				}
 			}
 			else
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_HARDCORE_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_CLASSIC_HARDCORE_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_HARDCORE_TIME;
+				}
 			}
 		}
 	}
@@ -3618,15 +3664,36 @@ bool steamLeaderboardSetScore(score_t* score)
 		// multiplayer
 		if ( score->victory == 2 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_HELL_TIME;
+			if ( monster )
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_MULTIPLAYER_HELL_TIME;
+			}
+			else
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_HELL_TIME;
+			}
 		}
 		else if ( score->victory == 3 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_TIME;
+			if ( monster )
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_MULTIPLAYER_TIME;
+			}
+			else
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_TIME;
+			}
 		}
 		else if ( score->victory == 1 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_CLASSIC_TIME;
+			if ( monster )
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_TIME;
+			}
+			else
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_CLASSIC_TIME;
+			}
 		}
 	}
 	else

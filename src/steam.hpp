@@ -116,8 +116,9 @@ public:
 	bool b_ScoresDownloaded;
 	bool b_LeaderboardInit;
 	bool b_ScoreUploaded;
+	bool b_ShowDLCScores;
 
-	static const int k_numLeaderboards = 17;
+	static const int k_numLeaderboards = 33;
 	static const std::string leaderboardNames[k_numLeaderboards];
 
 	CSteamLeaderboards() :
@@ -126,7 +127,8 @@ public:
 		b_ScoresDownloaded(false),
 		b_LeaderboardInit(false),
 		currentLeaderBoardIndex(0),
-		b_ScoreUploaded(false)
+		b_ScoreUploaded(false),
+		b_ShowDLCScores(false)
 	{
 		for ( int i = 0; i < k_numEntriesToRetrieve; ++i )
 		{

@@ -5569,7 +5569,7 @@ void handleMainMenu(bool mode)
 					g_SteamLeaderboards->LeaderboardView.rangeEnd);
 				score_leaderboard_window = 2;
 			}
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "Downloading entries...");
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorOrange(*mainsurface), "Downloading entries...");
 		}
 		else 
 		{
@@ -5579,7 +5579,7 @@ void handleMainMenu(bool mode)
 				numEntriesTotal = g_SteamLeaderboards->m_nLeaderboardEntries;
 				if ( numEntriesTotal <= 0 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "No Leaderboard entries for this category");
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorGreen(*mainsurface), "No Leaderboard entries for this category");
 				}
 			}
 
@@ -5874,17 +5874,44 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, language[1391]);
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
+				int creature = HUMAN;
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					creature = static_cast<int>(players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace));
+				}
 				if ( victory == 1 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1392]);
+					if ( creature != HUMAN )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3359], monstertypenamecapitalized[creature]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1392]);
+					}
 				}
 				else if ( victory == 2 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
+					if ( creature != HUMAN )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3360], monstertypenamecapitalized[creature]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
+					}
 				}
 				else if ( victory == 3 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+					if ( creature != HUMAN )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3361], 
+							language[3363 - 1 + stats[clientnum]->playerRace]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+					}
 				}
 			}
 			else
@@ -5892,10 +5919,22 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, language[1394]);
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
-				char classname[32];
+				char classname[64];
 				strcpy(classname, playerClassLangEntry(client_classes[0], clientnum));
 				classname[0] -= 32;
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
+				int creature = HUMAN;
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					creature = static_cast<int>(players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace));
+				}
+				if ( creature != HUMAN )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3362], monstertypenamecapitalized[creature], classname);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
+				}
 			}
 
 			// print total score
@@ -10835,7 +10874,9 @@ void buttonLeaderboardNextCategory(button_t* my)
 {
 	if ( g_SteamLeaderboards )
 	{
-		g_SteamLeaderboards->LeaderboardView.boardToDownload = std::min(g_SteamLeaderboards->LeaderboardView.boardToDownload + 1, (int)LEADERBOARD_MULTIPLAYER_HELL_SCORE);
+		int offset = (g_SteamLeaderboards->b_ShowDLCScores ? 16 : 0);
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = 
+			std::min(g_SteamLeaderboards->LeaderboardView.boardToDownload + 1, (int)LEADERBOARD_MULTIPLAYER_HELL_SCORE + offset);
 		g_SteamLeaderboards->b_ScoresDownloaded = false;
 		score_leaderboard_window = 1;
 		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
@@ -10846,11 +10887,39 @@ void buttonLeaderboardPrevCategory(button_t* my)
 {
 	if ( g_SteamLeaderboards )
 	{
-		g_SteamLeaderboards->LeaderboardView.boardToDownload = std::max(g_SteamLeaderboards->LeaderboardView.boardToDownload - 1, (int)LEADERBOARD_NORMAL_TIME);
+		int offset = (g_SteamLeaderboards->b_ShowDLCScores ? 16 : 0);
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = 
+			std::max(g_SteamLeaderboards->LeaderboardView.boardToDownload - 1, (int)LEADERBOARD_NORMAL_TIME + offset);
 		g_SteamLeaderboards->b_ScoresDownloaded = false;
 		score_leaderboard_window = 1;
 		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
 	}
+}
+
+void buttonDLCLeaderboardFetch(button_t* my)
+{
+	if ( g_SteamLeaderboards )
+	{
+		if ( g_SteamLeaderboards->b_ShowDLCScores )
+		{
+			if ( g_SteamLeaderboards->LeaderboardView.boardToDownload > LEADERBOARD_MULTIPLAYER_HELL_SCORE )
+			{
+				g_SteamLeaderboards->LeaderboardView.boardToDownload -= 16;
+			}
+		}
+		else
+		{
+			if ( g_SteamLeaderboards->LeaderboardView.boardToDownload <= LEADERBOARD_MULTIPLAYER_HELL_SCORE )
+			{
+				g_SteamLeaderboards->LeaderboardView.boardToDownload += 16;
+			}
+		}
+		g_SteamLeaderboards->b_ShowDLCScores = !g_SteamLeaderboards->b_ShowDLCScores;
+		g_SteamLeaderboards->b_ScoresDownloaded = false;
+		score_leaderboard_window = 1;
+		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
+	}
+
 }
 
 void buttonOpenSteamLeaderboards(button_t* my)
@@ -10917,13 +10986,24 @@ void buttonOpenSteamLeaderboards(button_t* my)
 		// fetch leaderboards
 		button = newButton();
 		strcpy(button->label, "Fetch Leaderboard");
-		button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+		button->y = suby1 + 3 * TTF12_HEIGHT + 8;
 		button->sizex = 25 * TTF12_WIDTH + 8;
 		button->x = subx2 - button->sizex - 8;
 		button->sizey = 32;
 		button->action = &buttonLeaderboardFetch;
 		button->visible = 1;
 		button->focused = 1;
+
+		// fetch DLC leaderboards
+		button_t* dlcScoreButton = newButton();
+		strcpy(dlcScoreButton->label, "Toggle DLC Scores");
+		dlcScoreButton->y = suby1 + 3 * TTF12_HEIGHT + 8;
+		dlcScoreButton->sizex = 25 * TTF12_WIDTH + 8;
+		dlcScoreButton->x = button->x - dlcScoreButton->sizex - 8;
+		dlcScoreButton->sizey = 32;
+		dlcScoreButton->action = &buttonDLCLeaderboardFetch;
+		dlcScoreButton->visible = 1;
+		dlcScoreButton->focused = 1;
 	}
 }
 #endif
