@@ -81,7 +81,31 @@ const std::string CSteamLeaderboards::leaderboardNames[CSteamLeaderboards::k_num
 	"Highest Score (Multiplayer Classic)",
 
 	"Fastest Time (Multiplayer Hell Route)",
-	"Highest Score (Multiplayer Hell Route)"
+	"Highest Score (Multiplayer Hell Route)",
+
+	"Fastest Time (Normal - Monsters Only)",
+	"Highest Score (Normal - Monsters Only)",
+
+	"Fastest Time (Multiplayer - Monsters Only)",
+	"Highest Score (Multiplayer - Monsters Only)",
+
+	"Fastest Time (Hell Route - Monsters Only)",
+	"Highest Score (Hell Route - Monsters Only)",
+
+	"Fastest Time (Hardcore - Monsters Only)",
+	"Highest Score (Hardcore - Monsters Only)",
+
+	"Fastest Time (Classic - Monsters Only)",
+	"Highest Score (Classic - Monsters Only)",
+
+	"Fastest Time (Classic Hardcore - Monsters Only)",
+	"Highest Score (Classic Hardcore - Monsters Only)",
+
+	"Fastest Time (Multiplayer Classic - Monsters Only)",
+	"Highest Score (Multiplayer Classic - Monsters Only)",
+
+	"Fastest Time (Multiplayer Hell Route - Monsters Only)",
+	"Highest Score (Multiplayer Hell Route - Monsters Only)"
 };
 #endif
 
