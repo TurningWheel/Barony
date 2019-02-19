@@ -87,6 +87,43 @@ static char monstertypename[][15] =
 	"lichfire"
 };
 
+static char monstertypenamecapitalized[][15] =
+{
+	"Nothing",
+	"Human",
+	"Rat",
+	"Goblin",
+	"Slime",
+	"Troll",
+	"Octopus",
+	"Spider",
+	"Ghoul",
+	"Skeleton",
+	"Scorpion",
+	"Imp",
+	"Bugbear",
+	"Gnome",
+	"Demon",
+	"Succubus",
+	"Mimic",
+	"Lich",
+	"Minotaur",
+	"Devil",
+	"Shopkeeper",
+	"Kobold",
+	"Scarab",
+	"Crystalgolem",
+	"Incubus",
+	"Vampire",
+	"Shadow",
+	"Cockatrice",
+	"Insectoid",
+	"Goatman",
+	"Automaton",
+	"Lichice",
+	"Lichfire"
+};
+
 // body part focal points
 extern float limbs[NUMMONSTERS][20][3];
 
