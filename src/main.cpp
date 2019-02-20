@@ -241,6 +241,7 @@ bool verticalSync = false;
 bool showStatusEffectIcons = true;
 bool minimapPingMute = false;
 bool mute_audio_on_focus_lost = false;
+bool mute_player_monster_sounds = false;
 int minimapTransparencyForeground = 0;
 int minimapTransparencyBackground = 0;
 int minimapScale = 4;

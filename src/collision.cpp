@@ -186,11 +186,11 @@ Entity* entityClicked()
 		}
 	}
 
-	if ( !uidToEntity(uidnum) )
+	if ( !uidToEntity(uidnum) && !mute_player_monster_sounds )
 	{
 		if ( players[clientnum] && players[clientnum]->entity && monsterEmoteGimpTimer == 0 )
 		{
-			monsterEmoteGimpTimer = TICKS_PER_SECOND * 3;
+			monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
 			int sfx = 0;
 			int line = 0;
 			switch ( stats[clientnum]->type )
@@ -203,7 +203,14 @@ Entity* entityClicked()
 					sfx = 70;
 					break;
 				case VAMPIRE:
-					sfx = 329 + rand() % 3;
+					if ( rand() % 4 == 0 )
+					{
+						sfx = 329;
+					}
+					else
+					{
+						sfx = 322 + rand() % 3;
+					}
 					break;
 				case GOATMAN:
 					sfx = 332 + rand() % 2;

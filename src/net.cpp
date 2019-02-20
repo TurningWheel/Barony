@@ -1808,7 +1808,38 @@ void clientHandlePacket()
 	else if ( !strncmp((char*)net_packet->data, "SNEL", 4) )
 	{
 		Entity* tmp = uidToEntity(SDLNet_Read32(&net_packet->data[6]));
-		playSoundEntityLocal(tmp, SDLNet_Read16(&net_packet->data[4]), SDLNet_Read16(&net_packet->data[10]));
+		int sfx = SDLNet_Read16(&net_packet->data[4]);
+		if ( tmp->behavior == &actPlayer && mute_player_monster_sounds )
+		{
+			switch ( sfx )
+			{
+				case 95:
+				case 70:
+				case 322:
+				case 323:
+				case 324:
+				case 329:
+				case 332:
+				case 333:
+				case 291:
+				case 292:
+				case 293:
+				case 294:
+				case 60:
+				case 61:
+				case 62:
+				case 257:
+				case 258:
+				case 276:
+				case 277:
+				case 278:
+					// return early, don't play monster noises from players.
+					return;
+				default:
+					break;
+			}
+		}
+		playSoundEntityLocal(tmp, sfx, SDLNet_Read16(&net_packet->data[10]));
 		return;
 	}
 
