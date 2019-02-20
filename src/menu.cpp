@@ -1850,7 +1850,7 @@ void handleMainMenu(bool mode)
 				displayRaceOptions = true;
 				ttfPrintText(ttf16, subx1 + 24, pady, language[3176]);
 				pady += 24;
-				char raceOptionBuffer[64];
+				char raceOptionBuffer[128];
 				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
 				if ( stats[0]->appearance > 1 )
 				{
@@ -1996,6 +1996,11 @@ void handleMainMenu(bool mode)
 										stats[0]->clearStats();
 										initClass(0);
 									}
+									else if ( stats[0]->playerRace != RACE_GOATMAN && lastRace == RACE_GOATMAN )
+									{
+										stats[0]->clearStats();
+										initClass(0);
+									}
 									// appearance reset.
 									if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 									{
@@ -2069,6 +2074,8 @@ void handleMainMenu(bool mode)
 							{
 								stats[0]->appearance = 1; // act as human
 							}
+							stats[0]->clearStats();
+							initClass(0);
 							raceSelect = 2;
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
@@ -2138,6 +2145,11 @@ void handleMainMenu(bool mode)
 						stats[0]->clearStats();
 						initClass(0);
 					}
+					else if ( stats[0]->playerRace != RACE_GOATMAN && lastRace == RACE_GOATMAN )
+					{
+						stats[0]->clearStats();
+						initClass(0);
+					}
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
@@ -2171,6 +2183,8 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->appearance = 1;
 					}
+					stats[0]->clearStats();
+					initClass(0);
 				}
 			}
 			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
@@ -2251,6 +2265,11 @@ void handleMainMenu(bool mode)
 						stats[0]->clearStats();
 						initClass(0);
 					}
+					else if ( stats[0]->playerRace != RACE_GOATMAN && lastRace == RACE_GOATMAN )
+					{
+						stats[0]->clearStats();
+						initClass(0);
+					}
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
@@ -2284,6 +2303,8 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->appearance = 1;
 					}
+					stats[0]->clearStats();
+					initClass(0);
 				}
 			}
 			if ( keystatus[SDL_SCANCODE_RIGHT] || (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) && rebindaction == -1) )
