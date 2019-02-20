@@ -2235,7 +2235,7 @@ void consoleCommand(char* command_str)
 			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity && entity->monsterAllySummonRank != 0 )
+				if ( entity && entity->behavior == &actMonster && entity->monsterAllySummonRank != 0 )
 				{
 					Stat* entityStats = entity->getStats();
 					if ( entityStats )
