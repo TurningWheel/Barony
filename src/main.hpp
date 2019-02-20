@@ -486,6 +486,7 @@ extern bool verticalSync;
 extern bool showStatusEffectIcons;
 extern bool minimapPingMute;
 extern bool mute_audio_on_focus_lost;
+extern bool mute_player_monster_sounds;
 extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;

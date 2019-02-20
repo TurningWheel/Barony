@@ -1132,6 +1132,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/muteaudiofocuslost\n");
 	}
+	if ( mute_player_monster_sounds )
+	{
+		fprintf(fp, "/muteplayermonstersounds\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");

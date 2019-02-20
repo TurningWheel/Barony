@@ -174,6 +174,7 @@ bool settings_vsync;
 bool settings_status_effect_icons = true;
 bool settings_minimap_ping_mute = false;
 bool settings_mute_audio_on_focus_lost = false;
+bool settings_mute_player_monster_sounds = false;
 int settings_minimap_transparency_foreground = 0;
 int settings_minimap_transparency_background = 0;
 int settings_minimap_scale = 4;
@@ -3185,6 +3186,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[ ] %s", language[3158]);
 			}
+			if ( settings_mute_player_monster_sounds )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[x] %s", language[3371]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[ ] %s", language[3371]);
+			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
@@ -3198,6 +3207,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
+					}
+					else if ( omousey >= suby1 + 216 && omousey < suby1 + 216 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_mute_player_monster_sounds = (settings_mute_player_monster_sounds == false);
 					}
 				}
 			}
@@ -9017,6 +9031,7 @@ void openSettingsWindow()
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
 	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
+	settings_mute_player_monster_sounds = mute_player_monster_sounds;
 	settings_minimap_transparency_foreground = minimapTransparencyForeground;
 	settings_minimap_transparency_background = minimapTransparencyBackground;
 	settings_minimap_scale = minimapScale;
@@ -10644,6 +10659,7 @@ void applySettings()
 	musvolume = settings_musvolume;
 	minimapPingMute = settings_minimap_ping_mute;
 	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
+	mute_player_monster_sounds = settings_mute_player_monster_sounds;
 
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
