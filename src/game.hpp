@@ -327,7 +327,7 @@ extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
 extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
-
+extern int monsterEmoteGimpTimer;
 void mapLevel(int player);
 
 class TileEntityListHandler
