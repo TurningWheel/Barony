@@ -10621,6 +10621,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		if ( isPlayer && isPotion )
 		{
 			weaponLimb->focalz += 1;
+			if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
+			{
+				weaponLimb->focaly += 1;
+				weaponLimb->focalz -= 1.5;
+			}
 		}
 	}
 	else
