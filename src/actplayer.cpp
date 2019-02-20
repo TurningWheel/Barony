@@ -30,6 +30,7 @@
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
 bool swimDebuffMessageHasPlayed = false;
+int monsterEmoteGimpTimer = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -910,6 +911,11 @@ void actPlayer(Entity* my)
 						messagePlayerColor(clientnum, color, language[538 + rand() % 32]);
 					}
 				}
+			}
+
+			if ( monsterEmoteGimpTimer > 0 )
+			{
+				--monsterEmoteGimpTimer;
 			}
 		}
 		if ( multiplayer == SERVER )

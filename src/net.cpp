@@ -1804,6 +1804,14 @@ void clientHandlePacket()
 		return;
 	}
 
+	// play sound entity local
+	else if ( !strncmp((char*)net_packet->data, "SNEL", 4) )
+	{
+		Entity* tmp = uidToEntity(SDLNet_Read32(&net_packet->data[6]));
+		playSoundEntityLocal(tmp, SDLNet_Read16(&net_packet->data[4]), SDLNet_Read16(&net_packet->data[10]));
+		return;
+	}
+
 	// new light, shadowed
 	else if (!strncmp((char*)net_packet->data, "LITS", 4))
 	{
@@ -4329,6 +4337,33 @@ void serverHandlePacket()
 				entity->goldAmount = amount; // amount
 			}
 
+		}
+		return;
+	}
+
+	// client played a sound
+	else if ( !strncmp((char*)net_packet->data, "EMOT", 4) )
+	{
+		int player = net_packet->data[4];
+		int sfx = SDLNet_Read16(&net_packet->data[5]);
+		if ( players[player] && players[player]->entity )
+		{
+			playSoundEntityLocal(players[player]->entity, sfx, 92);
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				// send to all other players
+				if ( c != player && !client_disconnected[c] )
+				{
+					strcpy((char*)net_packet->data, "SNEL");
+					SDLNet_Write16(sfx, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)players[clientnum]->entity->getUID(), &net_packet->data[6]);
+					SDLNet_Write16(92, &net_packet->data[10]);
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 12;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			}
 		}
 		return;
 	}
