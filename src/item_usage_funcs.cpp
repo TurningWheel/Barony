@@ -117,6 +117,22 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				playSoundEntity(entity, 52, 64);
 			}
 		}
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( stats && stats->EFFECTS[EFF_POLYMORPH] )
+			{
+				entity->setEffect(EFF_POLYMORPH, false, 0, true);
+				entity->effectPolymorph = 0;
+				serverUpdateEntitySkill(entity, 50);
+
+				messagePlayer(player, language[3192]);
+				messagePlayer(player, language[3185]);
+
+				playSoundEntity(entity, 400, 92);
+				createParticleDropRising(entity, 593, 1.f);
+				serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);
+			}
+		}
 		if ( player != clientnum )
 		{
 			consumeItem(item, player);
