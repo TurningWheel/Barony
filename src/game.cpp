@@ -1294,7 +1294,7 @@ void gameLogic(void)
 
 			DebugStats.eventsT5 = std::chrono::high_resolution_clock::now();
 
-
+			int bloodCount = 0;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1319,9 +1319,13 @@ void gameLogic(void)
 						break;
 				}
 
-				if ( item->type == FOOD_BLOOD && item->count >= 20 )
+				if ( item->type == FOOD_BLOOD )
 				{
-					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					bloodCount += item->count;
+					if ( bloodCount >= 20 )
+					{
+						steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					}
 				}
 
 				if ( itemCategory(item) == WEAPON )

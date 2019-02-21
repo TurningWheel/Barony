@@ -843,6 +843,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 			serverUpdateEffects(i);
 			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 			messagePlayerColor(i, color, language[2477]);
+			playSoundPlayer(i, 403, 32);
 		}
 	}
 
@@ -1010,7 +1011,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			}
 			else if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
 			{
-				difficulty = 0; // not allowed to control summons
+				chance = 0; // not allowed to control summons
 			}
 
 			if ( hit.entity == parent )
@@ -1058,16 +1059,12 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				if ( parent && parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					steamAchievementClient(parent->skill[2], "BARONY_ACH_OFF_LIMITS");
 				}
 				if ( player >= 0 )
 				{
 					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(player, color, language[3141]);
-
-					if ( difficulty == 666 )
-					{
-						steamAchievementClient(player, "BARONY_ACH_OFF_LIMITS");
-					}
 				}
 			}
 			else if ( parent && rand() % 100 < chance

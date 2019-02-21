@@ -276,7 +276,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				toCurse->beatitude = -toCurse->beatitude;
 				if ( itemCategory(toCurse) == WEAPON && stats->type == SUCCUBUS )
 				{
-					steamAchievement("BARONY_ACH_WAY_YOU_LIKE_IT");
+					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
 				}
 			}
 			messagePlayer(player, language[858], toCurse->getName());
@@ -330,7 +330,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 						target->beatitude = -target->beatitude;
 						if ( itemCategory(target) == WEAPON && stats->type == SUCCUBUS )
 						{
-							steamAchievement("BARONY_ACH_WAY_YOU_LIKE_IT");
+							steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
 						}
 					}
 					break;
@@ -413,10 +413,10 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			switch ( rand() % 3 )
 			{
 				case 0:
-					hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 8); // 8 + 8 minutes
+					hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 8); // 8 + 8 minutes
 					break;
 				case 1:
-					hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 4); // 8 + 4 minutes
+					hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 4); // 8 + 4 minutes
 					break;
 				case 2:
 					// intentional fall through
@@ -525,10 +525,10 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 				switch ( rand() % 3 )
 				{
 					case 0:
-						hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 8); // 8 + 8 minutes
+						hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 8); // 8 + 8 minutes
 						break;
 					case 1:
-						hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 4); // 8 + 4 minutes
+						hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 4); // 8 + 4 minutes
 						break;
 					case 2:
 						// intentional fall through
@@ -2297,7 +2297,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
 				if ( stats[clientnum]->type == SUCCUBUS )
 				{
-					steamAchievement("BARONY_ACH_WAY_YOU_LIKE_IT");
+					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
 				}
 			}
 			else
@@ -2650,7 +2650,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 				toCurse->beatitude = -toCurse->beatitude;
 				if ( itemCategory(toCurse) == WEAPON && stats[clientnum]->type == SUCCUBUS )
 				{
-					steamAchievement("BARONY_ACH_WAY_YOU_LIKE_IT");
+					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
 				}
 			}
 			messagePlayer(player, language[858], toCurse->getName());

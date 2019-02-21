@@ -122,6 +122,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					caster->setEffect(EFF_VAMPIRICAURA, true, 1, false); // apply 1 tick countdown to finish effect.
 					caster->playerVampireCurse = 2; // cured.
 					steamAchievement("BARONY_ACH_REVERSE_THIS_CURSE");
+					playSoundEntity(caster, 402, 128);
+					createParticleDropRising(caster, 174, 1.0);
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 174);
 					return;
 				}
 			}
