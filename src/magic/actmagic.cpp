@@ -1357,6 +1357,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
+								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								{
+									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									{
+										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										{
+											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+										}
+									}
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+								}
 								parent->awardXP( hit.entity, true, true );
 							}
 						}
@@ -1571,6 +1582,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								messagePlayerColor(player, color, language[395]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+							if ( hitstats->HP <= 0 && parent )
+							{
+								parent->awardXP(hit.entity, true, true);
+								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								{
+									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									{
+										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										{
+											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+										}
+									}
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+								}
+							}
 						}
 					}
 				}
@@ -1751,6 +1777,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
+								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								{
+									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									{
+										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										{
+											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+										}
+									}
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+								}
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )
