@@ -807,6 +807,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( stats[i]->EFFECTS[EFF_WITHDRAWAL] )
 					{
 						players[i]->entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
+						serverUpdatePlayerGameplayStats(i, STATISTICS_FUNCTIONAL, 1);
 					}
 					if ( players[i]->entity->flags[BURNING] )
 					{
@@ -843,6 +844,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								if ( target_stat->EFFECTS[EFF_WITHDRAWAL] )
 								{
 									entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
+									serverUpdatePlayerGameplayStats(i, STATISTICS_FUNCTIONAL, 1);
 								}
 								if ( entity->behavior == &actPlayer )
 								{

@@ -22,6 +22,7 @@
 #include "../paths.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../scores.hpp"
 
 void actMagiclightBall(Entity* my)
 {
@@ -3990,6 +3991,16 @@ bool Entity::magicOrbitingCollision()
 				{
 					if ( actmagicIsOrbiting == 2 )
 					{
+						if ( actmagicOrbitHitTargetUID4 != 0 && caster && caster->behavior == &actPlayer )
+						{
+							if ( actmagicOrbitHitTargetUID1 == 0 
+								&& actmagicOrbitHitTargetUID2 == 0
+								&& actmagicOrbitHitTargetUID3 == 0
+								&& hit.entity->behavior == &actMonster )
+							{
+								steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_VOLATILE, STEAM_STAT_INT, 1);
+							}
+						}
 						++actmagicOrbitStationaryHitTarget;
 						if ( actmagicOrbitHitTargetUID1 == 0 )
 						{

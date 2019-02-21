@@ -37,6 +37,8 @@ Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game st
 std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
 std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
+Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
 std::unordered_set<int> clientLearnedAlchemyIngredients;
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
@@ -3189,6 +3191,8 @@ void setDefaultPlayerConducts()
 		achievementThankTheTankPair[c].first = 0;
 		achievementThankTheTankPair[c].second = 0;
 		achievementStrobeVec[c].clear();
+		achievementStatusBaitAndSwitch[c] = false;
+		achievementBaitAndSwitchTimer[c] = 0;
 	}
 	clientLearnedAlchemyIngredients.clear();
 }
@@ -3283,6 +3287,10 @@ void updateGameplayStatisticsInMainLoop()
 	{
 		steamAchievement("BARONY_ACH_HOT_TUB");
 	}
+	if ( gameStatistics[STATISTICS_FUNCTIONAL] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_FUNCTIONAL");
+	}
 
 	if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
 	{
@@ -3300,7 +3308,7 @@ void updateGameplayStatisticsInMainLoop()
 
 	if ( gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 && clientLearnedAlchemyIngredients.empty() )
 	{
-		int numpotions = potionStandardAppearanceMap.size();
+		int numpotions = static_cast<int>(potionStandardAppearanceMap.size());
 		for ( int i = 0; i < numpotions; ++i )
 		{
 			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
@@ -3315,7 +3323,8 @@ void updateGameplayStatisticsInMainLoop()
 
 	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) && gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 )
 	{
-		int numpotions = potionStandardAppearanceMap.size();
+		int numpotions = static_cast<int>(potionStandardAppearanceMap.size());
+		bool failAchievement = false;
 		for ( int i = 0; i < numpotions; ++i )
 		{
 			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
@@ -3323,8 +3332,12 @@ void updateGameplayStatisticsInMainLoop()
 			int type = typeAppearance.first;
 			if ( !learned && (GenericGUI.isItemBaseIngredient(type) || GenericGUI.isItemSecondaryIngredient(type)) )
 			{
+				failAchievement = true;
 				break;
 			}
+		}
+		if ( !failAchievement )
+		{
 			steamAchievement("BARONY_ACH_MIXOLOGIST");
 		}
 	}
@@ -3525,10 +3538,38 @@ void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerI
 	}
 }
 
+void updateAchievementBaitAndSwitch(int player, bool isTeleporting)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( !stats[player] || stats[player]->playerRace != RACE_SUCCUBUS || achievementStatusBaitAndSwitch[player] || multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( !isTeleporting )
+	{
+		achievementBaitAndSwitchTimer[player] = ticks;
+	}
+	else
+	{
+		if ( achievementBaitAndSwitchTimer[player] > 0 && (ticks - achievementBaitAndSwitchTimer[player]) <= TICKS_PER_SECOND )
+		{
+			achievementStatusBaitAndSwitch[player] = true;
+			steamAchievementClient(player, "STEAM_ACH_BAIT_AND_SWITCH");
+		}
+	}
+}
+
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled)
 {
-	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT
-		|| player < 0 || player >= MAXPLAYERS )
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT )
 	{
 		return;
 	}

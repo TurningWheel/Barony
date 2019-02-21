@@ -40,6 +40,7 @@ static const int STATISTICS_HOT_TUB_TIME_MACHINE = 4;
 static const int STATISTICS_HEAL_BOT = 5;
 static const int STATISTICS_TEMPT_FATE = 6;
 static const int STATISTICS_ALCHEMY_RECIPES = 7;
+static const int STATISTICS_FUNCTIONAL = 8;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 enum SteamStatIndexes : int
@@ -123,6 +124,8 @@ extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
 extern std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS];
 extern bool achievementStatusRhythmOfTheKnight[MAXPLAYERS];
 extern std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS];
+extern bool achievementStatusBaitAndSwitch[MAXPLAYERS];
+extern Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS];
 extern std::unordered_set<int> clientLearnedAlchemyIngredients;
 extern bool achievementStatusThankTheTank[MAXPLAYERS];
 extern std::vector<Uint32> achievementStrobeVec[MAXPLAYERS];
@@ -156,6 +159,7 @@ void updatePlayerConductsInMainLoop(); // check and update conduct flags through
 void updateGameplayStatisticsInMainLoop(); // check for achievement values for gameplay statistics.
 void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerIsHit);
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
+void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
 static const int SAVE_GAMES_MAX = 10;
 
 #ifdef STEAMWORKS

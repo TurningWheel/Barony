@@ -424,6 +424,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 					break;
 			}
 			entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
 			messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
 		}
 		else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
@@ -535,6 +536,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 						break;
 				}
 				entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
+				serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
 				messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
 			}
 			else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
@@ -813,6 +815,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	if ( stats->EFFECTS[EFF_WITHDRAWAL] )
 	{
 		entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
+		serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
 	}
 
 	if ( item->beatitude < 0 )

@@ -6987,6 +6987,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
 							}
+							if ( behavior == &actMonster )
+							{
+								updateAchievementBaitAndSwitch(playerhit, false);
+							}
 							//messagePlayer(0, "took damage!");
 							if ( paralyzeStatusInflicted )
 							{
@@ -7741,6 +7745,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 		}
 		return false;
 	}
+	updateAchievementBaitAndSwitch(player, true);
 	if ( multiplayer != CLIENT )
 	{
 		TileEntityList.updateEntity(*this);
