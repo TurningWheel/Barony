@@ -4450,6 +4450,9 @@ void serverHandlePacket()
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
 				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");
+				playSoundEntity(players[player]->entity, 402, 128);
+				createParticleDropRising(players[player]->entity, 174, 1.0);
+				serverSpawnMiscParticles(players[player]->entity, PARTICLE_EFFECT_RISING_DROP, 174);
 			}
 		}
 		return;

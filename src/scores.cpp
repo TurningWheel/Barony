@@ -3369,7 +3369,7 @@ void updateGameplayStatisticsInMainLoop()
 		}
 		if ( potionList.size() >= 16 )
 		{
-			steamAchievement("BARONY_ACH_PERFECT_PREPARATION");
+			steamAchievement("BARONY_ACH_POTION_PREPARATION");
 		}
 	}
 }
@@ -3558,7 +3558,7 @@ void updateAchievementBaitAndSwitch(int player, bool isTeleporting)
 		if ( achievementBaitAndSwitchTimer[player] > 0 && (ticks - achievementBaitAndSwitchTimer[player]) <= TICKS_PER_SECOND )
 		{
 			achievementStatusBaitAndSwitch[player] = true;
-			steamAchievementClient(player, "STEAM_ACH_BAIT_AND_SWITCH");
+			steamAchievementClient(player, "BARONY_ACH_BAIT_AND_SWITCH");
 		}
 	}
 }

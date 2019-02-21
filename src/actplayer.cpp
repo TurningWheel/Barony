@@ -961,6 +961,7 @@ void actPlayer(Entity* my)
 					messagePlayerColor(PLAYER_NUM, color, language[3202]);
 
 					playSoundEntity(my, 167, 128);
+					playSoundEntity(my, 403, 128);
 					createParticleDropRising(my, 600, 0.7);
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}

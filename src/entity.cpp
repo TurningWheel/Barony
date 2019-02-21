@@ -2592,15 +2592,19 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
 	if ( !strncmp(map.name, "Sanctum", 7) 
 		|| !strncmp(map.name, "Boss", 4) 
 		|| !strncmp(map.name, "Hell Boss", 9)
 		|| !strncmp(map.name, "Hamlet", 6) )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
+		if ( vampiricHunger > 0 )
+		{
+			vampiricHunger *= 8;
+		}
 	}
 
-	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
 	if ( vampiricHunger > 0 )
 	{
 		hungerTickRate = 5 * vampiricHunger;
@@ -2623,16 +2627,13 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( !(svFlags & SV_FLAG_HARDCORE) )
+	if ( playerCount == 3 )
 	{
-		if ( playerCount == 3 )
-		{
-			hungerTickRate *= 1.25;
-		}
-		else if ( playerCount == 4 )
-		{
-			hungerTickRate *= 1.5;
-		}
+		hungerTickRate *= 1.25;
+	}
+	else if ( playerCount == 4 )
+	{
+		hungerTickRate *= 1.5;
 	}
 
 	bool processHunger = (svFlags & SV_FLAG_HUNGER); // check server flags if hunger is enabled.
@@ -4915,7 +4916,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									bool foundCharmSpell = false;
 									for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
 									{
-										Item* item = (Item*)node->element;
+										Item* item = (Item*)spellnode->element;
 										if ( item && itemCategory(item) == SPELL_CAT )
 										{
 											spell_t* spell = getSpellFromItem(item);
@@ -6276,8 +6277,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
 					// player weapon skills
-					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3)
-						&& (hasMeleeGloves) )
+					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3) )
 					{
 						int chance = 0;
 						bool inflictParalyze = false;
@@ -6299,7 +6299,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							default:
 								break;
 						}
-						if ( chance > 0 && backstab && !hitstats->EFFECTS[EFF_PARALYZED] )
+						if ( chance > 0 && backstab && !hitstats->EFFECTS[EFF_PARALYZED] && hitstats->HP > 0 )
 						{
 							int duration = 50;
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, duration, true) )
@@ -6314,7 +6314,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							hit.entity->modHP(-5); // do extra damage.
 						}
-						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						if ( hasMeleeGloves 
+							&& hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t baseMultiplier = 0.5;
 							if ( myStats->gloves )
@@ -12014,10 +12015,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 {
 	// monsters that retreat based on CHR
 	// gnomes, spiders, goblins, shopkeeps, trolls, humans (50%)
-	// kobolds, scarabs, vampires, suc/incubi, insectoids, goatmen, rats
+	// kobolds, scarabs, suc/incubi, insectoids, goatmen, rats
 
 	// excluded golems, shadows, cockatrice, skeletons, demons, imps
-	// scorpions, slimes, ghouls
+	// scorpions, slimes, ghouls, vampires
 
 	// retreating monsters will not try path when losing sight of target
 
@@ -12029,7 +12030,11 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return true;
 	}
-	if ( myStats.type == SHADOW )
+	if ( myStats.type == VAMPIRE )
+	{
+		return false;
+	}
+	else if ( myStats.type == SHADOW )
 	{
 		return false;
 	}
