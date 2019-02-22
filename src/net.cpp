@@ -1447,8 +1447,9 @@ void clientHandlePacket()
 	// update steam statistic
 	else if ( !strncmp((char*)net_packet->data, "SSTA", 4) )
 	{
+		int value = static_cast<int>(SDLNet_Read16(&net_packet->data[6]));
 		steamStatisticUpdate(static_cast<int>(net_packet->data[4]), 
-			static_cast<ESteamStatTypes>(net_packet->data[5]), static_cast<int>(net_packet->data[6]));
+			static_cast<ESteamStatTypes>(net_packet->data[5]), value);
 		return;
 	}
 
@@ -1677,6 +1678,33 @@ void clientHandlePacket()
 			else if ( static_cast<int>(net_packet->data[5]) < BROKEN )
 			{
 				item->status = BROKEN;
+				if ( net_packet->data[4] == 5 )
+				{
+					if ( client_classes[clientnum] == CLASS_MESMER )
+					{
+						if ( stats[clientnum]->weapon->type == MAGICSTAFF_CHARM )
+						{
+							bool foundCharmSpell = false;
+							for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
+							{
+								Item* item = (Item*)spellnode->element;
+								if ( item && itemCategory(item) == SPELL_CAT )
+								{
+									spell_t* spell = getSpellFromItem(item);
+									if ( spell && spell->ID == SPELL_CHARM_MONSTER )
+									{
+										foundCharmSpell = true;
+										break;
+									}
+								}
+							}
+							if ( !foundCharmSpell )
+							{
+								steamAchievement("BARONY_ACH_WHAT_NOW");
+							}
+						}
+					}
+				}
 			}
 			else
 			{
@@ -1773,6 +1801,45 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SNDG", 4))
 	{
 		playSound(SDLNet_Read32(&net_packet->data[4]), SDLNet_Read32(&net_packet->data[8]));
+		return;
+	}
+
+	// play sound entity local
+	else if ( !strncmp((char*)net_packet->data, "SNEL", 4) )
+	{
+		Entity* tmp = uidToEntity(SDLNet_Read32(&net_packet->data[6]));
+		int sfx = SDLNet_Read16(&net_packet->data[4]);
+		if ( tmp->behavior == &actPlayer && mute_player_monster_sounds )
+		{
+			switch ( sfx )
+			{
+				case 95:
+				case 70:
+				case 322:
+				case 323:
+				case 324:
+				case 329:
+				case 332:
+				case 333:
+				case 291:
+				case 292:
+				case 293:
+				case 294:
+				case 60:
+				case 61:
+				case 62:
+				case 257:
+				case 258:
+				case 276:
+				case 277:
+				case 278:
+					// return early, don't play monster noises from players.
+					return;
+				default:
+					break;
+			}
+		}
+		playSoundEntityLocal(tmp, sfx, SDLNet_Read16(&net_packet->data[10]));
 		return;
 	}
 
@@ -2372,6 +2439,10 @@ void clientHandlePacket()
 			OPENAL_ChannelGroup_Stop(sound_group);
 		}
 #endif
+		if ( openedChest[clientnum] )
+		{
+			closeChestClientside();
+		}
 
 		// show loading message
 #define LOADSTR language[709]
@@ -4301,6 +4372,33 @@ void serverHandlePacket()
 		return;
 	}
 
+	// client played a sound
+	else if ( !strncmp((char*)net_packet->data, "EMOT", 4) )
+	{
+		int player = net_packet->data[4];
+		int sfx = SDLNet_Read16(&net_packet->data[5]);
+		if ( players[player] && players[player]->entity )
+		{
+			playSoundEntityLocal(players[player]->entity, sfx, 92);
+			for ( int c = 1; c < MAXPLAYERS; ++c )
+			{
+				// send to all other players
+				if ( c != player && !client_disconnected[c] )
+				{
+					strcpy((char*)net_packet->data, "SNEL");
+					SDLNet_Write16(sfx, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)players[clientnum]->entity->getUID(), &net_packet->data[6]);
+					SDLNet_Write16(92, &net_packet->data[10]);
+					net_packet->address.host = net_clients[c - 1].host;
+					net_packet->address.port = net_clients[c - 1].port;
+					net_packet->len = 12;
+					sendPacketSafe(net_sock, -1, net_packet, c - 1);
+				}
+			}
+		}
+		return;
+	}
+
 	// the client asked for a level up
 	else if ( !strncmp((char*)net_packet->data, "CLVL", 4) )
 	{
@@ -4351,6 +4449,10 @@ void serverHandlePacket()
 				messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3242]);
 				players[player]->entity->playerVampireCurse = 2; // cured.
 				serverUpdateEntitySkill(players[player]->entity, 51);
+				steamAchievementClient(player, "BARONY_ACH_REVERSE_THIS_CURSE");
+				playSoundEntity(players[player]->entity, 402, 128);
+				createParticleDropRising(players[player]->entity, 174, 1.0);
+				serverSpawnMiscParticles(players[player]->entity, PARTICLE_EFFECT_RISING_DROP, 174);
 			}
 		}
 		return;

@@ -186,6 +186,88 @@ Entity* entityClicked()
 		}
 	}
 
+	if ( !uidToEntity(uidnum) && !mute_player_monster_sounds )
+	{
+		if ( players[clientnum] && players[clientnum]->entity && monsterEmoteGimpTimer == 0 )
+		{
+			monsterEmoteGimpTimer = TICKS_PER_SECOND * 5;
+			int sfx = 0;
+			int line = 0;
+			switch ( stats[clientnum]->type )
+			{
+				case SKELETON:
+					sfx = 95;
+					monsterEmoteGimpTimer = TICKS_PER_SECOND;
+					break;
+				case SUCCUBUS:
+					sfx = 70;
+					break;
+				case VAMPIRE:
+					if ( rand() % 4 == 0 )
+					{
+						sfx = 329;
+					}
+					else
+					{
+						sfx = 322 + rand() % 3;
+					}
+					break;
+				case GOATMAN:
+					sfx = 332 + rand() % 2;
+					break;
+				case INSECTOID:
+					sfx = 291 + rand() % 4;
+					break;
+				case GOBLIN:
+					sfx = 60 + rand() % 3;
+					break;
+				case AUTOMATON:
+					sfx = 257 + rand() % 2;
+					break;
+				case INCUBUS:
+					sfx = 276 + rand() % 3;
+					break;
+				default:
+					sfx = 0;
+					break;
+			}
+
+			//Tell the server we made a noise.
+			if ( sfx != 0 )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					playSound(sfx, 92);
+					strcpy((char*)net_packet->data, "EMOT");
+					net_packet->data[4] = clientnum;
+					SDLNet_Write16(sfx, &net_packet->data[5]);
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 7;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				else if ( multiplayer != CLIENT )
+				{
+					playSound(sfx, 92);
+					for ( int c = 1; c < MAXPLAYERS; ++c )
+					{
+						if ( !client_disconnected[c] )
+						{
+							strcpy((char*)net_packet->data, "SNEL");
+							SDLNet_Write16(sfx, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)players[clientnum]->entity->getUID(), &net_packet->data[6]);
+							SDLNet_Write16(92, &net_packet->data[10]);
+							net_packet->address.host = net_clients[c - 1].host;
+							net_packet->address.port = net_clients[c - 1].port;
+							net_packet->len = 12;
+							sendPacketSafe(net_sock, -1, net_packet, c - 1);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// pixel processing (opengl only)
 	if ( softwaremode == false)
 	{

@@ -67,10 +67,16 @@ void addMessage(Uint32 color, char* content, ...)
 	if (MESSAGE_MAX_TOTAL_LINES > 0)
 	{
 		for (auto last_message = notification_messages.rbegin(); last_message != notification_messages.rend(); last_message++) {
-			if (line_count < (MESSAGE_MAX_TOTAL_LINES - lines_needed))
+			if ( line_count < (MESSAGE_MAX_TOTAL_LINES - lines_needed) )
+			{
 				break;
+			}
 			line_count -= (*last_message)->text->lines;
 			notification_messages.pop_back();
+			if ( last_message != notification_messages.rend() )
+			{
+				last_message++;
+			}
 		}
 	}
 	else
@@ -212,13 +218,17 @@ void updateMessages()
 		}
 	}
 	// Remove all completely faded messages
-	for (auto it = notification_messages.begin(); it != notification_messages.end(); it++)
+	for (auto it = notification_messages.begin(); it != notification_messages.end(); )
 	{
 		Message *msg = *it;
 		if (msg->alpha <= SDL_ALPHA_TRANSPARENT)
 		{
 			messageDeconstructor(msg);
 			it = notification_messages.erase(it);
+		}
+		else
+		{
+			++it;
 		}
 	}
 }

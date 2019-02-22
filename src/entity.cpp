@@ -1345,6 +1345,14 @@ void Entity::increaseSkill(int skill)
 			}
 		}
 
+		if ( skill == PRO_STEALTH && myStats->PROFICIENCIES[skill] == 100 )
+		{
+			if ( client_classes[player] == CLASS_ACCURSED )
+			{
+				steamAchievementClient(player, "BARONY_ACH_BLOOD_RUNS_CLEAR");
+			}
+		}
+
 		if ( skill == PRO_ALCHEMY )
 		{
 			if ( player == clientnum )
@@ -2238,6 +2246,10 @@ void Entity::handleEffects(Stat* myStats)
 					serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 791);
 					skeletonSummonSetEquipment(myStats, std::min(7, 1 + (myStats->LVL / 5)));
 				}
+				else if ( myStats->LVL == 35 )
+				{
+					steamAchievementClient(this->monsterAllyIndex, "BARONY_ACH_BONE_TO_PICK");
+				}
 			}
 
 			for ( i = 0; i < 3; i++ )
@@ -2580,15 +2592,19 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
 	if ( !strncmp(map.name, "Sanctum", 7) 
 		|| !strncmp(map.name, "Boss", 4) 
 		|| !strncmp(map.name, "Hell Boss", 9)
 		|| !strncmp(map.name, "Hamlet", 6) )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
+		if ( vampiricHunger > 0 )
+		{
+			vampiricHunger *= 8;
+		}
 	}
 
-	int hungerTickRate = 30; // how many ticks to reduce hunger by a point.
 	if ( vampiricHunger > 0 )
 	{
 		hungerTickRate = 5 * vampiricHunger;
@@ -2611,16 +2627,13 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( !(svFlags & SV_FLAG_HARDCORE) )
+	if ( playerCount == 3 )
 	{
-		if ( playerCount == 3 )
-		{
-			hungerTickRate *= 1.25;
-		}
-		else if ( playerCount == 4 )
-		{
-			hungerTickRate *= 1.5;
-		}
+		hungerTickRate *= 1.25;
+	}
+	else if ( playerCount == 4 )
+	{
+		hungerTickRate *= 1.5;
 	}
 
 	bool processHunger = (svFlags & SV_FLAG_HUNGER); // check server flags if hunger is enabled.
@@ -3374,6 +3387,8 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				messagePlayer(player, language[654]);
 
+				steamAchievementClient(player, "BARONY_ACH_SECOND_CHANCE");
+
 				playSoundEntity(this, 167, 128);
 				createParticleDropRising(this, 174, 1.0);
 				serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 174);
@@ -3439,6 +3454,16 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					messagePlayer(player, language[648]);
 					this->modHP(-(2 + rand() % 3));
+					playSoundEntity(this, 28, 64); // "Damage.ogg"
+					if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
+					{
+						if ( rand() % 3 > 0 )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							messagePlayerColor(player, color, language[3358]);
+							this->modMP(2);
+						}
+					}
 					this->setObituary(language[1534]);
 					if ( myStats->HP <= 0 )
 					{
@@ -4854,7 +4879,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( myStats->weapon->type == MAGICSTAFF_CHARM )
 						{
-							if ( myStats->weapon->status <= SERVICABLE )
+							if ( myStats->weapon->status <= WORN )
 							{
 								forceDegrade = true;
 							}
@@ -4884,6 +4909,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 								steamAchievementClient(player, "BARONY_ACH_ONE_MANS_TRASH");
 							}
 							messagePlayer(player, language[660]);
+							if ( player == clientnum && client_classes[player] == CLASS_MESMER )
+							{
+								if ( myStats->weapon->type == MAGICSTAFF_CHARM )
+								{
+									bool foundCharmSpell = false;
+									for ( node_t* spellnode = stats[clientnum]->inventory.first; spellnode != nullptr; spellnode = spellnode->next )
+									{
+										Item* item = (Item*)spellnode->element;
+										if ( item && itemCategory(item) == SPELL_CAT )
+										{
+											spell_t* spell = getSpellFromItem(item);
+											if ( spell && spell->ID == SPELL_CHARM_MONSTER )
+											{
+												foundCharmSpell = true;
+												break;
+											}
+										}
+									}
+									if ( !foundCharmSpell )
+									{
+										steamAchievement("BARONY_ACH_WHAT_NOW");
+									}
+								}
+							}
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{
@@ -5729,7 +5778,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( weaponskill == PRO_UNARMED )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][PRO_UNARMED];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][6];
 					}
 					else if ( weaponskill >= 0 )
 					{
@@ -5832,7 +5881,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-
+					
 					hit.entity->modHP(-damage); // do the damage
 
 					// skill increase
@@ -5851,6 +5900,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else if ( hitstats->HP <= 0 )
 						{
+							if ( player >= 0 && weaponskill == PRO_UNARMED 
+								&& stats[player]->type == GOATMAN
+								&& stats[player]->EFFECTS[EFF_DRUNK] )
+							{
+								steamStatisticUpdateClient(player, STEAM_STAT_BARFIGHT_CHAMP, STEAM_STAT_INT, 1);
+							}
+
 							if ( rand() % 8 == 0 )
 							{
 								this->increaseSkill(weaponskill);
@@ -5959,7 +6015,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false; //certain monster's weapons don't degrade.
 							}
-							else if ( myStats->type == SKELETON && monsterAllySummonRank != 0 )
+							else if ( myStats->type == SKELETON && behavior == &actMonster && monsterAllySummonRank != 0 )
 							{
 								degradeWeapon = false;
 							}
@@ -6004,14 +6060,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( (*weaponToBreak)->status == BROKEN && behavior == &actMonster && playerhit >= 0 )
 								{
-									if ( playerhit > 0 )
-									{
-										steamStatisticUpdateClient(playerhit, STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
-									}
-									else
-									{
-										steamStatisticUpdate(STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
-									}
+									steamStatisticUpdateClient(playerhit, STEAM_STAT_TOUGH_AS_NAILS, STEAM_STAT_INT, 1);
 								}
 							}
 						}
@@ -6192,14 +6241,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( player >= 0 && hit.entity->behavior == &actMonster )
 							{
-								if ( player > 0 )
-								{
-									steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
-								}
-								else
-								{
-									steamStatisticUpdate(STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
-								}
+								steamStatisticUpdateClient(player, STEAM_STAT_UNSTOPPABLE_FORCE, STEAM_STAT_INT, 1);
 							}
 						}
 					}
@@ -6235,8 +6277,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
 					// player weapon skills
-					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3)
-						&& (hasMeleeGloves) )
+					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3) )
 					{
 						int chance = 0;
 						bool inflictParalyze = false;
@@ -6258,7 +6299,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							default:
 								break;
 						}
-						if ( chance > 0 && backstab && !hitstats->EFFECTS[EFF_PARALYZED] )
+						if ( chance > 0 && backstab && !hitstats->EFFECTS[EFF_PARALYZED] && hitstats->HP > 0 )
 						{
 							int duration = 50;
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_PARALYZED, true, duration, true) )
@@ -6266,10 +6307,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 								paralyzeStatusInflicted = true;
 								playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
+								if ( behavior == &actPlayer ) // redundant; but if this code ever changes...
+								{
+									steamAchievementClient(skill[2], "BARONY_ACH_ONE_PUNCH_MAN");
+								}
 							}
 							hit.entity->modHP(-5); // do extra damage.
 						}
-						if ( hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						if ( hasMeleeGloves 
+							&& hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t baseMultiplier = 0.5;
 							if ( myStats->gloves )
@@ -6671,6 +6717,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
 								}
+								if ( player >= 0 && stats[player]->type == VAMPIRE && isInvisible() )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_BLOOD_SPORT, STEAM_STAT_INT, 1);
+								}
 							}
 							else
 							{
@@ -6790,6 +6840,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( hitstats->type == COCKATRICE )
 								{
 									steamAchievementClient(player, "BARONY_ACH_SCALES_IN_FAVOR");
+								}
+								if ( player >= 0 && stats[player]->type == VAMPIRE && isInvisible() )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_BLOOD_SPORT, STEAM_STAT_INT, 1);
 								}
 							}
 							else
@@ -6933,6 +6987,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( !achievementStatusThankTheTank[playerhit] )
 							{
 								achievementThankTheTankPair[playerhit] = std::make_pair(0, 0);
+							}
+							if ( behavior == &actMonster )
+							{
+								updateAchievementBaitAndSwitch(playerhit, false);
 							}
 							//messagePlayer(0, "took damage!");
 							if ( paralyzeStatusInflicted )
@@ -7309,6 +7367,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								myStats->HUNGER = std::min(1499, myStats->HUNGER + 100);
 								serverUpdateHunger(player);
+								if ( stats[player]->type == VAMPIRE )
+								{
+									steamStatisticUpdateClient(player, STEAM_STAT_BAD_BLOOD, STEAM_STAT_INT, lifeStealAmount);
+								}
 							}
 							if ( playerhit >= 0 )
 							{
@@ -7684,6 +7746,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 		}
 		return false;
 	}
+	updateAchievementBaitAndSwitch(player, true);
 	if ( multiplayer != CLIENT )
 	{
 		TileEntityList.updateEntity(*this);
@@ -7932,7 +7995,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		return;
 	}
 
-	if ( src->monsterAllySummonRank != 0 )
+	if ( src->behavior == &actMonster && src->monsterAllySummonRank != 0 )
 	{
 		return; // summoned monster, no XP!
 	}
@@ -8151,13 +8214,19 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 	else
 	{
-		Entity* leader;
+		Entity* leader = nullptr;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
 		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL )
 		{
 			leader->increaseSkill(PRO_LEADERSHIP);
 			leader->awardXP(src, true, false);
+
+			if ( leader->behavior == &actPlayer && destStats->monsterIsCharmed == 1 )
+			{
+				// charmed follower killed something.
+				steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_KILL_COMMAND, STEAM_STAT_INT, 1);
+			}
 		}
 	}
 
@@ -10558,6 +10627,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		if ( isPlayer && isPotion )
 		{
 			weaponLimb->focalz += 1;
+			if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
+			{
+				weaponLimb->focaly += 1;
+				weaponLimb->focalz -= 1.5;
+			}
 		}
 	}
 	else
@@ -10974,6 +11048,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 					messagePlayer(target.skill[2], language[3243], namesays,
 						language[2000 + (targetStats->type - KOBOLD)]);
 				}
+				steamAchievementClient(target.skill[2], "BARONY_ACH_RIGHT_TO_REFUSE");
 			}
 			else
 			{
@@ -11861,7 +11936,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		return; //Shadows' armor and shields don't break.
 	}
 
-	if ( hitstats.type == SKELETON && monsterAllySummonRank > 0 )
+	if ( hitstats.type == SKELETON && behavior == &actMonster && monsterAllySummonRank > 0 )
 	{
 		return; // conjured skeleton armor doesn't break.
 	}
@@ -11940,10 +12015,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 {
 	// monsters that retreat based on CHR
 	// gnomes, spiders, goblins, shopkeeps, trolls, humans (50%)
-	// kobolds, scarabs, vampires, suc/incubi, insectoids, goatmen, rats
+	// kobolds, scarabs, suc/incubi, insectoids, goatmen, rats
 
 	// excluded golems, shadows, cockatrice, skeletons, demons, imps
-	// scorpions, slimes, ghouls
+	// scorpions, slimes, ghouls, vampires
 
 	// retreating monsters will not try path when losing sight of target
 
@@ -11955,7 +12030,11 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return true;
 	}
-	if ( myStats.type == SHADOW )
+	if ( myStats.type == VAMPIRE )
+	{
+		return false;
+	}
+	else if ( myStats.type == SHADOW )
 	{
 		return false;
 	}
@@ -14140,13 +14219,17 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 		{
 			playSoundEntity(this, 28, 64);
 			this->modHP(-damageOnHit);
+			Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 			if ( myStats.HP <= 0 )
 			{
-				Entity* whoKnockedMe = uidToEntity(this->monsterKnockbackUID);
 				if ( whoKnockedMe )
 				{
 					whoKnockedMe->awardXP(this, true, true);
 				}
+			}
+			if ( whoKnockedMe && whoKnockedMe->behavior == &actPlayer )
+			{
+				steamStatisticUpdateClient(whoKnockedMe->skill[2], STEAM_STAT_TAKE_THIS_OUTSIDE, STEAM_STAT_INT, 1);
 			}
 			knockedInto->doorHealth = 0;    // smash doors instantly
 			playSoundEntity(knockedInto, 28, 64);

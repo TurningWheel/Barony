@@ -516,6 +516,11 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				return;
 			}
 
+			if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
+			{
+				return;
+			}
+
 			// update enemy bar for attacker
 			if ( !strcmp(hitstats->name, "") )
 			{
@@ -838,6 +843,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 			serverUpdateEffects(i);
 			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 			messagePlayerColor(i, color, language[2477]);
+			playSoundPlayer(i, 403, 32);
 		}
 	}
 
@@ -1003,6 +1009,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			{
 				chance = 0;
 			}
+			else if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
+			{
+				chance = 0; // not allowed to control summons
+			}
 
 			if ( hit.entity == parent )
 			{
@@ -1049,6 +1059,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				if ( parent && parent->behavior == &actPlayer )
 				{
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					steamAchievementClient(parent->skill[2], "BARONY_ACH_OFF_LIMITS");
 				}
 				if ( player >= 0 )
 				{
@@ -1219,7 +1230,8 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 	}
 
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
-		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE )
+		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
+		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0) )
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
@@ -1240,6 +1252,11 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			|| (targetStats->leader_uid != 0 && monsterSummonType == SHADOW) )
 		{
 			monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
+		}
+
+		if ( targetStats->type == SHADOW )
+		{
+			monsterSummonType = CREATURE_IMP; // shadows turn to imps
 		}
 
 		bool summonCanEquipItems = false;

@@ -2118,6 +2118,10 @@ void consoleCommand(char* command_str)
 		{
 			mute_audio_on_focus_lost = (mute_audio_on_focus_lost == false);
 		}
+		else if ( !strncmp(command_str, "/muteplayermonstersounds", 24) )
+		{
+			mute_player_monster_sounds = (mute_player_monster_sounds == false);
+		}
 		else if ( !strncmp(command_str, "/minimaptransparencyfg", 22) )
 		{
 			minimapTransparencyForeground = atoi(&command_str[23]);
@@ -2235,7 +2239,7 @@ void consoleCommand(char* command_str)
 			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity && entity->monsterAllySummonRank != 0 )
+				if ( entity && entity->behavior == &actMonster && entity->monsterAllySummonRank != 0 )
 				{
 					Stat* entityStats = entity->getStats();
 					if ( entityStats )

@@ -453,9 +453,9 @@ void gameLogic(void)
 				}
 			}
 		}
+		DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 		if ( multiplayer != CLIENT )   // server/singleplayer code
 		{
-			DebugStats.eventsT2 = std::chrono::high_resolution_clock::now();
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
 				if ( assailantTimer[c] > 0 )
@@ -588,6 +588,17 @@ void gameLogic(void)
 						steamAchievementClient(c, "BARONY_ACH_GIFTS_ETERNALS");
 					}
 
+					if ( stats[c]->type == SKELETON 
+						&& stats[c]->weapon && stats[c]->weapon->type == ARTIFACT_AXE
+						&& stats[c]->cloak && stats[c]->cloak->type == CLOAK_PROTECTION
+						&& !stats[c]->gloves && !stats[c]->helmet && !stats[c]->shoes
+						&& !stats[c]->breastplate && !stats[c]->mask && !stats[c]->ring
+						&& !stats[c]->amulet && !stats[c]->shield )
+					{
+						// nothing but an axe and a cloak.
+						steamAchievementClient(c, "BARONY_ACH_COMEDIAN");
+					}
+
 					if ( stats[c]->EFFECTS[EFF_SHRINE_RED_BUFF]
 						&& stats[c]->EFFECTS[EFF_SHRINE_GREEN_BUFF]
 						&& stats[c]->EFFECTS[EFF_SHRINE_BLUE_BUFF] )
@@ -605,21 +616,51 @@ void gameLogic(void)
 					}
 
 					int bodyguards = 0;
+					int squadGhouls = 0;
+					int badRomance = 0;
+					int familyReunion = 0;
 					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = uidToEntity(*((Uint32*)node->element));
 						if ( follower )
 						{
 							Stat* followerStats = follower->getStats();
-							if ( followerStats && followerStats->type == CRYSTALGOLEM )
+							if ( followerStats )
 							{
-								++bodyguards;
+								if ( followerStats->type == CRYSTALGOLEM )
+								{
+									++bodyguards;
+								}
+								else if ( followerStats->type == GHOUL && stats[c]->type == SKELETON )
+								{
+									++squadGhouls;
+								}
+								else if ( stats[c]->type == SUCCUBUS && (followerStats->type == SUCCUBUS || followerStats->type == INCUBUS) )
+								{
+									++badRomance;
+								}
+								else if ( stats[c]->type == GOATMAN && followerStats->type == GOATMAN )
+								{
+									++familyReunion;
+								}
 							}
 						}
 					}
 					if ( bodyguards >= 2 )
 					{
 						steamAchievementClient(c, "BARONY_ACH_BODYGUARDS");
+					}
+					if ( squadGhouls >= 4 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_SQUAD_GHOULS");
+					}
+					if ( badRomance >= 2 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_BAD_ROMANCE");
+					}
+					if ( familyReunion >= 3 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_FAMILY_REUNION");
 					}
 				}
 				updateGameplayStatisticsInMainLoop();
@@ -713,10 +754,27 @@ void gameLogic(void)
 					}
 #endif
 					// stop combat music
+					// close chests
 					for ( c = 0; c < MAXPLAYERS; ++c )
 					{
 						assailantTimer[c] = 0;
+						if ( c > 0 && !client_disconnected[c] )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChestServer();
+							}
+						}
+						else if ( c == 0 )
+						{
+							if ( openedChest[c] )
+							{
+								openedChest[c]->closeChest();
+							}
+						}
 					}
+
+
 
 					// show loading message
 					loading = true;
@@ -1236,6 +1294,7 @@ void gameLogic(void)
 
 			DebugStats.eventsT5 = std::chrono::high_resolution_clock::now();
 
+			int bloodCount = 0;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -1258,6 +1317,15 @@ void gameLogic(void)
 						break;
 					default:
 						break;
+				}
+
+				if ( item->type == FOOD_BLOOD )
+				{
+					bloodCount += item->count;
+					if ( bloodCount >= 20 )
+					{
+						steamAchievement("BARONY_ACH_BLOOD_VESSELS");
+					}
 				}
 
 				if ( itemCategory(item) == WEAPON )
@@ -1743,6 +1811,11 @@ void gameLogic(void)
 					{
 						steamAchievement("BARONY_ACH_BLESSED");
 					}
+				}
+
+				if ( item->type == FOOD_BLOOD && item->count >= 20 )
+				{
+					steamAchievement("BARONY_ACH_BLOOD_VESSELS");
 				}
 
 				// drop any inventory items you don't have room for
