@@ -3549,6 +3549,11 @@ void updateAchievementBaitAndSwitch(int player, bool isTeleporting)
 		return;
 	}
 
+	if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance != 0 )
+	{
+		return;
+	}
+
 	if ( !isTeleporting )
 	{
 		achievementBaitAndSwitchTimer[player] = ticks;
@@ -3630,7 +3635,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	}
 	
 	bool monster = false;
-	if ( score->stats && score->stats->playerRace > 0 )
+	if ( score->stats && score->stats->playerRace > 0 && score->stats->appearance == 0 )
 	{
 		monster = true;
 	}
