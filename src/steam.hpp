@@ -286,15 +286,28 @@ struct SteamStat_t
 	float m_flAvgDenominator;
 };
 
+struct SteamGlobalStat_t
+{
+	int m_ID;
+	ESteamStatTypes m_eStatType;
+	const char *m_pchStatName;
+	int64 m_iValue;
+	float m_flValue;
+	float m_flAvgNumerator;
+	float m_flAvgDenominator;
+};
+
 class CSteamStatistics
 {
 private:
 	SteamStat_t *m_pStats; // Stats data
+	SteamGlobalStat_t *m_pGlobalStats; // Stats data
 	int m_iNumStats; // The number of Stats
-	bool m_bInitialized; // Have we called Request stats and received the callback?
+	int m_iNumGlobalStats; // The number of Global Stats
 public:
 
-	CSteamStatistics(SteamStat_t* gStats, int numStatistics);
+	bool m_bInitialized; // Have we called Request stats and received the callback?
+	CSteamStatistics(SteamStat_t* gStats, SteamGlobalStat_t* gGlobalStats, int numStatistics);
 	~CSteamStatistics() {};
 
 	bool RequestStats();
@@ -303,6 +316,8 @@ public:
 
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsReceived, UserStatsReceived_t, m_CallbackUserStatsReceived);
 	STEAM_CALLBACK(CSteamStatistics, OnUserStatsStored, UserStatsStored_t, m_CallbackUserStatsStored);
+	//STEAM_CALLBACK(CSteamStatistics, OnGlobalStatsReceived, GlobalStatsReceived_t, m_CallbackGlobalStatsReceived);
+	//NOTE FOR FUTURE GLOBAL STATS NEEDS CCallResult NOT STEAM_CALLBACK!
 };
 
 enum LeaderboardScoreTags : int

@@ -32,13 +32,16 @@ CSteamWorkshop::CSteamWorkshop() :
 
 }
 
-CSteamStatistics::CSteamStatistics(SteamStat_t* gStats, int numStatistics) :
+CSteamStatistics::CSteamStatistics(SteamStat_t* gStats, SteamGlobalStat_t* gGlobalStats, int numStatistics) :
 	m_CallbackUserStatsReceived(this, &CSteamStatistics::OnUserStatsReceived),
 	m_CallbackUserStatsStored(this, &CSteamStatistics::OnUserStatsStored),
 	m_bInitialized(false)
+	//m_CallbackGlobalStatsReceived(this, &CSteamStatistics::OnGlobalStatsReceived),
 {
 	m_iNumStats = numStatistics;
+	m_iNumGlobalStats = 2;
 	m_pStats = gStats;
+	m_pGlobalStats = gGlobalStats;
 	RequestStats();
 }
 
@@ -231,6 +234,7 @@ void CSteamStatistics::OnUserStatsReceived(UserStatsReceived_t *pCallback)
 				}
 			}
 			m_bInitialized = true;
+			SteamUserStats()->RequestGlobalStats(60);
 			printlog("[STEAM]: successfully received Steam user statistics.");
 		}
 		else
@@ -303,6 +307,46 @@ void CSteamStatistics::OnUserStatsStored(UserStatsStored_t *pCallback)
 		}
 	}
 }
+
+//void CSteamStatistics::OnGlobalStatsReceived(GlobalStatsReceived_t *pCallback)
+//{
+//	// we may get callbacks for other games' stats arriving, ignore them
+//	if ( pCallback->m_nGameID == STEAM_APPID )
+//	{
+//		if ( pCallback->m_eResult == k_EResultOK )
+//		{
+//			// load stats
+//			for ( int iStat = 0; iStat < m_iNumGlobalStats; ++iStat )
+//			{
+//				SteamGlobalStat_t &stat = m_pGlobalStats[iStat];
+//				switch ( stat.m_eStatType )
+//				{
+//					case STEAM_STAT_INT:
+//						SteamUserStats()->GetGlobalStat(stat.m_pchStatName, &stat.m_iValue);
+//						SteamUserStats()->SetStat(stat.m_pchStatName, static_cast<int>(1));
+//						printlog("%s: %d", stat.m_pchStatName, stat.m_iValue);
+//						break;
+//					case STEAM_STAT_FLOAT:
+//					case STEAM_STAT_AVGRATE:
+//						SteamUserStats()->GetStat(stat.m_pchStatName, &stat.m_flValue);
+//						break;
+//					default:
+//						break;
+//				}
+//			}
+//			//m_bInitialized = true;
+//			printlog("[STEAM]: successfully received Steam user statistics.");
+//		}
+//		else
+//		{
+//			printlog("[STEAM]: unsuccessfully received Steam user statistics!");
+//		}
+//	}
+//	else
+//	{
+//		printlog("[STEAM]: unsuccessfully received Steam user statistics, appID (%d) was invalid!", pCallback->m_nGameID);
+//	}
+//}
 
 bool CSteamStatistics::ClearAllStats()
 {

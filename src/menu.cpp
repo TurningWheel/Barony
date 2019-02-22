@@ -7690,6 +7690,8 @@ void handleMainMenu(bool mode)
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 			}
 
+			steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+
 			// delete game data clutter
 			list_FreeAll(&messages);
 			list_FreeAll(&command_history);

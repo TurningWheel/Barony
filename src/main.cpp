@@ -78,6 +78,11 @@ SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 	{ 18, STEAM_STAT_INT, "STAT_SURROGATES" },
 	{ 19, STEAM_STAT_INT, "STAT_KILL_COMMAND" }
 };
+SteamGlobalStat_t g_SteamGlobalStats[2] =
+{
+	{ 1, STEAM_STAT_INT, "STAT_GAMES_STARTED" },
+	{ 2, STEAM_STAT_INT, "STAT_GAMES_WON" }
+};
 CSteamStatistics* g_SteamStatistics = NULL;
 #else
 bool directConnect = true;
