@@ -369,6 +369,7 @@ int totalScore(score_t* score)
 		amount += score->conductIlliterate * 5000;
 		amount += conductGameChallenges[CONDUCT_BOOTS_SPEED] * 20000;
 		amount += conductGameChallenges[CONDUCT_BRAWLER] * 20000;
+		amount += conductGameChallenges[CONDUCT_ACCURSED] * 50000;
 		amount += conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
 		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
 			&& score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] == 0 )
