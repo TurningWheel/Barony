@@ -3678,6 +3678,7 @@ NOTE: Enabling this will disable Steam Achievements on your save files! #
 2932 Speedrunner#
 2933 Inventory Keeper#
 2934 +1 Lifer#
+2935 Cursed#
 
 2958 Multiplayer Highscores#
 2959 Continue multiplayer game#

@@ -6021,6 +6021,7 @@ void handleMainMenu(bool mode)
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]
+				&& !conductGameChallenges[CONDUCT_ACCURSED]
 				&& !conductGameChallenges[CONDUCT_MULTIPLAYER])
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
@@ -7776,6 +7777,23 @@ void handleMainMenu(bool mode)
 				{
 					steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
 				}
+
+				if ( (victory == 1 && currentlevel >= 20)
+					|| (victory == 2 && currentlevel >= 24)
+					|| (victory == 3 && currentlevel >= 35) )
+				{
+					if ( client_classes[clientnum] == CLASS_ACCURSED )
+					{
+						if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+						{
+							conductGameChallenges[CONDUCT_ACCURSED] = 1;
+						}
+					}
+					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+					{
+						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
+					}
+				}
 			}
 
 			// make a highscore!
@@ -7880,7 +7898,6 @@ void handleMainMenu(bool mode)
 					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 					{
 						steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
-						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 					}
 				}
 
@@ -7932,9 +7949,9 @@ void handleMainMenu(bool mode)
 						else if ( client_classes[clientnum] == CLASS_ACCURSED )
 						{
 							steamAchievement("BARONY_ACH_POWER_HUNGRY");
-							if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
+							if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 							{
-								if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+								if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
 								{
 									steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
 								}
