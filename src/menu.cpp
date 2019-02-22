@@ -7943,7 +7943,7 @@ void handleMainMenu(bool mode)
 							steamAchievement("BARONY_ACH_TURN_UNDEAD");
 						}
 
-						if ( stats[clientnum] )
+						if ( stats[clientnum] && stats[clientnum]->appearance == 0 )
 						{
 							switch ( stats[clientnum]->playerRace )
 							{
