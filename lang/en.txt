@@ -3639,7 +3639,7 @@ anyone seeking that power again, deep underground. #
 2908 Your thoughts no longer reside in solitude as you wrap the blindfold.#
 2909 The shrine bestows marksmanship and haste!#
 2910 The shrine bestows arcane knowledge and resistance!#
-2911 The Baron!#
+2911 the Baron!#
 
 # 2912-2916 Autosort text:
 2912 Item Categories for Inventory Autosort: (?)#
@@ -4345,5 +4345,20 @@ Learnt alchemy ingredients:
 3356 The brew dissolves into water...#
 
 3357 status effect icons#
+3358 You feel energized?#
+3359 the Triumphant %s!#
+3360 the Eternal %s!#
+3361 the %s Baron!#
+3362 the %s %s.#
+3363 Bony#
+3364 Bucktooth#
+3365 Bombshell#
+3366 Bleating#
+3367 Automaton#
+3368 Incubus#
+3369 Goblin#
+3370 Insectoid#
+
+3371 mute player monster sounds#
 
 3399 end#
