@@ -1132,6 +1132,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/muteaudiofocuslost\n");
 	}
+	if ( mute_player_monster_sounds )
+	{
+		fprintf(fp, "/muteplayermonstersounds\n");
+	}
 	if (colorblind)
 	{
 		fprintf(fp, "/colorblind\n");
@@ -3610,7 +3614,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 					result = POTION_BOOZE;
 					break;
 				case POTION_CONFUSION:
-					result = POTION_CONFUSION;
+					result = POTION_BOOZE;
 					break;
 				case POTION_CUREAILMENT:
 					result = POTION_RESTOREMAGIC;
@@ -4114,6 +4118,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			else
 			{
 				messagePlayer(clientnum, language[3352], newPotion->description());
+				steamStatisticUpdate(STEAM_STAT_IN_THE_MIX, STEAM_STAT_INT, 1);
 			}
 			itemPickup(clientnum, newPotion);
 			free(newPotion);

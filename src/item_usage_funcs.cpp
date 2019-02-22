@@ -117,6 +117,22 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				playSoundEntity(entity, 52, 64);
 			}
 		}
+		if ( player >= 0 && player < MAXPLAYERS )
+		{
+			if ( stats && stats->EFFECTS[EFF_POLYMORPH] )
+			{
+				entity->setEffect(EFF_POLYMORPH, false, 0, true);
+				entity->effectPolymorph = 0;
+				serverUpdateEntitySkill(entity, 50);
+
+				messagePlayer(player, language[3192]);
+				messagePlayer(player, language[3185]);
+
+				playSoundEntity(entity, 400, 92);
+				createParticleDropRising(entity, 593, 1.f);
+				serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);
+			}
+		}
 		if ( player != clientnum )
 		{
 			consumeItem(item, player);
@@ -274,6 +290,10 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			else
 			{
 				toCurse->beatitude = -toCurse->beatitude;
+				if ( itemCategory(toCurse) == WEAPON && stats->type == SUCCUBUS )
+				{
+					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
+				}
 			}
 			messagePlayer(player, language[858], toCurse->getName());
 			if ( multiplayer == CLIENT )
@@ -324,6 +344,10 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 					else
 					{
 						target->beatitude = -target->beatitude;
+						if ( itemCategory(target) == WEAPON && stats->type == SUCCUBUS )
+						{
+							steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
+						}
 					}
 					break;
 				}
@@ -405,10 +429,10 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			switch ( rand() % 3 )
 			{
 				case 0:
-					hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 8); // 8 + 8 minutes
+					hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 8); // 8 + 8 minutes
 					break;
 				case 1:
-					hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 4); // 8 + 4 minutes
+					hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 4); // 8 + 4 minutes
 					break;
 				case 2:
 					// intentional fall through
@@ -416,6 +440,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 					break;
 			}
 			entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
+			serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
 			messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
 		}
 		else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
@@ -516,10 +541,10 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 				switch ( rand() % 3 )
 				{
 					case 0:
-						hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 8); // 8 + 8 minutes
+						hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 8); // 8 + 8 minutes
 						break;
 					case 1:
-						hangoverReliefDuration += (TICKS_PER_SECOND * 60 + 4); // 8 + 4 minutes
+						hangoverReliefDuration += (TICKS_PER_SECOND * 60 * 4); // 8 + 4 minutes
 						break;
 					case 2:
 						// intentional fall through
@@ -527,6 +552,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 						break;
 				}
 				entity->setEffect(EFF_WITHDRAWAL, false, hangoverReliefDuration, true);
+				serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
 				messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3250]);
 			}
 			else if ( stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] > 0 && stats->EFFECTS_TIMERS[EFF_WITHDRAWAL] < EFFECT_WITHDRAWAL_BASE_TIME )
@@ -633,6 +659,11 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	messagePlayer(player, language[761]);
 	entity->modHP(-damage);
 	stats->EFFECTS[EFF_POISONED] = true;
+	if ( stats->type == LICH || stats->type == SHOPKEEPER || stats->type == DEVIL
+		|| stats->type == MINOTAUR || stats->type == LICH_FIRE || stats->type == LICH_ICE )
+	{
+		stats->EFFECTS_TIMERS[EFF_POISONED] = TICKS_PER_SECOND * 15;
+	}
 	playSoundEntity(entity, 28, 64);
 	serverUpdateEffects(player);
 
@@ -800,6 +831,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	if ( stats->EFFECTS[EFF_WITHDRAWAL] )
 	{
 		entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
+		serverUpdatePlayerGameplayStats(player, STATISTICS_FUNCTIONAL, 1);
 	}
 
 	if ( item->beatitude < 0 )
@@ -2279,6 +2311,10 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 			if ( (*toEnchant)->beatitude > 0 )
 			{
 				(*toEnchant)->beatitude = -(*toEnchant)->beatitude;
+				if ( stats[clientnum]->type == SUCCUBUS )
+				{
+					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
+				}
 			}
 			else
 			{
@@ -2628,6 +2664,10 @@ void item_ScrollRemoveCurse(Item* item, int player)
 			else
 			{
 				toCurse->beatitude = -toCurse->beatitude;
+				if ( itemCategory(toCurse) == WEAPON && stats[clientnum]->type == SUCCUBUS )
+				{
+					steamAchievement("BARONY_ACH_THE_WAY_YOU_LIKE_IT");
+				}
 			}
 			messagePlayer(player, language[858], toCurse->getName());
 			if ( multiplayer == CLIENT )
@@ -3706,6 +3746,7 @@ void item_Food(Item*& item, int player)
 		{
 			if ( player == clientnum )
 			{
+				steamAchievement("BARONY_ACH_BONEHEADED");
 				dropItem(item, player); // client drop item
 				messagePlayer(clientnum, language[3179]);
 			}
@@ -3741,6 +3782,11 @@ void item_Food(Item*& item, int player)
 		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH || item->type == FOOD_TOMALLEY || item->type == FOOD_BLOOD )
 		{
 			conductVegetarian = false;
+		}
+		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0
+			&& players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
 		}
 	}
 
@@ -3949,6 +3995,20 @@ void item_FoodTin(Item*& item, int player)
 	int pukeChance;
 	bool slippery = false;
 
+	if ( player >= 0 && stats[player]->type != HUMAN && (svFlags & SV_FLAG_HUNGER) ) // hunger on
+	{
+		if ( stats[player]->type == SKELETON )
+		{
+			if ( player == clientnum )
+			{
+				steamAchievement("BARONY_ACH_BONEHEADED");
+				dropItem(item, player); // client drop item
+				messagePlayer(clientnum, language[3179]);
+			}
+			return;
+		}
+	}
+
 	if ( stats[player]->amulet != NULL )
 	{
 		if ( stats[player]->amulet->type == AMULET_STRANGULATION )
@@ -3975,6 +4035,15 @@ void item_FoodTin(Item*& item, int player)
 	{
 		conductFoodless = false;
 		conductVegetarian = false;
+		if ( stats[player]->playerRace == RACE_SKELETON && stats[player]->appearance == 0
+			&& players[player] && players[player]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			steamAchievement("BARONY_ACH_MUSCLE_MEMORY");
+		}
+		if ( stats[player]->type == GOATMAN )
+		{
+			steamStatisticUpdate(STEAM_STAT_IRON_GUT, STEAM_STAT_INT, 1);
+		}
 	}
 
 	if ( multiplayer == CLIENT )

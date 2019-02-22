@@ -871,6 +871,11 @@ void drawStatus()
 						}
 						else
 						{
+							if ( itemCategory(item) == POTION 
+								&& (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
+							{
+								badpotion = true;
+							}
 							if ( !badpotion )
 							{
 								useItem(item, clientnum);
@@ -1313,7 +1318,7 @@ void drawStatus()
 				*inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) = 0;
 
 				hotbar[current_hotbar].item = 0;
-			}
+			}	
 
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w * uiscale_hotbar);
 			pos.y = initial_position.y - hotbar_img->h * uiscale_hotbar;
@@ -1339,6 +1344,11 @@ void drawStatus()
 			if ( item->type == POTION_EMPTY )
 			{
 				badpotion = true; //So that you wield empty potions be default.
+			}
+
+			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) && itemCategory(item) == POTION )
+			{
+				badpotion = true;
 			}
 
 			if ( !badpotion )

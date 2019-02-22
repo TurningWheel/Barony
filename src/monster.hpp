@@ -87,6 +87,43 @@ static char monstertypename[][15] =
 	"lichfire"
 };
 
+static char monstertypenamecapitalized[][15] =
+{
+	"Nothing",
+	"Human",
+	"Rat",
+	"Goblin",
+	"Slime",
+	"Troll",
+	"Octopus",
+	"Spider",
+	"Ghoul",
+	"Skeleton",
+	"Scorpion",
+	"Imp",
+	"Bugbear",
+	"Gnome",
+	"Demon",
+	"Succubus",
+	"Mimic",
+	"Lich",
+	"Minotaur",
+	"Devil",
+	"Shopkeeper",
+	"Kobold",
+	"Scarab",
+	"Crystalgolem",
+	"Incubus",
+	"Vampire",
+	"Shadow",
+	"Cockatrice",
+	"Insectoid",
+	"Goatman",
+	"Automaton",
+	"Lichice",
+	"Lichfire"
+};
+
 // body part focal points
 extern float limbs[NUMMONSTERS][20][3];
 
@@ -139,7 +176,7 @@ static double damagetables[NUMMONSTERS][7] =
 {
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // nothing
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // human
-	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f, 1.2 }, // rat
+	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f, 1.3 }, // rat
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // goblin
 	{ 1.4, 0.5, 1.3, 0.7, 0.5, 1.3, 0.5 }, // slime
 	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f, 0.8 }, // troll
@@ -154,7 +191,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 0.8, 1.f, 0.8, 0.9, 1.1, 0.8 }, // demon
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8, 1.f }, // succubus
 	{ 0.8, 1.1, 1.3, 1.f, 0.7, 1.2, 1.f }, // mimic
-	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f, 1.f }, // lich
+	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f, 1.8 }, // lich
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f, 1.f }, // devil
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.f }, // shopkeeper
@@ -168,8 +205,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f, 0.8 }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.4, 1.f }, // goatman
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 0.7 }, // automaton
-	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7, 1.f }, // lich ice
-	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f, 1.f }  // lich fire
+	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7, 1.2 }, // lich ice
+	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f, 1.4 }  // lich fire
 
 };
 

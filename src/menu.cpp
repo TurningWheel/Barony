@@ -174,6 +174,7 @@ bool settings_vsync;
 bool settings_status_effect_icons = true;
 bool settings_minimap_ping_mute = false;
 bool settings_mute_audio_on_focus_lost = false;
+bool settings_mute_player_monster_sounds = false;
 int settings_minimap_transparency_foreground = 0;
 int settings_minimap_transparency_background = 0;
 int settings_minimap_scale = 4;
@@ -1849,7 +1850,7 @@ void handleMainMenu(bool mode)
 				displayRaceOptions = true;
 				ttfPrintText(ttf16, subx1 + 24, pady, language[3176]);
 				pady += 24;
-				char raceOptionBuffer[64];
+				char raceOptionBuffer[128];
 				snprintf(raceOptionBuffer, 63, language[3177], language[3161 + stats[0]->playerRace]);
 				if ( stats[0]->appearance > 1 )
 				{
@@ -1995,6 +1996,11 @@ void handleMainMenu(bool mode)
 										stats[0]->clearStats();
 										initClass(0);
 									}
+									else if ( stats[0]->playerRace != RACE_GOATMAN && lastRace == RACE_GOATMAN )
+									{
+										stats[0]->clearStats();
+										initClass(0);
+									}
 									// appearance reset.
 									if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 									{
@@ -2068,6 +2074,8 @@ void handleMainMenu(bool mode)
 							{
 								stats[0]->appearance = 1; // act as human
 							}
+							stats[0]->clearStats();
+							initClass(0);
 							raceSelect = 2;
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
@@ -2137,6 +2145,11 @@ void handleMainMenu(bool mode)
 						stats[0]->clearStats();
 						initClass(0);
 					}
+					else if ( stats[0]->playerRace != RACE_GOATMAN && lastRace == RACE_GOATMAN )
+					{
+						stats[0]->clearStats();
+						initClass(0);
+					}
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
@@ -2170,6 +2183,8 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->appearance = 1;
 					}
+					stats[0]->clearStats();
+					initClass(0);
 				}
 			}
 			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
@@ -2250,6 +2265,11 @@ void handleMainMenu(bool mode)
 						stats[0]->clearStats();
 						initClass(0);
 					}
+					else if ( stats[0]->playerRace != RACE_GOATMAN && lastRace == RACE_GOATMAN )
+					{
+						stats[0]->clearStats();
+						initClass(0);
+					}
 					// appearance reset.
 					if ( stats[0]->playerRace == RACE_HUMAN && lastRace != RACE_HUMAN )
 					{
@@ -2283,6 +2303,8 @@ void handleMainMenu(bool mode)
 					{
 						stats[0]->appearance = 1;
 					}
+					stats[0]->clearStats();
+					initClass(0);
 				}
 			}
 			if ( keystatus[SDL_SCANCODE_RIGHT] || (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) && rebindaction == -1) )
@@ -3185,6 +3207,14 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 192, "[ ] %s", language[3158]);
 			}
+			if ( settings_mute_player_monster_sounds )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[x] %s", language[3371]);
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 24, suby1 + 216, "[ ] %s", language[3371]);
+			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
 				if ( omousex >= subx1 + 30 && omousex < subx1 + 54 )
@@ -3198,6 +3228,11 @@ void handleMainMenu(bool mode)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_mute_audio_on_focus_lost = (settings_mute_audio_on_focus_lost == false);
+					}
+					else if ( omousey >= suby1 + 216 && omousey < suby1 + 216 + 12 )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_mute_player_monster_sounds = (settings_mute_player_monster_sounds == false);
 					}
 				}
 			}
@@ -5569,7 +5604,7 @@ void handleMainMenu(bool mode)
 					g_SteamLeaderboards->LeaderboardView.rangeEnd);
 				score_leaderboard_window = 2;
 			}
-			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorOrange(*mainsurface), "Downloading entries...");
+			ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorOrange(*mainsurface), "Downloading entries...");
 		}
 		else 
 		{
@@ -5579,7 +5614,7 @@ void handleMainMenu(bool mode)
 				numEntriesTotal = g_SteamLeaderboards->m_nLeaderboardEntries;
 				if ( numEntriesTotal <= 0 )
 				{
-					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady, uint32ColorGreen(*mainsurface), "No Leaderboard entries for this category");
+					ttfPrintTextFormattedColor(ttf12, filename_padx, filename_pady + 2 * TTF12_HEIGHT, uint32ColorGreen(*mainsurface), "No Leaderboard entries for this category");
 				}
 			}
 
@@ -5874,17 +5909,44 @@ void handleMainMenu(bool mode)
 			{
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, language[1391]);
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
+				int creature = HUMAN;
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					creature = static_cast<int>(players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace));
+				}
 				if ( victory == 1 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1392]);
+					if ( creature != HUMAN )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3359], monstertypenamecapitalized[creature]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1392]);
+					}
 				}
 				else if ( victory == 2 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
+					if ( creature != HUMAN )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3360], monstertypenamecapitalized[creature]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1393]);
+					}
 				}
 				else if ( victory == 3 )
 				{
-					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+					if ( creature != HUMAN )
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3361], 
+							language[3363 - 1 + stats[clientnum]->playerRace]);
+					}
+					else
+					{
+						ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[2911]);
+					}
 				}
 			}
 			else
@@ -5892,10 +5954,22 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 40, language[1394]);
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 56, "%s", stats[clientnum]->name);
 
-				char classname[32];
+				char classname[64];
 				strcpy(classname, playerClassLangEntry(client_classes[0], clientnum));
 				classname[0] -= 32;
-				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
+				int creature = HUMAN;
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					creature = static_cast<int>(players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace));
+				}
+				if ( creature != HUMAN )
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[3362], monstertypenamecapitalized[creature], classname);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 72, language[1395], classname);
+				}
 			}
 
 			// print total score
@@ -5947,6 +6021,7 @@ void handleMainMenu(bool mode)
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]
+				&& !conductGameChallenges[CONDUCT_ACCURSED]
 				&& !conductGameChallenges[CONDUCT_MULTIPLAYER])
 			{
 				ttfPrintText(ttf12, subx1 + 32, suby2 - 64, language[1407]);
@@ -7616,6 +7691,8 @@ void handleMainMenu(bool mode)
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 			}
 
+			steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
+
 			// delete game data clutter
 			list_FreeAll(&messages);
 			list_FreeAll(&command_history);
@@ -7699,6 +7776,23 @@ void handleMainMenu(bool mode)
 				if ( k >= 2 )
 				{
 					steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
+				}
+
+				if ( (victory == 1 && currentlevel >= 20)
+					|| (victory == 2 && currentlevel >= 24)
+					|| (victory == 3 && currentlevel >= 35) )
+				{
+					if ( client_classes[clientnum] == CLASS_ACCURSED )
+					{
+						if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+						{
+							conductGameChallenges[CONDUCT_ACCURSED] = 1;
+						}
+					}
+					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
+					{
+						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
+					}
 				}
 			}
 
@@ -7804,7 +7898,6 @@ void handleMainMenu(bool mode)
 					if ( completionTime < 20 * 60 * TICKS_PER_SECOND )
 					{
 						steamAchievement("BARONY_ACH_BOOTS_OF_SPEED");
-						conductGameChallenges[CONDUCT_BOOTS_SPEED] = 1;
 					}
 				}
 
@@ -7843,6 +7936,56 @@ void handleMainMenu(bool mode)
 						if ( conductGameChallenges[CONDUCT_HARDCORE] )
 						{
 							steamAchievement("BARONY_ACH_POST_HARDCORE");
+						}
+
+						if ( client_classes[clientnum] == CLASS_MESMER )
+						{
+							steamAchievement("BARONY_ACH_COMMANDER_CHIEF");
+						}
+						else if ( client_classes[clientnum] == CLASS_BREWER )
+						{
+							steamAchievement("BARONY_ACH_DRUNK_POWER");
+						}
+						else if ( client_classes[clientnum] == CLASS_ACCURSED )
+						{
+							steamAchievement("BARONY_ACH_POWER_HUNGRY");
+							if ( stats[clientnum]->EFFECTS[EFF_VAMPIRICAURA] && stats[clientnum]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
+							{
+								if ( stats[clientnum] && (svFlags & SV_FLAG_HUNGER) )
+								{
+									steamAchievement("BARONY_ACH_BLOOD_IS_THE_LIFE");
+								}
+							}
+						}
+						else if ( client_classes[clientnum] == CLASS_CONJURER )
+						{
+							steamAchievement("BARONY_ACH_TURN_UNDEAD");
+						}
+
+						if ( stats[clientnum] && stats[clientnum]->appearance == 0 )
+						{
+							switch ( stats[clientnum]->playerRace )
+							{
+								case RACE_SKELETON:
+									steamAchievement("BARONY_ACH_BONY_BARON");
+									break;
+								case RACE_SUCCUBUS:
+									steamAchievement("BARONY_ACH_BOMBSHELL_BARON");
+									break;
+								case RACE_GOATMAN:
+									steamAchievement("BARONY_ACH_BLEATING_BARON");
+									break;
+								case RACE_VAMPIRE:
+									steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
+									break;
+								case RACE_INCUBUS:
+								case RACE_INSECTOID:
+								case RACE_AUTOMATON:
+								case RACE_GOBLIN:
+									break;
+								default:
+									break;
+							}
 						}
 					}
 				}
@@ -8928,6 +9071,7 @@ void openSettingsWindow()
 	settings_musvolume = musvolume;
 	settings_minimap_ping_mute = minimapPingMute;
 	settings_mute_audio_on_focus_lost = mute_audio_on_focus_lost;
+	settings_mute_player_monster_sounds = mute_player_monster_sounds;
 	settings_minimap_transparency_foreground = minimapTransparencyForeground;
 	settings_minimap_transparency_background = minimapTransparencyBackground;
 	settings_minimap_scale = minimapScale;
@@ -10555,6 +10699,7 @@ void applySettings()
 	musvolume = settings_musvolume;
 	minimapPingMute = settings_minimap_ping_mute;
 	mute_audio_on_focus_lost = settings_mute_audio_on_focus_lost;
+	mute_player_monster_sounds = settings_mute_player_monster_sounds;
 
 #ifdef USE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
@@ -10785,7 +10930,9 @@ void buttonLeaderboardNextCategory(button_t* my)
 {
 	if ( g_SteamLeaderboards )
 	{
-		g_SteamLeaderboards->LeaderboardView.boardToDownload = std::min(g_SteamLeaderboards->LeaderboardView.boardToDownload + 1, (int)LEADERBOARD_MULTIPLAYER_HELL_SCORE);
+		int offset = (g_SteamLeaderboards->b_ShowDLCScores ? 16 : 0);
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = 
+			std::min(g_SteamLeaderboards->LeaderboardView.boardToDownload + 1, (int)LEADERBOARD_MULTIPLAYER_HELL_SCORE + offset);
 		g_SteamLeaderboards->b_ScoresDownloaded = false;
 		score_leaderboard_window = 1;
 		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
@@ -10796,11 +10943,39 @@ void buttonLeaderboardPrevCategory(button_t* my)
 {
 	if ( g_SteamLeaderboards )
 	{
-		g_SteamLeaderboards->LeaderboardView.boardToDownload = std::max(g_SteamLeaderboards->LeaderboardView.boardToDownload - 1, (int)LEADERBOARD_NORMAL_TIME);
+		int offset = (g_SteamLeaderboards->b_ShowDLCScores ? 16 : 0);
+		g_SteamLeaderboards->LeaderboardView.boardToDownload = 
+			std::max(g_SteamLeaderboards->LeaderboardView.boardToDownload - 1, (int)LEADERBOARD_NORMAL_TIME + offset);
 		g_SteamLeaderboards->b_ScoresDownloaded = false;
 		score_leaderboard_window = 1;
 		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
 	}
+}
+
+void buttonDLCLeaderboardFetch(button_t* my)
+{
+	if ( g_SteamLeaderboards )
+	{
+		if ( g_SteamLeaderboards->b_ShowDLCScores )
+		{
+			if ( g_SteamLeaderboards->LeaderboardView.boardToDownload > LEADERBOARD_MULTIPLAYER_HELL_SCORE )
+			{
+				g_SteamLeaderboards->LeaderboardView.boardToDownload -= 16;
+			}
+		}
+		else
+		{
+			if ( g_SteamLeaderboards->LeaderboardView.boardToDownload <= LEADERBOARD_MULTIPLAYER_HELL_SCORE )
+			{
+				g_SteamLeaderboards->LeaderboardView.boardToDownload += 16;
+			}
+		}
+		g_SteamLeaderboards->b_ShowDLCScores = !g_SteamLeaderboards->b_ShowDLCScores;
+		g_SteamLeaderboards->b_ScoresDownloaded = false;
+		score_leaderboard_window = 1;
+		g_SteamLeaderboards->FindLeaderboard(g_SteamLeaderboards->leaderboardNames[g_SteamLeaderboards->LeaderboardView.boardToDownload].c_str());
+	}
+
 }
 
 void buttonOpenSteamLeaderboards(button_t* my)
@@ -10867,13 +11042,24 @@ void buttonOpenSteamLeaderboards(button_t* my)
 		// fetch leaderboards
 		button = newButton();
 		strcpy(button->label, "Fetch Leaderboard");
-		button->y = suby1 + 2 * TTF12_HEIGHT + 8;
+		button->y = suby1 + 3 * TTF12_HEIGHT + 8;
 		button->sizex = 25 * TTF12_WIDTH + 8;
 		button->x = subx2 - button->sizex - 8;
 		button->sizey = 32;
 		button->action = &buttonLeaderboardFetch;
 		button->visible = 1;
 		button->focused = 1;
+
+		// fetch DLC leaderboards
+		button_t* dlcScoreButton = newButton();
+		strcpy(dlcScoreButton->label, "Toggle DLC Scores");
+		dlcScoreButton->y = suby1 + 3 * TTF12_HEIGHT + 8;
+		dlcScoreButton->sizex = 25 * TTF12_WIDTH + 8;
+		dlcScoreButton->x = button->x - dlcScoreButton->sizex - 8;
+		dlcScoreButton->sizey = 32;
+		dlcScoreButton->action = &buttonDLCLeaderboardFetch;
+		dlcScoreButton->visible = 1;
+		dlcScoreButton->focused = 1;
 	}
 }
 #endif

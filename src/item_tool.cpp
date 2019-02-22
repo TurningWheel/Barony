@@ -511,6 +511,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				playSoundEntity(players[player]->entity, 401, 64);
 			}
 			free(item);
+			steamStatisticUpdateClient(player, STEAM_STAT_FREE_REFILLS, STEAM_STAT_INT, 1);
 		}
 
 		if ( entity.behavior == &actSink )

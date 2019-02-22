@@ -30,6 +30,7 @@
 bool smoothmouse = false;
 bool settings_smoothmouse = false;
 bool swimDebuffMessageHasPlayed = false;
+int monsterEmoteGimpTimer = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -911,6 +912,11 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+
+			if ( monsterEmoteGimpTimer > 0 )
+			{
+				--monsterEmoteGimpTimer;
+			}
 		}
 		if ( multiplayer == SERVER )
 		{
@@ -929,6 +935,21 @@ void actPlayer(Entity* my)
 		{
 			if ( PLAYER_ALIVETIME == 50 && currentlevel == 0 )
 			{
+				int monsterSquad = 0;
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					if ( players[c] && players[c]->entity && stats[c]->playerRace > 0 )
+					{
+						++monsterSquad;
+					}
+				}
+				if ( monsterSquad >= 3 )
+				{
+					for ( int c = 0; c < MAXPLAYERS; ++c )
+					{
+						steamAchievementClient(c, "BARONY_ACH_MONSTER_SQUAD");
+					}
+				}
 				if ( client_classes[PLAYER_NUM] == CLASS_ACCURSED )
 				{
 					my->setEffect(EFF_VAMPIRICAURA, true, -2, true);
@@ -940,6 +961,7 @@ void actPlayer(Entity* my)
 					messagePlayerColor(PLAYER_NUM, color, language[3202]);
 
 					playSoundEntity(my, 167, 128);
+					playSoundEntity(my, 403, 128);
 					createParticleDropRising(my, 600, 0.7);
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 				}
@@ -1491,6 +1513,7 @@ void actPlayer(Entity* my)
 									playSoundPlayer(PLAYER_NUM, 28, 92);
 								}
 								my->setObituary(language[3254]); // "goes for a swim in some water."
+								steamAchievementClient(PLAYER_NUM, "BARONY_ACH_BLOOD_BOIL");
 							}
 						}
 					}
@@ -2203,6 +2226,21 @@ void actPlayer(Entity* my)
 								// our leader died, let's undo the color change since we're now rabid.
 								myFollower->flags[USERFLAG2] = false;
 								serverUpdateEntityFlag(myFollower, USERFLAG2);
+
+								int bodypart = 0;
+								for ( node_t* node = myFollower->children.first; node != nullptr; node = node->next )
+								{
+									if ( bodypart >= LIMB_HUMANOID_TORSO )
+									{
+										Entity* tmp = (Entity*)node->element;
+										if ( tmp )
+										{
+											tmp->flags[USERFLAG2] = false;
+										}
+									}
+									++bodypart;
+								}
+
 								Stat* followerStats = myFollower->getStats();
 								if ( followerStats )
 								{
@@ -2519,10 +2557,12 @@ void actPlayer(Entity* my)
 		{
 			item = (Item*)node->element;
 			if ( item != NULL )
+			{
 				if ( item->type >= 0 && item->type < NUMITEMS )
 				{
 					weight += items[item->type].weight * item->count;
 				}
+			}
 		}
 		weight += stats[PLAYER_NUM]->GOLD / 100;
 		weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
@@ -4686,7 +4726,7 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case INSECTOID:
 					if ( stats[playernum]->sex == FEMALE )
 					{
-						this->sprite = 764;
+						this->sprite = 762;
 					}
 					else
 					{

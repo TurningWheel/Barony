@@ -486,6 +486,7 @@ extern bool verticalSync;
 extern bool showStatusEffectIcons;
 extern bool minimapPingMute;
 extern bool mute_audio_on_focus_lost;
+extern bool mute_player_monster_sounds;
 extern int minimapTransparencyForeground;
 extern int minimapTransparencyBackground;
 extern int minimapScale;
@@ -663,9 +664,10 @@ static const Uint32 cacheLimit = 8096;
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
-static const int NUM_STEAM_STATISTICS = 6;
+static const int NUM_STEAM_STATISTICS = 19;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+extern SteamGlobalStat_t g_SteamGlobalStats[2];
 extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS

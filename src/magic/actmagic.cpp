@@ -22,6 +22,7 @@
 #include "../paths.hpp"
 #include "../player.hpp"
 #include "magic.hpp"
+#include "../scores.hpp"
 
 void actMagiclightBall(Entity* my)
 {
@@ -1356,6 +1357,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
+								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								{
+									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									{
+										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										{
+											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+										}
+									}
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+								}
 								parent->awardXP( hit.entity, true, true );
 							}
 						}
@@ -1570,6 +1582,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								messagePlayerColor(player, color, language[395]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+							if ( hitstats->HP <= 0 && parent )
+							{
+								parent->awardXP(hit.entity, true, true);
+								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								{
+									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									{
+										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										{
+											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+										}
+									}
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+								}
+							}
 						}
 					}
 				}
@@ -1750,6 +1777,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
+								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								{
+									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									{
+										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										{
+											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+										}
+									}
+									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+								}
 							}
 						}
 						else if ( hit.entity->behavior == &actDoor )
@@ -3675,6 +3713,11 @@ void actParticleSapCenter(Entity* my)
 											serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 										}
 
+										if ( caster && caster->behavior == &actPlayer )
+										{
+											steamAchievementClient(caster->skill[2], "BARONY_ACH_SKELETON_CREW");
+										}
+
 										// change the color of the hit entity.
 										monster->flags[USERFLAG2] = true;
 										serverUpdateEntityFlag(monster, USERFLAG2);
@@ -3985,6 +4028,16 @@ bool Entity::magicOrbitingCollision()
 				{
 					if ( actmagicIsOrbiting == 2 )
 					{
+						if ( actmagicOrbitHitTargetUID4 != 0 && caster && caster->behavior == &actPlayer )
+						{
+							if ( actmagicOrbitHitTargetUID1 == 0 
+								&& actmagicOrbitHitTargetUID2 == 0
+								&& actmagicOrbitHitTargetUID3 == 0
+								&& hit.entity->behavior == &actMonster )
+							{
+								steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_VOLATILE, STEAM_STAT_INT, 1);
+							}
+						}
 						++actmagicOrbitStationaryHitTarget;
 						if ( actmagicOrbitHitTargetUID1 == 0 )
 						{

@@ -37,6 +37,8 @@ Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS] = { 0 }; // general saved game st
 std::vector<std::pair<Uint32, Uint32>> achievementRhythmOfTheKnightVec[MAXPLAYERS] = {};
 bool achievementStatusRhythmOfTheKnight[MAXPLAYERS] = { false };
 std::pair<Uint32, Uint32> achievementThankTheTankPair[MAXPLAYERS] = { std::make_pair(0, 0) };
+bool achievementStatusBaitAndSwitch[MAXPLAYERS] = { false };
+Uint32 achievementBaitAndSwitchTimer[MAXPLAYERS] = { 0 };
 std::unordered_set<int> clientLearnedAlchemyIngredients;
 bool achievementStatusThankTheTank[MAXPLAYERS] = { false };
 std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
@@ -367,6 +369,7 @@ int totalScore(score_t* score)
 		amount += score->conductIlliterate * 5000;
 		amount += conductGameChallenges[CONDUCT_BOOTS_SPEED] * 20000;
 		amount += conductGameChallenges[CONDUCT_BRAWLER] * 20000;
+		amount += conductGameChallenges[CONDUCT_ACCURSED] * 50000;
 		amount += conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
 		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
 			&& score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] == 0 )
@@ -3189,6 +3192,8 @@ void setDefaultPlayerConducts()
 		achievementThankTheTankPair[c].first = 0;
 		achievementThankTheTankPair[c].second = 0;
 		achievementStrobeVec[c].clear();
+		achievementStatusBaitAndSwitch[c] = false;
+		achievementBaitAndSwitchTimer[c] = 0;
 	}
 	clientLearnedAlchemyIngredients.clear();
 }
@@ -3258,6 +3263,7 @@ void updatePlayerConductsInMainLoop()
 
 void updateGameplayStatisticsInMainLoop()
 {
+	// local player only here.
 	if ( gameStatistics[STATISTICS_BOMB_SQUAD] >= 5 )
 	{
 		steamAchievement("BARONY_ACH_BOMB_SQUAD");
@@ -3282,6 +3288,10 @@ void updateGameplayStatisticsInMainLoop()
 	{
 		steamAchievement("BARONY_ACH_HOT_TUB");
 	}
+	if ( gameStatistics[STATISTICS_FUNCTIONAL] >= 10 )
+	{
+		steamAchievement("BARONY_ACH_FUNCTIONAL");
+	}
 
 	if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
 	{
@@ -3299,7 +3309,7 @@ void updateGameplayStatisticsInMainLoop()
 
 	if ( gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 && clientLearnedAlchemyIngredients.empty() )
 	{
-		int numpotions = potionStandardAppearanceMap.size();
+		int numpotions = static_cast<int>(potionStandardAppearanceMap.size());
 		for ( int i = 0; i < numpotions; ++i )
 		{
 			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
@@ -3309,6 +3319,58 @@ void updateGameplayStatisticsInMainLoop()
 				int type = typeAppearance.first;
 				clientLearnedAlchemyIngredients.insert(type);
 			}
+		}
+	}
+
+	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) && gameStatistics[STATISTICS_ALCHEMY_RECIPES] != 0 )
+	{
+		int numpotions = static_cast<int>(potionStandardAppearanceMap.size());
+		bool failAchievement = false;
+		for ( int i = 0; i < numpotions; ++i )
+		{
+			bool learned = gameStatistics[STATISTICS_ALCHEMY_RECIPES] & (1 << i);
+			auto typeAppearance = potionStandardAppearanceMap.at(i);
+			int type = typeAppearance.first;
+			if ( !learned && (GenericGUI.isItemBaseIngredient(type) || GenericGUI.isItemSecondaryIngredient(type)) )
+			{
+				failAchievement = true;
+				break;
+			}
+		}
+		if ( !failAchievement )
+		{
+			steamAchievement("BARONY_ACH_MIXOLOGIST");
+		}
+	}
+	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
+	{
+		std::unordered_set<int> potionList;
+		for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( itemCategory(item) == POTION )
+				{
+					switch ( item->type )
+					{
+						case POTION_EMPTY:
+						case POTION_THUNDERSTORM:
+						case POTION_ICESTORM:
+						case POTION_STRENGTH:
+						case POTION_FIRESTORM:
+							// do nothing, these are brewed only potions
+							break;
+						default:
+							potionList.insert(item->type);
+							break;
+					}
+				}
+			}
+		}
+		if ( potionList.size() >= 16 )
+		{
+			steamAchievement("BARONY_ACH_POTION_PREPARATION");
 		}
 	}
 }
@@ -3477,10 +3539,43 @@ void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerI
 	}
 }
 
+void updateAchievementBaitAndSwitch(int player, bool isTeleporting)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( !stats[player] || stats[player]->playerRace != RACE_SUCCUBUS || achievementStatusBaitAndSwitch[player] || multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance != 0 )
+	{
+		return;
+	}
+
+	if ( !isTeleporting )
+	{
+		achievementBaitAndSwitchTimer[player] = ticks;
+	}
+	else
+	{
+		if ( achievementBaitAndSwitchTimer[player] > 0 && (ticks - achievementBaitAndSwitchTimer[player]) <= TICKS_PER_SECOND )
+		{
+			achievementStatusBaitAndSwitch[player] = true;
+			steamAchievementClient(player, "BARONY_ACH_BAIT_AND_SWITCH");
+		}
+	}
+}
+
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled)
 {
-	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT
-		|| player < 0 || player >= MAXPLAYERS )
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
+	if ( achievementStatusThankTheTank[player] || multiplayer == CLIENT )
 	{
 		return;
 	}
@@ -3519,6 +3614,11 @@ bool steamLeaderboardSetScore(score_t* score)
 		return false;
 	}
 
+	if ( !score )
+	{
+		return false;
+	}
+
 	if ( score->victory == 0 )
 	{
 		return false;
@@ -3534,6 +3634,12 @@ bool steamLeaderboardSetScore(score_t* score)
 	{
 		return false;
 	}
+	
+	bool monster = false;
+	if ( score->stats && score->stats->playerRace > 0 && score->stats->appearance == 0 )
+	{
+		monster = true;
+	}
 
 	if ( !score->conductGameChallenges[CONDUCT_MULTIPLAYER] )
 	{
@@ -3542,26 +3648,61 @@ bool steamLeaderboardSetScore(score_t* score)
 		{
 			if ( score->victory == 2 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HELL_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_HELL_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HELL_TIME;
+				}
 			}
 			else if ( score->victory == 3 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_NORMAL_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_NORMAL_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_NORMAL_TIME;
+				}
 			}
 			else if ( score->victory == 1 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_CLASSIC_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_TIME;
+				}
 			}
 		}
 		else if ( score->conductGameChallenges[CONDUCT_HARDCORE] )
 		{
 			if ( score->victory == 3 )
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HARDCORE_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_HARDCORE_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_HARDCORE_TIME;
+				}
 			}
 			else
 			{
-				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_HARDCORE_TIME;
+				if ( monster )
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_CLASSIC_HARDCORE_TIME;
+				}
+				else
+				{
+					g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_CLASSIC_HARDCORE_TIME;
+				}
 			}
 		}
 	}
@@ -3570,15 +3711,36 @@ bool steamLeaderboardSetScore(score_t* score)
 		// multiplayer
 		if ( score->victory == 2 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_HELL_TIME;
+			if ( monster )
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_MULTIPLAYER_HELL_TIME;
+			}
+			else
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_HELL_TIME;
+			}
 		}
 		else if ( score->victory == 3 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_TIME;
+			if ( monster )
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_MULTIPLAYER_TIME;
+			}
+			else
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_TIME;
+			}
 		}
 		else if ( score->victory == 1 )
 		{
-			g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_CLASSIC_TIME;
+			if ( monster )
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_DLC_MULTIPLAYER_CLASSIC_TIME;
+			}
+			else
+			{
+				g_SteamLeaderboards->LeaderboardUpload.boardIndex = LEADERBOARD_MULTIPLAYER_CLASSIC_TIME;
+			}
 		}
 	}
 	else

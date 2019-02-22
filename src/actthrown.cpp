@@ -473,7 +473,41 @@ void actThrown(Entity* my)
 					}
 
 					int postDmgHP = hit.entity->getHP();
-					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER )   // this makes it impossible to bork the end boss :)
+					bool ignorePotion = false;
+					if ( hitstats->type == LICH || hitstats->type == SHOPKEEPER || hitstats->type == DEVIL
+						|| hitstats->type == MINOTAUR || hitstats->type == LICH_FIRE || hitstats->type == LICH_ICE )
+					{
+						switch ( item->type )
+						{
+							case POTION_SICKNESS:
+							case POTION_SPEED:
+							case POTION_ACID:
+							case POTION_FIRESTORM:
+							case POTION_ICESTORM:
+							case POTION_THUNDERSTORM:
+							case POTION_POLYMORPH:
+								ignorePotion = false;
+								break;
+							case POTION_EXTRAHEALING:
+							case POTION_HEALING:
+							case POTION_WATER:
+							case POTION_BOOZE:
+							case POTION_JUICE:
+							case POTION_CONFUSION:
+							case POTION_CUREAILMENT:
+							case POTION_BLINDNESS:
+							case POTION_RESTOREMAGIC:
+							case POTION_INVISIBILITY:
+							case POTION_LEVITATION:
+							case POTION_STRENGTH:
+							case POTION_PARALYSIS:
+								ignorePotion = true;
+								break;
+							default:
+								break;
+						}
+					}
+					if ( !ignorePotion )   // this makes it impossible to bork the end boss :)
 					{
 						switch ( item->type )
 						{
@@ -676,6 +710,20 @@ void actThrown(Entity* my)
 						if ( parent->checkEnemy(hit.entity) )
 						{
 							steamAchievementEntity(parent, "BARONY_ACH_SEE_THAT");
+						}
+					}
+					else if ( cat == POTION && hitstats->HP <= 0 )
+					{
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+							{
+								if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+								{
+									steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+								}
+							}
+							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
 					}
 				}

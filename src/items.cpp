@@ -1232,7 +1232,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	}*/
 	if ( monsterStats )
 	{
-		if ( monsterStats->type == SKELETON && monster->monsterAllySummonRank != 0 )
+		if ( monsterStats->type == SKELETON && monster->behavior == &actMonster && monster->monsterAllySummonRank != 0 )
 		{
 			itemDroppable = false;
 		}
@@ -1910,7 +1910,10 @@ void useItem(Item* item, int player, Entity* usedBy)
 			break;
 		case AMULET_STRANGULATION:
 			equipItem(item, &stats[player]->amulet, player);
-			messagePlayer(player, language[1095]);
+			if ( stats[player]->amulet )
+			{
+				messagePlayer(player, language[1095]);
+			}
 			if ( item->beatitude >= 0 )
 			{
 				item->beatitude = -1;
@@ -3712,7 +3715,8 @@ bool Item::shouldItemStack(int player)
 				&& itemCategory(this) != RING
 				&& itemCategory(this) != AMULET
 				&& itemCategory(this) != SPELLBOOK
-				&& this->type != TOOL_PICKAXE)
+				&& this->type != TOOL_PICKAXE
+				&& this->type != TOOL_ALEMBIC)
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION

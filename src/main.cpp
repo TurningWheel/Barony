@@ -58,12 +58,30 @@ CSteamLeaderboards* g_SteamLeaderboards = NULL;
 CSteamWorkshop* g_SteamWorkshop = NULL;
 SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS] =
 {
-	{1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS"},
-	{2, STEAM_STAT_INT, "STAT_WORTHLESS_GLASS"},
-	{3, STEAM_STAT_INT, "STAT_TOUGH_AS_NAILS"},
-	{4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE"},
-	{5, STEAM_STAT_INT, "STAT_GAMES_STARTED"},
-	{6, STEAM_STAT_INT, "STAT_GAMES_WON"}
+	{ 1, STEAM_STAT_INT, "STAT_BOULDER_DEATHS" },
+	{ 2, STEAM_STAT_INT, "STAT_WORTHLESS_GLASS" },
+	{ 3, STEAM_STAT_INT, "STAT_TOUGH_AS_NAILS" },
+	{ 4, STEAM_STAT_INT, "STAT_UNSTOPPABLE_FORCE" },
+	{ 5, STEAM_STAT_INT, "STAT_GAMES_STARTED" },
+	{ 6, STEAM_STAT_INT, "STAT_GAMES_WON" },
+	{ 7, STEAM_STAT_INT, "STAT_BOMBARDIER" },
+	{ 8, STEAM_STAT_INT, "STAT_IN_THE_MIX" },
+	{ 9, STEAM_STAT_INT, "STAT_FREE_REFILLS" },
+	{ 10, STEAM_STAT_INT, "STAT_TAKE_THIS_OUTSIDE" },
+	{ 11, STEAM_STAT_INT, "STAT_ALTER_EGO" },
+	{ 12, STEAM_STAT_INT, "STAT_BLOOD_SPORT" },
+	{ 13, STEAM_STAT_INT, "STAT_BAD_BLOOD" },
+	{ 14, STEAM_STAT_INT, "STAT_IRON_GUT" },
+	{ 15, STEAM_STAT_INT, "STAT_BOTTLE_NOSED" },
+	{ 16, STEAM_STAT_INT, "STAT_BARFIGHT_CHAMP" },
+	{ 17, STEAM_STAT_INT, "STAT_VOLATILE" },
+	{ 18, STEAM_STAT_INT, "STAT_SURROGATES" },
+	{ 19, STEAM_STAT_INT, "STAT_KILL_COMMAND" }
+};
+SteamGlobalStat_t g_SteamGlobalStats[2] =
+{
+	{ 1, STEAM_STAT_INT, "STAT_GAMES_STARTED" },
+	{ 2, STEAM_STAT_INT, "STAT_GAMES_WON" }
 };
 CSteamStatistics* g_SteamStatistics = NULL;
 #else
@@ -228,6 +246,7 @@ bool verticalSync = false;
 bool showStatusEffectIcons = true;
 bool minimapPingMute = false;
 bool mute_audio_on_focus_lost = false;
+bool mute_player_monster_sounds = false;
 int minimapTransparencyForeground = 0;
 int minimapTransparencyBackground = 0;
 int minimapScale = 4;
