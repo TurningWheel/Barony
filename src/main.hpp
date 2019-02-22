@@ -668,5 +668,6 @@ static const int NUM_STEAM_STATISTICS = 19;
 extern CSteamLeaderboards* g_SteamLeaderboards;
 extern CSteamWorkshop* g_SteamWorkshop;
 extern SteamStat_t g_SteamStats[NUM_STEAM_STATISTICS];
+extern SteamGlobalStat_t g_SteamGlobalStats[2];
 extern CSteamStatistics* g_SteamStatistics;
 #endif // STEAMWORKS
