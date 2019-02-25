@@ -2020,11 +2020,20 @@ void handleMainMenu(bool mode)
 								tooltip.y = omousey + 16;
 								tooltip.h = TTF12_HEIGHT + 8;
 #ifdef STEAMWORKS
-								if ( SteamUser()->BLoggedOn() )
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
+								{
+									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+								}
+								else
 								{
 									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
+								}
+								if ( SteamUser()->BLoggedOn() )
+								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
 										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
@@ -4321,7 +4330,7 @@ void handleMainMenu(bool mode)
 						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
 						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
 						char shortname[16] = "";
-						strncpy(shortname, stats[x]->name, 15);
+						strncpy(shortname, stats[c]->name, 15);
 						strcpy((char*)(&net_packet->data[14]), shortname);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;

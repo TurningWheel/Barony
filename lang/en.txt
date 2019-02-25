@@ -35,7 +35,6 @@ Difficulty: Normal#
 
 13 The professional hooligan. Dextrous and skilled thieves, though lacking in power and
 equipment.
-
 Difficulty: Hard#
 
 14 Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.
@@ -3977,7 +3976,7 @@ current food situation will last.#
 3198 But wait! Your summoned allies imbue you with new life!#
 
 3199 Locked - DLC Required!#
-3200 Locked - DLC Required! Left click to view on the store page in Steam overlay.#
+3200 Locked - Myths & Outcasts DLC Required! Left click to view on the store page in Steam overlay.#
 
 3201 Bleh! Your body rejects the solids in your stomach!#
 3202 What a horrible night to have a curse...#
@@ -4361,5 +4360,6 @@ Learnt alchemy ingredients:
 3370 Insectoid#
 
 3371 mute player monster sounds#
+3372 Locked - DLC Coming Soon!#
 
 3399 end#
