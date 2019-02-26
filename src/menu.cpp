@@ -143,7 +143,7 @@ sex_t lastSex = MALE;
 PlayerRaces lastRace = RACE_HUMAN;
 bool enabledDLCPack1 = false;
 bool enabledDLCPack2 = false;
-
+bool showRaceInfo = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -1651,6 +1651,45 @@ void handleMainMenu(bool mode)
 				}
 			}
 			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
+
+			SDL_Rect raceInfoBtn;
+			raceInfoBtn.y = rotateBtn.y;
+			raceInfoBtn.w = longestline(language[3373]) * TTF12_WIDTH + 8 + 4;
+			raceInfoBtn.x = rotateBtn.x - raceInfoBtn.w - 4;
+			raceInfoBtn.h = rotateBtn.h;
+			drawWindow(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
+			if ( mouseInBounds(raceInfoBtn.x, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y, raceInfoBtn.y + raceInfoBtn.h) )
+			{
+				if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) || mousestatus[SDL_BUTTON_LEFT] )
+				{
+					//drawDepressed(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+					showRaceInfo = !showRaceInfo;
+					playSound(139, 64);
+				}
+			}
+			if ( showRaceInfo )
+			{
+				pos.y += 2;
+				pos.h -= raceInfoBtn.h + 6;
+				pos.x += 2;
+				pos.w -= 6;
+				drawRect(&pos, 0, 168);
+				drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x, pos.y + pos.h, pos.x + pos.w, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x + pos.w, pos.y, pos.x + pos.w, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				if ( stats[0]->playerRace >= RACE_HUMAN )
+				{
+					ttfPrintText(ttf12, pos.x + 12, pos.y + 6, language[3375 + stats[0]->playerRace]);
+				}
+				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, language[3374]);
+			}
+			else
+			{
+				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, language[3373]);
+			}
 		}
 
 		// skin DLC check flags.
