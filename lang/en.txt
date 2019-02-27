@@ -4361,5 +4361,103 @@ Learnt alchemy ingredients:
 
 3371 mute player monster sounds#
 3372 Locked - DLC Coming Soon!#
+3373 Show Race Info#
+3374 Hide Race Info#
+3375 Human
+
+Friendly with: 
+Humans, Automatons
+
+Weaknesses:
+None
+
+Resistances: 
+None
+
+Traits:
+None#
+
+3376 Skeleton
+
+Friendly with: 
+Ghouls, Automatons
+
+Weaknesses:
+Maces, polearms, blessed water
+
+Resistances: 
+Swords, ranged, axes, magic
+
+Traits:
+- Cannot starve, or eat
+   (Potions still apply as normal)
+- Self-resurrection at 75 MP
+- 25% HP/MP regeneration rate
+- 50% water movement speed
+- Immune to burning#
+
+3377 Vampire
+
+Friendly with: 
+Vampires, Automatons
+
+Weaknesses:
+Maces, polearms, water, solid foods
+
+Resistances: 
+Swords, ranged, axes, magic
+
+Traits:
+- Converts HP to MP when casting
+   spells at 0 MP
+- Starts with Bloodletting and
+   Levitation spells learnt
+- Can only consume vials of blood to
+   sustain hunger
+- Vials of blood drop on kills
+   (Higher chance if bleeding or 
+    landing sneak attacks)#
+
+3378 Succubus
+
+Friendly with: 
+Succubi, Incubi, Automatons
+
+Weaknesses:
+Swords
+
+Resistances: 
+Magic, polearms
+
+Traits:
+- Cursed equipment is removable
+   and provides bonuses each curse
+- Blessed gear is unremovable
+   (Still provides bonuses)
+- Starts with Teleportation spell
+   learnt
+- Can recruit drunk/confused humans#
+
+3379 Goatman
+
+Friendly with: 
+Goatmen, Automatons
+
+Weaknesses:
+Magic, axes, polearms, ranged
+
+Resistances: 
+Swords
+
+Traits:
+- Fountains have a chance to drop
+   1-3 random potions on use
+- Increased STR/CHR while drunk
+   (Immune to drunk dizziness)
+- Suffers intermittent hangovers that
+   that can be cured by intoxication
+- Can eat tin cans without an opener
+- Can recruit humans/goblins by
+   throwing booze while drunk#
 
 3399 end#
