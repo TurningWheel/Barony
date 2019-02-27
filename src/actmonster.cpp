@@ -7506,7 +7506,19 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	if ( !isMobile() )
 	{
 		// doesn't respond.
-		messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[514], language[515], MSG_COMBAT);
+		if ( monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats->EFFECTS[EFF_ASLEEP]
+			&& (command != ALLY_CMD_SPECIAL) )
+		{
+			myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+			myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
+			myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
+			monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
+		}
+		else
+		{
+			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[514], language[515], MSG_COMBAT);
+		}
 		return;
 	}
 
