@@ -272,7 +272,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actPlayer && my->monsterAllyIndex >= 0 )
+		if ( entity->behavior == &actPlayer && my->monsterAllyIndex >= 0 
+			&& (my->monsterTarget == 0 || my->monsterAllyState == ALLY_STATE_MOVETO) )
 		{
 			continue;
 		}
