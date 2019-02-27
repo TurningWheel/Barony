@@ -1077,21 +1077,27 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				// fully charmed. (players not affected here.)
 				// does not affect shopkeepers
 				// succubus/incubus can steal followers from others, checking to see if they don't already follow them.
-				if ( forceFollower(*parent, *hit.entity) )
+				Entity* whoToFollow = parent;
+				if ( parent->behavior == &actMonster && parent->monsterAllyGetPlayerLeader() )
+				{
+					whoToFollow = parent->monsterAllyGetPlayerLeader();
+				}
+
+				if ( forceFollower(*whoToFollow, *hit.entity) )
 				{
 					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_CHARM_MONSTER, 0);
 					createParticleCharmMonster(hit.entity);
 					playSoundEntity(hit.entity, 174, 64); // WeirdSpell.ogg
-					if ( parent->behavior == &actPlayer )
+					if ( whoToFollow->behavior == &actPlayer )
 					{
-						parent->increaseSkill(PRO_LEADERSHIP);
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
-						hit.entity->monsterAllyIndex = parent->skill[2];
+						whoToFollow->increaseSkill(PRO_LEADERSHIP);
+						messagePlayerMonsterEvent(whoToFollow->skill[2], color, *hitstats, language[3137], language[3138], MSG_COMBAT);
+						hit.entity->monsterAllyIndex = whoToFollow->skill[2];
 						if ( multiplayer == SERVER )
 						{
 							serverUpdateEntitySkill(hit.entity, 42); // update monsterAllyIndex for clients.
 						}
-						if ( hit.entity->monsterTarget == parent->getUID() )
+						if ( hit.entity->monsterTarget == whoToFollow->getUID() )
 						{
 							hit.entity->monsterReleaseAttackTarget();
 						}
@@ -1118,11 +1124,11 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 							++bodypart;
 						}
 					}
-					if ( parent->behavior == &actMonster )
+					if ( whoToFollow->behavior == &actMonster )
 					{
-						if ( parent->monsterTarget == hit.entity->getUID() )
+						if ( whoToFollow->monsterTarget == hit.entity->getUID() )
 						{
-							parent->monsterReleaseAttackTarget(); // monsters stop attacking their new friend.
+							whoToFollow->monsterReleaseAttackTarget(); // monsters stop attacking their new friend.
 						}
 
 						// handle players losing their allies.
