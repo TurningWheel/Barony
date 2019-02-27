@@ -495,12 +495,9 @@ void handleMainMenu(bool mode)
 	button_t* button;
 
 #ifdef STEAMWORKS
-	if ( SteamUser()->BLoggedOn() )
+	if ( SteamApps()->BIsDlcInstalled(1010820) )
 	{
-		if ( SteamApps()->BIsDlcInstalled(1010820) )
-		{
-			enabledDLCPack1 = true;
-		}
+		enabledDLCPack1 = true;
 	}
 #else
 #endif // STEAMWORKS
