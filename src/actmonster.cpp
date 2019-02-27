@@ -3035,9 +3035,9 @@ void actMonster(Entity* my)
 											hitstats = entity->getStats();
 											if ( hitstats != nullptr )
 											{
-												if ( hitstats->type == myStats->type )
+												if ( entity->checkFriend(my) )
 												{
-													if ( entity->skill[0] == 0 )   // monster is waiting
+													if ( entity->skill[0] == MONSTER_STATE_WAIT )   // monster is waiting
 													{
 														tangent = atan2( entity->y - my->y, entity->x - my->x );
 														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
