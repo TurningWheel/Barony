@@ -30,6 +30,7 @@ Sint32 throwGimpTimer = 0; // player cannot throw objects unless zero
 Sint32 pickaxeGimpTimer = 0; // player cannot swap weapons immediately after using pickaxe 
 							 // due to multiplayer weapon degrade lag... equipping new weapon before degrade
 							// message hits can degrade the wrong weapon.
+Sint32 swapWeaponGimpTimer = 0; // player cannot swap weapons unless zero
 
 /*-------------------------------------------------------------------------------
 
@@ -321,6 +322,10 @@ void actHudWeapon(Entity* my)
 		//messagePlayer(clientnum, "%d", pickaxeGimpTimer);
 		--pickaxeGimpTimer;
 	}
+	if ( swapWeaponGimpTimer > 0 )
+	{
+		--swapWeaponGimpTimer;
+	}
 
 	// check levitating value
 	bool levitating = isLevitating(stats[clientnum]);
@@ -514,6 +519,29 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEZ = 2;
 			HUDWEAPON_MOVEX = -.5;
 			HUDWEAPON_ROLL = -PI / 2;
+		}
+	}
+
+	bool preventSwappingEquipment = false;
+	if ( !stats[clientnum]->weapon ||
+		(stats[clientnum]->weapon
+			&& !(itemCategory(stats[clientnum]->weapon) == POTION
+				|| itemCategory(stats[clientnum]->weapon) == GEM
+				|| itemCategory(stats[clientnum]->weapon) == THROWN))
+		)
+	{
+		// non-consumable items (e.g weapons) have swap equipment gimp timer.
+		if ( HUDWEAPON_CHOP > 0 && swingweapon )
+		{
+			swapWeaponGimpTimer = 20;
+		}
+		else if ( HUDWEAPON_CHOP != 0 && HUDWEAPON_CHOP != 1 && HUDWEAPON_CHOP != 4 && HUDWEAPON_CHOP != 7 && !swingweapon )
+		{
+			// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
+			if ( swapWeaponGimpTimer > 5 )
+			{
+				swapWeaponGimpTimer = 5;
+			}
 		}
 	}
 

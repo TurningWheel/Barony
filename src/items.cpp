@@ -1452,6 +1452,12 @@ void equipItem(Item* item, Item** slot, int player)
 		return;
 	}
 
+	if ( player == clientnum && multiplayer != SINGLE && swapWeaponGimpTimer > 0
+		&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+	{
+		return;
+	}
+
 	if ( itemCompare(*slot, item, true) )
 	{
 		// if items are different... (excluding the quantity of both item nodes)
@@ -1753,18 +1759,28 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 	if ( multiplayer == CLIENT && !intro )
 	{
-		strcpy((char*)net_packet->data, "USEI");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		net_packet->data[24] = item->identified;
-		net_packet->data[25] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		net_packet->len = 26;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		if ( swapWeaponGimpTimer > 0
+			&& ( itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+		{
+			// don't send to host as we're not allowed to "use" or equip these items. 
+			// will return false in equipItem.
+			// potions allowed here because we're drinking em.
+		}
+		else
+		{
+			strcpy((char*)net_packet->data, "USEI");
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
 	}
 
 	if ( player == clientnum )
