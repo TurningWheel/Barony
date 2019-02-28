@@ -16,6 +16,7 @@
 #include "interface.hpp"
 #include "../items.hpp"
 #include "../magic/magic.hpp"
+#include "../player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -216,67 +217,92 @@ void drawSustainedSpells()
 		pos.y = 32 + ( (!shootmode || lock_right_sidebar) ? (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) : 0); 
 	}
 
+	bool isChanneled = false;
+	char* tooltipText = nullptr;
+	char* currentTooltip = nullptr;
+	TTF_Font* fontText = ttf12;
+	int fontHeight = TTF12_HEIGHT;
+	int fontWidth = TTF12_WIDTH;
+	if ( uiscale_skillspage )
+	{
+		fontText = ttf16;
+		fontHeight = TTF16_HEIGHT;
+		fontWidth = TTF16_WIDTH;
+	}
+
 	for ( int i = 0; showStatusEffectIcons && i < NUMEFFECTS && stats[clientnum]; ++i )
 	{
 		node_t* effectImageNode = nullptr;
 		sprite = nullptr;
+		tooltipText = nullptr;
 		if ( stats[clientnum]->EFFECTS[i] )
 		{
 			switch ( i )
 			{
 				case EFF_SLOW:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLOW);
+					tooltipText = language[3384];
 					break;
 				case EFF_BLEEDING:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_BLEED);
+					tooltipText = language[3385];
 					break;
 				case EFF_ASLEEP:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SLEEP);
+					tooltipText = language[3386];
 					break;
 				case EFF_CONFUSED:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CONFUSE);
+					tooltipText = language[3387];
 					break;
 				case EFF_PACIFY:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
+					tooltipText = language[3388];
 					break;
 				case EFF_VAMPIRICAURA:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
-					/*node_t* node = channeledSpells[clientnum].first;
+					tooltipText = language[3389];
+					node_t* node = channeledSpells[clientnum].first;
 					for ( ; node != nullptr; node = node->next )
 					{
 						spell_t* spell = (spell_t*)node->element;
 						if ( spell && spell->ID == SPELL_VAMPIRIC_AURA )
 						{
-							effectImageNode = nullptr;
+							tooltipText = language[3390];
 							break;
 						}
-					}*/
+					}
 					break;
 				}
 				case EFF_PARALYZED:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_LIGHTNING);
+					tooltipText = language[3391];
 					break;
 				case EFF_DRUNK:
 					if ( effect_drunk_bmp )
 					{
 						sprite = &effect_drunk_bmp;
 					}
+					tooltipText = language[3392];
 					break;
 				case EFF_POLYMORPH:
 					if ( effect_polymorph_bmp )
 					{
 						sprite = &effect_polymorph_bmp;
 					}
+					tooltipText = language[3399];
 					break;
 				case EFF_WITHDRAWAL:
 					if ( effect_hungover_bmp )
 					{
 						sprite = &effect_hungover_bmp;
 					}
+					tooltipText = language[3393];
 					break;
 				case EFF_POTION_STR:
 					sprite = &str_bmp64u;
+					tooltipText = language[3394];
 					break;
 				case EFF_LEVITATING:
 				{
@@ -291,6 +317,7 @@ void drawSustainedSpells()
 							break;
 						}
 					}
+					tooltipText = language[3395];
 					break;
 				}
 				case EFF_INVISIBLE:
@@ -306,13 +333,23 @@ void drawSustainedSpells()
 							break;
 						}
 					}
+					tooltipText = language[3396];
 					break;
 				}
 				default:
 					effectImageNode = nullptr;
+					tooltipText = nullptr;
 					break;
 			}
 		}
+
+		if ( tooltipText && !shootmode && mouseInBounds(pos.x, pos.x + 32,
+			pos.y, pos.y + 32) )
+		{
+			// draw tooltip.
+			currentTooltip = tooltipText;
+		}
+
 		if ( effectImageNode || sprite )
 		{
 			if ( !sprite )
@@ -340,6 +377,7 @@ void drawSustainedSpells()
 					drawImage(*sprite, NULL, &pos);
 				}
 			}
+
 			if ( SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN )
 			{
 				pos.x += sustained_spell_generic_icon->w;
@@ -355,13 +393,34 @@ void drawSustainedSpells()
 
 	if (!channeledSpells[clientnum].first)
 	{
+		if ( currentTooltip )
+		{
+			SDL_Rect tooltip;
+			std::string str = currentTooltip;
+			size_t n = std::count(str.begin(), str.end(), '\n'); // count newlines
+			tooltip.w = ((longestline(currentTooltip) + 2) * fontWidth) + 8;
+			if ( n > 4 )
+			{
+				tooltip.h = fontHeight * (n + 2) + 12;
+			}
+			else
+			{
+				tooltip.h = fontHeight * (n + 1) + 12;
+			}
+			tooltip.x = mousex - 16 - tooltip.w;
+			tooltip.y = mousey + 16;
+			drawTooltip(&tooltip);
+			ttfPrintTextFormatted(fontText, tooltip.x + 8, tooltip.y + 8, currentTooltip);
+		}
 		return;    //No use continuing if there are no sustained spells.
 	}
+
 
 	int count = 0; //This is just for debugging purposes.
 	node_t* node = channeledSpells[clientnum].first;
 	for (; node; node = node->next, count++)
 	{
+		tooltipText = nullptr;
 		spell_t* spell = (spell_t*)node->element;
 		if (!spell)
 		{
@@ -372,6 +431,16 @@ void drawSustainedSpells()
 		{
 			continue;
 		}
+
+		if ( spell->ID == SPELL_REFLECT_MAGIC )
+		{
+			tooltipText = language[3397];
+		}
+		else if ( spell->ID == SPELL_LIGHT )
+		{
+			tooltipText = language[3398];
+		}
+
 		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
 		if (!node)
 		{
@@ -380,6 +449,12 @@ void drawSustainedSpells()
 		sprite = (SDL_Surface**)node->element;
 
 		drawImage(*sprite, NULL, &pos);
+
+		if ( !shootmode && mouseInBounds(pos.x, pos.x + 32, pos.y, pos.y + 32) && tooltipText )
+		{
+			// draw tooltip.
+			currentTooltip = tooltipText;
+		}
 
 		if (SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN)
 		{
@@ -390,5 +465,25 @@ void drawSustainedSpells()
 			//Vertical.
 			pos.y += (*sprite)->h;
 		}
+	}
+
+	if ( currentTooltip )
+	{
+		SDL_Rect tooltip;
+		std::string str = currentTooltip;
+		size_t n = std::count(str.begin(), str.end(), '\n'); // count newlines
+		tooltip.w = ((longestline(currentTooltip) + 2) * fontWidth) + 8;
+		if ( n > 4 )
+		{
+			tooltip.h = fontHeight * (n + 2) + 12;
+		}
+		else
+		{
+			tooltip.h = fontHeight * (n + 1) + 12;
+		}
+		tooltip.x = mousex - 16 - tooltip.w;
+		tooltip.y = mousey + 16;
+		drawTooltip(&tooltip);
+		ttfPrintTextFormatted(fontText, tooltip.x + 8, tooltip.y + 8, currentTooltip);
 	}
 }
