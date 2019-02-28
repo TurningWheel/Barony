@@ -467,7 +467,7 @@ void actThrown(Entity* my)
 
 				if ( hitstats )
 				{
-					if ( rand() % 5 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+					if ( rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
 					{
 						parent->increaseSkill(PRO_ALCHEMY);
 					}
