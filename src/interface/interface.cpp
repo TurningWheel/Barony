@@ -4205,6 +4205,27 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 			{
 				// store the potion index into here for game saves, just in case we don't have it set the element in anyway.
 				gameStatistics[STATISTICS_ALCHEMY_RECIPES] |= (1 << index); 
+				if ( increaseskill && rand() % 6 == 0 )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						// request level up
+						strcpy((char*)net_packet->data, "CSKL");
+						net_packet->data[4] = clientnum;
+						net_packet->data[5] = PRO_ALCHEMY;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 6;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					else
+					{
+						if ( players[clientnum] && players[clientnum]->entity )
+						{
+							players[clientnum]->entity->increaseSkill(PRO_ALCHEMY);
+						}
+					}
+				}
 			}
 			break;
 		}
