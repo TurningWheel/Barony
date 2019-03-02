@@ -908,6 +908,60 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case LIMB_HUMANOID_RIGHTARM:
 			{
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->gloves == nullptr )
+					{
+						entity->sprite = 233;
+					}
+					else
+					{
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+						{
+							// successfully set sprite for the human model
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 233 )
+						{
+							// these are the default arms.
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						entity->sprite = 233;
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				node_t* weaponNode = list_Node(&my->children, LIMB_HUMANOID_WEAPON);
 				if ( weaponNode )
 				{
@@ -918,7 +972,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][4][0]; // 0
 						entity->focaly = limbs[SKELETON][4][1]; // 0
 						entity->focalz = limbs[SKELETON][4][2]; // 2
-						entity->sprite = 233;
+						//entity->sprite = 233;
 					}
 					else
 					{
@@ -926,7 +980,14 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[SKELETON][4][0] + 1; // 1
 						entity->focaly = limbs[SKELETON][4][1]; // 0
 						entity->focalz = limbs[SKELETON][4][2] - 1; // 1
-						entity->sprite = 234;
+						if ( entity->sprite == 233 )
+						{
+							entity->sprite = 234;
+						}
+						else
+						{
+							entity->sprite += 2;
+						}
 					}
 				}
 				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_RIGHTARM);
@@ -936,6 +997,60 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case LIMB_HUMANOID_LEFTARM:
 			{
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->gloves == nullptr )
+					{
+						entity->sprite = 231;
+					}
+					else
+					{
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+						{
+							// successfully set sprite for the human model
+						}
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite == 231 )
+						{
+							// these are the default arms.
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						entity->sprite = 231;
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
 				shieldarm = entity;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
@@ -945,7 +1060,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					if ( shield->flags[INVISIBLE] )
 					{
 						// if shield invisible, relax arm.
-						entity->sprite = 231;
+						//entity->sprite = 231;
 						entity->focalx = limbs[SKELETON][5][0]; // 0
 						entity->focaly = limbs[SKELETON][5][1]; // 0
 						entity->focalz = limbs[SKELETON][5][2]; // 2
@@ -953,10 +1068,17 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					else
 					{
 						// else flex arm.
-						entity->sprite = 232;
 						entity->focalx = limbs[SKELETON][5][0] + 1; // 1
 						entity->focaly = limbs[SKELETON][5][1]; // 0
 						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
+						if ( entity->sprite == 231 )
+						{
+							entity->sprite = 232;
+						}
+						else
+						{
+							entity->sprite += 2;
+						}
 					}
 				}
 				my->setHumanoidLimbOffset(entity, SKELETON, LIMB_HUMANOID_LEFTARM);
