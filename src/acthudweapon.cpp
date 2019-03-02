@@ -522,28 +522,28 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	bool preventSwappingEquipment = false;
-	if ( !stats[clientnum]->weapon ||
-		(stats[clientnum]->weapon
-			&& !(itemCategory(stats[clientnum]->weapon) == POTION
-				|| itemCategory(stats[clientnum]->weapon) == GEM
-				|| itemCategory(stats[clientnum]->weapon) == THROWN))
-		)
+	// all items (e.g weapons) have swap equipment gimp timer in multiplayer.
+	if ( HUDWEAPON_CHOP > 0 && swingweapon )
 	{
-		// non-consumable items (e.g weapons) have swap equipment gimp timer.
-		if ( HUDWEAPON_CHOP > 0 && swingweapon )
+		swapWeaponGimpTimer = 20;
+	}
+	else if ( HUDWEAPON_CHOP != 0 && HUDWEAPON_CHOP != 1 && HUDWEAPON_CHOP != 4 && HUDWEAPON_CHOP != 7 && !swingweapon )
+	{
+		// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
+		if ( swapWeaponGimpTimer > 5 )
 		{
-			swapWeaponGimpTimer = 20;
-		}
-		else if ( HUDWEAPON_CHOP != 0 && HUDWEAPON_CHOP != 1 && HUDWEAPON_CHOP != 4 && HUDWEAPON_CHOP != 7 && !swingweapon )
-		{
-			// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
-			if ( swapWeaponGimpTimer > 5 )
-			{
-				swapWeaponGimpTimer = 5;
-			}
+			swapWeaponGimpTimer = 5;
 		}
 	}
+	/*if ( !stats[clientnum]->weapon ||
+		(stats[clientnum]->weapon
+			&& (stats[clientnum]->weapon->type == POTION_EMPTY 
+				|| !(itemCategory(stats[clientnum]->weapon) == POTION
+					|| itemCategory(stats[clientnum]->weapon) == GEM
+					|| itemCategory(stats[clientnum]->weapon) == THROWN)) )
+		)
+	{
+	}*/
 
 	// bow drawing sound check
 #ifdef SOUND
@@ -787,17 +787,21 @@ void actHudWeapon(Entity* my)
 						}
 						else if ( item->type == POTION_EMPTY )
 						{
-							HUDWEAPON_MOVEX = 5;
-							HUDWEAPON_CHOP = 3;
-							Entity* player = players[clientnum]->entity;
-							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
-							if ( hit.entity && stats[clientnum]->weapon )
+							if ( throwGimpTimer == 0 )
 							{
-								stats[clientnum]->weapon->apply(clientnum, hit.entity);
-							}
-							else
-							{
-								messagePlayer(clientnum, language[3336]);
+								HUDWEAPON_MOVEX = 5;
+								HUDWEAPON_CHOP = 3;
+								Entity* player = players[clientnum]->entity;
+								lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+								if ( hit.entity && stats[clientnum]->weapon )
+								{
+									stats[clientnum]->weapon->apply(clientnum, hit.entity);
+								}
+								else
+								{
+									messagePlayer(clientnum, language[3336]);
+								}
+								throwGimpTimer = TICKS_PER_SECOND / 2;
 							}
 						}
 						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
