@@ -306,7 +306,7 @@ void sellItemToShop(Item* item)
 				}
 				break;
 			case 4: // potion shop
-				if ( itemCategory(item) != POTION )
+				if ( item->type != TOOL_ALEMBIC && itemCategory(item) != POTION )
 				{
 					deal = false;
 				}
