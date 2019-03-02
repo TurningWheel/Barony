@@ -691,7 +691,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 			}
 			else if ( stats[monsterclicked]->type == VAMPIRE )
 			{
-				if ( race == VAMPIRE )
+				if ( race == VAMPIRE && strncmp(myStats->name, "Bram Kindly", 11) )
 				{
 					canAlly = true;
 				}
@@ -750,7 +750,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 					}
 					else if ( stats[monsterclicked]->type == VAMPIRE )
 					{
-						if ( race == VAMPIRE )
+						if ( race == VAMPIRE && strncmp(myStats->name, "Bram Kindly", 11) )
 						{
 							canAlly = true;
 						}
