@@ -4460,4 +4460,60 @@ Traits:
 - Can recruit humans/goblins by
    throwing booze while drunk#
 
-3399 end#
+3380 Automaton#
+3381 Goblin#
+3382 Incubus#
+3383 Insectoid#
+
+3384 Slowed
+ Reduced movement speed#
+3385 Bleeding
+ Taking damage over time#
+3386 Asleep
+ Unable to move or see#
+3387 Confused
+ Movement is reversed#
+3388 Pacified
+ Unable to attack#
+3389 Vampiric Aura
+ Increased STR/DEX
+ Increased chance to inflict
+  [bleed] status while unarmed
+ Chance to lifesteal on unarmed
+  lethal stealth attacks
+ Increased hunger rate#
+3390 Vampiric Aura
+ Increased STR/DEX
+ Increased chance to inflict
+  [bleed] status while unarmed
+ Chance to lifesteal on all
+  unarmed attacks
+ Increased hunger rate
+ Natural HP regen is disabled#
+3391 Paralyzed
+ Unable to move#
+3392 Drunk
+ Increased STR
+ Reduced DEX#
+3393 Hungover
+ Reduced DEX
+ Curable by intoxication#
+3394 Strength
+ Increased STR
+ Reduced PER#
+3395 Levitating
+ Able to float over chasms and
+  water/lava#
+3396 Invisible
+ Unable to be detected by enemies
+  outside of melee range#
+3397 Reflect Magic
+ Enemy spells are reflected
+ Magic damage reflected is consumed
+  from MP#
+3398 Light
+ Sustaining a magical source of light#
+3399 Polymorphed
+ Disguised as another monster#
+
+3449 end#
