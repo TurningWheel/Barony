@@ -8284,6 +8284,14 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return true;
 	}
+	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11) )
+	{
+		return true;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && !strncmp(yourStats->name, "Bram Kindly", 11) )
+	{
+		return true;
+	}
 
 	// if you have a leader, check whether we are enemies instead
 	Entity* yourLeader = NULL;
@@ -8520,6 +8528,14 @@ bool Entity::checkFriend(Entity* your)
 		return false;
 	}
 	else if ( (yourStats->type == HUMAN || your->behavior == &actPlayer) && (myStats->type == AUTOMATON && !strncmp(myStats->name, "corrupted automaton", 19)) )
+	{
+		return false;
+	}
+	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11) )
+	{
+		return false;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && !strncmp(yourStats->name, "Bram Kindly", 11) )
 	{
 		return false;
 	}
