@@ -767,7 +767,7 @@ bool spellInList(list_t* list, spell_t* spell)
 	return false;
 }
 
-void spell_changeHealth(Entity* entity, int amount)
+void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 {
 	if (!entity)
 	{
@@ -790,8 +790,16 @@ void spell_changeHealth(Entity* entity, int amount)
 	{
 		if (amount > 0)
 		{
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-			messagePlayerColor(player, color, language[443]);
+			if ( overdrewFromHP )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+				messagePlayerColor(player, color, language[3400]);
+			}
+			else
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				messagePlayerColor(player, color, language[443]);
+			}
 		}
 		else
 		{

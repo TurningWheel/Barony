@@ -242,6 +242,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	bool newbie = false;
+	bool overdrewIntoHP = false;
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = caster->isSpellcasterBeginner();
@@ -252,6 +253,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				messagePlayer(player, "Error: Invalid spell. Mana cost is negative?");
 			return NULL;
 		}*/
+		int prevHP = caster->getHP();
 		if ( multiplayer == SINGLE )
 		{
 			if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
@@ -297,6 +299,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 				caster->drainMP(magiccost);
 			}
+		}
+		if ( caster->getHP() < prevHP )
+		{
+			overdrewIntoHP = true;
 		}
 	}
 
@@ -745,7 +751,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();
-					spell_changeHealth(players[i]->entity, amount);
+					if ( overdrewIntoHP )
+					{
+						amount /= 2;
+					}
+					if ( oldHP > 0 )
+					{
+						spell_changeHealth(players[i]->entity, amount, overdrewIntoHP);
+					}
 					totalHeal += std::max(players[i]->entity->getHP() - oldHP, 0);
 
 					playSoundEntity(caster, 168, 128);
