@@ -590,9 +590,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					hitstats = hit.entity->getStats();
 					if ( hit.entity->behavior == &actPlayer )
 					{
+						bool skipMessage = false;
+						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+						{
+							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
+							{
+								skipMessage = true;
+							}
+						}
+
 						player = hit.entity->skill[2];
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(player, color, language[376]);
+						if ( !skipMessage )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							messagePlayerColor(player, color, language[376]);
+						}
 						if ( hitstats )
 						{
 							entityHealth = hitstats->HP;
