@@ -17,6 +17,7 @@
 #include "../items.hpp"
 #include "../magic/magic.hpp"
 #include "../player.hpp"
+#include "../colors.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -401,16 +402,29 @@ void drawSustainedSpells()
 			tooltip.w = ((longestline(currentTooltip) + 2) * fontWidth) + 8;
 			if ( n > 4 )
 			{
-				tooltip.h = fontHeight * (n + 2) + 12;
+				tooltip.h = fontHeight * (n + 1) + 16;
 			}
 			else
 			{
 				tooltip.h = fontHeight * (n + 1) + 12;
 			}
 			tooltip.x = mousex - 16 - tooltip.w;
-			tooltip.y = mousey + 16;
+			tooltip.y = mousey + 8;
 			drawTooltip(&tooltip);
-			ttfPrintTextFormatted(fontText, tooltip.x + 8, tooltip.y + 8, currentTooltip);
+			size_t found = str.find('\n');
+			if ( found != std::string::npos )
+			{
+				char buf[256] = "";
+				strncpy(buf, str.c_str(), found);
+				ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, buf);
+				str = str.substr(found);
+				strncpy(buf, str.c_str(), str.length());
+				ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue(*mainsurface), buf);
+			}
+			else
+			{
+				ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, currentTooltip);
+			}
 		}
 		return;    //No use continuing if there are no sustained spells.
 	}
@@ -432,7 +446,15 @@ void drawSustainedSpells()
 			continue;
 		}
 
-		if ( spell->ID == SPELL_REFLECT_MAGIC )
+		if ( spell->ID == SPELL_INVISIBILITY )
+		{
+			tooltipText = language[3396];
+		}
+		else if ( spell->ID == SPELL_LEVITATION )
+		{
+			tooltipText = language[3395];
+		}
+		else if ( spell->ID == SPELL_REFLECT_MAGIC )
 		{
 			tooltipText = language[3397];
 		}
@@ -472,18 +494,31 @@ void drawSustainedSpells()
 		SDL_Rect tooltip;
 		std::string str = currentTooltip;
 		size_t n = std::count(str.begin(), str.end(), '\n'); // count newlines
-		tooltip.w = ((longestline(currentTooltip) + 2) * fontWidth) + 8;
+		tooltip.w = ((longestline(currentTooltip) + 1) * fontWidth) + 8;
 		if ( n > 4 )
-		{
-			tooltip.h = fontHeight * (n + 2) + 12;
-		}
-		else
 		{
 			tooltip.h = fontHeight * (n + 1) + 12;
 		}
+		else
+		{
+			tooltip.h = fontHeight * (n + 1) + 8;
+		}
 		tooltip.x = mousex - 16 - tooltip.w;
-		tooltip.y = mousey + 16;
+		tooltip.y = mousey + 8;
 		drawTooltip(&tooltip);
-		ttfPrintTextFormatted(fontText, tooltip.x + 8, tooltip.y + 8, currentTooltip);
+		size_t found = str.find('\n');
+		if ( found != std::string::npos )
+		{
+			char buf[256] = "";
+			strncpy(buf, str.c_str(), found);
+			ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, buf);
+			str = str.substr(found);
+			strncpy(buf, str.c_str(), str.length());
+			ttfPrintTextFormattedColor(fontText, tooltip.x + 4, tooltip.y + 4, uint32ColorLightBlue(*mainsurface), buf);
+		}
+		else
+		{
+			ttfPrintTextFormatted(fontText, tooltip.x + 4, tooltip.y + 4, currentTooltip);
+		}
 	}
 }
