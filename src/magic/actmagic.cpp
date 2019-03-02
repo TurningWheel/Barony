@@ -470,6 +470,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				return;
 			}
 
+			if ( spell->ID == SPELL_CHARM_MONSTER || spell->ID == SPELL_ACID_SPRAY )
+			{
+				Entity* caster = uidToEntity(spell->caster);
+				if ( !caster )
+				{
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+
 			node = spell->elements.first;
 			//element = (spellElement_t *) spell->elements->first->element;
 			element = (spellElement_t*)node->element;
@@ -2278,19 +2289,35 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
 				{
-					spellEffectAcid(*my, *element, parent, resistance);
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectAcid(*my, *element, parent, resistance);
+					}
 				}
 				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
 				{
-					spellEffectStealWeapon(*my, *element, parent, resistance);
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectStealWeapon(*my, *element, parent, resistance);
+					}
 				}
 				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
 				{
-					spellEffectDrainSoul(*my, *element, parent, resistance);
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectDrainSoul(*my, *element, parent, resistance);
+					}
 				}
 				else if ( !strcmp(element->name, spellElement_charmMonster.name) )
 				{
-					spellEffectCharmMonster(*my, *element, parent, resistance, static_cast<bool>(my->actmagicCastByMagicstaff));
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectCharmMonster(*my, *element, parent, resistance, static_cast<bool>(my->actmagicCastByMagicstaff));
+					}
 				}
 
 				if ( hitstats )

@@ -1014,7 +1014,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 				chance = 0; // not allowed to control summons
 			}
 
-			if ( hit.entity == parent )
+			if ( parent && hit.entity == parent )
 			{
 				// caster hit themselves somehow... get pacified.
 				int duration = element.duration;
