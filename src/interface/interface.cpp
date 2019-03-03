@@ -3748,7 +3748,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 						result = POTION_BOOZE;
 						break;
 					case POTION_CONFUSION:
-						result = POTION_CONFUSION;
+						result = POTION_BOOZE;
 						break;
 					case POTION_CUREAILMENT:
 						result = POTION_RESTOREMAGIC;
