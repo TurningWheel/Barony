@@ -505,7 +505,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		if ( item )
 		{
 			itemPickup(player, item);
-			messagePlayer(clientnum, language[3353], item->description());
+			messagePlayer(player, language[3353], item->description());
 			if ( players[player] && players[player]->entity )
 			{
 				playSoundEntity(players[player]->entity, 401, 64);
