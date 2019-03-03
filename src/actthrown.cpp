@@ -464,16 +464,12 @@ void actThrown(Entity* my)
 				bool skipMessage = false;
 				Entity* polymorphedTarget = nullptr;
 				bool disableAlertBlindStatus = false;
+				bool ignorePotion = false;
+				bool wasPotion = itemCategory(item) == POTION;
 
 				if ( hitstats )
 				{
-					if ( rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
-					{
-						parent->increaseSkill(PRO_ALCHEMY);
-					}
-
 					int postDmgHP = hit.entity->getHP();
-					bool ignorePotion = false;
 					if ( hitstats->type == LICH || hitstats->type == SHOPKEEPER || hitstats->type == DEVIL
 						|| hitstats->type == MINOTAUR || hitstats->type == LICH_FIRE || hitstats->type == LICH_ICE )
 					{
@@ -507,8 +503,22 @@ void actThrown(Entity* my)
 								break;
 						}
 					}
+					else
+					{
+						if ( parent && parent->behavior == &actPlayer && parent->checkFriend(hit.entity) && itemCategory(item) == POTION )
+						{
+							if ( damage != 0 && friendlyHit )
+							{
+								ignorePotion = true;
+							}
+						}
+					}
 					if ( !ignorePotion )   // this makes it impossible to bork the end boss :)
 					{
+						if ( rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+						{
+							parent->increaseSkill(PRO_ALCHEMY);
+						}
 						switch ( item->type )
 						{
 							case POTION_WATER:
@@ -745,6 +755,13 @@ void actThrown(Entity* my)
 					updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 				}
 
+				if ( friendlyHit && !usedpotion )
+				{
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+
 				if ( damage > 0 )
 				{
 					Entity* gib = spawnGib(hit.entity);
@@ -797,12 +814,6 @@ void actThrown(Entity* my)
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
 						}
 					}
-				}
-
-				if ( friendlyHit )
-				{
-					list_RemoveNode(my->mynode);
-					return;
 				}
 
 				if ( hitstats->HP <= 0 && parent )
@@ -908,11 +919,11 @@ void actThrown(Entity* my)
 						}
 					}
 				}
-				else if ( hit.entity->behavior == &actPlayer && !skipMessage )
+				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 					messagePlayerColor(hit.entity->skill[2], color, language[588], itemname);
-					if ( damage == 0 )
+					if ( damage == 0 && !wasPotion )
 					{
 						messagePlayer(hit.entity->skill[2], language[452]);
 					}
