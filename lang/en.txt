@@ -3975,7 +3975,7 @@ current food situation will last.#
 3197 Your summoned %s gained a new rank!#
 3198 But wait! Your summoned allies imbue you with new life!#
 
-3199 Locked - DLC Required!#
+3199 Locked - Myths & Outcasts DLC Required!#
 3200 Locked - Myths & Outcasts DLC Required! Left click to view on the store page in Steam overlay.#
 
 3201 Bleh! Your body rejects the solids in your stomach!#
@@ -4466,54 +4466,57 @@ Traits:
 3383 Insectoid#
 
 3384 Slowed
- Reduced movement speed#
+Reduced movement speed#
 3385 Bleeding
- Taking damage over time#
+Taking damage over time#
 3386 Asleep
- Unable to move or see#
+Unable to move or see#
 3387 Confused
- Movement is reversed#
+Movement is reversed#
 3388 Pacified
- Unable to attack#
+Unable to attack#
 3389 Vampiric Aura
- Increased STR/DEX
- Increased chance to inflict
-  [bleed] status while unarmed
- Chance to lifesteal on unarmed
-  lethal stealth attacks
- Increased hunger rate#
++ Strength and Dexterity
+Increased hunger rate
+Increased chance to inflict
+ [bleed] status while unarmed
+Chance to lifesteal on unarmed
+ lethal stealth attacks#
 3390 Vampiric Aura
- Increased STR/DEX
- Increased chance to inflict
-  [bleed] status while unarmed
- Chance to lifesteal on all
-  unarmed attacks
- Increased hunger rate
- Natural HP regen is disabled#
++ Strength and Dexterity
+Increased hunger rate
+Increased chance to inflict
+ [bleed] status while unarmed
+Chance to lifesteal on all
+ unarmed attacks
+Natural HP regen is disabled#
 3391 Paralyzed
  Unable to move#
 3392 Drunk
- Increased STR
- Reduced DEX#
++ Strength
+- Dexterity#
 3393 Hungover
- Reduced DEX
- Curable by intoxication#
+- Dexterity
+Curable by intoxication#
 3394 Strength
- Increased STR
- Reduced PER#
++ Strength
+- Perception#
 3395 Levitating
- Able to float over chasms and
-  water/lava#
+Able to float over chasms and
+ water/lava#
 3396 Invisible
- Unable to be detected by enemies
-  outside of melee range#
+Unable to be detected by enemies
+ outside of melee range#
 3397 Reflect Magic
- Enemy spells are reflected
- Magic damage reflected is consumed
-  from MP#
+Enemy spells are reflected
+Magic damage reflected is consumed
+ from MP#
 3398 Light
- Sustaining a magical source of light#
+Sustaining a magical source of light#
 3399 Polymorphed
- Disguised as another monster#
+Disguised as another monster#
+
+3400 Expending your vitality weakened the spell!#
+3401 You sense the gods of Sokoban aiding your path...#
 
 3449 end#
