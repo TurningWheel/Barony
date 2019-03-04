@@ -2077,9 +2077,18 @@ void handleMainMenu(bool mode)
 									}
 								}
 #else
-								tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
-								drawTooltip(&tooltip);
-								ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
+								{
+									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+								}
+								else
+								{
+									tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+								}
 #endif // STEAMWORKS
 							}
 						}
