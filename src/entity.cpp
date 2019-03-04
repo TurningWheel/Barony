@@ -2596,7 +2596,7 @@ void Entity::handleEffects(Stat* myStats)
 	if ( !strncmp(map.name, "Sanctum", 7) 
 		|| !strncmp(map.name, "Boss", 4) 
 		|| !strncmp(map.name, "Hell Boss", 9)
-		|| !strncmp(map.name, "Hamlet", 6) )
+		|| !strncmp(map.name, "Mages Guild", 11) )
 	{
 		hungerring = 1; // slow down hunger on boss stages.
 		if ( vampiricHunger > 0 )
@@ -8611,7 +8611,7 @@ bool Entity::checkFriend(Entity* your)
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = monsterally[HUMAN][yourStats->type];
-				if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
+				if ( yourStats->type == HUMAN || yourStats->type == SHOPKEEPER )
 				{
 					result = false;
 				}
