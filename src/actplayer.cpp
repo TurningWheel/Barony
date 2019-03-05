@@ -2210,8 +2210,9 @@ void actPlayer(Entity* my)
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 					messagePlayerColor(PLAYER_NUM, color, language[577]);
 
-					for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = node->next )
+					for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = nextnode )
 					{
+						nextnode = node->next;
 						Uint32* c = (Uint32*)node->element;
 						Entity* myFollower = uidToEntity(*c);
 						if ( myFollower )
@@ -2246,8 +2247,14 @@ void actPlayer(Entity* my)
 								{
 									followerStats->leader_uid = 0;
 								}
+								list_RemoveNode(node);
+								if ( PLAYER_NUM != clientnum )
+								{
+									serverRemoveClientFollower(PLAYER_NUM, myFollower->getUID());
+								}
 							}
 						}
+
 					}
 
 					/* //TODO: Eventually.

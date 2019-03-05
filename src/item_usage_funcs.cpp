@@ -24,11 +24,11 @@
 #include "player.hpp"
 #include "collision.hpp"
 
-void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if ( !entity )
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -52,7 +52,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -63,7 +63,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -72,7 +72,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 
 	if ( multiplayer != CLIENT ) // server/singleplayer
@@ -136,7 +136,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		if ( player != clientnum )
 		{
 			consumeItem(item, player);
-			return;
+			return true;
 		}
 	}
 
@@ -309,7 +309,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				//messagePlayer(clientnum, "sent server: %d, %d, %d", net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 			}
 			consumeItem(item, player);
-			return;
+			return true;
 		}
 
 		// else randomly curse an item in the entity's inventory, item must be +0 or higher.
@@ -325,7 +325,7 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		if ( items == 0 )
 		{
 			consumeItem(item, player);
-			return;
+			return true;
 		}
 		int itemToCurse = rand() % items;
 		items = 0;
@@ -356,13 +356,14 @@ void item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
+bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -385,7 +386,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != nullptr )
@@ -396,7 +397,7 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -405,12 +406,12 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	messagePlayer(player, language[758]);
@@ -463,14 +464,16 @@ void item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item, player);
+		return true;
 	}
+	return false;
 }
 
-void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -493,7 +496,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -504,7 +507,7 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -513,12 +516,12 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	if ( item->beatitude < 0 )
@@ -580,13 +583,14 @@ void item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	playSoundEntity(entity, 168, 128);
 	spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -609,12 +613,12 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( entity == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( stats->amulet != NULL )
 	{
@@ -624,7 +628,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -633,7 +637,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT || player == 0 )
 	{
@@ -642,7 +646,7 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 		if ( multiplayer == CLIENT )
 		{
 			consumeItem(item, player);
-			return;
+			return true;
 		}
 	}
 
@@ -673,13 +677,14 @@ void item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -702,7 +707,7 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -713,7 +718,7 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -722,12 +727,12 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	messagePlayer(player, language[762]);
@@ -749,13 +754,14 @@ void item_PotionConfusion(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -779,7 +785,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -790,7 +796,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -799,7 +805,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( entity->flags[BURNING] )
 	{
@@ -809,7 +815,7 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	if ( item->beatitude < 0 )
@@ -853,13 +859,14 @@ void item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -882,7 +889,7 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -893,7 +900,7 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -902,12 +909,12 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	if ( entity->behavior == &actMonster && !entity->isBossMonsterOrBossMap() )
@@ -930,13 +937,14 @@ void item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -959,7 +967,7 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -970,7 +978,7 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -979,12 +987,12 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	messagePlayer(player, language[766]);
@@ -1020,13 +1028,14 @@ void item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1049,7 +1058,7 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -1060,7 +1069,7 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1069,12 +1078,12 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	if ( item->beatitude < 0 )
@@ -1096,13 +1105,14 @@ void item_PotionLevitation(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1125,7 +1135,7 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -1136,7 +1146,7 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1145,12 +1155,12 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 
@@ -1195,13 +1205,14 @@ void item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if ( !entity )
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1224,7 +1235,7 @@ void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -1235,7 +1246,7 @@ void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1244,12 +1255,12 @@ void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 
@@ -1284,13 +1295,14 @@ void item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1313,12 +1325,12 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( entity == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( stats->amulet != NULL )
 	{
@@ -1328,7 +1340,7 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1337,7 +1349,7 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT || player == 0 )
 	{
@@ -1346,7 +1358,7 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 		if ( multiplayer == CLIENT )
 		{
 			consumeItem(item, player);
-			return;
+			return true;
 		}
 	}
 
@@ -1370,13 +1382,14 @@ void item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion)
+bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion)
 {
 	if ( !entity )
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1399,12 +1412,12 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( entity == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( stats->amulet != NULL )
 	{
@@ -1414,7 +1427,7 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1423,7 +1436,7 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT || player == 0 )
 	{
@@ -1432,7 +1445,7 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 		if ( multiplayer == CLIENT )
 		{
 			consumeItem(item, player);
-			return;
+			return true;
 		}
 	}
 
@@ -1477,13 +1490,14 @@ void item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1506,7 +1520,7 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != NULL )
@@ -1517,7 +1531,7 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1526,12 +1540,12 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	messagePlayer(player, language[771]);
@@ -1556,13 +1570,14 @@ void item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy)
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
 	consumeItem(item, player);
+	return true;
 }
 
-void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
+bool item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1585,7 +1600,7 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != nullptr )
@@ -1596,7 +1611,7 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1605,12 +1620,12 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 	if ( stats->HP == stats->MAXHP )
 	{
@@ -1635,8 +1650,9 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 		if ( shouldConsumeItem )
 		{
 			consumeItem(item, player);
+			return true;
 		}
-		return;
+		return false;
 	}
 
 	int amount = std::max(7 + item->status, 0);
@@ -1697,14 +1713,16 @@ void item_PotionHealing(Item*& item, Entity* entity, Entity* usedBy, bool should
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item, player);
+		return true;
 	}
+	return false;
 }
 
-void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
+bool item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1727,7 +1745,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( stats->amulet != nullptr )
@@ -1738,7 +1756,7 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1747,12 +1765,12 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 	if ( stats->HP == stats->MAXHP )
 	{
@@ -1777,8 +1795,9 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 		if ( shouldConsumeItem )
 		{
 			consumeItem(item, player);
+			return true;
 		}
-		return;
+		return false;
 	}
 
 	int amount = std::max(15 + item->status, 0);
@@ -1838,14 +1857,16 @@ void item_PotionExtraHealing(Item*& item, Entity* entity, Entity* usedBy, bool s
 	if ( shouldConsumeItem )
 	{
 		consumeItem(item, player);
+		return true;
 	}
+	return false;
 }
 
-void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
+bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 {
 	if (!entity)
 	{
-		return;
+		return false;
 	}
 
 	int skillLVL = 0;
@@ -1868,12 +1889,12 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	stats = entity->getStats();
 	if ( !stats )
 	{
-		return;
+		return false;
 	}
 
 	if ( entity == NULL )
 	{
-		return;
+		return false;
 	}
 	if ( stats->amulet != NULL )
 	{
@@ -1883,7 +1904,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				messagePlayer(player, language[750]);
 			}
-			return;
+			return false;
 		}
 	}
 	if ( stats->EFFECTS[EFF_VOMITING] )
@@ -1892,12 +1913,12 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[751]);
 		}
-		return;
+		return false;
 	}
 	if ( multiplayer == CLIENT )
 	{
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 	if ( stats->MP == stats->MAXMP )
 	{
@@ -1914,7 +1935,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 			messagePlayer(player, language[772]);
 		}
 		consumeItem(item, player);
-		return;
+		return true;
 	}
 
 	int amount = std::max(7 + item->status, 0);
@@ -1945,6 +1966,7 @@ void item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	playSoundEntity(entity, 52, 64);
 
 	consumeItem(item, player);
+	return true;
 }
 
 Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)

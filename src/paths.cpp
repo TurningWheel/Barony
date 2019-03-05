@@ -223,9 +223,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		}
 	}
 
+	// for boulders falling and checking if a player can reach the ladder.
+	bool playerCheckPathToExit = (my && my->behavior == &actPlayer
+		&& target && (target->behavior == &actLadder || target->behavior == &actPortal));
+
 	if ( !loading )
 	{
-		if ( levitating )
+		if ( levitating || playerCheckPathToExit )
 		{
 			memcpy(pathMap, pathMapFlying, map.width * map.height * sizeof(int));
 		}
@@ -242,6 +246,22 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			free(pathMap);
 			return NULL;
+		}
+	}
+
+	// for boulders falling and checking if a player can reach the ladder.
+	// if we're not levitating, we use the flying path map (for water/lava) and here we remove the empty air tiles from the pathMap.
+	if ( playerCheckPathToExit && !levitating )
+	{
+		for ( int y = 0; y < map.height; ++y )
+		{
+			for ( int x = 0; x < map.width; ++x )
+			{
+				if ( !map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					pathMap[y + x * map.height] = 0;
+				}
+			}
 		}
 	}
 
@@ -264,6 +284,10 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
+		if ( playerCheckPathToExit && entity->behavior == &actGate )
+		{
+			continue;
+		}
 		if ( entity == target || entity == my )
 		{
 			continue;
@@ -272,13 +296,15 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
-		if ( entity->behavior == &actPlayer && my->monsterAllyIndex >= 0 )
+		if ( entity->behavior == &actPlayer && my->monsterAllyIndex >= 0 
+			&& (my->monsterTarget == 0 || my->monsterAllyState == ALLY_STATE_MOVETO) )
 		{
 			continue;
 		}
 		if ( lavaIsPassable &&
 			(entity->sprite == 41
-			|| lavatiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]])
+			|| lavatiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]]
+			|| swimmingtiles[map.tiles[static_cast<int>(entity->y / 16) * MAPLAYERS + static_cast<int>(entity->x / 16) * MAPLAYERS * map.height]])
 			)
 		{
 			//Fix to make ladders generate in hell.

@@ -691,7 +691,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 			}
 			else if ( stats[monsterclicked]->type == VAMPIRE )
 			{
-				if ( race == VAMPIRE )
+				if ( race == VAMPIRE && strncmp(myStats->name, "Bram Kindly", 11) )
 				{
 					canAlly = true;
 				}
@@ -750,7 +750,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 					}
 					else if ( stats[monsterclicked]->type == VAMPIRE )
 					{
-						if ( race == VAMPIRE )
+						if ( race == VAMPIRE && strncmp(myStats->name, "Bram Kindly", 11) )
 						{
 							canAlly = true;
 						}
@@ -3035,9 +3035,9 @@ void actMonster(Entity* my)
 											hitstats = entity->getStats();
 											if ( hitstats != nullptr )
 											{
-												if ( hitstats->type == myStats->type )
+												if ( entity->checkFriend(my) )
 												{
-													if ( entity->skill[0] == 0 )   // monster is waiting
+													if ( entity->skill[0] == MONSTER_STATE_WAIT )   // monster is waiting
 													{
 														tangent = atan2( entity->y - my->y, entity->x - my->x );
 														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
@@ -7506,7 +7506,19 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	if ( !isMobile() )
 	{
 		// doesn't respond.
-		messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[514], language[515], MSG_COMBAT);
+		if ( monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats->EFFECTS[EFF_ASLEEP]
+			&& (command != ALLY_CMD_SPECIAL) )
+		{
+			myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+			myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
+			myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
+			monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
+		}
+		else
+		{
+			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[514], language[515], MSG_COMBAT);
+		}
 		return;
 	}
 

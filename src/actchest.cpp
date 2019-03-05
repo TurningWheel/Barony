@@ -639,14 +639,17 @@ void Entity::actChest()
 			if ( !chestStatus )
 			{
 				messagePlayer(chestclicked, language[459]);
-				chestOpener = chestclicked;
 				openedChest[chestclicked] = this;
-				if ( removecursegui_active )
+				chestOpener = chestclicked;
+				if ( chestclicked == clientnum ) // i.e host opened the chest, close GUIs
 				{
-					closeRemoveCurseGUI();
+					if ( removecursegui_active )
+					{
+						closeRemoveCurseGUI();
+					}
+					GenericGUI.closeGUI();
+					identifygui_active = false;
 				}
-				GenericGUI.closeGUI();
-				identifygui_active = false;
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{
 					//Send all of the items to the client.

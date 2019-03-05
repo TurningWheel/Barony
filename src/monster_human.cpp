@@ -66,7 +66,7 @@ void initHuman(Entity* my, Stat* myStats)
 				{
 					specialMonsterVariant = 1;
 					int specialMonsterType = rand() % 10;
-					if ( !strncmp(map.name, "Hamlet", 6) )
+					if ( !strncmp(map.name, "Mages Guild", 11) )
 					{
 						while ( specialMonsterType == 6 ) // 2 spiders that spawn cause aggro issues in Hamlet.
 						{

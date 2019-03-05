@@ -325,6 +325,27 @@ int initGame()
 	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 	loadItemLists();
 
+#ifndef STEAMWORKS
+	if ( dataPathExists("mythsandoutcasts.key") )
+	{
+		std::vector<std::string> lines = getLinesFromDataFile("mythsandoutcasts.key");
+		// compute hash
+		if ( !lines.empty() )
+		{
+			std::size_t DLC1Hash = std::hash<std::string>{}(lines.at(0));
+			if ( DLC1Hash == 3325821858 )
+			{
+				printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+				enabledDLCPack1 = true;
+			}
+			else
+			{
+				printlog("[LICENSE]: Myths and Outcasts DLC license key invalid.");
+			}
+		}
+	}
+#endif // !STEAMWORKS
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR3, &w, &h);
