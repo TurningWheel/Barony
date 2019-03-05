@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "paths.hpp"
 
 #define BOULDER_STOPPED my->skill[0]
 #define BOULDER_AMBIENCE my->skill[1]
@@ -32,6 +33,50 @@
 #define BOULDER_SPAWNBLOOD my->skill[9]
 #define BOULDER_BLOODTIME my->skill[10]
 
+bool boulderCheckIfBlockedExit(Entity* my)
+{
+	bool playerAlive = false;
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( players[c] && players[c]->entity )
+		{
+			playerAlive = true;
+		}
+	}
+	if ( !playerAlive )
+	{
+		return true;
+	}
+	// check if this blocked the exit.
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+	{
+		Entity* ladder = (Entity*)node->element;
+		if ( ladder && (ladder->behavior == &actLadder || ladder->behavior == &actPortal) )
+		{
+			//if ( ladder->behavior == &actPortal && (ladder->portalNotSecret == 0) )
+			//{
+			//	continue; // secret exit, don't care.
+			//}
+			for ( int c = 0; c < MAXPLAYERS; ++c )
+			{
+				if ( players[c] && players[c]->entity )
+				{
+					list_t* path = generatePath(players[c]->entity->x / 16, players[c]->entity->y / 16, ladder->x / 16, ladder->y / 16,
+						players[c]->entity, ladder, true);
+					if ( path != NULL )
+					{
+						list_FreeAll(path);
+						free(path);
+						//messagePlayer(0, "found path to exit");
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 /*-------------------------------------------------------------------------------
 
 doesEntityStopBoulder
@@ -42,6 +87,10 @@ checks which objects the boulder breaks when it hits.
 
 bool doesEntityStopBoulder(Entity* entity)
 {
+	if ( !entity )
+	{
+		return false;
+	}
 	if ( entity->behavior == &actGate )
 	{
 		return true;
@@ -498,6 +547,47 @@ void actBoulder(Entity* my)
 		{
 			playSoundEntity(my, 181, 128);
 			BOULDER_STOPPED = 1;
+			TileEntityList.updateEntity(*my);
+			bool foundPathToExit = boulderCheckIfBlockedExit(my);
+			
+			if ( !foundPathToExit )
+			{
+				hit.entity = my;
+
+				// spawn luckstone
+				Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+				rock->flags[INVISIBLE] = true;
+				rock->flags[UPDATENEEDED] = true;
+				rock->x = my->x;
+				rock->y = my->y;
+				rock->z = -6 + rand() % 12;
+				rock->sizex = 4;
+				rock->sizey = 4;
+				rock->yaw = rand() % 360 * PI / 180;
+				rock->vel_z = -.25 - (rand() % 5) / 10.0;
+				rock->flags[PASSABLE] = true;
+				rock->behavior = &actItem;
+				rock->flags[USERFLAG1] = true; // no collision: helps performance
+				rock->skill[10] = GEM_LUCK;    // type
+				rock->skill[11] = WORN;        // status
+				rock->skill[12] = 0;           // beatitude
+				rock->skill[13] = 1;           // count
+				rock->skill[14] = 0;           // appearance
+				rock->skill[15] = false;       // identified
+
+				for ( int c = 0; c < MAXPLAYERS; ++c )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+					if ( !client_disconnected[c] )
+					{
+						messagePlayerColor(c, color, language[3401]);
+					}
+				}
+
+				magicDig(nullptr, nullptr, 2);
+				printlog("notice: boulder stopped path to exit, removed.");
+				return;
+			}
 		}
 		else
 		{
@@ -522,9 +612,54 @@ void actBoulder(Entity* my)
 						{
 							continue;
 						}
+						bool wasStopped = (BOULDER_STOPPED == 1);
 						if ( boulderCheckAgainstEntity(my, entity) )
 						{
 							return;
+						}
+						if ( BOULDER_STOPPED == 1 && !wasStopped )
+						{
+							TileEntityList.updateEntity(*my);
+							bool foundPathToExit = boulderCheckIfBlockedExit(my);
+
+							if ( !foundPathToExit )
+							{
+								hit.entity = my;
+
+								// spawn luckstone
+								Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
+								rock->flags[INVISIBLE] = true;
+								rock->flags[UPDATENEEDED] = true;
+								rock->x = my->x;
+								rock->y = my->y;
+								rock->z = -6 + rand() % 12;
+								rock->sizex = 4;
+								rock->sizey = 4;
+								rock->yaw = rand() % 360 * PI / 180;
+								rock->vel_z = -.25 - (rand() % 5) / 10.0;
+								rock->flags[PASSABLE] = true;
+								rock->behavior = &actItem;
+								rock->flags[USERFLAG1] = true; // no collision: helps performance
+								rock->skill[10] = GEM_LUCK;    // type
+								rock->skill[11] = WORN;        // status
+								rock->skill[12] = 0;           // beatitude
+								rock->skill[13] = 1;           // count
+								rock->skill[14] = 0;           // appearance
+								rock->skill[15] = false;       // identified
+
+								for ( int c = 0; c < MAXPLAYERS; ++c )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									if ( !client_disconnected[c] )
+									{
+										messagePlayerColor(c, color, language[3401]);
+									}
+								}
+
+								magicDig(nullptr, nullptr, 2);
+								printlog("notice: boulder stopped path to exit, removed.");
+								return;
+							}
 						}
 					}
 				}

@@ -143,7 +143,7 @@ sex_t lastSex = MALE;
 PlayerRaces lastRace = RACE_HUMAN;
 bool enabledDLCPack1 = false;
 bool enabledDLCPack2 = false;
-
+bool showRaceInfo = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
@@ -495,12 +495,9 @@ void handleMainMenu(bool mode)
 	button_t* button;
 
 #ifdef STEAMWORKS
-	if ( SteamUser()->BLoggedOn() )
+	if ( SteamApps()->BIsDlcInstalled(1010820) )
 	{
-		if ( SteamApps()->BIsDlcInstalled(1010820) )
-		{
-			enabledDLCPack1 = true;
-		}
+		enabledDLCPack1 = true;
 	}
 #else
 #endif // STEAMWORKS
@@ -1651,6 +1648,45 @@ void handleMainMenu(bool mode)
 				}
 			}
 			ttfPrintText(ttf12, rotateBtn.x + 4, rotateBtn.y + 6, "<");
+
+			SDL_Rect raceInfoBtn;
+			raceInfoBtn.y = rotateBtn.y;
+			raceInfoBtn.w = longestline(language[3373]) * TTF12_WIDTH + 8 + 4;
+			raceInfoBtn.x = rotateBtn.x - raceInfoBtn.w - 4;
+			raceInfoBtn.h = rotateBtn.h;
+			drawWindow(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
+			if ( mouseInBounds(raceInfoBtn.x, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y, raceInfoBtn.y + raceInfoBtn.h) )
+			{
+				if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) || mousestatus[SDL_BUTTON_LEFT] )
+				{
+					//drawDepressed(raceInfoBtn.x, raceInfoBtn.y, raceInfoBtn.x + raceInfoBtn.w, raceInfoBtn.y + raceInfoBtn.h);
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
+					showRaceInfo = !showRaceInfo;
+					playSound(139, 64);
+				}
+			}
+			if ( showRaceInfo )
+			{
+				pos.y += 2;
+				pos.h -= raceInfoBtn.h + 6;
+				pos.x += 2;
+				pos.w -= 6;
+				drawRect(&pos, 0, 168);
+				drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x, pos.y + pos.h, pos.x + pos.w, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				drawLine(pos.x + pos.w, pos.y, pos.x + pos.w, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+				if ( stats[0]->playerRace >= RACE_HUMAN )
+				{
+					ttfPrintText(ttf12, pos.x + 12, pos.y + 6, language[3375 + stats[0]->playerRace]);
+				}
+				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, language[3374]);
+			}
+			else
+			{
+				ttfPrintText(ttf12, raceInfoBtn.x + 4, raceInfoBtn.y + 6, language[3373]);
+			}
 		}
 
 		// skin DLC check flags.
@@ -2020,11 +2056,20 @@ void handleMainMenu(bool mode)
 								tooltip.y = omousey + 16;
 								tooltip.h = TTF12_HEIGHT + 8;
 #ifdef STEAMWORKS
-								if ( SteamUser()->BLoggedOn() )
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
+								{
+									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+								}
+								else
 								{
 									tooltip.w = longestline(language[3200]) * TTF12_WIDTH + 8;
 									drawTooltip(&tooltip);
 									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3200]);
+								}
+								if ( SteamUser()->BLoggedOn() )
+								{
 									if ( mousestatus[SDL_BUTTON_LEFT] )
 									{
 										SteamFriends()->ActivateGameOverlayToStore(STEAM_APPID, k_EOverlayToStoreFlag_None);
@@ -2032,9 +2077,18 @@ void handleMainMenu(bool mode)
 									}
 								}
 #else
-								tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
-								drawTooltip(&tooltip);
-								ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+								if ( c > RACE_GOATMAN && c <= RACE_INSECTOID )
+								{
+									tooltip.w = longestline(language[3372]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3372]);
+								}
+								else
+								{
+									tooltip.w = longestline(language[3199]) * TTF12_WIDTH + 8;
+									drawTooltip(&tooltip);
+									ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, uint32ColorOrange(*mainsurface), language[3199]);
+								}
 #endif // STEAMWORKS
 							}
 						}
@@ -4321,7 +4375,7 @@ void handleMainMenu(bool mode)
 						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
 						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
 						char shortname[16] = "";
-						strncpy(shortname, stats[x]->name, 15);
+						strncpy(shortname, stats[c]->name, 15);
 						strcpy((char*)(&net_packet->data[14]), shortname);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;

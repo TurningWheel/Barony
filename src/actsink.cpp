@@ -287,6 +287,7 @@ void actSink(Entity* my)
 						messagePlayer(i, language[585]);
 						playSoundEntity(my, 132, 64);
 					}
+					serverUpdateEntitySkill(my, 0);
 				}
 			}
 		}

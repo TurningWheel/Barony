@@ -344,7 +344,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 {
 	if ( entity.behavior == &actFountain || entity.behavior == &actSink )
 	{
-		if ( entity.skill[0] == 0 )
+		if ( entity.skill[0] <= 0 )
 		{
 			// fountain is dry, no bueno.
 			if ( player == clientnum )
@@ -505,7 +505,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		if ( item )
 		{
 			itemPickup(player, item);
-			messagePlayer(clientnum, language[3353], item->description());
+			messagePlayer(player, language[3353], item->description());
 			if ( players[player] && players[player]->entity )
 			{
 				playSoundEntity(players[player]->entity, 401, 64);
@@ -564,6 +564,8 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			else
 			{
 				--entity.skill[0];
+				entity.skill[0] = std::max(entity.skill[0], 0);
+				serverUpdateEntitySkill(&entity, 0);
 			}
 		}
 		else if ( entity.skill[1] == 2 || entity.skill[1] == 1 ) // fountain would spawn potions

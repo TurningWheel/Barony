@@ -4387,7 +4387,7 @@ void serverHandlePacket()
 				{
 					strcpy((char*)net_packet->data, "SNEL");
 					SDLNet_Write16(sfx, &net_packet->data[4]);
-					SDLNet_Write32((Uint32)players[clientnum]->entity->getUID(), &net_packet->data[6]);
+					SDLNet_Write32((Uint32)players[player]->entity->getUID(), &net_packet->data[6]);
 					SDLNet_Write16(92, &net_packet->data[10]);
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;

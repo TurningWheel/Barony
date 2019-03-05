@@ -35,7 +35,6 @@ Difficulty: Normal#
 
 13 The professional hooligan. Dextrous and skilled thieves, though lacking in power and
 equipment.
-
 Difficulty: Hard#
 
 14 Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.
@@ -3976,8 +3975,8 @@ current food situation will last.#
 3197 Your summoned %s gained a new rank!#
 3198 But wait! Your summoned allies imbue you with new life!#
 
-3199 Locked - DLC Required!#
-3200 Locked - DLC Required! Left click to view on the store page in Steam overlay.#
+3199 Locked - Myths & Outcasts DLC Required!#
+3200 Locked - Myths & Outcasts DLC Required! Left click to view on the store page in Steam overlay.#
 
 3201 Bleh! Your body rejects the solids in your stomach!#
 3202 What a horrible night to have a curse...#
@@ -4361,5 +4360,163 @@ Learnt alchemy ingredients:
 3370 Insectoid#
 
 3371 mute player monster sounds#
+3372 Locked - DLC Coming Soon!#
+3373 Show Race Info#
+3374 Hide Race Info#
+3375 Human
 
-3399 end#
+Friendly with: 
+Humans, Automatons
+
+Weaknesses:
+None
+
+Resistances: 
+None
+
+Traits:
+None#
+
+3376 Skeleton
+
+Friendly with: 
+Ghouls, Automatons
+
+Weaknesses:
+Maces, polearms, blessed water
+
+Resistances: 
+Swords, ranged, axes, magic
+
+Traits:
+- Cannot starve, or eat
+   (Potions still apply as normal)
+- Self-resurrection at 75 MP
+- 25% HP/MP regeneration rate
+- 50% water movement speed
+- Immune to burning#
+
+3377 Vampire
+
+Friendly with: 
+Vampires, Automatons
+
+Weaknesses:
+Maces, polearms, water, solid foods
+
+Resistances: 
+Swords, ranged, axes, magic
+
+Traits:
+- Converts HP to MP when casting
+   spells at 0 MP
+- Starts with Bloodletting and
+   Levitation spells learnt
+- Can only consume vials of blood to
+   sustain hunger
+- Vials of blood drop on kills
+   (Higher chance if bleeding or 
+    landing sneak attacks)#
+
+3378 Succubus
+
+Friendly with: 
+Succubi, Incubi, Automatons
+
+Weaknesses:
+Swords
+
+Resistances: 
+Magic, polearms
+
+Traits:
+- Cursed equipment is removable
+   and provides bonuses each curse
+- Blessed gear is unremovable
+   (Still provides bonuses)
+- Starts with Teleportation spell
+   learnt
+- Can recruit drunk/confused humans#
+
+3379 Goatman
+
+Friendly with: 
+Goatmen, Automatons
+
+Weaknesses:
+Magic, axes, polearms, ranged
+
+Resistances: 
+Swords
+
+Traits:
+- Fountains have a chance to drop
+   1-3 random potions on use
+- Increased STR/CHR while drunk
+   (Immune to drunk dizziness)
+- Suffers intermittent hangovers that
+   that can be cured by intoxication
+- Can eat tin cans without an opener
+- Can recruit humans/goblins by
+   throwing booze while drunk#
+
+3380 Automaton#
+3381 Goblin#
+3382 Incubus#
+3383 Insectoid#
+
+3384 Slowed
+Reduced movement speed#
+3385 Bleeding
+Taking damage over time#
+3386 Asleep
+Unable to move or see#
+3387 Confused
+Movement is reversed#
+3388 Pacified
+Unable to attack#
+3389 Vampiric Aura
++ Strength and Dexterity
+Increased hunger rate
+Increased chance to inflict
+ [bleed] status while unarmed
+Chance to lifesteal on unarmed
+ lethal stealth attacks#
+3390 Vampiric Aura
++ Strength and Dexterity
+Increased hunger rate
+Increased chance to inflict
+ [bleed] status while unarmed
+Chance to lifesteal on all
+ unarmed attacks
+Natural HP regen is disabled#
+3391 Paralyzed
+ Unable to move#
+3392 Drunk
++ Strength
+- Dexterity#
+3393 Hungover
+- Dexterity
+Curable by intoxication#
+3394 Strength
++ Strength
+- Perception#
+3395 Levitating
+Able to float over chasms and
+ water/lava#
+3396 Invisible
+Unable to be detected by enemies
+ outside of melee range#
+3397 Reflect Magic
+Enemy spells are reflected
+Magic damage reflected is consumed
+ from MP#
+3398 Light
+Sustaining a magical source of light#
+3399 Polymorphed
+Disguised as another monster#
+
+3400 Expending your vitality weakened the spell!#
+3401 You sense the gods of Sokoban aiding your path...#
+
+3449 end#

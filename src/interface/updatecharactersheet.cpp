@@ -677,7 +677,7 @@ void drawSkillsSheet()
 				case PRO_SPELLCASTING:
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
-						skillDetails[0] = players[clientnum]->entity->getBaseManaRegen(*(stats[clientnum])) / (TICKS_PER_SECOND * 1.f);
+						skillDetails[0] = players[clientnum]->entity->getManaRegenInterval(*(stats[clientnum])) / (TICKS_PER_SECOND * 1.f);
 						if ( players[clientnum]->entity->isSpellcasterBeginner() )
 						{
 							ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,

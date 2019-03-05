@@ -489,7 +489,7 @@ bool spellInList(list_t* list, spell_t* spell);
 //-----Implementations of spell effects-----
 void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
 void spell_summonFamiliar(int player); // summons some familiars.
-void spell_changeHealth(Entity* entity, int amount); //This function changes an entity's health.
+void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false); //This function changes an entity's health.
 
 //-----Spell Casting Animation-----
 //The two hand animation functions.

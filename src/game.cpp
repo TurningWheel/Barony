@@ -1299,7 +1299,10 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
-
+				if ( !item )
+				{
+					continue;
+				}
 				// unlock achievements for special collected items
 				switch ( item->type )
 				{
@@ -1785,7 +1788,10 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
-
+				if ( !item )
+				{
+					continue;
+				}
 				// unlock achievements for special collected items
 				switch ( item->type )
 				{
@@ -3246,7 +3252,7 @@ int main(int argc, char** argv)
 				if ( !gamePaused )
 				{
 					// interface
-					if ( (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) )
+					if ( !command && (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) )
 					{
 						*inputPressed(impulses[IN_STATUS]) = 0;
 						*inputPressed(joyimpulses[INJOY_STATUS]) = 0;

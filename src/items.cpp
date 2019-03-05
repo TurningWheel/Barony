@@ -1452,6 +1452,12 @@ void equipItem(Item* item, Item** slot, int player)
 		return;
 	}
 
+	if ( player == clientnum && multiplayer != SINGLE && swapWeaponGimpTimer > 0
+		&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+	{
+		return;
+	}
+
 	if ( itemCompare(*slot, item, true) )
 	{
 		// if items are different... (excluding the quantity of both item nodes)
@@ -1753,20 +1759,34 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 	if ( multiplayer == CLIENT && !intro )
 	{
-		strcpy((char*)net_packet->data, "USEI");
-		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		net_packet->data[24] = item->identified;
-		net_packet->data[25] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		net_packet->len = 26;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		if ( swapWeaponGimpTimer > 0
+			&& ( itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+		{
+			// don't send to host as we're not allowed to "use" or equip these items. 
+			// will return false in equipItem.
+			// potions allowed here because we're drinking em.
+		}
+		else
+		{
+			strcpy((char*)net_packet->data, "USEI");
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
 	}
 
+	bool drankPotion = false;
+	bool tryLearnPotionRecipe = false;
+	bool tryEmptyBottle = (item->status >= SERVICABLE);
+	ItemType potionType = item->type;
 	if ( player == clientnum )
 	{
 		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY && usedBy
@@ -1775,15 +1795,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		{
 			if ( item->identified )
 			{
-				GenericGUI.alchemyLearnRecipe(item->type, true);
-			}
-			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
-			if ( item->status >= SERVICABLE && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
-			{
-				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-				itemPickup(clientnum, emptyBottle);
-				messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
-				free(emptyBottle);
+				tryLearnPotionRecipe = true;
 			}
 		}
 	}
@@ -1923,63 +1935,70 @@ void useItem(Item* item, int player, Entity* usedBy)
 			equipItem(item, &stats[player]->amulet, player);
 			break;
 		case POTION_WATER:
-			item_PotionWater(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionWater(item, players[player]->entity, usedBy);
 			break;
 		case POTION_BOOZE:
-			item_PotionBooze(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionBooze(item, players[player]->entity, usedBy);
 			break;
 		case POTION_JUICE:
-			item_PotionJuice(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionJuice(item, players[player]->entity, usedBy);
 			break;
 		case POTION_SICKNESS:
-			item_PotionSickness(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionSickness(item, players[player]->entity, usedBy);
 			break;
 		case POTION_CONFUSION:
-			item_PotionConfusion(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionConfusion(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EXTRAHEALING:
-			item_PotionExtraHealing(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionExtraHealing(item, players[player]->entity, usedBy);
 			break;
 		case POTION_HEALING:
-			item_PotionHealing(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionHealing(item, players[player]->entity, usedBy);
 			break;
 		case POTION_CUREAILMENT:
-			item_PotionCureAilment(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionCureAilment(item, players[player]->entity, usedBy);
 			break;
 		case POTION_BLINDNESS:
-			item_PotionBlindness(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionBlindness(item, players[player]->entity, usedBy);
 			break;
 		case POTION_RESTOREMAGIC:
-			item_PotionRestoreMagic(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionRestoreMagic(item, players[player]->entity, usedBy);
 			break;
 		case POTION_INVISIBILITY:
-			item_PotionInvisibility(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionInvisibility(item, players[player]->entity, usedBy);
 			break;
 		case POTION_LEVITATION:
-			item_PotionLevitation(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionLevitation(item, players[player]->entity, usedBy);
 			break;
 		case POTION_SPEED:
-			item_PotionSpeed(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionSpeed(item, players[player]->entity, usedBy);
 			break;
 		case POTION_ACID:
-			item_PotionAcid(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionAcid(item, players[player]->entity, usedBy);
 			break;
 		case POTION_PARALYSIS:
-			item_PotionParalysis(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionParalysis(item, players[player]->entity, usedBy);
 			break;
 		case POTION_EMPTY:
 			messagePlayer(player, language[2359]);
 			break;
 		case POTION_POLYMORPH:
+		{
+			int oldcount = item->count;
 			item_PotionPolymorph(item, players[player]->entity, nullptr);
+			if ( !item || (item && item->count < oldcount) )
+			{
+				drankPotion = true;
+			}
 			break;
+		}
 		case POTION_FIRESTORM:
 		case POTION_ICESTORM:
 		case POTION_THUNDERSTORM:
-			item_PotionUnstableStorm(item, players[player]->entity, usedBy, nullptr);
+			drankPotion = item_PotionUnstableStorm(item, players[player]->entity, usedBy, nullptr);
 			break;
 		case POTION_STRENGTH:
-			item_PotionStrength(item, players[player]->entity, usedBy);
+			drankPotion = item_PotionStrength(item, players[player]->entity, usedBy);
 			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
@@ -2260,6 +2279,27 @@ void useItem(Item* item, int player, Entity* usedBy)
 		default:
 			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
 			break;
+	}
+
+	if ( player == clientnum )
+	{
+		if ( drankPotion && usedBy
+			&& (players[clientnum] && players[clientnum]->entity)
+			&& players[clientnum]->entity == usedBy )
+		{
+			if ( tryLearnPotionRecipe )
+			{
+				GenericGUI.alchemyLearnRecipe(potionType, true);
+			}
+			int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_ALCHEMY] / 20;
+			if ( tryEmptyBottle && rand() % 100 < std::min(80, (60 + skillLVL * 10)) ) // 60 - 80% chance
+			{
+				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+				itemPickup(clientnum, emptyBottle);
+				messagePlayer(clientnum, language[3351], items[POTION_EMPTY].name_identified);
+				free(emptyBottle);
+			}
+		}
 	}
 
 	if ( !item )
