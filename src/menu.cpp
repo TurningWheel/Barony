@@ -3020,6 +3020,10 @@ void handleMainMenu(bool mode)
 							windowSerialResult(0);
 						}
 					}
+					else
+					{
+						windowSerialResult(0);
+					}
 				}
 			}
 		}
