@@ -12884,6 +12884,20 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], language[2100 + (monsterType - KOBOLD)]);
 			}
 		}
+		else if ( detailType == MSG_STEAL_WEAPON )
+		{
+			if ( monsterStats.weapon )
+			{
+				if ( monsterType < KOBOLD ) // Original monster count
+				{
+					messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], monsterStats.weapon->getName());
+				}
+				else if ( monsterType >= KOBOLD ) //New monsters
+				{
+					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], monsterStats.weapon->getName());
+				}
+			}
+		}
 		else
 		{
 			if ( monsterType < KOBOLD ) // Original monster count
@@ -12989,6 +13003,24 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 			else if ( monsterType >= KOBOLD ) //New monsters
 			{
 				messagePlayerColor(player, color, msgNamed, monsterStats.name, language[2100 + (monsterType - KOBOLD)]);
+			}
+		}
+		else if ( detailType == MSG_STEAL_WEAPON )
+		{
+			if ( monsterStats.weapon )
+			{
+				if ( namedMonsterAsGeneric )
+				{
+					messagePlayerColor(player, color, msgGeneric, monsterStats.name, monsterStats.weapon->getName());
+				}
+				else if ( monsterType < KOBOLD ) //Original monster count
+				{
+					messagePlayerColor(player, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
+				}
+				else if ( monsterType >= KOBOLD ) //New monsters
+				{
+					messagePlayerColor(player, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
+				}
 			}
 		}
 	}
