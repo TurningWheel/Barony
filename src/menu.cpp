@@ -9833,7 +9833,6 @@ void buttonCloseSubwindow(button_t* my)
 	singleplayerSavegameFreeSlot = -1; // clear this value when closing window
 	multiplayerSavegameFreeSlot = -1;  // clear this value when closing window
 	directoryPath = "";
-	serialEnterWindow = false;
 	gamemodsWindowClearVariables();
 	if ( score_window || score_leaderboard_window )
 	{
@@ -9850,6 +9849,8 @@ void buttonCloseSubwindow(button_t* my)
 	rebindkey = -1;
 #ifdef STEAMWORKS
 	requestingLobbies = false;
+#else
+	serialEnterWindow = false;
 #endif
 	score_window = 0;
 	score_leaderboard_window = 0;
@@ -13756,7 +13757,7 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 		}
 	}
 }
-#endif // STEAMWORKS
+#else
 void buttonConfirmSerial(button_t* my)
 {
 	serialVerifyWindow = 1;
@@ -13883,3 +13884,4 @@ void windowEnterSerialPrompt()
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
+#endif // STEAMWORKS
