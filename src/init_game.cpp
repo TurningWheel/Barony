@@ -335,20 +335,19 @@ int initGame()
 		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
 		{
 			char buf[64];
-			fread(&buf, sizeof(char), 20, fp);
+			size_t len = fread(&buf, sizeof(char), 32, fp);
+			buf[len] = '\0';
+			serial = buf;
 			// compute hash
-			if ( strcmp(buf, "") )
+			size_t DLC1Hash = serialHash(serial);
+			if ( DLC1Hash == 144425 )
 			{
-				std::size_t DLC1Hash = serialHash(buf);
-				if ( DLC1Hash == 144425 )
-				{
-					printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
-					enabledDLCPack1 = true;
-				}
-				else
-				{
-					printlog("[LICENSE]: DLC license key invalid.");
-				}
+				printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+				enabledDLCPack1 = true;
+			}
+			else
+			{
+				printlog("[LICENSE]: DLC license key invalid.");
 			}
 			fclose(fp);
 		}
