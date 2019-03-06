@@ -6172,7 +6172,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							if ( armorDegradeChance < 100 && rand() % armorDegradeChance > 0 )
+							if ( armorDegradeChance == 100 || (rand() % armorDegradeChance > 0) )
 							{
 								armor = NULL;
 								armornum = 0;
