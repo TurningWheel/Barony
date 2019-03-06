@@ -7614,6 +7614,23 @@ void handleMainMenu(bool mode)
 												serverUpdateEntitySkill(monster, 42); // update monsterAllyIndex for clients.
 											}
 
+											if ( multiplayer != CLIENT )
+											{
+												monster->monsterAllyClass = monsterStats->allyClass;
+												monster->monsterAllyPickupItems = monsterStats->allyItemPickup;
+												if ( stats[c]->playerSummonPERCHR != 0 && !strcmp(monsterStats->name, "skeleton knight") )
+												{
+													monster->monsterAllySummonRank = (stats[c]->playerSummonPERCHR & 0x0000FF00) >> 8;
+												}
+												else if ( stats[c]->playerSummon2PERCHR != 0 && !strcmp(monsterStats->name, "skeleton sentinel") )
+												{
+													monster->monsterAllySummonRank = (stats[c]->playerSummon2PERCHR & 0x0000FF00) >> 8;
+												}
+												serverUpdateEntitySkill(monster, 46); // update monsterAllyClass
+												serverUpdateEntitySkill(monster, 44); // update monsterAllyPickupItems
+												serverUpdateEntitySkill(monster, 50); // update monsterAllySummonRank
+											}
+
 											newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 											newNode->deconstructor = &defaultDeconstructor;
 											Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
