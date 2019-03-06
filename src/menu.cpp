@@ -2963,8 +2963,7 @@ void handleMainMenu(bool mode)
 			ttfPrintTextFormatted(ttf12, flagsBox.x + 2, flagsBox.y + 4, flagsBoxText);
 		}
 	}
-#endif
-
+#else
 	if ( intro && introstage == 1 && subwindow && !strcmp(subtext, language[3403]) && serialEnterWindow )
 	{
 		drawDepressed(subx1 + 8, suby1 + 32, subx2 - 8, suby1 + 56);
@@ -3034,6 +3033,7 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf12, subx1 + 16 + x, suby1 + 40, "_");
 		}
 	}
+#endif
 
 	// settings window
 	if ( settings_window == true )
