@@ -339,8 +339,8 @@ int initGame()
 			// compute hash
 			if ( strcmp(buf, "") )
 			{
-				std::size_t DLC1Hash = std::hash<std::string>{}(buf);
-				if ( DLC1Hash == 3248597267 )
+				std::size_t DLC1Hash = serialHash(buf);
+				if ( DLC1Hash == 144425 )
 				{
 					printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
 					enabledDLCPack1 = true;

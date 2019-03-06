@@ -3006,8 +3006,8 @@ void handleMainMenu(bool mode)
 					// compute hash
 					if ( !serial.empty() )
 					{
-						std::size_t DLC1Hash = std::hash<std::string>{}(serial);
-						if ( DLC1Hash == 3248597267 )
+						std::size_t DLC1Hash = serialHash(serial);
+						if ( DLC1Hash == 144425 )
 						{
 							printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
 							enabledDLCPack1 = true;
@@ -13758,6 +13758,23 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 	}
 }
 #else
+size_t serialHash(std::string input)
+{
+	if ( input.empty() || input.size() != 19 )
+	{
+		return 0;
+	}
+	int i = 0;
+	size_t hash = 0;
+	for ( std::string::iterator it = input.begin(); it != input.end(); ++it )
+	{
+		char c = *it;
+		hash += static_cast<size_t>(c) * (i * i);
+		++i;
+	}
+	return hash;
+}
+
 void buttonConfirmSerial(button_t* my)
 {
 	serialVerifyWindow = 1;
