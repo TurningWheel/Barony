@@ -104,6 +104,7 @@ void buttonGamemodsMountHostsModFiles(button_t* my);
 #else
 void windowEnterSerialPrompt();
 void windowSerialResult(int success);
+size_t serialHash(std::string input);
 extern char serialInputText[64];
 #endif
 
