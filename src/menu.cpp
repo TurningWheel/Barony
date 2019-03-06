@@ -147,6 +147,10 @@ bool showRaceInfo = false;
 #ifdef STEAMWORKS
 std::vector<SteamUGCDetails_t *> workshopSubscribedItemList;
 std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
+#else
+bool serialEnterWindow = false;
+char serialInputText[64] = "";
+int serialVerifyWindow = 0;
 #endif // STEAMWORKS
 
 
@@ -651,7 +655,7 @@ void handleMainMenu(bool mode)
 					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8 + h, language[2986]);
 				}
 			}
-			if ( ticks % 250 == 0 && SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 )
+			if ( SteamUser()->BLoggedOn() && SteamAPICall_NumPlayersOnline == 0 )
 			{
 				SteamAPICall_NumPlayersOnline = SteamUserStats()->GetNumberOfCurrentPlayers();
 			}
@@ -662,6 +666,27 @@ void handleMainMenu(bool mode)
 				if ( NumberOfCurrentPlayers.m_bSuccess )
 				{
 					steamOnlinePlayers = NumberOfCurrentPlayers.m_cPlayers;
+				}
+			}
+#else
+			if ( intro && introstage == 1 )
+			{
+				TTF_SizeUTF8(ttf8, language[3402], &w, &h);
+				if ( (omousex >= xres - 8 - w && omousex < xres && omousey >= 8 && omousey < 8 + h)
+					&& subwindow == 0 )
+				{
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						playSound(139, 64);
+						windowEnterSerialPrompt();
+						
+					}
+					ttfPrintTextFormattedColor(ttf8, xres - 8 - w, 8, colorGray, language[3402]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf8, xres - 8 - w, 8, language[3402]);
 				}
 			}
 #endif // STEAMWORKS
@@ -2939,6 +2964,72 @@ void handleMainMenu(bool mode)
 		}
 	}
 #endif
+
+	if ( intro && introstage == 1 && subwindow && !strcmp(subtext, language[3403]) && serialEnterWindow )
+	{
+		drawDepressed(subx1 + 8, suby1 + 32, subx2 - 8, suby1 + 56);
+		ttfPrintText(ttf12, subx1 + 16, suby1 + 40, serialInputText);
+
+		// enter character name
+		if ( serialVerifyWindow == 0 && !SDL_IsTextInputActive() )
+		{
+			inputstr = serialInputText;
+			SDL_StartTextInput();
+		}
+		//strncpy(stats[0]->name,inputstr,16);
+		inputlen = 63;
+
+		if ( serialVerifyWindow > 0 )
+		{
+			if ( serialVerifyWindow % 10 < 3 )
+			{
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying");
+			}
+			else if ( serialVerifyWindow % 10 < 5 )
+			{
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying.");
+			}
+			else if ( serialVerifyWindow % 10 < 7 )
+			{
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying..");
+			}
+			else if ( serialVerifyWindow % 10 < 10 )
+			{
+				ttfPrintTextFormattedColor(ttf12, subx1 + 16, suby2 - 20, uint32ColorOrange(*mainsurface), "Verifying...");
+			}
+			if ( ticks % (TICKS_PER_SECOND / 2) == 0 )
+			{
+				++serialVerifyWindow;
+				if ( serialVerifyWindow >= 25 )
+				{
+					std::string serial = serialInputText;
+
+					// compute hash
+					if ( !serial.empty() )
+					{
+						std::size_t DLC1Hash = std::hash<std::string>{}(serial);
+						if ( DLC1Hash == 3248597267 )
+						{
+							printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
+							enabledDLCPack1 = true;
+							windowSerialResult(1);
+						}
+						else
+						{
+							printlog("[LICENSE]: DLC license key invalid.");
+							windowSerialResult(0);
+						}
+					}
+				}
+			}
+		}
+		else if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+		{
+			int x;
+			TTF_SizeUTF8(ttf12, serialInputText, &x, NULL);
+			ttfPrintText(ttf12, subx1 + 16 + x, suby1 + 40, "_");
+		}
+	}
 
 	// settings window
 	if ( settings_window == true )
@@ -9738,6 +9829,7 @@ void buttonCloseSubwindow(button_t* my)
 	singleplayerSavegameFreeSlot = -1; // clear this value when closing window
 	multiplayerSavegameFreeSlot = -1;  // clear this value when closing window
 	directoryPath = "";
+	serialEnterWindow = false;
 	gamemodsWindowClearVariables();
 	if ( score_window || score_leaderboard_window )
 	{
@@ -13661,3 +13753,129 @@ void gamemodsWorkshopPreloadMod(int fileID, std::string modTitle)
 	}
 }
 #endif // STEAMWORKS
+void buttonConfirmSerial(button_t* my)
+{
+	serialVerifyWindow = 1;
+	if ( SDL_IsTextInputActive() )
+	{
+		SDL_StopTextInput();
+	}
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+}
+
+void windowSerialResult(int success)
+{
+	// close current window
+	if ( success == 1 )
+	{
+		char path[PATH_MAX] = "";
+		completePath(path, "mythsandoutcasts.key", outputdir);
+
+		// open the serial file
+		FILE* fp = nullptr;
+		if ( (fp = fopen(path, "wb")) == NULL )
+		{
+			printlog("ERROR: failed to save license file!\n");
+		}
+		else
+		{
+			fwrite(serialInputText, sizeof(char), strlen(serialInputText), fp); // write out serial to file.
+			fclose(fp);
+		}
+	}
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	subwindow = 1;
+	subx1 = xres / 2 - 250;
+	subx2 = xres / 2 + 250;
+	suby1 = yres / 2 - 32;
+	suby2 = yres / 2 + 32;
+
+	// ok button
+	button_t* button = newButton();
+	strcpy(button->label, language[1317]);
+	button->x = subx2 - strlen(language[1317]) * 12 - 16;
+	button->y = suby2 - 28;
+	button->sizex = strlen(language[1317]) * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+
+	// close button
+	button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	if ( success )
+	{
+		strcpy(subtext, language[3404]);
+		playSound(402, 92);
+	}
+	else
+	{
+		strcpy(subtext, language[3406]);
+	}
+}
+
+void windowEnterSerialPrompt()
+{
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 300;
+	subx2 = xres / 2 + 300;
+	suby1 = yres / 2 - 64;
+	suby2 = yres / 2 + 64;
+	strcpy(subtext, language[3403]);
+	strcpy(serialInputText, "");
+	serialEnterWindow = true;
+	serialVerifyWindow = 0;
+
+	// yes button
+	button_t* button = newButton();
+	strcpy(button->label, "Submit");
+	button->x = subx2 - strlen("Submit") * 12 - 16;
+	button->y = suby2 - 28 * 2;
+	button->sizex = strlen("Submit") * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonConfirmSerial;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //TODO: Select which button to activate via dpad.
+
+	// cancel button
+	button = newButton();
+	strcpy(button->label, language[1316]);
+	button->x = subx2 - strlen(language[1316]) * 12 - 16;
+	button->y = suby2 - 28;
+	button->sizex = strlen(language[1316]) * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+
+	// close button
+	button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+}
