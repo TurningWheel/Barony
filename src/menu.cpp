@@ -13769,6 +13769,10 @@ size_t serialHash(std::string input)
 	for ( std::string::iterator it = input.begin(); it != input.end(); ++it )
 	{
 		char c = *it;
+		if ( c == '\0' || c == '\n' )
+		{
+			break;
+		}
 		hash += static_cast<size_t>(c) * (i * i);
 		++i;
 	}
