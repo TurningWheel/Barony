@@ -581,7 +581,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 						if ( parent->behavior == &actPlayer )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2434], language[2433], MSG_COMBAT);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2434], language[2433], MSG_STEAL_WEAPON);
 						}
 					}
 
