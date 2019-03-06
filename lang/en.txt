@@ -4518,5 +4518,12 @@ Disguised as another monster#
 
 3400 Expending your vitality weakened the spell!#
 3401 You sense the gods of Sokoban aiding your path...#
+3402 Enter DLC serial key#
+3403 Type in your serial key (case sensitive) and press submit:#
+3404 Success! Myths and Outcasts DLC is now available.
+Thank you for your support!#
+3405 Success! Legends and Pariahs DLC is now available.
+Thank you for your support!#
+3406 ERROR: Invalid serial key.#
 
 3449 end#
