@@ -4017,14 +4017,14 @@ current food situation will last.#
 3231 A frail but adept spellcaster able to conjure allies with mana.
 
 Difficulty: Normal#
-3232 The Accursed found themselves damned with a seemingly incurable thirst for blood. 
-Their search to dispel this curse leads to an arcane library deep within the dungeon.
+3232 The Accursed suffer from bestial hunger, but gain supernatural magic power and speed.
+An arcane library found deep within the dungeon may have a cure.
 Difficulty: Hard#
-3233 The mesmer is capable of turning even the most powerful of foes onto her side.
+3233 The Mesmer uses the Charm spell and leadership ability to enlist powerful allies.
 
 Difficulty: Hard#
-3234 Waking up in the dungeons of Hamlet with a foggy memory of nights past, the Drunkard
-ambles their way through in search of a good meal and drunken companionship.
+3234 A talented alchemist who is also comfortable with the relationships and bar-room 
+brawls that a good brew will bring.
 Difficulty: Normal#
 
 3235 automaton
