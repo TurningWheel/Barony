@@ -317,7 +317,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
 			Item* target = (Item*)node->element;
-			if ( target && !itemIsEquipped(target, player) && target->beatitude >= 0 )
+			if ( target && !itemIsEquipped(target, player) && itemCategory(target) != SPELL_CAT && target->beatitude >= 0 )
 			{
 				items++;
 			}
@@ -332,7 +332,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
 			Item* target = (Item*)node->element;
-			if ( target && !itemIsEquipped(target, player) && target->beatitude >= 0 )
+			if ( target && !itemIsEquipped(target, player) && itemCategory(target) != SPELL_CAT && target->beatitude >= 0 )
 			{
 				if ( items == itemToCurse )
 				{
