@@ -101,6 +101,11 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my);
 void buttonSteamLobbyBrowserRefresh(button_t* my);
 void buttonGamemodsSubscribeToHostsModFiles(button_t* my);
 void buttonGamemodsMountHostsModFiles(button_t* my);
+#else
+void windowEnterSerialPrompt();
+void windowSerialResult(int success);
+size_t serialHash(std::string input);
+extern char serialInputText[64];
 #endif
 
 #define SLIDERFONT font12x12_bmp

@@ -326,22 +326,30 @@ int initGame()
 	loadItemLists();
 
 #ifndef STEAMWORKS
-	if ( dataPathExists("mythsandoutcasts.key") )
+	if ( PHYSFS_getRealDir("mythsandoutcasts.key") != NULL )
 	{
-		std::vector<std::string> lines = getLinesFromDataFile("mythsandoutcasts.key");
-		// compute hash
-		if ( !lines.empty() )
+		std::string serial = PHYSFS_getRealDir("mythsandoutcasts.key");
+		serial.append(PHYSFS_getDirSeparator()).append("mythsandoutcasts.key");
+		// open the serial file
+		FILE* fp = nullptr;
+		if ( (fp = fopen(serial.c_str(), "rb")) != NULL )
 		{
-			std::size_t DLC1Hash = std::hash<std::string>{}(lines.at(0));
-			if ( DLC1Hash == 3325821858 )
+			char buf[64];
+			size_t len = fread(&buf, sizeof(char), 32, fp);
+			buf[len] = '\0';
+			serial = buf;
+			// compute hash
+			size_t DLC1Hash = serialHash(serial);
+			if ( DLC1Hash == 144425 )
 			{
 				printlog("[LICENSE]: Myths and Outcasts DLC license key found.");
 				enabledDLCPack1 = true;
 			}
 			else
 			{
-				printlog("[LICENSE]: Myths and Outcasts DLC license key invalid.");
+				printlog("[LICENSE]: DLC license key invalid.");
 			}
+			fclose(fp);
 		}
 	}
 #endif // !STEAMWORKS
