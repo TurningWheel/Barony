@@ -3866,7 +3866,7 @@ int main(int argc, char** argv)
 				std::chrono::duration<double> time_span = 
 					std::chrono::duration_cast<std::chrono::duration<double>>(DebugStats.t10FrameLimiter - DebugStats.t11End);
 				double timer = time_span.count() * 1000;
-				if ( timer > 10.f )
+				if ( timer > ((1000.f / (fps) * 1.4)) )
 				{
 					DebugStats.displayStats = true;
 					DebugStats.storeStats();
