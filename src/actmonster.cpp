@@ -7636,31 +7636,72 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			else if ( stats[monsterAllyIndex] )
 			{
-				Entity* dropped;
+				Entity* dropped = nullptr;
 				bool confirmDropped = false;
 				bool dropWeaponOnly = false;
+				bool unableToDrop = false;
 				Uint32 owner = players[monsterAllyIndex]->entity->getUID();
 				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_MASTER )
 				{
-					dropped = dropItemMonster(myStats->helmet, this, myStats);
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->canUnequip(myStats) )
+						{
+							dropped = dropItemMonster(myStats->helmet, this, myStats);
+						}
+						else
+						{
+							unableToDrop = true;
+						}
+					}
 					if ( dropped )
 					{
 						confirmDropped = true;
 						dropped->itemOriginalOwner = owner;
 					}
-					dropped = dropItemMonster(myStats->breastplate, this, myStats);
+					if ( myStats->breastplate )
+					{
+						if ( myStats->breastplate->canUnequip(myStats) )
+						{
+							dropped = dropItemMonster(myStats->breastplate, this, myStats);
+						}
+						else
+						{
+							unableToDrop = true;
+						}
+					}
 					if ( dropped )
 					{
 						confirmDropped = true;
 						dropped->itemOriginalOwner = owner;
 					}
-					dropped = dropItemMonster(myStats->shoes, this, myStats);
+					if ( myStats->shoes )
+					{
+						if ( myStats->shoes->canUnequip(myStats) )
+						{
+							dropped = dropItemMonster(myStats->shoes, this, myStats);
+						}
+						else
+						{
+							unableToDrop = true;
+						}
+					}
 					if ( dropped )
 					{
 						confirmDropped = true;
 						dropped->itemOriginalOwner = owner;
 					}
-					dropped = dropItemMonster(myStats->shield, this, myStats);
+					if ( myStats->shield )
+					{
+						if ( myStats->shield->canUnequip(myStats) )
+						{
+							dropped = dropItemMonster(myStats->shield, this, myStats);
+						}
+						else
+						{
+							unableToDrop = true;
+						}
+					}
 					if ( dropped )
 					{
 						confirmDropped = true;
@@ -7669,19 +7710,49 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 
 					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_LEGENDARY )
 					{
-						dropped = dropItemMonster(myStats->ring, this, myStats);
+						if ( myStats->ring )
+						{
+							if ( myStats->ring->canUnequip(myStats) )
+							{
+								dropped = dropItemMonster(myStats->ring, this, myStats);
+							}
+							else
+							{
+								unableToDrop = true;
+							}
+						}
 						if ( dropped )
 						{
 							confirmDropped = true;
 							dropped->itemOriginalOwner = owner;
 						}
-						dropped = dropItemMonster(myStats->amulet, this, myStats);
+						if ( myStats->amulet )
+						{
+							if ( myStats->amulet->canUnequip(myStats) )
+							{
+								dropped = dropItemMonster(myStats->amulet, this, myStats);
+							}
+							else
+							{
+								unableToDrop = true;
+							}
+						}
 						if ( dropped )
 						{
 							confirmDropped = true;
 							dropped->itemOriginalOwner = owner;
 						}
-						dropped = dropItemMonster(myStats->cloak, this, myStats);
+						if ( myStats->cloak )
+						{
+							if ( myStats->cloak->canUnequip(myStats) )
+							{
+								dropped = dropItemMonster(myStats->cloak, this, myStats);
+							}
+							else
+							{
+								unableToDrop = true;
+							}
+						}
 						if ( dropped )
 						{
 							confirmDropped = true;
@@ -7707,7 +7778,17 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						dropWeaponOnly = true;
 					}
 				}
-				dropped = dropItemMonster(myStats->weapon, this, myStats);
+				if ( myStats->weapon )
+				{
+					if ( myStats->weapon->canUnequip(myStats) )
+					{
+						dropped = dropItemMonster(myStats->weapon, this, myStats);
+					}
+					else
+					{
+						unableToDrop = true;
+					}
+				}
 				if ( dropped )
 				{
 					dropped->itemOriginalOwner = owner;
@@ -7716,6 +7797,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_WEAPON);
 					}
 				}
+				/*if ( unableToDrop )
+				{
+					handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_FAILED);
+				}*/
 			}
 			break;
 		case ALLY_CMD_MOVETO_CONFIRM:
