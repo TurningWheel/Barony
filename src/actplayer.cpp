@@ -234,7 +234,7 @@ void actPlayer(Entity* my)
 	int weight;
 	bool wearingring = false;
 	bool levitating = false;
-
+	bool isHumanoid = true;
 	if ( PLAYER_NUM < 0 || PLAYER_NUM >= MAXPLAYERS )
 	{
 		return;
@@ -275,6 +275,11 @@ void actPlayer(Entity* my)
 	else
 	{
 		stats[PLAYER_NUM]->type = HUMAN;
+	}
+
+	if ( stats[PLAYER_NUM]->type == RAT )
+	{
+		isHumanoid = false;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -1396,6 +1401,14 @@ void actPlayer(Entity* my)
 		else if ( !noclip )
 		{
 			my->z = -1;
+			switch ( stats[PLAYER_NUM]->type )
+			{
+				case RAT:
+					my->z = 6;
+					break;
+				default:
+					break;
+			}
 			if ( intro )
 			{
 				my->pitch = 0;
@@ -2034,6 +2047,10 @@ void actPlayer(Entity* my)
 			if ( playerRace == SKELETON )
 			{
 				my->sprite = 686;
+			}
+			else if ( playerRace == RAT )
+			{
+				my->sprite = 814;
 			}
 			else if ( playerRace == GOBLIN )
 			{
@@ -3008,162 +3025,224 @@ void actPlayer(Entity* my)
 	}
 
 	// move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	if ( isHumanoid )
 	{
-		if (bodypart == 0)
+		for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
 		{
-			// hudweapon case
-			continue;
-		}
-		entity = (Entity*)node->element;
-		entity->x = my->x;
-		entity->y = my->y;
-		entity->z = my->z;
+			if ( bodypart == 0 )
+			{
+				// hudweapon case
+				continue;
+			}
+			entity = (Entity*)node->element;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = my->z;
 
-		if ( bodypart < 9 ) // don't shift helm/mask. 
-		{
-			// these monsters are shorter than humans so extend the limbs down to floor, gives longer neck.
-			if ( playerRace == GOBLIN || playerRace == INSECTOID || playerRace == GOATMAN )
+			if ( bodypart < 9 ) // don't shift helm/mask. 
 			{
-				entity->z += 0.5;
-			}
-			else if ( playerRace == SKELETON || playerRace == AUTOMATON )
-			{
-				entity->z += 0.25;
-			}
-		}
-
-		entity->yaw = my->yaw;
-		if ( bodypart == 2 || bodypart == 5 ) // right leg, left arm
-		{
-			if ( bodypart == 2 )
-			{
-				rightbody = (Entity*)node->next->element;
-			}
-			if ( bodypart == 5 )
-			{
-				shieldarm = entity;
-			}
-			node_t* shieldNode = list_Node(&my->children, 7);
-			if ( shieldNode )
-			{
-				Entity* shield = (Entity*)shieldNode->element;
-				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || shield->flags[INVISIBLE]) )
+				// these monsters are shorter than humans so extend the limbs down to floor, gives longer neck.
+				if ( playerRace == GOBLIN || playerRace == INSECTOID || playerRace == GOATMAN )
 				{
-					if ( !rightbody->skill[0] )
-					{
-						entity->pitch -= dist * PLAYERWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->pitch = -PI / 4.0;
-							if (bodypart == 2 && dist > .4 && !levitating && !swimming)
-							{
-								node_t* tempNode = list_Node(&my->children, 2);
-								if ( tempNode )
-								{
-									Entity* foot = (Entity*)tempNode->element;
-									if ( foot->sprite == 152 || foot->sprite == 153 )
-									{
-										playSoundEntityLocal(my, 7 + rand() % 7, 32);
-									}
-									else if ( foot->sprite == 156 || foot->sprite == 157 )
-									{
-										playSoundEntityLocal(my, 14 + rand() % 7, 32);
-									}
-									else
-									{
-										playSoundEntityLocal(my, rand() % 7, 32);
-									}
-								}
-							}
-						}
-					}
-					else
-					{
-						entity->pitch += dist * PLAYERWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->pitch = PI / 4.0;
-							if (bodypart == 2 && dist > .4 && !levitating && !swimming)
-							{
-								node_t* tempNode = list_Node(&my->children, 2);
-								if ( tempNode )
-								{
-									Entity* foot = (Entity*)tempNode->element;
-									if ( foot->sprite == 152 || foot->sprite == 153 )
-									{
-										playSoundEntityLocal(my, 7 + rand() % 7, 32);
-									}
-									else if ( foot->sprite == 156 || foot->sprite == 157 )
-									{
-										playSoundEntityLocal(my, 14 + rand() % 7, 32);
-									}
-									else
-									{
-										playSoundEntityLocal(my, rand() % 7, 32);
-									}
-								}
-							}
-						}
-					}
+					entity->z += 0.5;
 				}
-				else
+				else if ( playerRace == SKELETON || playerRace == AUTOMATON )
 				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
+					entity->z += 0.25;
 				}
 			}
-		}
-		else if ( bodypart == 3 || bodypart == 4 || bodypart == 8 ) // left leg, right arm, cloak
-		{
-			if ( bodypart == 4 )
+
+			entity->yaw = my->yaw;
+			if ( bodypart == 2 || bodypart == 5 ) // right leg, left arm
 			{
-				weaponarm = entity;
-				if ( PLAYER_ATTACK == 1 )
+				if ( bodypart == 2 )
 				{
-					// vertical chop
-					if ( PLAYER_ATTACKTIME == 0 )
+					rightbody = (Entity*)node->next->element;
+				}
+				if ( bodypart == 5 )
+				{
+					shieldarm = entity;
+				}
+				node_t* shieldNode = list_Node(&my->children, 7);
+				if ( shieldNode )
+				{
+					Entity* shield = (Entity*)shieldNode->element;
+					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || shield->flags[INVISIBLE]) )
 					{
-						PLAYER_ARMBENDED = 0;
-						PLAYER_WEAPONYAW = 0;
-						entity->pitch = 0;
-						entity->roll = 0;
-						entity->skill[1] = 0;
-					}
-					else
-					{
-						if ( entity->skill[1] == 0 )
+						if ( !rightbody->skill[0] )
 						{
-							// upswing
-							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 5 * PI / 4, false, 0.0) )
+							entity->pitch -= dist * PLAYERWALKSPEED;
+							if ( entity->pitch < -PI / 4.0 )
 							{
-								entity->skill[1] = 1;
+								entity->pitch = -PI / 4.0;
+								if ( bodypart == 2 && dist > .4 && !levitating && !swimming )
+								{
+									node_t* tempNode = list_Node(&my->children, 2);
+									if ( tempNode )
+									{
+										Entity* foot = (Entity*)tempNode->element;
+										if ( foot->sprite == 152 || foot->sprite == 153 )
+										{
+											playSoundEntityLocal(my, 7 + rand() % 7, 32);
+										}
+										else if ( foot->sprite == 156 || foot->sprite == 157 )
+										{
+											playSoundEntityLocal(my, 14 + rand() % 7, 32);
+										}
+										else
+										{
+											playSoundEntityLocal(my, rand() % 7, 32);
+										}
+									}
+								}
 							}
 						}
 						else
 						{
-							if ( entity->pitch >= 3 * PI / 2 )
+							entity->pitch += dist * PLAYERWALKSPEED;
+							if ( entity->pitch > PI / 4.0 )
 							{
-								PLAYER_ARMBENDED = 1;
+								entity->pitch = PI / 4.0;
+								if ( bodypart == 2 && dist > .4 && !levitating && !swimming )
+								{
+									node_t* tempNode = list_Node(&my->children, 2);
+									if ( tempNode )
+									{
+										Entity* foot = (Entity*)tempNode->element;
+										if ( foot->sprite == 152 || foot->sprite == 153 )
+										{
+											playSoundEntityLocal(my, 7 + rand() % 7, 32);
+										}
+										else if ( foot->sprite == 156 || foot->sprite == 157 )
+										{
+											playSoundEntityLocal(my, 14 + rand() % 7, 32);
+										}
+										else
+										{
+											playSoundEntityLocal(my, rand() % 7, 32);
+										}
+									}
+								}
 							}
-							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 4, false, 0.0) )
+						}
+					}
+					else
+					{
+						if ( entity->pitch < 0 )
+						{
+							entity->pitch += 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch > 0 )
+							{
+								entity->pitch = 0;
+							}
+						}
+						else if ( entity->pitch > 0 )
+						{
+							entity->pitch -= 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch < 0 )
+							{
+								entity->pitch = 0;
+							}
+						}
+					}
+				}
+			}
+			else if ( bodypart == 3 || bodypart == 4 || bodypart == 8 ) // left leg, right arm, cloak
+			{
+				if ( bodypart == 4 )
+				{
+					weaponarm = entity;
+					if ( PLAYER_ATTACK == 1 )
+					{
+						// vertical chop
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							PLAYER_ARMBENDED = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 0;
+							entity->roll = 0;
+							entity->skill[1] = 0;
+						}
+						else
+						{
+							if ( entity->skill[1] == 0 )
+							{
+								// upswing
+								if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 5 * PI / 4, false, 0.0) )
+								{
+									entity->skill[1] = 1;
+								}
+							}
+							else
+							{
+								if ( entity->pitch >= 3 * PI / 2 )
+								{
+									PLAYER_ARMBENDED = 1;
+								}
+								if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 4, false, 0.0) )
+								{
+									entity->skill[0] = rightbody->skill[0];
+									entity->skill[1] = 0;
+									PLAYER_WEAPONYAW = 0;
+									entity->pitch = rightbody->pitch;
+									entity->roll = 0;
+									PLAYER_ARMBENDED = 0;
+									PLAYER_ATTACK = 0;
+								}
+							}
+						}
+					}
+					else if ( PLAYER_ATTACK == 2 )
+					{
+						// horizontal chop
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							PLAYER_ARMBENDED = 1;
+							PLAYER_WEAPONYAW = -3 * PI / 4;
+							entity->pitch = 0;
+							entity->roll = -PI / 2;
+						}
+						else
+						{
+							if ( PLAYER_WEAPONYAW >= PI / 8 )
 							{
 								entity->skill[0] = rightbody->skill[0];
-								entity->skill[1] = 0;
+								PLAYER_WEAPONYAW = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								PLAYER_ARMBENDED = 0;
+								PLAYER_ATTACK = 0;
+							}
+							else
+							{
+								PLAYER_WEAPONYAW += .25;
+							}
+						}
+					}
+					else if ( PLAYER_ATTACK == 3 )
+					{
+						// stab
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							PLAYER_ARMBENDED = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 0;
+							entity->roll = 0;
+						}
+						else
+						{
+							if ( PLAYER_ATTACKTIME >= 5 )
+							{
+								PLAYER_ARMBENDED = 1;
+								limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 11 * PI / 6, false, 0.0);
+							}
+							else
+							{
+								limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, 2 * PI / 3, false, 0.0);
+							}
+							if ( PLAYER_ATTACKTIME >= 10 )
+							{
+								entity->skill[0] = rightbody->skill[0];
 								PLAYER_WEAPONYAW = 0;
 								entity->pitch = rightbody->pitch;
 								entity->roll = 0;
@@ -3173,803 +3252,790 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				else if ( PLAYER_ATTACK == 2 )
+				else if ( bodypart == 8 )
 				{
-					// horizontal chop
-					if ( PLAYER_ATTACKTIME == 0 )
-					{
-						PLAYER_ARMBENDED = 1;
-						PLAYER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( PLAYER_WEAPONYAW >= PI / 8 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							PLAYER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							PLAYER_ARMBENDED = 0;
-							PLAYER_ATTACK = 0;
-						}
-						else
-						{
-							PLAYER_WEAPONYAW += .25;
-						}
-					}
+					entity->pitch = entity->fskill[0];
 				}
-				else if ( PLAYER_ATTACK == 3 )
-				{
-					// stab
-					if ( PLAYER_ATTACKTIME == 0 )
-					{
-						PLAYER_ARMBENDED = 0;
-						PLAYER_WEAPONYAW = 0;
-						entity->pitch = 0;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( PLAYER_ATTACKTIME >= 5 )
-						{
-							PLAYER_ARMBENDED = 1;
-							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 11 * PI / 6, false, 0.0);
-						}
-						else
-						{
-							limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, 2 * PI / 3, false, 0.0);
-						}
-						if ( PLAYER_ATTACKTIME >= 10 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							PLAYER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							PLAYER_ARMBENDED = 0;
-							PLAYER_ATTACK = 0;
-						}
-					}
-				}
-			}
-			else if ( bodypart == 8 )
-			{
-				entity->pitch = entity->fskill[0];
-			}
 
-			if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
-			{
-				if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+				if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 				{
-					if ( entity->skill[0] )
+					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
 					{
-						entity->pitch -= dist * PLAYERWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
+						if ( entity->skill[0] )
 						{
-							entity->skill[0] = 0;
-							entity->pitch = -PI / 4.0;
+							entity->pitch -= dist * PLAYERWALKSPEED;
+							if ( entity->pitch < -PI / 4.0 )
+							{
+								entity->skill[0] = 0;
+								entity->pitch = -PI / 4.0;
+							}
+						}
+						else
+						{
+							entity->pitch += dist * PLAYERWALKSPEED;
+							if ( entity->pitch > PI / 4.0 )
+							{
+								entity->skill[0] = 1;
+								entity->pitch = PI / 4.0;
+							}
 						}
 					}
 					else
 					{
-						entity->pitch += dist * PLAYERWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->skill[0] = 1;
-							entity->pitch = PI / 4.0;
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
 						if ( entity->pitch < 0 )
 						{
-							entity->pitch = 0;
+							entity->pitch += 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch > 0 )
+							{
+								entity->pitch = 0;
+							}
+						}
+						else if ( entity->pitch > 0 )
+						{
+							entity->pitch -= 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch < 0 )
+							{
+								entity->pitch = 0;
+							}
 						}
 					}
 				}
+				if ( bodypart == 8 )
+				{
+					entity->fskill[0] = entity->pitch;
+					entity->roll = my->roll - fabs(entity->pitch) / 2;
+					entity->pitch = 0;
+				}
 			}
-			if ( bodypart == 8 )
-			{
-				entity->fskill[0] = entity->pitch;
-				entity->roll = my->roll - fabs(entity->pitch) / 2;
-				entity->pitch = 0;
-			}
-		}
 
-		switch ( bodypart )
-		{
-			// torso
-			case 1:
-				torso = entity;
-				entity->focalx = limbs[playerRace][1][0];
-				entity->focaly = limbs[playerRace][1][1];
-				entity->focalz = limbs[playerRace][1][2];
-				if ( multiplayer != CLIENT )
-				{
-					if ( stats[PLAYER_NUM]->breastplate == NULL )
-					{
-						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
-					}
-					else
-					{
-						entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
-				break;
-			// right leg
-			case 2:
-				if ( multiplayer != CLIENT )
-				{
-					if ( stats[PLAYER_NUM]->shoes == NULL )
-					{
-						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
-					}
-					else
-					{
-						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTLEG);
-				break;
-			// left leg
-			case 3:
-				if ( multiplayer != CLIENT )
-				{
-					if ( stats[PLAYER_NUM]->shoes == NULL )
-					{
-						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
-					}
-					else
-					{
-						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTLEG);
-				break;
-			// right arm
-			case 4:
+			switch ( bodypart )
 			{
-				if ( multiplayer != CLIENT )
-				{
-					if ( stats[PLAYER_NUM]->gloves == NULL )
+				// torso
+				case 1:
+					torso = entity;
+					entity->focalx = limbs[playerRace][1][0];
+					entity->focaly = limbs[playerRace][1][1];
+					entity->focalz = limbs[playerRace][1][2];
+					if ( multiplayer != CLIENT )
 					{
-						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
-					}
-					else
-					{
-						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+						if ( stats[PLAYER_NUM]->breastplate == NULL )
 						{
-							// successfully set sprite for the human model
-						}
-					}
-					if ( !PLAYER_ARMBENDED )
-					{
-						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
-				node_t* tempNode = list_Node(&my->children, 6);
-				if ( tempNode )
-				{
-					Entity* weapon = (Entity*)tempNode->element;
-					if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED )
-					{
-						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
-						{
-							entity->focalx = limbs[playerRace][4][0] - 0.25;
-							entity->focaly = limbs[playerRace][4][1] - 0.25;
-							entity->focalz = limbs[playerRace][4][2];
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][4][0]; // 0
-							entity->focaly = limbs[playerRace][4][1]; // 0
-							entity->focalz = limbs[playerRace][4][2]; // 1.5
+							entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
-					else
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
+					break;
+					// right leg
+				case 2:
+					if ( multiplayer != CLIENT )
 					{
-						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						if ( stats[PLAYER_NUM]->shoes == NULL )
 						{
-							entity->focalx = limbs[playerRace][4][0];
-							entity->focaly = limbs[playerRace][4][1];
-							entity->focalz = limbs[playerRace][4][2];
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][4][0] + 0.75;
-							entity->focaly = limbs[playerRace][4][1];
-							entity->focalz = limbs[playerRace][4][2] - 0.75;
+							my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
-				}
-				entity->yaw += PLAYER_WEAPONYAW;
-				break;
-			}
-			// left arm
-			case 5:
-			{
-				if ( multiplayer != CLIENT )
-				{
-					if ( stats[PLAYER_NUM]->gloves == NULL )
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTLEG);
+					break;
+					// left leg
+				case 3:
+					if ( multiplayer != CLIENT )
 					{
-						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
-					}
-					else
-					{
-						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+						if ( stats[PLAYER_NUM]->shoes == NULL )
 						{
-							// successfully set sprite for the human model
-						}
-					}
-					entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
-				node_t* tempNode = list_Node(&my->children, 7);
-				if ( tempNode )
-				{
-					Entity* shield = (Entity*)tempNode->element;
-					if ( shield->flags[INVISIBLE] )
-					{
-						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
-						{
-							entity->focalx = limbs[playerRace][5][0] - 0.25;
-							entity->focaly = limbs[playerRace][5][1] + 0.25;
-							entity->focalz = limbs[playerRace][5][2];
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][5][0]; // 0
-							entity->focaly = limbs[playerRace][5][1]; // 0
-							entity->focalz = limbs[playerRace][5][2]; // 1.5
+							my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
-					else
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTLEG);
+					break;
+					// right arm
+				case 4:
+				{
+					if ( multiplayer != CLIENT )
 					{
-						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+						if ( stats[PLAYER_NUM]->gloves == NULL )
 						{
-							entity->focalx = limbs[playerRace][5][0];
-							entity->focaly = limbs[playerRace][5][1];
-							entity->focalz = limbs[playerRace][5][2];
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][5][0] + 0.75;
-							entity->focaly = limbs[playerRace][5][1];
-							entity->focalz = limbs[playerRace][5][2] - 0.75;
+							if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+							{
+								// successfully set sprite for the human model
+							}
+						}
+						if ( !PLAYER_ARMBENDED )
+						{
+							entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
+					node_t* tempNode = list_Node(&my->children, 6);
+					if ( tempNode )
+					{
+						Entity* weapon = (Entity*)tempNode->element;
+						if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED )
+						{
+							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+							{
+								entity->focalx = limbs[playerRace][4][0] - 0.25;
+								entity->focaly = limbs[playerRace][4][1] - 0.25;
+								entity->focalz = limbs[playerRace][4][2];
+							}
+							else
+							{
+								entity->focalx = limbs[playerRace][4][0]; // 0
+								entity->focaly = limbs[playerRace][4][1]; // 0
+								entity->focalz = limbs[playerRace][4][2]; // 1.5
+							}
+						}
+						else
+						{
+							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+							{
+								entity->focalx = limbs[playerRace][4][0];
+								entity->focaly = limbs[playerRace][4][1];
+								entity->focalz = limbs[playerRace][4][2];
+							}
+							else
+							{
+								entity->focalx = limbs[playerRace][4][0] + 0.75;
+								entity->focaly = limbs[playerRace][4][1];
+								entity->focalz = limbs[playerRace][4][2] - 0.75;
+							}
+						}
+					}
+					entity->yaw += PLAYER_WEAPONYAW;
+					break;
 				}
-				if ( multiplayer != CLIENT )
+				// left arm
+				case 5:
 				{
-					real_t prevYaw = PLAYER_SHIELDYAW;
-					if ( stats[PLAYER_NUM]->defending )
+					if ( multiplayer != CLIENT )
 					{
-						PLAYER_SHIELDYAW = PI / 5;
+						if ( stats[PLAYER_NUM]->gloves == NULL )
+						{
+							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
+						}
+						else
+						{
+							if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+							{
+								// successfully set sprite for the human model
+							}
+						}
+						entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
 					}
-					else
+					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
+					node_t* tempNode = list_Node(&my->children, 7);
+					if ( tempNode )
 					{
-						PLAYER_SHIELDYAW = 0;
+						Entity* shield = (Entity*)tempNode->element;
+						if ( shield->flags[INVISIBLE] )
+						{
+							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+							{
+								entity->focalx = limbs[playerRace][5][0] - 0.25;
+								entity->focaly = limbs[playerRace][5][1] + 0.25;
+								entity->focalz = limbs[playerRace][5][2];
+							}
+							else
+							{
+								entity->focalx = limbs[playerRace][5][0]; // 0
+								entity->focaly = limbs[playerRace][5][1]; // 0
+								entity->focalz = limbs[playerRace][5][2]; // 1.5
+							}
+						}
+						else
+						{
+							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
+							{
+								entity->focalx = limbs[playerRace][5][0];
+								entity->focaly = limbs[playerRace][5][1];
+								entity->focalz = limbs[playerRace][5][2];
+							}
+							else
+							{
+								entity->focalx = limbs[playerRace][5][0] + 0.75;
+								entity->focaly = limbs[playerRace][5][1];
+								entity->focalz = limbs[playerRace][5][2] - 0.75;
+							}
+						}
 					}
-					if ( prevYaw != PLAYER_SHIELDYAW || ticks % 200 == 0 )
+					if ( multiplayer != CLIENT )
 					{
-						serverUpdateEntityFSkill(players[PLAYER_NUM]->entity, 8);
+						real_t prevYaw = PLAYER_SHIELDYAW;
+						if ( stats[PLAYER_NUM]->defending )
+						{
+							PLAYER_SHIELDYAW = PI / 5;
+						}
+						else
+						{
+							PLAYER_SHIELDYAW = 0;
+						}
+						if ( prevYaw != PLAYER_SHIELDYAW || ticks % 200 == 0 )
+						{
+							serverUpdateEntityFSkill(players[PLAYER_NUM]->entity, 8);
+						}
 					}
+					entity->yaw += PLAYER_SHIELDYAW;
+					break;
 				}
-				entity->yaw += PLAYER_SHIELDYAW;
-				break;
-			}
-			// weapon
-			case 6:
-				if ( multiplayer != CLIENT )
-				{
-					if ( swimming )
+				// weapon
+				case 6:
+					if ( multiplayer != CLIENT )
 					{
-						entity->flags[INVISIBLE] = true;
-					}
-					else
-					{
-						if ( stats[PLAYER_NUM]->weapon == NULL || my->isInvisible() )
+						if ( swimming )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
 						else
 						{
-							entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
-							if ( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
+							if ( stats[PLAYER_NUM]->weapon == NULL || my->isInvisible() )
 							{
 								entity->flags[INVISIBLE] = true;
 							}
 							else
 							{
-								entity->flags[INVISIBLE] = false;
+								entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
+								if ( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
+								{
+									entity->flags[INVISIBLE] = true;
+								}
+								else
+								{
+									entity->flags[INVISIBLE] = false;
+								}
+							}
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
 							}
 						}
 					}
-					if ( multiplayer == SERVER )
+					else
 					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->sprite <= 0 )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							entity->flags[INVISIBLE] = true;
 						}
 					}
-				}
-				else
-				{
-					if ( entity->sprite <= 0 )
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
+					break;
+					// shield
+				case 7:
+					if ( multiplayer != CLIENT )
 					{
-						entity->flags[INVISIBLE] = true;
-					}
-				}
-				my->handleHumanoidWeaponLimb(entity, weaponarm);
-				break;
-			// shield
-			case 7:
-				if ( multiplayer != CLIENT )
-				{
-					if ( swimming )
-					{
-						entity->flags[INVISIBLE] = true;
+						if ( swimming )
+						{
+							entity->flags[INVISIBLE] = true;
+						}
+						else
+						{
+							if ( stats[PLAYER_NUM]->shield == NULL )
+							{
+								entity->flags[INVISIBLE] = true;
+								entity->sprite = 0;
+							}
+							else
+							{
+								entity->flags[INVISIBLE] = false;
+								entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
+							}
+							if ( my->isInvisible() )
+							{
+								entity->flags[INVISIBLE] = true;
+							}
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
 					}
 					else
 					{
-						if ( stats[PLAYER_NUM]->shield == NULL )
+						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
-							entity->sprite = 0;
+						}
+					}
+					my->handleHumanoidShieldLimb(entity, shieldarm);
+					break;
+					// cloak
+				case 8:
+					entity->focalx = limbs[playerRace][8][0];
+					entity->focaly = limbs[playerRace][8][1];
+					entity->focalz = limbs[playerRace][8][2];
+					entity->scalex = 1.01;
+					entity->scaley = 1.01;
+					if ( multiplayer != CLIENT )
+					{
+						if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
+						{
+							entity->flags[INVISIBLE] = true;
 						}
 						else
 						{
 							entity->flags[INVISIBLE] = false;
-							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
+							entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
 						}
-						if ( my->isInvisible() )
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+						}
+					}
+					else
+					{
+						if ( entity->sprite <= 0 )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
 					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				else
-				{
-					if ( entity->sprite <= 0 )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-				}
-				my->handleHumanoidShieldLimb(entity, shieldarm);
-				break;
-			// cloak
-			case 8:
-				entity->focalx = limbs[playerRace][8][0];
-				entity->focaly = limbs[playerRace][8][1];
-				entity->focalz = limbs[playerRace][8][2];
-				entity->scalex = 1.01;
-				entity->scaley = 1.01;
-				if ( multiplayer != CLIENT )
-				{
-					if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-					else
-					{
-						entity->flags[INVISIBLE] = false;
-						entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				else
-				{
-					if ( entity->sprite <= 0 )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-				}
 
-				if ( entity->sprite == items[CLOAK_BACKPACK].index )
-				{
-					// human
-					if ( playerRace == HUMAN || playerRace == VAMPIRE )
+					if ( entity->sprite == items[CLOAK_BACKPACK].index )
 					{
-						entity->focaly = limbs[playerRace][8][1] + 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.3;
-					}
-					else if ( playerRace == SUCCUBUS || playerRace == INCUBUS )
-					{
-						// succubus/incubus
-						entity->focaly = limbs[playerRace][8][1] + 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.7;
-					}
-					else if ( playerRace == SKELETON )
-					{
-						entity->focaly = limbs[playerRace][8][1] + 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.5;
-					}
-					else if ( playerRace == AUTOMATON )
-					{
-						entity->focaly = limbs[playerRace][8][1] - 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.5;
-					}
-					else if ( playerRace == GOATMAN || playerRace == INSECTOID || playerRace == GOBLIN )
-					{
-						entity->focaly = limbs[playerRace][8][1] - 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.5;
-					}
+						// human
+						if ( playerRace == HUMAN || playerRace == VAMPIRE )
+						{
+							entity->focaly = limbs[playerRace][8][1] + 0.25;
+							entity->focalz = limbs[playerRace][8][2] - 0.3;
+						}
+						else if ( playerRace == SUCCUBUS || playerRace == INCUBUS )
+						{
+							// succubus/incubus
+							entity->focaly = limbs[playerRace][8][1] + 0.25;
+							entity->focalz = limbs[playerRace][8][2] - 0.7;
+						}
+						else if ( playerRace == SKELETON )
+						{
+							entity->focaly = limbs[playerRace][8][1] + 0.25;
+							entity->focalz = limbs[playerRace][8][2] - 0.5;
+						}
+						else if ( playerRace == AUTOMATON )
+						{
+							entity->focaly = limbs[playerRace][8][1] - 0.25;
+							entity->focalz = limbs[playerRace][8][2] - 0.5;
+						}
+						else if ( playerRace == GOATMAN || playerRace == INSECTOID || playerRace == GOBLIN )
+						{
+							entity->focaly = limbs[playerRace][8][1] - 0.25;
+							entity->focalz = limbs[playerRace][8][2] - 0.5;
+						}
 
-					entity->scalex = 0.99;
-					entity->scaley = 0.99;
-				}
-				entity->x -= cos(my->yaw);
-				entity->y -= sin(my->yaw);
-				entity->yaw += PI / 2;
-				break;
-			// helm
-			case 9:
-				entity->focalx = limbs[playerRace][9][0]; // 0
-				entity->focaly = limbs[playerRace][9][1]; // 0
-				entity->focalz = limbs[playerRace][9][2]; // -1.75
-				entity->pitch = my->pitch;
-				entity->roll = 0;
-				if ( multiplayer != CLIENT )
-				{
-					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-					if ( stats[PLAYER_NUM]->helmet == NULL || my->isInvisible() )
-					{
-						entity->flags[INVISIBLE] = true;
+						entity->scalex = 0.99;
+						entity->scaley = 0.99;
 					}
-					else
+					entity->x -= cos(my->yaw);
+					entity->y -= sin(my->yaw);
+					entity->yaw += PI / 2;
+					break;
+					// helm
+				case 9:
+					entity->focalx = limbs[playerRace][9][0]; // 0
+					entity->focaly = limbs[playerRace][9][1]; // 0
+					entity->focalz = limbs[playerRace][9][2]; // -1.75
+					entity->pitch = my->pitch;
+					entity->roll = 0;
+					if ( multiplayer != CLIENT )
 					{
-						entity->flags[INVISIBLE] = false;
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
+						if ( stats[PLAYER_NUM]->helmet == NULL || my->isInvisible() )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				else
-				{
-					if ( entity->sprite <= 0 )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-				}
-				my->setHelmetLimbOffset(entity);
-				break;
-			// mask
-			case 10:
-				entity->focalx = limbs[playerRace][10][0]; // 0
-				entity->focaly = limbs[playerRace][10][1]; // 0
-				entity->focalz = limbs[playerRace][10][2]; // .5
-				entity->pitch = my->pitch;
-				entity->roll = PI / 2;
-				if ( multiplayer != CLIENT )
-				{
-					bool hasSteelHelm = false;
-					if ( stats[PLAYER_NUM]->helmet )
-						if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM )
-						{
-							hasSteelHelm = true;
-						}
-					if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-					else
-					{
-						entity->flags[INVISIBLE] = false;
-					}
-					if ( stats[PLAYER_NUM]->mask != NULL )
-					{
-						if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
-						{
-							entity->sprite = 165; // GlassesWorn.vox
+							entity->flags[INVISIBLE] = true;
 						}
 						else
 						{
-							entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
+							entity->flags[INVISIBLE] = false;
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
-					if ( multiplayer == SERVER )
+					else
 					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
+						if ( entity->sprite <= 0 )
 						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
+							entity->flags[INVISIBLE] = true;
 						}
 					}
-				}
-				else
-				{
-					if ( entity->sprite <= 0 )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-				}
-				if ( entity->sprite == 165 )
-				{
-					entity->focalx = limbs[playerRace][10][0] + .25; // .25
-					entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
+					my->setHelmetLimbOffset(entity);
+					break;
+					// mask
+				case 10:
+					entity->focalx = limbs[playerRace][10][0]; // 0
+					entity->focaly = limbs[playerRace][10][1]; // 0
 					entity->focalz = limbs[playerRace][10][2]; // .5
-				}
-				else
-				{
-					entity->focalx = limbs[playerRace][10][0] + .35; // .35
-					entity->focaly = limbs[playerRace][10][1] - 2; // -2
-					entity->focalz = limbs[playerRace][10][2]; // .5
-				}
-				break;
-			case 11:
-				additionalLimb = entity;
-				entity->focalx = limbs[playerRace][11][0];
-				entity->focaly = limbs[playerRace][11][1];
-				entity->focalz = limbs[playerRace][11][2];
-				entity->flags[INVISIBLE] = true;
-				if ( playerRace == INSECTOID )
-				{
-					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-					if ( stats[PLAYER_NUM]->sex == FEMALE )
+					entity->pitch = my->pitch;
+					entity->roll = PI / 2;
+					if ( multiplayer != CLIENT )
 					{
-						entity->sprite = 771;
-					}
-					else
-					{
-						entity->sprite = 750;
-					}
-					if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
-					{
-						// wearing armor, offset more.
-						entity->x -= 2.25 * cos(my->yaw);
-						entity->y -= 2.25 * sin(my->yaw);
-					}
-					else
-					{
-						entity->x -= 1.5 * cos(my->yaw);
-						entity->y -= 1.5 * sin(my->yaw);
-					}
-					bool moving = false;
-					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
-					{
-						moving = true;
-					}
-
-					if ( entity->skill[0] == 0 )
-					{
-						if ( moving )
+						bool hasSteelHelm = false;
+						if ( stats[PLAYER_NUM]->helmet )
+							if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM )
+							{
+								hasSteelHelm = true;
+							}
+						if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 						{
-							entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
-						}
-						else if ( PLAYER_ATTACK != 0 )
-						{
-							entity->fskill[0] += PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+							entity->flags[INVISIBLE] = true;
 						}
 						else
 						{
-							entity->fskill[0] += 0.01; // otherwise move slow idle
+							entity->flags[INVISIBLE] = false;
 						}
-
-						if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) ) 
+						if ( stats[PLAYER_NUM]->mask != NULL )
 						{
-							// switch direction if angle too great, angle is shorter if attacking or stationary
-							entity->skill[0] = 1;
+							if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
+							{
+								entity->sprite = 165; // GlassesWorn.vox
+							}
+							else
+							{
+								entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
+							}
+						}
+						if ( multiplayer == SERVER )
+						{
+							// update sprites for clients
+							if ( entity->skill[10] != entity->sprite )
+							{
+								entity->skill[10] = entity->sprite;
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( entity->skill[11] != entity->flags[INVISIBLE] )
+							{
+								entity->skill[11] = entity->flags[INVISIBLE];
+								serverUpdateEntityBodypart(my, bodypart);
+							}
+							if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+							{
+								serverUpdateEntityBodypart(my, bodypart);
+							}
 						}
 					}
-					else // reverse of the above
+					else
 					{
-						if ( moving )
+						if ( entity->sprite <= 0 )
 						{
-							entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+							entity->flags[INVISIBLE] = true;
 						}
-						else if ( PLAYER_ATTACK != 0 )
+					}
+					if ( entity->sprite == 165 )
+					{
+						entity->focalx = limbs[playerRace][10][0] + .25; // .25
+						entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
+						entity->focalz = limbs[playerRace][10][2]; // .5
+					}
+					else
+					{
+						entity->focalx = limbs[playerRace][10][0] + .35; // .35
+						entity->focaly = limbs[playerRace][10][1] - 2; // -2
+						entity->focalz = limbs[playerRace][10][2]; // .5
+					}
+					break;
+				case 11:
+					additionalLimb = entity;
+					entity->focalx = limbs[playerRace][11][0];
+					entity->focaly = limbs[playerRace][11][1];
+					entity->focalz = limbs[playerRace][11][2];
+					entity->flags[INVISIBLE] = true;
+					if ( playerRace == INSECTOID )
+					{
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						if ( stats[PLAYER_NUM]->sex == FEMALE )
 						{
-							entity->fskill[0] -= PLAYERWALKSPEED;
+							entity->sprite = 771;
 						}
 						else
 						{
-							entity->fskill[0] -= 0.007;
+							entity->sprite = 750;
+						}
+						if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+						{
+							// wearing armor, offset more.
+							entity->x -= 2.25 * cos(my->yaw);
+							entity->y -= 2.25 * sin(my->yaw);
+						}
+						else
+						{
+							entity->x -= 1.5 * cos(my->yaw);
+							entity->y -= 1.5 * sin(my->yaw);
+						}
+						bool moving = false;
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+						{
+							moving = true;
 						}
 
-						if ( entity->fskill[0] < -PI / 32 )
+						if ( entity->skill[0] == 0 )
 						{
-							entity->skill[0] = 0;
+							if ( moving )
+							{
+								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] += PLAYERWALKSPEED; // move fixed speed when attacking if stationary
+							}
+							else
+							{
+								entity->fskill[0] += 0.01; // otherwise move slow idle
+							}
+
+							if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) )
+							{
+								// switch direction if angle too great, angle is shorter if attacking or stationary
+								entity->skill[0] = 1;
+							}
+						}
+						else // reverse of the above
+						{
+							if ( moving )
+							{
+								entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+							}
+							else if ( PLAYER_ATTACK != 0 )
+							{
+								entity->fskill[0] -= PLAYERWALKSPEED;
+							}
+							else
+							{
+								entity->fskill[0] -= 0.007;
+							}
+
+							if ( entity->fskill[0] < -PI / 32 )
+							{
+								entity->skill[0] = 0;
+							}
+						}
+						entity->yaw += entity->fskill[0];
+					}
+					break;
+				case 12:
+					entity->focalx = limbs[playerRace][12][0];
+					entity->focaly = limbs[playerRace][12][1];
+					entity->focalz = limbs[playerRace][12][2];
+					entity->flags[INVISIBLE] = true;
+					if ( playerRace == INSECTOID )
+					{
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+						if ( stats[PLAYER_NUM]->sex == FEMALE )
+						{
+							entity->sprite = 772;
+						}
+						else
+						{
+							entity->sprite = 751;
+						}
+						if ( additionalLimb ) // follow the yaw of the previous limb.
+						{
+							entity->yaw -= additionalLimb->fskill[0];
+						}
+						if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+						{
+							// wearing armor, offset more.
+							entity->x -= 2.25 * cos(my->yaw);
+							entity->y -= 2.25 * sin(my->yaw);
+						}
+						else
+						{
+							entity->x -= 1.5 * cos(my->yaw);
+							entity->y -= 1.5 * sin(my->yaw);
 						}
 					}
-					entity->yaw += entity->fskill[0];
-				}
-				break;
-			case 12:
-				entity->focalx = limbs[playerRace][12][0];
-				entity->focaly = limbs[playerRace][12][1];
-				entity->focalz = limbs[playerRace][12][2];
-				entity->flags[INVISIBLE] = true;
-				if ( playerRace == INSECTOID )
-				{
-					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-					if ( stats[PLAYER_NUM]->sex == FEMALE )
-					{
-						entity->sprite = 772;
-					}
-					else
-					{
-						entity->sprite = 751;
-					}
-					if ( additionalLimb ) // follow the yaw of the previous limb.
-					{
-						entity->yaw -= additionalLimb->fskill[0];
-					}
-					if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
-					{
-						// wearing armor, offset more.
-						entity->x -= 2.25 * cos(my->yaw);
-						entity->y -= 2.25 * sin(my->yaw);
-					}
-					else
-					{
-						entity->x -= 1.5 * cos(my->yaw);
-						entity->y -= 1.5 * sin(my->yaw);
-					}
-				}
-				break;
-			default:
-				break;
+					break;
+				default:
+					break;
+			}
+		}
+		// rotate shield a bit
+		node_t* shieldNode = list_Node(&my->children, 7);
+		if ( shieldNode )
+		{
+			Entity* shieldEntity = (Entity*)shieldNode->element;
+			if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+			{
+				shieldEntity->yaw -= PI / 6;
+			}
 		}
 	}
-	// rotate shield a bit
-	node_t* shieldNode = list_Node(&my->children, 7);
-	if ( shieldNode )
+	else
 	{
-		Entity* shieldEntity = (Entity*)shieldNode->element;
-		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
 		{
-			shieldEntity->yaw -= PI / 6;
+			if ( stats[PLAYER_NUM]->type == RAT )
+			{
+				if ( bodypart == 0 )
+				{
+					// hudweapon case
+					my->focalx = -2;
+					continue;
+				}
+				entity = (Entity*)node->element;
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = my->z;
+				if ( bodypart == 1 )
+				{
+					entity->sprite = 815;
+					entity->focalx = -2;// limbs[playerRace][1][0];
+					// limbs[playerRace][1][1];
+					//entity->focalz = limbs[playerRace][1][2];
+					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+					{
+						/*if ( (ticks % 10 == 0 && dist > 0.1) || (PLAYER_ATTACKTIME != PLAYER_ATTACK) )
+						{
+							if ( my->sprite == 131 )
+							{
+								my->sprite = 265;
+							}
+							else
+							{
+								my->sprite = 131;
+							}
+						}*/
+					}
+				}
+
+				if ( bodypart > 1 )
+				{
+					entity->flags[INVISIBLE] = true;
+				}
+			}
+			entity->yaw = my->yaw;
 		}
 	}
 	if ( PLAYER_ATTACK != 0 )
@@ -4396,6 +4462,9 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 			break;
 		case RACE_SUCCUBUS:
 			return SUCCUBUS;
+			break;
+		case RACE_RAT:
+			return RAT;
 			break;
 		default:
 			return HUMAN;
