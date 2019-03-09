@@ -1775,7 +1775,7 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf16, subx1 + 24, suby1 + 108, language[3160]);
 			int pady = suby1 + 108 + 24;
 			bool isLocked = false;
-			for ( int c = 0; c < NUMRACES; )
+			for ( int c = 0; c < NUMPLAYABLERACES; )
 			{
 				if ( raceSelect == 1 )
 				{
@@ -1870,7 +1870,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( c == RACE_GOATMAN )
 					{
-						c = NUMRACES;
+						c = NUMPLAYABLERACES;
 					}
 					else
 					{
@@ -1976,9 +1976,9 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				else if ( omousey >= pady && omousey < pady + NUMRACES * 17 + (isLocked ? 8 : 0) )
+				else if ( omousey >= pady && omousey < pady + NUMPLAYABLERACES * 17 + (isLocked ? 8 : 0) )
 				{
-					for ( c = 0; c < NUMRACES; ++c )
+					for ( c = 0; c < NUMPLAYABLERACES; ++c )
 					{
 						if ( omousey >= pady && omousey < pady + 17 )
 						{
@@ -2138,14 +2138,14 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				else if ( omousey >= pady + (NUMRACES * 17) + 48 && omousey < pady + (NUMRACES * 17) + 82 )
+				else if ( omousey >= pady + (NUMPLAYABLERACES * 17) + 48 && omousey < pady + (NUMPLAYABLERACES * 17) + 82 )
 				{
 					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						if ( stats[0]->playerRace > 0 )
 						{
-							if ( omousey < pady + (NUMRACES * 17) + 64 ) // first option
+							if ( omousey < pady + (NUMPLAYABLERACES * 17) + 64 ) // first option
 							{
 								stats[0]->appearance = 0; // use racial passives
 							}
@@ -2181,11 +2181,11 @@ void handleMainMenu(bool mode)
 					{
 						if ( skipSecondDLC )
 						{
-							stats[0]->playerRace = NUMRACES - 5;
+							stats[0]->playerRace = NUMPLAYABLERACES - 5;
 						}
 						else if ( enabledDLCPack2 )
 						{
-							stats[0]->playerRace = NUMRACES - 1;
+							stats[0]->playerRace = NUMPLAYABLERACES - 1;
 						}
 					}
 					else
@@ -2284,7 +2284,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( skipSecondDLC )
 					{
-						if ( stats[0]->playerRace >= NUMRACES - 5 )
+						if ( stats[0]->playerRace >= NUMPLAYABLERACES - 5 )
 						{
 							stats[0]->playerRace = RACE_HUMAN;
 						}
@@ -2295,7 +2295,7 @@ void handleMainMenu(bool mode)
 					}
 					else if ( skipFirstDLC )
 					{
-						if ( stats[0]->playerRace >= RACE_GOATMAN && stats[0]->playerRace < NUMRACES - 1 )
+						if ( stats[0]->playerRace >= RACE_GOATMAN && stats[0]->playerRace < NUMPLAYABLERACES - 1 )
 						{
 							++stats[0]->playerRace;
 						}
@@ -2303,14 +2303,14 @@ void handleMainMenu(bool mode)
 						{
 							stats[0]->playerRace = RACE_AUTOMATON;
 						}
-						else if ( stats[0]->playerRace == NUMRACES - 1 )
+						else if ( stats[0]->playerRace == NUMPLAYABLERACES - 1 )
 						{
 							stats[0]->playerRace = RACE_HUMAN;
 						}
 					}
 					else
 					{
-						if ( stats[0]->playerRace >= NUMRACES - 1 )
+						if ( stats[0]->playerRace >= NUMPLAYABLERACES - 1 )
 						{
 							stats[0]->playerRace = RACE_HUMAN;
 						}

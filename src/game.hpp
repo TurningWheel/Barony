@@ -104,7 +104,8 @@ extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 21
-#define NUMRACES 9
+#define NUMRACES 10
+#define NUMPLAYABLERACES 9
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -153,7 +154,8 @@ enum PlayerRaces : int
 	RACE_AUTOMATON,
 	RACE_INCUBUS,
 	RACE_GOBLIN,
-	RACE_INSECTOID
+	RACE_INSECTOID,
+	RACE_RAT
 };
 
 enum ESteamStatTypes
@@ -395,6 +397,9 @@ public:
 	std::chrono::high_resolution_clock::time_point eventsT5;
 	std::chrono::high_resolution_clock::time_point eventsT6;
 
+	std::chrono::high_resolution_clock::time_point messagesT1;
+	std::chrono::high_resolution_clock::time_point messagesT2;
+
 	std::chrono::high_resolution_clock::time_point t1Stored;
 	std::chrono::high_resolution_clock::time_point t2Stored;
 	std::chrono::high_resolution_clock::time_point t21Stored;
@@ -414,6 +419,9 @@ public:
 	std::chrono::high_resolution_clock::time_point eventsT4stored;
 	std::chrono::high_resolution_clock::time_point eventsT5stored;
 	std::chrono::high_resolution_clock::time_point eventsT6stored;
+
+	std::chrono::high_resolution_clock::time_point messagesT1stored;
+	std::chrono::high_resolution_clock::time_point messagesT2stored;
 
 	bool displayStats = false;
 	char debugOutput[1024];
@@ -442,6 +450,9 @@ public:
 		eventsT4stored = eventsT4;
 		eventsT5stored = eventsT5;
 		eventsT6stored = eventsT6;
+
+		messagesT1stored = messagesT1;
+		messagesT2stored = messagesT2;
 	};
 
 	void storeStats()
@@ -474,9 +485,13 @@ public:
 		double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT5stored - eventsT4stored).count();
 		double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT6stored - eventsT5stored).count();
 
+		double out6 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t1Stored - messagesT1stored).count();
+		double out7 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(messagesT2stored - messagesT1stored).count();
+		double out8 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t21Stored - messagesT2stored).count();
+
 		snprintf(debugEventOutput, 1023,
-			"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\n",
-			out1, out2, out3, out4, out5);
+			"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\nMessagesT1: %4.5fms\nMessagesT2: %4.5fms\nMessagesT3: %4.5fms\nMessages Size %d",
+			out1, out2, out3, out4, out5, out6, out7, out8, net_handler->game_packets.size());
 	};
 };
 extern DebugStatsClass DebugStats;
