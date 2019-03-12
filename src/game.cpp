@@ -2556,22 +2556,27 @@ void pauseGame(int mode, int ignoreplayer)
 
 // records the SDL_GetTicks() value at the moment the mainloop restarted
 Uint64 lastGameTickCount = 0;
-
-bool frameRateLimit( Uint32 maxFrameRate )
+float framerateAccumulatedTime = 0.f;
+bool frameRateLimit( Uint32 maxFrameRate, bool resetAccumulator)
 {
-	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
+	float desiredFrameMilliseconds = 1.0f / maxFrameRate;
 	Uint64 gameTickCount = SDL_GetPerformanceCounter();
+	Uint64 ticksPerSecond = SDL_GetPerformanceFrequency();
+	float millisecondsElapsed = (gameTickCount - lastGameTickCount) / static_cast<float>(ticksPerSecond);
+	lastGameTickCount = gameTickCount;
+	framerateAccumulatedTime += millisecondsElapsed;
 
-	float millisecondsElapsed = static_cast<float>(gameTickCount - lastGameTickCount) * 1000
-		/ static_cast<float>(SDL_GetPerformanceFrequency());
-
-	if ( millisecondsElapsed < desiredFrameMilliseconds )
+	if ( framerateAccumulatedTime < desiredFrameMilliseconds )
 	{
 		// if enough time is left wait, otherwise just keep spinning so we don't go over the limit...
 		return true;
 	}
 	else
 	{
+		if ( resetAccumulator )
+		{
+			framerateAccumulatedTime = 0.f;
+		}
 		return false;
 	}
 }
@@ -3924,4 +3929,42 @@ int main(int argc, char** argv)
 		//TODO:
 		return 1;
 	}
+}
+
+void DebugStatsClass::storeStats()
+{
+	if ( !displayStats )
+	{
+		return;
+	}
+	storeOldTimePoints();
+	double out1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t2Stored - t21Stored).count();
+	double out2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t3Stored - t2Stored).count();
+	double out3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t5Stored - t4Stored).count();
+	double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t6Stored - t5Stored).count();
+	double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t7Stored - t6Messages).count();
+	double out6 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t8Stored - t7Stored).count();
+	double out7 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t9Stored - t8Stored).count();
+	double out8 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t10Stored - t9Stored).count();
+	double out9 = -1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t11Stored - t10Stored).count();
+	double out10 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t21Stored - t1Stored).count();
+	snprintf(debugOutput, 1023,
+		"Messages: %4.5fms\nEvents: %4.5fms\nSteamCallbacks: %4.5fms\nMainDraw: %4.5fms\nMessages: %4.5fms\nInputs: %4.5fms\nStatus: %4.5fms\nGUI: %4.5fms\nFrameLimiter: %4.5fms\nEnd: %4.5fms\n",
+		out10, out1, out2, out3, out4, out5, out6, out7, out8, out9);
+}
+
+void DebugStatsClass::storeEventStats()
+{
+	double out1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT2stored - eventsT1stored).count();
+	double out2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT3stored - eventsT2stored).count();
+	double out3 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT4stored - eventsT3stored).count();
+	double out4 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT5stored - eventsT4stored).count();
+	double out5 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(eventsT6stored - eventsT5stored).count();
+
+	double messages1 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(messagesT1stored - t1StartLoop).count();
+	double messages2 = 1000 * std::chrono::duration_cast<std::chrono::duration<double>>(t21Stored - messagesT1stored).count();
+
+	snprintf(debugEventOutput, 1023,
+		"Events1: %4.5fms\nEvents2: %4.5fms\nEvents3: %4.5fms\nEvents4: %4.5fms\nEvents5: %4.5fms\nMessagesT1: %4.5fms\nMessagesT2: %4.5fms\n",
+		out1, out2, out3, out4, out5, messages1, messages2);
 }

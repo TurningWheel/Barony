@@ -1423,6 +1423,32 @@ void clientHandlePacket()
 	printlog("info: client packet: %s\n", packetinfo);
 #endif
 
+	//if ( logCheckMainLoopTimers )
+	//{
+	//	char packetinfo[NET_PACKET_SIZE];
+	//	strncpy(packetinfo, (char*)net_packet->data, net_packet->len);
+	//	packetinfo[net_packet->len] = 0;
+	//	Uint32 uidpacket = 0;
+	//	int sprite = 0;
+	//	double lastPacketHandleTime = 0.f;
+	//	if ( !strcmp(packetinfo, "ENTU") )
+	//	{
+	//		uidpacket = static_cast<Uint32>(SDLNet_Read32(&net_packet->data[4]));
+	//		if ( uidToEntity(uidpacket) )
+	//		{
+	//			sprite = uidToEntity(uidpacket)->sprite;
+	//		}
+	//	}
+	//	lastPacketHandleTime = 1000 * 
+	//		std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - DebugStats.messagesT3WhileLoop).count();
+	//	if ( DebugStats.handlePacketStartLoop )
+	//	{
+	//		lastPacketHandleTime = 0.f;
+	//	}
+	//	printlog("info: client packet: %s, lastpacked %4.5fms, uid, %d, sprite %d\n", packetinfo, lastPacketHandleTime, uidpacket, sprite);
+	//	//DebugStats.networkPacketStored.push_back(packetinfo);
+	//}
+
 	// keep alive
 	if (!strncmp((char*)net_packet->data, "KPAL", 4))
 	{
@@ -3562,7 +3588,7 @@ void clientHandlePacket()
 
 -------------------------------------------------------------------------------*/
 
-void clientHandleMessages()
+void clientHandleMessages(bool checkFrameRate)
 {
 #ifdef STEAMWORKS
 	if (!directConnect && !net_handler)
@@ -3583,6 +3609,13 @@ void clientHandleMessages()
 			steamPacketThread(static_cast<void*>(net_handler));
 		}
 		SteamPacketWrapper* packet = nullptr;
+
+		if ( logCheckMainLoopTimers )
+		{
+			DebugStats.messagesT1 = std::chrono::high_resolution_clock::now();
+			DebugStats.handlePacketStartLoop = true;
+		}
+
 		while (packet = net_handler->getGamePacket())
 		{
 			memcpy(net_packet->data, packet->data(), packet->len());
@@ -3590,7 +3623,18 @@ void clientHandleMessages()
 
 			clientHandlePacket(); //Uses net_packet.
 
+			if ( logCheckMainLoopTimers )
+			{
+				DebugStats.messagesT2WhileLoop = std::chrono::high_resolution_clock::now();
+				DebugStats.handlePacketStartLoop = false;
+			}
 			delete packet;
+
+			if ( checkFrameRate && !frameRateLimit(fpsLimit / 2, false) )
+			{
+				printlog("[NETWORK]: Incoming messages exceeded 50% cycle time, packets remaining: %d", net_handler->game_packets.size());
+				break;
+			}
 		}
 	}
 	else
@@ -4503,7 +4547,7 @@ void serverHandlePacket()
 
 -------------------------------------------------------------------------------*/
 
-void serverHandleMessages()
+void serverHandleMessages(bool checkFrameRate)
 {
 #ifdef STEAMWORKS
 	if (!directConnect && !net_handler)
@@ -4524,6 +4568,13 @@ void serverHandleMessages()
 			steamPacketThread(static_cast<void*>(net_handler));
 		}
 		SteamPacketWrapper* packet = nullptr;
+
+		if ( logCheckMainLoopTimers )
+		{
+			DebugStats.messagesT1 = std::chrono::high_resolution_clock::now();
+			DebugStats.handlePacketStartLoop = true;
+		}
+
 		while (packet = net_handler->getGamePacket())
 		{
 			memcpy(net_packet->data, packet->data(), packet->len());
@@ -4531,7 +4582,18 @@ void serverHandleMessages()
 
 			serverHandlePacket(); //Uses net_packet;
 
+			if ( logCheckMainLoopTimers )
+			{
+				DebugStats.messagesT2WhileLoop = std::chrono::high_resolution_clock::now();
+				DebugStats.handlePacketStartLoop = false;
+			}
 			delete packet;
+
+			if ( checkFrameRate && !frameRateLimit(fpsLimit / 2, false) )
+			{
+				printlog("[NETWORK]: Incoming messages exceeded 50% cycle time, packets remaining: %d", net_handler->game_packets.size());
+				break;
+			}
 		}
 	}
 	else
