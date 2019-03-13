@@ -3588,7 +3588,7 @@ void clientHandlePacket()
 
 -------------------------------------------------------------------------------*/
 
-void clientHandleMessages(bool checkFrameRate)
+void clientHandleMessages(Uint32 framerateBreakInterval)
 {
 #ifdef STEAMWORKS
 	if (!directConnect && !net_handler)
@@ -3630,9 +3630,12 @@ void clientHandleMessages(bool checkFrameRate)
 			}
 			delete packet;
 
-			if ( checkFrameRate && !frameRateLimit(fpsLimit / 2, false) )
+			if ( !frameRateLimit(framerateBreakInterval, false) )
 			{
-				printlog("[NETWORK]: Incoming messages exceeded 50% cycle time, packets remaining: %d", net_handler->game_packets.size());
+				if ( logCheckMainLoopTimers )
+				{
+					printlog("[NETWORK]: Incoming messages exceeded given cycle time, packets remaining: %d", net_handler->game_packets.size());
+				}
 				break;
 			}
 		}
@@ -4547,7 +4550,7 @@ void serverHandlePacket()
 
 -------------------------------------------------------------------------------*/
 
-void serverHandleMessages(bool checkFrameRate)
+void serverHandleMessages(Uint32 framerateBreakInterval)
 {
 #ifdef STEAMWORKS
 	if (!directConnect && !net_handler)
@@ -4589,9 +4592,12 @@ void serverHandleMessages(bool checkFrameRate)
 			}
 			delete packet;
 
-			if ( checkFrameRate && !frameRateLimit(fpsLimit / 2, false) )
+			if ( !frameRateLimit(framerateBreakInterval, false) )
 			{
-				printlog("[NETWORK]: Incoming messages exceeded 50% cycle time, packets remaining: %d", net_handler->game_packets.size());
+				if ( logCheckMainLoopTimers )
+				{
+					printlog("[NETWORK]: Incoming messages exceeded given cycle time, packets remaining: %d", net_handler->game_packets.size());
+				}
 				break;
 			}
 		}

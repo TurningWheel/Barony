@@ -88,6 +88,7 @@ int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
 DebugStatsClass DebugStats;
+Uint32 networkTickrate = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -2814,13 +2815,18 @@ int main(int argc, char** argv)
 			if ( !intro )
 			{
 				// handle network messages
+				// only run up to % framerate interval (1 / (fps * networkTickrate))
+				if ( networkTickrate == 0 )
+				{
+					networkTickrate = 2;
+				}
 				if ( multiplayer == CLIENT )
 				{
-					clientHandleMessages();
+					clientHandleMessages(fpsLimit * networkTickrate);
 				}
 				else if ( multiplayer == SERVER )
 				{
-					serverHandleMessages();
+					serverHandleMessages(fpsLimit * networkTickrate);
 				}
 			}
 			DebugStats.t21PostHandleMessages = std::chrono::high_resolution_clock::now();
@@ -3897,18 +3903,18 @@ int main(int argc, char** argv)
 
 
 			// frame rate limiter
-			while ( frameRateLimit(fpsLimit) )
+			while ( frameRateLimit(fpsLimit, true) )
 			{
 				if ( !intro )
 				{
 					// handle network messages
 					if ( multiplayer == CLIENT )
 					{
-						clientHandleMessages();
+						clientHandleMessages(fpsLimit);
 					}
 					else if ( multiplayer == SERVER )
 					{
-						serverHandleMessages();
+						serverHandleMessages(fpsLimit);
 					}
 				}
 			}

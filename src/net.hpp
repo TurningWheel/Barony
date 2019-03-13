@@ -51,8 +51,8 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y);
 void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid = 0);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
-void clientHandleMessages(bool checkFrameRate = false);
-void serverHandleMessages(bool checkFrameRate = false);
+void clientHandleMessages(Uint32 framerateBreakInterval);
+void serverHandleMessages(Uint32 framerateBreakInterval);
 bool handleSafePacket();
 
 void closeNetworkInterfaces();

@@ -282,6 +282,7 @@ void actSignalTimer(Entity* my);
 
 void startMessages();
 bool frameRateLimit(Uint32 maxFrameRate, bool resetAccumulator = true);
+extern Uint32 networkTickrate;
 
 #define TOUCHRANGE 32
 #define STRIKERANGE 24
