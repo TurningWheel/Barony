@@ -2333,6 +2333,15 @@ void consoleCommand(char* command_str)
 		{
 			logCheckMainLoopTimers = !logCheckMainLoopTimers;
 		}
+		else if ( !strncmp(command_str, "/entityfreeze", 13) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			gameloopFreezeEntities = !gameloopFreezeEntities;
+		}
 		else if ( !strncmp(command_str, "/tickrate", 9) )
 		{
 			networkTickrate = atoi(&command_str[10]);

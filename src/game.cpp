@@ -89,6 +89,7 @@ Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
 DebugStatsClass DebugStats;
 Uint32 networkTickrate = 0;
+bool gameloopFreezeEntities = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -684,6 +685,10 @@ void gameLogic(void)
 					}
 					if ( entity->behavior != nullptr )
 					{
+						if ( gameloopFreezeEntities && entity->behavior != &actPlayer )
+						{
+							continue;
+						}
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
 							int ox = static_cast<int>(entity->x) >> 4;
