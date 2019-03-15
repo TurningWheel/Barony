@@ -1576,6 +1576,13 @@ void statsHoverText(Stat* tmpStat)
 							{
 								tmp = players[clientnum]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getHealthRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+								if ( tmpStat->type == SKELETON )
+								{
+									if ( !(svFlags & SV_FLAG_HUNGER) )
+									{
+										regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
+									}
+								}
 								if ( regen < 0 )
 								{
 									regen = 0.f;

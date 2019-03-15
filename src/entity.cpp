@@ -2877,13 +2877,17 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = getHealthRegenInterval(*myStats);
+	if ( healthRegenInterval == -1 && behavior == &actPlayer && myStats->type == SKELETON )
+	{
+		healthRegenInterval = HEAL_TIME * 4;
+	}
 	bool naturalHeal = false;
 	if ( healthRegenInterval >= 0 )
 	{
 		if ( myStats->HP < myStats->MAXHP )
 		{
 			this->char_heal++;
-			if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster )
+			if ( (svFlags & SV_FLAG_HUNGER) || behavior == &actMonster || (behavior == &actPlayer && myStats->type == SKELETON) )
 			{
 				if ( this->char_heal >= healthRegenInterval )
 				{
