@@ -1465,19 +1465,26 @@ void equipItem(Item* item, Item** slot, int player)
 		{
 			if (!(*slot)->canUnequip(stats[player]))
 			{
-				if ( player == clientnum )
+				if ( item->type == ARTIFACT_ORB_PURPLE && !strncmp(map.name, "Boss", 4) )
 				{
-					if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
-					{
-						messagePlayer(player, language[3217], (*slot)->getName());
-					}
-					else
-					{
-						messagePlayer(player, language[1089], (*slot)->getName());
-					}
+					// can unequip anything when trying to equip the dang orb.
 				}
-				(*slot)->identified = true;
-				return;
+				else
+				{
+					if ( player == clientnum )
+					{
+						if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+						{
+							messagePlayer(player, language[3217], (*slot)->getName());
+						}
+						else
+						{
+							messagePlayer(player, language[1089], (*slot)->getName());
+						}
+					}
+					(*slot)->identified = true;
+					return;
+				}
 			}
 		}
 		if ( multiplayer != CLIENT && !intro && !fadeout )
@@ -2998,6 +3005,7 @@ bool Item::canUnequip(Stat* wielder)
 	if (type >= 100 && type <= 121) { //Spellbooks always unequipable regardless of cursed.
 		return true;
 	}*/
+
 	if ( wielder )
 	{
 		if ( shouldInvertEquipmentBeatitude(wielder) )
