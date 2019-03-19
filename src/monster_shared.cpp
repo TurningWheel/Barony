@@ -175,7 +175,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return HUMAN;
 	}
-	else if ( mySprite == 131 || mySprite == 265 )     // rat
+	else if ( mySprite == 131 || mySprite == 265 || mySprite == 814 )     // rat
 	{
 		return RAT;
 	}
@@ -191,7 +191,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return SUCCUBUS;
 	}
-	else if ( mySprite == 204 )     // troll head
+	else if ( mySprite == 204 || mySprite == 817 )     // troll head
 	{
 		return TROLL;
 	}

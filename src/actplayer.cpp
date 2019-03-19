@@ -235,6 +235,7 @@ void actPlayer(Entity* my)
 	bool wearingring = false;
 	bool levitating = false;
 	bool isHumanoid = true;
+	bool showEquipment = true;
 	if ( PLAYER_NUM < 0 || PLAYER_NUM >= MAXPLAYERS )
 	{
 		return;
@@ -281,6 +282,10 @@ void actPlayer(Entity* my)
 	{
 		isHumanoid = false;
 	}
+	else if ( stats[PLAYER_NUM]->type == TROLL )
+	{
+		showEquipment = false;
+	}
 
 	if ( multiplayer != CLIENT )
 	{
@@ -305,6 +310,20 @@ void actPlayer(Entity* my)
 	if ( playerRace == GOATMAN && my->sprite == 768 )
 	{
 		my->focalz = limbs[playerRace][0][2] - 0.25; // minor head position fix to match male variant.
+	}
+
+	if ( playerRace == TROLL )
+	{
+		my->focalz += 1.25;
+		my->scalex = 1.01;
+		my->scaley = 1.01;
+		my->scalez = 1.01;
+	}
+	else
+	{
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -1406,6 +1425,9 @@ void actPlayer(Entity* my)
 				case RAT:
 					my->z = 6;
 					break;
+				case TROLL:
+					my->z = -1.5;
+					break;
 				default:
 					break;
 			}
@@ -2051,6 +2073,10 @@ void actPlayer(Entity* my)
 			else if ( playerRace == RAT )
 			{
 				my->sprite = 814;
+			}
+			else if ( playerRace == TROLL )
+			{
+				my->sprite = 817;
 			}
 			else if ( playerRace == GOBLIN )
 			{
@@ -3316,9 +3342,13 @@ void actPlayer(Entity* my)
 					entity->focalx = limbs[playerRace][1][0];
 					entity->focaly = limbs[playerRace][1][1];
 					entity->focalz = limbs[playerRace][1][2];
+					if ( stats[PLAYER_NUM]->type == TROLL )
+					{
+						//entity->focalx -= 1.5;
+					}
 					if ( multiplayer != CLIENT )
 					{
-						if ( stats[PLAYER_NUM]->breastplate == NULL )
+						if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
 						{
 							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO);
 						}
@@ -3344,9 +3374,12 @@ void actPlayer(Entity* my)
 					break;
 					// right leg
 				case 2:
+					entity->focalx = limbs[playerRace][2][0];
+					entity->focaly = limbs[playerRace][2][1];
+					entity->focalz = limbs[playerRace][2][2];
 					if ( multiplayer != CLIENT )
 					{
-						if ( stats[PLAYER_NUM]->shoes == NULL )
+						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
 						{
 							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG);
 						}
@@ -3372,9 +3405,12 @@ void actPlayer(Entity* my)
 					break;
 					// left leg
 				case 3:
+					entity->focalx = limbs[playerRace][3][0];
+					entity->focaly = limbs[playerRace][3][1];
+					entity->focalz = limbs[playerRace][3][2];
 					if ( multiplayer != CLIENT )
 					{
-						if ( stats[PLAYER_NUM]->shoes == NULL )
+						if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
 						{
 							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG);
 						}
@@ -3403,7 +3439,7 @@ void actPlayer(Entity* my)
 				{
 					if ( multiplayer != CLIENT )
 					{
-						if ( stats[PLAYER_NUM]->gloves == NULL )
+						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
 						{
 							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM);
 						}
@@ -3414,7 +3450,7 @@ void actPlayer(Entity* my)
 								// successfully set sprite for the human model
 							}
 						}
-						if ( !PLAYER_ARMBENDED )
+						if ( !PLAYER_ARMBENDED && showEquipment )
 						{
 							entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
 						}
@@ -3476,7 +3512,7 @@ void actPlayer(Entity* my)
 				{
 					if ( multiplayer != CLIENT )
 					{
-						if ( stats[PLAYER_NUM]->gloves == NULL )
+						if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
 						{
 							entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM);
 						}
@@ -3487,7 +3523,10 @@ void actPlayer(Entity* my)
 								// successfully set sprite for the human model
 							}
 						}
-						entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
+						if ( showEquipment )
+						{
+							entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
+						}
 						if ( multiplayer == SERVER )
 						{
 							// update sprites for clients
@@ -3980,6 +4019,15 @@ void actPlayer(Entity* my)
 				default:
 					break;
 			}
+
+
+			if ( !showEquipment )
+			{
+				if ( bodypart >= 6 )
+				{
+					entity->flags[INVISIBLE] = true;
+				}
+			}
 		}
 		// rotate shield a bit
 		node_t* shieldNode = list_Node(&my->children, 7);
@@ -3994,48 +4042,9 @@ void actPlayer(Entity* my)
 	}
 	else
 	{
-		for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
+		if ( stats[PLAYER_NUM]->type == RAT )
 		{
-			if ( stats[PLAYER_NUM]->type == RAT )
-			{
-				if ( bodypart == 0 )
-				{
-					// hudweapon case
-					my->focalx = -2;
-					continue;
-				}
-				entity = (Entity*)node->element;
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = my->z;
-				if ( bodypart == 1 )
-				{
-					entity->sprite = 815;
-					entity->focalx = -2;// limbs[playerRace][1][0];
-					// limbs[playerRace][1][1];
-					//entity->focalz = limbs[playerRace][1][2];
-					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
-					{
-						/*if ( (ticks % 10 == 0 && dist > 0.1) || (PLAYER_ATTACKTIME != PLAYER_ATTACK) )
-						{
-							if ( my->sprite == 131 )
-							{
-								my->sprite = 265;
-							}
-							else
-							{
-								my->sprite = 131;
-							}
-						}*/
-					}
-				}
-
-				if ( bodypart > 1 )
-				{
-					entity->flags[INVISIBLE] = true;
-				}
-			}
-			entity->yaw = my->yaw;
+			playerAnimateRat(my);
 		}
 	}
 	if ( PLAYER_ATTACK != 0 )
@@ -4417,6 +4426,9 @@ bool Entity::isPlayerHeadSprite()
 		case 760:
 		case 768:
 		case 770:
+		case 814:
+		case 817:
+			// TODO
 			return true;
 			break;
 		default:
@@ -4465,6 +4477,9 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 			break;
 		case RACE_RAT:
 			return RAT;
+			break;
+		case RACE_TROLL:
+			return TROLL;
 			break;
 		default:
 			return HUMAN;
@@ -4559,6 +4574,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case AUTOMATON:
 					this->sprite = 743;
 					break;
+				case TROLL:
+					this->sprite = 818;
+					break;
 				default:
 					break;
 			}
@@ -4629,6 +4647,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case AUTOMATON:
 					this->sprite = 749;
+					break;
+				case TROLL:
+					this->sprite = 822;
 					break;
 				default:
 					break;
@@ -4701,6 +4722,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case AUTOMATON:
 					this->sprite = 748;
 					break;
+				case TROLL:
+					this->sprite = 821;
+					break;
 				default:
 					break;
 			}
@@ -4757,6 +4781,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case AUTOMATON:
 					this->sprite = 745;
+					break;
+				case TROLL:
+					this->sprite = 820;
 					break;
 				default:
 					break;
@@ -4815,6 +4842,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case AUTOMATON:
 					this->sprite = 744;
 					break;
+				case TROLL:
+					this->sprite = 819;
+					break;
 				default:
 					break;
 			}
@@ -4847,4 +4877,53 @@ bool Entity::playerRequiresBloodToSustain()
 	}
 	
 	return false;
+}
+
+void playerAnimateRat(Entity* my)
+{
+	node_t* node = nullptr;
+	int bodypart = 0;
+	for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
+	{
+		if ( bodypart == 0 )
+		{
+			my->focalx = -2;
+			continue;
+		}
+		Entity* entity = (Entity*)node->element;
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = my->z;
+		if ( bodypart == 1 )
+		{
+			if ( entity->sprite != 815 && entity->sprite != 816 )
+			{
+				entity->sprite = 815;
+			}
+			entity->focalx = -2;
+			// limbs[playerRace][1][0];
+			// limbs[playerRace][1][1];
+			//entity->focalz = limbs[playerRace][1][2];
+			if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+			{
+				if ( (ticks % 10 == 0) )
+				{
+					if ( entity->sprite == 815 )
+					{
+						entity->sprite = 816;
+					}
+					else
+					{
+						entity->sprite = 815;
+					}
+				}
+			}
+		}
+
+		if ( bodypart > 1 )
+		{
+			entity->flags[INVISIBLE] = true;
+		}
+		entity->yaw = my->yaw;
+	}
 }

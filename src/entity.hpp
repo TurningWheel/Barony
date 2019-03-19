@@ -840,6 +840,7 @@ void getItemsOnTile(int x, int y, list_t** list);
 //--- Entity act* functions ---
 void actMonster(Entity* my);
 void actPlayer(Entity* my);
+void playerAnimateRat(Entity* my);
 
 /*
  * NOTE: Potion effects

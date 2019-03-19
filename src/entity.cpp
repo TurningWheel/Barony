@@ -13779,6 +13779,65 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 			}
 			break;
+		case TROLL:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .5 * cos(this->yaw);
+				limb->y -= .5 * sin(this->yaw);
+				limb->z += 2.25;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 2 * cos(this->yaw + PI / 2) - 0.75 * cos(this->yaw);
+				limb->y += 2 * sin(this->yaw + PI / 2) - 0.75 * sin(this->yaw);
+				limb->z += 5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 2 * cos(this->yaw + PI / 2) + 0.75 * cos(this->yaw);
+				limb->y -= 2 * sin(this->yaw + PI / 2) + 0.75 * sin(this->yaw);
+				limb->z += 5;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 3.5 * cos(this->yaw + PI / 2) - 1 * cos(this->yaw);
+				limb->y += 3.5 * sin(this->yaw + PI / 2) - 1 * sin(this->yaw);
+				limb->z += .1;
+				//limb->yaw += MONSTER_WEAPONYAW;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 3.5 * cos(this->yaw + PI / 2) + 1 * cos(this->yaw);
+				limb->y -= 3.5 * sin(this->yaw + PI / 2) + 1 * sin(this->yaw);
+				limb->z += .1;
+				if ( this->z >= 1.4 && this->z <= 1.6 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
 		case SKELETON:
 		case AUTOMATON:
 			if ( limbType == LIMB_HUMANOID_TORSO )
