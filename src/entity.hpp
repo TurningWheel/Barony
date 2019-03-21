@@ -841,6 +841,7 @@ void getItemsOnTile(int x, int y, list_t** list);
 void actMonster(Entity* my);
 void actPlayer(Entity* my);
 void playerAnimateRat(Entity* my);
+void playerAnimateSpider(Entity* my);
 
 /*
  * NOTE: Potion effects

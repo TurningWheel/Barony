@@ -104,7 +104,7 @@ extern Uint32 timesync;
 extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 21
-#define NUMRACES 11
+#define NUMRACES 13
 #define NUMPLAYABLERACES 9
 extern char address[64];
 extern bool loadnextlevel;
@@ -156,7 +156,9 @@ enum PlayerRaces : int
 	RACE_GOBLIN,
 	RACE_INSECTOID,
 	RACE_RAT,
-	RACE_TROLL
+	RACE_TROLL,
+	RACE_SPIDER,
+	RACE_IMP
 };
 
 enum ESteamStatTypes

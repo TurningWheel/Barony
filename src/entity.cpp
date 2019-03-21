@@ -13728,6 +13728,39 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	}
 	switch ( race )
 	{
+		case CREATURE_IMP:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= 2 * cos(this->yaw);
+				limb->y -= 2 * sin(this->yaw);
+				limb->z += 2.75;
+				limb->focalz -= 0.25;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2);
+				limb->y += 1 * sin(this->yaw + PI / 2);
+				limb->z += 6;
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2);
+				limb->y -= 1 * sin(this->yaw + PI / 2);
+				limb->z += 6;
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 3 * cos(this->yaw + PI / 2) - 1 * cos(this->yaw);
+				limb->y += 3 * sin(this->yaw + PI / 2) - 1 * sin(this->yaw);
+				limb->z += 1;
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 3 * cos(this->yaw + PI / 2) + 1 * cos(this->yaw);
+				limb->y -= 3 * sin(this->yaw + PI / 2) + 1 * sin(this->yaw);
+				limb->z += 1;
+			}
+			break;
 		case HUMAN:
 		case VAMPIRE:
 			if ( limbType == LIMB_HUMANOID_TORSO )

@@ -278,11 +278,11 @@ void actPlayer(Entity* my)
 		stats[PLAYER_NUM]->type = HUMAN;
 	}
 
-	if ( stats[PLAYER_NUM]->type == RAT )
+	if ( stats[PLAYER_NUM]->type == RAT || stats[PLAYER_NUM]->type == SPIDER )
 	{
 		isHumanoid = false;
 	}
-	else if ( stats[PLAYER_NUM]->type == TROLL )
+	else if ( stats[PLAYER_NUM]->type == TROLL || stats[PLAYER_NUM]->type == CREATURE_IMP )
 	{
 		showEquipment = false;
 	}
@@ -651,8 +651,8 @@ void actPlayer(Entity* my)
 
 		// additional limb 1
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
-		entity->sizex = 1;
-		entity->sizey = 1;
+		entity->sizex = 4;
+		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
@@ -671,8 +671,8 @@ void actPlayer(Entity* my)
 
 		// additional limb 2
 		entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
-		entity->sizex = 1;
-		entity->sizey = 1;
+		entity->sizex = 4;
+		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
@@ -688,6 +688,49 @@ void actPlayer(Entity* my)
 		node->deconstructor = &emptyDeconstructor;
 		node->size = sizeof(Entity*);
 		my->bodyparts.push_back(entity);
+
+		// additional limb 3 - 18.
+		for ( int c = 0; c < 8; ++c )
+		{
+			entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->skill[2] = PLAYER_NUM;
+			entity->fskill[10] = (c / 8.f);
+			entity->flags[PASSABLE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[GENIUS] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->focalx = limbs[playerRace][11][0];
+			entity->focaly = limbs[playerRace][11][1];
+			entity->focalz = limbs[playerRace][11][2];
+			entity->behavior = &actPlayerLimb;
+			entity->parent = my->getUID();
+			node = list_AddNodeLast(&my->children);
+			node->element = entity;
+			node->deconstructor = &emptyDeconstructor;
+			node->size = sizeof(Entity*);
+			my->bodyparts.push_back(entity);
+
+			entity = newEntity(-1, 1, map.entities, nullptr); //Limb entity.
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->skill[2] = PLAYER_NUM;
+			entity->flags[PASSABLE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[GENIUS] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->focalx = limbs[playerRace][12][0];
+			entity->focaly = limbs[playerRace][12][1];
+			entity->focalz = limbs[playerRace][12][2];
+			entity->behavior = &actPlayerLimb;
+			entity->parent = my->getUID();
+			node = list_AddNodeLast(&my->children);
+			node->element = entity;
+			node->deconstructor = &emptyDeconstructor;
+			node->size = sizeof(Entity*);
+			my->bodyparts.push_back(entity);
+		}
 	}
 	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 	int blueSpeechVolume = 100;
@@ -1428,6 +1471,12 @@ void actPlayer(Entity* my)
 				case TROLL:
 					my->z = -1.5;
 					break;
+				case SPIDER:
+					my->z = 4.5;
+					break;
+				case CREATURE_IMP:
+					my->z = -4.5;
+					break;
 				default:
 					break;
 			}
@@ -2078,6 +2127,14 @@ void actPlayer(Entity* my)
 			{
 				my->sprite = 817;
 			}
+			else if ( playerRace == SPIDER )
+			{
+				my->sprite = 823;
+			}
+			else if ( playerRace == CREATURE_IMP )
+			{
+				my->sprite = 827;
+			}
 			else if ( playerRace == GOBLIN )
 			{
 				if ( stats[PLAYER_NUM]->sex == FEMALE )
@@ -2192,7 +2249,7 @@ void actPlayer(Entity* my)
 						{
 							list_RemoveNode(tempEntity->mynode);
 						}
-						if ( i > 12 )
+						if ( i > 28 )
 						{
 							break;
 						}
@@ -3078,6 +3135,12 @@ void actPlayer(Entity* my)
 				}
 			}
 
+			if ( bodypart > 12 )
+			{
+				entity->flags[INVISIBLE] = true;
+				break;
+			}
+
 			entity->yaw = my->yaw;
 			if ( bodypart == 2 || bodypart == 5 ) // right leg, left arm
 			{
@@ -3089,18 +3152,26 @@ void actPlayer(Entity* my)
 				{
 					shieldarm = entity;
 				}
+				double limbSpeed = dist;
+				double pitchLimit = PI / 4.f;
+				if ( playerRace == CREATURE_IMP )
+				{
+					limbSpeed = 1 / 12.f;
+					pitchLimit = PI / 8.f;
+				}
 				node_t* shieldNode = list_Node(&my->children, 7);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || shield->flags[INVISIBLE]) )
+					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || shield->flags[INVISIBLE])
+						|| playerRace == CREATURE_IMP )
 					{
 						if ( !rightbody->skill[0] )
 						{
-							entity->pitch -= dist * PLAYERWALKSPEED;
-							if ( entity->pitch < -PI / 4.0 )
+							entity->pitch -= limbSpeed * PLAYERWALKSPEED;
+							if ( entity->pitch < -pitchLimit )
 							{
-								entity->pitch = -PI / 4.0;
+								entity->pitch = -pitchLimit;
 								if ( bodypart == 2 && dist > .4 && !levitating && !swimming )
 								{
 									node_t* tempNode = list_Node(&my->children, 2);
@@ -3125,10 +3196,10 @@ void actPlayer(Entity* my)
 						}
 						else
 						{
-							entity->pitch += dist * PLAYERWALKSPEED;
-							if ( entity->pitch > PI / 4.0 )
+							entity->pitch += limbSpeed * PLAYERWALKSPEED;
+							if ( entity->pitch > pitchLimit )
 							{
-								entity->pitch = PI / 4.0;
+								entity->pitch = pitchLimit;
 								if ( bodypart == 2 && dist > .4 && !levitating && !swimming )
 								{
 									node_t* tempNode = list_Node(&my->children, 2);
@@ -3156,7 +3227,7 @@ void actPlayer(Entity* my)
 					{
 						if ( entity->pitch < 0 )
 						{
-							entity->pitch += 1 / fmax(dist * .1, 10.0);
+							entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
 							if ( entity->pitch > 0 )
 							{
 								entity->pitch = 0;
@@ -3164,7 +3235,7 @@ void actPlayer(Entity* my)
 						}
 						else if ( entity->pitch > 0 )
 						{
-							entity->pitch -= 1 / fmax(dist * .1, 10.0);
+							entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
 							if ( entity->pitch < 0 )
 							{
 								entity->pitch = 0;
@@ -3285,24 +3356,31 @@ void actPlayer(Entity* my)
 
 				if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 				{
-					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+					double limbSpeed = dist;
+					double pitchLimit = PI / 4.f;
+					if ( playerRace == CREATURE_IMP )
+					{
+						limbSpeed = 1 / 12.f;
+						pitchLimit = PI / 8.f;
+					}
+					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 || playerRace == CREATURE_IMP )
 					{
 						if ( entity->skill[0] )
 						{
-							entity->pitch -= dist * PLAYERWALKSPEED;
-							if ( entity->pitch < -PI / 4.0 )
+							entity->pitch -= limbSpeed * PLAYERWALKSPEED;
+							if ( entity->pitch < -pitchLimit )
 							{
 								entity->skill[0] = 0;
-								entity->pitch = -PI / 4.0;
+								entity->pitch = -pitchLimit;
 							}
 						}
 						else
 						{
-							entity->pitch += dist * PLAYERWALKSPEED;
-							if ( entity->pitch > PI / 4.0 )
+							entity->pitch += limbSpeed * PLAYERWALKSPEED;
+							if ( entity->pitch > pitchLimit )
 							{
 								entity->skill[0] = 1;
-								entity->pitch = PI / 4.0;
+								entity->pitch = pitchLimit;
 							}
 						}
 					}
@@ -3310,7 +3388,7 @@ void actPlayer(Entity* my)
 					{
 						if ( entity->pitch < 0 )
 						{
-							entity->pitch += 1 / fmax(dist * .1, 10.0);
+							entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
 							if ( entity->pitch > 0 )
 							{
 								entity->pitch = 0;
@@ -3318,7 +3396,7 @@ void actPlayer(Entity* my)
 						}
 						else if ( entity->pitch > 0 )
 						{
-							entity->pitch -= 1 / fmax(dist * .1, 10.0);
+							entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
 							if ( entity->pitch < 0 )
 							{
 								entity->pitch = 0;
@@ -3342,10 +3420,6 @@ void actPlayer(Entity* my)
 					entity->focalx = limbs[playerRace][1][0];
 					entity->focaly = limbs[playerRace][1][1];
 					entity->focalz = limbs[playerRace][1][2];
-					if ( stats[PLAYER_NUM]->type == TROLL )
-					{
-						//entity->focalx -= 1.5;
-					}
 					if ( multiplayer != CLIENT )
 					{
 						if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
@@ -3911,27 +3985,40 @@ void actPlayer(Entity* my)
 					entity->focaly = limbs[playerRace][11][1];
 					entity->focalz = limbs[playerRace][11][2];
 					entity->flags[INVISIBLE] = true;
-					if ( playerRace == INSECTOID )
+					if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-						if ( stats[PLAYER_NUM]->sex == FEMALE )
+						if ( playerRace == INSECTOID )
 						{
-							entity->sprite = 771;
+							if ( stats[PLAYER_NUM]->sex == FEMALE )
+							{
+								entity->sprite = 771;
+							}
+							else
+							{
+								entity->sprite = 750;
+							}
+							if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+							{
+								// wearing armor, offset more.
+								entity->x -= 2.25 * cos(my->yaw);
+								entity->y -= 2.25 * sin(my->yaw);
+							}
+							else
+							{
+								entity->x -= 1.5 * cos(my->yaw);
+								entity->y -= 1.5 * sin(my->yaw);
+							}
 						}
-						else
+						else if ( playerRace == CREATURE_IMP )
 						{
-							entity->sprite = 750;
-						}
-						if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
-						{
-							// wearing armor, offset more.
-							entity->x -= 2.25 * cos(my->yaw);
-							entity->y -= 2.25 * sin(my->yaw);
-						}
-						else
-						{
-							entity->x -= 1.5 * cos(my->yaw);
-							entity->y -= 1.5 * sin(my->yaw);
+							entity->sprite = 833;
+							entity->focalx = limbs[playerRace][7][0];
+							entity->focaly = limbs[playerRace][7][1];
+							entity->focalz = limbs[playerRace][7][2];
+							entity->x -= 1 * cos(my->yaw + PI / 2) + 2.5 * cos(my->yaw);
+							entity->y -= 1 * sin(my->yaw + PI / 2) + 2.5 * sin(my->yaw);
+							entity->z += 1;
 						}
 						bool moving = false;
 						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
@@ -3954,7 +4041,9 @@ void actPlayer(Entity* my)
 								entity->fskill[0] += 0.01; // otherwise move slow idle
 							}
 
-							if ( entity->fskill[0] > PI / 3 || ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5) )
+							if ( entity->fskill[0] > PI / 3 
+								|| ((!moving || PLAYER_ATTACK != 0) && entity->fskill[0] > PI / 5)
+								|| (playerRace == CREATURE_IMP && entity->fskill[0] > PI / 8) )
 							{
 								// switch direction if angle too great, angle is shorter if attacking or stationary
 								entity->skill[0] = 1;
@@ -3975,7 +4064,11 @@ void actPlayer(Entity* my)
 								entity->fskill[0] -= 0.007;
 							}
 
-							if ( entity->fskill[0] < -PI / 32 )
+							if ( playerRace == INSECTOID && entity->fskill[0] < -PI / 32 )
+							{
+								entity->skill[0] = 0;
+							}
+							else if ( playerRace == CREATURE_IMP && entity->fskill[0] < -PI / 4 )
 							{
 								entity->skill[0] = 0;
 							}
@@ -3988,31 +4081,44 @@ void actPlayer(Entity* my)
 					entity->focaly = limbs[playerRace][12][1];
 					entity->focalz = limbs[playerRace][12][2];
 					entity->flags[INVISIBLE] = true;
-					if ( playerRace == INSECTOID )
+					if ( playerRace == INSECTOID || playerRace == CREATURE_IMP )
 					{
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-						if ( stats[PLAYER_NUM]->sex == FEMALE )
+						if ( playerRace == INSECTOID )
 						{
-							entity->sprite = 772;
+							if ( stats[PLAYER_NUM]->sex == FEMALE )
+							{
+								entity->sprite = 772;
+							}
+							else
+							{
+								entity->sprite = 751;
+							}
+							if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
+							{
+								// wearing armor, offset more.
+								entity->x -= 2.25 * cos(my->yaw);
+								entity->y -= 2.25 * sin(my->yaw);
+							}
+							else
+							{
+								entity->x -= 1.5 * cos(my->yaw);
+								entity->y -= 1.5 * sin(my->yaw);
+							}
 						}
-						else
+						else if ( playerRace == CREATURE_IMP )
 						{
-							entity->sprite = 751;
+							entity->sprite = 834;
+							entity->focalx = limbs[playerRace][6][0];
+							entity->focaly = limbs[playerRace][6][1];
+							entity->focalz = limbs[playerRace][6][2];
+							entity->x += 1 * cos(my->yaw + PI / 2) - 2.5 * cos(my->yaw);
+							entity->y += 1 * sin(my->yaw + PI / 2) - 2.5 * sin(my->yaw);
+							entity->z += 1;
 						}
 						if ( additionalLimb ) // follow the yaw of the previous limb.
 						{
 							entity->yaw -= additionalLimb->fskill[0];
-						}
-						if ( torso && torso->sprite != 727 && torso->sprite != 761 && torso->sprite != 458 )
-						{
-							// wearing armor, offset more.
-							entity->x -= 2.25 * cos(my->yaw);
-							entity->y -= 2.25 * sin(my->yaw);
-						}
-						else
-						{
-							entity->x -= 1.5 * cos(my->yaw);
-							entity->y -= 1.5 * sin(my->yaw);
 						}
 					}
 					break;
@@ -4023,7 +4129,7 @@ void actPlayer(Entity* my)
 
 			if ( !showEquipment )
 			{
-				if ( bodypart >= 6 )
+				if ( bodypart >= 6 && bodypart <= 10 )
 				{
 					entity->flags[INVISIBLE] = true;
 				}
@@ -4045,6 +4151,10 @@ void actPlayer(Entity* my)
 		if ( stats[PLAYER_NUM]->type == RAT )
 		{
 			playerAnimateRat(my);
+		}
+		else if ( stats[PLAYER_NUM]->type == SPIDER )
+		{
+			playerAnimateSpider(my);
 		}
 	}
 	if ( PLAYER_ATTACK != 0 )
@@ -4428,6 +4538,8 @@ bool Entity::isPlayerHeadSprite()
 		case 770:
 		case 814:
 		case 817:
+		case 823:
+		case 827:
 			// TODO
 			return true;
 			break;
@@ -4480,6 +4592,12 @@ Monster Entity::getMonsterFromPlayerRace(int playerRace)
 			break;
 		case RACE_TROLL:
 			return TROLL;
+			break;
+		case RACE_SPIDER:
+			return SPIDER;
+			break;
+		case RACE_IMP:
+			return CREATURE_IMP;
 			break;
 		default:
 			return HUMAN;
@@ -4534,6 +4652,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					{
 						this->sprite = 695;
 					}
+					break;
+				case CREATURE_IMP:
+					this->sprite = 828;
 					break;
 				case INCUBUS:
 					this->sprite = 703;
@@ -4616,6 +4737,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 701;
 					}
 					break;
+				case CREATURE_IMP:
+					this->sprite = 830;
+					break;
 				case INCUBUS:
 					this->sprite = 709;
 					break;
@@ -4690,6 +4814,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 						this->sprite = 700;
 					}
 					break;
+				case CREATURE_IMP:
+					this->sprite = 829;
+					break;
 				case INCUBUS:
 					this->sprite = 708;
 					break;
@@ -4757,6 +4884,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case GOBLIN:
 					this->sprite = 697;
 					break;
+				case CREATURE_IMP:
+					this->sprite = 832;
+					break;
 				case INCUBUS:
 					this->sprite = 705;
 					break;
@@ -4816,6 +4946,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					break;
 				case GOBLIN:
 					this->sprite = 696;
+					break;
+				case CREATURE_IMP:
+					this->sprite = 831;
 					break;
 				case INCUBUS:
 					this->sprite = 704;
@@ -4925,5 +5058,313 @@ void playerAnimateRat(Entity* my)
 			entity->flags[INVISIBLE] = true;
 		}
 		entity->yaw = my->yaw;
+	}
+}
+
+void playerAnimateSpider(Entity* my)
+{
+	node_t* node = nullptr;
+	int bodypart = 0;
+	for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( bodypart < 11 )
+		{
+			entity->flags[INVISIBLE] = true;
+			continue;
+		}
+		Entity* previous = NULL; // previous part
+		if ( bodypart > 11 )
+		{
+			previous = (Entity*)node->prev->element;
+		}
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = my->z;
+		entity->yaw = my->yaw;
+
+		entity->roll = my->roll;
+
+		if ( bodypart > 12 )
+		{
+			entity->pitch = -my->pitch;
+			entity->pitch = std::max(-PI / 32, std::min(PI / 32, entity->pitch));
+			if ( bodypart % 2 == 0 )
+			{
+				entity->sprite = 826;
+				entity->focalx = limbs[SPIDER][4][0]; // 3
+				entity->focaly = limbs[SPIDER][4][1]; // 0
+				entity->focalz = limbs[SPIDER][4][2]; // 0
+			}
+			else
+			{
+				entity->sprite = 825;
+				entity->focalx = limbs[SPIDER][3][0]; // 1
+				entity->focaly = limbs[SPIDER][3][1]; // 0
+				entity->focalz = limbs[SPIDER][3][2]; // -1
+			}
+		}
+
+		if ( bodypart == 11 || bodypart == 12 )
+		{
+			if ( PLAYER_ATTACK >= 1 && PLAYER_ATTACK <= 3 )
+			{
+				// vertical chop
+				if ( PLAYER_ATTACKTIME == 0 )
+				{
+					entity->pitch = 0;
+					entity->roll = 0;
+					entity->skill[1] = 0;
+				}
+				else
+				{
+					if ( entity->skill[1] == 0 )
+					{
+						// upswing
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 5 * PI / 4, false, 0.0) )
+						{
+							entity->skill[1] = 1;
+						}
+					}
+					else
+					{
+						if ( entity->pitch >= 3 * PI / 2 )
+						{
+							PLAYER_ARMBENDED = 1;
+						}
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 0, false, 0.0) )
+						{
+							entity->skill[1] = 0;
+							entity->roll = 0;
+							PLAYER_ARMBENDED = 0;
+							PLAYER_ATTACK = 0;
+						}
+					}
+				}
+			}
+		}
+
+		entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+
+		switch ( bodypart )
+		{
+			// right pedipalp
+			case 11:
+				entity->sprite = 824;
+				entity->focalx = limbs[SPIDER][1][0]; // 1
+				entity->focaly = limbs[SPIDER][1][1]; // 0
+				entity->focalz = limbs[SPIDER][1][2]; // 1
+				entity->x += cos(my->yaw) * 2 + cos(my->yaw + PI / 2) * 2;
+				entity->y += sin(my->yaw) * 2 + sin(my->yaw + PI / 2) * 2;
+				entity->yaw += PI / 10;
+				if ( PLAYER_ATTACK == 0 )
+				{
+					entity->pitch = my->pitch;
+					entity->pitch -= PI / 8;
+				}
+				break;
+				// left pedipalp
+			case 12:
+				entity->sprite = 824;
+				entity->focalx = limbs[SPIDER][2][0]; // 1
+				entity->focaly = limbs[SPIDER][2][1]; // 0
+				entity->focalz = limbs[SPIDER][2][2]; // 1
+				entity->x += cos(my->yaw) * 2 - cos(my->yaw + PI / 2) * 2;
+				entity->y += sin(my->yaw) * 2 - sin(my->yaw + PI / 2) * 2;
+				entity->yaw -= PI / 10;
+				if ( PLAYER_ATTACK == 0 )
+				{
+					entity->pitch = my->pitch;
+					entity->pitch -= PI / 8;
+				}
+				break;
+
+				// 1st/5th leg:
+				// thigh
+			case 13:
+			case 21:
+				entity->x += cos(my->yaw) * 1 + cos(my->yaw + PI / 2) * 2.5 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * 1 + sin(my->yaw + PI / 2) * 2.5 * (1 - 2 * (bodypart > 20));
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				{
+					if ( !entity->skill[0] )
+					{
+						entity->fskill[0] += .1;
+						if ( entity->fskill[0] >= 1 )
+						{
+							entity->fskill[0] = 1;
+							entity->skill[0] = 1;
+						}
+					}
+					else
+					{
+						entity->fskill[0] -= .1;
+						if ( entity->fskill[0] <= 0 )
+						{
+							entity->fskill[0] = 0;
+							entity->skill[0] = 0;
+						}
+					}
+				}
+				entity->z += entity->fskill[0];
+				entity->yaw += PI / 6 * (1 - 2 * (bodypart > 20));
+				entity->pitch += PI / 4;
+				break;
+				// shin
+			case 14:
+			case 22:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw) * 3 + cos(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * 3 + sin(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
+				entity->z += .5;
+				entity->pitch += PI / 6 - PI / 4;
+				entity->pitch -= (PI / 10) * (previous->z - my->z);
+				break;
+
+				// 2nd/6th leg:
+				// thigh
+			case 15:
+			case 23:
+				entity->x += cos(my->yaw + PI / 2) * 3 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw + PI / 2) * 3 * (1 - 2 * (bodypart > 20));
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				{
+					if ( !entity->skill[0] )
+					{
+						entity->fskill[0] += .1;
+						if ( entity->fskill[0] >= 1 )
+						{
+							entity->fskill[0] = 1;
+							entity->skill[0] = 1;
+						}
+					}
+					else
+					{
+						entity->fskill[0] -= .1;
+						if ( entity->fskill[0] <= 0 )
+						{
+							entity->fskill[0] = 0;
+							entity->skill[0] = 0;
+						}
+					}
+				}
+				entity->z += entity->fskill[0];
+				entity->yaw += PI / 3 * (1 - 2 * (bodypart > 20));
+				entity->pitch += PI / 4;
+				break;
+				// shin
+			case 16:
+			case 24:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw) * 1.75 + cos(my->yaw + PI / 2) * 3 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * 1.75 + sin(my->yaw + PI / 2) * 3 * (1 - 2 * (bodypart > 20));
+				entity->z += .5;
+				entity->pitch += PI / 6 - PI / 4;
+				entity->pitch -= (PI / 10) * (previous->z - my->z);
+				break;
+
+				// 3rd/7th leg:
+				// thigh
+			case 17:
+			case 25:
+				entity->x += cos(my->yaw) * -.5 + cos(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * -.5 + sin(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				{
+					if ( !entity->skill[0] )
+					{
+						entity->fskill[0] += .1;
+						if ( entity->fskill[0] >= 1 )
+						{
+							entity->fskill[0] = 1;
+							entity->skill[0] = 1;
+						}
+					}
+					else
+					{
+						entity->fskill[0] -= .1;
+						if ( entity->fskill[0] <= 0 )
+						{
+							entity->fskill[0] = 0;
+							entity->skill[0] = 0;
+						}
+					}
+				}
+				entity->z += entity->fskill[0];
+				entity->yaw += (PI / 2 + PI / 8) * (1 - 2 * (bodypart > 20));
+				entity->pitch += PI / 4;
+				break;
+				// shin
+			case 18:
+			case 26:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw) * -1.25 + cos(my->yaw + PI / 2) * 3.25 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * -1.25 + sin(my->yaw + PI / 2) * 3.25 * (1 - 2 * (bodypart > 20));
+				entity->z += .5;
+				entity->pitch += PI / 6 - PI / 4;
+				entity->pitch -= (PI / 10) * (previous->z - my->z);
+				break;
+
+				// 4th/8th leg:
+				// thigh
+			case 19:
+			case 27:
+				entity->x += cos(my->yaw) * -.5 + cos(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * -.5 + sin(my->yaw + PI / 2) * 2 * (1 - 2 * (bodypart > 20));
+				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) > 0.1 )
+				{
+					if ( !entity->skill[0] )
+					{
+						entity->fskill[0] += .1;
+						if ( entity->fskill[0] >= 1 )
+						{
+							entity->fskill[0] = 1;
+							entity->skill[0] = 1;
+						}
+					}
+					else
+					{
+						entity->fskill[0] -= .1;
+						if ( entity->fskill[0] <= 0 )
+						{
+							entity->fskill[0] = 0;
+							entity->skill[0] = 0;
+						}
+					}
+				}
+				entity->z += entity->fskill[0];
+				entity->yaw += (PI / 2 + PI / 3) * (1 - 2 * (bodypart > 20));
+				entity->pitch += PI / 4;
+				break;
+				// shin
+			case 20:
+			case 28:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw) * -3 + cos(my->yaw + PI / 2) * 1.75 * (1 - 2 * (bodypart > 20));
+				entity->y += sin(my->yaw) * -3 + sin(my->yaw + PI / 2) * 1.75 * (1 - 2 * (bodypart > 20));
+				entity->z += .5;
+				entity->pitch += PI / 6 - PI / 4;
+				entity->pitch += (PI / 10) * (previous->z - my->z);
+				break;
+			default:
+				//entity->flags[INVISIBLE] = true; // for debugging
+				break;
+		}
 	}
 }
