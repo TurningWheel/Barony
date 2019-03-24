@@ -1458,7 +1458,12 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 				continue;
 			}
 
-			Item* spellbook = getSpellbookFromSpellID(spell->ID);
+			int spellbookType = getSpellbookFromSpellID(spell->ID);
+			if ( spellbookType == WOODEN_SHIELD )
+			{
+				continue;
+			}
+			Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
 			if ( !spellbook )
 			{
 				continue;
@@ -1492,7 +1497,16 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	{
 		int choosen = rand()%spellsCanMimic.size();
 
-		Item* spellbook = getSpellbookFromSpellID(spellsCanMimic[choosen]);
+		int spellbookType = getSpellbookFromSpellID(spellsCanMimic[choosen]);
+		if ( spellbookType == WOODEN_SHIELD )
+		{
+			continue;
+		}
+		Item* spellbook = newItem(static_cast<ItemType>(spellbookType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
+		if ( !spellbook )
+		{
+			continue;
+		}
 
 		if ( spellbook )
 		{

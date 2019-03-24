@@ -482,7 +482,7 @@ bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
 
 spell_t* getSpellFromID(int ID);
-Item* getSpellbookFromSpellID(int spellID);
+int getSpellbookFromSpellID(int spellID);
 
 bool spellInList(list_t* list, spell_t* spell);
 

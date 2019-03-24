@@ -1421,6 +1421,11 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
 		}
+		else if ( itemCategory(&item) == SPELLBOOK )
+		{
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
+		}
 	}
 }
 
@@ -1598,6 +1603,64 @@ inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height
 	drawOptionDrop(x, y);
 }
 
+inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int height, bool learnedSpell)
+{
+	int width = 0;
+
+	//Option 0.
+	if ( openedChest[clientnum] )
+	{
+		drawOptionStoreInChest(x, y);
+	}
+	else if ( gui_mode == GUI_MODE_SHOP )
+	{
+		drawOptionSell(x, y);
+	}
+	else
+	{
+		if ( learnedSpell )
+		{
+			if ( itemIsEquipped(&item, clientnum) )
+			{
+				drawOptionUnwield(x, y);
+			}
+			else
+			{
+				drawOptionWield(x, y);
+			}
+		}
+		else
+		{
+			drawOptionUse(item, x, y);
+		}
+	}
+	y += height;
+
+	//Option 1
+	if ( learnedSpell )
+	{
+		drawOptionUse(item, x, y);
+	}
+	else
+	{
+		if ( itemIsEquipped(&item, clientnum) )
+		{
+			drawOptionUnwield(x, y);
+		}
+		else
+		{
+			drawOptionWield(x, y);
+		}
+	}
+	y += height;
+
+	//Option 2
+	drawOptionAppraise(x, y);
+	y += height;
+
+	//Option 3
+	drawOptionDrop(x, y);
+}
 
 /*
  * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
@@ -1628,7 +1691,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 			itemMenuSelected = 2;
 		}
 		current_y += slot_height;
-		if (itemCategory(&item) == POTION)
+		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK )
 		{
 			if (mousey >= current_y && mousey < current_y + slot_height)
 			{
@@ -1656,7 +1719,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 /*
  * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
  */
-inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false)
+inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedSpell)
 {
 	if (!item)
 	{
@@ -1675,7 +1738,7 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false)
 	}
 	else
 	{
-		if (!is_potion_bad)
+		if (!is_potion_bad && !learnedSpell)
 		{
 			//Option 0 = use.
 			useItem(item, clientnum);
@@ -1693,7 +1756,14 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false)
 				}
 				else
 				{
-					strcpy((char*)net_packet->data, "EQUI");
+					if ( itemCategory(item) == SPELLBOOK )
+					{
+						strcpy((char*)net_packet->data, "EQUS");
+					}
+					else
+					{
+						strcpy((char*)net_packet->data, "EQUI");
+					}
 					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1707,12 +1777,19 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false)
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
 			}
-			equipItem(item, &stats[clientnum]->weapon, clientnum);
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				equipItem(item, &stats[clientnum]->shield, clientnum);
+			}
+			else
+			{
+				equipItem(item, &stats[clientnum]->weapon, clientnum);
+			}
 		}
 	}
 }
 
-inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
+inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedSpell)
 {
 	if (!item || itemCategory(item) == SPELL_CAT)
 	{
@@ -1724,7 +1801,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 		// experimenting!
 		GenericGUI.openGUI(GUI_TYPE_ALCHEMY, true, item);
 	}
-	else if (itemCategory(item) != POTION)
+	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK)
 	{
 		//Option 1 = appraise.
 		identifygui_active = false;
@@ -1737,7 +1814,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 	}
 	else
 	{
-		if (!is_potion_bad)
+		if (!is_potion_bad && !learnedSpell)
 		{
 			//Option 1 = equip.
 			if (multiplayer == CLIENT)
@@ -1750,7 +1827,14 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 				}
 				else
 				{
-					strcpy((char*)net_packet->data, "EQUI");
+					if ( itemCategory(item) == SPELLBOOK )
+					{
+						strcpy((char*)net_packet->data, "EQUS");
+					}
+					else
+					{
+						strcpy((char*)net_packet->data, "EQUI");
+					}
 					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1764,7 +1848,15 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
 			}
-			equipItem(item, &stats[clientnum]->weapon, clientnum);
+
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				equipItem(item, &stats[clientnum]->shield, clientnum);
+			}
+			else
+			{
+				equipItem(item, &stats[clientnum]->weapon, clientnum);
+			}
 		}
 		else
 		{
@@ -1781,7 +1873,7 @@ inline void executeItemMenuOption2(Item* item)
 		return;
 	}
 
-	if (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC)
+	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK )
 	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
@@ -1801,12 +1893,12 @@ inline void executeItemMenuOption2(Item* item)
 
 inline void executeItemMenuOption3(Item* item)
 {
-	if (!item || (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC))
+	if (!item || (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK))
 	{
 		return;
 	}
 
-	//Option 3 = drop (only potions have option 3).
+	//Option 3 = drop (only spellbooks/potions have option 3).
 	dropItem(item, clientnum);
 }
 
@@ -1854,6 +1946,7 @@ void itemContextMenu()
 	}
 
 	drawItemMenuSlots(*current_item, slot_width, slot_height);
+	bool learnedSpell = false;
 
 	if (itemCategory(current_item) == SPELL_CAT)
 	{
@@ -1868,6 +1961,11 @@ void itemContextMenu()
 		else if (itemCategory(current_item) == POTION || current_item->type == TOOL_ALEMBIC)
 		{
 			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
+		}
+		else if ( itemCategory(current_item) == SPELLBOOK )
+		{
+			learnedSpell = playerLearnedSpellbook(current_item);
+			drawItemMenuOptionSpellbook(*current_item, itemMenuX, itemMenuY, slot_height, learnedSpell);
 		}
 		else
 		{
@@ -1895,10 +1993,10 @@ void itemContextMenu()
 		switch (itemMenuSelected)
 		{
 			case 0:
-				executeItemMenuOption0(current_item, is_potion_bad);
+				executeItemMenuOption0(current_item, is_potion_bad, learnedSpell);
 				break;
 			case 1:
-				executeItemMenuOption1(current_item, is_potion_bad);
+				executeItemMenuOption1(current_item, is_potion_bad, learnedSpell);
 				break;
 			case 2:
 				executeItemMenuOption2(current_item);
@@ -1927,6 +2025,10 @@ int numItemMenuSlots(const Item& item)
 		if (itemCategory(&item) == POTION)
 		{
 			numSlots += 1; //Option 3 => drop.
+		}
+		else if ( itemCategory(&item) == SPELLBOOK )
+		{
+			numSlots += 1; //Can read/equip spellbooks
 		}
 	}
 
@@ -2409,4 +2511,32 @@ bool mouseInsidePlayerHotbar()
 	pos.w = NUM_HOTBAR_SLOTS * hotbar_img->w * uiscale_hotbar;
 	pos.h = hotbar_img->h * uiscale_hotbar;
 	return mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h);
+}
+
+bool playerLearnedSpellbook(Item* current_item)
+{
+	for ( node_t* node = stats[clientnum]->inventory.first; node && current_item->identified; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item )
+		{
+			continue;
+		}
+		//Search player's inventory for the special spell item.
+		if ( itemCategory(item) != SPELL_CAT )
+		{
+			continue;
+		}
+		spell_t *spell = getSpellFromItem(item); //Do not free or delete this.
+		if ( !spell )
+		{
+			continue;
+		}
+		if ( current_item->type == getSpellbookFromSpellID(spell->ID) )
+		{
+			// learned spell, default option is now equip spellbook.
+			return true;
+		}
+	}
+	return false;
 }

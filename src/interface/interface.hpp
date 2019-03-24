@@ -138,6 +138,7 @@ void sortInventoryItemsOfType(int categoryInt, bool sortRightToLeft); // sort in
 void autosortInventory();
 bool mouseInsidePlayerInventory();
 bool mouseInsidePlayerHotbar();
+bool playerLearnedSpellbook(Item* current_item);
 extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
 extern int itemMenuSelected;

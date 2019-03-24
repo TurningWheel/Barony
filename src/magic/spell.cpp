@@ -568,11 +568,9 @@ spell_t* getSpellFromID(int ID)
 	return spell;
 }
 
-Item* getSpellbookFromSpellID(int spellID)
+int getSpellbookFromSpellID(int spellID)
 {
-	Item *spellbook = nullptr;
-
-	int itemType = -1;
+	ItemType itemType = WOODEN_SHIELD;
 	switch (spellID)
 	{
 		case SPELL_FORCEBOLT:
@@ -672,12 +670,7 @@ Item* getSpellbookFromSpellID(int spellID)
 			break;
 	}
 
-	if ( itemType > 0 )
-	{
-		spellbook = newItem(static_cast<ItemType>(itemType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
-	}
-
-	return spellbook;
+	return itemType;
 }
 
 int getSpellIDFromSpellbook(int spellbookType)

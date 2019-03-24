@@ -850,6 +850,7 @@ void drawStatus()
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						bool badpotion = false;
+						bool learnedSpell = false;
 						if ( itemCategory(item) == POTION && item->identified )
 						{
 							badpotion = isPotionBad(*item); //So that you wield empty potions be default.
@@ -857,6 +858,10 @@ void drawStatus()
 						if ( item->type == POTION_EMPTY )
 						{
 							badpotion = true;
+						}
+						if ( itemCategory(item) == SPELLBOOK )
+						{
+							learnedSpell = playerLearnedSpellbook(item);
 						}
 
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -876,7 +881,7 @@ void drawStatus()
 							{
 								badpotion = true;
 							}
-							if ( !badpotion )
+							if ( !badpotion && !learnedSpell )
 							{
 								useItem(item, clientnum);
 							}
@@ -892,7 +897,14 @@ void drawStatus()
 									}
 									else
 									{
-										strcpy((char*)net_packet->data, "EQUI");
+										if ( itemCategory(item) == SPELLBOOK )
+										{
+											strcpy((char*)net_packet->data, "EQUS");
+										}
+										else
+										{
+											strcpy((char*)net_packet->data, "EQUI");
+										}
 										SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 										SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 										SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -906,7 +918,14 @@ void drawStatus()
 										sendPacketSafe(net_sock, -1, net_packet, 0);
 									}
 								}
-								equipItem(item, &stats[clientnum]->weapon, clientnum);
+								if ( itemCategory(item) == SPELLBOOK )
+								{
+									equipItem(item, &stats[clientnum]->shield, clientnum);
+								}
+								else
+								{
+									equipItem(item, &stats[clientnum]->weapon, clientnum);
+								}
 							}
 							used = true;
 						}
@@ -1346,6 +1365,7 @@ void drawStatus()
 		if ( item )
 		{
 			bool badpotion = false;
+			bool learnedSpell = false;
 			if ( itemCategory(item) == POTION && item->identified )
 			{
 				badpotion = isPotionBad(*item);
@@ -1354,13 +1374,18 @@ void drawStatus()
 			{
 				badpotion = true; //So that you wield empty potions be default.
 			}
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				learnedSpell = playerLearnedSpellbook(item);
+			}
 
 			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) && itemCategory(item) == POTION )
 			{
 				badpotion = true;
+				learnedSpell = true;
 			}
 
-			if ( !badpotion )
+			if ( !badpotion && !learnedSpell )
 			{
 				useItem(item, clientnum);
 			}
@@ -1376,7 +1401,14 @@ void drawStatus()
 					}
 					else
 					{
-						strcpy((char*)net_packet->data, "EQUI");
+						if ( itemCategory(item) == SPELLBOOK )
+						{
+							strcpy((char*)net_packet->data, "EQUS");
+						}
+						else
+						{
+							strcpy((char*)net_packet->data, "EQUI");
+						}
 						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1390,7 +1422,14 @@ void drawStatus()
 						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
 				}
-				equipItem(item, &stats[clientnum]->weapon, clientnum);
+				if ( itemCategory(item) == SPELLBOOK )
+				{
+					equipItem(item, &stats[clientnum]->shield, clientnum);
+				}
+				else
+				{
+					equipItem(item, &stats[clientnum]->weapon, clientnum);
+				}
 			}
 		}
 	}
