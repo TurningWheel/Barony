@@ -876,7 +876,7 @@ void drawStatus()
 						}
 						else
 						{
-							if ( itemCategory(item) == POTION 
+							if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK)
 								&& (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 							{
 								badpotion = true;
@@ -1379,7 +1379,8 @@ void drawStatus()
 				learnedSpell = playerLearnedSpellbook(item);
 			}
 
-			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) && itemCategory(item) == POTION )
+			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
+				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK) )
 			{
 				badpotion = true;
 				learnedSpell = true;

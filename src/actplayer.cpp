@@ -3163,7 +3163,17 @@ void actPlayer(Entity* my)
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || shield->flags[INVISIBLE])
+					bool bendArm = true;
+					if ( shield->flags[INVISIBLE] )
+					{
+						bendArm = false;
+					}
+					else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
+						&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+					{
+						bendArm = false;
+					}
+					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || !bendArm)
 						|| playerRace == CREATURE_IMP )
 					{
 						if ( !rightbody->skill[0] )
@@ -3599,7 +3609,19 @@ void actPlayer(Entity* my)
 						}
 						if ( showEquipment )
 						{
-							entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
+							bool bendArm = false;
+							if ( stats[PLAYER_NUM]->shield != NULL )
+							{
+								if ( itemCategory(stats[PLAYER_NUM]->shield) == SPELLBOOK )
+								{
+									bendArm = false;
+								}
+								else
+								{
+									bendArm = true;
+								}
+							}
+							entity->sprite += 2 * (bendArm);
 						}
 						if ( multiplayer == SERVER )
 						{
@@ -3620,7 +3642,18 @@ void actPlayer(Entity* my)
 					if ( tempNode )
 					{
 						Entity* shield = (Entity*)tempNode->element;
+						bool bendArm = true;
 						if ( shield->flags[INVISIBLE] )
+						{
+							bendArm = false;
+						}
+						else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
+							&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+						{
+							bendArm = false;
+						}
+						
+						if ( !bendArm )
 						{
 							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 							{
