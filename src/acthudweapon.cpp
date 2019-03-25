@@ -1771,8 +1771,14 @@ void actHudShield(Entity* my)
 		}
 	}
 
+	bool spellbook = false;
+	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
+	{
+		spellbook = true;
+	}
+
 	// main animation
-	if ( defending )
+	if ( defending && !spellbook )
 	{
 		if ( HUDSHIELD_MOVEY < 3 )
 		{
@@ -1880,6 +1886,12 @@ void actHudShield(Entity* my)
 	my->yaw = HUDSHIELD_YAW - camera_shakex2 - PI / 3;
 	my->pitch = HUDSHIELD_PITCH - camera_shakey2 / 200.f;
 	my->roll = HUDSHIELD_ROLL;
+	if ( spellbook )
+	{
+		my->sprite = 835;
+		my->pitch += PI / 2;
+		my->z -= 1;
+	}
 
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
@@ -1904,6 +1916,313 @@ void actHudShield(Entity* my)
 				my->flags[BRIGHT] = true;
 			}
 			else if (stats[clientnum]->shield->type == TOOL_LANTERN)
+			{
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
+				entity->flags[OVERDRAW] = true;
+				entity->z += 1;
+				my->flags[BRIGHT] = true;
+			}
+		}
+	}
+}
+
+void actHudAdditional(Entity* my)
+{
+	bool spellbook = false;
+	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
+	{
+		spellbook = true;
+	}
+
+	my->flags[UNCLICKABLE] = true;
+
+	// isn't active during intro/menu sequence
+	if ( intro == true )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		if ( stats[clientnum]->HP <= 0 )
+		{
+			my->flags[INVISIBLE] = true;
+			return;
+		}
+	}
+
+	// this entity only exists so long as the player exists
+	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !hudweapon )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if ( !spellbook )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+
+	// check levitating value
+	bool levitating = isLevitating(stats[clientnum]);
+
+	// water walking boots
+	bool waterwalkingboots = false;
+	if ( stats[clientnum]->shoes != nullptr )
+		if ( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING )
+		{
+			waterwalkingboots = true;
+		}
+
+	// select model
+	bool wearingring = false;
+	if ( stats[clientnum]->ring != nullptr )
+	{
+		if ( stats[clientnum]->ring->type == RING_INVISIBILITY )
+		{
+			wearingring = true;
+		}
+	}
+	if ( stats[clientnum]->cloak != nullptr )
+	{
+		if ( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
+		{
+			wearingring = true;
+		}
+	}
+	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
+	{
+		my->flags[INVISIBLE] = true;
+	}
+	else
+	{
+		if ( stats[clientnum]->shield == nullptr )
+		{
+			my->flags[INVISIBLE] = true;
+		}
+		else
+		{
+			if ( stats[clientnum]->shield )
+			{
+				if ( itemModelFirstperson(stats[clientnum]->shield) != itemModel(stats[clientnum]->shield) )
+				{
+					my->scalex = 0.5f;
+					my->scaley = 0.5f;
+					my->scalez = 0.5f;
+				}
+				else
+				{
+					my->scalex = 1.f;
+					my->scaley = 1.f;
+					my->scalez = 1.f;
+				}
+			}
+			my->sprite = itemModelFirstperson(stats[clientnum]->shield);
+			my->flags[INVISIBLE] = false;
+		}
+	}
+
+	// swimming
+	bool swimming = false;
+	if ( players[clientnum] && players[clientnum]->entity )
+	{
+		if ( !levitating && !waterwalkingboots && !skillCapstoneUnlocked(clientnum, PRO_SWIMMING) )
+		{
+			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			{
+				my->flags[INVISIBLE] = true;
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent )
+				{
+					parent->flags[INVISIBLE] = true;
+				}
+				swimming = true;
+			}
+		}
+	}
+
+	if ( cast_animation.active )
+	{
+		my->flags[INVISIBLE] = true;
+	}
+
+	bool defending = false;
+	bool sneaking = false;
+	if ( !command && !swimming )
+	{
+		if ( players[clientnum] && players[clientnum]->entity
+			&& (*inputPressed(impulses[IN_DEFEND]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND])))
+			&& players[clientnum]->entity->isMobile()
+			&& !gamePaused
+			&& !cast_animation.active )
+		{
+			if ( stats[clientnum]->shield && (hudweapon->skill[0] % 3 == 0) )
+			{
+				defending = true;
+			}
+			sneaking = true;
+		}
+	}
+
+	if ( defending )
+	{
+		stats[clientnum]->defending = true;
+	}
+	else
+	{
+		stats[clientnum]->defending = false;
+	}
+	if ( sneaking )
+	{
+		stats[clientnum]->sneaking = true;
+	}
+	else
+	{
+		stats[clientnum]->sneaking = false;
+	}
+
+	HUDSHIELD_DEFEND = defending;
+	HUDSHIELD_SNEAKING = sneaking;
+
+	// shield switching animation
+	if ( shieldSwitch )
+	{
+		shieldSwitch = false;
+		if ( !defending )
+		{
+			HUDSHIELD_MOVEY = -6;
+			HUDSHIELD_MOVEZ = 2;
+			HUDSHIELD_MOVEX = -2;
+		}
+	}
+
+	// main animation
+	if ( defending && spellbook )
+	{
+		HUDSHIELD_ROLL = std::max<real_t>(HUDSHIELD_ROLL - .15, -2 * PI / 3);
+	}
+	else
+	{
+		if ( HUDSHIELD_MOVEX > 0 )
+		{
+			HUDSHIELD_MOVEX = std::max<real_t>(HUDSHIELD_MOVEX - .5, 0.0);
+		}
+		else if ( HUDSHIELD_MOVEX < 0 )
+		{
+			HUDSHIELD_MOVEX = std::min<real_t>(HUDSHIELD_MOVEX + .5, 0.0);
+		}
+		if ( HUDSHIELD_MOVEY > 0 )
+		{
+			HUDSHIELD_MOVEY = std::max<real_t>(HUDSHIELD_MOVEY - .5, 0.0);
+		}
+		else if ( HUDSHIELD_MOVEY < 0 )
+		{
+			HUDSHIELD_MOVEY = std::min<real_t>(HUDSHIELD_MOVEY + .5, 0.0);
+		}
+		if ( HUDSHIELD_MOVEZ > 0 )
+		{
+			HUDSHIELD_MOVEZ = std::max<real_t>(HUDSHIELD_MOVEZ - .2, 0.0);
+		}
+		else if ( HUDSHIELD_MOVEZ < 0 )
+		{
+			HUDSHIELD_MOVEZ = std::min<real_t>(HUDSHIELD_MOVEZ + .2, 0.0);
+		}
+		if ( HUDSHIELD_YAW > 0 )
+		{
+			HUDSHIELD_YAW = std::max<real_t>(HUDSHIELD_YAW - .15, 0.0);
+		}
+		else if ( HUDSHIELD_YAW < 0 )
+		{
+			HUDSHIELD_YAW = std::min<real_t>(HUDSHIELD_YAW + .15, 0.0);
+		}
+		if ( HUDSHIELD_PITCH > 0 )
+		{
+			HUDSHIELD_PITCH = std::max<real_t>(HUDSHIELD_PITCH - .15, 0.0);
+		}
+		else if ( HUDSHIELD_PITCH < 0 )
+		{
+			HUDSHIELD_PITCH = std::min<real_t>(HUDSHIELD_PITCH + .15, 0.0);
+		}
+		if ( HUDSHIELD_ROLL > 0 )
+		{
+			HUDSHIELD_ROLL = std::max<real_t>(HUDSHIELD_ROLL - .15, 0);
+		}
+		else if ( HUDSHIELD_ROLL < 0 )
+		{
+			HUDSHIELD_ROLL = std::min<real_t>(HUDSHIELD_ROLL + .15, 0);
+		}
+	}
+
+	// set entity position
+	my->x = 7 + HUDSHIELD_MOVEX;
+	my->y = -3.5 + HUDSHIELD_MOVEY;
+	my->z = 6 + HUDSHIELD_MOVEZ + (camera.z * .5 - players[clientnum]->entity->z);
+	my->yaw = HUDSHIELD_YAW - camera_shakex2 - PI / 3;
+	my->pitch = HUDSHIELD_PITCH - camera_shakey2 / 200.f;
+	my->roll = HUDSHIELD_ROLL;
+	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
+	{
+		my->sprite = 836;
+		my->pitch += PI / 2;
+		my->roll += -0.15;
+		//if ( my->roll <= 0.f )
+		//{
+		//	my->roll -= 0.03;// PI;
+		//}
+		//else
+		//{
+		//	my->roll += 0.03;
+		//}
+		//if ( my->roll < -2 * PI / 3 )
+		//{
+		//	my->roll += 2 * PI;
+		//}
+		//else if ( my->roll > (2 * PI - 0.15) )
+		//{
+		//	my->roll = -0.15;
+		//}
+		my->x += 1.4;
+		my->y += 1.1;
+		my->z += -1;
+		my->focalx = 0;
+		my->focaly = -1.55;
+		my->focalz = -0.1;
+		/*my->z += limbs[HUMAN][2][0];
+		my->x += limbs[HUMAN][2][1];
+		my->y += limbs[HUMAN][2][2];
+		my->focalx = limbs[HUMAN][1][0];
+		my->focaly = limbs[HUMAN][1][1];
+		my->focalz = limbs[HUMAN][1][2];*/
+		//my->focaly = -2.25;
+	}
+
+	// torch/lantern flames
+	my->flags[BRIGHT] = false;
+	if ( stats[clientnum]->shield && !swimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch )
+	{
+		if ( itemCategory(stats[clientnum]->shield) == TOOL )
+		{
+			if ( stats[clientnum]->shield->type == TOOL_TORCH )
+			{
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
+				entity->flags[OVERDRAW] = true;
+				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				my->flags[BRIGHT] = true;
+			}
+			if ( stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
+			{
+				Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
+				entity->flags[OVERDRAW] = true;
+				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				my->flags[BRIGHT] = true;
+			}
+			else if ( stats[clientnum]->shield->type == TOOL_LANTERN )
 			{
 				Entity* entity = spawnFlame(my, SPRITE_FLAME);
 				entity->flags[OVERDRAW] = true;

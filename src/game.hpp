@@ -235,6 +235,7 @@ void actCrystalShard(Entity* my);
 void actDoor(Entity* my);
 void actHudWeapon(Entity* my);
 void actHudShield(Entity* my);
+void actHudAdditional(Entity* my);
 void actItem(Entity* my);
 void actGoldBag(Entity* my);
 void actGib(Entity* my);

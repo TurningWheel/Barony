@@ -426,6 +426,15 @@ void actPlayer(Entity* my)
 			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actHudShield;
 			my->bodyparts.push_back(entity);
+
+			// hud shield
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->behavior = &actHudAdditional;
+			my->bodyparts.push_back(entity);
 		}
 		else
 		{
