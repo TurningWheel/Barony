@@ -1640,6 +1640,13 @@ void actHudShield(Entity* my)
 			wearingring = true;
 		}
 	}
+
+	bool spellbook = false;
+	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
+	{
+		spellbook = true;
+	}
+
 	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
@@ -1656,9 +1663,18 @@ void actHudShield(Entity* my)
 			{
 				if (itemModelFirstperson(stats[clientnum]->shield) != itemModel(stats[clientnum]->shield))
 				{
-					my->scalex = 0.5f;
-					my->scaley = 0.5f;
-					my->scalez = 0.5f;
+					if ( spellbook )
+					{
+						my->scalex = 0.35;
+						my->scaley = 0.35;
+						my->scalez = 0.35;
+					}
+					else
+					{
+						my->scalex = 0.5f;
+						my->scaley = 0.5f;
+						my->scalez = 0.5f;
+					}
 				}
 				else
 				{
@@ -1762,7 +1778,10 @@ void actHudShield(Entity* my)
 	// shield switching animation
 	if ( shieldSwitch )
 	{
-		shieldSwitch = false;
+		if ( !spellbook )
+		{
+			shieldSwitch = false;
+		}
 		if ( !defending )
 		{
 			HUDSHIELD_MOVEY = -6;
@@ -1771,58 +1790,67 @@ void actHudShield(Entity* my)
 		}
 	}
 
-	bool spellbook = false;
-	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
-	{
-		spellbook = true;
-	}
-
 	// main animation
-	if ( defending && !spellbook )
+	if ( defending )
 	{
-		if ( HUDSHIELD_MOVEY < 3 )
+		if ( !spellbook )
 		{
-			HUDSHIELD_MOVEY += .5;
-			if ( HUDSHIELD_MOVEY > 3 )
+			if ( HUDSHIELD_MOVEY < 3 )
 			{
-				HUDSHIELD_MOVEY = 3;
-			}
-		}
-		if ( HUDSHIELD_MOVEZ > -1 )
-		{
-			HUDSHIELD_MOVEZ -= .2;
-			if ( HUDSHIELD_MOVEZ < -1 )
-			{
-				HUDSHIELD_MOVEZ = -1;
-			}
-		}
-		if ( HUDSHIELD_YAW < PI / 3 )
-		{
-			HUDSHIELD_YAW += .15;
-			if ( HUDSHIELD_YAW > PI / 3 )
-			{
-				HUDSHIELD_YAW = PI / 3;
-			}
-		}
-		if ( stats[clientnum]->shield )
-		{
-			if ( stats[clientnum]->shield->type == TOOL_TORCH || stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
-			{
-				if ( HUDSHIELD_MOVEX < 1.5 )
+				HUDSHIELD_MOVEY += .5;
+				if ( HUDSHIELD_MOVEY > 3 )
 				{
-					HUDSHIELD_MOVEX += .5;
-					if ( HUDSHIELD_MOVEX > 1.5 )
+					HUDSHIELD_MOVEY = 3;
+				}
+			}
+			if ( HUDSHIELD_MOVEZ > -1 )
+			{
+				HUDSHIELD_MOVEZ -= .2;
+				if ( HUDSHIELD_MOVEZ < -1 )
+				{
+					HUDSHIELD_MOVEZ = -1;
+				}
+			}
+			if ( HUDSHIELD_YAW < PI / 3 )
+			{
+				HUDSHIELD_YAW += .15;
+				if ( HUDSHIELD_YAW > PI / 3 )
+				{
+					HUDSHIELD_YAW = PI / 3;
+				}
+			}
+			if ( stats[clientnum]->shield )
+			{
+				if ( stats[clientnum]->shield->type == TOOL_TORCH || stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
+				{
+					if ( HUDSHIELD_MOVEX < 1.5 )
 					{
-						HUDSHIELD_MOVEX = 1.5;
+						HUDSHIELD_MOVEX += .5;
+						if ( HUDSHIELD_MOVEX > 1.5 )
+						{
+							HUDSHIELD_MOVEX = 1.5;
+						}
+					}
+					if ( HUDSHIELD_ROLL < PI / 5 )
+					{
+						HUDSHIELD_ROLL += .15;
+						if ( HUDSHIELD_ROLL > PI / 5 )
+						{
+							HUDSHIELD_ROLL = PI / 5;
+						}
 					}
 				}
-				if ( HUDSHIELD_ROLL < PI / 5 )
+			}
+		}
+		else
+		{
+			HUDSHIELD_ROLL = std::min<real_t>(HUDSHIELD_ROLL + .15, PI / 2);
+			if ( HUDSHIELD_MOVEZ > -1 )
+			{
+				HUDSHIELD_MOVEZ -= .2;
+				if ( HUDSHIELD_MOVEZ < -1 )
 				{
-					HUDSHIELD_ROLL += .15;
-					if ( HUDSHIELD_ROLL > PI / 5 )
-					{
-						HUDSHIELD_ROLL = PI / 5;
-					}
+					HUDSHIELD_MOVEZ = -1;
 				}
 			}
 		}
@@ -1889,8 +1917,44 @@ void actHudShield(Entity* my)
 	if ( spellbook )
 	{
 		my->sprite = 835;
-		my->pitch += PI / 2;
-		my->z -= 1;
+		my->x += 0.87;
+		my->y += -0.23;
+		my->z += -1;
+		my->pitch += PI / 2 + PI / 5;
+		my->yaw -= PI / 3 - 2 * PI / 5;
+		my->roll -= PI / 2;
+
+		my->focalx = 0;
+		my->focaly = -1.2;
+		my->focalz = -0.1;
+		//if ( my->roll <= 0.f )
+		//{
+		//	my->roll -= 0.03;// PI;
+		//}
+		//else
+		//{
+		//	my->roll += 0.03;
+		//}
+		//if ( my->roll < -PI / 2 )
+		//{
+		//	my->roll += 2 * PI;
+		//}
+		//else if ( my->roll > (2 * PI + (PI / 2 - 1.6)) )
+		//{
+		//	my->roll = (PI / 2 - 1.6);
+		//}
+
+
+		/*if ( ticks % 25 == 0 )
+		{
+			consoleCommand("/reloadlimbs");
+		}*/
+	}
+	else
+	{
+		my->focalx = 0;
+		my->focaly = 0;
+		my->focalz = 0;
 	}
 
 	// torch/lantern flames
@@ -2008,9 +2072,18 @@ void actHudAdditional(Entity* my)
 			{
 				if ( itemModelFirstperson(stats[clientnum]->shield) != itemModel(stats[clientnum]->shield) )
 				{
-					my->scalex = 0.5f;
-					my->scaley = 0.5f;
-					my->scalez = 0.5f;
+					if ( spellbook )
+					{
+						my->scalex = 0.35;
+						my->scaley = 0.35;
+						my->scalez = 0.35;
+					}
+					else
+					{
+						my->scalex = 0.5f;
+						my->scaley = 0.5f;
+						my->scalez = 0.5f;
+					}
 				}
 				else
 				{
@@ -2068,30 +2141,16 @@ void actHudAdditional(Entity* my)
 		}
 	}
 
-	if ( defending )
-	{
-		stats[clientnum]->defending = true;
-	}
-	else
-	{
-		stats[clientnum]->defending = false;
-	}
-	if ( sneaking )
-	{
-		stats[clientnum]->sneaking = true;
-	}
-	else
-	{
-		stats[clientnum]->sneaking = false;
-	}
-
 	HUDSHIELD_DEFEND = defending;
 	HUDSHIELD_SNEAKING = sneaking;
 
 	// shield switching animation
 	if ( shieldSwitch )
 	{
-		shieldSwitch = false;
+		if ( spellbook )
+		{
+			shieldSwitch = false;
+		}
 		if ( !defending )
 		{
 			HUDSHIELD_MOVEY = -6;
@@ -2103,7 +2162,15 @@ void actHudAdditional(Entity* my)
 	// main animation
 	if ( defending && spellbook )
 	{
-		HUDSHIELD_ROLL = std::max<real_t>(HUDSHIELD_ROLL - .15, -2 * PI / 3);
+		HUDSHIELD_ROLL = std::max<real_t>(HUDSHIELD_ROLL - .1, -1 * PI / 3);
+		if ( HUDSHIELD_MOVEZ > -1 )
+		{
+			HUDSHIELD_MOVEZ -= .2;
+			if ( HUDSHIELD_MOVEZ < -1 )
+			{
+				HUDSHIELD_MOVEZ = -1;
+			}
+		}
 	}
 	else
 	{
@@ -2153,7 +2220,14 @@ void actHudAdditional(Entity* my)
 		}
 		else if ( HUDSHIELD_ROLL < 0 )
 		{
-			HUDSHIELD_ROLL = std::min<real_t>(HUDSHIELD_ROLL + .15, 0);
+			if ( spellbook )
+			{
+				HUDSHIELD_ROLL = std::min<real_t>(HUDSHIELD_ROLL + .10, 0);
+			}
+			else
+			{
+				HUDSHIELD_ROLL = std::min<real_t>(HUDSHIELD_ROLL + .15, 0);
+			}
 		}
 	}
 
@@ -2167,8 +2241,9 @@ void actHudAdditional(Entity* my)
 	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
 	{
 		my->sprite = 836;
-		my->pitch += PI / 2;
-		my->roll += -0.15;
+		//my->roll += -0.15;
+		my->pitch += PI / 2 + PI / 5;
+		my->yaw -= PI / 3 - 2 * PI / 5;
 		//if ( my->roll <= 0.f )
 		//{
 		//	my->roll -= 0.03;// PI;
@@ -2177,27 +2252,22 @@ void actHudAdditional(Entity* my)
 		//{
 		//	my->roll += 0.03;
 		//}
-		//if ( my->roll < -2 * PI / 3 )
+		//if ( my->roll < -PI )
 		//{
 		//	my->roll += 2 * PI;
 		//}
-		//else if ( my->roll > (2 * PI - 0.15) )
+		//else if ( my->roll > (2 * PI - PI / 3) )
 		//{
-		//	my->roll = -0.15;
+		//	my->roll = -PI / 3;
 		//}
-		my->x += 1.4;
-		my->y += 1.1;
-		my->z += -1;
+		my->roll -= PI / 2;
+		//my->roll += PI / 2 - 1.6;
+		my->x += 1;
+		my->y += -0.2;
+		my->z -= 0.95;
 		my->focalx = 0;
-		my->focaly = -1.55;
-		my->focalz = -0.1;
-		/*my->z += limbs[HUMAN][2][0];
-		my->x += limbs[HUMAN][2][1];
-		my->y += limbs[HUMAN][2][2];
-		my->focalx = limbs[HUMAN][1][0];
-		my->focaly = limbs[HUMAN][1][1];
-		my->focalz = limbs[HUMAN][1][2];*/
-		//my->focaly = -2.25;
+		my->focaly = -1.1;
+		my->focalz = 0.25;
 	}
 
 	// torch/lantern flames
