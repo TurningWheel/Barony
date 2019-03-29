@@ -1268,12 +1268,12 @@ void updatePlayerInventory()
 							//Cleanup identify GUI gamecontroller code here.
 							selectedIdentifySlot = -1;
 						}
-						else if ( itemCategory(item) == POTION && 
+						else if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK ) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
 							&& !(*inputPressed(joyimpulses[INJOY_MENU_USE])) )
 						{
 							mousestatus[SDL_BUTTON_RIGHT] = 0;
-							// force equip potion
+							// force equip potion/spellbook
 							if ( multiplayer == CLIENT )
 							{
 								if ( swapWeaponGimpTimer > 0 )
@@ -1297,7 +1297,14 @@ void updatePlayerInventory()
 									sendPacketSafe(net_sock, -1, net_packet, 0);
 								}
 							}
-							equipItem(item, &stats[clientnum]->weapon, clientnum);
+							if ( itemCategory(item) == SPELLBOOK )
+							{
+								equipItem(item, &stats[clientnum]->shield, clientnum);
+							}
+							else
+							{
+								equipItem(item, &stats[clientnum]->weapon, clientnum);
+							}
 						}
 						else
 						{

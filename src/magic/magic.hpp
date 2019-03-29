@@ -429,7 +429,7 @@ void setupSpells();
 
 void equipSpell(spell_t* spell, int playernum);
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap);
-void castSpellInit(Uint32 caster_uid, spell_t* spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
+void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 
 void actMagicTrap(Entity* my);
 void actMagicStatusEffect(Entity* my);
@@ -503,6 +503,7 @@ typedef struct spellcastingAnimationManager
 	Uint32 caster;
 
 	bool active;
+	bool active_spellbook;
 	int stage; //The current stage of the animation.
 	int circle_count; //How many times it's circled around in the circle stage.
 	int times_to_circle; //How many times to circle around in the circle stage.
@@ -519,7 +520,7 @@ typedef struct spellcastingAnimationManager
 } spellcasting_animation_manager_t;
 extern spellcasting_animation_manager_t cast_animation;
 
-void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell);
+void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook);
 extern Entity* magicLeftHand;
 extern Entity* magicRightHand;
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);

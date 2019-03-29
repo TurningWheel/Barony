@@ -3341,12 +3341,22 @@ int main(int argc, char** argv)
 							//proficienciesPage = 0;
 						}
 					}
-					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))
+					bool hasSpellbook = false;
+					if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
+					{
+						hasSpellbook = true;
+					}
+					if (!command && 
+						(*inputPressed(impulses[IN_CAST_SPELL]) 
+							|| (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))
+							|| (hasSpellbook && *inputPressed(impulses[IN_DEFEND])) 
+							|| (hasSpellbook && shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) )
+						)
 					{
 						bool allowCasting = true;
-						if ( *inputPressed(impulses[IN_CAST_SPELL]) )
+						if ( *inputPressed(impulses[IN_CAST_SPELL]) || *inputPressed(impulses[IN_DEFEND]) )
 						{
-							if ((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE 
+							if (((impulses[IN_CAST_SPELL] == RIGHT_CLICK_IMPULSE || impulses[IN_DEFEND] == RIGHT_CLICK_IMPULSE)
 								&& gui_mode >= GUI_MODE_INVENTORY
 								&& (mouseInsidePlayerInventory() || mouseInsidePlayerHotbar()) 
 								))
@@ -3360,6 +3370,7 @@ int main(int argc, char** argv)
 							if ( shootmode )
 							{
 								*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
+								*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 							}
 							if (players[clientnum] && players[clientnum]->entity)
 							{
@@ -3375,7 +3386,14 @@ int main(int argc, char** argv)
 										{
 											messagePlayer(clientnum, language[2998]); // notify no longer eligible for achievement but still cast.
 										}
-										castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+										if ( hasSpellbook && *inputPressed(impulses[IN_DEFEND]) )
+										{
+											castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
+										}
+										else
+										{
+											castSpellInit(players[clientnum]->entity->getUID(), selected_spell, false);
+										}
 										if ( selected_spell != nullptr )
 										{
 											conductGameChallenges[CONDUCT_BRAWLER] = 0;
@@ -3384,9 +3402,17 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
+									if ( hasSpellbook && *inputPressed(impulses[IN_DEFEND]) )
+									{
+										castSpellInit(players[clientnum]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[clientnum]->shield->type)), true);
+									}
+									else
+									{
+										castSpellInit(players[clientnum]->entity->getUID(), selected_spell, false);
+									}
 								}
 							}
+							*inputPressed(impulses[IN_DEFEND]) = 0;
 						}
 					}
 					if ( !command && *inputPressed(impulses[IN_TOGGLECHATLOG]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_TOGGLECHATLOG])) )

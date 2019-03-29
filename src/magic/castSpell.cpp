@@ -23,7 +23,7 @@
 #include "../scores.hpp"
 #include "../colors.hpp"
 
-void castSpellInit(Uint32 caster_uid, spell_t* spell)
+void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 {
 	Entity* caster = uidToEntity(caster_uid);
 	node_t* node = NULL;
@@ -46,7 +46,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		}
 	}
 
-	if ( cast_animation.active )
+	if ( cast_animation.active || cast_animation.active_spellbook )
 	{
 		//Already casting spell.
 		return;
@@ -180,7 +180,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 
 	//Hand the torch off to the spell animator. And stuff. Stuff. I mean spell animation handler thingymabobber.
-	fireOffSpellAnimation(&cast_animation, caster->getUID(), spell);
+	fireOffSpellAnimation(&cast_animation, caster->getUID(), spell, usingSpellbook);
 
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }

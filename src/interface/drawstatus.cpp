@@ -859,7 +859,7 @@ void drawStatus()
 						{
 							badpotion = true;
 						}
-						if ( itemCategory(item) == SPELLBOOK )
+						if ( itemCategory(item) == SPELLBOOK && item->identified )
 						{
 							learnedSpell = playerLearnedSpellbook(item);
 						}
@@ -880,6 +880,7 @@ void drawStatus()
 								&& (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 							{
 								badpotion = true;
+								learnedSpell = true;
 							}
 							if ( !badpotion && !learnedSpell )
 							{
@@ -1374,7 +1375,7 @@ void drawStatus()
 			{
 				badpotion = true; //So that you wield empty potions be default.
 			}
-			if ( itemCategory(item) == SPELLBOOK )
+			if ( itemCategory(item) == SPELLBOOK && item->identified )
 			{
 				learnedSpell = playerLearnedSpellbook(item);
 			}

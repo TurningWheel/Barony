@@ -427,7 +427,7 @@ void actPlayer(Entity* my)
 			entity->behavior = &actHudShield;
 			my->bodyparts.push_back(entity);
 
-			// hud shield
+			// hud additional limb
 			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
 			entity->flags[PASSABLE] = true;
 			entity->flags[OVERDRAW] = true;
