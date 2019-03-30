@@ -3788,3 +3788,30 @@ bool shouldInvertEquipmentBeatitude(Stat* wielder)
 	}
 	return false;
 }
+
+bool isItemEquippableInShieldSlot(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case WOODEN_SHIELD:
+		case BRONZE_SHIELD:
+		case IRON_SHIELD:
+		case STEEL_SHIELD:
+		case STEEL_SHIELD_RESISTANCE:
+		case MIRROR_SHIELD:
+		case CRYSTAL_SHIELD:
+		case TOOL_TORCH:
+		case TOOL_LANTERN:
+		case TOOL_CRYSTALSHARD:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}

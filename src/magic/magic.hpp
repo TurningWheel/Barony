@@ -428,7 +428,7 @@ extern spell_t spell_charmMonster;
 void setupSpells();
 
 void equipSpell(spell_t* spell, int playernum);
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap);
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool using_spellbook = false);
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 
 void actMagicTrap(Entity* my);

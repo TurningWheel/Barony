@@ -110,6 +110,18 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 			animation_manager->times_to_circle += amount;
 		}
 	}
+	if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+	{
+		if ( !playerLearnedSpellbook(stat->shield) )
+		{
+			int casterAbility = std::min(100, std::max(0, stat->PROFICIENCIES[PRO_MAGIC] + statGetINT(stat, caster))) / 20;
+			int difficulty = spell->difficulty / 20;
+			if ( difficulty > casterAbility )
+			{
+				animation_manager->times_to_circle += (std::min(5, 1 + 2 * (difficulty - casterAbility)));
+			}
+		}
+	}
 	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / getCostOfSpell(spell, caster);
 	animation_manager->consume_timer = animation_manager->consume_interval;
 }
@@ -135,7 +147,7 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager)
 {
-	castSpell(animation_manager->caster, animation_manager->spell, false, false); //Actually cast the spell.
+	castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook); //Actually cast the spell.
 
 	spellcastingAnimationManager_deactivate(animation_manager);
 }

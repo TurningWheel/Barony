@@ -1283,23 +1283,47 @@ void updatePlayerInventory()
 								}
 								else
 								{
-									strcpy((char*)net_packet->data, "EQUI");
-									SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-									SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-									SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-									SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-									SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-									net_packet->data[24] = item->identified;
-									net_packet->data[25] = clientnum;
-									net_packet->address.host = net_server.host;
-									net_packet->address.port = net_server.port;
-									net_packet->len = 26;
-									sendPacketSafe(net_sock, -1, net_packet, 0);
+									if ( itemCategory(item) == SPELLBOOK )
+									{
+										if ( !cast_animation.active_spellbook )
+										{
+											strcpy((char*)net_packet->data, "EQUS");
+											SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+											SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+											SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+											SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+											SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+											net_packet->data[24] = item->identified;
+											net_packet->data[25] = clientnum;
+											net_packet->address.host = net_server.host;
+											net_packet->address.port = net_server.port;
+											net_packet->len = 26;
+											sendPacketSafe(net_sock, -1, net_packet, 0);
+										}
+									}
+									else
+									{
+										strcpy((char*)net_packet->data, "EQUI");
+										SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+										SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+										SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+										SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+										net_packet->data[24] = item->identified;
+										net_packet->data[25] = clientnum;
+										net_packet->address.host = net_server.host;
+										net_packet->address.port = net_server.port;
+										net_packet->len = 26;
+										sendPacketSafe(net_sock, -1, net_packet, 0);
+									}
 								}
 							}
 							if ( itemCategory(item) == SPELLBOOK )
 							{
-								equipItem(item, &stats[clientnum]->shield, clientnum);
+								if ( !cast_animation.active_spellbook )
+								{
+									equipItem(item, &stats[clientnum]->shield, clientnum);
+								}
 							}
 							else
 							{
@@ -1748,7 +1772,10 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 		if (!is_potion_bad && !learnedSpell)
 		{
 			//Option 0 = use.
-			useItem(item, clientnum);
+			if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+			{
+				useItem(item, clientnum);
+			}
 		}
 		else
 		{
@@ -1765,28 +1792,45 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 				{
 					if ( itemCategory(item) == SPELLBOOK )
 					{
-						strcpy((char*)net_packet->data, "EQUS");
+						if ( !cast_animation.active_spellbook )
+						{
+							strcpy((char*)net_packet->data, "EQUS");
+							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+							net_packet->data[24] = item->identified;
+							net_packet->data[25] = clientnum;
+							net_packet->address.host = net_server.host;
+							net_packet->address.port = net_server.port;
+							net_packet->len = 26;
+							sendPacketSafe(net_sock, -1, net_packet, 0);
+						}
 					}
 					else
 					{
 						strcpy((char*)net_packet->data, "EQUI");
+						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+						net_packet->data[24] = item->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 26;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
-					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-					SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-					SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-					net_packet->data[24] = item->identified;
-					net_packet->data[25] = clientnum;
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 26;
-					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
 			}
 			if ( itemCategory(item) == SPELLBOOK )
 			{
-				equipItem(item, &stats[clientnum]->shield, clientnum);
+				if ( !cast_animation.active_spellbook )
+				{
+					equipItem(item, &stats[clientnum]->shield, clientnum);
+				}
 			}
 			else
 			{
@@ -1836,29 +1880,46 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 				{
 					if ( itemCategory(item) == SPELLBOOK )
 					{
-						strcpy((char*)net_packet->data, "EQUS");
+						if ( !cast_animation.active_spellbook )
+						{
+							strcpy((char*)net_packet->data, "EQUS");
+							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+							net_packet->data[24] = item->identified;
+							net_packet->data[25] = clientnum;
+							net_packet->address.host = net_server.host;
+							net_packet->address.port = net_server.port;
+							net_packet->len = 26;
+							sendPacketSafe(net_sock, -1, net_packet, 0);
+						}
 					}
 					else
 					{
 						strcpy((char*)net_packet->data, "EQUI");
+						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+						net_packet->data[24] = item->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 26;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
 					}
-					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-					SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-					SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-					net_packet->data[24] = item->identified;
-					net_packet->data[25] = clientnum;
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 26;
-					sendPacketSafe(net_sock, -1, net_packet, 0);
 				}
 			}
 
 			if ( itemCategory(item) == SPELLBOOK )
 			{
-				equipItem(item, &stats[clientnum]->shield, clientnum);
+				if ( !cast_animation.active_spellbook )
+				{
+					equipItem(item, &stats[clientnum]->shield, clientnum);
+				}
 			}
 			else
 			{
@@ -1868,7 +1929,10 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		else
 		{
 			//Option 1 = drink/use/whatever.
-			useItem(item, clientnum);
+			if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+			{
+				useItem(item, clientnum);
+			}
 		}
 	}
 }
@@ -2522,6 +2586,14 @@ bool mouseInsidePlayerHotbar()
 
 bool playerLearnedSpellbook(Item* current_item)
 {
+	if ( !current_item )
+	{
+		return false;
+	}
+	if ( itemCategory(current_item) != SPELLBOOK )
+	{
+		return false;
+	}
 	for ( node_t* node = stats[clientnum]->inventory.first; node && current_item->identified; node = node->next )
 	{
 		Item* item = static_cast<Item*>(node->element);
