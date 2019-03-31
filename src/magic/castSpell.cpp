@@ -185,7 +185,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
 
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool using_spellbook)
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook)
 {
 	Entity* caster = uidToEntity(caster_uid);
 

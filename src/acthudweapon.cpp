@@ -76,10 +76,31 @@ void actHudArm(Entity* my)
 	my->y = parent->y;
 	my->z = parent->z - 2.5;
 
+	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+	int playerAppearance = stats[clientnum]->appearance;
+	if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	{
+		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			playerRace = HUMAN;
+			playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+		}
+		else
+		{
+			playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+		}
+	}
+
 	bool noGloves = false;
-	if (stats[clientnum]->gloves == nullptr)
+	bool hideWeapon = false;
+	if (stats[clientnum]->gloves == nullptr
+		|| playerRace == SPIDER
+		|| playerRace == RAT
+		|| playerRace == CREATURE_IMP
+		|| playerRace == TROLL )
 	{
 		noGloves = true;
+		hideWeapon = true;
 	}
 	else
 	{
@@ -130,24 +151,8 @@ void actHudArm(Entity* my)
 		}
 	}
 
-	int playerAppearance = stats[clientnum]->appearance;
-
 	if ( noGloves )
 	{
-		Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
-		if ( players[clientnum]->entity->effectPolymorph != NOTHING )
-		{
-			if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
-			{
-				playerRace = HUMAN;
-				playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
-			}
-			else
-			{
-				playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
-			}
-		}
-
 		switch ( playerRace )
 		{
 			case SKELETON:
@@ -195,6 +200,18 @@ void actHudArm(Entity* my)
 					my->sprite = 636;
 				}
 				break;
+			case TROLL:
+				my->sprite = 855;
+				break;
+			case SPIDER:
+				my->sprite = 853;
+				break;
+			case CREATURE_IMP:
+				my->sprite = 857;
+				break;
+			case RAT:
+				my->sprite = 859;
+				break;
 			default:
 				my->sprite = 634;
 				break;
@@ -211,7 +228,7 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 636;
 		}*/
-		if ( stats[clientnum]->weapon == nullptr )
+		if ( stats[clientnum]->weapon == nullptr || hideWeapon )
 		{
 			my->scalex = 0.5f;
 			my->scaley = 0.5f;
@@ -357,8 +374,32 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+	int playerAppearance = stats[clientnum]->appearance;
+	if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	{
+		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			playerRace = HUMAN;
+			playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+		}
+		else
+		{
+			playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+		}
+	}
+
+	bool hideWeapon = false;
+	if ( playerRace == SPIDER
+		|| playerRace == RAT
+		|| playerRace == CREATURE_IMP
+		|| playerRace == TROLL )
+	{
+		hideWeapon = true;
+	}
+
 	bool rangedweapon = false;
-	if ( stats[clientnum]->weapon )
+	if ( stats[clientnum]->weapon && !hideWeapon )
 	{
 		if ( stats[clientnum]->weapon->type == SLING )
 		{
@@ -403,7 +444,7 @@ void actHudWeapon(Entity* my)
 	}
 	else
 	{
-		if (stats[clientnum]->weapon == nullptr)
+		if ( stats[clientnum]->weapon == nullptr || hideWeapon )
 		{
 			my->flags[INVISIBLE] = true;
 			if (parent != nullptr)
@@ -514,7 +555,7 @@ void actHudWeapon(Entity* my)
 	if ( weaponSwitch )
 	{
 		weaponSwitch = false;
-		if ( !HUDWEAPON_CHOP )
+		if ( !HUDWEAPON_CHOP && !hideWeapon )
 		{
 			HUDWEAPON_MOVEZ = 2;
 			HUDWEAPON_MOVEX = -.5;
@@ -535,15 +576,6 @@ void actHudWeapon(Entity* my)
 			swapWeaponGimpTimer = 5;
 		}
 	}
-	/*if ( !stats[clientnum]->weapon ||
-		(stats[clientnum]->weapon
-			&& (stats[clientnum]->weapon->type == POTION_EMPTY 
-				|| !(itemCategory(stats[clientnum]->weapon) == POTION
-					|| itemCategory(stats[clientnum]->weapon) == GEM
-					|| itemCategory(stats[clientnum]->weapon) == THROWN)) )
-		)
-	{
-	}*/
 
 	// bow drawing sound check
 #ifdef SOUND
@@ -601,7 +633,7 @@ void actHudWeapon(Entity* my)
 				messagePlayer(clientnum, language[1301]);
 				spellcastingAnimationManager_deactivate(&cast_animation);
 			}
-			if ( stats[clientnum]->weapon == NULL )
+			if ( stats[clientnum]->weapon == NULL || hideWeapon )
 			{
 				HUDWEAPON_CHOP = 7; // punch
 			}
@@ -843,9 +875,12 @@ void actHudWeapon(Entity* my)
 		{
 			if ( !stats[clientnum]->defending )
 			{
-				if ( stats[clientnum]->weapon )
+				if ( stats[clientnum]->weapon || hideWeapon )
 				{
-					if ( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW )
+					if ( !hideWeapon &&
+						(stats[clientnum]->weapon->type == SLING 
+							|| stats[clientnum]->weapon->type == SHORTBOW 
+							|| stats[clientnum]->weapon->type == ARTIFACT_BOW) )
 					{
 #ifdef SOUND
 						if ( bowDrawingSoundPlaying && bowDrawingSound )
@@ -1132,7 +1167,7 @@ void actHudWeapon(Entity* my)
 		{
 			// another swing...
 			Item* item = stats[clientnum]->weapon;
-			if ( item )
+			if ( item && !hideWeapon )
 			{
 				if ( !rangedweapon 
 					&& item->type != TOOL_SKELETONKEY 
@@ -1162,7 +1197,7 @@ void actHudWeapon(Entity* my)
 		}
 		else
 		{
-			if (stats[clientnum]->weapon)
+			if (stats[clientnum]->weapon && !hideWeapon )
 			{
 				if (stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW)
 				{
@@ -1175,7 +1210,7 @@ void actHudWeapon(Entity* my)
 			}
 		}
 
-		if ( stats[clientnum]->weapon != NULL )
+		if ( stats[clientnum]->weapon && !hideWeapon )
 		{
 			if ( rangedweapon )
 			{
@@ -1279,9 +1314,11 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEX = 0;
 		}
 		HUDWEAPON_MOVEZ -= .75;
-		if ( HUDWEAPON_MOVEZ < -4 )
+
+		int targetZ = -4;
+		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
-			HUDWEAPON_MOVEZ = -4;
+			HUDWEAPON_MOVEZ = targetZ;
 		}
 		HUDWEAPON_MOVEY -= .75;
 		if ( HUDWEAPON_MOVEY < -6 )
@@ -1292,7 +1329,7 @@ void actHudWeapon(Entity* my)
 		if (HUDWEAPON_ROLL < -PI / 2)
 		{
 			HUDWEAPON_ROLL = -PI / 2;
-			if (HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -6 && HUDWEAPON_MOVEZ == -4)
+			if (HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -6 && HUDWEAPON_MOVEZ == targetZ)
 			{
 				if (!swingweapon)
 				{
@@ -1333,7 +1370,7 @@ void actHudWeapon(Entity* my)
 		if ( swingweapon )
 		{
 			// one more swing...
-			if ( stats[clientnum]->weapon )
+			if ( stats[clientnum]->weapon && !hideWeapon )
 			{
 				int weaponSkill = getWeaponSkill(stats[clientnum]->weapon);
 				if ( weaponSkill == PRO_SWORD || stats[clientnum]->weapon->type == STEEL_HALBERD )
@@ -1465,7 +1502,7 @@ void actHudWeapon(Entity* my)
 			if ( swingweapon )
 			{
 				// restart the combo...
-				if ( stats[clientnum]->weapon == NULL )
+				if ( stats[clientnum]->weapon == NULL || hideWeapon )
 				{
 					HUDWEAPON_CHOP = 7;
 				}
@@ -1527,7 +1564,7 @@ void actHudWeapon(Entity* my)
 		return;
 	}
 	double defaultpitch = PI / 8.f;
-	if (stats[clientnum]->weapon == nullptr)
+	if (stats[clientnum]->weapon == nullptr || hideWeapon)
 	{
 		my->x = 6 + HUDWEAPON_MOVEX;
 		my->y = 3 + HUDWEAPON_MOVEY;

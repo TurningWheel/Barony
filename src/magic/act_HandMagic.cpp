@@ -199,8 +199,27 @@ void actLeftHandMagic(Entity* my)
 	my->z -= 0.75;
 
 	//Sprite
+	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+	int playerAppearance = stats[clientnum]->appearance;
+	if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	{
+		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			playerRace = HUMAN;
+			playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+		}
+		else
+		{
+			playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+		}
+	}
+
 	bool noGloves = false;
-	if ( stats[clientnum]->gloves == NULL )
+	if ( stats[clientnum]->gloves == NULL
+		|| playerRace == SPIDER
+		|| playerRace == RAT
+		|| playerRace == CREATURE_IMP
+		|| playerRace == TROLL )
 	{
 		noGloves = true;
 	}
@@ -244,23 +263,9 @@ void actLeftHandMagic(Entity* my)
 		}
 	}
 
-	int playerAppearance = stats[clientnum]->appearance;
 
 	if ( noGloves )
 	{
-		Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
-		if ( players[clientnum]->entity->effectPolymorph != NOTHING )
-		{
-			if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
-			{
-				playerRace = HUMAN;
-				playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
-			}
-			else
-			{
-				playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
-			}
-		}
 
 		switch ( playerRace )
 		{
@@ -308,6 +313,15 @@ void actLeftHandMagic(Entity* my)
 				{
 					my->sprite = 658;
 				}
+				break;
+			case TROLL:
+				my->sprite = 856;
+				break;
+			case SPIDER:
+				my->sprite = 854;
+				break;
+			case CREATURE_IMP:
+				my->sprite = 858;
 				break;
 			default:
 				my->sprite = 656;
@@ -491,8 +505,27 @@ void actRightHandMagic(Entity* my)
 	my->z -= 0.75;
 
 	//Sprite
+	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+	int playerAppearance = stats[clientnum]->appearance;
+	if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	{
+		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			playerRace = HUMAN;
+			playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
+		}
+		else
+		{
+			playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+		}
+	}
+
 	bool noGloves = false;
-	if ( stats[clientnum]->gloves == NULL )
+	if ( stats[clientnum]->gloves == NULL 
+		|| playerRace == SPIDER 
+		|| playerRace == RAT 
+		|| playerRace == CREATURE_IMP
+		|| playerRace == TROLL )
 	{
 		noGloves = true;
 	}
@@ -536,24 +569,8 @@ void actRightHandMagic(Entity* my)
 		}
 	}
 
-	int playerAppearance = stats[clientnum]->appearance;
-
 	if ( noGloves )
 	{
-		Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
-		if ( players[clientnum]->entity->effectPolymorph != NOTHING )
-		{
-			if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
-			{
-				playerRace = HUMAN;
-				playerAppearance = players[clientnum]->entity->effectPolymorph - 100;
-			}
-			else
-			{
-				playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
-			}
-		}
-
 		switch ( playerRace )
 		{
 			case SKELETON:
@@ -600,6 +617,15 @@ void actRightHandMagic(Entity* my)
 				{
 					my->sprite = 636;
 				}
+				break;
+			case TROLL:
+				my->sprite = 855;
+				break;
+			case SPIDER:
+				my->sprite = 853;
+				break;
+			case CREATURE_IMP:
+				my->sprite = 857;
 				break;
 			default:
 				my->sprite = 634;
