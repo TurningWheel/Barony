@@ -48,7 +48,17 @@ static const int SPELL_STEAL_WEAPON = 28;
 static const int SPELL_DRAIN_SOUL = 29;
 static const int SPELL_VAMPIRIC_AURA = 30;
 static const int SPELL_CHARM_MONSTER = 31;
-static const int NUM_SPELLS = 32;
+static const int SPELL_REVERT_FORM = 32;
+static const int SPELL_RAT_FORM = 33;
+static const int SPELL_SPIDER_FORM = 34;
+static const int SPELL_TROLL_FORM = 35;
+static const int SPELL_IMP_FORM = 36;
+static const int SPELL_SPRAY_WEB = 37;
+static const int SPELL_POISON= 38;
+static const int SPELL_SPEED = 39;
+static const int SPELL_FEAR = 40;
+static const int SPELL_STRIKE = 41;
+static const int NUM_SPELLS = 42;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -349,8 +359,13 @@ extern spellElement_t spellElement_stealWeapon;
 extern spellElement_t spellElement_drainSoul;
 /* Vampiric Aura */
 extern spellElement_t spellElement_vampiricAura;
-
 extern spellElement_t spellElement_charmMonster;
+extern spellElement_t spellElement_changeForm;
+extern spellElement_t spellElement_sprayWeb;
+extern spellElement_t spellElement_poison;
+extern spellElement_t spellElement_speed;
+extern spellElement_t spellElement_fear;
+extern spellElement_t spellElement_strike;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -422,6 +437,16 @@ extern spell_t spell_stealWeapon;
 extern spell_t spell_drainSoul;
 extern spell_t spell_vampiricAura;
 extern spell_t spell_charmMonster;
+extern spell_t spell_revertForm;
+extern spell_t spell_ratForm;
+extern spell_t spell_spiderForm;
+extern spell_t spell_trollForm;
+extern spell_t spell_impForm;
+extern spell_t spell_sprayWeb;
+extern spell_t spell_poison;
+extern spell_t spell_speed;
+extern spell_t spell_fear;
+extern spell_t spell_strike;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 

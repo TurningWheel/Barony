@@ -2153,6 +2153,16 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case SPELLBOOK_DRAIN_SOUL:
 		case SPELLBOOK_VAMPIRIC_AURA:
 		case SPELLBOOK_CHARM_MONSTER:
+		case SPELLBOOK_REVERT_FORM:
+		case SPELLBOOK_RAT_FORM:
+		case SPELLBOOK_SPIDER_FORM:
+		case SPELLBOOK_TROLL_FORM:
+		case SPELLBOOK_IMP_FORM:
+		case SPELLBOOK_SPRAY_WEB:
+		case SPELLBOOK_POISON:
+		case SPELLBOOK_SPEED:
+		case SPELLBOOK_FEAR:
+		case SPELLBOOK_STRIKE:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:

@@ -57,6 +57,12 @@ spellElement_t spellElement_stealWeapon;
 spellElement_t spellElement_drainSoul;
 spellElement_t spellElement_vampiricAura;
 spellElement_t spellElement_charmMonster;
+spellElement_t spellElement_changeForm;
+spellElement_t spellElement_sprayWeb;
+spellElement_t spellElement_poison;
+spellElement_t spellElement_speed;
+spellElement_t spellElement_fear;
+spellElement_t spellElement_strike;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -90,6 +96,16 @@ spell_t spell_stealWeapon;
 spell_t spell_drainSoul;
 spell_t spell_vampiricAura;
 spell_t spell_charmMonster;
+spell_t spell_revertForm;
+spell_t spell_ratForm;
+spell_t spell_spiderForm;
+spell_t spell_trollForm;
+spell_t spell_impForm;
+spell_t spell_sprayWeb;
+spell_t spell_poison;
+spell_t spell_speed;
+spell_t spell_fear;
+spell_t spell_strike;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -197,6 +213,36 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_CHARM_MONSTER:
 			new_spell = copySpell(&spell_charmMonster);
+			break;
+		case SPELL_REVERT_FORM:
+			new_spell = copySpell(&spell_revertForm);
+			break;
+		case SPELL_RAT_FORM:
+			new_spell = copySpell(&spell_ratForm);
+			break;
+		case SPELL_SPIDER_FORM:
+			new_spell = copySpell(&spell_spiderForm);
+			break;
+		case SPELL_TROLL_FORM:
+			new_spell = copySpell(&spell_trollForm);
+			break;
+		case SPELL_IMP_FORM:
+			new_spell = copySpell(&spell_impForm);
+			break;
+		case SPELL_SPRAY_WEB:
+			new_spell = copySpell(&spell_sprayWeb);
+			break;
+		case SPELL_POISON:
+			new_spell = copySpell(&spell_poison);
+			break;
+		case SPELL_SPEED:
+			new_spell = copySpell(&spell_speed);
+			break;
+		case SPELL_FEAR:
+			new_spell = copySpell(&spell_fear);
+			break;
+		case SPELL_STRIKE:
+			new_spell = copySpell(&spell_strike);
 			break;
 		default:
 			return false;
@@ -561,6 +607,36 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_CHARM_MONSTER:
 			spell = &spell_charmMonster;
 			break;
+		case SPELL_REVERT_FORM:
+			spell = &spell_revertForm;
+			break;
+		case SPELL_RAT_FORM:
+			spell = &spell_ratForm;
+			break;
+		case SPELL_SPIDER_FORM:
+			spell = &spell_spiderForm;
+			break;
+		case SPELL_TROLL_FORM:
+			spell = &spell_trollForm;
+			break;
+		case SPELL_IMP_FORM:
+			spell = &spell_impForm;
+			break;
+		case SPELL_SPRAY_WEB:
+			spell = &spell_sprayWeb;
+			break;
+		case SPELL_POISON:
+			spell = &spell_poison;
+			break;
+		case SPELL_SPEED:
+			spell = &spell_speed;
+			break;
+		case SPELL_FEAR:
+			spell = &spell_fear;
+			break;
+		case SPELL_STRIKE:
+			spell = &spell_strike;
+			break;
 		default:
 			break;
 	}
@@ -666,6 +742,36 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_CHARM_MONSTER:
 			itemType = SPELLBOOK_CHARM_MONSTER;
 			break;
+		case SPELL_REVERT_FORM:
+			itemType = SPELLBOOK_REVERT_FORM;
+			break;
+		case SPELL_RAT_FORM:
+			itemType = SPELLBOOK_RAT_FORM;
+			break;
+		case SPELL_SPIDER_FORM:
+			itemType = SPELLBOOK_SPIDER_FORM;
+			break;
+		case SPELL_TROLL_FORM:
+			itemType = SPELLBOOK_TROLL_FORM;
+			break;
+		case SPELL_IMP_FORM:
+			itemType = SPELLBOOK_IMP_FORM;
+			break;
+		case SPELL_SPRAY_WEB:
+			itemType = SPELLBOOK_SPRAY_WEB;
+			break;
+		case SPELL_POISON:
+			itemType = SPELLBOOK_POISON;
+			break;
+		case SPELL_SPEED:
+			itemType = SPELLBOOK_SPEED;
+			break;
+		case SPELL_FEAR:
+			itemType = SPELLBOOK_FEAR;
+			break;
+		case SPELL_STRIKE:
+			itemType = SPELLBOOK_STRIKE;
+			break;
 		default:
 			break;
 	}
@@ -737,6 +843,26 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_vampiricAura.ID;
 		case SPELLBOOK_CHARM_MONSTER:
 			return spell_charmMonster.ID;
+		case SPELLBOOK_REVERT_FORM:
+			return spell_revertForm.ID;
+		case SPELLBOOK_RAT_FORM:
+			return spell_ratForm.ID;
+		case SPELLBOOK_SPIDER_FORM:
+			return spell_spiderForm.ID;
+		case SPELLBOOK_TROLL_FORM:
+			return spell_trollForm.ID;
+		case SPELLBOOK_IMP_FORM:
+			return spell_impForm.ID;
+		case SPELLBOOK_SPRAY_WEB:
+			return spell_sprayWeb.ID;
+		case SPELLBOOK_POISON:
+			return spell_poison.ID;
+		case SPELLBOOK_SPEED:
+			return spell_speed.ID;
+		case SPELLBOOK_FEAR:
+			return spell_fear.ID;
+		case SPELLBOOK_STRIKE:
+			return spell_strike.ID;
 		default:
 			return SPELL_NONE;
 	}

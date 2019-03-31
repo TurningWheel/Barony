@@ -287,6 +287,54 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_charmMonster.duration = 300;
 	strcpy(spellElement_charmMonster.name, language[2399]);
 
+	spellElementConstructor(&spellElement_changeForm);
+	spellElement_changeForm.mana = 1;
+	spellElement_changeForm.base_mana = 1;
+	spellElement_changeForm.overload_multiplier = 1;
+	spellElement_changeForm.damage = 1;
+	spellElement_changeForm.duration = 0;
+	strcpy(spellElement_changeForm.name, language[3407]);
+
+	spellElementConstructor(&spellElement_sprayWeb);
+	spellElement_changeForm.mana = 1;
+	spellElement_changeForm.base_mana = 1;
+	spellElement_changeForm.overload_multiplier = 1;
+	spellElement_changeForm.damage = 1;
+	spellElement_changeForm.duration = 0;
+	strcpy(spellElement_changeForm.name, language[3412]);
+
+	spellElementConstructor(&spellElement_poison);
+	spellElement_changeForm.mana = 1;
+	spellElement_changeForm.base_mana = 1;
+	spellElement_changeForm.overload_multiplier = 1;
+	spellElement_changeForm.damage = 1;
+	spellElement_changeForm.duration = 0;
+	strcpy(spellElement_changeForm.name, language[3413]);
+
+	spellElementConstructor(&spellElement_speed);
+	spellElement_changeForm.mana = 1;
+	spellElement_changeForm.base_mana = 1;
+	spellElement_changeForm.overload_multiplier = 1;
+	spellElement_changeForm.damage = 1;
+	spellElement_changeForm.duration = 0;
+	strcpy(spellElement_changeForm.name, language[3414]);
+
+	spellElementConstructor(&spellElement_fear);
+	spellElement_changeForm.mana = 1;
+	spellElement_changeForm.base_mana = 1;
+	spellElement_changeForm.overload_multiplier = 1;
+	spellElement_changeForm.damage = 1;
+	spellElement_changeForm.duration = 0;
+	strcpy(spellElement_changeForm.name, language[3415]);
+
+	spellElementConstructor(&spellElement_strike);
+	spellElement_changeForm.mana = 1;
+	spellElement_changeForm.base_mana = 1;
+	spellElement_changeForm.overload_multiplier = 1;
+	spellElement_changeForm.damage = 1;
+	spellElement_changeForm.duration = 0;
+	strcpy(spellElement_changeForm.name, language[3416]);
+
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
 	spell_forcebolt.ID = SPELL_FORCEBOLT;
@@ -835,4 +883,74 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
+
+	spellConstructor(&spell_revertForm);
+	strcpy(spell_revertForm.name, language[3407]);
+	spell_revertForm.ID = SPELL_REVERT_FORM;
+	spell_revertForm.difficulty = 20;
+	spell_revertForm.elements.first = NULL;
+	spell_revertForm.elements.last = NULL;
+	node = list_AddNodeLast(&spell_revertForm.elements);
+	node->element = copySpellElement(&spellElement_changeForm);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 5;
+
+	spellConstructor(&spell_ratForm);
+	strcpy(spell_ratForm.name, language[3408]);
+	spell_ratForm.ID = SPELL_RAT_FORM;
+	spell_ratForm.difficulty = 20;
+	spell_ratForm.elements.first = NULL;
+	spell_ratForm.elements.last = NULL;
+	node = list_AddNodeLast(&spell_ratForm.elements);
+	node->element = copySpellElement(&spellElement_changeForm);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 8;
+
+	spellConstructor(&spell_spiderForm);
+	strcpy(spell_spiderForm.name, language[3409]);
+	spell_spiderForm.ID = SPELL_SPIDER_FORM;
+	spell_spiderForm.difficulty = 20;
+	spell_spiderForm.elements.first = NULL;
+	spell_spiderForm.elements.last = NULL;
+	node = list_AddNodeLast(&spell_spiderForm.elements);
+	node->element = copySpellElement(&spellElement_changeForm);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 16;
+
+	spellConstructor(&spell_trollForm);
+	strcpy(spell_trollForm.name, language[3410]);
+	spell_trollForm.ID = SPELL_TROLL_FORM;
+	spell_trollForm.difficulty = 20;
+	spell_trollForm.elements.first = NULL;
+	spell_trollForm.elements.last = NULL;
+	node = list_AddNodeLast(&spell_trollForm.elements);
+	node->element = copySpellElement(&spellElement_changeForm);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 24;
+
+	spellConstructor(&spell_impForm);
+	strcpy(spell_impForm.name, language[3411]);
+	spell_impForm.ID = SPELL_IMP_FORM;
+	spell_impForm.difficulty = 20;
+	spell_impForm.elements.first = NULL;
+	spell_impForm.elements.last = NULL;
+	node = list_AddNodeLast(&spell_impForm.elements);
+	node->element = copySpellElement(&spellElement_changeForm);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 32;
 }

@@ -4457,6 +4457,36 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_CHARM_MONSTER:
 				learned = addSpell(SPELL_CHARM_MONSTER, player);
 				break;
+			case SPELLBOOK_REVERT_FORM:
+				learned = addSpell(SPELL_REVERT_FORM, player);
+				break;
+			case SPELLBOOK_RAT_FORM:
+				learned = addSpell(SPELL_RAT_FORM, player);
+				break;
+			case SPELLBOOK_SPIDER_FORM:
+				learned = addSpell(SPELL_SPIDER_FORM, player);
+				break;
+			case SPELLBOOK_TROLL_FORM:
+				learned = addSpell(SPELL_TROLL_FORM, player);
+				break;
+			case SPELLBOOK_IMP_FORM:
+				learned = addSpell(SPELL_IMP_FORM, player);
+				break;
+			case SPELLBOOK_SPRAY_WEB:
+				learned = addSpell(SPELL_SPRAY_WEB, player);
+				break;
+			case SPELLBOOK_POISON:
+				learned = addSpell(SPELL_POISON, player);
+				break;
+			case SPELLBOOK_SPEED:
+				learned = addSpell(SPELL_SPEED, player);
+				break;
+			case SPELLBOOK_FEAR:
+				learned = addSpell(SPELL_FEAR, player);
+				break;
+			case SPELLBOOK_STRIKE:
+				learned = addSpell(SPELL_STRIKE, player);
+				break;
 			default:
 				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;

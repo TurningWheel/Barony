@@ -55,6 +55,16 @@ void freeSpells()
 	list_FreeAll(&spell_drainSoul.elements);
 	list_FreeAll(&spell_vampiricAura.elements);
 	list_FreeAll(&spell_charmMonster.elements);
+	list_FreeAll(&spell_revertForm.elements);
+	list_FreeAll(&spell_ratForm.elements);
+	list_FreeAll(&spell_spiderForm.elements);
+	list_FreeAll(&spell_trollForm.elements);
+	list_FreeAll(&spell_impForm.elements);
+	list_FreeAll(&spell_sprayWeb.elements);
+	list_FreeAll(&spell_poison.elements);
+	list_FreeAll(&spell_speed.elements);
+	list_FreeAll(&spell_fear.elements);
+	list_FreeAll(&spell_strike.elements);
 }
 
 void spell_magicMap(int player)
