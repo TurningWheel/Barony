@@ -57,7 +57,7 @@ spellElement_t spellElement_stealWeapon;
 spellElement_t spellElement_drainSoul;
 spellElement_t spellElement_vampiricAura;
 spellElement_t spellElement_charmMonster;
-spellElement_t spellElement_changeForm;
+spellElement_t spellElement_shapeshift;
 spellElement_t spellElement_sprayWeb;
 spellElement_t spellElement_poison;
 spellElement_t spellElement_speed;

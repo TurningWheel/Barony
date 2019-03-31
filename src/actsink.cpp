@@ -94,14 +94,24 @@ void actSink(Entity* my)
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
-					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] )
+					if ( stats[i] && (stats[i]->EFFECTS[EFF_POLYMORPH] || stats[i]->EFFECTS[EFF_SHAPESHIFT]) )
 					{
-						players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
-						players[i]->entity->effectPolymorph = 0;
-						serverUpdateEntitySkill(players[i]->entity, 50);
-
-						messagePlayer(i, language[3192]);
-						messagePlayer(i, language[3185]);
+						if ( stats[i]->EFFECTS[EFF_POLYMORPH] )
+						{
+							players[i]->entity->setEffect(EFF_POLYMORPH, false, 0, true);
+							players[i]->entity->effectPolymorph = 0;
+							serverUpdateEntitySkill(players[i]->entity, 50);
+							messagePlayer(i, language[3192]);
+							messagePlayer(i, language[3185]);
+						}
+						if ( stats[i]->EFFECTS[EFF_SHAPESHIFT] )
+						{
+							players[i]->entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
+							players[i]->entity->effectShapeshift = 0;
+							serverUpdateEntitySkill(players[i]->entity, 53);
+							messagePlayer(i, language[3418]);
+							messagePlayer(i, language[3417]);
+						}
 
 						playSoundEntity(players[i]->entity, 400, 92);
 						createParticleDropRising(players[i]->entity, 593, 1.f);

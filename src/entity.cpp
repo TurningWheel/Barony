@@ -259,7 +259,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalTimerRepeatCount(skill[3]),
 	signalTimerLatchInput(skill[4]),
 	signalInputDirection(skill[5]),
-	effectPolymorph(skill[50])
+	effectPolymorph(skill[50]),
+	effectShapeshift(skill[53])
 {
 	int c;
 	// add the entity to the entity list
@@ -1227,6 +1228,15 @@ void Entity::effectTimes()
 						effectPolymorph = 0;
 						serverUpdateEntitySkill(this, 50);
 						messagePlayer(player, language[3185]);
+
+						playSoundEntity(this, 400, 92);
+						createParticleDropRising(this, 593, 1.f);
+						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
+						break;
+					case EFF_SHAPESHIFT:
+						effectShapeshift = 0;
+						serverUpdateEntitySkill(this, 53);
+						messagePlayer(player, language[3417]);
 
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);

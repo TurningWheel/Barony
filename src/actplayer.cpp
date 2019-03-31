@@ -249,7 +249,12 @@ void actPlayer(Entity* my)
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 	int playerAppearance = stats[PLAYER_NUM]->appearance;
 
-	if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || my->effectPolymorph != NOTHING )
+	if ( my->effectShapeshift != NOTHING )
+	{
+		playerRace = static_cast<Monster>(my->effectShapeshift);
+		stats[PLAYER_NUM]->type = playerRace;
+	}
+	else if ( stats[PLAYER_NUM]->playerRace > 0 || stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || my->effectPolymorph != NOTHING )
 	{
 		playerRace = my->getMonsterFromPlayerRace(stats[PLAYER_NUM]->playerRace);
 		if ( my->effectPolymorph != NOTHING )
@@ -289,6 +294,19 @@ void actPlayer(Entity* my)
 
 	if ( multiplayer != CLIENT )
 	{
+		if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+		{
+			stats[PLAYER_NUM]->playerShapeshiftStorage = my->effectShapeshift; // keep track of player shapeshift effects
+		}
+		else
+		{
+			if ( my->effectShapeshift != NOTHING ) // just in case this was cleared other than normal progression ticking down
+			{
+				my->effectShapeshift = NOTHING;
+				serverUpdateEntitySkill(my, 53);
+			}
+		}
+
 		if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 		{
 			stats[PLAYER_NUM]->playerPolymorphStorage = my->effectPolymorph; // keep track of player polymorph effects
@@ -1583,15 +1601,26 @@ void actPlayer(Entity* my)
 							messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
 							serverUpdateEntityFlag(my, BURNING);
 						}
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 						{
-							my->setEffect(EFF_POLYMORPH, false, 0, true);
-							my->effectPolymorph = 0;
-							serverUpdateEntitySkill(my, 50);
+							if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
+							{
+								my->setEffect(EFF_POLYMORPH, false, 0, true);
+								my->effectPolymorph = 0;
+								serverUpdateEntitySkill(my, 50);
 
-							messagePlayer(PLAYER_NUM, language[3192]);
-							messagePlayer(PLAYER_NUM, language[3185]);
+								messagePlayer(PLAYER_NUM, language[3192]);
+								messagePlayer(PLAYER_NUM, language[3185]);
+							}
+							if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+							{
+								my->setEffect(EFF_SHAPESHIFT, false, 0, true);
+								my->effectShapeshift = 0;
+								serverUpdateEntitySkill(my, 53);
 
+								messagePlayer(PLAYER_NUM, language[3418]);
+								messagePlayer(PLAYER_NUM, language[3417]);
+							}
 							playSoundEntity(my, 400, 92);
 							createParticleDropRising(my, 593, 1.f);
 							serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);
@@ -3147,7 +3176,7 @@ void actPlayer(Entity* my)
 			if ( bodypart > 12 )
 			{
 				entity->flags[INVISIBLE] = true;
-				break;
+				continue;
 			}
 
 			entity->yaw = my->yaw;

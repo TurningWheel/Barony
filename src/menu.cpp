@@ -7662,6 +7662,12 @@ void handleMainMenu(bool mode)
 								serverUpdateEntitySkill(players[c]->entity, 50); // update visual polymorph effect for clients.
 								serverUpdateEffects(c);
 							}
+							if ( stats[c] && stats[c]->EFFECTS[EFF_SHAPESHIFT] && stats[c]->playerShapeshiftStorage != NOTHING )
+							{
+								players[c]->entity->effectShapeshift = stats[c]->playerShapeshiftStorage;
+								serverUpdateEntitySkill(players[c]->entity, 53); // update visual shapeshift effect for clients.
+								serverUpdateEffects(c);
+							}
 							if ( stats[c] && stats[c]->EFFECTS[EFF_VAMPIRICAURA] && stats[c]->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 							{
 								players[c]->entity->playerVampireCurse = 1;

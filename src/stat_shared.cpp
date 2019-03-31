@@ -30,7 +30,8 @@ Stat::Stat(Sint32 sprite) :
 	playerSummon2LVLHP(MISC_FLAGS[9]),
 	playerSummon2STRDEXCONINT(MISC_FLAGS[10]),
 	playerSummon2PERCHR(MISC_FLAGS[11]),
-	monsterIsCharmed(MISC_FLAGS[12])
+	monsterIsCharmed(MISC_FLAGS[12]),
+	playerShapeshiftStorage(MISC_FLAGS[13])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

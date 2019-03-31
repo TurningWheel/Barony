@@ -78,7 +78,11 @@ void actHudArm(Entity* my)
 
 	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
 	int playerAppearance = stats[clientnum]->appearance;
-	if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+	{
+		playerRace = static_cast<Monster>(players[clientnum]->entity->effectShapeshift);
+	}
+	else if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 	{
 		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
 		{
@@ -376,7 +380,11 @@ void actHudWeapon(Entity* my)
 
 	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
 	int playerAppearance = stats[clientnum]->appearance;
-	if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+	{
+		playerRace = static_cast<Monster>(players[clientnum]->entity->effectShapeshift);
+	}
+	else if ( players[clientnum]->entity->effectPolymorph != NOTHING )
 	{
 		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
 		{

@@ -119,15 +119,26 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
-			if ( stats && stats->EFFECTS[EFF_POLYMORPH] )
+			if ( stats && (stats->EFFECTS[EFF_POLYMORPH] || stats->EFFECTS[EFF_SHAPESHIFT]) )
 			{
-				entity->setEffect(EFF_POLYMORPH, false, 0, true);
-				entity->effectPolymorph = 0;
-				serverUpdateEntitySkill(entity, 50);
+				if ( stats->EFFECTS[EFF_POLYMORPH] )
+				{
+					entity->setEffect(EFF_POLYMORPH, false, 0, true);
+					entity->effectPolymorph = 0;
+					serverUpdateEntitySkill(entity, 50);
 
-				messagePlayer(player, language[3192]);
-				messagePlayer(player, language[3185]);
+					messagePlayer(player, language[3192]);
+					messagePlayer(player, language[3185]);
+				}
+				if ( stats->EFFECTS[EFF_SHAPESHIFT] )
+				{
+					entity->setEffect(EFF_SHAPESHIFT, false, 0, true);
+					entity->effectShapeshift = 0;
+					serverUpdateEntitySkill(entity, 53);
 
+					messagePlayer(player, language[3418]);
+					messagePlayer(player, language[3417]);
+				}
 				playSoundEntity(entity, 400, 92);
 				createParticleDropRising(entity, 593, 1.f);
 				serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);

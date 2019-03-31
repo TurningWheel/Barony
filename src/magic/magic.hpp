@@ -360,7 +360,7 @@ extern spellElement_t spellElement_drainSoul;
 /* Vampiric Aura */
 extern spellElement_t spellElement_vampiricAura;
 extern spellElement_t spellElement_charmMonster;
-extern spellElement_t spellElement_changeForm;
+extern spellElement_t spellElement_shapeshift;
 extern spellElement_t spellElement_sprayWeb;
 extern spellElement_t spellElement_poison;
 extern spellElement_t spellElement_speed;

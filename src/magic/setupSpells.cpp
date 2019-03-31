@@ -287,53 +287,53 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_charmMonster.duration = 300;
 	strcpy(spellElement_charmMonster.name, language[2399]);
 
-	spellElementConstructor(&spellElement_changeForm);
-	spellElement_changeForm.mana = 1;
-	spellElement_changeForm.base_mana = 1;
-	spellElement_changeForm.overload_multiplier = 1;
-	spellElement_changeForm.damage = 1;
-	spellElement_changeForm.duration = 0;
-	strcpy(spellElement_changeForm.name, language[3407]);
+	spellElementConstructor(&spellElement_shapeshift);
+	spellElement_shapeshift.mana = 1;
+	spellElement_shapeshift.base_mana = 1;
+	spellElement_shapeshift.overload_multiplier = 1;
+	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.duration = 0;
+	strcpy(spellElement_shapeshift.name, language[3407]);
 
 	spellElementConstructor(&spellElement_sprayWeb);
-	spellElement_changeForm.mana = 1;
-	spellElement_changeForm.base_mana = 1;
-	spellElement_changeForm.overload_multiplier = 1;
-	spellElement_changeForm.damage = 1;
-	spellElement_changeForm.duration = 0;
-	strcpy(spellElement_changeForm.name, language[3412]);
+	spellElement_shapeshift.mana = 1;
+	spellElement_shapeshift.base_mana = 1;
+	spellElement_shapeshift.overload_multiplier = 1;
+	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.duration = 0;
+	strcpy(spellElement_shapeshift.name, language[3412]);
 
 	spellElementConstructor(&spellElement_poison);
-	spellElement_changeForm.mana = 1;
-	spellElement_changeForm.base_mana = 1;
-	spellElement_changeForm.overload_multiplier = 1;
-	spellElement_changeForm.damage = 1;
-	spellElement_changeForm.duration = 0;
-	strcpy(spellElement_changeForm.name, language[3413]);
+	spellElement_shapeshift.mana = 1;
+	spellElement_shapeshift.base_mana = 1;
+	spellElement_shapeshift.overload_multiplier = 1;
+	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.duration = 0;
+	strcpy(spellElement_shapeshift.name, language[3413]);
 
 	spellElementConstructor(&spellElement_speed);
-	spellElement_changeForm.mana = 1;
-	spellElement_changeForm.base_mana = 1;
-	spellElement_changeForm.overload_multiplier = 1;
-	spellElement_changeForm.damage = 1;
-	spellElement_changeForm.duration = 0;
-	strcpy(spellElement_changeForm.name, language[3414]);
+	spellElement_shapeshift.mana = 1;
+	spellElement_shapeshift.base_mana = 1;
+	spellElement_shapeshift.overload_multiplier = 1;
+	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.duration = 0;
+	strcpy(spellElement_shapeshift.name, language[3414]);
 
 	spellElementConstructor(&spellElement_fear);
-	spellElement_changeForm.mana = 1;
-	spellElement_changeForm.base_mana = 1;
-	spellElement_changeForm.overload_multiplier = 1;
-	spellElement_changeForm.damage = 1;
-	spellElement_changeForm.duration = 0;
-	strcpy(spellElement_changeForm.name, language[3415]);
+	spellElement_shapeshift.mana = 1;
+	spellElement_shapeshift.base_mana = 1;
+	spellElement_shapeshift.overload_multiplier = 1;
+	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.duration = 0;
+	strcpy(spellElement_shapeshift.name, language[3415]);
 
 	spellElementConstructor(&spellElement_strike);
-	spellElement_changeForm.mana = 1;
-	spellElement_changeForm.base_mana = 1;
-	spellElement_changeForm.overload_multiplier = 1;
-	spellElement_changeForm.damage = 1;
-	spellElement_changeForm.duration = 0;
-	strcpy(spellElement_changeForm.name, language[3416]);
+	spellElement_shapeshift.mana = 1;
+	spellElement_shapeshift.base_mana = 1;
+	spellElement_shapeshift.overload_multiplier = 1;
+	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.duration = 0;
+	strcpy(spellElement_shapeshift.name, language[3416]);
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
@@ -891,7 +891,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_revertForm.elements.first = NULL;
 	spell_revertForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_revertForm.elements);
-	node->element = copySpellElement(&spellElement_changeForm);
+	node->element = copySpellElement(&spellElement_shapeshift);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
@@ -905,7 +905,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_ratForm.elements.first = NULL;
 	spell_ratForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_ratForm.elements);
-	node->element = copySpellElement(&spellElement_changeForm);
+	node->element = copySpellElement(&spellElement_shapeshift);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
@@ -919,7 +919,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_spiderForm.elements.first = NULL;
 	spell_spiderForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_spiderForm.elements);
-	node->element = copySpellElement(&spellElement_changeForm);
+	node->element = copySpellElement(&spellElement_shapeshift);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
@@ -933,7 +933,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_trollForm.elements.first = NULL;
 	spell_trollForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_trollForm.elements);
-	node->element = copySpellElement(&spellElement_changeForm);
+	node->element = copySpellElement(&spellElement_shapeshift);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
@@ -947,7 +947,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_impForm.elements.first = NULL;
 	spell_impForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_impForm.elements);
-	node->element = copySpellElement(&spellElement_changeForm);
+	node->element = copySpellElement(&spellElement_shapeshift);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

@@ -796,6 +796,94 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			playSoundEntity(caster, 168, 128);
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
+		else if ( !strcmp(element->name, spellElement_shapeshift.name) && caster && caster->behavior == &actPlayer )
+		{
+			Monster type = NOTHING;
+			switch ( spell->ID )
+			{
+				case SPELL_RAT_FORM:
+					type = RAT;
+					break;
+				case SPELL_TROLL_FORM:
+					type = TROLL;
+					break;
+				case SPELL_SPIDER_FORM:
+					type = SPIDER;
+					break;
+				case SPELL_IMP_FORM:
+					type = CREATURE_IMP;
+					break;
+				case SPELL_REVERT_FORM:
+					break;
+				default:
+					break;
+			}
+
+			if ( type != NOTHING && caster->setEffect(EFF_SHAPESHIFT, true, 20 * TICKS_PER_SECOND, true) )
+			{
+				spawnExplosion(caster->x, caster->y, caster->z);
+				playSoundEntity(caster, 400, 92);
+				createParticleDropRising(caster, 593, 1.f);
+				serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
+
+				caster->effectShapeshift = type;
+				serverUpdateEntitySkill(caster, 53);
+
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( caster->effectShapeshift < KOBOLD )
+				{
+					messagePlayerColor(caster->skill[2], color, language[3419], language[90 + caster->effectShapeshift]);
+				}
+				else
+				{
+					messagePlayerColor(caster->skill[2], color, language[3419], language[2000 + caster->effectShapeshift - KOBOLD]);
+				}
+
+				// change player's type here, don't like this.. will get auto reset in actPlayer() though
+				// otherwise the below aggro check will still assume previous race since actPlayer() hasn't run yet.
+				//targetStats->type = race;
+
+				//for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				//{
+				//	Entity* creature = (Entity*)node->element;
+				//	if ( creature && creature->behavior == &actMonster && creature != target )
+				//	{
+				//		if ( creature->monsterTarget == target->getUID() )
+				//		{
+				//			if ( creature->checkEnemy(target) )
+				//			{
+				//				creature->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH); // re-acquire new target
+				//			}
+				//			else
+				//			{
+				//				creature->monsterReleaseAttackTarget(); // release if new target is ally.
+				//			}
+				//		}
+				//	}
+				//}
+			}
+			else
+			{
+				if ( spell->ID == SPELL_REVERT_FORM )
+				{
+					if ( stats[caster->skill[2]]->EFFECTS[EFF_SHAPESHIFT] )
+					{
+						caster->setEffect(EFF_SHAPESHIFT, false, 0, true);
+						caster->effectShapeshift = 0;
+						serverUpdateEntitySkill(caster, 53);
+
+						messagePlayer(caster->skill[2], language[3417]);
+					}
+					playSoundEntity(caster, 400, 92);
+					createParticleDropRising(caster, 593, 1.f);
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[3420]);
+				}
+			}
+		}
 		else if (!strcmp(element->name, spellElement_cure_ailment.name))     //TODO: Generalize it for NPCs too?
 		{
 			for (i = 0; i < numplayers; ++i)

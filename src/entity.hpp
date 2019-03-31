@@ -201,6 +201,7 @@ public:
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
+	Sint32& effectShapeshift; // skill[53]
 
 	//--PUBLIC GENERAL ENTITY STUFF--
 	Sint32& interactedByMonster; //skill[47] for use with monsterAllyInteractTarget
