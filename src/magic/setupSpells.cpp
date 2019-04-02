@@ -887,7 +887,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_revertForm);
 	strcpy(spell_revertForm.name, language[3407]);
 	spell_revertForm.ID = SPELL_REVERT_FORM;
-	spell_revertForm.difficulty = 20;
+	spell_revertForm.difficulty = 0;
 	spell_revertForm.elements.first = NULL;
 	spell_revertForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_revertForm.elements);
@@ -901,7 +901,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_ratForm);
 	strcpy(spell_ratForm.name, language[3408]);
 	spell_ratForm.ID = SPELL_RAT_FORM;
-	spell_ratForm.difficulty = 20;
+	spell_ratForm.difficulty = 0;
 	spell_ratForm.elements.first = NULL;
 	spell_ratForm.elements.last = NULL;
 	node = list_AddNodeLast(&spell_ratForm.elements);

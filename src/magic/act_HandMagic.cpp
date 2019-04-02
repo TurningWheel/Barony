@@ -81,11 +81,14 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->stage = CIRCLE;
 
 	//Make the HUDWEAPON disappear, or somesuch?
-	if ( !usingSpellbook )
+	if ( stat->type != RAT )
 	{
-		magicLeftHand->flags[INVISIBLE] = false;
+		if ( !usingSpellbook )
+		{
+			magicLeftHand->flags[INVISIBLE] = false;
+		}
+		magicRightHand->flags[INVISIBLE] = false;
 	}
-	magicRightHand->flags[INVISIBLE] = false;
 
 	animation_manager->lefthand_angle = 0;
 	animation_manager->lefthand_movex = 0;
@@ -344,6 +347,13 @@ void actLeftHandMagic(Entity* my)
 		{
 			my->sprite = 658;
 		}*/
+	}
+
+	if ( playerRace == RAT )
+	{
+		my->flags[INVISIBLE] = true;
+		my->y = 0;
+		my->z += 1;
 	}
 
 	bool wearingring = false;
@@ -651,6 +661,13 @@ void actRightHandMagic(Entity* my)
 		{
 			my->sprite = 636;
 		}*/
+	}
+
+	if ( playerRace == RAT )
+	{
+		my->flags[INVISIBLE] = true;
+		my->y = 0;
+		my->z += 1;
 	}
 
 	bool wearingring = false;

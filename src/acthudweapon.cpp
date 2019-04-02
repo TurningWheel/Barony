@@ -220,18 +220,7 @@ void actHudArm(Entity* my)
 				my->sprite = 634;
 				break;
 		}
-		/*else if ( playerAppearance / 6 == 0 )
-		{
-			my->sprite = 634;
-		}
-		else if ( playerAppearance / 6 == 1 )
-		{
-			my->sprite = 635;
-		}
-		else
-		{
-			my->sprite = 636;
-		}*/
+
 		if ( stats[clientnum]->weapon == nullptr || hideWeapon )
 		{
 			my->scalex = 0.5f;
@@ -245,11 +234,39 @@ void actHudArm(Entity* my)
 
 	// rotation
 	//my->yaw = atan2( my->y-camera.y*16, my->x-camera.x*16 );
-	my->yaw = -2 * PI / 32;
 	//my->fskill[0] = sqrt( pow(my->x-camera.x*16,2) + pow(my->y-camera.y*16,2) );
 	//my->pitch = atan2( my->z-camera.z*.5, my->fskill[0] );
-	my->pitch = -17 * PI / 32;
 	//messagePlayer(0, "my y: %f, my z: %f", my->y, my->z);
+
+	if ( playerRace == RAT )
+	{
+		my->pitch = 0.f;
+		my->yaw = parent->yaw + players[clientnum]->entity->fskill[10]; // PLAYER_SIDEBOB
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
+		my->x += -4.f;
+		my->y += -3.f;
+		my->z += 5.5;
+	}
+	else if ( playerRace == SPIDER )
+	{
+		my->pitch = parent->pitch;
+		my->scalex = 1.f;
+		my->scaley = 1.f;
+		my->scalez = 1.f;
+		my->x += limbs[HUMAN][1][0];
+		my->y += limbs[HUMAN][1][1];
+		my->z += limbs[HUMAN][1][2];
+		my->focalx = limbs[HUMAN][2][0];
+		my->focaly = limbs[HUMAN][2][1];
+		my->focalz = limbs[HUMAN][2][2];
+	}
+	else
+	{
+		my->yaw = -2 * PI / 32;
+		my->pitch = -17 * PI / 32;
+	}
 }
 
 #ifdef USE_FMOD
@@ -540,10 +557,13 @@ void actHudWeapon(Entity* my)
 
 	if ( cast_animation.active || cast_animation.active_spellbook )
 	{
-		my->flags[INVISIBLE] = true;
-		if (parent != NULL)
+		if ( playerRace != RAT )
 		{
-			parent->flags[INVISIBLE] = true;
+			my->flags[INVISIBLE] = true;
+			if (parent != NULL)
+			{
+				parent->flags[INVISIBLE] = true;
+			}
 		}
 	}
 
@@ -1444,16 +1464,25 @@ void actHudWeapon(Entity* my)
 			result = 2 * PI / 5;
 			HUDWEAPON_YAW = result;
 		}
-		HUDWEAPON_PITCH -= .05;
-		if ( HUDWEAPON_PITCH < .2)
+		real_t pitchLimit = .2;
+		if ( playerRace == SPIDER )
 		{
-			HUDWEAPON_PITCH = .2;
+			pitchLimit = -PI / 2;
+			HUDWEAPON_PITCH -= .2;
+		}
+		else
+		{
+			HUDWEAPON_PITCH -= .05;
+		}
+		if ( HUDWEAPON_PITCH < pitchLimit )
+		{
+			HUDWEAPON_PITCH = pitchLimit;
 		}
 		HUDWEAPON_ROLL -= .15;
 		if (HUDWEAPON_ROLL < -2 * PI / 5)
 		{
 			HUDWEAPON_ROLL = -2 * PI / 5;
-			if (HUDWEAPON_PITCH == .2 && HUDWEAPON_YAW == result && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && HUDWEAPON_MOVEZ == -2)
+			if (HUDWEAPON_PITCH == pitchLimit && HUDWEAPON_YAW == result && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && HUDWEAPON_MOVEZ == -2)
 			{
 				if (!swingweapon)
 				{
@@ -1531,7 +1560,14 @@ void actHudWeapon(Entity* my)
 			{
 				HUDWEAPON_YAW = -.1;
 			}
-			HUDWEAPON_PITCH += .05;
+			if ( playerRace == SPIDER )
+			{
+				HUDWEAPON_PITCH += .2;
+			}
+			else
+			{
+				HUDWEAPON_PITCH += .05;
+			}
 			if ( HUDWEAPON_PITCH > 0)
 			{
 				HUDWEAPON_PITCH = 0;
@@ -1574,12 +1610,33 @@ void actHudWeapon(Entity* my)
 	double defaultpitch = PI / 8.f;
 	if (stats[clientnum]->weapon == nullptr || hideWeapon)
 	{
-		my->x = 6 + HUDWEAPON_MOVEX;
-		my->y = 3 + HUDWEAPON_MOVEY;
-		my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
-		my->yaw = HUDWEAPON_YAW - camera_shakex2;
-		my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
-		my->roll = HUDWEAPON_ROLL;
+		if ( playerRace == RAT )
+		{
+			my->x = 6 + HUDWEAPON_MOVEX / 3;
+			my->y = 3;// +HUDWEAPON_MOVEY;
+			my->z = (camera.z * .1 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ / 10;
+			my->yaw = 0.f - camera_shakex2;
+			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
+			my->roll = HUDWEAPON_ROLL;
+		}
+		else if ( playerRace == SPIDER )
+		{
+			my->x = 6 + HUDWEAPON_MOVEX;
+			my->y = 3;// +HUDWEAPON_MOVEY;
+			my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+			my->yaw = HUDWEAPON_YAW - camera_shakex2;
+			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
+			my->roll = HUDWEAPON_ROLL;
+		}
+		else
+		{
+			my->x = 6 + HUDWEAPON_MOVEX;
+			my->y = 3 + HUDWEAPON_MOVEY;
+			my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+			my->yaw = HUDWEAPON_YAW - camera_shakex2;
+			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
+			my->roll = HUDWEAPON_ROLL;
+		}
 	}
 	else
 	{
@@ -1686,6 +1743,31 @@ void actHudShield(Entity* my)
 		}
 	}
 
+	Monster playerRace = players[clientnum]->entity->getMonsterFromPlayerRace(stats[clientnum]->playerRace);
+	if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+	{
+		playerRace = static_cast<Monster>(players[clientnum]->entity->effectShapeshift);
+	}
+	else if ( players[clientnum]->entity->effectPolymorph != NOTHING )
+	{
+		if ( players[clientnum]->entity->effectPolymorph > NUMMONSTERS )
+		{
+			playerRace = HUMAN;
+		}
+		else
+		{
+			playerRace = static_cast<Monster>(players[clientnum]->entity->effectPolymorph);
+		}
+	}
+
+	bool hideShield = false;
+	if ( playerRace == RAT
+		|| playerRace == CREATURE_IMP
+		|| playerRace == TROLL )
+	{
+		hideShield = true;
+	}
+
 	bool spellbook = false;
 	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
 	{
@@ -1754,7 +1836,11 @@ void actHudShield(Entity* my)
 		}
 	}
 
-	if ( cast_animation.active )
+	if ( hideShield )
+	{
+		my->flags[INVISIBLE] = true;
+	}
+	else if ( cast_animation.active )
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -1987,6 +2073,28 @@ void actHudShield(Entity* my)
 		my->focalx = 0;
 		my->focaly = 0;
 		my->focalz = 0;
+	}
+
+
+	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	{
+		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
+		my->sprite = 854;
+		if ( hudArm )
+		{
+			my->x = hudArm->x;
+			my->y = -hudArm->y;
+			my->z = hudArm->z;
+			my->pitch = hudArm->pitch;
+			my->roll = -hudArm->roll;
+			my->yaw = -hudArm->yaw;
+			my->scalex = hudArm->scalex;
+			my->scaley = hudArm->scaley;
+			my->scalez = hudArm->scalez;
+			my->focalx = limbs[HUMAN][2][0];
+			my->focaly = -limbs[HUMAN][2][1];
+			my->focalz = limbs[HUMAN][2][2];
+		}
 	}
 
 	// torch/lantern flames

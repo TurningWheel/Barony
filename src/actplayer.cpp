@@ -182,6 +182,7 @@ void actDeathCam(Entity* my)
 #define PLAYER_ROTX my->fskill[6]
 #define PLAYER_ROTY my->fskill[7]
 #define PLAYER_SHIELDYAW my->fskill[8]
+#define PLAYER_SIDEBOB my->fskill[10]
 #define PLAYERWALKSPEED .12
 
 void actPlayer(Entity* my)
@@ -1708,6 +1709,58 @@ void actPlayer(Entity* my)
 				PLAYER_BOB = 0;
 				PLAYER_BOBMODE = 0;
 			}
+
+			if ( !command && !swimming && (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) )
+			{
+				if ( (*inputPressed(impulses[IN_RIGHT]) && !(*inputPressed(impulses[IN_BACK]))) 
+					|| (*inputPressed(impulses[IN_LEFT]) && (*inputPressed(impulses[IN_BACK]))) )
+				{
+					PLAYER_SIDEBOB += 0.01;
+					real_t angle = PI / 32;
+					if ( *inputPressed(impulses[IN_BACK]) )
+					{
+						angle = PI / 64;
+					}
+					if ( PLAYER_SIDEBOB > angle )
+					{
+						PLAYER_SIDEBOB = angle;
+					}
+				}
+				else if ( (*inputPressed(impulses[IN_LEFT]) && !(*inputPressed(impulses[IN_BACK])))
+					|| (*inputPressed(impulses[IN_RIGHT]) && (*inputPressed(impulses[IN_BACK]))) )
+				{
+					PLAYER_SIDEBOB -= 0.01;
+					real_t angle = -PI / 32;
+					if ( *inputPressed(impulses[IN_BACK]) )
+					{
+						angle = -PI / 64;
+					}
+					if ( PLAYER_SIDEBOB < angle )
+					{
+						PLAYER_SIDEBOB = angle;
+					}
+				}
+			}
+			else
+			{
+				if ( PLAYER_SIDEBOB > 0.001 )
+				{
+					PLAYER_SIDEBOB -= 0.02;
+					if ( PLAYER_SIDEBOB < 0.f )
+					{
+						PLAYER_SIDEBOB = 0.f;
+					}
+				}
+				else
+				{
+					PLAYER_SIDEBOB += 0.02;
+					if ( PLAYER_SIDEBOB > 0.f )
+					{
+						PLAYER_SIDEBOB = 0.f;
+					}
+				}
+			}
+
 			if ( !swimming && !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 			{
 				if ( PLAYER_BOBMOVE > .2 )
