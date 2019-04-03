@@ -655,11 +655,11 @@ void deinitGame()
 		// handle network messages
 		if ( multiplayer == CLIENT )
 		{
-			clientHandleMessages();
+			clientHandleMessages(fpsLimit);
 		}
 		else if ( multiplayer == SERVER )
 		{
-			serverHandleMessages();
+			serverHandleMessages(fpsLimit);
 		}
 		if ( !(SDL_GetTicks() % 25) && multiplayer )
 		{
