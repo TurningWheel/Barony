@@ -355,6 +355,24 @@ void actLeftHandMagic(Entity* my)
 		my->y = 0;
 		my->z += 1;
 	}
+	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	{
+		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
+		my->x = hudArm->x;
+		my->y = -hudArm->y;
+		//my->z = hudArm->z;
+		my->pitch = hudArm->pitch;
+		my->roll = -hudArm->roll;
+		my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw;
+		my->scalex = hudArm->scalex;
+		my->scaley = hudArm->scaley;
+		my->scalez = hudArm->scalez;
+		my->focalz = hudArm->focalz;
+	}
+	else
+	{
+		my->focalz = -1.5;
+	}
 
 	bool wearingring = false;
 
@@ -471,16 +489,36 @@ void actLeftHandMagic(Entity* my)
 	//double defaultpitch = PI / (0-4.f);
 	//defaultpitch = (0 - 2.8);
 	//my->x = 6 + HUDWEAPON_MOVEX;
-	my->x += cast_animation.lefthand_movex;
+
+	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	{
+		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
+		my->x = hudArm->x;
+		my->y = -hudArm->y;
+		my->z = hudArm->z;
+		my->pitch = hudArm->pitch;
+		my->roll = -hudArm->roll;
+		my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw;
+		my->scalex = hudArm->scalex;
+		my->scaley = hudArm->scaley;
+		my->scalez = hudArm->scalez;
+		my->focalz = hudArm->focalz;
+	}
+	else
+	{
+		my->y = -3;
+		my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
+		my->z -= 4;
+		my->yaw = HANDMAGIC_YAW - camera_shakex2;
+		my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
+		my->roll = HANDMAGIC_ROLL;
+		my->focalz = -1.5;
+	}
+
 	//my->y = 3 + HUDWEAPON_MOVEY;
-	my->y = -3;
-	my->y += cast_animation.lefthand_movey;
 	//my->z = (camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a PLAYERSWAP
-	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
-	my->z -= 4;
-	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
-	my->roll = HANDMAGIC_ROLL;
+	my->x += cast_animation.lefthand_movex;
+	my->y += cast_animation.lefthand_movey;
 }
 
 void actRightHandMagic(Entity* my)
@@ -669,6 +707,24 @@ void actRightHandMagic(Entity* my)
 		my->y = 0;
 		my->z += 1;
 	}
+	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	{
+		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
+		my->x = hudArm->x;
+		my->y = hudArm->y;
+		//my->z = hudArm->z;
+		my->pitch = hudArm->pitch;
+		my->roll = hudArm->roll;
+		my->yaw = players[clientnum]->entity->bodyparts.at(0)->yaw;
+		my->scalex = hudArm->scalex;
+		my->scaley = hudArm->scaley;
+		my->scalez = hudArm->scalez;
+		my->focalz = hudArm->focalz;
+	}
+	else
+	{
+		my->focalz = -1.5;
+	}
 
 	bool wearingring = false;
 
@@ -734,20 +790,33 @@ void actRightHandMagic(Entity* my)
 	{
 		return;
 	}
-	//double defaultpitch = PI / 8.f;
-	//double defaultpitch = 0;
-	//double defaultpitch = PI / (0-4.f);
-	//defaultpitch = (0 - 6.f) / PI;
-	//my->x = 6 + HUDWEAPON_MOVEX;
-	my->x = 8;
+
+	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	{
+		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
+		my->x = hudArm->x;
+		my->y = hudArm->y;
+		my->z = hudArm->z;
+		my->pitch = hudArm->pitch;
+		my->roll = hudArm->roll;
+		my->yaw = players[clientnum]->entity->bodyparts.at(0)->yaw;
+		my->scalex = hudArm->scalex;
+		my->scaley = hudArm->scaley;
+		my->scalez = hudArm->scalez;
+		my->focalz = hudArm->focalz;
+	}
+	else
+	{
+		my->x = 8;
+		my->y = 3;
+		my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
+		my->z -= 4;
+		my->yaw = HANDMAGIC_YAW - camera_shakex2;
+		my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
+		my->roll = HANDMAGIC_ROLL;
+		my->focalz = -1.5;
+	}
+
 	my->x += cast_animation.lefthand_movex;
-	//my->y = 3 + HUDWEAPON_MOVEY;
-	my->y = 3;
 	my->y -= cast_animation.lefthand_movey;
-	//my->z = (camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a playerswap
-	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
-	my->z -= 4;
-	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
-	my->roll = HANDMAGIC_ROLL;
 }

@@ -237,7 +237,9 @@ void actHudArm(Entity* my)
 	//my->fskill[0] = sqrt( pow(my->x-camera.x*16,2) + pow(my->y-camera.y*16,2) );
 	//my->pitch = atan2( my->z-camera.z*.5, my->fskill[0] );
 	//messagePlayer(0, "my y: %f, my z: %f", my->y, my->z);
-
+	my->focalx = 0;
+	my->focaly = 0;
+	my->focalz = -1.5;
 	if ( playerRace == RAT )
 	{
 		my->pitch = 0.f;
@@ -252,15 +254,14 @@ void actHudArm(Entity* my)
 	else if ( playerRace == SPIDER )
 	{
 		my->pitch = parent->pitch;
+		my->yaw = parent->yaw + players[clientnum]->entity->fskill[10];
 		my->scalex = 1.f;
 		my->scaley = 1.f;
 		my->scalez = 1.f;
-		my->x += limbs[HUMAN][1][0];
-		my->y += limbs[HUMAN][1][1];
-		my->z += limbs[HUMAN][1][2];
-		my->focalx = limbs[HUMAN][2][0];
-		my->focaly = limbs[HUMAN][2][1];
-		my->focalz = limbs[HUMAN][2][2];
+		my->x += 1;
+		my->y += 1;
+		my->z += 2;
+		my->focalz = -1;
 	}
 	else
 	{
@@ -1510,16 +1511,40 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 8 )     // third swing
 	{
-		HUDWEAPON_MOVEX += 2;
-		if ( HUDWEAPON_MOVEX > 4 )
+		if ( playerRace == SPIDER )
 		{
-			HUDWEAPON_MOVEX = 4;
-			HUDWEAPON_CHOP++;
+			HUDWEAPON_MOVEX += 1;
+			if ( HUDWEAPON_MOVEX > 2 )
+			{
+				HUDWEAPON_MOVEX = 2;
+				HUDWEAPON_CHOP++;
+			}
+			HUDWEAPON_PITCH += .2;
+			if ( HUDWEAPON_PITCH > 0 )
+			{
+				HUDWEAPON_PITCH = 0;
+			}
+		}
+		else
+		{
+			HUDWEAPON_MOVEX += 2;
+			if ( HUDWEAPON_MOVEX > 4 )
+			{
+				HUDWEAPON_MOVEX = 4;
+				HUDWEAPON_CHOP++;
+			}
 		}
 	}
 	else if ( HUDWEAPON_CHOP == 9 )     // return from third swing
 	{
-		HUDWEAPON_MOVEX -= .5;
+		if ( playerRace == SPIDER )
+		{
+			HUDWEAPON_MOVEX -= .25;
+		}
+		else
+		{
+			HUDWEAPON_MOVEX -= .5;
+		}
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
 			HUDWEAPON_MOVEX = 0;
@@ -1562,7 +1587,7 @@ void actHudWeapon(Entity* my)
 			}
 			if ( playerRace == SPIDER )
 			{
-				HUDWEAPON_PITCH += .2;
+				HUDWEAPON_PITCH += .12;
 			}
 			else
 			{
@@ -1624,7 +1649,7 @@ void actHudWeapon(Entity* my)
 			my->x = 6 + HUDWEAPON_MOVEX;
 			my->y = 3;// +HUDWEAPON_MOVEY;
 			my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
-			my->yaw = HUDWEAPON_YAW - camera_shakex2;
+			my->yaw = 0.f - camera_shakex2;
 			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 			my->roll = HUDWEAPON_ROLL;
 		}
@@ -1780,7 +1805,7 @@ void actHudShield(Entity* my)
 	}
 	else
 	{
-		if (stats[clientnum]->shield == nullptr)
+		if (stats[clientnum]->shield == nullptr && playerRace != SPIDER )
 		{
 			my->flags[INVISIBLE] = true;
 		}
@@ -2085,15 +2110,13 @@ void actHudShield(Entity* my)
 			my->x = hudArm->x;
 			my->y = -hudArm->y;
 			my->z = hudArm->z;
-			my->pitch = hudArm->pitch;
+			my->pitch = hudArm->pitch - camera_shakey2 / 200.f;
 			my->roll = -hudArm->roll;
-			my->yaw = -hudArm->yaw;
+			my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw + players[clientnum]->entity->fskill[10] - camera_shakex2;
 			my->scalex = hudArm->scalex;
 			my->scaley = hudArm->scaley;
 			my->scalez = hudArm->scalez;
-			my->focalx = limbs[HUMAN][2][0];
-			my->focaly = -limbs[HUMAN][2][1];
-			my->focalz = limbs[HUMAN][2][2];
+			my->focalz = hudArm->focalz;
 		}
 	}
 
@@ -2169,8 +2192,11 @@ void actHudAdditional(Entity* my)
 		return;
 	}
 
-	if ( !players[clientnum]->entity->bodyparts.at(2) || players[clientnum]->entity->bodyparts.at(2)->flags[INVISIBLE] )
+	if ( !players[clientnum]->entity->bodyparts.at(2) 
+		|| players[clientnum]->entity->bodyparts.at(2)->flags[INVISIBLE]
+		|| players[clientnum]->entity->bodyparts.at(2)->sprite == 854 )
 	{
+		// if shield invisible or spider arm we're invis.
 		my->flags[INVISIBLE] = true;
 		return;
 	}
@@ -2341,5 +2367,11 @@ void actHudAdditional(Entity* my)
 		my->focalx = 0;
 		my->focaly = -1.1;
 		my->focalz = 0.25;
+	}
+	else
+	{
+		my->focalx = 0;
+		my->focaly = 0;
+		my->focalz = 0;
 	}
 }
