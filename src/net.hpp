@@ -51,8 +51,8 @@ void sendMinimapPing(Uint8 player, Uint8 x, Uint8 y);
 void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y, Uint32 targetUid = 0);
 Entity* receiveEntity(Entity* entity);
 void clientActions(Entity* entity);
-void clientHandleMessages();
-void serverHandleMessages();
+void clientHandleMessages(Uint32 framerateBreakInterval);
+void serverHandleMessages(Uint32 framerateBreakInterval);
 bool handleSafePacket();
 
 void closeNetworkInterfaces();
@@ -87,13 +87,11 @@ class NetHandler
 {
 	SDL_Thread* steam_packet_thread;
 	bool continue_multithreading_steam_packets;
-
-	std::queue<SteamPacketWrapper* > game_packets;
-
 	SDL_mutex* game_packets_lock;
 public:
 	NetHandler();
 	~NetHandler();
+	std::queue<SteamPacketWrapper* > game_packets;
 
 	void initializeMultithreadedPacketHandling();
 	void stopMultithreadedPacketHandling();
@@ -111,7 +109,8 @@ public:
 	SteamPacketWrapper* getGamePacket();
 
 	SDL_mutex* continue_multithreading_steam_packets_lock;
-} extern* net_handler;
+};
+extern NetHandler* net_handler;
 
 extern bool disableMultithreadedSteamNetworking;
 
