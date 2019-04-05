@@ -23,6 +23,7 @@
 list_t spellList;
 list_t channeledSpells[4];
 spell_t* selected_spell = NULL;
+spell_t* selected_spell_alternate = NULL;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
@@ -948,19 +949,28 @@ void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP)
 
 spell_t* getSpellFromItem(Item* item)
 {
-	spell_t* spell = NULL;
-	node_t* node = NULL;
-	for (node = spellList.first; node; node = node->next)
+	spell_t* spell = nullptr;
+	node_t* node = nullptr;
+	if ( !item )
 	{
-		if (node->element)
+		return nullptr;
+	}
+	for ( node = spellList.first; node; node = node->next )
+	{
+		if ( node->element )
 		{
 			spell = (spell_t*) node->element;
-			if (spell->ID == item->appearance)
+			Uint32 appearance = item->appearance;
+			if ( item->type == SPELL_ITEM && item->appearance > 1000 )
+			{
+				appearance -= 1000; // hack for normally uncontrollable spells.
+			}
+			if ( spell->ID == appearance )
 			{
 				return spell;    //Found the spell.
 			}
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }

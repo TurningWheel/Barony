@@ -29,7 +29,7 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-
+	client_classes[player] = CLASS_SHAMAN;
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -1902,6 +1902,76 @@ void initClass(int player)
 			free(item);
 		}
 	}
+	else if ( client_classes[player] == CLASS_SHAMAN )
+	{
+		// attributes
+		stats[player]->STR += 1;
+		stats[player]->CON += 2;
+		stats[player]->PER -= -1;
+		stats[player]->CHR -= -1;
+
+		stats[player]->MAXHP += 10;
+		stats[player]->HP += 10;
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
+		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+
+		// knuckles
+		//item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, NULL);
+		//if ( player == clientnum )
+		//{
+		//	item2 = itemPickup(player, item);
+		//	useItem(item2, player);
+		//	hotbar[0].item = item2->uid;
+		//	free(item);
+		//}
+		//else
+		//{
+		//	useItem(item, player);
+		//}
+
+		//// tunic
+		//item = newItem(TUNIC, EXCELLENT, 0, 1, 0, true, NULL);
+		//if ( player == clientnum )
+		//{
+		//	item2 = itemPickup(player, item);
+		//	useItem(item2, player);
+		//	free(item);
+		//}
+		//else
+		//{
+		//	useItem(item, player);
+		//}
+
+		//// ring slow digestion
+		//item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
+		//if ( player == clientnum )
+		//{
+		//	item2 = itemPickup(player, item);
+		//	useItem(item2, player);
+		//	free(item);
+		//}
+		//else
+		//{
+		//	useItem(item, player);
+		//}
+
+		//if ( player == clientnum )
+		//{
+		//	// light book
+		//	item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, NULL);
+		//	item2 = itemPickup(player, item);
+		//	hotbar[9].item = item2->uid;
+		//	free(item);
+		//}
+	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 
@@ -1998,6 +2068,23 @@ void initClass(int player)
 			}
 		}
 
+		if ( client_classes[clientnum] == CLASS_SHAMAN )
+		{
+			addSpell(SPELL_RAT_FORM, player, true);
+			addSpell(SPELL_SPIDER_FORM, player, true);
+			addSpell(SPELL_TROLL_FORM, player, true);
+			addSpell(SPELL_IMP_FORM, player, true);
+			addSpell(SPELL_REVERT_FORM, player, true);
+
+			addSpell(SPELL_SPEED, player, true);
+			addSpell(SPELL_POISON, player, true);
+			addSpell(SPELL_SPRAY_WEB, player, true);
+			addSpell(SPELL_STRIKE, player, true);
+			addSpell(SPELL_FEAR, player, true);
+			addSpell(SPELL_LIGHTNING, player, true);
+			addSpell(SPELL_CONFUSE, player, true);
+		}
+
 		//printlog("spell size: %d", list_Size(&spellList));
 		// move default items to the right
 		for ( node_t* node = stats[player]->inventory.first; node != NULL; node = node->next )
@@ -2008,6 +2095,32 @@ void initClass(int player)
 				item->x = INVENTORY_SIZEX - item->x - 1;
 				if ( item->type == SPELL_ITEM )
 				{
+					bool skipSpellRearrange = false;
+					spell_t* spell = getSpellFromItem(item);
+					if ( spell && client_classes[clientnum] == CLASS_SHAMAN )
+					{
+						// don't add shapeshift spells to hotbar.
+						switch ( spell->ID )
+						{
+							case SPELL_SPEED:
+							case SPELL_POISON:
+							case SPELL_SPRAY_WEB:
+							case SPELL_STRIKE:
+							case SPELL_FEAR:
+							case SPELL_LIGHTNING:
+							case SPELL_CONFUSE:
+								item->appearance += 1000;
+								item->x = -1;
+								skipSpellRearrange = true;
+								break;
+							default:
+								break;
+						}
+					}
+					if ( skipSpellRearrange )
+					{
+						continue;
+					}
 					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 					{
 						if ( hotbar[i].item == 0 )
@@ -2022,4 +2135,89 @@ void initClass(int player)
 		}
 	}
 	//stats[clientnum]->printStats();
+}
+
+void initShapeshiftHotbar()
+{
+	Uint32 spellUid1 = 0;
+	Uint32 spellUid2 = 0;
+	Uint32 spellUid3 = 0;
+	Uint32 spellUid4 = 0;
+	Uint32 spellUid5 = 0;
+	Uint32 spellUid6 = 0;
+	Uint32 spellUid7 = 0;
+	Uint32 spellUid8 = 0;
+	Uint32 spellUid9 = 0;
+	Uint32 spellUid10 = 0;
+
+	if ( stats[clientnum]->type == HUMAN )
+	{
+		return;
+	}
+
+	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item && item->type == SPELL_ITEM )
+		{
+			spell_t* spell = getSpellFromItem(item);
+			if ( spell )
+			{
+				if ( spell->ID == SPELL_REVERT_FORM )
+				{
+					hotbar[4].item = item->uid;
+					selected_spell_alternate = selected_spell;
+					selected_spell = spell;
+				}
+				else if ( item->appearance >= 1000 )
+				{
+					switch ( spell->ID )
+					{
+						case SPELL_SPEED:
+							spellUid1 = item->uid;
+							break;
+						case SPELL_POISON:
+							spellUid2 = item->uid;
+							break;
+						case SPELL_SPRAY_WEB:
+							spellUid3 = item->uid;
+							break;
+						case SPELL_STRIKE:
+							spellUid4 = item->uid;
+							break;
+						case SPELL_FEAR:
+							spellUid5 = item->uid;
+							break;
+						case SPELL_LIGHTNING:
+							spellUid6 = item->uid;
+							break;
+						case SPELL_CONFUSE:
+							spellUid7 = item->uid;
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
+	if ( stats[clientnum]->type == RAT )
+	{
+		hotbar[0].item = spellUid1;
+	}
+	else if ( stats[clientnum]->type == SPIDER )
+	{
+		hotbar[0].item = spellUid1;
+		hotbar[1].item = spellUid2;
+	}
+	else if ( stats[clientnum]->type == TROLL )
+	{
+		hotbar[0].item = spellUid4;
+		hotbar[1].item = spellUid5;
+	}
+	else if ( stats[clientnum]->type == CREATURE_IMP )
+	{
+		hotbar[0].item = spellUid6;
+		hotbar[1].item = spellUid7;
+	}
 }

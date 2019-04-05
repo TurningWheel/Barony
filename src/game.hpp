@@ -140,7 +140,7 @@ enum PlayerClasses : int
 	CLASS_BREWER,
 	CLASS_UNDEF1,
 	CLASS_UNDEF2,
-	CLASS_UNDEF3,
+	CLASS_SHAMAN,
 	CLASS_UNDEF4
 };
 
@@ -295,6 +295,7 @@ extern bool gameloopFreezeEntities;
 
 // function prototypes for charclass.c:
 void initClass(int player);
+void initShapeshiftHotbar();
 
 extern char last_ip[64];
 extern char last_port[64];

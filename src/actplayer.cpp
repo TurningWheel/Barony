@@ -322,6 +322,34 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	if ( PLAYER_NUM == clientnum )
+	{
+		if ( stats[clientnum]->type != HUMAN && stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift == 0 )
+		{
+			swapHotbarOnShapeshift = 1;
+			Uint32 swapItem = 0;
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				swapItem = hotbar_alternate[i].item;
+				hotbar_alternate[i].item = hotbar[i].item;
+				hotbar[i].item = swapItem;
+			}
+			initShapeshiftHotbar();
+		}
+		else if ( !stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift != 0 )
+		{
+			Uint32 swapItem = 0;
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				swapItem = hotbar[i].item;
+				hotbar[i].item = hotbar_alternate[i].item;
+				hotbar_alternate[i].item = swapItem;
+			}
+			swapHotbarOnShapeshift = 0;
+			selected_spell = selected_spell_alternate;
+		}
+	}
+
 	my->focalx = limbs[playerRace][0][0];
 	my->focaly = limbs[playerRace][0][1];
 	my->focalz = limbs[playerRace][0][2];

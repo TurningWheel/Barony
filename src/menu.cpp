@@ -7529,6 +7529,7 @@ void handleMainMenu(bool mode)
 			loading = true;
 			darkmap = false;
 			selected_spell = NULL;
+			selected_spell_alternate = NULL;
 			shootmode = true;
 			currentlevel = startfloor;
 			secretlevel = false;
@@ -8174,6 +8175,7 @@ void handleMainMenu(bool mode)
 			clientnum = 0;
 			introstage = 1;
 			intro = true;
+			selected_spell_alternate = NULL;
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 			client_classes[0] = 0;
 			spellcastingAnimationManager_deactivate(&cast_animation);

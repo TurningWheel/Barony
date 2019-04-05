@@ -2375,6 +2375,7 @@ int loadGame(int player, int saveIndex)
 		else
 		{
 			hotbar[c].item = 0;
+			hotbar_alternate[c].item = 0;
 		}
 	}
 

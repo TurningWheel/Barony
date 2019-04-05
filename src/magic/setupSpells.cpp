@@ -953,4 +953,104 @@ void setupSpells()   ///TODO: Verify this function.
 	element = (spellElement_t*)node->element;
 	element->node = node;
 	element->mana = 32;
+
+	spellConstructor(&spell_sprayWeb);
+	strcpy(spell_sprayWeb.name, language[3412]);
+	spell_sprayWeb.ID = SPELL_SPRAY_WEB;
+	spell_sprayWeb.difficulty = 0;
+	node = list_AddNodeLast(&spell_sprayWeb.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_sprayWeb);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_poison);
+	strcpy(spell_poison.name, language[3413]);
+	spell_poison.ID = SPELL_POISON;
+	spell_poison.difficulty = 0;
+	node = list_AddNodeLast(&spell_poison.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_poison);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_speed);
+	strcpy(spell_speed.name, language[3414]);
+	spell_speed.ID = SPELL_SPEED;
+	spell_speed.difficulty = 0;
+	node = list_AddNodeLast(&spell_speed.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_speed);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_fear);
+	strcpy(spell_fear.name, language[3415]);
+	spell_fear.ID = SPELL_FEAR;
+	spell_fear.difficulty = 0;
+	node = list_AddNodeLast(&spell_fear.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_fear);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_strike);
+	strcpy(spell_strike.name, language[3416]);
+	spell_strike.ID = SPELL_STRIKE;
+	spell_strike.difficulty = 0;
+	node = list_AddNodeLast(&spell_strike.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_strike);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
 }
