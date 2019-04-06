@@ -324,29 +324,22 @@ void actPlayer(Entity* my)
 
 	if ( PLAYER_NUM == clientnum )
 	{
-		if ( stats[clientnum]->type != HUMAN && stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift == 0 )
+		if ( stats[clientnum]->type != HUMAN && stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] )
 		{
-			swapHotbarOnShapeshift = 1;
-			Uint32 swapItem = 0;
-			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			if ( swapHotbarOnShapeshift == 0 )
 			{
-				swapItem = hotbar_alternate[i].item;
-				hotbar_alternate[i].item = hotbar[i].item;
-				hotbar[i].item = swapItem;
+				initShapeshiftHotbar();
 			}
-			initShapeshiftHotbar();
+			else if ( swapHotbarOnShapeshift != stats[clientnum]->type )
+			{
+				// we likely transformed while still shapeshifted, fully init the hotbar code again.
+				deinitShapeshiftHotbar();
+				initShapeshiftHotbar();
+			}
 		}
-		else if ( !stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift != 0 )
+		else if ( !stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] && swapHotbarOnShapeshift > 0 )
 		{
-			Uint32 swapItem = 0;
-			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
-			{
-				swapItem = hotbar[i].item;
-				hotbar[i].item = hotbar_alternate[i].item;
-				hotbar_alternate[i].item = swapItem;
-			}
-			swapHotbarOnShapeshift = 0;
-			selected_spell = selected_spell_alternate;
+			deinitShapeshiftHotbar();
 		}
 	}
 

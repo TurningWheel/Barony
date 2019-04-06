@@ -65,6 +65,8 @@ void freeSpells()
 	list_FreeAll(&spell_speed.elements);
 	list_FreeAll(&spell_fear.elements);
 	list_FreeAll(&spell_strike.elements);
+	list_FreeAll(&spell_detectFood.elements);
+	list_FreeAll(&spell_weakness.elements);
 }
 
 void spell_magicMap(int player)
@@ -87,6 +89,27 @@ void spell_magicMap(int player)
 
 	messagePlayer(player, language[412]);
 	mapLevel(player);
+}
+
+void spell_detectFoodEffectOnMap(int player)
+{
+	if ( players[player] == nullptr || players[player]->entity == nullptr )
+	{
+		return;
+	}
+
+	if ( multiplayer == SERVER && player > 0 )
+	{
+		//Tell the client to map the food.
+		strcpy((char*)net_packet->data, "MFOD");
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 4;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
+	}
+
+	mapFoodOnLevel(player);
 }
 
 void spell_summonFamiliar(int player)

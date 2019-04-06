@@ -725,8 +725,73 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					spell_magicMap(i);
 				}
 			}
-
 			playSoundEntity(caster, 167, 128 );
+		}
+		else if ( !strcmp(element->name, spellElement_detectFood.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					spell_detectFoodEffectOnMap(i);
+				}
+			}
+			playSoundEntity(caster, 167, 128);
+		}
+		else if ( !strcmp(element->name, spellElement_speed.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					//Duration for speed.
+					int amount = element->damage * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier); 
+					if ( newbie )
+					{
+						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+						chance = rand() % 10;
+						if ( chance >= spellcasting / 10 )
+						{
+							amount -= rand() % (1000 / (spellcasting + 1));
+						}
+						if ( amount < 8 )
+						{
+							amount = 8;    //Range checking.
+						}
+					}
+
+					if ( stats[i]->EFFECTS[EFF_SLOW] )
+					{
+						caster->setEffect(EFF_SLOW, false, 0, true);
+					}
+					caster->setEffect(EFF_FAST, true, amount * TICKS_PER_SECOND, true);
+					
+					for ( node = map.creatures->first; node; node = node->next )
+					{
+						entity = (Entity*)(node->element);
+						if ( !entity || entity == caster )
+						{
+							continue;
+						}
+						if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
+						{
+							continue;
+						}
+
+						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
+						{
+							entity->setEffect(EFF_FAST, true, amount * TICKS_PER_SECOND, true);
+							playSoundEntity(entity, 168, 128);
+							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+						}
+					}
+					break;
+				}
+			}
+
+			playSoundEntity(caster, 168, 128);
+			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
 		else if (!strcmp(element->name, spellElement_heal.name))     //TODO: Make it work for NPCs.
 		{

@@ -4498,6 +4498,12 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_STRIKE:
 				learned = addSpell(SPELL_STRIKE, player);
 				break;
+			case SPELLBOOK_DETECT_FOOD:
+				learned = addSpell(SPELL_DETECT_FOOD, player);
+				break;
+			case SPELLBOOK_WEAKNESS:
+				learned = addSpell(SPELL_WEAKNESS, player);
+				break;
 			default:
 				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;

@@ -296,6 +296,7 @@ extern bool gameloopFreezeEntities;
 // function prototypes for charclass.c:
 void initClass(int player);
 void initShapeshiftHotbar();
+void deinitShapeshiftHotbar();
 
 extern char last_ip[64];
 extern char last_port[64];
@@ -341,6 +342,7 @@ extern std::vector<std::string> physFSFilesInDirectory;
 void loadRandomNames();
 extern int monsterEmoteGimpTimer;
 void mapLevel(int player);
+void mapFoodOnLevel(int player);
 
 class TileEntityListHandler
 {

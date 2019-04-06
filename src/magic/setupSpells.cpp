@@ -296,44 +296,60 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_shapeshift.name, language[3407]);
 
 	spellElementConstructor(&spellElement_sprayWeb);
-	spellElement_shapeshift.mana = 1;
-	spellElement_shapeshift.base_mana = 1;
-	spellElement_shapeshift.overload_multiplier = 1;
-	spellElement_shapeshift.damage = 1;
-	spellElement_shapeshift.duration = 0;
-	strcpy(spellElement_shapeshift.name, language[3412]);
+	spellElement_sprayWeb.mana = 1;
+	spellElement_sprayWeb.base_mana = 1;
+	spellElement_sprayWeb.overload_multiplier = 1;
+	spellElement_sprayWeb.damage = 1;
+	spellElement_sprayWeb.duration = 0;
+	strcpy(spellElement_sprayWeb.name, language[3412]);
 
 	spellElementConstructor(&spellElement_poison);
-	spellElement_shapeshift.mana = 1;
-	spellElement_shapeshift.base_mana = 1;
-	spellElement_shapeshift.overload_multiplier = 1;
-	spellElement_shapeshift.damage = 1;
-	spellElement_shapeshift.duration = 0;
-	strcpy(spellElement_shapeshift.name, language[3413]);
+	spellElement_poison.mana = 1;
+	spellElement_poison.base_mana = 1;
+	spellElement_poison.overload_multiplier = 1;
+	spellElement_poison.damage = 1;
+	spellElement_poison.duration = 0;
+	strcpy(spellElement_poison.name, language[3413]);
 
 	spellElementConstructor(&spellElement_speed);
-	spellElement_shapeshift.mana = 1;
-	spellElement_shapeshift.base_mana = 1;
-	spellElement_shapeshift.overload_multiplier = 1;
-	spellElement_shapeshift.damage = 1;
-	spellElement_shapeshift.duration = 0;
-	strcpy(spellElement_shapeshift.name, language[3414]);
+	spellElement_speed.mana = 1;
+	spellElement_speed.base_mana = 1;
+	spellElement_speed.overload_multiplier = 1;
+	spellElement_speed.damage = 1;
+	spellElement_speed.duration = 0;
+	strcpy(spellElement_speed.name, language[3414]);
 
 	spellElementConstructor(&spellElement_fear);
-	spellElement_shapeshift.mana = 1;
-	spellElement_shapeshift.base_mana = 1;
-	spellElement_shapeshift.overload_multiplier = 1;
-	spellElement_shapeshift.damage = 1;
-	spellElement_shapeshift.duration = 0;
-	strcpy(spellElement_shapeshift.name, language[3415]);
+	spellElement_fear.mana = 1;
+	spellElement_fear.base_mana = 1;
+	spellElement_fear.overload_multiplier = 1;
+	spellElement_fear.damage = 1;
+	spellElement_fear.duration = 0;
+	strcpy(spellElement_fear.name, language[3415]);
 
 	spellElementConstructor(&spellElement_strike);
-	spellElement_shapeshift.mana = 1;
-	spellElement_shapeshift.base_mana = 1;
-	spellElement_shapeshift.overload_multiplier = 1;
-	spellElement_shapeshift.damage = 1;
-	spellElement_shapeshift.duration = 0;
-	strcpy(spellElement_shapeshift.name, language[3416]);
+	spellElement_strike.mana = 1;
+	spellElement_strike.base_mana = 1;
+	spellElement_strike.overload_multiplier = 1;
+	spellElement_strike.damage = 1;
+	spellElement_strike.duration = 0;
+	strcpy(spellElement_strike.name, language[3416]);
+
+	spellElementConstructor(&spellElement_weakness);
+	spellElement_weakness.mana = 1;
+	spellElement_weakness.base_mana = 1;
+	spellElement_weakness.overload_multiplier = 1;
+	spellElement_weakness.damage = 1;
+	spellElement_weakness.duration = 0;
+	strcpy(spellElement_weakness.name, language[3422]);
+
+	spellElementConstructor(&spellElement_detectFood);
+	spellElement_detectFood.mana = 14;
+	spellElement_detectFood.base_mana = 14;
+	spellElement_detectFood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	spellElement_detectFood.damage = 0;
+	spellElement_detectFood.duration = 0;
+	strcpy(spellElement_detectFood.name, language[3421]);
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
@@ -997,17 +1013,10 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_speed);
 	strcpy(spell_speed.name, language[3414]);
 	spell_speed.ID = SPELL_SPEED;
-	spell_speed.difficulty = 0;
+	spell_speed.difficulty = 60;
+	spell_speed.elements.first = NULL;
+	spell_speed.elements.last = NULL;
 	node = list_AddNodeLast(&spell_speed.elements);
-	node->element = copySpellElement(&spellElement_missile);
-	node->size = sizeof(spellElement_t);
-	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t*)node->element;
-	element->node = node; //Tell the element what list it resides in.
-						  //Now for the second element.
-	element->elements.first = NULL;
-	element->elements.last = NULL;
-	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_speed);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
@@ -1034,6 +1043,26 @@ void setupSpells()   ///TODO: Verify this function.
 	element = (spellElement_t*)node->element;
 	element->node = node;
 
+	spellConstructor(&spell_weakness);
+	strcpy(spell_weakness.name, language[3422]);
+	spell_weakness.ID = SPELL_WEAKNESS;
+	spell_weakness.difficulty = 0;
+	node = list_AddNodeLast(&spell_weakness.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_weakness);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
 	spellConstructor(&spell_strike);
 	strcpy(spell_strike.name, language[3416]);
 	spell_strike.ID = SPELL_STRIKE;
@@ -1049,6 +1078,19 @@ void setupSpells()   ///TODO: Verify this function.
 	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_strike);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_detectFood);
+	strcpy(spell_detectFood.name, language[3421]);
+	spell_detectFood.ID = SPELL_DETECT_FOOD;
+	spell_detectFood.difficulty = 60;
+	spell_detectFood.elements.first = NULL;
+	spell_detectFood.elements.last = NULL;
+	node = list_AddNodeLast(&spell_detectFood.elements);
+	node->element = copySpellElement(&spellElement_detectFood);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

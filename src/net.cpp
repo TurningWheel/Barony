@@ -3366,6 +3366,12 @@ void clientHandlePacket()
 		return;
 	}
 
+	else if ( !strncmp((char*)net_packet->data, "MFOD", 4) )
+	{
+		spell_magicMap(clientnum);
+		return;
+	}
+
 	// boss death
 	else if ( !strncmp((char*)net_packet->data, "BDTH", 4) )
 	{

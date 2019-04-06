@@ -58,7 +58,9 @@ static const int SPELL_POISON= 38;
 static const int SPELL_SPEED = 39;
 static const int SPELL_FEAR = 40;
 static const int SPELL_STRIKE = 41;
-static const int NUM_SPELLS = 42;
+static const int SPELL_DETECT_FOOD = 42;
+static const int SPELL_WEAKNESS = 43;
+static const int NUM_SPELLS = 44;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -366,6 +368,8 @@ extern spellElement_t spellElement_poison;
 extern spellElement_t spellElement_speed;
 extern spellElement_t spellElement_fear;
 extern spellElement_t spellElement_strike;
+extern spellElement_t spellElement_detectFood;
+extern spellElement_t spellElement_weakness;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -448,6 +452,8 @@ extern spell_t spell_poison;
 extern spell_t spell_speed;
 extern spell_t spell_fear;
 extern spell_t spell_strike;
+extern spell_t spell_detectFood;
+extern spell_t spell_weakness;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -514,6 +520,7 @@ bool spellInList(list_t* list, spell_t* spell);
 
 //-----Implementations of spell effects-----
 void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
+void spell_detectFoodEffectOnMap(int player);
 void spell_summonFamiliar(int player); // summons some familiars.
 void spell_changeHealth(Entity* entity, int amount, bool overdrewFromHP = false); //This function changes an entity's health.
 

@@ -2083,6 +2083,8 @@ void initClass(int player)
 			addSpell(SPELL_FEAR, player, true);
 			addSpell(SPELL_LIGHTNING, player, true);
 			addSpell(SPELL_CONFUSE, player, true);
+			addSpell(SPELL_DETECT_FOOD, player, true);
+			addSpell(SPELL_WEAKNESS, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));
@@ -2109,8 +2111,10 @@ void initClass(int player)
 							case SPELL_FEAR:
 							case SPELL_LIGHTNING:
 							case SPELL_CONFUSE:
+							case SPELL_DETECT_FOOD:
+							case SPELL_WEAKNESS:
 								item->appearance += 1000;
-								item->x = -1;
+								item->y -= 100;
 								skipSpellRearrange = true;
 								break;
 							default:
@@ -2139,22 +2143,24 @@ void initClass(int player)
 
 void initShapeshiftHotbar()
 {
-	Uint32 spellUid1 = 0;
-	Uint32 spellUid2 = 0;
-	Uint32 spellUid3 = 0;
-	Uint32 spellUid4 = 0;
-	Uint32 spellUid5 = 0;
-	Uint32 spellUid6 = 0;
-	Uint32 spellUid7 = 0;
-	Uint32 spellUid8 = 0;
-	Uint32 spellUid9 = 0;
-	Uint32 spellUid10 = 0;
+	Uint32 spellRevertUid = 0;
+	std::vector<Uint32> monsterSpells;
 
 	if ( stats[clientnum]->type == HUMAN )
 	{
 		return;
 	}
 
+	swapHotbarOnShapeshift = stats[clientnum]->type;
+	Uint32 swapItem = 0;
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		swapItem = hotbar_alternate[i].item;
+		hotbar_alternate[i].item = hotbar[i].item; // store our current hotbar.
+		hotbar[i].item = swapItem;
+	}
+
+	// find "shapeshift" only spells, add em to view.
 	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*)node->element;
@@ -2165,7 +2171,7 @@ void initShapeshiftHotbar()
 			{
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
-					hotbar[4].item = item->uid;
+					spellRevertUid = item->uid;
 					selected_spell_alternate = selected_spell;
 					selected_spell = spell;
 				}
@@ -2174,25 +2180,213 @@ void initShapeshiftHotbar()
 					switch ( spell->ID )
 					{
 						case SPELL_SPEED:
-							spellUid1 = item->uid;
+						case SPELL_DETECT_FOOD:
+							if ( stats[clientnum]->type == RAT )
+							{
+								monsterSpells.push_back(item->uid);
+								item->y += 100;
+							}
 							break;
 						case SPELL_POISON:
-							spellUid2 = item->uid;
-							break;
 						case SPELL_SPRAY_WEB:
-							spellUid3 = item->uid;
+							if ( stats[clientnum]->type == SPIDER )
+							{
+								monsterSpells.push_back(item->uid);
+								item->y += 100;
+							}
 							break;
 						case SPELL_STRIKE:
-							spellUid4 = item->uid;
-							break;
 						case SPELL_FEAR:
-							spellUid5 = item->uid;
+							if ( stats[clientnum]->type == TROLL )
+							{
+								monsterSpells.push_back(item->uid);
+								item->y += 100;
+							}
 							break;
 						case SPELL_LIGHTNING:
-							spellUid6 = item->uid;
-							break;
 						case SPELL_CONFUSE:
-							spellUid7 = item->uid;
+						case SPELL_WEAKNESS:
+							if ( stats[clientnum]->type == CREATURE_IMP )
+							{
+								monsterSpells.push_back(item->uid);
+								item->y += 100;
+							}
+							break;
+						default:
+							break;
+					}
+
+					if ( item->y >= 0 )
+					{
+						int x = 0;
+						bool notfree = false;
+						bool foundaspot = false;
+						while ( 1 )
+						{
+							for ( int y = 0; y < 3; y++ )
+							{
+								for ( node_t* node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
+								{
+									Item* tempItem = (Item*)node2->element;
+									if ( tempItem == item )
+									{
+										continue;
+									}
+									if ( tempItem )
+									{
+										if ( tempItem->x == x && tempItem->y == y )
+										{
+											if ( itemCategory(tempItem) == SPELL_CAT )
+											{
+												notfree = true;  //Both spells. Can't fit in the same slot.
+											}
+										}
+									}
+								}
+								if ( notfree )
+								{
+									notfree = false;
+									continue;
+								}
+								item->x = x;
+								item->y = y;
+								foundaspot = true;
+								break;
+							}
+							if ( foundaspot )
+							{
+								break;
+							}
+							x++;
+						}
+					}
+					else
+					{
+						for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+						{
+							if ( hotbar[i].item == item->uid )
+							{
+								hotbar[i].item = 0;
+							}
+						}
+					}
+				}
+			}
+		}
+		else if ( item )
+		{
+			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+			{
+				if ( hotbar[i].item != 0 )
+				{
+					Item* itemToHide = uidToItem(hotbar[i].item);
+					if ( itemToHide == item )
+					{
+						if ( itemCategory(itemToHide) == ARMOR
+							|| itemCategory(itemToHide) == MAGICSTAFF
+							|| itemCategory(itemToHide) == WEAPON
+							|| itemCategory(itemToHide) == SPELLBOOK
+							|| itemCategory(itemToHide) == THROWN )
+						{
+							hotbar[i].item = 0;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		if ( hotbar[i].item == 0 && hotbar_alternate[i].item != 0 )
+		{
+			Item* itemToAdd = uidToItem(hotbar_alternate[i].item);
+			if ( itemToAdd )
+			{
+				if ( !(itemCategory(itemToAdd) == ARMOR
+					|| itemCategory(itemToAdd) == MAGICSTAFF
+					|| itemCategory(itemToAdd) == WEAPON
+					|| itemCategory(itemToAdd) == SPELLBOOK
+					|| itemCategory(itemToAdd) == THROWN) )
+				{
+					hotbar[i].item = hotbar_alternate[i].item;
+				}
+			}
+		}
+	}
+
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		if ( hotbar[i].item == 0 )
+		{
+			continue;
+		}
+		if ( hotbar[i].item == spellRevertUid )
+		{
+			spellRevertUid = 0;
+		}
+		for ( auto it = monsterSpells.begin(); it != monsterSpells.end(); ++it )
+		{
+			if ( *it == hotbar[i].item )
+			{
+				*it = 0;
+			}
+		}
+	}
+
+	int i = 0;
+	for ( auto it = monsterSpells.begin(); it != monsterSpells.end(); ++it )
+	{
+		if ( *it != 0 )
+		{
+			hotbar[i].item = *it;
+			++i;
+		}
+	}
+	if ( spellRevertUid )
+	{
+		hotbar[4].item = spellRevertUid; // place revert form.
+	}
+}
+
+void deinitShapeshiftHotbar()
+{
+	Uint32 swapItem = 0;
+	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	{
+		swapItem = hotbar[i].item;
+		hotbar[i].item = hotbar_alternate[i].item;
+		hotbar_alternate[i].item = swapItem;
+	}
+	swapHotbarOnShapeshift = 0;
+	selected_spell = selected_spell_alternate;
+
+	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item )
+		{
+			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
+			{
+				spell_t* spell = getSpellFromItem(item);
+				if ( spell && client_classes[clientnum] == CLASS_SHAMAN )
+				{
+					// don't add shapeshift spells to hotbar.
+					switch ( spell->ID )
+					{
+						case SPELL_SPEED:
+						case SPELL_POISON:
+						case SPELL_SPRAY_WEB:
+						case SPELL_STRIKE:
+						case SPELL_FEAR:
+						case SPELL_LIGHTNING:
+						case SPELL_CONFUSE:
+						case SPELL_WEAKNESS:
+						case SPELL_DETECT_FOOD:
+							if ( item->y >= 0 )
+							{
+								item->y -= 100;
+							}
 							break;
 						default:
 							break;
@@ -2200,24 +2394,5 @@ void initShapeshiftHotbar()
 				}
 			}
 		}
-	}
-	if ( stats[clientnum]->type == RAT )
-	{
-		hotbar[0].item = spellUid1;
-	}
-	else if ( stats[clientnum]->type == SPIDER )
-	{
-		hotbar[0].item = spellUid1;
-		hotbar[1].item = spellUid2;
-	}
-	else if ( stats[clientnum]->type == TROLL )
-	{
-		hotbar[0].item = spellUid4;
-		hotbar[1].item = spellUid5;
-	}
-	else if ( stats[clientnum]->type == CREATURE_IMP )
-	{
-		hotbar[0].item = spellUid6;
-		hotbar[1].item = spellUid7;
 	}
 }

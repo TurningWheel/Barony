@@ -5199,6 +5199,35 @@ void mapLevel(int player)
 	}
 }
 
+void mapFoodOnLevel(int player)
+{
+	int numFood = 0;
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity && entity->behavior == &actItem )
+		{
+			Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+			if ( item )
+			{
+				if ( itemCategory(item) == FOOD )
+				{
+					++numFood;
+				}
+				free(item);
+			}
+		}
+	}
+	if ( numFood == 0 )
+	{
+		messagePlayer(player, language[3423]);
+	}
+	else
+	{
+		messagePlayer(player, language[3424]);
+	}
+}
+
 int loadMainMenuMap(bool blessedAdditionMaps, bool forceVictoryMap)
 {
 	bool foundVictory = false;

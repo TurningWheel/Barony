@@ -64,6 +64,8 @@ spellElement_t spellElement_poison;
 spellElement_t spellElement_speed;
 spellElement_t spellElement_fear;
 spellElement_t spellElement_strike;
+spellElement_t spellElement_detectFood;
+spellElement_t spellElement_weakness;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -107,6 +109,8 @@ spell_t spell_poison;
 spell_t spell_speed;
 spell_t spell_fear;
 spell_t spell_strike;
+spell_t spell_detectFood;
+spell_t spell_weakness;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -244,6 +248,12 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_STRIKE:
 			new_spell = copySpell(&spell_strike);
+			break;
+		case SPELL_DETECT_FOOD:
+			new_spell = copySpell(&spell_detectFood);
+			break;
+		case SPELL_WEAKNESS:
+			new_spell = copySpell(&spell_weakness);
 			break;
 		default:
 			return false;
@@ -638,6 +648,12 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_STRIKE:
 			spell = &spell_strike;
 			break;
+		case SPELL_DETECT_FOOD:
+			spell = &spell_detectFood;
+			break;
+		case SPELL_WEAKNESS:
+			spell = &spell_weakness;
+			break;
 		default:
 			break;
 	}
@@ -773,6 +789,12 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_STRIKE:
 			itemType = SPELLBOOK_STRIKE;
 			break;
+		case SPELL_DETECT_FOOD:
+			itemType = SPELLBOOK_DETECT_FOOD;
+			break;
+		case SPELL_WEAKNESS:
+			itemType = SPELLBOOK_WEAKNESS;
+			break;
 		default:
 			break;
 	}
@@ -864,6 +886,10 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_fear.ID;
 		case SPELLBOOK_STRIKE:
 			return spell_strike.ID;
+		case SPELLBOOK_DETECT_FOOD:
+			return spell_detectFood.ID;
+		case SPELLBOOK_WEAKNESS:
+			return spell_weakness.ID;
 		default:
 			return SPELL_NONE;
 	}
@@ -961,7 +987,7 @@ spell_t* getSpellFromItem(Item* item)
 		{
 			spell = (spell_t*) node->element;
 			Uint32 appearance = item->appearance;
-			if ( item->type == SPELL_ITEM && item->appearance > 1000 )
+			if ( item->type == SPELL_ITEM && item->appearance >= 1000 )
 			{
 				appearance -= 1000; // hack for normally uncontrollable spells.
 			}
