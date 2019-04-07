@@ -355,19 +355,18 @@ void actLeftHandMagic(Entity* my)
 		my->y = 0;
 		my->z += 1;
 	}
-	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
 	{
-		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
-		my->x = hudArm->x;
-		my->y = -hudArm->y;
+		my->x = hudarm->x;
+		my->y = -hudarm->y;
 		//my->z = hudArm->z;
-		my->pitch = hudArm->pitch;
-		my->roll = -hudArm->roll;
+		my->pitch = hudarm->pitch;
+		my->roll = -hudarm->roll;
 		my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudArm->scalex;
-		my->scaley = hudArm->scaley;
-		my->scalez = hudArm->scalez;
-		my->focalz = hudArm->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{
@@ -490,19 +489,18 @@ void actLeftHandMagic(Entity* my)
 	//defaultpitch = (0 - 2.8);
 	//my->x = 6 + HUDWEAPON_MOVEX;
 
-	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
 	{
-		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
-		my->x = hudArm->x;
-		my->y = -hudArm->y;
-		my->z = hudArm->z;
-		my->pitch = hudArm->pitch;
-		my->roll = -hudArm->roll;
+		my->x = hudarm->x;
+		my->y = -hudarm->y;
+		my->z = hudarm->z;
+		my->pitch = hudarm->pitch;
+		my->roll = -hudarm->roll;
 		my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudArm->scalex;
-		my->scaley = hudArm->scaley;
-		my->scalez = hudArm->scalez;
-		my->focalz = hudArm->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{
@@ -707,19 +705,18 @@ void actRightHandMagic(Entity* my)
 		my->y = 0;
 		my->z += 1;
 	}
-	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
 	{
-		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
-		my->x = hudArm->x;
-		my->y = hudArm->y;
+		my->x = hudarm->x;
+		my->y = hudarm->y;
 		//my->z = hudArm->z;
-		my->pitch = hudArm->pitch;
-		my->roll = hudArm->roll;
+		my->pitch = hudarm->pitch;
+		my->roll = hudarm->roll;
 		my->yaw = players[clientnum]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudArm->scalex;
-		my->scaley = hudArm->scaley;
-		my->scalez = hudArm->scalez;
-		my->focalz = hudArm->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{
@@ -791,19 +788,18 @@ void actRightHandMagic(Entity* my)
 		return;
 	}
 
-	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
 	{
-		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
-		my->x = hudArm->x;
-		my->y = hudArm->y;
-		my->z = hudArm->z;
-		my->pitch = hudArm->pitch;
-		my->roll = hudArm->roll;
+		my->x = hudarm->x;
+		my->y = hudarm->y;
+		my->z = hudarm->z;
+		my->pitch = hudarm->pitch;
+		my->roll = hudarm->roll;
 		my->yaw = players[clientnum]->entity->bodyparts.at(0)->yaw;
-		my->scalex = hudArm->scalex;
-		my->scaley = hudArm->scaley;
-		my->scalez = hudArm->scalez;
-		my->focalz = hudArm->focalz;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 	else
 	{

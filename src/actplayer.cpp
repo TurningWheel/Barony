@@ -1463,7 +1463,22 @@ void actPlayer(Entity* my)
 						entity = (Entity*)node->element;
 						if ( entity->flags[INVISIBLE] )
 						{
-							entity->flags[INVISIBLE] = false;
+							if ( stats[PLAYER_NUM]->type == RAT )
+							{
+								if ( i == 1 )
+								{
+									// only unhide the body.
+									entity->flags[INVISIBLE] = false;
+								}
+							}
+							else if ( stats[PLAYER_NUM]->type == SPIDER )
+							{
+								// do nothing, these limbs are invisible for the spider so don't unhide.
+							}
+							else
+							{
+								entity->flags[INVISIBLE] = false;
+							}
 							serverUpdateEntityBodypart(my, i);
 						}
 					}
@@ -5197,10 +5212,27 @@ void playerAnimateRat(Entity* my)
 				}
 			}
 		}
-
-		if ( bodypart > 1 )
+		else if ( bodypart > 1 )
 		{
 			entity->flags[INVISIBLE] = true;
+		}
+		if ( multiplayer == SERVER )
+		{
+			// update sprites for clients
+			if ( entity->skill[10] != entity->sprite )
+			{
+				entity->skill[10] = entity->sprite;
+				serverUpdateEntityBodypart(my, bodypart);
+			}
+			if ( entity->skill[11] != entity->flags[INVISIBLE] )
+			{
+				entity->skill[11] = entity->flags[INVISIBLE];
+				serverUpdateEntityBodypart(my, bodypart);
+			}
+			if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+			{
+				serverUpdateEntityBodypart(my, bodypart);
+			}
 		}
 		entity->yaw = my->yaw;
 	}
@@ -5213,9 +5245,32 @@ void playerAnimateSpider(Entity* my)
 	for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
 	{
 		Entity* entity = (Entity*)node->element;
+		if ( bodypart == 0 )
+		{
+			// hudweapon case
+			continue;
+		}
 		if ( bodypart < 11 )
 		{
 			entity->flags[INVISIBLE] = true;
+			if ( multiplayer == SERVER )
+			{
+				// update sprites for clients
+				if ( entity->skill[10] != entity->sprite )
+				{
+					entity->skill[10] = entity->sprite;
+					serverUpdateEntityBodypart(my, bodypart);
+				}
+				if ( entity->skill[11] != entity->flags[INVISIBLE] )
+				{
+					entity->skill[11] = entity->flags[INVISIBLE];
+					serverUpdateEntityBodypart(my, bodypart);
+				}
+				if ( PLAYER_ALIVETIME == TICKS_PER_SECOND + bodypart )
+				{
+					serverUpdateEntityBodypart(my, bodypart);
+				}
+			}
 			continue;
 		}
 		Entity* previous = NULL; // previous part

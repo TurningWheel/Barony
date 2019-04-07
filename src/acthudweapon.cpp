@@ -2101,23 +2101,19 @@ void actHudShield(Entity* my)
 	}
 
 
-	if ( playerRace == SPIDER && players[clientnum]->entity->bodyparts.at(0) )
+	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
 	{
-		Entity* hudArm = uidToEntity(players[clientnum]->entity->bodyparts.at(0)->parent);
 		my->sprite = 854;
-		if ( hudArm )
-		{
-			my->x = hudArm->x;
-			my->y = -hudArm->y;
-			my->z = hudArm->z;
-			my->pitch = hudArm->pitch - camera_shakey2 / 200.f;
-			my->roll = -hudArm->roll;
-			my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw + players[clientnum]->entity->fskill[10] - camera_shakex2;
-			my->scalex = hudArm->scalex;
-			my->scaley = hudArm->scaley;
-			my->scalez = hudArm->scalez;
-			my->focalz = hudArm->focalz;
-		}
+		my->x = hudarm->x;
+		my->y = -hudarm->y;
+		my->z = hudarm->z;
+		my->pitch = hudarm->pitch - camera_shakey2 / 200.f;
+		my->roll = -hudarm->roll;
+		my->yaw = -players[clientnum]->entity->bodyparts.at(0)->yaw + players[clientnum]->entity->fskill[10] - camera_shakex2;
+		my->scalex = hudarm->scalex;
+		my->scaley = hudarm->scaley;
+		my->scalez = hudarm->scalez;
+		my->focalz = hudarm->focalz;
 	}
 
 	// torch/lantern flames
