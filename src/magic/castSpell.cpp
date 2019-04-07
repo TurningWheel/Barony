@@ -746,18 +746,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( caster == players[i]->entity )
 				{
 					//Duration for speed.
-					int amount = element->damage * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier); 
+					int duration = element->duration;
+					duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 					if ( newbie )
 					{
 						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
 						chance = rand() % 10;
 						if ( chance >= spellcasting / 10 )
 						{
-							amount -= rand() % (1000 / (spellcasting + 1));
+							duration -= rand() % (1000 / (spellcasting + 1));
 						}
-						if ( amount < 8 )
+						if ( duration < 100 )
 						{
-							amount = 8;    //Range checking.
+							duration = 100;    //Range checking.
 						}
 					}
 
@@ -765,7 +766,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
-					caster->setEffect(EFF_FAST, true, amount * TICKS_PER_SECOND, true);
+					caster->setEffect(EFF_FAST, true, duration, true);
 					
 					for ( node = map.creatures->first; node; node = node->next )
 					{
@@ -781,7 +782,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
-							entity->setEffect(EFF_FAST, true, amount * TICKS_PER_SECOND, true);
+							entity->setEffect(EFF_FAST, true, duration, true);
 							playSoundEntity(entity, 168, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 						}

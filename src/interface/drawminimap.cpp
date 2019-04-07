@@ -190,6 +190,20 @@ void drawMinimap()
 					//glEnd();
 				}
 			}
+			else if ( entity->behavior == &actItem && entity->itemShowOnMap == 1 )
+			{
+				x = floor(entity->x / 16);
+				y = floor(entity->y / 16);
+				if ( ticks % 40 - ticks % 20 )
+				{
+					glColor4f(240 / 255.f, 228 / 255.f, 66 / 255.f, 1); // yellow
+					//glBegin(GL_QUADS);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+				}
+			}
 		}
 	}
 	glEnd();

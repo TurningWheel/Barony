@@ -7530,6 +7530,7 @@ void handleMainMenu(bool mode)
 			darkmap = false;
 			selected_spell = NULL;
 			selected_spell_alternate = NULL;
+			deinitShapeshiftHotbar();
 			shootmode = true;
 			currentlevel = startfloor;
 			secretlevel = false;

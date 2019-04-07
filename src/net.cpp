@@ -3368,7 +3368,7 @@ void clientHandlePacket()
 
 	else if ( !strncmp((char*)net_packet->data, "MFOD", 4) )
 	{
-		spell_magicMap(clientnum);
+		mapFoodOnLevel(clientnum);
 		return;
 	}
 

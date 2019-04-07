@@ -5202,29 +5202,42 @@ void mapLevel(int player)
 void mapFoodOnLevel(int player)
 {
 	int numFood = 0;
+	bool previouslyIdentifiedFood = false;
 	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity && entity->behavior == &actItem )
 		{
-			Item* item = newItemFromEntity(FollowerMenu.entityToInteractWith);
+			Item* item = newItemFromEntity(entity);
 			if ( item )
 			{
 				if ( itemCategory(item) == FOOD )
 				{
-					++numFood;
+					if ( entity->itemShowOnMap != 0 )
+					{
+						previouslyIdentifiedFood = true;
+					}
+					else
+					{
+						++numFood;
+					}
+					entity->itemShowOnMap = 1;
 				}
 				free(item);
 			}
 		}
 	}
-	if ( numFood == 0 )
+	if ( numFood == 0 && previouslyIdentifiedFood )
+	{
+		messagePlayer(player, language[3425]);
+	}
+	else if ( numFood == 0 )
 	{
 		messagePlayer(player, language[3423]);
 	}
 	else
 	{
-		messagePlayer(player, language[3424]);
+		messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 0, 255, 0),language[3424]);
 	}
 }
 

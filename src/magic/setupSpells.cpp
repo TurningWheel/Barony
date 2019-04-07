@@ -312,11 +312,11 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_poison.name, language[3413]);
 
 	spellElementConstructor(&spellElement_speed);
-	spellElement_speed.mana = 1;
-	spellElement_speed.base_mana = 1;
+	spellElement_speed.mana = 11;
+	spellElement_speed.base_mana = 11;
 	spellElement_speed.overload_multiplier = 1;
 	spellElement_speed.damage = 1;
-	spellElement_speed.duration = 0;
+	spellElement_speed.duration = 10 * TICKS_PER_SECOND;
 	strcpy(spellElement_speed.name, language[3414]);
 
 	spellElementConstructor(&spellElement_fear);
