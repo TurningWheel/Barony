@@ -3625,7 +3625,7 @@ bool steamLeaderboardSetScore(score_t* score)
 	}
 
 	if ( score->conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
-		|| score->conductGameChallenges[CONDUCT_MODDED]
+		|| gamemods_disableSteamAchievements
 		|| score->conductGameChallenges[CONDUCT_LIFESAVING] )
 	{
 		return false;
