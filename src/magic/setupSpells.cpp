@@ -296,16 +296,16 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_shapeshift.name, language[3407]);
 
 	spellElementConstructor(&spellElement_sprayWeb);
-	spellElement_sprayWeb.mana = 1;
-	spellElement_sprayWeb.base_mana = 1;
+	spellElement_sprayWeb.mana = 7;
+	spellElement_sprayWeb.base_mana = 7;
 	spellElement_sprayWeb.overload_multiplier = 1;
 	spellElement_sprayWeb.damage = 1;
 	spellElement_sprayWeb.duration = 0;
 	strcpy(spellElement_sprayWeb.name, language[3412]);
 
 	spellElementConstructor(&spellElement_poison);
-	spellElement_poison.mana = 1;
-	spellElement_poison.base_mana = 1;
+	spellElement_poison.mana = 4;
+	spellElement_poison.base_mana = 4;
 	spellElement_poison.overload_multiplier = 1;
 	spellElement_poison.damage = 1;
 	spellElement_poison.duration = 0;
@@ -316,7 +316,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_speed.base_mana = 11;
 	spellElement_speed.overload_multiplier = 1;
 	spellElement_speed.damage = 1;
-	spellElement_speed.duration = 10 * TICKS_PER_SECOND;
+	spellElement_speed.duration = 30 * TICKS_PER_SECOND;
 	strcpy(spellElement_speed.name, language[3414]);
 
 	spellElementConstructor(&spellElement_fear);

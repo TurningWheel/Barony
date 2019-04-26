@@ -767,7 +767,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
 					caster->setEffect(EFF_FAST, true, duration, true);
-					
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
@@ -783,7 +782,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
 							entity->setEffect(EFF_FAST, true, duration, true);
-							playSoundEntity(entity, 168, 128);
+							playSoundEntity(entity, 178, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 						}
 					}
@@ -791,7 +790,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 
-			playSoundEntity(caster, 168, 128);
+			playSoundEntity(caster, 178, 128);
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
 		else if (!strcmp(element->name, spellElement_heal.name))     //TODO: Make it work for NPCs.
