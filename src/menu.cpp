@@ -9971,6 +9971,27 @@ void buttonContinue(button_t* my)
 		{
 			charcreation_step = 0;
 
+			// since we skip step 6 we never set the correct free slot.
+			reloadSavegamesList();
+			if ( multiplayerSavegameFreeSlot == -1 )
+			{
+				savegameCurrentFileIndex = 0;
+				std::vector<std::tuple<int, int, int, std::string>>::reverse_iterator it = savegamesList.rbegin();
+				for ( ; it != savegamesList.rend(); ++it )
+				{
+					std::tuple<int, int, int, std::string> entry = *it;
+					if ( std::get<1>(entry) != SINGLE )
+					{
+						savegameCurrentFileIndex = std::get<2>(entry);
+						break;
+					}
+				}
+			}
+			else
+			{
+				savegameCurrentFileIndex = multiplayerSavegameFreeSlot;
+			}
+
 			// close current window
 			int temp1 = connectingToLobby;
 			int temp2 = connectingToLobbyWindow;
@@ -11600,47 +11621,10 @@ void openLoadGameWindow(button_t* my)
 	}
 }
 
-void openNewLoadGameWindow(button_t* my)
+void reloadSavegamesList()
 {
-	// close current window
-	buttonCloseSubwindow(nullptr);
-	list_FreeAll(&button_l);
-	deleteallbuttons = true;
-
-	// create confirmation window
-	subwindow = 1;
-	subx1 = xres / 2 - 380;
-	subx2 = xres / 2 + 380;
-	suby1 = yres / 2 - 210;
-	suby2 = yres / 2 + 210;
-	strcpy(subtext, language[3065]);
-
-	// close button
-	button_t* button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-
-	button = newButton();
-	strcpy(button->label, language[1463]);
-	button->sizex = strlen(language[1463]) * 10 + 8;
-	button->sizey = 36;
-	button->x = subx1 + 16;
-	button->y = suby1 + 42;
-	button->action = &buttonOpenCharacterCreationWindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
-
 	savegamesList.clear();
+
 	// load single player files
 	for ( int fileNumber = 0; fileNumber < SAVE_GAMES_MAX; ++fileNumber )
 	{
@@ -11705,6 +11689,49 @@ void openNewLoadGameWindow(button_t* my)
 	}
 	savegames_window = 1;
 	std::sort(savegamesList.begin(), savegamesList.end());
+}
+
+void openNewLoadGameWindow(button_t* my)
+{
+	// close current window
+	buttonCloseSubwindow(nullptr);
+	list_FreeAll(&button_l);
+	deleteallbuttons = true;
+
+	// create confirmation window
+	subwindow = 1;
+	subx1 = xres / 2 - 380;
+	subx2 = xres / 2 + 380;
+	suby1 = yres / 2 - 210;
+	suby2 = yres / 2 + 210;
+	strcpy(subtext, language[3065]);
+
+	// close button
+	button_t* button = newButton();
+	strcpy(button->label, "x");
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+
+	button = newButton();
+	strcpy(button->label, language[1463]);
+	button->sizex = strlen(language[1463]) * 10 + 8;
+	button->sizey = 36;
+	button->x = subx1 + 16;
+	button->y = suby1 + 42;
+	button->action = &buttonOpenCharacterCreationWindow;
+	button->visible = 1;
+	button->focused = 1;
+	button->key = SDL_SCANCODE_RETURN;
+	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
+
+	reloadSavegamesList();
 }
 
 void buttonDeleteSavedSoloGame(button_t* my)
