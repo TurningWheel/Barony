@@ -522,6 +522,176 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	}
 }
 
+void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	playSoundEntity(&my, 173, 128);
+	if ( hit.entity )
+	{
+		int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			Entity* parent = uidToEntity(my.parent);
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					return;
+				}
+			}
+			playSoundEntity(hit.entity, 249, 64);
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
+			bool hasamulet = false;
+			if ( hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE )
+			{
+				resistance += 2;
+				hasamulet = true;
+			}
+			damage /= (1 + (int)resistance);
+			damage *= damagetables[hitstats->type][5];
+			hit.entity->modHP(-damage);
+
+			// write the obituary
+			if ( parent )
+			{
+				parent->killedByMonsterObituary(hit.entity);
+			}
+
+			if ( !hasamulet )
+			{
+				hit.entity->setEffect(EFF_POISONED, true, 600, true); // 12 seconds.
+				hitstats->poisonKiller = my.parent;
+			}
+
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				serverUpdateEffects(hit.entity->skill[2]);
+			}
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
+				}
+			}
+
+			// update enemy bar for attacker
+			if ( !strcmp(hitstats->name, "") )
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+				}
+			}
+			else
+			{
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+			}
+
+			if ( hitstats->HP <= 0 && parent )
+			{
+				parent->awardXP(hit.entity, true, true);
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
+			if ( player >= 0 )
+			{
+				messagePlayerColor(player, color, language[3438]);
+			}
+		}
+		else if ( hit.entity->behavior == &actDoor )
+		{
+			hit.entity->doorHandleDamageMagic(damage, my, parent);
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+}
+
+void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	if ( hit.entity )
+	{
+		//int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			Entity* parent = uidToEntity(my.parent);
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					return;
+				}
+			}
+			playSoundEntity(hit.entity, 396 + rand() % 3, 64);
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}		
+
+			if ( hit.entity->setEffect(EFF_SLOW, true, 450, true) ) // 9 seconds.
+			{
+				hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + resistance);
+				hit.entity->setEffect(EFF_PUNCHING_BAG, true, hitstats->EFFECTS_TIMERS[EFF_SLOW], true);
+			}
+
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3430], language[3429], MSG_COMBAT);
+				}
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
+			if ( player >= 0 )
+			{
+				messagePlayerColor(player, color, language[3431]);
+			}
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+}
+
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
 	if ( hit.entity )

@@ -53,6 +53,7 @@ static const int EFF_KNOCKBACK = 26;
 static const int EFF_WITHDRAWAL = 27;
 static const int EFF_POTION_STR = 28;
 static const int EFF_SHAPESHIFT = 29;
+static const int EFF_PUNCHING_BAG = 30;
 static const int NUMEFFECTS = 32;
 
 // stats

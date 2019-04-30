@@ -1220,6 +1220,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
+			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
+			{
+				playSoundEntity(entity, 164, volume);
+				traveltime = 15;
+				entity->skill[5] = traveltime;
+			}
 			else
 			{
 				playSoundEntity(entity, 169, volume);
@@ -1250,6 +1256,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			else if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
 				sprite = 597;
+				angle = PI / 16;
+				baseSpeed = 3;
+				baseSideSpeed = 2;
+				traveltime = 20;
+			}
+			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
+			{
+				sprite = 174;
 				angle = PI / 16;
 				baseSpeed = 3;
 				baseSideSpeed = 2;
@@ -1497,6 +1511,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if (propulsion == PROPULSION_MISSILE)
 				{
 					entity->sprite = 171;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_poison.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 597;
 				}
 			}
 			else if (!strcmp(element->name, spellElement_sleep.name))

@@ -307,7 +307,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_poison.mana = 4;
 	spellElement_poison.base_mana = 4;
 	spellElement_poison.overload_multiplier = 1;
-	spellElement_poison.damage = 1;
+	spellElement_poison.damage = 12;
 	spellElement_poison.duration = 0;
 	strcpy(spellElement_poison.name, language[3413]);
 
@@ -975,7 +975,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_sprayWeb.ID = SPELL_SPRAY_WEB;
 	spell_sprayWeb.difficulty = 0;
 	node = list_AddNodeLast(&spell_sprayWeb.elements);
-	node->element = copySpellElement(&spellElement_missile);
+	node->element = copySpellElement(&spellElement_missile_trio);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

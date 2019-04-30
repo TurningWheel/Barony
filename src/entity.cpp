@@ -10912,6 +10912,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 		case EFF_PACIFY:
 		case EFF_KNOCKBACK:
 		case EFF_BLIND:
+		case EFF_PUNCHING_BAG:
 			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 			{

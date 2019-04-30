@@ -572,6 +572,8 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
 Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent); // returns nullptr if target was monster, otherwise returns pointer to new creature
+void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 
 void freeSpells();
 void drawSpellTooltip(spell_t* spell);

@@ -2295,6 +2295,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectAcid(*my, *element, parent, resistance);
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_poison.name) )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectPoison(*my, *element, parent, resistance);
+					}
+				}
+				else if ( !strcmp(element->name, spellElement_sprayWeb.name) )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectSprayWeb(*my, *element, parent, resistance);
+					}
+				}
 				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
 				{
 					Entity* caster = uidToEntity(spell->caster);
