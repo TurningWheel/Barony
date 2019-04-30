@@ -4098,6 +4098,11 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX--;
 		}
 	}
+
+	if ( entitystats->EFFECTS[EFF_PUNCHING_BAG] )
+	{
+		DEX = std::min(DEX - 2, -2);
+	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{
 		DEX = std::min(DEX - 3, -2);
@@ -6295,6 +6300,35 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool bleedStatusInflicted = false;
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
+
+					if ( hitstats->EFFECTS[EFF_PUNCHING_BAG] && !hitstats->EFFECTS[EFF_KNOCKBACK] && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+					{
+						real_t baseMultiplier = 0.7;
+						real_t pushbackMultiplier = baseMultiplier;
+						/*if ( myStats->shield && hasMeleeGloves )
+						{
+						pushbackMultiplier /= 2;
+						}*/
+						if ( !hit.entity->isMobile() )
+						{
+							pushbackMultiplier += 0.3;
+						}
+						real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
+						hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+						hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+						hit.entity->monsterKnockbackVelocity = 0.05;
+						hit.entity->monsterKnockbackUID = this->getUID();
+						hit.entity->lookAtEntity(*this);
+						if ( !(backstab || flanking) )
+						{
+							if ( hit.entity->monsterAttack == 0 )
+							{
+								hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+							}
+						}
+						knockbackInflicted = true;
+					}
+
 					// player weapon skills
 					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= MAXCHARGE - 3) )
 					{
@@ -6333,7 +6367,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 							hit.entity->modHP(-5); // do extra damage.
 						}
-						if ( hasMeleeGloves 
+						if ( !knockbackInflicted && hasMeleeGloves
 							&& hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t baseMultiplier = 0.5;
@@ -10918,6 +10952,7 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 			{
 				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) &&
 					!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) &&
+					!(effect == EFF_PUNCHING_BAG && myStats->type == COCKATRICE) &&
 					!(effect == EFF_BLIND && myStats->type == COCKATRICE) &&
 					!(effect == EFF_BLIND && myStats->type == SHOPKEEPER) )
 				{

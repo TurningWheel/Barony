@@ -648,7 +648,6 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 					return;
 				}
 			}
-			playSoundEntity(hit.entity, 396 + rand() % 3, 64);
 
 			Stat* hitstats = hit.entity->getStats();
 			if ( !hitstats )
@@ -656,11 +655,32 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				return;
 			}		
 
-			if ( hit.entity->setEffect(EFF_SLOW, true, 450, true) ) // 9 seconds.
+			bool spawnParticles = true;
+			if ( hitstats->EFFECTS[EFF_PUNCHING_BAG] )
 			{
-				hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + resistance);
-				hit.entity->setEffect(EFF_PUNCHING_BAG, true, hitstats->EFFECTS_TIMERS[EFF_SLOW], true);
+				spawnParticles = false;
 			}
+			if ( hit.entity->setEffect(EFF_PUNCHING_BAG, true, 250, true) ) // 5 seconds.
+			{
+				if ( spawnParticles )
+				{
+					createParticleAestheticOrbit(hit.entity, 860, 250);
+				}
+			}
+			else
+			{
+				// no effect.
+				if ( parent )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					}
+				}
+				return;
+			}
+			playSoundEntity(hit.entity, 396 + rand() % 3, 64);
 
 			// hit messages
 			if ( parent )

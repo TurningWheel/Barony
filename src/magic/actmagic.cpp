@@ -2788,6 +2788,36 @@ void createParticleDot(Entity* parent)
 	}
 }
 
+void createParticleAestheticOrbit(Entity* parent, int sprite, int duration)
+{
+	if ( !parent )
+	{
+		return;
+	}
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->actmagicOrbitDist = 6;
+	entity->yaw = parent->yaw;
+	entity->x = parent->x + entity->actmagicOrbitDist * cos(entity->yaw);
+	entity->y = parent->y + entity->actmagicOrbitDist * sin(entity->yaw);
+	entity->z = parent->z;
+	entity->parent = parent->getUID();
+	//entity->vel_z = -1;
+	//entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = duration;
+	entity->behavior = &actParticleAestheticOrbit;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[UNCLICKABLE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+}
+
 void createParticleRock(Entity* parent)
 {
 	for ( int c = 0; c < 5; c++ )
@@ -2865,6 +2895,35 @@ void actParticleDot(Entity* my)
 		--PARTICLE_LIFE;
 		my->z += my->vel_z;
 		//my->z -= 0.01;
+	}
+	return;
+}
+
+void actParticleAestheticOrbit(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+	}
+	else
+	{
+		Entity* parent = uidToEntity(my->parent);
+		if ( !parent )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		Stat* stats = parent->getStats();
+		if ( stats && !stats->EFFECTS[EFF_PUNCHING_BAG] )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		--PARTICLE_LIFE;
+		my->yaw += 0.2;
+		spawnMagicParticle(my);
+		my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
+		my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
 	}
 	return;
 }
