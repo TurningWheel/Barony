@@ -54,7 +54,7 @@ void updateCharacterSheet()
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
 	int statWindowY = 196;
-	int statWindowY2 = 404;
+	int statWindowY2 = 412;
 	if ( uiscale_charactersheet )
 	{
 		pos.h = 236;
@@ -248,7 +248,12 @@ void updateCharacterSheet()
 	// armor, gold, and weight
 	int attackInfo[6] = { 0 };
 	text_y += pad_y * 2;
+
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[2542], displayAttackPower(attackInfo));
+	text_y += pad_y;
+
+	//New Hunger Stat
+	ttfPrintTextFormatted(fontStat, 8, text_y, language[3449], stats[clientnum]->HUNGER);
 
 	text_y += pad_y;
 	ttfPrintTextFormatted(fontStat, 8, text_y, language[371], AC(stats[clientnum]));
@@ -1576,13 +1581,6 @@ void statsHoverText(Stat* tmpStat)
 							{
 								tmp = players[clientnum]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getHealthRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
-								if ( tmpStat->type == SKELETON )
-								{
-									if ( !(svFlags & SV_FLAG_HUNGER) )
-									{
-										regen = HEAL_TIME * 4 / TICKS_PER_SECOND;
-									}
-								}
 								if ( regen < 0 )
 								{
 									regen = 0.f;
