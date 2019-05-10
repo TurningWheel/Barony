@@ -2703,13 +2703,13 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 0 )
 		{
 			myStats->HUNGER--;
+			serverUpdateHunger(player);
 			if ( myStats->HUNGER == 1500 )
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
 					messagePlayer(player, language[629]);
 				}
-				serverUpdateHunger(player);
 			}
 			else if ( myStats->HUNGER == 250 )
 			{
@@ -2718,7 +2718,6 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, language[630]);
 					playSoundPlayer(player, 32, 128);
 				}
-				serverUpdateHunger(player);
 			}
 			else if ( myStats->HUNGER == 150 )
 			{
@@ -2727,7 +2726,6 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, language[631]);
 					playSoundPlayer(player, 32, 128);
 				}
-				serverUpdateHunger(player);
 			}
 			else if ( myStats->HUNGER == 50 )
 			{
@@ -2736,7 +2734,6 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, language[632]);
 					playSoundPlayer(player, 32, 128);
 				}
-				serverUpdateHunger(player);
 			}
 		}
 		else
