@@ -603,7 +603,7 @@ thou makest use of them.#
 370 Gold:%13d Gold#
 371 Armor:%12d AC#
 372 Weight:%11d Wt.#
-
+3449 Hunger:%11d HNG#
 
 # chest inventory
 
@@ -4023,7 +4023,7 @@ Difficulty: Hard#
 3233 The Mesmer uses the Charm spell and leadership ability to enlist powerful allies.
 
 Difficulty: Hard#
-3234 A talented alchemist who is also comfortable with the relationships and bar-room 
+3234 A talented alchemist who is also comfortable with the relationships and bar-room
 brawls that a good brew will bring.
 Difficulty: Normal#
 
@@ -4526,4 +4526,4 @@ Thank you for your support!#
 Thank you for your support!#
 3406 ERROR: Invalid serial key.#
 
-3449 end#
+3450 end#
