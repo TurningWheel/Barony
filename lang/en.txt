@@ -25,41 +25,39 @@
 A skilled combatant. What they lack in armor they make up for in strength and fighting
 prowess.#
 
-11 The trained soldier. They are heavily armored and make capable leaders.
-
+11 Difficulty: Beginner
+The trained soldier. They are heavily armored and make capable leaders.
 Difficulty: Beginner#
 
-12 A talented physician. Though they are poor fighters, they come stocked with medical
-supplies and other healing abilities.
-Difficulty: Normal#
+12 Difficulty: Normal
+A talented physician. Though they are poor fighters, they come stocked with medical
+supplies and other healing abilities.#
 
-13 The professional hooligan. Dextrous and skilled thieves, though lacking in power and
-equipment.
-Difficulty: Hard#
+13 Difficulty: Hard
+The professional hooligan. Dextrous and skilled thieves, though lacking in power and
+equipment.#
 
-14 Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.
+14 Difficulty: Normal
+Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.#
 
-Difficulty: Normal#
+15 Difficulty: Beginner
+Students of the church. Fairly well equipped and able in many ways, they are
+well-rounded adventurers.#
 
-15 Students of the church. Fairly well equipped and able in many ways, they are
-well-rounded adventurers.
-Difficulty: Beginner#
+16 Difficulty: Hard#
+A seasoned trader. They are skilled in the market and adept at identifying foreign
+artifacts.#
 
-16 A seasoned trader. They are skilled in the market and adept at identifying foreign
-artifacts.
-Difficulty: Hard#
+17 Difficulty: Hard
+The wise magician. Though frail, they are extremely well-versed in magic.#
 
-17 The wise magician. Though frail, they are extremely well-versed in magic.
+18 Difficulty: Normal
+A cunning spellcaster. Less magically adept than the Wizard, but hardier and better
+equipped.#
 
-Difficulty: Hard#
-
-18 A cunning spellcaster. Less magically adept than the Wizard, but hardier and better
-equipped.
-Difficulty: Normal#
-
-19 The wild card. Jokers come with very little equipment, but they have a few tricks up
-their sleeves nonetheless.
-Difficulty: Extreme#
+19 Difficulty: Extreme
+The wild card. Jokers come with very little equipment, but they have a few tricks up
+their sleeves nonetheless#
 
 
 # appearance names

@@ -3,3 +3,9 @@
 ################################################################################
 
 /VS.2015/packages
+/VS.2015/.vs/Barony/v15
+/VS.2015/Barony/Debug
+/VS.2015/editor
+/VS.2015/Barony/packages.config
+/.vs
+/src/Config.hpp
