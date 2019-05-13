@@ -21,9 +21,9 @@
 
 # class descriptions
 
-10 A skilled combatant. What they lack in armor they make up for in strength and fighting
-prowess.
-Difficulty: Normal#
+10 Difficulty: Normal
+A skilled combatant. What they lack in armor they make up for in strength and fighting
+prowess.#
 
 11 The trained soldier. They are heavily armored and make capable leaders.
 
