@@ -239,7 +239,7 @@ void actHudAdditional(Entity* my);
 void actItem(Entity* my);
 void actGoldBag(Entity* my);
 void actGib(Entity* my);
-Entity* spawnGib(Entity* parentent);
+Entity* spawnGib(Entity* parentent, int customGibSprite = -1);
 Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
 void serverSpawnGibForClient(Entity* gib);
 void actLadder(Entity* my);

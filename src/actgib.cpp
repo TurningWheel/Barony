@@ -104,7 +104,7 @@ void actGib(Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-Entity* spawnGib(Entity* parentent)
+Entity* spawnGib(Entity* parentent, int customGibSprite)
 {
 	Entity* entity = nullptr;
 	Stat* parentstats = nullptr;
@@ -115,39 +115,48 @@ Entity* spawnGib(Entity* parentent)
 	{
 		return nullptr;
 	}
+
 	if ( (parentstats = parentent->getStats()) != nullptr )
 	{
 		if ( multiplayer == CLIENT )
 		{
 			printlog("[%s:%d spawnGib()] spawnGib() called on client, got clientstats. Probably bad?", __FILE__, __LINE__);
 		}
-		switch ( gibtype[(int)parentstats->type] )
+
+		if ( customGibSprite != -1 )
 		{
-			case 0:
-				return nullptr;
-			case 1:
-				gibsprite = 5;
-				break;
-			case 2:
-				gibsprite = 211;
-				break;
-			case 3:
-				if ( parentent->sprite == 210 )
-				{
+			gibsprite = customGibSprite;
+		}
+		else
+		{
+			switch ( gibtype[(int)parentstats->type] )
+			{
+				case 0:
+					return nullptr;
+				case 1:
+					gibsprite = 5;
+					break;
+				case 2:
 					gibsprite = 211;
-				}
-				else
-				{
-					gibsprite = 215;
-				}
-				break;
-			case 4:
-				gibsprite = 683;
-				break;
-			//TODO: Gear gibs for automatons, and crystal gibs for golem.
-			default:
-				gibsprite = 5;
-				break;
+					break;
+				case 3:
+					if ( parentent->sprite == 210 )
+					{
+						gibsprite = 211;
+					}
+					else
+					{
+						gibsprite = 215;
+					}
+					break;
+				case 4:
+					gibsprite = 683;
+					break;
+				//TODO: Gear gibs for automatons, and crystal gibs for golem.
+				default:
+					gibsprite = 5;
+					break;
+			}
 		}
 	}
 
@@ -174,7 +183,7 @@ Entity* spawnGib(Entity* parentent)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UNCLICKABLE] = true;
-	if ( !spawn_blood )
+	if ( !spawn_blood && customGibSprite == -1 )
 	{
 		entity->flags[INVISIBLE] = true;
 	}

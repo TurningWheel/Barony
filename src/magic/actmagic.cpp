@@ -2914,7 +2914,7 @@ void actParticleAestheticOrbit(Entity* my)
 			return;
 		}
 		Stat* stats = parent->getStats();
-		if ( stats && !stats->EFFECTS[EFF_PUNCHING_BAG] )
+		if ( stats && !stats->EFFECTS[EFF_WEBBED] )
 		{
 			list_RemoveNode(my->mynode);
 			return;

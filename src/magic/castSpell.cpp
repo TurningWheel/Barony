@@ -1222,7 +1222,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
-				playSoundEntity(entity, 164, volume);
+				playSoundEntity(entity, 169, volume);
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
@@ -1263,7 +1263,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
-				sprite = 174;
+				sprite = 861;
 				angle = PI / 16;
 				baseSpeed = 3;
 				baseSideSpeed = 2;

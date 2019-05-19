@@ -3175,6 +3175,35 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
+	
+	// webbed
+	if ( myStats->EFFECTS[EFF_WEBBED] )
+	{
+		if ( ticks % 25 == 0 )
+		{
+			Entity* gib = spawnGib(this, 863);
+			serverSpawnGibForClient(gib);
+		}
+		if ( ticks % 40 == 0 )
+		{
+			Entity* entity = newEntity(862, 1, map.entities, nullptr); //Web pool entity.
+			if ( entity != NULL )
+			{
+				entity->x = this->x;
+				entity->y = this->y;
+				entity->z = 8.0 + (rand() % 20) / 100.0;
+				entity->parent = this->uid;
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				real_t scale = 0.75 + 0.25 * (rand() % 100) / 100.f;
+				entity->scalex = scale;
+				entity->scaley = scale;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+		}
+	}
 
 	if ( player >= 0 && myStats->EFFECTS[EFF_LEVITATING] && MFLAG_DISABLELEVITATION)
 	{
@@ -4099,7 +4128,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		}
 	}
 
-	if ( entitystats->EFFECTS[EFF_PUNCHING_BAG] )
+	if ( entitystats->EFFECTS[EFF_WEBBED] )
 	{
 		DEX = std::min(DEX - 2, -2);
 	}
@@ -6301,7 +6330,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
 
-					if ( hitstats->EFFECTS[EFF_PUNCHING_BAG] && !hitstats->EFFECTS[EFF_KNOCKBACK] && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+					if ( hitstats->EFFECTS[EFF_WEBBED] && !hitstats->EFFECTS[EFF_KNOCKBACK] && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
 						real_t baseMultiplier = 0.7;
 						real_t pushbackMultiplier = baseMultiplier;
@@ -6566,12 +6595,29 @@ void Entity::attack(int pose, int charge, Entity* target)
 								serverUpdateEffects(playerhit);
 								break;
 							case SPIDER:
-								hitstats->EFFECTS[EFF_POISONED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
-								messagePlayer(playerhit, language[686]);
-								messagePlayer(playerhit, language[687]);
-								serverUpdateEffects(playerhit);
+							{
+								bool applyPoison = true;
+								if ( behavior == &actPlayer )
+								{
+									if ( charge >= MAXCHARGE - 3 ) // fully charged strike injects venom.
+									{
+										applyPoison = true;
+									}
+									else
+									{
+										applyPoison = false;
+									}
+								}
+								if ( applyPoison )
+								{
+									hitstats->EFFECTS[EFF_POISONED] = true;
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
+									messagePlayer(playerhit, language[686]);
+									messagePlayer(playerhit, language[687]);
+									serverUpdateEffects(playerhit);
+								}
 								break;
+							}
 							case SUCCUBUS:
 								switch ( armorstolen )
 								{
@@ -6680,12 +6726,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 									statusInflicted = true;
 									break;
 								case SPIDER:
-									hitstats->EFFECTS[EFF_POISONED] = true;
-									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
-									messagePlayer(playerhit, language[686]);
-									messagePlayer(playerhit, language[687]);
-									serverUpdateEffects(playerhit);
-									statusInflicted = true;
+									if ( behavior != &actPlayer )
+									{
+										hitstats->EFFECTS[EFF_POISONED] = true;
+										hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 300 - hit.entity->getCON() * 20);
+										messagePlayer(playerhit, language[686]);
+										messagePlayer(playerhit, language[687]);
+										serverUpdateEffects(playerhit);
+										statusInflicted = true;
+									}
 									break;
 								default:
 									break;
@@ -10946,13 +10995,13 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 		case EFF_PACIFY:
 		case EFF_KNOCKBACK:
 		case EFF_BLIND:
-		case EFF_PUNCHING_BAG:
+		case EFF_WEBBED:
 			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
 				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 			{
 				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) &&
 					!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) &&
-					!(effect == EFF_PUNCHING_BAG && myStats->type == COCKATRICE) &&
+					!(effect == EFF_WEBBED && myStats->type == COCKATRICE) &&
 					!(effect == EFF_BLIND && myStats->type == COCKATRICE) &&
 					!(effect == EFF_BLIND && myStats->type == SHOPKEEPER) )
 				{

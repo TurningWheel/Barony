@@ -656,15 +656,15 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			}		
 
 			bool spawnParticles = true;
-			if ( hitstats->EFFECTS[EFF_PUNCHING_BAG] )
+			if ( hitstats->EFFECTS[EFF_WEBBED] )
 			{
 				spawnParticles = false;
 			}
-			if ( hit.entity->setEffect(EFF_PUNCHING_BAG, true, 250, true) ) // 5 seconds.
+			if ( hit.entity->setEffect(EFF_WEBBED, true, 250, true) ) // 5 seconds.
 			{
 				if ( spawnParticles )
 				{
-					createParticleAestheticOrbit(hit.entity, 860, 250);
+					createParticleAestheticOrbit(hit.entity, 863, 250);
 				}
 			}
 			else
@@ -704,11 +704,11 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				messagePlayerColor(player, color, language[3431]);
 			}
 		}
-		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 863);
 	}
 	else
 	{
-		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+		spawnMagicEffectParticles(my.x, my.y, my.z, 863);
 	}
 }
 
