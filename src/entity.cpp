@@ -4577,6 +4577,13 @@ bool Entity::isMobile()
 		return false;
 	}
 
+	if ( behavior == &actPlayer && 
+		(this->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1 || this->skill[9] == PLAYER_POSE_GOLEM_SMASH) // special strike attack
+		)
+	{
+		return false;
+	}
+
 	// paralyzed
 	if ( entitystats->EFFECTS[EFF_PARALYZED] )
 	{
@@ -4766,7 +4773,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 		// animation
 		if ( player >= 0 )
 		{
-			if ( stats[player]->weapon != nullptr )
+			if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == PLAYER_POSE_GOLEM_SMASH )
+			{
+				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
+				if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 )
+				{
+					return;
+				}
+			}
+			else if ( stats[player]->weapon != nullptr )
 			{
 				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
 			}

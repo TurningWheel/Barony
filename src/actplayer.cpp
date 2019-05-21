@@ -3386,7 +3386,7 @@ void actPlayer(Entity* my)
 				if ( bodypart == 4 )
 				{
 					weaponarm = entity;
-					if ( PLAYER_ATTACK == 1 )
+					if ( PLAYER_ATTACK == 1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH )
 					{
 						// vertical chop
 						if ( PLAYER_ATTACKTIME == 0 )
@@ -3422,6 +3422,34 @@ void actPlayer(Entity* my)
 									entity->roll = 0;
 									PLAYER_ARMBENDED = 0;
 									PLAYER_ATTACK = 0;
+								}
+							}
+						}
+
+						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && PLAYER_NUM == clientnum )
+						{
+							if ( my->pitch < PI / 12 )
+							{
+								// rotate head upwards
+								if ( limbAngleWithinRange(my->pitch, 0.12, PI / 12) )
+								{
+									my->pitch = PI / 12;
+								}
+								else
+								{
+									my->pitch += 0.1;
+								}
+							}
+							else
+							{
+								// rotate head downwards
+								if ( limbAngleWithinRange(my->pitch, -0.12, PI / 12) )
+								{
+									my->pitch = PI / 12;
+								}
+								else
+								{
+									my->pitch -= 0.1;
 								}
 							}
 						}
@@ -3483,6 +3511,70 @@ void actPlayer(Entity* my)
 								PLAYER_ARMBENDED = 0;
 								PLAYER_ATTACK = 0;
 							}
+						}
+					}
+					// special double vertical chop
+					else if ( PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
+					{
+						if ( PLAYER_ATTACKTIME == 0 )
+						{
+							// init rotations
+							PLAYER_ARMBENDED = 0;
+							PLAYER_WEAPONYAW = 0;
+							entity->pitch = 0;
+							entity->roll = 0;
+							entity->skill[1] = 0;
+							createParticleDot(my);
+							/*if ( multiplayer != CLIENT )
+							{
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
+							}*/
+						}
+
+						if ( PLAYER_ATTACKTIME < 40 )
+						{
+							// move the head.
+							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
+							if ( PLAYER_NUM == clientnum )
+							{
+								if ( my->pitch > -PI / 6 )
+								{
+									// rotate head upwards
+									if ( limbAngleWithinRange(my->pitch, -0.05, -PI / 6) )
+									{
+										my->pitch = -PI / 6;
+									}
+									else
+									{
+										my->pitch += -0.03;
+									}
+								}
+								else
+								{
+									// slowly rotate head downwards
+									if ( limbAngleWithinRange(my->pitch, 0.05, -PI / 6) )
+									{
+										my->pitch = -PI / 6;
+									}
+									else
+									{
+										my->pitch -= -0.02;
+									}
+								}
+							}
+
+							// raise right arm and tilt.
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 9 * PI / 8, true, 0.1);
+							limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 32, false, 0);
+						}
+						else if ( PLAYER_ATTACKTIME == 40 )
+						{
+							playSoundEntityLocal(my, 153, 128);
+						}
+						else if ( PLAYER_ATTACKTIME > 50 )
+						{
+							my->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
 						}
 					}
 				}
@@ -3765,6 +3857,19 @@ void actPlayer(Entity* my)
 						}
 					}
 					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
+
+					if ( weaponarm && 
+						(PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH))
+					{
+						// special swing - copy the right arm movements.
+						entity->pitch = weaponarm->pitch;
+						entity->roll = -weaponarm->roll;
+					}
+					else
+					{
+						entity->roll = 0.f;
+					}
+
 					node_t* tempNode = list_Node(&my->children, 7);
 					if ( tempNode )
 					{

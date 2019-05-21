@@ -630,6 +630,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			caster->teleportRandom();
 		}
+		else if ( !strcmp(element->name, spellElement_strike.name) )
+		{
+			caster->attack(MONSTER_POSE_SPECIAL_WINDUP1, MAXCHARGE, nullptr);
+		}
 		else if (!strcmp(element->name, spellElement_identify.name))
 		{
 			for (i = 0; i < numplayers; ++i)

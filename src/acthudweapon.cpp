@@ -580,6 +580,11 @@ void actHudWeapon(Entity* my)
 		swingweapon = true;
 	}
 
+	/*if ( !swingweapon && players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1 )
+	{
+		swingweapon = true;
+	}*/
+
 	// weapon switch animation
 	if ( weaponSwitch )
 	{

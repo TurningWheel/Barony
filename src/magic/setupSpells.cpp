@@ -1067,16 +1067,9 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spell_strike.name, language[3416]);
 	spell_strike.ID = SPELL_STRIKE;
 	spell_strike.difficulty = 0;
+	spell_strike.elements.first = NULL;
+	spell_strike.elements.last = NULL;
 	node = list_AddNodeLast(&spell_strike.elements);
-	node->element = copySpellElement(&spellElement_missile);
-	node->size = sizeof(spellElement_t);
-	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t*)node->element;
-	element->node = node; //Tell the element what list it resides in.
-						  //Now for the second element.
-	element->elements.first = NULL;
-	element->elements.last = NULL;
-	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_strike);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
