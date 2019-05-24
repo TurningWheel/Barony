@@ -580,10 +580,7 @@ void actHudWeapon(Entity* my)
 		swingweapon = true;
 	}
 
-	/*if ( !swingweapon && players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1 )
-	{
-		swingweapon = true;
-	}*/
+	bool castStrikeAnimation = (players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
 
 	// weapon switch animation
 	if ( weaponSwitch )
@@ -660,14 +657,18 @@ void actHudWeapon(Entity* my)
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
 	{
-		if ( swingweapon )
+		if ( swingweapon || castStrikeAnimation )
 		{
 			if ( cast_animation.active || cast_animation.active_spellbook )
 			{
 				messagePlayer(clientnum, language[1301]);
 				spellcastingAnimationManager_deactivate(&cast_animation);
 			}
-			if ( stats[clientnum]->weapon == NULL || hideWeapon )
+			if ( castStrikeAnimation )
+			{
+				HUDWEAPON_CHOP = 10; // special punch
+			}
+			else if ( stats[clientnum]->weapon == NULL || hideWeapon )
 			{
 				HUDWEAPON_CHOP = 7; // punch
 			}
@@ -1488,7 +1489,8 @@ void actHudWeapon(Entity* my)
 		if (HUDWEAPON_ROLL < -2 * PI / 5)
 		{
 			HUDWEAPON_ROLL = -2 * PI / 5;
-			if (HUDWEAPON_PITCH == pitchLimit && HUDWEAPON_YAW == result && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && HUDWEAPON_MOVEZ == -2)
+			if (HUDWEAPON_PITCH == pitchLimit && HUDWEAPON_YAW == result 
+				&& HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && (HUDWEAPON_MOVEZ == -2))
 			{
 				if (!swingweapon)
 				{
@@ -1613,8 +1615,96 @@ void actHudWeapon(Entity* my)
 			}
 		}
 	}
+	else if ( HUDWEAPON_CHOP == 10 ) // special punch
+	{
+		HUDWEAPON_MOVEX = std::max(static_cast<real_t>(0.0), HUDWEAPON_MOVEX - .15); // forward/back
+		HUDWEAPON_MOVEY = std::min(static_cast<real_t>(1.0), HUDWEAPON_MOVEY + .25); // left/right
+		HUDWEAPON_MOVEZ = std::max(static_cast<real_t>(-2.0), HUDWEAPON_MOVEZ - .05); // up/down
 
-	if ( HUDWEAPON_CHARGE == MAXCHARGE )
+		HUDWEAPON_YAW -= .15;
+		if ( HUDWEAPON_YAW < 2 * PI / 5 )
+		{
+			result = 2 * PI / 5;
+			HUDWEAPON_YAW = result;
+		}
+		real_t pitchLimit = .2;
+		HUDWEAPON_PITCH -= .05;
+		if ( HUDWEAPON_PITCH < pitchLimit )
+		{
+			HUDWEAPON_PITCH = pitchLimit;
+		}
+		HUDWEAPON_ROLL -= .15;
+		if ( HUDWEAPON_ROLL < -2 * PI / 5 )
+		{
+			HUDWEAPON_ROLL = -2 * PI / 5;
+			if ( HUDWEAPON_CHARGE < 40 )
+			{
+				HUDWEAPON_CHARGE += 1;
+			}
+			else
+			{
+				HUDWEAPON_CHOP = 11;
+				HUDWEAPON_CHARGE = 0;
+				HUDWEAPON_OVERCHARGE = 0;
+				if ( players[clientnum]->entity->skill[3] == 0 )   // debug cam OFF
+				{
+					camera_shakex += .06;
+					camera_shakey += 6;
+				}
+			}
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 11 )     // third swing
+	{
+		HUDWEAPON_MOVEX += 1;
+		if ( HUDWEAPON_MOVEX > 4 )
+		{
+			HUDWEAPON_MOVEX = 4;
+			HUDWEAPON_CHOP = 12;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 12 )     // return from third swing
+	{
+		HUDWEAPON_MOVEX -= .2;
+		if ( HUDWEAPON_MOVEX < 0 )
+		{
+			HUDWEAPON_MOVEX = 0;
+		}
+		HUDWEAPON_MOVEY += .15;
+		if ( HUDWEAPON_MOVEY > 0 )
+		{
+			HUDWEAPON_MOVEY = 0;
+		}
+		HUDWEAPON_MOVEZ += .25;
+		if ( HUDWEAPON_MOVEZ > 0 )
+		{
+			HUDWEAPON_MOVEZ = 0;
+		}
+		if ( HUDWEAPON_MOVEX == 0 )
+		{
+			HUDWEAPON_YAW -= .25;
+			if ( HUDWEAPON_YAW < -.1 )
+			{
+				HUDWEAPON_YAW = -.1;
+			}
+			HUDWEAPON_PITCH += .05;
+			if ( HUDWEAPON_PITCH > 0 )
+			{
+				HUDWEAPON_PITCH = 0;
+			}
+			HUDWEAPON_ROLL += .25;
+			if ( HUDWEAPON_ROLL > 0 )
+			{
+				HUDWEAPON_ROLL = 0;
+				if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
+				{
+					HUDWEAPON_CHOP = 0;
+				}
+			}
+		}
+	}
+
+	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation )
 	{
 		if ( ticks % 2 == 0 )
 		{
@@ -1630,6 +1720,31 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEZ += HUDWEAPON_OLDVIBRATEZ;
 		}
 		HUDWEAPON_OVERCHARGE++;
+	}
+	if ( castStrikeAnimation )
+	{
+		if ( ticks % 5 == 0 )
+		{
+			Entity* entity = spawnGib(my);
+			entity->flags[INVISIBLE] = false;
+			entity->flags[SPRITE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UPDATENEEDED] = false;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[BRIGHT] = true;
+			entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+			entity->scaley = 0.25f;
+			entity->scalez = 0.25f;
+			entity->z -= 3;
+			entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+			entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
+			entity->pitch = (rand() % 360) * PI / 180.0;
+			entity->roll = (rand() % 360) * PI / 180.0;
+			entity->vel_x = cos(entity->yaw) * .1;
+			entity->vel_y = sin(entity->yaw) * .1;
+			entity->vel_z = -.15;
+			entity->fskill[3] = 0.01;
+		}
 	}
 
 	// move the weapon

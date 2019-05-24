@@ -3428,12 +3428,12 @@ void actPlayer(Entity* my)
 
 						if ( PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH && PLAYER_NUM == clientnum )
 						{
-							if ( my->pitch < PI / 12 )
+							if ( my->pitch < PI / 32 )
 							{
 								// rotate head upwards
-								if ( limbAngleWithinRange(my->pitch, 0.12, PI / 12) )
+								if ( limbAngleWithinRange(my->pitch, 0.1, PI / 32) )
 								{
-									my->pitch = PI / 12;
+									my->pitch = PI / 32;
 								}
 								else
 								{
@@ -3443,9 +3443,9 @@ void actPlayer(Entity* my)
 							else
 							{
 								// rotate head downwards
-								if ( limbAngleWithinRange(my->pitch, -0.12, PI / 12) )
+								if ( limbAngleWithinRange(my->pitch, -0.1, PI / 32) )
 								{
-									my->pitch = PI / 12;
+									my->pitch = PI / 32;
 								}
 								else
 								{
@@ -3538,12 +3538,12 @@ void actPlayer(Entity* my)
 							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
 							if ( PLAYER_NUM == clientnum )
 							{
-								if ( my->pitch > -PI / 6 )
+								if ( my->pitch > -PI / 12 )
 								{
 									// rotate head upwards
-									if ( limbAngleWithinRange(my->pitch, -0.05, -PI / 6) )
+									if ( limbAngleWithinRange(my->pitch, -0.05, -PI / 12) )
 									{
-										my->pitch = -PI / 6;
+										my->pitch = -PI / 12;
 									}
 									else
 									{
@@ -3553,9 +3553,9 @@ void actPlayer(Entity* my)
 								else
 								{
 									// slowly rotate head downwards
-									if ( limbAngleWithinRange(my->pitch, 0.05, -PI / 6) )
+									if ( limbAngleWithinRange(my->pitch, 0.05, -PI / 12) )
 									{
-										my->pitch = -PI / 6;
+										my->pitch = -PI / 12;
 									}
 									else
 									{
