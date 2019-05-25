@@ -488,7 +488,7 @@ void actParticleAestheticOrbit(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
-void createParticleAestheticOrbit(Entity* parent, int sprite, int duration);
+Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration);
 void createParticleRock(Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);

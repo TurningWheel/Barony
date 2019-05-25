@@ -2788,11 +2788,11 @@ void createParticleDot(Entity* parent)
 	}
 }
 
-void createParticleAestheticOrbit(Entity* parent, int sprite, int duration)
+Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration)
 {
 	if ( !parent )
 	{
-		return;
+		return nullptr;
 	}
 	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
 	entity->sizex = 1;
@@ -2816,6 +2816,7 @@ void createParticleAestheticOrbit(Entity* parent, int sprite, int duration)
 		entity_uids--;
 	}
 	entity->setUID(-3);
+	return entity;
 }
 
 void createParticleRock(Entity* parent)
@@ -2914,7 +2915,7 @@ void actParticleAestheticOrbit(Entity* my)
 			return;
 		}
 		Stat* stats = parent->getStats();
-		if ( stats && !stats->EFFECTS[EFF_WEBBED] )
+		if ( my->sprite == 863 && !stats->EFFECTS[EFF_WEBBED] )
 		{
 			list_RemoveNode(my->mynode);
 			return;
@@ -4501,11 +4502,16 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks)
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 				messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
+				playSoundPos(hit.x, hit.y, 66, 128); // strike wall
 			}
 			else
 			{
-				playSoundEntity(projectile, 66, 128);
-				playSoundEntity(projectile, 67, 128);
+				if ( projectile )
+				{
+					playSoundEntity(projectile, 66, 128);
+					playSoundEntity(projectile, 67, 128);
+				}
+
 				// spawn several rock items
 				int i = numRocks + rand() % 4;
 				for ( int c = 0; c < i; c++ )

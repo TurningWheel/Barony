@@ -1651,6 +1651,7 @@ void actHudWeapon(Entity* my)
 					camera_shakex += .06;
 					camera_shakey += 6;
 				}
+				players[clientnum]->entity->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
 			}
 		}
 	}
@@ -1721,7 +1722,7 @@ void actHudWeapon(Entity* my)
 		}
 		HUDWEAPON_OVERCHARGE++;
 	}
-	if ( castStrikeAnimation )
+	if ( castStrikeAnimation ) // magic sprite particles around the fist
 	{
 		if ( ticks % 5 == 0 )
 		{
@@ -1735,7 +1736,7 @@ void actHudWeapon(Entity* my)
 			entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 			entity->scaley = 0.25f;
 			entity->scalez = 0.25f;
-			entity->z -= 3;
+			entity->z -= 3.5;
 			entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
 			entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
 			entity->pitch = (rand() % 360) * PI / 180.0;

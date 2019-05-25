@@ -3315,17 +3315,17 @@ void actPlayer(Entity* my)
 									if ( tempNode )
 									{
 										Entity* foot = (Entity*)tempNode->element;
-										if ( foot->sprite == 152 || foot->sprite == 153 )
+										if ( playerRace == TROLL )
 										{
-											playSoundEntityLocal(my, 7 + rand() % 7, 32);
+											playSoundEntityLocal(my, my->getMonsterFootstepSound(MONSTER_FOOTSTEP_STOMP, foot->sprite), 92);
 										}
-										else if ( foot->sprite == 156 || foot->sprite == 157 )
+										else if ( playerRace == SPIDER || playerRace == RAT || playerRace == CREATURE_IMP )
 										{
-											playSoundEntityLocal(my, 14 + rand() % 7, 32);
+											// no sound.
 										}
 										else
 										{
-											playSoundEntityLocal(my, rand() % 7, 32);
+											playSoundEntityLocal(my, my->getMonsterFootstepSound(MONSTER_FOOTSTEP_USE_BOOTS, foot->sprite), 32);
 										}
 									}
 								}
@@ -3343,17 +3343,17 @@ void actPlayer(Entity* my)
 									if ( tempNode )
 									{
 										Entity* foot = (Entity*)tempNode->element;
-										if ( foot->sprite == 152 || foot->sprite == 153 )
+										if ( playerRace == TROLL )
 										{
-											playSoundEntityLocal(my, 7 + rand() % 7, 32);
+											playSoundEntityLocal(my, my->getMonsterFootstepSound(MONSTER_FOOTSTEP_STOMP, foot->sprite), 32);
 										}
-										else if ( foot->sprite == 156 || foot->sprite == 157 )
+										else if ( playerRace == SPIDER || playerRace == RAT || playerRace == CREATURE_IMP )
 										{
-											playSoundEntityLocal(my, 14 + rand() % 7, 32);
+											// no sound.
 										}
 										else
 										{
-											playSoundEntityLocal(my, rand() % 7, 32);
+											playSoundEntityLocal(my, my->getMonsterFootstepSound(MONSTER_FOOTSTEP_USE_BOOTS, foot->sprite), 32);
 										}
 									}
 								}
@@ -3525,14 +3525,8 @@ void actPlayer(Entity* my)
 							entity->roll = 0;
 							entity->skill[1] = 0;
 							createParticleDot(my);
-							/*if ( multiplayer != CLIENT )
-							{
-								myStats->EFFECTS[EFF_PARALYZED] = true;
-								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
-							}*/
 						}
-
-						if ( PLAYER_ATTACKTIME < 40 )
+						else
 						{
 							// move the head.
 							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
@@ -3541,25 +3535,25 @@ void actPlayer(Entity* my)
 								if ( my->pitch > -PI / 12 )
 								{
 									// rotate head upwards
-									if ( limbAngleWithinRange(my->pitch, -0.05, -PI / 12) )
+									if ( limbAngleWithinRange(my->pitch, -0.03, -PI / 12) )
 									{
 										my->pitch = -PI / 12;
 									}
 									else
 									{
-										my->pitch += -0.03;
+										my->pitch += -0.02;
 									}
 								}
 								else
 								{
 									// slowly rotate head downwards
-									if ( limbAngleWithinRange(my->pitch, 0.05, -PI / 12) )
+									if ( limbAngleWithinRange(my->pitch, 0.03, -PI / 12) )
 									{
 										my->pitch = -PI / 12;
 									}
 									else
 									{
-										my->pitch -= -0.02;
+										my->pitch -= -0.01;
 									}
 								}
 							}
@@ -3567,14 +3561,18 @@ void actPlayer(Entity* my)
 							// raise right arm and tilt.
 							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 9 * PI / 8, true, 0.1);
 							limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 32, false, 0);
-						}
-						else if ( PLAYER_ATTACKTIME == 40 )
-						{
-							playSoundEntityLocal(my, 153, 128);
-						}
-						else if ( PLAYER_ATTACKTIME > 50 )
-						{
-							my->attack(PLAYER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
+
+							if ( PLAYER_ATTACKTIME == 5 )
+							{
+								if ( multiplayer != CLIENT && playerRace == TROLL && rand() % 4 == 0 )
+								{
+									playSoundEntityLocal(players[clientnum]->entity, 79, 128);
+								}
+							}
+							else if ( PLAYER_ATTACKTIME == 35 )
+							{
+								playSoundEntityLocal(players[clientnum]->entity, 164, 128);
+							}
 						}
 					}
 				}

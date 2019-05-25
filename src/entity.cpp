@@ -4773,12 +4773,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 		// animation
 		if ( player >= 0 )
 		{
+			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
 			if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == PLAYER_POSE_GOLEM_SMASH )
 			{
 				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
 				if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 )
 				{
+					if ( multiplayer == SERVER )
+					{
+						if ( player >= 0 && player < MAXPLAYERS )
+						{
+							serverUpdateEntitySkill(players[player]->entity, 9);
+							serverUpdateEntitySkill(players[player]->entity, 10);
+						}
+					}
 					return;
+				}
+				else if ( pose == PLAYER_POSE_GOLEM_SMASH )
+				{
+					players[player]->entity->skill[10] = 1; // to avoid resetting the animation
 				}
 			}
 			else if ( stats[player]->weapon != nullptr )
@@ -4789,7 +4802,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				players[player]->entity->skill[9] = 1; // special case for punch to eliminate spanking motion :p
 			}
-			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
 		}
 		else
 		{
@@ -5341,37 +5353,43 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 			if ( hit.entity->behavior == &actBoulder )
 			{
-				if ( myStats->weapon != nullptr )
+				if ( myStats->weapon != nullptr || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
-					if ( myStats->weapon->type == TOOL_PICKAXE )
+					if ( myStats->weapon->type == TOOL_PICKAXE || pose == PLAYER_POSE_GOLEM_SMASH )
 					{
 						// spawn several rock items
-						int i = 8 + rand() % 4;
-
-						int c;
-						for ( c = 0; c < i; c++ )
+						if ( pose == PLAYER_POSE_GOLEM_SMASH )
 						{
-							Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
-							entity->flags[INVISIBLE] = true;
-							entity->flags[UPDATENEEDED] = true;
-							entity->x = hit.entity->x - 4 + rand() % 8;
-							entity->y = hit.entity->y - 4 + rand() % 8;
-							entity->z = -6 + rand() % 12;
-							entity->sizex = 4;
-							entity->sizey = 4;
-							entity->yaw = rand() % 360 * PI / 180;
-							entity->vel_x = (rand() % 20 - 10) / 10.0;
-							entity->vel_y = (rand() % 20 - 10) / 10.0;
-							entity->vel_z = -.25 - (rand() % 5) / 10.0;
-							entity->flags[PASSABLE] = true;
-							entity->behavior = &actItem;
-							entity->flags[USERFLAG1] = true; // no collision: helps performance
-							entity->skill[10] = GEM_ROCK;    // type
-							entity->skill[11] = WORN;        // status
-							entity->skill[12] = 0;           // beatitude
-							entity->skill[13] = 1;           // count
-							entity->skill[14] = 0;           // appearance
-							entity->skill[15] = false;       // identified
+							createParticleRock(hit.entity);
+						}
+						else
+						{
+							int i = 8 + rand() % 4;
+							int c;
+							for ( c = 0; c < i; c++ )
+							{
+								Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Rock/item entity.
+								entity->flags[INVISIBLE] = true;
+								entity->flags[UPDATENEEDED] = true;
+								entity->x = hit.entity->x - 4 + rand() % 8;
+								entity->y = hit.entity->y - 4 + rand() % 8;
+								entity->z = -6 + rand() % 12;
+								entity->sizex = 4;
+								entity->sizey = 4;
+								entity->yaw = rand() % 360 * PI / 180;
+								entity->vel_x = (rand() % 20 - 10) / 10.0;
+								entity->vel_y = (rand() % 20 - 10) / 10.0;
+								entity->vel_z = -.25 - (rand() % 5) / 10.0;
+								entity->flags[PASSABLE] = true;
+								entity->behavior = &actItem;
+								entity->flags[USERFLAG1] = true; // no collision: helps performance
+								entity->skill[10] = GEM_ROCK;    // type
+								entity->skill[11] = WORN;        // status
+								entity->skill[12] = 0;           // beatitude
+								entity->skill[13] = 1;           // count
+								entity->skill[14] = 0;           // appearance
+								entity->skill[15] = false;       // identified
+							}
 						}
 
 						double ox = hit.entity->x;
@@ -5438,7 +5456,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
 						messagePlayer(player, language[663]);
-						if ( rand() % 2 )
+						if ( myStats->weapon && rand() % 2 )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 							if ( myStats->weapon->status < BROKEN )
@@ -5634,6 +5652,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( charge > MAXCHARGE / 2 )
 					{
 						axe *= 3;
+					}
+				}
+				if ( pose == PLAYER_POSE_GOLEM_SMASH )
+				{
+					if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture )
+					{
+						axe += 20;
+					}
+					else if ( hit.entity->behavior == &::actChest )
+					{
+						axe = std::min(axe + 50, 50);
 					}
 				}
 				if ( hit.entity->behavior != &::actChest )
@@ -5838,8 +5867,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int damage = 0;
 					int damagePreMultiplier = 1;
 
-					if ( (myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
+					if ( (myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH)
 						|| (myStats->type == LICH_FIRE && pose == 3) )
+					{
+						damagePreMultiplier = 2;
+					}
+					else if ( player >= 0 && pose == PLAYER_POSE_GOLEM_SMASH && myStats->type == TROLL )
 					{
 						damagePreMultiplier = 2;
 					}
@@ -6217,7 +6250,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						// crystal golem special attack increase chance for armor to break if hit. (25-33%)
 						// special attack only degrades armor if primary target.
-						if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
+						if ( (pose == MONSTER_POSE_GOLEM_SMASH || pose == PLAYER_POSE_GOLEM_SMASH) && target == nullptr )
 						{
 							if ( isWeakArmor )
 							{
@@ -6345,9 +6378,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
 
-					if ( hitstats->EFFECTS[EFF_WEBBED] && !hitstats->EFFECTS[EFF_KNOCKBACK] && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+					if ( (hitstats->EFFECTS[EFF_WEBBED] || pose == PLAYER_POSE_GOLEM_SMASH) 
+						&& !hitstats->EFFECTS[EFF_KNOCKBACK] && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
 						real_t baseMultiplier = 0.7;
+						if ( pose == PLAYER_POSE_GOLEM_SMASH )
+						{
+							baseMultiplier = 0.9;
+						}
 						real_t pushbackMultiplier = baseMultiplier;
 						/*if ( myStats->shield && hasMeleeGloves )
 						{
@@ -7062,7 +7100,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( playerhit == 0 )
 					{
-						if ( pose == MONSTER_POSE_GOLEM_SMASH )
+						if ( pose == MONSTER_POSE_GOLEM_SMASH || pose == PLAYER_POSE_GOLEM_SMASH )
 						{
 							if ( target == nullptr )
 							{
@@ -7188,6 +7226,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( bleedStatusInflicted || (rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
+								|| (rand() % 4 == 0 && pose == PLAYER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
 								|| (rand() % 8 == 0 && myStats->EFFECTS[EFF_VAMPIRICAURA] && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
 							)
@@ -7441,6 +7480,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							tryLifesteal = true;
 						}
+
+						// special strike spell animation
+						if ( pose == PLAYER_POSE_GOLEM_SMASH )
+						{
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 643);
+							for ( int gibs = 0; gibs < 10; ++gibs )
+							{
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
+							}
+							playSoundEntity(hit.entity, 181, 128);
+						}
 					}
 
 					if ( tryLifesteal || forceLifesteal )
@@ -7575,7 +7626,47 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( dist != STRIKERANGE )
 			{
 				// hit a wall
-				if ( myStats->weapon != NULL )
+				if ( pose == PLAYER_POSE_GOLEM_SMASH )
+				{
+					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
+					{
+						magicDig(this, nullptr, 0);
+						playSoundPos(hit.x, hit.y, 67, 128); // bust wall
+						for ( int c = 0; c < 5; c++ )
+						{
+							Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
+							entity->sizex = 1;
+							entity->sizey = 1;
+							entity->x = hit.x + (-4 + rand() % 9);
+							entity->y = hit.y + (-4 + rand() % 9);
+							entity->z = 7.5;
+							entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
+							entity->roll = (rand() % 360) * PI / 180.0;
+
+							entity->vel_x = 0.2 * cos(entity->yaw);
+							entity->vel_y = 0.2 * sin(entity->yaw);
+							entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+
+							entity->skill[0] = 50; // particle life
+							entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+							entity->behavior = &actParticleRock;
+							entity->flags[PASSABLE] = true;
+							entity->flags[NOUPDATE] = true;
+							entity->flags[UNCLICKABLE] = true;
+							if ( multiplayer != CLIENT )
+							{
+								entity_uids--;
+							}
+							entity->setUID(-3);
+						}
+					}
+					else
+					{
+						messagePlayer(player, language[706]);
+					}
+				}
+				else if ( myStats->weapon != NULL )
 				{
 					if ( myStats->weapon->type == TOOL_PICKAXE )
 					{
@@ -7701,7 +7792,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 
 			// apply AoE shake effect
-			if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
+			if ( (pose == MONSTER_POSE_GOLEM_SMASH || pose == PLAYER_POSE_GOLEM_SMASH) && target == nullptr )
 			{
 				list_t* shakeTargets = nullptr;
 				Entity* tmpEntity = nullptr;
