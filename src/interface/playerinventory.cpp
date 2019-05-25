@@ -924,6 +924,20 @@ void updatePlayerInventory()
 			drawImageScaled(itemSprite(item), NULL, &pos);
 		}
 
+		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+		{
+			// shape shifted, disable some items
+			SDL_Rect greyBox;
+			greyBox.x = x + item->x * (INVENTORY_SLOTSIZE)+2;
+			greyBox.y = y + item->y * (INVENTORY_SLOTSIZE)+1;
+			greyBox.w = (INVENTORY_SLOTSIZE)-2;
+			greyBox.h = (INVENTORY_SLOTSIZE)-2;
+			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+			{
+				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 92, 92, 92), 128);
+			}
+		}
+
 		// item count
 		if ( item->count > 1 )
 		{
@@ -1220,6 +1234,16 @@ void updatePlayerInventory()
 						dropItem(item, clientnum);
 					}
 
+					bool disableItemUsage = false;
+					if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+					{
+						// shape shifted, disable some items
+						if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+						{
+							disableItemUsage = true;
+						}
+					}
+
 					// handle clicking
 					if ( (mousestatus[SDL_BUTTON_LEFT] 
 						|| (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) 
@@ -1268,7 +1292,7 @@ void updatePlayerInventory()
 							//Cleanup identify GUI gamecontroller code here.
 							selectedIdentifySlot = -1;
 						}
-						else if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK ) &&
+						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK ) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
 							&& !(*inputPressed(joyimpulses[INJOY_MENU_USE])) )
 						{
@@ -1757,6 +1781,16 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 		return;
 	}
 
+	bool disableItemUsage = false;
+	if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+	{
+		// shape shifted, disable some items
+		if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+		{
+			disableItemUsage = true;
+		}
+	}
+
 	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT)
 	{
 		//Option 0 = store in chest.
@@ -1774,27 +1808,52 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 			//Option 0 = use.
 			if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
 			{
-				useItem(item, clientnum);
+				if ( !disableItemUsage )
+				{
+					useItem(item, clientnum);
+				}
+				else
+				{
+					messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+				}
 			}
 		}
 		else
 		{
-			//Option 0 = equip.
-			if (multiplayer == CLIENT)
+			if ( !disableItemUsage )
 			{
-				if ( swapWeaponGimpTimer > 0
-					&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+				//Option 0 = equip.
+				if (multiplayer == CLIENT)
 				{
-					// don't send to host as we're not allowed to "use" or equip these items. 
-					// will return false in equipItem.
-				}
-				else
-				{
-					if ( itemCategory(item) == SPELLBOOK )
+					if ( swapWeaponGimpTimer > 0
+						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
 					{
-						if ( !cast_animation.active_spellbook )
+						// don't send to host as we're not allowed to "use" or equip these items. 
+						// will return false in equipItem.
+					}
+					else
+					{
+						if ( itemCategory(item) == SPELLBOOK )
 						{
-							strcpy((char*)net_packet->data, "EQUS");
+							if ( !cast_animation.active_spellbook )
+							{
+								strcpy((char*)net_packet->data, "EQUS");
+								SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+								SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+								SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+								net_packet->data[24] = item->identified;
+								net_packet->data[25] = clientnum;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 26;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+						}
+						else
+						{
+							strcpy((char*)net_packet->data, "EQUI");
 							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1808,33 +1867,22 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 							sendPacketSafe(net_sock, -1, net_packet, 0);
 						}
 					}
-					else
+				}
+				if ( itemCategory(item) == SPELLBOOK )
+				{
+					if ( !cast_animation.active_spellbook )
 					{
-						strcpy((char*)net_packet->data, "EQUI");
-						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-						net_packet->data[24] = item->identified;
-						net_packet->data[25] = clientnum;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 26;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						equipItem(item, &stats[clientnum]->shield, clientnum);
 					}
 				}
-			}
-			if ( itemCategory(item) == SPELLBOOK )
-			{
-				if ( !cast_animation.active_spellbook )
+				else
 				{
-					equipItem(item, &stats[clientnum]->shield, clientnum);
+					equipItem(item, &stats[clientnum]->weapon, clientnum);
 				}
 			}
 			else
 			{
-				equipItem(item, &stats[clientnum]->weapon, clientnum);
+				messagePlayer(clientnum, language[3432]); // unable to use in current form message.
 			}
 		}
 	}
@@ -1847,10 +1895,27 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		return;
 	}
 
+	bool disableItemUsage = false;
+	if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+	{
+		// shape shifted, disable some items
+		if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+		{
+			disableItemUsage = true;
+		}
+	}
+
 	if ( item->type == TOOL_ALEMBIC )
 	{
 		// experimenting!
-		GenericGUI.openGUI(GUI_TYPE_ALCHEMY, true, item);
+		if ( !disableItemUsage )
+		{
+			GenericGUI.openGUI(GUI_TYPE_ALCHEMY, true, item);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+		}
 	}
 	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK)
 	{
@@ -1865,24 +1930,42 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 	}
 	else
 	{
-		if (!is_potion_bad && !learnedSpell)
+		if ( !disableItemUsage )
 		{
-			//Option 1 = equip.
-			if (multiplayer == CLIENT)
+			if (!is_potion_bad && !learnedSpell)
 			{
-				if ( swapWeaponGimpTimer > 0
-					&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+				//Option 1 = equip.
+				if (multiplayer == CLIENT)
 				{
-					// don't send to host as we're not allowed to "use" or equip these items. 
-					// will return false in equipItem.
-				}
-				else
-				{
-					if ( itemCategory(item) == SPELLBOOK )
+					if ( swapWeaponGimpTimer > 0
+						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
 					{
-						if ( !cast_animation.active_spellbook )
+						// don't send to host as we're not allowed to "use" or equip these items. 
+						// will return false in equipItem.
+					}
+					else
+					{
+						if ( itemCategory(item) == SPELLBOOK )
 						{
-							strcpy((char*)net_packet->data, "EQUS");
+							if ( !cast_animation.active_spellbook )
+							{
+								strcpy((char*)net_packet->data, "EQUS");
+								SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+								SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+								SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+								SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+								SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+								net_packet->data[24] = item->identified;
+								net_packet->data[25] = clientnum;
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 26;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+						}
+						else
+						{
+							strcpy((char*)net_packet->data, "EQUI");
 							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1896,43 +1979,32 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 							sendPacketSafe(net_sock, -1, net_packet, 0);
 						}
 					}
-					else
+				}
+
+				if ( itemCategory(item) == SPELLBOOK )
+				{
+					if ( !cast_animation.active_spellbook )
 					{
-						strcpy((char*)net_packet->data, "EQUI");
-						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-						net_packet->data[24] = item->identified;
-						net_packet->data[25] = clientnum;
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 26;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
+						equipItem(item, &stats[clientnum]->shield, clientnum);
 					}
 				}
-			}
-
-			if ( itemCategory(item) == SPELLBOOK )
-			{
-				if ( !cast_animation.active_spellbook )
+				else
 				{
-					equipItem(item, &stats[clientnum]->shield, clientnum);
+					equipItem(item, &stats[clientnum]->weapon, clientnum);
 				}
 			}
 			else
 			{
-				equipItem(item, &stats[clientnum]->weapon, clientnum);
+				//Option 1 = drink/use/whatever.
+				if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
+				{
+					useItem(item, clientnum);
+				}
 			}
 		}
 		else
 		{
-			//Option 1 = drink/use/whatever.
-			if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
-			{
-				useItem(item, clientnum);
-			}
+			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
 		}
 	}
 }

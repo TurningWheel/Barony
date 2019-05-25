@@ -3827,3 +3827,44 @@ bool isItemEquippableInShieldSlot(Item* item)
 	}
 	return false;
 }
+
+bool Item::usableWhileShapeshifted(Stat* wielder) const
+{
+	if ( !wielder )
+	{
+		return true;
+	}
+	switch ( itemCategory(this) )
+	{
+		case WEAPON:
+		case ARMOR:
+		case MAGICSTAFF:
+		case GEM:
+		case THROWN:
+		case TOOL:
+		case BOOK:
+		case SCROLL:
+			return false;
+			break;
+		case SPELLBOOK:
+			if ( wielder->type == CREATURE_IMP )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		case POTION:
+		case AMULET:
+		case RING:
+		case FOOD:
+		case SPELL_CAT:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}

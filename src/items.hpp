@@ -366,6 +366,7 @@ public:
 	bool canUnequip(Stat* wielder = nullptr); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
+	bool usableWhileShapeshifted(Stat* wielder = nullptr) const;
 
 	void apply(int player, Entity* entity);
 
