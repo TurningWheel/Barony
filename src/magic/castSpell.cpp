@@ -887,8 +887,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				default:
 					break;
 			}
-
-			if ( type != NOTHING && caster->setEffect(EFF_SHAPESHIFT, true, 20 * TICKS_PER_SECOND, true) )
+			int duration = 120 * TICKS_PER_SECOND;
+			if ( type != NOTHING && caster->setEffect(EFF_SHAPESHIFT, true, duration, true) )
 			{
 				spawnExplosion(caster->x, caster->y, caster->z);
 				playSoundEntity(caster, 400, 92);
@@ -907,29 +907,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					messagePlayerColor(caster->skill[2], color, language[3419], language[2000 + caster->effectShapeshift - KOBOLD]);
 				}
-
-				// change player's type here, don't like this.. will get auto reset in actPlayer() though
-				// otherwise the below aggro check will still assume previous race since actPlayer() hasn't run yet.
-				//targetStats->type = race;
-
-				//for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
-				//{
-				//	Entity* creature = (Entity*)node->element;
-				//	if ( creature && creature->behavior == &actMonster && creature != target )
-				//	{
-				//		if ( creature->monsterTarget == target->getUID() )
-				//		{
-				//			if ( creature->checkEnemy(target) )
-				//			{
-				//				creature->monsterAcquireAttackTarget(*target, MONSTER_STATE_PATH); // re-acquire new target
-				//			}
-				//			else
-				//			{
-				//				creature->monsterReleaseAttackTarget(); // release if new target is ally.
-				//			}
-				//		}
-				//	}
-				//}
 			}
 			else
 			{

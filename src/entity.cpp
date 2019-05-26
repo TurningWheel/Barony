@@ -124,6 +124,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterAllySummonRank(skill[50]),
 	monsterKnockbackVelocity(fskill[9]),
 	monsterKnockbackUID(skill[51]),
+	creatureWebbedSlowCount(skill[52]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -3093,6 +3094,18 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_poison = 0;
 	}
 
+	if ( !myStats->EFFECTS[EFF_WEBBED] )
+	{
+		if ( creatureWebbedSlowCount > 0 )
+		{
+			creatureWebbedSlowCount = 0; // reset counter.
+			if ( behavior == &actPlayer )
+			{
+				serverUpdateEntitySkill(this, 52); // update player.
+			}
+		}
+	}
+
 	// bleeding
 	if ( myStats->EFFECTS[EFF_BLEEDING] )
 	{
@@ -4172,7 +4185,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 
 	if ( entitystats->EFFECTS[EFF_WEBBED] )
 	{
-		DEX = std::min(DEX - 2, -2);
+		DEX = std::min(DEX - 2 * my->creatureWebbedSlowCount, -2);
 	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{
@@ -9661,10 +9674,18 @@ bool isLevitating(Stat* mystats)
 			{
 				if ( players[i]->entity->getStats() == mystats )
 				{
+					if ( mystats->type == CREATURE_IMP )
+					{
+						return true;
+					}
 					return false;
 				}
 			}
 		}
+	}
+	if ( mystats->type == CREATURE_IMP )
+	{
+		return true;
 	}
 	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
 	{

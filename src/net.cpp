@@ -2709,6 +2709,9 @@ void clientHandlePacket()
 				case PARTICLE_EFFECT_CHARM_MONSTER:
 					createParticleCharmMonster(entity);
 					break;
+				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
+					createParticleAestheticOrbit(entity, 863, 400);
+					break;
 				case PARTICLE_EFFECT_PORTAL_SPAWN:
 				{
 					Entity* spellTimer = createParticleTimer(entity, 100, sprite);

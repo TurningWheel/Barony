@@ -123,6 +123,7 @@ static const int PARTICLE_EFFECT_LICHICE_TELEPORT_STATIONARY = 14;
 static const int PARTICLE_EFFECT_SUMMON_MONSTER = 15;
 static const int PARTICLE_EFFECT_CHARM_MONSTER = 16;
 static const int PARTICLE_EFFECT_SPELL_SUMMON = 17;
+static const int PARTICLE_EFFECT_SPELL_WEB_ORBIT = 18;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;

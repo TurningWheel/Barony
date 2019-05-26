@@ -660,11 +660,22 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			{
 				spawnParticles = false;
 			}
-			if ( hit.entity->setEffect(EFF_WEBBED, true, 250, true) ) // 5 seconds.
+			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_WEBBED];
+			if ( hit.entity->setEffect(EFF_WEBBED, true, 400, true) ) // 8 seconds.
 			{
+				if ( 400 - previousDuration > 10 )
+				{
+					playSoundEntity(hit.entity, 396 + rand() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
+				}
+				hit.entity->creatureWebbedSlowCount = std::min(3, hit.entity->creatureWebbedSlowCount + 1);
+				if ( hit.entity->behavior == &actPlayer )
+				{
+					serverUpdateEntitySkill(hit.entity, 52); // update player.
+				}
 				if ( spawnParticles )
 				{
-					createParticleAestheticOrbit(hit.entity, 863, 250);
+					createParticleAestheticOrbit(hit.entity, 863, 400);
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SPELL_WEB_ORBIT, 863);
 				}
 			}
 			else
@@ -680,7 +691,6 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				}
 				return;
 			}
-			playSoundEntity(hit.entity, 396 + rand() % 3, 64);
 
 			// hit messages
 			if ( parent )
