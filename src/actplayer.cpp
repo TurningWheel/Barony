@@ -3495,7 +3495,10 @@ void actPlayer(Entity* my)
 						{
 							if ( PLAYER_ATTACKTIME >= 5 )
 							{
-								PLAYER_ARMBENDED = 1;
+								if ( playerRace != CREATURE_IMP )
+								{
+									PLAYER_ARMBENDED = 1;
+								}
 								limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 11 * PI / 6, false, 0.0);
 							}
 							else
@@ -3564,7 +3567,7 @@ void actPlayer(Entity* my)
 
 							if ( PLAYER_ATTACKTIME == 5 )
 							{
-								if ( multiplayer != CLIENT && playerRace == TROLL && rand() % 4 == 0 )
+								if ( playerRace == TROLL && rand() % 4 == 0 )
 								{
 									playSoundEntityLocal(players[clientnum]->entity, 79, 128);
 								}
@@ -3774,7 +3777,7 @@ void actPlayer(Entity* my)
 					if ( tempNode )
 					{
 						Entity* weapon = (Entity*)tempNode->element;
-						if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED )
+						if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED || playerRace == CREATURE_IMP )
 						{
 							if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 							{
@@ -3879,6 +3882,10 @@ void actPlayer(Entity* my)
 						}
 						else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
 							&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+						{
+							bendArm = false;
+						}
+						else if ( playerRace == CREATURE_IMP )
 						{
 							bendArm = false;
 						}
@@ -3988,7 +3995,7 @@ void actPlayer(Entity* my)
 					}
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
 					break;
-					// shield
+				// shield
 				case 7:
 					if ( multiplayer != CLIENT )
 					{
@@ -4395,6 +4402,25 @@ void actPlayer(Entity* my)
 				if ( bodypart >= 6 && bodypart <= 10 )
 				{
 					entity->flags[INVISIBLE] = true;
+					if ( playerRace == CREATURE_IMP && bodypart == 7 )
+					{
+						if ( entity->sprite >= items[SPELLBOOK_LIGHT].index
+							&& entity->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+						{
+							entity->flags[INVISIBLE] = false; // show spellbooks
+						}
+					}
+					else if ( playerRace == CREATURE_IMP && bodypart == 6 )
+					{
+						if ( entity->sprite >= 59 && entity->sprite < 64 )
+						{
+							entity->flags[INVISIBLE] = false; // show magicstaffs
+						}
+						if ( multiplayer != CLIENT && !stats[PLAYER_NUM]->weapon )
+						{
+							entity->flags[INVISIBLE] = true; // show magicstaffs
+						}
+					}
 				}
 			}
 		}

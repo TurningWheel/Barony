@@ -215,7 +215,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return DEMON;
 	}
-	else if ( mySprite == 267 )     // spider body
+	else if ( mySprite == 267 || mySprite == 823 )     // spider body
 	{
 		return SPIDER;
 	}
@@ -223,7 +223,7 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return LICH;
 	}
-	else if ( mySprite == 289 )     // imp head
+	else if ( mySprite == 289 || mySprite == 827 )     // imp head
 	{
 		return CREATURE_IMP;
 	}

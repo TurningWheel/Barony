@@ -3866,7 +3866,6 @@ bool Item::usableWhileShapeshifted(Stat* wielder) const
 	{
 		case WEAPON:
 		case ARMOR:
-		case MAGICSTAFF:
 		case GEM:
 		case THROWN:
 		case TOOL:
@@ -3874,6 +3873,7 @@ bool Item::usableWhileShapeshifted(Stat* wielder) const
 		case SCROLL:
 			return false;
 			break;
+		case MAGICSTAFF:
 		case SPELLBOOK:
 			if ( wielder->type == CREATURE_IMP )
 			{

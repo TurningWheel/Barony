@@ -5014,8 +5014,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 			shapeshifted = true;
 		}
 
-		if ( myStats->weapon != nullptr && !shapeshifted )
+		if ( myStats->weapon != nullptr
+			&& (!shapeshifted || (shapeshifted && myStats->type == CREATURE_IMP && itemCategory(myStats->weapon) == MAGICSTAFF)) )
 		{
+			// if non-shapeshifted, or you're an imp with a staff then process throwing/magic weapons
+
 			// magical weapons
 			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
 			{
@@ -10976,7 +10979,14 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 
 	bool armBended = (!isPlayer && this->monsterArmbended) || (isPlayer && this->skill[11]);
 
-	if ( !armBended )
+	if ( isPlayer && monsterType == CREATURE_IMP )
+	{
+		weaponLimb->focalx = limbs[monsterType][9][0];
+		weaponLimb->focaly = limbs[monsterType][9][1];
+		weaponLimb->focalz = limbs[monsterType][9][2];
+		weaponLimb->pitch += .5 + limbs[monsterType][10][0];
+	}
+	else if ( !armBended )
 	{
 		weaponLimb->focalx = limbs[monsterType][6][0]; // 2.5
 		if ( weaponLimb->sprite == items[CROSSBOW].index )
@@ -14462,6 +14472,36 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 
 	switch ( race )
 	{
+		case CREATURE_IMP:
+			shieldLimb->focalx = limbs[race][8][0];
+			shieldLimb->focaly = limbs[race][8][1];
+			shieldLimb->focalz = limbs[race][8][2];
+
+			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->z += 2.5;
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = 0;
+			shieldLimb->scalex = 1.f;
+			shieldLimb->scaley = 1.f;
+			shieldLimb->scalez = 1.f;
+
+			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+			{
+				shieldLimb->pitch = shieldArmLimb->pitch - .35 + 3 * PI / 2;
+				shieldLimb->yaw += PI / 6;
+				shieldLimb->focalx -= 4;
+				shieldLimb->focalz += .5;
+				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) - 1 * cos(this->yaw);
+				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) - 1 * sin(this->yaw);
+				shieldLimb->z -= 0.5;
+				shieldLimb->scalex = 0.8;
+				shieldLimb->scaley = 0.8;
+				shieldLimb->scalez = 0.8;
+			}
+			break;
 		case HUMAN:
 		case VAMPIRE:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);

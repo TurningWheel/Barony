@@ -632,7 +632,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_strike.name) )
 		{
-			caster->attack(MONSTER_POSE_SPECIAL_WINDUP1, MAXCHARGE, nullptr);
+			caster->attack(MONSTER_POSE_SPECIAL_WINDUP1, MAXCHARGE, nullptr); // this is server only, tells client to attack.
 		}
 		else if (!strcmp(element->name, spellElement_identify.name))
 		{

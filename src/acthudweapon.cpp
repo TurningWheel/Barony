@@ -422,6 +422,10 @@ void actHudWeapon(Entity* my)
 		|| playerRace == TROLL )
 	{
 		hideWeapon = true;
+		if ( playerRace == CREATURE_IMP && stats[clientnum]->weapon && itemCategory(stats[clientnum]->weapon) == MAGICSTAFF )
+		{
+			hideWeapon = false;
+		}
 	}
 
 	bool rangedweapon = false;
@@ -1918,7 +1922,12 @@ void actHudShield(Entity* my)
 	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
 	{
 		spellbook = true;
+		if ( playerRace == CREATURE_IMP )
+		{
+			hideShield = false;
+		}
 	}
+
 
 	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
@@ -2013,6 +2022,14 @@ void actHudShield(Entity* my)
 			}
 			sneaking = true;
 		}
+	}
+
+	if ( playerRace == RAT
+		|| playerRace == CREATURE_IMP
+		|| playerRace == TROLL
+		|| playerRace == SPIDER )
+	{
+		defending = false;
 	}
 
 	if (defending)
