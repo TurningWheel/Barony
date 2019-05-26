@@ -934,7 +934,7 @@ void updatePlayerInventory()
 			greyBox.h = (INVENTORY_SLOTSIZE)-2;
 			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
 			{
-				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 92, 92, 92), 128);
+				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 127, 127, 127), 192);
 			}
 		}
 
@@ -1194,6 +1194,16 @@ void updatePlayerInventory()
 							{
 								if ( itemCategory(item) == WEAPON )
 								{
+									Monster tmpRace = stats[clientnum]->type;
+									if ( stats[clientnum]->type == TROLL
+										|| stats[clientnum]->type == RAT
+										|| stats[clientnum]->type == SPIDER
+										|| stats[clientnum]->type == CREATURE_IMP )
+									{
+										// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
+										stats[clientnum]->type = HUMAN;
+									}
+
 									if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
@@ -1202,10 +1212,26 @@ void updatePlayerInventory()
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
+									if ( stats[clientnum]->type != tmpRace )
+									{
+										color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+									}
+
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
+									stats[clientnum]->type = tmpRace;
 								}
 								else if ( itemCategory(item) == ARMOR )
 								{
+									Monster tmpRace = stats[clientnum]->type;
+									if ( stats[clientnum]->type == TROLL
+										|| stats[clientnum]->type == RAT
+										|| stats[clientnum]->type == SPIDER
+										|| stats[clientnum]->type == CREATURE_IMP )
+									{
+										// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
+										stats[clientnum]->type = HUMAN;
+									}
+
 									if ( item->armorGetAC(stats[clientnum]) >= 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
@@ -1214,7 +1240,13 @@ void updatePlayerInventory()
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
+									if ( stats[clientnum]->type != tmpRace )
+									{
+										color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+									}
+
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
+									stats[clientnum]->type = tmpRace;
 								}
 							}
 						}

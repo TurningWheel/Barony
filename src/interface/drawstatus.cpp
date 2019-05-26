@@ -808,7 +808,7 @@ void drawStatus()
 				if ( !item->usableWhileShapeshifted(stats[clientnum]) )
 				{
 					disableItemUsage = true;
-					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 92, 92, 92), 128);
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 127, 127, 127), 192);
 				}
 			}
 
@@ -1133,6 +1133,16 @@ void drawStatus()
 						{
 							if ( itemCategory(item) == WEAPON )
 							{
+								Monster tmpRace = stats[clientnum]->type;
+								if ( stats[clientnum]->type == TROLL
+									|| stats[clientnum]->type == RAT
+									|| stats[clientnum]->type == SPIDER
+									|| stats[clientnum]->type == CREATURE_IMP )
+								{
+									// these monsters have 0 bonus from weapons, but want the tooltip to say the normal amount.
+									stats[clientnum]->type = HUMAN;
+								}
+
 								if ( item->weaponGetAttack(stats[clientnum]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
@@ -1142,9 +1152,20 @@ void drawStatus()
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
+								stats[clientnum]->type = tmpRace;
 							}
 							else if ( itemCategory(item) == ARMOR )
 							{
+								Monster tmpRace = stats[clientnum]->type;
+								if ( stats[clientnum]->type == TROLL
+									|| stats[clientnum]->type == RAT
+									|| stats[clientnum]->type == SPIDER
+									|| stats[clientnum]->type == CREATURE_IMP )
+								{
+									// these monsters have 0 bonus from armor, but want the tooltip to say the normal amount.
+									stats[clientnum]->type = HUMAN;
+								}
+
 								if ( item->armorGetAC(stats[clientnum]) >= 0 )
 								{
 									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
@@ -1154,6 +1175,7 @@ void drawStatus()
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
+								stats[clientnum]->type = tmpRace;
 							}
 						}
 					}
@@ -1515,6 +1537,10 @@ void drawStatus()
 						equipItem(item, &stats[clientnum]->weapon, clientnum);
 					}
 				}
+			}
+			else
+			{
+				messagePlayer(clientnum, language[3432]); // unable to use in current form message.
 			}
 		}
 	}

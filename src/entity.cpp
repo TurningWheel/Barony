@@ -3957,6 +3957,33 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 	Sint32 STR;
 
 	STR = entitystats->STR;
+
+	bool cursedItemIsBuff = false;
+	bool shapeshifted = false;
+	if ( my && my->behavior == &actPlayer )
+	{
+		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
+		if ( my->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+			if ( my->effectShapeshift == TROLL )
+			{
+				int bonusSTR = 5 + (std::max(0, entitystats->STR) / 4); // 5 + 25% base STR
+				STR += bonusSTR;
+			}
+			else if ( my->effectShapeshift == SPIDER )
+			{
+				int bonusSTR = 2 + (std::max(0, entitystats->STR) / 10); // 2 + 10% base STR
+				STR += bonusSTR;
+			}
+			else if ( my->effectShapeshift == RAT )
+			{
+				int bonusSTR = -(std::max(0, entitystats->STR) / 4); // -25% base STR
+				STR += bonusSTR;
+			}
+		}
+	}
+
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
 		if ( entitystats->HUNGER >= 1500 )
@@ -3972,11 +3999,6 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR--;
 		}
 	}
-	bool cursedItemIsBuff = false;
-	if ( my && my->behavior == &actPlayer )
-	{
-		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
-	}
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && my && my->behavior == &actPlayer )
 	{
 		if ( entitystats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
@@ -3988,7 +4010,7 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += 5;
 		}
 	}
-	if ( entitystats->gloves != nullptr )
+	if ( entitystats->gloves != nullptr && !shapeshifted )
 	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
 		{
@@ -4076,9 +4098,29 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	DEX = entitystats->DEX;
 
 	bool cursedItemIsBuff = false;
+	bool shapeshifted = false;
 	if ( my && my->behavior == &actPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
+		if ( my->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+			if ( my->effectShapeshift == TROLL )
+			{
+				int bonusDEX = -5 - (std::max(0, entitystats->DEX) / 4); // -5 - 25% base DEX
+				DEX += bonusDEX;
+			}
+			else if ( my->effectShapeshift == SPIDER )
+			{
+				int bonusDEX = 2 + (std::max(0, entitystats->DEX) / 10); // 2 + 10% base DEX
+				DEX += bonusDEX;
+			}
+			else if ( my->effectShapeshift == RAT )
+			{
+				int bonusDEX = 5 + (std::max(0, entitystats->DEX) / 4); // 5 + 25% base DEX
+				DEX += bonusDEX;
+			}
+		}
 	}
 
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
@@ -4136,7 +4178,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		DEX = std::min(DEX - 3, -2);
 	}
-	if ( entitystats->shoes != nullptr )
+	if ( entitystats->shoes != nullptr && !shapeshifted )
 	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
@@ -4147,7 +4189,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX += (cursedItemIsBuff ? abs(entitystats->shoes->beatitude) : entitystats->shoes->beatitude);
 		}
 	}
-	if ( entitystats->gloves != nullptr )
+	if ( entitystats->gloves != nullptr && !shapeshifted )
 	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
@@ -4219,9 +4261,29 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	CON = entitystats->CON;
 
 	bool cursedItemIsBuff = false;
+	bool shapeshifted = false;
 	if ( my && my->behavior == &actPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
+		if ( my->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+			if ( my->effectShapeshift == RAT )
+			{
+				int bonusCON = -5 - (std::max(0, entitystats->CON) / 4); // -5 -25% base CON
+				CON += bonusCON;
+			}
+			else if ( my->effectShapeshift == SPIDER )
+			{
+				int bonusCON = -1 * (2 + (std::max(0, entitystats->CON) / 10)); // -2 - 10% base CON
+				CON += bonusCON;
+			}
+			else if ( my->effectShapeshift == TROLL )
+			{
+				int bonusCON = 2 + (std::max(0, entitystats->CON) / 10); // 2 + 10% base CON
+				CON += bonusCON;
+			}
+		}
 	}
 
 	if ( entitystats->ring != nullptr )
@@ -4235,7 +4297,7 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 			CON += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
-	if ( entitystats->gloves != nullptr )
+	if ( entitystats->gloves != nullptr && !shapeshifted )
 	{
 		if ( entitystats->gloves->type == BRACERS_CONSTITUTION )
 		{
@@ -4279,9 +4341,24 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 	INT = entitystats->INT;
 
 	bool cursedItemIsBuff = false;
+	bool shapeshifted = false;
 	if ( my && my->behavior == &actPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
+		if ( my->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+			if ( my->effectShapeshift == TROLL )
+			{
+				int bonusINT = -5 - (std::max(0, entitystats->INT) / 4); // -5 -25% base INT
+				INT += bonusINT;
+			}
+			else if ( my->effectShapeshift == CREATURE_IMP )
+			{
+				int bonusINT = 5 + (std::max(0, entitystats->INT) / 4); // 5 + 25% base INT
+				INT += bonusINT;
+			}
+		}
 	}
 
 	if ( svFlags & SV_FLAG_HUNGER )
@@ -4291,7 +4368,7 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 			INT--;
 		}
 	}
-	if ( entitystats->helmet != nullptr )
+	if ( entitystats->helmet != nullptr && !shapeshifted )
 	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
@@ -4347,9 +4424,29 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 	PER = entitystats->PER;
 
 	bool cursedItemIsBuff = false;
+	bool shapeshifted = false;
 	if ( my && my->behavior == &actPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
+		if ( my->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+			if ( my->effectShapeshift == SPIDER )
+			{
+				int bonusPER = 5 + (std::max(0, entitystats->PER) / 4); // 5 + 25% base PER
+				PER += bonusPER;
+			}
+			else if ( my->effectShapeshift == CREATURE_IMP )
+			{
+				int bonusPER = (2 + (std::max(0, entitystats->PER) / 10)); // +2 + 10% base PER
+				PER += bonusPER;
+			}
+			else if ( my->effectShapeshift == TROLL )
+			{
+				int bonusPER = -1 * (2 + (std::max(0, entitystats->PER) / 10)); // -2 - 10% base PER
+				PER += bonusPER;
+			}
+		}
 	}
 
 	if ( svFlags & SV_FLAG_HUNGER )
@@ -4359,7 +4456,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			PER--;
 		}
 	}
-	if ( entitystats->mask )
+	if ( entitystats->mask && !shapeshifted )
 	{
 		if ( entitystats->mask->type == TOOL_GLASSES )
 		{
@@ -4414,12 +4511,22 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	CHR = entitystats->CHR;
 
 	bool cursedItemIsBuff = false;
+	bool shapeshifted = false;
 	if ( my && my->behavior == &actPlayer )
 	{
 		cursedItemIsBuff = shouldInvertEquipmentBeatitude(entitystats);
+		if ( my->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+			if ( my->effectShapeshift == CREATURE_IMP )
+			{
+				int bonusCHR = (2 + (std::max(0, entitystats->CHR) / 10)); // +2 + 10% base CHR
+				CHR += bonusCHR;
+			}
+		}
 	}
 
-	if ( entitystats->helmet != nullptr )
+	if ( entitystats->helmet != nullptr && !shapeshifted )
 	{
 		if ( entitystats->helmet->type == HAT_JESTER )
 		{
@@ -4464,6 +4571,15 @@ bool Entity::isBlind()
 		return false;
 	}
 
+	bool shapeshifted = false;
+	if ( this->behavior == &actPlayer )
+	{
+		if ( effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+		}
+	}
+
 	// being blind
 	if ( entitystats->EFFECTS[EFF_BLIND] == true )
 	{
@@ -4483,7 +4599,7 @@ bool Entity::isBlind()
 	}
 
 	// wearing blindfolds
-	if ( entitystats->mask != nullptr )
+	if ( entitystats->mask != nullptr && !shapeshifted )
 		if ( entitystats->mask->type == TOOL_BLINDFOLD 
 			|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY 
 			|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
@@ -4892,7 +5008,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
-		if ( myStats->weapon != nullptr )
+		bool shapeshifted = false;
+		if ( this->behavior == &actPlayer && this->effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
+		}
+
+		if ( myStats->weapon != nullptr && !shapeshifted )
 		{
 			// magical weapons
 			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
@@ -5634,7 +5756,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest )
 			{
 				int axe = 0;
-				if ( myStats->weapon )
+				if ( myStats->weapon && !shapeshifted )
 				{
 					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE
 						|| myStats->weapon->type == CRYSTAL_BATTLEAXE )
@@ -5828,7 +5950,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else
 			{
-				if ( myStats->weapon )
+				if ( myStats->weapon && !shapeshifted )
 				{
 					// bang
 					spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
@@ -5848,6 +5970,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( behavior == &actMonster && weaponskill == PRO_UNARMED )
 				{
 					weaponskill = -1;
+				}
+				if ( shapeshifted )
+				{
+					weaponskill == PRO_UNARMED;
 				}
 				/*if( weaponskill>=0 )
 				hitskill = myStats->PROFICIENCIES[weaponskill]/5;
@@ -6030,7 +6156,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool degradeWeapon = false;
 					ItemType weaponType = static_cast<ItemType>(WOODEN_SHIELD);
 					bool hasMeleeGloves = false;
-					if ( myStats->gloves )
+					if ( myStats->gloves && !shapeshifted )
 					{
 						switch ( myStats->gloves->type )
 						{
@@ -6055,7 +6181,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						weaponToBreak = &myStats->gloves;
 					}
 
-					if ( weaponToBreak != nullptr )
+					if ( weaponToBreak != nullptr && !shapeshifted )
 					{
 						weaponType = (*weaponToBreak)->type;
 						if ( weaponType == ARTIFACT_AXE || weaponType == ARTIFACT_MACE || weaponType == ARTIFACT_SPEAR || weaponType == ARTIFACT_SWORD )
@@ -6348,7 +6474,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// special weapon effects
-					if ( myStats->weapon )
+					if ( myStats->weapon && !shapeshifted )
 					{
 						if ( myStats->weapon->type == ARTIFACT_SWORD )
 						{
@@ -7444,7 +7570,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( behavior == &actPlayer )
 						{
-							if ( myStats->weapon == nullptr )
+							if ( myStats->weapon == nullptr || shapeshifted )
 							{
 								if ( myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] == -2 )
 								{
@@ -7666,7 +7792,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						messagePlayer(player, language[706]);
 					}
 				}
-				else if ( myStats->weapon != NULL )
+				else if ( myStats->weapon != NULL && !shapeshifted )
 				{
 					if ( myStats->weapon->type == TOOL_PICKAXE )
 					{
@@ -7888,6 +8014,17 @@ int AC(Stat* stat)
 	if ( stat->ring )
 	{
 		armor += stat->ring->armorGetAC(stat);
+	}
+
+	if ( stat->type == TROLL || stat->type == RAT || stat->type == SPIDER || stat->type == CREATURE_IMP )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stat == stats[i] ) // is a player stat pointer.
+			{
+				return armor; // shapeshifted players do not benefit from shield defense/proficiency.
+			}
+		}
 	}
 
 	if ( stat->shield )

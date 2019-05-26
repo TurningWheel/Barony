@@ -2709,6 +2709,16 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	Sint32 attack = beatitude;
 	if ( wielder )
 	{
+		if ( wielder->type == TROLL || wielder->type == RAT || wielder->type == SPIDER || wielder->type == CREATURE_IMP )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( wielder == stats[i] ) // is a player stat pointer.
+				{
+					return 0; // players that are these monsters do not benefit from weapons
+				}
+			}
+		}
 		if ( shouldInvertEquipmentBeatitude(wielder) )
 		{
 			attack = abs(beatitude);
@@ -2998,6 +3008,24 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 		armor += 3;
 	}
 	//armor *= (double)(item->status/5.0);
+
+	if ( wielder )
+	{
+		if ( wielder->type == TROLL || wielder->type == RAT || wielder->type == SPIDER || wielder->type == CREATURE_IMP )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( wielder == stats[i] ) // is a player stat pointer.
+				{
+					if ( itemCategory(this) == RING || itemCategory(this) == AMULET )
+					{
+						return armor;
+					}
+					return 0; // players that are these monsters do not benefit from non rings/amulets
+				}
+			}
+		}
+	}
 
 	return armor;
 }
