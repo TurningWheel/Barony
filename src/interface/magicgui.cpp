@@ -260,6 +260,29 @@ void drawSustainedSpells()
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
 					tooltipText = language[3388];
 					break;
+				case EFF_SHAPESHIFT:
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						switch ( players[clientnum]->entity->effectShapeshift )
+						{
+							case RAT:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_RAT_FORM);
+								break;
+							case TROLL:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLL_FORM);
+								break;
+							case SPIDER:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPIDER_FORM);
+								break;
+							case CREATURE_IMP:
+								effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_IMP_FORM);
+								break;
+							default:
+								break;
+						}
+						tooltipText = language[3433];
+					}
+					break;
 				case EFF_VAMPIRICAURA:
 				{
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_VAMPIRIC_AURA);
