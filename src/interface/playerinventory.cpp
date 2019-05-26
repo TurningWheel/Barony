@@ -934,7 +934,7 @@ void updatePlayerInventory()
 			greyBox.h = (INVENTORY_SLOTSIZE)-2;
 			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
 			{
-				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 127, 127, 127), 192);
+				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
 			}
 		}
 

@@ -808,7 +808,7 @@ void drawStatus()
 				if ( !item->usableWhileShapeshifted(stats[clientnum]) )
 				{
 					disableItemUsage = true;
-					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 127, 127, 127), 192);
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
 				}
 			}
 
@@ -1151,6 +1151,11 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
+								if ( stats[clientnum]->type != tmpRace )
+								{
+									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+								}
+
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack(stats[clientnum]));
 								stats[clientnum]->type = tmpRace;
 							}
@@ -1174,6 +1179,11 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
+								if ( stats[clientnum]->type != tmpRace )
+								{
+									color = SDL_MapRGB(mainsurface->format, 127, 127, 127); // grey out the text if monster doesn't benefit.
+								}
+
 								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
 								stats[clientnum]->type = tmpRace;
 							}
