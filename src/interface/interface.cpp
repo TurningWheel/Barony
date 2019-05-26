@@ -3850,7 +3850,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 	Status status = SERVICABLE;
 	bool duplicateSucceed = false;
-	if ( tryDuplicatePotion && !explodeSelf )
+	if ( tryDuplicatePotion && !explodeSelf && !randomResult )
 	{
 		// do duplicate.
 		if ( rand() % 100 < (50 + skillLVL * 10) ) // 50 - 100% chance
