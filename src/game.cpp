@@ -3368,6 +3368,22 @@ int main(int argc, char** argv)
 							{
 								allowCasting = false;
 							}
+
+							if ( (*inputPressed(impulses[IN_DEFEND]) && hasSpellbook) 
+								&& players[clientnum] && players[clientnum]->entity )
+							{
+								if ( players[clientnum]->entity->effectShapeshift != NOTHING )
+								{
+									if ( players[clientnum]->entity->effectShapeshift == CREATURE_IMP )
+									{
+										// imp allowed to cast via spellbook.
+									}
+									else
+									{
+										allowCasting = false;
+									}
+								}
+							}
 						}
 						if ( allowCasting )
 						{

@@ -9683,10 +9683,21 @@ bool isLevitating(Stat* mystats)
 			}
 		}
 	}
-	if ( mystats->type == CREATURE_IMP )
+	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		return true;
+		if ( players[i] && players[i]->entity )
+		{
+			if ( players[i]->entity->getStats() == mystats )
+			{
+				if ( players[i]->entity->effectShapeshift == CREATURE_IMP )
+				{
+					return true;
+				}
+				break;
+			}
+		}
 	}
+
 	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
 	{
 		return true;

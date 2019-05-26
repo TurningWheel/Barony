@@ -914,9 +914,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( stats[caster->skill[2]]->EFFECTS[EFF_SHAPESHIFT] )
 					{
+						int previousShapeshift = caster->effectShapeshift;
 						caster->setEffect(EFF_SHAPESHIFT, false, 0, true);
 						caster->effectShapeshift = 0;
 						serverUpdateEntitySkill(caster, 53);
+						if ( previousShapeshift == CREATURE_IMP && !isLevitating(stats[caster->skill[2]]) )
+						{
+							stats[caster->skill[2]]->EFFECTS[EFF_LEVITATING] = true;
+							stats[caster->skill[2]]->EFFECTS_TIMERS[EFF_LEVITATING] = 5;
+						}
 
 						messagePlayer(caster->skill[2], language[3417]);
 					}

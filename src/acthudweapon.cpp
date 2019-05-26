@@ -1787,6 +1787,16 @@ void actHudWeapon(Entity* my)
 			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 			my->roll = HUDWEAPON_ROLL;
 		}
+
+		// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.
+		if ( playerRace == CREATURE_IMP && players[clientnum]->entity->z == -4.5 )
+		{
+			my->z -= .5;
+		}
+		else if ( playerRace == TROLL && players[clientnum]->entity->z <= -1.5 )
+		{
+			my->z -= -2 * .5;
+		}
 	}
 	else
 	{
@@ -1825,6 +1835,16 @@ void actHudWeapon(Entity* my)
 				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL + (PI / 2) * (itemCategory(item) == POTION);
 			}
+		}
+
+		// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.
+		if ( playerRace == CREATURE_IMP && players[clientnum]->entity->z == -4.5 )
+		{
+			my->z -= .5;
+		}
+		else if ( playerRace == TROLL && players[clientnum]->entity->z <= -1.5 )
+		{
+			my->z -= -2 * .5;
 		}
 	}
 }
@@ -2014,7 +2034,7 @@ void actHudShield(Entity* my)
 			&& !gamePaused 
 			&& !cast_animation.active
 			&& !cast_animation.active_spellbook
-			&& !spellbook )
+			&& (!spellbook || (spellbook && hideShield)) )
 		{
 			if ( stats[clientnum]->shield && (hudweapon->skill[0] % 3 == 0) )
 			{
@@ -2252,6 +2272,16 @@ void actHudShield(Entity* my)
 		my->scaley = hudarm->scaley;
 		my->scalez = hudarm->scalez;
 		my->focalz = hudarm->focalz;
+	}
+
+	// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.
+	if ( playerRace == CREATURE_IMP && players[clientnum]->entity->z == -4.5 )
+	{
+		my->z -= .5;
+	}
+	else if ( playerRace == TROLL && players[clientnum]->entity->z <= -1.5 )
+	{
+		my->z -= -2 * .5;
 	}
 
 	// torch/lantern flames
@@ -2507,5 +2537,15 @@ void actHudAdditional(Entity* my)
 		my->focalx = 0;
 		my->focaly = 0;
 		my->focalz = 0;
+	}
+
+	// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.
+	if ( stats[clientnum]->type == CREATURE_IMP && players[clientnum]->entity->z == -4.5 )
+	{
+		my->z -= .5;
+	}
+	else if ( stats[clientnum]->type == TROLL && players[clientnum]->entity->z <= -1.5 )
+	{
+		my->z -= -2 * .5;
 	}
 }

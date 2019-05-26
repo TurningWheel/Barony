@@ -1489,12 +1489,41 @@ void actPlayer(Entity* my)
 
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
+		real_t zOffset = 0;
+		switch ( stats[PLAYER_NUM]->type )
+		{
+			case RAT:
+				zOffset = 6;
+				break;
+			case TROLL:
+				zOffset = -1.5;
+				break;
+			case SPIDER:
+				zOffset = 4.5;
+				break;
+			case CREATURE_IMP:
+				zOffset = -3.5;
+				break;
+			default:
+				break;
+		}
 		bool prevlevitating = false;
 		if ( multiplayer != CLIENT )
 		{
-			if ( (my->z >= -2.05 && my->z <= -1.95) || (my->z >= -1.55 && my->z <= -1.45) )
+			if ( abs(zOffset) <= 0.05 )
 			{
-				prevlevitating = true;
+				if ( (my->z >= -2.05 && my->z <= -1.95 ) || (my->z >= -1.55 && my->z <= -1.45) )
+				{
+					prevlevitating = true;
+				}
+			}
+			else
+			{
+				if( (my->z >= (zOffset - 1.05)) && (my->z <= (zOffset - 0.95))
+					|| (my->z >= (zOffset - .55)) && (my->z <= (zOffset - .45)) )
+				{
+					prevlevitating = true;
+				}
 			}
 		}
 
@@ -1527,22 +1556,9 @@ void actPlayer(Entity* my)
 		else if ( !noclip )
 		{
 			my->z = -1;
-			switch ( stats[PLAYER_NUM]->type )
+			if ( abs(zOffset) >= 0.05 )
 			{
-				case RAT:
-					my->z = 6;
-					break;
-				case TROLL:
-					my->z = -1.5;
-					break;
-				case SPIDER:
-					my->z = 4.5;
-					break;
-				case CREATURE_IMP:
-					my->z = -4.5;
-					break;
-				default:
-					break;
+				my->z = zOffset;
 			}
 			if ( intro )
 			{
@@ -4463,6 +4479,14 @@ void actPlayer(Entity* my)
 			camera.x = my->x / 16.0;
 			camera.y = my->y / 16.0;
 			camera.z = (my->z * 2) + PLAYER_BOB - 2.5;
+			if ( playerRace == CREATURE_IMP && my->z == -4.5 )
+			{
+				camera.z += 1;
+			}
+			else if ( playerRace == TROLL && my->z <= -1.5 )
+			{
+				camera.z -= 2;
+			}
 			camera.ang = my->yaw;
 			if ( softwaremode )
 			{
