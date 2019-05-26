@@ -1768,6 +1768,11 @@ void actHudWeapon(Entity* my)
 			my->yaw = 0.f - camera_shakex2;
 			my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 			my->roll = HUDWEAPON_ROLL;
+
+			if ( isLevitating(stats[clientnum]) )
+			{
+				my->z -= 2 * .4;
+			}
 		}
 		else if ( playerRace == SPIDER )
 		{
