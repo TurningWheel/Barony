@@ -630,6 +630,104 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 	}
 }
 
+bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance)
+{
+	if ( !target )
+	{
+		//spawnMagicEffectParticles(my.x, my.y, my.z, 863);
+		return false;
+	}
+	//int damage = element.damage;
+	//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+	if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+	{
+		Entity* parent = forceParent;
+		if ( my && !parent )
+		{
+			parent = uidToEntity(my->parent);
+		}
+		if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+		{
+			// test for friendly fire
+			if ( parent && parent->checkFriend(target) )
+			{
+				return false;
+			}
+		}
+
+		Stat* hitstats = target->getStats();
+		if ( !hitstats )
+		{
+			return false;
+		}
+
+		int duration = 250;
+		duration /= (1 + resistance);
+		if ( target->setEffect(EFF_PACIFY, true, duration, true) ) // 5 seconds.
+		{
+			playSoundEntity(target, 168, 128); // Healing.ogg
+			Uint32 color = 0;
+			if ( parent )
+			{
+				// update enemy bar for attacker
+				if ( !strcmp(hitstats->name, "") )
+				{
+					if ( hitstats->type < KOBOLD ) //Original monster count
+					{
+						updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+					}
+					else if ( hitstats->type >= KOBOLD ) //New monsters
+					{
+						updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+					}
+				}
+				else
+				{
+					updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
+				}
+			}
+		}
+		else
+		{
+			// no effect.
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+				}
+			}
+			return false;
+		}
+
+		// hit messages
+		if ( parent )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			if ( parent->behavior == &actPlayer )
+			{
+				messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3434], language[3435], MSG_COMBAT);
+			}
+		}
+
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+		int player = -1;
+		if ( target->behavior == &actPlayer )
+		{
+			player = target->skill[2];
+		}
+		if ( player >= 0 )
+		{
+			messagePlayerColor(player, color, language[3436]);
+		}
+	}
+	spawnMagicEffectParticles(target->x, target->y, target->z, 863);
+	return true;
+}
+
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
 	if ( hit.entity )
@@ -661,9 +759,11 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				spawnParticles = false;
 			}
 			int previousDuration = hitstats->EFFECTS_TIMERS[EFF_WEBBED];
+			int duration = 400;
+			duration /= (1 + resistance);
 			if ( hit.entity->setEffect(EFF_WEBBED, true, 400, true) ) // 8 seconds.
 			{
-				if ( 400 - previousDuration > 10 )
+				if ( duration - previousDuration > 10 )
 				{
 					playSoundEntity(hit.entity, 396 + rand() % 3, 64); // play sound only if not recently webbed. (triple shot makes many noise)
 				}

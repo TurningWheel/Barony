@@ -4183,9 +4183,9 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		}
 	}
 
-	if ( entitystats->EFFECTS[EFF_WEBBED] )
+	if ( entitystats->EFFECTS[EFF_WEBBED] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
-		DEX = std::min(DEX - 2 * my->creatureWebbedSlowCount, -2);
+		DEX = std::max(std::min(DEX, 2) - 2 * my->creatureWebbedSlowCount, -4);
 	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{

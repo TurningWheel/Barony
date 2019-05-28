@@ -634,6 +634,25 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			caster->attack(MONSTER_POSE_SPECIAL_WINDUP1, MAXCHARGE, nullptr); // this is server only, tells client to attack.
 		}
+		else if ( !strcmp(element->name, spellElement_fear.name) )
+		{
+			if ( caster->behavior == &actPlayer )
+			{
+				for ( node_t* node3 = map.creatures->first; node3 != nullptr; node3 = node3->next )
+				{
+					Entity* creature = (Entity*)node3->element;
+					if ( creature && creature->behavior == &actMonster 
+						&& !caster->checkFriend(creature) && entityDist(caster, creature) < TOUCHRANGE * 4 )
+					{
+						Entity* spellEntity = createParticleSapCenter(creature, caster, SPELL_FEAR, 174, 174);
+						if ( spellEntity )
+						{
+							spellEntity->skill[7] = creature->getUID();
+						}
+					}
+				}
+			}
+		}
 		else if (!strcmp(element->name, spellElement_identify.name))
 		{
 			for (i = 0; i < numplayers; ++i)

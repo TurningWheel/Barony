@@ -1027,16 +1027,9 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spell_fear.name, language[3415]);
 	spell_fear.ID = SPELL_FEAR;
 	spell_fear.difficulty = 0;
+	spell_fear.elements.first = NULL;
+	spell_fear.elements.last = NULL;
 	node = list_AddNodeLast(&spell_fear.elements);
-	node->element = copySpellElement(&spellElement_missile);
-	node->size = sizeof(spellElement_t);
-	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t*)node->element;
-	element->node = node; //Tell the element what list it resides in.
-						  //Now for the second element.
-	element->elements.first = NULL;
-	element->elements.last = NULL;
-	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_fear);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;

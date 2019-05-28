@@ -3032,6 +3032,10 @@ void createParticleSap(Entity* parent)
 		{
 			sprite = parent->sprite;
 		}
+		else if ( parent->skill[6] == SPELL_FEAR )
+		{
+			sprite = parent->sprite;
+		}
 		else if ( multiplayer == CLIENT )
 		{
 			// client won't receive the sprite skill data in time, fix for this until a solution is found!
@@ -3701,6 +3705,16 @@ void actParticleSapCenter(Entity* my)
 				}*/
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
+			}
+			else if ( my->skill[6] == SPELL_FEAR )
+			{
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 174);
+				Entity* caster = uidToEntity(my->skill[7]);
+				if ( caster )
+				{
+					spellEffectFear(nullptr, spellElement_fear, caster, parent, 0);
+				}
 			}
 			list_RemoveNode(my->mynode);
 			return;
