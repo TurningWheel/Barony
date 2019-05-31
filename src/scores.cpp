@@ -1018,6 +1018,22 @@ void loadAllScores(const std::string& scoresfilename)
 				}
 			}
 		}
+		else if ( versionNumber <= 323 )
+		{
+			for ( c = 0; c < NUMEFFECTS; c++ )
+			{
+				if ( c < 32 )
+				{
+					fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+					fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					score->stats->EFFECTS[c] = false;
+					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
 		else
 		{
 			for ( c = 0; c < NUMEFFECTS; c++ )
@@ -2047,8 +2063,16 @@ int loadGame(int player, int saveIndex)
 		{
 			fseek(fp, sizeof(Sint32)*14, SEEK_CUR);
 		}
-		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
-		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		if ( versionNumber <= 323 ) // legacy
+		{
+			fseek(fp, sizeof(bool)*32, SEEK_CUR);
+			fseek(fp, sizeof(Sint32)*32, SEEK_CUR);
+		}
+		else
+		{
+			fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
+			fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		}
 		if ( versionNumber >= 323 )
 		{
 			fseek(fp, sizeof(Sint32)*32, SEEK_CUR); // stat flags
@@ -2145,8 +2169,24 @@ int loadGame(int player, int saveIndex)
 	}
 	for ( c = 0; c < NUMEFFECTS; c++ )
 	{
-		fread(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
-		fread(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+		if ( versionNumber <= 323 ) // legacy
+		{
+			if ( c < 32 )
+			{
+				fread(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
+				fread(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+			}
+			else
+			{
+				stats[player]->EFFECTS[c] = false;
+				stats[player]->EFFECTS_TIMERS[c] = 0;
+			}
+		}
+		else
+		{
+			fread(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
+			fread(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+		}
 	}
 	if ( versionNumber >= 323 )
 	{
@@ -2523,8 +2563,24 @@ list_t* loadGameFollowers(int saveIndex)
 			}
 			for ( j = 0; j < NUMEFFECTS; j++ )
 			{
-				fread(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
-				fread(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
+				if ( versionNumber <= 323 ) // legacy
+				{
+					if ( c < 32 )
+					{
+						fread(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
+						fread(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
+					}
+					else
+					{
+						followerStats->EFFECTS[j] = false;
+						followerStats->EFFECTS_TIMERS[j] = 0;
+					}
+				}
+				else
+				{
+					fread(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
+					fread(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
+				}
 			}
 			if ( versionNumber >= 323 )
 			{
@@ -2838,8 +2894,16 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		{
 			fseek(fp, sizeof(Sint32)*14, SEEK_CUR);
 		}
-		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
-		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		if ( versionNumber <= 323 )
+		{
+			fseek(fp, sizeof(bool)*32, SEEK_CUR);
+			fseek(fp, sizeof(Sint32)*32, SEEK_CUR);
+		}
+		else
+		{
+			fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
+			fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
+		}
 		if ( versionNumber >= 323 )
 		{
 			fseek(fp, sizeof(Sint32) * 32, SEEK_CUR); // stat flags

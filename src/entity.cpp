@@ -11242,6 +11242,7 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 		net_packet->data[9] = 0;
 		net_packet->data[10] = 0;
 		net_packet->data[11] = 0;
+		net_packet->data[12] = 0;
 		for ( int i = 0; i < NUMEFFECTS; ++i )
 		{
 			if ( myStats->EFFECTS[i] )
@@ -11251,7 +11252,7 @@ void Entity::serverUpdateEffectsForEntity(bool guarantee)
 		}
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 12;
+		net_packet->len = 13;
 		if ( guarantee )
 		{
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
