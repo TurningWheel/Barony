@@ -99,6 +99,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterKnockbackVelocity(fskill[9]),
 	monsterKnockbackUID(skill[51]),
 	creatureWebbedSlowCount(skill[52]),
+	monsterFearfulOfUid(skill[53]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),
 	particleDuration(skill[0]),

@@ -54,6 +54,7 @@ static const int EFF_WITHDRAWAL = 27;
 static const int EFF_POTION_STR = 28;
 static const int EFF_SHAPESHIFT = 29;
 static const int EFF_WEBBED = 30;
+static const int EFF_FEAR = 31;
 static const int NUMEFFECTS = 40;
 
 // stats

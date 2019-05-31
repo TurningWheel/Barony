@@ -125,6 +125,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterKnockbackVelocity(fskill[9]),
 	monsterKnockbackUID(skill[51]),
 	creatureWebbedSlowCount(skill[52]),
+	monsterFearfulOfUid(skill[53]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -1261,6 +1262,10 @@ void Entity::effectTimes()
 								this->setEffect(EFF_WITHDRAWAL, true, -2, true); // set effect as "active"
 							}
 						}
+						break;
+					case EFF_FEAR:
+						this->monsterFearfulOfUid = 0;
+						messagePlayer(player, language[3439]);
 						break;
 					default:
 						break;
@@ -3236,6 +3241,14 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(40, 600, 20 + rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->EFFECTS[EFF_FEAR] )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			spawnAmbientParticles(1, 864, 20 + rand() % 10, 0.5, true);
+		}
+	}
+
 	if ( myStats->EFFECTS[EFF_PACIFY] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
@@ -4701,7 +4714,7 @@ bool Entity::isMobile()
 		return true;
 	}
 
-	if ( behavior == &actPlayer && entitystats->EFFECTS[EFF_PACIFY] )
+	if ( behavior == &actPlayer && (entitystats->EFFECTS[EFF_PACIFY] || entitystats->EFFECTS[EFF_FEAR]) )
 	{
 		return false;
 	}
@@ -5594,7 +5607,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
 						messagePlayer(player, language[663]);
-						if ( myStats->weapon && rand() % 2 )
+						if ( myStats->weapon && rand() % 2 && pose != PLAYER_POSE_GOLEM_SMASH )
 						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 							if ( myStats->weapon->status < BROKEN )
@@ -6775,7 +6788,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY]) && rand() % 4 == 0 )
+					else if ( (damage > 0 || hitstats->EFFECTS[EFF_PACIFY] || hitstats->EFFECTS[EFF_FEAR]) && rand() % 4 == 0 )
 					{
 						int armornum = 0;
 						Item* armor = nullptr;
@@ -11295,6 +11308,14 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				}
 			}
 			break;
+		case EFF_FEAR:
+			if ( myStats->type == LICH || myStats->type == DEVIL 
+				|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+				|| myStats->type == SHADOW )
+			{
+				return false;
+			}
+			break;
 		case EFF_POLYMORPH:
 			//if ( myStats->EFFECTS[EFF_POLYMORPH] || effectPolymorph != 0 )
 			//{
@@ -12428,7 +12449,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 	// retreating monsters will not try path when losing sight of target
 
-	if ( myStats.EFFECTS[EFF_PACIFY] )
+	if ( myStats.EFFECTS[EFF_PACIFY] || myStats.EFFECTS[EFF_FEAR] )
 	{
 		return true;
 	}

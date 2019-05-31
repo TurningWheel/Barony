@@ -662,9 +662,10 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 			return false;
 		}
 
-		int duration = 250;
+		int duration = 500; // 10 seconds
+		duration = std::max(150, duration - TICKS_PER_SECOND * (hitstats->CON / 5)); // 3-10 seconds, depending on CON.
 		duration /= (1 + resistance);
-		if ( target->setEffect(EFF_PACIFY, true, duration, true) ) // 5 seconds.
+		if ( target->setEffect(EFF_FEAR, true, duration, true) )
 		{
 			playSoundEntity(target, 168, 128); // Healing.ogg
 			Uint32 color = 0;
@@ -686,6 +687,8 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 				{
 					updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
 				}
+				target->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
+				target->monsterFearfulOfUid = parent->getUID();
 			}
 		}
 		else

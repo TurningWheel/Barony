@@ -199,6 +199,7 @@ public:
 	real_t& monsterKnockbackVelocity; //fskill[9]
 	Sint32& monsterKnockbackUID; //skill[51]
 	Sint32& creatureWebbedSlowCount; //skill[52]
+	Sint32& monsterFearfulOfUid; //skill[53]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
@@ -708,6 +709,11 @@ public:
 		if ( !myStats )
 		{
 			return;
+		}
+
+		if ( myStats->EFFECTS[EFF_FEAR] )
+		{
+			return; // don't change weapons while feared.
 		}
 
 		switch ( myStats->type )

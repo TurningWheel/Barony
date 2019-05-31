@@ -665,7 +665,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								++foundTarget;
 								spellEntity->skill[0] = 25; // duration
-								spellEntity->skill[7] = creature->getUID();
+								spellEntity->skill[7] = caster->getUID();
 							}
 						}
 						hit.entity = ohit;

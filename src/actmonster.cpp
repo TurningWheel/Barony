@@ -2838,7 +2838,7 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
-		if ( myStats->EFFECTS[EFF_PACIFY] )
+		if ( myStats->EFFECTS[EFF_PACIFY] || myStats->EFFECTS[EFF_FEAR] )
 		{
 			my->monsterHitTime = HITRATE / 2; // stop this incrementing to HITRATE but leave monster ready to strike shortly after.
 		}
@@ -2870,31 +2870,31 @@ void actMonster(Entity* my)
 		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
 		//	|| myStats->type == CRYSTALGOLEM )
 		//{
-		//	std::string state_string;
+			//std::string state_string;
 
-		//	switch(my->monsterState)
-		//	{
-		//	case MONSTER_STATE_WAIT:
-		//		state_string = "WAIT";
-		//		break;
-		//	case MONSTER_STATE_ATTACK:
-		//		state_string = "CHARGE";
-		//		break;
-		//	case MONSTER_STATE_PATH:
-		//		state_string = "PATH";
-		//		break;
-		//	case MONSTER_STATE_HUNT:
-		//		state_string = "HUNT";
-		//		break;
-		//	case MONSTER_STATE_TALK:
-		//		state_string = "TALK";
-		//		break;
-		//	default:
-		//		state_string = "Unknown state";
-		//		break;
-		//	}
+			//switch(my->monsterState)
+			//{
+			//case MONSTER_STATE_WAIT:
+			//	state_string = "WAIT";
+			//	break;
+			//case MONSTER_STATE_ATTACK:
+			//	state_string = "CHARGE";
+			//	break;
+			//case MONSTER_STATE_PATH:
+			//	state_string = "PATH";
+			//	break;
+			//case MONSTER_STATE_HUNT:
+			//	state_string = "HUNT";
+			//	break;
+			//case MONSTER_STATE_TALK:
+			//	state_string = "TALK";
+			//	break;
+			//default:
+			//	state_string = "Unknown state";
+			//	break;
+			//}
 
-		//	messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
+			//messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
 		//}
 
 		//Begin state machine
@@ -2906,6 +2906,21 @@ void actMonster(Entity* my)
 			MONSTER_VELY = 0;
 			if ( myReflex )
 			{
+				if ( myStats->EFFECTS[EFF_FEAR] && my->monsterFearfulOfUid != 0 )
+				{
+					Entity* scaryEntity = uidToEntity(my->monsterFearfulOfUid);
+					if ( scaryEntity )
+					{
+						my->monsterAcquireAttackTarget(*scaryEntity, MONSTER_STATE_PATH);
+						my->lookAtEntity(*scaryEntity);
+						if ( previousMonsterState != my->monsterState )
+						{
+							serverUpdateEntitySkill(my, 0);
+						}
+						return;
+					}
+				}
+
 				for ( node2 = map.creatures->first; node2 != nullptr; node2 = node2->next ) //So my concern is that this never explicitly checks for actMonster or actPlayer, instead it relies on there being stats. Now, only monsters and players have stats, so that's not a problem, except...actPlayerLimb can still return a stat from getStat()! D: Meh, if you can find the player's hand, you can find the actual player too, so it shouldn't be an issue.
 				{
 					entity = (Entity*)node2->element;
@@ -3170,7 +3185,7 @@ void actMonster(Entity* my)
 			{
 				my->monsterLookTime = 0;
 				my->monsterMoveTime--;
-				if ( myStats->type != GHOUL && myStats->type != SPIDER )
+				if ( myStats->type != GHOUL && myStats->type != SPIDER && !myStats->EFFECTS[EFF_FEAR] )
 				{
 					my->monsterLookDir = (rand() % 360) * PI / 180;
 				}
@@ -3230,7 +3245,9 @@ void actMonster(Entity* my)
 					}
 				}
 			}
-			if ( my->monsterMoveTime == 0 && (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND) )
+			if ( my->monsterMoveTime == 0 
+				&& (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND)
+				&& !myStats->EFFECTS[EFF_FEAR] )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
@@ -3397,7 +3414,7 @@ void actMonster(Entity* my)
 				if ( targetdist > sightranges[myStats->type] )
 				{
 					// if target has left my sight, decide whether or not to path or retreat (stay put).
-					if ( my->shouldRetreat(*myStats) )
+					if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
 					{
 						my->monsterMoveTime = 0;
 						my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3429,7 +3446,7 @@ void actMonster(Entity* my)
 						}
 						// if target is within sight range but light level is too low and out of melee range.
 						// decide whether or not to path or retreat (stay put).
-						if ( my->shouldRetreat(*myStats) )
+						if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
 						{
 							my->monsterMoveTime = 0;
 							my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3462,7 +3479,7 @@ void actMonster(Entity* my)
 						{
 							// if I currently lost sight of my target in a straight line in front of me
 							// decide whether or not to path or retreat (stay put).
-							if ( my->shouldRetreat(*myStats) )
+							if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
 							{
 								my->monsterMoveTime = 0;
 								my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3629,7 +3646,7 @@ timeToGoAgain:
 									}
 									else
 									{
-										if ( my->shouldRetreat(*myStats) )
+										if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
 										{
 											my->monsterMoveTime = 0;
 											my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3642,7 +3659,7 @@ timeToGoAgain:
 								}
 								else
 								{
-									if ( my->shouldRetreat(*myStats) )
+									if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
 									{
 										my->monsterMoveTime = 0;
 										my->monsterState = MONSTER_STATE_WAIT; // wait state
