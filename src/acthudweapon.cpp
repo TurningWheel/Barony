@@ -1709,8 +1709,12 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation )
+	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation || players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2 )
 	{
+		if ( ticks % 5 == 0 && players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2 )
+		{
+			camera_shakey += 6;
+		}
 		if ( ticks % 2 == 0 )
 		{
 			// charge vibration
@@ -1724,7 +1728,10 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEY += HUDWEAPON_OLDVIBRATEY;
 			HUDWEAPON_MOVEZ += HUDWEAPON_OLDVIBRATEZ;
 		}
-		HUDWEAPON_OVERCHARGE++;
+		if ( !(castStrikeAnimation || players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2) )
+		{
+			HUDWEAPON_OVERCHARGE++; // don't overcharge here.
+		}
 	}
 	if ( castStrikeAnimation ) // magic sprite particles around the fist
 	{

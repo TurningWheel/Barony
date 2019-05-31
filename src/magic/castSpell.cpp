@@ -636,19 +636,48 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( !strcmp(element->name, spellElement_fear.name) )
 		{
+			playSoundEntity(caster, 79, 128);
+			playSoundEntity(caster, 405, 128);
 			if ( caster->behavior == &actPlayer )
 			{
+				caster->setEffect(EFF_STUNNED, true, 35, true);
+				caster->attack(MONSTER_POSE_SPECIAL_WINDUP2, 0, nullptr);
+				//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+				int foundTarget = 0;
+				if ( caster->behavior == &actPlayer )
+				{
+					messagePlayer(caster->skill[2], language[3437]);
+				}
 				for ( node_t* node3 = map.creatures->first; node3 != nullptr; node3 = node3->next )
 				{
 					Entity* creature = (Entity*)node3->element;
-					if ( creature && creature->behavior == &actMonster 
-						&& !caster->checkFriend(creature) && entityDist(caster, creature) < TOUCHRANGE * 4 )
+					if ( creature && creature != caster && creature->behavior == &actMonster 
+						&& !caster->checkFriend(creature) && entityDist(caster, creature) < TOUCHRANGE * 2 )
 					{
-						Entity* spellEntity = createParticleSapCenter(creature, caster, SPELL_FEAR, 174, 174);
-						if ( spellEntity )
+						// check LOS
+						Entity* ohit = hit.entity;
+						real_t tangent = atan2(creature->y - caster->y, creature->x - caster->x);
+						lineTraceTarget(caster, caster->x, caster->y, tangent, TOUCHRANGE * 2, 0, false, creature);
+						if ( hit.entity == creature )
 						{
-							spellEntity->skill[7] = creature->getUID();
+							Entity* spellEntity = createParticleSapCenter(creature, caster, SPELL_FEAR, 864, 864);
+							if ( spellEntity )
+							{
+								++foundTarget;
+								spellEntity->skill[0] = 25; // duration
+								spellEntity->skill[7] = creature->getUID();
+							}
 						}
+						hit.entity = ohit;
+					}
+				}
+				if ( foundTarget == 0 )
+				{
+					createParticleErupt(caster, 864);
+					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_ERUPT, 864);
+					if ( caster->behavior == &actPlayer )
+					{
+						messagePlayer(caster->skill[2], language[3438]);
 					}
 				}
 			}

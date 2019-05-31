@@ -958,7 +958,7 @@ void Entity::effectTimes()
 						messagePlayer(player, language[594]);
 						break;
 					case EFF_STUNNED:
-						messagePlayer(player, language[595]);
+						//messagePlayer(player, language[595]);
 						break;
 					case EFF_CONFUSED:
 						messagePlayer(player, language[596]);
@@ -4903,10 +4903,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 		if ( player >= 0 )
 		{
 			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
-			if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == PLAYER_POSE_GOLEM_SMASH )
+			if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == PLAYER_POSE_GOLEM_SMASH || pose == MONSTER_POSE_SPECIAL_WINDUP2 )
 			{
 				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
-				if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 )
+				if ( pose == MONSTER_POSE_SPECIAL_WINDUP1 || pose == MONSTER_POSE_SPECIAL_WINDUP2 )
 				{
 					if ( multiplayer == SERVER )
 					{

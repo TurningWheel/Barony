@@ -3533,7 +3533,8 @@ void actPlayer(Entity* my)
 						}
 					}
 					// special double vertical chop
-					else if ( PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
+					else if ( PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1
+						|| PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP2 )
 					{
 						if ( PLAYER_ATTACKTIME == 0 )
 						{
@@ -3543,13 +3544,16 @@ void actPlayer(Entity* my)
 							entity->pitch = 0;
 							entity->roll = 0;
 							entity->skill[1] = 0;
-							createParticleDot(my);
+							if ( PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
+							{
+								createParticleDot(my);
+							}
 						}
 						else
 						{
 							// move the head.
 							//limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
-							if ( PLAYER_NUM == clientnum )
+							if ( PLAYER_NUM == clientnum && PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 )
 							{
 								if ( my->pitch > -PI / 12 )
 								{
@@ -3577,20 +3581,51 @@ void actPlayer(Entity* my)
 								}
 							}
 
-							// raise right arm and tilt.
-							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 9 * PI / 8, true, 0.1);
-							limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 32, false, 0);
-
-							if ( PLAYER_ATTACKTIME == 5 )
+							if ( PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP2 )
 							{
-								if ( playerRace == TROLL && rand() % 4 == 0 )
+								// lower right arm.
+								if ( entity->skill[1] == 0 )
 								{
-									playSoundEntityLocal(players[clientnum]->entity, 79, 128);
+									// upswing
+									if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 5 * PI / 4, false, 0.0) )
+									{
+										entity->skill[1] = 1;
+									}
+								}
+								else
+								{
+									if ( entity->pitch >= 3 * PI / 2 )
+									{
+										PLAYER_ARMBENDED = 1;
+									}
+									if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 4, false, 0.1) )
+									{
+										entity->skill[0] = rightbody->skill[0];
+										entity->skill[1] = 0;
+										PLAYER_WEAPONYAW = 0;
+										entity->pitch = rightbody->pitch;
+										entity->roll = 0;
+										PLAYER_ARMBENDED = 0;
+										PLAYER_ATTACK = 0;
+									}
 								}
 							}
-							else if ( PLAYER_ATTACKTIME == 35 )
+							else
 							{
-								playSoundEntityLocal(players[clientnum]->entity, 164, 128);
+								// raise right arm and tilt.
+								limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 9 * PI / 8, true, 0.1);
+								limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 32, false, 0);
+								if ( PLAYER_ATTACKTIME == 5 )
+								{
+									if ( playerRace == TROLL && rand() % 4 == 0 )
+									{
+										playSoundEntityLocal(players[clientnum]->entity, 79, 128);
+									}
+								}
+								else if ( PLAYER_ATTACKTIME == 35 )
+								{
+									playSoundEntityLocal(players[clientnum]->entity, 164, 128);
+								}
 							}
 						}
 					}
@@ -3875,8 +3910,10 @@ void actPlayer(Entity* my)
 					}
 					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
 
-					if ( weaponarm && 
-						(PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 || PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH))
+					if ( weaponarm && !showEquipment &&
+						(PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1 
+							|| PLAYER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP2
+							|| PLAYER_ATTACK == PLAYER_POSE_GOLEM_SMASH))
 					{
 						// special swing - copy the right arm movements.
 						entity->pitch = weaponarm->pitch;
