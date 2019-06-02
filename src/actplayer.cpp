@@ -219,6 +219,10 @@ void actPlayer(Entity* my)
 			//messagePlayer(0, "Lorem ipsum dolor sit amet, dico accusam reprehendunt ne mea, ea est illum tincidunt voluptatibus. Ne labore voluptua eos, nostro fierent mnesarchum an mei, cu mea dolor verear epicuri. Est id iriure principes, unum cotidieque qui te. An sit tractatos complectitur.");
 		}
 	}
+	if ( autoLimbReload && ticks % 20 == 0 && PLAYER_NUM == clientnum )
+	{
+		consoleCommand("/reloadlimbs");
+	}
 
 	Entity* entity;
 	Entity* entity2 = nullptr;
@@ -3250,6 +3254,8 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	Entity* helmet = nullptr;
+
 	// move bodyparts
 	if ( isHumanoid )
 	{
@@ -4185,6 +4191,7 @@ void actPlayer(Entity* my)
 					break;
 					// helm
 				case 9:
+					helmet = entity;
 					entity->focalx = limbs[playerRace][9][0]; // 0
 					entity->focaly = limbs[playerRace][9][1]; // 0
 					entity->focalz = limbs[playerRace][9][2]; // -1.75
@@ -4294,6 +4301,21 @@ void actPlayer(Entity* my)
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
 						entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
 						entity->focalz = limbs[playerRace][10][2]; // .5
+						if ( helmet && helmet->sprite == items[MASK_SHAMAN].index )
+						{
+							if ( playerRace == SUCCUBUS || playerRace == INCUBUS || playerRace == GOATMAN || playerRace == SKELETON )
+							{
+								entity->focalx += 0.25;
+							}
+							else if ( playerRace == INSECTOID )
+							{
+								entity->focaly += 0.5; // make it lower
+							}
+							else
+							{
+								entity->focalx += 0.5;
+							}
+						}
 					}
 					else
 					{

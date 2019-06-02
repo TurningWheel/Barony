@@ -374,6 +374,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_strike",
 	"spellbook_detect_food",
 	"spellbook_weakness",
+	"mask_shaman",
 	""
 };
 
@@ -389,6 +390,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_fez",
 		"hat_hood_silver",
 		"hat_hood_red",
+		"mask_shaman",
 		"leather_helm",
 		"iron_helm",
 		"steel_helm",

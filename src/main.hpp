@@ -37,6 +37,7 @@ extern bool showfirst;
 extern bool logCheckObstacle;
 extern int logCheckObstacleCount;
 extern bool logCheckMainLoopTimers;
+extern bool autoLimbReload;
 
 #include <dirent.h>
 #include <stdlib.h>

@@ -158,9 +158,9 @@ int initGame()
 	fp = openDataFile(itemsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); ++c )
 	{
-		if ( c > MASK_SHAMAN )
+		if ( c > SPELLBOOK_DETECT_FOOD )
 		{
-			newItems = c - MASK_SHAMAN - 1;
+			newItems = c - SPELLBOOK_DETECT_FOOD - 1;
 			items[c].name_identified = language[3500 + newItems * 2];
 			items[c].name_unidentified = language[3501 + newItems * 2];
 		}

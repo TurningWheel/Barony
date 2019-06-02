@@ -31,6 +31,7 @@ bool showfirst = false;
 bool logCheckObstacle = false;
 int logCheckObstacleCount = 0;
 bool logCheckMainLoopTimers = false;
+bool autoLimbReload = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -1976,7 +1977,10 @@ void consoleCommand(char* command_str)
 		FILE* fp;
 		bool success = true;
 
-		messagePlayer(clientnum, "Reloading limb offsets from limbs.txt files...");
+		if ( !autoLimbReload )
+		{
+			messagePlayer(clientnum, "Reloading limb offsets from limbs.txt files...");
+		}
 
 		for ( c = 1; c < NUMMONSTERS; c++ )
 		{
@@ -2035,7 +2039,7 @@ void consoleCommand(char* command_str)
 			// close file
 			fclose(fp);
 		}
-		if ( success )
+		if ( success && !autoLimbReload )
 		{
 			messagePlayer(clientnum, "Successfully reloaded all limbs.txt!");
 		}
@@ -2191,6 +2195,10 @@ void consoleCommand(char* command_str)
 		else if ( !strncmp(command_str, "/disablenetworkmultithreading", 29) )
 		{
 			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
+		}
+		else if ( !strncmp(command_str, "/autolimbreload", 15) )
+		{
+			autoLimbReload = !autoLimbReload;
 		}
 		else if ( !strncmp(command_str, "/togglesecretlevel", 18) )
 		{

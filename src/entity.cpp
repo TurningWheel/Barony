@@ -9494,6 +9494,7 @@ int checkEquipType(const Item *item)
 		case HAT_WIZARD:
 		case HAT_FEZ:
 		case HAT_HOOD_RED:
+		case MASK_SHAMAN:
 			return TYPE_HAT;
 			break;
 
@@ -13724,6 +13725,61 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				break;
 		}
 		helm->roll = PI / 2;
+	}
+	else if ( helm->sprite == items[MASK_SHAMAN].index )
+	{
+		switch ( monster )
+		{
+			case AUTOMATON:
+				helm->focalx = limbs[monster][10][0] + 1.f;
+				helm->focaly = limbs[monster][10][1] - 0.5;
+				helm->focalz = limbs[monster][10][2] - 1.5;
+				break;
+			case SKELETON:
+				helm->focalx = limbs[monster][10][0] + 0.5;
+				helm->focaly = limbs[monster][10][1] - 0.5;
+				helm->focalz = limbs[monster][10][2] - 1.7;
+				break;
+			case INCUBUS:
+				helm->focalx = limbs[monster][10][0] + 0.5;
+				helm->focaly = limbs[monster][10][1] - 0.25;
+				helm->focalz = limbs[monster][10][2] - 2;
+				break;
+			case SUCCUBUS:
+				helm->focalx = limbs[monster][10][0] + 0.5;
+				helm->focaly = limbs[monster][10][1] - 0;
+				helm->focalz = limbs[monster][10][2] - 2.25;
+				break;
+			case VAMPIRE:
+			case SHOPKEEPER:
+			case HUMAN:
+				helm->focalx = limbs[monster][10][0] + 0.75;
+				helm->focaly = limbs[monster][10][1] - 0;
+				helm->focalz = limbs[monster][10][2] - 2;
+				break;
+			case GOATMAN:
+				helm->focalx = limbs[monster][10][0] + 0.7;
+				helm->focaly = limbs[monster][10][1] + 0.25;
+				helm->focalz = limbs[monster][10][2] - 2.55;
+				break;
+			case INSECTOID:
+				helm->focalx = limbs[monster][10][0] + 1.03;
+				helm->focaly = limbs[monster][10][1] - 0.25;
+				helm->focalz = limbs[monster][10][2] - 1.5;
+				break;
+			case GOBLIN:
+				helm->focalx = limbs[monster][10][0] + 0.75;
+				helm->focaly = limbs[monster][10][1] + 0;
+				helm->focalz = limbs[monster][10][2] - 2.25;
+				//if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
+				//{
+				//	helm->focaly -= 0.25;
+				//}
+				break;
+			case SHADOW:
+			default:
+				break;
+		}
 	}
 	else
 	{
