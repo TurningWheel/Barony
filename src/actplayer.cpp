@@ -1654,7 +1654,7 @@ void actPlayer(Entity* my)
 							messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
 							serverUpdateEntityFlag(my, BURNING);
 						}
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] || stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+						if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 						{
 							if ( stats[PLAYER_NUM]->EFFECTS[EFF_POLYMORPH] )
 							{
@@ -1665,7 +1665,7 @@ void actPlayer(Entity* my)
 								messagePlayer(PLAYER_NUM, language[3192]);
 								messagePlayer(PLAYER_NUM, language[3185]);
 							}
-							if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
+							/*if ( stats[PLAYER_NUM]->EFFECTS[EFF_SHAPESHIFT] )
 							{
 								my->setEffect(EFF_SHAPESHIFT, false, 0, true);
 								my->effectShapeshift = 0;
@@ -1673,7 +1673,7 @@ void actPlayer(Entity* my)
 
 								messagePlayer(PLAYER_NUM, language[3418]);
 								messagePlayer(PLAYER_NUM, language[3417]);
-							}
+							}*/
 							playSoundEntity(my, 400, 92);
 							createParticleDropRising(my, 593, 1.f);
 							serverSpawnMiscParticles(my, PARTICLE_EFFECT_RISING_DROP, 593);

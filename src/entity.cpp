@@ -4938,7 +4938,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( stats[player]->weapon != nullptr )
 			{
-				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
+				if ( stats[player]->type == CREATURE_IMP && itemCategory(stats[player]->weapon) != MAGICSTAFF )
+				{
+					players[player]->entity->skill[9] = 1;
+				}
+				else
+				{
+					players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
+				}
 			}
 			else
 			{
