@@ -841,7 +841,13 @@ int loadLanguage(char* lang)
 	// update item internal language entries.
 	for ( int c = 0; c < NUMITEMS; ++c )
 	{
-		if ( c > ARTIFACT_BOW )
+		if ( c > MASK_SHAMAN )
+		{
+			int newItems = c - MASK_SHAMAN - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if ( c > ARTIFACT_BOW )
 		{
 			int newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];

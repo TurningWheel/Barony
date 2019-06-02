@@ -158,7 +158,13 @@ int initGame()
 	fp = openDataFile(itemsDirectory.c_str(), "r");
 	for ( c = 0; !feof(fp); ++c )
 	{
-		if ( c > ARTIFACT_BOW )
+		if ( c > MASK_SHAMAN )
+		{
+			newItems = c - MASK_SHAMAN - 1;
+			items[c].name_identified = language[3500 + newItems * 2];
+			items[c].name_unidentified = language[3501 + newItems * 2];
+		}
+		else if ( c > ARTIFACT_BOW )
 		{
 			newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];
