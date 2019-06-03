@@ -1000,3 +1000,63 @@ spell_t* getSpellFromItem(Item* item)
 
 	return nullptr;
 }
+
+int canUseShapeshiftSpellInCurrentForm(Item& item)
+{
+	if ( itemCategory(&item) != SPELL_CAT )
+	{
+		return -1;
+	}
+	if ( item.appearance < 1000 )
+	{
+		return -1;
+	}
+	if ( !stats[clientnum] )
+	{
+		return -1;
+	}
+	spell_t* spell = getSpellFromItem(&item);
+	if ( !spell )
+	{
+		return -1;
+	}
+	if ( !stats[clientnum]->EFFECTS[EFF_SHAPESHIFT] )
+	{
+		return 0;
+	}
+	switch ( spell->ID )
+	{
+		case SPELL_SPEED:
+		case SPELL_DETECT_FOOD:
+			if ( stats[clientnum]->type == RAT )
+			{
+				return 1;
+			}
+			break;
+		case SPELL_POISON:
+		case SPELL_SPRAY_WEB:
+			if ( stats[clientnum]->type == SPIDER )
+			{
+				return 1;
+			}
+			break;
+		case SPELL_STRIKE:
+		case SPELL_FEAR:
+			if ( stats[clientnum]->type == TROLL )
+			{
+				return 1;
+			}
+			break;
+		case SPELL_LIGHTNING:
+		case SPELL_CONFUSE:
+		case SPELL_WEAKNESS:
+			if ( stats[clientnum]->type == CREATURE_IMP )
+			{
+				return 1;
+			}
+			break;
+		default:
+			break;
+	}
+	return 0;
+}

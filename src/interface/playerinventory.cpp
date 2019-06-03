@@ -491,6 +491,14 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 	}
 
 	//TODO: Do proper refactoring.
+	if ( selectedItem && itemCategory(selectedItem) == SPELL_CAT && selectedItem->appearance >= 1000 )
+	{
+		if ( canUseShapeshiftSpellInCurrentForm(*selectedItem) == 0 )
+		{
+			selectedItem = nullptr;
+			return;
+		}
+	}
 
 	// releasing items
 	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) )
@@ -517,6 +525,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 				}
 			}
 		}
+
 		if (selectedItem)
 		{
 			if (mousex >= x && mousey >= y
@@ -1814,12 +1823,25 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 	}
 
 	bool disableItemUsage = false;
-	if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+	if ( players[clientnum] && players[clientnum]->entity )
 	{
-		// shape shifted, disable some items
-		if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+		if ( players[clientnum]->entity->effectShapeshift != NOTHING )
 		{
-			disableItemUsage = true;
+			// shape shifted, disable some items
+			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+			{
+				disableItemUsage = true;
+			}
+		}
+		else
+		{
+			if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
+			{
+				if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+				{
+					disableItemUsage = true;
+				}
+			}
 		}
 	}
 

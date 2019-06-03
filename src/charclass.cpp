@@ -2217,43 +2217,10 @@ void initShapeshiftHotbar()
 				}
 				else if ( item->appearance >= 1000 )
 				{
-					switch ( spell->ID )
+					if ( canUseShapeshiftSpellInCurrentForm(*item) == 1 )
 					{
-						case SPELL_SPEED:
-						case SPELL_DETECT_FOOD:
-							if ( stats[clientnum]->type == RAT )
-							{
-								monsterSpells.push_back(item->uid);
-								item->y += 100;
-							}
-							break;
-						case SPELL_POISON:
-						case SPELL_SPRAY_WEB:
-							if ( stats[clientnum]->type == SPIDER )
-							{
-								monsterSpells.push_back(item->uid);
-								item->y += 100;
-							}
-							break;
-						case SPELL_STRIKE:
-						case SPELL_FEAR:
-							if ( stats[clientnum]->type == TROLL )
-							{
-								monsterSpells.push_back(item->uid);
-								item->y += 100;
-							}
-							break;
-						case SPELL_LIGHTNING:
-						case SPELL_CONFUSE:
-						case SPELL_WEAKNESS:
-							if ( stats[clientnum]->type == CREATURE_IMP )
-							{
-								monsterSpells.push_back(item->uid);
-								item->y += 100;
-							}
-							break;
-						default:
-							break;
+						monsterSpells.push_back(item->uid);
+						item->y += 100;
 					}
 
 					if ( item->y >= 0 )
