@@ -1491,9 +1491,9 @@ void actPlayer(Entity* my)
 		}
 	}
 
+	real_t zOffset = 0;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		real_t zOffset = 0;
 		switch ( stats[PLAYER_NUM]->type )
 		{
 			case RAT:
@@ -1534,7 +1534,7 @@ void actPlayer(Entity* my)
 		// sleeping
 		if ( stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] )
 		{
-			switch ( stats[PLAYER_NUM]->type )
+			switch ( playerRace )
 			{
 				case GOBLIN:
 				case GOATMAN:
@@ -1549,6 +1549,7 @@ void actPlayer(Entity* my)
 				case VAMPIRE:
 				case INCUBUS:
 				case SUCCUBUS:
+				case TROLL:
 					my->z = 1.5;
 					break;
 				default:
@@ -1627,6 +1628,10 @@ void actPlayer(Entity* my)
 				}
 				swimming = true;
 				my->z = 7;
+				if ( playerRace == SPIDER || playerRace == RAT )
+				{
+					my->z += 1;
+				}
 				if ( !PLAYER_INWATER && PLAYER_NUM == clientnum )
 				{
 					PLAYER_INWATER = 1;
@@ -1857,6 +1862,10 @@ void actPlayer(Entity* my)
 				}
 			}
 			PLAYER_BOB += PLAYER_BOBMOVE;
+			if ( playerRace == SPIDER || playerRace == RAT )
+			{
+				PLAYER_BOB = std::min(static_cast<real_t>(1), PLAYER_BOB);
+			}
 		}
 		else
 		{

@@ -4036,7 +4036,7 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += 5;
 		}
 	}
-	if ( entitystats->gloves != nullptr && !shapeshifted )
+	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
 		{
@@ -4204,7 +4204,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	{
 		DEX = std::min(DEX - 3, -2);
 	}
-	if ( entitystats->shoes != nullptr && !shapeshifted )
+	if ( entitystats->shoes != nullptr )
 	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
@@ -4215,7 +4215,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			DEX += (cursedItemIsBuff ? abs(entitystats->shoes->beatitude) : entitystats->shoes->beatitude);
 		}
 	}
-	if ( entitystats->gloves != nullptr && !shapeshifted )
+	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
@@ -4323,7 +4323,7 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 			CON += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
-	if ( entitystats->gloves != nullptr && !shapeshifted )
+	if ( entitystats->gloves != nullptr )
 	{
 		if ( entitystats->gloves->type == BRACERS_CONSTITUTION )
 		{
@@ -4394,7 +4394,7 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 			INT--;
 		}
 	}
-	if ( entitystats->helmet != nullptr && !shapeshifted )
+	if ( entitystats->helmet != nullptr )
 	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
@@ -4482,7 +4482,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			PER--;
 		}
 	}
-	if ( entitystats->mask && !shapeshifted )
+	if ( entitystats->mask )
 	{
 		if ( entitystats->mask->type == TOOL_GLASSES )
 		{
@@ -4552,7 +4552,7 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 		}
 	}
 
-	if ( entitystats->helmet != nullptr && !shapeshifted )
+	if ( entitystats->helmet != nullptr )
 	{
 		if ( entitystats->helmet->type == HAT_JESTER )
 		{
@@ -12923,11 +12923,16 @@ int Entity::getManaRegenInterval(Stat& myStats)
 {
 	int regenTime = getBaseManaRegen(myStats);
 	int manaring = 0;
+	bool shapeshifted = false;
 	if ( behavior == &actPlayer && myStats.type != HUMAN )
 	{
 		if ( myStats.type == SKELETON )
 		{
 			manaring = -1; // 0.25x regen speed.
+		}
+		if ( effectShapeshift != NOTHING )
+		{
+			shapeshifted = true;
 		}
 	}
 	bool cursedItemIsBuff = false;
@@ -12954,6 +12959,20 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		if ( myStats.cloak->type == ARTIFACT_CLOAK )
 		{
 			if ( myStats.cloak->beatitude >= 0 || cursedItemIsBuff )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( myStats.helmet != nullptr )
+	{
+		if ( myStats.helmet->type == MASK_SHAMAN && shapeshifted )
+		{
+			if ( myStats.helmet->beatitude >= 0 || cursedItemIsBuff )
 			{
 				manaring++;
 			}
