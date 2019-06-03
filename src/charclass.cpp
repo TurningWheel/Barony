@@ -2152,12 +2152,45 @@ void initShapeshiftHotbar()
 	}
 
 	swapHotbarOnShapeshift = stats[clientnum]->type;
-	Uint32 swapItem = 0;
+	hotbar_slot_t* newHotbar = hotbar_alternate[HOTBAR_DEFAULT]; // the monster's special hotbar.
+	spell_t* newSpell = selected_spell_alternate[HOTBAR_DEFAULT];
+	bool shapeshiftHotbarInit = false;
+	if ( swapHotbarOnShapeshift > 0 )
+	{
+		if ( swapHotbarOnShapeshift == RAT )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_RAT];
+			newSpell = selected_spell_alternate[HOTBAR_RAT];
+			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_RAT];
+			hotbarShapeshiftInit[HOTBAR_RAT] = true;
+		}
+		else if ( swapHotbarOnShapeshift == SPIDER )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_SPIDER];
+			newSpell = selected_spell_alternate[HOTBAR_SPIDER];
+			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_SPIDER];
+			hotbarShapeshiftInit[HOTBAR_SPIDER] = true;
+		}
+		else if ( swapHotbarOnShapeshift == TROLL )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_TROLL];
+			newSpell = selected_spell_alternate[HOTBAR_TROLL];
+			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_TROLL];
+			hotbarShapeshiftInit[HOTBAR_TROLL] = true;
+		}
+		else if ( swapHotbarOnShapeshift == CREATURE_IMP )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_IMP];
+			newSpell = selected_spell_alternate[HOTBAR_IMP];
+			shapeshiftHotbarInit = hotbarShapeshiftInit[HOTBAR_IMP];
+			hotbarShapeshiftInit[HOTBAR_IMP] = true;
+		}
+	}
+
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
-		swapItem = hotbar_alternate[i].item;
-		hotbar_alternate[i].item = hotbar[i].item; // store our current hotbar.
-		hotbar[i].item = swapItem;
+		hotbar_alternate[HOTBAR_DEFAULT][i].item = hotbar[i].item; // store our current hotbar.
+		hotbar[i].item = newHotbar[i].item; // load from the monster's hotbar.
 	}
 
 	// find "shapeshift" only spells, add em to view.
@@ -2172,8 +2205,15 @@ void initShapeshiftHotbar()
 				if ( spell->ID == SPELL_REVERT_FORM )
 				{
 					spellRevertUid = item->uid;
-					selected_spell_alternate = selected_spell;
-					selected_spell = spell;
+					selected_spell_alternate[HOTBAR_DEFAULT] = selected_spell;
+					if ( !newSpell )
+					{
+						selected_spell = spell; // revert form add to spell equipped.
+					}
+					else
+					{
+						selected_spell = newSpell;
+					}
 				}
 				else if ( item->appearance >= 1000 )
 				{
@@ -2273,7 +2313,7 @@ void initShapeshiftHotbar()
 				}
 			}
 		}
-		else if ( item )
+		/*else if ( item )
 		{
 			for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 			{
@@ -2293,10 +2333,10 @@ void initShapeshiftHotbar()
 					}
 				}
 			}
-		}
+		}*/
 	}
 
-	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+	/*for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
 		if ( hotbar[i].item == 0 && hotbar_alternate[i].item != 0 )
 		{
@@ -2313,7 +2353,7 @@ void initShapeshiftHotbar()
 				}
 			}
 		}
-	}
+	}*/
 
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
@@ -2335,7 +2375,7 @@ void initShapeshiftHotbar()
 	}
 
 	int i = 0;
-	for ( auto it = monsterSpells.begin(); it != monsterSpells.end(); ++it )
+	for ( auto it = monsterSpells.begin(); it != monsterSpells.end() && !shapeshiftHotbarInit; ++it )
 	{
 		if ( *it != 0 )
 		{
@@ -2343,7 +2383,7 @@ void initShapeshiftHotbar()
 			++i;
 		}
 	}
-	if ( spellRevertUid )
+	if ( spellRevertUid && !shapeshiftHotbarInit )
 	{
 		hotbar[4].item = spellRevertUid; // place revert form.
 	}
@@ -2352,14 +2392,40 @@ void initShapeshiftHotbar()
 void deinitShapeshiftHotbar()
 {
 	Uint32 swapItem = 0;
+	hotbar_slot_t* newHotbar = hotbar_alternate[HOTBAR_DEFAULT]; // the monster's special hotbar.
+	spell_t* newSpell = selected_spell_alternate[HOTBAR_DEFAULT];
+	if ( swapHotbarOnShapeshift > 0 )
+	{
+		if ( swapHotbarOnShapeshift == RAT )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_RAT];
+			newSpell = selected_spell_alternate[HOTBAR_RAT];
+		}
+		else if ( swapHotbarOnShapeshift == SPIDER )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_SPIDER];
+			newSpell = selected_spell_alternate[HOTBAR_SPIDER];
+		}
+		else if ( swapHotbarOnShapeshift == TROLL )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_TROLL];
+			newSpell = selected_spell_alternate[HOTBAR_TROLL];
+		}
+		else if ( swapHotbarOnShapeshift == CREATURE_IMP )
+		{
+			newHotbar = hotbar_alternate[HOTBAR_IMP];
+			newSpell = selected_spell_alternate[HOTBAR_IMP];
+		}
+	}
 	for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
 	{
 		swapItem = hotbar[i].item;
-		hotbar[i].item = hotbar_alternate[i].item;
-		hotbar_alternate[i].item = swapItem;
+		hotbar[i].item = hotbar_alternate[HOTBAR_DEFAULT][i].item; // swap back to default loadout
+		newHotbar[i].item = swapItem;
 	}
 	swapHotbarOnShapeshift = 0;
-	selected_spell = selected_spell_alternate;
+	newSpell = selected_spell;
+	selected_spell = selected_spell_alternate[HOTBAR_DEFAULT];
 
 	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{

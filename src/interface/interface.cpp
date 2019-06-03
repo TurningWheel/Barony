@@ -140,8 +140,9 @@ int buttonclick = 0;
 bool draw_cursor = true;
 
 hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
-hotbar_slot_t hotbar_alternate[NUM_HOTBAR_SLOTS];
+hotbar_slot_t hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
 int swapHotbarOnShapeshift = 0;
+bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES] = { false, false, false, false, false };
 int current_hotbar = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
@@ -383,7 +384,10 @@ bool loadInterfaceResources()
 	for (i = 0; i < NUM_HOTBAR_SLOTS; ++i)
 	{
 		hotbar[i].item = 0;
-		hotbar_alternate[i].item = 0;
+		for ( int j = 0; j < NUM_HOTBAR_ALTERNATES; ++j )
+		{
+			hotbar_alternate[j][i].item = 0;
+		}
 	}
 
 	damageIndicators.first = nullptr;

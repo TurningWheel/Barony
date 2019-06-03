@@ -433,10 +433,20 @@ typedef struct hotbar_slot_t
 #define HOTBAR_SPELL 2
 
 static const unsigned NUM_HOTBAR_SLOTS = 10; //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
+static const unsigned NUM_HOTBAR_ALTERNATES = 5;
 extern hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
-extern hotbar_slot_t hotbar_alternate[NUM_HOTBAR_SLOTS];
+extern hotbar_slot_t hotbar_alternate[NUM_HOTBAR_ALTERNATES][NUM_HOTBAR_SLOTS];
 extern int swapHotbarOnShapeshift;
+extern bool hotbarShapeshiftInit[NUM_HOTBAR_ALTERNATES];
 extern int current_hotbar; //For use with gamepads and stuff because no hotkeys like a keyboard.
+enum HotbarLoadouts : int
+{
+	HOTBAR_DEFAULT,
+	HOTBAR_RAT,
+	HOTBAR_SPIDER,
+	HOTBAR_TROLL,
+	HOTBAR_IMP
+};
 
 extern SDL_Surface* hotbar_img; //A 64x64 slot.
 extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)
