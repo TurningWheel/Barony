@@ -1413,7 +1413,18 @@ void updatePlayerInventory()
 							}
 						}
 					}
-					if ( hotbar_numkey_quick_add )
+
+					bool numkey_quick_add = hotbar_numkey_quick_add;
+					if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 &&
+						players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift )
+					{
+						if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+						{
+							numkey_quick_add = false;
+						}
+					}
+
+					if ( numkey_quick_add )
 					{
 						if ( keystatus[SDL_SCANCODE_1] )
 						{

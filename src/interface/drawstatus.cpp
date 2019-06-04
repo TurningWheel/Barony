@@ -1471,11 +1471,24 @@ void drawStatus()
 			}
 
 			bool disableItemUsage = false;
-			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+			if ( players[clientnum] && players[clientnum]->entity )
 			{
-				if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+				if ( players[clientnum]->entity->effectShapeshift != NOTHING )
 				{
-					disableItemUsage = true;
+					if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+					{
+						disableItemUsage = true;
+					}
+				}
+				else
+				{
+					if ( itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
+					{
+						if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 )
+						{
+							disableItemUsage = true;
+						}
+					}
 				}
 			}
 

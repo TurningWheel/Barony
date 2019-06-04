@@ -2389,6 +2389,17 @@ void deinitShapeshiftHotbar()
 		swapItem = hotbar[i].item;
 		hotbar[i].item = hotbar_alternate[HOTBAR_DEFAULT][i].item; // swap back to default loadout
 		newHotbar[i].item = swapItem;
+
+		// double check for shapeshift spells and remove them.
+		Item* item = uidToItem(hotbar[i].item);
+		if ( item && itemCategory(item) == SPELL_CAT && item->appearance >= 1000 )
+		{
+			if ( canUseShapeshiftSpellInCurrentForm(*item) != 1 ) // not allowed to use spell.
+			{
+				hotbar[i].item = 0;
+				hotbar_alternate[HOTBAR_DEFAULT][i].item = 0;
+			}
+		}
 	}
 	swapHotbarOnShapeshift = 0;
 	newSpell = selected_spell;
@@ -2404,7 +2415,8 @@ void deinitShapeshiftHotbar()
 				spell_t* spell = getSpellFromItem(item);
 				if ( spell && client_classes[clientnum] == CLASS_SHAMAN )
 				{
-					// don't add shapeshift spells to hotbar.
+					// move shapeshift spells out of inventory. 
+					// if somehow the spell got added to your selected spell then remove it.
 					switch ( spell->ID )
 					{
 						case SPELL_SPEED:
@@ -2419,6 +2431,14 @@ void deinitShapeshiftHotbar()
 							if ( item->y >= 0 )
 							{
 								item->y -= 100;
+							}
+							if ( selected_spell == spell )
+							{
+								selected_spell = nullptr;
+							}
+							if ( selected_spell_alternate[HOTBAR_DEFAULT] == spell )
+							{
+								selected_spell_alternate[HOTBAR_DEFAULT] = nullptr;
 							}
 							break;
 						default:
