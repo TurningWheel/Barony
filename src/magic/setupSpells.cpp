@@ -279,6 +279,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_vampiricAura.duration = 85; //TODO: Decide on something.
 	strcpy(spellElement_vampiricAura.name, language[2398]);
 
+	spellElementConstructor(&spellElement_amplifyMagic);
+	spellElement_amplifyMagic.mana = 5;
+	spellElement_amplifyMagic.base_mana = 5;
+	spellElement_amplifyMagic.overload_multiplier = 1;
+	spellElement_amplifyMagic.damage = 0;
+	spellElement_amplifyMagic.duration = 85; //TODO: Decide on something.
+	strcpy(spellElement_amplifyMagic.name, language[3440]);
+
 	spellElementConstructor(&spellElement_charmMonster);
 	spellElement_charmMonster.mana = 49;
 	spellElement_charmMonster.base_mana = 49;
@@ -874,6 +882,20 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_vampiricAura.elements.last = nullptr;
 	node = list_AddNodeLast(&spell_vampiricAura.elements);
 	node->element = copySpellElement(&spellElement_vampiricAura);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	element->channeled = true;
+
+	spellConstructor(&spell_amplifyMagic);
+	strcpy(spell_amplifyMagic.name, language[3440]);
+	spell_amplifyMagic.ID = SPELL_AMPLIFY_MAGIC;
+	spell_amplifyMagic.difficulty = 0;
+	spell_amplifyMagic.elements.first = nullptr;
+	spell_amplifyMagic.elements.last = nullptr;
+	node = list_AddNodeLast(&spell_amplifyMagic.elements);
+	node->element = copySpellElement(&spellElement_amplifyMagic);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

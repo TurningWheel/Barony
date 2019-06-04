@@ -4504,6 +4504,24 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_WEAKNESS:
 				learned = addSpell(SPELL_WEAKNESS, player);
 				break;
+			case SPELLBOOK_AMPLIFY_MAGIC:
+				learned = addSpell(SPELL_AMPLIFY_MAGIC, player);
+				break;
+			case SPELLBOOK_1:
+				learned = addSpell(SPELL_1, player);
+				break;
+			case SPELLBOOK_2:
+				learned = addSpell(SPELL_2, player);
+				break;
+			case SPELLBOOK_3:
+				learned = addSpell(SPELL_3, player);
+				break;
+			case SPELLBOOK_4:
+				learned = addSpell(SPELL_4, player);
+				break;
+			case SPELLBOOK_5:
+				learned = addSpell(SPELL_5, player);
+				break;
 			default:
 				learned = addSpell(SPELL_FORCEBOLT, player);
 				break;

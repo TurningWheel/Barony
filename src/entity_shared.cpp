@@ -375,6 +375,12 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_detect_food",
 	"spellbook_weakness",
 	"mask_shaman",
+	"spellbook_amplify_magic",
+	"spellbook_1",
+	"spellbook_2",
+	"spellbook_3",
+	"spellbook_4",
+	"spellbook_5",
 	""
 };
 
@@ -500,6 +506,12 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_strike",
 		"spellbook_detect_food",
 		"spellbook_weakness",
+		"spellbook_amplify_magic",
+		"spellbook_1",
+		"spellbook_2",
+		"spellbook_3",
+		"spellbook_4",
+		"spellbook_5",
 		"tool_pickaxe",
 		"artifact_sword",
 		"artifact_mace",

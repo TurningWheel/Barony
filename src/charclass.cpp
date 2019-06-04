@@ -2085,6 +2085,7 @@ void initClass(int player)
 			addSpell(SPELL_CONFUSE, player, true);
 			addSpell(SPELL_DETECT_FOOD, player, true);
 			addSpell(SPELL_WEAKNESS, player, true);
+			addSpell(SPELL_AMPLIFY_MAGIC, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));
@@ -2113,6 +2114,7 @@ void initClass(int player)
 							case SPELL_CONFUSE:
 							case SPELL_DETECT_FOOD:
 							case SPELL_WEAKNESS:
+							case SPELL_AMPLIFY_MAGIC:
 								item->appearance += 1000;
 								item->y -= 100;
 								skipSpellRearrange = true;
@@ -2428,6 +2430,7 @@ void deinitShapeshiftHotbar()
 						case SPELL_CONFUSE:
 						case SPELL_WEAKNESS:
 						case SPELL_DETECT_FOOD:
+						case SPELL_AMPLIFY_MAGIC:
 							if ( item->y >= 0 )
 							{
 								item->y -= 100;

@@ -67,6 +67,7 @@ void freeSpells()
 	list_FreeAll(&spell_strike.elements);
 	list_FreeAll(&spell_detectFood.elements);
 	list_FreeAll(&spell_weakness.elements);
+	list_FreeAll(&spell_amplifyMagic.elements);
 }
 
 void spell_magicMap(int player)

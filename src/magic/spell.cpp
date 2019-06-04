@@ -66,6 +66,7 @@ spellElement_t spellElement_fear;
 spellElement_t spellElement_strike;
 spellElement_t spellElement_detectFood;
 spellElement_t spellElement_weakness;
+spellElement_t spellElement_amplifyMagic;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -111,6 +112,7 @@ spell_t spell_fear;
 spell_t spell_strike;
 spell_t spell_detectFood;
 spell_t spell_weakness;
+spell_t spell_amplifyMagic;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -253,6 +255,16 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			new_spell = copySpell(&spell_detectFood);
 			break;
 		case SPELL_WEAKNESS:
+			new_spell = copySpell(&spell_weakness);
+			break;
+		case SPELL_AMPLIFY_MAGIC:
+			new_spell = copySpell(&spell_amplifyMagic);
+			break;
+		case SPELL_1:
+		case SPELL_2:
+		case SPELL_3:
+		case SPELL_4:
+		case SPELL_5:
 			new_spell = copySpell(&spell_weakness);
 			break;
 		default:
@@ -654,6 +666,16 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_WEAKNESS:
 			spell = &spell_weakness;
 			break;
+		case SPELL_AMPLIFY_MAGIC:
+			spell = &spell_amplifyMagic;
+			break;
+		case SPELL_1:
+		case SPELL_2:
+		case SPELL_3:
+		case SPELL_4:
+		case SPELL_5:
+			spell = &spell_weakness;
+			break;
 		default:
 			break;
 	}
@@ -795,6 +817,24 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_WEAKNESS:
 			itemType = SPELLBOOK_WEAKNESS;
 			break;
+		case SPELL_AMPLIFY_MAGIC:
+			itemType = SPELLBOOK_AMPLIFY_MAGIC;
+			break;
+		case SPELL_1:
+			itemType = SPELLBOOK_1;
+			break;
+		case SPELL_2:
+			itemType = SPELLBOOK_2;
+			break;
+		case SPELL_3:
+			itemType = SPELLBOOK_3;
+			break;
+		case SPELL_4:
+			itemType = SPELLBOOK_4;
+			break;
+		case SPELL_5:
+			itemType = SPELLBOOK_5;
+			break;
 		default:
 			break;
 	}
@@ -889,6 +929,18 @@ int getSpellIDFromSpellbook(int spellbookType)
 		case SPELLBOOK_DETECT_FOOD:
 			return spell_detectFood.ID;
 		case SPELLBOOK_WEAKNESS:
+			return spell_weakness.ID;
+		case SPELL_AMPLIFY_MAGIC:
+			return spell_amplifyMagic.ID;
+		case SPELL_1:
+			return spell_weakness.ID;
+		case SPELL_2:
+			return spell_weakness.ID;
+		case SPELL_3:
+			return spell_weakness.ID;
+		case SPELL_4:
+			return spell_weakness.ID;
+		case SPELL_5:
 			return spell_weakness.ID;
 		default:
 			return SPELL_NONE;
@@ -1050,6 +1102,7 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 		case SPELL_LIGHTNING:
 		case SPELL_CONFUSE:
 		case SPELL_WEAKNESS:
+		case SPELL_AMPLIFY_MAGIC:
 			if ( stats[clientnum]->type == CREATURE_IMP )
 			{
 				return 1;

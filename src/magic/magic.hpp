@@ -60,7 +60,13 @@ static const int SPELL_FEAR = 40;
 static const int SPELL_STRIKE = 41;
 static const int SPELL_DETECT_FOOD = 42;
 static const int SPELL_WEAKNESS = 43;
-static const int NUM_SPELLS = 44;
+static const int SPELL_AMPLIFY_MAGIC = 44;
+static const int SPELL_1 = 45;
+static const int SPELL_2 = 46;
+static const int SPELL_3 = 47;
+static const int SPELL_4 = 48;
+static const int SPELL_5 = 49;
+static const int NUM_SPELLS = 50;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -353,14 +359,9 @@ extern spellElement_t spellElement_missile_trio;
  * Turns a non-boss non-player creature into one of your followers.
  */
 extern spellElement_t spellElement_dominate;
-
 extern spellElement_t spellElement_reflectMagic;
-
-/* Steal Weapon */
 extern spellElement_t spellElement_stealWeapon;
-/* Drain Soul */
 extern spellElement_t spellElement_drainSoul;
-/* Vampiric Aura */
 extern spellElement_t spellElement_vampiricAura;
 extern spellElement_t spellElement_charmMonster;
 extern spellElement_t spellElement_shapeshift;
@@ -371,6 +372,7 @@ extern spellElement_t spellElement_fear;
 extern spellElement_t spellElement_strike;
 extern spellElement_t spellElement_detectFood;
 extern spellElement_t spellElement_weakness;
+extern spellElement_t spellElement_amplifyMagic;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -455,6 +457,7 @@ extern spell_t spell_fear;
 extern spell_t spell_strike;
 extern spell_t spell_detectFood;
 extern spell_t spell_weakness;
+extern spell_t spell_amplifyMagic;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
