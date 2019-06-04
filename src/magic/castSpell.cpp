@@ -1181,6 +1181,47 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			playSoundEntity(caster, 166, 128 );
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
 		}
+		else if ( !strcmp(element->name, spellElement_amplifyMagic.name) )
+		{
+			//TODO: Refactor into a function that adds magic_effects. Invisibility also makes use of this.
+			//Also refactor the duration determining code.
+			int duration = element->duration;
+			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+			channeled_spell = (spell_t*)(spellnode->element);
+			channeled_spell->magic_effects_node = spellnode;
+			spellnode->size = sizeof(spell_t);
+			((spell_t*)spellnode->element)->caster = caster->getUID();
+			spellnode->deconstructor = &spellDeconstructor;
+			if ( newbie )
+			{
+				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				chance = rand() % 10;
+				if ( chance >= spellcasting / 10 )
+				{
+					duration -= rand() % (1000 / (spellcasting + 1));
+				}
+				if ( duration < 180 )
+				{
+					duration = 180;    //Range checking.
+				}
+			}
+			duration /= getCostOfSpell((spell_t*)spellnode->element);
+			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+			caster->setEffect(EFF_MAGICAMPLIFY, true, duration, true);
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					serverUpdateEffects(i);
+					messagePlayer(i, language[3441]);
+				}
+			}
+
+			playSoundEntity(caster, 166, 128);
+			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+		}
 		else if ( !strcmp(element->name, spellElement_vampiricAura.name) )
 		{
 			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
@@ -1210,6 +1251,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if ( using_magicstaff )
 			{
 				entity->actmagicCastByMagicstaff = 1;
+			}
+			Stat* casterStats = caster->getStats();
+			if ( casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
+			{
+				missile_speed /= 2;
+				entity->vel_x = cos(entity->yaw) * (missile_speed);
+				entity->vel_y = sin(entity->yaw) * (missile_speed);
+				entity->actmagicProjectileArc = 1;
+				entity->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+				entity->vel_z = -0.5;
+				entity->pitch = -PI / 32;
 			}
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);

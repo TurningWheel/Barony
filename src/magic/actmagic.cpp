@@ -581,6 +581,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitFromAbove = true;
 						}
 					}
+					if ( my->actmagicProjectileArc > 0 )
+					{
+						real_t z = -1 - my->z;
+						if ( z > 0 )
+						{
+							my->pitch = -atan(z * 0.1 / sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y));
+						}
+						else
+						{
+							my->pitch = -atan(z * 0.1 / sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y));
+						}
+						if ( my->actmagicProjectileArc == 1 )
+						{
+							messagePlayer(0, "z: %f vel: %f", my->z, my->vel_z);
+							my->vel_z = my->vel_z * 0.75;
+							if ( my->vel_z > -0.1 )
+							{
+								messagePlayer(0, "arc down");
+								my->actmagicProjectileArc = 2;
+								my->vel_z = 0.01;
+							}
+						}
+						else if ( my->actmagicProjectileArc == 2 )
+						{
+							messagePlayer(0, "z: %f vel: %f", my->z, my->vel_z);
+							my->vel_z = std::min(1.0, my->vel_z * 1.1);
+						}
+					}
 				}
 				else
 				{

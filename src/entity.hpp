@@ -379,7 +379,8 @@ public:
 	Sint32& actmagicOrbitHitTargetUID1; // skill[15]
 	Sint32& actmagicOrbitHitTargetUID2; // skill[16]
 	Sint32& actmagicOrbitHitTargetUID3; // skill[17]
-	Sint32& actmagicOrbitHitTargetUID4; // skill[17]
+	Sint32& actmagicOrbitHitTargetUID4; // skill[18]
+	Sint32& actmagicProjectileArc; // skill[19]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]

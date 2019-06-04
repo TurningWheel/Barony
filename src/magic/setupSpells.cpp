@@ -990,7 +990,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 32;
+	element->mana = 1;
 
 	spellConstructor(&spell_sprayWeb);
 	strcpy(spell_sprayWeb.name, language[3412]);

@@ -233,6 +233,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitHitTargetUID2(skill[16]),
 	actmagicOrbitHitTargetUID3(skill[17]),
 	actmagicOrbitHitTargetUID4(skill[18]),
+	actmagicProjectileArc(skill[19]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -773,6 +774,7 @@ void Entity::effectTimes()
 	spell_t* invisibility_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things. //TODO: Incorporate the spell into isInvisible() instead?
 	spell_t* levitation_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
 	spell_t* reflectMagic_hijacked = nullptr;
+	spell_t* amplifyMagic_hijacked = nullptr;
 	spell_t* vampiricAura_hijacked = nullptr;
 	//Handle magic effects (like invisibility)
 	for ( node = myStats->magic_effects.first; node; node = node->next, ++count )
@@ -870,6 +872,30 @@ void Entity::effectTimes()
 						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
 						{
 							messagePlayer(c, language[2446]);
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_AMPLIFY_MAGIC:
+				amplifyMagic_hijacked = spell;
+				if ( !myStats->EFFECTS[EFF_MAGICAMPLIFY] )
+				{
+					for ( c = 0; c < numplayers; ++c )
+					{
+						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						{
+							messagePlayer(c, language[3441]);
 						}
 					}
 					node_t* temp = nullptr;
@@ -1168,6 +1194,46 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, language[2471]);
+							updateClient = true;
+						}
+						break;
+					case EFF_MAGICAMPLIFY:
+						dissipate = true; //Remove the effect by default.
+						if ( amplifyMagic_hijacked )
+						{
+							bool sustained = false;
+							Entity* caster = uidToEntity(amplifyMagic_hijacked->caster);
+							if ( caster )
+							{
+								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+								if ( deducted )
+								{
+									sustained = true;
+									myStats->EFFECTS[c] = true;
+									myStats->EFFECTS_TIMERS[c] = amplifyMagic_hijacked->channel_duration;
+								}
+								else
+								{
+									int i = 0;
+									for ( i = 0; i < 4; ++i )
+									{
+										if ( players[i]->entity == caster )
+										{
+											messagePlayer(i, language[3443]);
+										}
+									}
+									list_RemoveNode(amplifyMagic_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
+								}
+							}
+							if ( sustained )
+							{
+								dissipate = false; //Sustained the spell, so do not stop being invisible.
+							}
+						}
+						if ( dissipate )
+						{
+							messagePlayer(player, language[3441]);
 							updateClient = true;
 						}
 						break;
@@ -3264,7 +3330,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( myStats->EFFECTS[EFF_POLYMORPH] )
+	if ( myStats->EFFECTS[EFF_POLYMORPH] || myStats->EFFECTS[EFF_SHAPESHIFT] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
@@ -11205,6 +11271,14 @@ void Entity::handleEffectsClient()
 		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
 	}
 
+	if ( myStats->EFFECTS[EFF_FEAR] )
+	{
+		if ( ticks % 25 == 0 || ticks % 40 == 0 )
+		{
+			spawnAmbientParticles(1, 864, 20 + rand() % 10, 0.5, true);
+		}
+	}
+
 	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
 	{
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
@@ -11215,7 +11289,7 @@ void Entity::handleEffectsClient()
 		spawnAmbientParticles(30, 685, 20 + rand() % 30, 0.5, true);
 	}
 
-	if ( myStats->EFFECTS[EFF_POLYMORPH] )
+	if ( myStats->EFFECTS[EFF_POLYMORPH] || myStats->EFFECTS[EFF_SHAPESHIFT] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
