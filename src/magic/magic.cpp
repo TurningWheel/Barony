@@ -663,8 +663,8 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 			return false;
 		}
 
-		int duration = 500; // 10 seconds
-		duration = std::max(150, duration - TICKS_PER_SECOND * (hitstats->CON / 5)); // 3-10 seconds, depending on CON.
+		int duration = 400; // 8 seconds
+		duration = std::max(150, duration - TICKS_PER_SECOND * (hitstats->CON / 5)); // 3-8 seconds, depending on CON.
 		duration /= (1 + resistance);
 		if ( target->setEffect(EFF_FEAR, true, duration, true) )
 		{
