@@ -930,7 +930,7 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_detectFood.ID;
 		case SPELLBOOK_WEAKNESS:
 			return spell_weakness.ID;
-		case SPELL_AMPLIFY_MAGIC:
+		case SPELLBOOK_AMPLIFY_MAGIC:
 			return spell_amplifyMagic.ID;
 		case SPELL_1:
 			return spell_weakness.ID;

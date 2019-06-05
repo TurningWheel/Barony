@@ -813,6 +813,7 @@ void Entity::effectTimes()
 			continue; //Skip this spell.
 		}
 
+		bool unsustain = false;
 		switch ( spell->ID )
 		{
 			case SPELL_INVISIBILITY:
@@ -835,6 +836,7 @@ void Entity::effectTimes()
 					{
 						temp = node->next;
 					}
+					unsustain = true;
 					list_RemoveNode(node); //Remove this here node.
 					node = temp;
 				}
@@ -859,6 +861,7 @@ void Entity::effectTimes()
 					{
 						temp = node->next;
 					}
+					unsustain = true;
 					list_RemoveNode(node); //Remove this here node.
 					node = temp;
 				}
@@ -883,6 +886,7 @@ void Entity::effectTimes()
 					{
 						temp = node->next;
 					}
+					unsustain = true;
 					list_RemoveNode(node); //Remove this here node.
 					node = temp;
 				}
@@ -907,6 +911,7 @@ void Entity::effectTimes()
 					{
 						temp = node->next;
 					}
+					unsustain = true;
 					list_RemoveNode(node); //Remove this here node.
 					node = temp;
 				}
@@ -931,6 +936,7 @@ void Entity::effectTimes()
 					{
 						temp = node->next;
 					}
+					unsustain = true;
 					list_RemoveNode(node); //Remove this here node.
 					node = temp;
 				}
@@ -939,6 +945,21 @@ void Entity::effectTimes()
 				//Unknown spell, undefined effect. Like, say, a fireball spell wound up in here for some reason. That's a nono.
 				printlog("[entityEffectTimes] Warning: magic_effects spell that's not relevant. Should not be in the magic_effects list!\n");
 				list_RemoveNode(node);
+		}
+
+		if ( unsustain )
+		{
+			// the node has been removed, tell the client to unsustain in their list.
+			if ( player > -1 && multiplayer == SERVER )
+			{
+				strcpy((char*)net_packet->data, "UNCH");
+				net_packet->data[4] = player;
+				SDLNet_Write32(spell->ID, &net_packet->data[5]);
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
 		}
 
 		if ( !node )
@@ -953,6 +974,7 @@ void Entity::effectTimes()
 
 	bool dissipate = true;
 	bool updateClient = false;
+	spell_t* unsustainSpell = nullptr;
 
 	for ( c = 0; c < NUMEFFECTS; c++ )
 	{
@@ -1013,13 +1035,14 @@ void Entity::effectTimes()
 								else
 								{
 									int i = 0;
-									for ( i = 0; i < 4; ++i )
+									for ( i = 0; i < MAXPLAYERS; ++i )
 									{
 										if ( players[i]->entity == caster )
 										{
 											messagePlayer(i, language[598]);
 										}
 									}
+									unsustainSpell = invisibility_hijacked;
 									list_RemoveNode(invisibility_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 																								//list_RemoveNode(invisibility_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}
@@ -1082,13 +1105,14 @@ void Entity::effectTimes()
 								else
 								{
 									int i = 0;
-									for ( i = 0; i < 4; ++i )
+									for ( i = 0; i < MAXPLAYERS; ++i )
 									{
 										if ( players[i]->entity == caster )
 										{
 											messagePlayer(i, language[606]);    //TODO: Unhardcode name?
 										}
 									}
+									unsustainSpell = levitation_hijacked;
 									list_RemoveNode(levitation_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 								}
 							}
@@ -1175,13 +1199,14 @@ void Entity::effectTimes()
 								else
 								{
 									int i = 0;
-									for ( i = 0; i < 4; ++i )
+									for ( i = 0; i < MAXPLAYERS; ++i )
 									{
 										if ( players[i]->entity == caster )
 										{
 											messagePlayer(i, language[2474]);
 										}
 									}
+									unsustainSpell = reflectMagic_hijacked;
 									list_RemoveNode(reflectMagic_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 																								//list_RemoveNode(reflectMagic_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}
@@ -1216,13 +1241,14 @@ void Entity::effectTimes()
 								else
 								{
 									int i = 0;
-									for ( i = 0; i < 4; ++i )
+									for ( i = 0; i < MAXPLAYERS; ++i )
 									{
 										if ( players[i]->entity == caster )
 										{
 											messagePlayer(i, language[3443]);
 										}
 									}
+									unsustainSpell = amplifyMagic_hijacked;
 									list_RemoveNode(amplifyMagic_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 								}
 							}
@@ -1263,13 +1289,14 @@ void Entity::effectTimes()
 								else
 								{
 									int i = 0;
-									for ( i = 0; i < 4; ++i )
+									for ( i = 0; i < MAXPLAYERS; ++i )
 									{
 										if ( players[i]->entity == caster )
 										{
 											//messagePlayer(player, language[2449]);
 										}
 									}
+									unsustainSpell = vampiricAura_hijacked;
 									list_RemoveNode(vampiricAura_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 																								//list_RemoveNode(reflectMagic_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}
@@ -1349,6 +1376,21 @@ void Entity::effectTimes()
 				}
 			}
 		}
+		if ( unsustainSpell )
+		{
+			// we need to tell the client to un-sustain from their list.
+			if ( player > -1 && multiplayer == SERVER )
+			{
+				strcpy((char*)net_packet->data, "UNCH");
+				net_packet->data[4] = player;
+				SDLNet_Write32(unsustainSpell->ID, &net_packet->data[5]);
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+		}
+		unsustainSpell = nullptr;
 	}
 
 	if ( updateClient )

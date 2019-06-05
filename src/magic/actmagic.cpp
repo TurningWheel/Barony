@@ -590,23 +590,23 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else
 						{
-							my->pitch = -atan(z * 0.1 / sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y));
+							my->pitch = -atan(z * 0.15 / sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y));
 						}
 						if ( my->actmagicProjectileArc == 1 )
 						{
-							messagePlayer(0, "z: %f vel: %f", my->z, my->vel_z);
-							my->vel_z = my->vel_z * 0.75;
+							//messagePlayer(0, "z: %f vel: %f", my->z, my->vel_z);
+							my->vel_z = my->vel_z * 0.9;
 							if ( my->vel_z > -0.1 )
 							{
-								messagePlayer(0, "arc down");
+								//messagePlayer(0, "arc down");
 								my->actmagicProjectileArc = 2;
 								my->vel_z = 0.01;
 							}
 						}
 						else if ( my->actmagicProjectileArc == 2 )
 						{
-							messagePlayer(0, "z: %f vel: %f", my->z, my->vel_z);
-							my->vel_z = std::min(1.0, my->vel_z * 1.1);
+							//messagePlayer(0, "z: %f vel: %f", my->z, my->vel_z);
+							my->vel_z = std::min(0.8, my->vel_z * 1.2);
 						}
 					}
 				}
@@ -2408,6 +2408,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 					}
+				}
+
+				if ( my->actmagicProjectileArc > 0 )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
 				}
 
 				if ( !(my->actmagicIsOrbiting == 2) )
@@ -4297,7 +4303,18 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->flags[INVISIBLE] = true;
 		parent = entity;
 	}
+	Stat* stats = parent->getStats();
+	bool amplify = false;
+	if ( stats )
+	{
+		amplify = stats->EFFECTS[EFF_MAGICAMPLIFY];
+		stats->EFFECTS[EFF_MAGICAMPLIFY] = false; // temporary skip amplify effects otherwise recursion.
+	}
 	Entity* entity = castSpell(parent->getUID(), spell, false, true);
+	if ( stats )
+	{
+		stats->EFFECTS[EFF_MAGICAMPLIFY] = amplify;
+	}
 	if ( entity )
 	{
 		if ( spellID == SPELL_FIREBALL )

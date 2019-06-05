@@ -73,8 +73,11 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 		{
 			if (channeledSpells[clientnum], spell)
 			{
-				for (node = channeledSpells[player].first; node; node = node->next)
+				bool removedSpell = false;
+				node_t* nextnode;
+				for (node = channeledSpells[player].first; node; node = nextnode)
 				{
+					nextnode = node->next;
 					spell_t* spell_search = (spell_t*)node->element;
 					if (spell_search->ID == spell->ID)
 					{
@@ -87,6 +90,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 						if (multiplayer == CLIENT)
 						{
 							list_RemoveNode(node);
+							node = nullptr;
 							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = clientnum;
 							SDLNet_Write32(spell->ID, &net_packet->data[5]);
@@ -95,8 +99,12 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook)
 							net_packet->len = 9;
 							sendPacketSafe(net_sock, -1, net_packet, 0);
 						}
-						return;
+						removedSpell = true;
 					}
+				}
+				if ( removedSpell )
+				{
+					return;
 				}
 			}
 			if ( spell->ID == SPELL_VAMPIRIC_AURA && client_classes[player] == CLASS_ACCURSED && 
@@ -1194,19 +1202,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			spellnode->size = sizeof(spell_t);
 			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
-			if ( newbie )
-			{
-				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-				chance = rand() % 10;
-				if ( chance >= spellcasting / 10 )
-				{
-					duration -= rand() % (1000 / (spellcasting + 1));
-				}
-				if ( duration < 180 )
-				{
-					duration = 180;    //Range checking.
-				}
-			}
+			//if ( newbie )
+			//{
+			//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+			//	chance = rand() % 10;
+			//	if ( chance >= spellcasting / 10 )
+			//	{
+			//		duration -= rand() % (1000 / (spellcasting + 1));
+			//	}
+			//	if ( duration < 180 )
+			//	{
+			//		duration = 180;    //Range checking.
+			//	}
+			//}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			caster->setEffect(EFF_MAGICAMPLIFY, true, duration, true);
@@ -1215,7 +1223,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( caster == players[i]->entity )
 				{
 					serverUpdateEffects(i);
-					messagePlayer(i, language[3441]);
+					messagePlayer(i, language[3442]);
 				}
 			}
 
@@ -1255,13 +1263,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			Stat* casterStats = caster->getStats();
 			if ( casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
 			{
-				missile_speed /= 2;
-				entity->vel_x = cos(entity->yaw) * (missile_speed);
-				entity->vel_y = sin(entity->yaw) * (missile_speed);
-				entity->actmagicProjectileArc = 1;
-				entity->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
-				entity->vel_z = -0.5;
-				entity->pitch = -PI / 32;
+				if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_COLD || spell->ID == SPELL_LIGHTNING || spell->ID == SPELL_MAGICMISSILE )
+				{
+					missile_speed /= 2;
+					entity->vel_x = cos(entity->yaw) * (missile_speed);
+					entity->vel_y = sin(entity->yaw) * (missile_speed);
+					entity->actmagicProjectileArc = 1;
+					entity->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+					entity->vel_z = -0.3;
+					entity->pitch = -PI / 32;
+				}
 			}
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);

@@ -807,7 +807,7 @@ void serverUpdateEffects(int player)
 		if ( stats[player]->EFFECTS_TIMERS[j] < TICKS_PER_SECOND * 5 && stats[player]->EFFECTS_TIMERS[j] > 0 )
 		{
 			// use these bits to denote if duration is low.
-			net_packet->data[8 + j / 8] |= power(2, j - (j / 8) * 8);
+			net_packet->data[9 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
 	net_packet->address.host = net_clients[player - 1].host;
@@ -2273,7 +2273,7 @@ void clientHandlePacket()
 			if ( net_packet->data[4 + c / 8]&power(2, c - (c / 8) * 8) )
 			{
 				stats[clientnum]->EFFECTS[c] = true;
-				if ( net_packet->data[8 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
+				if ( net_packet->data[9 + c / 8] & power(2, c - (c / 8) * 8) ) // use these bits to denote if duration is low.
 				{
 					stats[clientnum]->EFFECTS_TIMERS[c] = 1;
 				}
