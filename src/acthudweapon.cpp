@@ -2296,8 +2296,14 @@ void actHudShield(Entity* my)
 		my->z -= -2 * .5;
 	}
 
+
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
+	if ( playerRace == TROLL || playerRace == SPIDER || playerRace == CREATURE_IMP || playerRace == RAT )
+	{
+		// don't process flames as these don't hold torches.
+		return;
+	}
 	if (stats[clientnum]->shield && !swimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !cast_animation.active_spellbook && !shieldSwitch)
 	{
 		if (itemCategory(stats[clientnum]->shield) == TOOL)

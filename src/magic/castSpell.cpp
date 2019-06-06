@@ -1261,7 +1261,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				entity->actmagicCastByMagicstaff = 1;
 			}
 			Stat* casterStats = caster->getStats();
-			if ( casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
+			if ( !trap && !using_magicstaff && casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
 			{
 				if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_COLD || spell->ID == SPELL_LIGHTNING || spell->ID == SPELL_MAGICMISSILE )
 				{

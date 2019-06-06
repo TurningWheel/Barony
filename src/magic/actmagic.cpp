@@ -1205,6 +1205,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							if ( my->actmagicIsOrbiting == 2 )
+							{
+								spawnExplosion(my->x, my->y, my->z);
+								if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+								{
+									// cast through amplify magic effect
+									damage /= 2;
+								}
+								damage = damage - rand() % ((damage / 8) + 1);
+							}
+
+
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1215,7 +1227,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							// write the obituary
-							if (parent)
+							if ( parent )
 							{
 								parent->killedByMonsterObituary(hit.entity);
 							}
@@ -1248,8 +1260,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 						else if ( hit.entity->behavior == &actChest )
@@ -1257,8 +1276,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 						else if (hit.entity->behavior == &actFurniture )
@@ -1301,8 +1327,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
+							if ( !(my->actmagicIsOrbiting == 2) )
+							{
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+							}
+							else
+							{
+								spawnExplosion(my->x, my->y, my->z);
+							}
 							return;
 						}
 					}
@@ -1328,7 +1361,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								spawnExplosion(my->x, my->y, my->z);
-								if ( parent )
+								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
 								{
 									if ( parent->behavior == &actParticleDot )
 									{
@@ -1347,6 +1380,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										damage = 14;
 									}
+								}
+								else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+								{
+									// cast through amplify magic effect
+									damage /= 2;
 								}
 								else
 								{
@@ -1408,7 +1446,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
-								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
 								{
 									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 									{
@@ -1564,7 +1602,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
-								if ( parent )
+								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
 								{
 									if ( parent->behavior == &actParticleDot )
 									{
@@ -1583,6 +1621,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										damage = 18;
 									}
+								}
+								else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+								{
+									// cast through amplify magic effect
+									damage /= 2;
 								}
 								else
 								{
@@ -1636,7 +1679,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent )
 							{
 								parent->awardXP(hit.entity, true, true);
-								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
 								{
 									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 									{
@@ -1772,7 +1815,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
-								if ( parent )
+								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
 								{
 									if ( parent->behavior == &actParticleDot )
 									{
@@ -1791,6 +1834,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									{
 										damage = 22;
 									}
+								}
+								else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
+								{
+									// cast through amplify magic effect
+									damage /= 2;
 								}
 								else
 								{
@@ -1828,7 +1876,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
-								if ( my->actmagicIsOrbiting == 2 && parent->behavior == &actPlayer )
+								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
 								{
 									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 									{
@@ -4518,7 +4566,7 @@ void actParticleCharmMonster(Entity* my)
 	}
 }
 
-void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget)
+void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell)
 {
 	bool autoHit = false;
 	if ( autoHitTarget && (autoHitTarget->behavior == &actPlayer || autoHitTarget->behavior == &actMonster) )
@@ -4533,19 +4581,40 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 		}
 	}
 	Entity* orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 0.0, 40);
-	if ( autoHit )
+	if ( orbit )
 	{
-		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+		if ( castedSpell )
+		{
+			orbit->actmagicOrbitCastFromSpell = 1;
+		}
+		if ( autoHit )
+		{
+			orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+		}
 	}
 	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 2 * PI / 3, 40);
-	if ( autoHit )
+	if ( orbit )
 	{
-		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+		if ( castedSpell )
+		{
+			orbit->actmagicOrbitCastFromSpell = 1;
+		}
+		if ( autoHit )
+		{
+			orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+		}
 	}
 	orbit = castStationaryOrbitingMagicMissile(parent, spellID, x, y, 16.0, 4 * PI / 3, 40);
-	if ( autoHit )
+	if ( orbit )
 	{
-		orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+		if ( castedSpell )
+		{
+			orbit->actmagicOrbitCastFromSpell = 1;
+		}
+		if ( autoHit )
+		{
+			orbit->actmagicOrbitHitTargetUID4 = autoHitTarget->getUID();
+		}
 	}
 	spawnMagicEffectParticles(x, y, 0, 174);
 	spawnExplosion(x, y, -4 + rand() % 8);

@@ -210,6 +210,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitHitTargetUID3(skill[17]),
 	actmagicOrbitHitTargetUID4(skill[18]),
 	actmagicProjectileArc(skill[19]),
+	actmagicOrbitCastFromSpell(skill[20]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),

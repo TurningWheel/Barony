@@ -233,8 +233,8 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
 	{	4,	4,	4,	4,	4,	4 }, // RESERVED 17
 	{	4,	4,	4,	4,	4,	4 }, // RESERVED 18
-	{	4,	4,	4,	4,	4,	4 }, // RESERVED 19
-	{	4,	4,	4,	4,	4,	4 } // RESERVED 20
+	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
+	{	4,	4,	4,	4,	4,	4 }  // RESERVED 20
 };
 
 enum AllyNPCCommand : int

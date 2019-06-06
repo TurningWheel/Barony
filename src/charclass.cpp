@@ -1905,17 +1905,20 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_SHAMAN )
 	{
 		// attributes
-		stats[player]->STR += 1;
-		stats[player]->CON += 2;
-		stats[player]->PER -= -1;
-		stats[player]->CHR -= -1;
+		stats[player]->STR -= 1;
+		stats[player]->INT += 2;
+		stats[player]->PER += 1;
+		stats[player]->CHR += 1;
 
-		stats[player]->MAXHP += 10;
-		stats[player]->HP += 10;
+		stats[player]->MAXHP += 5;
+		stats[player]->HP += 5;
+
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;
 
 		// skills
-		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
 		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;

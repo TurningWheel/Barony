@@ -234,6 +234,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitHitTargetUID3(skill[17]),
 	actmagicOrbitHitTargetUID4(skill[18]),
 	actmagicProjectileArc(skill[19]),
+	actmagicOrbitCastFromSpell(skill[20]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -4102,18 +4103,21 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			shapeshifted = true;
 			if ( my->effectShapeshift == TROLL )
 			{
-				int bonusSTR = 5 + (std::max(0, entitystats->STR) / 4); // 5 + 25% base STR
+				int bonusSTR = 5;
 				STR += bonusSTR;
+				if ( STR >= 0 )
+				{
+					STR *= 1.33;
+				}
 			}
 			else if ( my->effectShapeshift == SPIDER )
 			{
-				int bonusSTR = 2 + (std::max(0, entitystats->STR) / 10); // 2 + 10% base STR
+				int bonusSTR = 3;
 				STR += bonusSTR;
-			}
-			else if ( my->effectShapeshift == RAT )
-			{
-				int bonusSTR = -(std::max(0, entitystats->STR) / 4); // -25% base STR
-				STR += bonusSTR;
+				if ( STR >= 0 )
+				{
+					STR *= 1.25;
+				}
 			}
 		}
 	}
@@ -4241,18 +4245,21 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 			shapeshifted = true;
 			if ( my->effectShapeshift == TROLL )
 			{
-				int bonusDEX = -5 - (std::max(0, entitystats->DEX) / 4); // -5 - 25% base DEX
+				int bonusDEX = -5;
 				DEX += bonusDEX;
-			}
-			else if ( my->effectShapeshift == SPIDER )
-			{
-				int bonusDEX = 2 + (std::max(0, entitystats->DEX) / 10); // 2 + 10% base DEX
-				DEX += bonusDEX;
+				if ( DEX >= 0 )
+				{
+					DEX *= 0.67;
+				}
 			}
 			else if ( my->effectShapeshift == RAT )
 			{
-				int bonusDEX = 5 + (std::max(0, entitystats->DEX) / 4); // 5 + 25% base DEX
+				int bonusDEX = 3;
 				DEX += bonusDEX;
+				if ( DEX >= 0 )
+				{
+					DEX *= 1.25;
+				}
 			}
 		}
 	}
@@ -4402,20 +4409,23 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		if ( my->effectShapeshift != NOTHING )
 		{
 			shapeshifted = true;
-			if ( my->effectShapeshift == RAT )
+			if ( my->effectShapeshift == SPIDER )
 			{
-				int bonusCON = -5 - (std::max(0, entitystats->CON) / 4); // -5 -25% base CON
+				int bonusCON = 3;
 				CON += bonusCON;
-			}
-			else if ( my->effectShapeshift == SPIDER )
-			{
-				int bonusCON = -1 * (2 + (std::max(0, entitystats->CON) / 10)); // -2 - 10% base CON
-				CON += bonusCON;
+				if ( CON >= 0 )
+				{
+					CON *= 1.25;
+				}
 			}
 			else if ( my->effectShapeshift == TROLL )
 			{
-				int bonusCON = 2 + (std::max(0, entitystats->CON) / 10); // 2 + 10% base CON
+				int bonusCON = 5;
 				CON += bonusCON;
+				if ( CON >= 0 )
+				{
+					CON *= 1.33;
+				}
 			}
 		}
 	}
@@ -4482,15 +4492,23 @@ Sint32 statGetINT(Stat* entitystats, Entity* my)
 		if ( my->effectShapeshift != NOTHING )
 		{
 			shapeshifted = true;
-			if ( my->effectShapeshift == TROLL )
+			if ( my->effectShapeshift == RAT )
 			{
-				int bonusINT = -5 - (std::max(0, entitystats->INT) / 4); // -5 -25% base INT
+				int bonusINT = 3;
 				INT += bonusINT;
+				if ( INT >= 0 )
+				{
+					INT *= 1.25;
+				}
 			}
 			else if ( my->effectShapeshift == CREATURE_IMP )
 			{
-				int bonusINT = 5 + (std::max(0, entitystats->INT) / 4); // 5 + 25% base INT
+				int bonusINT = 5;
 				INT += bonusINT;
+				if ( INT >= 0 )
+				{
+					INT *= 1.33;
+				}
 			}
 		}
 	}
@@ -4567,18 +4585,30 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			shapeshifted = true;
 			if ( my->effectShapeshift == SPIDER )
 			{
-				int bonusPER = 5 + (std::max(0, entitystats->PER) / 4); // 5 + 25% base PER
+				int bonusPER = 5;
 				PER += bonusPER;
+				if ( PER >= 0 )
+				{
+					PER *= 1.33;
+				}
 			}
 			else if ( my->effectShapeshift == CREATURE_IMP )
 			{
-				int bonusPER = (2 + (std::max(0, entitystats->PER) / 10)); // +2 + 10% base PER
+				int bonusPER = 3;
 				PER += bonusPER;
+				if ( PER >= 0 )
+				{
+					PER *= 1.25;
+				}
 			}
-			else if ( my->effectShapeshift == TROLL )
+			else if ( my->effectShapeshift == RAT )
 			{
-				int bonusPER = -1 * (2 + (std::max(0, entitystats->PER) / 10)); // -2 - 10% base PER
+				int bonusPER = 3;
 				PER += bonusPER;
+				if ( PER >= 0 )
+				{
+					PER *= 1.25;
+				}
 			}
 		}
 	}
@@ -4652,11 +4682,11 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 		if ( my->effectShapeshift != NOTHING )
 		{
 			shapeshifted = true;
-			if ( my->effectShapeshift == CREATURE_IMP )
-			{
-				int bonusCHR = (2 + (std::max(0, entitystats->CHR) / 10)); // +2 + 10% base CHR
-				CHR += bonusCHR;
-			}
+			//if ( my->effectShapeshift == CREATURE_IMP )
+			//{
+			//	int bonusCHR = (2 + (std::max(0, entitystats->CHR) / 10)); // +2 + 10% base CHR
+			//	CHR += bonusCHR;
+			//}
 		}
 	}
 
@@ -12762,6 +12792,29 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	//{
 	//	messagePlayer(0, "%2d, ", *i);
 	//}
+	if ( playerClass == CLASS_SHAMAN && stats[skill[2]] )
+	{
+		if ( stats[skill[2]]->type == RAT )
+		{
+			//	            STR	DEX	CON	INT	PER	CHR
+			statWeights = { 1,	6,	1,	3,	1,	1 };
+		}
+		else if ( stats[skill[2]]->type == SPIDER )
+		{
+			//	            STR	DEX	CON	INT	PER	CHR
+			statWeights = { 1,	1,	3,	1,	6,	1 };
+		}
+		else if ( stats[skill[2]]->type == TROLL )
+		{
+			//	            STR	DEX	CON	INT	PER	CHR
+			statWeights = { 6,	1,	3,	1,	1,	1 };
+		}
+		else if ( stats[skill[2]]->type == CREATURE_IMP )
+		{
+			//	            STR	DEX	CON	INT	PER	CHR
+			statWeights = { 1,	3,	1,	6,	1,	1 };
+		}
+	}
 
 	chosenStats[0] = rand() % 6; // get first stat randomly.
 	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.

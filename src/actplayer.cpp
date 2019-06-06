@@ -2193,7 +2193,7 @@ void actPlayer(Entity* my)
 	{
 		if ( multiplayer == SERVER || PLAYER_NUM == clientnum )
 		{
-			if ( stats[PLAYER_NUM]->shield != NULL )
+			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) )
 			{
 				if ( PLAYER_NUM == clientnum )
 				{
@@ -4630,6 +4630,18 @@ void actPlayerLimb(Entity* my)
 	//my->vel_x = players[my->skill[2]]->vel_x;
 	//my->vel_y = players[my->skill[2]]->vel_y;
 	//my->vel_z = players[my->skill[2]]->vel_z;
+
+	if ( stats[PLAYER_NUM] )
+	{
+		if ( stats[PLAYER_NUM]->type == RAT
+			|| stats[PLAYER_NUM]->type == SPIDER
+			|| stats[PLAYER_NUM]->type == TROLL
+			|| stats[PLAYER_NUM]->type == CREATURE_IMP )
+		{
+			players[PLAYER_NUM]->entity->skill[1] = 0;
+			return;
+		}
+	}
 
 	// set light size
 	if (my->sprite == 93)   // torch
