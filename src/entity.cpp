@@ -3373,7 +3373,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( myStats->EFFECTS[EFF_POLYMORPH] || myStats->EFFECTS[EFF_SHAPESHIFT] )
+	if ( myStats->EFFECTS[EFF_POLYMORPH] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
@@ -11361,7 +11361,7 @@ void Entity::handleEffectsClient()
 		spawnAmbientParticles(30, 685, 20 + rand() % 30, 0.5, true);
 	}
 
-	if ( myStats->EFFECTS[EFF_POLYMORPH] || myStats->EFFECTS[EFF_SHAPESHIFT] )
+	if ( myStats->EFFECTS[EFF_POLYMORPH] )
 	{
 		if ( ticks % 25 == 0 || ticks % 40 == 0 )
 		{
