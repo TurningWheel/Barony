@@ -1281,52 +1281,44 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->size = sizeof(spell_t);
 
 			int volume = 128;
-			if ( trap )
+
+			// IMPORTANT - TRAP IS USED FOR STORM POTIONS AND ORBIT PARTICLES, QUIET SOUND HERE.
+			if ( trap && (caster->behavior == &actPlayer || caster->behavior == &actMonster) )
+			{
+				volume = 16;
+			}
+			else if ( trap )
 			{
 				volume = 96;
 			}
-			if ( !strcmp(spell->name, spell_fireball.name) )
+
+			if( !strcmp(spell->name, spell_cold.name) )
 			{
-				playSoundEntity(entity, 164, volume);
-			}
-			else if ( !strcmp(spell->name, spell_lightning.name) )
-			{
-				playSoundEntity(entity, 171, volume);
-			}
-			else if ( !strcmp(spell->name, spell_cold.name) )
-			{
-				if ( caster && caster->behavior == &actPlayer && trap )
+				if ( volume > 64 )
 				{
-					playSoundEntity(entity, 172, 48);
+					volume = 64;
 				}
-				else
+				else if ( volume == 32 )
 				{
-					playSoundEntity(entity, 172, 64);
+					volume = 16;
 				}
 			}
-			else if ( !strcmp(spell->name, spell_bleed.name) )
+			
+			if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
-				playSoundEntity(entity, 171, volume);
-			}
-			else if ( !strcmp(spell->name, spell_stoneblood.name) )
-			{
-				playSoundEntity(entity, 171, volume);
-			}
-			else if ( !strcmp(spell->name, spell_acidSpray.name) )
-			{
-				playSoundEntity(entity, 164, volume);
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
 			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
-				playSoundEntity(entity, 169, volume);
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
-			else
+
+			int sound = spellGetCastSound(spell);
+			if ( volume > 0 && sound > 0 )
 			{
-				playSoundEntity(entity, 169, volume);
+				playSoundEntity(entity, sound, volume);
 			}
 			result = entity;
 
@@ -1398,14 +1390,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
-			if ( !strcmp(spell->name, spell_stoneblood.name) )
-			{
-				playSoundEntity(entity, 171, 128);
-			}
-			else if ( !strcmp(spell->name, spell_acidSpray.name) )
-			{
-				playSoundEntity(entity, 164, 128);
-			}
+			playSoundEntity(entity, spellGetCastSound(spell), 128);
 
 			result = entity;
 
@@ -1825,4 +1810,45 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	return result;
+}
+
+int spellGetCastSound(spell_t* spell)
+{
+	if ( !spell )
+	{
+		return 0;
+	}
+	if ( !strcmp(spell->name, spell_fireball.name) )
+	{
+		return 164;
+	}
+	else if ( !strcmp(spell->name, spell_lightning.name) )
+	{
+		return 171;
+	}
+	else if ( !strcmp(spell->name, spell_cold.name) )
+	{
+		return 172;
+	}
+	else if ( !strcmp(spell->name, spell_bleed.name) )
+	{
+		return 171;
+	}
+	else if ( !strcmp(spell->name, spell_stoneblood.name) )
+	{
+		return 171;
+	}
+	else if ( !strcmp(spell->name, spell_acidSpray.name) )
+	{
+		return 164;
+	}
+	else if ( !strcmp(spell->name, spell_sprayWeb.name) )
+	{
+		return 169;
+	}
+	else
+	{
+		return 169;
+	}
+	return 0;
 }

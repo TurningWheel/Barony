@@ -4289,6 +4289,7 @@ void Entity::castFallingMagicMissile(int spellID, real_t distFromCaster, real_t 
 		entity->pitch = PI / 2;
 		entity->actmagicIsVertical = MAGIC_ISVERTICAL_Z;
 		spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
+		playSoundEntity(entity, spellGetCastSound(spell), 128);
 	}
 }
 
@@ -4323,6 +4324,7 @@ Entity* Entity::castOrbitingMagicMissile(int spellID, real_t distFromCaster, rea
 		entity->actmagicOrbitVerticalDirection = 1;
 		entity->actmagicOrbitLifetime = duration;
 		entity->vel_z = entity->actmagicOrbitVerticalSpeed;
+		playSoundEntity(entity, spellGetCastSound(spell), 128);
 		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
 	return entity;
@@ -4400,6 +4402,8 @@ Entity* castStationaryOrbitingMagicMissile(Entity* parent, int spellID, real_t c
 		entity->actmagicOrbitStationaryX = centerx;
 		entity->actmagicOrbitStationaryY = centery;
 		entity->vel_z = -0.1;
+		playSoundEntity(entity, spellGetCastSound(spell), 128);
+
 		//spawnMagicEffectParticles(entity->x, entity->y, 0, 174);
 	}
 	return entity;
