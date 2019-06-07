@@ -144,6 +144,8 @@ enum PlayerClasses : int
 	CLASS_UNDEF4
 };
 
+static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;
+
 enum PlayerRaces : int
 {
 	RACE_HUMAN,

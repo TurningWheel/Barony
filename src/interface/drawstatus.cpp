@@ -1059,7 +1059,7 @@ void drawStatus()
 					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
-						drawSpellTooltip(spell);
+						drawSpellTooltip(spell, item);
 					}
 					else
 					{
@@ -1634,7 +1634,7 @@ void drawStatus()
 	}
 }
 
-void drawSpellTooltip(spell_t* spell)
+void drawSpellTooltip(spell_t* spell, Item* item)
 {
 	SDL_Rect src;
 	src.x = mousex + 16;
@@ -1811,6 +1811,40 @@ void drawSpellTooltip(spell_t* spell)
 				break;
 		}
 		char tempstr[64] = "";
+		char spellNameString[128] = "";
+		if ( item && item->appearance >= 1000 )
+		{
+			// shapeshift spells, append the form name here.
+			switch ( spell->ID )
+			{
+				case SPELL_SPEED:
+				case SPELL_DETECT_FOOD:
+					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3408]);
+					break;
+				case SPELL_POISON:
+				case SPELL_SPRAY_WEB:
+					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3409]);
+					break;
+				case SPELL_STRIKE:
+				case SPELL_FEAR:
+					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3410]);
+					break;
+				case SPELL_LIGHTNING:
+				case SPELL_CONFUSE:
+				case SPELL_WEAKNESS:
+				case SPELL_AMPLIFY_MAGIC:
+					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3411]);
+					break;
+				default:
+					strncpy(spellNameString, spell->name, 127);
+					break;
+			}
+		}
+		else
+		{
+			strncpy(spellNameString, spell->name, 127);
+		}
+
 		if ( spell->ID == SPELL_DOMINATE )
 		{
 			snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
@@ -1848,7 +1882,7 @@ void drawSpellTooltip(spell_t* spell)
 		}
 		else
 		{
-			src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
+			src.w = std::max(longestline(spellNameString), longestline(tempstr)) * TTF12_WIDTH + 8;
 		}
 
 		int furthestX = xres;
@@ -1886,7 +1920,7 @@ void drawSpellTooltip(spell_t* spell)
 		}
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s\n%s",
-			spell->name, tempstr, spellType);
+			spellNameString, tempstr, spellType);
 		Uint32 effectColor = uint32ColorLightBlue(*mainsurface);
 		ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, effectColor,
 			"\n\n\n%s", spellEffectText);

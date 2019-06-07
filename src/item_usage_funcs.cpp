@@ -4339,31 +4339,114 @@ void item_Spellbook(Item*& item, int player)
 		messagePlayer(clientnum, language[971]);
 		if ( list_Size(&spellList) > 0 )
 		{
-			messagePlayer(clientnum, language[972]);
-
 			// randomly delete a spell
 			int spellToDelete = rand() % list_Size(&spellList);
 			node = list_Node(&spellList, spellToDelete);
 			spell_t* spell = (spell_t*)node->element;
-			if ( spell == selected_spell )
-			{
-				selected_spell = NULL;
-			}
 			int spellID = spell->ID;
-			list_RemoveNode(node);
+			bool deleted = false;
+			bool rerollSpell = false;
 
 			// delete its accompanying spell item(s)
-			for ( node = stats[player]->inventory.first; node != NULL; node = nextnode )
+
+			if ( client_classes[clientnum] == CLASS_SHAMAN )
 			{
-				nextnode = node->next;
-				Item* item = (Item*)node->element;
-				if ( item->type == SPELL_ITEM )
+				// don't forget your racial spells otherwise borked.
+				// special roll checking.
+				if ( list_Size(&spellList) <= CLASS_SHAMAN_NUM_STARTING_SPELLS )
 				{
-					if ( item->appearance == spellID )
+					// no spells to delete. return early.
+					messagePlayer(clientnum, language[973]);
+					consumeItem(item, player);
+					return;
+				}
+				spellToDelete = rand() % (list_Size(&spellList) - CLASS_SHAMAN_NUM_STARTING_SPELLS);
+				spellToDelete += CLASS_SHAMAN_NUM_STARTING_SPELLS; // e.g 16 spells is 0 + 15, 15th index.
+				node = list_Node(&spellList, spellToDelete);
+				spell = (spell_t*)node->element;
+				spellID = spell->ID;
+			}
+
+			for ( node_t* node2 = stats[player]->inventory.first; node2 != NULL; node2 = nextnode )
+			{
+				nextnode = node2->next;
+				Item* itemInventory = (Item*)node2->element;
+				if ( itemInventory && itemInventory->type == SPELL_ITEM )
+				{
+					if ( rerollSpell )
 					{
-						list_RemoveNode(node);
+						// Unused. But if ever shapeshift form spells get added to general classes then will need this checking.
+						//if ( itemInventory->appearance < 1000 )
+						//{
+						//	// can delete non-shapeshift spells. let's delete this one.
+						//	spell = getSpellFromItem(itemInventory);
+						//	if ( spell )
+						//	{
+						//		spellID = spell->ID;
+						//		if ( spellID == SPELL_RAT_FORM || spellID == SPELL_SPIDER_FORM
+						//			|| spellID == SPELL_TROLL_FORM || spellID == SPELL_IMP_FORM
+						//			|| spellID == SPELL_REVERT_FORM )
+						//		{
+						//			continue;
+						//		}
+						//		// find the node in spellList for the ID
+						//		spellToDelete = 0;
+						//		for ( node_t* tmpNode = spellList.first; tmpNode != nullptr; tmpNode = tmpNode->next )
+						//		{
+						//			if ( tmpNode->element )
+						//			{
+						//				spell_t* tmpSpell = (spell_t*)tmpNode->element;
+						//				if ( tmpSpell && tmpSpell->ID == spellID )
+						//				{
+						//					// found the node in the list, delete this one.
+						//					node = list_Node(&spellList, spellToDelete);
+						//					list_RemoveNode(node2); // delete inventory spell.
+						//					deleted = true;
+						//					break;
+						//				}
+						//			}
+						//			++spellToDelete;
+						//		}
+						//		if ( deleted )
+						//		{
+						//			break;
+						//		}
+						//	}
+						//}
+					}
+					else if ( itemInventory->appearance == spellID )
+					{
+						list_RemoveNode(node2); // delete inventory spell.
+						deleted = true;
+						break;
 					}
 				}
+			}
+
+			//messagePlayer(0, "%d, %d %d", rerollSpell, spellToDelete, deleted);
+
+			if ( !deleted )
+			{
+				// maybe we've got an inventory full of shapeshift spells?
+				messagePlayer(clientnum, language[973]);
+				consumeItem(item, player);
+				return;
+			}
+			else if ( deleted )
+			{
+				messagePlayer(clientnum, language[972]);
+				if ( spell == selected_spell )
+				{
+					selected_spell = nullptr;
+				}
+				for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+				{
+					if ( selected_spell_alternate[i] == spell )
+					{
+						selected_spell_alternate[i] = nullptr;
+					}
+				}
+				list_RemoveNode(node);
 			}
 		}
 		else

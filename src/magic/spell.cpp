@@ -272,9 +272,56 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 	}
 	if ( spellInList(&spellList, new_spell) )
 	{
-		messagePlayer(player, language[439], new_spell->name);
-		spellDeconstructor((void*)new_spell);
-		return false;
+		// check inventory for shapeshift spells
+		bool foundShapeshiftSpell = false;
+		bool foundNormalSpell = false;
+		if ( !ignoreSkill ) // learning the proper way, not being forced at character creation or debug.
+		{
+			for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+			{
+				Item* item = (Item*)node->element;
+				if ( item->type == SPELL_ITEM )
+				{
+					if ( item->appearance >= 1000 )
+					{
+						if ( item->appearance - 1000 == spell )
+						{
+							foundShapeshiftSpell = true;
+						}
+					}
+					else
+					{
+						if ( item->appearance == spell )
+						{
+							foundNormalSpell = true;
+						}
+					}
+				}
+				if ( foundNormalSpell && foundShapeshiftSpell )
+				{
+					// found both varieties, no point searching rest of inventory.
+					break;
+				}
+			}
+			if ( !foundNormalSpell )
+			{
+				// can learn. proceed.
+			}
+			else if ( foundNormalSpell )
+			{
+				// can't learn, already have it.
+				messagePlayer(player, language[439], new_spell->name);
+				spellDeconstructor((void*)new_spell);
+				return false;
+			}
+		}
+		else
+		{
+			// can't learn, already have it.
+			messagePlayer(player, language[439], new_spell->name);
+			spellDeconstructor((void*)new_spell);
+			return false;
+		}
 	}
 	int skillLVL = stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player], players[player]->entity);
 	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] >= 100 )

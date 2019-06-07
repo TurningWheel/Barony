@@ -584,4 +584,4 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
 
 void freeSpells();
-void drawSpellTooltip(spell_t* spell);
+void drawSpellTooltip(spell_t* spell, Item* item);

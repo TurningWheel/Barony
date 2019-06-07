@@ -1122,7 +1122,7 @@ void updatePlayerInventory()
 						if (itemCategory(item) == SPELL_CAT)
 						{
 							spell_t* spell = getSpellFromItem(item);
-							drawSpellTooltip(spell);
+							drawSpellTooltip(spell, item);
 						}
 						else
 						{
