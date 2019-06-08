@@ -15,7 +15,7 @@
 
 // function prototypes
 real_t entityDist(Entity* my, Entity* your);
-Entity* entityClicked();
+Entity* entityClicked(bool* clickedOnGUI);
 bool entityInsideTile(Entity* entity, int x, int y, int z);
 bool entityInsideEntity(Entity* entity1, Entity* entity2);
 bool entityInsideSomething(Entity* entity);
