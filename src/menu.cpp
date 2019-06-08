@@ -6369,7 +6369,7 @@ void handleMainMenu(bool mode)
 		int numMultiplayerSaves = 0;
 
 		// draw the content
-		for ( int i = 0; i < numSaves; ++i )
+		for ( int i = 0; i < numSaves && !savegamesList.empty(); ++i )
 		{
 			filename_padx = subx1 + 16;
 
