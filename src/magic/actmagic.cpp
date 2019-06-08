@@ -1634,6 +1634,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								damage = damage - rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							int oldHP = hitstats->HP;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1676,7 +1677,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								messagePlayerColor(player, color, language[395]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-							if ( hitstats->HP <= 0 && parent )
+							if ( oldHP > 0 && hitstats->HP <= 0 && parent )
 							{
 								parent->awardXP(hit.entity, true, true);
 								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
@@ -1847,6 +1848,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								damage = damage - rand() % ((damage / 8) + 1);
 							}
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							int oldHP = hitstats->HP;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1873,7 +1875,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 							}
-							if ( hitstats->HP <= 0 && parent)
+							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
 							{
 								parent->awardXP( hit.entity, true, true );
 								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
