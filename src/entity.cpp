@@ -14961,6 +14961,20 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				flameEntity->y += 2.5 * sin(shieldLimb->yaw);
 				flameEntity->z += 1;
 			}
+			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+			{
+				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;
+				shieldLimb->yaw += PI / 6;
+				shieldLimb->focalx -= 4;
+				shieldLimb->focalz += .5;
+				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
+				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
+				shieldLimb->z -= 1;
+				shieldLimb->scalex = 0.8;
+				shieldLimb->scaley = 0.8;
+				shieldLimb->scalez = 0.8;
+			}
 
 			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
 			{
@@ -15037,6 +15051,20 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				flameEntity->x += 2 * cos(shieldLimb->yaw);
 				flameEntity->y += 2 * sin(shieldLimb->yaw);
 				flameEntity->z += 1;
+			}
+			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+			{
+				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;
+				shieldLimb->yaw += PI / 6;
+				shieldLimb->focalx -= 4;
+				shieldLimb->focalz += .5;
+				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
+				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
+				shieldLimb->z -= 1;
+				shieldLimb->scalex = 0.8;
+				shieldLimb->scaley = 0.8;
+				shieldLimb->scalez = 0.8;
 			}
 
 			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
