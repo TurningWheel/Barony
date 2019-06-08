@@ -3924,6 +3924,27 @@ int main(int argc, char** argv)
 				}
 			}
 
+			// selectedEntityGimpTimer will only allow the game to process a right click entity click 1-2 times
+			// otherwise if we interacted with a menu the gimp timer does not increment. (it would have auto reset the status of IN_USE)
+			if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+			{
+				selectedEntityGimpTimer = 0;
+			}
+			else
+			{
+				if ( selectedEntityGimpTimer >= 2 )
+				{
+					if ( *inputPressed(impulses[IN_USE]) )
+					{
+						*inputPressed(impulses[IN_USE]) = 0;
+					}
+					if ( *inputPressed(joyimpulses[INJOY_GAME_USE]) )
+					{
+						*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+					}
+				}
+			}
+
 			DebugStats.t11End = std::chrono::high_resolution_clock::now();
 
 			// increase the cycle count
