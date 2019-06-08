@@ -2757,6 +2757,11 @@ bool playerLearnedSpellbook(Item* current_item)
 		{
 			continue;
 		}
+		if ( item->appearance >= 1000 )
+		{
+			// special shaman racial spells, don't count this as being learnt
+			continue;
+		}
 		spell_t *spell = getSpellFromItem(item); //Do not free or delete this.
 		if ( !spell )
 		{
