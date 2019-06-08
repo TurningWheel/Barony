@@ -3747,7 +3747,8 @@ int main(int argc, char** argv)
 							else
 							{
 								spell_t* spell = getSpellFromItem(selectedItem);
-								if ( selected_spell == spell && selected_spell_last_appearance == selectedItem->appearance )
+								if ( selected_spell == spell && 
+									(selected_spell_last_appearance == selectedItem->appearance || selected_spell_last_appearance == -1) )
 								{
 									pos.y += 16;
 									drawImage(equipped_bmp, NULL, &pos);

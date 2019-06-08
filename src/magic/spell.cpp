@@ -24,7 +24,7 @@ list_t spellList;
 list_t channeledSpells[4];
 spell_t* selected_spell = NULL;
 spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { NULL, NULL, NULL, NULL, NULL };
-int selected_spell_last_appearance = 0;
+int selected_spell_last_appearance = -1;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;

@@ -7529,6 +7529,7 @@ void handleMainMenu(bool mode)
 			loading = true;
 			darkmap = false;
 			selected_spell = NULL;
+			selected_spell_last_appearance = -1;
 			deinitShapeshiftHotbar();
 			for ( c = 0; c < NUM_HOTBAR_ALTERNATES; ++c )
 			{
@@ -8187,6 +8188,7 @@ void handleMainMenu(bool mode)
 				hotbarShapeshiftInit[c] = false;
 			}
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
+			selected_spell_last_appearance = -1;
 			client_classes[0] = 0;
 			spellcastingAnimationManager_deactivate(&cast_animation);
 			SDL_StopTextInput();

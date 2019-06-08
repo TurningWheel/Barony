@@ -983,7 +983,8 @@ void updatePlayerInventory()
 		else
 		{
 			spell_t* spell = getSpellFromItem(item);
-			if ( selected_spell == spell && selected_spell_last_appearance == item->appearance )
+			if ( selected_spell == spell 
+				&& (selected_spell_last_appearance == item->appearance || selected_spell_last_appearance == -1) )
 			{
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 				pos.y = y + item->y * INVENTORY_SLOTSIZE + INVENTORY_SLOTSIZE - 18;
