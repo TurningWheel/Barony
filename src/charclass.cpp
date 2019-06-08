@@ -1926,32 +1926,30 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
 
-		// knuckles
-		//item = newItem(BRASS_KNUCKLES, EXCELLENT, 0, 1, 0, true, NULL);
-		//if ( player == clientnum )
-		//{
-		//	item2 = itemPickup(player, item);
-		//	useItem(item2, player);
-		//	hotbar[0].item = item2->uid;
-		//	free(item);
-		//}
-		//else
-		//{
-		//	useItem(item, player);
-		//}
+		item = newItem(MAGICSTAFF_SLOW, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
-		//// tunic
-		//item = newItem(TUNIC, EXCELLENT, 0, 1, 0, true, NULL);
-		//if ( player == clientnum )
-		//{
-		//	item2 = itemPickup(player, item);
-		//	useItem(item2, player);
-		//	free(item);
-		//}
-		//else
-		//{
-		//	useItem(item, player);
-		//}
+		item = newItem(MASK_SHAMAN, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
 		//// ring slow digestion
 		//item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
@@ -1966,14 +1964,18 @@ void initClass(int player)
 		//	useItem(item, player);
 		//}
 
-		//if ( player == clientnum )
-		//{
-		//	// light book
-		//	item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, NULL);
-		//	item2 = itemPickup(player, item);
-		//	hotbar[9].item = item2->uid;
-		//	free(item);
-		//}
+		if ( player == clientnum )
+		{
+			item = newItem(BRONZE_SWORD, WORN, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			item = newItem(GEM_ROCK, WORN, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+		}
 	}
 
 	stats[player]->OLDHP = stats[player]->HP;
