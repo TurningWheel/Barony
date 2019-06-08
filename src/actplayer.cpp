@@ -31,6 +31,7 @@ bool smoothmouse = false;
 bool settings_smoothmouse = false;
 bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
+int selectedEntityGimpTimer = 0;
 
 /*-------------------------------------------------------------------------------
 
@@ -1922,6 +1923,11 @@ void actPlayer(Entity* my)
 			if ( FollowerMenu.followerToCommand == nullptr && FollowerMenu.selectMoveTo == false )
 			{
 				selectedEntity = entityClicked(); // using objects
+				if ( !selectedEntity )
+				{
+					// otherwise if we hold right click we'll keep trying this function, FPS will drop.
+					++selectedEntityGimpTimer; 
+				}
 			}
 			else
 			{
