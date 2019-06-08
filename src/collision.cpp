@@ -50,7 +50,7 @@ real_t entityDist(Entity* my, Entity* your)
 
 -------------------------------------------------------------------------------*/
 
-Entity* entityClicked()
+Entity* entityClicked(bool* clickedOnGUI)
 {
 	Uint32 uidnum;
 	GLubyte pixel[4];
@@ -63,25 +63,45 @@ Entity* entityClicked()
 	{
 		if ( itemMenuOpen )
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
 		if ( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh )
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
 		if (openedChest[clientnum])
 			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;    //Click falls inside the chest inventory GUI.
 			}
 		if (identifygui_active)
 			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;    //Click falls inside the identify item gui.
 			}
 		if (book_open)
 			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;    //Click falls inside the book GUI.
 			}
 		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
@@ -89,6 +109,10 @@ Entity* entityClicked()
 			if ( gui_mode == GUI_MODE_INVENTORY )
 				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
 				{
+					if ( clickedOnGUI )
+					{
+						*clickedOnGUI = true;
+					}
 					return NULL;    //Click falls inside the right sidebar.
 				}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
@@ -97,6 +121,10 @@ Entity* entityClicked()
 			if ( mouseInBounds(INVENTORY_STARTX, INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE, INVENTORY_STARTY, INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) )
 			{
 				// clicked in inventory
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;
 			}
 			if ( gui_mode == GUI_MODE_SHOP )
@@ -105,6 +133,10 @@ Entity* entityClicked()
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
 				if (mouseInBounds(x1, x2, y1, y2))
 				{
+					if ( clickedOnGUI )
+					{
+						*clickedOnGUI = true;
+					}
 					return NULL;
 				}
 			}
@@ -128,17 +160,29 @@ Entity* entityClicked()
 
 				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
 				{
+					if ( clickedOnGUI )
+					{
+						*clickedOnGUI = true;
+					}
 					return NULL;
 				}
 			}
 		}
 		if (mouseInBounds(0, 224, 0, 420))   // character sheet
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
 		int x = xres / 2 - (status_bmp->w / 2);
 		if (mouseInBounds(x, x + status_bmp->w, yres - status_bmp->h, yres))
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
 
@@ -148,6 +192,10 @@ Entity* entityClicked()
 			if ( mouseInBounds(interfaceSkillsSheet.x, interfaceSkillsSheet.x + interfaceSkillsSheet.w,
 				interfaceSkillsSheet.y, interfaceSkillsSheet.y + interfaceSkillsSheet.h) )
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;
 			}
 		}
@@ -156,12 +204,20 @@ Entity* entityClicked()
 			if ( mouseInBounds(interfacePartySheet.x, interfacePartySheet.x + interfacePartySheet.w,
 				interfacePartySheet.y, interfacePartySheet.y + interfacePartySheet.h) )
 			{
+				if ( clickedOnGUI )
+				{
+					*clickedOnGUI = true;
+				}
 				return NULL;
 			}
 		}
 
 		if ( mouseInsidePlayerInventory() || mouseInsidePlayerHotbar() )
 		{
+			if ( clickedOnGUI )
+			{
+				*clickedOnGUI = true;
+			}
 			return NULL;
 		}
 
