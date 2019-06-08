@@ -6284,7 +6284,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					
 					hit.entity->modHP(-damage); // do the damage
-
+					bool skillIncreased = false;
 					// skill increase
 					if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED )
 					{
@@ -6294,9 +6294,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| myStats->weapon->type == CRYSTAL_SWORD
 								|| myStats->weapon->type == CRYSTAL_SPEAR) )
 						{
-							if ( rand() % 6 == 0 )
+							int chance = 6;
+							if ( myStats->type == GOBLIN )
+							{
+								chance = 10;
+							}
+							if ( rand() % chance == 0 )
 							{
 								this->increaseSkill(weaponskill);
+								skillIncreased = true;
 							}
 						}
 						else if ( hitstats->HP <= 0 )
@@ -6307,18 +6313,57 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								steamStatisticUpdateClient(player, STEAM_STAT_BARFIGHT_CHAMP, STEAM_STAT_INT, 1);
 							}
-
-							if ( rand() % 8 == 0 )
+							int chance = 8;
+							if ( myStats->type == GOBLIN )
+							{
+								chance = 12;
+							}
+							if ( rand() % chance == 0 )
 							{
 								this->increaseSkill(weaponskill);
+								skillIncreased = true;
 							}
 						}
-						else if ( rand() % 10 == 0 )
+						else
 						{
-							this->increaseSkill(weaponskill);
+							int chance = 10;
+							if ( myStats->type == GOBLIN )
+							{
+								chance = 14;
+							}
+							if ( rand() % 14 == 0 )
+							{
+								this->increaseSkill(weaponskill);
+								skillIncreased = true;
+
+							}
 						}
 					}
 
+					if ( skillIncreased && myStats->type == GOBLIN )
+					{
+						// goblins level up all combat skills at once.
+						if ( weaponskill != PRO_SWORD )
+						{
+							this->increaseSkill(PRO_SWORD);
+						}
+						if ( weaponskill != PRO_MACE )
+						{
+							this->increaseSkill(PRO_MACE);
+						}
+						if ( weaponskill != PRO_AXE )
+						{
+							this->increaseSkill(PRO_AXE);
+						}
+						if ( weaponskill != PRO_POLEARM )
+						{
+							this->increaseSkill(PRO_POLEARM);
+						}
+						if ( weaponskill != PRO_UNARMED )
+						{
+							this->increaseSkill(PRO_UNARMED);
+						}
+					}
 
 					// write the obituary
 					killedByMonsterObituary(hit.entity);

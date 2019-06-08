@@ -30,6 +30,8 @@ void initClass(int player)
 {
 	Item* item, *item2;
 	client_classes[player] = CLASS_SHAMAN;
+	stats[player]->playerRace = RACE_GOBLIN;
+	stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
