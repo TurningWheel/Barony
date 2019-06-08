@@ -584,7 +584,7 @@ void actBoulder(Entity* my)
 					}
 				}
 
-				magicDig(nullptr, nullptr, 2);
+				magicDig(nullptr, nullptr, 2, 4);
 				printlog("notice: boulder stopped path to exit, removed.");
 				return;
 			}
@@ -656,7 +656,7 @@ void actBoulder(Entity* my)
 									}
 								}
 
-								magicDig(nullptr, nullptr, 2);
+								magicDig(nullptr, nullptr, 2, 4);
 								printlog("notice: boulder stopped path to exit, removed.");
 								return;
 							}

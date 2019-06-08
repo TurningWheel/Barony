@@ -933,7 +933,7 @@ void actThrown(Entity* my)
 					case POTION_FIRESTORM:
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							magicDig(parent, my, 2);
+							magicDig(parent, my, 2, 4);
 						}
 						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						break;
@@ -956,7 +956,7 @@ void actThrown(Entity* my)
 				case POTION_FIRESTORM:
 					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 					{
-						magicDig(parent, my, 2);
+						magicDig(parent, my, 2, 4);
 					}
 					spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, nullptr);
 					break;

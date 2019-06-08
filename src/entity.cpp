@@ -6124,7 +6124,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else
 			{
-				if ( myStats->weapon && !shapeshifted )
+				if ( myStats->weapon && !shapeshifted && pose != PLAYER_POSE_GOLEM_SMASH )
 				{
 					// bang
 					spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
@@ -6145,7 +6145,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					weaponskill = -1;
 				}
-				if ( shapeshifted )
+				if ( shapeshifted || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
 					weaponskill == PRO_UNARMED;
 				}
@@ -6172,7 +6172,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						damagePreMultiplier = 2;
 					}
-					else if ( player >= 0 && pose == PLAYER_POSE_GOLEM_SMASH && myStats->type == TROLL )
+					else if ( player >= 0 && pose == PLAYER_POSE_GOLEM_SMASH )
 					{
 						damagePreMultiplier = 2;
 					}
@@ -7930,7 +7930,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 					{
-						magicDig(this, nullptr, 0);
+						magicDig(this, nullptr, 0, 0);
 						playSoundPos(hit.x, hit.y, 67, 128); // bust wall
 						for ( int c = 0; c < 5; c++ )
 						{

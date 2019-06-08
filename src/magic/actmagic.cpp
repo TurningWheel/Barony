@@ -2171,14 +2171,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
-							magicDig(parent, my, 8);
+							magicDig(parent, my, 8, 4);
 						}
 					}
 					else
 					{
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							magicDig(parent, my, 8);
+							magicDig(parent, my, 8, 4);
 						}
 						else
 						{
@@ -4626,7 +4626,7 @@ void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* au
 	spawnExplosion(x, y, -4 + rand() % 8);
 }
 
-void magicDig(Entity* parent, Entity* projectile, int numRocks)
+void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 {
 	if ( !hit.entity )
 	{
@@ -4647,7 +4647,11 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks)
 				}
 
 				// spawn several rock items
-				int i = numRocks + rand() % 4;
+				if ( randRocks <= 0 )
+				{
+					randRocks = 1;
+				}
+				int i = numRocks + rand() % randRocks;
 				for ( int c = 0; c < i; c++ )
 				{
 					Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
