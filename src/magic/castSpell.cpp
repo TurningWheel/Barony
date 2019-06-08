@@ -251,9 +251,18 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 	bool newbie = false;
 	bool overdrewIntoHP = false;
+	bool playerCastingFromKnownSpellbook = false;
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = caster->isSpellcasterBeginner();
+		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		{
+			if ( playerLearnedSpellbook(stat->shield) )
+			{
+				newbie = false; // bypass newbie penalty.
+				playerCastingFromKnownSpellbook = true;
+			}
+		}
 
 		/*magiccost = getCostOfSpell(spell);
 		if (magiccost < 0) {
@@ -1739,6 +1748,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					// piece of cake!
 					spellCastChance = 6; // 16.67%
 					magicChance = 7; // 14.2%
+				}
+				if ( usingSpellbook && !playerCastingFromKnownSpellbook )
+				{
+					spellCastChance *= 2;
+					magicChance *= 2;
 				}
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
 				if ( !strcmp(element->name, spellElement_light.name)
