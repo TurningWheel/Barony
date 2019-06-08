@@ -21,7 +21,7 @@
 
 /*-------------------------------------------------------------------------------
 
-	renderMagicGUI
+	renderMagicGUI - DEPRECATED, called from updateRightSidebar()
 
 	draws all the magic related gui stuff
 
@@ -121,7 +121,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh)
 
 /*-------------------------------------------------------------------------------
 
-	updateMagicGUI
+	updateMagicGUI - DEPRECATED, called from updateRightSidebar()
 
 	Handles all buttons and such.
 	If the spell list is open, it "equips" spells the player clicks on.
@@ -181,7 +181,7 @@ void updateMagicGUI()
 						spell_t* spell = (spell_t*)node->element;
 						if (spell)
 						{
-							equipSpell(spell, clientnum);
+							//equipSpell(spell, clientnum);
 							//selected_spell = spell;
 						}
 					}

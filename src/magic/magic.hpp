@@ -404,6 +404,7 @@ extern spell_t* selected_spell; //The spell the player's currently selected.
 extern spell_t* selected_spell_alternate[5];
 extern list_t channeledSpells[4]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
 extern std::vector<spell_t*> allGameSpells; // to iterate over for quickly finding attributes of all spells.
+extern int selected_spell_last_appearance;
 
 //TODO: Add stock spells.
 
@@ -463,7 +464,7 @@ extern spell_t spell_amplifyMagic;
 
 void setupSpells();
 
-void equipSpell(spell_t* spell, int playernum);
+void equipSpell(spell_t* spell, int playernum, Item* spellItem);
 Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook = false);
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 int spellGetCastSound(spell_t* spell);

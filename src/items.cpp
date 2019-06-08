@@ -2277,7 +2277,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			spell_t* spell = getSpellFromItem(item);
 			if (spell)
 			{
-				equipSpell(spell, player);
+				equipSpell(spell, player, item);
 			}
 			break;
 		}

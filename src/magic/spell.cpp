@@ -24,6 +24,7 @@ list_t spellList;
 list_t channeledSpells[4];
 spell_t* selected_spell = NULL;
 spell_t* selected_spell_alternate[NUM_HOTBAR_ALTERNATES] = { NULL, NULL, NULL, NULL, NULL };
+int selected_spell_last_appearance = 0;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
@@ -566,12 +567,13 @@ bool spellElement_isChanneled(spellElement_t* spellElement)
 	return false;
 }
 
-void equipSpell(spell_t* spell, int playernum)
+void equipSpell(spell_t* spell, int playernum, Item* spellItem)
 {
 	if ( playernum == clientnum )
 	{
 		selected_spell = spell;
 		messagePlayer(playernum, language[442], spell->name);
+		selected_spell_last_appearance = spellItem->appearance; // to keep track of shapeshift/normal spells.
 	}
 }
 

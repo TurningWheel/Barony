@@ -1024,7 +1024,7 @@ void drawStatus()
 				else
 				{
 					spell_t* spell = getSpellFromItem(item);
-					if ( selected_spell == spell )
+					if ( selected_spell == spell && selected_spell_last_appearance == item->appearance )
 					{
 						drawImageScaled(equipped_bmp, NULL, &src);
 					}
