@@ -1854,6 +1854,7 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 				}
 			}
 		}
+
 	}
 
 	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT)
@@ -2173,6 +2174,18 @@ void itemContextMenu()
 		else if ( itemCategory(current_item) == SPELLBOOK )
 		{
 			learnedSpell = playerLearnedSpellbook(current_item);
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				if ( players[clientnum]->entity->effectShapeshift == CREATURE_IMP )
+				{
+					learnedSpell = true; // imps can't learn spells but always equip books.
+				}
+				else if ( stats[clientnum] && stats[clientnum]->type == GOBLIN )
+				{
+					learnedSpell = true; // goblinos can't learn spells but always equip books.
+				}
+			}
+
 			drawItemMenuOptionSpellbook(*current_item, itemMenuX, itemMenuY, slot_height, learnedSpell);
 		}
 		else

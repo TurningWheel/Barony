@@ -4332,6 +4332,20 @@ void item_Spellbook(Item*& item, int player)
 		return;
 	}
 
+	if ( players[player] && players[player]->entity )
+	{
+		if ( players[player]->entity->effectShapeshift != NOTHING )
+		{
+			messagePlayer(player, language[3445]);
+			return;
+		}
+		else if ( stats[player] && stats[player]->type == GOBLIN )
+		{
+			messagePlayer(player, language[3444]);
+			return;
+		}
+	}
+
 	conductIlliterate = false;
 
 	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
