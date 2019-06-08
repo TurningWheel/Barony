@@ -1260,6 +1260,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1276,6 +1281,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1327,6 +1337,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1466,6 +1481,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1482,6 +1502,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1533,6 +1558,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1898,7 +1928,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
-
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1911,6 +1945,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 							if ( !(my->actmagicIsOrbiting == 2) )
 							{
 								my->removeLightField();
@@ -1958,6 +1997,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
+							if ( my->actmagicProjectileArc > 0 )
+							{
+								Entity* caster = uidToEntity(spell->caster);
+								spawnMagicTower(caster, my->x, my->y, spell->ID, nullptr);
+							}
 						}
 					}
 				}
