@@ -186,7 +186,9 @@ Entity* entityClicked()
 		}
 	}
 
-	if ( !uidToEntity(uidnum) && !mute_player_monster_sounds )
+	Entity* entity = uidToEntity(uidnum);
+
+	if ( !entity && !mute_player_monster_sounds )
 	{
 		if ( players[clientnum] && players[clientnum]->entity && monsterEmoteGimpTimer == 0 )
 		{
@@ -271,7 +273,7 @@ Entity* entityClicked()
 	// pixel processing (opengl only)
 	if ( softwaremode == false)
 	{
-		return uidToEntity(uidnum);
+		return entity;
 	}
 	else
 	{
