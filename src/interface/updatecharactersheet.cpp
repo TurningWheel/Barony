@@ -1643,7 +1643,18 @@ Sint32 displayAttackPower(Sint32 output[6])
 	{
 		if ( stats[clientnum] )
 		{
-			if ( !stats[clientnum]->weapon )
+			bool shapeshiftUseMeleeAttack = false;
+			if ( entity->effectShapeshift != NOTHING )
+			{
+				shapeshiftUseMeleeAttack = true;
+				if ( entity->effectShapeshift == CREATURE_IMP
+					&& stats[clientnum]->weapon && itemCategory(stats[clientnum]->weapon) == MAGICSTAFF )
+				{
+					shapeshiftUseMeleeAttack = false;
+				}
+			}
+
+			if ( !stats[clientnum]->weapon || shapeshiftUseMeleeAttack )
 			{
 				// fists
 				attack += entity->getAttack();
