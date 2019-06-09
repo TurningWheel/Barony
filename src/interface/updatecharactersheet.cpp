@@ -775,6 +775,14 @@ void drawSkillsSheet()
 				{
 					skillDetails[0] = 100 - (100 - stats[clientnum]->PROFICIENCIES[PRO_RANGED]) / 2.f; // lowest damage roll
 					skillDetails[1] = 50 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10;
+					if ( stats[clientnum]->type == GOBLIN )
+					{
+						skillDetails[1] += 20;
+						if ( stats[clientnum]->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
+						{
+							skillDetails[1] = std::min(skillDetails[1], 90.0);
+						}
+					}
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
 						skillDetails[2] = std::min(std::max(players[clientnum]->entity->getPER() / 2, 0), 50);
@@ -815,8 +823,8 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 50; // chance to degrade on > 0 dmg
-						skillDetails[2] = 4; // chance to degrade on 0 dmg
+						skillDetails[1] = 50 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 4 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
 						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
 						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
@@ -841,8 +849,8 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 100; // chance to degrade on > 0 dmg
-						skillDetails[2] = 8; // chance to degrade on 0 dmg
+						skillDetails[1] = 100 + (stats[clientnum]->type == GOBLIN ? 20 : 0); // chance to degrade on > 0 dmg
+						skillDetails[2] = 8 + (stats[clientnum]->type == GOBLIN ? 4 : 0); // chance to degrade on 0 dmg
 						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20)) * 10;
 						skillDetails[2] += static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20);
 						if ( svFlags & SV_FLAG_HARDCORE )
@@ -865,13 +873,13 @@ void drawSkillsSheet()
 					}
 					else
 					{
-						skillDetails[1] = 25; // degrade > 0 dmg taken
-						skillDetails[2] = 10; // degrade on 0 dmg
+						skillDetails[1] = 25 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade > 0 dmg taken
+						skillDetails[2] = 10 + (stats[clientnum]->type == GOBLIN ? 10 : 0); // degrade on 0 dmg
 						skillDetails[1] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
 						skillDetails[2] += (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10));
 						if ( svFlags & SV_FLAG_HARDCORE )
 						{
-							skillDetails[2] = 40;
+							skillDetails[2] = 40 + (stats[clientnum]->type == GOBLIN ? 10 : 0);
 						}
 						ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 							uint32ColorWhite(*mainsurface), language[3255 + i],

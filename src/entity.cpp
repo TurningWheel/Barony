@@ -1411,7 +1411,7 @@ Increases the given skill of the given entity by 1.
 
 -------------------------------------------------------------------------------*/
 
-void Entity::increaseSkill(int skill)
+void Entity::increaseSkill(int skill, bool notify)
 {
 	Stat* myStats = this->getStats();
 	int player = -1;
@@ -1429,7 +1429,10 @@ void Entity::increaseSkill(int skill)
 	if ( myStats->PROFICIENCIES[skill] < 100 )
 	{
 		myStats->PROFICIENCIES[skill]++;
-		messagePlayerColor(player, color, language[615], getSkillLangEntry(skill));
+		if ( notify )
+		{
+			messagePlayerColor(player, color, language[615], getSkillLangEntry(skill));
+		}
 		switch ( myStats->PROFICIENCIES[skill] )
 		{
 			case 20:
@@ -5415,7 +5418,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					bowDegradeChance += (stats[skill[2]]->PROFICIENCIES[PRO_RANGED] / 20) * 10;
 				}
-				if ( bowDegradeChance < 100 && rand() % 50 == 0 && myStats->weapon->type != ARTIFACT_BOW )
+				if ( myStats->type == GOBLIN )
+				{
+					bowDegradeChance += 20;
+					if ( myStats->PROFICIENCIES[PRO_RANGED] < SKILL_LEVEL_LEGENDARY )
+					{
+						bowDegradeChance = std::min(bowDegradeChance, 90);
+					}
+				}
+				if ( bowDegradeChance < 100 && rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW )
 				{
 					if ( myStats->weapon != NULL )
 					{
@@ -6295,13 +6306,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| myStats->weapon->type == CRYSTAL_SPEAR) )
 						{
 							int chance = 6;
+							bool notify = true;
 							if ( myStats->type == GOBLIN )
 							{
 								chance = 10;
+								notify = false;
 							}
 							if ( rand() % chance == 0 )
 							{
-								this->increaseSkill(weaponskill);
+								this->increaseSkill(weaponskill, notify);
 								skillIncreased = true;
 							}
 						}
@@ -6314,26 +6327,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 								steamStatisticUpdateClient(player, STEAM_STAT_BARFIGHT_CHAMP, STEAM_STAT_INT, 1);
 							}
 							int chance = 8;
+							bool notify = true;
 							if ( myStats->type == GOBLIN )
 							{
 								chance = 12;
+								notify = false;
 							}
 							if ( rand() % chance == 0 )
 							{
-								this->increaseSkill(weaponskill);
+								this->increaseSkill(weaponskill, notify);
 								skillIncreased = true;
 							}
 						}
 						else
 						{
 							int chance = 10;
+							bool notify = true;
 							if ( myStats->type == GOBLIN )
 							{
 								chance = 14;
+								notify = false;
 							}
 							if ( rand() % 14 == 0 )
 							{
-								this->increaseSkill(weaponskill);
+								this->increaseSkill(weaponskill, notify);
 								skillIncreased = true;
 
 							}
@@ -6345,23 +6362,28 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// goblins level up all combat skills at once.
 						if ( weaponskill != PRO_SWORD )
 						{
-							this->increaseSkill(PRO_SWORD);
+							this->increaseSkill(PRO_SWORD, false);
 						}
 						if ( weaponskill != PRO_MACE )
 						{
-							this->increaseSkill(PRO_MACE);
+							this->increaseSkill(PRO_MACE, false);
 						}
 						if ( weaponskill != PRO_AXE )
 						{
-							this->increaseSkill(PRO_AXE);
+							this->increaseSkill(PRO_AXE, false);
 						}
 						if ( weaponskill != PRO_POLEARM )
 						{
-							this->increaseSkill(PRO_POLEARM);
+							this->increaseSkill(PRO_POLEARM, false);
 						}
 						if ( weaponskill != PRO_UNARMED )
 						{
-							this->increaseSkill(PRO_UNARMED);
+							this->increaseSkill(PRO_UNARMED, false);
+						}
+						if ( player >= 0 )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							messagePlayerColor(player, color, language[3446]);
 						}
 					}
 
@@ -6413,17 +6435,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 							isWeakWeapon = true;
 						}
 
+						if ( myStats->type == GOBLIN )
+						{
+							isWeakWeapon = false;
+						}
+
 						if ( !artifactWeapon )
 						{
 							// normal weapons chance to not degrade 75% chance on 0 dmg, else 98%
-							int degradeOnZeroDMG = 4;
-							int degradeOnNormalDMG = 50;
+							int degradeOnZeroDMG = 4 + (myStats->type == GOBLIN ? 4 : 0);
+							int degradeOnNormalDMG = 50 + (myStats->type == GOBLIN ? 20 : 0);
 
 							if ( !myStats->weapon && (*weaponToBreak) )
 							{
 								// unarmed glove weapons, 87.5% to not degrade on 0 dmg, else 99%
-								degradeOnZeroDMG = 8;
-								degradeOnNormalDMG = 100;
+								degradeOnZeroDMG = 8 + (myStats->type == GOBLIN ? 4 : 0);
+								degradeOnNormalDMG = 100 + (myStats->type == GOBLIN ? 20 : 0);
 							}
 							else if ( isWeakWeapon )
 							{
@@ -6584,6 +6611,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 
+						if ( hitstats->type == GOBLIN )
+						{
+							armorDegradeChance += 10;
+						}
+
 						if ( hit.entity->behavior == &actPlayer && armornum == 4 )
 						{
 							armorDegradeChance += (hitstats->PROFICIENCIES[PRO_SHIELD] / 10);
@@ -6659,6 +6691,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( svFlags & SV_FLAG_HARDCORE )
 							{
 								shieldDegradeChance = 40;
+							}
+							if ( hitstats->type == GOBLIN )
+							{
+								shieldDegradeChance += 10;
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
@@ -8090,8 +8126,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// Update the paths so that monsters know they can walk through it
 								generatePathMaps();
 							}
-
-							if ( rand() % 2 && degradePickaxe )
+							int chance = 2 + (myStats->type == GOBLIN ? 2 : 0);
+							if ( rand() % chance && degradePickaxe )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )

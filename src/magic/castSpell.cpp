@@ -1787,9 +1787,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if ( usingSpellbook && rand() % 10 == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+	if ( usingSpellbook ) // degrade spellbooks on use.
 	{
-		caster->degradeArmor(*stat, *(stat->shield), 4);
+		int chance = 8;
+		if ( stat->type == GOBLIN )
+		{
+			chance = 16;
+		}
+		if ( rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+		{
+			caster->degradeArmor(*stat, *(stat->shield), 4);
+		}
 	}
 
 	if (spell_isChanneled(spell) && !using_magicstaff)   //TODO: What about magic traps and channeled spells?

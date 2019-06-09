@@ -459,7 +459,7 @@ public:
 	void handleEffectsClient();
 
 	void effectTimes();
-	void increaseSkill(int skill);
+	void increaseSkill(int skill, bool notify = true);
 
 	Stat* getStats() const;
 
