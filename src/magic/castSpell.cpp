@@ -257,10 +257,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		newbie = caster->isSpellcasterBeginner();
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
-			if ( playerLearnedSpellbook(stat->shield) )
+			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(stat->shield) )
 			{
-				newbie = false; // bypass newbie penalty.
+				// bypass newbie penalty since we're good enough to cast the spell.
+				newbie = false; 
 				playerCastingFromKnownSpellbook = true;
+			}
+			else
+			{
+				newbie = true;
 			}
 		}
 
@@ -323,22 +328,35 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if (newbie)
+	if ( newbie )
 	{
 		//So This wizard is a newbie.
 
 		//First, drain some extra mana maybe.
 		int chance = rand() % 10;
-		if (chance >= spellcasting / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
+		int spellcastingAbility = spellcasting;
+		if ( usingSpellbook )
 		{
-			extramagic = rand() % (300 / (spellcasting + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
+			// penalty for not knowing spellbook. e.g 40 spellcasting, 80 difficulty = 40% more chance to fumble/use mana.
+			if ( spellcastingAbility >= 20 )
+			{
+				spellcastingAbility = std::max(10, spellcastingAbility - spell->difficulty);
+			}
+			else
+			{
+				spellcastingAbility = std::max(0, spellcastingAbility - spell->difficulty);
+			}
+		}
+		if (chance >= spellcastingAbility / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
+		{
+			extramagic = rand() % (300 / (spellcastingAbility + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
 			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
 			caster->drainMP(extramagic);
 		}
 
 		//Now, there's a chance they'll fumble the spell.
 		chance = rand() % 10;
-		if (chance >= spellcasting / 10)
+		if (chance >= spellcastingAbility / 10)
 		{
 			if (rand() % 3 == 1)
 			{
