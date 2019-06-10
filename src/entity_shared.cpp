@@ -381,6 +381,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_3",
 	"spellbook_4",
 	"spellbook_5",
+	"tool_whip",
 	""
 };
 
@@ -430,6 +431,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"iron_dagger",
 		"steel_chakram",
 		"crystal_shuriken",
+		"tool_whip",
 		"potion_water",
 		"potion_booze",
 		"potion_juice",

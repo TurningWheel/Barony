@@ -2195,6 +2195,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_PICKAXE:
+		case TOOL_WHIP:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TINOPENER:

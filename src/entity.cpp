@@ -11250,6 +11250,45 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 
 	bool armBended = (!isPlayer && this->monsterArmbended) || (isPlayer && this->skill[11]);
+	if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+	{
+		if ( myAttack != 2 )
+		{
+			weaponLimb->pitch -= PI / 8;
+			if ( weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+			{
+				weaponLimb->pitch -= PI / 8;
+			}
+		}
+		if ( myAttack == 1 )
+		{
+			if ( weaponArmLimb->skill[1] == 1 && armBended )
+			{
+				if ( weaponArmLimb->pitch >= 3 * PI / 2 )
+				{
+					if ( weaponLimb->sprite == items[TOOL_WHIP].index )
+					{
+						weaponLimb->sprite += 1;
+					}
+				}
+				else if ( weaponArmLimb->pitch >= PI / 10 )
+				{
+					if ( weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+					{
+						weaponLimb->sprite = items[TOOL_WHIP].index;
+					}
+				}
+			}
+			else
+			{
+				weaponLimb->sprite = items[TOOL_WHIP].index;
+			}
+		}
+		else
+		{
+			weaponLimb->sprite = items[TOOL_WHIP].index;
+		}
+	}
 
 	if ( isPlayer && monsterType == CREATURE_IMP )
 	{
@@ -11275,6 +11314,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->focaly += 1;
 				weaponLimb->focalz -= 1.5;
 			}
+		}
+
+		if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+		{
+			weaponLimb->focalx += 1;
+			weaponLimb->focalz += 1.5;
 		}
 	}
 	else
@@ -11309,6 +11354,18 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->focalz += 3;
 			}
 		}
+
+		if ( weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+		{
+			weaponLimb->focalx += 5.5;
+			weaponLimb->focalz += 3.5;
+		}
+		else if ( weaponLimb->sprite == items[TOOL_WHIP].index )
+		{
+			weaponLimb->focalx += 1.5;
+			weaponLimb->focalz += 2.5;
+		}
+
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
 		weaponLimb->pitch += cos(weaponArmLimb->roll) * PI / 2;
 	}
