@@ -5627,12 +5627,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return;
 			}
 		}
-
+		bool whip = myStats->weapon && myStats->weapon->type == TOOL_WHIP;
 		// normal attacks
 		if ( target == nullptr )
 		{
-			playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
-			dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+			if ( whip )
+			{
+				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, 0, false);
+				if ( hit.entity )
+				{
+					playSoundEntity(this, 407, 128);
+				}
+				else
+				{
+					playSoundEntity(this, 406, 128); // whoosh noise
+				}
+			}
+			else
+			{
+				playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
+				dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+			}
 		}
 		else
 		{
@@ -8004,7 +8019,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( dist != STRIKERANGE )
+			if ( (dist != STRIKERANGE && !whip) || (dist != STRIKERANGE * 1.5 && whip) )
 			{
 				// hit a wall
 				if ( pose == PLAYER_POSE_GOLEM_SMASH )

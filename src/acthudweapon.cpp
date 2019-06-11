@@ -1154,10 +1154,10 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEY = -2;
 		}
 		int targetZ = -6;
-		if ( stats[clientnum]->weapon
-			&& stats[clientnum]->weapon->type == TOOL_WHIP )
+		bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
+		if ( whip )
 		{
-			targetZ = -4;
+			targetZ = -6;
 			HUDWEAPON_MOVEZ -= .32;
 		}
 		else
@@ -1169,9 +1169,16 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEZ = targetZ;
 			if (HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == -2)
 			{
-				if ( !swingweapon || (stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP) )
+				if ( !swingweapon || whip )
 				{
-					HUDWEAPON_CHOP++;
+					if ( whip )
+					{
+						HUDWEAPON_CHOP = 13;
+					}
+					else
+					{
+						HUDWEAPON_CHOP++;
+					}
 					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 					if ( stats[clientnum]->weapon
 						&& stats[clientnum]->weapon->type == CROSSBOW )
@@ -1203,48 +1210,21 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 2 )     // first swing
 	{
-		HUDWEAPON_PITCH += .75 * (monsterGlobalAnimationMultiplier / 50.0);
+		HUDWEAPON_PITCH += .75;
 		if ( HUDWEAPON_PITCH >= (PI * 3) / 4 )
 		{
 			HUDWEAPON_PITCH = (PI * 3) / 4;
 		}
-		HUDWEAPON_MOVEX += 1 * (monsterGlobalAnimationMultiplier / 50.0);
+		HUDWEAPON_MOVEX += 1;
 		if ( HUDWEAPON_MOVEX > 4 )
 		{
 			HUDWEAPON_MOVEX = 4;
 		}
-		if ( stats[clientnum]->weapon
-			&& stats[clientnum]->weapon->type == TOOL_WHIP )
+		HUDWEAPON_MOVEZ += .8;
+		if ( HUDWEAPON_MOVEZ > 0 )
 		{
-			HUDWEAPON_MOVEY += .45 * (monsterGlobalAnimationMultiplier / 50.0);
-			if ( HUDWEAPON_MOVEY > 0 )
-			{
-				HUDWEAPON_MOVEY = 0;
-			}
-			HUDWEAPON_MOVEZ += 0.8 * (monsterGlobalAnimationMultiplier / 50.0);
-			if ( HUDWEAPON_MOVEZ > 6 )
-			{
-				HUDWEAPON_MOVEZ = 6;
-				HUDWEAPON_CHOP++;
-			}
-			if ( HUDWEAPON_PITCH >= 0 && HUDWEAPON_PITCH <= PI / 2 )
-			{
-				my->sprite = itemModelFirstperson(stats[clientnum]->weapon) + 1;
-				if ( HUDWEAPON_PITCH >= PI / 4 )
-				{
-					HUDWEAPON_PITCH -= .7 * (monsterGlobalAnimationMultiplier / 50.0);
-					HUDWEAPON_MOVEZ -= .75 * (monsterGlobalAnimationMultiplier / 50.0);
-				}
-			}
-		}
-		else
-		{
-			HUDWEAPON_MOVEZ += .8 * (monsterGlobalAnimationMultiplier / 50.0);
-			if ( HUDWEAPON_MOVEZ > 0 )
-			{
-				HUDWEAPON_MOVEZ = 0;
-				HUDWEAPON_CHOP++;
-			}
+			HUDWEAPON_MOVEZ = 0;
+			HUDWEAPON_CHOP++;
 		}
 	}
 	else if ( HUDWEAPON_CHOP == 3 )     // return from first swing
@@ -1395,45 +1375,47 @@ void actHudWeapon(Entity* my)
 		real_t targetRoll = -PI / 2;
 		int targetY = -6;
 		real_t targetPitch = 0.f;
-		if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
+		bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
+		if ( whip )
 		{
 			/*targetRoll = -PI / 2;
 			targetY = -3;*/
 			targetRoll = -PI / 6;
-			targetY = -3 + 1;
-			targetZ = -3 + 3;
-			HUDWEAPON_PITCH += .25 * (monsterGlobalAnimationMultiplier / 50.0);
+			targetY = -4;
+			targetZ = 0;
+			HUDWEAPON_PITCH += .25;
 			targetPitch = PI / 4;
 			if ( HUDWEAPON_PITCH > targetPitch )
 			{
 				HUDWEAPON_PITCH = targetPitch;
 			}
+			HUDWEAPON_MOVEX -= .05;
 		}
 		else
 		{
-			HUDWEAPON_PITCH -= .25 * (monsterGlobalAnimationMultiplier / 50.0);
+			HUDWEAPON_PITCH -= .25;
 			if ( HUDWEAPON_PITCH < 0 )
 			{
 				HUDWEAPON_PITCH = 0;
 			}
+			HUDWEAPON_MOVEX -= .35;
 		}
-		HUDWEAPON_MOVEX -= .35 * (monsterGlobalAnimationMultiplier / 50.0);
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
 			HUDWEAPON_MOVEX = 0;
 		}
-		HUDWEAPON_MOVEZ -= .75 * (monsterGlobalAnimationMultiplier / 50.0);
+		HUDWEAPON_MOVEZ -= .75;
 
 		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
 			HUDWEAPON_MOVEZ = targetZ;
 		}
-		HUDWEAPON_MOVEY -= .75 * (monsterGlobalAnimationMultiplier / 50.0);
+		HUDWEAPON_MOVEY -= .75;
 		if ( HUDWEAPON_MOVEY < targetY )
 		{
 			HUDWEAPON_MOVEY = targetY;
 		}
-		HUDWEAPON_ROLL -= .25 * (monsterGlobalAnimationMultiplier / 50.0);
+		HUDWEAPON_ROLL -= .25;
 
 		if (HUDWEAPON_ROLL < targetRoll )
 		{
@@ -1442,28 +1424,18 @@ void actHudWeapon(Entity* my)
 			{
 				if (!swingweapon)
 				{
-					if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP 
-						&& HUDWEAPON_CHARGE < MAXCHARGE )
+					HUDWEAPON_CHOP++;
+					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
+					if ( stats[clientnum]->weapon
+						&& stats[clientnum]->weapon->type == CROSSBOW )
 					{
-						HUDWEAPON_CHOP = 0;
-						HUDWEAPON_CHARGE = 0;
-						HUDWEAPON_OVERCHARGE = 0;
+						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
-					else
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
 					{
-						HUDWEAPON_CHOP++;
-						players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
-						if ( stats[clientnum]->weapon
-							&& stats[clientnum]->weapon->type == CROSSBOW )
-						{
-							throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
-						}
-						HUDWEAPON_CHARGE = 0;
-						HUDWEAPON_OVERCHARGE = 0;
-						if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
-						{
-							camera_shakex += .07;
-						}
+						camera_shakex += .07;
 					}
 				}
 				else
@@ -1477,11 +1449,11 @@ void actHudWeapon(Entity* my)
 	{
 		HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
 		HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
-		HUDWEAPON_YAW += .35 * (monsterGlobalAnimationMultiplier / 50.0);
+		HUDWEAPON_YAW += .35;
 		if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
 		{
 			HUDWEAPON_MOVEY = -5 * cos(HUDWEAPON_YAW) + 3;
-			HUDWEAPON_ROLL -= .25 * (monsterGlobalAnimationMultiplier / 50.0);
+			HUDWEAPON_ROLL -= .25;
 			if ( HUDWEAPON_ROLL < -PI / 2 )
 			{
 				HUDWEAPON_ROLL = -PI / 2;
@@ -1803,6 +1775,45 @@ void actHudWeapon(Entity* my)
 			}
 		}
 	}
+	else if ( HUDWEAPON_CHOP == 13 ) // whip swing
+	{
+		HUDWEAPON_MOVEX += 1;
+		if ( HUDWEAPON_MOVEX > 4 )
+		{
+			HUDWEAPON_MOVEX = 4;
+		}
+		HUDWEAPON_MOVEY += .45;
+		if ( HUDWEAPON_MOVEY > 0 )
+		{
+			HUDWEAPON_MOVEY = 0;
+		}
+		HUDWEAPON_PITCH += .5;
+		if ( HUDWEAPON_PITCH >= 3 * PI / 4 )
+		{
+			HUDWEAPON_PITCH = 3 * PI / 4;
+		}
+		HUDWEAPON_MOVEZ += 1;
+		if ( HUDWEAPON_MOVEZ > 4 )
+		{
+			HUDWEAPON_MOVEZ = 4;
+		}
+		if ( HUDWEAPON_PITCH >= PI / 8 )
+		{
+			my->sprite = items[TOOL_WHIP].fpindex + 1;
+		}
+		if ( HUDWEAPON_YAW > -.1 )
+		{
+			HUDWEAPON_YAW = std::max<real_t>(HUDWEAPON_YAW - .1, -.1);
+		}
+		else if ( HUDWEAPON_YAW < -.1 )
+		{
+			HUDWEAPON_YAW = std::min<real_t>(HUDWEAPON_YAW + .1, -.1);
+		}
+		if ( HUDWEAPON_MOVEZ == 4 && HUDWEAPON_PITCH == 3 * PI / 4 )
+		{
+			HUDWEAPON_CHOP = 3;
+		}
+	}
 
 	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation || players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2 )
 	{
@@ -1939,16 +1950,13 @@ void actHudWeapon(Entity* my)
 			}
 			else if ( item->type == TOOL_WHIP )
 			{
-				my->x = 6 + HUDWEAPON_MOVEX + 4;
-				my->y = 3 + HUDWEAPON_MOVEY;
+				my->x = 6 + HUDWEAPON_MOVEX + 4 + 1;
+				my->y = 3 + HUDWEAPON_MOVEY - 0.5;
 				my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
 				my->yaw = HUDWEAPON_YAW - camera_shakex2;
 				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
-				if ( my->sprite == itemModelFirstperson(item) + 1 )
+				if ( my->sprite == items[TOOL_WHIP].fpindex + 1 )
 				{
-					my->x += limbs[HUMAN][12][0];
-					my->y += limbs[HUMAN][12][1];
-					my->z += limbs[HUMAN][12][2];
 					my->pitch -= PI / 4;
 					my->focalx = 10;
 					my->focalz = -4;
