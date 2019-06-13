@@ -291,6 +291,7 @@ bool bowFire = false;
 #define HUDWEAPON_INIT my->skill[1]
 #define HUDWEAPON_CHARGE my->skill[3]
 #define HUDWEAPON_OVERCHARGE my->skill[4]
+#define HUDWEAPON_WHIP_ANGLE my->skill[5]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -488,9 +489,9 @@ void actHudWeapon(Entity* my)
 			{
 				if ( stats[clientnum]->weapon->type == TOOL_WHIP )
 				{
-					my->scalex = 0.7;
-					my->scaley = 0.7;
-					my->scalez = 0.7;
+					my->scalex = 0.6;
+					my->scaley = 0.6;
+					my->scalez = 0.6;
 				}
 				else if ( itemModelFirstperson(stats[clientnum]->weapon) != itemModel(stats[clientnum]->weapon) )
 				{
@@ -1169,7 +1170,7 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEZ = targetZ;
 			if (HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == -2)
 			{
-				if ( !swingweapon || whip )
+				if ( !swingweapon )
 				{
 					if ( whip )
 					{
@@ -1369,43 +1370,46 @@ void actHudWeapon(Entity* my)
 	}
 	else if ( HUDWEAPON_CHOP == 4 )     // prepare for second swing
 	{
-		HUDWEAPON_YAW = 0;
-
 		int targetZ = -4;
 		real_t targetRoll = -PI / 2;
 		int targetY = -6;
 		real_t targetPitch = 0.f;
-		bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
+		bool whip = (stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP);
 		if ( whip )
 		{
 			/*targetRoll = -PI / 2;
 			targetY = -3;*/
-			targetRoll = -PI / 6;
-			targetY = -4;
-			targetZ = 0;
+			/*targetRoll = -PI / 2;
+			targetY = -6;
+			targetZ = -4;*/
 			HUDWEAPON_PITCH += .25;
-			targetPitch = PI / 4;
+			targetPitch = PI / 8;
 			if ( HUDWEAPON_PITCH > targetPitch )
 			{
 				HUDWEAPON_PITCH = targetPitch;
 			}
-			HUDWEAPON_MOVEX -= .05;
+			HUDWEAPON_WHIP_ANGLE = 0;
+			HUDWEAPON_YAW -= .35;
+			if ( HUDWEAPON_YAW < -PI / 4 )
+			{
+				HUDWEAPON_YAW = -PI / 4;
+			}
 		}
 		else
 		{
+			HUDWEAPON_YAW = 0;
 			HUDWEAPON_PITCH -= .25;
-			if ( HUDWEAPON_PITCH < 0 )
+			if ( HUDWEAPON_PITCH < targetPitch )
 			{
-				HUDWEAPON_PITCH = 0;
+				HUDWEAPON_PITCH = targetPitch;
 			}
-			HUDWEAPON_MOVEX -= .35;
 		}
+		HUDWEAPON_MOVEX -= .35;
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
 			HUDWEAPON_MOVEX = 0;
 		}
 		HUDWEAPON_MOVEZ -= .75;
-
 		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
 			HUDWEAPON_MOVEZ = targetZ;
@@ -1447,33 +1451,63 @@ void actHudWeapon(Entity* my)
 	}
 	else if (HUDWEAPON_CHOP == 5)     // second swing
 	{
-		HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
-		HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
-		HUDWEAPON_YAW += .35;
 		if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
 		{
-			HUDWEAPON_MOVEY = -5 * cos(HUDWEAPON_YAW) + 3;
-			HUDWEAPON_ROLL -= .25;
-			if ( HUDWEAPON_ROLL < -PI / 2 )
+			/*HUDWEAPON_MOVEX = limbs[HUMAN][11][2] + cos(HUDWEAPON_WHIP_ANGLE) * (limbs[HUMAN][11][0]);
+			HUDWEAPON_MOVEY = limbs[HUMAN][12][2] + cos(HUDWEAPON_WHIP_ANGLE) * (limbs[HUMAN][12][0]);
+			my->sprite = items[TOOL_WHIP].fpindex + 1;
+			if ( HUDWEAPON_PITCH < PI / 4 )
 			{
-				HUDWEAPON_ROLL = -PI / 2;
+				HUDWEAPON_PITCH = 3 * PI / 8;
+				HUDWEAPON_YAW -= PI / 4;
+			}
+			HUDWEAPON_YAW += .25 * (monsterGlobalAnimationMultiplier / 50.f);
+			HUDWEAPON_WHIP_ANGLE += .35 * (monsterGlobalAnimationMultiplier / 50.f);
+			if ( HUDWEAPON_YAW > (2 * PI) / 4 )
+			{
+				HUDWEAPON_YAW = (2 * PI) / 4;
+			}*/
+			if ( HUDWEAPON_WHIP_ANGLE == 0 )
+			{
+				HUDWEAPON_WHIP_ANGLE = 1;
+				HUDWEAPON_PITCH = 3 * PI / 8;
+				HUDWEAPON_YAW -= PI / 4;
+			}
+			else if ( HUDWEAPON_WHIP_ANGLE == 1 && HUDWEAPON_YAW > PI / 4 )
+			{
+				HUDWEAPON_WHIP_ANGLE = 2;
+				HUDWEAPON_PITCH = PI / 8;
+				HUDWEAPON_YAW += PI / 4;
+			}
+
+			if ( HUDWEAPON_WHIP_ANGLE == 1 )
+			{
+				my->sprite = items[TOOL_WHIP].fpindex + 1;
+			}
+			HUDWEAPON_MOVEX = sin(std::min(HUDWEAPON_YAW + PI / 4, 3 * PI / 4)) * -4;
+			HUDWEAPON_MOVEY = -2 + cos(std::min(HUDWEAPON_YAW + PI / 4, 3 * PI / 4)) * -4;
+			HUDWEAPON_YAW += .35 * (monsterGlobalAnimationMultiplier / 50.f);
+			if ( HUDWEAPON_YAW > (3 * PI) / 4 )
+			{
+				HUDWEAPON_YAW = (3 * PI) / 4;
+				HUDWEAPON_CHOP++;
 			}
 		}
-
-		if ( HUDWEAPON_YAW > (3 * PI) / 4 )
+		else
 		{
-			HUDWEAPON_YAW = (3 * PI) / 4;
-			HUDWEAPON_CHOP++;
+			HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
+			HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
+			HUDWEAPON_YAW += .35;
+			if ( HUDWEAPON_YAW > (3 * PI) / 4 )
+			{
+				HUDWEAPON_YAW = (3 * PI) / 4;
+				HUDWEAPON_CHOP++;
+			}
 		}
 	}
 	else if (HUDWEAPON_CHOP == 6)     // return from second swing
 	{
-		if ( stats[clientnum]->weapon
-			&& stats[clientnum]->weapon->type == TOOL_WHIP )
-		{
-			HUDWEAPON_CHOP = 1;
-		}
-		else if ( swingweapon )
+		if ( swingweapon )
 		{
 			// one more swing...
 			if ( stats[clientnum]->weapon && !hideWeapon )
@@ -1489,27 +1523,38 @@ void actHudWeapon(Entity* my)
 				}
 			}
 		}
-		HUDWEAPON_MOVEX -= .25;
+		HUDWEAPON_MOVEX -= .25 * (monsterGlobalAnimationMultiplier / 50.f);
 		if ( HUDWEAPON_MOVEX < 0 )
 		{
 			HUDWEAPON_MOVEX = 0;
 		}
-		HUDWEAPON_MOVEY -= .25;
+		HUDWEAPON_MOVEY -= .25 * (monsterGlobalAnimationMultiplier / 50.f);
 		if ( HUDWEAPON_MOVEY < 0 )
 		{
 			HUDWEAPON_MOVEY = 0;
 		}
-		HUDWEAPON_MOVEZ += .35;
-		if ( HUDWEAPON_MOVEZ > 0 )
-		{
-			HUDWEAPON_MOVEZ = 0;
-		}
-		HUDWEAPON_YAW -= .25;
+		HUDWEAPON_YAW -= .25 * (monsterGlobalAnimationMultiplier / 50.f);
 		if ( HUDWEAPON_YAW < -.1 )
 		{
 			HUDWEAPON_YAW = -.1;
 		}
-		HUDWEAPON_ROLL += .25;
+		if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
+		{
+			if ( HUDWEAPON_ROLL > -PI / 8 )
+			{
+				HUDWEAPON_PITCH -= .25 * (monsterGlobalAnimationMultiplier / 50.f);
+				if ( HUDWEAPON_PITCH < 0.f )
+				{
+					HUDWEAPON_PITCH = 0.f;
+				}
+			}
+		}
+		HUDWEAPON_MOVEZ += .35 * (monsterGlobalAnimationMultiplier / 50.f);
+		if ( HUDWEAPON_MOVEZ > 0 )
+		{
+			HUDWEAPON_MOVEZ = 0;
+		}
+		HUDWEAPON_ROLL += .25 * (monsterGlobalAnimationMultiplier / 50.f);
 		if ( HUDWEAPON_ROLL > 0 )
 		{
 			HUDWEAPON_ROLL = 0;
@@ -1950,16 +1995,20 @@ void actHudWeapon(Entity* my)
 			}
 			else if ( item->type == TOOL_WHIP )
 			{
-				my->x = 6 + HUDWEAPON_MOVEX + 4 + 1;
-				my->y = 3 + HUDWEAPON_MOVEY - 0.5;
+				my->x = 6 + HUDWEAPON_MOVEX + 5;
+				my->y = 3 + HUDWEAPON_MOVEY - 0.5 + 1;
+				//my->flags[OVERDRAW] = false;
 				my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
 				my->yaw = HUDWEAPON_YAW - camera_shakex2;
 				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				if ( my->sprite == items[TOOL_WHIP].fpindex + 1 )
 				{
 					my->pitch -= PI / 4;
-					my->focalx = 10;
+					my->focalx = 10 + (HUDWEAPON_CHOP == 5 ? 4 : 0);
 					my->focalz = -4;
+					my->focaly = 0;
+					my->x += (HUDWEAPON_CHOP == 5 ? -3 : 0);
+					my->y += (HUDWEAPON_CHOP == 5 ? 6 : 0);
 				}
 				else
 				{
