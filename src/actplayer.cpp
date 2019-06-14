@@ -5434,9 +5434,6 @@ void playerAnimateRat(Entity* my)
 				entity->sprite = 815;
 			}
 			entity->focalx = -2;
-			// limbs[playerRace][1][0];
-			// limbs[playerRace][1][1];
-			//entity->focalz = limbs[playerRace][1][2];
 			if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
 			{
 				if ( (ticks % 10 == 0) )
