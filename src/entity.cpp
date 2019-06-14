@@ -5634,14 +5634,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( whip )
 			{
 				dist = lineTrace(this, x, y, yaw, STRIKERANGE * 1.5, 0, false);
-				if ( hit.entity )
-				{
-					playSoundEntity(this, 407, 128);
-				}
-				else
-				{
-					playSoundEntity(this, 406, 128); // whoosh noise
-				}
+				playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
 			}
 			else
 			{

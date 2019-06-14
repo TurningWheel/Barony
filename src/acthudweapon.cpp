@@ -721,6 +721,7 @@ void actHudWeapon(Entity* my)
 					if ( whip )
 					{
 						HUDWEAPON_CHOP = 4;
+						pickaxeGimpTimer = 20;
 					}
 					else if ( rangedweapon )
 					{
@@ -1160,6 +1161,10 @@ void actHudWeapon(Entity* my)
 		{
 			targetZ = -6;
 			HUDWEAPON_MOVEZ -= .32;
+			if ( HUDWEAPON_MOVEY > 2 )
+			{
+				HUDWEAPON_MOVEY -= .45; // returning from side swing, y offset is larger than normal so assist here.
+			}
 		}
 		else
 		{
@@ -1172,22 +1177,15 @@ void actHudWeapon(Entity* my)
 			{
 				if ( !swingweapon )
 				{
-					if ( whip )
-					{
-						HUDWEAPON_CHOP = 13;
-					}
-					else
-					{
-						HUDWEAPON_CHOP++;
-					}
+					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 					if ( stats[clientnum]->weapon
 						&& stats[clientnum]->weapon->type == CROSSBOW )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
-					if ( stats[clientnum]->weapon
-						&& stats[clientnum]->weapon->type == TOOL_PICKAXE )
+					if ( (stats[clientnum]->weapon
+						&& stats[clientnum]->weapon->type == TOOL_PICKAXE) || whip )
 					{
 						if ( pickaxeGimpTimer < 20 )
 						{
@@ -1213,22 +1211,23 @@ void actHudWeapon(Entity* my)
 	{
 		if ( whip )
 		{
-			HUDWEAPON_MOVEX += 1;
+			real_t animationMult = 0.8;
+			HUDWEAPON_MOVEX += 1 * animationMult;
 			if ( HUDWEAPON_MOVEX > 4 )
 			{
 				HUDWEAPON_MOVEX = 4;
 			}
-			HUDWEAPON_MOVEY += .45;
+			HUDWEAPON_MOVEY += .45 * animationMult;
 			if ( HUDWEAPON_MOVEY > 0 )
 			{
 				HUDWEAPON_MOVEY = 0;
 			}
-			HUDWEAPON_PITCH += .5;
+			HUDWEAPON_PITCH += .5 * animationMult;
 			if ( HUDWEAPON_PITCH >= 3 * PI / 4 )
 			{
 				HUDWEAPON_PITCH = 3 * PI / 4;
 			}
-			HUDWEAPON_MOVEZ += 1;
+			HUDWEAPON_MOVEZ += 1 * animationMult;
 			if ( HUDWEAPON_MOVEZ > 4 )
 			{
 				HUDWEAPON_MOVEZ = 4;
@@ -1477,6 +1476,10 @@ void actHudWeapon(Entity* my)
 					{
 						camera_shakex += .07;
 					}
+					if ( whip && pickaxeGimpTimer < 20 )
+					{
+						pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+					}
 				}
 				else
 				{
@@ -1593,7 +1596,7 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_YAW = -.1;
 		}
-		HUDWEAPON_MOVEZ += .35 * (monsterGlobalAnimationMultiplier / 50.f);
+		HUDWEAPON_MOVEZ += .35;
 		if ( HUDWEAPON_MOVEZ > 0 )
 		{
 			HUDWEAPON_MOVEZ = 0;
