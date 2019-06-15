@@ -1478,7 +1478,7 @@ void actHudWeapon(Entity* my)
 					}
 					if ( whip && pickaxeGimpTimer < 20 )
 					{
-						pickaxeGimpTimer = 20; // fix for swapping weapon from pickaxe causing issues.
+						pickaxeGimpTimer = 20; // fix for swapping weapon from whip causing issues.
 					}
 				}
 				else
@@ -1546,7 +1546,14 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					HUDWEAPON_CHOP = 1;  // everything else can't
+					if ( pickaxeGimpTimer <= 0 )
+					{
+						HUDWEAPON_CHOP = 1;  // everything else can't
+					}
+					else
+					{
+						HUDWEAPON_CHOP = 0;
+					}
 				}
 			}
 		}
