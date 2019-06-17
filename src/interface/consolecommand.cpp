@@ -2389,7 +2389,7 @@ void consoleCommand(char* command_str)
 			learned = addSpell(SPELL_CHARM_MONSTER, clientnum, true);
 			return;
 		}
-		else if ( !strncmp(command_str, "/setmapseed ", 11) )
+		else if ( !strncmp(command_str, "/setmapseed ", 12) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
 			{
@@ -2403,7 +2403,7 @@ void consoleCommand(char* command_str)
 				return;
 			}
 			
-			Uint32 newseed = atoi(&command_str[11]);
+			Uint32 newseed = atoi(&command_str[12]);
 			forceMapSeed = newseed;
 			messagePlayer(clientnum, "Set next map seed to: %d", forceMapSeed);
 			return;
