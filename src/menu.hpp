@@ -164,6 +164,7 @@ extern std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileID
 #endif // STEAMWORKS
 bool drawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor);
 extern bool scoreDisplayMultiplayer;
+extern std::vector<std::tuple<int, int, int, std::string>> savegamesList; // tuple - last modified, multiplayer type, file entry, and description of save game.
 
 extern Sint32 slidery, slidersize, oslidery;
 
