@@ -2396,7 +2396,6 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[277]);
 				return;
 			}
-
 			if ( multiplayer == CLIENT )
 			{
 				messagePlayer(clientnum, language[284]);
@@ -2407,6 +2406,23 @@ void consoleCommand(char* command_str)
 			forceMapSeed = newseed;
 			messagePlayer(clientnum, "Set next map seed to: %d", forceMapSeed);
 			return;
+		}
+		else if ( !strncmp(command_str, "/greaseme", 9) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				players[clientnum]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * 20, false);
+			}
 		}
 		else
 		{
