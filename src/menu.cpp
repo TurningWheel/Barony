@@ -10014,7 +10014,7 @@ void buttonContinue(button_t* my)
 			charcreation_step = 0;
 
 			// since we skip step 6 we never set the correct free slot.
-			reloadSavegamesList();
+			reloadSavegamesList(false);
 			if ( multiplayerSavegameFreeSlot == -1 )
 			{
 				savegameCurrentFileIndex = 0;
@@ -11663,7 +11663,7 @@ void openLoadGameWindow(button_t* my)
 	}
 }
 
-void reloadSavegamesList()
+void reloadSavegamesList(bool showWindow)
 {
 	savegamesList.clear();
 
@@ -11729,7 +11729,10 @@ void reloadSavegamesList()
 			}
 		}
 	}
-	savegames_window = 1;
+	if ( showWindow )
+	{
+		savegames_window = 1;
+	}
 	std::sort(savegamesList.begin(), savegamesList.end());
 }
 

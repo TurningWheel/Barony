@@ -3072,31 +3072,36 @@ void Entity::handleEffects(Stat* myStats)
 	// effects of greasy fingers
 	if ( myStats->EFFECTS[EFF_GREASY] == true )
 	{
-		if ( myStats->weapon != NULL 
-			&& (myStats->weapon->beatitude == 0 
-				|| !shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude > 0
-				|| shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude < 0)
-			)
+		// add some weird timing so it doesn't auto drop out of your hand immediately.
+		// intended to fix multiplayer duplication.
+		if ( ticks % 70 == 0 || ticks % 130 == 0 ) 
 		{
-			messagePlayer(player, language[636]);
-			if ( player >= 0 )
+			if ( myStats->weapon != NULL 
+				&& (myStats->weapon->beatitude == 0 
+					|| !shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude > 0
+					|| shouldInvertEquipmentBeatitude(myStats) && myStats->weapon->beatitude < 0)
+				)
 			{
-				dropItem(myStats->weapon, player);
-				if ( player > 0 && multiplayer == SERVER )
+				messagePlayer(player, language[636]);
+				if ( player >= 0 )
 				{
-					strcpy((char*)net_packet->data, "DROP");
-					net_packet->data[4] = 5;
-					net_packet->address.host = net_clients[player - 1].host;
-					net_packet->address.port = net_clients[player - 1].port;
-					net_packet->len = 5;
-					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					dropItem(myStats->weapon, player);
+					if ( player > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)net_packet->data, "DROP");
+						net_packet->data[4] = 5;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
+						net_packet->len = 5;
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
+					}
 				}
+				else
+				{
+					dropItemMonster(myStats->weapon, this, myStats);
+				}
+				myStats->weapon = NULL;
 			}
-			else
-			{
-				dropItemMonster(myStats->weapon, this, myStats);
-			}
-			myStats->weapon = NULL;
 		}
 	}
 

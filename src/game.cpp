@@ -834,6 +834,11 @@ void gameLogic(void)
 					// signal clients about level change
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
+					if ( forceMapSeed > 0 )
+					{
+						mapseed = forceMapSeed;
+						forceMapSeed = 0;
+					}
 					if ( skipLevelsOnLoad > 0 )
 					{
 						currentlevel += skipLevelsOnLoad;

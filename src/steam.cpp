@@ -1285,12 +1285,39 @@ void processLobbyInvite()
 		}
 		else
 		{
-			printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
-			if ( lobbyToConnectTo )
+			// try reload from your other savefiles since this didn't match the default savegameIndex.
+			if ( savegamesList.empty() )
 			{
-				cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
+				reloadSavegamesList(false);
 			}
-			lobbyToConnectTo = NULL;
+			bool foundSave = false;
+			for ( auto it = savegamesList.begin(); it != savegamesList.end(); ++it )
+			{
+				auto entry = *it;
+				savegameCurrentFileIndex = std::get<2>(entry);
+				gameKey = getSaveGameUniqueGameKey(false, savegameCurrentFileIndex);
+				if ( std::get<1>(entry) != SINGLE && temp32 == gameKey )
+				{
+					foundSave = true;
+					break;
+				}
+			}
+
+			if ( !foundSave )
+			{
+				savegameCurrentFileIndex = 0;
+				printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
+				if ( lobbyToConnectTo )
+				{
+					cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
+				}
+				lobbyToConnectTo = NULL;
+			}
+			else
+			{
+				loadingsavegame = temp32;
+				buttonLoadMultiplayerGame(NULL);
+			}
 		}
 		stillConnectingToLobby = false;
 	}
