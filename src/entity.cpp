@@ -8488,20 +8488,6 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist, int effectType
 		}
 	}
 
-	if ( effectType == PARTICLE_EFFECT_TELEPORT_PULL )
-	{
-		// try place target infront of caster.
-		real_t temp_x = target->x + cos(target->yaw) * 32;
-		real_t temp_y = target->y + sin(target->yaw) * 32;
-		tx = static_cast<int>(std::floor(temp_x)) >> 4;
-		ty = static_cast<int>(std::floor(temp_y)) >> 4;
-
-		if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, this, NULL) )
-		{
-			return teleport(tx, ty);
-		}
-	}
-
 	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
 		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )

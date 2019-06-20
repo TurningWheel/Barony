@@ -578,6 +578,10 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
+			if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
+			{
+				continue;
+			}
 			if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
 			{
 				continue;    // monsters don't have hard collision with door frames
@@ -903,6 +907,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
+			{
+				continue;
+			}
+			if ( entity->behavior == &actParticleTimer )
 			{
 				continue;
 			}
@@ -1377,6 +1385,10 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 				{
 					entity = (Entity*)node->element;
 					if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor )
+					{
+						continue;
+					}
+					if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
 					{
 						continue;
 					}

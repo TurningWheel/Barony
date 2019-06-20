@@ -781,7 +781,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				}
 				if ( spawnParticles )
 				{
-					createParticleAestheticOrbit(hit.entity, 863, 400);
+					createParticleAestheticOrbit(hit.entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
 					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SPELL_WEB_ORBIT, 863);
 				}
 			}
@@ -2233,25 +2233,134 @@ int spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent,
 
 			if ( parent )
 			{
-				// set a coundown to pull enemy.
+				if ( target->behavior == &actPlayer )
+				{
+					if ( MFLAG_DISABLETELEPORT )
+					{
+						// can't teleport here.
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+						messagePlayerColor(target->skill[2], color, language[2381]);
+						if ( parent->behavior == &actPlayer )
+						{
+							messagePlayerColor(parent->skill[2], color, language[3452]);
+						}
+						return 0;
+					}
+				}
+				if ( target->behavior == &actMonster && target->isBossMonster() )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+					}
+					return 0;
+				}
+
+				// try find a teleport location in front of the caster.
+				int tx = static_cast<int>(std::floor(parent->x + 32 * cos(parent->yaw))) >> 4;
+				int ty = static_cast<int>(std::floor(parent->y + 32 * sin(parent->yaw))) >> 4;
+				int dist = 2;
+				bool foundLocation = false;
+				if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, target, NULL) )
+				{
+					foundLocation = true;
+				}
+				if ( !foundLocation )
+				{
+					int numlocations = 0;
+					for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+					{
+						for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+						{
+							if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
+							{
+								numlocations++;
+							}
+						}
+					}
+					if ( numlocations == 0 )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							// no room to teleport!
+							messagePlayer(parent->skill[2], language[3453]);
+						}
+						return 0;
+					}
+					int pickedlocation = rand() % numlocations;
+					numlocations = 0;
+					for ( int iy = std::max(0, ty - dist); !foundLocation && iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+					{
+						for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+						{
+							if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
+							{
+								if ( numlocations == pickedlocation )
+								{
+									foundLocation = true;
+									tx = ix;
+									ty = iy;
+									break;
+								}
+								numlocations++;
+							}
+						}
+						if ( foundLocation )
+						{
+							break;
+						}
+					}
+				}
+
+				if ( !foundLocation )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						// no room to teleport!
+						messagePlayer(parent->skill[2], language[3453]);
+					}
+					return 0;
+				}
+
+				// this timer is the entity spawn location.
+				Entity* locationTimer = createParticleTimer(parent, 40, 593); 
+				locationTimer->x = tx * 16.0 + 8;
+				locationTimer->y = ty * 16.0 + 8;
+				locationTimer->z = 0;
+				locationTimer->particleTimerCountdownAction = PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION;
+				locationTimer->particleTimerCountdownSprite = 593;
+				locationTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+				locationTimer->particleTimerEndAction = PARTICLE_EFFECT_TELEPORT_PULL; // teleport behavior of timer.
+				locationTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+				locationTimer->flags[PASSABLE] = false; // so this location is reserved for teleporting the entity.
+				locationTimer->sizex = 4;
+				locationTimer->sizey = 4;
+				if ( !locationTimer->myTileListNode )
+				{
+					locationTimer->setUID(-2);
+					TileEntityList.addEntity(*locationTimer);
+					locationTimer->setUID(-3);
+				}
+
+				// set a coundown to spawn particles on the monster.
 				Entity* spellTimer = createParticleTimer(target, 40, 593);
-				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_TELEPORT_PULL; // teleport behavior of timer.
-				spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
 				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 				spellTimer->particleTimerCountdownSprite = 593;
 				spellTimer->particleTimerTarget = static_cast<Sint32>(parent->getUID()); // get the target to teleport around.
-				spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
+
+
 				if ( multiplayer == SERVER )
 				{
 					serverSpawnMiscParticles(target, PARTICLE_EFFECT_TELEPORT_PULL, 593);
+					serverSpawnMiscParticlesAtLocation(tx, ty, 0, PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION, 593);
 				}
 
-				// hit messages
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
+					// play a sound for the player to confirm the hit.
 					playSoundPlayer(parent->skill[2], 251, 128);
-					//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
 				}
 
 				// update enemy bar for attacker

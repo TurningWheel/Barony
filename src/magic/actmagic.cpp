@@ -2924,7 +2924,7 @@ void createParticleDot(Entity* parent)
 	}
 }
 
-Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration)
+Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int effectType)
 {
 	if ( !parent )
 	{
@@ -2938,6 +2938,7 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration)
 	entity->x = parent->x + entity->actmagicOrbitDist * cos(entity->yaw);
 	entity->y = parent->y + entity->actmagicOrbitDist * sin(entity->yaw);
 	entity->z = parent->z;
+	entity->skill[1] = effectType;
 	entity->parent = parent->getUID();
 	//entity->vel_z = -1;
 	//entity->yaw = (rand() % 360) * PI / 180.0;
@@ -3358,7 +3359,7 @@ void actParticleErupt(Entity* my)
 
 void actParticleTimer(Entity* my)
 {
-	if( PARTICLE_LIFE < 0 )
+	if ( PARTICLE_LIFE < 0 )
 	{
 		if ( multiplayer != CLIENT )
 		{
@@ -3405,36 +3406,39 @@ void actParticleTimer(Entity* my)
 				if ( parent && target )
 				{
 					real_t distance = (entityDist(parent, target)) / 16;
-					if ( !parent->isBossMonster() && 
-						parent->teleportAroundEntity(target, my->particleTimerVariable1, PARTICLE_EFFECT_TELEPORT_PULL) )
+					my->flags[PASSABLE] = true;
+					int tx = static_cast<int>(std::floor(my->x)) >> 4;
+					int ty = static_cast<int>(std::floor(my->y)) >> 4;
+					if ( !target->isBossMonster() &&
+						target->teleport(tx, ty) )
 					{
 						// teleport success.
-						if ( target->behavior == &actPlayer )
+						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( parent->getStats() )
+							if ( target->getStats() )
 							{
-								messagePlayerMonsterEvent(target->skill[2], color, *(parent->getStats()), language[3450], language[3451], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *(target->getStats()), language[3450], language[3451], MSG_COMBAT);
 							}
 						}
-						createParticleErupt(parent, my->particleTimerEndSprite);
+						createParticleErupt(target, my->particleTimerEndSprite);
 						int durationToStun = 50;
 						if ( distance >= 6 )
 						{
 							durationToStun += std::min((distance - 6) * 10, 50.0);
 						}
-						if ( parent->behavior == &actMonster )
+						if ( target->behavior == &actMonster )
 						{
-							parent->setEffect(EFF_PARALYZED, true, durationToStun, false);
-							parent->monsterReleaseAttackTarget();
+							target->setEffect(EFF_PARALYZED, true, durationToStun, false);
+							target->monsterReleaseAttackTarget();
 						}
-						else if ( parent->behavior == &actPlayer )
+						else if ( target->behavior == &actPlayer )
 						{
-							parent->setEffect(EFF_PARALYZED, true, durationToStun, false);
+							target->setEffect(EFF_PARALYZED, true, durationToStun, false);
 						}
 						if ( multiplayer == SERVER )
 						{
-							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+							serverSpawnMiscParticles(target, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
 						}
 					}
 				}
@@ -3689,29 +3693,12 @@ void actParticleTimer(Entity* my)
 					createParticleErupt(my, my->particleTimerCountdownSprite);
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, my->particleTimerCountdownSprite);
 				}
-
-				// shoot drops to the sky
-				//if ( my->particleTimerCountdownSprite != 0 )
-				//{
-				//	Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities, nullptr); //Particle entity.
-				//	entity->sizex = 1;
-				//	entity->sizey = 1;
-				//	entity->x = my->x - 4 + rand() % 9;
-				//	entity->y = my->y - 4 + rand() % 9;
-				//	entity->z = 7.5;
-				//	entity->vel_z = -1;
-				//	entity->yaw = (rand() % 360) * PI / 180.0;
-				//	entity->particleDuration = 10 + rand() % 30;
-				//	entity->behavior = &actParticleDot;
-				//	entity->flags[PASSABLE] = true;
-				//	entity->flags[NOUPDATE] = true;
-				//	entity->flags[UNCLICKABLE] = true;
-				//	if ( multiplayer != CLIENT )
-				//	{
-				//		entity_uids--;
-				//	}
-				//	entity->setUID(-3);
-				//}
+			}
+			// fire once off.
+			else if ( my->particleTimerCountdownAction == PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION )
+			{
+				createParticleDropRising(my, my->particleTimerCountdownSprite, 1.0);
+				my->particleTimerCountdownAction = 0;
 			}
 		}
 		else

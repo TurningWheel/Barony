@@ -136,6 +136,7 @@ static const int PARTICLE_EFFECT_CHARM_MONSTER = 16;
 static const int PARTICLE_EFFECT_SPELL_SUMMON = 17;
 static const int PARTICLE_EFFECT_SPELL_WEB_ORBIT = 18;
 static const int PARTICLE_EFFECT_TELEPORT_PULL = 19;
+static const int PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION = 20;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -506,7 +507,7 @@ void actParticleAestheticOrbit(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
-Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration);
+Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, int particleType);
 void createParticleRock(Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);

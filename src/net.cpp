@@ -2698,14 +2698,14 @@ void clientHandlePacket()
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
-				break;
+					break;
 				case PARTICLE_EFFECT_TELEPORT_PULL:
 				{
 					Entity* spellTimer = createParticleTimer(entity, 40, sprite);
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
-				break;
+					break;
 				case PARTICLE_EFFECT_ERUPT:
 					createParticleErupt(entity, sprite);
 					break;
@@ -2719,7 +2719,7 @@ void clientHandlePacket()
 					createParticleCharmMonster(entity);
 					break;
 				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
-					createParticleAestheticOrbit(entity, 863, 400);
+					createParticleAestheticOrbit(entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
 					break;
 				case PARTICLE_EFFECT_PORTAL_SPAWN:
 				{
@@ -2777,6 +2777,19 @@ void clientHandlePacket()
 				spellTimer->x = particle_x * 16.0 + 8;
 				spellTimer->y = particle_y * 16.0 + 8;
 				spellTimer->z = particle_z;
+			}
+				break;
+			case PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 40, 593);
+				spellTimer->particleTimerCountdownAction = PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION;
+				spellTimer->particleTimerCountdownSprite = 593;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+				spellTimer->flags[PASSABLE] = false;
+				spellTimer->sizex = 4;
+				spellTimer->sizey = 4;
 			}
 				break;
 			default:
