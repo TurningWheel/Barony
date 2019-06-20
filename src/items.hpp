@@ -269,14 +269,19 @@ typedef enum ItemType
 	SPELLBOOK_WEAKNESS,
 	MASK_SHAMAN,
 	SPELLBOOK_AMPLIFY_MAGIC,
-	SPELLBOOK_1,
-	SPELLBOOK_2,
-	SPELLBOOK_3,
+	SPELLBOOK_SHADOW_TAG,
+	SPELLBOOK_TELEPULL,
+	SPELLBOOK_DEMON_ILLU,
 	SPELLBOOK_4,
 	SPELLBOOK_5,
-	TOOL_WHIP
+	TOOL_WHIP,
+	SPELLBOOK_6,
+	SPELLBOOK_7,
+	SPELLBOOK_8,
+	SPELLBOOK_9,
+	SPELLBOOK_10
 } ItemType;
-const int NUMITEMS = 252;
+const int NUMITEMS = 257;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

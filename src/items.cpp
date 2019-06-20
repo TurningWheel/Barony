@@ -2167,9 +2167,9 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case SPELLBOOK_DETECT_FOOD:
 		case SPELLBOOK_WEAKNESS:
 		case SPELLBOOK_AMPLIFY_MAGIC:
-		case SPELLBOOK_1:
-		case SPELLBOOK_2:
-		case SPELLBOOK_3:
+		case SPELLBOOK_SHADOW_TAG:
+		case SPELLBOOK_TELEPULL:
+		case SPELLBOOK_DEMON_ILLU:
 		case SPELLBOOK_4:
 		case SPELLBOOK_5:
 			item_Spellbook(item, player);

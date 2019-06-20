@@ -261,11 +261,22 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_AMPLIFY_MAGIC:
 			new_spell = copySpell(&spell_amplifyMagic);
 			break;
-		case SPELL_1:
-		case SPELL_2:
-		case SPELL_3:
+		case SPELL_SHADOW_TAG:
+			new_spell = copySpell(&spell_weakness);
+			break;
+		case SPELL_TELEPULL:
+			new_spell = copySpell(&spell_weakness);
+			break;
+		case SPELL_DEMON_ILLUSION:
+			new_spell = copySpell(&spell_weakness);
+			break;
 		case SPELL_4:
 		case SPELL_5:
+		case SPELL_6:
+		case SPELL_7:
+		case SPELL_8:
+		case SPELL_9:
+		case SPELL_10:
 			new_spell = copySpell(&spell_weakness);
 			break;
 		default:
@@ -718,11 +729,22 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_AMPLIFY_MAGIC:
 			spell = &spell_amplifyMagic;
 			break;
-		case SPELL_1:
-		case SPELL_2:
-		case SPELL_3:
+		case SPELL_SHADOW_TAG:
+			spell = &spell_weakness;
+			break;
+		case SPELL_TELEPULL:
+			spell = &spell_weakness;
+			break;
+		case SPELL_DEMON_ILLUSION:
+			spell = &spell_weakness;
+			break;
 		case SPELL_4:
 		case SPELL_5:
+		case SPELL_6:
+		case SPELL_7:
+		case SPELL_8:
+		case SPELL_9:
+		case SPELL_10:
 			spell = &spell_weakness;
 			break;
 		default:
@@ -869,20 +891,35 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_AMPLIFY_MAGIC:
 			itemType = SPELLBOOK_AMPLIFY_MAGIC;
 			break;
-		case SPELL_1:
-			itemType = SPELLBOOK_1;
+		case SPELL_SHADOW_TAG:
+			itemType = SPELLBOOK_SHADOW_TAG;
 			break;
-		case SPELL_2:
-			itemType = SPELLBOOK_2;
+		case SPELL_TELEPULL:
+			itemType = SPELLBOOK_TELEPULL;
 			break;
-		case SPELL_3:
-			itemType = SPELLBOOK_3;
+		case SPELL_DEMON_ILLUSION:
+			itemType = SPELLBOOK_DEMON_ILLU;
 			break;
 		case SPELL_4:
 			itemType = SPELLBOOK_4;
 			break;
 		case SPELL_5:
 			itemType = SPELLBOOK_5;
+			break;
+		case SPELL_6:
+			itemType = SPELLBOOK_6;
+			break;
+		case SPELL_7:
+			itemType = SPELLBOOK_7;
+			break;
+		case SPELL_8:
+			itemType = SPELLBOOK_8;
+			break;
+		case SPELL_9:
+			itemType = SPELLBOOK_9;
+			break;
+		case SPELL_10:
+			itemType = SPELLBOOK_10;
 			break;
 		default:
 			break;
@@ -981,15 +1018,25 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_weakness.ID;
 		case SPELLBOOK_AMPLIFY_MAGIC:
 			return spell_amplifyMagic.ID;
-		case SPELL_1:
+		case SPELL_SHADOW_TAG:
 			return spell_weakness.ID;
-		case SPELL_2:
+		case SPELL_TELEPULL:
 			return spell_weakness.ID;
-		case SPELL_3:
+		case SPELL_DEMON_ILLUSION:
 			return spell_weakness.ID;
 		case SPELL_4:
 			return spell_weakness.ID;
 		case SPELL_5:
+			return spell_weakness.ID;
+		case SPELL_6:
+			return spell_weakness.ID;
+		case SPELL_7:
+			return spell_weakness.ID;
+		case SPELL_8:
+			return spell_weakness.ID;
+		case SPELL_9:
+			return spell_weakness.ID;
+		case SPELL_10:
 			return spell_weakness.ID;
 		default:
 			return SPELL_NONE;

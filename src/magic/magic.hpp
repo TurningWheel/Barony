@@ -61,12 +61,17 @@ static const int SPELL_STRIKE = 41;
 static const int SPELL_DETECT_FOOD = 42;
 static const int SPELL_WEAKNESS = 43;
 static const int SPELL_AMPLIFY_MAGIC = 44;
-static const int SPELL_1 = 45;
-static const int SPELL_2 = 46;
-static const int SPELL_3 = 47;
+static const int SPELL_SHADOW_TAG = 45;
+static const int SPELL_TELEPULL = 46;
+static const int SPELL_DEMON_ILLUSION = 47;
 static const int SPELL_4 = 48;
 static const int SPELL_5 = 49;
-static const int NUM_SPELLS = 50;
+static const int SPELL_6 = 50;
+static const int SPELL_7 = 51;
+static const int SPELL_8 = 52;
+static const int SPELL_9 = 53;
+static const int SPELL_10 = 54;
+static const int NUM_SPELLS = 55;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
