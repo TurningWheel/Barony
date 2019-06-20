@@ -135,6 +135,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemOriginalOwner(skill[21]),
 	itemStolen(skill[22]),
 	itemShowOnMap(skill[23]),
+	itemDelayMonsterPickingUp(skill[24]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -7446,6 +7447,45 @@ void Entity::attack(int pose, int charge, Entity* target)
 							awardXP(hit.entity, true, true);
 						}
 					}
+
+					if ( hitstats->HP > 0 )
+					{
+						if ( whip && (hitstats->EFFECTS[EFF_DISORIENTED] || !hit.entity->isMobile()) )
+						{
+							if ( hit.entity->behavior == &actMonster && !hit.entity->isBossMonster() )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( hitstats->weapon
+									&& itemCategory(hitstats->weapon) != SPELLBOOK )
+								{
+									Entity* dropped = nullptr;
+									if ( dropped = dropItemMonster(hitstats->weapon, hit.entity, hitstats) )
+									{
+										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
+										double tangent = atan2(hit.entity->y - y, hit.entity->x - x);
+										dropped->yaw = tangent;
+										dropped->vel_x = (1.5 + .025 * (rand() % 11)) * cos(tangent);
+										dropped->vel_y = (1.5 + .025 * (rand() % 11)) * sin(tangent);
+										messagePlayerMonsterEvent(player, color, *hitstats, language[3454], language[3455], MSG_COMBAT);
+									}
+								}
+								else if ( hitstats->shield )
+								{
+									Entity* dropped = nullptr;
+									if ( dropped = dropItemMonster(hitstats->shield, hit.entity, hitstats) )
+									{
+										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
+										double tangent = atan2(hit.entity->y - y, hit.entity->x - x);
+										dropped->yaw = tangent;
+										dropped->vel_x = (1.5 + .025 * (rand() % 11)) * cos(tangent);
+										dropped->vel_y = (1.5 + .025 * (rand() % 11)) * sin(tangent);
+										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
+									}
+								}
+							}
+						}
+					}
+
 					if ( playerhit > 0 && multiplayer == SERVER )
 					{
 						if ( pose == MONSTER_POSE_GOLEM_SMASH )
@@ -11618,6 +11658,14 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 				}
 			}
 			break;
+		case EFF_DISORIENTED:
+			if ( myStats->type == LICH || myStats->type == DEVIL
+				|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+				|| myStats->type == SHADOW || myStats->type == SHOPKEEPER )
+			{
+				return false;
+			}
+			break;
 		case EFF_FEAR:
 			if ( myStats->type == LICH || myStats->type == DEVIL 
 				|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
@@ -11712,6 +11760,11 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		{
 			return;
 		}
+	}
+
+	if ( myStats->EFFECTS[EFF_DISORIENTED] )
+	{
+		return;
 	}
 
 	if ( monsterState != MONSTER_STATE_ATTACK && !hadOldTarget )
@@ -12092,6 +12145,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						// player item too new on ground, or monster is set to not pickup player items.
 						continue;
 					}
+				}
+				if ( entity->itemDelayMonsterPickingUp > 0 && entity->ticks < entity->itemDelayMonsterPickingUp )
+				{
+					// dropped from a disarm skill, don't pick up item until timer is up.
+					continue;
 				}
 
 				if ( myStats->type == SLIME )

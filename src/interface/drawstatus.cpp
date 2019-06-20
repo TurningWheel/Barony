@@ -142,7 +142,7 @@ void updateEnemyBarStatusEffectColor(int player, const Entity &target, const Sta
 	{
 		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 112, 112, 0);
 	}
-	else if ( targetStats.EFFECTS[EFF_CONFUSED] )
+	else if ( targetStats.EFFECTS[EFF_CONFUSED] || targetStats.EFFECTS[EFF_DISORIENTED] )
 	{
 		enemy_bar_color[player] = SDL_MapRGB(mainsurface->format, 92, 0, 92);
 	}

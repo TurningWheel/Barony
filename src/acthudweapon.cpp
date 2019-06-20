@@ -1546,14 +1546,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					if ( pickaxeGimpTimer <= 0 )
-					{
-						HUDWEAPON_CHOP = 1;  // everything else can't
-					}
-					else
-					{
-						HUDWEAPON_CHOP = 0;
-					}
+					HUDWEAPON_CHOP = 1;  // everything else can't
 				}
 			}
 		}

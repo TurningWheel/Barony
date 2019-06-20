@@ -3423,18 +3423,29 @@ void actParticleTimer(Entity* my)
 						}
 						createParticleErupt(target, my->particleTimerEndSprite);
 						int durationToStun = 50;
-						if ( distance >= 6 )
+						if ( distance >= 4 )
 						{
-							durationToStun += std::min((distance - 6) * 10, 50.0);
+							durationToStun += std::min((distance - 4) * 10, 50.0);
 						}
 						if ( target->behavior == &actMonster )
 						{
-							target->setEffect(EFF_PARALYZED, true, durationToStun, false);
+							if ( target->setEffect(EFF_DISORIENTED, true, durationToStun, false) )
+							{
+								int numSprites = durationToStun / TICKS_PER_SECOND;
+								for ( int i = 0; i < numSprites; ++i )
+								{
+									Entity* statusSprite = spawnSleepZ(target->x + (-4 + rand() % 9) + cos(target->yaw) * 2, 
+										target->y + (-4 + rand() % 9) + sin(target->yaw) * 2, target->z + rand() % 4);
+									statusSprite->sprite = 134;
+								}
+							}
 							target->monsterReleaseAttackTarget();
+							target->lookAtEntity(*parent);
+							target->monsterLookDir += (PI - PI / 4 + (rand() % 10) * PI / 40);
 						}
 						else if ( target->behavior == &actPlayer )
 						{
-							target->setEffect(EFF_PARALYZED, true, durationToStun, false);
+							target->setEffect(EFF_DISORIENTED, true, durationToStun, false);
 						}
 						if ( multiplayer == SERVER )
 						{

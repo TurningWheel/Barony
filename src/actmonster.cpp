@@ -2904,7 +2904,7 @@ void actMonster(Entity* my)
 			my->monsterReleaseAttackTarget();
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
-			if ( myReflex )
+			if ( myReflex && !myStats->EFFECTS[EFF_DISORIENTED] )
 			{
 				if ( myStats->EFFECTS[EFF_FEAR] && my->monsterFearfulOfUid != 0 )
 				{
@@ -3127,7 +3127,11 @@ void actMonster(Entity* my)
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 
+				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
+				&& my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
+				&& !myStats->EFFECTS[EFF_FEAR]
+				&& !myStats->EFFECTS[EFF_DISORIENTED] )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -3247,7 +3251,8 @@ void actMonster(Entity* my)
 			}
 			if ( my->monsterMoveTime == 0 
 				&& (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND)
-				&& !myStats->EFFECTS[EFF_FEAR] )
+				&& !myStats->EFFECTS[EFF_FEAR] 
+				&& !myStats->EFFECTS[EFF_DISORIENTED] )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
