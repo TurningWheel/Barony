@@ -2201,8 +2201,12 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 	return nullptr;
 }
 
-bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance)
+int spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance)
 {
+	if ( !parent )
+	{
+		return 0;
+	}
 	if ( target )
 	{
 		playSoundEntity(target, 173, 128);
@@ -2216,7 +2220,7 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				// test for friendly fire
 				if ( parent && parent->checkFriend(target) )
 				{
-					return;
+					return 0;
 				}
 			}
 			//playSoundEntity(target, 249, 64);
@@ -2224,58 +2228,67 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 			Stat* hitstats = target->getStats();
 			if ( !hitstats )
 			{
-				return;
+				return 0;
 			}
 
-			//target->setEffect(EFF_POISONED, true, 600, true); // 12 seconds.
-
-			//if ( target->behavior == &actPlayer )
-			//{
-			//	serverUpdateEffects(target->skill[2]);
-			//}
-			// hit messages
 			if ( parent )
 			{
+				// set a coundown to pull enemy.
+				Entity* spellTimer = createParticleTimer(target, 40, 593);
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_TELEPORT_PULL; // teleport behavior of timer.
+				spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+				spellTimer->particleTimerCountdownSprite = 593;
+				spellTimer->particleTimerTarget = static_cast<Sint32>(parent->getUID()); // get the target to teleport around.
+				spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
+				if ( multiplayer == SERVER )
+				{
+					serverSpawnMiscParticles(target, PARTICLE_EFFECT_TELEPORT_PULL, 593);
+				}
+
+				// hit messages
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
+					playSoundPlayer(parent->skill[2], 251, 128);
 					//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
 				}
-			}
 
-			// update enemy bar for attacker
-			if ( !strcmp(hitstats->name, "") )
-			{
-				if ( hitstats->type < KOBOLD ) //Original monster count
+				// update enemy bar for attacker
+				if ( !strcmp(hitstats->name, "") )
 				{
-					updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+					if ( hitstats->type < KOBOLD ) //Original monster count
+					{
+						updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+					}
+					else if ( hitstats->type >= KOBOLD ) //New monsters
+					{
+						updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+					}
 				}
-				else if ( hitstats->type >= KOBOLD ) //New monsters
+				else
 				{
-					updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+					updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
+				}
+
+
+				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				int player = -1;
+				if ( target->behavior == &actPlayer )
+				{
+					player = target->skill[2];
 				}
 			}
-			else
-			{
-				updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
-			}
-
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-
-			int player = -1;
-			if ( target->behavior == &actPlayer )
-			{
-				player = target->skill[2];
-			}
-			if ( player >= 0 )
-			{
-				//	messagePlayerColor(player, color, language[3438]);
-			}
+			return 1;
 		}
-		//spawnMagicEffectParticles(target->x, target->y, target->z, my->sprite);
+		if ( my )
+		{
+			spawnMagicEffectParticles(target->x, target->y, target->z, my->sprite);
+		}
 	}
 	else if ( my )
 	{
-		spawnMagicEffectParticles(my->x, my->y, my->z, 863);
+		spawnMagicEffectParticles(my->x, my->y, my->z, my->sprite);
 	}
+	return 0;
 }

@@ -2457,6 +2457,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectCharmMonster(*my, *element, parent, resistance, static_cast<bool>(my->actmagicCastByMagicstaff));
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_telePull.name) )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectTeleportPull(my, *element, parent, hit.entity, resistance);
+					}
+				}
 
 				if ( hitstats )
 				{
@@ -3382,6 +3390,48 @@ void actParticleTimer(Entity* my)
 					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
 					{
 						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_TELEPORT_PULL )
+			{
+				// teleport to target spell.
+				Entity* parent = uidToEntity(my->parent);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( parent && target )
+				{
+					real_t distance = (entityDist(parent, target)) / 16;
+					if ( !parent->isBossMonster() && 
+						parent->teleportAroundEntity(target, my->particleTimerVariable1, PARTICLE_EFFECT_TELEPORT_PULL) )
+					{
+						// teleport success.
+						if ( target->behavior == &actPlayer )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							if ( parent->getStats() )
+							{
+								messagePlayerMonsterEvent(target->skill[2], color, *(parent->getStats()), language[3450], language[3451], MSG_COMBAT);
+							}
+						}
+						createParticleErupt(parent, my->particleTimerEndSprite);
+						int durationToStun = 50;
+						if ( distance >= 6 )
+						{
+							durationToStun += std::min((distance - 6) * 10, 50.0);
+						}
+						if ( parent->behavior == &actMonster )
+						{
+							parent->setEffect(EFF_PARALYZED, true, durationToStun, false);
+							parent->monsterReleaseAttackTarget();
+						}
+						else if ( parent->behavior == &actPlayer )
+						{
+							parent->setEffect(EFF_PARALYZED, true, durationToStun, false);
+						}
 						if ( multiplayer == SERVER )
 						{
 							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);

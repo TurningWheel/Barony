@@ -8463,11 +8463,15 @@ Teleports the given entity within a radius of a target entity.
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::teleportAroundEntity(const Entity* target, int dist)
+bool Entity::teleportAroundEntity(const Entity* target, int dist, int effectType)
 {
 	int numlocations = 0;
 	int pickedlocation;
 	int player = -1;
+	if ( !target )
+	{
+		return false;
+	}
 	int ty = static_cast<int>(std::floor(target->y)) >> 4;
 	int tx = static_cast<int>(std::floor(target->x)) >> 4;
 
@@ -8483,6 +8487,21 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 			return false;
 		}
 	}
+
+	if ( effectType == PARTICLE_EFFECT_TELEPORT_PULL )
+	{
+		// try place target infront of caster.
+		real_t temp_x = target->x + cos(target->yaw) * 32;
+		real_t temp_y = target->y + sin(target->yaw) * 32;
+		tx = static_cast<int>(std::floor(temp_x)) >> 4;
+		ty = static_cast<int>(std::floor(temp_y)) >> 4;
+
+		if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, this, NULL) )
+		{
+			return teleport(tx, ty);
+		}
+	}
+
 	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
 		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
@@ -15165,6 +15184,10 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->yaw += PI / 6;
 				shieldLimb->focalx -= 4;
 				shieldLimb->focalz += .5;
+				if ( race == INCUBUS || race == SUCCUBUS )
+				{
+					shieldLimb->focalz -= 1.5;
+				}
 				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
 				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
 				shieldLimb->z -= 1;
@@ -15213,7 +15236,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	}
 }
 
-bool Entity::isBossMonsterOrBossMap()
+bool Entity::isBossMonster()
 {
 	Stat* myStats = getStats();
 	if ( myStats )
@@ -15221,11 +15244,12 @@ bool Entity::isBossMonsterOrBossMap()
 		if ( myStats->type == MINOTAUR
 			|| myStats->type == SHOPKEEPER
 			|| myStats->type == SHADOW
+			|| myStats->type == LICH
+			|| myStats->type == LICH_FIRE
+			|| myStats->type == LICH_ICE
+			|| myStats->type == DEVIL
 			|| (myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11))
 			|| (myStats->type == COCKATRICE && !strncmp(map.name, "Cockatrice Lair", 15))
-			|| !strncmp(map.name, "Sanctum", 7)
-			|| !strncmp(map.name, "Boss", 4)
-			|| !strncmp(map.name, "Hell Boss", 9)
 			)
 		{
 			return true;

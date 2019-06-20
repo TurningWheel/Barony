@@ -928,7 +928,7 @@ bool item_PotionBlindness(Item*& item, Entity* entity, Entity* usedBy)
 		return true;
 	}
 
-	if ( entity->behavior == &actMonster && !entity->isBossMonsterOrBossMap() )
+	if ( entity->behavior == &actMonster && !entity->isBossMonster() )
 	{
 		entity->monsterReleaseAttackTarget();
 	}
@@ -1015,7 +1015,7 @@ bool item_PotionInvisibility(Item*& item, Entity* entity, Entity* usedBy)
 			Entity* creature = (Entity*)node->element;
 			if ( creature && creature->behavior == &actMonster && creature->monsterTarget == entity->getUID() )
 			{
-				if ( !creature->isBossMonsterOrBossMap() )
+				if ( !creature->isBossMonster() )
 				{
 					//Abort if invalid creature (boss, shopkeep, etc).
 					real_t dist = entityDist(entity, creature);

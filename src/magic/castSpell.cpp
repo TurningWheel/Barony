@@ -606,7 +606,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					Entity* creature = (Entity*)node->element;
 					if ( creature && creature->behavior == &actMonster && creature->monsterTarget == caster->getUID() )
 					{
-						if ( !creature->isBossMonsterOrBossMap() )
+						if ( !creature->isBossMonster() )
 						{
 							//Abort if invalid creature (boss, shopkeep, etc).
 							real_t dist = entityDist(caster, creature);
@@ -1262,10 +1262,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
 			//Also refactor the duration determining code.
 		}
-		else if ( !strcmp(element->name, spellElement_telePull.name) )
-		{
-			//spellEffectVampiricAura(caster, spell, extramagic_to_use);
-		}
 
 		if ( propulsion == PROPULSION_MISSILE )
 		{
@@ -1681,6 +1677,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 173;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_telePull.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 175;
 				}
 			}
 		}

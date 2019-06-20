@@ -1024,11 +1024,11 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_weakness.ID;
 		case SPELLBOOK_AMPLIFY_MAGIC:
 			return spell_amplifyMagic.ID;
-		case SPELL_SHADOW_TAG:
+		case SPELLBOOK_SHADOW_TAG:
 			return spell_shadowTag.ID;
-		case SPELL_TELEPULL:
+		case SPELLBOOK_TELEPULL:
 			return spell_telePull.ID;
-		case SPELL_DEMON_ILLUSION:
+		case SPELLBOOK_DEMON_ILLU:
 			return spell_demonIllusion.ID;
 		case SPELL_4:
 			return spell_weakness.ID;

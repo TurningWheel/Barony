@@ -490,7 +490,7 @@ public:
 	bool teleport(int x, int y);
 	bool teleportRandom();
 	// teleport entity to a target, within a radius dist (range in whole tile lengths)
-	bool teleportAroundEntity(const Entity* target, int dist);
+	bool teleportAroundEntity(const Entity* target, int dist, int effectType = 0);
 	// teleport entity to fixed position with appropriate sounds, for actTeleporter.
 	bool teleporterMove(int x, int y, int type);
 
@@ -810,7 +810,7 @@ public:
 	void handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event); // monster text for interactions.
 	void playerStatIncrease(int playerClass, int chosenStats[3]);
 	bool playerRequiresBloodToSustain(); // vampire type or accursed class
-	bool isBossMonsterOrBossMap(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
+	bool isBossMonster(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
 	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 };
 

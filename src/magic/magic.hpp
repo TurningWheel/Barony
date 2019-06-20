@@ -135,6 +135,7 @@ static const int PARTICLE_EFFECT_SUMMON_MONSTER = 15;
 static const int PARTICLE_EFFECT_CHARM_MONSTER = 16;
 static const int PARTICLE_EFFECT_SPELL_SUMMON = 17;
 static const int PARTICLE_EFFECT_SPELL_WEB_ORBIT = 18;
+static const int PARTICLE_EFFECT_TELEPORT_PULL = 19;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -595,6 +596,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent);
 void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
+int spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 
 void freeSpells();
 void drawSpellTooltip(spell_t* spell, Item* item);
