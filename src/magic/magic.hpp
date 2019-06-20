@@ -378,6 +378,9 @@ extern spellElement_t spellElement_strike;
 extern spellElement_t spellElement_detectFood;
 extern spellElement_t spellElement_weakness;
 extern spellElement_t spellElement_amplifyMagic;
+extern spellElement_t spellElement_shadowTag;
+extern spellElement_t spellElement_telePull;
+extern spellElement_t spellElement_demonIllusion;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -464,6 +467,9 @@ extern spell_t spell_strike;
 extern spell_t spell_detectFood;
 extern spell_t spell_weakness;
 extern spell_t spell_amplifyMagic;
+extern spell_t spell_shadowTag;
+extern spell_t spell_telePull;
+extern spell_t spell_demonIllusion;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 

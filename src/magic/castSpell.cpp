@@ -1262,6 +1262,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
 			//Also refactor the duration determining code.
 		}
+		else if ( !strcmp(element->name, spellElement_telePull.name) )
+		{
+			//spellEffectVampiricAura(caster, spell, extramagic_to_use);
+		}
 
 		if ( propulsion == PROPULSION_MISSILE )
 		{

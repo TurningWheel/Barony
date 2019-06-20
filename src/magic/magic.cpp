@@ -68,6 +68,9 @@ void freeSpells()
 	list_FreeAll(&spell_detectFood.elements);
 	list_FreeAll(&spell_weakness.elements);
 	list_FreeAll(&spell_amplifyMagic.elements);
+	list_FreeAll(&spell_shadowTag.elements);
+	list_FreeAll(&spell_telePull.elements);
+	list_FreeAll(&spell_demonIllusion.elements);
 }
 
 void spell_magicMap(int player)
@@ -2196,4 +2199,83 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 	}
 
 	return nullptr;
+}
+
+bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance)
+{
+	if ( target )
+	{
+		playSoundEntity(target, 173, 128);
+		//int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+		{
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(target) )
+				{
+					return;
+				}
+			}
+			//playSoundEntity(target, 249, 64);
+
+			Stat* hitstats = target->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
+
+			//target->setEffect(EFF_POISONED, true, 600, true); // 12 seconds.
+
+			//if ( target->behavior == &actPlayer )
+			//{
+			//	serverUpdateEffects(target->skill[2]);
+			//}
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3427], language[3426], MSG_COMBAT);
+				}
+			}
+
+			// update enemy bar for attacker
+			if ( !strcmp(hitstats->name, "") )
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+				}
+			}
+			else
+			{
+				updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( target->behavior == &actPlayer )
+			{
+				player = target->skill[2];
+			}
+			if ( player >= 0 )
+			{
+				//	messagePlayerColor(player, color, language[3438]);
+			}
+		}
+		//spawnMagicEffectParticles(target->x, target->y, target->z, my->sprite);
+	}
+	else if ( my )
+	{
+		spawnMagicEffectParticles(my->x, my->y, my->z, 863);
+	}
 }

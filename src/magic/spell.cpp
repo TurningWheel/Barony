@@ -68,6 +68,9 @@ spellElement_t spellElement_strike;
 spellElement_t spellElement_detectFood;
 spellElement_t spellElement_weakness;
 spellElement_t spellElement_amplifyMagic;
+spellElement_t spellElement_shadowTag;
+spellElement_t spellElement_telePull;
+spellElement_t spellElement_demonIllusion;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -114,6 +117,9 @@ spell_t spell_strike;
 spell_t spell_detectFood;
 spell_t spell_weakness;
 spell_t spell_amplifyMagic;
+spell_t spell_shadowTag;
+spell_t spell_telePull;
+spell_t spell_demonIllusion;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -262,13 +268,13 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 			new_spell = copySpell(&spell_amplifyMagic);
 			break;
 		case SPELL_SHADOW_TAG:
-			new_spell = copySpell(&spell_weakness);
+			new_spell = copySpell(&spell_shadowTag);
 			break;
 		case SPELL_TELEPULL:
-			new_spell = copySpell(&spell_weakness);
+			new_spell = copySpell(&spell_telePull);
 			break;
 		case SPELL_DEMON_ILLUSION:
-			new_spell = copySpell(&spell_weakness);
+			new_spell = copySpell(&spell_demonIllusion);
 			break;
 		case SPELL_4:
 		case SPELL_5:
@@ -730,13 +736,13 @@ spell_t* getSpellFromID(int ID)
 			spell = &spell_amplifyMagic;
 			break;
 		case SPELL_SHADOW_TAG:
-			spell = &spell_weakness;
+			spell = &spell_shadowTag;
 			break;
 		case SPELL_TELEPULL:
-			spell = &spell_weakness;
+			spell = &spell_telePull;
 			break;
 		case SPELL_DEMON_ILLUSION:
-			spell = &spell_weakness;
+			spell = &spell_demonIllusion;
 			break;
 		case SPELL_4:
 		case SPELL_5:
@@ -1019,11 +1025,11 @@ int getSpellIDFromSpellbook(int spellbookType)
 		case SPELLBOOK_AMPLIFY_MAGIC:
 			return spell_amplifyMagic.ID;
 		case SPELL_SHADOW_TAG:
-			return spell_weakness.ID;
+			return spell_shadowTag.ID;
 		case SPELL_TELEPULL:
-			return spell_weakness.ID;
+			return spell_telePull.ID;
 		case SPELL_DEMON_ILLUSION:
-			return spell_weakness.ID;
+			return spell_demonIllusion.ID;
 		case SPELL_4:
 			return spell_weakness.ID;
 		case SPELL_5:
