@@ -7458,27 +7458,31 @@ void Entity::attack(int pose, int charge, Entity* target)
 								if ( hitstats->weapon
 									&& itemCategory(hitstats->weapon) != SPELLBOOK )
 								{
-									Entity* dropped = nullptr;
-									if ( dropped = dropItemMonster(hitstats->weapon, hit.entity, hitstats) )
+									Entity* dropped = dropItemMonster(hitstats->weapon, hit.entity, hitstats);
+									if ( dropped )
 									{
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
-										double tangent = atan2(hit.entity->y - y, hit.entity->x - x);
-										dropped->yaw = tangent;
+										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
+										dropped->yaw = tangent + PI;
 										dropped->vel_x = (1.5 + .025 * (rand() % 11)) * cos(tangent);
 										dropped->vel_y = (1.5 + .025 * (rand() % 11)) * sin(tangent);
+										dropped->vel_z = (-10 - rand() % 20) * .01;
+										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3454], language[3455], MSG_COMBAT);
 									}
 								}
 								else if ( hitstats->shield )
 								{
-									Entity* dropped = nullptr;
-									if ( dropped = dropItemMonster(hitstats->shield, hit.entity, hitstats) )
+									Entity* dropped = dropItemMonster(hitstats->shield, hit.entity, hitstats);
+									if ( dropped )
 									{
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
-										double tangent = atan2(hit.entity->y - y, hit.entity->x - x);
+										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent;
 										dropped->vel_x = (1.5 + .025 * (rand() % 11)) * cos(tangent);
 										dropped->vel_y = (1.5 + .025 * (rand() % 11)) * sin(tangent);
+										dropped->vel_z = (-10 - rand() % 20) * .01;
+										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
 									}
 								}
