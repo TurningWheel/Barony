@@ -42,6 +42,7 @@ char last_port[64] = "";
 char lobbyChatbox[LOBBY_CHATBOX_LENGTH];
 list_t lobbyChatboxMessages;
 bool disableMultithreadedSteamNetworking = false;
+bool disableFPSLimitOnNetworkMessages = false;
 
 // uncomment this to have the game log packet info
 //#define PACKETINFO
@@ -3630,7 +3631,7 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 			}
 			delete packet;
 
-			if ( !frameRateLimit(framerateBreakInterval, false) )
+			if ( !disableFPSLimitOnNetworkMessages && !frameRateLimit(framerateBreakInterval, false) )
 			{
 				if ( logCheckMainLoopTimers )
 				{
@@ -4592,7 +4593,7 @@ void serverHandleMessages(Uint32 framerateBreakInterval)
 			}
 			delete packet;
 
-			if ( !frameRateLimit(framerateBreakInterval, false) )
+			if ( !disableFPSLimitOnNetworkMessages && !frameRateLimit(framerateBreakInterval, false) )
 			{
 				if ( logCheckMainLoopTimers )
 				{

@@ -215,6 +215,7 @@ bool settings_hide_statusbar = false;
 bool settings_hide_playertags = false;
 bool settings_show_skill_values = false;
 bool settings_disableMultithreadedSteamNetworking = false;
+bool settings_disableFPSLimitOnNetworkMessages = false;
 Sint32 oslidery = 0;
 
 //Gamepad settings.
@@ -3975,13 +3976,20 @@ void handleMainMenu(bool mode)
 			}
 
 			// network options
-#ifdef STEAMWORKS
 			current_y += 32;
 			ttfPrintText(ttf12, subx1 + 24, current_y, language[3146]);
 			current_y += 24;
-
 			int networking_options_start_y = current_y;
-
+			if ( settings_disableFPSLimitOnNetworkMessages )
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", "disable netcode FPS optimization");
+			}
+			else
+			{
+				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[ ] %s", "disable netcode FPS optimization");
+			}
+			current_y += 16;
+#ifdef STEAMWORKS
 			if ( settings_disableMultithreadedSteamNetworking )
 			{
 				ttfPrintTextFormatted(ttf12, subx1 + 36, current_y, "[x] %s", language[3147]);
@@ -4163,10 +4171,22 @@ void handleMainMenu(bool mode)
 				tooltip_box.y = omousey + 8;
 				tooltip_box.h = TTF12_HEIGHT + 8;
 
-#ifdef STEAMWORKS
 				// networking hover text and mouse selection
 				current_y = networking_options_start_y;
-
+				if ( omousey >= current_y && omousey < current_y + 12 )
+				{
+					//tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
+					//tooltip_box.h = TTF12_HEIGHT * 2 + 8;
+					//drawTooltip(&tooltip_box);
+					//ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[3148]);
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_disableFPSLimitOnNetworkMessages = (settings_disableFPSLimitOnNetworkMessages == false);
+					}
+				}
+				current_y += 16;
+#ifdef STEAMWORKS
 				if ( omousey >= current_y && omousey < current_y + 12 )
 				{
 					tooltip_box.w = longestline(language[3148]) * TTF12_WIDTH + 8;
@@ -4180,6 +4200,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 #endif // STEAMWORKS
+
 
 				current_y = options_start_y;
 
@@ -9284,6 +9305,7 @@ void openSettingsWindow()
 	settings_hide_playertags = hide_playertags;
 	settings_show_skill_values = show_skill_values;
 	settings_disableMultithreadedSteamNetworking = disableMultithreadedSteamNetworking;
+	settings_disableFPSLimitOnNetworkMessages = disableFPSLimitOnNetworkMessages;
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
 		settings_impulses[c] = impulses[c];
@@ -10993,6 +11015,7 @@ void applySettings()
 		net_handler->toggleMultithreading(settings_disableMultithreadedSteamNetworking);
 	}
 	disableMultithreadedSteamNetworking = settings_disableMultithreadedSteamNetworking;
+	disableFPSLimitOnNetworkMessages = settings_disableFPSLimitOnNetworkMessages;
 	saveConfig("default.cfg");
 }
 

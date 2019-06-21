@@ -222,6 +222,7 @@ extern bool settings_hide_statusbar;
 extern bool settings_hide_playertags;
 extern bool settings_show_skill_values;
 extern bool settings_disableMultithreadedSteamNetworking;
+extern bool settings_disableFPSLimitOnNetworkMessages;
 
 static const int NUM_SETTINGS_TABS = 7;
 

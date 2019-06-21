@@ -1262,6 +1262,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/disablenetworkmultithreading\n");
 	}
+	if ( disableFPSLimitOnNetworkMessages )
+	{
+		fprintf(fp, "/disablenetcodefpslimit\n");
+	}
 	if ( !gamemods_mountedFilepaths.empty() )
 	{
 		std::vector<std::pair<std::string, std::string>>::iterator it;

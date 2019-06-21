@@ -2192,6 +2192,10 @@ void consoleCommand(char* command_str)
 		{
 			disableMultithreadedSteamNetworking = !disableMultithreadedSteamNetworking;
 		}
+		else if ( !strncmp(command_str, "/disablenetcodefpslimit", 23) )
+		{
+			disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
+		}
 		else if ( !strncmp(command_str, "/togglesecretlevel", 18) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
