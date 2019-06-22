@@ -211,9 +211,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		strcpy( (char*)net_packet->data, "SPEL" );
 		net_packet->data[4] = clientnum;
 		SDLNet_Write32(spell->ID, &net_packet->data[5]);
+		if ( usingSpellbook )
+		{
+			net_packet->data[9] = 1;
+		}
+		else
+		{
+			net_packet->data[9] = 0;
+		}
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 9;
+		net_packet->len = 10;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		return NULL;
 	}
@@ -1822,6 +1830,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if ( rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
 			caster->degradeArmor(*stat, *(stat->shield), 4);
+			if ( stat->shield->status == BROKEN )
+			{
+				Item* toBreak = stat->shield;
+				consumeItem(toBreak, player);
+			}
 		}
 	}
 

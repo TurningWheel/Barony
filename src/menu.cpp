@@ -504,6 +504,10 @@ void handleMainMenu(bool mode)
 	{
 		enabledDLCPack1 = true;
 	}
+	if ( SteamApps()->BIsDlcInstalled(1010821) )
+	{
+		enabledDLCPack2 = true;
+	}
 #else
 #endif // STEAMWORKS
 

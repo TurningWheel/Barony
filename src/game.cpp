@@ -214,7 +214,7 @@ void gameLogic(void)
 		}
 		else
 		{
-			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] )
+			if ( stats[clientnum]->EFFECTS[EFF_WITHDRAWAL] || stats[clientnum]->EFFECTS[EFF_DISORIENTED] )
 			{
 				// special widthdrawal shakes
 				if ( drunkextend < 0.2 )

@@ -1738,6 +1738,12 @@ void clientHandlePacket()
 			{
 				item->status = static_cast<Status>(net_packet->data[5]);
 			}
+
+			// spellbooks in hand crumble to nothing.
+			if ( item->status == BROKEN && net_packet->data[4] == 4 && itemCategory(item) == SPELLBOOK )
+			{
+				consumeItem(item, clientnum);
+			}
 		}
 		return;
 	}
@@ -2841,6 +2847,17 @@ void clientHandlePacket()
 		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
 		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[8]);
 		spawnSleepZ( x, y, z );
+		return;
+	}
+
+	// spawn a misc sprite like the sleep Z
+	else if ( !strncmp((char*)net_packet->data, "SLEM", 4) )
+	{
+		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[4]);
+		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[6]);
+		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		Sint16 sprite = (Sint16)SDLNet_Read16(&net_packet->data[10]);
+		spawnFloatingSpriteMisc(sprite, x, y, z);
 		return;
 	}
 
@@ -4204,7 +4221,14 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
-		castSpell(players[the_client]->entity->getUID(), thespell, false, false);
+		if ( net_packet->data[9] == 1 )
+		{
+			castSpell(players[the_client]->entity->getUID(), thespell, false, false, true);
+		}
+		else
+		{
+			castSpell(players[the_client]->entity->getUID(), thespell, false, false);
+		}
 		return;
 	}
 

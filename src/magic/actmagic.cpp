@@ -3421,6 +3421,11 @@ void actParticleTimer(Entity* my)
 								messagePlayerMonsterEvent(parent->skill[2], color, *(target->getStats()), language[3450], language[3451], MSG_COMBAT);
 							}
 						}
+						if ( target->behavior == &actPlayer )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							messagePlayerColor(target->skill[2], color, language[3461]);
+						}
 						createParticleErupt(target, my->particleTimerEndSprite);
 						int durationToStun = 50;
 						if ( distance >= 4 )
@@ -3434,9 +3439,8 @@ void actParticleTimer(Entity* my)
 								int numSprites = durationToStun / TICKS_PER_SECOND;
 								for ( int i = 0; i < numSprites; ++i )
 								{
-									Entity* statusSprite = spawnSleepZ(target->x + (-4 + rand() % 9) + cos(target->yaw) * 2, 
+									spawnFloatingSpriteMisc(134, target->x + (-4 + rand() % 9) + cos(target->yaw) * 2, 
 										target->y + (-4 + rand() % 9) + sin(target->yaw) * 2, target->z + rand() % 4);
-									statusSprite->sprite = 134;
 								}
 							}
 							target->monsterReleaseAttackTarget();
@@ -3446,6 +3450,14 @@ void actParticleTimer(Entity* my)
 						else if ( target->behavior == &actPlayer )
 						{
 							target->setEffect(EFF_DISORIENTED, true, durationToStun, false);
+							int numSprites = durationToStun / TICKS_PER_SECOND;
+							for ( int i = 0; i < numSprites; ++i )
+							{
+								spawnFloatingSpriteMisc(134, target->x + (-4 + rand() % 9) + cos(target->yaw) * 2,
+									target->y + (-4 + rand() % 9) + sin(target->yaw) * 2, target->z + rand() % 4);
+							}
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							messagePlayerColor(target->skill[2], color, language[3462]);
 						}
 						if ( multiplayer == SERVER )
 						{

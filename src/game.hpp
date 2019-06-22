@@ -260,6 +260,7 @@ void actSleepZ(Entity* my);
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
+Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z);
 void actArrow(Entity* my);
 void actBoulder(Entity* my);
 void actBoulderTrap(Entity* my);

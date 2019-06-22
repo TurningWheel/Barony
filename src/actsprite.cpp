@@ -270,3 +270,51 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 
 	return entity;
 }
+
+Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z)
+{
+	int c;
+
+	if ( multiplayer == SERVER )
+	{
+		for ( c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "SLEM");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			SDLNet_Write16(sprite, &net_packet->data[10]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 12;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
+	Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Sprite entity.
+	entity->behavior = &actSleepZ;
+	entity->x = x;
+	entity->y = y;
+	entity->z = z;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UPDATENEEDED] = false;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->scalex = 0.05;
+	entity->scaley = 0.05;
+	entity->scalez = 0.05;
+	entity->sizex = 1;
+	entity->sizey = 1;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+
+	return entity;
+}

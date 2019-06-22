@@ -12836,6 +12836,10 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 			playSoundEntity(hit.entity, 162, 64);
 			messagePlayer(playerhit, language[2351], armor.getName());
 		}
+		else if ( itemCategory(&armor) == SPELLBOOK )
+		{
+			messagePlayer(playerhit, language[3459], armor.getName());
+		}
 		else
 		{
 			playSoundEntity(hit.entity, 76, 64);

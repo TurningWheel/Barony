@@ -4331,6 +4331,11 @@ void item_Spellbook(Item*& item, int player)
 		messagePlayer(player, language[970]);
 		return;
 	}
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		messagePlayer(player, language[3460]);
+		return;
+	}
 
 	if ( players[player] && players[player]->entity )
 	{
