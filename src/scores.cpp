@@ -2921,7 +2921,7 @@ char* getSaveGameName(bool singleplayer, int saveIndex)
 		snprintf(tempstr, 1024, language[1540 + mul], name, level, playerClassLangEntry(class_, plnum), dungeonlevel, timestamp);
 	}
 	// close file
-	stats[0]->playerRace = oldRace;
+	stats[plnum]->playerRace = oldRace;
 	fclose(fp);
 
 	return tempstr;
