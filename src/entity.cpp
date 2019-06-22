@@ -3954,7 +3954,16 @@ Sint32 Entity::getAttack()
 			attack += 1 + entitystats->ring->beatitude;
 		}
 	}
-	attack += this->getSTR();
+	if ( entitystats->weapon && entitystats->weapon->type == TOOL_WHIP )
+	{
+		int atk = this->getSTR() + this->getDEX();
+		atk = std::min(atk / 2, atk);
+		attack += atk;
+	}
+	else
+	{
+		attack += this->getSTR();
+	}
 
 	return attack;
 }
@@ -6206,6 +6215,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][6];
 					}
+					else if ( weaponskill == PRO_RANGED )
+					{
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][4];
+					}
 					else if ( weaponskill >= 0 )
 					{
 						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
@@ -6277,7 +6290,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							gungnir = true;
 						}
 					}
-					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || weaponskill == PRO_UNARMED )
+					if ( (weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir) || weaponskill == PRO_UNARMED || weaponskill == PRO_RANGED )
 					{
 						int chance = 0;
 						if ( weaponskill == PRO_POLEARM )
@@ -6473,11 +6486,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeOnNormalDMG = 40;
 							}
 
-							if ( behavior == &actPlayer && ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED) )
+							if ( behavior == &actPlayer && ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) 
+								|| weaponskill == PRO_UNARMED || weaponskill == PRO_RANGED) )
 							{
 								int skillLVL = myStats->PROFICIENCIES[weaponskill] / 20;
 								degradeOnZeroDMG += skillLVL; // increase by 1-5
 								degradeOnNormalDMG += (skillLVL * 10); // increase by 10-50
+							}
+							if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+							{
+								degradeOnZeroDMG = degradeOnNormalDMG; // don't degrade faster on 0 dmg.
 							}
 							if ( behavior == &actPlayer && (svFlags & SV_FLAG_HARDCORE) )
 							{
@@ -7450,7 +7468,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( hitstats->HP > 0 )
 					{
-						if ( whip && (hitstats->EFFECTS[EFF_DISORIENTED] || !hit.entity->isMobile()) )
+						if ( !whip && hitstats->EFFECTS[EFF_DISORIENTED] )
+						{
+							hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+						}
+						else if ( whip && (hitstats->EFFECTS[EFF_DISORIENTED] || !hit.entity->isMobile()) )
 						{
 							if ( hit.entity->behavior == &actMonster && !hit.entity->isBossMonster() )
 							{
@@ -7461,6 +7483,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Entity* dropped = dropItemMonster(hitstats->weapon, hit.entity, hitstats);
 									if ( dropped )
 									{
+										if ( hitstats->EFFECTS[EFF_DISORIENTED] && !hitstats->shield )
+										{
+											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+										}
+										playSoundEntity(this, 407, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
 										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent + PI;
@@ -7476,6 +7503,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Entity* dropped = dropItemMonster(hitstats->shield, hit.entity, hitstats);
 									if ( dropped )
 									{
+										if ( hitstats->EFFECTS[EFF_DISORIENTED] )
+										{
+											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+										}
+										playSoundEntity(this, 407, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
 										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent;
@@ -7485,6 +7517,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
 									}
+								}
+								else
+								{
+									if ( hitstats->EFFECTS[EFF_DISORIENTED] )
+									{
+										hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+									}
+								}
+							}
+							else
+							{
+								if ( hitstats->EFFECTS[EFF_DISORIENTED] )
+								{
+									hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
 								}
 							}
 						}
@@ -10068,6 +10114,10 @@ int getWeaponSkill(Item* weapon)
 	{
 		return PRO_RANGED;
 	}
+	if ( weapon->type == TOOL_WHIP )
+	{
+		return PRO_RANGED;
+	}
 	return -1;
 }
 
@@ -11641,57 +11691,60 @@ bool Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 		return false;
 	}
 
-	switch ( effect )
+	if ( value == true )
 	{
-		case EFF_ASLEEP:
-		case EFF_PARALYZED:
-		case EFF_PACIFY:
-		case EFF_KNOCKBACK:
-		case EFF_BLIND:
-		case EFF_WEBBED:
-			if ( (myStats->type >= LICH && myStats->type < KOBOLD)
-				|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
-			{
-				if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) &&
-					!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) &&
-					!(effect == EFF_WEBBED && myStats->type == COCKATRICE) &&
-					!(effect == EFF_BLIND && myStats->type == COCKATRICE) &&
-					!(effect == EFF_BLIND && myStats->type == SHOPKEEPER) )
+		switch ( effect )
+		{
+			case EFF_ASLEEP:
+			case EFF_PARALYZED:
+			case EFF_PACIFY:
+			case EFF_KNOCKBACK:
+			case EFF_BLIND:
+			case EFF_WEBBED:
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD)
+					|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+				{
+					if ( !(effect == EFF_PACIFY && myStats->type == SHOPKEEPER) &&
+						!(effect == EFF_KNOCKBACK && myStats->type == COCKATRICE) &&
+						!(effect == EFF_WEBBED && myStats->type == COCKATRICE) &&
+						!(effect == EFF_BLIND && myStats->type == COCKATRICE) &&
+						!(effect == EFF_BLIND && myStats->type == SHOPKEEPER) )
+					{
+						return false;
+					}
+				}
+				break;
+			case EFF_DISORIENTED:
+				if ( myStats->type == LICH || myStats->type == DEVIL
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+					|| myStats->type == SHADOW || myStats->type == SHOPKEEPER )
 				{
 					return false;
 				}
-			}
-			break;
-		case EFF_DISORIENTED:
-			if ( myStats->type == LICH || myStats->type == DEVIL
-				|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
-				|| myStats->type == SHADOW || myStats->type == SHOPKEEPER )
-			{
-				return false;
-			}
-			break;
-		case EFF_FEAR:
-			if ( myStats->type == LICH || myStats->type == DEVIL 
-				|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
-				|| myStats->type == SHADOW )
-			{
-				return false;
-			}
-			break;
-		case EFF_POLYMORPH:
-			//if ( myStats->EFFECTS[EFF_POLYMORPH] || effectPolymorph != 0 )
-			//{
-			//	return false;
-			//}
-			break;
-		case EFF_BLEEDING:
-			if ( gibtype[(int)myStats->type] == 0 )
-			{
-				return false;
-			}
-			break;
-		default:
-			break;
+				break;
+			case EFF_FEAR:
+				if ( myStats->type == LICH || myStats->type == DEVIL 
+					|| myStats->type == LICH_FIRE || myStats->type == LICH_ICE
+					|| myStats->type == SHADOW )
+				{
+					return false;
+				}
+				break;
+			case EFF_POLYMORPH:
+				//if ( myStats->EFFECTS[EFF_POLYMORPH] || effectPolymorph != 0 )
+				//{
+				//	return false;
+				//}
+				break;
+			case EFF_BLEEDING:
+				if ( gibtype[(int)myStats->type] == 0 )
+				{
+					return false;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 	myStats->EFFECTS[effect] = value;
 	myStats->EFFECTS_TIMERS[effect] = duration;

@@ -1697,6 +1697,22 @@ Sint32 displayAttackPower(Sint32 output[6])
 						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
 						output[1] = attack;
 					}
+					else if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP )
+					{
+						attack += entity->getAttack();
+						output[0] = 6; // ranged
+						output[1] = attack;
+						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						int atk = entity->getSTR() + entity->getDEX();
+						atk = std::min(atk / 2, atk);
+						output[3] = atk; // bonus from main attribute
+						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
+
+						output[4] = (attack / 2) * (100 - stats[clientnum]->PROFICIENCIES[weaponskill]) / 100.f;
+						attack -= (output[4] / 2);
+						output[4] = ((output[4] / 2) / static_cast<real_t>(attack)) * 100.f;// return percent variance
+						output[1] = attack;
+					}
 					else
 					{
 						int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_RANGED] / 20;
@@ -1831,6 +1847,10 @@ void attackHoverText(Sint32 input[6])
 					snprintf(tooltipHeader, strlen(language[2541]), language[2541]);
 					numInfoLines = 0;
 					break;
+				case 6: // whip
+					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
+					numInfoLines = 3;
+					break;
 				default:
 					break;
 			}
@@ -1840,6 +1860,10 @@ void attackHoverText(Sint32 input[6])
 			src.y = mousey + tooltip_offset_y;
 			src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
 			src.w = 256;
+			if ( input[0] == 6 ) // whip tooltip wider
+			{
+				src.w += 32;
+			}
 			drawTooltip(&src);
 
 			// draw header
@@ -1953,6 +1977,23 @@ void attackHoverText(Sint32 input[6])
 				else if ( input[0] == 5 ) // staff
 				{
 					
+				}
+				else if ( input[0] == 6 ) // whip
+				{
+					switch ( j )
+					{
+						case 0:
+							snprintf(buf, 127, language[2538], input[2]);
+							break;
+						case 1:
+							snprintf(buf, longestline(language[3458]), language[3458], input[3]);
+							break;
+						case 2:
+							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						default:
+							break;
+					}
 				}
 				ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
 			}

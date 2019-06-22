@@ -2848,6 +2848,10 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	{
 		attack += 8;
 	}
+	else if ( type == TOOL_WHIP )
+	{
+		attack += 2;
+	}
 	// old formula
 	//attack *= (double)(status / 5.0);
 	//

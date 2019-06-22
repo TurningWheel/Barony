@@ -1413,6 +1413,8 @@ void actHudWeapon(Entity* my)
 	{
 		int targetZ = -4;
 		real_t targetRoll = -PI / 2;
+		real_t rateY = .75;
+		real_t rateRoll = .25;
 		int targetY = -6;
 		real_t targetPitch = 0.f;
 		if ( whip )
@@ -1429,6 +1431,8 @@ void actHudWeapon(Entity* my)
 			{
 				HUDWEAPON_YAW = -PI / 4;
 			}
+			rateY = .55;
+			rateRoll = .35;
 		}
 		else
 		{
@@ -1449,12 +1453,12 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEZ = targetZ;
 		}
-		HUDWEAPON_MOVEY -= .75;
+		HUDWEAPON_MOVEY -= rateY;
 		if ( HUDWEAPON_MOVEY < targetY )
 		{
 			HUDWEAPON_MOVEY = targetY;
 		}
-		HUDWEAPON_ROLL -= .25;
+		HUDWEAPON_ROLL -= rateRoll;
 
 		if (HUDWEAPON_ROLL < targetRoll )
 		{
