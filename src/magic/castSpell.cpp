@@ -1271,6 +1271,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			//Also refactor the duration determining code.
 		}
 
+		if ( !strcmp(spell->name, spellElement_telePull.name) )
+		{
+			if ( caster->creatureShadowTaggedThisUid != 0 )
+			{
+				Entity* entityToTeleport = uidToEntity(caster->creatureShadowTaggedThisUid);
+				if ( entityToTeleport )
+				{
+					propulsion = 0;
+					spellEffectTeleportPull(nullptr, *element, caster, entityToTeleport, 0);
+				}
+			}
+		}
+		
 		if ( propulsion == PROPULSION_MISSILE )
 		{
 			entity = newEntity(168, 1, map.entities, nullptr); // red magic ball

@@ -315,7 +315,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_poison.mana = 4;
 	spellElement_poison.base_mana = 4;
 	spellElement_poison.overload_multiplier = 1;
-	spellElement_poison.damage = 12;
+	spellElement_poison.damage = 10;
 	spellElement_poison.duration = 0;
 	strcpy(spellElement_poison.name, language[3413]);
 
@@ -360,10 +360,10 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_detectFood.name, language[3421]);
 
 	spellElementConstructor(&spellElement_shadowTag);
-	spellElement_shadowTag.mana = 1;
-	spellElement_shadowTag.base_mana = 1;
+	spellElement_shadowTag.mana = 4;
+	spellElement_shadowTag.base_mana = 4;
 	spellElement_shadowTag.overload_multiplier = 1;
-	spellElement_shadowTag.damage = 1;
+	spellElement_shadowTag.damage = 0;
 	spellElement_shadowTag.duration = 0;
 	strcpy(spellElement_shadowTag.name, language[3447]);
 

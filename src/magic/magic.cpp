@@ -2404,7 +2404,6 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 
 void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
-	playSoundEntity(&my, 173, 128);
 	if ( hit.entity )
 	{
 		//int damage = element.damage;
@@ -2412,6 +2411,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 		{
+			playSoundEntity(&my, 174, 128);
 			Stat* hitstats = hit.entity->getStats();
 			if ( !hitstats )
 			{

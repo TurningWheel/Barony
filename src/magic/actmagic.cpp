@@ -936,7 +936,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
 				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 				{
-					if ( parent && parent->checkFriend(hit.entity) )
+					if ( !strcmp(element->name, spellElement_telePull.name) || !strcmp(element->name, spellElement_shadowTag.name) )
+					{
+						// these spells can hit allies no penalty.
+					}
+					else if ( parent && parent->checkFriend(hit.entity) )
 					{
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
@@ -1013,6 +1017,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							bool alertTarget = true;
+							bool alertAllies = true;
 							if ( parent->behavior == &actMonster && parent->monsterAllyIndex != -1 )
 							{
 								if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1 )
@@ -1021,13 +1026,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									alertTarget = false;
 								}
 							}
+							if ( !strcmp(element->name, spellElement_telePull.name) || !strcmp(element->name, spellElement_shadowTag.name) )
+							{
+								alertTarget = false;
+								alertAllies = false;
+							}
 
 							if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 							{
 								hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH, true);
 							}
 
-							bool alertAllies = true;
 							if ( parent->behavior == &actPlayer || parent->monsterAllyIndex != -1 )
 							{
 								if ( hit.entity->behavior == &actPlayer || (hit.entity->behavior == &actMonster && hit.entity->monsterAllyIndex != -1) )
