@@ -1331,6 +1331,7 @@ void Entity::effectTimes()
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
+						updateClient = true;
 						break;
 					case EFF_SHAPESHIFT:
 						effectShapeshift = 0;
@@ -1340,6 +1341,7 @@ void Entity::effectTimes()
 						playSoundEntity(this, 400, 92);
 						createParticleDropRising(this, 593, 1.f);
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
+						updateClient = true;
 						break;
 					case EFF_WITHDRAWAL:
 						if ( player >= 0 && player < MAXPLAYERS )
@@ -1362,6 +1364,12 @@ void Entity::effectTimes()
 					case EFF_FEAR:
 						this->monsterFearfulOfUid = 0;
 						messagePlayer(player, language[3439]);
+						updateClient = true;
+						break;
+					case EFF_PACIFY:
+					case EFF_SHADOW_TAGGED:
+					case EFF_WEBBED:
+						updateClient = true;
 						break;
 					default:
 						break;

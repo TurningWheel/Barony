@@ -4640,20 +4640,27 @@ void actParticleShadowTag(Entity* my)
 			Entity* caster = uidToEntity(casterUid);
 			Entity* parent = uidToEntity(my->parent);
 			if ( caster && caster->behavior == &actPlayer
-				&& parent && parent->getStats() )
+				&& parent )
 			{
 				// caster is alive, notify they lost their mark
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), language[3466], language[3467], MSG_COMBAT);
+				if ( parent->getStats() )
+				{
+					messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), language[3466], language[3467], MSG_COMBAT);
+					parent->setEffect(EFF_SHADOW_TAGGED, false, 0, true);
+				}
 			}
 		}
-
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
 	else
 	{
 		--PARTICLE_LIFE;
+		my->removeLightField();
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
+
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
 		{
