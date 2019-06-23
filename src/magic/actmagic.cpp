@@ -4609,7 +4609,7 @@ void actParticleShadowTag(Entity* my)
 		int numParticles = 8;
 		for ( int c = 0; c < 8; c++ )
 		{
-			Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
+			Entity* entity = newEntity(871, 1, map.entities, nullptr); //Particle entity.
 			entity->sizex = 1;
 			entity->sizey = 1;
 			entity->x = my->x;
@@ -4762,7 +4762,7 @@ void actParticleShadowTag(Entity* my)
 			int numParticles = 8;
 			for ( int c = 0; c < 8; c++ )
 			{
-				Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
+				Entity* entity = newEntity(871, 1, map.entities, nullptr); //Particle entity.
 				entity->sizex = 1;
 				entity->sizey = 1;
 				entity->x = my->x;
@@ -4797,7 +4797,7 @@ void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
 	{
 		return;
 	}
-	Entity* entity = newEntity(175, 1, map.entities, nullptr); //Particle entity.
+	Entity* entity = newEntity(870, 1, map.entities, nullptr); //Particle entity.
 	entity->parent = parent->getUID();
 	entity->x = parent->x;
 	entity->y = parent->y;

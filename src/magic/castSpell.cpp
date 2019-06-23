@@ -1711,7 +1711,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( propulsion == PROPULSION_MISSILE )
 				{
-					entity->sprite = 175;
+					entity->sprite = 870;
 				}
 			}
 		}

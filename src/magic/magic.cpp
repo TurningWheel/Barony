@@ -2442,7 +2442,7 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 				if ( !sameAsPrevious )
 				{
 					createParticleShadowTag(hit.entity, parent->getUID(), 60 * TICKS_PER_SECOND);
-					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHADOW_TAG, 175, parent->getUID());
+					serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_SHADOW_TAG, 870, parent->getUID());
 				}
 			}
 
