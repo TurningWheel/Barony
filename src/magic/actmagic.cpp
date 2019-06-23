@@ -2465,6 +2465,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectTeleportPull(my, *element, parent, hit.entity, resistance);
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_shadowTag.name) )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectShadowTag(*my, *element, parent, resistance);
+					}
+				}
 
 				if ( hitstats )
 				{
@@ -4581,6 +4589,229 @@ void actParticleFollowerCommand(Entity* my)
 			my->vel_z *= 0.9;
 		}
 	}
+}
+
+void actParticleShadowTag(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		// once off, fire some erupt dot particles at end of life.
+		real_t yaw = 0;
+		int numParticles = 8;
+		for ( int c = 0; c < 8; c++ )
+		{
+			Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->x = my->x;
+			entity->y = my->y;
+			entity->z = -10 + my->fskill[0];
+			entity->yaw = yaw;
+			entity->vel_x = 0.2;
+			entity->vel_y = 0.2;
+			entity->vel_z = -0.02;
+			entity->skill[0] = 100;
+			entity->skill[1] = 0; // direction.
+			entity->fskill[0] = 0.1;
+			entity->behavior = &actParticleErupt;
+			entity->flags[PASSABLE] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UNCLICKABLE] = true;
+			if ( multiplayer != CLIENT )
+			{
+				entity_uids--;
+			}
+			entity->setUID(-3);
+			yaw += 2 * PI / numParticles;
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			Uint32 casterUid = static_cast<Uint32>(my->skill[2]);
+			Entity* caster = uidToEntity(casterUid);
+			Entity* parent = uidToEntity(my->parent);
+			if ( caster && caster->behavior == &actPlayer
+				&& parent && parent->getStats() )
+			{
+				// caster is alive, notify they lost their mark
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+				messagePlayerMonsterEvent(caster->skill[2], color, *(parent->getStats()), language[3466], language[3467], MSG_COMBAT);
+			}
+		}
+
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		Entity* parent = uidToEntity(my->parent);
+		if ( parent )
+		{
+			my->x = parent->x;
+			my->y = parent->y;
+		}
+
+		if ( my->skill[1] >= 50 ) // stop changing size
+		{
+			real_t maxspeed = .03;
+			real_t acceleration = 0.95;
+			if ( my->skill[3] == 0 ) 
+			{
+				// once off, store the normal height of the particle.
+				my->skill[3] = 1;
+				my->vel_z = -maxspeed;
+			}
+			if ( my->skill[1] % 5 == 0 )
+			{
+				Uint32 casterUid = static_cast<Uint32>(my->skill[2]);
+				Entity* caster = uidToEntity(casterUid);
+				if ( caster && caster->creatureShadowTaggedThisUid == my->parent && parent )
+				{
+					// caster is alive, and they have still marked the parent this particle is following.
+				}
+				else
+				{
+					PARTICLE_LIFE = 0;
+				}
+			}
+
+			if ( PARTICLE_LIFE > 0 && PARTICLE_LIFE < TICKS_PER_SECOND )
+			{
+				if ( parent && parent->getStats() && parent->getStats()->EFFECTS[EFF_SHADOW_TAGGED] )
+				{
+					++PARTICLE_LIFE;
+				}
+			}
+			// bob up and down movement.
+			if ( my->skill[3] == 1 )
+			{
+				my->vel_z *= acceleration;
+				if ( my->vel_z > -0.005 )
+				{
+					my->skill[3] = 2;
+					my->vel_z = -0.005;
+				}
+				my->z += my->vel_z;
+			}
+			else if ( my->skill[3] == 2 )
+			{
+				my->vel_z /= acceleration;
+				if ( my->vel_z < -maxspeed )
+				{
+					my->skill[3] = 3;
+					my->vel_z = -maxspeed;
+				}
+				my->z -= my->vel_z;
+			}
+			else if ( my->skill[3] == 3 )
+			{
+				my->vel_z *= acceleration;
+				if ( my->vel_z > -0.005 )
+				{
+					my->skill[3] = 4;
+					my->vel_z = -0.005;
+				}
+				my->z -= my->vel_z;
+			}
+			else if ( my->skill[3] == 4 )
+			{
+				my->vel_z /= acceleration;
+				if ( my->vel_z < -maxspeed )
+				{
+					my->skill[3] = 1;
+					my->vel_z = -maxspeed;
+				}
+				my->z += my->vel_z;
+			}
+			my->yaw += 0.01;
+		}
+		else
+		{
+			my->z += my->vel_z;
+			my->yaw += my->vel_z * 2;
+			if ( my->scalex < 0.5 )
+			{
+				my->scalex += 0.02;
+			}
+			else
+			{
+				my->scalex = 0.5;
+			}
+			my->scaley = my->scalex;
+			my->scalez = my->scalex;
+			if ( my->z < -3 + my->fskill[0] )
+			{
+				my->vel_z *= 0.9;
+			}
+		}
+
+		// once off, fire some erupt dot particles at start.
+		if ( my->skill[1] == 0 )
+		{
+			real_t yaw = 0;
+			int numParticles = 8;
+			for ( int c = 0; c < 8; c++ )
+			{
+				Entity* entity = newEntity(576, 1, map.entities, nullptr); //Particle entity.
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = -10 + my->fskill[0];
+				entity->yaw = yaw;
+				entity->vel_x = 0.2;
+				entity->vel_y = 0.2;
+				entity->vel_z = -0.02;
+				entity->skill[0] = 100;
+				entity->skill[1] = 0; // direction.
+				entity->fskill[0] = 0.1;
+				entity->behavior = &actParticleErupt;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+				yaw += 2 * PI / numParticles;
+			}
+		}
+		++my->skill[1];
+	}
+}
+
+void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration)
+{
+	if ( !parent )
+	{
+		return;
+	}
+	Entity* entity = newEntity(175, 1, map.entities, nullptr); //Particle entity.
+	entity->parent = parent->getUID();
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->z = 7.5;
+	entity->fskill[0] = parent->z;
+	entity->vel_z = -0.8;
+	entity->scalex = 0.1;
+	entity->scaley = 0.1;
+	entity->scalez = 0.1;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = duration;
+	entity->skill[1] = 0;
+	entity->skill[2] = static_cast<Sint32>(casterUid);
+	entity->skill[3] = 0;
+	entity->behavior = &actParticleShadowTag;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
 }
 
 void createParticleCharmMonster(Entity* parent)

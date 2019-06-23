@@ -674,7 +674,7 @@ Spawns misc particle effects for all clients
 
 -------------------------------------------------------------------------------*/
 
-void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite)
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite, Uint32 optionalUid)
 {
 	int c;
 	if ( multiplayer != SERVER )
@@ -689,9 +689,10 @@ void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSpri
 			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = particleType;
 			SDLNet_Write16(particleSprite, &net_packet->data[9]);
+			SDLNet_Write32(optionalUid, &net_packet->data[11]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 12;
+			net_packet->len = 16;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
@@ -2724,6 +2725,12 @@ void clientHandlePacket()
 				case PARTICLE_EFFECT_CHARM_MONSTER:
 					createParticleCharmMonster(entity);
 					break;
+				case PARTICLE_EFFECT_SHADOW_TAG:
+				{
+					Uint32 uid = SDLNet_Read32(&net_packet->data[11]);
+					createParticleShadowTag(entity, uid, 60 * TICKS_PER_SECOND);
+					break;
+				}
 				case PARTICLE_EFFECT_SPELL_WEB_ORBIT:
 					createParticleAestheticOrbit(entity, 863, 400, PARTICLE_EFFECT_SPELL_WEB_ORBIT);
 					break;

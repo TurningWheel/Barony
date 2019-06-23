@@ -126,6 +126,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterKnockbackUID(skill[51]),
 	creatureWebbedSlowCount(skill[52]),
 	monsterFearfulOfUid(skill[53]),
+	creatureShadowTaggedThisUid(skill[54]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -2320,6 +2321,25 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EFFECTS[EFF_ASLEEP] && ticks % 30 == 0 )
 	{
 		spawnSleepZ(this->x + cos(this->yaw) * 2, this->y + sin(this->yaw) * 2, this->z);
+	}
+
+	if ( creatureShadowTaggedThisUid != 0 )
+	{
+		Entity* tagged = uidToEntity(creatureShadowTaggedThisUid);
+		if ( !tagged )
+		{
+			creatureShadowTaggedThisUid = 0;
+			serverUpdateEntitySkill(this, 54);
+		}
+		else
+		{
+			Stat* tagStats = tagged->getStats();
+			if ( tagStats && !tagStats->EFFECTS[EFF_SHADOW_TAGGED] ) // effect timed out.
+			{
+				creatureShadowTaggedThisUid = 0;
+				serverUpdateEntitySkill(this, 54);
+			}
+		}
 	}
 
 	// level ups

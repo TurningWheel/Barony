@@ -143,7 +143,22 @@ void drawMinimap()
 			if ( entity->behavior == &actMonster && entity->monsterAllyIndex < 0 )
 			{
 				bool warningEffect = false;
-				if ( stats[clientnum]->ring != NULL )
+				if ( (players[clientnum] && players[clientnum]->entity
+					&& players[clientnum]->entity->creatureShadowTaggedThisUid == entity->getUID())
+					|| (entity->getStats() && entity->getStats()->EFFECTS[EFF_SHADOW_TAGGED]) )
+				{
+					warningEffect = true;
+					x = floor(entity->x / 16);
+					y = floor(entity->y / 16);
+					glColor4f(.75, .75, .75, 1);
+					//glBegin(GL_QUADS);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					//glEnd();
+				}
+				if ( !warningEffect && stats[clientnum]->ring != NULL )
 				{
 					if ( stats[clientnum]->ring->type == RING_WARNING )
 					{
@@ -314,6 +329,11 @@ void drawMinimap()
 						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
 						break;
 				}
+				if ( players[clientnum] && players[clientnum]->entity
+					&& players[clientnum]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+				{
+					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+				}
 				//color = SDL_MapRGB(mainsurface->format, 0, 192, 0);
 			}
 			else
@@ -336,7 +356,11 @@ void drawMinimap()
 						color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
 						break;
 				}
-				//color = SDL_MapRGB(mainsurface->format, 0, 0, 192);
+				if ( players[clientnum] && players[clientnum]->entity
+					&& players[clientnum]->entity->creatureShadowTaggedThisUid == entity->getUID() )
+				{
+					color = SDL_MapRGB(mainsurface->format, 192, 192, 192); // grey
+				}
 			}
 
 			// draw the first pixel

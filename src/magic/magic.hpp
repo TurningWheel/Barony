@@ -137,6 +137,7 @@ static const int PARTICLE_EFFECT_SPELL_SUMMON = 17;
 static const int PARTICLE_EFFECT_SPELL_WEB_ORBIT = 18;
 static const int PARTICLE_EFFECT_TELEPORT_PULL = 19;
 static const int PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION = 20;
+static const int PARTICLE_EFFECT_SHADOW_TAG = 21;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -504,6 +505,7 @@ void actParticleExplosionCharge(Entity* my);
 void actParticleFollowerCommand(Entity* my);
 void actParticleCharmMonster(Entity* my);
 void actParticleAestheticOrbit(Entity* my);
+void actParticleShadowTag(Entity* my);
 
 void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
@@ -516,6 +518,7 @@ void createParticleSap(Entity* parent);
 void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount, double scale);
 void createParticleFollowerCommand(real_t x, real_t y, real_t z, int sprite);
 void createParticleCharmMonster(Entity* parent);
+void createParticleShadowTag(Entity* parent, Uint32 casterUid, int duration);
 
 void spawnMagicTower(Entity* parent, real_t x, real_t y, int spellID, Entity* autoHitTarget, bool castedSpell = false); // autoHitTarget is to immediate damage an entity, as all 3 tower magics hitting is unreliable
 void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks);
@@ -597,7 +600,8 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent);
 void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
-int spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
+bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
+void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 
 void freeSpells();
 void drawSpellTooltip(spell_t* spell, Item* item);

@@ -57,6 +57,7 @@ static const int EFF_WEBBED = 30;
 static const int EFF_FEAR = 31;
 static const int EFF_MAGICAMPLIFY = 32;
 static const int EFF_DISORIENTED = 33;
+static const int EFF_SHADOW_TAGGED = 34;
 static const int NUMEFFECTS = 40;
 
 // stats

@@ -200,6 +200,7 @@ public:
 	Sint32& monsterKnockbackUID; //skill[51]
 	Sint32& creatureWebbedSlowCount; //skill[52]
 	Sint32& monsterFearfulOfUid; //skill[53]
+	Sint32& creatureShadowTaggedThisUid; //skill[54]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
