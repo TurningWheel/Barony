@@ -2213,23 +2213,22 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 		//int damage = element.damage;
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
-		if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+		if ( target->behavior == &actMonster || target->behavior == &actPlayer 
+			/*|| target->behavior == &actDoor || target->behavior == &actChest*/ )
 		{
-			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			Stat* hitstats = target->getStats();
+			if ( hitstats )
 			{
-				// test for friendly fire
-				if ( parent && parent->checkFriend(target) )
+				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 				{
-					return false;
+					// test for friendly fire
+					if ( parent && parent->checkFriend(target) )
+					{
+						return false;
+					}
 				}
 			}
 			//playSoundEntity(target, 249, 64);
-
-			Stat* hitstats = target->getStats();
-			if ( !hitstats )
-			{
-				return false;
-			}
 
 			if ( parent )
 			{
@@ -2252,7 +2251,10 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 					if ( parent->behavior == &actPlayer )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+						if ( hitstats )
+						{
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2905], language[2906], MSG_COMBAT);
+						}
 					}
 					return false;
 				}
@@ -2364,20 +2366,23 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				}
 
 				// update enemy bar for attacker
-				if ( !strcmp(hitstats->name, "") )
+				if ( hitstats )
 				{
-					if ( hitstats->type < KOBOLD ) //Original monster count
+					if ( !strcmp(hitstats->name, "") )
 					{
-						updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(parent, target, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						}
 					}
-					else if ( hitstats->type >= KOBOLD ) //New monsters
+					else
 					{
-						updateEnemyBar(parent, target, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
-				}
-				else
-				{
-					updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
 				}
 
 
