@@ -1714,6 +1714,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					entity->sprite = 870;
 				}
 			}
+			else if ( !strcmp(element->name, spellElement_demonIllusion.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 171;
+				}
+			}
 		}
 	}
 

@@ -602,6 +602,7 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);
 bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 
 void freeSpells();
 void drawSpellTooltip(spell_t* spell, Item* item);

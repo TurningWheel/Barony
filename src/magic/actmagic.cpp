@@ -2482,6 +2482,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						spellEffectShadowTag(*my, *element, parent, resistance);
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_demonIllusion.name) )
+				{
+					Entity* caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						spellEffectDemonIllusion(*my, *element, parent, hit.entity, resistance);
+					}
+				}
 
 				if ( hitstats )
 				{

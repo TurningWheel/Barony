@@ -127,6 +127,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	creatureWebbedSlowCount(skill[52]),
 	monsterFearfulOfUid(skill[53]),
 	creatureShadowTaggedThisUid(skill[54]),
+	monsterIllusionTauntingThisUid(skill[55]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -5158,7 +5159,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
-			else if ( (myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT)
+			else if ( (myStats->type == INCUBUS && (pose == MONSTER_POSE_INCUBUS_TELEPORT || pose == MONSTER_POSE_INCUBUS_TAUNT))
 				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
 				|| (myStats->type == LICH_FIRE && pose == MONSTER_POSE_MAGIC_CAST1)
 				|| (myStats->type == LICH_ICE && pose == MONSTER_POSE_MAGIC_CAST1)
@@ -8743,6 +8744,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		return; // summoned monster, no XP!
 	}
+	if ( srcStats->type == INCUBUS && !strncmp(srcStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	{
+		return;
+	}
 
 	int player = -1;
 	if ( behavior == &actPlayer )
@@ -9035,6 +9040,14 @@ bool Entity::checkEnemy(Entity* your)
 	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && !strncmp(yourStats->name, "Bram Kindly", 11) )
 	{
 		return true;
+	}
+	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	{
+		Entity* parentEntity = uidToEntity(this->parent);
+		if ( parentEntity != your )
+		{
+			return true;
+		}
 	}
 
 	// if you have a leader, check whether we are enemies instead
@@ -11862,6 +11875,26 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			return;
 		}
 	}
+	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	{
+		if ( monsterState == MONSTER_STATE_WAIT )
+		{
+			return;
+		}
+	}
+
+	if ( target.getRace() == INCUBUS )
+	{
+		Stat* targetStats = target.getStats();
+		if ( targetStats && !strncmp(targetStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+		{
+			Entity* illusionTauntingThisEntity = uidToEntity(static_cast<Uint32>(target.monsterIllusionTauntingThisUid));
+			if ( illusionTauntingThisEntity != this )
+			{
+				return;
+			}
+		}
+	}
 
 	if ( myStats->EFFECTS[EFF_DISORIENTED] )
 	{
@@ -12954,6 +12987,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 	if ( myStats.type == LICH_ICE )
+	{
+		return false;
+	}
+	if ( myStats.type == INCUBUS && !strncmp(myStats.name, "demonic conjuration", strlen("demonic conjuration")) )
 	{
 		return false;
 	}
@@ -14587,7 +14624,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "cultist")
 		|| strstr(monsterStats.name, "knight")
 		|| strstr(monsterStats.name, "sentinel")
-		|| strstr(monsterStats.name, "mage") )
+		|| strstr(monsterStats.name, "mage")
+		|| strstr(monsterStats.name, "demonic") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		return true;

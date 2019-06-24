@@ -1243,6 +1243,13 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 			{
 				itemDroppable = false;
 			}
+			if ( monsterStats->type == INCUBUS )
+			{
+				if ( !strncmp(monsterStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+				{
+					itemDroppable = false;
+				}
+			}
 
 			if ( (monsterStats->type == KOBOLD
 				|| monsterStats->type == COCKATRICE

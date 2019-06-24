@@ -45,119 +45,236 @@ void initIncubus(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
-			bool lesserMonster = false;
-			if ( !strncmp(myStats->name, "lesser incubus", strlen("lesser incubus")) )
+			if ( !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
 			{
-				lesserMonster = true;
-				myStats->HP = 80;
-				myStats->MAXHP = myStats->HP;
-				myStats->OLDHP = myStats->HP;
-				myStats->STR = 12;
-				myStats->DEX = 6;
-				myStats->CON = 3;
-				myStats->INT = -2;
-				myStats->PER = 5;
-				myStats->CHR = 5;
-				myStats->EXP = 0;
-				myStats->LVL = 15;
-			}
-			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
-
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
-			{
-
+				Entity* parent = uidToEntity(my->parent);
+				if ( !parent )
+				{
+					myStats->HP = 0;
+				}
+				else
+				{
+					Stat* parentStats = parent->getStats();
+					if ( !parentStats )
+					{
+						myStats->HP = 0;
+					}
+					else
+					{
+						myStats->HP = parentStats->HP;
+						myStats->MAXHP = myStats->HP;
+						myStats->OLDHP = myStats->HP;
+						myStats->STR = -50;
+						myStats->DEX = std::min(parentStats->DEX, 10);
+						myStats->CON = parentStats->CON;
+						myStats->INT = parentStats->INT;
+						myStats->PER = parentStats->PER;
+						myStats->CHR = parentStats->CHR;
+						myStats->LVL = parentStats->LVL;
+						myStats->GOLD = 0;
+						if ( parentStats->weapon )
+						{
+							myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->weapon, parentStats->weapon);
+							myStats->weapon->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->shield )
+						{
+							myStats->shield = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->shield, parentStats->shield);
+							myStats->shield->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->helmet )
+						{
+							myStats->helmet = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->helmet, parentStats->helmet);
+							myStats->helmet->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->breastplate )
+						{
+							myStats->breastplate = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->breastplate, parentStats->breastplate);
+							myStats->breastplate->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->shoes )
+						{
+							myStats->shoes = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->shoes, parentStats->shoes);
+							myStats->shoes->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->gloves )
+						{
+							myStats->gloves = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->gloves, parentStats->gloves);
+							myStats->gloves->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->cloak )
+						{
+							myStats->cloak = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->cloak, parentStats->cloak);
+							myStats->cloak->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->ring )
+						{
+							myStats->ring = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->ring, parentStats->ring);
+							myStats->ring->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->amulet )
+						{
+							myStats->amulet = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->amulet, parentStats->amulet);
+							myStats->amulet->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+						if ( parentStats->mask )
+						{
+							myStats->mask = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+							copyItem(myStats->mask, parentStats->mask);
+							myStats->mask->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+						}
+					}
+				}
 			}
 			else
 			{
-				/*myStats->DEX = 10;
-				strcpy(myStats->name, "Lilith");
-				for ( c = 0; c < 2; c++ )
+				bool lesserMonster = false;
+				if ( !strncmp(myStats->name, "lesser incubus", strlen("lesser incubus")) )
 				{
-					Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
-					if ( entity )
+					lesserMonster = true;
+					myStats->HP = 80;
+					myStats->MAXHP = myStats->HP;
+					myStats->OLDHP = myStats->HP;
+					myStats->STR = 12;
+					myStats->DEX = 6;
+					myStats->CON = 3;
+					myStats->INT = -2;
+					myStats->PER = 5;
+					myStats->CHR = 5;
+					myStats->EXP = 0;
+					myStats->LVL = 15;
+				}
+				// apply random stat increases if set in stat_shared.cpp or editor
+				setRandomMonsterStats(myStats);
+
+				// generate 6 items max, less if there are any forced items from boss variants
+				int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+				// boss variants
+				if ( rand() % 50 || my->flags[USERFLAG2] )
+				{
+
+				}
+				else
+				{
+					/*myStats->DEX = 10;
+					strcpy(myStats->name, "Lilith");
+					for ( c = 0; c < 2; c++ )
 					{
-						entity->parent = my->getUID();
-					}
-				}*/
-			}
+						Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
+						if ( entity )
+						{
+							entity->parent = my->getUID();
+						}
+					}*/
+				}
 
-			// random effects
+				// random effects
 
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
+				// generates equipment and weapons if available from editor
+				createMonsterEquipment(myStats);
 
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
+				// create any custom inventory items from editor if available
+				createCustomInventory(myStats, customItemsToGenerate);
 
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+				// count if any custom inventory items from editor
+				int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
 
-														 // count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
+															 // count any inventory items set to default in edtior
+				int defaultItems = countDefaultItems(myStats);
 
-			my->setHardcoreStats(*myStats);
+				my->setHardcoreStats(*myStats);
 
-			// always give special spell to incubus, undroppable.
-			newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
-			newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+				// always give special spell to incubus, undroppable.
+				newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+				newItem(SPELLBOOK_CHARM_MONSTER, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
-			if ( rand() % 4 == 0 ) // 1 in 4
-			{
-				newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
-			}
-			else // 3 in 4
-			{
-				newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
-			}
+				if ( rand() % 4 == 0 ) // 1 in 4
+				{
+					newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+				}
+				else // 3 in 4
+				{
+					newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+				}
 
 
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
-			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-					if ( rand() % 2 == 0 && !lesserMonster ) // 1 in 2
+				// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+				switch ( defaultItems )
+				{
+					case 6:
+					case 5:
+					case 4:
+					case 3:
+						if ( rand() % 2 == 0 && !lesserMonster ) // 1 in 2
+						{
+							newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
+						}
+					case 2:
+						if ( rand() % 5 == 0 ) // 1 in 5
+						{
+							newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+						}
+					case 1:
+						if ( rand() % 3 == 0 ) // 1 in 3
+						{
+							newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
+						}
+						break;
+					default:
+						break;
+				}
+
+				//give weapon
+				if ( lesserMonster )
+				{
+					if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 					{
-						newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+								myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+							case 6:
+							case 7:
+							case 8:
+								myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 9:
+								myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+						}
 					}
-				case 2:
-					if ( rand() % 5 == 0 ) // 1 in 5
-					{
-						newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
-					}
-				case 1:
-					if ( rand() % 3 == 0 ) // 1 in 3
-					{
-						newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
-					}
-					break;
-				default:
-					break;
-			}
-
-			//give weapon
-			if ( lesserMonster )
-			{
-				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				}
+				else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
 						case 2:
 						case 3:
+							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
 						case 4:
 						case 5:
 						case 6:
+							myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
 						case 7:
 						case 8:
 							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
@@ -167,50 +284,26 @@ void initIncubus(Entity* my, Stat* myStats)
 							break;
 					}
 				}
-			}
-			else if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 4:
-					case 5:
-					case 6:
-						myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 7:
-					case 8:
-						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-				}
-			}
 
-			// give shield
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				switch ( rand() % 10 )
+				// give shield
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-						break;
-					case 8:
-					case 9:
-						myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							break;
+						case 8:
+						case 9:
+							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 		}
@@ -425,6 +518,20 @@ void actIncubusLimb(Entity* my)
 void incubusDie(Entity* my)
 {
 	int c;
+
+	Stat* myStats = my->getStats();
+	if ( myStats && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	{
+		// die, no blood.
+		createParticleErupt(my, 171);
+		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 171);
+		//playSoundEntity(my, 279 + rand() % 3, 128);
+		playSoundEntity(my, 77, 64);
+		my->removeMonsterDeathNodes();
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
 	for ( c = 0; c < 5; c++ )
 	{
 		Entity* gib = spawnGib(my);
@@ -521,6 +628,19 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 		}
 
+		if ( !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+		{
+			Entity* parent = uidToEntity(my->parent);
+			if ( !parent )
+			{
+				myStats->HP = 0;
+			}
+			else if ( my->ticks > TICKS_PER_SECOND * 5 )
+			{
+				myStats->HP = 0;
+			}
+		}
+
 		// sleeping
 		if ( myStats->EFFECTS[EFF_ASLEEP] )
 		{
@@ -542,7 +662,9 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
 			if ( multiplayer != CLIENT && bodypart == 1 )
 			{
-				if ( my->monsterAttack != MONSTER_POSE_MAGIC_WINDUP3 && my->monsterAttack != MONSTER_POSE_INCUBUS_TELEPORT )
+				if ( my->monsterAttack != MONSTER_POSE_MAGIC_WINDUP3 
+					&& my->monsterAttack != MONSTER_POSE_INCUBUS_TELEPORT
+					&& my->monsterAttack != MONSTER_POSE_INCUBUS_TAUNT )
 				{
 					limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
 				}
@@ -565,7 +687,8 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			if ( bodypart == LIMB_HUMANOID_LEFTARM &&
 				((my->monsterSpecialState == INCUBUS_STEAL && my->monsterAttack != 0 ) ||
-				my->monsterAttack == MONSTER_POSE_INCUBUS_TELEPORT) )
+				my->monsterAttack == MONSTER_POSE_INCUBUS_TELEPORT
+					|| my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT) )
 			{
 				// leftarm follows the right arm during special steal state/teleport attack
 				// will not work when shield is visible
@@ -675,7 +798,8 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 					// teleport animation
-					else if( my->monsterAttack == MONSTER_POSE_INCUBUS_TELEPORT )
+					else if( my->monsterAttack == MONSTER_POSE_INCUBUS_TELEPORT
+						|| my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
 					{
 						if ( my->monsterAttackTime == 0 )
 						{
@@ -686,13 +810,27 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							weaponarm->roll = 0;
 							weaponarm->skill[1] = 0; // use this for direction of animation
 							// monster scream
-							playSoundEntityLocal(my, MONSTER_SPOTSND + 2, 128);
+							if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
+							{
+								playSoundEntityLocal(my, 276 + rand() % 3, 128);
+							}
+							else
+							{
+								playSoundEntityLocal(my, 282 + 2, 128);
+							}
 							if ( multiplayer != CLIENT )
 							{
 								// set overshoot for head, freeze incubus in place
 								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 								myStats->EFFECTS[EFF_PARALYZED] = true;
-								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 100;
+								if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
+								{
+									myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 250;
+								}
+								else
+								{
+									myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 100;
+								}
 							}
 						}
 
@@ -717,7 +855,14 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// keeps between PI and 0 (2PI) so we can lower the head at completion to 0 (2PI).
 							if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
 							{
-								limbAnimateWithOvershoot(my, ANIMATE_PITCH, -0.1, 7 * PI / 4, -0.1, 15 * PI / 8, ANIMATE_DIR_POSITIVE);
+								if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
+								{
+									limbAnimateWithOvershoot(my, ANIMATE_PITCH, -0.05, 7 * PI / 4, -0.05, 15 * PI / 8, ANIMATE_DIR_POSITIVE);
+								}
+								else
+								{
+									limbAnimateWithOvershoot(my, ANIMATE_PITCH, -0.1, 7 * PI / 4, -0.1, 15 * PI / 8, ANIMATE_DIR_POSITIVE);
+								}
 							}
 							else
 							{
@@ -727,6 +872,11 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 
 						// animation takes roughly 2 seconds.
+						int duration = 10;
+						if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
+						{
+							duration = 100;
+						}
 						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP * 10 / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							weaponarm->skill[0] = rightbody->skill[0];
@@ -1224,6 +1374,11 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 
 	Stat *myStats = getStats();
 	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
 	{
 		return;
 	}

@@ -2496,3 +2496,203 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
 }
+
+bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance)
+{
+	if ( target )
+	{
+		//int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
+		if ( target->behavior == &actMonster || target->behavior == &actPlayer )
+		{
+			playSoundEntity(&my, 174, 128);
+			Stat* hitstats = target->getStats();
+			if ( !hitstats )
+			{
+				return false;
+			}
+
+			if ( hitstats->type == INCUBUS && !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")) )
+			{
+				if ( parent->behavior == &actPlayer )
+				{
+					// unable to taunt!
+					messagePlayer(parent->skill[2], language[3472]);
+				}
+				return false;
+			}
+
+			if ( parent )
+			{
+				// try find a summon location around the entity.
+				int tx = static_cast<int>(std::floor(target->x)) >> 4;
+				int ty = static_cast<int>(std::floor(target->y)) >> 4;
+				int dist = 2;
+				bool foundLocation = false;
+				int numlocations = 0;
+				for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+				{
+					for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+					{
+						if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
+						{
+							Entity* ohitentity = hit.entity;
+							real_t ox = parent->x;
+							real_t oy = parent->y;
+							parent->x = (ix << 4) + 8;
+							parent->y = (iy << 4) + 8;
+							// pretend the parent is in the supposed spawn locations and try linetrace from each position.
+							real_t tangent = atan2(parent->y - target->y, parent->x - target->x);
+							lineTraceTarget(target, target->x, target->y, tangent, 64, 0, false, parent);
+							if ( hit.entity == parent )
+							{
+								numlocations++;
+							}
+							// reset the coordinates we messed with
+							parent->x = ox;
+							parent->y = oy;
+							hit.entity = ohitentity;
+						}
+					}
+				}
+				if ( numlocations == 0 )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						// no room to spawn!
+						messagePlayer(parent->skill[2], language[3471]);
+					}
+					return false;
+				}
+				int pickedlocation = rand() % numlocations;
+				numlocations = 0;
+				for ( int iy = std::max(0, ty - dist); !foundLocation && iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+				{
+					for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+					{
+						if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
+						{
+							if ( numlocations == pickedlocation )
+							{
+								Entity* ohitentity = hit.entity;
+								real_t ox = parent->x;
+								real_t oy = parent->y;
+								parent->x = (ix << 4) + 8;
+								parent->y = (iy << 4) + 8;
+								// pretend the parent is in the supposed spawn locations and try linetrace from each position.
+								real_t tangent = atan2(parent->y - target->y, parent->x - target->x);
+								lineTraceTarget(target, target->x, target->y, tangent, 64, 0, false, parent);
+								if ( hit.entity == parent )
+								{
+									numlocations++;
+								}
+								// reset the coordinates we messed with
+								parent->x = ox;
+								parent->y = oy;
+								hit.entity = ohitentity;
+
+								foundLocation = true;
+								tx = ix;
+								ty = iy;
+								break;
+							}
+							numlocations++;
+						}
+					}
+					if ( foundLocation )
+					{
+						break;
+					}
+				}
+
+				if ( !foundLocation )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						// no room to spawn!
+						messagePlayer(parent->skill[2], language[3471]);
+					}
+					return false;
+				}
+
+				Entity* monster = summonMonster(INCUBUS, tx * 16.0 + 8, ty * 16.0 + 8, true);
+				if ( monster )
+				{
+					spawnExplosion(monster->x, monster->y, -1);
+					playSoundEntity(monster, 171, 128);
+
+					createParticleErupt(monster, 171);
+					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 171);
+
+					monster->parent = parent->getUID();
+					monster->monsterIllusionTauntingThisUid = static_cast<Sint32>(target->getUID());
+					switch ( target->getRace() )
+					{
+						case LICH:
+						case DEVIL:
+						case LICH_FIRE:
+						case LICH_ICE:
+						case MINOTAUR:
+							break;
+						default:
+							target->monsterAcquireAttackTarget(*monster, MONSTER_STATE_PATH);
+							break;
+					}
+					monster->lookAtEntity(*target);
+					Stat* monsterStats = monster->getStats();
+					if ( monsterStats )
+					{
+						monsterStats->leader_uid = 0;
+						strcpy(monsterStats->name, "demonic conjuration");
+						monster->setEffect(EFF_STUNNED, true, 20, false);
+						monster->flags[USERFLAG2] = true;
+						serverUpdateEntityFlag(monster, USERFLAG2);
+						if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
+						{
+							int bodypart = 0;
+							for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
+							{
+								if ( bodypart >= LIMB_HUMANOID_TORSO )
+								{
+									Entity* tmp = (Entity*)node->element;
+									if ( tmp )
+									{
+										tmp->flags[USERFLAG2] = true;
+										serverUpdateEntityFlag(tmp, USERFLAG2);
+									}
+								}
+								++bodypart;
+							}
+						}
+					}
+				}
+				// hit messages
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3469], language[3470], MSG_COMBAT);
+				}
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			int player = -1;
+			if ( target->behavior == &actPlayer )
+			{
+				player = target->skill[2];
+				if ( player >= 0 )
+				{
+					messagePlayerColor(player, color, language[3468]);
+				}
+			}
+			spawnMagicEffectParticles(target->x, target->y, target->z, my.sprite);
+			return true;
+		}
+		spawnMagicEffectParticles(target->x, target->y, target->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+	return false;
+}

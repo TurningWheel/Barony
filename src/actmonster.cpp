@@ -2715,6 +2715,61 @@ void actMonster(Entity* my)
 		}
 	}
 
+	bool isIllusionTaunt = false;
+	if ( myStats->type == INCUBUS && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	{
+		isIllusionTaunt = true;
+		hasrangedweapon = false;
+		if ( my->ticks % 25 == 0 )
+		{
+			Entity* myTarget = uidToEntity(static_cast<Uint32>(my->monsterIllusionTauntingThisUid));
+			if ( myTarget )
+			{
+				if ( myTarget->monsterTarget != my->getUID() )
+				{
+					switch ( myTarget->getRace() )
+					{
+						case LICH:
+						case DEVIL:
+						case LICH_FIRE:
+						case LICH_ICE:
+						case MINOTAUR:
+							break;
+						default:
+							myTarget->monsterAcquireAttackTarget(*my, MONSTER_STATE_PATH);
+							break;
+					}
+				}
+				if ( my->isMobile() && my->ticks > 10 )
+				{
+					if ( my->ticks >= 100 && my->monsterAttack == 0 )
+					{
+						my->monsterReleaseAttackTarget();
+						my->attack(MONSTER_POSE_INCUBUS_TAUNT, 0, nullptr);
+					}
+					else if ( my->monsterState == MONSTER_STATE_WAIT )
+					{
+						my->monsterHitTime = HITRATE - 3;
+						if ( entityDist(my, myTarget) > STRIKERANGE * 1.5 )
+						{
+							my->monsterState = MONSTER_STATE_PATH;
+							my->monsterTarget = myTarget->getUID();
+							my->monsterTargetX = myTarget->x;
+							my->monsterTargetY = myTarget->y;
+						}
+						else
+						{
+							my->monsterState = MONSTER_STATE_ATTACK;
+							my->monsterTarget = myTarget->getUID();
+							my->monsterTargetX = myTarget->x;
+							my->monsterTargetY = myTarget->y;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	if ( my->isMobile() )
 	{
 		// ghouls rise out of the dirt :O
@@ -2904,7 +2959,7 @@ void actMonster(Entity* my)
 			my->monsterReleaseAttackTarget();
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
-			if ( myReflex && !myStats->EFFECTS[EFF_DISORIENTED] )
+			if ( myReflex && !myStats->EFFECTS[EFF_DISORIENTED] && !isIllusionTaunt )
 			{
 				if ( myStats->EFFECTS[EFF_FEAR] && my->monsterFearfulOfUid != 0 )
 				{
@@ -3131,7 +3186,8 @@ void actMonster(Entity* my)
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
 				&& !myStats->EFFECTS[EFF_FEAR]
-				&& !myStats->EFFECTS[EFF_DISORIENTED] )
+				&& !myStats->EFFECTS[EFF_DISORIENTED]
+				&& !isIllusionTaunt )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -3189,7 +3245,8 @@ void actMonster(Entity* my)
 			{
 				my->monsterLookTime = 0;
 				my->monsterMoveTime--;
-				if ( myStats->type != GHOUL && myStats->type != SPIDER && !myStats->EFFECTS[EFF_FEAR] )
+				if ( myStats->type != GHOUL && myStats->type != SPIDER 
+					&& !myStats->EFFECTS[EFF_FEAR] && !isIllusionTaunt )
 				{
 					my->monsterLookDir = (rand() % 360) * PI / 180;
 				}
@@ -3219,7 +3276,7 @@ void actMonster(Entity* my)
 						}
 					}
 				}
-				if ( rand() % 3 == 0 )
+				if ( rand() % 3 == 0 && !isIllusionTaunt )
 				{
 					if ( !MONSTER_SOUND )
 					{
@@ -3252,7 +3309,8 @@ void actMonster(Entity* my)
 			if ( my->monsterMoveTime == 0 
 				&& (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND)
 				&& !myStats->EFFECTS[EFF_FEAR] 
-				&& !myStats->EFFECTS[EFF_DISORIENTED] )
+				&& !myStats->EFFECTS[EFF_DISORIENTED]
+				&& !isIllusionTaunt )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
