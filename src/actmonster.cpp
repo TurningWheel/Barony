@@ -2716,7 +2716,7 @@ void actMonster(Entity* my)
 	}
 
 	bool isIllusionTaunt = false;
-	if ( myStats->type == INCUBUS && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	if ( myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		isIllusionTaunt = true;
 		hasrangedweapon = false;

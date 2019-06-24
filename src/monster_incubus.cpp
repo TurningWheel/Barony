@@ -45,7 +45,7 @@ void initIncubus(Entity* my, Stat* myStats)
 				myStats->leader_uid = 0;
 			}
 
-			if ( !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+			if ( !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 			{
 				Entity* parent = uidToEntity(my->parent);
 				if ( !parent )
@@ -74,9 +74,13 @@ void initIncubus(Entity* my, Stat* myStats)
 						myStats->GOLD = 0;
 						if ( parentStats->weapon )
 						{
-							myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
-							copyItem(myStats->weapon, parentStats->weapon);
-							myStats->weapon->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+							if ( itemCategory(parentStats->weapon) == WEAPON
+								|| itemCategory(parentStats->weapon) == TOOL )
+							{
+								myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
+								copyItem(myStats->weapon, parentStats->weapon);
+								myStats->weapon->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+							}
 						}
 						if ( parentStats->shield )
 						{
@@ -520,14 +524,14 @@ void incubusDie(Entity* my)
 	int c;
 
 	Stat* myStats = my->getStats();
-	if ( myStats && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	if ( myStats && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		// die, no blood.
-		spawnMagicEffectParticles(my->x, my->y, my->z, 171);
-		//createParticleErupt(my, 171);
-		//serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 171);
+		//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+		createParticleErupt(my, 171);
+		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 171);
 		//playSoundEntity(my, 279 + rand() % 3, 128);
-		playSoundEntity(my, 77, 64);
+		playSoundEntity(my, 178, 128);
 		my->removeMonsterDeathNodes();
 		list_RemoveNode(my->mynode);
 		return;
@@ -629,7 +633,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 		}
 
-		if ( !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+		if ( !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 		{
 			Entity* parent = uidToEntity(my->parent);
 			if ( !parent )
@@ -1379,7 +1383,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		return;
 	}
 
-	if ( !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	if ( !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		return;
 	}

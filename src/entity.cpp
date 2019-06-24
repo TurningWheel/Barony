@@ -5240,6 +5240,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			shapeshifted = true;
 		}
 
+		bool isIllusion = false;
+		if ( myStats->type == INCUBUS
+			&& !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
+		{
+			isIllusion = true;
+		}
+
 		if ( myStats->weapon != nullptr
 			&& (!shapeshifted || (shapeshifted && myStats->type == CREATURE_IMP && itemCategory(myStats->weapon) == MAGICSTAFF)) )
 		{
@@ -6561,8 +6568,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false;
 							}
-							else if ( myStats->type == INCUBUS
-								&& !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+							else if ( isIllusion )
 							{
 								degradeWeapon = false;
 							}
@@ -7723,7 +7729,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					if ( !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")) )
+					if ( !strncmp(hitstats->name, "inner demon", strlen("inner demon")) )
 					{
 						hit.entity->modHP(damage); // undo melee damage.
 					}
@@ -7746,7 +7752,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					if ( damage > 0 && hitstats->type == INCUBUS 
-						&& !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")) )
+						&& !strncmp(hitstats->name, "inner demon", strlen("inner demon")) )
 					{
 						// conjuration deals damage back to attacker.
 						Entity* illusionParent = uidToEntity(hit.entity->parent);
@@ -8804,7 +8810,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	{
 		return; // summoned monster, no XP!
 	}
-	if ( srcStats->type == INCUBUS && !strncmp(srcStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	if ( srcStats->type == INCUBUS && !strncmp(srcStats->name, "inner demon", strlen("inner demon")) )
 	{
 		return;
 	}
@@ -9101,7 +9107,7 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return true;
 	}
-	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		Entity* parentEntity = uidToEntity(this->parent);
 		if ( parentEntity != your )
@@ -11936,7 +11942,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			return;
 		}
 	}
-	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		if ( monsterState == MONSTER_STATE_WAIT )
 		{
@@ -11947,7 +11953,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	if ( target.getRace() == INCUBUS )
 	{
 		Stat* targetStats = target.getStats();
-		if ( targetStats && !strncmp(targetStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+		if ( targetStats && !strncmp(targetStats->name, "inner demon", strlen("inner demon")) )
 		{
 			Entity* illusionTauntingThisEntity = uidToEntity(static_cast<Uint32>(target.monsterIllusionTauntingThisUid));
 			if ( illusionTauntingThisEntity != this )
@@ -13051,7 +13057,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 	{
 		return false;
 	}
-	if ( myStats.type == INCUBUS && !strncmp(myStats.name, "demonic conjuration", strlen("demonic conjuration")) )
+	if ( myStats.type == INCUBUS && !strncmp(myStats.name, "inner demon", strlen("inner demon")) )
 	{
 		return false;
 	}
@@ -14686,7 +14692,7 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "knight")
 		|| strstr(monsterStats.name, "sentinel")
 		|| strstr(monsterStats.name, "mage")
-		|| strstr(monsterStats.name, "demonic") )
+		|| strstr(monsterStats.name, "inner") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		return true;

@@ -858,7 +858,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 
 			if ( hit.entity->behavior == &actMonster 
 				&& (hit.entity->monsterAllySummonRank != 0 
-					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration"))))
+					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))))
 				)
 			{
 				return;
@@ -1354,7 +1354,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			}
 			else if ( hit.entity->behavior == &actMonster 
 				&& (hit.entity->monsterAllySummonRank != 0
-					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")))) 
+					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon")))) 
 				)
 			{
 				chance = 0; // not allowed to control summons
@@ -1584,7 +1584,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
 		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
-		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "demonic conjuration", strlen("demonic conjuration")))
+		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")))
 		)
 	{
 		if ( parent && parent->behavior == &actPlayer )
@@ -2521,12 +2521,13 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				return false;
 			}
 
-			if ( hitstats->type == INCUBUS && !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")) )
+			if ( hitstats->type == INCUBUS || hitstats->type == AUTOMATON
+				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent->behavior == &actPlayer )
 				{
 					// unable to taunt!
-					messagePlayer(parent->skill[2], language[3472]);
+					messagePlayer(parent->skill[2], language[3472], hitstats->name);
 				}
 				return false;
 			}
@@ -2605,7 +2606,6 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 								ty = iy;
 								break;
 							}
-							numlocations++;
 						}
 					}
 					if ( foundLocation )
@@ -2652,7 +2652,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					if ( monsterStats )
 					{
 						monsterStats->leader_uid = 0;
-						strcpy(monsterStats->name, "demonic conjuration");
+						strcpy(monsterStats->name, "inner demon");
 						monster->setEffect(EFF_STUNNED, true, 20, false);
 						monster->flags[USERFLAG2] = true;
 						serverUpdateEntityFlag(monster, USERFLAG2);

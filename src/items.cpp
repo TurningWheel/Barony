@@ -1238,7 +1238,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		}
 		if ( monsterStats->type == INCUBUS )
 		{
-			if ( !strncmp(monsterStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+			if ( !strncmp(monsterStats->name, "inner demon", strlen("inner demon")) )
 			{
 				itemDroppable = false;
 			}
@@ -2734,7 +2734,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 				}
 			}
 		}
-		if ( wielder->type == INCUBUS && !strncmp(wielder->name, "demonic conjuration", strlen("demonic conjuration")) )
+		if ( wielder->type == INCUBUS && !strncmp(wielder->name, "inner demon", strlen("inner demon")) )
 		{
 			return -9999;
 		}
