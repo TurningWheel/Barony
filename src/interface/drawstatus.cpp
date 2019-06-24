@@ -198,6 +198,14 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 				player = source->monsterAllyIndex; // don't update enemy bar if attacking leader.
 			}
 		}
+		else if ( source->behavior == &actMonster && source->monsterIllusionTauntingThisUid != 0 )
+		{
+			Entity* parent = uidToEntity(source->parent);
+			if ( parent && parent->behavior == &actPlayer && parent != target )
+			{
+				player = parent->skill[2]; // don't update enemy bar if attacking leader.
+			}
+		}
 	}
 
 	int playertarget = -1;

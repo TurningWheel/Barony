@@ -2720,10 +2720,10 @@ void actMonster(Entity* my)
 	{
 		isIllusionTaunt = true;
 		hasrangedweapon = false;
-		if ( my->ticks % 25 == 0 )
+		Entity* myTarget = uidToEntity(static_cast<Uint32>(my->monsterIllusionTauntingThisUid));
+		if ( myTarget )
 		{
-			Entity* myTarget = uidToEntity(static_cast<Uint32>(my->monsterIllusionTauntingThisUid));
-			if ( myTarget )
+			if ( my->ticks % 50 == 0 )
 			{
 				if ( myTarget->monsterTarget != my->getUID() )
 				{
@@ -2740,33 +2740,38 @@ void actMonster(Entity* my)
 							break;
 					}
 				}
-				if ( my->isMobile() && my->ticks > 10 )
+			}
+			if ( my->isMobile() && my->ticks > 10 )
+			{
+				if ( (my->monsterState != MONSTER_STATE_WAIT && my->monsterHitTime >= 30 && my->monsterHitTime <= 40)
+					|| (my->ticks >= 100 && my->monsterAttack == 0) )
 				{
-					if ( my->ticks >= 100 && my->monsterAttack == 0 )
+					my->monsterReleaseAttackTarget();
+					my->attack(MONSTER_POSE_INCUBUS_TAUNT, 0, nullptr);
+				}
+				else if ( my->monsterState == MONSTER_STATE_WAIT )
+				{
+					my->monsterHitTime = HITRATE - 3;
+					if ( entityDist(my, myTarget) > STRIKERANGE * 1.5 )
 					{
-						my->monsterReleaseAttackTarget();
-						my->attack(MONSTER_POSE_INCUBUS_TAUNT, 0, nullptr);
+						my->monsterState = MONSTER_STATE_PATH;
+						my->monsterTarget = myTarget->getUID();
+						my->monsterTargetX = myTarget->x;
+						my->monsterTargetY = myTarget->y;
 					}
-					else if ( my->monsterState == MONSTER_STATE_WAIT )
+					else
 					{
-						my->monsterHitTime = HITRATE - 3;
-						if ( entityDist(my, myTarget) > STRIKERANGE * 1.5 )
-						{
-							my->monsterState = MONSTER_STATE_PATH;
-							my->monsterTarget = myTarget->getUID();
-							my->monsterTargetX = myTarget->x;
-							my->monsterTargetY = myTarget->y;
-						}
-						else
-						{
-							my->monsterState = MONSTER_STATE_ATTACK;
-							my->monsterTarget = myTarget->getUID();
-							my->monsterTargetX = myTarget->x;
-							my->monsterTargetY = myTarget->y;
-						}
+						my->monsterState = MONSTER_STATE_ATTACK;
+						my->monsterTarget = myTarget->getUID();
+						my->monsterTargetX = myTarget->x;
+						my->monsterTargetY = myTarget->y;
 					}
 				}
 			}
+		}
+		else
+		{
+			my->modHP(-9999);
 		}
 	}
 

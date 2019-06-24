@@ -1236,19 +1236,19 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		{
 			itemDroppable = false;
 		}
+		if ( monsterStats->type == INCUBUS )
+		{
+			if ( !strncmp(monsterStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+			{
+				itemDroppable = false;
+			}
+		}
 
 		if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 		{
 			if ( monsterStats->type == SHADOW || monsterStats->type == AUTOMATON )
 			{
 				itemDroppable = false;
-			}
-			if ( monsterStats->type == INCUBUS )
-			{
-				if ( !strncmp(monsterStats->name, "demonic conjuration", strlen("demonic conjuration")) )
-				{
-					itemDroppable = false;
-				}
 			}
 
 			if ( (monsterStats->type == KOBOLD
@@ -2733,6 +2733,10 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 					return 0; // players that are these monsters do not benefit from weapons
 				}
 			}
+		}
+		if ( wielder->type == INCUBUS && !strncmp(wielder->name, "demonic conjuration", strlen("demonic conjuration")) )
+		{
+			return -9999;
 		}
 		if ( shouldInvertEquipmentBeatitude(wielder) )
 		{

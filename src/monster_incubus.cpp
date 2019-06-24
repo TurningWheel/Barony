@@ -64,8 +64,8 @@ void initIncubus(Entity* my, Stat* myStats)
 						myStats->HP = parentStats->HP;
 						myStats->MAXHP = myStats->HP;
 						myStats->OLDHP = myStats->HP;
-						myStats->STR = -50;
-						myStats->DEX = std::min(parentStats->DEX, 10);
+						myStats->STR = -999;
+						myStats->DEX = std::min(parentStats->DEX, 15);
 						myStats->CON = parentStats->CON;
 						myStats->INT = parentStats->INT;
 						myStats->PER = parentStats->PER;
@@ -523,8 +523,9 @@ void incubusDie(Entity* my)
 	if ( myStats && !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
 	{
 		// die, no blood.
-		createParticleErupt(my, 171);
-		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 171);
+		spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+		//createParticleErupt(my, 171);
+		//serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 171);
 		//playSoundEntity(my, 279 + rand() % 3, 128);
 		playSoundEntity(my, 77, 64);
 		my->removeMonsterDeathNodes();
@@ -875,9 +876,9 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						int duration = 10;
 						if ( my->monsterAttack == MONSTER_POSE_INCUBUS_TAUNT )
 						{
-							duration = 100;
+							duration = 50;
 						}
-						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP * 10 / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP * duration / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							weaponarm->skill[0] = rightbody->skill[0];
 							weaponarm->pitch = rightbody->pitch;

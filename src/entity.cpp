@@ -6561,6 +6561,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								degradeWeapon = false;
 							}
+							else if ( myStats->type == INCUBUS
+								&& !strncmp(myStats->name, "demonic conjuration", strlen("demonic conjuration")) )
+							{
+								degradeWeapon = false;
+							}
 
 							if ( degradeWeapon )
 							{
@@ -7718,6 +7723,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					if ( !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")) )
+					{
+						hit.entity->modHP(damage); // undo melee damage.
+					}
+
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{
@@ -7735,6 +7745,56 @@ void Entity::attack(int pose, int charge, Entity* target)
 						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
 
+					if ( damage > 0 && hitstats->type == INCUBUS 
+						&& !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")) )
+					{
+						// conjuration deals damage back to attacker.
+						Entity* illusionParent = uidToEntity(hit.entity->parent);
+						if ( illusionParent )
+						{
+							this->modHP(-damage / 2);
+							if ( myStats->HP <= 0 )
+							{
+								illusionParent->awardXP(this, true, true);
+							}
+							if ( player > 0 && multiplayer == SERVER )
+							{
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
+							}
+							else if ( player == 0 )
+							{
+								camera_shakex += 0.1;
+								camera_shakey += 10;
+							}
+
+							spawnMagicEffectParticles(this->x, this->y, this->z, 643);
+							if ( illusionParent->behavior == &actPlayer )
+							{
+								// update enemy bar for attacker
+								if ( !strcmp(myStats->name, "") )
+								{
+									if ( myStats->type < KOBOLD ) //Original monster count
+									{
+										updateEnemyBar(illusionParent, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
+									}
+									else if ( myStats->type >= KOBOLD ) //New monsters
+									{
+										updateEnemyBar(illusionParent, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
+									}
+								}
+								else
+								{
+									updateEnemyBar(illusionParent, this, myStats->name, myStats->HP, myStats->MAXHP);
+								}
+							}
+						}
+					}
 
 					playSoundEntity(hit.entity, 28, 64);
 
@@ -10506,7 +10566,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
 				|| myStats->type == SHADOW )
 			{
-				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
+				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE
+					|| myStats->weapon->type == TOOL_WHIP )
 				{
 					// axes and maces don't stab
 					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;

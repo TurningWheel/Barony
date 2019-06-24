@@ -856,7 +856,10 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				return;
 			}
 
-			if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
+			if ( hit.entity->behavior == &actMonster 
+				&& (hit.entity->monsterAllySummonRank != 0 
+					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration"))))
+				)
 			{
 				return;
 			}
@@ -1349,7 +1352,10 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 			{
 				chance = 0;
 			}
-			else if ( hit.entity->behavior == &actMonster && hit.entity->monsterAllySummonRank != 0 )
+			else if ( hit.entity->behavior == &actMonster 
+				&& (hit.entity->monsterAllySummonRank != 0
+					|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "demonic conjuration", strlen("demonic conjuration")))) 
+				)
 			{
 				chance = 0; // not allowed to control summons
 			}
@@ -1577,7 +1583,9 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 
 	if ( targetStats->type == LICH || targetStats->type == SHOPKEEPER || targetStats->type == DEVIL
 		|| targetStats->type == MINOTAUR || targetStats->type == LICH_FIRE || targetStats->type == LICH_ICE
-		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0) )
+		|| (target->behavior == &actMonster && target->monsterAllySummonRank != 0)
+		|| (targetStats->type == INCUBUS && !strncmp(targetStats->name, "demonic conjuration", strlen("demonic conjuration")))
+		)
 	{
 		if ( parent && parent->behavior == &actPlayer )
 		{
