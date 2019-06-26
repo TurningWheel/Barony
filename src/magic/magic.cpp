@@ -2514,7 +2514,6 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 
 		if ( target->behavior == &actMonster || target->behavior == &actPlayer )
 		{
-			playSoundEntity(&my, 174, 128);
 			Stat* hitstats = target->getStats();
 			if ( !hitstats )
 			{
@@ -2527,7 +2526,8 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				if ( parent->behavior == &actPlayer )
 				{
 					// unable to taunt!
-					messagePlayer(parent->skill[2], language[3472], hitstats->name);
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3472], language[3473], MSG_COMBAT);
 				}
 				return false;
 			}
@@ -2537,9 +2537,9 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				// try find a summon location around the entity.
 				int tx = static_cast<int>(std::floor(target->x)) >> 4;
 				int ty = static_cast<int>(std::floor(target->y)) >> 4;
-				int dist = 2;
-				bool foundLocation = false;
+				int dist = 3;
 				int numlocations = 0;
+				std::vector<std::pair<int, int>> goodspots;
 				for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 				{
 					for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
@@ -2556,6 +2556,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							lineTraceTarget(target, target->x, target->y, tangent, 64, 0, false, parent);
 							if ( hit.entity == parent )
 							{
+								goodspots.push_back(std::make_pair(ix, iy));
 								numlocations++;
 							}
 							// reset the coordinates we messed with
@@ -2574,62 +2575,16 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					}
 					return false;
 				}
-				int pickedlocation = rand() % numlocations;
-				numlocations = 0;
-				for ( int iy = std::max(0, ty - dist); !foundLocation && iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
-				{
-					for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
-					{
-						if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
-						{
-							if ( numlocations == pickedlocation )
-							{
-								Entity* ohitentity = hit.entity;
-								real_t ox = parent->x;
-								real_t oy = parent->y;
-								parent->x = (ix << 4) + 8;
-								parent->y = (iy << 4) + 8;
-								// pretend the parent is in the supposed spawn locations and try linetrace from each position.
-								real_t tangent = atan2(parent->y - target->y, parent->x - target->x);
-								lineTraceTarget(target, target->x, target->y, tangent, 64, 0, false, parent);
-								if ( hit.entity == parent )
-								{
-									numlocations++;
-								}
-								// reset the coordinates we messed with
-								parent->x = ox;
-								parent->y = oy;
-								hit.entity = ohitentity;
-
-								foundLocation = true;
-								tx = ix;
-								ty = iy;
-								break;
-							}
-						}
-					}
-					if ( foundLocation )
-					{
-						break;
-					}
-				}
-
-				if ( !foundLocation )
-				{
-					if ( parent->behavior == &actPlayer )
-					{
-						// no room to spawn!
-						messagePlayer(parent->skill[2], language[3471]);
-					}
-					return false;
-				}
+				std::pair<int, int> tmpPair = goodspots[rand() % goodspots.size()];
+				tx = tmpPair.first;
+				ty = tmpPair.second;
 
 				Entity* monster = summonMonster(INCUBUS, tx * 16.0 + 8, ty * 16.0 + 8, true);
 				if ( monster )
 				{
 					spawnExplosion(monster->x, monster->y, -1);
 					playSoundEntity(monster, 171, 128);
-
+					//playSoundEntity(&my, 178, 128);
 					createParticleErupt(monster, 171);
 					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 171);
 

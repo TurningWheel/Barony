@@ -72,17 +72,9 @@ void initIncubus(Entity* my, Stat* myStats)
 						myStats->CHR = parentStats->CHR;
 						myStats->LVL = parentStats->LVL;
 						myStats->GOLD = 0;
-						if ( parentStats->weapon )
-						{
-							if ( itemCategory(parentStats->weapon) == WEAPON
-								|| itemCategory(parentStats->weapon) == TOOL )
-							{
-								myStats->weapon = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
-								copyItem(myStats->weapon, parentStats->weapon);
-								myStats->weapon->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
-							}
-						}
-						if ( parentStats->shield )
+			
+						myStats->weapon = newItem(TOOL_WHIP, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, true, nullptr);
+						/*if ( parentStats->shield )
 						{
 							myStats->shield = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
 							copyItem(myStats->shield, parentStats->shield);
@@ -135,7 +127,7 @@ void initIncubus(Entity* my, Stat* myStats)
 							myStats->mask = newItem(BRONZE_SWORD, EXCELLENT, 0, 1, 0, true, nullptr);
 							copyItem(myStats->mask, parentStats->mask);
 							myStats->mask->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
-						}
+						}*/
 					}
 				}
 			}

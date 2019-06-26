@@ -7780,7 +7780,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 
 							spawnMagicEffectParticles(this->x, this->y, this->z, 643);
-							if ( illusionParent->behavior == &actPlayer )
+							if ( illusionParent->behavior == &actPlayer && illusionParent != this )
 							{
 								// update enemy bar for attacker
 								if ( !strcmp(myStats->name, "") )
