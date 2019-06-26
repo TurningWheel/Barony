@@ -30,7 +30,7 @@ void initClass(int player)
 {
 	Item* item, *item2;
 	client_classes[player] = CLASS_SHAMAN;
-	stats[player]->playerRace = RACE_INCUBUS;
+	stats[player]->playerRace = RACE_AUTOMATON;
 	stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
@@ -1998,6 +1998,11 @@ void initClass(int player)
 	{
 		stats[player]->EFFECTS[EFF_ASLEEP] = false;
 		stats[player]->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+	}
+
+	if ( stats[player]->appearance == 0 && stats[player]->playerRace == RACE_AUTOMATON )
+	{
+		stats[player]->HUNGER = 150;
 	}
 
 	if ( stats[player]->appearance == 0 

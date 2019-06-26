@@ -37,6 +37,9 @@ SDL_Surface* status_bmp = nullptr;
 SDL_Surface* character_bmp = nullptr;
 SDL_Surface* hunger_bmp = nullptr;
 SDL_Surface* hunger_blood_bmp = nullptr;
+SDL_Surface* hunger_boiler_bmp = nullptr;
+SDL_Surface* hunger_boiler_hotflame_bmp = nullptr;
+SDL_Surface* hunger_boiler_flame_bmp = nullptr;
 SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
@@ -202,6 +205,9 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&character_bmp, "images/system/CharacterSheet.png"),
 	std::make_pair(&hunger_bmp, "images/system/Hunger.png"),
 	std::make_pair(&hunger_blood_bmp, "images/system/Hunger_blood.png"),
+	std::make_pair(&hunger_boiler_bmp, "images/system/Hunger_boiler.png"),
+	std::make_pair(&hunger_boiler_hotflame_bmp, "images/system/Hunger_boiler_hotfire.png"),
+	std::make_pair(&hunger_boiler_flame_bmp, "images/system/Hunger_boiler_fire.png"),
 	std::make_pair(&minotaur_bmp, "images/system/minotaur.png"),
 	std::make_pair(&attributesleft_bmp, "images/system/AttributesLeftHighlighted.png"),
 	std::make_pair(&attributesright_bmp, "images/system/AttributesRightHighlighted.png"),
@@ -283,6 +289,9 @@ bool loadInterfaceResources()
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
 	hunger_blood_bmp = loadImage("images/system/Hunger_blood.png");
+	hunger_boiler_bmp = loadImage("images/system/Hunger_boiler.png");
+	hunger_boiler_hotflame_bmp = loadImage("images/system/Hunger_boiler_hotfire.png");
+	hunger_boiler_flame_bmp = loadImage("images/system/Hunger_boiler_fire.png");
 	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
@@ -431,6 +440,18 @@ void freeInterfaceResources()
 	if ( hunger_blood_bmp )
 	{
 		SDL_FreeSurface(hunger_blood_bmp);
+	}
+	if ( hunger_boiler_bmp )
+	{
+		SDL_FreeSurface(hunger_boiler_bmp);
+	}
+	if ( hunger_boiler_hotflame_bmp )
+	{
+		SDL_FreeSurface(hunger_boiler_hotflame_bmp);
+	}
+	if ( hunger_boiler_flame_bmp )
+	{
+		SDL_FreeSurface(hunger_boiler_flame_bmp);
 	}
 	if ( minotaur_bmp )
 	{

@@ -2804,7 +2804,22 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( !processHunger )
+	if ( myStats->type == AUTOMATON && player >= 0 )
+	{
+		if ( ticks % std::max(hungerTickRate / 4, 0) == 0 )
+		{
+			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
+			if ( myStats->HUNGER > 0 )
+			{
+				myStats->HUNGER--;
+			}
+			else
+			{
+
+			}
+		}
+	}
+	else if ( !processHunger )
 	{
 		if ( behavior == &actMonster )
 		{
@@ -3075,10 +3090,20 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// regaining energy over time
-	int manaRegenInterval = getManaRegenInterval(*myStats);
-
-	if ( myStats->MP < myStats->MAXMP )
+	if ( myStats->type == AUTOMATON && player >= 0 )
 	{
+		int manaRegenInterval = getManaRegenInterval(*myStats);
+		this->char_energize++;
+		if ( this->char_energize >= manaRegenInterval && myStats->HUNGER <= 0 )
+		{
+			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
+			this->char_energize = 0;
+			this->modMP(-1);
+		}
+	}
+	else if ( myStats->MP < myStats->MAXMP )
+	{
+		int manaRegenInterval = getManaRegenInterval(*myStats);
 		// summons don't regen MP. we use this to refund mana to the caster.
 		if ( !(this->behavior == &actMonster && this->monsterAllySummonRank != 0) )
 		{
@@ -13589,6 +13614,23 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		}
 	}
 
+	if ( behavior == &actPlayer && myStats.type == AUTOMATON )
+	{
+		float floatRegenTime = (90 * regenTime) / (std::max(myStats.MAXMP, 1));
+		if ( manaring > 0 )
+		{
+			return floatRegenTime * (manaring * 2); // lose 1 MP each 12 base seconds - good!
+		}
+		else if ( manaring < 0 )
+		{
+			return floatRegenTime / abs(manaring) * 2; // lose 1 MP each 3 base seconds - bad!
+		}
+		else if ( manaring == 0 )
+		{
+			return floatRegenTime;
+		}
+	}
+
 	if ( manaring > 0 )
 	{
 		return regenTime / (manaring * 2); // 1 MP each 6 seconds base
@@ -13717,6 +13759,10 @@ int Entity::getBaseManaRegen(Stat& myStats)
 	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
 	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
+	if ( myStats.type == AUTOMATON )
+	{
+		return MAGIC_REGEN_TIME;
+	}
 
 	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 150))); // return 300-150 ticks, 6-3 seconds.
 }

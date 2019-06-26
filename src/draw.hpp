@@ -25,6 +25,7 @@ void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation);
 void drawImage(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
 void drawImageRing(SDL_Surface* image, SDL_Rect* src, int radius, int thickness, int segments, real_t angStart, real_t angEnd, Uint8 alpha);
 void drawImageScaled(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
+void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, float percentY);
 void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha);
 void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
 void drawImageFancy(SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos);

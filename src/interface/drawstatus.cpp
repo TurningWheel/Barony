@@ -665,7 +665,8 @@ void drawStatus()
 	int xoffset = pos.x;
 
 	// hunger icon
-	if ( (svFlags & SV_FLAG_HUNGER) && stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
+	if ( stats[clientnum]->type != AUTOMATON 
+		&& (svFlags & SV_FLAG_HUNGER) && stats[clientnum]->HUNGER <= 250 && (ticks % 50) - (ticks % 25) )
 	{
 		pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 		pos.y = yres - 160;
@@ -680,6 +681,27 @@ void drawStatus()
 			drawImageScaled(hunger_bmp, NULL, &pos);
 		}
 	}
+
+	if ( stats[clientnum]->type == AUTOMATON && stats[clientnum]->HUNGER > 0 )
+	{
+		if ( stats[clientnum]->HUNGER > 50 || (ticks % 50) - (ticks % 25) )
+		{
+			pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
+			pos.y = yres - 160;
+			pos.w = 64;
+			pos.h = 64;
+			if ( stats[clientnum]->HUNGER > 125 )
+			{
+				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
+			}
+			else
+			{
+				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, std::max(std::min(stats[clientnum]->HUNGER - 50, 100), 10) / 100.f);
+			}
+			drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
+		}
+	}
+
 	// minotaur icon
 	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
 	{
@@ -698,9 +720,19 @@ void drawStatus()
 	pos.h = playerStatusBarHeight;
 	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
-
-	// Display "MP" at the top of Magic bar
-	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
+	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
+	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
+	if ( stats[clientnum]->type == AUTOMATON )
+	{
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
+		mpColorBG = SDL_MapRGB(mainsurface->format, 64, 32, 0);
+		mpColorFG = SDL_MapRGB(mainsurface->format, 192, 92, 0);
+	}
+	else
+	{
+		// Display "MP" at the top of Magic bar
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[307]);
+	}
 
 	// Display border between actual Magic bar and "MP"
 	//pos.x = 12;
@@ -727,7 +759,7 @@ void drawStatus()
 	pos.y = yres - 15 - pos.h;
 
 	// Draw the actual Magic bar's faint background
-	drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255); // Display blue
+	drawRect(&pos, mpColorBG, 255); // Display blue
 
 	// If the Player has MP, base the size of the actual Magic bar off remaining MP
 	if ( stats[clientnum]->MP > 0 )
@@ -738,7 +770,7 @@ void drawStatus()
 		pos.y = yres - 15 - pos.h;
 
 		// Only draw the actual Magic bar if the Player has MP
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255); // Display blue
+		drawRect(&pos, mpColorFG, 255); // Display blue
 	}
 
 	// Print out the amount of MP the Player currently has

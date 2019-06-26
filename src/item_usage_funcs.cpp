@@ -3773,6 +3773,16 @@ void item_Food(Item*& item, int player)
 		return;
 	}
 
+	if ( player >= 0 && stats[player]->type == AUTOMATON )
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			players[player]->entity->modMP(5);
+			stats[player]->HUNGER += 50;
+			return;
+		}
+	}
+
 	if ( player >= 0 && stats[player]->type != HUMAN && (svFlags & SV_FLAG_HUNGER) ) // hunger on
 	{
 		if ( stats[player]->type == SKELETON )

@@ -790,6 +790,74 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 
 /*-------------------------------------------------------------------------------
 
+drawImageScaledPartial
+
+blits an image in either an opengl or SDL context, scaling it
+
+-------------------------------------------------------------------------------*/
+
+void drawImageScaledPartial(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, float percentY)
+{
+	SDL_Rect secondsrc;
+
+	if ( !image )
+	{
+		return;
+	}
+
+	// update projection
+	glPushMatrix();
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glViewport(0, 0, xres, yres);
+	glLoadIdentity();
+	glOrtho(0, xres, 0, yres, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_BLEND);
+
+	// for the use of a whole image
+	if ( src == NULL )
+	{
+		secondsrc.x = 0;
+		secondsrc.y = 0;
+		secondsrc.w = image->w;
+		secondsrc.h = image->h;
+		src = &secondsrc;
+	}
+
+	// draw a textured quad
+	glBindTexture(GL_TEXTURE_2D, texid[image->refcount]);
+	glColor4f(1, 1, 1, 1);
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.f, 1.f - 1.f * percentY); // top left. 
+	glVertex2f(pos->x, yres - pos->y - pos->h + pos->h * percentY);
+
+	glTexCoord2f(0.f, 1.f); // bottom left
+	glVertex2f(pos->x, yres - pos->y - pos->h);
+
+	glTexCoord2f(1.f, 1.f); // bottom right
+	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h);
+
+	glTexCoord2f(1.f, 1.f - 1.f * percentY); // top right
+	glVertex2f(pos->x + pos->w, yres - pos->y - pos->h + pos->h * percentY);
+	glEnd();
+	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
+
+	// debug corners
+	//Uint32 color = SDL_MapRGB(mainsurface->format, 64, 255, 64); // green
+	//drawCircle(pos->x, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
+	//color = SDL_MapRGB(mainsurface->format, 204, 121, 167); // pink
+	//drawCircle(pos->x, pos->y + pos->h, 5, color, 255);
+	//color = SDL_MapRGB(mainsurface->format, 86, 180, 233); // sky blue
+	//drawCircle(pos->x + pos->w, pos->y + pos->h, 5, color, 255);
+	//color = SDL_MapRGB(mainsurface->format, 240, 228, 66); // yellow
+	//drawCircle(pos->x + pos->w, pos->y + (pos->h - (pos->h * percentY)), 5, color, 255);
+}
+
+/*-------------------------------------------------------------------------------
+
 drawImageScaledColor
 
 blits an image in either an opengl or SDL context while colorizing and scaling it
