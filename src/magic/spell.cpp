@@ -530,6 +530,13 @@ int getCostOfSpell(spell_t* spell, Entity* caster)
 			cost += 5 * (summonLevel / 5);
 		}
 	}
+	else if ( caster && (spell->ID == SPELL_TELEPORTATION || spell->ID == SPELL_TELEPULL) )
+	{
+		if ( caster->creatureShadowTaggedThisUid != 0 && uidToEntity(caster->creatureShadowTaggedThisUid) )
+		{
+			cost /= 2;
+		}
+	}
 
 	return cost;
 }

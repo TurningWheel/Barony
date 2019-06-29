@@ -29,8 +29,8 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	client_classes[player] = CLASS_SHAMAN;
-	stats[player]->playerRace = RACE_AUTOMATON;
+	client_classes[player] = CLASS_PUNISHER;
+	stats[player]->playerRace = RACE_INCUBUS;
 	stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
@@ -1979,6 +1979,86 @@ void initClass(int player)
 			free(item);
 		}
 	}
+	else if ( client_classes[player] == CLASS_PUNISHER )
+	{
+		// attributes
+		stats[player]->STR -= 1;
+		stats[player]->DEX += 1;
+		stats[player]->CON -= 1;
+		stats[player]->INT -= 1;
+
+		/*stats[player]->MAXHP += 5;
+		stats[player]->HP += 5;
+
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;*/
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 20;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
+		stats[player]->PROFICIENCIES[PRO_AXE] = 25;
+		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+
+		item = newItem(TOOL_WHIP, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		//// ring slow digestion
+		//item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
+		//if ( player == clientnum )
+		//{
+		//	item2 = itemPickup(player, item);
+		//	useItem(item2, player);
+		//	free(item);
+		//}
+		//else
+		//{
+		//	useItem(item, player);
+		//}
+
+		if ( player == clientnum )
+		{
+			item = newItem(CRYSTAL_BATTLEAXE, DECREPIT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			item = newItem(FOOD_MEAT, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(RING_CONFLICT, WORN, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+		}
+	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 
@@ -2050,6 +2130,11 @@ void initClass(int player)
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
 		}
+		else if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->appearance == 0 )
+		{
+			addSpell(SPELL_TELEPORTATION, player, true);
+			addSpell(SPELL_SHADOW_TAG, player, true);
+		}
 
 		if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
 		{
@@ -2098,6 +2183,11 @@ void initClass(int player)
 			addSpell(SPELL_DETECT_FOOD, player, true);
 			addSpell(SPELL_WEAKNESS, player, true);
 			addSpell(SPELL_AMPLIFY_MAGIC, player, true);
+		}
+		else if ( client_classes[clientnum] == CLASS_PUNISHER )
+		{
+			addSpell(SPELL_TELEPULL, player, true);
+			addSpell(SPELL_DEMON_ILLUSION, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

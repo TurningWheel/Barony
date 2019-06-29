@@ -2493,7 +2493,7 @@ void handleMainMenu(bool mode)
 					entriesToDisplay = NUMCLASSES - 4;
 					if ( skipFirstDLC )
 					{
-						lastClassInList = CLASS_UNDEF4;
+						lastClassInList = CLASS_HUNTER;
 					}
 					else if ( skipSecondDLC )
 					{
@@ -2608,7 +2608,7 @@ void handleMainMenu(bool mode)
 					{
 						if ( client_classes[0] == CLASS_MONK + 1 && skipFirstDLC )
 						{
-							client_classes[0] = CLASS_UNDEF1;
+							client_classes[0] = CLASS_MACHINIST;
 						}
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && stats[0]->appearance == 0 )

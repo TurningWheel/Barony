@@ -66,7 +66,12 @@ void initIncubus(Entity* my, Stat* myStats)
 						myStats->OLDHP = myStats->HP;
 						myStats->STR = -999;
 						myStats->DEX = std::min(parentStats->DEX, 15);
-						myStats->CON = parentStats->CON;
+						// pretend the parent wasn't defending as this gets added in AC() call.
+						bool wasDefending = parentStats->defending;
+						parentStats->defending = false;
+						myStats->CON = AC(parentStats);
+						parentStats->defending = wasDefending;
+
 						myStats->INT = parentStats->INT;
 						myStats->PER = parentStats->PER;
 						myStats->CHR = parentStats->CHR;

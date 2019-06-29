@@ -671,7 +671,22 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_teleportation.name))
 		{
-			caster->teleportRandom();
+			if ( caster->creatureShadowTaggedThisUid != 0 )
+			{
+				Entity* entityToTeleport = uidToEntity(caster->creatureShadowTaggedThisUid);
+				if ( entityToTeleport )
+				{
+					caster->teleportAroundEntity(entityToTeleport, 3, 0);
+				}
+				else
+				{
+					caster->teleportRandom();
+				}
+			}
+			else
+			{
+				caster->teleportRandom();
+			}
 		}
 		else if ( !strcmp(element->name, spellElement_strike.name) )
 		{

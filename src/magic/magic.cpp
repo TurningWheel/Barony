@@ -2629,12 +2629,31 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							}
 						}
 					}
-				}
-				// hit messages
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				if ( parent->behavior == &actPlayer )
-				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3469], language[3470], MSG_COMBAT);
+					Stat* parentStats = parent->getStats();
+					if ( parentStats )
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							messagePlayerColor(parent->skill[2], color, language[621]);
+						}
+						parent->modHP(-(parentStats->MAXHP / 10));
+						if ( parentStats->sex == MALE )
+						{
+							parent->setObituary(language[1528]);
+						}
+						else
+						{
+							parent->setObituary(language[1529]);
+						}
+					}
+
+					// hit messages
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					if ( parent->behavior == &actPlayer )
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3469], language[3470], MSG_COMBAT);
+					}
 				}
 			}
 

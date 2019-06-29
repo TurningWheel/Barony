@@ -368,16 +368,16 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_shadowTag.name, language[3447]);
 
 	spellElementConstructor(&spellElement_telePull);
-	spellElement_telePull.mana = 1;
-	spellElement_telePull.base_mana = 1;
+	spellElement_telePull.mana = 19;
+	spellElement_telePull.base_mana = 19;
 	spellElement_telePull.overload_multiplier = 1;
 	spellElement_telePull.damage = 1;
 	spellElement_telePull.duration = 0;
 	strcpy(spellElement_telePull.name, language[3448]);
 
 	spellElementConstructor(&spellElement_demonIllusion);
-	spellElement_demonIllusion.mana = 1;
-	spellElement_demonIllusion.base_mana = 1;
+	spellElement_demonIllusion.mana = 24;
+	spellElement_demonIllusion.base_mana = 24;
 	spellElement_demonIllusion.overload_multiplier = 1;
 	spellElement_demonIllusion.damage = 1;
 	spellElement_demonIllusion.duration = 0;

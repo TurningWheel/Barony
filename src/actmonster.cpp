@@ -702,7 +702,8 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 				{
 					canAlly = true;
 				}
-				else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+				else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED])
+					&& stats[monsterclicked]->type != INCUBUS )
 				{
 					canAlly = true;
 				}
@@ -719,7 +720,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	else
 	{
 		bool tryAlly = my->checkFriend(players[monsterclicked]->entity);
-		if ( stats[monsterclicked]->type == SUCCUBUS || stats[monsterclicked]->type == INCUBUS )
+		if ( stats[monsterclicked]->type == SUCCUBUS )
 		{
 			if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
 			{
@@ -761,7 +762,8 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 						{
 							canAlly = true;
 						}
-						else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
+						else if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED])
+							&& stats[monsterclicked]->type != INCUBUS )
 						{
 							canAlly = true;
 							if ( stats[monsterclicked]->type == SUCCUBUS )
