@@ -231,12 +231,25 @@ void drawSustainedSpells()
 		fontWidth = TTF16_WIDTH;
 	}
 
-	for ( int i = 0; showStatusEffectIcons && i < NUMEFFECTS && stats[clientnum]; ++i )
+	for ( int i = 0; showStatusEffectIcons && i <= NUMEFFECTS && stats[clientnum]; ++i )
 	{
 		node_t* effectImageNode = nullptr;
 		sprite = nullptr;
 		tooltipText = nullptr;
-		if ( stats[clientnum]->EFFECTS[i] )
+
+		if ( i == NUMEFFECTS )
+		{
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				if ( players[clientnum]->entity->creatureShadowTaggedThisUid != 0
+					&& uidToEntity(players[clientnum]->entity->creatureShadowTaggedThisUid) )
+				{
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SHADOW_TAG);
+					tooltipText = language[3391];
+				}
+			}
+		}
+		else if ( stats[clientnum]->EFFECTS[i] )
 		{
 			switch ( i )
 			{
@@ -415,7 +428,7 @@ void drawSustainedSpells()
 		}
 	}
 
-	if (!channeledSpells[clientnum].first)
+	if ( !channeledSpells[clientnum].first )
 	{
 		if ( currentTooltip )
 		{
