@@ -2125,6 +2125,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case MAGICSTAFF_BLEED:
 		case MAGICSTAFF_SUMMON:
 		case MAGICSTAFF_CHARM:
+		case MAGICSTAFF_POISON:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:

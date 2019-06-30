@@ -387,6 +387,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_8",
 	"spellbook_9",
 	"spellbook_10",
+	"magicstaff_poison",
 	""
 };
 
@@ -470,6 +471,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"magicstaff_bleed",
 		"magicstaff_summon",
 		"magicstaff_charm",
+		"magicstaff_poison",
 		"spellbook_forcebolt",
 		"spellbook_magicmissile",
 		"spellbook_cold",

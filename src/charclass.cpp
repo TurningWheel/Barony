@@ -1928,7 +1928,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
 
-		item = newItem(MAGICSTAFF_SLOW, EXCELLENT, 0, 1, 0, true, NULL);
+		item = newItem(MAGICSTAFF_POISON, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);

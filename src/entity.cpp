@@ -3249,12 +3249,36 @@ void Entity::handleEffects(Stat* myStats)
 				poisonhurt -= rand() % (std::max(1, poisonhurt / 4));
 			}
 			this->modHP(-poisonhurt);
+			for ( int tmp = 0; tmp < 3; ++tmp )
+			{
+				Entity* gib = spawnGib(this, 211);
+				serverSpawnGibForClient(gib);
+			}
+			Entity* killer = uidToEntity(myStats->poisonKiller);
 			if ( myStats->HP <= 0 )
 			{
-				Entity* killer = uidToEntity(myStats->poisonKiller);
 				if ( killer )
 				{
 					killer->awardXP(this, true, true);
+				}
+			}
+			if ( killer && killer->behavior == &actPlayer )
+			{
+				// update enemy bar for attacker
+				if ( !strcmp(myStats->name, "") )
+				{
+					if ( myStats->type < KOBOLD ) //Original monster count
+					{
+						updateEnemyBar(killer, this, language[90 + myStats->type], myStats->HP, myStats->MAXHP);
+					}
+					else if ( myStats->type >= KOBOLD ) //New monsters
+					{
+						updateEnemyBar(killer, this, language[2000 + (myStats->type - KOBOLD)], myStats->HP, myStats->MAXHP);
+					}
+				}
+				else
+				{
+					updateEnemyBar(killer, this, myStats->name, myStats->HP, myStats->MAXHP);
 				}
 			}
 			this->setObituary(language[1531]);
@@ -5354,6 +5378,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case MAGICSTAFF_CHARM:
 							castSpell(uid, &spell_charmMonster, true, false);
 							break;
+						case MAGICSTAFF_POISON:
+							castSpell(uid, &spell_poison, true, false);
+							break;
 						default:
 							messagePlayer(player, "This is my wish stick! Wishy wishy wish!");
 							break;
@@ -7123,6 +7150,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					bool playerPoisonedTarget = false;
+
 					// special monster effects
 					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
 					{
@@ -7177,11 +7206,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 								if ( applyPoison )
 								{
+									playerPoisonedTarget = true;
 									hitstats->EFFECTS[EFF_POISONED] = true;
 									hitstats->EFFECTS_TIMERS[EFF_POISONED] = std::max(200, 600 - hit.entity->getCON() * 20);
 									messagePlayer(playerhit, language[686]);
 									messagePlayer(playerhit, language[687]);
 									serverUpdateEffects(playerhit);
+									for ( int tmp = 0; tmp < 3; ++tmp )
+									{
+										Entity* gib = spawnGib(hit.entity, 211);
+										serverSpawnGibForClient(gib);
+									}
 								}
 								break;
 							}
@@ -7358,6 +7393,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
 								}
 							}
+							if ( playerPoisonedTarget )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
+							}
 							if ( paralyzeStatusInflicted )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
@@ -7481,6 +7520,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									// backstab on unaware enemy
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
 								}
+							}
+							if ( playerPoisonedTarget )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
 							}
 							if ( paralyzeStatusInflicted )
 							{

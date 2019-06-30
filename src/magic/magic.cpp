@@ -570,7 +570,14 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 
 			if ( !hasamulet )
 			{
-				hit.entity->setEffect(EFF_POISONED, true, 600, true); // 12 seconds.
+				if ( my.actmagicCastByMagicstaff == 1 )
+				{
+					hit.entity->setEffect(EFF_POISONED, true, 320, true); // 6 seconds.
+				}
+				else
+				{
+					hit.entity->setEffect(EFF_POISONED, true, std::max(200, 350 - hit.entity->getCON() * 5), true); // 4-7 seconds.
+				}
 				hitstats->poisonKiller = my.parent;
 			}
 
