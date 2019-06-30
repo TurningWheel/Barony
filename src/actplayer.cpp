@@ -3363,7 +3363,7 @@ void actPlayer(Entity* my)
 										Entity* foot = (Entity*)tempNode->element;
 										if ( playerRace == TROLL )
 										{
-											playSoundEntityLocal(my, my->getMonsterFootstepSound(MONSTER_FOOTSTEP_STOMP, foot->sprite), 92);
+											playSoundEntityLocal(my, my->getMonsterFootstepSound(MONSTER_FOOTSTEP_STOMP, foot->sprite), 32);
 										}
 										else if ( playerRace == SPIDER || playerRace == RAT || playerRace == CREATURE_IMP )
 										{
