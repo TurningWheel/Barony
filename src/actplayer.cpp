@@ -2250,6 +2250,14 @@ void actPlayer(Entity* my)
 				if ( PLAYER_NUM == clientnum && !PLAYER_DEBUGCAM )
 				{
 					PLAYER_TORCH = 3 + (my->getPER() / 3);
+					if ( playerRace == RAT )
+					{
+						PLAYER_TORCH += 3;
+					}
+					else if ( playerRace == SPIDER )
+					{
+						PLAYER_TORCH += 2;
+					}
 					// more visible world if defending/sneaking with no shield
 					PLAYER_TORCH += ((stats[PLAYER_NUM]->sneaking == 1) * (2 + (stats[PLAYER_NUM]->PROFICIENCIES[PRO_STEALTH] / 40)));
 				}

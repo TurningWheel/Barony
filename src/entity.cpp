@@ -9136,6 +9136,24 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return true;
 	}
+	else if ( your->behavior == &actPlayer && myStats->type == CREATURE_IMP 
+		&& (!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
+	{
+		if ( this->monsterAllyGetPlayerLeader() )
+		{
+			return false;
+		}
+		return true;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == CREATURE_IMP 
+		&& (!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
+	{
+		if ( your->monsterAllyGetPlayerLeader() )
+		{
+			return false;
+		}
+		return true;
+	}
 	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11) )
 	{
 		return true;
@@ -9232,6 +9250,31 @@ bool Entity::checkEnemy(Entity* your)
 							result = false;
 						}
 						break;
+					case RAT:
+						if ( yourStats->type == RAT )
+						{
+							result = false;
+						}
+						break;
+					case SPIDER:
+						if ( yourStats->type == SPIDER || yourStats->type == INSECTOID
+							|| yourStats->type == SCARAB || yourStats->type == SCORPION )
+						{
+							result = false;
+						}
+						break;
+					case TROLL:
+						if ( yourStats->type == TROLL )
+						{
+							result = false;
+						}
+						break;
+					case CREATURE_IMP:
+						if ( yourStats->type == CREATURE_IMP )
+						{
+							result = false;
+						}
+						break;
 					case GOBLIN:
 						if ( yourStats->type == GOBLIN )
 						{
@@ -9287,6 +9330,31 @@ bool Entity::checkEnemy(Entity* your)
 					{
 						case SKELETON:
 							if ( myStats->type == GHOUL )
+							{
+								result = false;
+							}
+							break;
+						case RAT:
+							if ( myStats->type == RAT )
+							{
+								result = false;
+							}
+							break;
+						case SPIDER:
+							if ( myStats->type == SPIDER || myStats->type == INSECTOID
+								|| myStats->type == SCARAB || myStats->type == SCORPION )
+							{
+								result = false;
+							}
+							break;
+						case TROLL:
+							if ( myStats->type == TROLL )
+							{
+								result = false;
+							}
+							break;
+						case CREATURE_IMP:
+							if ( myStats->type == CREATURE_IMP )
 							{
 								result = false;
 							}
@@ -9391,6 +9459,24 @@ bool Entity::checkFriend(Entity* your)
 	{
 		return false;
 	}
+	else if ( your->behavior == &actPlayer && myStats->type == CREATURE_IMP
+		&& (!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
+	{
+		if ( this->monsterAllyGetPlayerLeader() )
+		{
+			return true;
+		}
+		return false;
+	}
+	else if ( behavior == &actPlayer && yourStats->type == CREATURE_IMP
+		&& (!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
+	{
+		if ( your->monsterAllyGetPlayerLeader() )
+		{
+			return true;
+		}
+		return false;
+	}
 	else if ( your->behavior == &actPlayer && myStats->type == VAMPIRE && !strncmp(myStats->name, "Bram Kindly", 11) )
 	{
 		return false;
@@ -9486,6 +9572,31 @@ bool Entity::checkFriend(Entity* your)
 								result = true;
 							}
 							break;
+						case RAT:
+							if ( yourStats->type == RAT )
+							{
+								result = true;
+							}
+							break;
+						case SPIDER:
+							if ( yourStats->type == SPIDER || yourStats->type == INSECTOID 
+								|| yourStats->type == SCARAB || yourStats->type == SCORPION )
+							{
+								result = true;
+							}
+							break;
+						case TROLL:
+							if ( yourStats->type == TROLL )
+							{
+								result = true;
+							}
+							break;
+						case CREATURE_IMP:
+							if ( yourStats->type == CREATURE_IMP )
+							{
+								result = true;
+							}
+							break;
 						case GOBLIN:
 							if ( yourStats->type == GOBLIN )
 							{
@@ -9541,6 +9652,31 @@ bool Entity::checkFriend(Entity* your)
 					{
 						case SKELETON:
 							if ( myStats->type == GHOUL )
+							{
+								result = true;
+							}
+							break;
+						case RAT:
+							if ( myStats->type == RAT )
+							{
+								result = true;
+							}
+							break;
+						case SPIDER:
+							if ( myStats->type == SPIDER || myStats->type == INSECTOID
+								|| myStats->type == SCARAB || myStats->type == SCORPION )
+							{
+								result = true;
+							}
+							break;
+						case TROLL:
+							if ( myStats->type == TROLL )
+							{
+								result = true;
+							}
+							break;
+						case CREATURE_IMP:
+							if ( myStats->type == CREATURE_IMP )
 							{
 								result = true;
 							}

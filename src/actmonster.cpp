@@ -715,6 +715,35 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 					canAlly = true;
 				}
 			}
+			else if ( stats[monsterclicked]->type == RAT )
+			{
+				if ( race == RAT )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == SPIDER )
+			{
+				if ( race == SPIDER || race == INSECTOID
+					|| race == SCARAB || race == SCORPION )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == TROLL )
+			{
+				if ( race == TROLL )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == CREATURE_IMP )
+			{
+				if ( race == CREATURE_IMP && !(!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
+				{
+					canAlly = true; // non-boss imps
+				}
+			}
 		}
 	}
 	else
@@ -777,6 +806,35 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 						if ( race == GOATMAN )
 						{
 							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == RAT )
+					{
+						if ( race == RAT )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == SPIDER )
+					{
+						if ( race == SPIDER || race == INSECTOID
+							|| race == SCARAB || race == SCORPION )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == TROLL )
+					{
+						if ( race == TROLL )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == CREATURE_IMP )
+					{
+						if ( race == CREATURE_IMP && !(!strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Hell Boss", 9)) )
+						{
+							canAlly = true; // non-boss imps
 						}
 					}
 				}
@@ -3142,7 +3200,7 @@ void actMonster(Entity* my)
 					|| myStats->type == LICH 
 					|| myStats->type == LICH_FIRE 
 					|| myStats->type == LICH_ICE 
-					|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss"))
+					|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss") && !my->monsterAllyGetPlayerLeader())
 					|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted automaton")) )
 				{
 					double distToPlayer = 0;
@@ -4270,7 +4328,7 @@ timeToGoAgain:
 			if ( myStats->type == MINOTAUR 
 				|| (myStats->type == LICH && my->monsterSpecialTimer <= 0)
 				|| ((myStats->type == LICH_FIRE || myStats->type == LICH_ICE) && my->monsterSpecialTimer <= 0 )
-				|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss"))
+				|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss") && !my->monsterAllyGetPlayerLeader())
 				|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted automaton")) )
 			{
 				bool shouldHuntPlayer = false;
