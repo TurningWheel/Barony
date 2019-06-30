@@ -29,9 +29,9 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	client_classes[player] = CLASS_SHAMAN;
+	/*client_classes[player] = CLASS_SHAMAN;
 	stats[player]->playerRace = RACE_GOBLIN;
-	stats[player]->appearance = 0;
+	stats[player]->appearance = 0;*/
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -2313,13 +2313,13 @@ void initShapeshiftHotbar()
 					if ( !newSpell )
 					{
 						selected_spell = spell; // revert form add to spell equipped.
-						selected_spell_last_appearance = spell->ID;
+						selected_spell_last_appearance = selected_spell->ID;
 
 					}
 					else
 					{
 						selected_spell = newSpell;
-						selected_spell_last_appearance = spell->ID;
+						selected_spell_last_appearance = selected_spell->ID;
 					}
 				}
 				else if ( item->appearance >= 1000 )
@@ -2511,7 +2511,14 @@ void deinitShapeshiftHotbar()
 	swapHotbarOnShapeshift = 0;
 	newSpell = selected_spell;
 	selected_spell = selected_spell_alternate[HOTBAR_DEFAULT];
-	selected_spell_last_appearance = selected_spell_alternate[HOTBAR_DEFAULT]->ID;
+	if ( selected_spell )
+	{
+		selected_spell_last_appearance = selected_spell->ID;
+	}
+	else
+	{
+		selected_spell_last_appearance = -1;
+	}
 
 	for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
