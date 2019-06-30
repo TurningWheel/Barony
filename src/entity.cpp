@@ -993,6 +993,14 @@ void Entity::effectTimes()
 					messagePlayer(player, language[3193]);
 				}
 			}
+			else if ( c == EFF_SHAPESHIFT )
+			{
+				if ( myStats->EFFECTS_TIMERS[c] == TICKS_PER_SECOND * 15 )
+				{
+					playSoundPlayer(player, 32, 128);
+					messagePlayer(player, language[3475]);
+				}
+			}
 			if ( myStats->EFFECTS_TIMERS[c] == 0 )
 			{
 				myStats->EFFECTS[c] = false;
@@ -9296,7 +9304,8 @@ bool Entity::checkEnemy(Entity* your)
 						}
 						break;
 					case INSECTOID:
-						if ( yourStats->type == SCARAB || yourStats->type == SPIDER || yourStats->type == INSECTOID )
+						if ( yourStats->type == SCARAB || yourStats->type == SPIDER 
+							|| myStats->type == INSECTOID || myStats->type == SCORPION )
 						{
 							result = false;
 						}
@@ -9380,7 +9389,8 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( myStats->type == SCARAB || myStats->type == SPIDER || myStats->type == INSECTOID )
+							if ( myStats->type == SCARAB || myStats->type == SPIDER 
+								|| myStats->type == INSECTOID || myStats->type == SCORPION )
 							{
 								result = false;
 							}
@@ -9618,7 +9628,8 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( yourStats->type == SCARAB || yourStats->type == SPIDER || yourStats->type == INSECTOID )
+							if ( yourStats->type == SCARAB || yourStats->type == SPIDER 
+								|| yourStats->type == INSECTOID || yourStats->type == SCORPION )
 							{
 								result = true;
 							}
@@ -9702,7 +9713,8 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( myStats->type == SCARAB || myStats->type == SPIDER || myStats->type == INSECTOID )
+							if ( myStats->type == SCARAB || myStats->type == SPIDER 
+								|| myStats->type == INSECTOID || myStats->type == SCORPION )
 							{
 								result = true;
 							}
