@@ -8471,7 +8471,19 @@ int AC(Stat* stat)
 		return 0;
 	}
 
-	int armor = stat->CON;
+	Entity* playerEntity = nullptr;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( stat && stats[i] == stat )
+		{
+			if ( players[i] && players[i]->entity )
+			{
+				playerEntity = players[i]->entity;
+				break;
+			}
+		}
+	}
+	int armor = statGetCON(stat, playerEntity);
 
 	if ( stat->helmet )
 	{
