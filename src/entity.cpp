@@ -13937,7 +13937,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 int Entity::getBaseManaRegen(Stat& myStats)
 {
 	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
-	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 2; // 2 to 7
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 2 to 7
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
