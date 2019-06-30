@@ -3896,6 +3896,11 @@ void item_Food(Item*& item, int player)
 		pukeChance = 1;
 	}
 
+	if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+	{
+		pukeChance = 100; // shapeshifted players don't puke
+	}
+
 	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (rand() % pukeChance == 0)) && pukeChance < 100)
 	{
 		if (players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER))
@@ -4010,7 +4015,11 @@ void item_Food(Item*& item, int player)
 		}
 		else if ( stats[player]->HUNGER < 2000 )
 		{
-			if (rand() % 3)
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+			{
+				messagePlayer(player, language[916]); // shapeshifted players don't puke
+			}
+			else if (rand() % 3)
 			{
 				messagePlayer(player, language[916]);
 			}
@@ -4022,8 +4031,15 @@ void item_Food(Item*& item, int player)
 		}
 		else
 		{
-			messagePlayer(player, language[917]);
-			players[player]->entity->skill[26] = 40 + rand() % 10;
+			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
+			{
+				messagePlayer(player, language[916]); // shapeshifted players don't puke
+			}
+			else
+			{
+				messagePlayer(player, language[917]);
+				players[player]->entity->skill[26] = 40 + rand() % 10;
+			}
 		}
 	}
 

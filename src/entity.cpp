@@ -2978,7 +2978,8 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// "random" vomiting
-	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] && myStats->type != SKELETON )
+	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] 
+		&& myStats->type != SKELETON && effectShapeshift != NOTHING )
 	{
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
