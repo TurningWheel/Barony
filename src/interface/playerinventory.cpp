@@ -2175,7 +2175,11 @@ void itemContextMenu()
 		else if ( itemCategory(current_item) == SPELLBOOK )
 		{
 			learnedSpell = playerLearnedSpellbook(current_item);
-			if ( players[clientnum] && players[clientnum]->entity )
+			if ( itemIsEquipped(current_item, clientnum) )
+			{
+				learnedSpell = true; // equipped spellbook will unequip on use.
+			}
+			else if ( players[clientnum] && players[clientnum]->entity )
 			{
 				if ( players[clientnum]->entity->effectShapeshift == CREATURE_IMP )
 				{

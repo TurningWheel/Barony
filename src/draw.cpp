@@ -2578,11 +2578,19 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 -------------------------------------------------------------------------------*/
 
-void drawTooltip(SDL_Rect* src)
+void drawTooltip(SDL_Rect* src, Uint32 optionalColor)
 {
-	drawRect(src, 0, 250);
-	drawLine(src->x, src->y, src->x + src->w, src->y, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
-	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
-	drawLine(src->x, src->y, src->x, src->y + src->h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
-	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
+	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 192, 255);
+	if ( optionalColor == 0 )
+	{
+		drawRect(src, 0, 250);
+	}
+	else
+	{
+		color = optionalColor;
+	}
+	drawLine(src->x, src->y, src->x + src->w, src->y, color, 255);
+	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, color, 255);
+	drawLine(src->x, src->y, src->x, src->y + src->h, color, 255);
+	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, 255);
 }

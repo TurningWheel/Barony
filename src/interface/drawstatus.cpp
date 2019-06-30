@@ -589,6 +589,24 @@ void drawStatus()
 	pos.h = playerStatusBarHeight;
 	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
+	if ( stats[clientnum] && stats[clientnum]->HP > 0 
+		&& stats[clientnum]->EFFECTS[EFF_HP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
+			(stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
 
 	// Display "HP" at top of Health bar
 	ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[306]);
@@ -599,6 +617,24 @@ void drawStatus()
 	pos.h = 0;
 	pos.y = yres - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
+	if ( stats[clientnum] && stats[clientnum]->HP > 0
+		&& stats[clientnum]->EFFECTS[EFF_HP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] > 0 &&
+			(stats[clientnum]->EFFECTS_TIMERS[EFF_HP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
 
 	// Display the actual Health bar's faint background
 	pos.x = 42 + 38 * uiscale_playerbars;
@@ -720,6 +756,24 @@ void drawStatus()
 	pos.h = playerStatusBarHeight;
 	pos.y = yres - (playerStatusBarHeight + 12);
 	drawTooltip(&pos);
+	if ( stats[clientnum] && stats[clientnum]->HP > 0
+		&& stats[clientnum]->EFFECTS[EFF_MP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
+			(stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
 	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
 	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
 	if ( stats[clientnum]->type == AUTOMATON )
@@ -740,6 +794,24 @@ void drawStatus()
 	pos.h = 0;
 	pos.y = yres - (playerStatusBarHeight - 9);
 	drawTooltip(&pos);
+	if ( stats[clientnum] && stats[clientnum]->HP > 0
+		&& stats[clientnum]->EFFECTS[EFF_MP_REGEN] )
+	{
+		bool lowDurationFlash = !((ticks % 50) - (ticks % 25));
+		bool lowDuration = stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] > 0 &&
+			(stats[clientnum]->EFFECTS_TIMERS[EFF_MP_REGEN] < TICKS_PER_SECOND * 5);
+		if ( (lowDuration && !lowDurationFlash) || !lowDuration )
+		{
+			if ( colorblind )
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 255)); // blue
+			}
+			else
+			{
+				drawTooltip(&pos, SDL_MapRGB(mainsurface->format, 0, 255, 0)); // green
+			}
+		}
+	}
 
 	// Display the actual Magic bar's faint background
 	if ( uiscale_playerbars < 1.5 )
@@ -912,9 +984,10 @@ void drawStatus()
 						{
 							badpotion = true;
 						}
-						if ( itemCategory(item) == SPELLBOOK && item->identified )
+						if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, clientnum)) )
 						{
-							learnedSpell = playerLearnedSpellbook(item);
+							// equipped spellbook will unequip on use.
+							learnedSpell = (playerLearnedSpellbook(item) || itemIsEquipped(item, clientnum));
 						}
 
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -1505,9 +1578,10 @@ void drawStatus()
 			{
 				badpotion = true; //So that you wield empty potions be default.
 			}
-			if ( itemCategory(item) == SPELLBOOK && item->identified )
+			if ( itemCategory(item) == SPELLBOOK && (item->identified || itemIsEquipped(item, clientnum)) )
 			{
-				learnedSpell = playerLearnedSpellbook(item);
+				// equipped spellbook will unequip on use.
+				learnedSpell = (playerLearnedSpellbook(item) || itemIsEquipped(item, clientnum));
 			}
 
 			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 

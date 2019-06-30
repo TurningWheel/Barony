@@ -59,5 +59,5 @@ void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...);
 void printText( SDL_Surface* font_bmp, int x, int y, const char* str );
 void drawSprite(view_t* camera, Entity* entity);
-void drawTooltip(SDL_Rect* src);
+void drawTooltip(SDL_Rect* src, Uint32 optionalColor = 0);
 

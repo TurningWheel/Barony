@@ -1015,6 +1015,14 @@ void Entity::effectTimes()
 							myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
 						}
 						break;
+					case EFF_HP_REGEN:
+						messagePlayer(player, language[3476]);
+						updateClient = true;
+						break;
+					case EFF_MP_REGEN:
+						messagePlayer(player, language[3477]);
+						updateClient = true;
+						break;
 					case EFF_POISONED:
 						messagePlayer(player, language[594]);
 						break;

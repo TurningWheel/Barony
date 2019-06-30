@@ -226,7 +226,17 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 					{
 						if ( autoAddHotbarFilter(*item) )
 						{
-							hotbar[c].item = item->uid;
+							if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
+							{
+								if ( item->usableWhileShapeshifted(stats[clientnum]) )
+								{
+									hotbar[c].item = item->uid;
+								}
+							}
+							else
+							{
+								hotbar[c].item = item->uid;
+							}
 							break;
 						}
 					}
