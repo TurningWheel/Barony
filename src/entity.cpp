@@ -13937,14 +13937,14 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 int Entity::getBaseManaRegen(Stat& myStats)
 {
 	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
-	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 2; // 2 to 7
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
 	{
 		return MAGIC_REGEN_TIME;
 	}
 
-	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 150))); // return 300-150 ticks, 6-3 seconds.
+	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 100))); // return 300-100 ticks, 6-2 seconds.
 }
 
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
