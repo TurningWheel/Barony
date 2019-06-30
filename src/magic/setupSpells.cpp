@@ -280,8 +280,8 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_vampiricAura.name, language[2398]);
 
 	spellElementConstructor(&spellElement_amplifyMagic);
-	spellElement_amplifyMagic.mana = 5;
-	spellElement_amplifyMagic.base_mana = 5;
+	spellElement_amplifyMagic.mana = 7;
+	spellElement_amplifyMagic.base_mana = 7;
 	spellElement_amplifyMagic.overload_multiplier = 1;
 	spellElement_amplifyMagic.damage = 0;
 	spellElement_amplifyMagic.duration = 85; //TODO: Decide on something.
@@ -328,16 +328,16 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_speed.name, language[3414]);
 
 	spellElementConstructor(&spellElement_fear);
-	spellElement_fear.mana = 1;
-	spellElement_fear.base_mana = 1;
+	spellElement_fear.mana = 27;
+	spellElement_fear.base_mana = 27;
 	spellElement_fear.overload_multiplier = 1;
 	spellElement_fear.damage = 1;
 	spellElement_fear.duration = 0;
 	strcpy(spellElement_fear.name, language[3415]);
 
 	spellElementConstructor(&spellElement_strike);
-	spellElement_strike.mana = 1;
-	spellElement_strike.base_mana = 1;
+	spellElement_strike.mana = 22;
+	spellElement_strike.base_mana = 22;
 	spellElement_strike.overload_multiplier = 1;
 	spellElement_strike.damage = 1;
 	spellElement_strike.duration = 0;
@@ -1014,7 +1014,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 1;
+	element->mana = 32;
 
 	spellConstructor(&spell_sprayWeb);
 	strcpy(spell_sprayWeb.name, language[3412]);

@@ -1346,9 +1346,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			int volume = 128;
 
 			// IMPORTANT - TRAP IS USED FOR STORM POTIONS AND ORBIT PARTICLES, QUIET SOUND HERE.
-			if ( trap && (caster->behavior == &actPlayer || caster->behavior == &actMonster) )
+			if ( trap && caster && (caster->behavior == &actPlayer || caster->behavior == &actMonster) )
 			{
-				volume = 16;
+				volume = 8;
 			}
 			else if ( trap )
 			{
@@ -1360,10 +1360,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( volume > 64 )
 				{
 					volume = 64;
-				}
-				else if ( volume == 32 )
-				{
-					volume = 16;
 				}
 			}
 			
