@@ -3970,6 +3970,17 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		serverUpdateEffects(player);
 	}
+	else if ( myStats->EFFECTS[EFF_ASLEEP] && monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
+	{
+		if ( myStats->HP == myStats->MAXHP )
+		{
+			myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
+			myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
+			myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
+			monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
+		}
+	}
 	myStats->OLDHP = myStats->HP;
 }
 
