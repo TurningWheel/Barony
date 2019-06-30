@@ -1661,7 +1661,14 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+					if ( stats[clientnum]->weapon && hideWeapon )
+					{
+						players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
+					}
+					else
+					{
+						players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
+					}
 					if ( stats[clientnum]->weapon
 						&& stats[clientnum]->weapon->type == CROSSBOW )
 					{
