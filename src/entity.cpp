@@ -15570,8 +15570,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
 			{
 				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;
-				shieldLimb->yaw += PI / 6;
+				shieldLimb->yaw += PI / 16;
 				shieldLimb->focalx -= 4;
+				if ( race == SKELETON )
+				{
+					shieldLimb->focaly += .5;
+				}
 				shieldLimb->focalz += .5;
 				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
 				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
