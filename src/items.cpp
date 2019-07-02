@@ -1939,7 +1939,6 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case HAT_FEZ:
 		case HAT_HOOD_RED:
 		case HAT_HOOD_SILVER:
-		case MASK_SHAMAN:
 			equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
@@ -2252,6 +2251,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 				}
 			break;
 		case TOOL_GLASSES:
+		case MASK_SHAMAN:
 			equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_BEARTRAP:

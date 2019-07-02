@@ -14388,6 +14388,9 @@ Adjusts helmet offsets for all monsters, depending on the type of headwear.
 
 void Entity::setHelmetLimbOffset(Entity* helm)
 {
+	helm->scalex = 1.01;
+	helm->scaley = 1.01;
+	helm->scalez = 1.01;
 	// for non-armor helmets, they are rotated so focaly acts as up/down postion.
 	int monster = getMonsterTypeFromSprite();
 	if ( helm->sprite == items[HAT_PHRYGIAN].index )
@@ -14539,7 +14542,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				break;
 			case GOATMAN:
 				helm->focalx = limbs[monster][9][0];
-				helm->focaly = limbs[monster][9][1] - 5.f;
+				helm->focaly = limbs[monster][9][1] - 5.1;
 				helm->focalz = limbs[monster][9][2] + 2.75;
 				break;
 			case INSECTOID:
@@ -14648,7 +14651,7 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalz = limbs[monster][10][2] - 1.5;
 				break;
 			case GOBLIN:
-				helm->focalx = limbs[monster][10][0] + 0.75;
+				helm->focalx = limbs[monster][10][0] + 0.7;
 				helm->focaly = limbs[monster][10][1] + 0;
 				helm->focalz = limbs[monster][10][2] - 2.25;
 				//if ( monster == GOBLIN && this->sprite == 752 ) // special female offset.
@@ -15842,4 +15845,113 @@ void Entity::handleKnockbackDamage(Stat& myStats, Entity* knockedInto)
 			playSoundEntity(knockedInto, 28, 64);
 		}
 	}
+}
+
+void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
+{
+	if ( !helm || !mask )
+	{
+		return;
+	}
+
+	if ( !mask->flags[INVISIBLE] && !helm->flags[INVISIBLE] )
+	{
+		helm->scalex = 1.01;
+		helm->scaley = 1.01;
+		helm->scalez = 1.01;
+	}
+	else
+	{
+		mask->scalex = 1.01;
+		mask->scaley = 1.01;
+		mask->scalez = 1.01;
+		return;
+	}
+
+	if ( helm->sprite == items[LEATHER_HELM].index
+		|| helm->sprite == items[IRON_HELM].index
+		|| (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
+		|| helm->sprite == items[HAT_HOOD_RED].index
+		|| helm->sprite == items[HAT_HOOD_SILVER].index )
+	{
+		helm->scalex = 1.05;
+		helm->scaley = 1.05;
+		helm->scalez = 1.05;
+	}
+
+	mask->scalex = 1.01;
+	mask->scaley = 1.01;
+	mask->scalez = 1.01;
+
+	int monster = getMonsterTypeFromSprite();
+	switch ( monster )
+	{
+		case HUMAN:
+		case VAMPIRE:
+		case SHOPKEEPER:
+			if ( helm->sprite == items[LEATHER_HELM].index )
+			{
+				helm->focalz -= 0.2;
+			}
+			break;
+			break;
+		case GOBLIN:
+			if ( helm->sprite == items[LEATHER_HELM].index
+				|| helm->sprite == items[IRON_HELM].index )
+			{
+				helm->focalz -= 0.2;
+			}
+			else if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+			{
+				// black hood
+				helm->focalx += 0.25;
+			}
+			break;
+		case GOATMAN:
+			if ( helm->sprite == items[LEATHER_HELM].index
+				|| helm->sprite == items[IRON_HELM].index )
+			{
+				helm->focalz -= 0.25;
+			}
+			break;
+		case INCUBUS:
+			if ( helm->sprite == items[LEATHER_HELM].index
+				|| helm->sprite == items[IRON_HELM].index )
+			{
+				helm->focalx += 0.4;
+				helm->focalz -= 0.2;
+			}
+			break;
+		case SUCCUBUS:
+			if ( helm->sprite == items[LEATHER_HELM].index
+				|| helm->sprite == items[IRON_HELM].index )
+			{
+				helm->focalz -= 0.2;
+			}
+			break;
+		case AUTOMATON:
+			if ( helm->sprite == items[LEATHER_HELM].index
+				|| helm->sprite == items[IRON_HELM].index )
+			{
+				mask->focalx -= 0.2;
+			}
+			break;
+		case INSECTOID:
+			if ( helm->sprite == items[LEATHER_HELM].index )
+			{
+				helm->focalz -= 0.2;
+			}
+			else if ( helm->sprite == (items[HAT_HOOD].index + 2) )
+			{
+				// black hood
+				helm->focalx += 0.25;
+				helm->focaly += 0.06;
+			}
+			break;
+		case SKELETON:
+			break;
+		default:
+			break;
+	}
+
 }

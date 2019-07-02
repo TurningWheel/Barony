@@ -4271,10 +4271,14 @@ void actPlayer(Entity* my)
 					{
 						bool hasSteelHelm = false;
 						if ( stats[PLAYER_NUM]->helmet )
-							if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM )
+						{
+							if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM
+								|| stats[PLAYER_NUM]->helmet->type == CRYSTAL_HELM 
+								|| stats[PLAYER_NUM]->helmet->type == ARTIFACT_HELM )
 							{
 								hasSteelHelm = true;
 							}
+						}
 						if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 						{
 							entity->flags[INVISIBLE] = true;
@@ -4320,26 +4324,35 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = true;
 						}
 					}
+					entity->scalex = 0.99;
+					entity->scaley = 0.99;
+					entity->scalez = 0.99;
 					if ( entity->sprite == 165 )
 					{
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
 						entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
 						entity->focalz = limbs[playerRace][10][2]; // .5
-						if ( helmet && helmet->sprite == items[MASK_SHAMAN].index )
-						{
-							if ( playerRace == SUCCUBUS || playerRace == INCUBUS || playerRace == GOATMAN || playerRace == SKELETON )
-							{
-								entity->focalx += 0.25;
-							}
-							else if ( playerRace == INSECTOID )
-							{
-								entity->focaly += 0.5; // make it lower
-							}
-							else
-							{
-								entity->focalx += 0.5;
-							}
-						}
+						//if ( helmet && helmet->sprite == items[MASK_SHAMAN].index )
+						//{
+						//	if ( playerRace == SUCCUBUS || playerRace == INCUBUS || playerRace == GOATMAN || playerRace == SKELETON )
+						//	{
+						//		entity->focalx += 0.25;
+						//	}
+						//	else if ( playerRace == INSECTOID )
+						//	{
+						//		entity->focaly += 0.5; // make it lower
+						//	}
+						//	else
+						//	{
+						//		entity->focalx += 0.5;
+						//	}
+						//}
+					}
+					else if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
 					}
 					else
 					{

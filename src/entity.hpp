@@ -815,6 +815,7 @@ public:
 	bool playerRequiresBloodToSustain(); // vampire type or accursed class
 	bool isBossMonster(); // return true if boss map (hell boss, boss etc or shopkeeper/shadow/other boss
 	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
+	void setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask);
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

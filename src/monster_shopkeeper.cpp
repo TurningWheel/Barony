@@ -822,6 +822,8 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
+	Entity* helmet = nullptr;
+
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
@@ -1200,6 +1202,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case LIMB_HUMANOID_HELMET:
+				helmet = entity;
 				entity->focalx = limbs[SHOPKEEPER][9][0]; // 0
 				entity->focaly = limbs[SHOPKEEPER][9][1]; // 0
 				entity->focalz = limbs[SHOPKEEPER][9][2]; // -1.75
@@ -1253,7 +1256,17 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					bool hasSteelHelm = false;
+					if ( myStats->helmet )
+					{
+						if ( myStats->helmet->type == STEEL_HELM
+							|| myStats->helmet->type == CRYSTAL_HELM
+							|| myStats->helmet->type == ARTIFACT_HELM )
+						{
+							hasSteelHelm = true;
+						}
+					}
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1301,9 +1314,18 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[SHOPKEEPER][10][0] + .35; // .35
-					entity->focaly = limbs[SHOPKEEPER][10][1] - 2; // -2
-					entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
+					if ( entity->sprite == items[MASK_SHAMAN].index )
+					{
+						entity->roll = 0;
+						my->setHelmetLimbOffset(entity);
+						my->setHelmetLimbOffsetWithMask(helmet, entity);
+					}
+					else
+					{
+						entity->focalx = limbs[SHOPKEEPER][10][0] + .35; // .35
+						entity->focaly = limbs[SHOPKEEPER][10][1] - 2; // -2
+						entity->focalz = limbs[SHOPKEEPER][10][2]; // .5
+					}
 				}
 				else
 				{
