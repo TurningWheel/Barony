@@ -89,7 +89,14 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		int inventory_y = INVENTORY_SIZEY;
 		if ( is_spell )
 		{
-			inventory_y = 3;
+			if ( list_Size(&spellList) >= INVENTORY_SIZEX * 3 )
+			{
+				inventory_y = INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+			}
+			else
+			{
+				inventory_y = 3;
+			}
 		}
 		else if ( multiplayer != CLIENT )
 		{

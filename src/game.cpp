@@ -1244,13 +1244,18 @@ void gameLogic(void)
 				client_selected[j] = NULL;
 			}
 
+			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
 			{
 				INVENTORY_SIZEY = 4;
 			}
+			else if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+			}
 			else
 			{
-				if ( INVENTORY_SIZEY > 3 )
+				if ( INVENTORY_SIZEY > 3 && !tooManySpells )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -1263,6 +1268,10 @@ void gameLogic(void)
 						if ( itemCategory(item) != SPELL_CAT )
 						{
 							continue;
+						}
+						if ( item->appearance >= 1000 )
+						{
+							continue; // shaman spells.
 						}
 						while ( 1 )
 						{
@@ -1735,14 +1744,18 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				entity->ranbehavior = false;
 			}
-
+			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
 			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
 			{
 				INVENTORY_SIZEY = 4;
 			}
+			else if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+			{
+				INVENTORY_SIZEY = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+			}
 			else
 			{
-				if ( INVENTORY_SIZEY > 3 )
+				if ( INVENTORY_SIZEY > 3 && !tooManySpells )
 				{
 					// we should rearrange our spells.
 					for ( node_t* node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
@@ -1755,6 +1768,10 @@ void gameLogic(void)
 						if ( itemCategory(item) != SPELL_CAT )
 						{
 							continue;
+						}
+						if ( item->appearance >= 1000 )
+						{
+							continue; // shaman spells.
 						}
 						while ( 1 )
 						{

@@ -29,9 +29,9 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	/*client_classes[player] = CLASS_SHAMAN;
+	client_classes[player] = CLASS_SHAMAN;
 	stats[player]->playerRace = RACE_GOBLIN;
-	stats[player]->appearance = 0;*/
+	stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -2335,9 +2335,15 @@ void initShapeshiftHotbar()
 						int x = 0;
 						bool notfree = false;
 						bool foundaspot = false;
+						bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
+						int numRows = INVENTORY_SIZEY;
+						if ( tooManySpells && gui_mode == GUI_MODE_INVENTORY && inventory_mode == INVENTORY_MODE_SPELL )
+						{
+							numRows = 4 + ((list_Size(&spellList) - (INVENTORY_SIZEX * 3)) / INVENTORY_SIZEX);
+						}
 						while ( 1 )
 						{
-							for ( int y = 0; y < 3; y++ )
+							for ( int y = 0; y < numRows; y++ )
 							{
 								for ( node_t* node2 = stats[clientnum]->inventory.first; node2 != NULL; node2 = node2->next )
 								{
