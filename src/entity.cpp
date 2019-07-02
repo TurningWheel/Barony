@@ -3844,7 +3844,7 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					messagePlayer(player, language[653]);
 				}
-				if ( myStats->amulet->beatitude >= 0 )
+				if ( myStats->amulet->beatitude >= 0 || shouldInvertEquipmentBeatitude(myStats) )
 				{
 					messagePlayer(player, language[654]);
 					messagePlayer(player, language[655]);
