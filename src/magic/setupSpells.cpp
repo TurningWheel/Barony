@@ -328,16 +328,16 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_speed.name, language[3414]);
 
 	spellElementConstructor(&spellElement_fear);
-	spellElement_fear.mana = 27;
-	spellElement_fear.base_mana = 27;
+	spellElement_fear.mana = 28;
+	spellElement_fear.base_mana = 28;
 	spellElement_fear.overload_multiplier = 1;
 	spellElement_fear.damage = 1;
 	spellElement_fear.duration = 0;
 	strcpy(spellElement_fear.name, language[3415]);
 
 	spellElementConstructor(&spellElement_strike);
-	spellElement_strike.mana = 22;
-	spellElement_strike.base_mana = 22;
+	spellElement_strike.mana = 23;
+	spellElement_strike.base_mana = 23;
 	spellElement_strike.overload_multiplier = 1;
 	spellElement_strike.damage = 1;
 	spellElement_strike.duration = 0;
