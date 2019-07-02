@@ -718,7 +718,7 @@ void actHudWeapon(Entity* my)
 					{
 						HUDWEAPON_CHOP = 7; // spear lunges
 					}
-					if ( whip )
+					else if ( whip )
 					{
 						HUDWEAPON_CHOP = 4;
 						pickaxeGimpTimer = 20;
