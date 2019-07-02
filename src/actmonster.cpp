@@ -611,7 +611,7 @@ int devilacted = 0;
 int devilroar = 0;
 int devilintro = 0;
 
-bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats)
+bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
 {
 	if ( ringconflict )
 	{
@@ -671,7 +671,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		{
 			//Can control humans & goblins & goatmen & insectoids.
 			//TODO: Control humanoids in general? Or otherwise something from each tileset.
-			if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN) 
+			if ( (stats[monsterclicked]->type == HUMAN && race == HUMAN)
 				|| race == GOBLIN
 				|| race == AUTOMATON
 				|| race == GOATMAN
@@ -759,6 +759,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 				}
 			}
 		}
+		else
+		{
+			messagePlayer(monsterclicked, language[3482]);
+		}
 	}
 	else
 	{
@@ -768,6 +772,15 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 			if ( race == HUMAN && (myStats->EFFECTS[EFF_DRUNK] || myStats->EFFECTS[EFF_CONFUSED]) )
 			{
 				tryAlly = true;
+			}
+		}
+		if ( strcmp(myStats->name, "") && !monsterNameIsGeneric(*myStats)
+			&& ((stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] + stats[monsterclicked]->CHR) < 60) )
+		{
+			if ( race != HUMAN )
+			{
+				tryAlly = false;
+				messagePlayer(monsterclicked, language[3481], myStats->name);
 			}
 		}
 		if ( tryAlly )
@@ -866,6 +879,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 						}
 					}
 				}
+				else
+				{
+					messagePlayer(monsterclicked, language[3480]);
+				}
 			}
 		}
 	}
@@ -928,7 +945,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		serverUpdateAllyStat(monsterclicked, my->getUID(), myStats->LVL, myStats->HP, myStats->MAXHP, myStats->type);
 	}
 
-		// update flags for colors.
+	// update flags for colors.
 	my->flags[USERFLAG2] = true;
 	serverUpdateEntityFlag(my, USERFLAG2);
 	if ( !monsterally[HUMAN][myStats->type] )
@@ -2677,21 +2694,25 @@ void actMonster(Entity* my)
 	}
 
 	// chatting
-	char namesays[32];
-	if ( !strcmp(myStats->name, "") )
+	char namesays[64];
+	if ( !strcmp(myStats->name, "") || monsterNameIsGeneric(*myStats) )
 	{
-		if ( myStats->type < KOBOLD ) //Original monster count
+		if ( monsterNameIsGeneric(*myStats) )
 		{
-			snprintf(namesays, 31, language[513], language[90 + myStats->type]);
+			snprintf(namesays, 63, language[1302], myStats->name);
+		}
+		else if ( myStats->type < KOBOLD ) //Original monster count
+		{
+			snprintf(namesays, 63, language[513], language[90 + myStats->type]);
 		}
 		else if ( myStats->type >= KOBOLD ) //New monsters
 		{
-			snprintf(namesays, 31, language[513], language[2000 + myStats->type - KOBOLD]);
+			snprintf(namesays, 63, language[513], language[2000 + myStats->type - KOBOLD]);
 		}
 	}
 	else
 	{
-		snprintf(namesays, 31, language[1302], myStats->name);
+		snprintf(namesays, 63, language[1302], myStats->name);
 	}
 	int monsterclicked = -1;
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7478,7 +7499,7 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 	return count;
 }
 
-bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats)
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
 {
 	if ( ringconflict || myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 	{

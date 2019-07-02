@@ -650,7 +650,7 @@ extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
 // monster custom NPC chatter
-bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats);
 // check qty of a certain creature race alive on a map
 int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster);
 
