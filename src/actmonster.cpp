@@ -8018,7 +8018,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			if ( monsterAllySpecialCooldown == 0 )
 			{
 				int duration = TICKS_PER_SECOND * (60 - (rand() % 30));
-				if ( setEffect(EFF_ASLEEP, true, duration, false) ) // 30-60 seconds of sleep.
+				if ( myStats->HP < myStats->MAXHP && (EFF_ASLEEP, true, duration, false) ) // 30-60 seconds of sleep.
 				{
 					setEffect(EFF_HP_REGEN, true, duration, false);
 					monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
