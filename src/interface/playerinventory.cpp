@@ -1524,6 +1524,11 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
 
+		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) && itemCategory(&item) != FOOD )
+		{
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
+		}
 		if (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC)
 		{
 			current_y += slot_height;
@@ -1676,6 +1681,63 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	drawOptionDrop(x, y);
 }
 
+inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int height, bool is_potion_bad)
+{
+	int width = 0;
+
+	//Option 0.
+	if ( openedChest[clientnum] )
+	{
+		drawOptionStoreInChest(x, y);
+	}
+	else if ( gui_mode == GUI_MODE_SHOP )
+	{
+		drawOptionSell(x, y);
+	}
+	else
+	{
+		if ( !is_potion_bad )
+		{
+			if ( !itemIsConsumableByAutomaton(item) || itemCategory(&item) != FOOD )
+			{
+				drawOptionUse(item, x, y);
+			}
+			else
+			{
+				TTF_SizeUTF8(ttf12, language[3487], &width, nullptr);
+				ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
+			}
+		}
+		else
+		{
+			if ( itemIsEquipped(&item, clientnum) )
+			{
+				drawOptionUnwield(x, y);
+			}
+			else
+			{
+				drawOptionWield(x, y);
+			}
+		}
+	}
+	y += height;
+
+	//Option 1.
+	if ( itemCategory(&item) != FOOD )
+	{
+		TTF_SizeUTF8(ttf12, language[3487], &width, nullptr);
+		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
+		y += height;
+	}
+
+	//Option 1.
+	drawOptionAppraise(x, y);
+	y += height;
+
+	//Option 2.
+	drawOptionDrop(x, y);
+}
+
 /*
  * Helper function to itemContextMenu(). Draws all other items's options.
  */
@@ -1799,7 +1861,8 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 			itemMenuSelected = 2;
 		}
 		current_y += slot_height;
-		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK )
+		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK
+			|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) && itemCategory(&item) != FOOD) )
 		{
 			if (mousey >= current_y && mousey < current_y + slot_height)
 			{
@@ -1972,7 +2035,27 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		}
 	}
 
-	if ( item->type == TOOL_ALEMBIC )
+	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
+	{
+		// consume item
+		if ( multiplayer == CLIENT )
+		{
+			strcpy((char*)net_packet->data, "FODA");
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		item_FoodAutomaton(item, clientnum);
+	}
+	else if ( item->type == TOOL_ALEMBIC )
 	{
 		// experimenting!
 		if ( !disableItemUsage )
@@ -2083,7 +2166,18 @@ inline void executeItemMenuOption2(Item* item)
 		return;
 	}
 
-	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK )
+	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
+	{
+		//Option 2 = appraise.
+		identifygui_active = false;
+		identifygui_appraising = true;
+
+		//Cleanup identify GUI gamecontroller code here.
+		selectedIdentifySlot = -1;
+
+		identifyGUIIdentify(item);
+	}
+	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK )
 	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
@@ -2103,7 +2197,17 @@ inline void executeItemMenuOption2(Item* item)
 
 inline void executeItemMenuOption3(Item* item)
 {
-	if (!item || (itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK))
+	if ( !item )
+	{
+		return;
+	}
+	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
+	{
+		//Option 3 = drop (automaton has 4 options on consumable items).
+		dropItem(item, clientnum);
+		return;
+	}
+	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK )
 	{
 		return;
 	}
@@ -2164,7 +2268,11 @@ void itemContextMenu()
 	}
 	else
 	{
-		if ( current_item->type == TOOL_ALEMBIC )
+		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*current_item) )
+		{
+			drawItemMenuOptionAutomaton(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
+		}
+		else if ( current_item->type == TOOL_ALEMBIC )
 		{
 			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, false);
 		}

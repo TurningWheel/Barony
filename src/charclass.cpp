@@ -30,7 +30,7 @@ void initClass(int player)
 {
 	Item* item, *item2;
 	client_classes[player] = CLASS_SHAMAN;
-	stats[player]->playerRace = RACE_GOBLIN;
+	stats[player]->playerRace = RACE_AUTOMATON;
 	stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
@@ -1921,12 +1921,13 @@ void initClass(int player)
 		// skills
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 40;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 10;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 10;
 		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;*/
 
 		item = newItem(MAGICSTAFF_POISON, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
@@ -2099,7 +2100,7 @@ void initClass(int player)
 	}
 	if ( stats[player]->appearance == 0 
 		&& client_classes[player] >= CLASS_CONJURER 
-		&& client_classes[player] <= CLASS_BREWER 
+		&& client_classes[player] <= CLASS_HUNTER 
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( player == clientnum )
@@ -2168,11 +2169,12 @@ void initClass(int player)
 		if ( client_classes[clientnum] == CLASS_SHAMAN )
 		{
 			addSpell(SPELL_RAT_FORM, player, true);
+			addSpell(SPELL_REVERT_FORM, player, true);
+			addSpell(SPELL_DETECT_FOOD, player, true);
+
 			addSpell(SPELL_SPIDER_FORM, player, true);
 			addSpell(SPELL_TROLL_FORM, player, true);
 			addSpell(SPELL_IMP_FORM, player, true);
-			addSpell(SPELL_REVERT_FORM, player, true);
-
 			addSpell(SPELL_SPEED, player, true);
 			addSpell(SPELL_POISON, player, true);
 			addSpell(SPELL_SPRAY_WEB, player, true);
@@ -2180,7 +2182,6 @@ void initClass(int player)
 			addSpell(SPELL_FEAR, player, true);
 			addSpell(SPELL_LIGHTNING, player, true);
 			addSpell(SPELL_CONFUSE, player, true);
-			addSpell(SPELL_DETECT_FOOD, player, true);
 			addSpell(SPELL_WEAKNESS, player, true);
 			addSpell(SPELL_AMPLIFY_MAGIC, player, true);
 		}

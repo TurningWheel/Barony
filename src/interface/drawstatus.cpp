@@ -726,7 +726,7 @@ void drawStatus()
 			pos.y = yres - 160;
 			pos.w = 64;
 			pos.h = 64;
-			if ( stats[clientnum]->HUNGER > 125 )
+			if ( stats[clientnum]->HUNGER > 200 )
 			{
 				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
 			}

@@ -495,7 +495,7 @@ Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(Stat* wielder);
 bool isItemEquippableInShieldSlot(Item* item);
-bool itemIsConsumableByAutomaton(Item* item);
+bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];

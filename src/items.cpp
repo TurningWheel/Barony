@@ -1762,7 +1762,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 	}
 
 	// tins need a tin opener to open...
-	if ( player == clientnum && !(stats[player]->type == GOATMAN) )
+	if ( player == clientnum && !(stats[player]->type == GOATMAN || stats[player]->type == AUTOMATON) )
 	{
 		if ( item->type == FOOD_TIN )
 		{

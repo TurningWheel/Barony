@@ -4610,6 +4610,14 @@ void serverHandlePacket()
 			}
 		}
 	}
+
+	// use automaton food item
+	else if ( !strncmp((char*)net_packet->data, "FODA", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		item_FoodAutomaton(item, net_packet->data[25]);
+		return;
+	}
 }
 
 /*-------------------------------------------------------------------------------
