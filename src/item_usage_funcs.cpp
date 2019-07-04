@@ -3777,8 +3777,7 @@ void item_Food(Item*& item, int player)
 	{
 		if ( players[player] && players[player]->entity )
 		{
-			players[player]->entity->modMP(5);
-			stats[player]->HUNGER += 50;
+			item_FoodAutomaton(item, player);
 			return;
 		}
 	}
@@ -4689,4 +4688,234 @@ void item_Spellbook(Item*& item, int player)
 			}
 		}
 	}
+}
+
+void item_FoodAutomaton(Item*& item, int player)
+{
+	if ( !stats[player] || !players[player] || !players[player]->entity )
+	{
+		return;
+	}
+
+	if ( player >= 0 && stats[player]->type != AUTOMATON )
+	{
+		messagePlayer(player, "You are not an Automaton!");
+		return;
+	}
+
+	if ( !itemIsConsumableByAutomaton(item) )
+	{
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return;
+	}
+
+	// consumption message
+	int oldcount = item->count;
+	item->count = 1;
+	messagePlayer(player, language[907], item->description());
+	item->count = oldcount;
+
+	// eating sound
+	if ( item->type == FOOD_BLOOD )
+	{
+		// play drink sound
+		playSoundEntity(players[player]->entity, 52, 64);
+	}
+	else
+	{
+		playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
+	}
+
+	/*if ( item->beatitude < 0 && item->type != FOOD_CREAMPIE )
+	{
+		if ( players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER) )
+		{
+			playSoundEntity(players[player]->entity, 28, 64);
+			players[player]->entity->modHP(-5);
+		}
+		consumeItem(item, player);
+		return;
+	}*/
+	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
+	{
+		messagePlayer(player, language[909]);
+		messagePlayer(player, language[910]);
+		stats[player]->EFFECTS[EFF_MESSY] = true;
+		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
+		serverUpdateEffects(player);
+		consumeItem(item, player);
+		return;
+	}
+
+	// automaton hunger/combustion tick is every 0.6 seconds. 
+	// 100 hunger = 60 seconds.
+	// 80 hunger = 48 seconds
+	// 50 hunger = 30 seconds
+	// 40 hunger = 24 seconds
+	// 20 hunger = 12 seconds
+
+	// replenish nutrition points
+	if ( svFlags & SV_FLAG_HUNGER )
+	{
+		switch ( item->type )
+		{
+			case FOOD_BREAD:
+			case FOOD_CREAMPIE:
+			case FOOD_BLOOD:
+				stats[player]->HUNGER += 40;
+				break;
+			case FOOD_CHEESE:
+			case FOOD_APPLE:
+			case FOOD_TOMALLEY:
+				stats[player]->HUNGER += 20;
+				break;
+			case FOOD_MEAT:
+			case FOOD_FISH:
+				stats[player]->HUNGER += 50;
+				break;
+			case GEM_ROCK:
+			case GEM_GLASS:
+				stats[player]->HUNGER += 20;
+				break;
+			case GEM_LUCK:
+			case GEM_GARNET:
+			case GEM_RUBY:
+			case GEM_JACINTH:
+			case GEM_AMBER:
+			case GEM_CITRINE:
+			case GEM_JADE:
+			case GEM_EMERALD:
+			case GEM_SAPPHIRE:
+			case GEM_AQUAMARINE:
+			case GEM_AMETHYST:
+			case GEM_FLUORITE:
+			case GEM_OPAL:
+			case GEM_DIAMOND:
+			case GEM_JETSTONE:
+			case GEM_OBSIDIAN:
+				stats[player]->HUNGER += 200;
+				break;
+			case READABLE_BOOK:
+				stats[player]->HUNGER += 100;
+				break;
+			case SCROLL_MAIL:
+			case SCROLL_BLANK:
+				stats[player]->HUNGER += 50;
+				break;
+			case SCROLL_IDENTIFY:
+			case SCROLL_LIGHT:
+			case SCROLL_REMOVECURSE:
+			case SCROLL_FOOD:
+			case SCROLL_MAGICMAPPING:
+			case SCROLL_REPAIR:
+			case SCROLL_DESTROYARMOR:
+			case SCROLL_TELEPORTATION:
+			case SCROLL_SUMMON:
+			case SCROLL_ENCHANTWEAPON:
+			case SCROLL_ENCHANTARMOR:
+				stats[player]->HUNGER += 200;
+				break;
+			case SCROLL_FIRE:
+				stats[player]->HUNGER += 300;
+				break;
+			default:
+				messagePlayer(player, "Unknown food?");
+				break;
+		}
+	}
+	else
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			players[player]->entity->modHP(5);
+		}
+		messagePlayer(player, language[911]);
+	}
+
+	// results of eating
+	if ( true /*(svFlags & SV_FLAG_HUNGER)*/ )
+	{
+		if ( stats[player]->HUNGER >= 300 )
+		{
+			messagePlayer(player, language[3483]);
+		}
+		else if ( stats[player]->HUNGER > 200 )
+		{
+			messagePlayer(player, language[3484]);
+		}
+		else if ( stats[player]->HUNGER > 50 )
+		{
+			messagePlayer(player, language[3485]);
+		}
+		else
+		{
+			messagePlayer(player, language[3486]);
+		}
+	}
+
+	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 300);
+	serverUpdateHunger(player);
+	consumeItem(item, player);
+}
+
+bool itemIsConsumableByAutomaton(Item* item)
+{
+	switch ( item->type )
+	{
+		case FOOD_BREAD:
+		case FOOD_CREAMPIE:
+		case FOOD_BLOOD:
+		case FOOD_CHEESE:
+		case FOOD_APPLE:
+		case FOOD_TOMALLEY:
+		case FOOD_MEAT:
+		case FOOD_FISH:
+
+		case GEM_ROCK:
+		case GEM_GLASS:
+		case GEM_LUCK:
+		case GEM_GARNET:
+		case GEM_RUBY:
+		case GEM_JACINTH:
+		case GEM_AMBER:
+		case GEM_CITRINE:
+		case GEM_JADE:
+		case GEM_EMERALD:
+		case GEM_SAPPHIRE:
+		case GEM_AQUAMARINE:
+		case GEM_AMETHYST:
+		case GEM_FLUORITE:
+		case GEM_OPAL:
+		case GEM_DIAMOND:
+		case GEM_JETSTONE:
+		case GEM_OBSIDIAN:
+
+		case READABLE_BOOK:
+
+		case SCROLL_MAIL:
+		case SCROLL_BLANK:
+		case SCROLL_IDENTIFY:
+		case SCROLL_LIGHT:
+		case SCROLL_ENCHANTWEAPON:
+		case SCROLL_ENCHANTARMOR:
+		case SCROLL_REMOVECURSE:
+		case SCROLL_FOOD:
+		case SCROLL_MAGICMAPPING:
+		case SCROLL_REPAIR:
+		case SCROLL_DESTROYARMOR:
+		case SCROLL_TELEPORTATION:
+		case SCROLL_SUMMON:
+		case SCROLL_FIRE:
+			return true;
+			break;
+		default:
+			return false;
+			break;
+	}
+	return false;
 }

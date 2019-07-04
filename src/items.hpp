@@ -469,6 +469,7 @@ void item_ToolMirror(Item*& item, int player);
 void item_ToolBeartrap(Item*& item, int player);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
+void item_FoodAutomaton(Item*& item, int player);
 void item_Gem(Item* item, int player);
 void item_Spellbook(Item*& item, int player);
 
@@ -494,6 +495,7 @@ Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(Stat* wielder);
 bool isItemEquippableInShieldSlot(Item* item);
+bool itemIsConsumableByAutomaton(Item* item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];
