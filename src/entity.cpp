@@ -1016,11 +1016,11 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_HP_REGEN:
-						messagePlayer(player, language[3476]);
+						//messagePlayer(player, language[3476]);
 						updateClient = true;
 						break;
 					case EFF_MP_REGEN:
-						messagePlayer(player, language[3477]);
+						//messagePlayer(player, language[3477]);
 						updateClient = true;
 						break;
 					case EFF_POISONED:
