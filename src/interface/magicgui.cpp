@@ -278,8 +278,8 @@ void drawSustainedSpells()
 					tooltipText = language[3492];
 					break;
 				case EFF_FAST:
-					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
-					tooltipText = language[3492];
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
+					tooltipText = language[3493];
 					break;
 				case EFF_SHAPESHIFT:
 					if ( players[clientnum] && players[clientnum]->entity )
