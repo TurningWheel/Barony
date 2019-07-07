@@ -825,7 +825,8 @@ char monsterEditorNameStrings[NUMMONSTERS][13] =
 	"goatman",
 	"automaton",
 	"lich_ice",
-	"lich_fire"
+	"lich_fire",
+	"sentrybot"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =

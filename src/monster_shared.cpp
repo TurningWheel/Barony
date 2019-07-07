@@ -287,6 +287,10 @@ int Entity::getMonsterTypeFromSprite()
 	{
 		return SLIME;
 	}
+	else if ( mySprite == 872 )     // sentrybot
+	{
+		return SENTRYBOT;
+	}
 	return NOTHING;
 }
 
