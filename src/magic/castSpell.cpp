@@ -849,6 +849,54 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			playSoundEntity(caster, 167, 128);
 		}
+		else if ( !strcmp(element->name, spellElement_trollsBlood.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					int amount = TICKS_PER_SECOND * 80;
+
+					if ( overdrewIntoHP )
+					{
+						amount /= 4;
+						messagePlayerColor(player, SDL_MapRGB(mainsurface->format, 255, 255, 255), language[3400]);
+					}
+
+					caster->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
+					playSoundEntity(caster, 168, 128);
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(i, color, language[3490]);
+					for ( node = map.creatures->first; node; node = node->next )
+					{
+						entity = (Entity*)(node->element);
+						if ( !entity || entity == caster )
+						{
+							continue;
+						}
+						if ( entity->behavior != &actPlayer && entity->behavior != &actMonster )
+						{
+							continue;
+						}
+
+						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
+						{
+							caster->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
+							playSoundEntity(entity, 168, 128);
+							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+							if ( entity->behavior == &actPlayer )
+							{
+								messagePlayerColor(entity->skill[2], color, language[3490]);
+							}
+						}
+					}
+					break;
+				}
+			}
+
+			playSoundEntity(caster, 168, 128);
+			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
+		}
 		else if ( !strcmp(element->name, spellElement_speed.name) )
 		{
 			for ( i = 0; i < numplayers; ++i )
@@ -857,20 +905,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					//Duration for speed.
 					int duration = element->duration;
-					duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
-					if ( newbie )
-					{
-						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
-						chance = rand() % 10;
-						if ( chance >= spellcasting / 10 )
-						{
-							duration -= rand() % (1000 / (spellcasting + 1));
-						}
-						if ( duration < 100 )
-						{
-							duration = 100;    //Range checking.
-						}
-					}
+					//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+					//if ( newbie )
+					//{
+					//	//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+					//	chance = rand() % 10;
+					//	if ( chance >= spellcasting / 10 )
+					//	{
+					//		duration -= rand() % (1000 / (spellcasting + 1));
+					//	}
+					//	if ( duration < 100 )
+					//	{
+					//		duration = 100;    //Range checking.
+					//	}
+					//}
 
 					if ( stats[i]->EFFECTS[EFF_SLOW] )
 					{
@@ -893,7 +941,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							entity->setEffect(EFF_FAST, true, duration, true);
 							playSoundEntity(entity, 178, 128);
-							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
 						}
 					}
 					break;
@@ -901,7 +949,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 
 			playSoundEntity(caster, 178, 128);
-			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
+			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
 		}
 		else if (!strcmp(element->name, spellElement_heal.name))     //TODO: Make it work for NPCs.
 		{

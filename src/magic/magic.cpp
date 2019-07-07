@@ -71,6 +71,7 @@ void freeSpells()
 	list_FreeAll(&spell_shadowTag.elements);
 	list_FreeAll(&spell_telePull.elements);
 	list_FreeAll(&spell_demonIllusion.elements);
+	list_FreeAll(&spell_trollsBlood.elements);
 }
 
 void spell_magicMap(int player)

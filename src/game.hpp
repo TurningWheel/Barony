@@ -301,6 +301,7 @@ extern bool gameloopFreezeEntities;
 void initClass(int player);
 void initShapeshiftHotbar();
 void deinitShapeshiftHotbar();
+bool playerUnlockedShamanSpell(int player, Item* item);
 
 extern char last_ip[64];
 extern char last_port[64];

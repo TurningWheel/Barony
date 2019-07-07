@@ -71,6 +71,7 @@ spellElement_t spellElement_amplifyMagic;
 spellElement_t spellElement_shadowTag;
 spellElement_t spellElement_telePull;
 spellElement_t spellElement_demonIllusion;
+spellElement_t spellElement_trollsBlood;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -120,6 +121,7 @@ spell_t spell_amplifyMagic;
 spell_t spell_shadowTag;
 spell_t spell_telePull;
 spell_t spell_demonIllusion;
+spell_t spell_trollsBlood;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -276,7 +278,9 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_DEMON_ILLUSION:
 			new_spell = copySpell(&spell_demonIllusion);
 			break;
-		case SPELL_4:
+		case SPELL_TROLLS_BLOOD:
+			new_spell = copySpell(&spell_trollsBlood);
+			break;
 		case SPELL_5:
 		case SPELL_6:
 		case SPELL_7:
@@ -751,7 +755,9 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_DEMON_ILLUSION:
 			spell = &spell_demonIllusion;
 			break;
-		case SPELL_4:
+		case SPELL_TROLLS_BLOOD:
+			spell = &spell_trollsBlood;
+			break;
 		case SPELL_5:
 		case SPELL_6:
 		case SPELL_7:
@@ -913,8 +919,8 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_DEMON_ILLUSION:
 			itemType = SPELLBOOK_DEMON_ILLU;
 			break;
-		case SPELL_4:
-			itemType = SPELLBOOK_4;
+		case SPELL_TROLLS_BLOOD:
+			itemType = SPELLBOOK_TROLLS_BLOOD;
 			break;
 		case SPELL_5:
 			itemType = SPELLBOOK_5;
@@ -1037,8 +1043,8 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_telePull.ID;
 		case SPELLBOOK_DEMON_ILLU:
 			return spell_demonIllusion.ID;
-		case SPELL_4:
-			return spell_weakness.ID;
+		case SPELLBOOK_TROLLS_BLOOD:
+			return spell_trollsBlood.ID;
 		case SPELL_5:
 			return spell_weakness.ID;
 		case SPELL_6:
@@ -1203,6 +1209,7 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 			break;
 		case SPELL_STRIKE:
 		case SPELL_FEAR:
+		case SPELL_TROLLS_BLOOD:
 			if ( stats[clientnum]->type == TROLL )
 			{
 				return 1;
@@ -1210,7 +1217,6 @@ int canUseShapeshiftSpellInCurrentForm(Item& item)
 			break;
 		case SPELL_LIGHTNING:
 		case SPELL_CONFUSE:
-		case SPELL_WEAKNESS:
 		case SPELL_AMPLIFY_MAGIC:
 			if ( stats[clientnum]->type == CREATURE_IMP )
 			{

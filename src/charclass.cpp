@@ -30,7 +30,7 @@ void initClass(int player)
 {
 	Item* item, *item2;
 	client_classes[player] = CLASS_SHAMAN;
-	stats[player]->playerRace = RACE_AUTOMATON;
+	stats[player]->playerRace = RACE_GOBLIN;
 	stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
@@ -2169,12 +2169,12 @@ void initClass(int player)
 		if ( client_classes[clientnum] == CLASS_SHAMAN )
 		{
 			addSpell(SPELL_RAT_FORM, player, true);
-			addSpell(SPELL_REVERT_FORM, player, true);
-			addSpell(SPELL_DETECT_FOOD, player, true);
-
 			addSpell(SPELL_SPIDER_FORM, player, true);
 			addSpell(SPELL_TROLL_FORM, player, true);
 			addSpell(SPELL_IMP_FORM, player, true);
+			addSpell(SPELL_REVERT_FORM, player, true);
+
+			addSpell(SPELL_DETECT_FOOD, player, true);
 			addSpell(SPELL_SPEED, player, true);
 			addSpell(SPELL_POISON, player, true);
 			addSpell(SPELL_SPRAY_WEB, player, true);
@@ -2182,7 +2182,7 @@ void initClass(int player)
 			addSpell(SPELL_FEAR, player, true);
 			addSpell(SPELL_LIGHTNING, player, true);
 			addSpell(SPELL_CONFUSE, player, true);
-			addSpell(SPELL_WEAKNESS, player, true);
+			addSpell(SPELL_TROLLS_BLOOD, player, true);
 			addSpell(SPELL_AMPLIFY_MAGIC, player, true);
 		}
 		else if ( client_classes[clientnum] == CLASS_PUNISHER )
@@ -2216,7 +2216,7 @@ void initClass(int player)
 							case SPELL_LIGHTNING:
 							case SPELL_CONFUSE:
 							case SPELL_DETECT_FOOD:
-							case SPELL_WEAKNESS:
+							case SPELL_TROLLS_BLOOD:
 							case SPELL_AMPLIFY_MAGIC:
 								item->appearance += 1000;
 								item->y -= 100;
@@ -2548,8 +2548,8 @@ void deinitShapeshiftHotbar()
 						case SPELL_FEAR:
 						case SPELL_LIGHTNING:
 						case SPELL_CONFUSE:
-						case SPELL_WEAKNESS:
 						case SPELL_DETECT_FOOD:
+						case SPELL_TROLLS_BLOOD:
 						case SPELL_AMPLIFY_MAGIC:
 							if ( item->y >= 0 )
 							{
@@ -2572,4 +2572,80 @@ void deinitShapeshiftHotbar()
 			}
 		}
 	}
+}
+
+bool playerUnlockedShamanSpell(int player, Item* item)
+{
+	if ( player < 0 && player >= MAXPLAYERS )
+	{
+		return false;
+	}
+
+	if ( !stats[player] || !item || item->type != SPELL_ITEM )
+	{
+		return false;
+	}
+
+	spell_t* spell = getSpellFromItem(item);
+	int levelRequirement = 0;
+	if ( spell && client_classes[player] == CLASS_SHAMAN )
+	{
+		if ( item->appearance >= 1000 )
+		{
+			switch ( spell->ID )
+			{
+				case SPELL_DETECT_FOOD:
+					levelRequirement = 0;
+					break;
+				case SPELL_SPRAY_WEB:
+				case SPELL_SPEED:
+					levelRequirement = 3;
+					break;
+				case SPELL_POISON:
+				case SPELL_STRIKE:
+					levelRequirement = 6;
+					break;
+				case SPELL_TROLLS_BLOOD:
+					levelRequirement = 9;
+					break;
+				case SPELL_FEAR:
+				case SPELL_LIGHTNING:
+				case SPELL_CONFUSE:
+					levelRequirement = 12;
+				case SPELL_AMPLIFY_MAGIC:
+					levelRequirement = 18;
+					break;
+				default:
+					return true;
+					break;
+			}
+		}
+		else
+		{
+			switch ( spell->ID )
+			{
+				case SPELL_RAT_FORM:
+					levelRequirement = 0;
+					break;
+				case SPELL_SPIDER_FORM:
+					levelRequirement = 3;
+					break;
+				case SPELL_TROLL_FORM:
+					levelRequirement = 6;
+					break;
+				case SPELL_IMP_FORM:
+					levelRequirement = 12;
+					break;
+				default:
+					return true;
+					break;
+			}
+		}
+	}
+
+	if ( stats[player]->LVL >= levelRequirement )
+	{
+		return true;
+	}
+	return false;
 }

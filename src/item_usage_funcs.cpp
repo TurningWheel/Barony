@@ -4652,8 +4652,8 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_DEMON_ILLU:
 				learned = addSpell(SPELL_DEMON_ILLUSION, player);
 				break;
-			case SPELLBOOK_4:
-				learned = addSpell(SPELL_4, player);
+			case SPELLBOOK_TROLLS_BLOOD:
+				learned = addSpell(SPELL_TROLLS_BLOOD, player);
 				break;
 			case SPELLBOOK_5:
 				learned = addSpell(SPELL_5, player);

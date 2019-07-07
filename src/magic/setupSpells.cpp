@@ -359,6 +359,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_detectFood.duration = 0;
 	strcpy(spellElement_detectFood.name, language[3421]);
 
+	spellElementConstructor(&spellElement_trollsBlood);
+	spellElement_trollsBlood.mana = 25;
+	spellElement_trollsBlood.base_mana = 25;
+	spellElement_trollsBlood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	spellElement_trollsBlood.damage = 0;
+	spellElement_trollsBlood.duration = 0;
+	strcpy(spellElement_detectFood.name, language[3489]);
+
 	spellElementConstructor(&spellElement_shadowTag);
 	spellElement_shadowTag.mana = 4;
 	spellElement_shadowTag.base_mana = 4;
@@ -1123,6 +1131,19 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_detectFood.elements.last = NULL;
 	node = list_AddNodeLast(&spell_detectFood.elements);
 	node->element = copySpellElement(&spellElement_detectFood);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_trollsBlood);
+	strcpy(spell_trollsBlood.name, language[3489]);
+	spell_trollsBlood.ID = SPELL_TROLLS_BLOOD;
+	spell_trollsBlood.difficulty = 60;
+	spell_trollsBlood.elements.first = NULL;
+	spell_trollsBlood.elements.last = NULL;
+	node = list_AddNodeLast(&spell_trollsBlood.elements);
+	node->element = copySpellElement(&spellElement_trollsBlood);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

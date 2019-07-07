@@ -1360,6 +1360,10 @@ void Entity::effectTimes()
 						serverSpawnMiscParticles(this, PARTICLE_EFFECT_RISING_DROP, 593);
 						updateClient = true;
 						break;
+					case EFF_TROLLS_BLOOD:
+						messagePlayer(player, language[3491]);
+						updateClient = true;
+						break;
 					case EFF_WITHDRAWAL:
 						if ( player >= 0 && player < MAXPLAYERS )
 						{
@@ -3466,6 +3470,11 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			spawnAmbientParticles(1, 864, 20 + rand() % 10, 0.5, true);
 		}
+	}
+
+	if ( myStats->EFFECTS[EFF_TROLLS_BLOOD] )
+	{
+		spawnAmbientParticles(80, 169, 20 + rand() % 10, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_PACIFY] )
@@ -11944,8 +11953,8 @@ void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration,
 			spawnParticle->particleShrink = 0;
 		}
 		spawnParticle->behavior = &actAmbientParticleEffectIdle;
-spawnParticle->flags[PASSABLE] = true;
-spawnParticle->setUID(-3);
+		spawnParticle->flags[PASSABLE] = true;
+		spawnParticle->setUID(-3);
 	}
 }
 
@@ -11969,6 +11978,11 @@ void Entity::handleEffectsClient()
 		{
 			spawnAmbientParticles(1, 864, 20 + rand() % 10, 0.5, true);
 		}
+	}
+
+	if ( myStats->EFFECTS[EFF_TROLLS_BLOOD] )
+	{
+		spawnAmbientParticles(80, 169, 20 + rand() % 10, 0.5, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
@@ -13814,11 +13828,11 @@ int Entity::getManaRegenInterval(Stat& myStats)
 			}
 		}
 	}
-	if ( myStats.helmet != nullptr )
+	if ( myStats.mask != nullptr )
 	{
-		if ( myStats.helmet->type == MASK_SHAMAN && shapeshifted )
+		if ( myStats.mask->type == MASK_SHAMAN && shapeshifted )
 		{
-			if ( myStats.helmet->beatitude >= 0 || cursedItemIsBuff )
+			if ( myStats.mask->beatitude >= 0 || cursedItemIsBuff )
 			{
 				manaring++;
 			}
@@ -13897,7 +13911,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 	{
 		return -1;
 	}
-	int healring = 0;
+	double healring = 0;
 	if ( behavior == &actPlayer && myStats.type != HUMAN )
 	{
 		if ( myStats.type == SKELETON )
@@ -13940,6 +13954,11 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 				healring--;
 			}
 		}
+	}
+
+	if ( myStats.EFFECTS[EFF_TROLLS_BLOOD] )
+	{
+		healring += 1;
 	}
 
 	if ( healring >= 2 && ticks % TICKS_PER_SECOND == 0 )

@@ -64,7 +64,7 @@ static const int SPELL_AMPLIFY_MAGIC = 44;
 static const int SPELL_SHADOW_TAG = 45;
 static const int SPELL_TELEPULL = 46;
 static const int SPELL_DEMON_ILLUSION = 47;
-static const int SPELL_4 = 48;
+static const int SPELL_TROLLS_BLOOD = 48;
 static const int SPELL_5 = 49;
 static const int SPELL_6 = 50;
 static const int SPELL_7 = 51;
@@ -384,6 +384,7 @@ extern spellElement_t spellElement_amplifyMagic;
 extern spellElement_t spellElement_shadowTag;
 extern spellElement_t spellElement_telePull;
 extern spellElement_t spellElement_demonIllusion;
+extern spellElement_t spellElement_trollsBlood;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -473,6 +474,7 @@ extern spell_t spell_amplifyMagic;
 extern spell_t spell_shadowTag;
 extern spell_t spell_telePull;
 extern spell_t spell_demonIllusion;
+extern spell_t spell_trollsBlood;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 

@@ -914,10 +914,19 @@ void drawStatus()
 			drawImageScaled(itemSprite(item), NULL, &pos);
 
 			bool disableItemUsage = false;
+
 			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
 			{
 				// shape shifted, disable some items
 				if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+				{
+					disableItemUsage = true;
+					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
+				}
+			}
+			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			{
+				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
 				{
 					disableItemUsage = true;
 					drawRect(&highlightBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
@@ -1024,7 +1033,14 @@ void drawStatus()
 									}
 									else
 									{
-										messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+										if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+										{
+											messagePlayer(clientnum, language[3488]); // unable to use with current level.
+										}
+										else
+										{
+											messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+										}
 									}
 								}
 							}
@@ -1091,7 +1107,14 @@ void drawStatus()
 								}
 								else
 								{
-									messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+									if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+									{
+										messagePlayer(clientnum, language[3488]); // unable to use with current level.
+									}
+									else
+									{
+										messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+									}
 								}
 							}
 							used = true;
@@ -1617,6 +1640,13 @@ void drawStatus()
 					}
 				}
 			}
+			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			{
+				if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+				{
+					disableItemUsage = true;
+				}
+			}
 
 			if ( !disableItemUsage )
 			{
@@ -1689,7 +1719,14 @@ void drawStatus()
 			}
 			else
 			{
-				messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+				if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+				{
+					messagePlayer(clientnum, language[3488]); // unable to use with current level.
+				}
+				else
+				{
+					messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+				}
 			}
 		}
 	}
@@ -1953,11 +1990,11 @@ void drawSpellTooltip(spell_t* spell, Item* item)
 					break;
 				case SPELL_STRIKE:
 				case SPELL_FEAR:
+				case SPELL_TROLLS_BLOOD:
 					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3410]);
 					break;
 				case SPELL_LIGHTNING:
 				case SPELL_CONFUSE:
-				case SPELL_WEAKNESS:
 				case SPELL_AMPLIFY_MAGIC:
 					snprintf(spellNameString, 127, "%s (%s)", spell->name, language[3411]);
 					break;

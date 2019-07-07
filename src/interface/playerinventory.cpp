@@ -933,18 +933,31 @@ void updatePlayerInventory()
 			drawImageScaled(itemSprite(item), NULL, &pos);
 		}
 
+		bool greyedOut = false;
 		if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->effectShapeshift != NOTHING )
 		{
 			// shape shifted, disable some items
+			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+			{
+				SDL_Rect greyBox;
+				greyBox.x = x + item->x * (INVENTORY_SLOTSIZE)+2;
+				greyBox.y = y + item->y * (INVENTORY_SLOTSIZE)+1;
+				greyBox.w = (INVENTORY_SLOTSIZE)-2;
+				greyBox.h = (INVENTORY_SLOTSIZE)-2;
+				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
+				greyedOut = true;
+			}
+		}
+		if ( !greyedOut && client_classes[clientnum] == CLASS_SHAMAN 
+			&& item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+		{
 			SDL_Rect greyBox;
 			greyBox.x = x + item->x * (INVENTORY_SLOTSIZE)+2;
 			greyBox.y = y + item->y * (INVENTORY_SLOTSIZE)+1;
 			greyBox.w = (INVENTORY_SLOTSIZE)-2;
 			greyBox.h = (INVENTORY_SLOTSIZE)-2;
-			if ( !item->usableWhileShapeshifted(stats[clientnum]) )
-			{
-				drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
-			}
+			drawRect(&greyBox, SDL_MapRGB(mainsurface->format, 64, 64, 64), 144);
+			greyedOut = true;
 		}
 
 		// item count
@@ -1281,6 +1294,13 @@ void updatePlayerInventory()
 					{
 						// shape shifted, disable some items
 						if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+						{
+							disableItemUsage = true;
+						}
+					}
+					if ( client_classes[clientnum] == CLASS_SHAMAN )
+					{
+						if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
 						{
 							disableItemUsage = true;
 						}
@@ -1918,7 +1938,14 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 				}
 			}
 		}
+	}
 
+	if ( client_classes[clientnum] == CLASS_SHAMAN )
+	{
+		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
+		{
+			disableItemUsage = true;
+		}
 	}
 
 	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT)
@@ -1944,7 +1971,14 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 				}
 				else
 				{
-					messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+					if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+					{
+						messagePlayer(clientnum, language[3488]); // unable to use with current level.
+					}
+					else
+					{
+						messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+					}
 				}
 			}
 		}
@@ -2012,7 +2046,14 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 			}
 			else
 			{
-				messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+				if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+				{
+					messagePlayer(clientnum, language[3488]); // unable to use with current level.
+				}
+				else
+				{
+					messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+				}
 			}
 		}
 	}
@@ -2030,6 +2071,14 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 	{
 		// shape shifted, disable some items
 		if ( !item->usableWhileShapeshifted(stats[clientnum]) )
+		{
+			disableItemUsage = true;
+		}
+	}
+
+	if ( client_classes[clientnum] == CLASS_SHAMAN )
+	{
+		if ( item->type == SPELL_ITEM && !(playerUnlockedShamanSpell(clientnum, item)) )
 		{
 			disableItemUsage = true;
 		}
@@ -2154,7 +2203,14 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		}
 		else
 		{
-			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+			if ( client_classes[clientnum] == CLASS_SHAMAN && item->type == SPELL_ITEM )
+			{
+				messagePlayer(clientnum, language[3488]); // unable to use with current level.
+			}
+			else
+			{
+				messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+			}
 		}
 	}
 }

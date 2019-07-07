@@ -273,6 +273,14 @@ void drawSustainedSpells()
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_CHARM_MONSTER);
 					tooltipText = language[3388];
 					break;
+				case EFF_TROLLS_BLOOD:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
+					tooltipText = language[3492];
+					break;
+				case EFF_FAST:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
+					tooltipText = language[3492];
+					break;
 				case EFF_SHAPESHIFT:
 					if ( players[clientnum] && players[clientnum]->entity )
 					{

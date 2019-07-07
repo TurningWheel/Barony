@@ -2194,7 +2194,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case SPELLBOOK_SHADOW_TAG:
 		case SPELLBOOK_TELEPULL:
 		case SPELLBOOK_DEMON_ILLU:
-		case SPELLBOOK_4:
+		case SPELLBOOK_TROLLS_BLOOD:
 		case SPELLBOOK_5:
 			item_Spellbook(item, player);
 			break;
