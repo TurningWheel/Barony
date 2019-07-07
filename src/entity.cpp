@@ -8685,9 +8685,10 @@ bool Entity::teleport(int tele_x, int tele_y)
 		strcpy((char*)net_packet->data, "TELE");
 		net_packet->data[4] = tele_x;
 		net_packet->data[5] = tele_y;
+		SDLNet_Write16(static_cast<Sint16>(this->yaw * 180 / PI), &net_packet->data[6]);
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 6;
+		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
@@ -8892,7 +8893,13 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 		{
 			target->monsterReleaseAttackTarget();
 		}
+		if ( teleport(tx, ty) )
+		{
+			return true;
+		}
+		return false;
 	}
+
 	return teleport(tx, ty);
 }
 
