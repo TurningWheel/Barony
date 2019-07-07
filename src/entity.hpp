@@ -493,7 +493,7 @@ public:
 	bool teleport(int x, int y);
 	bool teleportRandom();
 	// teleport entity to a target, within a radius dist (range in whole tile lengths)
-	bool teleportAroundEntity(const Entity* target, int dist, int effectType = 0);
+	bool teleportAroundEntity(Entity* target, int dist, int effectType = 0);
 	// teleport entity to fixed position with appropriate sounds, for actTeleporter.
 	bool teleporterMove(int x, int y, int type);
 

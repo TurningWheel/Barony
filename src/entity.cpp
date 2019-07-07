@@ -8779,7 +8779,7 @@ Teleports the given entity within a radius of a target entity.
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::teleportAroundEntity(const Entity* target, int dist, int effectType)
+bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 {
 	int numlocations = 0;
 	int pickedlocation;
@@ -8804,13 +8804,58 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist, int effectType
 		}
 	}
 
+	std::vector<std::pair<int, int>> goodspots;
+	std::vector<std::pair<int, int>> spotsBehindMonster;
 	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
 		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
-				numlocations++;
+				if ( behavior == &actPlayer )
+				{
+					// check LOS
+					Entity* ohit = hit.entity;
+
+					// pretend player has teleported, get the angle needed.
+					real_t tmpx = x;
+					real_t tmpy = y;
+					x = (ix << 4) + 8;
+					y = (iy << 4) + 8;
+					real_t tangent = atan2(target->y - this->y, target->x - this->x);
+					lineTraceTarget(this, this->x, this->y, tangent, 64 * dist, 0, false, target);
+					if ( hit.entity == target )
+					{
+						numlocations++;
+						real_t targetYaw = target->yaw;
+						while ( targetYaw >= 2 * PI )
+						{
+							targetYaw -= PI * 2;
+						}
+						while ( targetYaw < 0 )
+						{
+							targetYaw += PI * 2;
+						}
+						real_t yawDifference = (PI - abs(abs(tangent - targetYaw) - PI)) * 2;
+						if ( yawDifference >= 0 && yawDifference <= PI ) // 180 degree arc
+						{
+							spotsBehindMonster.push_back(std::make_pair(ix, iy));
+						}
+						else
+						{
+							goodspots.push_back(std::make_pair(ix, iy));
+						}
+					}
+					// restore coordinates.
+					x = tmpx;
+					y = tmpy;
+					hit.entity = ohit;
+				}
+				else
+				{
+					goodspots.push_back(std::make_pair(ix, iy));
+					numlocations++;
+				}
 			}
 		}
 	}
@@ -8820,23 +8865,35 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist, int effectType
 		messagePlayer(player, language[708]);
 		return false;
 	}
-	pickedlocation = rand() % numlocations;
-	numlocations = 0;
-	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	std::pair<int, int> tmpPair;
+	if ( behavior == &actMonster || spotsBehindMonster.empty() )
 	{
-		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		tmpPair = goodspots[rand() % goodspots.size()];
+	}
+	else
+	{
+		tmpPair = spotsBehindMonster[rand() % spotsBehindMonster.size()];
+	}
+	tx = tmpPair.first;
+	ty = tmpPair.second;
+	if ( behavior == &actPlayer )
+	{
+		// pretend player has teleported, get the angle needed.
+		real_t tmpx = x;
+		real_t tmpy = y;
+		x = (tx << 4) + 8;
+		y = (ty << 4) + 8;
+		real_t tangent = atan2(target->y - this->y, target->x - this->x);
+		// restore coordinates.
+		x = tmpx;
+		y = tmpy;
+		this->yaw = tangent;
+		if ( target->behavior == &actMonster && target->monsterTarget == getUID() )
 		{
-			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
-			{
-				if ( numlocations == pickedlocation )
-				{
-					return teleport(ix, iy);
-				}
-				numlocations++;
-			}
+			target->monsterReleaseAttackTarget();
 		}
 	}
-	return false;
+	return teleport(tx, ty);
 }
 
 /*-------------------------------------------------------------------------------
