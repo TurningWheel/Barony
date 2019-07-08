@@ -2690,6 +2690,7 @@ void actMonster(Entity* my)
 		case SHOPKEEPER:
 		case LICH_FIRE:
 		case LICH_ICE:
+		case SENTRYBOT:
 			handleinvisible = false;
 			break;
 		default:
@@ -3449,7 +3450,8 @@ void actMonster(Entity* my)
 				&& (uidToEntity(myStats->leader_uid) == NULL || my->monsterAllyState == ALLY_STATE_DEFEND)
 				&& !myStats->EFFECTS[EFF_FEAR] 
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
-				&& !isIllusionTaunt )
+				&& !isIllusionTaunt
+				&& !(myStats->type == SENTRYBOT) )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
@@ -3760,7 +3762,13 @@ timeToGoAgain:
 								MONSTER_VELY = maxVelY;
 							}
 
-							if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
+							if ( myStats->type == SENTRYBOT )
+							{
+								// this is just so that the monster rotates. it doesn't actually move
+								MONSTER_VELX = maxVelX * 0.01;
+								MONSTER_VELY = maxVelY * 0.01;
+							}
+							else if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
 								((dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon)) )
 							{
 								if ( my->shouldRetreat(*myStats) )
@@ -4150,6 +4158,15 @@ timeToGoAgain:
 		else if ( my->monsterState == MONSTER_STATE_PATH )     //Begin path state
 		{
 			if ( myStats->type == DEVIL )
+			{
+				my->monsterState = MONSTER_STATE_ATTACK;
+				if ( previousMonsterState != my->monsterState )
+				{
+					serverUpdateEntitySkill(my, 0);
+				}
+				return;
+			}
+			else if ( myStats->type == SENTRYBOT )
 			{
 				my->monsterState = MONSTER_STATE_ATTACK;
 				if ( previousMonsterState != my->monsterState )

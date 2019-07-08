@@ -66,17 +66,18 @@ void initSentryBot(Entity* my, Stat* myStats)
 		}
 	}
 
-	// torso
+	// tripod
 	Entity* entity = newEntity(873, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][1][0]; // 0
-	entity->focaly = limbs[SENTRYBOT][1][1]; // 0
-	entity->focalz = limbs[SENTRYBOT][1][2]; // 0
+	entity->focalx = limbs[SENTRYBOT][1][0];
+	entity->focaly = limbs[SENTRYBOT][1][1];
+	entity->focalz = limbs[SENTRYBOT][1][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -85,17 +86,18 @@ void initSentryBot(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
-	// right leg
+	// gear 1 left
 	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][2][0]; // .25
-	entity->focaly = limbs[SENTRYBOT][2][1]; // 0
-	entity->focalz = limbs[SENTRYBOT][2][2]; // 1.5
+	entity->focalx = limbs[SENTRYBOT][2][0];
+	entity->focaly = limbs[SENTRYBOT][2][1];
+	entity->focalz = limbs[SENTRYBOT][2][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -104,17 +106,38 @@ void initSentryBot(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
-	// left leg
+	// gear 1 left
+	entity = newEntity(874, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[SENTRYBOT][3][0];
+	entity->focaly = limbs[SENTRYBOT][3][1];
+	entity->focalz = limbs[SENTRYBOT][3][2];
+	entity->behavior = &actSentryBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// gear 2 middle
 	entity = newEntity(875, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][3][0]; // .25
-	entity->focaly = limbs[SENTRYBOT][3][1]; // 0
-	entity->focalz = limbs[SENTRYBOT][3][2]; // 1.5
+	entity->focalx = limbs[SENTRYBOT][4][0];
+	entity->focaly = limbs[SENTRYBOT][4][1];
+	entity->focalz = limbs[SENTRYBOT][4][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -123,36 +146,18 @@ void initSentryBot(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
-	// right arm
+	// loader
 	entity = newEntity(876, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][4][0]; // 0
-	entity->focaly = limbs[SENTRYBOT][4][1]; // 0
-	entity->focalz = limbs[SENTRYBOT][4][2]; // 2
-	entity->behavior = &actSentryBotLimb;
-	entity->parent = my->getUID();
-	node = list_AddNodeLast(&my->children);
-	node->element = entity;
-	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity*);
-	my->bodyparts.push_back(entity);
-
-	// left arm
-	entity = newEntity(878, 0, map.entities, nullptr); //Limb entity.
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = true;
-	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][5][0]; // 0
-	entity->focaly = limbs[SENTRYBOT][5][1]; // 0
-	entity->focalz = limbs[SENTRYBOT][5][2]; // 2
+	entity->focalx = limbs[SENTRYBOT][5][0];
+	entity->focaly = limbs[SENTRYBOT][5][1];
+	entity->focalz = limbs[SENTRYBOT][5][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -169,10 +174,11 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
+	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][6][0]; // 2
-	entity->focaly = limbs[SENTRYBOT][6][1]; // 0
-	entity->focalz = limbs[SENTRYBOT][6][2]; // -.5
+	entity->focalx = limbs[SENTRYBOT][6][0];
+	entity->focaly = limbs[SENTRYBOT][6][1];
+	entity->focalz = limbs[SENTRYBOT][6][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	entity->pitch = .25;
@@ -213,6 +219,12 @@ void sentryBotDie(Entity* my)
 }
 
 #define SENTRYBOTWALKSPEED .13
+#define BODY_TRIPOD 2
+#define GEAR_LEFT 3
+#define GEAR_RIGHT 4
+#define GEAR_MIDDLE 5 
+#define WEAPON_LOADER 6
+#define WEAPON_LIMB 7
 
 void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 {
@@ -237,10 +249,17 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
+	my->focalx = limbs[SENTRYBOT][0][0];
+	my->focaly = limbs[SENTRYBOT][0][1];
+	my->focalz = limbs[SENTRYBOT][0][2];
+	my->z = limbs[SENTRYBOT][11][2];
+
+	Entity* tripod = nullptr;
+
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart)
 	{
-		if ( bodypart < LIMB_HUMANOID_TORSO )
+		if ( bodypart < BODY_TRIPOD )
 		{
 			continue;
 		}
@@ -248,8 +267,85 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
 
+		if ( bodypart == WEAPON_LOADER || bodypart == GEAR_LEFT || bodypart == GEAR_RIGHT )
+		{
+			entity->yaw = my->yaw;
+		}
+
+		if ( bodypart == GEAR_LEFT )
+		{
+			entity->pitch += 0.1;
+			if ( entity->pitch > 2 * PI )
+			{
+				entity->pitch -= 2 * PI;
+			}
+		}
+		else if ( bodypart == GEAR_RIGHT )
+		{
+			entity->pitch -= 0.1;
+			if ( entity->pitch < 0 )
+			{
+				entity->pitch += 2 * PI;
+			}
+		}
+		else if ( bodypart == GEAR_MIDDLE )
+		{
+			if ( my->yaw > 2 * PI )
+			{
+				my->yaw -= 2 * PI;
+			}
+			else if ( my->yaw < 0 )
+			{
+				my->yaw += 2 * PI;
+			}
+			if ( entity->pitch > 4 * PI )
+			{
+				entity->pitch -= 4 * PI;
+			}
+			else if ( entity->pitch < 0 )
+			{
+				entity->pitch += 4 * PI;
+			}
+
+			if ( !limbAngleWithinRange(entity->pitch, entity->fskill[0], my->yaw * 2) && abs(entity->fskill[0]) < 0.01 )
+			{
+				if ( entity->pitch <= my->yaw * 2 )
+				{
+					if ( (my->yaw * 2 - entity->pitch) > 2 * PI ) // quicker to go the opposite way.
+					{
+						entity->fskill[0] = -0.4;
+					}
+					else
+					{
+						entity->fskill[0] = 0.4;
+					}
+				}
+				else if ( entity->pitch > my->yaw * 2 )
+				{
+					if ( (entity->pitch - my->yaw * 2) > 2 * PI ) // quicker to go the opposite way.
+					{
+						entity->fskill[0] = 0.4;
+					}
+					else
+					{
+						entity->fskill[0] = -0.4;
+					}
+				}
+			}
+			else
+			{
+				if ( limbAngleWithinRange(entity->pitch, entity->fskill[0], my->yaw * 2) )
+				{
+					entity->pitch = my->yaw * 2;
+				}
+				else
+				{
+					entity->pitch += entity->fskill[0];
+				}
+				entity->fskill[0] *= 0.95;
+			}
+		}
 		//if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		//{
 		//	my->humanoidAnimateWalk(entity, node, bodypart, SENTRYBOTWALKSPEED, dist, 0.4);
@@ -282,137 +378,76 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 
 		switch ( bodypart )
 		{
-			// torso
-			case LIMB_HUMANOID_TORSO:
-				entity->x -= .25 * cos(my->yaw);
-				entity->y -= .25 * sin(my->yaw);
-				entity->z += 1.25;
+			case BODY_TRIPOD:
+				tripod = entity;
+				entity->focalx = limbs[SENTRYBOT][1][0];
+				entity->focaly = limbs[SENTRYBOT][1][1];
+				entity->focalz = limbs[SENTRYBOT][1][2];
+				entity->x += limbs[SENTRYBOT][7][0];
+				entity->y += limbs[SENTRYBOT][7][1];
+				entity->z += limbs[SENTRYBOT][7][2];
 				break;
-			// right leg
-			case LIMB_HUMANOID_RIGHTLEG:
-				if ( multiplayer != CLIENT )
+			case GEAR_LEFT:
+				entity->focalx = limbs[SENTRYBOT][2][0];
+				entity->focaly = limbs[SENTRYBOT][2][1];
+				entity->focalz = limbs[SENTRYBOT][2][2];
+				if ( tripod )
 				{
-					entity->sprite = 423;
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
+					entity->x += limbs[SENTRYBOT][8][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * cos(tripod->yaw);
+					entity->y += limbs[SENTRYBOT][8][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * sin(tripod->yaw);
+					entity->z += limbs[SENTRYBOT][8][2];
 				}
-				entity->x += 1.25 * cos(my->yaw + PI / 2);
-				entity->y += 1.25 * sin(my->yaw + PI / 2);
-				entity->z += 2.75;
 				break;
-			// left leg
-			case LIMB_HUMANOID_LEFTLEG:
-				if ( multiplayer != CLIENT )
+			case GEAR_RIGHT:
+				entity->focalx = limbs[SENTRYBOT][3][0];
+				entity->focaly = limbs[SENTRYBOT][3][1];
+				entity->focalz = limbs[SENTRYBOT][3][2];
+				if ( tripod )
 				{
-					entity->sprite = 424;
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
+					entity->x -= limbs[SENTRYBOT][8][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * cos(tripod->yaw);
+					entity->y -= limbs[SENTRYBOT][8][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * sin(tripod->yaw);
+					entity->z += limbs[SENTRYBOT][8][2];
 				}
-				entity->x -= 1.25 * cos(my->yaw + PI / 2);
-				entity->y -= 1.25 * sin(my->yaw + PI / 2);
-				entity->z += 2.75;
 				break;
-			// right arm
-			case LIMB_HUMANOID_RIGHTARM:
-			{
-				// if weapon invisible and I'm not moving, relax arm.
-				entity->focalx = limbs[KOBOLD][4][0]; // 0
-				entity->focaly = limbs[KOBOLD][4][1]; // 0
-				entity->focalz = limbs[KOBOLD][4][2]; // 2
-				entity->sprite = 425;
-
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .75 * sin(my->yaw);
-				entity->z -= .25;
-				entity->yaw += MONSTER_WEAPONYAW;
+			case GEAR_MIDDLE:
+				entity->focalx = limbs[SENTRYBOT][4][0];
+				entity->focaly = limbs[SENTRYBOT][4][1];
+				entity->focalz = limbs[SENTRYBOT][4][2];
+				entity->yaw = tripod->yaw + PI / 2;
+				if ( tripod )
+				{
+					entity->x += limbs[SENTRYBOT][9][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][9][1] * cos(tripod->yaw);
+					entity->y += limbs[SENTRYBOT][9][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][9][1] * sin(tripod->yaw);
+					entity->z += limbs[SENTRYBOT][9][2];
+				}
+				//if ( multiplayer != CLIENT )
+				//{
+				//	entity->sprite = 875;
+				//	if ( multiplayer == SERVER )
+				//	{
+				//		// update sprites for clients
+				//		if ( entity->skill[10] != entity->sprite )
+				//		{
+				//			entity->skill[10] = entity->sprite;
+				//			serverUpdateEntityBodypart(my, bodypart);
+				//		}
+				//		if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+				//		{
+				//			serverUpdateEntityBodypart(my, bodypart);
+				//		}
+				//	}
+				//}
 				break;
-			}
-			// left arm
-			case LIMB_HUMANOID_LEFTARM:
-			{
-				// if shield invisible and I'm not moving, relax arm.
-				entity->focalx = limbs[KOBOLD][5][0]; // 0
-				entity->focaly = limbs[KOBOLD][5][1]; // 0
-				entity->focalz = limbs[KOBOLD][5][2]; // 2
-				entity->sprite = 427;
-
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .75 * sin(my->yaw);
-				entity->z -= .25;
+			case WEAPON_LOADER:
+				entity->focalx = limbs[SENTRYBOT][5][0];
+				entity->focaly = limbs[SENTRYBOT][5][1];
+				entity->focalz = limbs[SENTRYBOT][5][2];
+				entity->x += limbs[SENTRYBOT][10][0];
+				entity->y += limbs[SENTRYBOT][10][1];
+				entity->z += limbs[SENTRYBOT][10][2];
 				break;
-			}
-			// weapon
-			case LIMB_HUMANOID_WEAPON:
-				if ( multiplayer != CLIENT )
-				{
-					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] ) //TODO: isInvisible()?
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-					else
-					{
-						entity->sprite = itemModel(myStats->weapon);
-						if ( itemCategory(myStats->weapon) == SPELLBOOK )
-						{
-							entity->flags[INVISIBLE] = true;
-						}
-						else
-						{
-							entity->flags[INVISIBLE] = false;
-						}
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				else
-				{
-					if ( entity->sprite <= 0 )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-				}
-				if ( weaponarm != nullptr )
-				{
-					my->handleHumanoidWeaponLimb(entity, weaponarm);
-				}
+			case WEAPON_LIMB:
+				entity->flags[INVISIBLE] = true;
 				break;
 			default:
 				break;
