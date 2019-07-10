@@ -302,7 +302,16 @@ public:
 	bool experimentingAlchemy;
 
 	// Tinkering
+	enum TinkeringFilter
+	{
+		TINKER_FILTER_ALL,
+		TINKER_FILTER_CRAFTABLE,
+		TINKER_FILTER_SALVAGEABLE
+	};
 	Item* tinkeringKitItem;
+	list_t tinkeringTotalItems;
+	node_t* tinkeringTotalLastCraftableNode;
+	TinkeringFilter tinkeringFilter;
 
 	GenericGUIMenu() :
 		guiActive(false),
@@ -315,12 +324,16 @@ public:
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
 		experimentingAlchemy(false),
-		tinkeringKitItem(false)
+		tinkeringKitItem(false),
+		tinkeringTotalLastCraftableNode(nullptr),
+		tinkeringFilter(TINKER_FILTER_ALL)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
 			itemsDisplayed[i] = nullptr;
 		}
+		tinkeringTotalItems.first = nullptr;
+		tinkeringTotalItems.last = nullptr;
 	};
 
 	void warpMouseToSelectedSlot();
@@ -352,11 +365,23 @@ public:
 	bool tinkeringSalvageItem(Item* item);
 	bool tinkeringCraftItem(Item* item);
 	int tinkeringGetItemValue(Item* item);
+	void tinkeringCreateCraftableItemList();
+	void tinkeringFreeLists();
+	bool isItemSalvageable(const Item* item);
 
 	inline bool isGUIOpen()
 	{
 		return guiActive;
 	};
+	inline bool isNodeTinkeringCraftableItem(node_t* node)
+	{
+		if ( !node )
+		{
+			return false;
+		}
+		return (node->list == &tinkeringTotalItems);
+	};
+	bool isNodeFromPlayerInventory(node_t* node);
 };
 extern GenericGUIMenu GenericGUI;
 

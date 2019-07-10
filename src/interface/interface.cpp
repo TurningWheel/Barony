@@ -2744,6 +2744,16 @@ void GenericGUIMenu::rebuildGUIInventory()
 	Item* item = nullptr;
 	int c = 0;
 
+	if ( guiType == GUI_TYPE_TINKERING )
+	{
+		player_inventory = &tinkeringTotalItems;
+		tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
+		if ( tinkeringTotalLastCraftableNode )
+		{
+			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+	}
+
 	if ( player_inventory )
 	{
 		//Count the number of items in the GUI "inventory".
@@ -2823,6 +2833,25 @@ void GenericGUIMenu::updateGUI()
 				return;
 			}
 			if ( alembicItem->node->list != &stats[clientnum]->inventory )
+			{
+				// dropped out of inventory or something.
+				closeGUI();
+				return;
+			}
+		}
+		else if ( guiType == GUI_TYPE_TINKERING )
+		{
+			if ( !tinkeringKitItem )
+			{
+				closeGUI();
+				return;
+			}
+			if ( !tinkeringKitItem->node )
+			{
+				closeGUI();
+				return;
+			}
+			if ( tinkeringKitItem->node->list != &stats[clientnum]->inventory )
 			{
 				// dropped out of inventory or something.
 				closeGUI();
@@ -2928,6 +2957,15 @@ void GenericGUIMenu::updateGUI()
 		}
 
 		list_t* player_inventory = &stats[clientnum]->inventory;
+		if ( guiType == GUI_TYPE_TINKERING )
+		{
+			player_inventory = &tinkeringTotalItems;
+			tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
+			if ( tinkeringTotalLastCraftableNode )
+			{
+				tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			}
+		}
 
 		if ( !player_inventory )
 		{
@@ -3087,7 +3125,28 @@ void GenericGUIMenu::updateGUI()
 								continue;
 							}
 							char tempstr[256] = { 0 };
-							strncpy(tempstr, item->description(), 46);
+							if ( guiType == GUI_TYPE_TINKERING )
+							{
+								if ( isNodeTinkeringCraftableItem(item->node) )
+								{
+									strncpy(tempstr, "craft ", 6);
+									strncat(tempstr, item->description(), 40);
+								}
+								else if ( isItemSalvageable(item) )
+								{
+									strncpy(tempstr, "salvage ", 8);
+									strncat(tempstr, item->description(), 38);
+								}
+								else
+								{
+									messagePlayer(0, "%d", item->type);
+									strncat(tempstr, "invalid item", 12);
+								}
+							}
+							else
+							{
+								strncpy(tempstr, item->description(), 46);
+							}
 							if ( strlen(tempstr) == 46 )
 							{
 								strcat(tempstr, " ...");
@@ -3127,7 +3186,20 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	}
 	else if ( guiType == GUI_TYPE_TINKERING )
 	{
-		return true;
+		if ( item && isNodeTinkeringCraftableItem(item->node) )
+		{
+			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+			{
+				return true;
+			}
+		}
+		if ( isItemSalvageable(item) )
+		{
+			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -3205,6 +3277,7 @@ void GenericGUIMenu::repairItem(Item* item)
 
 void GenericGUIMenu::closeGUI()
 {
+	tinkeringFreeLists();
 	guiActive = false;
 	selectedSlot = -1;
 	guiType = GUI_TYPE_NONE;
@@ -3406,6 +3479,9 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
 
+	// build the craftables list.
+	tinkeringCreateCraftableItemList();
+
 	if ( removecursegui_active )
 	{
 		closeRemoveCurseGUI();
@@ -3484,6 +3560,18 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		}
 		return true;
 	}
+	else if ( guiType == GUI_TYPE_TINKERING )
+	{
+		if ( isNodeTinkeringCraftableItem(item->node) )
+		{
+			tinkeringCraftItem(item);
+		}
+		else if ( isNodeFromPlayerInventory(item->node) )
+		{
+			tinkeringSalvageItem(item);
+		}
+		return true;
+	}
 
 	return false;
 }
@@ -3527,7 +3615,6 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		}
 		return false;
 	}
-
 
 	if ( itemIsEquipped(item, clientnum) )
 	{
@@ -4368,4 +4455,129 @@ void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
 		ItemType potion = itemLevelCurve(POTION, 0, currentlevel);
 		GenericGUI.alchemyLearnRecipe(potion, false);
 	}
+}
+
+void GenericGUIMenu::tinkeringCreateCraftableItemList()
+{
+	tinkeringFreeLists();
+
+	newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
+	newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
+	newItem(TOOL_REPAIRKIT, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
+	newItem(TOOL_BOMB, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
+
+	messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
+	if ( stats[clientnum] )
+	{
+		// make the last node jump to the player's actual items, 
+		// so consuming the items in this list will actually update the player's inventory.
+		node_t* tinkeringTotalLastCraftableNode = tinkeringTotalItems.last;
+		if ( tinkeringTotalLastCraftableNode )
+		{
+			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+		messagePlayer(clientnum, "asserting total list size: %d", list_Size(&tinkeringTotalItems));
+	}
+}
+
+void GenericGUIMenu::tinkeringFreeLists()
+{
+	node_t* nextnode = nullptr;
+	int itemcnt = 0;
+
+	// totalItems is a unique list, contains unique craftable data, 
+	// as well as a pointer to continue to the player's inventory
+	for ( node_t* node = tinkeringTotalItems.first; node; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->list == &tinkeringTotalItems )
+		{
+			list_RemoveNode(node);
+			++itemcnt;
+		}
+		else if ( node->list == &stats[clientnum]->inventory )
+		{
+			messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			break;
+		}
+	}
+	tinkeringTotalItems.first = nullptr;
+	tinkeringTotalItems.last = nullptr;
+	tinkeringTotalLastCraftableNode = nullptr;
+}
+
+bool GenericGUIMenu::tinkeringCraftItem(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	// add checks/consuming of items here.
+
+	Item* crafted = newItem(item->type, item->status, item->beatitude, 1, 0, true, nullptr);
+	if ( crafted )
+	{
+		Item* pickedUp = itemPickup(clientnum, crafted);
+		messagePlayer(clientnum, "crafted a %s!", items[pickedUp->type].name_identified);
+		free(crafted);
+	}
+}
+
+bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		messagePlayer(clientnum, "can't salvage equipped items!");
+		return false; // don't want to deal with client/server desync problems here.
+	}
+
+	// add checks/consuming of items here.
+	Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 1, 0, true, nullptr);
+	if ( crafted )
+	{
+		Item* pickedUp = itemPickup(clientnum, crafted);
+		messagePlayer(clientnum, "salvaged a %s!", items[pickedUp->type].name_identified);
+		free(crafted);
+	}
+	consumeItem(item, clientnum);
+}
+
+bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
+{
+	if ( stats[clientnum] && node )
+	{
+		return (node->list == &stats[clientnum]->inventory);
+	}
+	return false;
+};
+
+bool GenericGUIMenu::isItemSalvageable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( itemIsConsumableByAutomaton(*item) )
+	{
+		return false;
+	}
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		return false;
+	}
+	if ( item == tinkeringKitItem )
+	{
+		return false;
+	}
+	if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
+	{
+		return false;
+	}
+	return true;
 }
