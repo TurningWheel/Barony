@@ -6354,6 +6354,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 				bow = 2;
 			}
 		}
+		if ( myStats->type == SENTRYBOT )
+		{
+			bow = 2;
+		}
 		// check if ready to attack
 		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow 
 				&& (myStats->type != LICH && myStats->type != LICH_ICE))
