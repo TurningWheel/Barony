@@ -2267,6 +2267,16 @@ void useItem(Item* item, int player, Entity* usedBy)
 				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, false, item);
 			}
 			break;
+		case TOOL_TINKERING_KIT:
+			if ( player != clientnum )
+			{
+				consumeItem(item, player);
+			}
+			else
+			{
+				GenericGUI.openGUI(GUI_TYPE_TINKERING, item);
+			}
+			break;
 		case FOOD_BREAD:
 		case FOOD_CREAMPIE:
 		case FOOD_CHEESE:

@@ -388,6 +388,12 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_9",
 	"spellbook_10",
 	"magicstaff_poison",
+	"tool_metal_scrap",
+	"tool_magic_scrap",
+	"tool_tinkering_kit",
+	"tool_sentrybot",
+	"tool_repairkit",
+	"tool_bomb",
 	""
 };
 

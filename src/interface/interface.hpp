@@ -274,7 +274,8 @@ enum GUICurrentType
 {
 	GUI_TYPE_NONE,
 	GUI_TYPE_REPAIR,
-	GUI_TYPE_ALCHEMY
+	GUI_TYPE_ALCHEMY,
+	GUI_TYPE_TINKERING
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -300,6 +301,9 @@ public:
 	Item* alembicItem;
 	bool experimentingAlchemy;
 
+	// Tinkering
+	Item* tinkeringKitItem;
+
 	GenericGUIMenu() :
 		guiActive(false),
 		offsetx(0),
@@ -310,7 +314,8 @@ public:
 		basePotion(nullptr),
 		secondaryPotion(nullptr),
 		alembicItem(nullptr),
-		experimentingAlchemy(false)
+		experimentingAlchemy(false),
+		tinkeringKitItem(false)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -323,6 +328,7 @@ public:
 	void closeGUI();
 	void openGUI(int type, int scrollBeatitude);
 	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
+	void openGUI(int type, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
 	void updateGUI();
 	void rebuildGUIInventory();
@@ -341,6 +347,11 @@ public:
 	bool isItemBaseIngredient(int type);
 	bool isItemSecondaryIngredient(int type);
 	void alchemyLearnRecipeOnLevelUp(int skill);
+
+	// tinkering menu fonucs
+	bool tinkeringSalvageItem(Item* item);
+	bool tinkeringCraftItem(Item* item);
+	int tinkeringGetItemValue(Item* item);
 
 	inline bool isGUIOpen()
 	{

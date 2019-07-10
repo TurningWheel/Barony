@@ -3125,6 +3125,10 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	{
 		return isItemMixable(item);
 	}
+	else if ( guiType == GUI_TYPE_TINKERING )
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -3367,6 +3371,36 @@ void GenericGUIMenu::openGUI(int type, bool experimenting, Item* itemOpenedWith)
 	guiActive = true;
 	alembicItem = itemOpenedWith;
 	experimentingAlchemy = experimenting;
+	guiType = static_cast<GUICurrentType>(type);
+
+	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
+	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
+
+	if ( removecursegui_active )
+	{
+		closeRemoveCurseGUI();
+	}
+	if ( identifygui_active )
+	{
+		CloseIdentifyGUI();
+	}
+	FollowerMenu.closeFollowerMenuGUI();
+
+	if ( openedChest[clientnum] )
+	{
+		openedChest[clientnum]->closeChest();
+	}
+	rebuildGUIInventory();
+	this->initGUIControllerCode();
+}
+
+void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
+{
+	this->closeGUI();
+	shootmode = false;
+	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
+	guiActive = true;
+	tinkeringKitItem = itemOpenedWith;
 	guiType = static_cast<GUICurrentType>(type);
 
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
