@@ -248,16 +248,16 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_reflectMagic.name, language[2394]);
 
 	spellElementConstructor(&spellElement_acidSpray);
-	spellElement_acidSpray.mana = 20;
-	spellElement_acidSpray.base_mana = 20;
+	spellElement_acidSpray.mana = 10;
+	spellElement_acidSpray.base_mana = 10;
 	spellElement_acidSpray.overload_multiplier = 1;
 	spellElement_acidSpray.damage = 10;
 	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_acidSpray.name, language[2395]);
 
 	spellElementConstructor(&spellElement_stealWeapon);
-	spellElement_stealWeapon.mana = 80;
-	spellElement_stealWeapon.base_mana = 80;
+	spellElement_stealWeapon.mana = 50;
+	spellElement_stealWeapon.base_mana = 50;
 	spellElement_stealWeapon.overload_multiplier = 1;
 	spellElement_stealWeapon.damage = 0;
 	spellElement_stealWeapon.duration = 0;
@@ -299,7 +299,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_shapeshift.mana = 1;
 	spellElement_shapeshift.base_mana = 1;
 	spellElement_shapeshift.overload_multiplier = 1;
-	spellElement_shapeshift.damage = 1;
+	spellElement_shapeshift.damage = 0;
 	spellElement_shapeshift.duration = 0;
 	strcpy(spellElement_shapeshift.name, language[3407]);
 
@@ -307,7 +307,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_sprayWeb.mana = 7;
 	spellElement_sprayWeb.base_mana = 7;
 	spellElement_sprayWeb.overload_multiplier = 1;
-	spellElement_sprayWeb.damage = 1;
+	spellElement_sprayWeb.damage = 0;
 	spellElement_sprayWeb.duration = 0;
 	strcpy(spellElement_sprayWeb.name, language[3412]);
 
@@ -323,7 +323,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_speed.mana = 11;
 	spellElement_speed.base_mana = 11;
 	spellElement_speed.overload_multiplier = 1;
-	spellElement_speed.damage = 1;
+	spellElement_speed.damage = 0;
 	spellElement_speed.duration = 30 * TICKS_PER_SECOND;
 	strcpy(spellElement_speed.name, language[3414]);
 
@@ -331,7 +331,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_fear.mana = 28;
 	spellElement_fear.base_mana = 28;
 	spellElement_fear.overload_multiplier = 1;
-	spellElement_fear.damage = 1;
+	spellElement_fear.damage = 0;
 	spellElement_fear.duration = 0;
 	strcpy(spellElement_fear.name, language[3415]);
 
@@ -347,7 +347,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_weakness.mana = 1;
 	spellElement_weakness.base_mana = 1;
 	spellElement_weakness.overload_multiplier = 1;
-	spellElement_weakness.damage = 1;
+	spellElement_weakness.damage = 0;
 	spellElement_weakness.duration = 0;
 	strcpy(spellElement_weakness.name, language[3422]);
 
@@ -364,7 +364,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_trollsBlood.base_mana = 25;
 	spellElement_trollsBlood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_trollsBlood.damage = 0;
-	spellElement_trollsBlood.duration = 0;
+	spellElement_trollsBlood.duration = 80 * TICKS_PER_SECOND;
 	strcpy(spellElement_detectFood.name, language[3489]);
 
 	spellElementConstructor(&spellElement_shadowTag);
@@ -379,7 +379,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_telePull.mana = 19;
 	spellElement_telePull.base_mana = 19;
 	spellElement_telePull.overload_multiplier = 1;
-	spellElement_telePull.damage = 1;
+	spellElement_telePull.damage = 0;
 	spellElement_telePull.duration = 0;
 	strcpy(spellElement_telePull.name, language[3448]);
 
@@ -387,7 +387,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_demonIllusion.mana = 24;
 	spellElement_demonIllusion.base_mana = 24;
 	spellElement_demonIllusion.overload_multiplier = 1;
-	spellElement_demonIllusion.damage = 1;
+	spellElement_demonIllusion.damage = 0;
 	spellElement_demonIllusion.duration = 0;
 	strcpy(spellElement_demonIllusion.name, language[3449]);
 
