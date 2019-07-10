@@ -575,6 +575,21 @@ bool spell_isChanneled(spell_t* spell)
 	return false;
 }
 
+real_t getBonusFromCasterOfSpellElement(Entity* caster, spellElement_t* spellElement)
+{
+	if ( !caster || caster->behavior != &actPlayer )
+	{
+		return 0;
+	}
+
+	int INT = caster->getINT();
+	if ( INT > 0 )
+	{
+		return INT / 100.0;
+	}
+	return 0;
+}
+
 bool spellElement_isChanneled(spellElement_t* spellElement)
 {
 	node_t* node = NULL;

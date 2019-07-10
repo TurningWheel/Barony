@@ -238,6 +238,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitHitTargetUID4(skill[18]),
 	actmagicProjectileArc(skill[19]),
 	actmagicOrbitCastFromSpell(skill[20]),
+	actmagicBlessedSpellbookBonus(skill[21]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -5633,6 +5634,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 				entity->x = x;
 				entity->y = y;
 				entity->z = z;
+				if ( myStats->type == SENTRYBOT )
+				{
+					entity->z -= 1;
+				}
 				entity->yaw = yaw;
 				entity->sizex = 1;
 				entity->sizey = 1;
@@ -10752,6 +10757,10 @@ int Entity::getAttackPose() const
 					break;
 			}
 		}
+		else if ( myStats->type == SENTRYBOT )
+		{
+			pose = MONSTER_POSE_RANGED_WINDUP1;
+		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
@@ -13381,6 +13390,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 			return false;
 		}
 	}
+	else if ( myStats.type == SENTRYBOT )
+	{
+		return false;
+	}
 	if ( monsterAllySummonRank != 0 )
 	{
 		return false;
@@ -13428,6 +13441,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	}
 
 	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
+	{
+		return false;
+	}
+	if ( myStats.type == SENTRYBOT )
 	{
 		return false;
 	}

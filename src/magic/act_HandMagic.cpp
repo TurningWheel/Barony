@@ -115,15 +115,23 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	}
 	if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 	{
-		if ( !playerLearnedSpellbook(stat->shield) )
+		if ( !playerLearnedSpellbook(stat->shield) || stat->shield->beatitude < 0 )
 		{
 			// for every tier below the spell you are, add 3 circle for 1 tier, or add 2 for every additional tier.
 			int casterAbility = std::min(100, std::max(0, stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat, caster))) / 20;
+			if ( stat->shield->beatitude < 0 )
+			{
+				casterAbility = 0; // cursed book has cast penalty.
+			}
 			int difficulty = spell->difficulty / 20;
 			if ( difficulty > casterAbility )
 			{
 				animation_manager->times_to_circle += (std::min(5, 1 + 2 * (difficulty - casterAbility)));
 			}
+		}
+		else if ( stat->PROFICIENCIES[PRO_SPELLCASTING] >= SPELLCASTING_BEGINNER )
+		{
+			animation_manager->times_to_circle = (spellCost / 20) + 1; //Circle once for every 20 mana the spell costs.
 		}
 	}
 	animation_manager->consume_interval = (animation_manager->times_to_circle * ((2 * PI) / HANDMAGIC_CIRCLE_SPEED)) / spellCost;

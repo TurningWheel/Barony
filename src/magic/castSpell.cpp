@@ -260,11 +260,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool newbie = false;
 	bool overdrewIntoHP = false;
 	bool playerCastingFromKnownSpellbook = false;
+	int usingBlessedSpellbook = 0;
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = caster->isSpellcasterBeginner();
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			if ( stat->shield->beatitude > 0 
+				|| (shouldInvertEquipmentBeatitude(stat) && stat->shield->beatitude < 0) )
+			{
+				usingBlessedSpellbook = abs(stat->shield->beatitude);
+			}
 			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(stat->shield) )
 			{
 				// bypass newbie penalty since we're good enough to cast the spell.
@@ -274,6 +280,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			else
 			{
 				newbie = true;
+			}
+			if ( stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat) )
+			{
+				newbie = true;
+				playerCastingFromKnownSpellbook = false;
 			}
 		}
 
@@ -354,6 +365,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				spellcastingAbility = std::max(0, spellcastingAbility - spell->difficulty);
 			}
+			if ( stat->shield && (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
+			{
+				if ( stat->shield->beatitude == -1 )
+				{
+					spellcastingAbility = std::min(30, spellcastingAbility); // 70% chance to use more mana at least
+				}
+				else
+				{
+					spellcastingAbility = std::min(10, spellcastingAbility); // 90% chance to use more mana at least
+				}
+			}
 		}
 		if (chance >= spellcastingAbility / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
@@ -374,6 +396,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if (player >= 0)
 				{
 					messagePlayer(player, language[409]);
+				}
+				if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK 
+					&& (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat)) )
+				{
+					caster->degradeArmor(*stat, *(stat->shield), 4);
+					if ( stat->shield->status == BROKEN )
+					{
+						Item* toBreak = stat->shield;
+						consumeItem(toBreak, player);
+					}
 				}
 				return NULL;
 			}
@@ -855,7 +887,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster == players[i]->entity )
 				{
-					int amount = TICKS_PER_SECOND * 80;
+					int amount = element->duration;
+					amount += (usingBlessedSpellbook * amount * 0.5);
 
 					if ( overdrewIntoHP )
 					{
@@ -905,6 +938,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					//Duration for speed.
 					int duration = element->duration;
+					duration += (usingBlessedSpellbook * duration * 0.5); // 100-200%
 					//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 					//if ( newbie )
 					//{
@@ -971,6 +1005,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							amount = 8;    //Range checking.
 						}
 					}
+					// spellbook 100-150%, 50 INT = 200%.
+					amount += amount * ((usingBlessedSpellbook * 0.25) + getBonusFromCasterOfSpellElement(caster, element));
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();
@@ -1127,6 +1163,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
 
+					if ( usingBlessedSpellbook > 0 )
+					{
+						caster->setEffect(EFF_HP_REGEN, true, 20 * usingBlessedSpellbook * TICKS_PER_SECOND, true);
+					}
+
 					for ( node = map.creatures->first; node->next; node = node->next )
 					{
 						entity = (Entity*)(node->element);
@@ -1155,6 +1196,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 								{
 									entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 									serverUpdatePlayerGameplayStats(i, STATISTICS_FUNCTIONAL, 1);
+								}
+								if ( usingBlessedSpellbook > 0 )
+								{
+									entity->setEffect(EFF_HP_REGEN, true, 20 * usingBlessedSpellbook * TICKS_PER_SECOND, true);
 								}
 								if ( entity->behavior == &actPlayer )
 								{
@@ -1371,6 +1416,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity->actmagicCastByMagicstaff = 1;
 			}
+			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			{
+				entity->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+			}
 			Stat* casterStats = caster->getStats();
 			if ( !trap && !using_magicstaff && casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
 			{
@@ -1491,6 +1540,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity->actmagicCastByMagicstaff = 1;
 			}
+			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			{
+				entity->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+			}
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
 			((spell_t*)node->element)->caster = caster->getUID();
@@ -1525,6 +1578,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity1->actmagicCastByMagicstaff = 1;
 			}
+			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			{
+				entity1->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+			}
 			node = list_AddNodeFirst(&entity1->children);
 			node->element = copySpell(spell);
 			((spell_t*)node->element)->caster = caster->getUID();
@@ -1554,6 +1611,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if ( using_magicstaff )
 			{
 				entity2->actmagicCastByMagicstaff = 1;
+			}
+			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			{
+				entity2->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
 			}
 			node = list_AddNodeFirst(&entity2->children);
 			node->element = copySpell(spell);
@@ -1912,6 +1973,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if ( stat->type == GOBLIN )
 		{
 			chance = 16;
+		}
+		if ( stat->shield 
+			&& ( (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat))
+				|| (stat->shield->beatitude > 0 && shouldInvertEquipmentBeatitude(stat)) ) 
+			)
+		{
+			chance = 1; // cursed books always degrade, or blessed books in succubus/incubus
 		}
 		if ( rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{

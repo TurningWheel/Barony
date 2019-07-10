@@ -536,6 +536,7 @@ void spellElementDeconstructor(void* data);
 
 int getCostOfSpell(spell_t* spell, Entity* caster = nullptr);
 int getCostOfSpellElement(spellElement_t* spellElement);
+real_t getBonusFromCasterOfSpellElement(Entity* caster, spellElement_t* spellElement = nullptr);
 bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
 
@@ -607,4 +608,5 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* parent, Entity* target, int resistance);
 
 void freeSpells();
-void drawSpellTooltip(spell_t* spell, Item* item);
+int drawSpellTooltip(spell_t* spell, Item* item);
+void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellType[32], int value, int* spellInfoLines, real_t* sustainCostPerSecond);

@@ -1208,11 +1208,27 @@ void drawStatus()
 					{
 						src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 						src.h = TTF12_HEIGHT * 4 + 8;
+						char spellEffectText[256] = "";
 						if ( item->identified )
 						{
 							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
 							{
 								src.h += TTF12_HEIGHT;
+							}
+							else if ( itemCategory(item) == SPELLBOOK && playerLearnedSpellbook(item) )
+							{
+								int height = 1;
+								char effectType[32] = "";
+								int spellID = getSpellIDFromSpellbook(item->type);
+								int damage = drawSpellTooltip(getSpellFromID(spellID), item);
+								real_t dummy = 0.f;
+								getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
+								int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
+								if ( width > src.w )
+								{
+									src.w = width;
+								}
+								src.h += height * TTF12_HEIGHT;
 							}
 						}
 						int furthestX = xres;
@@ -1271,6 +1287,10 @@ void drawStatus()
 						ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
 						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
+						if ( strcmp(spellEffectText, "") )
+						{
+							ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
+						}
 
 						if ( item->identified )
 						{
@@ -1797,12 +1817,16 @@ void drawStatus()
 	}
 }
 
-void drawSpellTooltip(spell_t* spell, Item* item)
+int drawSpellTooltip(spell_t* spell, Item* item)
 {
 	SDL_Rect src;
 	src.x = mousex + 16;
 	src.y = mousey + 8;
-
+	bool spellbook = false;
+	if ( item && itemCategory(item) == SPELLBOOK )
+	{
+		spellbook = true;
+	}
 	if ( spell )
 	{
 		node_t* rootNode = spell->elements.first;
@@ -1813,17 +1837,37 @@ void drawSpellTooltip(spell_t* spell, Item* item)
 		}
 		int damage = 0;
 		int mana = 0;
+		int heal = 0;
 		spellElement_t* primaryElement = nullptr;
 		if ( elementRoot )
 		{
 			node_t* primaryNode = elementRoot->elements.first;
 			mana = elementRoot->mana;
+			heal = mana;
 			if ( primaryNode )
 			{
 				primaryElement = (spellElement_t*)(primaryNode->element);
 				if ( primaryElement )
 				{
 					damage = primaryElement->damage;
+					if ( players[clientnum] )
+					{
+						int bonus = 0;
+						if ( spellbook )
+						{
+							bonus = (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude);
+							if ( bonus < 0 )
+							{
+								bonus = 0;
+							}
+						}
+						damage += (damage * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+						heal += (heal * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+						if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
+						{
+							damage = heal;
+						}
+					}
 				}
 			}
 		}
@@ -1831,148 +1875,7 @@ void drawSpellTooltip(spell_t* spell, Item* item)
 		char spellType[32] = "";
 		char spellEffectText[256] = "";
 		real_t sustainCostPerSecond = 0.f;
-		switch ( spell->ID )
-		{
-			case SPELL_FORCEBOLT:
-			case SPELL_MAGICMISSILE:
-			case SPELL_LIGHTNING:
-				snprintf(spellEffectText, 255, language[3289], damage);
-				snprintf(spellType, 31, language[3303]);
-				break;
-			case SPELL_COLD:
-				snprintf(spellEffectText, 255, language[3290], damage, language[3294]);
-				snprintf(spellType, 31, language[3303]);
-				spellInfoLines = 2;
-				break;
-			case SPELL_FIREBALL:
-				snprintf(spellEffectText, 255, language[3290], damage, language[3295]);
-				snprintf(spellType, 31, language[3303]);
-				spellInfoLines = 2;
-				break;
-			case SPELL_BLEED:
-				snprintf(spellEffectText, 255, language[3291], damage, language[3297], language[3294]);
-				spellInfoLines = 2;
-				snprintf(spellType, 31, language[3303]);
-				break;
-			case SPELL_SLOW:
-				snprintf(spellEffectText, 255, language[3292], language[3294]);
-				snprintf(spellType, 31, language[3303]);
-				break;
-			case SPELL_SLEEP:
-				snprintf(spellEffectText, 255, language[3292], language[3298]);
-				snprintf(spellType, 31, language[3303]);
-				break;
-			case SPELL_CONFUSE:
-				snprintf(spellEffectText, 255, language[3292], language[3299]);
-				snprintf(spellType, 31, language[3303]);
-				break;
-			case SPELL_ACID_SPRAY:
-				snprintf(spellEffectText, 255, language[3293], damage, language[3300]);
-				snprintf(spellType, 31, language[3304]);
-				spellInfoLines = 2;
-				break;
-			case SPELL_HEALING:
-			case SPELL_EXTRAHEALING:
-			{
-				int heal = mana;
-				snprintf(spellType, 31, language[3301]);
-				snprintf(spellEffectText, 255, language[3307], heal);
-				spellInfoLines = 2;
-				break;
-			}
-			case SPELL_REFLECT_MAGIC:
-				snprintf(spellType, 31, language[3302]);
-				snprintf(spellEffectText, 255, language[3308]);
-				spellInfoLines = 2;
-				sustainCostPerSecond = 6.f;
-				break;
-			case SPELL_LEVITATION:
-				snprintf(spellType, 31, language[3302]);
-				snprintf(spellEffectText, 255, language[3309]);
-				sustainCostPerSecond = 0.6;
-				break;
-			case SPELL_INVISIBILITY:
-				snprintf(spellType, 31, language[3302]);
-				snprintf(spellEffectText, 255, language[3310]);
-				sustainCostPerSecond = 1.f;
-				break;
-			case SPELL_LIGHT:
-				snprintf(spellType, 31, language[3302]);
-				snprintf(spellEffectText, 255, language[3311]);
-				sustainCostPerSecond = 15.f;
-				break;
-			case SPELL_REMOVECURSE:
-				snprintf(spellType, 31, language[3305]);
-				snprintf(spellEffectText, 255, language[3312]);
-				break;
-			case SPELL_IDENTIFY:
-				snprintf(spellType, 31, language[3305]);
-				snprintf(spellEffectText, 255, language[3313]);
-				break;
-			case SPELL_MAGICMAPPING:
-				snprintf(spellType, 31, language[3305]);
-				snprintf(spellEffectText, 255, language[3314]);
-				spellInfoLines = 2;
-				break;
-			case SPELL_TELEPORTATION:
-				snprintf(spellType, 31, language[3305]);
-				snprintf(spellEffectText, 255, language[3315]);
-				break;
-			case SPELL_OPENING:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3316]);
-				break;
-			case SPELL_LOCKING:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3317]);
-				break;
-			case SPELL_CUREAILMENT:
-				snprintf(spellType, 31, language[3301]);
-				snprintf(spellEffectText, 255, language[3318]);
-				spellInfoLines = 2;
-				break;
-			case SPELL_DIG:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3319]);
-				break;
-			case SPELL_SUMMON:
-				snprintf(spellType, 31, language[3306]);
-				snprintf(spellEffectText, 255, language[3320]);
-				spellInfoLines = 3;
-				break;
-			case SPELL_STONEBLOOD:
-				snprintf(spellType, 31, language[3304]);
-				snprintf(spellEffectText, 255, language[3292], language[3296]);
-				break;
-			case SPELL_DOMINATE:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3321]);
-				spellInfoLines = 4;
-				break;
-			case SPELL_STEAL_WEAPON:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3322]);
-				spellInfoLines = 2;
-				break;
-			case SPELL_DRAIN_SOUL:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3323], damage);
-				spellInfoLines = 2;
-				break;
-			case SPELL_VAMPIRIC_AURA:
-				snprintf(spellType, 31, language[3302]);
-				snprintf(spellEffectText, 255, language[3324]);
-				spellInfoLines = 4;
-				sustainCostPerSecond = 0.33;
-				break;
-			case SPELL_CHARM_MONSTER:
-				snprintf(spellType, 31, language[3303]);
-				snprintf(spellEffectText, 255, language[3326]);
-				spellInfoLines = 3;
-				break;
-			default:
-				break;
-		}
+		getSpellEffectString(spell->ID, spellEffectText, spellType, damage, &spellInfoLines, &sustainCostPerSecond);
 		char tempstr[64] = "";
 		char spellNameString[128] = "";
 		if ( item && item->appearance >= 1000 )
@@ -2081,6 +1984,11 @@ void drawSpellTooltip(spell_t* spell, Item* item)
 		{
 			src.y -= (src.y + src.h + 16 - yres);
 		}
+		if ( spellbook )
+		{
+			return damage;
+		}
+
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s\n%s",
 			spellNameString, tempstr, spellType);
@@ -2094,5 +2002,155 @@ void drawSpellTooltip(spell_t* spell, Item* item)
 		src.h = TTF12_HEIGHT + 8;
 		drawTooltip(&src);
 		ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
+	}
+	return 0;
+}
+
+void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellType[32], int value, int* spellInfoLines, real_t* sustainCostPerSecond)
+{
+	if ( !spellInfoLines || !sustainCostPerSecond )
+	{
+		return;
+	}
+	switch ( spellID )
+	{
+		case SPELL_FORCEBOLT:
+		case SPELL_MAGICMISSILE:
+		case SPELL_LIGHTNING:
+			snprintf(effectTextBuffer, 255, language[3289], value);
+			snprintf(spellType, 31, language[3303]);
+			break;
+		case SPELL_COLD:
+			snprintf(effectTextBuffer, 255, language[3290], value, language[3294]);
+			snprintf(spellType, 31, language[3303]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_FIREBALL:
+			snprintf(effectTextBuffer, 255, language[3290], value, language[3295]);
+			snprintf(spellType, 31, language[3303]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_BLEED:
+			snprintf(effectTextBuffer, 255, language[3291], value, language[3297], language[3294]);
+			*spellInfoLines = 2;
+			snprintf(spellType, 31, language[3303]);
+			break;
+		case SPELL_SLOW:
+			snprintf(effectTextBuffer, 255, language[3292], language[3294]);
+			snprintf(spellType, 31, language[3303]);
+			break;
+		case SPELL_SLEEP:
+			snprintf(effectTextBuffer, 255, language[3292], language[3298]);
+			snprintf(spellType, 31, language[3303]);
+			break;
+		case SPELL_CONFUSE:
+			snprintf(effectTextBuffer, 255, language[3292], language[3299]);
+			snprintf(spellType, 31, language[3303]);
+			break;
+		case SPELL_ACID_SPRAY:
+			snprintf(effectTextBuffer, 255, language[3293], value, language[3300]);
+			snprintf(spellType, 31, language[3304]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_HEALING:
+		case SPELL_EXTRAHEALING:
+		{
+			snprintf(spellType, 31, language[3301]);
+			snprintf(effectTextBuffer, 255, language[3307], value);
+			*spellInfoLines = 2;
+			break;
+		}
+		case SPELL_REFLECT_MAGIC:
+			snprintf(spellType, 31, language[3302]);
+			snprintf(effectTextBuffer, 255, language[3308]);
+			*spellInfoLines = 2;
+			*sustainCostPerSecond = 6.f;
+			break;
+		case SPELL_LEVITATION:
+			snprintf(spellType, 31, language[3302]);
+			snprintf(effectTextBuffer, 255, language[3309]);
+			*sustainCostPerSecond = 0.6;
+			break;
+		case SPELL_INVISIBILITY:
+			snprintf(spellType, 31, language[3302]);
+			snprintf(effectTextBuffer, 255, language[3310]);
+			*sustainCostPerSecond = 1.f;
+			break;
+		case SPELL_LIGHT:
+			snprintf(spellType, 31, language[3302]);
+			snprintf(effectTextBuffer, 255, language[3311]);
+			*sustainCostPerSecond = 15.f;
+			break;
+		case SPELL_REMOVECURSE:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3312]);
+			break;
+		case SPELL_IDENTIFY:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3313]);
+			break;
+		case SPELL_MAGICMAPPING:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3314]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_TELEPORTATION:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3315]);
+			break;
+		case SPELL_OPENING:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3316]);
+			break;
+		case SPELL_LOCKING:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3317]);
+			break;
+		case SPELL_CUREAILMENT:
+			snprintf(spellType, 31, language[3301]);
+			snprintf(effectTextBuffer, 255, language[3318]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_DIG:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3319]);
+			break;
+		case SPELL_SUMMON:
+			snprintf(spellType, 31, language[3306]);
+			snprintf(effectTextBuffer, 255, language[3320]);
+			*spellInfoLines = 3;
+			break;
+		case SPELL_STONEBLOOD:
+			snprintf(spellType, 31, language[3304]);
+			snprintf(effectTextBuffer, 255, language[3292], language[3296]);
+			break;
+		case SPELL_DOMINATE:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3321]);
+			*spellInfoLines = 4;
+			break;
+		case SPELL_STEAL_WEAPON:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3322]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_DRAIN_SOUL:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3323], value);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			snprintf(spellType, 31, language[3302]);
+			snprintf(effectTextBuffer, 255, language[3324]);
+			*spellInfoLines = 4;
+			*sustainCostPerSecond = 0.33;
+			break;
+		case SPELL_CHARM_MONSTER:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3326]);
+			*spellInfoLines = 3;
+			break;
+		default:
+			break;
 	}
 }

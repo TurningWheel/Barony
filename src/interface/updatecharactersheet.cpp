@@ -1414,7 +1414,7 @@ void statsHoverText(Stat* tmpStat)
 		"charisma: "
 	};
 
-	char tooltipText[6][4][128] =
+	char tooltipText[6][5][128] =
 	{
 		{
 			"base:  %2d ",
@@ -1436,6 +1436,7 @@ void statsHoverText(Stat* tmpStat)
 			"base:  %2d ",
 			"bonus: %2d ",
 			"MP regen rate: 1 / %2.1fs",
+			"magic damage:     %3d%%",
 			"magic resistance: %2.1f%% "
 		},
 		{
@@ -1489,7 +1490,7 @@ void statsHoverText(Stat* tmpStat)
 					statBonus = statGetCON(tmpStat, playerEntity) - statBase;
 					break;
 				case 3:
-					numInfoLines = 4;
+					numInfoLines = 5;
 					tmp_bmp = int_bmp64;
 					statBase = tmpStat->INT;
 					statBonus = statGetINT(tmpStat, playerEntity) - statBase;
@@ -1613,6 +1614,18 @@ void statsHoverText(Stat* tmpStat)
 						}
 					}
 					else if ( j == 3 )
+					{
+						if ( i == 3 )
+						{
+							int bonusDamage = 100;
+							if ( players[clientnum] && players[clientnum]->entity )
+							{
+								bonusDamage += 100 * (getBonusFromCasterOfSpellElement(players[clientnum]->entity, nullptr));
+							}
+							snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], bonusDamage);
+						}
+					}
+					else if ( j == 4 )
 					{
 						if ( i == 3 )
 						{

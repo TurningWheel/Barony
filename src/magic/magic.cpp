@@ -399,6 +399,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	if ( hit.entity )
 	{
 		int damage = element.damage;
+		damage += damage * (my.actmagicBlessedSpellbookBonus * 0.25 + getBonusFromCasterOfSpellElement(parent, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -533,6 +534,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 	if ( hit.entity )
 	{
 		int damage = element.damage;
+		damage += damage * (my.actmagicBlessedSpellbookBonus * 0.25 + getBonusFromCasterOfSpellElement(parent, &element));
 		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -649,8 +651,6 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 		//spawnMagicEffectParticles(my.x, my.y, my.z, 863);
 		return false;
 	}
-	//int damage = element.damage;
-	//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 
 	if ( target->behavior == &actMonster || target->behavior == &actPlayer )
 	{
@@ -747,9 +747,6 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 {
 	if ( hit.entity )
 	{
-		//int damage = element.damage;
-		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
-
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
@@ -1022,6 +1019,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			}
 
 			int damage = element.damage;
+			damage += damage * (my.actmagicBlessedSpellbookBonus * 0.25 + getBonusFromCasterOfSpellElement(parent, &element));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
 			damage *= damagetables[hitstats->type][5];
@@ -1041,6 +1039,10 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			if ( damage > hitstats->MP )
 			{
 				damage = hitstats->MP;
+			}
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				damage /= 4; // reduced mana steal
 			}
 			hit.entity->drainMP(damage);
 

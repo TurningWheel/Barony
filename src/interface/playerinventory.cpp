@@ -1142,11 +1142,27 @@ void updatePlayerInventory()
 						{
 							src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 4 + 8;
+							char spellEffectText[256] = "";
 							if ( item->identified )
 							{
 								if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
 								{
 									src.h += TTF12_HEIGHT;
+								}
+								else if ( itemCategory(item) == SPELLBOOK && playerLearnedSpellbook(item) )
+								{
+									int height = 1;
+									char effectType[32] = "";
+									int spellID = getSpellIDFromSpellbook(item->type);
+									int damage = drawSpellTooltip(getSpellFromID(spellID), item);
+									real_t dummy = 0.f;
+									getSpellEffectString(spellID, spellEffectText, effectType, damage, &height, &dummy);
+									int width = longestline(spellEffectText) * TTF12_WIDTH + 8;
+									if ( width > src.w )
+									{
+										src.w = width;
+									}
+									src.h += height * TTF12_HEIGHT;
 								}
 							}
 							int furthestX = xres;
@@ -1168,6 +1184,7 @@ void updatePlayerInventory()
 							{
 								src.x -= (src.w + 32);
 							}
+
 							drawTooltip(&src);
 
 							Uint32 color = 0xFFFFFFFF;
@@ -1212,6 +1229,10 @@ void updatePlayerInventory()
 							ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
+							if ( strcmp(spellEffectText, "") )
+							{
+								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4 + TTF12_HEIGHT * 4, SDL_MapRGB(mainsurface->format, 0, 255, 255), spellEffectText);
+							}
 
 							if ( item->identified )
 							{
