@@ -395,7 +395,6 @@ public:
 	void applyLockpick(int player, Entity& entity);
 	void applyOrb(int player, ItemType type, Entity& entity);
 	void applyEmptyPotion(int player, Entity& entity);
-
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*
 	 * Returns which weapon hits harder.
@@ -406,6 +405,17 @@ public:
 
 	bool isShield() const;
 
+	enum ItemBombPlacement : int
+	{
+		BOMB_FLOOR,
+		BOMB_WALL_NORTH,
+		BOMB_WALL_EAST,
+		BOMB_WALL_SOUTH,
+		BOMB_WALL_WEST,
+		BOMB_CHEST,
+		BOMB_DOOR
+	};
+	void applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown, Entity* onEntity);
 };
 extern Uint32 itemuids;
 

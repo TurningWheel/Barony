@@ -656,7 +656,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							if ( strcmp(element->name, spellElement_charmMonster.name) )
 							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+								if ( my->actmagicCastByTinkerTrap == 1 )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
+								}
+								else
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+								}
 							}
 						}
 					}
@@ -741,7 +748,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(element->name, spellElement_charmMonster.name) )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+								if ( my->actmagicCastByTinkerTrap == 1 )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
+								}
+								else
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
+								}
 							}
 							if ( !spellIsReflectingMagic )
 							{
@@ -1097,7 +1111,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				real_t blessedSpellbookDamageBonus = (my->actmagicBlessedSpellbookBonus * 0.25);
-				blessedSpellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
+				if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
+				{
+					blessedSpellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
+				}
 
 				if (!strcmp(element->name, spellElement_force.name))
 				{

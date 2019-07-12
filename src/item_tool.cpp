@@ -593,3 +593,273 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 		messagePlayer(player, language[2371]);
 	}
 }
+
+void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown, Entity* onEntity)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	
+	if ( placement == BOMB_FLOOR )
+	{
+		if ( thrown )
+		{
+			Entity* entity = newEntity(878, 1, map.entities, nullptr); //Beartrap entity.
+			entity->behavior = &actBomb;
+			entity->flags[PASSABLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = thrown->x;
+			entity->y = thrown->y;
+			entity->z = 6.75;
+			entity->yaw = thrown->yaw;
+			entity->roll = -PI / 2; // flip the model
+			if ( parent )
+			{
+				entity->parent = parent->getUID();
+				if ( parent->behavior == &actPlayer )
+				{
+					entity->skill[17] = parent->skill[2];
+				}
+				else
+				{
+					entity->skill[17] = -1;
+				}
+			}
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->skill[11] = this->status;
+			entity->skill[12] = this->beatitude;
+			entity->skill[14] = this->appearance;
+			entity->skill[15] = this->identified;
+			entity->skill[16] = placement;
+		}
+	}
+	else if ( placement >= BOMB_WALL_NORTH && placement <= BOMB_WALL_WEST )
+	{
+		if ( thrown )
+		{
+			Entity* entity = newEntity(878, 1, map.entities, nullptr); //Beartrap entity.
+			entity->behavior = &actBomb;
+			entity->flags[PASSABLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = thrown->x;
+			entity->y = thrown->y;
+			entity->z = std::min(4.0, thrown->z);
+			int height = 1;
+			switch ( placement )
+			{
+				case BOMB_WALL_EAST:
+					entity->yaw = 3 * PI / 2;
+					entity->x = (static_cast<int>(std::floor(entity->x + 8)) >> 4) * 16;
+					entity->x += height;
+					break;
+				case BOMB_WALL_SOUTH:
+					entity->yaw = 0;
+					entity->y = (static_cast<int>(std::floor(entity->y + 8)) >> 4) * 16;
+					entity->y += height;
+					break;
+				case BOMB_WALL_WEST:
+					entity->yaw = PI / 2;
+					entity->x = (static_cast<int>(std::floor(entity->x + 8)) >> 4) * 16;
+					entity->x -= height;
+					break;
+				case BOMB_WALL_NORTH:
+					entity->yaw = PI;
+					entity->y = (static_cast<int>(std::floor(entity->y + 8)) >> 4) * 16;
+					entity->y -= height;
+					break;
+				default:
+					break;
+			}
+			entity->roll = 0; // flip the model
+			if ( parent )
+			{
+				entity->parent = parent->getUID();
+				if ( parent->behavior == &actPlayer )
+				{
+					entity->skill[17] = parent->skill[2];
+				}
+				else
+				{
+					entity->skill[17] = -1;
+				}
+			}
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->skill[11] = this->status;
+			entity->skill[12] = this->beatitude;
+			entity->skill[14] = this->appearance;
+			entity->skill[15] = this->identified;
+			entity->skill[16] = placement;
+		}
+	}
+	else if ( placement == BOMB_CHEST || placement == BOMB_DOOR )
+	{
+		if ( thrown && onEntity && (hit.entity == onEntity) )
+		{
+			Entity* entity = newEntity(878, 1, map.entities, nullptr); //Beartrap entity.
+			entity->behavior = &actBomb;
+			entity->flags[PASSABLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = thrown->x;
+			entity->y = thrown->y;
+			entity->z = std::min(4.0, thrown->z);
+			if ( placement == BOMB_CHEST )
+			{
+				entity->z = std::max(2.0, entity->z);
+			}
+
+			if ( hit.side == 0 )
+			{
+				// pick a random side to be on.
+				if ( rand() % 2 == 0 )
+				{
+					hit.side = HORIZONTAL;
+				}
+				else
+				{
+					hit.side = VERTICAL;
+				}
+			}
+
+			int direction = 0;
+			if ( hit.side == HORIZONTAL )
+			{
+				if ( thrown->vel_x > 0 )
+				{
+					direction = Item::BOMB_WALL_WEST;
+				}
+				else
+				{
+					direction = Item::BOMB_WALL_EAST;
+				}
+			}
+			else if ( hit.side == VERTICAL )
+			{
+				if ( thrown->vel_y > 0 )
+				{
+					direction = Item::BOMB_WALL_NORTH;
+				}
+				else
+				{
+					direction = Item::BOMB_WALL_SOUTH;
+				}
+			}
+			real_t height = 0;
+			if ( placement == BOMB_CHEST )
+			{
+				if ( onEntity->yaw == 0 || onEntity->yaw == PI ) //EAST/WEST FACING
+				{
+					if ( hit.side == HORIZONTAL )
+					{
+						height = 5;
+					}
+					else
+					{
+						height = 4;
+					}
+				}
+				else if ( onEntity->yaw == PI / 2 || onEntity->yaw == 3 * PI / 2 ) //SOUTH/NORTH FACING
+				{
+					if ( hit.side == VERTICAL )
+					{
+						height = 4;
+					}
+					else
+					{
+						height = 5;
+					}
+				}
+			}
+			else if ( placement == BOMB_DOOR )
+			{
+				if ( onEntity->yaw == 0 || onEntity->yaw == PI ) //EAST/WEST FACING
+				{
+					if ( hit.side == HORIZONTAL )
+					{
+						height = 1.75;
+					}
+				}
+				else if ( onEntity->yaw == -PI / 2 ) //SOUTH/NORTH FACING
+				{
+					if ( hit.side == VERTICAL )
+					{
+						height = 1.75;
+					}
+				}
+			}
+
+			switch ( direction )
+			{
+				case BOMB_WALL_EAST:
+					entity->yaw = 3 * PI / 2;
+					entity->x = onEntity->x;
+					if ( onEntity->yaw == 0 && placement == BOMB_CHEST )
+					{
+						height += 0.5;
+					}
+					entity->x += height;
+					break;
+				case BOMB_WALL_SOUTH:
+					entity->yaw = 0;
+					entity->y = onEntity->y;
+					if ( onEntity->yaw == PI / 2 && placement == BOMB_CHEST )
+					{
+						height -= 0.5;
+					}
+					entity->y += height;
+					break;
+				case BOMB_WALL_WEST:
+					entity->yaw = PI / 2;
+					entity->x = onEntity->x;
+					if ( onEntity->yaw == PI && placement == BOMB_CHEST )
+					{
+						height -= 0.5;
+					}
+					entity->x -= height;
+					break;
+				case BOMB_WALL_NORTH:
+					entity->yaw = PI;
+					entity->y = onEntity->y;
+					if ( onEntity->yaw == 3 * PI / 2 && placement == BOMB_CHEST )
+					{
+						height += 0.5;
+					}
+					entity->y -= height;
+					break;
+				default:
+					break;
+			}
+			entity->roll = 0; // flip the model
+			if ( parent )
+			{
+				entity->parent = parent->getUID();
+				if ( parent->behavior == &actPlayer )
+				{
+					entity->skill[17] = parent->skill[2];
+				}
+				else
+				{
+					entity->skill[17] = -1;
+				}
+			}
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->skill[11] = this->status;
+			entity->skill[12] = this->beatitude;
+			entity->skill[14] = this->appearance;
+			entity->skill[15] = this->identified;
+			entity->skill[16] = placement;
+			entity->skill[18] = static_cast<Sint32>(onEntity->getUID());
+			if ( placement == BOMB_DOOR )
+			{
+				entity->skill[19] = onEntity->doorHealth;
+			}
+			else if ( placement == BOMB_CHEST )
+			{
+				entity->skill[19] = onEntity->skill[3]; //chestHealth
+			}
+		}
+	}
+}

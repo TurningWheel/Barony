@@ -3758,6 +3758,7 @@ void item_ToolBeartrap(Item*& item, int player)
 	entity->skill[12] = item->beatitude;
 	entity->skill[14] = item->appearance;
 	entity->skill[15] = item->identified;
+	entity->skill[17] = players[player]->entity->skill[2];
 	messagePlayer(player, language[906]);
 	consumeItem(item, player);
 	return;

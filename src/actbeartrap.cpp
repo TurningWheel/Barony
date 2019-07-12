@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -34,6 +35,7 @@
 #define BEARTRAP_BEATITUDE my->skill[12]
 #define BEARTRAP_APPEARANCE my->skill[14]
 #define BEARTRAP_IDENTIFIED my->skill[15]
+#define BEARTRAP_OWNER my->skill[17]
 
 void actBeartrap(Entity* my)
 {
@@ -107,6 +109,17 @@ void actBeartrap(Entity* my)
 				if ( (parent && parent->checkFriend(entity)) )
 				{
 					continue;
+				}
+				if ( !parent && BEARTRAP_OWNER >= 0 )
+				{
+					if ( entity->behavior == &actPlayer )
+					{
+						continue; // players won't trigger if owner dead.
+					}
+					else if ( entity->monsterAllyGetPlayerLeader() )
+					{
+						continue; // player followers won't trigger if owner dead.
+					}
 				}
 				if ( entityDist(my, entity) < 6.5 )
 				{
@@ -250,6 +263,258 @@ void actBeartrapLaunched(Entity* my)
 {
 	if ( my->ticks >= 200 )
 	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
+#define BOMB_TYPE my->skill[16]
+
+void actBomb(Entity* my)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	// undo bomb
+	for ( int i = 0; i < MAXPLAYERS; i++ )
+	{
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		{
+			if ( inrange[i] )
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = my->z;
+				entity->sizex = my->sizex;
+				entity->sizey = my->sizey;
+				entity->yaw = my->yaw;
+				entity->pitch = my->pitch;
+				entity->roll = PI / 2;
+				entity->behavior = &actItem;
+				entity->skill[10] = TOOL_BOMB;
+				entity->skill[11] = BEARTRAP_STATUS;
+				entity->skill[12] = BEARTRAP_BEATITUDE;
+				entity->skill[13] = 1;
+				entity->skill[14] = BEARTRAP_APPEARANCE;
+				entity->skill[15] = BEARTRAP_IDENTIFIED;
+				if ( BOMB_TYPE == Item::ItemBombPlacement::BOMB_FLOOR )
+				{
+					// don't fall down
+					entity->itemNotMoving = 1;
+					entity->itemNotMovingClient = 1;
+					serverUpdateEntitySkill(entity, 18); //update both the above flags.
+					serverUpdateEntitySkill(entity, 19);
+				}
+				else
+				{
+					entity->itemNotMoving = 0;
+					entity->itemNotMovingClient = 0;
+				}
+				messagePlayer(i, language[1300]);
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+	}
+
+	// launch bomb
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+	Entity* triggered = false;
+	real_t entityDistance = 0.f;
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !triggered; ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr && !triggered; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( my->parent == entity->getUID() )
+			{
+				continue;
+			}
+			if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
+			{
+				Stat* stat = entity->getStats();
+				if ( stat )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					if ( (parent && parent->checkFriend(entity)) )
+					{
+						continue;
+					}
+					if ( !parent && BEARTRAP_OWNER >= 0 )
+					{
+						if ( entity->behavior == &actPlayer )
+						{
+							continue; // players won't trigger if owner dead.
+						}
+						else if ( entity->monsterAllyGetPlayerLeader() )
+						{
+							continue; // player followers won't trigger if owner dead.
+						}
+					}
+					if ( BOMB_TYPE == Item::ItemBombPlacement::BOMB_FLOOR )
+					{
+						entityDistance = entityDist(my, entity);
+						if ( entityDistance < 6.5 )
+						{
+							spawnExplosion(my->x, my->y, my->z - 2);
+							triggered = entity;
+						}
+					}
+					else
+					{
+						real_t oldx = my->x;
+						real_t oldy = my->y;
+						// pretend the bomb is in the center of the tile it's facing.
+						switch ( BOMB_TYPE )
+						{
+							case Item::ItemBombPlacement::BOMB_WALL_EAST:
+								my->x += 8;
+								entityDistance = entityDist(my, entity);
+								if ( entityDistance < 12 )
+								{
+									triggered = entity;
+									spawnExplosion(my->x, my->x - 4, my->z);
+								}
+								break;
+							case Item::ItemBombPlacement::BOMB_WALL_WEST:
+								my->x -= 8;
+								entityDistance = entityDist(my, entity);
+								if ( entityDistance < 12 )
+								{
+									triggered = entity;
+									spawnExplosion(my->x, my->x + 4, my->z);
+								}
+								break;
+							case Item::ItemBombPlacement::BOMB_WALL_SOUTH:
+								my->y += 8;
+								entityDistance = entityDist(my, entity);
+								if ( entityDistance < 12 )
+								{
+									triggered = entity;
+									spawnExplosion(my->x, my->y - 4, my->z);
+								}
+								break;
+							case Item::ItemBombPlacement::BOMB_WALL_NORTH:
+								my->y -= 8;
+								entityDistance = entityDist(my, entity);
+								if ( entityDistance < 12 )
+								{
+									triggered = entity;
+									spawnExplosion(my->x, my->y + 4, my->z);
+								}
+								break;
+							default:
+								break;
+						}
+						my->x = oldx;
+						my->y = oldy;
+					}
+				}
+			}
+		}
+	}
+
+	if ( triggered )
+	{
+		Entity* parent = uidToEntity(my->parent);
+		Stat* stat = triggered->getStats();
+		//messagePlayer(0, "dmg: %d", damage);
+		int doSpell = SPELL_NONE;
+		bool doVertical = false;
+		switch ( BOMB_TYPE )
+		{
+			case Item::ItemBombPlacement::BOMB_WALL_EAST:
+			case Item::ItemBombPlacement::BOMB_WALL_WEST:
+			case Item::ItemBombPlacement::BOMB_WALL_SOUTH:
+			case Item::ItemBombPlacement::BOMB_WALL_NORTH:
+				doSpell = SPELL_FIREBALL;
+				break;
+			case Item::ItemBombPlacement::BOMB_FLOOR:
+				doSpell = SPELL_FIREBALL;
+				doVertical = true;
+				break;
+			default:
+				break;
+		}
+		if ( doSpell != SPELL_NONE )
+		{
+			Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
+			spell->parent = my->parent;
+			spell->x = my->x;
+			spell->y = my->y;
+			if ( !doVertical )
+			{
+				real_t speed = 4.f;
+				real_t ticksToHit = (entityDistance / speed);
+				real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+				double tangent = atan2(predicty - my->y, predictx - my->x);
+				spell->yaw = tangent;
+				spell->vel_x = speed * cos(spell->yaw);
+				spell->vel_y = speed * sin(spell->yaw);
+			}
+			else
+			{
+				real_t speed = 3.f;
+				real_t ticksToHit = (entityDistance / speed);
+				real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+				double tangent = atan2(predicty - my->y, predictx - my->x);
+				spell->yaw = tangent;
+				spell->vel_z = -2.f;
+				spell->vel_x = speed * cos(spell->yaw);
+				spell->vel_y = speed * sin(spell->yaw);
+				spell->pitch = atan2(spell->vel_z, speed);
+				spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+			}
+			spell->actmagicCastByTinkerTrap = 1;
+			spell->skill[5] = 10; // travel time
+		}
+		// set obituary
+		triggered->setObituary(language[3496]);
+		if ( triggered->behavior == &actPlayer )
+		{
+			int player = triggered->skill[2];
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			messagePlayerColor(player, color, language[3497]);
+			if ( player > 0 )
+			{
+				serverUpdateEffects(player);
+			}
+		}
+		else if ( parent && parent->behavior == &actPlayer )
+		{
+			int player = parent->skill[2];
+			if ( player >= 0 )
+			{
+				double tangent = atan2(parent->y - my->y, parent->x - my->x);
+				lineTraceTarget(my, my->x, my->y, tangent, 128, 0, false, parent);
+				if ( hit.entity != parent )
+				{
+					if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
+					{
+						messagePlayer(player, language[3494]);
+					}
+					else
+					{
+						messagePlayer(player, language[3495]);
+					}
+				}
+				if ( rand() % 3 == 0 )
+				{
+					parent->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+		playSoundEntity(my, 76, 64);
 		list_RemoveNode(my->mynode);
 		return;
 	}

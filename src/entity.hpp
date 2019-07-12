@@ -386,6 +386,7 @@ public:
 	Sint32& actmagicOrbitHitTargetUID4; // skill[18]
 	Sint32& actmagicProjectileArc; // skill[19]
 	Sint32& actmagicOrbitCastFromSpell; // skill[20]
+	Sint32& actmagicCastByTinkerTrap; // skill[22]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]

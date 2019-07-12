@@ -827,6 +827,10 @@ void actHudWeapon(Entity* my)
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							players[clientnum]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
+						else if ( stats[clientnum]->weapon->type == TOOL_BOMB )
+						{
+							HUDWEAPON_CHOP = 13;
+						}
 						else if (itemCategory(item) == MAGICSTAFF)
 						{
 							HUDWEAPON_CHOP = 7; // magicstaffs lunge
@@ -1284,6 +1288,7 @@ void actHudWeapon(Entity* my)
 					&& itemCategory(item) != GEM 
 					&& itemCategory(item) != THROWN
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
+					&& item->type != TOOL_BOMB
 					&& item->type != TOOL_WHIP )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )
@@ -1874,6 +1879,137 @@ void actHudWeapon(Entity* my)
 				{
 					HUDWEAPON_CHOP = 0;
 				}
+			}
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 13 ) // tool placing
+	{
+		int targetZ = -4;
+		real_t targetRoll = -PI / 2;
+		real_t rateY = .1;
+		real_t rateRoll = .25;
+		int targetY = 1;
+		if ( !swingweapon )
+		{
+			//targetY = 0;
+		}
+		real_t targetPitch = 0.f;
+
+		HUDWEAPON_YAW = 0;
+		HUDWEAPON_PITCH -= .25;
+		if ( HUDWEAPON_PITCH < targetPitch )
+		{
+			HUDWEAPON_PITCH = targetPitch;
+		}
+		HUDWEAPON_MOVEX -= .35;
+		if ( HUDWEAPON_MOVEX < 0 )
+		{
+			HUDWEAPON_MOVEX = 0;
+		}
+		HUDWEAPON_MOVEZ -= .75;
+		if ( HUDWEAPON_MOVEZ < targetZ )
+		{
+			HUDWEAPON_MOVEZ = targetZ;
+		}
+		HUDWEAPON_MOVEY += rateY;
+		if ( HUDWEAPON_MOVEY > targetY )
+		{
+			HUDWEAPON_MOVEY = targetY;
+		}
+		HUDWEAPON_ROLL -= rateRoll;
+
+		if ( HUDWEAPON_ROLL < targetRoll )
+		{
+			HUDWEAPON_ROLL = targetRoll;
+			if ( HUDWEAPON_PITCH == targetPitch && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == targetY && HUDWEAPON_MOVEZ == targetZ )
+			{
+				if ( !swingweapon )
+				{
+					HUDWEAPON_CHOP = 14;
+					if ( players[clientnum]->entity->skill[3] == 0 )   // debug cam OFF
+					{
+						camera_shakex += .07;
+					}
+					Entity* player = players[clientnum]->entity;
+					if ( stats[clientnum]->weapon && player )
+					{
+						//lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+						players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
+						throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+						Item* item = stats[clientnum]->weapon;
+						if ( multiplayer == CLIENT )
+						{
+							item->count--;
+							if ( item->count <= 0 )
+							{
+								if ( item->node )
+								{
+									list_RemoveNode(item->node);
+								}
+								else
+								{
+									free(item);
+								}
+								stats[clientnum]->weapon = NULL;
+							}
+						}
+						if ( !stats[clientnum]->weapon )
+						{
+							HUDWEAPON_ROLL = 0;
+							HUDWEAPON_MOVEZ = 3;
+						}
+					}
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+				}
+				else
+				{
+					HUDWEAPON_CHARGE = std::min<real_t>(HUDWEAPON_CHARGE + 1, MAXCHARGE);
+				}
+			}
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 14 )     // second swing
+	{
+		HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 2;
+		HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * 1;
+		HUDWEAPON_YAW += .3;
+		if ( HUDWEAPON_YAW > (2 * PI) / 4 )
+		{
+			HUDWEAPON_YAW = (2 * PI) / 4;
+			HUDWEAPON_CHOP++;
+		}
+	}
+	else if ( HUDWEAPON_CHOP == 15 )     // return from second swing
+	{
+		HUDWEAPON_MOVEX -= .25;
+		if ( HUDWEAPON_MOVEX < 0 )
+		{
+			HUDWEAPON_MOVEX = 0;
+		}
+		HUDWEAPON_MOVEY -= .25;
+		if ( HUDWEAPON_MOVEY < 0 )
+		{
+			HUDWEAPON_MOVEY = 0;
+		}
+		HUDWEAPON_ROLL += .05;
+
+		HUDWEAPON_YAW -= .05;
+		if ( HUDWEAPON_YAW < -.1 )
+		{
+			HUDWEAPON_YAW = -.1;
+		}
+		HUDWEAPON_MOVEZ += .35;
+		if ( HUDWEAPON_MOVEZ > 0 )
+		{
+			HUDWEAPON_MOVEZ = 0;
+		}
+		if ( HUDWEAPON_ROLL > 0 )
+		{
+			HUDWEAPON_ROLL = 0;
+			if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 )
+			{
+				HUDWEAPON_CHOP = 0;
 			}
 		}
 	}

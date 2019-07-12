@@ -239,6 +239,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicProjectileArc(skill[19]),
 	actmagicOrbitCastFromSpell(skill[20]),
 	actmagicBlessedSpellbookBonus(skill[21]),
+	actmagicCastByTinkerTrap(skill[22]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -5651,7 +5652,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 
 			// potions & gems (throwing), and thrown weapons
-			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
+			if ( itemCategory(myStats->weapon) == POTION 
+				|| itemCategory(myStats->weapon) == GEM 
+				|| itemCategory(myStats->weapon) == THROWN
+				|| myStats->weapon->type == TOOL_BOMB )
 			{
 				bool drankPotion = false;
 				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
@@ -5752,6 +5756,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 							entity->vel_z = -.3;
 						}
 					}
+				}
+				else if ( myStats->weapon->type == TOOL_BOMB )
+				{
+					real_t normalisedCharge = (charge * 0.5);
+					normalisedCharge /= MAXCHARGE;
+					entity->vel_x = (1.f + normalisedCharge) * cos(players[player]->entity->yaw);
+					entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
+					entity->vel_z = -.3;
+					entity->roll -= (PI / 2 - 0.1 + (rand() % 10) * 0.02);
 				}
 				else
 				{

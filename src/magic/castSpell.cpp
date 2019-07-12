@@ -1967,7 +1967,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if ( usingSpellbook ) // degrade spellbooks on use.
+	if ( !trap && usingSpellbook ) // degrade spellbooks on use.
 	{
 		int chance = 8;
 		if ( stat->type == GOBLIN )
@@ -1992,7 +1992,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	if (spell_isChanneled(spell) && !using_magicstaff)   //TODO: What about magic traps and channeled spells?
+	if (spell_isChanneled(spell) && !using_magicstaff && !trap)   //TODO: What about magic traps and channeled spells?
 	{
 		if (!channeled_spell)
 		{

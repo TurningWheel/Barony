@@ -1319,6 +1319,9 @@ void clientActions(Entity* entity)
 		case 668:
 			entity->behavior = &actBeartrap;
 			break;
+		case 878:
+			entity->behavior = &actBomb;
+			break;
 		case 674:
 		case 675:
 		case 676:

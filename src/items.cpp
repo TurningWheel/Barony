@@ -2230,6 +2230,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			break;
 		case TOOL_LOCKPICK:
 		case TOOL_SKELETONKEY:
+		case TOOL_BOMB:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TORCH:
@@ -3254,7 +3255,7 @@ void Item::apply(int player, Entity* entity)
 		{
 			applyOrb(player, type, *entity);
 		}
-		if ( type == POTION_EMPTY )
+		else if ( type == POTION_EMPTY )
 		{
 			applyEmptyPotion(player, *entity);
 		}

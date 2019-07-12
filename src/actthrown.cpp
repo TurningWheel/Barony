@@ -163,6 +163,12 @@ void actThrown(Entity* my)
 				my->yaw += 0.5;
 			}
 		}
+		else if ( item->type == TOOL_BOMB )
+		{
+			my->yaw += 0.05;
+			THROWN_VELZ += 0.04;
+			my->z += THROWN_VELZ;
+		}
 		else
 		{
 			THROWN_VELZ += 0.04;
@@ -174,6 +180,7 @@ void actThrown(Entity* my)
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
+			// landing on the ground.
 			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
 			{
 				item = newItemFromEntity(my);
@@ -200,6 +207,16 @@ void actThrown(Entity* my)
 				}
 				else if ( specialMonster )
 				{
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( item && item->type == TOOL_BOMB )
+				{
+					if ( parent )
+					{
+						item->applyBomb(parent, Item::BOMB_FLOOR, my, nullptr);
+					}
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
@@ -377,7 +394,24 @@ void actThrown(Entity* my)
 					friendlyHit = true;
 				}
 			}
-			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+			if ( item->type == TOOL_BOMB )
+			{
+				if ( hit.entity->behavior == &actChest )
+				{
+					item->applyBomb(parent, Item::BOMB_CHEST, my, hit.entity);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+				else if ( hit.entity->behavior == &actDoor )
+				{
+					item->applyBomb(parent, Item::BOMB_DOOR, my, hit.entity);
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
+			}
+			else if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
@@ -965,6 +999,46 @@ void actThrown(Entity* my)
 					break;
 				case POTION_THUNDERSTORM:
 					spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, nullptr);
+					break;
+				case TOOL_BOMB:
+					if ( hit.side == 0 )
+					{
+						// pick a random side to be on.
+						if ( rand() % 2 == 0 )
+						{
+							hit.side = HORIZONTAL;
+						}
+						else
+						{
+							hit.side = VERTICAL;
+						}
+					}
+
+					if ( hit.side == HORIZONTAL )
+					{
+						if ( THROWN_VELX > 0 )
+						{
+							item->applyBomb(parent, Item::BOMB_WALL_WEST, my, nullptr);
+						}
+						else
+						{
+							item->applyBomb(parent, Item::BOMB_WALL_EAST, my, nullptr);
+						}
+					}
+					else if ( hit.side == VERTICAL )
+					{
+						if ( THROWN_VELY > 0 )
+						{
+							item->applyBomb(parent, Item::BOMB_WALL_NORTH, my, nullptr);
+						}
+						else
+						{
+							item->applyBomb(parent, Item::BOMB_WALL_SOUTH, my, nullptr);
+						}
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
 					break;
 				default:
 					break;
