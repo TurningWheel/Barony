@@ -276,6 +276,201 @@ void actBeartrapLaunched(Entity* my)
 #define BOMB_ITEMTYPE my->skill[21]
 #define BOMB_TRIGGER_TYPE my->skill[22]
 
+void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
+{
+	Entity* parent = uidToEntity(my->parent);
+	Stat* stat = triggered->getStats();
+	//messagePlayer(0, "dmg: %d", damage);
+	int doSpell = SPELL_NONE;
+	bool doVertical = false;
+	switch ( BOMB_ITEMTYPE )
+	{
+		case TOOL_BOMB:
+			doSpell = SPELL_FIREBALL;
+			break;
+		case TOOL_SLEEP_BOMB:
+			doSpell = SPELL_SLEEP;
+			break;
+		case TOOL_FREEZE_BOMB:
+			doSpell = SPELL_COLD;
+			break;
+		case TOOL_TELEPORT_BOMB:
+			doSpell = SPELL_TELEPORTATION;
+			break;
+		default:
+			break;
+	}
+	if ( BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_FLOOR )
+	{
+		doVertical = true;
+	}
+
+	if ( doSpell == SPELL_TELEPORTATION )
+	{
+		if ( triggered->isBossMonster() )
+		{
+			// no effect.
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				// stumbled into the trap!
+				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_COMBAT);
+				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
+			}
+			return;
+		}
+		std::vector<Entity*> goodspots;
+		bool teleported = false;
+		for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity && entity != my && entity->behavior == &actBomb )
+			{
+				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1 )
+				{
+					// receiver location.
+					goodspots.push_back(entity);
+				}
+			}
+		}
+		if ( !goodspots.empty() )
+		{
+			Entity* targetLocation = goodspots[rand() % goodspots.size()];
+			teleported = triggered->teleportAroundEntity(targetLocation, 2);
+		}
+		else
+		{
+			teleported = triggered->teleportRandom(); // woosh!
+		}
+
+		// stumbled into the trap!
+		Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+		if ( parent && parent->behavior == &actPlayer && triggered->behavior == &actMonster )
+		{
+			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_COMBAT);
+		}
+
+		if ( teleported )
+		{
+			createParticleErupt(my, 593);
+			serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 593);
+			if ( triggered->behavior == &actPlayer )
+			{
+				int player = triggered->skill[2];
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				messagePlayerColor(player, color, language[3497]);
+			}
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				if ( triggered != parent )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3601], language[3602], MSG_COMBAT);
+				}
+			}
+
+			if ( triggered->behavior == &actMonster )
+			{
+				triggered->monsterReleaseAttackTarget();
+			}
+
+			createParticleErupt(triggered, 593);
+			serverSpawnMiscParticlesAtLocation(triggered->x / 16, triggered->y / 16, 0, PARTICLE_EFFECT_ERUPT, 593);
+		}
+		else
+		{
+			if ( parent && parent->behavior == &actPlayer && triggered->behavior == &actMonster )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
+			}
+		}
+
+		playSoundEntity(my, 76, 64);
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else if ( doSpell != SPELL_NONE )
+	{
+		Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
+		spell->parent = my->parent;
+		spell->x = my->x;
+		spell->y = my->y;
+		if ( !doVertical )
+		{
+			real_t speed = 4.f;
+			real_t ticksToHit = (entityDistance / speed);
+			real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+			double tangent = atan2(predicty - my->y, predictx - my->x);
+			spell->yaw = tangent;
+			spell->vel_x = speed * cos(spell->yaw);
+			spell->vel_y = speed * sin(spell->yaw);
+		}
+		else
+		{
+			real_t speed = 3.f;
+			real_t ticksToHit = (entityDistance / speed);
+			real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
+			double tangent = atan2(predicty - my->y, predictx - my->x);
+			spell->yaw = tangent;
+			spell->vel_z = -2.f;
+			spell->vel_x = speed * cos(spell->yaw);
+			spell->vel_y = speed * sin(spell->yaw);
+			spell->pitch = atan2(spell->vel_z, speed);
+			spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
+		}
+		spell->actmagicCastByTinkerTrap = 1;
+		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL )
+		{
+			spell->actmagicTinkerTrapFriendlyFire = 1;
+			if ( triggered == parent )
+			{
+				spell->parent = 0;
+			}
+		}
+		spell->skill[5] = 10; // travel time
+	}
+	// set obituary
+	triggered->setObituary(language[3496]);
+	if ( triggered->behavior == &actPlayer )
+	{
+		int player = triggered->skill[2];
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		messagePlayerColor(player, color, language[3497]);
+		if ( player > 0 )
+		{
+			serverUpdateEffects(player);
+		}
+	}
+	if ( parent && parent != triggered && parent->behavior == &actPlayer )
+	{
+		int player = parent->skill[2];
+		if ( player >= 0 )
+		{
+			double tangent = atan2(parent->y - my->y, parent->x - my->x);
+			lineTraceTarget(my, my->x, my->y, tangent, 128, 0, false, parent);
+			if ( hit.entity != parent )
+			{
+				if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
+				{
+					messagePlayer(player, language[3494]);
+				}
+				else
+				{
+					messagePlayer(player, language[3495]);
+				}
+			}
+			if ( rand() % 3 == 0 && triggered->behavior == &actMonster )
+			{
+				parent->increaseSkill(PRO_LOCKPICKING);
+			}
+		}
+	}
+}
+
 void actBomb(Entity* my)
 {
 	my->removeLightField();
@@ -346,6 +541,28 @@ void actBomb(Entity* my)
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
 	Entity* triggered = false;
 	real_t entityDistance = 0.f;
+
+	if ( BOMB_ENTITY_ATTACHED_TO != 0 )
+	{
+		Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
+		if ( onEntity )
+		{
+			if ( onEntity->behavior == &actDoor )
+			{
+				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE] )
+				{
+					onEntity->doorHandleDamageMagic(50, *my, uidToEntity(my->parent));
+				}
+			}
+			else if ( onEntity->behavior == &actChest )
+			{
+				if ( onEntity->skill[3] < BOMB_ENTITY_ATTACHED_START_HP)
+				{
+					onEntity->chestHandleDamageMagic(50, *my, uidToEntity(my->parent));
+				}
+			}
+		}
+	}
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !triggered; ++it )
 	{
 		list_t* currentList = *it;
@@ -443,199 +660,7 @@ void actBomb(Entity* my)
 
 	if ( triggered )
 	{
-		Entity* parent = uidToEntity(my->parent);
-		Stat* stat = triggered->getStats();
-		//messagePlayer(0, "dmg: %d", damage);
-		int doSpell = SPELL_NONE;
-		bool doVertical = false;
-		switch ( BOMB_ITEMTYPE )
-		{
-			case TOOL_BOMB:
-				doSpell = SPELL_FIREBALL;
-				break;
-			case TOOL_SLEEP_BOMB:
-				doSpell = SPELL_SLEEP;
-				break;
-			case TOOL_FREEZE_BOMB:
-				doSpell = SPELL_COLD;
-				break;
-			case TOOL_TELEPORT_BOMB:
-				doSpell = SPELL_TELEPORTATION;
-				break;
-			default:
-				break;
-		}
-		if ( BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_FLOOR )
-		{
-			doVertical = true;
-		}
-
-		if ( doSpell == SPELL_TELEPORTATION )
-		{
-			if ( triggered->isBossMonster() )
-			{
-				// no effect.
-				if ( parent && parent->behavior == &actPlayer )
-				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-					// stumbled into the trap!
-					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_COMBAT);
-					color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
-				}
-				playSoundEntity(my, 76, 64);
-				list_RemoveNode(my->mynode);
-				return;
-			}
-			std::vector<Entity*> goodspots;
-			bool teleported = false;
-			for ( node_t* node = map.entities->first; node != NULL; node = node->next )
-			{
-				Entity* entity = (Entity*)node->element;
-				if ( entity && entity != my && entity->behavior == &actBomb )
-				{
-					if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1 )
-					{
-						// receiver location.
-						goodspots.push_back(entity);
-					}
-				}
-			}
-			if ( !goodspots.empty() )
-			{
-				Entity* targetLocation = goodspots[rand() % goodspots.size()];
-				teleported = triggered->teleportAroundEntity(targetLocation, 2);
-			}
-			else
-			{
-				teleported = triggered->teleportRandom(); // woosh!
-			}
-
-			// stumbled into the trap!
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-			if ( parent && parent->behavior == &actPlayer && triggered->behavior == &actMonster )
-			{
-				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_COMBAT);
-			}
-
-			if ( teleported )
-			{
-				createParticleErupt(my, 593);
-				serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 593);
-				if ( triggered->behavior == &actPlayer )
-				{
-					int player = triggered->skill[2];
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerColor(player, color, language[3497]);
-				}
-				if ( parent && parent->behavior == &actPlayer )
-				{
-					if ( triggered != parent )
-					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-						messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3601], language[3602], MSG_COMBAT);
-					}
-				}
-
-				if ( triggered->behavior == &actMonster )
-				{
-					triggered->monsterReleaseAttackTarget();
-				}
-
-				createParticleErupt(triggered, 593);
-				serverSpawnMiscParticlesAtLocation(triggered->x / 16, triggered->y / 16, 0, PARTICLE_EFFECT_ERUPT, 593);
-			}
-			else
-			{
-				if ( parent && parent->behavior == &actPlayer && triggered->behavior == &actMonster )
-				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
-				}
-			}
-
-			playSoundEntity(my, 76, 64);
-			list_RemoveNode(my->mynode);
-			return;
-		}
-		else if ( doSpell != SPELL_NONE )
-		{
-			Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
-			spell->parent = my->parent;
-			spell->x = my->x;
-			spell->y = my->y;
-			if ( !doVertical )
-			{
-				real_t speed = 4.f;
-				real_t ticksToHit = (entityDistance / speed);
-				real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
-				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-				double tangent = atan2(predicty - my->y, predictx - my->x);
-				spell->yaw = tangent;
-				spell->vel_x = speed * cos(spell->yaw);
-				spell->vel_y = speed * sin(spell->yaw);
-			}
-			else
-			{
-				real_t speed = 3.f;
-				real_t ticksToHit = (entityDistance / speed);
-				real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
-				real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-				double tangent = atan2(predicty - my->y, predictx - my->x);
-				spell->yaw = tangent;
-				spell->vel_z = -2.f;
-				spell->vel_x = speed * cos(spell->yaw);
-				spell->vel_y = speed * sin(spell->yaw);
-				spell->pitch = atan2(spell->vel_z, speed);
-				spell->actmagicIsVertical = MAGIC_ISVERTICAL_XYZ;
-			}
-			spell->actmagicCastByTinkerTrap = 1;
-			if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL )
-			{
-				spell->actmagicTinkerTrapFriendlyFire = 1;
-				if ( triggered == parent )
-				{
-					spell->parent = 0;
-				}
-			}
-			spell->skill[5] = 10; // travel time
-		}
-		// set obituary
-		triggered->setObituary(language[3496]);
-		if ( triggered->behavior == &actPlayer )
-		{
-			int player = triggered->skill[2];
-			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-			messagePlayerColor(player, color, language[3497]);
-			if ( player > 0 )
-			{
-				serverUpdateEffects(player);
-			}
-		}
-		if ( parent && parent != triggered && parent->behavior == &actPlayer )
-		{
-			int player = parent->skill[2];
-			if ( player >= 0 )
-			{
-				double tangent = atan2(parent->y - my->y, parent->x - my->x);
-				lineTraceTarget(my, my->x, my->y, tangent, 128, 0, false, parent);
-				if ( hit.entity != parent )
-				{
-					if ( entityDist(my, parent) >= 64 && entityDist(my, parent) < 128 )
-					{
-						messagePlayer(player, language[3494]);
-					}
-					else
-					{
-						messagePlayer(player, language[3495]);
-					}
-				}
-				if ( rand() % 3 == 0 && triggered->behavior == &actMonster )
-				{
-					parent->increaseSkill(PRO_LOCKPICKING);
-				}
-			}
-		}
+		bombDoEffect(my, triggered, entityDistance);
 		playSoundEntity(my, 76, 64);
 		list_RemoveNode(my->mynode);
 		return;
