@@ -60,7 +60,43 @@ void Item::applySkeletonKey(int player, Entity& entity)
 void Item::applyLockpick(int player, Entity& entity)
 {
 	bool capstoneUnlocked = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= CAPSTONE_LOCKPICKING_UNLOCK);
-	if ( entity.behavior == &actChest )
+	if ( entity.behavior == &actBomb )
+	{
+		if ( entity.skill[21] == TOOL_TELEPORT_BOMB )
+		{
+			++entity.skill[22];
+			if ( entity.skill[22] > BOMB_TRIGGER_ALL )
+			{
+				entity.skill[22] = BOMB_TRIGGER_ENEMIES;
+			}
+		}
+		else
+		{
+			entity.skill[22] = (entity.skill[22] == BOMB_TRIGGER_ENEMIES) ? BOMB_TRIGGER_ALL : BOMB_TRIGGER_ENEMIES;
+		}
+		if ( entity.skill[22] == BOMB_TRIGGER_ENEMIES )
+		{
+			messagePlayer(player, language[3605]);
+			messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3606]);
+		}
+		else if ( entity.skill[22] == BOMB_TRIGGER_ALL )
+		{
+			messagePlayer(player, language[3607]);
+			messagePlayerColor(player, uint32ColorRed(*mainsurface), language[3608]);
+		}
+		else if ( entity.skill[22] == BOMB_TELEPORT_RECEIVER )
+		{
+			messagePlayer(player, language[3609]);
+			messagePlayer(player, language[3610]);
+
+			playSoundEntity(&entity, 166, 128); // invisible.ogg
+			createParticleDropRising(&entity, 579, 1.0);
+			serverSpawnMiscParticles(&entity, PARTICLE_EFFECT_RISING_DROP, 579);
+		}
+		serverUpdateEntitySkill(&entity, 22);
+		playSoundEntity(&entity, 253, 64);
+	}
+	else if ( entity.behavior == &actChest )
 	{
 		if ( entity.chestLocked )
 		{
@@ -594,7 +630,7 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 	}
 }
 
-void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown, Entity* onEntity)
+void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -633,9 +669,11 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 			entity->skill[14] = this->appearance;
 			entity->skill[15] = this->identified;
 			entity->skill[16] = placement;
+			entity->skill[20] = dir;
+			entity->skill[21] = type;
 		}
 	}
-	else if ( placement >= BOMB_WALL_NORTH && placement <= BOMB_WALL_WEST )
+	else if ( placement == BOMB_WALL )
 	{
 		if ( thrown )
 		{
@@ -647,24 +685,24 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 			entity->y = thrown->y;
 			entity->z = std::min(4.0, thrown->z);
 			int height = 1;
-			switch ( placement )
+			switch ( dir )
 			{
-				case BOMB_WALL_EAST:
+				case BOMB_EAST:
 					entity->yaw = 3 * PI / 2;
 					entity->x = (static_cast<int>(std::floor(entity->x + 8)) >> 4) * 16;
 					entity->x += height;
 					break;
-				case BOMB_WALL_SOUTH:
+				case BOMB_SOUTH:
 					entity->yaw = 0;
 					entity->y = (static_cast<int>(std::floor(entity->y + 8)) >> 4) * 16;
 					entity->y += height;
 					break;
-				case BOMB_WALL_WEST:
+				case BOMB_WEST:
 					entity->yaw = PI / 2;
 					entity->x = (static_cast<int>(std::floor(entity->x + 8)) >> 4) * 16;
 					entity->x -= height;
 					break;
-				case BOMB_WALL_NORTH:
+				case BOMB_NORTH:
 					entity->yaw = PI;
 					entity->y = (static_cast<int>(std::floor(entity->y + 8)) >> 4) * 16;
 					entity->y -= height;
@@ -692,6 +730,8 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 			entity->skill[14] = this->appearance;
 			entity->skill[15] = this->identified;
 			entity->skill[16] = placement;
+			entity->skill[20] = dir;
+			entity->skill[21] = type;
 		}
 	}
 	else if ( placement == BOMB_CHEST || placement == BOMB_DOOR )
@@ -723,27 +763,26 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 				}
 			}
 
-			int direction = 0;
 			if ( hit.side == HORIZONTAL )
 			{
 				if ( thrown->vel_x > 0 )
 				{
-					direction = Item::BOMB_WALL_WEST;
+					dir = BOMB_WEST;
 				}
 				else
 				{
-					direction = Item::BOMB_WALL_EAST;
+					dir = BOMB_EAST;
 				}
 			}
 			else if ( hit.side == VERTICAL )
 			{
 				if ( thrown->vel_y > 0 )
 				{
-					direction = Item::BOMB_WALL_NORTH;
+					dir = BOMB_NORTH;
 				}
 				else
 				{
-					direction = Item::BOMB_WALL_SOUTH;
+					dir = BOMB_SOUTH;
 				}
 			}
 			real_t height = 0;
@@ -790,9 +829,9 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 				}
 			}
 
-			switch ( direction )
+			switch ( dir )
 			{
-				case BOMB_WALL_EAST:
+				case BOMB_EAST:
 					entity->yaw = 3 * PI / 2;
 					entity->x = onEntity->x;
 					if ( onEntity->yaw == 0 && placement == BOMB_CHEST )
@@ -801,7 +840,7 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 					}
 					entity->x += height;
 					break;
-				case BOMB_WALL_SOUTH:
+				case BOMB_SOUTH:
 					entity->yaw = 0;
 					entity->y = onEntity->y;
 					if ( onEntity->yaw == PI / 2 && placement == BOMB_CHEST )
@@ -810,7 +849,7 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 					}
 					entity->y += height;
 					break;
-				case BOMB_WALL_WEST:
+				case BOMB_WEST:
 					entity->yaw = PI / 2;
 					entity->x = onEntity->x;
 					if ( onEntity->yaw == PI && placement == BOMB_CHEST )
@@ -819,7 +858,7 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 					}
 					entity->x -= height;
 					break;
-				case BOMB_WALL_NORTH:
+				case BOMB_NORTH:
 					entity->yaw = PI;
 					entity->y = onEntity->y;
 					if ( onEntity->yaw == 3 * PI / 2 && placement == BOMB_CHEST )
@@ -860,6 +899,8 @@ void Item::applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown
 			{
 				entity->skill[19] = onEntity->skill[3]; //chestHealth
 			}
+			entity->skill[20] = dir;
+			entity->skill[21] = type;
 		}
 	}
 }

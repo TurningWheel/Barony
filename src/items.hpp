@@ -286,9 +286,12 @@ typedef enum ItemType
 	TOOL_TINKERING_KIT,
 	TOOL_SENTRYBOT,
 	TOOL_REPAIRKIT,
-	TOOL_BOMB
+	TOOL_BOMB,
+	TOOL_SLEEP_BOMB,
+	TOOL_FREEZE_BOMB,
+	TOOL_TELEPORT_BOMB
 } ItemType;
-const int NUMITEMS = 264;
+const int NUMITEMS = 267;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -408,14 +411,25 @@ public:
 	enum ItemBombPlacement : int
 	{
 		BOMB_FLOOR,
-		BOMB_WALL_NORTH,
-		BOMB_WALL_EAST,
-		BOMB_WALL_SOUTH,
-		BOMB_WALL_WEST,
+		BOMB_WALL,
 		BOMB_CHEST,
 		BOMB_DOOR
 	};
-	void applyBomb(Entity* parent, ItemBombPlacement placement, Entity* thrown, Entity* onEntity);
+	enum ItemBombFacingDirection : int
+	{
+		BOMB_UP,
+		BOMB_NORTH,
+		BOMB_EAST,
+		BOMB_SOUTH,
+		BOMB_WEST
+	};
+	enum ItemBombTriggerType : int
+	{
+		BOMB_TRIGGER_ENEMIES,
+		BOMB_TELEPORT_RECEIVER,
+		BOMB_TRIGGER_ALL
+	};
+	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 };
 extern Uint32 itemuids;
 

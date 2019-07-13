@@ -50,12 +50,12 @@ real_t entityDist(Entity* my, Entity* your)
 
 -------------------------------------------------------------------------------*/
 
-Entity* entityClicked(bool* clickedOnGUI)
+Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride)
 {
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
-	if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
+	if ( !clickCheckOverride && !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
 	{
 		return NULL;
 	}
@@ -244,7 +244,7 @@ Entity* entityClicked(bool* clickedOnGUI)
 
 	Entity* entity = uidToEntity(uidnum);
 
-	if ( !entity && !mute_player_monster_sounds )
+	if ( !entity && !mute_player_monster_sounds && !clickCheckOverride )
 	{
 		if ( players[clientnum] && players[clientnum]->entity && monsterEmoteGimpTimer == 0 )
 		{

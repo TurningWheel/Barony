@@ -387,6 +387,7 @@ public:
 	Sint32& actmagicProjectileArc; // skill[19]
 	Sint32& actmagicOrbitCastFromSpell; // skill[20]
 	Sint32& actmagicCastByTinkerTrap; // skill[22]
+	Sint32& actmagicTinkerTrapFriendlyFire; // skill[23]
 	
 	//--PUBLIC GOLD SKILLS--
 	Sint32& goldAmount; //skill[0]
@@ -933,7 +934,7 @@ void actTextSource(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 267;
+static const int NUM_ITEM_STRINGS = 270;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 125;
 static const int NUM_EDITOR_SPRITES = 134;
 static const int NUM_EDITOR_TILES = 300;

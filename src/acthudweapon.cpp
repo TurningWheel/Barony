@@ -827,7 +827,7 @@ void actHudWeapon(Entity* my)
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							players[clientnum]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
-						else if ( stats[clientnum]->weapon->type == TOOL_BOMB )
+						else if ( stats[clientnum]->weapon->type >= TOOL_BOMB && stats[clientnum]->weapon->type <= TOOL_TELEPORT_BOMB )
 						{
 							HUDWEAPON_CHOP = 13;
 						}
@@ -841,14 +841,35 @@ void actHudWeapon(Entity* my)
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
 							Entity* player = players[clientnum]->entity;
-							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
-							if (hit.entity  && stats[clientnum]->weapon)
+							bool foundBomb = false;
+							if ( stats[clientnum]->weapon )
 							{
-								stats[clientnum]->weapon->apply(clientnum, hit.entity);
+								bool clickedOnGUI = false;
+								int tmpmousex = omousex;
+								int tmpmousey = omousey;
+								omousex = xres / 2; // pretend move the mouse to the centre of screen.
+								omousey = yres / 2;
+								Entity* clickedOn = entityClicked(&clickedOnGUI, true); // using objects
+								omousex = tmpmousex;
+								omousey = tmpmousey;
+								if ( clickedOn && clickedOn->behavior == &actBomb && entityDist(clickedOn, players[clientnum]->entity) < STRIKERANGE )
+								{
+									// found something
+									stats[clientnum]->weapon->apply(clientnum, clickedOn);
+									foundBomb = true;
+								}
 							}
-							else
+							if ( !foundBomb )
 							{
-								messagePlayer(clientnum, language[503], item->getName());
+								lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+								if ( hit.entity && stats[clientnum]->weapon )
+								{
+									stats[clientnum]->weapon->apply(clientnum, hit.entity);
+								}
+								else
+								{
+									messagePlayer(clientnum, language[503], item->getName());
+								}
 							}
 						}
 						else if ( item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN )
@@ -1288,7 +1309,7 @@ void actHudWeapon(Entity* my)
 					&& itemCategory(item) != GEM 
 					&& itemCategory(item) != THROWN
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
-					&& item->type != TOOL_BOMB
+					&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
 					&& item->type != TOOL_WHIP )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )

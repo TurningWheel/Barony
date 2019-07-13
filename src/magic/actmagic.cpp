@@ -630,7 +630,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					if ( hit.entity->behavior == &actPlayer )
 					{
 						bool skipMessage = false;
-						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+						if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) && my->actmagicTinkerTrapFriendlyFire == 0 )
 						{
 							if ( parent && (parent->behavior == &actMonster || parent->behavior == &actPlayer) && parent->checkFriend(hit.entity) )
 							{
@@ -950,7 +950,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				// Test for Friendly Fire, if Friendly Fire is OFF, delete the missile
 				if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 				{
-					if ( !strcmp(element->name, spellElement_telePull.name) || !strcmp(element->name, spellElement_shadowTag.name) )
+					if ( !strcmp(element->name, spellElement_telePull.name) 
+						|| !strcmp(element->name, spellElement_shadowTag.name)
+						|| my->actmagicTinkerTrapFriendlyFire == 1 )
 					{
 						// these spells can hit allies no penalty.
 					}

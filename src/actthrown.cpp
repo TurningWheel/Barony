@@ -163,7 +163,7 @@ void actThrown(Entity* my)
 				my->yaw += 0.5;
 			}
 		}
-		else if ( item->type == TOOL_BOMB )
+		else if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
 		{
 			my->yaw += 0.05;
 			THROWN_VELZ += 0.04;
@@ -211,11 +211,11 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( item && item->type == TOOL_BOMB )
+				else if ( item && (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
 				{
 					if ( parent )
 					{
-						item->applyBomb(parent, Item::BOMB_FLOOR, my, nullptr);
+						item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_FLOOR, Item::ItemBombFacingDirection::BOMB_UP, my, nullptr);
 					}
 					free(item);
 					list_RemoveNode(my->mynode);
@@ -394,18 +394,18 @@ void actThrown(Entity* my)
 					friendlyHit = true;
 				}
 			}
-			if ( item->type == TOOL_BOMB )
+			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
 			{
 				if ( hit.entity->behavior == &actChest )
 				{
-					item->applyBomb(parent, Item::BOMB_CHEST, my, hit.entity);
+					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_CHEST, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
 				}
 				else if ( hit.entity->behavior == &actDoor )
 				{
-					item->applyBomb(parent, Item::BOMB_DOOR, my, hit.entity);
+					item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_DOOR, Item::ItemBombFacingDirection::BOMB_UP, my, hit.entity);
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
@@ -1001,6 +1001,9 @@ void actThrown(Entity* my)
 					spawnMagicTower(parent, my->x, my->y, SPELL_LIGHTNING, nullptr);
 					break;
 				case TOOL_BOMB:
+				case TOOL_SLEEP_BOMB:
+				case TOOL_TELEPORT_BOMB:
+				case TOOL_FREEZE_BOMB:
 					if ( hit.side == 0 )
 					{
 						// pick a random side to be on.
@@ -1018,22 +1021,22 @@ void actThrown(Entity* my)
 					{
 						if ( THROWN_VELX > 0 )
 						{
-							item->applyBomb(parent, Item::BOMB_WALL_WEST, my, nullptr);
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_WEST, my, nullptr);
 						}
 						else
 						{
-							item->applyBomb(parent, Item::BOMB_WALL_EAST, my, nullptr);
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_EAST, my, nullptr);
 						}
 					}
 					else if ( hit.side == VERTICAL )
 					{
 						if ( THROWN_VELY > 0 )
 						{
-							item->applyBomb(parent, Item::BOMB_WALL_NORTH, my, nullptr);
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_NORTH, my, nullptr);
 						}
 						else
 						{
-							item->applyBomb(parent, Item::BOMB_WALL_SOUTH, my, nullptr);
+							item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_WALL, Item::ItemBombFacingDirection::BOMB_SOUTH, my, nullptr);
 						}
 					}
 					free(item);

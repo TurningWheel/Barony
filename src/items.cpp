@@ -2231,6 +2231,9 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_LOCKPICK:
 		case TOOL_SKELETONKEY:
 		case TOOL_BOMB:
+		case TOOL_SLEEP_BOMB:
+		case TOOL_FREEZE_BOMB:
+		case TOOL_TELEPORT_BOMB:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TORCH:

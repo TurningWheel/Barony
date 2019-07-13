@@ -240,6 +240,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitCastFromSpell(skill[20]),
 	actmagicBlessedSpellbookBonus(skill[21]),
 	actmagicCastByTinkerTrap(skill[22]),
+	actmagicTinkerTrapFriendlyFire(skill[23]),
 	goldAmount(skill[0]),
 	goldAmbience(skill[1]),
 	goldSokoban(skill[2]),
@@ -5655,7 +5656,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( itemCategory(myStats->weapon) == POTION 
 				|| itemCategory(myStats->weapon) == GEM 
 				|| itemCategory(myStats->weapon) == THROWN
-				|| myStats->weapon->type == TOOL_BOMB )
+				|| (myStats->weapon->type >= TOOL_BOMB && myStats->weapon->type <= TOOL_TELEPORT_BOMB) )
 			{
 				bool drankPotion = false;
 				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
@@ -5757,7 +5758,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 				}
-				else if ( myStats->weapon->type == TOOL_BOMB )
+				else if ( myStats->weapon->type >= TOOL_BOMB && myStats->weapon->type <= TOOL_TELEPORT_BOMB )
 				{
 					real_t normalisedCharge = (charge * 0.5);
 					normalisedCharge /= MAXCHARGE;
@@ -8825,13 +8826,14 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 
 	std::vector<std::pair<int, int>> goodspots;
 	std::vector<std::pair<int, int>> spotsBehindMonster;
-	for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	bool forceSpot = false;
+	for ( int iy = std::max(1, ty - dist); !forceSpot && iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
-		for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		for ( int ix = std::max(1, tx - dist); !forceSpot && ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 		{
 			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
 			{
-				if ( behavior == &actPlayer )
+				if ( behavior == &actPlayer && target->behavior == &actMonster )
 				{
 					// check LOS
 					Entity* ohit = hit.entity;
@@ -8872,6 +8874,18 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 				}
 				else
 				{
+					if ( target->behavior == &actBomb && target->skill[22] == 1 ) // teleport receiver.
+					{
+						if ( ix == tx && iy == ty )
+						{
+							// directly on top, let's go there.
+							forceSpot = true;
+							goodspots.clear();
+							goodspots.push_back(std::make_pair(ix, iy));
+							numlocations = 1;
+							break;
+						}
+					}
 					goodspots.push_back(std::make_pair(ix, iy));
 					numlocations++;
 				}
