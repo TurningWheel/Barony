@@ -2357,6 +2357,10 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, "Set tickrate to %d, network processing allowed %3.0f percent of frame limit interval. Default value 2.", 
 				networkTickrate, 100.f / networkTickrate);
 		}
+		else if ( !strncmp(command_str, "/disablenetcodefpslimit", 23) )
+		{
+			disableFPSLimitOnNetworkMessages = !disableFPSLimitOnNetworkMessages;
+		}
 		else if ( !strncmp(command_str, "/allspells", 10) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )

@@ -113,6 +113,7 @@ public:
 extern NetHandler* net_handler;
 
 extern bool disableMultithreadedSteamNetworking;
+extern bool disableFPSLimitOnNetworkMessages;
 
 int steamPacketThread(void* data);
 
