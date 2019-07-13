@@ -898,6 +898,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 			else if ( placement == BOMB_CHEST )
 			{
 				entity->skill[19] = onEntity->skill[3]; //chestHealth
+				entity->skill[22] = onEntity->skill[1];
 			}
 			entity->skill[20] = dir;
 			entity->skill[21] = type;

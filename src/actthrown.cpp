@@ -376,6 +376,12 @@ void actThrown(Entity* my)
 		cat = itemCategory(item);
 		itemname = item->getName();
 		item->count = 1;
+
+		if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || itemCategory(item) == POTION )
+		{
+			my->entityCheckIfTriggeredBomb(true);
+		}
+
 		if ( hit.entity != nullptr )
 		{
 			Entity* parent = uidToEntity(my->parent);

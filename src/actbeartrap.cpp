@@ -275,11 +275,14 @@ void actBeartrapLaunched(Entity* my)
 #define BOMB_DIRECTION my->skill[20]
 #define BOMB_ITEMTYPE my->skill[21]
 #define BOMB_TRIGGER_TYPE my->skill[22]
+#define BOMB_CHEST_STATUS my->skill[23]
+#define BOMB_HIT_BY_PROJECTILE my->skill[24]
 
-void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
+void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spawnMagicOnTriggeredMonster )
 {
 	Entity* parent = uidToEntity(my->parent);
 	Stat* stat = triggered->getStats();
+	int damage = 0;
 	//messagePlayer(0, "dmg: %d", damage);
 	int doSpell = SPELL_NONE;
 	bool doVertical = false;
@@ -287,15 +290,19 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
 	{
 		case TOOL_BOMB:
 			doSpell = SPELL_FIREBALL;
+			damage = 5;
 			break;
 		case TOOL_SLEEP_BOMB:
 			doSpell = SPELL_SLEEP;
+			damage = 10;
 			break;
 		case TOOL_FREEZE_BOMB:
 			doSpell = SPELL_COLD;
+			damage = 5;
 			break;
 		case TOOL_TELEPORT_BOMB:
 			doSpell = SPELL_TELEPORTATION;
+			damage = 0;
 			break;
 		default:
 			break;
@@ -327,7 +334,8 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
 			Entity* entity = (Entity*)node->element;
 			if ( entity && entity != my && entity->behavior == &actBomb )
 			{
-				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1 )
+				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1
+					&& entity->parent == my->parent )
 				{
 					// receiver location.
 					goodspots.push_back(entity);
@@ -386,17 +394,22 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
 				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
 			}
 		}
-
-		playSoundEntity(my, 76, 64);
-		list_RemoveNode(my->mynode);
 		return;
 	}
 	else if ( doSpell != SPELL_NONE )
 	{
 		Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
 		spell->parent = my->parent;
-		spell->x = my->x;
-		spell->y = my->y;
+		if ( spawnMagicOnTriggeredMonster )
+		{
+			spell->x = triggered->x;
+			spell->y = triggered->y;
+		}
+		else
+		{
+			spell->x = my->x;
+			spell->y = my->y;
+		}
 		if ( !doVertical )
 		{
 			real_t speed = 4.f;
@@ -434,7 +447,18 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
 		spell->skill[5] = 10; // travel time
 	}
 	// set obituary
+	int oldHP = stat->HP;
+	triggered->modHP(-damage);
 	triggered->setObituary(language[3496]);
+
+	if ( stat->HP <= 0 && oldHP > 0 )
+	{
+		if ( parent )
+		{
+			parent->awardXP(triggered, true, true);
+		}
+	}
+
 	if ( triggered->behavior == &actPlayer )
 	{
 		int player = triggered->skill[2];
@@ -443,6 +467,22 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
 		if ( player > 0 )
 		{
 			serverUpdateEffects(player);
+		}
+		
+		if ( player == clientnum )
+		{
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
+		else if ( player > 0 && multiplayer == SERVER )
+		{
+			strcpy((char*)net_packet->data, "SHAK");
+			net_packet->data[4] = 10; // turns into .1
+			net_packet->data[5] = 10;
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			net_packet->len = 6;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
 	if ( parent && parent != triggered && parent->behavior == &actPlayer )
@@ -466,6 +506,27 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance)
 			if ( rand() % 3 == 0 && triggered->behavior == &actMonster )
 			{
 				parent->increaseSkill(PRO_LOCKPICKING);
+			}
+			// update enemy bar for attacker
+			if ( damage > 0 )
+			{
+				if ( !strcmp(stat->name, "") )
+				{
+					if ( stat->type < KOBOLD ) //Original monster count
+					{
+						updateEnemyBar(parent, triggered, language[90 + stat->type], stat->HP, stat->MAXHP);
+					}
+					else if ( stat->type >= KOBOLD ) //New monsters
+					{
+						updateEnemyBar(parent, triggered, language[2000 + (stat->type - KOBOLD)], stat->HP, stat->MAXHP);
+					}
+				}
+				else
+				{
+					updateEnemyBar(parent, triggered, stat->name, stat->HP, stat->MAXHP);
+				}
+				Entity* gib = spawnGib(triggered);
+				serverSpawnGibForClient(gib);
 			}
 		}
 	}
@@ -541,26 +602,63 @@ void actBomb(Entity* my)
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
 	Entity* triggered = false;
 	real_t entityDistance = 0.f;
+	bool bombExplodeAOETargets = false;
 
-	if ( BOMB_ENTITY_ATTACHED_TO != 0 )
+	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 )
 	{
 		Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
+		bool shouldExplode = false;
 		if ( onEntity )
 		{
 			if ( onEntity->behavior == &actDoor )
 			{
-				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE] )
+				if ( onEntity->doorHealth < BOMB_ENTITY_ATTACHED_START_HP || onEntity->flags[PASSABLE]
+					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
-					onEntity->doorHandleDamageMagic(50, *my, uidToEntity(my->parent));
+					if ( onEntity->doorHealth > 0 )
+					{
+						onEntity->doorHandleDamageMagic(50, *my, uidToEntity(my->parent));
+					}
+					shouldExplode = true;
 				}
 			}
 			else if ( onEntity->behavior == &actChest )
 			{
-				if ( onEntity->skill[3] < BOMB_ENTITY_ATTACHED_START_HP)
+				if ( onEntity->skill[3] < BOMB_ENTITY_ATTACHED_START_HP || BOMB_CHEST_STATUS != onEntity->skill[1]
+					|| BOMB_HIT_BY_PROJECTILE == 1 )
 				{
-					onEntity->chestHandleDamageMagic(50, *my, uidToEntity(my->parent));
+					if ( onEntity->skill[3] > 0 )
+					{
+						if ( BOMB_ITEMTYPE == TOOL_BOMB ) // fire bomb do more.
+						{
+							onEntity->chestHandleDamageMagic(50, *my, uidToEntity(my->parent));
+						}
+						else
+						{
+							onEntity->chestHandleDamageMagic(10, *my, uidToEntity(my->parent));
+						}
+					}
+					shouldExplode = true;
 				}
 			}
+		}
+		else
+		{
+			shouldExplode = true; // my attached entity died.
+		}
+
+		if ( shouldExplode )
+		{
+			if ( onEntity )
+			{
+				spawnExplosion(onEntity->x, onEntity->y, onEntity->z);
+			}
+			else
+			{
+				spawnExplosion(my->x, my->y, my->z);
+			}
+			bombExplodeAOETargets = true;
+			BOMB_TRIGGER_TYPE = Item::ItemBombTriggerType::BOMB_TRIGGER_ALL;
 		}
 	}
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !triggered; ++it )
@@ -600,8 +698,30 @@ void actBomb(Entity* my)
 						entityDistance = entityDist(my, entity);
 						if ( entityDistance < 6.5 )
 						{
-							spawnExplosion(my->x, my->y, my->z - 2);
+							spawnExplosion(my->x - 4 + rand() % 9, my->y + rand() % 9, my->z - 2);
 							triggered = entity;
+						}
+					}
+					else if ( bombExplodeAOETargets )
+					{
+						Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
+						if ( onEntity )
+						{
+							entityDistance = entityDist(onEntity, entity);
+							if ( entityDistance < 16 )
+							{
+								spawnExplosion(entity->x, entity->y, entity->z);
+								bombDoEffect(my, entity, entityDistance, true);
+							}
+						}
+						else
+						{
+							entityDistance = entityDist(my, entity);
+							if ( entityDistance < 16 )
+							{
+								spawnExplosion(entity->x, entity->y, entity->z);
+								bombDoEffect(my, entity, entityDistance, true);
+							}
 						}
 					}
 					else
@@ -617,7 +737,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x - 4, my->y, my->z);
+									spawnExplosion(my->x - rand() % 9, my->y - 4 + rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_WEST:
@@ -626,7 +746,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x + 4, my->y, my->z);
+									spawnExplosion(my->x + rand() % 9, my->y - 4 + rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_SOUTH:
@@ -635,7 +755,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x, my->y - 4, my->z);
+									spawnExplosion(my->x - 4 + rand() % 9, my->y - rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_NORTH:
@@ -644,7 +764,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x, my->y + 4, my->z);
+									spawnExplosion(my->x - 4 + rand() % 9, my->y + rand() % 9, my->z);
 								}
 								break;
 							default:
@@ -658,11 +778,58 @@ void actBomb(Entity* my)
 		}
 	}
 
-	if ( triggered )
+	if ( triggered && (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST) )
 	{
-		bombDoEffect(my, triggered, entityDistance);
+
+	}
+	if ( bombExplodeAOETargets )
+	{
+		my->removeLightField();
 		playSoundEntity(my, 76, 64);
 		list_RemoveNode(my->mynode);
 		return;
 	}
+	else if ( triggered )
+	{
+		my->removeLightField();
+		bombDoEffect(my, triggered, entityDistance, false);
+		playSoundEntity(my, 76, 64);
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
+bool Entity::entityCheckIfTriggeredBomb(bool triggerBomb)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+	if ( this->behavior != &actThrown && this->behavior != &actArrow )
+	{
+		return false;
+	}
+	bool foundBomb = false;
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity && entity->behavior == &actBomb && entity->skill[24] == 0 )
+			{
+				if ( entityInsideEntity(this, entity) )
+				{
+					if ( triggerBomb )
+					{
+						entity->skill[24] = 1;
+					}
+					foundBomb = true;
+				}
+			}
+		}
+	}
+	return foundBomb;
 }

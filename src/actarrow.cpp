@@ -84,6 +84,7 @@ void actArrow(Entity* my)
 			ARROW_VELX = 0;
 			ARROW_VELY = 0;
 			ARROW_VELZ = 0;
+			my->entityCheckIfTriggeredBomb(true);
 			if ( hit.entity != NULL )
 			{
 				Entity* parent = uidToEntity(my->parent);
