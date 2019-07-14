@@ -278,8 +278,12 @@ void actBeartrapLaunched(Entity* my)
 #define BOMB_CHEST_STATUS my->skill[23]
 #define BOMB_HIT_BY_PROJECTILE my->skill[24]
 
-void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spawnMagicOnTriggeredMonster )
+void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spawnMagicOnTriggeredMonster, bool hitByAOE )
 {
+	if ( !triggered || !my )
+	{
+		return;
+	}
 	Entity* parent = uidToEntity(my->parent);
 	Stat* stat = triggered->getStats();
 	int damage = 0;
@@ -294,7 +298,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			break;
 		case TOOL_SLEEP_BOMB:
 			doSpell = SPELL_SLEEP;
-			damage = 10;
+			damage = 0;
 			break;
 		case TOOL_FREEZE_BOMB:
 			doSpell = SPELL_COLD;
@@ -312,6 +316,34 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		doVertical = true;
 	}
 
+	// stumbled into the trap!
+	Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+	if ( parent && parent->behavior == &actPlayer && triggered != parent )
+	{
+		if ( !hitByAOE )
+		{
+			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_TOOL_BOMB, my);
+		}
+		else
+		{
+			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3613], language[3614], MSG_TOOL_BOMB, my);
+		}
+	}
+	if ( triggered->behavior == &actPlayer )
+	{
+		int player = triggered->skill[2];
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		// you stumbled into the trap!
+		if ( !hitByAOE )
+		{
+			messagePlayerColor(player, color, language[3497], items[BOMB_ITEMTYPE].name_identified);
+		}
+		else
+		{
+			messagePlayerColor(player, color, language[3612], items[BOMB_ITEMTYPE].name_identified);
+		}
+	}
+
 	if ( doSpell == SPELL_TELEPORTATION )
 	{
 		if ( triggered->isBossMonster() )
@@ -319,10 +351,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			// no effect.
 			if ( parent && parent->behavior == &actPlayer )
 			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				// stumbled into the trap!
-				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_COMBAT);
-				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
 			}
 			return;
@@ -334,15 +363,30 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			Entity* entity = (Entity*)node->element;
 			if ( entity && entity != my && entity->behavior == &actBomb )
 			{
-				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1
-					&& entity->parent == my->parent )
+				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1 )
 				{
 					// receiver location.
 					goodspots.push_back(entity);
 				}
 			}
 		}
-		if ( !goodspots.empty() )
+
+		std::vector<Entity*> parentgoodspots; // prioritize traps from the player owner, instead of other player's traps.
+		for ( auto it = goodspots.begin(); it != goodspots.end(); ++it )
+		{
+			Entity* entry = *it;
+			if ( entry && (entry->parent == my->parent) )
+			{
+				parentgoodspots.push_back(entry);
+			}
+		}
+
+		if ( !parentgoodspots.empty() )
+		{
+			Entity* targetLocation = parentgoodspots[rand() % parentgoodspots.size()];
+			teleported = triggered->teleportAroundEntity(targetLocation, 2);
+		}
+		else if ( !goodspots.empty() )
 		{
 			Entity* targetLocation = goodspots[rand() % goodspots.size()];
 			teleported = triggered->teleportAroundEntity(targetLocation, 2);
@@ -352,30 +396,23 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			teleported = triggered->teleportRandom(); // woosh!
 		}
 
-		// stumbled into the trap!
-		Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-		if ( parent && parent->behavior == &actPlayer && triggered->behavior == &actMonster )
-		{
-			messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3498], language[3499], MSG_COMBAT);
-		}
-
 		if ( teleported )
 		{
 			createParticleErupt(my, 593);
 			serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 593);
-			if ( triggered->behavior == &actPlayer )
-			{
-				int player = triggered->skill[2];
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-				messagePlayerColor(player, color, language[3497]);
-			}
 			if ( parent && parent->behavior == &actPlayer )
 			{
+				// whisked away!
 				if ( triggered != parent )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3601], language[3602], MSG_COMBAT);
 				}
+			}
+			if ( triggered->behavior == &actPlayer )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+				messagePlayerColor(triggered->skill[2], color, language[3611], items[BOMB_ITEMTYPE].name_identified);
 			}
 
 			if ( triggered->behavior == &actMonster )
@@ -388,10 +425,10 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		}
 		else
 		{
-			if ( parent && parent->behavior == &actPlayer && triggered->behavior == &actMonster )
+			if ( parent && parent->behavior == &actPlayer && triggered != parent )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3603], language[3604], MSG_COMBAT);
+				messagePlayerMonsterEvent(parent->skill[2], color, *triggered->getStats(), language[3615], language[3616], MSG_COMBAT);
 			}
 		}
 		return;
@@ -400,29 +437,24 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	{
 		Entity* spell = castSpell(my->getUID(), getSpellFromID(doSpell), false, true);
 		spell->parent = my->parent;
-		if ( spawnMagicOnTriggeredMonster )
-		{
-			spell->x = triggered->x;
-			spell->y = triggered->y;
-		}
-		else
-		{
-			spell->x = my->x;
-			spell->y = my->y;
-		}
+		spell->x = triggered->x;
+		spell->y = triggered->y;
 		if ( !doVertical )
 		{
-			real_t speed = 4.f;
+			real_t speed = 1.f;
 			real_t ticksToHit = (entityDistance / speed);
-			real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
+			/*real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
 			real_t predicty = triggered->y + (triggered->vel_y * ticksToHit);
-			double tangent = atan2(predicty - my->y, predictx - my->x);
+			double tangent = atan2(predicty - my->y, predictx - my->x);*/
+			double tangent = atan2(triggered->y - my->y, triggered->x - my->x);
 			spell->yaw = tangent;
 			spell->vel_x = speed * cos(spell->yaw);
 			spell->vel_y = speed * sin(spell->yaw);
 		}
 		else
 		{
+			spell->x = my->x;
+			spell->y = my->y;
 			real_t speed = 3.f;
 			real_t ticksToHit = (entityDistance / speed);
 			real_t predictx = triggered->x + (triggered->vel_x * ticksToHit);
@@ -462,12 +494,6 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	if ( triggered->behavior == &actPlayer )
 	{
 		int player = triggered->skill[2];
-		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-		messagePlayerColor(player, color, language[3497]);
-		if ( player > 0 )
-		{
-			serverUpdateEffects(player);
-		}
 		
 		if ( player == clientnum )
 		{
@@ -604,11 +630,39 @@ void actBomb(Entity* my)
 	real_t entityDistance = 0.f;
 	bool bombExplodeAOETargets = false;
 
-	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 )
+	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL )
 	{
 		Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
 		bool shouldExplode = false;
-		if ( onEntity )
+		if ( BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL )
+		{
+			int checkx = my->x;
+			int checky = my->y;
+			switch ( BOMB_DIRECTION )
+			{
+				case Item::ItemBombFacingDirection::BOMB_EAST:
+					checkx -= 8;
+					break;
+				case Item::ItemBombFacingDirection::BOMB_WEST:
+					checkx += 8;
+					break;
+				case Item::ItemBombFacingDirection::BOMB_SOUTH:
+					checky -= 8;
+					break;
+				case Item::ItemBombFacingDirection::BOMB_NORTH:
+					checky += 8;
+					break;
+				default:
+					break;
+			}
+			checkx = checkx >> 4;
+			checky = checky >> 4;
+			if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
+			{
+				shouldExplode = true;
+			}
+		}
+		else if ( onEntity )
 		{
 			if ( onEntity->behavior == &actDoor )
 			{
@@ -635,7 +689,7 @@ void actBomb(Entity* my)
 						}
 						else
 						{
-							onEntity->chestHandleDamageMagic(10, *my, uidToEntity(my->parent));
+							onEntity->chestHandleDamageMagic(20, *my, uidToEntity(my->parent));
 						}
 					}
 					shouldExplode = true;
@@ -708,19 +762,19 @@ void actBomb(Entity* my)
 						if ( onEntity )
 						{
 							entityDistance = entityDist(onEntity, entity);
-							if ( entityDistance < 16 )
+							if ( entityDistance < STRIKERANGE )
 							{
 								spawnExplosion(entity->x, entity->y, entity->z);
-								bombDoEffect(my, entity, entityDistance, true);
+								bombDoEffect(my, entity, entityDistance, true, true);
 							}
 						}
 						else
 						{
 							entityDistance = entityDist(my, entity);
-							if ( entityDistance < 16 )
+							if ( entityDistance < STRIKERANGE )
 							{
 								spawnExplosion(entity->x, entity->y, entity->z);
-								bombDoEffect(my, entity, entityDistance, true);
+								bombDoEffect(my, entity, entityDistance, true, true);
 							}
 						}
 					}
@@ -778,11 +832,13 @@ void actBomb(Entity* my)
 		}
 	}
 
-	if ( triggered && (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST) )
+	if ( !bombExplodeAOETargets && triggered 
+		&& (BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_DOOR || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_CHEST) )
 	{
-
+		// found enemy, do AoE effect.
+		BOMB_HIT_BY_PROJECTILE = 1;
 	}
-	if ( bombExplodeAOETargets )
+	else if ( bombExplodeAOETargets )
 	{
 		my->removeLightField();
 		playSoundEntity(my, 76, 64);
@@ -792,7 +848,7 @@ void actBomb(Entity* my)
 	else if ( triggered )
 	{
 		my->removeLightField();
-		bombDoEffect(my, triggered, entityDistance, false);
+		bombDoEffect(my, triggered, entityDistance, false, false);
 		playSoundEntity(my, 76, 64);
 		list_RemoveNode(my->mynode);
 		return;

@@ -14254,7 +14254,7 @@ handles text for monster interaction/damage/obituaries
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* monster)
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType, Entity* optionalEntity)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -14264,9 +14264,12 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 	// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 	bool namedMonsterAsGeneric = monsterNameIsGeneric(monsterStats);
 	int monsterType = monsterStats.type;
-	if ( monster != nullptr && monster->behavior == &actPlayer )
+	if ( optionalEntity != nullptr )
 	{
-		monsterType = monster->getMonsterTypeFromSprite();
+		if ( optionalEntity->behavior == &actPlayer )
+		{
+			monsterType = optionalEntity->getMonsterTypeFromSprite();
+		}
 	}
 
 	//char str[256] = { 0 };
@@ -14327,6 +14330,22 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				else if ( monsterType >= KOBOLD ) //New monsters
 				{
 					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], monsterStats.weapon->getName());
+				}
+			}
+		}
+		else if ( detailType == MSG_TOOL_BOMB )
+		{
+			int itemType = WOODEN_SHIELD;
+			if ( optionalEntity && optionalEntity->behavior == &actBomb )
+			{
+				itemType = optionalEntity->skill[21];
+				if ( monsterType < KOBOLD ) // Original monster count
+				{
+					messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], items[itemType].name_identified);
+				}
+				else if ( monsterType >= KOBOLD ) //New monsters
+				{
+					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], items[itemType].name_identified);
 				}
 			}
 		}
@@ -14452,6 +14471,26 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 				else if ( monsterType >= KOBOLD ) //New monsters
 				{
 					messagePlayerColor(player, color, msgNamed, monsterStats.name, monsterStats.weapon->getName());
+				}
+			}
+		}
+		else if ( detailType == MSG_TOOL_BOMB )
+		{
+			int itemType = WOODEN_SHIELD;
+			if ( optionalEntity && optionalEntity->behavior == &actBomb )
+			{
+				itemType = optionalEntity->skill[21];
+				if ( namedMonsterAsGeneric || monsterType == HUMAN )
+				{
+					messagePlayerColor(player, color, msgGeneric, monsterStats.name, items[itemType].name_identified);
+				}
+				else if ( monsterType < KOBOLD ) // Original monster count
+				{
+					messagePlayerColor(player, color, msgGeneric, language[90 + monsterType], items[itemType].name_identified);
+				}
+				else if ( monsterType >= KOBOLD ) //New monsters
+				{
+					messagePlayerColor(player, color, msgGeneric, language[2000 + (monsterType - KOBOLD)], items[itemType].name_identified);
 				}
 			}
 		}

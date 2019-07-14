@@ -1277,11 +1277,25 @@ void Entity::chestHandleDamageMagic(int damage, Entity &magicProjectile, Entity 
 		{
 			if ( chestHealth <= 0 )
 			{
-				messagePlayer(caster->skill[2], language[2520]);
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], language[3617], items[magicProjectile.skill[21]].name_identified, language[675]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[2520]);
+				}
 			}
 			else
 			{
-				messagePlayer(caster->skill[2], language[378], language[675]);
+				if ( magicProjectile.behavior == &actBomb )
+				{
+					messagePlayer(caster->skill[2], language[3618], items[magicProjectile.skill[21]].name_identified, language[675]);
+				}
+				else
+				{
+					messagePlayer(caster->skill[2], language[378], language[675]);
+				}
 			}
 		}
 		updateEnemyBar(caster, this, language[675], chestHealth, chestMaxHealth);

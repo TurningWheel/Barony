@@ -639,6 +639,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 
 						player = hit.entity->skill[2];
+						if ( my->actmagicCastByTinkerTrap == 1 )
+						{
+							skipMessage = true;
+						}
 						if ( !skipMessage )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -658,7 +662,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								if ( my->actmagicCastByTinkerTrap == 1 )
 								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
+									//messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
 								}
 								else
 								{
@@ -711,6 +715,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						reflection = hit.entity->getReflection();
 					}
+					if ( my->actmagicCastByTinkerTrap == 1 )
+					{
+						reflection = 0;
+					}
 					if ( reflection == 3 && hitstats->shield && hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
 					{
 						if ( my->actmagicIsVertical == MAGIC_ISVERTICAL_Z )
@@ -748,14 +756,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !strcmp(element->name, spellElement_charmMonster.name) )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( my->actmagicCastByTinkerTrap == 1 )
-								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3498], language[3499], MSG_COMBAT);
-								}
-								else
-								{
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
-								}
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
 							}
 							if ( !spellIsReflectingMagic )
 							{
