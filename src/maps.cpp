@@ -3368,6 +3368,18 @@ void assignActions(map_t* map)
 						entity->sprite = 646;
 						entity->skill[29] = 120;
 						break;
+					case SENTRYBOT:
+						entity->z = 0;
+						entity->focalx = limbs[SENTRYBOT][0][0]; // 0
+						entity->focaly = limbs[SENTRYBOT][0][1]; // 0
+						entity->focalz = limbs[SENTRYBOT][0][2]; // -1.75
+						break;
+					case SPELLBOT:
+						entity->z = 0;
+						entity->focalx = limbs[SENTRYBOT][0][0]; // 0
+						entity->focaly = limbs[SENTRYBOT][0][1]; // 0
+						entity->focalz = limbs[SENTRYBOT][0][2]; // -1.75
+						break;
 					default:
 						break;
 				}

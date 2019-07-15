@@ -75,6 +75,8 @@ void initSentryBot(Entity* my, Stat* myStats)
 		}
 	}
 
+	int race = my->getMonsterTypeFromSprite();
+
 	// tripod
 	Entity* entity = newEntity(873, 0, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
@@ -84,9 +86,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][1][0];
-	entity->focaly = limbs[SENTRYBOT][1][1];
-	entity->focalz = limbs[SENTRYBOT][1][2];
+	entity->focalx = limbs[race][1][0];
+	entity->focaly = limbs[race][1][1];
+	entity->focalz = limbs[race][1][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -104,9 +106,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][2][0];
-	entity->focaly = limbs[SENTRYBOT][2][1];
-	entity->focalz = limbs[SENTRYBOT][2][2];
+	entity->focalx = limbs[race][2][0];
+	entity->focaly = limbs[race][2][1];
+	entity->focalz = limbs[race][2][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -124,9 +126,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][2][0];
-	entity->focaly = -limbs[SENTRYBOT][2][1];
-	entity->focalz = limbs[SENTRYBOT][2][2];
+	entity->focalx = limbs[race][2][0];
+	entity->focaly = -limbs[race][2][1];
+	entity->focalz = limbs[race][2][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -144,9 +146,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][3][0];
-	entity->focaly = limbs[SENTRYBOT][3][1];
-	entity->focalz = limbs[SENTRYBOT][3][2];
+	entity->focalx = limbs[race][3][0];
+	entity->focaly = limbs[race][3][1];
+	entity->focalz = limbs[race][3][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -164,9 +166,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][3][0];
-	entity->focaly = -limbs[SENTRYBOT][3][1];
-	entity->focalz = limbs[SENTRYBOT][3][2];
+	entity->focalx = limbs[race][3][0];
+	entity->focaly = -limbs[race][3][1];
+	entity->focalz = limbs[race][3][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -184,9 +186,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][4][0];
-	entity->focaly = limbs[SENTRYBOT][4][1];
-	entity->focalz = limbs[SENTRYBOT][4][2];
+	entity->focalx = limbs[race][4][0];
+	entity->focaly = limbs[race][4][1];
+	entity->focalz = limbs[race][4][2];
 	entity->scalex = 0.99;
 	entity->scaley = 0.99;
 	entity->scalez = 0.99;
@@ -207,9 +209,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][5][0];
-	entity->focaly = limbs[SENTRYBOT][5][1];
-	entity->focalz = limbs[SENTRYBOT][5][2];
+	entity->focalx = limbs[race][5][0];
+	entity->focaly = limbs[race][5][1];
+	entity->focalz = limbs[race][5][2];
 	entity->behavior = &actSentryBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -228,9 +230,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[INVISIBLE] = true;
 	entity->yaw = my->yaw;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SENTRYBOT][6][0];
-	entity->focaly = limbs[SENTRYBOT][6][1];
-	entity->focalz = limbs[SENTRYBOT][6][2];
+	entity->focalx = limbs[race][6][0];
+	entity->focaly = limbs[race][6][1];
+	entity->focalz = limbs[race][6][2];
 	entity->scalex = 0.99;
 	entity->scaley = 0.99;
 	entity->scalez = 0.99;
@@ -300,7 +302,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GYROBOT][1][0];
 	entity->focaly = limbs[GYROBOT][1][1];
 	entity->focalz = limbs[GYROBOT][1][2];
@@ -320,7 +322,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GYROBOT][2][0];
 	entity->focaly = limbs[GYROBOT][2][1];
 	entity->focalz = limbs[GYROBOT][2][2];
@@ -395,10 +397,15 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	my->focalx = limbs[SENTRYBOT][0][0];
-	my->focaly = limbs[SENTRYBOT][0][1];
-	my->focalz = limbs[SENTRYBOT][0][2];
-	my->z = limbs[SENTRYBOT][11][2];
+	int race = my->getMonsterTypeFromSprite();
+
+	my->focalx = limbs[race][0][0];
+	my->focaly = limbs[race][0][1];
+	my->focalz = limbs[race][0][2];
+	if ( multiplayer != CLIENT )
+	{
+		my->z = limbs[race][11][2];
+	}
 
 	Entity* tripod = nullptr;
 	Entity* gearBodyLeft = nullptr;
@@ -411,6 +418,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			continue;
 		}
+
 		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
@@ -626,22 +634,22 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			case BODY_TRIPOD:
 				tripod = entity;
-				entity->focalx = limbs[SENTRYBOT][1][0];
-				entity->focaly = limbs[SENTRYBOT][1][1];
-				entity->focalz = limbs[SENTRYBOT][1][2];
-				entity->x += limbs[SENTRYBOT][7][0];
-				entity->y += limbs[SENTRYBOT][7][1];
-				entity->z += limbs[SENTRYBOT][7][2];
+				entity->focalx = limbs[race][1][0];
+				entity->focaly = limbs[race][1][1];
+				entity->focalz = limbs[race][1][2];
+				entity->x += limbs[race][7][0];
+				entity->y += limbs[race][7][1];
+				entity->z += limbs[race][7][2];
 				break;
 			case GEAR_HEAD_LEFT:
-				entity->focalx = limbs[SENTRYBOT][2][0];
-				entity->focaly = limbs[SENTRYBOT][2][1];
-				entity->focalz = limbs[SENTRYBOT][2][2];
+				entity->focalx = limbs[race][2][0];
+				entity->focaly = limbs[race][2][1];
+				entity->focalz = limbs[race][2][2];
 				if ( tripod )
 				{
-					entity->x += limbs[SENTRYBOT][8][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * cos(tripod->yaw);
-					entity->y += limbs[SENTRYBOT][8][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * sin(tripod->yaw);
-					entity->z += limbs[SENTRYBOT][8][2];
+					entity->x += limbs[race][8][0] * cos(tripod->yaw + PI / 2) + limbs[race][8][1] * cos(tripod->yaw);
+					entity->y += limbs[race][8][0] * sin(tripod->yaw + PI / 2) + limbs[race][8][1] * sin(tripod->yaw);
+					entity->z += limbs[race][8][2];
 				}
 				break;
 			case GEAR_HEAD_RIGHT:
@@ -649,49 +657,49 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					entity->pitch = gearHeadLeft->pitch;
 				}
-				entity->focalx = limbs[SENTRYBOT][2][0];
-				entity->focaly = -limbs[SENTRYBOT][2][1];
-				entity->focalz = limbs[SENTRYBOT][2][2];
+				entity->focalx = limbs[race][2][0];
+				entity->focaly = -limbs[race][2][1];
+				entity->focalz = limbs[race][2][2];
 				if ( tripod )
 				{
-					entity->x -= limbs[SENTRYBOT][8][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * cos(tripod->yaw);
-					entity->y -= limbs[SENTRYBOT][8][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][8][1] * sin(tripod->yaw);
-					entity->z += limbs[SENTRYBOT][8][2];
+					entity->x -= limbs[race][8][0] * cos(tripod->yaw + PI / 2) + limbs[race][8][1] * cos(tripod->yaw);
+					entity->y -= limbs[race][8][0] * sin(tripod->yaw + PI / 2) + limbs[race][8][1] * sin(tripod->yaw);
+					entity->z += limbs[race][8][2];
 				}
 				break;
 			case GEAR_BODY_LEFT:
 				gearBodyLeft = entity;
-				entity->focalx = limbs[SENTRYBOT][3][0];
-				entity->focaly = limbs[SENTRYBOT][3][1];
-				entity->focalz = limbs[SENTRYBOT][3][2];
+				entity->focalx = limbs[race][3][0];
+				entity->focaly = limbs[race][3][1];
+				entity->focalz = limbs[race][3][2];
 				if ( tripod )
 				{
-					entity->x += limbs[SENTRYBOT][12][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][12][1] * cos(tripod->yaw);
-					entity->y += limbs[SENTRYBOT][12][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][12][1] * sin(tripod->yaw);
-					entity->z += limbs[SENTRYBOT][12][2];
+					entity->x += limbs[race][12][0] * cos(tripod->yaw + PI / 2) + limbs[race][12][1] * cos(tripod->yaw);
+					entity->y += limbs[race][12][0] * sin(tripod->yaw + PI / 2) + limbs[race][12][1] * sin(tripod->yaw);
+					entity->z += limbs[race][12][2];
 				}
 				break;
 			case GEAR_BODY_RIGHT:
-				entity->focalx = limbs[SENTRYBOT][3][0];
-				entity->focaly = -limbs[SENTRYBOT][3][1];
-				entity->focalz = limbs[SENTRYBOT][3][2];
+				entity->focalx = limbs[race][3][0];
+				entity->focaly = -limbs[race][3][1];
+				entity->focalz = limbs[race][3][2];
 				if ( tripod )
 				{
-					entity->x -= limbs[SENTRYBOT][12][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][12][1] * cos(tripod->yaw);
-					entity->y -= limbs[SENTRYBOT][12][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][12][1] * sin(tripod->yaw);
-					entity->z += limbs[SENTRYBOT][12][2];
+					entity->x -= limbs[race][12][0] * cos(tripod->yaw + PI / 2) + limbs[race][12][1] * cos(tripod->yaw);
+					entity->y -= limbs[race][12][0] * sin(tripod->yaw + PI / 2) + limbs[race][12][1] * sin(tripod->yaw);
+					entity->z += limbs[race][12][2];
 				}
 				break;
 			case GEAR_MIDDLE:
-				entity->focalx = limbs[SENTRYBOT][4][0];
-				entity->focaly = limbs[SENTRYBOT][4][1];
-				entity->focalz = limbs[SENTRYBOT][4][2];
+				entity->focalx = limbs[race][4][0];
+				entity->focaly = limbs[race][4][1];
+				entity->focalz = limbs[race][4][2];
 				entity->yaw = tripod->yaw + PI / 2;
 				if ( tripod )
 				{
-					entity->x += limbs[SENTRYBOT][9][0] * cos(tripod->yaw + PI / 2) + limbs[SENTRYBOT][9][1] * cos(tripod->yaw);
-					entity->y += limbs[SENTRYBOT][9][0] * sin(tripod->yaw + PI / 2) + limbs[SENTRYBOT][9][1] * sin(tripod->yaw);
-					entity->z += limbs[SENTRYBOT][9][2];
+					entity->x += limbs[race][9][0] * cos(tripod->yaw + PI / 2) + limbs[race][9][1] * cos(tripod->yaw);
+					entity->y += limbs[race][9][0] * sin(tripod->yaw + PI / 2) + limbs[race][9][1] * sin(tripod->yaw);
+					entity->z += limbs[race][9][2];
 				}
 				//if ( multiplayer != CLIENT )
 				//{
@@ -713,12 +721,12 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				break;
 			case WEAPON_LOADER:
 				weaponLoader = entity;
-				entity->focalx = limbs[SENTRYBOT][5][0];
-				entity->focaly = limbs[SENTRYBOT][5][1];
-				entity->focalz = limbs[SENTRYBOT][5][2];
-				entity->x += limbs[SENTRYBOT][10][0];
-				entity->y += limbs[SENTRYBOT][10][1];
-				entity->z += limbs[SENTRYBOT][10][2];
+				entity->focalx = limbs[race][5][0];
+				entity->focaly = limbs[race][5][1];
+				entity->focalz = limbs[race][5][2];
+				entity->x += limbs[race][10][0];
+				entity->y += limbs[race][10][1];
+				entity->z += limbs[race][10][2];
 				if ( my->monsterAttack == MONSTER_POSE_RANGED_SHOOT1 )
 				{
 					entity->fskill[0] = std::min(3.5, 2 + entity->fskill[0]);
@@ -729,11 +737,15 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 					entity->fskill[0] = std::max(0.0, entity->fskill[0] - 0.1);
 					entity->focalx += entity->fskill[0];
 				}
+				if ( race == SPELLBOT )
+				{
+					entity->flags[INVISIBLE] = true;
+				}
 				break;
 			case WEAPON_LIMB:
-				entity->focalx = limbs[SENTRYBOT][6][0];
-				entity->focaly = limbs[SENTRYBOT][6][1];
-				entity->focalz = limbs[SENTRYBOT][6][2];
+				entity->focalx = limbs[race][6][0];
+				entity->focaly = limbs[race][6][1];
+				entity->focalz = limbs[race][6][2];
 				if ( my->monsterAttack == MONSTER_POSE_RANGED_SHOOT1 )
 				{
 					entity->flags[INVISIBLE] = true;
@@ -746,6 +758,10 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 						entity->focalx += entity->fskill[0];
 					}
 					entity->flags[INVISIBLE] = false;
+				}
+				if ( race == SPELLBOT )
+				{
+					entity->flags[INVISIBLE] = true;
 				}
 				break;
 			default:
@@ -767,6 +783,9 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 	}
 }
 
+#define GYRO_ROTOR_LARGE 2
+#define GYRO_ROTOR_SMALL 3
+
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
@@ -786,7 +805,120 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			//my->z = 2.25;
-			my->pitch = 0;
+			//my->pitch = 0;
+		}
+	}
+
+	my->focalx = limbs[GYROBOT][0][0];
+	my->focaly = limbs[GYROBOT][0][1];
+	my->focalz = limbs[GYROBOT][0][2];
+	bool doACoolFlip = false;
+	if ( multiplayer != CLIENT )
+	{
+		//my->z = limbs[GYROBOT][3][2];
+		if ( my->ticks % (TICKS_PER_SECOND * 10) == 0 )
+		{
+			doACoolFlip = true;
+			my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+		}
+
+		if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+		{
+			my->z = -6;
+			my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+		}
+		if ( dist < 0.1 )
+		{
+			// not moving, float.
+			limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -4.5, 0.01, -6, ANIMATE_DIR_POSITIVE);
+		}
+	}
+
+	//Move bodyparts
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+	{
+		if ( bodypart < GYRO_ROTOR_LARGE )
+		{
+			continue;
+		}
+
+		entity = (Entity*)node->element;
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = my->z;
+
+		if ( bodypart == GYRO_ROTOR_SMALL )
+		{
+			entity->yaw = my->yaw; // face the monster's direction
+			if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP1 )
+			{
+				entity->skill[0] = 1;
+				my->monsterAttack = 0;
+				entity->fskill[0] = 0.05;
+			}
+			if ( entity->skill[0] == 1 )
+			{
+				my->pitch = (entity->fskill[0] * 2);
+				entity->fskill[0] -= 0.05;
+				if ( entity->fskill[0] < -PI )
+				{
+					entity->skill[0] = 0;
+					entity->fskill[0] = 0;
+					my->pitch = 0;
+				}
+			}
+		}
+
+		if ( bodypart == GYRO_ROTOR_LARGE )
+		{
+			entity->pitch = my->pitch + PI / 2;
+			entity->yaw = my->yaw;
+			entity->roll += 0.1;
+			if ( dist > 0.1 )
+			{
+				entity->roll += 0.5;
+			}
+			else
+			{
+				entity->roll += 0.2;
+			}
+			if ( entity->yaw > 2 * PI )
+			{
+				entity->yaw -= 2 * PI;
+			}
+		}
+		else if ( bodypart == GYRO_ROTOR_SMALL )
+		{
+			entity->pitch += 0.4;
+			if ( entity->pitch > 2 * PI )
+			{
+				entity->pitch -= 2 * PI;
+			}
+		}
+
+		switch ( bodypart )
+		{
+			case GYRO_ROTOR_LARGE:
+				entity->x += limbs[GYROBOT][4][0] * sin(my->pitch) * cos(my->yaw);
+				entity->y += limbs[GYROBOT][4][1] * sin(my->pitch) * sin(my->yaw);
+				entity->z += limbs[GYROBOT][4][2] * cos(my->pitch);
+				entity->focalx = limbs[GYROBOT][1][0];
+				entity->focaly = limbs[GYROBOT][1][1];
+				entity->focalz = limbs[GYROBOT][1][2];
+				//entity->x += limbs[GYROBOT][4][0] * cos(my->yaw + PI / 2) + limbs[GYROBOT][4][1] * cos(my->yaw);
+				//entity->y += limbs[GYROBOT][4][0] * sin(my->yaw + PI / 2) + limbs[GYROBOT][4][1] * sin(my->yaw);
+				//entity->z += limbs[GYROBOT][4][2];
+				break;
+			case GYRO_ROTOR_SMALL:
+				entity->x += (limbs[GYROBOT][5][0] * cos(my->pitch + PI / 8)) * cos(my->yaw);
+				entity->y += (limbs[GYROBOT][5][0] * cos(my->pitch + PI / 8)) * sin(my->yaw);
+				entity->z += limbs[GYROBOT][5][2] * sin(my->pitch + PI / 8);
+				entity->focalx = limbs[GYROBOT][2][0];
+				entity->focaly = limbs[GYROBOT][2][1];
+				entity->focalz = limbs[GYROBOT][2][2];
+				break;
+			default:
+				break;
 		}
 	}
 }

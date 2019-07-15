@@ -4525,7 +4525,9 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 		Item* pickedUp = itemPickup(clientnum, crafted);
 		messagePlayer(clientnum, "crafted a %s!", items[pickedUp->type].name_identified);
 		free(crafted);
+		return true;
 	}
+	return false;
 }
 
 bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
@@ -4548,8 +4550,10 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
 		Item* pickedUp = itemPickup(clientnum, crafted);
 		messagePlayer(clientnum, "salvaged a %s!", items[pickedUp->type].name_identified);
 		free(crafted);
+		consumeItem(item, clientnum);
+		return true;
 	}
-	consumeItem(item, clientnum);
+	return false;
 }
 
 bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)

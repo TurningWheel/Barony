@@ -327,7 +327,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				{
 					if ( entity->flags[USERFLAG2] )
 					{
-						if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() || entity->sprite == 467) )
+						if ( entity->behavior == &actMonster 
+							&& (entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 						{
 							// dont invert human heads, or automaton heads.
 							glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
@@ -369,7 +370,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
 				if ( entity->flags[USERFLAG2] )
 				{
-					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() || entity->sprite == 467) )
+					if ( entity->behavior == &actMonster && (entity->isPlayerHeadSprite() 
+						|| entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 					{
 						SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
 					}

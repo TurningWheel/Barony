@@ -16147,3 +16147,27 @@ bool monsterIsImmobileTurret(Entity* my, Stat* myStats)
 
 	return false;
 }
+
+bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
+{
+	int race = NOTHING;
+	if ( !myStats )
+	{
+		if ( !entity )
+		{
+			return true;
+		}
+		race = entity->getMonsterTypeFromSprite();
+	}
+	else
+	{
+		race = myStats->type;
+	}
+	
+	if ( race == HUMAN || race == SENTRYBOT
+		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT )
+	{
+		return false;
+	}
+	return true;
+}

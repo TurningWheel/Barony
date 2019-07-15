@@ -973,6 +973,7 @@ int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
 bool monsterIsImmobileTurret(Entity* my, Stat* myStats);
+bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity = nullptr);
 
 static const int MSG_DESCRIPTION = 0;
 static const int MSG_COMBAT = 1;

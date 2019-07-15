@@ -596,7 +596,7 @@ void actThrown(Entity* my)
 												// change the color of the hit entity.
 												hit.entity->flags[USERFLAG2] = true;
 												serverUpdateEntityFlag(hit.entity, USERFLAG2);
-												if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+												if ( monsterChangesColorWhenAlly(hitstats) )
 												{
 													int bodypart = 0;
 													for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )

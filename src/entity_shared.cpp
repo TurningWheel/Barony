@@ -836,7 +836,7 @@ char monsterEditorNameStrings[NUMMONSTERS][16] =
 	"lich_ice",
 	"lich_fire",
 	"sentrybot",
-	"sentrybot_magic",
+	"spellbot",
 	"gyrobot"
 };
 

@@ -129,7 +129,7 @@ static char monstertypenamecapitalized[][15] =
 	"Lichice",
 	"Lichfire",
 	"Sentrybot",
-	"Sentrybot",
+	"Spellbot",
 	"Gyrobot"
 };
 

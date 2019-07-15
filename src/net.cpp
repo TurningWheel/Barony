@@ -3202,7 +3202,7 @@ void clientHandlePacket()
 			if ( entity->behavior == &actMonster && net_packet->data[8] == USERFLAG2 )
 			{
 				// we should update the flags for all bodyparts (except for human and automaton heads, don't update the other bodyparts).
-				if ( !(entity->isPlayerHeadSprite() || entity->sprite == 467) )
+				if ( !(entity->isPlayerHeadSprite() || entity->sprite == 467 || !monsterChangesColorWhenAlly(nullptr, entity)) )
 				{
 					int bodypart = 0;
 					for ( node_t* node = entity->children.first; node != nullptr; node = node->next )

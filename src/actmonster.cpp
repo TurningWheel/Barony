@@ -106,9 +106,9 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }, // AUTOMATON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0 }, // LICH_ICE
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0 }, // LICH_FIRE
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1 }, // SENTRYBOT
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1 }, // SPELLBOT
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }  // GYROBOT
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1 }, // SENTRYBOT
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1 }, // SPELLBOT
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }  // GYROBOT
 };
 
 // monster sight ranges
@@ -472,19 +472,19 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 				entity->sprite = 646;
 				break;
 			case SENTRYBOT:
-				entity->z = 2.25;
-				entity->focalx = limbs[SENTRYBOT][0][0]; // 0
-				entity->focaly = limbs[SENTRYBOT][0][1]; // 0
-				entity->focalz = limbs[SENTRYBOT][0][2]; // -2
+				entity->z = 0;
+				entity->focalx = limbs[SENTRYBOT][0][0];
+				entity->focaly = limbs[SENTRYBOT][0][1];
+				entity->focalz = limbs[SENTRYBOT][0][2];
 				break;
 			case SPELLBOT:
-				entity->z = 2.25;
-				entity->focalx = limbs[SPELLBOT][0][0]; // 0
-				entity->focaly = limbs[SPELLBOT][0][1]; // 0
-				entity->focalz = limbs[SPELLBOT][0][2]; // -2
+				entity->z = 0;
+				entity->focalx = limbs[SPELLBOT][0][0];
+				entity->focaly = limbs[SPELLBOT][0][1];
+				entity->focalz = limbs[SPELLBOT][0][2];
 				break;
 			case GYROBOT:
-				entity->z = 2.25;
+				entity->z = -6;
 				entity->focalx = limbs[GYROBOT][0][0]; // 0
 				entity->focaly = limbs[GYROBOT][0][1]; // 0
 				entity->focalz = limbs[GYROBOT][0][2]; // -2
@@ -749,7 +749,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					canAlly = true;
 				}
 			}
-			else if ( stats[monsterclicked]->type == AUTOMATON )
+			else if ( stats[monsterclicked]->type == AUTOMATON || stats[monsterclicked]->type == GYROBOT )
 			{
 				if ( race == AUTOMATON || race == HUMAN )
 				{
@@ -817,7 +817,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 				int allowedFollowers = std::min(8, std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20)));
 				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
 				{
-					if ( race == AUTOMATON )
+					if ( race == AUTOMATON || race == GYROBOT )
 					{
 						canAlly = true;
 					}
@@ -975,7 +975,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 	// update flags for colors.
 	my->flags[USERFLAG2] = true;
 	serverUpdateEntityFlag(my, USERFLAG2);
-	if ( !monsterally[HUMAN][myStats->type] )
+	if ( monsterChangesColorWhenAlly(myStats) )
 	{
 		int bodypart = 0;
 		for ( node_t* node = my->children.first; node != nullptr; node = node->next )
@@ -1324,7 +1324,7 @@ void actMonster(Entity* my)
 				my->flags[BURNABLE] = false;
 				sentryBotAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
-			else if ( my->sprite == 886 )     // sentrybot head
+			else if ( my->sprite == 886 )     // gyrobot head
 			{
 				my->flags[BURNABLE] = false;
 				gyroBotAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
@@ -1475,7 +1475,12 @@ void actMonster(Entity* my)
 					my->monsterLichBattleState = LICH_BATTLE_IMMOBILE;
 					break;
 				case SENTRYBOT:
+					my->sprite = 872;
+					my->flags[BURNABLE] = false;
+					initSentryBot(my, myStats);
+					break;
 				case SPELLBOT:
+					my->sprite = 885;
 					my->flags[BURNABLE] = false;
 					initSentryBot(my, myStats);
 					break;

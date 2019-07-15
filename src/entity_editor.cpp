@@ -395,3 +395,9 @@ bool Entity::isPlayerHeadSprite()
 	// dummy function
 	return false;
 }
+
+bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
+{
+	// dummy function
+	return false;
+}

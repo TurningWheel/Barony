@@ -4709,7 +4709,7 @@ void item_FoodAutomaton(Item*& item, int player)
 
 	if ( player >= 0 && stats[player]->type != AUTOMATON )
 	{
-		messagePlayer(player, "You are not an Automaton!");
+		messagePlayer(player, "Err: You are not an Automaton!");
 		return;
 	}
 

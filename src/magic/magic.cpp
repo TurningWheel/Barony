@@ -358,7 +358,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 
 		hit.entity->flags[USERFLAG2] = true;
 		serverUpdateEntityFlag(hit.entity, USERFLAG2);
-		if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+		if ( monsterChangesColorWhenAlly(hitstats) )
 		{
 			int bodypart = 0;
 			for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
@@ -1463,7 +1463,7 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 					hit.entity->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(hit.entity, USERFLAG2);
 					hitstats->monsterIsCharmed = 1;
-					if ( hitstats->type != HUMAN && hitstats->type != AUTOMATON )
+					if ( monsterChangesColorWhenAlly(hitstats) )
 					{
 						int bodypart = 0;
 						for ( node_t* node = (hit.entity)->children.first; node != nullptr; node = node->next )
@@ -1861,7 +1861,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 					// change the color of the hit entity.
 					summonedEntity->flags[USERFLAG2] = true;
 					serverUpdateEntityFlag(summonedEntity, USERFLAG2);
-					if ( summonedStats->type != HUMAN && summonedStats->type != AUTOMATON )
+					if ( monsterChangesColorWhenAlly(summonedStats) )
 					{
 						int bodypart = 0;
 						for ( node_t* node = summonedEntity->children.first; node != nullptr; node = node->next )
@@ -2622,7 +2622,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 						monster->setEffect(EFF_STUNNED, true, 20, false);
 						monster->flags[USERFLAG2] = true;
 						serverUpdateEntityFlag(monster, USERFLAG2);
-						if ( monsterStats->type != HUMAN && monsterStats->type != AUTOMATON )
+						if ( monsterChangesColorWhenAlly(monsterStats) )
 						{
 							int bodypart = 0;
 							for ( node_t* node = (monster)->children.first; node != nullptr; node = node->next )
