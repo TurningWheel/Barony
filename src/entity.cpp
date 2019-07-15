@@ -9310,6 +9310,11 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( myStats->type == GYROBOT )
+	{
+		return false;
+	}
+
 	if ( myStats->type == HUMAN && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
 	{
 		return true;
@@ -9631,6 +9636,11 @@ bool Entity::checkFriend(Entity* your)
 	}
 
 	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) )
+	{
+		return true;
+	}
+
+	if ( myStats->type == GYROBOT )
 	{
 		return true;
 	}
@@ -12280,6 +12290,15 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	}
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
+
+	if ( target.getRace() == GYROBOT )
+	{
+		return;
+	}
+	else if ( myStats->type == GYROBOT )
+	{
+		return;
+	}
 
 	if ( &target != uidToEntity(monsterTarget) && !monsterReleaseAttackTarget() )
 	{

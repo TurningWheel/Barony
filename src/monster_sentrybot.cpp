@@ -789,9 +789,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = nullptr, *entity2 = nullptr;
-	Entity* rightbody = nullptr;
-	Entity* weaponarm = nullptr;
+	Entity* entity = nullptr;
 	int bodypart;
 
 	if ( multiplayer != CLIENT )
@@ -807,6 +805,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			//my->z = 2.25;
 			//my->pitch = 0;
 		}
+		my->flags[PASSABLE] = true;
 	}
 
 	my->focalx = limbs[GYROBOT][0][0];
@@ -854,6 +853,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				entity->skill[0] = 1;
 				my->monsterAttack = 0;
+				my->pitch = 0;
 				entity->fskill[0] = 0.05;
 			}
 			if ( entity->skill[0] == 1 )
@@ -865,6 +865,20 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					entity->skill[0] = 0;
 					entity->fskill[0] = 0;
 					my->pitch = 0;
+				}
+			}
+			else
+			{
+				if ( multiplayer != CLIENT )
+				{
+					if ( dist > 0.1 )
+					{
+						my->pitch = PI / 32;
+					}
+					else
+					{
+						my->pitch = 0;
+					}
 				}
 			}
 		}

@@ -2991,7 +2991,7 @@ void actMonster(Entity* my)
 				{
 					continue;
 				}
-				if ( entityInsideEntity(my, entity) )
+				if ( entityInsideEntity(my, entity) && entity->getRace() != GYROBOT )
 				{
 					if ( entity->behavior != &actDoorFrame )
 					{
