@@ -26,7 +26,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
 
-	my->initMonster(872);
+	my->initMonster(my->sprite);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -64,9 +64,13 @@ void initSentryBot(Entity* my, Stat* myStats)
 
 			my->setHardcoreStats(*myStats);
 
-			if ( myStats->weapon == nullptr /*&& myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1*/ )
+			if ( myStats->weapon == nullptr && my->sprite == 872/*&& myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1*/ )
 			{
 				myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+			}
+			else if ( myStats->weapon == nullptr && my->sprite == 875/*&& myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1*/ )
+			{
+				myStats->weapon = newItem(SPELLBOOK_SLOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 			}
 		}
 	}
@@ -231,6 +235,96 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->scaley = 0.99;
 	entity->scalez = 0.99;
 	entity->behavior = &actSentryBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	if ( multiplayer == CLIENT || MONSTER_INIT )
+	{
+		return;
+	}
+}
+
+void initGyroBot(Entity* my, Stat* myStats)
+{
+	node_t* node;
+
+	my->initMonster(886);
+
+	if ( multiplayer != CLIENT )
+	{
+		MONSTER_SPOTSND = 0;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = 0;
+		MONSTER_IDLEVAR = 1;
+	}
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
+		if ( myStats != nullptr )
+		{
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			my->setHardcoreStats(*myStats);
+		}
+	}
+
+	// rotor large
+	Entity* entity = newEntity(887, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[GYROBOT][1][0];
+	entity->focaly = limbs[GYROBOT][1][1];
+	entity->focalz = limbs[GYROBOT][1][2];
+	entity->behavior = &actGyroBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// rotor small
+	entity = newEntity(888, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[GYROBOT][2][0];
+	entity->focaly = limbs[GYROBOT][2][1];
+	entity->focalz = limbs[GYROBOT][2][2];
+	entity->behavior = &actGyroBotLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -671,4 +765,52 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
+{
+	node_t* node;
+	Entity* entity = nullptr, *entity2 = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
+	int bodypart;
+
+	if ( multiplayer != CLIENT )
+	{
+		// sleeping
+		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		{
+			//my->z = 4;
+			my->pitch = PI / 4;
+		}
+		else
+		{
+			//my->z = 2.25;
+			my->pitch = 0;
+		}
+	}
+}
+
+void actGyroBotLimb(Entity* my)
+{
+	my->actMonsterLimb(false);
+}
+
+void gyroBotDie(Entity* my)
+{
+	/*int c;
+	for ( c = 0; c < 6; ++c )
+	{
+	Entity* entity = spawnGib(my);
+	if ( entity )
+	{
+	serverSpawnGibForClient(entity);
+	}
+	}*/
+
+	my->removeMonsterDeathNodes();
+
+	// playSoundEntity(my, 298 + rand() % 4, 128);
+	list_RemoveNode(my->mynode);
+	return;
 }

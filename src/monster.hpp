@@ -46,9 +46,11 @@ enum Monster : int
 	AUTOMATON,
 	LICH_ICE,
 	LICH_FIRE,
-	SENTRYBOT
+	SENTRYBOT,
+	SPELLBOT,
+	GYROBOT
 };
-const int NUMMONSTERS = 34;
+const int NUMMONSTERS = 36;
 extern int kills[NUMMONSTERS];
 
 static char monstertypename[][15] =
@@ -86,7 +88,9 @@ static char monstertypename[][15] =
 	"automaton",
 	"lichice",
 	"lichfire",
-	"sentrybot"
+	"sentrybot",
+	"spellbot",
+	"gyrobot"
 };
 
 static char monstertypenamecapitalized[][15] =
@@ -124,7 +128,9 @@ static char monstertypenamecapitalized[][15] =
 	"Automaton",
 	"Lichice",
 	"Lichfire",
-	"Sentrybot"
+	"Sentrybot",
+	"Sentrybot",
+	"Gyrobot"
 };
 
 // body part focal points
@@ -169,7 +175,9 @@ static char gibtype[NUMMONSTERS] =
 	0,	//AUTOMATON,
 	2,	//LICH_ICE,
 	2,	//LICH_FIRE
-	0	//SENTRYBOT
+	0,	//SENTRYBOT
+	0,	//SPELLBOT
+	0	//GYROBOT
 };
 
 // columns go like this:
@@ -210,7 +218,9 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8, 0.7 }, // automaton
 	{ 1.5, 1.5, 1.5, 1.5, 1.f, 0.7, 1.2 }, // lich ice
 	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f, 1.4 }, // lich fire
-	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }  // sentrybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }  // gyrobot
 };
 
 static std::vector<std::vector<int>> classStatGrowth =
@@ -400,6 +410,7 @@ void initGoatman(Entity* my, Stat* myStats);
 void initLichFire(Entity* my, Stat* myStats);
 void initLichIce(Entity* my, Stat* myStats);
 void initSentryBot(Entity* my, Stat* myStats);
+void initGyroBot(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -430,6 +441,7 @@ void actScarabLimb(Entity* my);
 void actLichFireLimb(Entity* my);
 void actLichIceLimb(Entity* my);
 void actSentryBotLimb(Entity* my);
+void actGyroBotLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -462,6 +474,7 @@ void goatmanDie(Entity* my);
 void lichFireDie(Entity* my);
 void lichIceDie(Entity* my);
 void sentryBotDie(Entity* my);
+void gyroBotDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -494,6 +507,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void lichFireAnimate(Entity* my, Stat* myStats, double dist);
 void lichIceAnimate(Entity* my, Stat* myStats, double dist);
 void sentryBotAnimate(Entity* my, Stat* myStats, double dist);
+void gyroBotAnimate(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

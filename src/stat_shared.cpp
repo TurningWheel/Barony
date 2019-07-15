@@ -1207,7 +1207,15 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 25; //Random Items
 			break;
 		case (1000 + SENTRYBOT):
-			stats->type = SENTRYBOT;
+		case (1000 + SPELLBOT):
+			if ( sprite == 1000 + SENTRYBOT )
+			{
+				stats->type = SENTRYBOT;
+			}
+			else if ( sprite == 1000 + SPELLBOT )
+			{
+				stats->type = SPELLBOT;
+			}
 			stats->MAXHP = 100;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;

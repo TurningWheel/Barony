@@ -153,6 +153,12 @@ void Entity::initMonster(int mySprite)
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
+		case SENTRYBOT:
+		case SPELLBOT:
+		case GYROBOT:
+			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
+			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
+			break;
 		default:
 			monsterFootstepType = MONSTER_FOOTSTEP_NONE;
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
@@ -290,6 +296,14 @@ int Entity::getMonsterTypeFromSprite()
 	else if ( mySprite == 872 )     // sentrybot
 	{
 		return SENTRYBOT;
+	}
+	else if ( mySprite == 885 )
+	{
+		return SPELLBOT;
+	}
+	else if ( mySprite == 886 )
+	{
+		return GYROBOT;
 	}
 	return NOTHING;
 }

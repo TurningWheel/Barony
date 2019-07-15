@@ -2859,6 +2859,14 @@ void actPlayer(Entity* my)
 			}
 		}
 
+		if ( !allowMovement )
+		{
+			if ( clientnum == PLAYER_NUM && openedChest[clientnum] )
+			{
+				openedChest[clientnum]->closeChest();
+			}
+		}
+
 		if ( (!command || pacified) && allowMovement )
 		{
 			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.

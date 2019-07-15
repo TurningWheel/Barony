@@ -13417,7 +13417,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 			return false;
 		}
 	}
-	else if ( myStats.type == SENTRYBOT )
+	else if ( monsterIsImmobileTurret(this, &myStats) )
 	{
 		return false;
 	}
@@ -13471,7 +13471,7 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	{
 		return false;
 	}
-	if ( myStats.type == SENTRYBOT )
+	if ( monsterIsImmobileTurret(this, &myStats) )
 	{
 		return false;
 	}
@@ -16125,5 +16125,25 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		default:
 			break;
 	}
+}
 
+bool monsterIsImmobileTurret(Entity* my, Stat* myStats)
+{
+	if ( myStats )
+	{
+		if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+		{
+			return true;
+		}
+	}
+	else if ( my )
+	{
+		int race = my->getMonsterTypeFromSprite();
+		if ( race == SENTRYBOT || race == SPELLBOT )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

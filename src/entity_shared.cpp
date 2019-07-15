@@ -800,7 +800,7 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"SIGNAL TIMER"
 };
 
-char monsterEditorNameStrings[NUMMONSTERS][13] =
+char monsterEditorNameStrings[NUMMONSTERS][16] =
 {
 	"nothing",
 	"human",
@@ -835,7 +835,9 @@ char monsterEditorNameStrings[NUMMONSTERS][13] =
 	"automaton",
 	"lich_ice",
 	"lich_fire",
-	"sentrybot"
+	"sentrybot",
+	"sentrybot_magic",
+	"gyrobot"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =

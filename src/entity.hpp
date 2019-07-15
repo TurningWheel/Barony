@@ -950,7 +950,7 @@ static const int FURNITURE_PODIUM = 4;
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
 extern char tileEditorNameStrings[NUM_EDITOR_TILES][44];
-extern char monsterEditorNameStrings[NUMMONSTERS][13];
+extern char monsterEditorNameStrings[NUMMONSTERS][16];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
 extern char itemNameStrings[NUM_ITEM_STRINGS][32];
 int canWearEquip(Entity* entity, int category);
@@ -972,6 +972,7 @@ bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
+bool monsterIsImmobileTurret(Entity* my, Stat* myStats);
 
 static const int MSG_DESCRIPTION = 0;
 static const int MSG_COMBAT = 1;
