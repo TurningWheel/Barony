@@ -12297,7 +12297,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	}
 	else if ( myStats->type == GYROBOT )
 	{
-		return;
+		if ( state == MONSTER_STATE_ATTACK )
+		{
+			return;
+		}
+		else
+		{
+			if ( target.behavior == &actMonster )
+			{
+				return;
+			}
+		}
 	}
 
 	if ( &target != uidToEntity(monsterTarget) && !monsterReleaseAttackTarget() )
@@ -12945,6 +12955,10 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 		return false;
 	}
 
+	if ( myStats->type == GYROBOT && item.interactNPCUid == getUID() )
+	{
+		return true;
+	}
 	if ( item.status == BROKEN )
 	{
 		return false; // no want broken.

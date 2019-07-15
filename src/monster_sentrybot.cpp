@@ -873,7 +873,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( dist > 0.1 )
 					{
-						my->pitch = PI / 32;
+						my->pitch = PI / 16;
 					}
 					else
 					{

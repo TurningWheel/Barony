@@ -1945,7 +1945,7 @@ void actPlayer(Entity* my)
 							*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
 
 							int minimapTotalScale = minimapScaleQuickToggle + minimapScale;
-							if ( mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
+							if ( !shootmode && mouseInBounds(xres - map.width * minimapTotalScale, xres, yres - map.height * minimapTotalScale, yres) ) // mouse within minimap pixels (each map tile is 4 pixels)
 							{
 								MinimapPing newPing(ticks, -1, (omousex - (xres - map.width * minimapTotalScale)) / minimapTotalScale, (omousey - (yres - map.height * minimapTotalScale)) / minimapTotalScale);
 								minimapPingAdd(newPing);

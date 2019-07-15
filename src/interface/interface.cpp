@@ -2429,6 +2429,8 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case SHADOW:
 			creatureTier = 3;
 			break;
+		default:
+			break;
 	}
 
 	int requirement = AllyNPCSkillRequirements[option];
@@ -2525,7 +2527,12 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 
 		case ALLY_CMD_ATTACK_CONFIRM:
-			if ( creatureTier == 3 && playerSkillLVL < SKILL_LEVEL_LEGENDARY )
+			if ( monsterType == GYROBOT )
+			{
+				return -1; // disabled due to creature.
+				break;
+			}
+			else if ( creatureTier == 3 && playerSkillLVL < SKILL_LEVEL_LEGENDARY )
 			{
 				return SKILL_LEVEL_LEGENDARY; // disabled due to advanced skill requirements.
 			}
@@ -2656,6 +2663,7 @@ bool FollowerRadialMenu::allowedInteractWorld(int monsterType)
 		case KOBOLD:
 		case GOATMAN:
 		case SKELETON:
+		case GYROBOT:
 			return true;
 			break;
 		default:
@@ -2679,6 +2687,7 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 		case SKELETON:
 		case VAMPIRE:
 		case SLIME:
+		case GYROBOT:
 			if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 			{
 				return false;
