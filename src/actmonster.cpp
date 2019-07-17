@@ -7818,6 +7818,21 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		return;
 	}
 
+	if ( myStats->type != GYROBOT )
+	{
+		if ( FollowerMenu.monsterGyroBotOnlyCommand(command) )
+		{
+			return;
+		}
+	}
+	else if ( myStats->type == GYROBOT )
+	{
+		if ( FollowerMenu.monsterGyroBotDisallowedCommands(command) )
+		{
+			return;
+		}
+	}
+
 	switch ( command )
 	{
 		case ALLY_CMD_RETURN_SOUL:
@@ -7924,8 +7939,26 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			myStats->allyItemPickup = monsterAllyPickupItems;
 			serverUpdateEntitySkill(this, 44);
 			break;
+		case ALLY_CMD_GYRO_LIGHT_TOGGLE:
+			++monsterAllyClass;
+			if ( monsterAllyClass >= ALLY_GYRO_LIGHT_END )
+			{
+				monsterAllyClass = ALLY_GYRO_LIGHT_NONE;
+			}
+			myStats->allyClass = monsterAllyClass;
+			serverUpdateEntitySkill(this, 46);
+			break;
+		case ALLY_CMD_GYRO_DETECT_TOGGLE:
+			++monsterAllyPickupItems;
+			if ( monsterAllyPickupItems >= ALLY_GYRO_DETECT_END )
+			{
+				monsterAllyPickupItems = ALLY_GYRO_DETECT_NONE;
+			}
+			myStats->allyItemPickup = monsterAllyPickupItems;
+			serverUpdateEntitySkill(this, 44);
+			break;
 		case ALLY_CMD_DROP_EQUIP:
-			if ( strcmp(myStats->name, "") )
+			if ( strcmp(myStats->name, "") && myStats->type == HUMAN )
 			{
 				// named humans refuse to drop equipment.
 				handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_HUMAN_REFUSE);

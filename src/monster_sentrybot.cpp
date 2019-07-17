@@ -811,6 +811,73 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		my->flags[PASSABLE] = true;
 	}
 
+	if ( my->ticks % TICKS_PER_SECOND == 0 && my->monsterAllyIndex == clientnum )
+	{
+		Entity* playerLeader = my->monsterAllyGetPlayerLeader();
+		for ( node_t* searchNode = map.entities->first; searchNode != nullptr; searchNode = searchNode->next )
+		{
+			Entity* ent = (Entity*)searchNode->element;
+			if ( !ent || ent == my )
+			{
+				continue;
+			}
+			ent->entityShowOnMap = 0;
+			if ( playerLeader )
+			{
+				if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_MONSTERS )
+				{
+					if ( ent->behavior == &actMonster && ent->monsterAllyIndex < 0 )
+					{
+						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						{
+							ent->entityShowOnMap = 1;
+						}
+					}
+				}
+				else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_TRAPS )
+				{
+					if ( ent->behavior == &actBoulderTrap || ent->behavior == &actArrowTrap
+						|| ent->behavior == &actMagicTrap || ent->behavior == &actMagicTrapCeiling
+						|| ent->behavior == &actBoulderTrapEast || ent->behavior == &actBoulderTrapWest
+						|| ent->behavior == &actBoulderTrapNorth || ent->behavior == &actBoulderTrapSouth
+						|| ent->behavior == &actSummonTrap || ent->behavior == &actSpearTrap )
+					{
+						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						{
+							ent->entityShowOnMap = 1;
+						}
+					}
+				}
+				else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_EXITS )
+				{
+					if ( ent->behavior == &actLadder || ent->behavior == &actPortal )
+					{
+						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						{
+							ent->entityShowOnMap = 1;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	my->removeLightField();
+	if ( my->monsterAllyClass > ALLY_GYRO_LIGHT_NONE )
+	{
+		switch ( my->monsterAllyClass )
+		{
+			case ALLY_GYRO_LIGHT_FAINT:
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
+				break;
+			case ALLY_GYRO_LIGHT_BRIGHT:
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 128);
+				break;
+			default:
+				break;
+		}
+	}
+
 	my->focalx = limbs[GYROBOT][0][0];
 	my->focaly = limbs[GYROBOT][0][1];
 	my->focalz = limbs[GYROBOT][0][2];

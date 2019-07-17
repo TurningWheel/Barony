@@ -271,7 +271,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalTimerLatchInput(skill[4]),
 	signalInputDirection(skill[5]),
 	effectPolymorph(skill[50]),
-	effectShapeshift(skill[53])
+	effectShapeshift(skill[53]),
+	entityShowOnMap(skill[59])
 {
 	int c;
 	// add the entity to the entity list

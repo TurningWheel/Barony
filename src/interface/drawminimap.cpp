@@ -116,7 +116,7 @@ void drawMinimap()
 			{
 				x = floor(entity->x / 16);
 				y = floor(entity->y / 16);
-				if ( minimap[y][x] )
+				if ( minimap[y][x] || entity->entityShowOnMap == 1 )
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
@@ -158,21 +158,20 @@ void drawMinimap()
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
 					//glEnd();
 				}
-				if ( !warningEffect && stats[clientnum]->ring != NULL )
+				if ( !warningEffect 
+					&& ((stats[clientnum]->ring && stats[clientnum]->ring->type == RING_WARNING) 
+						|| entity->entityShowOnMap == 1) )
 				{
-					if ( stats[clientnum]->ring->type == RING_WARNING )
-					{
-						x = floor(entity->x / 16);
-						y = floor(entity->y / 16);
-						glColor4f( .5, .25, .5, 1 );
-						//glBegin(GL_QUADS);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-						//glEnd();
-						warningEffect = true;
-					}
+					x = floor(entity->x / 16);
+					y = floor(entity->y / 16);
+					glColor4f( .5, .25, .5, 1 );
+					//glBegin(GL_QUADS);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					//glEnd();
+					warningEffect = true;
 				}
 				if ( !warningEffect && stats[clientnum]->shoes != NULL )
 				{
@@ -213,6 +212,19 @@ void drawMinimap()
 				{
 					glColor4f(240 / 255.f, 228 / 255.f, 66 / 255.f, 1); // yellow
 					//glBegin(GL_QUADS);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+				}
+			}
+			else if ( entity->entityShowOnMap == 1 )
+			{
+				x = floor(entity->x / 16);
+				y = floor(entity->y / 16);
+				if ( ticks % 40 - ticks % 20 )
+				{
+					glColor4f(255 / 255.f, 168 / 255.f, 200 / 255.f, 1); // pink
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);

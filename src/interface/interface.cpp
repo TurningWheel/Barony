@@ -1600,12 +1600,21 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
+		bool isTinkeringFollower = false;
+		if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+		{
+			isTinkeringFollower = true;
+		}
 		int skillLVL = 0;
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+				if ( isTinkeringFollower )
+				{
+					skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+				}
 				if ( followerToCommand->monsterAllySummonRank != 0 )
 				{
 					skillLVL = SKILL_LEVEL_LEGENDARY;
@@ -1673,12 +1682,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 
-			if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
+			if ( followerStats->type == GYROBOT )
+			{
+				monsterGyroBotConvertCommand(&optionSelected);
+			}
+			else if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
 			{
 				optionSelected = ALLY_CMD_RETURN_SOUL;
 			}
 
-			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE || optionSelected == ALLY_CMD_PICKUP_TOGGLE);
+			keepWheelOpen = (optionSelected == ALLY_CMD_CLASS_TOGGLE 
+				|| optionSelected == ALLY_CMD_PICKUP_TOGGLE
+				|| optionSelected == ALLY_CMD_GYRO_LIGHT_TOGGLE
+				|| optionSelected == ALLY_CMD_GYRO_DETECT_TOGGLE);
 			if ( disableOption != 0 )
 			{
 				keepWheelOpen = true;
@@ -1790,10 +1806,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
+		bool isTinkeringFollower = false;
+		if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+		{
+			isTinkeringFollower = true;
+		}
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
 			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
-			if ( followerToCommand->monsterAllySummonRank != 0 )
+			if ( isTinkeringFollower )
+			{
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+			}
+			else if ( followerToCommand->monsterAllySummonRank != 0 )
 			{
 				skillLVL = SKILL_LEVEL_LEGENDARY;
 			}
@@ -1923,7 +1948,15 @@ void FollowerRadialMenu::drawFollowerMenu()
 				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
 				if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
-					if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
+					if ( followerStats->type == GYROBOT )
+					{
+						// draw higher.
+						TTF_SizeUTF8(ttf12, language[3619], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3619]);
+						TTF_SizeUTF8(ttf12, language[3620 + followerToCommand->monsterAllyClass], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3620 + followerToCommand->monsterAllyClass]);
+					}
+					else if ( followerToCommand && followerToCommand->monsterAllySummonRank != 0 )
 					{
 						TTF_SizeUTF8(ttf12, "Relinquish ", &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3196]);
@@ -1938,35 +1971,63 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else if ( i == ALLY_CMD_PICKUP_TOGGLE )
 				{
-					// draw higher.
-					TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
-					TTF_SizeUTF8(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
-				}
-				else if ( i == ALLY_CMD_DROP_EQUIP )
-				{
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
-					if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3061], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
-					}
-					else if ( skillLVL >= SKILL_LEVEL_MASTER )
-					{
-						TTF_SizeUTF8(ttf12, language[3060], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+						TTF_SizeUTF8(ttf12, language[3624], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3624]);
+						TTF_SizeUTF8(ttf12, language[3625 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3625 + followerToCommand->monsterAllyPickupItems]);
 					}
 					else
 					{
-						TTF_SizeUTF8(ttf12, language[3059], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+						// draw higher.
+						TTF_SizeUTF8(ttf12, "Pickup", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3037 + i]);
+						TTF_SizeUTF8(ttf12, language[3056 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3056 + followerToCommand->monsterAllyPickupItems]);
+					}
+				}
+				else if ( i == ALLY_CMD_DROP_EQUIP )
+				{
+					if ( followerStats->type == GYROBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3631], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3631]);
+						TTF_SizeUTF8(ttf12, language[3632], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3632]);
+					}
+					else
+					{
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3037 + i]);
+						if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
+						{
+							TTF_SizeUTF8(ttf12, language[3061], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3061]);
+						}
+						else if ( skillLVL >= SKILL_LEVEL_MASTER )
+						{
+							TTF_SizeUTF8(ttf12, language[3060], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3060]);
+						}
+						else
+						{
+							TTF_SizeUTF8(ttf12, language[3059], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3059]);
+						}
 					}
 				}
 				else if ( i == ALLY_CMD_SPECIAL )
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					if ( followerStats->type == GYROBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3629], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3629]);
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					}
 				}
 				else if ( i == ALLY_CMD_ATTACK_SELECT )
 				{
@@ -2404,6 +2465,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case SPIDER:
 		case SKELETON:
 		case SCORPION:
+		case GYROBOT:
 			creatureTier = 0;
 			break;
 		case GOBLIN:
@@ -2434,6 +2496,11 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	}
 
 	int requirement = AllyNPCSkillRequirements[option];
+
+	if ( monsterType == GYROBOT )
+	{
+		monsterGyroBotConvertCommand(&option);
+	}
 
 	if ( option == ALLY_CMD_SPECIAL
 		&& followerToCommand->monsterAllySpecialCooldown != 0 )
@@ -2552,6 +2619,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return 0;
 			}
+			if ( monsterType == GYROBOT )
+			{
+				return 0;
+			}
 			if ( !allowedClassToggle(monsterType) )
 			{
 				return -1; // disabled due to creature.
@@ -2567,6 +2638,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			if ( !allowedItemPickupToggle(monsterType) )
 			{
 				return -1; // disabled due to creature.
+			}
+			if ( monsterType == GYROBOT )
+			{
+				return 0;
 			}
 			if ( playerSkillLVL < requirement )
 			{
@@ -2703,6 +2778,61 @@ bool FollowerRadialMenu::allowedInteractItems(int monsterType)
 bool FollowerRadialMenu::attackCommandOnly(int monsterType)
 {
 	return !(allowedInteractItems(monsterType) || allowedInteractWorld(monsterType) || allowedInteractFood(monsterType));
+}
+
+void FollowerRadialMenu::monsterGyroBotConvertCommand(int* option)
+{
+	if ( !option )
+	{
+		return;
+	}
+	switch ( *option )
+	{
+		case ALLY_CMD_PICKUP_TOGGLE:
+			*option = ALLY_CMD_GYRO_DETECT_TOGGLE;
+			break;
+		case ALLY_CMD_SPECIAL:
+		case ALLY_CMD_RETURN_SOUL:
+			*option = ALLY_CMD_GYRO_KAMIKAZE;
+			break;
+		case ALLY_CMD_CLASS_TOGGLE:
+			*option = ALLY_CMD_GYRO_LIGHT_TOGGLE;
+			break;
+		default:
+			break;
+	}
+}
+
+
+bool FollowerRadialMenu::monsterGyroBotOnlyCommand(int option)
+{
+	switch ( option )
+	{
+		case ALLY_CMD_GYRO_DEPLOY:
+		case ALLY_CMD_GYRO_PATROL:
+		case ALLY_CMD_GYRO_LIGHT_TOGGLE:
+		case ALLY_CMD_GYRO_KAMIKAZE:
+		case ALLY_CMD_GYRO_DETECT_TOGGLE:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+bool FollowerRadialMenu::monsterGyroBotDisallowedCommands(int option)
+{
+	switch ( option )
+	{
+		case ALLY_CMD_CLASS_TOGGLE:
+		case ALLY_CMD_PICKUP_TOGGLE:
+			return true;
+			break;
+		default:
+			break;
+	}
+	return false;
 }
 
 bool GenericGUIMenu::isItemRepairable(const Item* item)

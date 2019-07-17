@@ -643,6 +643,9 @@ public:
 	bool allowedInteractWorld(int monsterType);
 	bool allowedInteractItems(int monsterType);
 	bool attackCommandOnly(int monsterType);
+	void monsterGyroBotConvertCommand(int* option);
+	bool monsterGyroBotOnlyCommand(int option);
+	bool monsterGyroBotDisallowedCommands(int option);
 };
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;
