@@ -1973,10 +1973,21 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3624], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3624]);
-						TTF_SizeUTF8(ttf12, language[3625 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3625 + followerToCommand->monsterAllyPickupItems]);
+						if ( followerToCommand->monsterAllyPickupItems >= ALLY_GYRO_DETECT_ITEMS_BLESSED
+							&& followerToCommand->monsterAllyPickupItems < ALLY_GYRO_DETECT_END )
+						{
+							TTF_SizeUTF8(ttf12, "Detect", &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]);
+							TTF_SizeUTF8(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 12, language[3624 + followerToCommand->monsterAllyPickupItems]);
+						}
+						else
+						{
+							TTF_SizeUTF8(ttf12, language[3623], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3623]);
+							TTF_SizeUTF8(ttf12, language[3624 + followerToCommand->monsterAllyPickupItems], &width, nullptr);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3624 + followerToCommand->monsterAllyPickupItems]);
+						}
 					}
 					else
 					{
@@ -1991,10 +2002,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3631], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3631]);
-						TTF_SizeUTF8(ttf12, language[3632], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3632]);
+						TTF_SizeUTF8(ttf12, language[3633], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3633]);
+						TTF_SizeUTF8(ttf12, language[3634], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3634]);
 					}
 					else
 					{
@@ -2020,8 +2031,8 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == GYROBOT )
 					{
-						TTF_SizeUTF8(ttf12, language[3629], &width, nullptr);
-						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3629]);
+						TTF_SizeUTF8(ttf12, "Return &", &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]);
 					}
 					else
 					{
@@ -2793,7 +2804,7 @@ void FollowerRadialMenu::monsterGyroBotConvertCommand(int* option)
 			break;
 		case ALLY_CMD_SPECIAL:
 		case ALLY_CMD_RETURN_SOUL:
-			*option = ALLY_CMD_GYRO_KAMIKAZE;
+			*option = ALLY_CMD_GYRO_RETURN;
 			break;
 		case ALLY_CMD_CLASS_TOGGLE:
 			*option = ALLY_CMD_GYRO_LIGHT_TOGGLE;
@@ -2811,7 +2822,7 @@ bool FollowerRadialMenu::monsterGyroBotOnlyCommand(int option)
 		case ALLY_CMD_GYRO_DEPLOY:
 		case ALLY_CMD_GYRO_PATROL:
 		case ALLY_CMD_GYRO_LIGHT_TOGGLE:
-		case ALLY_CMD_GYRO_KAMIKAZE:
+		case ALLY_CMD_GYRO_RETURN:
 		case ALLY_CMD_GYRO_DETECT_TOGGLE:
 			return true;
 			break;

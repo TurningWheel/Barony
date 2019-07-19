@@ -104,6 +104,31 @@ void actItem(Entity* my)
 			net_packet->len = 9;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
+		else if ( my->skill[10] == 0 && my->itemReceivedDetailsFromServer == 0 && players[clientnum] && players[clientnum]->entity )
+		{
+			// request itemtype and beatitude
+			if ( ticks % (TICKS_PER_SECOND * 6) == my->getUID() % (TICKS_PER_SECOND * 6) )
+			{
+				strcpy((char*)net_packet->data, "ITMU");
+				net_packet->data[4] = clientnum;
+				SDLNet_Write32(my->getUID(), &net_packet->data[5]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+				/*for ( node_t* tmpNode = map.creatures->first; tmpNode != nullptr; tmpNode = tmpNode->next )
+				{
+					Entity* follower = (Entity*)tmpNode->element;
+					if ( follower && players[clientnum]->entity == follower->monsterAllyGetPlayerLeader() )
+					{
+						if ( follower->getMonsterTypeFromSprite() == GYROBOT )
+						{
+							break;
+						}
+					}
+				}*/
+			}
+		}
 	}
 	else
 	{
@@ -136,7 +161,21 @@ void actItem(Entity* my)
 			{
 				if ( my->skill[10] >= 0 && my->skill[10] < NUMITEMS )
 				{
-					if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
+					if ( monsterInteracting->getMonsterTypeFromSprite() == GYROBOT )
+					{
+						if ( monsterInteracting->getStats() && list_Size(&(monsterInteracting->getStats())->inventory) >= 1 )
+						{
+							if ( monsterInteracting->monsterAllyGetPlayerLeader() )
+							{
+								messagePlayer(monsterInteracting->monsterAllyIndex, language[3637]);
+							}
+						}
+						else
+						{
+							monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 1, my);
+						}
+					}
+					else if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
 					{
 						monsterInteracting->monsterConsumeFoodEntity(my, monsterInteracting->getStats());
 					}

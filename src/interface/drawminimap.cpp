@@ -160,7 +160,7 @@ void drawMinimap()
 				}
 				if ( !warningEffect 
 					&& ((stats[clientnum]->ring && stats[clientnum]->ring->type == RING_WARNING) 
-						|| entity->entityShowOnMap == 1) )
+						|| (entity->entityShowOnMap == 1 && (ticks % 40 - ticks % 20))) )
 				{
 					x = floor(entity->x / 16);
 					y = floor(entity->y / 16);

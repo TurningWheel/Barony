@@ -138,6 +138,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemStolen(skill[22]),
 	itemShowOnMap(skill[23]),
 	itemDelayMonsterPickingUp(skill[24]),
+	itemReceivedDetailsFromServer(skill[25]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -5035,6 +5036,12 @@ bool Entity::isMobile()
 
 	if ( (entitystats->type == LICH_FIRE || entitystats->type == LICH_ICE)
 		&& monsterLichBattleState < LICH_BATTLE_READY )
+	{
+		return false;
+	}
+
+	if ( entitystats->type == GYROBOT 
+		&& (monsterSpecialState == GYRO_RETURN_LANDING || monsterSpecialState == GYRO_INTERACT_LANDING) )
 	{
 		return false;
 	}

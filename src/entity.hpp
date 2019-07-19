@@ -364,6 +364,7 @@ public:
 	Sint32& itemStolen; // skill[22]
 	Sint32& itemShowOnMap; //skill[23]
 	Sint32& itemDelayMonsterPickingUp; //skill[24]
+	Sint32& itemReceivedDetailsFromServer; //skill[25]
 
 	//--PUBLIC ACTMAGIC SKILLS (Standard projectiles)--
 	Sint32& actmagicIsVertical; //skill[6]

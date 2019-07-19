@@ -4905,17 +4905,26 @@ timeToGoAgain:
 								//messagePlayer(0, "Interacting with a target!");
 								if ( my->monsterAllySetInteract() )
 								{
-									if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+									if ( myStats->type == GYROBOT )
 									{
-										//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+										my->monsterSpecialState = GYRO_INTERACT_LANDING;
+										my->monsterState = MONSTER_STATE_WAIT;
+										serverUpdateEntitySkill(my, 33); // for clients to keep track of animation
 									}
 									else
 									{
-										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
+										if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+										{
+											//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+										}
+										else
+										{
+											my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
+										}
+										my->monsterAllyInteractTarget = 0;
+										my->monsterAllyState = ALLY_STATE_DEFAULT;
 									}
 								}
-								my->monsterAllyInteractTarget = 0;
-								my->monsterAllyState = ALLY_STATE_DEFAULT;
 							}
 							else
 							{
@@ -4942,6 +4951,12 @@ timeToGoAgain:
 								}
 								my->monsterAllyState = ALLY_STATE_DEFEND;
 								my->createPathBoundariesNPC(5);
+								if ( myStats->type == GYROBOT && my->monsterSpecialState == GYRO_RETURN_PATHING )
+								{
+									my->monsterSpecialState = GYRO_RETURN_LANDING;
+									my->monsterState = MONSTER_STATE_WAIT;
+									serverUpdateEntitySkill(my, 33); // for clients to keep track of animation
+								}
 							}
 						}
 					}
@@ -4968,18 +4983,27 @@ timeToGoAgain:
 						{
 							if ( my->monsterAllySetInteract() )
 							{
-								// we found our interactable within distance.
-								//messagePlayer(0, "Found my interactable.");
-								if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+								if ( myStats->type == GYROBOT )
 								{
-									//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+									my->monsterSpecialState = GYRO_INTERACT_LANDING;
+									my->monsterState = MONSTER_STATE_WAIT;
+									serverUpdateEntitySkill(my, 33); // for clients to keep track of animation
 								}
 								else
 								{
-									my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
+									// we found our interactable within distance.
+									//messagePlayer(0, "Found my interactable.");
+									if ( FollowerMenu.entityToInteractWith && FollowerMenu.entityToInteractWith->behavior == &actItem )
+									{
+										//my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_ITEM);
+									}
+									else
+									{
+										my->handleNPCInteractDialogue(*myStats, ALLY_EVENT_INTERACT_OTHER);
+									}
+									my->monsterAllyInteractTarget = 0;
+									my->monsterAllyState = ALLY_STATE_DEFAULT;
 								}
-								my->monsterAllyInteractTarget = 0;
-								my->monsterAllyState = ALLY_STATE_DEFAULT;
 							}
 							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) )
 							{
@@ -7963,6 +7987,25 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				// named humans refuse to drop equipment.
 				handleNPCInteractDialogue(*myStats, ALLY_EVENT_DROP_HUMAN_REFUSE);
 			}
+			else if ( myStats->type == GYROBOT )
+			{
+				node_t* nextnode = nullptr;
+				for ( node_t* node = myStats->inventory.first; node; node = nextnode )
+				{
+					nextnode = node->next;
+					Item* item = (Item*)node->element;
+					if ( item )
+					{
+						for ( int c = item->count; c > 0; --c )
+						{
+							Entity* dropped = dropItemMonster(item, this, myStats);
+							if ( dropped )
+							{
+							}
+						}
+					}
+				}
+			}
 			else if ( stats[monsterAllyIndex] )
 			{
 				Entity* dropped = nullptr;
@@ -8148,6 +8191,34 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			break;
 		}
+		case ALLY_CMD_GYRO_RETURN:
+		{
+			if ( players[monsterAllyIndex]->entity )
+			{
+				destX = static_cast<int>(players[monsterAllyIndex]->entity->x) >> 4;
+				destY = static_cast<int>(players[monsterAllyIndex]->entity->y) >> 4;
+				if ( entityDist(this, players[monsterAllyIndex]->entity) < TOUCHRANGE * 2 )
+				{
+					monsterSpecialState = GYRO_RETURN_LANDING;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+				}
+				else if ( monsterSetPathToLocation(destX, destY, 2) )
+				{
+					monsterState = MONSTER_STATE_HUNT; // hunt state
+					monsterAllyState = ALLY_STATE_MOVETO;
+					serverUpdateEntitySkill(this, 0);
+					handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_BEGIN);
+					monsterSpecialState = GYRO_RETURN_PATHING;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+				}
+				else
+				{
+					//messagePlayer(0, "no path to destination");
+					handleNPCInteractDialogue(*myStats, ALLY_EVENT_MOVETO_FAIL);
+				}
+			}
+			break;
+		}
 		case ALLY_CMD_SPECIAL:
 		{
 			if ( monsterAllySpecialCooldown == 0 )
@@ -8197,8 +8268,18 @@ bool Entity::monsterAllySetInteract()
 	double range = pow(y - target->y, 2) + pow(x - target->x, 2);
 	if ( range < 576 ) // 24 squared
 	{
-		FollowerMenu.entityToInteractWith = target; // set followerInteractedEntity to the mechanism/item/gold etc.
-		FollowerMenu.entityToInteractWith->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
+		if ( getMonsterTypeFromSprite() == GYROBOT 
+			&& monsterSpecialState != GYRO_INTERACT_LANDING
+			&& z < -0.1 )
+		{
+			// don't set interact yet.
+			return true;
+		}
+		else
+		{
+			FollowerMenu.entityToInteractWith = target; // set followerInteractedEntity to the mechanism/item/gold etc.
+			FollowerMenu.entityToInteractWith->interactedByMonster = getUID(); // set the remote entity to this monster's uid to lookup later.
+		}
 	}
 	else
 	{

@@ -808,7 +808,14 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			//my->z = 2.25;
 			//my->pitch = 0;
 		}
-		my->flags[PASSABLE] = true;
+		if ( my->monsterSpecialState == GYRO_RETURN_LANDING || my->monsterSpecialState == GYRO_INTERACT_LANDING )
+		{
+			my->flags[PASSABLE] = false;
+		}
+		else
+		{
+			my->flags[PASSABLE] = true;
+		}
 	}
 
 	if ( my->ticks % TICKS_PER_SECOND == 0 && my->monsterAllyIndex == clientnum )
@@ -858,6 +865,37 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else if ( my->monsterAllyPickupItems >= ALLY_GYRO_DETECT_ITEMS_BLESSED
+					&& my->monsterAllyPickupItems < ALLY_GYRO_DETECT_END )
+				{
+					if ( ent->behavior == &actItem )
+					{
+						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						{
+							ItemType type = static_cast<ItemType>(ent->skill[10]);
+							Status status = static_cast<Status>(ent->skill[11]);
+							int beatitude = ent->skill[12];
+							if ( status > BROKEN && type >= WOODEN_SHIELD && type < NUMITEMS )
+							{
+								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_BLESSED
+									&& beatitude > 0 )
+								{
+									ent->entityShowOnMap = 1;
+								}
+								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_RARE
+									&& (items[type].level >= (currentlevel + 5) || items[type].level == -1) )
+								{
+									ent->entityShowOnMap = 1;
+								}
+								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
+									&& items[type].value >= 400 )
+								{
+									ent->entityShowOnMap = 1;
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -885,21 +923,61 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		//my->z = limbs[GYROBOT][3][2];
-		if ( my->ticks % (TICKS_PER_SECOND * 10) == 0 )
+		if ( my->ticks % (TICKS_PER_SECOND * 10) == 0 
+			&& my->monsterSpecialTimer == 0
+			&& my->monsterSpecialState == 0 )
 		{
 			doACoolFlip = true;
 			my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+			my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
 		}
 
-		if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+		if ( my->monsterSpecialState == GYRO_RETURN_LANDING )
 		{
-			my->z = -6;
-			my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+			if ( limbAnimateToLimit(my, ANIMATE_Z, 0.05, 0, false, 0.0) )
+			{
+				Item* item = newItem(TOOL_TORCH, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+				myStats->HP = 0;
+				my->setObituary(language[3631]);
+				return;
+			}
 		}
-		if ( dist < 0.1 )
+		else if ( my->monsterSpecialState == GYRO_INTERACT_LANDING )
 		{
-			// not moving, float.
-			limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -4.5, 0.01, -6, ANIMATE_DIR_POSITIVE);
+			if ( limbAnimateToLimit(my, ANIMATE_Z, 0.1, 0, false, 0.0) )
+			{
+				my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+				my->monsterSpecialTimer = TICKS_PER_SECOND * 5;
+				if ( my->monsterAllySetInteract() )
+				{
+					// do interact.
+					my->monsterAllyInteractTarget = 0;
+					my->monsterAllyState = ALLY_STATE_DEFAULT;
+				}
+				my->monsterSpecialState = 0;
+				serverUpdateEntitySkill(my, 33);
+				my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+			}
+		}
+		else
+		{
+			if ( my->z > -4.5 )
+			{
+				limbAnimateToLimit(my, ANIMATE_Z, -0.1, -5, false, 0.0);
+			}
+			else
+			{
+				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+				{
+					my->z = -6;
+					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+				if ( dist < 0.1 )
+				{
+					// not moving, float.
+					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -4.5, 0.01, -6, ANIMATE_DIR_POSITIVE);
+				}
+			}
 		}
 		if ( !myStats->EFFECTS[EFF_LEVITATING] )
 		{
@@ -963,7 +1041,12 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			entity->pitch = my->pitch + PI / 2;
 			entity->yaw = my->yaw;
 			entity->roll += 0.1;
-			if ( dist > 0.1 )
+
+			if ( my->z > -4 && my->monsterSpecialState == 0 )
+			{
+				entity->roll += 1;
+			}
+			else if ( dist > 0.1 )
 			{
 				entity->roll += 0.5;
 			}
@@ -1019,19 +1102,26 @@ void actGyroBotLimb(Entity* my)
 
 void gyroBotDie(Entity* my)
 {
-	/*int c;
-	for ( c = 0; c < 6; ++c )
+	if ( my->monsterSpecialState == GYRO_RETURN_LANDING )
 	{
-	Entity* entity = spawnGib(my);
-	if ( entity )
-	{
-	serverSpawnGibForClient(entity);
+		// don't make noises etc.
 	}
-	}*/
+	else
+	{
+		// playSoundEntity(my, 298 + rand() % 4, 128);
+		/*int c;
+		for ( c = 0; c < 6; ++c )
+		{
+		Entity* entity = spawnGib(my);
+		if ( entity )
+		{
+		serverSpawnGibForClient(entity);
+		}
+		}*/
 
+	}
 	my->removeMonsterDeathNodes();
 
-	// playSoundEntity(my, 298 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
