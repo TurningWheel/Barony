@@ -919,7 +919,6 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 	my->focalx = limbs[GYROBOT][0][0];
 	my->focaly = limbs[GYROBOT][0][1];
 	my->focalz = limbs[GYROBOT][0][2];
-	bool doACoolFlip = false;
 	if ( multiplayer != CLIENT )
 	{
 		//my->z = limbs[GYROBOT][3][2];
@@ -927,7 +926,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			&& my->monsterSpecialTimer == 0
 			&& my->monsterSpecialState == 0 )
 		{
-			doACoolFlip = true;
+			// doACoolFlip = true!
 			my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
 			my->monsterSpecialTimer = TICKS_PER_SECOND * 8;
 		}
@@ -936,7 +935,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			if ( limbAnimateToLimit(my, ANIMATE_Z, 0.05, 0, false, 0.0) )
 			{
-				Item* item = newItem(TOOL_TORCH, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+				Item* item = newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
 				myStats->HP = 0;
 				my->setObituary(language[3631]);
 				return;

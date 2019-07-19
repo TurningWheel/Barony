@@ -397,6 +397,8 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tool_sleep_bomb",
 	"tool_freeze_bomb",
 	"tool_teleport_bomb",
+	"tool_gyrobot",
+	"tool_spellbot",
 	""
 };
 
