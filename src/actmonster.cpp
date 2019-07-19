@@ -7842,6 +7842,23 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		return;
 	}
 
+	bool isTinkeringFollower = false;
+	if ( myStats->type == GYROBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+	{
+		isTinkeringFollower = true;
+	}
+	int tinkeringLVL = 0;
+	int skillLVL = 0;
+	if ( stats[monsterAllyIndex] )
+	{
+		tinkeringLVL = stats[monsterAllyIndex]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[monsterAllyIndex], players[monsterAllyIndex]->entity);
+		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[monsterAllyIndex]->entity);
+		if ( isTinkeringFollower )
+		{
+			skillLVL = tinkeringLVL;
+		}
+	}
+
 	if ( myStats->type != GYROBOT )
 	{
 		if ( FollowerMenu.monsterGyroBotOnlyCommand(command) )
@@ -7856,6 +7873,14 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			return;
 		}
 	}
+
+	// do a final check if player can use this command.
+	/*if ( FollowerMenu.optionDisabledForCreature(skillLVL, myStats->type, command) != 0 )
+	{
+		messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+			*myStats, language[3638], language[3639], MSG_COMBAT);
+		return;
+	}*/
 
 	switch ( command )
 	{
@@ -7881,7 +7906,6 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						if ( stats[monsterAllyIndex] ) // check owner's proficiency.
 						{
-							int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[monsterAllyIndex]->entity);
 							if ( skillLVL >= SKILL_LEVEL_MASTER || myStats->type != HUMAN )
 							{
 								// attack anything except if FF is off + friend.
@@ -8013,7 +8037,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				bool dropWeaponOnly = false;
 				bool unableToDrop = false;
 				Uint32 owner = players[monsterAllyIndex]->entity->getUID();
-				if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_MASTER )
+				if ( skillLVL >= SKILL_LEVEL_MASTER )
 				{
 					if ( myStats->helmet )
 					{
@@ -8080,7 +8104,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 						dropped->itemOriginalOwner = owner;
 					}
 
-					if ( (stats[monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[monsterAllyIndex], players[monsterAllyIndex]->entity)) >= SKILL_LEVEL_LEGENDARY )
+					if ( skillLVL >= SKILL_LEVEL_LEGENDARY )
 					{
 						if ( myStats->ring )
 						{

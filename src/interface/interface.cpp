@@ -1608,7 +1608,30 @@ void FollowerRadialMenu::drawFollowerMenu()
 		int skillLVL = 0;
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
-			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_ATTACK_CONFIRM )
+			if ( (*inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD])) && optionPrevious != -1 )
+			{
+				if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
+				{
+					optionPrevious = ALLY_CMD_ATTACK_SELECT;
+				}
+				else if ( optionPrevious == ALLY_CMD_MOVETO_CONFIRM )
+				{
+					optionPrevious = ALLY_CMD_MOVETO_SELECT;
+				}
+				else if ( optionPrevious == ALLY_CMD_FOLLOW || optionPrevious == ALLY_CMD_DEFEND )
+				{
+					if ( followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO )
+					{
+						optionPrevious = ALLY_CMD_FOLLOW;
+					}
+					else
+					{
+						optionPrevious = ALLY_CMD_DEFEND;
+					}
+				}
+				optionSelected = optionPrevious;
+			}
+			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END && optionSelected != ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
 				if ( isTinkeringFollower )
@@ -1655,31 +1678,10 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 			}
 
+			bool usingLastCmd = false;
 			if ( *inputPressed(impulses[IN_FOLLOWERMENU_LASTCMD]) || *inputPressed(joyimpulses[INJOY_GAME_FOLLOWERMENU_LASTCMD]) )
 			{
-				if ( optionPrevious != -1 )
-				{
-					if ( optionPrevious == ALLY_CMD_ATTACK_CONFIRM )
-					{
-						optionPrevious = ALLY_CMD_ATTACK_SELECT;
-					}
-					else if ( optionPrevious == ALLY_CMD_MOVETO_CONFIRM )
-					{
-						optionPrevious = ALLY_CMD_MOVETO_SELECT;
-					}
-					else if ( optionPrevious == ALLY_CMD_FOLLOW || optionPrevious == ALLY_CMD_DEFEND )
-					{
-						if ( followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO )
-						{
-							optionPrevious = ALLY_CMD_FOLLOW;
-						}
-						else
-						{
-							optionPrevious = ALLY_CMD_DEFEND;
-						}
-					}
-					optionSelected = optionPrevious;
-				}
+				usingLastCmd = true;
 			}
 
 			if ( followerStats->type == GYROBOT )
@@ -1695,7 +1697,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 				|| optionSelected == ALLY_CMD_PICKUP_TOGGLE
 				|| optionSelected == ALLY_CMD_GYRO_LIGHT_TOGGLE
 				|| optionSelected == ALLY_CMD_GYRO_DETECT_TOGGLE);
-			if ( disableOption != 0 )
+			if ( disableOption != 0 && !usingLastCmd )
 			{
 				keepWheelOpen = true;
 			}
@@ -1776,6 +1778,40 @@ void FollowerRadialMenu::drawFollowerMenu()
 						else
 						{
 							followerToCommand->monsterAllySendCommand(optionSelected, moveToX, moveToY, followerToCommand->monsterAllyInteractTarget);
+						}
+					}
+					else if ( usingLastCmd )
+					{
+						// tell player current monster can't do what you asked (e.g using last command & swapping between monsters with different requirements)
+						if ( followerStats->type < KOBOLD ) // Original monster count
+						{
+							if ( disableOption < 0 )
+							{
+								messagePlayer(clientnum, language[3640], language[90 + followerStats->type]);
+							}
+							else if ( isTinkeringFollower )
+							{
+								messagePlayer(clientnum, language[3639], language[90 + followerStats->type]);
+							}
+							else
+							{
+								messagePlayer(clientnum, language[3638], language[90 + followerStats->type]);
+							}
+						}
+						else if ( followerStats->type >= KOBOLD ) //New monsters
+						{
+							if ( disableOption < 0 )
+							{
+								messagePlayer(clientnum, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
+							}
+							else if ( isTinkeringFollower )
+							{
+								messagePlayer(clientnum, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
+							}
+							else
+							{
+								messagePlayer(clientnum, language[3638], language[2000 + (followerStats->type - KOBOLD)]);
+							}
 						}
 					}
 
@@ -2512,6 +2548,13 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	{
 		monsterGyroBotConvertCommand(&option);
 	}
+	else
+	{
+		if ( monsterGyroBotOnlyCommand(option) )
+		{
+			return -1; // disabled due to monster.
+		}
+	}
 
 	if ( option == ALLY_CMD_SPECIAL
 		&& followerToCommand->monsterAllySpecialCooldown != 0 )
@@ -2565,6 +2608,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return -1; // disabled due to creature.
 			}
+			else if ( monsterType == GYROBOT )
+			{
+				requirement = SKILL_LEVEL_SKILLED;
+			}
 			else if ( creatureTier > 0 )
 			{
 				requirement += 20 * creatureTier; // 60, 80, 100
@@ -2596,6 +2643,13 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			}
 			else
 			{
+				if ( monsterType == GYROBOT )
+				{
+					if ( playerSkillLVL < SKILL_LEVEL_SKILLED )
+					{
+						return SKILL_LEVEL_SKILLED;
+					}
+				}
 				if ( playerSkillLVL < AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT] )
 				{
 					return AllyNPCSkillRequirements[ALLY_CMD_ATTACK_SELECT];
@@ -2666,6 +2720,18 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			{
 				return -1; // disabled due to creature.
 			}
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		case ALLY_CMD_GYRO_DETECT_TOGGLE:
+			if ( playerSkillLVL < requirement )
+			{
+				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		case ALLY_CMD_GYRO_LIGHT_TOGGLE:
 			if ( playerSkillLVL < requirement )
 			{
 				return requirement; // disabled due to basic skill requirements.
