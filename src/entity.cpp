@@ -16172,7 +16172,7 @@ bool monsterIsImmobileTurret(Entity* my, Stat* myStats)
 {
 	if ( myStats )
 	{
-		if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+		if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT || myStats->type == DUMMYBOT )
 		{
 			return true;
 		}
@@ -16180,7 +16180,7 @@ bool monsterIsImmobileTurret(Entity* my, Stat* myStats)
 	else if ( my )
 	{
 		int race = my->getMonsterTypeFromSprite();
-		if ( race == SENTRYBOT || race == SPELLBOT )
+		if ( race == SENTRYBOT || race == SPELLBOT || race == DUMMYBOT )
 		{
 			return true;
 		}
@@ -16206,7 +16206,7 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 	}
 	
 	if ( race == HUMAN || race == SENTRYBOT
-		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT )
+		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT )
 	{
 		return false;
 	}

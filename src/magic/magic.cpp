@@ -1614,7 +1614,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			|| monsterSummonType == MINOTAUR || monsterSummonType == LICH_FIRE || monsterSummonType == LICH_ICE
 			|| monsterSummonType == NOTHING || monsterSummonType == targetStats->type || monsterSummonType == HUMAN
 			|| (targetStats->leader_uid != 0 && monsterSummonType == SHADOW) || monsterSummonType == SENTRYBOT
-			|| monsterSummonType == SPELLBOT || monsterSummonType == GYROBOT )
+			|| monsterSummonType == SPELLBOT || monsterSummonType == GYROBOT || monsterSummonType == DUMMYBOT )
 		{
 			monsterSummonType = static_cast<Monster>(rand() % NUMMONSTERS);
 		}

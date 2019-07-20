@@ -3376,9 +3376,21 @@ void assignActions(map_t* map)
 						break;
 					case SPELLBOT:
 						entity->z = 0;
-						entity->focalx = limbs[SENTRYBOT][0][0]; // 0
-						entity->focaly = limbs[SENTRYBOT][0][1]; // 0
-						entity->focalz = limbs[SENTRYBOT][0][2]; // -1.75
+						entity->focalx = limbs[SENTRYBOT][0][0];
+						entity->focaly = limbs[SENTRYBOT][0][1];
+						entity->focalz = limbs[SENTRYBOT][0][2];
+						break;
+					case GYROBOT:
+						entity->z = -6;
+						entity->focalx = limbs[GYROBOT][0][0];
+						entity->focaly = limbs[GYROBOT][0][1];
+						entity->focalz = limbs[GYROBOT][0][2];
+						break;
+					case DUMMYBOT:
+						entity->z = 0;
+						entity->focalx = limbs[DUMMYBOT][0][0];
+						entity->focaly = limbs[DUMMYBOT][0][1];
+						entity->focalz = limbs[DUMMYBOT][0][2];
 						break;
 					default:
 						break;

@@ -48,9 +48,10 @@ enum Monster : int
 	LICH_FIRE,
 	SENTRYBOT,
 	SPELLBOT,
-	GYROBOT
+	GYROBOT,
+	DUMMYBOT
 };
-const int NUMMONSTERS = 36;
+const int NUMMONSTERS = 37;
 extern int kills[NUMMONSTERS];
 
 static char monstertypename[][15] =
@@ -90,7 +91,8 @@ static char monstertypename[][15] =
 	"lichfire",
 	"sentrybot",
 	"spellbot",
-	"gyrobot"
+	"gyrobot",
+	"dummybot"
 };
 
 static char monstertypenamecapitalized[][15] =
@@ -130,7 +132,8 @@ static char monstertypenamecapitalized[][15] =
 	"Lichfire",
 	"Sentrybot",
 	"Spellbot",
-	"Gyrobot"
+	"Gyrobot",
+	"Dummybot"
 };
 
 // body part focal points
@@ -177,7 +180,8 @@ static char gibtype[NUMMONSTERS] =
 	2,	//LICH_FIRE
 	0,	//SENTRYBOT
 	0,	//SPELLBOT
-	0	//GYROBOT
+	0,  //GYROBOT
+	0	//DUMMYBOT
 };
 
 // columns go like this:
@@ -220,7 +224,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.8, 1.8, 1.8, 1.8, 1.f, 1.f, 1.4 }, // lich fire
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
-	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }  // gyrobot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 0.5 }  // dummybot
 };
 
 static std::vector<std::vector<int>> classStatGrowth =
@@ -292,7 +297,7 @@ static const int AllyNPCSkillRequirements[19] =
 	0,					// ALLY_CMD_GYRO_PATROL,
 	0,					// ALLY_CMD_GYRO_LIGHT_TOGGLE,
 	0,					// ALLY_CMD_GYRO_RETURN,
-	0,					// ALLY_CMD_GYRO_DETECT_TOGGLE,
+	SKILL_LEVEL_SKILLED,// ALLY_CMD_GYRO_DETECT_TOGGLE,
 	0					// ALLY_CMD_END
 };
 
