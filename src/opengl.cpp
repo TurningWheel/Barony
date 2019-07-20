@@ -88,6 +88,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 		modelindex = 0;
 	}
 
+	if ( model == models[0] )
+	{
+		return; // don't draw green balls
+	}
+
 	// model array indexes
 	indexdown[0] = model->sizez * model->sizey;
 	indexdown[1] = model->sizez;
