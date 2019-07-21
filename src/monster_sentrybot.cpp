@@ -30,9 +30,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 0;
+		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = 0;
+		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -62,7 +62,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
-			my->setHardcoreStats(*myStats);
+			//my->setHardcoreStats(*myStats);
 
 			if ( myStats->weapon == nullptr && my->sprite == 872/*&& myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1*/ )
 			{
@@ -258,9 +258,9 @@ void initGyroBot(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 0;
+		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = 0;
+		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -293,7 +293,7 @@ void initGyroBot(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
-			my->setHardcoreStats(*myStats);
+			//my->setHardcoreStats(*myStats);
 		}
 	}
 
@@ -350,17 +350,39 @@ void actSentryBotLimb(Entity* my)
 
 void sentryBotDie(Entity* my)
 {
-	/*int c;
-	for ( c = 0; c < 6; ++c )
+	my->removeMonsterDeathNodes();
+	int c;
+	for ( c = 0; c < 6; c++ )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
 		{
+			switch ( c )
+			{
+				case 0:
+					entity->sprite = 873;
+					break;
+				case 1:
+					entity->sprite = 874;
+					break;
+				case 2:
+					entity->sprite = 874;
+					break;
+				case 3:
+					entity->sprite = 874;
+					break;
+				case 4:
+					entity->sprite = 874;
+					break;
+				case 5:
+					entity->sprite = 875;
+					break;
+				default:
+					break;
+			}
 			serverSpawnGibForClient(entity);
 		}
-	}*/
-
-	my->removeMonsterDeathNodes();
+	}
 
 	// playSoundEntity(my, 298 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
@@ -1101,26 +1123,460 @@ void actGyroBotLimb(Entity* my)
 
 void gyroBotDie(Entity* my)
 {
+	bool gibs = true;
 	if ( my->monsterSpecialState == GYRO_RETURN_LANDING )
 	{
 		// don't make noises etc.
+		Stat* myStats = my->getStats();
+		if ( myStats && !strncmp(myStats->obituary, language[3631], strlen(language[3631])) )
+		{
+			// returning to land, don't explode into gibs.
+			gibs = false;
+		}
 	}
-	else
+	
+	my->removeMonsterDeathNodes();
+	if ( gibs )
 	{
 		// playSoundEntity(my, 298 + rand() % 4, 128);
-		/*int c;
-		for ( c = 0; c < 6; ++c )
+		int c;
+		for ( c = 0; c < 4; c++ )
 		{
-		Entity* entity = spawnGib(my);
-		if ( entity )
-		{
-		serverSpawnGibForClient(entity);
+			Entity* entity = spawnGib(my);
+			if ( entity )
+			{
+				switch ( c )
+				{
+					case 0:
+						entity->sprite = 886;
+						break;
+					case 1:
+						entity->sprite = 887;
+						break;
+					case 2:
+						entity->sprite = 888;
+						break;
+					case 3:
+						entity->sprite = 874;
+						break;
+					default:
+						break;
+				}
+				serverSpawnGibForClient(entity);
+			}
 		}
-		}*/
-
 	}
-	my->removeMonsterDeathNodes();
 
 	list_RemoveNode(my->mynode);
 	return;
+}
+
+void initDummyBot(Entity* my, Stat* myStats)
+{
+	node_t* node;
+
+	my->initMonster(889);
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	if ( multiplayer != CLIENT )
+	{
+		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 1;
+	}
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
+		if ( myStats != nullptr )
+		{
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			//my->setHardcoreStats(*myStats);
+		}
+	}
+
+	// head
+	Entity* entity = newEntity(889, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	entity->z = 6;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DUMMYBOT][1][0];
+	entity->focaly = limbs[DUMMYBOT][1][1];
+	entity->focalz = limbs[DUMMYBOT][1][2];
+	entity->behavior = &actDummyBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// body
+	entity = newEntity(890, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DUMMYBOT][2][0];
+	entity->focaly = limbs[DUMMYBOT][2][1];
+	entity->focalz = limbs[DUMMYBOT][2][2];
+	entity->behavior = &actDummyBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// shield
+	entity = newEntity(891, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DUMMYBOT][3][0];
+	entity->focaly = limbs[DUMMYBOT][3][1];
+	entity->focalz = limbs[DUMMYBOT][3][2];
+	entity->behavior = &actDummyBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// box
+	entity = newEntity(892, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = my->yaw;
+	real_t prevYaw = entity->yaw;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DUMMYBOT][4][0];
+	entity->focaly = limbs[DUMMYBOT][4][1];
+	entity->focalz = limbs[DUMMYBOT][4][2];
+	entity->behavior = &actDummyBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	// lid
+	entity = newEntity(893, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = prevYaw;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DUMMYBOT][5][0];
+	entity->focaly = limbs[DUMMYBOT][5][1];
+	entity->focalz = limbs[DUMMYBOT][5][2];
+	entity->scalex = 1.01;
+	entity->scaley = 1.01;
+	entity->scalez = 1.01;
+	entity->pitch = PI;
+	entity->behavior = &actDummyBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
+	if ( multiplayer == CLIENT || MONSTER_INIT )
+	{
+		return;
+	}
+}
+
+void actDummyBotLimb(Entity* my)
+{
+	my->actMonsterLimb(false);
+}
+
+void dummyBotDie(Entity* my)
+{
+	// playSoundEntity(my, 298 + rand() % 4, 128);
+	my->removeMonsterDeathNodes();
+	int c;
+	for ( c = 0; c < 5; c++ )
+	{
+		Entity* entity = spawnGib(my);
+		if ( entity )
+		{
+			switch ( c )
+			{
+				case 0:
+					entity->sprite = 889;
+					break;
+				case 1:
+					entity->sprite = 890;
+					break;
+				case 2:
+					entity->sprite = 891;
+					break;
+				case 3:
+					entity->sprite = 892;
+					break;
+				case 4:
+					entity->sprite = 893;
+					break;
+				default:
+					break;
+			}
+			serverSpawnGibForClient(entity);
+		}
+	}
+
+	list_RemoveNode(my->mynode);
+	return;
+}
+
+#define DUMMY_HEAD 2
+#define DUMMY_BODY 3
+#define DUMMY_SHIELD 4
+#define DUMMY_BOX 5
+#define DUMMY_LID 6
+
+void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
+{
+	node_t* node;
+	Entity* entity = nullptr;
+	Entity* head = nullptr;
+	int bodypart;
+
+	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+
+	my->focalx = limbs[DUMMYBOT][0][0];
+	my->focaly = limbs[DUMMYBOT][0][1];
+	my->focalz = limbs[DUMMYBOT][0][2];
+	if ( multiplayer != CLIENT )
+	{
+		my->z = 0;
+	}
+
+	//Move bodyparts
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
+	{
+		if ( bodypart < DUMMY_HEAD )
+		{
+			continue;
+		}
+
+		entity = (Entity*)node->element;
+		entity->x = my->x;
+		entity->y = my->y;
+		if ( bodypart == DUMMY_HEAD )
+		{
+			head = entity;
+			if ( multiplayer != CLIENT && entity->skill[0] == 2 )
+			{
+				if ( entity->skill[3] > 0 && myStats->HP < entity->skill[3] )
+				{
+					// on hit, bounce a bit.
+					my->attack(MONSTER_POSE_RANGED_WINDUP1, 0, nullptr);
+				}
+				entity->skill[3] = myStats->HP;
+			}
+
+			if ( entity->skill[0] == 0 ) // non initialized.
+			{
+				entity->skill[0] = 1;
+				entity->fskill[0] = -1;
+				entity->z = 6 + limbs[DUMMYBOT][6][2];
+			}
+			else if ( entity->skill[0] == 1 ) // rising.
+			{
+				if ( limbAnimateToLimit(entity, ANIMATE_Z, entity->fskill[0], limbs[DUMMYBOT][6][2], false, 0.0) )
+				{
+					entity->skill[0] = 2;
+					entity->z = my->z;
+				}
+				else
+				{
+					entity->fskill[0] *= 0.85;
+				}
+			}
+			else
+			{
+				entity->z = my->z;
+				if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP1 )
+				{
+					my->monsterAttack = 0;
+					entity->skill[4] = 1;
+					entity->fskill[1] = 0.06;
+					entity->fskill[2] = PI / 6;
+					entity->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+				if ( entity->skill[4] > 0 )
+				{
+					if ( entity->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+					{
+						if ( entity->pitch > 0 )
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -entity->fskill[1], 0.0, false, 0.0) )
+							{
+								entity->skill[4] = 0;
+							}
+						}
+						else
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, entity->fskill[1], 0.0, false, 0.0) )
+							{
+								entity->skill[4] = 0;
+							}
+						}
+					}
+					else
+					{
+						limbAnimateWithOvershoot(entity, ANIMATE_PITCH, entity->fskill[1], 2 * PI - entity->fskill[2], 
+							entity->fskill[1], PI / 12, ANIMATE_DIR_NEGATIVE);
+					}
+				}
+			}
+		}
+		else if ( bodypart != DUMMY_LID && bodypart != DUMMY_BOX )
+		{
+			if ( head )
+			{
+				if ( head->skill[0] == 2 )
+				{
+					entity->z = my->z;
+					entity->pitch = head->pitch;
+				}
+				else
+				{
+					entity->z = head->z - limbs[DUMMYBOT][6][2];
+				}
+			}
+		}
+
+		if ( bodypart == DUMMY_BODY || bodypart == DUMMY_SHIELD || bodypart == DUMMY_HEAD )
+		{
+			entity->yaw = my->yaw;
+		}
+		else if ( bodypart == DUMMY_LID )
+		{
+			if ( entity->skill[0] == 0 )
+			{
+				if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 7 * PI / 4, false, 0.0) )
+				{
+					entity->skill[0] = 1;
+				}
+			}
+
+		}
+
+		switch ( bodypart )
+		{
+			case DUMMY_HEAD:
+				entity->x += limbs[DUMMYBOT][6][0] * cos(my->yaw);
+				entity->y += limbs[DUMMYBOT][6][1] * sin(my->yaw);
+				if ( entity->skill[0] == 2 )
+				{
+					entity->z += limbs[DUMMYBOT][6][2];
+				}
+				entity->focalx = limbs[DUMMYBOT][1][0];
+				entity->focaly = limbs[DUMMYBOT][1][1];
+				entity->focalz = limbs[DUMMYBOT][1][2];
+				break;
+			case DUMMY_BODY:
+				entity->x += limbs[DUMMYBOT][7][0] * cos(my->yaw);
+				entity->y += limbs[DUMMYBOT][7][1] * sin(my->yaw);
+				entity->z += limbs[DUMMYBOT][7][2];
+				entity->focalx = limbs[DUMMYBOT][2][0];
+				entity->focaly = limbs[DUMMYBOT][2][1];
+				entity->focalz = limbs[DUMMYBOT][2][2];
+				break;
+			case DUMMY_SHIELD:
+				if ( head && head->skill[0] != 2 )
+				{
+					entity->flags[INVISIBLE] = true;
+				}
+				else
+				{
+					if ( entity->flags[INVISIBLE] )
+					{
+						playSoundEntityLocal(my, 44 + rand() % 3, 92);
+					}
+					entity->flags[INVISIBLE] = false;
+				}
+				entity->x += limbs[DUMMYBOT][8][0] * cos(my->yaw) + limbs[DUMMYBOT][8][1] * cos(my->yaw + PI / 2);
+				entity->y += limbs[DUMMYBOT][8][0] * sin(my->yaw) + limbs[DUMMYBOT][8][1] * sin(my->yaw + PI / 2);
+				entity->z += limbs[DUMMYBOT][8][2];
+				entity->focalx = limbs[DUMMYBOT][3][0];
+				entity->focaly = limbs[DUMMYBOT][3][1];
+				entity->focalz = limbs[DUMMYBOT][3][2];
+				break;
+			case DUMMY_BOX:
+				entity->x += limbs[DUMMYBOT][9][0] * cos(entity->yaw);
+				entity->y += limbs[DUMMYBOT][9][1] * sin(entity->yaw);
+				entity->z = limbs[DUMMYBOT][9][2];
+				entity->focalx = limbs[DUMMYBOT][4][0];
+				entity->focaly = limbs[DUMMYBOT][4][1];
+				entity->focalz = limbs[DUMMYBOT][4][2];
+				break;
+			case DUMMY_LID:
+				entity->x += limbs[DUMMYBOT][10][0] * cos(entity->yaw);
+				entity->y += limbs[DUMMYBOT][10][1] * sin(entity->yaw);
+				entity->z = limbs[DUMMYBOT][10][2];
+				entity->focalx = limbs[DUMMYBOT][5][0];
+				entity->focaly = limbs[DUMMYBOT][5][1];
+				entity->focalz = limbs[DUMMYBOT][5][2];
+				break;
+			default:
+				break;
+		}
+	}
+
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
+	{
+		MONSTER_ATTACKTIME++;
+	}
+	else if ( MONSTER_ATTACK == 0 )
+	{
+		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
+	}
 }

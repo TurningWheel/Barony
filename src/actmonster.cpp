@@ -152,7 +152,7 @@ double sightranges[NUMMONSTERS] =
 	256,  // SENTRYBOT
 	256,  // SPELLBOT
 	256,  // GYROBOT
-	0     // DUMMYBOT
+	32    // DUMMYBOT
 };
 
 int monsterGlobalAnimationMultiplier = 10;
@@ -711,7 +711,8 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 				|| race == GOBLIN
 				|| race == AUTOMATON
 				|| race == GOATMAN
-				|| race == INSECTOID )
+				|| race == INSECTOID
+				|| race == GYROBOT )
 			{
 				canAlly = true;
 			}
@@ -758,7 +759,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					canAlly = true;
 				}
 			}
-			else if ( stats[monsterclicked]->type == AUTOMATON || stats[monsterclicked]->type == GYROBOT )
+			else if ( stats[monsterclicked]->type == AUTOMATON )
 			{
 				if ( race == AUTOMATON || race == HUMAN )
 				{
@@ -3303,7 +3304,7 @@ void actMonster(Entity* my)
 
 									if ( entity != nullptr )
 									{
-										if ( entity->behavior == &actPlayer )
+										if ( entity->behavior == &actPlayer && myStats->type != DUMMYBOT )
 										{
 											assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 											assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
@@ -3649,7 +3650,7 @@ void actMonster(Entity* my)
 			}
 			if ( entity != nullptr )
 			{
-				if ( entity->behavior == &actPlayer )
+				if ( entity->behavior == &actPlayer && myStats->type != DUMMYBOT )
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 					assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
@@ -4240,6 +4241,12 @@ timeToGoAgain:
 				}
 				return;
 			}
+			else if ( myStats->type == DUMMYBOT )
+			{
+				my->monsterState = MONSTER_STATE_WAIT;
+				my->monsterMoveTime = 0;
+				return;
+			}
 			else if ( monsterIsImmobileTurret(my, myStats) )
 			{
 				my->monsterState = MONSTER_STATE_ATTACK;
@@ -4472,7 +4479,7 @@ timeToGoAgain:
 
 												if ( entity != nullptr )
 												{
-													if ( entity->behavior == &actPlayer )
+													if ( entity->behavior == &actPlayer && myStats->type != DUMMYBOT )
 													{
 														assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 														assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
@@ -4678,7 +4685,7 @@ timeToGoAgain:
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity != NULL )
 			{
-				if ( entity->behavior == &actPlayer )
+				if ( entity->behavior == &actPlayer && myStats->type != DUMMYBOT )
 				{
 					assailant[entity->skill[2]] = true; // as long as this is active, combat music doesn't turn off
 					assailantTimer[entity->skill[2]] = COMBAT_MUSIC_COOLDOWN;
@@ -6445,6 +6452,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		{
 			monsterStrafeDirection = -1 + ((rand() % 2 == 0) ? 2 : 0);
 		}
+	}
+	else if ( myStats->type == DUMMYBOT )
+	{
+		return;
 	}
 
 	// check the range to the target, depending on ranged weapon or melee.

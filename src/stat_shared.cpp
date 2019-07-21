@@ -1257,6 +1257,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_MAGIC] = 100;
 			stats->PROFICIENCIES[PRO_LEADERSHIP] = 60;*/
 			break;
+		case (1000 + DUMMYBOT):
+			stats->type = DUMMYBOT;
+			stats->MAXHP = 1000;
+			stats->HP = stats->MAXHP;
+			stats->MAXMP = 10;
+			stats->MP = stats->MAXMP;
+			stats->OLDHP = stats->HP;
 		case 10:
 		default:
 			break;
