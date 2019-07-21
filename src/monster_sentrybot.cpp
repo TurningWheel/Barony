@@ -1321,6 +1321,27 @@ void initDummyBot(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
+	// crank
+	entity = newEntity(895, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->yaw = prevYaw;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[DUMMYBOT][11][0];
+	entity->focaly = limbs[DUMMYBOT][11][1];
+	entity->focalz = limbs[DUMMYBOT][11][2];
+	entity->fskill[0] = 1;
+	entity->behavior = &actDummyBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
 	if ( multiplayer == CLIENT || MONSTER_INIT )
 	{
 		return;
@@ -1375,6 +1396,7 @@ void dummyBotDie(Entity* my)
 #define DUMMY_SHIELD 4
 #define DUMMY_BOX 5
 #define DUMMY_LID 6
+#define DUMMY_CRANK 7
 
 void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 {
@@ -1473,7 +1495,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
-		else if ( bodypart != DUMMY_LID && bodypart != DUMMY_BOX )
+		else if ( bodypart != DUMMY_LID && bodypart != DUMMY_BOX && bodypart != DUMMY_CRANK )
 		{
 			if ( head )
 			{
@@ -1502,7 +1524,50 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 					entity->skill[0] = 1;
 				}
 			}
-
+		}
+		else if ( bodypart == DUMMY_CRANK )
+		{
+			if ( entity->fskill[0] > 0.08 )
+			{
+				entity->pitch += entity->fskill[0];
+				if ( entity->pitch > 2 * PI )
+				{
+					entity->pitch -= 2 * PI;
+				}
+				entity->fskill[0] *= 0.95;
+			}
+			else if ( entity->skill[0] == 0 )
+			{
+				// fall to rest on a 90 degree angle.
+				if ( entity->pitch < PI / 2 )
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.08, PI / 2, false, 0.f) )
+					{
+						entity->skill[0] = 1;
+					}
+				}
+				else if ( entity->pitch < PI )
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.08, PI, false, 0.f) )
+					{
+						entity->skill[0] = 1;
+					}
+				}
+				else if ( entity->pitch < (3 * PI / 2) )
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.08, 3 * PI / 2, false, 0.f) )
+					{
+						entity->skill[0] = 1;
+					}
+				}
+				else
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.08, 0.f, false, 0.f) )
+					{
+						entity->skill[0] = 1;
+					}
+				}
+			}
 		}
 
 		switch ( bodypart )
@@ -1561,6 +1626,14 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 				entity->focalx = limbs[DUMMYBOT][5][0];
 				entity->focaly = limbs[DUMMYBOT][5][1];
 				entity->focalz = limbs[DUMMYBOT][5][2];
+				break;
+			case DUMMY_CRANK:
+				entity->x += limbs[DUMMYBOT][12][0] * cos(entity->yaw) + limbs[DUMMYBOT][12][1] * cos(entity->yaw + PI / 2);
+				entity->y += limbs[DUMMYBOT][12][0] * sin(entity->yaw) + limbs[DUMMYBOT][12][1] * sin(entity->yaw + PI / 2);
+				entity->z = limbs[DUMMYBOT][12][2];
+				entity->focalx = limbs[DUMMYBOT][11][0];
+				entity->focaly = limbs[DUMMYBOT][11][1];
+				entity->focalz = limbs[DUMMYBOT][11][2];
 				break;
 			default:
 				break;
