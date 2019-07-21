@@ -3381,7 +3381,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[SENTRYBOT][0][2];
 						break;
 					case GYROBOT:
-						entity->z = -6;
+						entity->z = 5;
 						entity->focalx = limbs[GYROBOT][0][0];
 						entity->focaly = limbs[GYROBOT][0][1];
 						entity->focalz = limbs[GYROBOT][0][2];

@@ -487,7 +487,7 @@ Entity* summonMonster(Monster creature, long x, long y, bool forceLocation)
 				entity->focalz = limbs[SPELLBOT][0][2];
 				break;
 			case GYROBOT:
-				entity->z = -6;
+				entity->z = 5;
 				entity->focalx = limbs[GYROBOT][0][0];
 				entity->focaly = limbs[GYROBOT][0][1];
 				entity->focalz = limbs[GYROBOT][0][2];
@@ -8307,6 +8307,13 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			break;
 		}
+		case ALLY_CMD_DUMMYBOT_RETURN:
+			if ( myStats->type == DUMMYBOT )
+			{
+				monsterSpecialState = DUMMYBOT_RETURN_FORM;
+				serverUpdateEntitySkill(this, 33);
+			}
+			break;
 		default:
 			break;
 	}

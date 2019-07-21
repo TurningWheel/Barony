@@ -988,15 +988,27 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			}
 			else
 			{
-				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+				if ( my->monsterSpecialState == GYRO_START_FLYING )
 				{
-					my->z = -6;
-					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+					if ( limbAnimateToLimit(my, ANIMATE_Z, -0.1, -6, false, 0.0) )
+					{
+						my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+						my->monsterSpecialState = 0;
+						serverUpdateEntitySkill(my, 33);
+					}
 				}
-				if ( dist < 0.1 )
+				else
 				{
-					// not moving, float.
-					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -4.5, 0.01, -6, ANIMATE_DIR_POSITIVE);
+					if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+					{
+						my->z = -6;
+						my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+					}
+					if ( dist < 0.1 )
+					{
+						// not moving, float.
+						limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -4.5, 0.01, -6, ANIMATE_DIR_POSITIVE);
+					}
 				}
 			}
 		}
@@ -1063,7 +1075,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw;
 			entity->roll += 0.1;
 
-			if ( my->z > -4 && my->monsterSpecialState == 0 )
+			if ( (my->z > -4 && my->monsterSpecialState == 0) || my->monsterSpecialState == GYRO_START_FLYING )
 			{
 				entity->roll += 1;
 			}
@@ -1356,34 +1368,49 @@ void actDummyBotLimb(Entity* my)
 void dummyBotDie(Entity* my)
 {
 	// playSoundEntity(my, 298 + rand() % 4, 128);
-	my->removeMonsterDeathNodes();
-	int c;
-	for ( c = 0; c < 5; c++ )
+	bool gibs = true;
+	if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
 	{
-		Entity* entity = spawnGib(my);
-		if ( entity )
+		// don't make noises etc.
+		Stat* myStats = my->getStats();
+		if ( myStats && !strncmp(myStats->obituary, language[3643], strlen(language[3643])) )
 		{
-			switch ( c )
+			// returning to box, don't explode into gibs.
+			gibs = false;
+		}
+	}
+
+	my->removeMonsterDeathNodes();
+	if ( gibs )
+	{
+		int c;
+		for ( c = 0; c < 5; c++ )
+		{
+			Entity* entity = spawnGib(my);
+			if ( entity )
 			{
-				case 0:
-					entity->sprite = 889;
-					break;
-				case 1:
-					entity->sprite = 890;
-					break;
-				case 2:
-					entity->sprite = 891;
-					break;
-				case 3:
-					entity->sprite = 892;
-					break;
-				case 4:
-					entity->sprite = 893;
-					break;
-				default:
-					break;
+				switch ( c )
+				{
+					case 0:
+						entity->sprite = 889;
+						break;
+					case 1:
+						entity->sprite = 890;
+						break;
+					case 2:
+						entity->sprite = 891;
+						break;
+					case 3:
+						entity->sprite = 892;
+						break;
+					case 4:
+						entity->sprite = 893;
+						break;
+					default:
+						break;
+				}
+				serverSpawnGibForClient(entity);
 			}
-			serverSpawnGibForClient(entity);
 		}
 	}
 
@@ -1439,7 +1466,42 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 				entity->skill[3] = myStats->HP;
 			}
 
-			if ( entity->skill[0] == 0 ) // non initialized.
+			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+			{
+				bool pitchZero = false;
+				if ( entity->pitch > 0 )
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 0.0, false, 0.0) )
+					{
+						pitchZero = true;
+					}
+				}
+				else
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 0.0, false, 0.0) )
+					{
+						pitchZero = true;
+					}
+				}
+				entity->skill[0] = 1;
+				real_t rate = 0.5;
+				if ( entity->z > 12 )
+				{
+					rate = 0.1;
+				}
+				if ( pitchZero && limbAnimateToLimit(entity, ANIMATE_Z, rate, 7.5 + limbs[DUMMYBOT][6][2], false, 0.0) )
+				{
+					if ( multiplayer != CLIENT )
+					{
+						// kill me!
+						Item* item = newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+						myStats->HP = 0;
+						my->setObituary(language[3643]);
+						return;
+					}
+				}
+			}
+			else if ( entity->skill[0] == 0 ) // non initialized.
 			{
 				entity->skill[0] = 1;
 				entity->fskill[0] = -1;
@@ -1499,7 +1561,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			if ( head )
 			{
-				if ( head->skill[0] == 2 )
+				if ( head->skill[0] == 2 || my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
 				{
 					entity->z = my->z;
 					entity->pitch = head->pitch;
@@ -1517,7 +1579,14 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == DUMMY_LID )
 		{
-			if ( entity->skill[0] == 0 )
+			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+			{
+				if ( head && head->z > 11 )
+				{
+					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI, false, 0.0);
+				}
+			}
+			else if ( entity->skill[0] == 0 )
 			{
 				if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 7 * PI / 4, false, 0.0) )
 				{
@@ -1527,7 +1596,15 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == DUMMY_CRANK )
 		{
-			if ( entity->fskill[0] > 0.08 )
+			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+			{
+				entity->pitch -= 0.5;
+				if ( entity->pitch < 0 )
+				{
+					entity->pitch += 2 * PI;
+				}
+			}
+			else if ( entity->fskill[0] > 0.08 )
 			{
 				entity->pitch += entity->fskill[0];
 				if ( entity->pitch > 2 * PI )

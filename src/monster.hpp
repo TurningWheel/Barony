@@ -275,6 +275,7 @@ enum AllyNPCCommand : int
 	ALLY_CMD_GYRO_LIGHT_TOGGLE,
 	ALLY_CMD_GYRO_RETURN,
 	ALLY_CMD_GYRO_DETECT_TOGGLE,
+	ALLY_CMD_DUMMYBOT_RETURN,
 	ALLY_CMD_END
 };
 
@@ -778,3 +779,7 @@ static const int LICH_BATTLE_READY = 0;
 static const int GYRO_RETURN_PATHING = 1;
 static const int GYRO_RETURN_LANDING = 2;
 static const int GYRO_INTERACT_LANDING = 3;
+static const int GYRO_START_FLYING = 4;
+
+//--Dummybot--
+static const int DUMMYBOT_RETURN_FORM = 1;

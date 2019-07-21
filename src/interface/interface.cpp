@@ -1688,6 +1688,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				monsterGyroBotConvertCommand(&optionSelected);
 			}
+			else if ( followerStats->type == DUMMYBOT )
+			{
+				if ( optionSelected == ALLY_CMD_SPECIAL )
+				{
+					optionSelected = ALLY_CMD_DUMMYBOT_RETURN;
+				}
+			}
 			else if ( followerToCommand->monsterAllySummonRank != 0 && optionSelected == ALLY_CMD_CLASS_TOGGLE )
 			{
 				optionSelected = ALLY_CMD_RETURN_SOUL;
@@ -2070,6 +2077,13 @@ void FollowerRadialMenu::drawFollowerMenu()
 						TTF_SizeUTF8(ttf12, "Return &", &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3635]);
 					}
+					else if ( followerStats->type == DUMMYBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3641], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 12, language[3641]);
+						TTF_SizeUTF8(ttf12, language[3642], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]);
+					}
 					else
 					{
 						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
@@ -2088,7 +2102,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 						else
 						{
 							TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+							ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3037 + i]);
 						}
 					}
 					else
@@ -2556,6 +2570,18 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		}
 	}
 
+	if ( monsterType == DUMMYBOT )
+	{
+		if ( option != ALLY_CMD_SPECIAL && option != ALLY_CMD_DUMMYBOT_RETURN )
+		{
+			return -1; // disabled due to monster.
+		}
+		else
+		{
+			option = ALLY_CMD_DUMMYBOT_RETURN;
+		}
+	}
+
 	if ( option == ALLY_CMD_SPECIAL
 		&& followerToCommand->monsterAllySpecialCooldown != 0 )
 	{
@@ -2565,6 +2591,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 	switch ( option )
 	{
 		case ALLY_CMD_MOVEASIDE:
+			if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+			{
+				return -1; // can't use.
+			}
 		case ALLY_CMD_CANCEL:
 			if ( playerSkillLVL < requirement )
 			{
@@ -2575,6 +2605,10 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 
 		case ALLY_CMD_FOLLOW:
 		case ALLY_CMD_DEFEND:
+			if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+			{
+				return -1; // can't use.
+			}
 			if ( creatureTier > 0 )
 			{
 				requirement = 20 * creatureTier; // 20, 40, 60.
@@ -2725,6 +2759,16 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 				return requirement; // disabled due to basic skill requirements.
 			}
 			break;
+		case ALLY_CMD_DUMMYBOT_RETURN:
+			if ( monsterType != DUMMYBOT )
+			{
+				return -1;
+			}
+			else
+			{
+				return 0;
+			}
+			break;
 		case ALLY_CMD_GYRO_DETECT_TOGGLE:
 			if ( playerSkillLVL < requirement )
 			{
@@ -2735,6 +2779,16 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			if ( playerSkillLVL < requirement )
 			{
 				return requirement; // disabled due to basic skill requirements.
+			}
+			break;
+		case ALLY_CMD_GYRO_RETURN:
+			if ( monsterType == GYROBOT )
+			{
+				return 0;
+			}
+			else
+			{
+				return -1;
 			}
 			break;
 		default:

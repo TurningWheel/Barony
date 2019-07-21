@@ -934,18 +934,33 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 		entity->skill[12] = this->beatitude;
 		entity->skill[14] = this->appearance;
 	}
-	else if ( type == TOOL_DUMMYBOT )
+	else if ( type == TOOL_DUMMYBOT || type == TOOL_GYROBOT )
 	{
-		Entity* summon = summonMonster(DUMMYBOT, thrown->x, thrown->y, true);
+		Monster monsterType = DUMMYBOT;
+		if ( type == TOOL_GYROBOT )
+		{
+			monsterType = GYROBOT;
+		}
+		Entity* summon = summonMonster(monsterType, thrown->x, thrown->y, true);
 		if ( !summon )
 		{
-			summon = summonMonster(DUMMYBOT, floor(thrown->x / 16) * 16 + 8, floor(thrown->y / 16) * 16 + 8, false);
+			summon = summonMonster(monsterType, floor(thrown->x / 16) * 16 + 8, floor(thrown->y / 16) * 16 + 8, false);
 		}
 		if ( summon )
 		{
 			Stat* summonedStats = summon->getStats();
 			if ( parent && parent->behavior == &actPlayer && summonedStats )
 			{
+				if ( summonedStats->type == GYROBOT )
+				{
+					summon->yaw = thrown->yaw;
+					summon->monsterSpecialState = GYRO_START_FLYING;
+					serverUpdateEntitySkill(summon, 33);
+				}
+				else
+				{
+					summon->yaw = thrown->yaw + ((PI / 2) * (rand() % 4));
+				}
 				if ( forceFollower(*parent, *summon) )
 				{
 					if ( parent->behavior == &actPlayer )

@@ -5041,7 +5041,14 @@ bool Entity::isMobile()
 	}
 
 	if ( entitystats->type == GYROBOT 
-		&& (monsterSpecialState == GYRO_RETURN_LANDING || monsterSpecialState == GYRO_INTERACT_LANDING) )
+		&& (monsterSpecialState == GYRO_RETURN_LANDING 
+			|| monsterSpecialState == GYRO_INTERACT_LANDING
+			|| monsterSpecialState == GYRO_START_FLYING) )
+	{
+		return false;
+	}
+	else if ( entitystats->type == DUMMYBOT
+		&& (monsterSpecialState == DUMMYBOT_RETURN_FORM) )
 	{
 		return false;
 	}
@@ -5770,6 +5777,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					real_t normalisedCharge = (charge * 0.5);
 					normalisedCharge /= MAXCHARGE;
+					entity->sizex = 4;
+					entity->sizey = 4;
 					entity->vel_x = (1.f + normalisedCharge) * cos(players[player]->entity->yaw);
 					entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
 					entity->vel_z = -.3;
@@ -11866,6 +11875,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 
 	bool armBended = (!isPlayer && this->monsterArmbended) || (isPlayer && this->skill[11]);
+	weaponLimb->scalex = 1.f;
+	weaponLimb->scaley = 1.f;
+	weaponLimb->scalez = 1.f;
 	if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
 	{
 		if ( myAttack != 2 )
@@ -11905,6 +11917,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->sprite = items[TOOL_WHIP].index;
 		}
 	}
+	else if ( weaponLimb->sprite == items[TOOL_DECOY].index || weaponLimb->sprite == items[TOOL_DUMMYBOT].index )
+	{
+		weaponLimb->scalex = 0.8;
+		weaponLimb->scaley = 0.8;
+		weaponLimb->scalez = 0.8;
+	}
 
 	if ( isPlayer && monsterType == CREATURE_IMP )
 	{
@@ -11936,6 +11954,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		{
 			weaponLimb->focalx += 1;
 			weaponLimb->focalz += 1.5;
+		}
+		else if ( weaponLimb->sprite == items[TOOL_GYROBOT].index )
+		{
+			weaponLimb->focalz += 1;
 		}
 	}
 	else
@@ -11980,6 +12002,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		{
 			weaponLimb->focalx += 1.5;
 			weaponLimb->focalz += 2.5;
+		}
+		else if ( weaponLimb->sprite == items[TOOL_GYROBOT].index )
+		{
+			weaponLimb->focalz += 1;
 		}
 
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;

@@ -1374,6 +1374,10 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 				}
 			}
 		}
+		else if ( monsterStats->type == DUMMYBOT )
+		{
+			entity->z = 4;
+		}
 	}
 
 	item->count -= count;

@@ -167,7 +167,14 @@ void actThrown(Entity* my)
 		}
 		else if ( itemIsThrowableTinkerTool(item) )
 		{
-			my->yaw += 0.05;
+			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
+			{
+				my->yaw += 0.05;
+			}
+			else
+			{
+				my->roll += 0.05;
+			}
 			THROWN_VELZ += 0.04;
 			my->z += THROWN_VELZ;
 		}
