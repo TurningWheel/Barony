@@ -6431,7 +6431,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
 								if ( rand() % 4 > 0 )
 								{
-									this->increaseSkill(PRO_STEALTH);
+									if ( !monsterIsImmobileTurret(hit.entity, hitstats) )
+									{
+										this->increaseSkill(PRO_STEALTH);
+									}
 								}
 							}
 							else if ( rand() % 2 == 0 )
@@ -6442,7 +6445,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
 								if ( rand() % 20 == 0 )
 								{
-									this->increaseSkill(PRO_STEALTH);
+									if ( !monsterIsImmobileTurret(hit.entity, hitstats) )
+									{
+										this->increaseSkill(PRO_STEALTH);
+									}
 								}
 							}
 						}
@@ -6490,7 +6496,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					hit.entity->modHP(-damage); // do the damage
 					bool skillIncreased = false;
 					// skill increase
-					if ( (weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED )
+					if ( !monsterIsImmobileTurret(hit.entity, hitstats)
+						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED) )
 					{
 						if ( myStats->weapon &&
 							(myStats->weapon->type == CRYSTAL_BATTLEAXE
