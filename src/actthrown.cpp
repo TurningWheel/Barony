@@ -130,7 +130,9 @@ void actThrown(Entity* my)
 	}
 
 	// gravity
-	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
+	real_t groundHeight = 7.5 - models[my->sprite]->sizey * .25;
+	bool processXYCollision = true;
+	if ( my->z < groundHeight )
 	{
 		// fall
 		if ( cat == THROWN )
@@ -163,7 +165,7 @@ void actThrown(Entity* my)
 				my->yaw += 0.5;
 			}
 		}
-		else if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
+		else if ( itemIsThrowableTinkerTool(item) )
 		{
 			my->yaw += 0.05;
 			THROWN_VELZ += 0.04;
@@ -221,6 +223,16 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
+				else if ( item && itemIsThrowableTinkerTool(item) )
+				{
+					if ( parent )
+					{
+						item->applyTinkeringCreation(parent, my);
+					}
+					free(item);
+					list_RemoveNode(my->mynode);
+					return;
+				}
 				else
 				{
 					Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
@@ -270,6 +282,11 @@ void actThrown(Entity* my)
 					THROWN_VELZ += 0.04;
 					my->z += THROWN_VELZ;
 					my->roll += 0.04;
+				}
+
+				if ( my->z > groundHeight + 4 ) // if entity is 4 height below the ground, then fall straight down.
+				{
+					processXYCollision = false;
 				}
 			}
 		}
@@ -347,10 +364,13 @@ void actThrown(Entity* my)
 	double ox = my->x;
 	double oy = my->y;
 	double oz = my->z;
-	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
-
 	bool usedpotion = false;
-	if ( result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
+	if ( !processXYCollision )
+	{
+		return;
+	}
+	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
+	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
 		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
@@ -381,8 +401,13 @@ void actThrown(Entity* my)
 		{
 			my->entityCheckIfTriggeredBomb(true);
 		}
+		bool tryHitEntity = true;
+		if ( itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
+		{
+			tryHitEntity = false;
+		}
 
-		if ( hit.entity != nullptr )
+		if ( hit.entity != nullptr && tryHitEntity )
 		{
 			Entity* parent = uidToEntity(my->parent);
 			Stat* parentStats = nullptr;
@@ -1068,6 +1093,10 @@ void actThrown(Entity* my)
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
 			playSoundEntity(my, 66, 64);
+		}
+		else if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
+		{
+			// non-bomb tools will fall to the ground and get placed.
 		}
 		else
 		{

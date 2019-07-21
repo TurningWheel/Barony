@@ -273,6 +273,8 @@ void actThrown(Entity* my);
 void actBeartrap(Entity* my);
 void actBeartrapLaunched(Entity* my);
 void actBomb(Entity* my);
+void actDecoyBox(Entity* my);
+void actDecoyBoxCrank(Entity* my);
 void actSpearTrap(Entity* my);
 void actWallBuster(Entity* my);
 void actWallBuilder(Entity* my);

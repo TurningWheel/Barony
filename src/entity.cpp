@@ -5664,7 +5664,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( itemCategory(myStats->weapon) == POTION 
 				|| itemCategory(myStats->weapon) == GEM 
 				|| itemCategory(myStats->weapon) == THROWN
-				|| (myStats->weapon->type >= TOOL_BOMB && myStats->weapon->type <= TOOL_TELEPORT_BOMB) )
+				|| itemIsThrowableTinkerTool(myStats->weapon) )
 			{
 				bool drankPotion = false;
 				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
@@ -5766,7 +5766,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 				}
-				else if ( myStats->weapon->type >= TOOL_BOMB && myStats->weapon->type <= TOOL_TELEPORT_BOMB )
+				else if ( itemIsThrowableTinkerTool(myStats->weapon) )
 				{
 					real_t normalisedCharge = (charge * 0.5);
 					normalisedCharge /= MAXCHARGE;

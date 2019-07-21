@@ -827,7 +827,7 @@ void actHudWeapon(Entity* my)
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							players[clientnum]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
-						else if ( stats[clientnum]->weapon->type >= TOOL_BOMB && stats[clientnum]->weapon->type <= TOOL_TELEPORT_BOMB )
+						else if ( itemIsThrowableTinkerTool(item) )
 						{
 							HUDWEAPON_CHOP = 13;
 						}
@@ -1309,7 +1309,7 @@ void actHudWeapon(Entity* my)
 					&& itemCategory(item) != GEM 
 					&& itemCategory(item) != THROWN
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
-					&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+					&& !(itemIsThrowableTinkerTool(item))
 					&& item->type != TOOL_WHIP )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )

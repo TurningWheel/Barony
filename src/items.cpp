@@ -1156,13 +1156,13 @@ void dropItem(Item* item, int player)
 		item->count = oldcount - 1;
 
 		// unequip the item
-		if ( item->count <= 1 )
+		/*if ( item->count <= 1 )
 		{
-			Item** slot = itemSlot(stats[player], item);
-			if ( slot != NULL )
-			{
-				*slot = NULL;
-			}
+		}*/
+		Item** slot = itemSlot(stats[player], item);
+		if ( slot != NULL )
+		{
+			*slot = NULL;
 		}
 
 		if ( item->count <= 0 )
@@ -2234,6 +2234,11 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_SLEEP_BOMB:
 		case TOOL_FREEZE_BOMB:
 		case TOOL_TELEPORT_BOMB:
+		case TOOL_DECOY:
+		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case TOOL_TORCH:

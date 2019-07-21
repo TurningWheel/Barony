@@ -1320,12 +1320,6 @@ void clientActions(Entity* entity)
 		case 668:
 			entity->behavior = &actBeartrap;
 			break;
-		case 878:
-		case 880:
-		case 882:
-		case 884:
-			entity->behavior = &actBomb;
-			break;
 		case 674:
 		case 675:
 		case 676:
@@ -1394,6 +1388,12 @@ void clientActions(Entity* entity)
 					break;
 				case -13:
 					entity->behavior = &actParticleSapCenter;
+					break;
+				case -14:
+					entity->behavior = &actDecoyBox;
+					break;
+				case -15:
+					entity->behavior = &actBomb;
 					break;
 				default:
 					break;
@@ -2949,7 +2949,7 @@ void clientHandlePacket()
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		Entity* monster = uidToEntity(uidnum);
-		if ( monster && monster->monsterAllyIndex == clientnum )
+		if ( monster )
 		{
 			if ( !monster->clientsHaveItsStats )
 			{
@@ -2970,7 +2970,7 @@ void clientHandlePacket()
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
 		Entity* monster = uidToEntity(uidnum);
-		if ( monster && monster->monsterAllyIndex == clientnum )
+		if ( monster )
 		{
 			if ( !monster->clientsHaveItsStats )
 			{

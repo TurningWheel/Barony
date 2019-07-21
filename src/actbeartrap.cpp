@@ -570,6 +570,10 @@ void actBomb(Entity* my)
 		}
 		return;
 	}
+	else
+	{
+		my->skill[2] = -15;
+	}
 
 	// undo bomb
 	for ( int i = 0; i < MAXPLAYERS; i++ )
@@ -888,4 +892,65 @@ bool Entity::entityCheckIfTriggeredBomb(bool triggerBomb)
 		}
 	}
 	return foundBomb;
+}
+
+void actDecoyBox(Entity* my)
+{
+	my->flags[PASSABLE] = true;
+	if ( my->skill[0] == 0 )
+	{
+		my->skill[0] = 1;
+		//spawn a crank.
+		Entity* entity = newEntity(895, 1, map.entities, nullptr); //Decoy crank.
+		entity->behavior = &actDecoyBoxCrank;
+		entity->parent = my->getUID();
+		entity->x = my->x;
+		entity->y = my->y;
+		entity->z = my->z;
+		entity->yaw = my->yaw;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( my->ticks > TICKS_PER_SECOND * 5 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+}
+
+void actDecoyBoxCrank(Entity* my)
+{
+	Entity* parent = uidToEntity(my->parent);
+	if ( !parent )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	my->x = parent->x;
+	my->y = parent->y;
+	my->z = parent->z;
+	my->yaw = parent->yaw;
+
+	my->x += limbs[DUMMYBOT][12][0] * cos(parent->yaw) + limbs[DUMMYBOT][12][1] * cos(parent->yaw + PI / 2);
+	my->y += limbs[DUMMYBOT][12][0] * sin(parent->yaw) + limbs[DUMMYBOT][12][1] * sin(parent->yaw + PI / 2);
+	my->z = limbs[DUMMYBOT][12][2];
+	my->focalx = limbs[DUMMYBOT][11][0];
+	my->focaly = limbs[DUMMYBOT][11][1];
+	my->focalz = limbs[DUMMYBOT][11][2];
+
+	my->pitch += 0.1;
+	if ( my->pitch > 2 * PI )
+	{
+		my->pitch -= 2 * PI;
+	}
 }

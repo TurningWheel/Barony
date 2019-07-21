@@ -291,9 +291,11 @@ typedef enum ItemType
 	TOOL_FREEZE_BOMB,
 	TOOL_TELEPORT_BOMB,
 	TOOL_GYROBOT,
-	TOOL_SPELLBOT
+	TOOL_SPELLBOT,
+	TOOL_DECOY,
+	TOOL_DUMMYBOT
 } ItemType;
-const int NUMITEMS = 269;
+const int NUMITEMS = 271;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -432,6 +434,7 @@ public:
 		BOMB_TRIGGER_ALL
 	};
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
+	void applyTinkeringCreation(Entity* parent, Entity* thrown);
 };
 extern Uint32 itemuids;
 
@@ -544,6 +547,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance);
 bool isPotionBad(const Item& potion);
 bool isRangedWeapon(const Item& item);
 bool isMeleeWeapon(const Item& item);
+bool itemIsThrowableTinkerTool(const Item* item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
 void copyItem(Item* itemToSet, Item* itemToCopy);

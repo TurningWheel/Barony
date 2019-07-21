@@ -905,3 +905,80 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 		}
 	}
 }
+
+void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
+{
+	if ( !thrown )
+	{
+		return;
+	}
+	if ( type == TOOL_DECOY )
+	{
+		Entity* entity = newEntity(894, 1, map.entities, nullptr); //Decoy box.
+		entity->behavior = &actDecoyBox;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = thrown->x;
+		entity->y = thrown->y;
+		entity->z = limbs[DUMMYBOT][9][2] - 0.25;
+		entity->yaw = thrown->yaw;
+		entity->skill[2] = -14;
+		if ( parent )
+		{
+			entity->parent = parent->getUID();
+		}
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->skill[10] = this->type;
+		entity->skill[11] = this->status;
+		entity->skill[12] = this->beatitude;
+		entity->skill[14] = this->appearance;
+	}
+	else if ( type == TOOL_DUMMYBOT )
+	{
+		Entity* summon = summonMonster(DUMMYBOT, thrown->x, thrown->y, true);
+		if ( !summon )
+		{
+			summon = summonMonster(DUMMYBOT, floor(thrown->x / 16) * 16 + 8, floor(thrown->y / 16) * 16 + 8, false);
+		}
+		if ( summon )
+		{
+			Stat* summonedStats = summon->getStats();
+			if ( parent && parent->behavior == &actPlayer && summonedStats )
+			{
+				if ( forceFollower(*parent, *summon) )
+				{
+					if ( parent->behavior == &actPlayer )
+					{
+						summon->monsterAllyIndex = parent->skill[2];
+						if ( multiplayer == SERVER )
+						{
+							serverUpdateEntitySkill(summon, 42); // update monsterAllyIndex for clients.
+						}
+					}
+					// change the color of the hit entity.
+					summon->flags[USERFLAG2] = true;
+					serverUpdateEntityFlag(summon, USERFLAG2);
+				}
+			}
+		}
+	}
+}
+
+bool itemIsThrowableTinkerTool(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	if ( (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+		|| item->type == TOOL_DECOY
+		|| item->type == TOOL_SENTRYBOT 
+		|| item->type == TOOL_SPELLBOT 
+		|| item->type == TOOL_GYROBOT
+		|| item->type == TOOL_DUMMYBOT )
+	{
+		return true;
+	}
+	return false;
+}

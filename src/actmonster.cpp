@@ -3402,7 +3402,8 @@ void actMonster(Entity* my)
 				&& my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
 				&& !myStats->EFFECTS[EFF_FEAR]
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
-				&& !isIllusionTaunt )
+				&& !isIllusionTaunt
+				&& !monsterIsImmobileTurret(my, myStats) )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -4589,7 +4590,8 @@ timeToGoAgain:
 
 			// follow the leader :)
 			if ( uidToEntity(my->monsterTarget) == nullptr 
-				&& myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+				&& myStats->leader_uid != 0 && my->monsterAllyState == ALLY_STATE_DEFAULT && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND
+				&& !monsterIsImmobileTurret(my, myStats) )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
