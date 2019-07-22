@@ -85,7 +85,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][1][0];
 	entity->focaly = limbs[race][1][1];
 	entity->focalz = limbs[race][1][2];
@@ -104,8 +104,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][2][0];
 	entity->focaly = limbs[race][2][1];
 	entity->focalz = limbs[race][2][2];
@@ -124,8 +125,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][2][0];
 	entity->focaly = -limbs[race][2][1];
 	entity->focalz = limbs[race][2][2];
@@ -145,7 +147,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][3][0];
 	entity->focaly = limbs[race][3][1];
 	entity->focalz = limbs[race][3][2];
@@ -165,7 +167,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][3][0];
 	entity->focaly = -limbs[race][3][1];
 	entity->focalz = limbs[race][3][2];
@@ -185,7 +187,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][4][0];
 	entity->focaly = limbs[race][4][1];
 	entity->focalz = limbs[race][4][2];
@@ -207,8 +209,9 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][5][0];
 	entity->focaly = limbs[race][5][1];
 	entity->focalz = limbs[race][5][2];
@@ -229,7 +232,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[race][6][0];
 	entity->focaly = limbs[race][6][1];
 	entity->focalz = limbs[race][6][2];
@@ -413,7 +416,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		if ( myStats->EFFECTS[EFF_ASLEEP] )
 		{
 			//my->z = 4;
-			my->pitch = PI / 4;
+			//my->pitch = PI / 4;
 		}
 		else
 		{
@@ -455,7 +458,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw; // face the monster's direction
 		}
 
-		if ( bodypart == GEAR_MIDDLE )
+		if ( bodypart == GEAR_MIDDLE && !my->flags[INVISIBLE] )
 		{
 			entity->pitch += 0.1;
 			if ( entity->pitch > 2 * PI )
@@ -559,7 +562,8 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 			//	entity->pitch -= 2 * PI;
 			//}
 		}
-		else if ( bodypart == GEAR_BODY_LEFT || bodypart == GEAR_BODY_RIGHT )
+		else if ( (bodypart == GEAR_BODY_LEFT || bodypart == GEAR_BODY_RIGHT)
+			&& !my->flags[INVISIBLE] )
 		{
 			// normalize rotations
 			if ( my->yaw > 2 * PI )
@@ -625,35 +629,6 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				entity->fskill[0] *= 0.95;
 			}
 		}
-		//if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
-		//{
-		//	my->humanoidAnimateWalk(entity, node, bodypart, SENTRYBOTWALKSPEED, dist, 0.4);
-		//}
-		//else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
-		//{
-		//	// left leg, right arm, cloak.
-		//	if ( bodypart == LIMB_HUMANOID_RIGHTARM )
-		//	{
-		//		weaponarm = entity;
-		//		if ( my->monsterAttack > 0 )
-		//		{
-		//			my->handleWeaponArmAttack(entity);
-		//		}
-		//	}
-		//	else if ( bodypart == LIMB_HUMANOID_CLOAK )
-		//	{
-		//		entity->pitch = entity->fskill[0];
-		//	}
-
-		//	my->humanoidAnimateWalk(entity, node, bodypart, SENTRYBOTWALKSPEED, dist, 0.4);
-		//	
-		//	if ( bodypart == LIMB_HUMANOID_CLOAK )
-		//	{
-		//		entity->fskill[0] = entity->pitch;
-		//		entity->roll = my->roll - fabs(entity->pitch) / 2;
-		//		entity->pitch = 0;
-		//	}
-		//}
 
 		switch ( bodypart )
 		{
@@ -667,6 +642,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				entity->z += limbs[race][7][2];
 				break;
 			case GEAR_HEAD_LEFT:
+				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 				entity->focalx = limbs[race][2][0];
 				entity->focaly = limbs[race][2][1];
 				entity->focalz = limbs[race][2][2];
@@ -678,6 +654,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			case GEAR_HEAD_RIGHT:
+				entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 				if ( gearHeadLeft )
 				{
 					entity->pitch = gearHeadLeft->pitch;
@@ -766,6 +743,10 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = true;
 				}
+				else
+				{
+					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+				}
 				break;
 			case WEAPON_LIMB:
 				entity->focalx = limbs[race][6][0];
@@ -787,6 +768,10 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				if ( race == SPELLBOT )
 				{
 					entity->flags[INVISIBLE] = true;
+				}
+				else
+				{
+					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 				}
 				break;
 			default:

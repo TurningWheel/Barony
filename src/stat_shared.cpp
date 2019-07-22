@@ -1264,6 +1264,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MAXMP = 10;
 			stats->MP = stats->MAXMP;
 			stats->OLDHP = stats->HP;
+			break;
 		case 10:
 		default:
 			break;

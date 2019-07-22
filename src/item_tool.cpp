@@ -934,16 +934,27 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 		entity->skill[12] = this->beatitude;
 		entity->skill[14] = this->appearance;
 	}
-	else if ( type == TOOL_DUMMYBOT || type == TOOL_GYROBOT )
+	else if ( type == TOOL_DUMMYBOT || type == TOOL_GYROBOT || type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
 	{
 		Monster monsterType = DUMMYBOT;
 		if ( type == TOOL_GYROBOT )
 		{
 			monsterType = GYROBOT;
 		}
+		else if ( type == TOOL_SENTRYBOT )
+		{
+			monsterType = SENTRYBOT;
+		}
+		else if ( type == TOOL_SPELLBOT )
+		{
+			monsterType = SPELLBOT;
+		}
+
+		bool exactLocation = true;
 		Entity* summon = summonMonster(monsterType, thrown->x, thrown->y, true);
 		if ( !summon )
 		{
+			exactLocation = false;
 			summon = summonMonster(monsterType, floor(thrown->x / 16) * 16 + 8, floor(thrown->y / 16) * 16 + 8, false);
 		}
 		if ( summon )
@@ -956,6 +967,17 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 					summon->yaw = thrown->yaw;
 					summon->monsterSpecialState = GYRO_START_FLYING;
 					serverUpdateEntitySkill(summon, 33);
+				}
+				else if ( summonedStats->type == SENTRYBOT || summonedStats->type == SPELLBOT )
+				{
+					summon->yaw = thrown->yaw;
+					if ( exactLocation )
+					{
+						summon->x = thrown->x;
+						summon->y = thrown->y;
+					}
+					summonedStats->EFFECTS[EFF_STUNNED] = true;
+					summonedStats->EFFECTS_TIMERS[EFF_STUNNED] = 30;
 				}
 				else
 				{

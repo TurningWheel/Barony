@@ -500,6 +500,13 @@ void actHudWeapon(Entity* my)
 					my->scaley = 0.8;
 					my->scalez = 0.8;
 				}
+				else if ( stats[clientnum]->weapon->type == TOOL_SENTRYBOT
+					|| stats[clientnum]->weapon->type == TOOL_SPELLBOT )
+				{
+					my->scalex = 0.7;
+					my->scaley = 0.7;
+					my->scalez = 0.7;
+				}
 				else if ( itemModelFirstperson(stats[clientnum]->weapon) != itemModel(stats[clientnum]->weapon) )
 				{
 					my->scalex = 0.5f;

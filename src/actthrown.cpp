@@ -43,11 +43,13 @@
 #define THROWN_IDENTIFIED my->skill[15]
 #define THROWN_LIFE my->skill[16]
 #define THROWN_BOUNCES my->skill[17]
+#define THROWN_LINGER my->skill[18]
 
 void actThrown(Entity* my)
 {
 	Item* item = nullptr;
 	Category cat = GEM;
+	ItemType type = WOODEN_SHIELD;
 	char* itemname = nullptr;
 	node_t* node;
 
@@ -55,6 +57,7 @@ void actThrown(Entity* my)
 	if ( item )
 	{
 		cat = itemCategory(item);
+		type = item->type;
 		free(item);
 	}
 
@@ -117,6 +120,16 @@ void actThrown(Entity* my)
 		}
 	}
 
+	if ( THROWN_LINGER != 0 )
+	{
+		if ( my->ticks > (THROWN_LINGER + 1) )
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+		return;
+	}
+
 	if ( multiplayer == CLIENT )
 	{
 		return;
@@ -131,6 +144,10 @@ void actThrown(Entity* my)
 
 	// gravity
 	real_t groundHeight = 7.5 - models[my->sprite]->sizey * .25;
+	if ( type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
+	{
+		groundHeight = 3;
+	}
 	bool processXYCollision = true;
 	if ( my->z < groundHeight )
 	{
@@ -147,7 +164,7 @@ void actThrown(Entity* my)
 				THROWN_VELZ += 0.03;
 			}
 			my->z += THROWN_VELZ;
-			if ( item->type == BRONZE_TOMAHAWK || item->type == IRON_DAGGER )
+			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER )
 			{
 				// axe and dagger spin vertically
 				my->pitch += 0.2;
@@ -167,9 +184,14 @@ void actThrown(Entity* my)
 		}
 		else if ( itemIsThrowableTinkerTool(item) )
 		{
-			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
+			if ( type >= TOOL_BOMB && type <= TOOL_TELEPORT_BOMB )
 			{
 				my->yaw += 0.05;
+			}
+			else if ( type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
+			{
+				my->roll += 0.07;
+				my->roll = std::min(my->roll, 0.0);
 			}
 			else
 			{
@@ -235,6 +257,17 @@ void actThrown(Entity* my)
 					if ( parent )
 					{
 						item->applyTinkeringCreation(parent, my);
+					}
+					if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
+					{
+						// have the thrown particle hang out for a sec to avoid temporary flashing of nothingness.
+						THROWN_LINGER = my->ticks;
+						THROWN_VELX = 0.0;
+						THROWN_VELY = 0.0;
+						THROWN_VELZ = 0.0;
+						my->z = groundHeight;
+						free(item);
+						return;
 					}
 					free(item);
 					list_RemoveNode(my->mynode);
@@ -1155,6 +1188,13 @@ void actThrown(Entity* my)
 	{
 		THROWN_VELX = THROWN_VELX * .99;
 		THROWN_VELY = THROWN_VELY * .99;
-		my->pitch += result * .01;
+		if ( my->sprite == 897 ) // sentrybot head item
+		{
+			my->pitch = 0.0;
+		}
+		else
+		{
+			my->pitch += result * .01;
+		}
 	}
 }
