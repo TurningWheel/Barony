@@ -3034,9 +3034,26 @@ void GenericGUIMenu::rebuildGUIInventory()
 		for ( node = player_inventory->first; node != nullptr; node = node->next )
 		{
 			item = (Item*)node->element;
-			if ( shouldDisplayItemInGUI(item) )
+			if ( item )
 			{
-				++c;
+				if ( shouldDisplayItemInGUI(item) )
+				{
+					++c;
+				}
+				if ( guiType == GUI_TYPE_TINKERING )
+				{
+					if ( item->node && item->node->list == &stats[clientnum]->inventory )
+					{
+						if ( item->type == TOOL_METAL_SCRAP )
+						{
+							tinkeringMetalScrap = item;
+						}
+						else if ( item->type == TOOL_MAGIC_SCRAP )
+						{
+							tinkeringMagicScrap = item;
+						}
+					}
+				}
 			}
 		}
 		if ( c == 0 && guiType == GUI_TYPE_ALCHEMY )
@@ -3139,6 +3156,124 @@ void GenericGUIMenu::updateGUI()
 		//Center the GUI.
 		pos.x = gui_starty;
 		pos.y = gui_startx;
+		int windowX1 = pos.x - 20;
+		int windowX2 = pos.x + identifyGUI_img->w + 20;
+		int windowY1 = pos.y - 40;
+		int windowY2 = pos.y + identifyGUI_img->h + 40;
+		if ( guiType == GUI_TYPE_TINKERING )
+		{
+			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+			int numMetalScrap = 0;
+			int numMagicScrap = 0;
+			if ( tinkeringMetalScrap )
+			{
+				numMetalScrap = tinkeringMetalScrap->count;
+			}
+			if ( tinkeringMagicScrap )
+			{
+				numMagicScrap = tinkeringMagicScrap->count;
+			}
+
+			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - TTF12_HEIGHT - 8,
+				language[3647], numMetalScrap, numMagicScrap);
+			SDL_Rect smallIcon;
+			smallIcon.x = windowX1 + 16 + (strlen(language[3647]) - 5) * TTF12_WIDTH;
+			smallIcon.y = windowY2 - TTF12_HEIGHT - 12;
+			smallIcon.h = 16;
+			smallIcon.w = 16;
+			node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
+			if ( imageNode )
+			{
+				drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			}
+			smallIcon.x += TTF12_WIDTH * 6;
+			imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
+			if ( imageNode )
+			{
+				drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+			}
+
+			// draw filter labels.
+			int txtWidth = 0;
+			int txtHeight = 0;
+			int charWidth = 0;
+			TTF_Font* font = ttf8;
+			TTF_SizeUTF8(font, "a", &charWidth, nullptr); // get 1 character width.
+			int textstartx = pos.x + 2 * charWidth + 4;
+
+			SDL_Rect highlightBtn;
+			// Craft
+			TTF_SizeUTF8(ttf8, language[3644], &txtWidth, &txtHeight);
+			highlightBtn.x = textstartx;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( mousestatus[SDL_BUTTON_LEFT]
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3644]);
+
+			// Salvage
+			TTF_SizeUTF8(font, language[3645], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( mousestatus[SDL_BUTTON_LEFT]
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3645]);
+
+			// Repair
+			TTF_SizeUTF8(font, language[3646], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( mousestatus[SDL_BUTTON_LEFT]
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3646]);
+
+			// Filter include all (*)
+			TTF_SizeUTF8(font, language[356], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( mousestatus[SDL_BUTTON_LEFT]
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				tinkeringFilter = TINKER_FILTER_ALL;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+			}
+			if ( tinkeringFilter == TINKER_FILTER_ALL )
+			{
+				drawImageScaled(smallbutton_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + (highlightBtn.w - txtWidth) / 2, pos.y - (8 - txtHeight), language[356]);
+		}
 		drawImage(identifyGUI_img, NULL, &pos);
 
 		//Buttons
@@ -3399,17 +3534,27 @@ void GenericGUIMenu::updateGUI()
 								continue;
 							}
 							char tempstr[256] = { 0 };
+							Uint32 color = uint32ColorWhite(*mainsurface);
 							if ( guiType == GUI_TYPE_TINKERING )
 							{
 								if ( isNodeTinkeringCraftableItem(item->node) )
 								{
-									strncpy(tempstr, "craft ", 6);
-									strncat(tempstr, item->description(), 40);
+									strncpy(tempstr, language[3644], strlen(language[3644])); // craft
+									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
+									if ( !tinkeringPlayerCanAffordCraft(item) )
+									{
+										color = uint32ColorGray(*mainsurface);
+									}
 								}
 								else if ( isItemSalvageable(item) )
 								{
-									strncpy(tempstr, "salvage ", 8);
-									strncat(tempstr, item->description(), 38);
+									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
+									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
+								}
+								else if ( true )
+								{
+									strncpy(tempstr, language[3646], strlen(language[3646])); // repair
+									strncat(tempstr, item->description(), 46 - strlen(language[3646]));
 								}
 								else
 								{
@@ -3425,12 +3570,38 @@ void GenericGUIMenu::updateGUI()
 							{
 								strcat(tempstr, " ...");
 							}
-							ttfPrintText(ttf8, gui_starty + 36, y, tempstr);
+							ttfPrintTextColor(ttf8, gui_starty + 36, y, color, true, tempstr);
 							pos.x = gui_starty + 16;
 							pos.y = gui_startx + 17 + 18 * (c - scroll - 1);
 							pos.w = 16;
 							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
+							if ( guiType == GUI_TYPE_TINKERING )
+							{
+								int metal = 0;
+								int magic = 0;
+								if ( isNodeTinkeringCraftableItem(item->node) )
+								{
+									tinkeringGetCraftingCost(item, &metal, &magic);
+								}
+								else if ( isItemSalvageable(item) )
+								{
+									tinkeringGetItemValue(item, &metal, &magic);
+								}
+								pos.x = windowX2 - 20 - TTF8_WIDTH * 12;
+								ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
+								node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
+								if ( imageNode )
+								{
+									drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
+								}
+								pos.x += TTF12_WIDTH * 4;
+								imageNode = items[TOOL_MAGIC_SCRAP].surfaces.first;
+								if ( imageNode )
+								{
+									drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &pos);
+								}
+							}
 							y += 18;
 							if ( c > 3 + scroll )
 							{
@@ -3467,7 +3638,7 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 				return true;
 			}
 		}
-		if ( isItemSalvageable(item) )
+		else if ( isItemSalvageable(item) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 			{
@@ -4734,11 +4905,27 @@ void GenericGUIMenu::alchemyLearnRecipeOnLevelUp(int skill)
 void GenericGUIMenu::tinkeringCreateCraftableItemList()
 {
 	tinkeringFreeLists();
-
-	newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
-	newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
-	newItem(TOOL_REPAIRKIT, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
-	newItem(TOOL_BOMB, EXCELLENT, 0, 1, 0, true, &tinkeringTotalItems);
+	/*Item* tempItem = newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+	if ( tinkeringPlayerCanAffordCraft(tempItem) )
+	{
+	}*/
+	newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	newItem(POTION_EMPTY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	//newItem(TOOL_REPAIRKIT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 
 	messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
 	if ( stats[clientnum] )
@@ -4788,8 +4975,14 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	}
 
 	// add checks/consuming of items here.
+	if ( !tinkeringPlayerCanAffordCraft(item) )
+	{
+		playSound(90, 64);
+		messagePlayer(clientnum, language[3648], items[item->type].name_identified);
+		return false;
+	}
 
-	Item* crafted = newItem(item->type, item->status, item->beatitude, 1, 0, true, nullptr);
+	Item* crafted = tinkeringCraftItemAndConsumeMaterials(item);
 	if ( crafted )
 	{
 		Item* pickedUp = itemPickup(clientnum, crafted);
@@ -4814,16 +5007,37 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
 	}
 
 	// add checks/consuming of items here.
-	Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 1, 0, true, nullptr);
-	if ( crafted )
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetItemValue(item, &metal, &magic);
+	bool didCraft = false;
+	if ( metal > 0 )
 	{
-		Item* pickedUp = itemPickup(clientnum, crafted);
-		messagePlayer(clientnum, "salvaged a %s!", items[pickedUp->type].name_identified);
-		free(crafted);
-		consumeItem(item, clientnum);
-		return true;
+		Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metal, 0, true, nullptr);
+		if ( crafted )
+		{
+			Item* pickedUp = itemPickup(clientnum, crafted);
+			messagePlayer(clientnum, "salvaged %d %s!", metal, items[pickedUp->type].name_identified);
+			free(crafted);
+			didCraft = true;
+		}
 	}
-	return false;
+	if ( magic > 0 )
+	{
+		Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, magic, 0, true, nullptr);
+		if ( crafted )
+		{
+			Item* pickedUp = itemPickup(clientnum, crafted);
+			messagePlayer(clientnum, "salvaged %d %s!", magic, items[pickedUp->type].name_identified);
+			free(crafted);
+			didCraft = true;
+		}
+	}
+	if ( didCraft )
+	{
+		consumeItem(item, clientnum);
+	}
+	return true;
 }
 
 bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
@@ -4857,5 +5071,424 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item)
 	{
 		return false;
 	}
+	int metal = 0;
+	int magic = 0;
+	if ( tinkeringGetItemValue(item, &metal, &magic) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringPlayerCanAffordCraft(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetCraftingCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return false;
+	}
+	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+	{
+		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
+{
+	if ( !item )
+	{
+		return nullptr;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetCraftingCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return nullptr;
+	}
+	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+	{
+		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
+		{
+			for ( int c = 0; c < metal; ++c )
+			{
+				consumeItem(tinkeringMetalScrap, clientnum);
+			}
+			for ( int c = 0; c < magic; ++c )
+			{
+				consumeItem(tinkeringMagicScrap, clientnum);
+			}
+			return newItem(item->type, item->status, item->beatitude, 1, 0, true, nullptr);
+		}
+	}
+	return nullptr;
+}
+
+bool GenericGUIMenu::tinkeringGetCraftingCost(const Item* item, int* metal, int* magic)
+{
+	if ( !item || !metal || !magic )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case TOOL_BOMB:
+		case TOOL_FREEZE_BOMB:
+			*metal = 8;
+			*magic = 12;
+			break;
+		case TOOL_SLEEP_BOMB:
+		case TOOL_TELEPORT_BOMB:
+			*metal = 4;
+			*magic = 8;
+			break;
+		case CLOAK_BACKPACK:
+			*metal = 20;
+			*magic = 4;
+			break;
+		case TOOL_DUMMYBOT:
+			*metal = 16;
+			*magic = 4;
+			break;
+		case TOOL_GYROBOT:
+			*metal = 16;
+			*magic = 12;
+			break;
+		case TOOL_SENTRYBOT:
+			*metal = 16;
+			*magic = 8;
+			break;
+		case TOOL_SPELLBOT:
+			*metal = 8;
+			*magic = 16;
+			break;
+		case TOOL_ALEMBIC:
+			*metal = 16;
+			*magic = 16;
+			break;
+		case TOOL_DECOY:
+			*metal = 8;
+			*magic = 1;
+			break;
+		case TOOL_BEARTRAP:
+			*metal = 4;
+			*magic = 0;
+			break;
+		case TOOL_LOCKPICK:
+			*metal = 2;
+			*magic = 0;
+			break;
+		case TOOL_GLASSES:
+		case TOOL_LANTERN:
+			*metal = 8;
+			*magic = 4;
+			break;
+		case POTION_EMPTY:
+			*metal = 2;
+			*magic = 2;
+			break;
+		default:
+			*metal = 0;
+			*magic = 0;
+			return false;
+			break;
+	}
+
 	return true;
+}
+
+bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* magic)
+{
+	if ( !item || !metal || !magic )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case WOODEN_SHIELD:
+		case QUARTERSTAFF:
+		case BRONZE_SWORD:
+		case BRONZE_MACE:
+		case BRONZE_AXE:
+		case BRONZE_SHIELD:
+		case SLING:
+		case GLOVES:
+		case CLOAK:
+		case LEATHER_BOOTS:
+		case HAT_PHRYGIAN:
+		case HAT_HOOD:
+		case LEATHER_HELM:
+		case TOOL_TINOPENER:
+		case TOOL_MIRROR:
+		case TOOL_TORCH:
+		case TOOL_BLINDFOLD:
+		case TOOL_TOWEL:
+		case FOOD_TIN:
+		case WIZARD_DOUBLET:
+		case HEALER_DOUBLET:
+		case BRASS_KNUCKLES:
+		case BRONZE_TOMAHAWK:
+			*metal = 1;
+			*magic = 0;
+			break;
+
+		case CLOAK_MAGICREFLECTION:
+		case CLOAK_PROTECTION:
+		case HAT_WIZARD:
+		case HAT_JESTER:
+		case AMULET_WATERBREATHING:
+		case AMULET_STRANGULATION:
+		case AMULET_POISONRESISTANCE:
+		case MAGICSTAFF_LIGHT:
+		case MAGICSTAFF_LOCKING:
+		case MAGICSTAFF_SLOW:
+		case RING_ADORNMENT:
+		case RING_PROTECTION:
+		case RING_TELEPORTATION:
+		case GEM_GARNET:
+		case GEM_JADE:
+		case GEM_JETSTONE:
+		case GEM_OBSIDIAN:
+		case TOOL_CRYSTALSHARD:
+			*metal = 1;
+			*magic = 1;
+			break;
+
+		case GLOVES_DEXTERITY:
+		case LEATHER_BOOTS_SPEED:
+		case AMULET_SEXCHANGE:
+		case MAGICSTAFF_OPENING:
+		case MAGICSTAFF_COLD:
+		case MAGICSTAFF_FIRE:
+		case MAGICSTAFF_LIGHTNING:
+		case MAGICSTAFF_SLEEP:
+		case RING_STRENGTH:
+		case RING_CONSTITUTION:
+		case RING_CONFLICT:
+		case GEM_AMBER:
+		case GEM_EMERALD:
+		case GEM_AMETHYST:
+		case GEM_FLUORITE:
+			*metal = 1;
+			*magic = 2;
+			break;
+
+		case AMULET_MAGICREFLECTION:
+		case MAGICSTAFF_DIGGING:
+		case MAGICSTAFF_MAGICMISSILE:
+		case RING_WARNING:
+		case RING_MAGICRESISTANCE:
+		case GEM_RUBY:
+		case GEM_JACINTH:
+		case GEM_CITRINE:
+		case GEM_SAPPHIRE:
+		case GEM_AQUAMARINE:
+		case GEM_OPAL:
+			*metal = 1;
+			*magic = 3;
+			break;
+
+		case CLOAK_INVISIBILITY:
+		case AMULET_LIFESAVING:
+		case RING_SLOWDIGESTION:
+		case RING_INVISIBILITY:
+		case RING_LEVITATION:
+		case RING_REGENERATION:
+		case GEM_DIAMOND:
+		case TOOL_SKELETONKEY:
+		case VAMPIRE_DOUBLET:
+			*metal = 1;
+			*magic = 4;
+			break;
+
+		case SCROLL_LIGHT:
+		case SCROLL_FIRE:
+		case SCROLL_MAGICMAPPING:
+		case SCROLL_REPAIR:
+		case SCROLL_DESTROYARMOR:
+		case SCROLL_TELEPORTATION:
+			*metal = 0;
+			*magic = 1;
+			break;
+
+		case SCROLL_IDENTIFY:
+		case SCROLL_REMOVECURSE:
+		case SCROLL_FOOD:
+		case SCROLL_SUMMON:
+		case SPELLBOOK_FORCEBOLT:
+		case SPELLBOOK_LIGHT:
+		case SPELLBOOK_SLOW:
+		case SPELLBOOK_LOCKING:
+		case SPELLBOOK_TELEPORTATION:
+			*metal = 0;
+			*magic = 2;
+			break;
+
+		case SCROLL_ENCHANTWEAPON:
+		case SCROLL_ENCHANTARMOR:
+		case SPELLBOOK_COLD:
+		case SPELLBOOK_FIREBALL:
+		case SPELLBOOK_REMOVECURSE:
+		case SPELLBOOK_LIGHTNING:
+		case SPELLBOOK_IDENTIFY:
+		case SPELLBOOK_MAGICMAPPING:
+		case SPELLBOOK_SLEEP:
+		case SPELLBOOK_CONFUSE:
+		case SPELLBOOK_OPENING:
+		case SPELLBOOK_HEALING:
+		case SPELLBOOK_CUREAILMENT:
+			*metal = 0;
+			*magic = 3;
+			break;
+
+		case SPELLBOOK_MAGICMISSILE:
+		case SPELLBOOK_LEVITATION:
+		case SPELLBOOK_INVISIBILITY:
+		case SPELLBOOK_EXTRAHEALING:
+		case SPELLBOOK_DIG:
+		case GEM_LUCK:
+			*metal = 0;
+			*magic = 4;
+
+		case IRON_SPEAR:
+		case IRON_SWORD:
+		case IRON_MACE:
+		case IRON_AXE:
+		case IRON_SHIELD:
+		case SHORTBOW:
+		case BRACERS:
+		case IRON_BOOTS:
+		case LEATHER_BREASTPIECE:
+		case IRON_HELM:
+		case TOOL_PICKAXE:
+		case TOOL_LANTERN:
+		case TOOL_GLASSES:
+		case IRON_KNUCKLES:
+		case IRON_DAGGER:
+			*metal = 2;
+			*magic = 0;
+			break;
+
+		case BRACERS_CONSTITUTION:
+			*metal = 2;
+			*magic = 2;
+			break;
+
+		case IRON_BOOTS_WATERWALKING:
+			*metal = 2;
+			*magic = 3;
+			break;
+
+		case MIRROR_SHIELD:
+			*metal = 2;
+			*magic = 4;
+			break;
+
+		case STEEL_HALBERD:
+		case STEEL_SWORD:
+		case STEEL_MACE:
+		case STEEL_AXE:
+		case STEEL_SHIELD:
+		case CROSSBOW:
+		case GAUNTLETS:
+		case STEEL_BOOTS:
+		case IRON_BREASTPIECE:
+		case STEEL_HELM:
+		case SPIKED_GAUNTLETS:
+		case STEEL_CHAKRAM:
+			*metal = 3;
+			*magic = 0;
+			break;
+
+		case GAUNTLETS_STRENGTH:
+			*metal = 3;
+			*magic = 2;
+			break;
+
+		case STEEL_SHIELD_RESISTANCE:
+			*metal = 3;
+			*magic = 4;
+			break;
+
+		case STEEL_BREASTPIECE:
+		case TOOL_BEARTRAP:
+		case CRYSTAL_SHURIKEN:
+			*metal = 4;
+			*magic = 0;
+			break;
+
+		case CRYSTAL_HELM:
+		case CRYSTAL_BOOTS:
+		case CRYSTAL_SHIELD:
+		case CRYSTAL_GLOVES:
+		case CRYSTAL_SWORD:
+		case CRYSTAL_SPEAR:
+		case CRYSTAL_BATTLEAXE:
+		case CRYSTAL_MACE:
+			*metal = 4;
+			*magic = 2;
+			break;
+
+		case STEEL_BOOTS_FEATHER:
+			*metal = 4;
+			*magic = 3;
+			break;
+
+		case STEEL_BOOTS_LEVITATION:
+			*metal = 4;
+			*magic = 4;
+			break;
+
+		case ARTIFACT_BOW:
+			*metal = 4;
+			*magic = 32;
+			break;
+		case ARTIFACT_CLOAK:
+			*metal = 4;
+			*magic = 24;
+			break;
+
+		case CRYSTAL_BREASTPIECE:
+			*metal = 8;
+			*magic = 2;
+			break;
+
+		case ARTIFACT_SWORD:
+		case ARTIFACT_MACE:
+		case ARTIFACT_SPEAR:
+		case ARTIFACT_AXE:
+		case ARTIFACT_HELM:
+		case ARTIFACT_BOOTS:
+		case ARTIFACT_GLOVES:
+			*metal = 8;
+			*magic = 16;
+			break;
+
+		case ARTIFACT_BREASTPIECE:
+			*metal = 16;
+			*magic = 16;
+			break;
+
+		default:
+			*metal = 0;
+			*magic = 0;
+			break;
+	}
+	if ( *metal > 0 || *magic > 0 )
+	{
+		return true;
+	}
+	return false;
 }

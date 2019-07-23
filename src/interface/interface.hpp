@@ -306,12 +306,15 @@ public:
 	{
 		TINKER_FILTER_ALL,
 		TINKER_FILTER_CRAFTABLE,
-		TINKER_FILTER_SALVAGEABLE
+		TINKER_FILTER_SALVAGEABLE,
+		TINKER_FILTER_REPAIRABLE
 	};
 	Item* tinkeringKitItem;
 	list_t tinkeringTotalItems;
 	node_t* tinkeringTotalLastCraftableNode;
 	TinkeringFilter tinkeringFilter;
+	Item* tinkeringMetalScrap;
+	Item* tinkeringMagicScrap;
 
 	GenericGUIMenu() :
 		guiActive(false),
@@ -326,7 +329,9 @@ public:
 		experimentingAlchemy(false),
 		tinkeringKitItem(false),
 		tinkeringTotalLastCraftableNode(nullptr),
-		tinkeringFilter(TINKER_FILTER_ALL)
+		tinkeringFilter(TINKER_FILTER_ALL),
+		tinkeringMetalScrap(nullptr),
+		tinkeringMagicScrap(nullptr)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -364,10 +369,13 @@ public:
 	// tinkering menu fonucs
 	bool tinkeringSalvageItem(Item* item);
 	bool tinkeringCraftItem(Item* item);
-	int tinkeringGetItemValue(Item* item);
 	void tinkeringCreateCraftableItemList();
 	void tinkeringFreeLists();
 	bool isItemSalvageable(const Item* item);
+	bool tinkeringGetItemValue(const Item* item, int* metal, int* magic);
+	bool tinkeringGetCraftingCost(const Item* item, int* metal, int* magic);
+	bool tinkeringPlayerCanAffordCraft(const Item* item);
+	Item* tinkeringCraftItemAndConsumeMaterials(const Item* item);
 
 	inline bool isGUIOpen()
 	{
