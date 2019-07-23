@@ -29,9 +29,9 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	client_classes[player] = CLASS_SHAMAN;
-	stats[player]->playerRace = RACE_GOBLIN;
-	stats[player]->appearance = 0;
+	/*client_classes[player] = CLASS_PUNISHER;
+	stats[player]->playerRace = RACE_INCUBUS;*/
+	//stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -2060,6 +2060,79 @@ void initClass(int player)
 			free(item);
 		}
 	}
+	else if ( client_classes[player] == CLASS_MACHINIST )
+	{
+		// attributes
+		/*stats[player]->STR -= 1;
+		stats[player]->DEX += 1;
+		stats[player]->CON -= 1;
+		stats[player]->INT -= 1;*/
+
+		/*stats[player]->MAXHP += 5;
+		stats[player]->HP += 5;
+
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;*/
+
+		// skills
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 40;
+		//stats[player]->PROFICIENCIES[PRO_MAGIC] = 20;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
+		//stats[player]->PROFICIENCIES[PRO_AXE] = 25;
+		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
+		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+
+		item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+		if ( player == clientnum )
+		{
+			item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 20, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 20, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(IRON_HELM, DECREPIT, 0, 5, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SPELLBOOK_LIGHT, DECREPIT, 0, 5, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(TOOL_GYROBOT, EXCELLENT, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 3, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
 
 	stats[player]->OLDHP = stats[player]->HP;
 
@@ -2606,14 +2679,12 @@ bool playerUnlockedShamanSpell(int player, Item* item)
 					levelRequirement = 6;
 					break;
 				case SPELL_TROLLS_BLOOD:
-					levelRequirement = 9;
-					break;
-				case SPELL_FEAR:
 				case SPELL_LIGHTNING:
 				case SPELL_CONFUSE:
 					levelRequirement = 12;
+				case SPELL_FEAR:
 				case SPELL_AMPLIFY_MAGIC:
-					levelRequirement = 18;
+					levelRequirement = 15;
 					break;
 				default:
 					return true;
