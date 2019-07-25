@@ -279,6 +279,14 @@ void actItem(Entity* my)
 			my->z += ITEM_VELZ;
 			my->roll += 0.08;
 		}
+		// sentry/spellbot only rotate 90 degrees and land on their side.
+		else if ( my->sprite == 897 || my->sprite == 898 )
+		{
+			ITEM_VELZ += 0.04;
+			my->z += ITEM_VELZ;
+			my->roll += 0.02;
+			my->roll = std::min(my->roll, PI / 2);
+		}
 		else
 		{
 			ITEM_VELZ += 0.04;

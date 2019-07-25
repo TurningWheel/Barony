@@ -1688,7 +1688,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			{
 				monsterGyroBotConvertCommand(&optionSelected);
 			}
-			else if ( followerStats->type == DUMMYBOT )
+			else if ( followerStats->type == DUMMYBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
 			{
 				if ( optionSelected == ALLY_CMD_SPECIAL )
 				{
@@ -1850,7 +1850,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			return;
 		}
 		bool isTinkeringFollower = false;
-		if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+		if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT )
 		{
 			isTinkeringFollower = true;
 		}
@@ -2084,6 +2084,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 						TTF_SizeUTF8(ttf12, language[3642], &width, nullptr);
 						ttfPrintText(ttf12, txt.x - width / 2, txt.y + 4, language[3642]);
 					}
+					else if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3649], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3649]);
+					}
 					else
 					{
 						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
@@ -2113,8 +2118,16 @@ void FollowerRadialMenu::drawFollowerMenu()
 				}
 				else if ( i == ALLY_CMD_MOVETO_SELECT )
 				{
-					TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+					{
+						TTF_SizeUTF8(ttf12, language[3650], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3650]);
+					}
+					else
+					{
+						TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
+						ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i]);
+					}
 				}
 				else
 				{
@@ -2451,12 +2464,21 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
-
+	bool isTinkeringFollower = false;
+	if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT )
+	{
+		isTinkeringFollower = true;
+	}
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
+	if ( isTinkeringFollower )
+	{
+		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
+	}
 	if ( followerToCommand->monsterAllySummonRank != 0 )
 	{
 		skillLVL = SKILL_LEVEL_LEGENDARY;
 	}
+
 	bool enableAttack = (optionDisabledForCreature(skillLVL, followerStats->type, ALLY_CMD_ATTACK_CONFIRM) == 0);
 	
 	if ( !interactItems && !interactWorld && enableAttack )
@@ -2527,6 +2549,8 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case SKELETON:
 		case SCORPION:
 		case GYROBOT:
+		case SENTRYBOT:
+		case SPELLBOT:
 			creatureTier = 0;
 			break;
 		case GOBLIN:
@@ -2575,6 +2599,22 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		if ( option != ALLY_CMD_SPECIAL && option != ALLY_CMD_DUMMYBOT_RETURN )
 		{
 			return -1; // disabled due to monster.
+		}
+		else
+		{
+			option = ALLY_CMD_DUMMYBOT_RETURN;
+		}
+	}
+	else if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
+	{
+		if ( option != ALLY_CMD_SPECIAL && option != ALLY_CMD_DUMMYBOT_RETURN )
+		{
+			if ( option != ALLY_CMD_MOVETO_CONFIRM && option != ALLY_CMD_MOVETO_SELECT
+				&&  option != ALLY_CMD_ATTACK_SELECT && option != ALLY_CMD_ATTACK_CONFIRM
+				&&  option != ALLY_CMD_CANCEL )
+			{
+				return -1; // disabled due to monster.
+			}
 		}
 		else
 		{
@@ -2760,7 +2800,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			}
 			break;
 		case ALLY_CMD_DUMMYBOT_RETURN:
-			if ( monsterType != DUMMYBOT )
+			if ( monsterType != DUMMYBOT && monsterType != SENTRYBOT && monsterType != SPELLBOT )
 			{
 				return -1;
 			}
@@ -5128,7 +5168,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			{
 				consumeItem(tinkeringMagicScrap, clientnum);
 			}
-			return newItem(item->type, item->status, item->beatitude, 1, 0, true, nullptr);
+			return newItem(item->type, item->status, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 		}
 	}
 	return nullptr;

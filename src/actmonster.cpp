@@ -8244,7 +8244,16 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 		case ALLY_CMD_MOVETO_CONFIRM:
 		{
-			if ( monsterSetPathToLocation(destX, destY, 1) )
+			if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+			{
+				real_t floatx = destX * 16 + 8;
+				real_t floaty = destY * 16 + 8;
+				double tangent = atan2(floaty - y, floatx - x);
+				monsterLookTime = 1;
+				monsterMoveTime = rand() % 10 + 1;
+				monsterLookDir = tangent;
+			}
+			else if ( monsterSetPathToLocation(destX, destY, 1) )
 			{
 				monsterState = MONSTER_STATE_HUNT; // hunt state
 				monsterAllyState = ALLY_STATE_MOVETO;
@@ -8309,6 +8318,11 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		}
 		case ALLY_CMD_DUMMYBOT_RETURN:
 			if ( myStats->type == DUMMYBOT )
+			{
+				monsterSpecialState = DUMMYBOT_RETURN_FORM;
+				serverUpdateEntitySkill(this, 33);
+			}
+			else if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
 			{
 				monsterSpecialState = DUMMYBOT_RETURN_FORM;
 				serverUpdateEntitySkill(this, 33);
@@ -9295,6 +9309,20 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 					return false;
 			}
 		}
+	}
+	return false;
+}
+
+bool Entity::monsterIsTinkeringCreation()
+{
+	int race = this->getMonsterTypeFromSprite();
+	if ( behavior != &actMonster )
+	{
+		return false;
+	}
+	if ( race == GYROBOT || race == DUMMYBOT || race == SENTRYBOT || race == SPELLBOT )
+	{
+		return true;
 	}
 	return false;
 }

@@ -353,37 +353,52 @@ void actSentryBotLimb(Entity* my)
 
 void sentryBotDie(Entity* my)
 {
-	my->removeMonsterDeathNodes();
-	int c;
-	for ( c = 0; c < 6; c++ )
+	bool gibs = true;
+	if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
 	{
-		Entity* entity = spawnGib(my);
-		if ( entity )
+		// don't make noises etc.
+		Stat* myStats = my->getStats();
+		if ( myStats && !strncmp(myStats->obituary, language[3631], strlen(language[3631])) )
 		{
-			switch ( c )
+			// returning to land, don't explode into gibs.
+			gibs = false;
+		}
+	}
+
+	my->removeMonsterDeathNodes();
+	if ( gibs )
+	{
+		int c;
+		for ( c = 0; c < 6; c++ )
+		{
+			Entity* entity = spawnGib(my);
+			if ( entity )
 			{
-				case 0:
-					entity->sprite = 873;
-					break;
-				case 1:
-					entity->sprite = 874;
-					break;
-				case 2:
-					entity->sprite = 874;
-					break;
-				case 3:
-					entity->sprite = 874;
-					break;
-				case 4:
-					entity->sprite = 874;
-					break;
-				case 5:
-					entity->sprite = 875;
-					break;
-				default:
-					break;
+				switch ( c )
+				{
+					case 0:
+						entity->sprite = 873;
+						break;
+					case 1:
+						entity->sprite = 874;
+						break;
+					case 2:
+						entity->sprite = 874;
+						break;
+					case 3:
+						entity->sprite = 874;
+						break;
+					case 4:
+						entity->sprite = 874;
+						break;
+					case 5:
+						entity->sprite = 875;
+						break;
+					default:
+						break;
+				}
+				serverSpawnGibForClient(entity);
 			}
-			serverSpawnGibForClient(entity);
 		}
 	}
 
@@ -412,11 +427,21 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 
 	if ( multiplayer != CLIENT )
 	{
-		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
 		{
-			//my->z = 4;
-			//my->pitch = PI / 4;
+			if ( limbAnimateToLimit(my, ANIMATE_PITCH, 0.01, PI / 8, false, 0.0) )
+			{
+				int appearance = myStats->HP;
+				ItemType type = TOOL_SENTRYBOT;
+				if ( myStats->type == SPELLBOT )
+				{
+					type = TOOL_SPELLBOT;
+				}
+				Item* item = newItem(type, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
+				myStats->HP = 0;
+				my->setObituary(language[3631]);
+				return;
+			}
 		}
 		else
 		{
@@ -457,10 +482,24 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			entity->yaw = my->yaw; // face the monster's direction
 		}
+		if ( bodypart == WEAPON_LOADER || bodypart == WEAPON_LIMB )
+		{
+			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+			{
+				entity->pitch = my->pitch;
+			}
+		}
 
 		if ( bodypart == GEAR_MIDDLE && !my->flags[INVISIBLE] )
 		{
-			entity->pitch += 0.1;
+			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+			{
+				entity->pitch += 0.02;
+			}
+			else
+			{
+				entity->pitch += 0.1;
+			}
 			if ( entity->pitch > 2 * PI )
 			{
 				entity->pitch -= 2 * PI;
@@ -584,7 +623,11 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 			}
 
 			// spin the gear as the head turns.
-			if ( bodypart == GEAR_BODY_RIGHT )
+			if ( bodypart == GEAR_BODY_LEFT && my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+			{
+				entity->pitch -= 0.1;
+			}
+			else if ( bodypart == GEAR_BODY_RIGHT )
 			{
 				if ( gearBodyLeft )
 				{
@@ -769,10 +812,6 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = true;
 				}
-				else
-				{
-					entity->flags[INVISIBLE] = my->flags[INVISIBLE];
-				}
 				break;
 			default:
 				break;
@@ -942,7 +981,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			if ( limbAnimateToLimit(my, ANIMATE_Z, 0.05, 0, false, 0.0) )
 			{
-				Item* item = newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+				int appearance = myStats->HP;
+				Item* item = newItem(TOOL_GYROBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
 				my->setObituary(language[3631]);
 				return;
@@ -1454,7 +1494,15 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 			if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
 			{
 				bool pitchZero = false;
-				if ( entity->pitch > 0 )
+				while ( entity->pitch > 2 * PI )
+				{
+					entity->pitch -= 2 * PI;
+				}
+				while ( entity->pitch < 0 )
+				{
+					entity->pitch += 2 * PI;
+				}
+				if ( entity->pitch > 0 && entity->pitch <= PI )
 				{
 					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 0.0, false, 0.0) )
 					{
@@ -1463,12 +1511,12 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 0.0, false, 0.0) )
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.1, 0.0, false, 0.0) )
 					{
 						pitchZero = true;
 					}
 				}
-				entity->skill[0] = 1;
+				entity->skill[0] = 3;
 				real_t rate = 0.5;
 				if ( entity->z > 12 )
 				{
@@ -1479,7 +1527,8 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer != CLIENT )
 					{
 						// kill me!
-						Item* item = newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+						int appearance = myStats->HP;
+						Item* item = newItem(TOOL_DUMMYBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 						myStats->HP = 0;
 						my->setObituary(language[3643]);
 						return;
@@ -1546,13 +1595,17 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			if ( head )
 			{
-				if ( head->skill[0] == 2 || my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
+				if ( head->skill[0] == 2 )
 				{
 					entity->z = my->z;
 					entity->pitch = head->pitch;
 				}
 				else
 				{
+					if ( head->skill[0] == 3 ) // returning to box
+					{
+						entity->pitch = head->pitch;
+					}
 					entity->z = head->z - limbs[DUMMYBOT][6][2];
 				}
 			}

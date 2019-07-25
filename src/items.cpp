@@ -1084,6 +1084,12 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	{
 		return 1;
 	}
+
+	if ( item1->type == TOOL_GYROBOT || item1->type == TOOL_SENTRYBOT || item1->type == TOOL_SPELLBOT || item1->type == TOOL_DUMMYBOT )
+	{
+		checkAppearance = true; // these items store their HP inside appearance.
+	}
+
 	if ( checkAppearance && (item1->appearance != item2->appearance) )
 	{
 		return 1;
@@ -1267,6 +1273,10 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 			{
 				itemDroppable = false;
 			}
+			if ( monster->monsterIsTinkeringCreation() )
+			{
+				itemDroppable = false;
+			}
 
 			if ( (monsterStats->type == KOBOLD
 				|| monsterStats->type == COCKATRICE
@@ -1377,6 +1387,12 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		else if ( monsterStats->type == DUMMYBOT )
 		{
 			entity->z = 4;
+		}
+		else if ( monsterStats->type == SENTRYBOT || monsterStats->type == SPELLBOT )
+		{
+			entity->vel_x *= 0.1;
+			entity->vel_y *= 0.1;
+			entity->vel_z = -.5;
 		}
 	}
 
@@ -3868,11 +3884,12 @@ bool Item::shouldItemStack(int player)
 				&& itemCategory(this) != AMULET
 				&& itemCategory(this) != SPELLBOOK
 				&& this->type != TOOL_PICKAXE
-				&& this->type != TOOL_ALEMBIC)
+				&& this->type != TOOL_ALEMBIC
+				&& this->type != TOOL_TINKERING_KIT )
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
-			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE && this->type != TOOL_ALEMBIC)
+			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE && this->type != TOOL_ALEMBIC && this->type != TOOL_TINKERING_KIT)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.

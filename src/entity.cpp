@@ -5047,7 +5047,7 @@ bool Entity::isMobile()
 	{
 		return false;
 	}
-	else if ( entitystats->type == DUMMYBOT
+	else if ( (entitystats->type == DUMMYBOT || entitystats->type == SENTRYBOT || entitystats->type == SPELLBOT)
 		&& (monsterSpecialState == DUMMYBOT_RETURN_FORM) )
 	{
 		return false;
@@ -9049,7 +9049,9 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		return;
 	}
 
-	if ( src->behavior == &actMonster && src->monsterAllySummonRank != 0 )
+	if ( src->behavior == &actMonster 
+		&& (src->monsterAllySummonRank != 0
+			|| src->monsterIsTinkeringCreation()) )
 	{
 		return; // summoned monster, no XP!
 	}
@@ -9139,6 +9141,11 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 						Entity* follower = uidToEntity(*((Uint32*)node->element));
 						if ( entityDist(this, follower) < XPSHARERANGE && follower != src )
 						{
+							if ( follower && follower->monsterIsTinkeringCreation() )
+							{
+								--numFollowers; // tinkering creation don't penalise XP.
+								continue;
+							}
 							Stat* followerStats = follower->getStats();
 							if ( followerStats )
 							{
@@ -9162,7 +9169,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 	}
 
 	// award XP to main victor
-	destStats->EXP += xpGain;
+	if ( !this->monsterIsTinkeringCreation() )
+	{
+		destStats->EXP += xpGain;
+	}
 
 	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root )
 	{
@@ -13284,7 +13294,15 @@ double Entity::monsterRotate()
 	{
 		dir += PI * 2;
 	}
-	yaw -= dir / 2;
+	int race = getMonsterTypeFromSprite();
+	if ( race == SENTRYBOT || race == SPELLBOT )
+	{
+		yaw -= dir / 64;
+	}
+	else
+	{
+		yaw -= dir / 2;
+	}
 	while ( yaw < 0 )
 	{
 		yaw += 2 * PI;

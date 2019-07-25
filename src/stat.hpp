@@ -213,6 +213,7 @@ public:
 	Sint32& playerSummon2PERCHR; // MISC_FLAGS[11]
 	Sint32& monsterIsCharmed; // MISC_FLAGS[12]
 	Sint32& playerShapeshiftStorage; // MISC_FLAGS[13]
+	Sint32& monsterTinkeringStatus; // MISC_FLAGS[14]
 
 	// group think
 	Uint32 leader_uid;

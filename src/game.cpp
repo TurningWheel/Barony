@@ -3786,7 +3786,17 @@ int main(int argc, char** argv)
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Move to...");
+								if ( FollowerMenu.followerToCommand
+									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT)
+									)
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+								}
 							}
 							else
 							{
@@ -3841,7 +3851,17 @@ int main(int argc, char** argv)
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 							if ( FollowerMenu.optionSelected == ALLY_CMD_MOVETO_SELECT )
 							{
-								ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, "Move to...");
+								if ( FollowerMenu.followerToCommand
+									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
+										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT)
+									)
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
+								}
+								else
+								{
+									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3039]);
+								}
 							}
 							else
 							{

@@ -983,6 +983,11 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 				{
 					summon->yaw = thrown->yaw + ((PI / 2) * (rand() % 4));
 				}
+				summonedStats->monsterTinkeringStatus = static_cast<Sint32>(this->status); // store the type of item that was used to summon me.
+				if ( this->appearance > 0 && this->appearance != ITEM_TINKERING_APPEARANCE && this->appearance < summonedStats->MAXHP )
+				{
+					summon->setHP(this->appearance);
+				}
 				if ( forceFollower(*parent, *summon) )
 				{
 					if ( parent->behavior == &actPlayer )

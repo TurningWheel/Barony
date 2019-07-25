@@ -532,6 +532,7 @@ public:
 	bool monsterConsumeFoodEntity(Entity* food, Stat* myStats);
 	Entity* monsterAllyGetPlayerLeader();
 	bool monsterAllyEquipmentInClass(const Item& item) const;
+	bool monsterIsTinkeringCreation();
 
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 

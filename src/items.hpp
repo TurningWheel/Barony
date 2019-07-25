@@ -562,6 +562,6 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
-static const int ITEM_TINKERING_APPEARANCE = 9876543210;
+static const int ITEM_TINKERING_APPEARANCE = 987654321;
 
 bool loadItemLists();
