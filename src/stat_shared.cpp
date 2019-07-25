@@ -1266,6 +1266,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = stats->MAXMP;
 			stats->OLDHP = stats->HP;
 			break;
+		case (1000 + GYROBOT):
+			stats->LVL = 1;
+			stats->HP = 10;
+			stats->HP = stats->MAXHP;
+			stats->OLDHP = stats->HP;
+			stats->DEX = 12;
+			break;
 		case 10:
 		default:
 			break;

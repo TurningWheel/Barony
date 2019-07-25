@@ -3408,11 +3408,47 @@ void actMonster(Entity* my)
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
-					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
+					real_t followx = leader->x;
+					real_t followy = leader->y;
+					if ( myStats->type == GYROBOT )
+					{
+						// follow ahead of the leader.
+						real_t startx = leader->x;
+						real_t starty = leader->y;
+						// draw line from the leaders direction until we hit a wall or 48 dist
+						real_t previousx = startx;
+						real_t previousy = starty;
+						for ( int iterations = 0; iterations < 16; ++iterations)
+						{
+							startx += 4 * cos(leader->yaw);
+							starty += 4 * sin(leader->yaw);
+							int index = (static_cast<int>(starty + 16 * sin(leader->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(leader->yaw)) >> 4) * MAPLAYERS * map.height;
+							if ( !map.tiles[OBSTACLELAYER + index] )
+							{
+								// store the last known good coordinate
+								previousx = startx;
+								previousy = starty;
+							}
+							else if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								// hit a wall.
+								break;
+							}
+							if ( sqrt(pow(leader->x - previousx, 2) + pow(leader->y - previousy, 2)) > WAIT_FOLLOWDIST )
+							{
+								break;
+							}
+						}
+						followx = previousx;
+						followy = previousy;
+						// createParticleFollowerCommand(previousx, previousy, 0, 174); debug particle
+					}
+					double dist = sqrt(pow(my->x - followx, 2) + pow(my->y - followy, 2));
+
 					if ( dist > WAIT_FOLLOWDIST )
 					{
 						my->monsterReleaseAttackTarget();
-						if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
+						if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 1) )
 						{
 							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 						}
@@ -3426,7 +3462,7 @@ void actMonster(Entity* my)
 						}
 						return;
 					}
-					else
+					else if ( myStats->type != GYROBOT )
 					{
 						tangent = atan2( leader->y - my->y, leader->x - my->x );
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
@@ -4596,11 +4632,46 @@ timeToGoAgain:
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
 				{
-					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
+					real_t followx = leader->x;
+					real_t followy = leader->y;
+					if ( myStats->type == GYROBOT )
+					{
+						// follow ahead of the leader.
+						real_t startx = leader->x;
+						real_t starty = leader->y;
+						// draw line from the leaders direction until we hit a wall or 48 dist
+						real_t previousx = startx;
+						real_t previousy = starty;
+						real_t leadDistance = HUNT_FOLLOWDIST;
+						for ( int iterations = 0; iterations < 16; ++iterations )
+						{
+							startx += 4 * cos(leader->yaw);
+							starty += 4 * sin(leader->yaw);
+							int index = (static_cast<int>(starty + 16 * sin(leader->yaw)) >> 4) * MAPLAYERS + (static_cast<int>(startx + 16 * cos(leader->yaw)) >> 4) * MAPLAYERS * map.height;
+							if ( !map.tiles[OBSTACLELAYER + index] )
+							{
+								// store the last known good coordinate
+								previousx = startx;
+								previousy = starty;
+							}
+							else if ( map.tiles[OBSTACLELAYER + index] )
+							{
+								break;
+							}
+							if ( sqrt(pow(leader->x - previousx, 2) + pow(leader->y - previousy, 2)) > HUNT_FOLLOWDIST )
+							{
+								break;
+							}
+						}
+						followx = previousx;
+						followy = previousy;
+						//createParticleFollowerCommand(previousx, previousy, 0, 175); debug particle
+					}
+					double dist = sqrt(pow(my->x - followx, 2) + pow(my->y - followy, 2));
 					if ( dist > HUNT_FOLLOWDIST && !my->monsterTarget )
 					{
-						x = ((int)floor(leader->x)) >> 4;
-						y = ((int)floor(leader->y)) >> 4;
+						x = ((int)floor(followx)) >> 4;
+						y = ((int)floor(followy)) >> 4;
 						int u, v;
 						bool foundplace = false;
 						for ( u = x - 1; u <= x + 1; u++ )
@@ -4635,7 +4706,7 @@ timeToGoAgain:
 						}
 						return;
 					}
-					else
+					else if ( myStats->type != GYROBOT )
 					{
 						double tangent = atan2( leader->y - my->y, leader->x - my->x );
 						Entity* ohitentity = hit.entity;

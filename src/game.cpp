@@ -1022,12 +1022,36 @@ void gameLogic(void)
 							}
 
 							node_t* node;
+							node_t* gyrobotNode = nullptr;
+							Entity* gyrobotEntity = nullptr;
+							std::vector<node_t*> allyRobotNodes;
+							for ( node = tempFollowers[c].first; node != NULL; node = node->next )
+							{
+								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats && tempStats->type == GYROBOT )
+								{
+									gyrobotNode = node;
+									break;
+								}
+							}
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
 							{
 								Stat* tempStats = (Stat*)node->element;
+								if ( gyrobotNode && tempStats && (tempStats->type == DUMMYBOT
+									|| tempStats->type == SENTRYBOT
+									|| tempStats->type == SPELLBOT) )
+								{
+									// gyrobot will pick up these guys into it's inventory.
+									allyRobotNodes.push_back(node);
+									continue;
+								}
 								Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
 								if (monster)
 								{
+									if ( node == gyrobotNode )
+									{
+										gyrobotEntity = monster;
+									}
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
 
@@ -1100,6 +1124,44 @@ void gameLogic(void)
 								else
 								{
 									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *tempStats, language[723], language[722], MSG_COMBAT);
+								}
+							}
+							if ( gyrobotEntity && !allyRobotNodes.empty() )
+							{
+								Stat* gyroStats = gyrobotEntity->getStats();
+								for ( auto it = allyRobotNodes.begin(); gyroStats && it != allyRobotNodes.end(); ++it )
+								{
+									node_t* botNode = *it;
+									if ( botNode )
+									{
+										Stat* tempStats = (Stat*)botNode->element;
+										if ( tempStats )
+										{
+											ItemType type = WOODEN_SHIELD;
+											if ( tempStats->type == SENTRYBOT )
+											{
+												type = TOOL_SENTRYBOT;
+											}
+											else if ( tempStats->type == SPELLBOT )
+											{
+												type = TOOL_SPELLBOT;
+											}
+											else if ( tempStats->type == DUMMYBOT )
+											{
+												type = TOOL_DUMMYBOT;
+											}
+											int appearance = tempStats->HP;
+											if ( tempStats->HP == tempStats->MAXHP )
+											{
+												appearance = ITEM_TINKERING_APPEARANCE;
+											}
+											if ( type != WOODEN_SHIELD )
+											{
+												Item* item = newItem(type, static_cast<Status>(tempStats->monsterTinkeringStatus),
+													0, 1, appearance, true, &gyroStats->inventory);
+											}
+										}
+									}
 								}
 							}
 						}

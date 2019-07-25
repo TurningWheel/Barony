@@ -844,23 +844,56 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] )
-		{
-			//my->z = 4;
-			my->pitch = PI / 4;
-		}
-		else
-		{
-			//my->z = 2.25;
-			//my->pitch = 0;
-		}
-		if ( my->monsterSpecialState == GYRO_RETURN_LANDING || my->monsterSpecialState == GYRO_INTERACT_LANDING )
+		//if ( myStats->EFFECTS[EFF_ASLEEP] )
+		//{
+		//	//my->z = 4;
+		//	my->pitch = PI / 4;
+		//}
+		//else
+		//{
+		//	//my->z = 2.25;
+		//	//my->pitch = 0;
+		//}
+		/*if ( my->monsterSpecialState == GYRO_RETURN_LANDING || my->monsterSpecialState == GYRO_INTERACT_LANDING )
 		{
 			my->flags[PASSABLE] = false;
 		}
 		else
 		{
-			my->flags[PASSABLE] = true;
+		}*/
+		my->flags[PASSABLE] = true;
+
+		if ( my->ticks == 25 )
+		{
+			// drop any bots we collected from the previous level.
+			node_t* invNodeNext = nullptr;
+			bool dropped = false;
+			for ( node_t* invNode = myStats->inventory.first; invNode; invNode = invNodeNext )
+			{
+				invNodeNext = invNode->next;
+				Item* item = (Item*)invNode->element;
+				if ( item && (item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT) )
+				{
+					for ( int c = item->count; c > 0; c-- )
+					{
+						Entity* itemDropped = dropItemMonster(item, my, myStats);
+						if ( itemDropped )
+						{
+							dropped = true;
+							itemDropped->flags[USERFLAG1] = true;    // makes items passable, improves performance
+						}
+					}
+				}
+			}
+			if ( dropped )
+			{
+				int leader = my->monsterAllyIndex;
+				if ( leader >= 0 )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(leader, color, language[3651]);
+				}
+			}
 		}
 	}
 
