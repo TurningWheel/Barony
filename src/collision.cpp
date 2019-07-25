@@ -611,6 +611,13 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 							continue;
 						}
 					}
+					else if ( my->behavior == &actMonster && entity->behavior == &actPlayer )
+					{
+						if ( my->checkFriend(entity) )
+						{
+							continue;
+						}
+					}
 					else
 					{
 						continue;
