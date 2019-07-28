@@ -29,7 +29,7 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	/*client_classes[player] = CLASS_PUNISHER;
+	client_classes[player] = CLASS_MACHINIST;/*
 	stats[player]->playerRace = RACE_INCUBUS;*/
 	//stats[player]->appearance = 0;
 	if ( player == clientnum)
@@ -2120,15 +2120,15 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(TOOL_GYROBOT, EXCELLENT, 0, 3, 0, true, NULL);
+			item = newItem(TOOL_GYROBOT, EXCELLENT, 0, 3, ITEM_TINKERING_APPEARANCE, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 3, 0, true, NULL);
+			item = newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 3, ITEM_TINKERING_APPEARANCE, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 3, 0, true, NULL);
+			item = newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 3, ITEM_TINKERING_APPEARANCE, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
@@ -2185,16 +2185,22 @@ void initClass(int player)
 		}
 	}
 
-	if ( player == clientnum )
+	if ( svFlags & SV_FLAG_LIFESAVING )
 	{
-		if ( svFlags & SV_FLAG_LIFESAVING )
+		item = newItem(AMULET_LIFESAVING, WORN, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
 		{
-			item = newItem(AMULET_LIFESAVING, WORN, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
 			free(item);
 		}
-
+		else
+		{
+			useItem(item, player);
+		}
+	}
+	if ( player == clientnum )
+	{
 		if ( stats[player]->playerRace == RACE_VAMPIRE && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_LEVITATION, player, true);
