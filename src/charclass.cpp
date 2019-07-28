@@ -46,6 +46,13 @@ void initClass(int player)
 		}
 	}
 
+	bool curseItems = false;
+	if ( (stats[player]->playerRace == RACE_SUCCUBUS || stats[player]->playerRace == RACE_INCUBUS)
+		&& stats[player]->appearance == 0 )
+	{
+		curseItems = true;
+	}
+
 	// SEX MODIFIER
 	// female; else male
 	if ( stats[player]->sex )
@@ -567,7 +574,7 @@ void initClass(int player)
 		}
 
 		// boots
-		item = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 0, true, NULL);
+		item = newItem(LEATHER_BOOTS, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -643,7 +650,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
 
 		// iron mace
-		item = newItem(IRON_MACE, SERVICABLE, 1, 1, 0, true, NULL);
+		item = newItem(IRON_MACE, SERVICABLE, curseItems ? -1 : 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -697,7 +704,7 @@ void initClass(int player)
 		}
 
 		// gloves
-		item = newItem(BRACERS, WORN, 1, 1, 0, true, NULL);
+		item = newItem(BRACERS, WORN, curseItems ? -1 : 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -1660,12 +1667,6 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_MESMER )
 	{
 		// attributes
-		bool curseItems = false;
-		if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
-		{
-			curseItems = true;
-		}
-
 		stats[player]->STR -= 2;
 		stats[player]->CON -= 3;
 		stats[player]->INT += 2;
