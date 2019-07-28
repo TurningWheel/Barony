@@ -557,12 +557,16 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 				if ( player > 0 )
 				{
 					client_selected[player] = &entity;
+					entity.skill[8] = 1; // disables polymorph being washed away.
 					actSink(&entity);
+					entity.skill[8] = 0;
 				}
 				else if ( player == 0 )
 				{
 					selectedEntity = &entity;
+					entity.skill[8] = 1; // disables polymorph being washed away.
 					actSink(&entity);
+					entity.skill[8] = 0;
 				}
 			}
 			else if ( entity.skill[0] > 1 )

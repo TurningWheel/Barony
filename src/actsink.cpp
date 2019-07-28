@@ -31,6 +31,7 @@
 -------------------------------------------------------------------------------*/
 
 #define SINK_AMBIENCE my->skill[7]
+#define SINK_DISABLE_POLYMORPH_WASHING my->skill[8]
 
 void actSink(Entity* my)
 {
@@ -94,7 +95,7 @@ void actSink(Entity* my)
 						serverUpdateEntityFlag(players[i]->entity, BURNING);
 						steamAchievementClient(i, "BARONY_ACH_HOT_SHOWER");
 					}
-					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] )
+					if ( stats[i] && stats[i]->EFFECTS[EFF_POLYMORPH] && (SINK_DISABLE_POLYMORPH_WASHING == 0) )
 					{
 						if ( stats[i]->EFFECTS[EFF_POLYMORPH] )
 						{
