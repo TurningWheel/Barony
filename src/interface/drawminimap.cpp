@@ -263,12 +263,16 @@ void drawMinimap()
 			int aliveTime = ticks - ping.tickStart;
 			if ( aliveTime < TICKS_PER_SECOND * 2.5 ) // 2.5 second duration.
 			{
-				if ( (aliveTime < TICKS_PER_SECOND && (aliveTime % 10 < 5)) || aliveTime >= TICKS_PER_SECOND )
+				if ( (aliveTime < TICKS_PER_SECOND && (aliveTime % 10 < 5)) || aliveTime >= TICKS_PER_SECOND || ping.radiusPing )
 				{
 					// draw the ping blinking every 5 ticks if less than 1 second lifetime, otherwise constantly draw.
 					x = xres - map.width * minimapTotalScale + ping.x * minimapTotalScale;
 					y = yres - map.height * minimapTotalScale + ping.y * minimapTotalScale;
 					int alpha = 255;
+					if ( ping.radiusPing )
+					{
+						alpha = 100;
+					}
 					if ( aliveTime >= TICKS_PER_SECOND * 2 )
 					{
 						// start fading ping after 2 seconds, lasting 0.5 seconds.
@@ -276,7 +280,16 @@ void drawMinimap()
 						alpha = std::max(static_cast<int>(alphafade * alpha), 0);
 					}
 					// draw a circle
-					drawCircle(x - 1, y - 1, std::max(3 + minimapObjectZoom, 0), color, alpha);
+					if ( ping.radiusPing )
+					{
+						int radius = 3 + std::min(30, aliveTime);
+						radius = std::min(minimapTotalScale * 6, radius);
+						drawCircle(x - 1, y - 1, std::max(radius + minimapObjectZoom, 0), color, alpha);
+					}
+					else
+					{
+						drawCircle(x - 1, y - 1, std::max(3 + minimapObjectZoom, 0), color, alpha);
+					}
 				}
 			}
 
@@ -560,7 +573,7 @@ void minimapPingAdd(MinimapPing newPing)
 		for ( std::vector<MinimapPing>::iterator it = minimapPings.begin(); it != minimapPings.end();)
 		{
 			MinimapPing ping = *it;
-			if ( ping.player == newPing.player )
+			if ( ping.player == newPing.player && !newPing.radiusPing )
 			{
 				++numPlayerPings;
 				// prune pings if too many by same player.
@@ -578,7 +591,7 @@ void minimapPingAdd(MinimapPing newPing)
 			++it;
 		}
 	}
-	if ( !minimapPingMute )
+	if ( !minimapPingMute && !newPing.radiusPing )
 	{
 		playSound(399, 64);
 	}

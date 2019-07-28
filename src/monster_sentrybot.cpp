@@ -21,6 +21,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "interface/interface.hpp"
 
 void initSentryBot(Entity* my, Stat* myStats)
 {
@@ -897,9 +898,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( my->ticks % TICKS_PER_SECOND == 0 && my->monsterAllyIndex == clientnum )
+	if ( my->ticks % (TICKS_PER_SECOND * 1) == 0 && my->monsterAllyIndex == clientnum )
 	{
 		Entity* playerLeader = my->monsterAllyGetPlayerLeader();
+		bool doPing = false;
 		for ( node_t* searchNode = map.entities->first; searchNode != nullptr; searchNode = searchNode->next )
 		{
 			Entity* ent = (Entity*)searchNode->element;
@@ -976,6 +978,17 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					}
 				}
 			}
+			if ( ent->entityShowOnMap == 1 )
+			{
+				doPing = true;
+			}
+		}
+		if ( doPing )
+		{
+			int pingx = my->x / 16;
+			int pingy = my->y / 16;
+			MinimapPing radiusPing(ticks, clientnum, pingx, pingy, true);
+			minimapPingAdd(radiusPing);
 		}
 	}
 

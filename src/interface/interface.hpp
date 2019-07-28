@@ -587,11 +587,20 @@ public:
 	Uint8 player;
 	Uint8 x;
 	Uint8 y;
+	bool radiusPing;
 	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y) :
 		tickStart(tickStart),
 		player(player),
 		x(x),
-		y(y) {}
+		y(y),
+		radiusPing(false) {}
+
+	MinimapPing(Sint32 tickStart, Uint8 player, Uint8 x, Uint8 y, bool radiusPing) :
+		tickStart(tickStart),
+		player(player),
+		x(x),
+		y(y),
+		radiusPing(radiusPing) {}
 };
 
 extern std::vector<MinimapPing> minimapPings;
