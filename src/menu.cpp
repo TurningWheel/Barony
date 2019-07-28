@@ -7870,11 +7870,7 @@ void handleMainMenu(bool mode)
 													{
 														type = TOOL_DUMMYBOT;
 													}
-													int appearance = tempStats->HP;
-													if ( tempStats->HP == tempStats->MAXHP )
-													{
-														appearance = ITEM_TINKERING_APPEARANCE;
-													}
+													int appearance = monsterTinkeringConvertHPToAppearance(tempStats);
 													if ( type != WOODEN_SHIELD )
 													{
 														Item* item = newItem(type, static_cast<Status>(tempStats->monsterTinkeringStatus), 

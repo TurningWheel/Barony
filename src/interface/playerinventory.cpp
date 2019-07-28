@@ -1164,6 +1164,11 @@ void updatePlayerInventory()
 									}
 									src.h += height * TTF12_HEIGHT;
 								}
+								else if ( item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT
+									|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
+								{
+									src.w += 7 * TTF12_WIDTH;
+								}
 							}
 							int furthestX = xres;
 							if ( proficienciesPage == 0 )
@@ -1226,7 +1231,21 @@ void updatePlayerInventory()
 							{
 								color = 0xFFFFFFFF;
 							}
-							ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
+
+							if ( item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT
+								|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
+							{
+								int health = 100;
+								if ( item->appearance > 0 && item->appearance <= 4 )
+								{
+									health = 25 * item->appearance;
+								}
+								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), health);
+							}
+							else
+							{
+								ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
+							}
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
 							if ( strcmp(spellEffectText, "") )

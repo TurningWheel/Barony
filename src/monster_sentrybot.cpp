@@ -431,7 +431,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			if ( limbAnimateToLimit(my, ANIMATE_PITCH, 0.01, PI / 8, false, 0.0) )
 			{
-				int appearance = myStats->HP;
+				int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 				ItemType type = TOOL_SENTRYBOT;
 				if ( myStats->type == SPELLBOT )
 				{
@@ -1014,7 +1014,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		{
 			if ( limbAnimateToLimit(my, ANIMATE_Z, 0.05, 0, false, 0.0) )
 			{
-				int appearance = myStats->HP;
+				int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 				Item* item = newItem(TOOL_GYROBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 				myStats->HP = 0;
 				my->setObituary(language[3631]);
@@ -1560,7 +1560,7 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 					if ( multiplayer != CLIENT )
 					{
 						// kill me!
-						int appearance = myStats->HP;
+						int appearance = monsterTinkeringConvertHPToAppearance(myStats);
 						Item* item = newItem(TOOL_DUMMYBOT, static_cast<Status>(myStats->monsterTinkeringStatus), 0, 1, appearance, true, &myStats->inventory);
 						myStats->HP = 0;
 						my->setObituary(language[3643]);
@@ -1800,4 +1800,13 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+void tinkerBotSetStats(Stat* myStats, int rank)
+{
+	if ( !myStats )
+	{
+		return;
+	}
+
 }

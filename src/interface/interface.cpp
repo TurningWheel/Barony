@@ -3581,7 +3581,7 @@ void GenericGUIMenu::updateGUI()
 								{
 									strncpy(tempstr, language[3644], strlen(language[3644])); // craft
 									strncat(tempstr, item->description(), 46 - strlen(language[3644]));
-									if ( !tinkeringPlayerCanAffordCraft(item) )
+									if ( !tinkeringPlayerCanAffordCraft(item) || (tinkeringPlayerHasSkillLVLToCraft(item) == -1) )
 									{
 										color = uint32ColorGray(*mainsurface);
 									}
@@ -4949,22 +4949,63 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	if ( tinkeringPlayerCanAffordCraft(tempItem) )
 	{
 	}*/
-	newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	newItem(POTION_EMPTY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	std::vector<Item*> items;
+	items.push_back(newItem(TOOL_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_DECOY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(POTION_EMPTY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	for ( auto it = items.begin(); it != items.end(); ++it )
+	{
+		Item* item = *it;
+		if ( item )
+		{
+			int skillLVL = 0;
+			int requiredSkill = tinkeringPlayerHasSkillLVLToCraft(item);
+			if ( stats[clientnum] )
+			{
+				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0 to 5
+			}
+			if ( item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT
+				|| item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT )
+			{
+				if ( skillLVL == 5 ) // maximum
+				{
+					item->status = EXCELLENT;
+				}
+				else if ( requiredSkill >= skillLVL || requiredSkill == -1 )
+				{
+					item->status = DECREPIT;
+				}
+				else
+				{
+					if ( skillLVL - requiredSkill == 1 )
+					{
+						item->status = WORN;
+					}
+					else if ( skillLVL - requiredSkill == 2 )
+					{
+						item->status = SERVICABLE;
+					}
+					else if ( skillLVL - requiredSkill >= 3 )
+					{
+						item->status = EXCELLENT;
+					}
+				}
+			}
+		}
+	}
+	//newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 	//newItem(TOOL_REPAIRKIT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 
 	messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
@@ -5015,6 +5056,12 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	}
 
 	// add checks/consuming of items here.
+	if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
+	{
+		playSound(90, 64);
+		messagePlayer(clientnum, language[3652], items[item->type].name_identified);
+		return false;
+	}
 	if ( !tinkeringPlayerCanAffordCraft(item) )
 	{
 		playSound(90, 64);
@@ -5531,4 +5578,64 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		return true;
 	}
 	return false;
+}
+
+int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
+{
+	if ( !item )
+	{
+		return -1;
+	}
+	int skillLVL = 0;
+	if ( stats[clientnum] )
+	{
+		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0 to 5
+	}
+
+	switch ( item->type )
+	{
+		case TOOL_LOCKPICK:
+		case TOOL_GLASSES:
+		case POTION_EMPTY:
+		case TOOL_DECOY:
+			if ( skillLVL >= 0 ) // 0 requirement
+			{
+				return 0;
+			}
+			break;
+		case TOOL_GYROBOT:
+		case TOOL_SLEEP_BOMB:
+		case TOOL_FREEZE_BOMB:
+		case TOOL_DUMMYBOT:
+		case TOOL_LANTERN:
+			if ( skillLVL >= 1 ) // 20 requirement
+			{
+				return 1;
+			}
+			break;
+		case TOOL_BOMB:
+		case TOOL_TELEPORT_BOMB:
+		case TOOL_SENTRYBOT:
+			if ( skillLVL >= 2 ) // 40 requirement
+			{
+				return 2;
+			}
+			break;
+		case TOOL_SPELLBOT:
+		case TOOL_ALEMBIC:
+			if ( skillLVL >= 3 ) // 60 requirement
+			{
+				return 3;
+			}
+			break;
+		case CLOAK_BACKPACK:
+			if ( skillLVL >= 4 ) // 80 requirement
+			{
+				return 4;
+			}
+			break;
+		default:
+			break;
+	}
+	return -1;
 }

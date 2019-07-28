@@ -647,7 +647,14 @@ char* Item::description()
 		{
 			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
-				snprintf(tempstr, 1024, language[982 + status], beatitude);
+				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
+				{
+					snprintf(tempstr, 1024, language[3653 + status]);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
@@ -702,7 +709,24 @@ char* Item::description()
 		{
 			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
-				snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
+				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
+				{
+					int percentHP = 100;
+					if ( this->appearance == ITEM_TINKERING_APPEARANCE || this->appearance == 0 )
+					{
+						percentHP = 100;
+					}
+					else
+					{
+						percentHP = this->appearance * 25;
+						percentHP = std::min(percentHP, 100);
+					}
+					snprintf(tempstr, 1024, language[3658 + status], count, percentHP);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
+				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
@@ -760,7 +784,14 @@ char* Item::description()
 		{
 			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
-				strncpy(tempstr, language[1034 + status], 1024);
+				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
+				{
+					strncpy(tempstr, language[3653 + status], 1024);
+				}
+				else
+				{
+					strncpy(tempstr, language[1034 + status], 1024);
+				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
@@ -822,7 +853,14 @@ char* Item::description()
 		{
 			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
-				snprintf(tempstr, 1024, language[1060 + status], count);
+				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
+				{
+					snprintf(tempstr, 1024, language[3658 + status], count);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1060 + status], count);
+				}
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{

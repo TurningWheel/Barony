@@ -366,7 +366,7 @@ public:
 	bool isItemSecondaryIngredient(int type);
 	void alchemyLearnRecipeOnLevelUp(int skill);
 
-	// tinkering menu fonucs
+	// tinkering menu foncs
 	bool tinkeringSalvageItem(Item* item);
 	bool tinkeringCraftItem(Item* item);
 	void tinkeringCreateCraftableItemList();
@@ -376,6 +376,7 @@ public:
 	bool tinkeringGetCraftingCost(const Item* item, int* metal, int* magic);
 	bool tinkeringPlayerCanAffordCraft(const Item* item);
 	Item* tinkeringCraftItemAndConsumeMaterials(const Item* item);
+	int tinkeringPlayerHasSkillLVLToCraft(const Item* item);
 
 	inline bool isGUIOpen()
 	{

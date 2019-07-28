@@ -9287,7 +9287,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
 		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL )
 		{
-			leader->increaseSkill(PRO_LEADERSHIP);
+			if ( this->monsterIsTinkeringCreation() )
+			{
+				leader->increaseSkill(PRO_LOCKPICKING);
+			}
+			else
+			{
+				leader->increaseSkill(PRO_LEADERSHIP);
+			}
 			leader->awardXP(src, true, false);
 
 			if ( leader->behavior == &actPlayer && destStats->monsterIsCharmed == 1 )
@@ -16262,4 +16269,54 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 		return false;
 	}
 	return true;
+}
+
+int monsterTinkeringConvertHPToAppearance(Stat* myStats)
+{
+	if ( myStats )
+	{
+		if ( myStats->MAXHP == 0 || myStats->HP == 0 )
+		{
+			return 0;
+		}
+		if ( myStats->MAXHP == myStats->HP )
+		{
+			return ITEM_TINKERING_APPEARANCE;
+		}
+		real_t ratio = (1.0 * myStats->HP) / (myStats->MAXHP);
+		if ( ratio >= 0.74 )
+		{
+			return 3;
+		}
+		else if ( ratio >= 0.49 )
+		{
+			return 2;
+		}
+		else if ( ratio >= 0.24 )
+		{
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	return 0;
+}
+
+int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
+{
+	if ( myStats )
+	{
+		if ( appearance == ITEM_TINKERING_APPEARANCE )
+		{
+			return myStats->MAXHP;
+		}
+		if ( appearance == 0 )
+		{
+			return 0;
+		}
+		return ((appearance * myStats->HP) / 4);
+	}
+	return 0;
 }

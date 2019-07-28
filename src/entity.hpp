@@ -758,6 +758,7 @@ public:
 	void shadowChooseWeapon(const Entity* target, double dist);
 	void succubusChooseWeapon(const Entity* target, double dist);
 	void skeletonSummonSetEquipment(Stat* myStats, int rank);
+	void tinkerBotSetStats(Stat* myStats, int rank);
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);
@@ -977,6 +978,8 @@ int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
 bool monsterIsImmobileTurret(Entity* my, Stat* myStats);
 bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity = nullptr);
+int monsterTinkeringConvertHPToAppearance(Stat* myStats);
+int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance);
 
 static const int MSG_DESCRIPTION = 0;
 static const int MSG_COMBAT = 1;
