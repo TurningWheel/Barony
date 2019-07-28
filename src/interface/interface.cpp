@@ -3586,7 +3586,7 @@ void GenericGUIMenu::updateGUI()
 										color = uint32ColorGray(*mainsurface);
 									}
 								}
-								else if ( isItemSalvageable(item) )
+								else if ( isItemSalvageable(item, clientnum) )
 								{
 									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
 									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
@@ -3624,7 +3624,7 @@ void GenericGUIMenu::updateGUI()
 								{
 									tinkeringGetCraftingCost(item, &metal, &magic);
 								}
-								else if ( isItemSalvageable(item) )
+								else if ( isItemSalvageable(item, clientnum) )
 								{
 									tinkeringGetItemValue(item, &metal, &magic);
 								}
@@ -3678,7 +3678,7 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 				return true;
 			}
 		}
-		else if ( isItemSalvageable(item) )
+		else if ( isItemSalvageable(item, clientnum) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 			{
@@ -4053,7 +4053,7 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		}
 		else if ( isNodeFromPlayerInventory(item->node) )
 		{
-			tinkeringSalvageItem(item);
+			tinkeringSalvageItem(item, false, clientnum);
 		}
 		return true;
 	}
@@ -5073,23 +5073,23 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	if ( crafted )
 	{
 		Item* pickedUp = itemPickup(clientnum, crafted);
-		messagePlayer(clientnum, "crafted a %s!", items[pickedUp->type].name_identified);
+		messagePlayer(clientnum, language[3668], pickedUp->description());
 		free(crafted);
 		return true;
 	}
 	return false;
 }
 
-bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
+bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int player)
 {
 	if ( !item )
 	{
 		return false;
 	}
 
-	if ( itemIsEquipped(item, clientnum) )
+	if ( !outsideInventory && itemIsEquipped(item, player) )
 	{
-		messagePlayer(clientnum, "can't salvage equipped items!");
+		messagePlayer(player, language[3669]);
 		return false; // don't want to deal with client/server desync problems here.
 	}
 
@@ -5098,14 +5098,63 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
 	int magic = 0;
 	tinkeringGetItemValue(item, &metal, &magic);
 	bool didCraft = false;
+	int skillLVL = 0;
+	int bonusMetalScrap = 0;
+	int bonusMagicScrap = 0;
+	if ( stats[player] )
+	{
+		skillLVL = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity);
+		skillLVL /= 5;
+		switch ( skillLVL )
+		{
+			case 5:
+				bonusMetalScrap = (1 + (rand() % 2 == 0) ? 1 : 0) * metal; // 2x or 50% 3x extra scrap
+				bonusMagicScrap = (1 + (rand() % 2 == 0) ? 1 : 0) * magic; // 2x or 50% 3x extra scrap
+				break;
+			case 4:
+				bonusMetalScrap = (1 + (rand() % 4 == 0) ? 1 : 0) * metal; // 2x or 25% 3x extra scrap
+				bonusMagicScrap = (1 + (rand() % 4 == 0) ? 1 : 0) * magic; // 2x or 25% 3x extra scrap
+				break;
+			case 3:
+				bonusMetalScrap = ((rand() % 2 == 0) ? 1 : 0) * metal; // 50% 2x scrap value
+				bonusMagicScrap = ((rand() % 2 == 0) ? 1 : 0) * magic; // 50% 2x scrap value
+				break;
+			case 2:
+				bonusMetalScrap = ((rand() % 4 == 0) ? 1 : 0) * metal; // 25% 2x scrap value
+				bonusMagicScrap = ((rand() % 4 == 0) ? 1 : 0) * magic; // 25% 2x scrap value
+				break;
+			case 1:
+				bonusMetalScrap = ((rand() % 8 == 0) ? 1 : 0) * metal; // 12.5% 2x scrap value
+				bonusMagicScrap = ((rand() % 8 == 0) ? 1 : 0) * magic; // 12.5% 2x scrap value
+				break;
+			default:
+				break;
+		}
+	}
+	if ( metal > 0 )
+	{
+		metal += bonusMetalScrap;
+	}
+	if ( magic > 0 )
+	{
+		magic += bonusMagicScrap;
+	}
 	if ( metal > 0 )
 	{
 		Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metal, 0, true, nullptr);
 		if ( crafted )
 		{
-			Item* pickedUp = itemPickup(clientnum, crafted);
-			messagePlayer(clientnum, "salvaged %d %s!", metal, items[pickedUp->type].name_identified);
-			free(crafted);
+			Item* pickedUp = itemPickup(player, crafted);
+			if ( bonusMetalScrap > 0 )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				messagePlayerColor(player, color, language[3665], metal, items[pickedUp->type].name_identified);
+			}
+			else
+			{
+				messagePlayer(player, language[3665], metal, items[pickedUp->type].name_identified);
+			}
+			free(crafted); // if player != clientnum, then crafted == pickedUp
 			didCraft = true;
 		}
 	}
@@ -5114,15 +5163,90 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item)
 		Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, magic, 0, true, nullptr);
 		if ( crafted )
 		{
-			Item* pickedUp = itemPickup(clientnum, crafted);
-			messagePlayer(clientnum, "salvaged %d %s!", magic, items[pickedUp->type].name_identified);
-			free(crafted);
+			Item* pickedUp = itemPickup(player, crafted);
+			if ( bonusMetalScrap > 0 )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				messagePlayerColor(player, color, language[3665], magic, items[pickedUp->type].name_identified);
+			}
+			else
+			{
+				messagePlayer(player, language[3665], magic, items[pickedUp->type].name_identified);
+			}
+			free(crafted); // if player != clientnum, then crafted == pickedUp
 			didCraft = true;
 		}
 	}
-	if ( didCraft )
+
+	bool increaseSkill = false;
+	if ( stats[player] && didCraft )
 	{
-		consumeItem(item, clientnum);
+		if ( metal >= 4 || magic >= 4 )
+		{
+			if ( rand() % 2 == 0 ) // 50%
+			{
+				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+				{
+					increaseSkill = true;
+				}
+				else if ( rand() % 20 == 0 )
+				{
+					messagePlayer(player, language[3666]); // nothing left to learn from salvaging.
+				}
+			}
+		}
+		else if ( metal >= 2 || magic >= 2 )
+		{
+			if ( rand() % 5 == 0 ) // 20%
+			{
+				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_EXPERT )
+				{
+					increaseSkill = true;
+				}
+				else if ( rand() % 20 == 0 )
+				{
+					messagePlayer(player, language[3666]); // nothing left to learn from salvaging.
+				}
+			}
+		}
+	}
+
+	if ( increaseSkill )
+	{
+		if ( player != clientnum ) // server initiated craft for client.
+		{
+			if ( players[player] && players[player]->entity )
+			{
+				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+			}
+		}
+		else if ( player == clientnum ) // client/server initiated craft for self.
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_LOCKPICKING;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+	}
+	
+
+	if ( !outsideInventory && didCraft )
+	{
+		consumeItem(item, player);
 	}
 	return true;
 }
@@ -5136,17 +5260,17 @@ bool GenericGUIMenu::isNodeFromPlayerInventory(node_t* node)
 	return false;
 };
 
-bool GenericGUIMenu::isItemSalvageable(const Item* item)
+bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 {
 	if ( !item )
 	{
 		return false;
 	}
-	if ( itemIsConsumableByAutomaton(*item) )
+	/*if ( itemIsConsumableByAutomaton(*item) )
 	{
 		return false;
-	}
-	if ( itemIsEquipped(item, clientnum) )
+	}*/
+	if ( player == clientnum && itemIsEquipped(item, clientnum) )
 	{
 		return false;
 	}
@@ -5158,6 +5282,7 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item)
 	{
 		return false;
 	}
+
 	int metal = 0;
 	int magic = 0;
 	if ( tinkeringGetItemValue(item, &metal, &magic) )
@@ -5207,6 +5332,64 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 	{
 		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
 		{
+			bool increaseSkill = false;
+			if ( stats[clientnum] )
+			{
+				if ( metal > 4 || magic > 4 )
+				{
+					if ( rand() % 2 == 0 )
+					{
+						increaseSkill = true;
+					}
+				}
+				else
+				{
+					if ( metal > 2 || magic > 2 )
+					{
+						if ( rand() % 10 == 0 )
+						{
+							increaseSkill = true;
+						}
+					}
+					else
+					{
+						if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+						{
+							if ( rand() % 10 == 0 )
+							{
+								increaseSkill = true;
+							}
+						}
+						else if ( rand() % 20 == 0 )
+						{
+							messagePlayer(clientnum, language[3667], items[item->type].name_identified);
+						}
+					}
+				}
+			}
+			
+			if ( increaseSkill )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					// request level up
+					strcpy((char*)net_packet->data, "CSKL");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = PRO_LOCKPICKING;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				else
+				{
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+					}
+				}
+			}
+
 			for ( int c = 0; c < metal; ++c )
 			{
 				consumeItem(tinkeringMetalScrap, clientnum);
@@ -5348,6 +5531,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_JADE:
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
+		case GEM_GLASS:
 		case TOOL_CRYSTALSHARD:
 			*metal = 1;
 			*magic = 1;
@@ -5407,7 +5591,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SCROLL_DESTROYARMOR:
 		case SCROLL_TELEPORTATION:
 			*metal = 0;
-			*magic = 1;
+			*magic = 2;
 			break;
 
 		case SCROLL_IDENTIFY:
@@ -5420,7 +5604,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_LOCKING:
 		case SPELLBOOK_TELEPORTATION:
 			*metal = 0;
-			*magic = 2;
+			*magic = 4;
 			break;
 
 		case SCROLL_ENCHANTWEAPON:
@@ -5437,7 +5621,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_HEALING:
 		case SPELLBOOK_CUREAILMENT:
 			*metal = 0;
-			*magic = 3;
+			*magic = 6;
 			break;
 
 		case SPELLBOOK_MAGICMISSILE:
@@ -5447,7 +5631,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_DIG:
 		case GEM_LUCK:
 			*metal = 0;
-			*magic = 4;
+			*magic = 8;
 
 		case IRON_SPEAR:
 		case IRON_SWORD:
@@ -5463,6 +5647,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case TOOL_LANTERN:
 		case TOOL_GLASSES:
 		case IRON_KNUCKLES:
+		case TOOL_BEARTRAP:
 		case IRON_DAGGER:
 			*metal = 2;
 			*magic = 0;
@@ -5510,7 +5695,6 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case STEEL_BREASTPIECE:
-		case TOOL_BEARTRAP:
 		case CRYSTAL_SHURIKEN:
 			*metal = 4;
 			*magic = 0;
@@ -5638,4 +5822,72 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 			break;
 	}
 	return -1;
+}
+
+bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
+{
+	if ( player == clientnum )
+	{
+		Item* toDegrade = tinkeringKitItem;
+		if ( !toDegrade )
+		{
+			// look for tinkeringKit in inventory.
+			toDegrade = tinkeringKitFindInInventory();
+			if ( !toDegrade )
+			{
+				return false;
+			}
+		}
+		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
+		if ( toDegrade->status > BROKEN )
+		{
+			messagePlayer(clientnum, language[681], toDegrade->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[662], toDegrade->getName());
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				playSoundEntityLocal(players[clientnum]->entity, 76, 64);
+			}
+			tinkeringKitItem = nullptr;
+		}
+	}
+	else if ( player > 0 && multiplayer == SERVER )
+	{
+		strcpy((char*)net_packet->data, "TKIT");
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 4;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+Item* GenericGUIMenu::tinkeringKitFindInInventory()
+{
+	if ( tinkeringKitItem )
+	{
+		return tinkeringKitItem;
+	}
+	else
+	{
+		for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+		{
+			Item* tinkerItem = (Item*)invnode->element;
+			if ( tinkerItem && tinkerItem->type == TOOL_TINKERING_KIT && tinkerItem->status > BROKEN )
+			{
+				return tinkerItem;
+			}
+		}
+	}
+	return nullptr;
+}
+
+bool GenericGUIMenu::tinkeringKitRollIfShouldBreak()
+{
+	if ( rand() % 20 == 10 )
+	{
+		return true;
+	}
+	return false;
 }

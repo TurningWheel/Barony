@@ -1407,30 +1407,33 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
 
-		if ( monsterStats && (monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS) )
+		if ( monsterStats )
 		{
-			// check if item was stolen.
-			for ( int c = 0; c < MAXPLAYERS; ++c )
+			if (monsterStats->type == INCUBUS || monsterStats->type == SUCCUBUS )
 			{
-				if ( players[c] && players[c]->entity )
+				// check if item was stolen.
+				for ( int c = 0; c < MAXPLAYERS; ++c )
 				{
-					if ( entity->itemOriginalOwner == players[c]->entity->getUID() )
+					if ( players[c] && players[c]->entity )
 					{
-						entity->itemStolen = 1;
-						break;
+						if ( entity->itemOriginalOwner == players[c]->entity->getUID() )
+						{
+							entity->itemStolen = 1;
+							break;
+						}
 					}
 				}
 			}
-		}
-		else if ( monsterStats->type == DUMMYBOT )
-		{
-			entity->z = 4;
-		}
-		else if ( monsterStats->type == SENTRYBOT || monsterStats->type == SPELLBOT )
-		{
-			entity->vel_x *= 0.1;
-			entity->vel_y *= 0.1;
-			entity->vel_z = -.5;
+			else if ( monsterStats->type == DUMMYBOT )
+			{
+				entity->z = 4;
+			}
+			else if ( monsterStats->type == SENTRYBOT || monsterStats->type == SPELLBOT )
+			{
+				entity->vel_x *= 0.1;
+				entity->vel_y *= 0.1;
+				entity->vel_z = -.5;
+			}
 		}
 	}
 

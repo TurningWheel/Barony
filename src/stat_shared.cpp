@@ -1217,61 +1217,46 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			{
 				stats->type = SPELLBOT;
 			}
-			stats->MAXHP = 100;
+			stats->MAXHP = 50;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 50;
 			stats->MP = stats->MAXMP;
 			stats->OLDHP = stats->HP;
-			/*stats->sex = sex_t::MALE;
-			stats->appearance = rand();
-			stats->inventory.first = nullptr;
-			stats->inventory.last = nullptr;
-			stats->RANDOM_MAXHP = 25;
-			stats->RANDOM_HP = stats->RANDOM_MAXHP;
-			stats->RANDOM_MAXMP = 0;
-			stats->RANDOM_MP = stats->RANDOM_MAXMP;
-			stats->STR = 20;
-			stats->RANDOM_STR = 5;
-			stats->DEX = 8;
-			stats->CON = 3;
-			stats->RANDOM_CON = 2;
-			stats->INT = -2;
-			stats->RANDOM_INT = 2;
-			stats->PER = 10;
-			stats->RANDOM_PER = 5;
-			stats->CHR = -3;
+			stats->PROFICIENCIES[PRO_RANGED] = 80;
+			stats->STR = 0;
+			stats->DEX = 0;
+			stats->CON = 0;
+			stats->PER = 0;
+			stats->CHR = 0;
 			stats->EXP = 0;
-			stats->LVL = 25;*/
-
-			/*stats->GOLD = 50;
-			stats->RANDOM_GOLD = 50;*/
-
-			/*stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;*/
-			//stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
-			//stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
-			//stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
-
-			/*stats->PROFICIENCIES[PRO_MACE] = 75;
-			stats->PROFICIENCIES[PRO_POLEARM] = 60;
-			stats->PROFICIENCIES[PRO_RANGED] = 75;
-			stats->PROFICIENCIES[PRO_MAGIC] = 100;
-			stats->PROFICIENCIES[PRO_LEADERSHIP] = 60;*/
+			stats->LVL = 1;
 			break;
 		case (1000 + DUMMYBOT):
 			stats->type = DUMMYBOT;
-			stats->MAXHP = 1000;
+			stats->MAXHP = 50;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 10;
 			stats->MP = stats->MAXMP;
 			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = 0;
+			stats->CON = 3;
+			stats->PER = 0;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
 			break;
 		case (1000 + GYROBOT):
-			stats->LVL = 1;
 			stats->HP = 10;
 			stats->HP = stats->MAXHP;
 			stats->OLDHP = stats->HP;
-			stats->DEX = 12;
+			stats->STR = 0;
+			stats->DEX = 5;
+			stats->CON = 0;
+			stats->PER = 0;
+			stats->CHR = 0;
+			stats->EXP = 0;
+			stats->LVL = 1;
 			break;
 		case 10:
 		default:

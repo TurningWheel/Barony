@@ -1802,11 +1802,131 @@ void dummyBotAnimate(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-void tinkerBotSetStats(Stat* myStats, int rank)
+void Entity::tinkerBotSetStats(Stat* myStats, int rank)
 {
 	if ( !myStats )
 	{
 		return;
 	}
 
+	if ( myStats->type == SENTRYBOT )
+	{
+		switch ( rank )
+		{
+			case DECREPIT:
+				myStats->LVL = 3;
+				myStats->HP = 50;
+				myStats->CON = 0;
+				myStats->PER = 4;
+				break;
+			case WORN:
+				myStats->LVL = 5;
+				myStats->HP = 75;
+				myStats->CON = 3;
+				myStats->PER = 8;
+				break;
+			case SERVICABLE:
+				myStats->LVL = 10;
+				myStats->HP = 125;
+				myStats->CON = 6;
+				myStats->PER = 12;
+				break;
+			case EXCELLENT:
+				myStats->LVL = 15;
+				myStats->HP = 150;
+				myStats->CON = 9;
+				myStats->PER = 16;
+				break;
+			default:
+				break;
+		}
+	}
+	else if ( myStats->type == SPELLBOT )
+	{
+		switch ( rank )
+		{
+			case DECREPIT:
+				myStats->LVL = 3;
+				myStats->HP = 50;
+				myStats->CON = 0;
+				myStats->PER = 4;
+				break;
+			case WORN:
+				myStats->LVL = 5;
+				myStats->HP = 75;
+				myStats->CON = 3;
+				myStats->PER = 8;
+				break;
+			case SERVICABLE:
+				myStats->LVL = 10;
+				myStats->HP = 125;
+				myStats->CON = 6;
+				myStats->PER = 12;
+				break;
+			case EXCELLENT:
+				myStats->LVL = 15;
+				myStats->HP = 150;
+				myStats->CON = 9;
+				myStats->PER = 16;
+				break;
+			default:
+				break;
+		}
+	}
+	else if ( myStats->type == GYROBOT )
+	{
+		switch ( rank )
+		{
+			case DECREPIT:
+				myStats->LVL = 1;
+				myStats->HP = 10;
+				break;
+			case WORN:
+				myStats->LVL = 5;
+				myStats->HP = 35;
+				break;
+			case SERVICABLE:
+				myStats->LVL = 10;
+				myStats->HP = 60;
+				break;
+			case EXCELLENT:
+				myStats->LVL = 15;
+				myStats->HP = 85;
+				break;
+			default:
+				break;
+		}
+	}
+	else if ( myStats->type == DUMMYBOT )
+	{
+		switch ( rank )
+		{
+			case DECREPIT:
+				myStats->LVL = 3;
+				myStats->HP = 50;
+				myStats->CON = 5;
+				break;
+			case WORN:
+				myStats->LVL = 5;
+				myStats->HP = 100;
+				myStats->CON = 8;
+				break;
+			case SERVICABLE:
+				myStats->LVL = 10;
+				myStats->HP = 150;
+				myStats->CON = 10;
+				break;
+			case EXCELLENT:
+				myStats->LVL = 15;
+				myStats->HP = 200;
+				myStats->CON = 15;
+				break;
+			default:
+				break;
+		}
+	}
+
+	myStats->MAXHP = myStats->HP;
+	myStats->OLDHP = myStats->HP;
+	return;
 }

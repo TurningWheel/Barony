@@ -195,7 +195,13 @@ void actItem(Entity* my)
 			{
 				if (inrange[i])
 				{
-					if (players[i] != nullptr && players[i]->entity != nullptr)
+					bool trySalvage = false;
+					if ( static_cast<Uint32>(my->itemAutoSalvageByPlayer) == players[i]->entity->getUID() )
+					{
+						trySalvage = true;
+						my->itemAutoSalvageByPlayer = 0; // clear interact flag.
+					}
+					if ( !trySalvage && players[i] != nullptr && players[i]->entity != nullptr)
 					{
 						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
 					}
@@ -210,24 +216,62 @@ void actItem(Entity* my)
 					//messagePlayer(i, "old owner: %d", item2->ownerUid);
 					if (item2)
 					{
-						item = itemPickup(i, item2);
-						if (item)
+						if ( trySalvage )
 						{
-							if (i == 0)
+							// auto salvage this item, don't pick it up.
+							bool salvaged = false;
+							if ( GenericGUI.isItemSalvageable(item2, i) )
 							{
+								if ( GenericGUI.tinkeringSalvageItem(item2, true, i) )
+								{
+									salvaged = true;
+								}
+							}
+
+							if ( salvaged )
+							{
+								if ( players[i] != nullptr && players[i]->entity != nullptr )
+								{
+									playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+								}
+								free(item2);
+								if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
+								{
+									GenericGUI.tinkeringKitDegradeOnUse(i);
+								}
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+								return;
+							}
+							else
+							{
+								// unable to salvage.
+								messagePlayer(i, language[3664], item2->description());
+								playSoundPlayer(i, 90, 64);
 								free(item2);
 							}
-							int oldcount = item->count;
-							item->count = 1;
-							messagePlayer(i, language[504], item->description());
-							item->count = oldcount;
-							if (i != 0)
+						}
+						else
+						{
+							item = itemPickup(i, item2);
+							if (item)
 							{
-								free(item);
+								if (i == 0)
+								{
+									free(item2);
+								}
+								int oldcount = item->count;
+								item->count = 1;
+								messagePlayer(i, language[504], item->description());
+								item->count = oldcount;
+								if (i != 0)
+								{
+									free(item);
+								}
+								my->removeLightField();
+								list_RemoveNode(my->mynode);
+								return;
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}

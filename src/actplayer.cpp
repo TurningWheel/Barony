@@ -2121,9 +2121,29 @@ void actPlayer(Entity* my)
 				{
 					*inputPressed(impulses[IN_USE]) = 0;
 					*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
+					bool foundTinkeringKit = false;
 					if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
 					{
 						inrange[PLAYER_NUM] = true;
+
+						if ( (selectedEntity->behavior == &actItem || selectedEntity->behavior == &actTorch) 
+							&& keystatus[SDL_SCANCODE_LSHIFT] && players[clientnum] 
+							&& players[clientnum]->entity && stats[clientnum] )
+						{
+							for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+							{
+								Item* tinkerItem = (Item*)invnode->element;
+								if ( tinkerItem && tinkerItem->type == TOOL_TINKERING_KIT && tinkerItem->status > BROKEN )
+								{
+									foundTinkeringKit = true;
+									break;
+								}
+							}
+						}
+						if ( foundTinkeringKit && clientnum == 0 )
+						{
+							selectedEntity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[clientnum]->entity->getUID());
+						}
 					}
 					else
 					{
@@ -2133,7 +2153,14 @@ void actPlayer(Entity* my)
 					{
 						if ( inrange[PLAYER_NUM] )
 						{
-							strcpy((char*)net_packet->data, "CKIR");
+							if ( foundTinkeringKit )
+							{
+								strcpy((char*)net_packet->data, "SALV");
+							}
+							else
+							{
+								strcpy((char*)net_packet->data, "CKIR");
+							}
 						}
 						else
 						{

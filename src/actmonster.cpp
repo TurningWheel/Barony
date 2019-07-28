@@ -149,8 +149,8 @@ double sightranges[NUMMONSTERS] =
 	192,  // AUTOMATON
 	512,  // LICH_ICE
 	512,  // LICH_FIRE
-	256,  // SENTRYBOT
-	256,  // SPELLBOT
+	512,  // SENTRYBOT
+	512,  // SPELLBOT
 	256,  // GYROBOT
 	32    // DUMMYBOT
 };
@@ -3221,6 +3221,10 @@ void actMonster(Entity* my)
 								//See invisible.
 								light = 1000;
 							}
+							else if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+							{
+								light += 150;
+							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 							if ( targetdist > sightranges[myStats->type] )
 							{
@@ -3725,6 +3729,10 @@ void actMonster(Entity* my)
 				{
 					//See invisible.
 					light = 1000;
+				}
+				else if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+				{
+					light += 150;
 				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 				if ( targetdist > sightranges[myStats->type] )
@@ -4286,7 +4294,7 @@ timeToGoAgain:
 			}
 			else if ( monsterIsImmobileTurret(my, myStats) )
 			{
-				my->monsterState = MONSTER_STATE_ATTACK;
+				my->monsterState = MONSTER_STATE_WAIT;
 				if ( previousMonsterState != my->monsterState )
 				{
 					serverUpdateEntitySkill(my, 0);

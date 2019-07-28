@@ -3445,6 +3445,12 @@ void clientHandlePacket()
 		return;
 	}
 
+	else if ( !strncmp((char*)net_packet->data, "TKIT", 4) )
+	{
+		GenericGUI.tinkeringKitDegradeOnUse(clientnum);
+		return;
+	}
+
 	// boss death
 	else if ( !strncmp((char*)net_packet->data, "BDTH", 4) )
 	{
@@ -3931,13 +3937,21 @@ void serverHandlePacket()
 	}
 
 	// clicked entity in range
-	else if (!strncmp((char*)net_packet->data, "CKIR", 4))
+	else if (!strncmp((char*)net_packet->data, "CKIR", 4) || !strncmp((char*)net_packet->data, "SALV", 4) )
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
+			if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "SALV", 4) )
+			{
+				// auto salvage this item.
+				if ( players[net_packet->data[4]] && players[net_packet->data[4]]->entity )
+				{
+					entity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[net_packet->data[4]]->entity->getUID());
+				}
+			}
 			client_selected[net_packet->data[4]] = entity;
 			inrange[net_packet->data[4]] = true;
 		}

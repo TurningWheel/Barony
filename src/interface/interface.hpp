@@ -315,6 +315,8 @@ public:
 	TinkeringFilter tinkeringFilter;
 	Item* tinkeringMetalScrap;
 	Item* tinkeringMagicScrap;
+	Item* tinkeringAutoSalvageKitItem;
+	Item* tinkeringAutoSalvageThisItem;
 
 	GenericGUIMenu() :
 		guiActive(false),
@@ -331,7 +333,9 @@ public:
 		tinkeringTotalLastCraftableNode(nullptr),
 		tinkeringFilter(TINKER_FILTER_ALL),
 		tinkeringMetalScrap(nullptr),
-		tinkeringMagicScrap(nullptr)
+		tinkeringMagicScrap(nullptr),
+		tinkeringAutoSalvageKitItem(nullptr),
+		tinkeringAutoSalvageThisItem(nullptr)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -367,16 +371,19 @@ public:
 	void alchemyLearnRecipeOnLevelUp(int skill);
 
 	// tinkering menu foncs
-	bool tinkeringSalvageItem(Item* item);
+	bool tinkeringSalvageItem(Item* item, bool outsideInventory, int player);
 	bool tinkeringCraftItem(Item* item);
 	void tinkeringCreateCraftableItemList();
 	void tinkeringFreeLists();
-	bool isItemSalvageable(const Item* item);
+	bool isItemSalvageable(const Item* item, int player);
 	bool tinkeringGetItemValue(const Item* item, int* metal, int* magic);
 	bool tinkeringGetCraftingCost(const Item* item, int* metal, int* magic);
 	bool tinkeringPlayerCanAffordCraft(const Item* item);
 	Item* tinkeringCraftItemAndConsumeMaterials(const Item* item);
 	int tinkeringPlayerHasSkillLVLToCraft(const Item* item);
+	bool tinkeringKitDegradeOnUse(int player);
+	Item* tinkeringKitFindInInventory();
+	bool tinkeringKitRollIfShouldBreak();
 
 	inline bool isGUIOpen()
 	{

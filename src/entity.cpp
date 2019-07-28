@@ -139,6 +139,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	itemShowOnMap(skill[23]),
 	itemDelayMonsterPickingUp(skill[24]),
 	itemReceivedDetailsFromServer(skill[25]),
+	itemAutoSalvageByPlayer(skill[26]),
 	gateInit(skill[1]),
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
@@ -12367,6 +12368,17 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			}
 		}
 	}
+	else if ( monsterIsImmobileTurret(this, myStats) )
+	{
+		if ( monsterAllyIndex >= 0 && target.behavior == &actPlayer )
+		{
+			return;
+		}
+		if ( monsterIsImmobileTurret(nullptr, target.getStats()) && state == MONSTER_STATE_PATH )
+		{
+			return;
+		}
+	}
 
 	if ( &target != uidToEntity(monsterTarget) && !monsterReleaseAttackTarget() )
 	{
@@ -13304,7 +13316,28 @@ double Entity::monsterRotate()
 	int race = getMonsterTypeFromSprite();
 	if ( race == SENTRYBOT || race == SPELLBOT )
 	{
-		yaw -= dir / 64;
+		Stat* myStats = getStats();
+		int ratio = 64;
+		if ( myStats )
+		{
+			if ( myStats->LVL >= 15 )
+			{
+				ratio = 2;
+			}
+			else if ( myStats->LVL >= 10 )
+			{
+				ratio = 4;
+			}
+			else if ( myStats->LVL >= 5 )
+			{
+				ratio = 16;
+			}
+			else if ( myStats->LVL >= 3 )
+			{
+				ratio = 64;
+			}
+		}
+		yaw -= dir / ratio;
 	}
 	else
 	{

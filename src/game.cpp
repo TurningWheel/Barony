@@ -3953,6 +3953,26 @@ int main(int argc, char** argv)
 						}
 						else
 						{
+							if ( keystatus[SDL_SCANCODE_LSHIFT] )
+							{
+								if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
+								{
+									bool foundTinkeringKit = false;
+									for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+									{
+										Item* tinkerItem = (Item*)invnode->element;
+										if ( tinkerItem && tinkerItem->type == TOOL_TINKERING_KIT && tinkerItem->status > BROKEN )
+										{
+											foundTinkeringKit = true;
+											break;
+										}
+									}
+									if ( foundTinkeringKit )
+									{
+										ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3663]);
+									}
+								}
+							}
 							drawImageAlpha(cross_bmp, NULL, &pos, 128);
 						}
 					}
