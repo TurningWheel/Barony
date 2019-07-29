@@ -120,6 +120,12 @@ void actThrown(Entity* my)
 		}
 	}
 
+	if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
+	{
+		my->focalz = 0.5;
+	}
+
 	if ( THROWN_LINGER != 0 )
 	{
 		if ( my->ticks > (THROWN_LINGER + 1) )
@@ -186,7 +192,7 @@ void actThrown(Entity* my)
 		{
 			if ( type >= TOOL_BOMB && type <= TOOL_TELEPORT_BOMB )
 			{
-				my->yaw += 0.05;
+				my->yaw += 0.2;
 			}
 			else if ( type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
 			{

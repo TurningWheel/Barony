@@ -2217,6 +2217,11 @@ void actHudWeapon(Entity* my)
 				my->roll = HUDWEAPON_ROLL + (PI / 2) * (itemCategory(item) == POTION);
 				my->focalx = 0;
 			}
+
+			if ( item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB )
+			{
+				my->z += .5;
+			}
 		}
 
 		// dirty hack because we altered the camera height in actPlayer(). adjusts HUD to match new height.

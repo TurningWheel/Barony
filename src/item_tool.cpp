@@ -640,18 +640,24 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 	{
 		return;
 	}
+
+	int sprite = items[TOOL_BOMB].index + 1;
+	if ( type >= TOOL_BOMB && type <= TOOL_TELEPORT_BOMB )
+	{
+		sprite = items[type].index + 1; // unpacked bomb model.
+	}
 	
 	if ( placement == BOMB_FLOOR )
 	{
 		if ( thrown )
 		{
-			Entity* entity = newEntity(878, 1, map.entities, nullptr); //Beartrap entity.
+			Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Beartrap entity.
 			entity->behavior = &actBomb;
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
 			entity->x = thrown->x;
 			entity->y = thrown->y;
-			entity->z = 6.75;
+			entity->z = 6.5;
 			entity->yaw = thrown->yaw;
 			entity->roll = -PI / 2; // flip the model
 			if ( parent )
@@ -681,7 +687,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 	{
 		if ( thrown )
 		{
-			Entity* entity = newEntity(878, 1, map.entities, nullptr); //Beartrap entity.
+			Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Beartrap entity.
 			entity->behavior = &actBomb;
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
@@ -742,7 +748,7 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 	{
 		if ( thrown && onEntity && (hit.entity == onEntity) )
 		{
-			Entity* entity = newEntity(878, 1, map.entities, nullptr); //Beartrap entity.
+			Entity* entity = newEntity(sprite, 1, map.entities, nullptr); //Beartrap entity.
 			entity->behavior = &actBomb;
 			entity->flags[PASSABLE] = true;
 			entity->flags[UPDATENEEDED] = true;
@@ -796,22 +802,22 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				{
 					if ( hit.side == HORIZONTAL )
 					{
-						height = 5;
+						height = 5.25;
 					}
 					else
 					{
-						height = 4;
+						height = 4.25;
 					}
 				}
 				else if ( onEntity->yaw == PI / 2 || onEntity->yaw == 3 * PI / 2 ) //SOUTH/NORTH FACING
 				{
 					if ( hit.side == VERTICAL )
 					{
-						height = 4;
+						height = 4.25;
 					}
 					else
 					{
-						height = 5;
+						height = 5.25;
 					}
 				}
 			}
@@ -821,14 +827,14 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				{
 					if ( hit.side == HORIZONTAL )
 					{
-						height = 1.75;
+						height = 2;
 					}
 				}
 				else if ( onEntity->yaw == -PI / 2 ) //SOUTH/NORTH FACING
 				{
 					if ( hit.side == VERTICAL )
 					{
-						height = 1.75;
+						height = 2;
 					}
 				}
 			}

@@ -2905,6 +2905,12 @@ void assignActions(map_t* map)
 							entity->z = 8.75 - models[entity->sprite]->sizey * .25;
 						}
 					}
+					else if ( item->type == TOOL_BOMB || item->type == TOOL_FREEZE_BOMB
+						|| item->type == TOOL_SLEEP_BOMB || item->type == TOOL_TELEPORT_BOMB )
+					{
+						entity->roll = PI;
+						entity->z = 7 - models[entity->sprite]->sizey * .25;
+					}
 					else
 					{
 						entity->z = 7.5 - models[entity->sprite]->sizey * .25;

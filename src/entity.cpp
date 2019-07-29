@@ -11977,6 +11977,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		{
 			weaponLimb->focalz += 1;
 		}
+		else if ( weaponLimb->sprite >= items[TOOL_BOMB].index && weaponLimb->sprite <= items[TOOL_TELEPORT_BOMB].index )
+		{
+			weaponLimb->focalz += 2;
+		}
 	}
 	else
 	{
@@ -12024,6 +12028,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		else if ( weaponLimb->sprite == items[TOOL_GYROBOT].index )
 		{
 			weaponLimb->focalz += 1;
+		}
+		else if ( weaponLimb->sprite >= items[TOOL_BOMB].index && weaponLimb->sprite <= items[TOOL_TELEPORT_BOMB].index )
+		{
+			weaponLimb->focalz += 2;
 		}
 
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;

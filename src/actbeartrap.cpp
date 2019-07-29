@@ -190,8 +190,11 @@ void actBeartrap(Entity* my)
 							{
 								messagePlayer(player, language[2522]);
 							}
-							parent->increaseSkill(PRO_LOCKPICKING);
-							if ( rand() % 2 == 0 )
+							if ( rand() % 10 == 0 )
+							{
+								parent->increaseSkill(PRO_LOCKPICKING);
+							}
+							if ( rand() % 5 == 0 )
 							{
 								parent->increaseSkill(PRO_RANGED);
 							}
@@ -529,9 +532,26 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 					messagePlayer(player, language[3495]);
 				}
 			}
-			if ( rand() % 3 == 0 && triggered->behavior == &actMonster )
+			if ( triggered->behavior == &actMonster )
 			{
-				parent->increaseSkill(PRO_LOCKPICKING);
+				if ( oldHP > 0 && stat->HP == 0 ) // got a kill
+				{
+					if ( rand() % 2 == 0 )
+					{
+						parent->increaseSkill(PRO_LOCKPICKING);
+					}
+				}
+				else if ( oldHP > stat->HP )
+				{
+					if ( rand() % 5 == 0 ) // wounded
+					{
+						parent->increaseSkill(PRO_LOCKPICKING);
+					}
+				}
+				else if( rand() % 10 == 0) // any other effect
+				{
+					parent->increaseSkill(PRO_LOCKPICKING);
+				}
 			}
 			// update enemy bar for attacker
 			if ( damage > 0 )
@@ -593,7 +613,7 @@ void actBomb(Entity* my)
 				entity->sizey = my->sizey;
 				entity->yaw = my->yaw;
 				entity->pitch = my->pitch;
-				entity->roll = PI / 2;
+				entity->roll = 3 * PI / 2;
 				entity->behavior = &actItem;
 				entity->skill[10] = BOMB_ITEMTYPE;
 				entity->skill[11] = BEARTRAP_STATUS;

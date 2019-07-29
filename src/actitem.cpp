@@ -363,6 +363,12 @@ void actItem(Entity* my)
 							my->z = 8.75 - models[my->sprite]->sizey * .25;
 						}
 					}
+					else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+						|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
+					{
+						my->roll = PI;
+						my->z = 7 - models[my->sprite]->sizey * .25;
+					}
 					else
 					{
 						my->roll = PI / 2.0;
@@ -410,6 +416,11 @@ void actItem(Entity* my)
 	if ( my->sprite == 569 )
 	{
 		groundheight = 8.5 - models[my->sprite]->sizey * .25;
+	}
+	else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
+	{
+		groundheight = 7 - models[my->sprite]->sizey * .25;
 	}
 	else if ( my->sprite == 567 )
 	{
