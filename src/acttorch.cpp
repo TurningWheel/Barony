@@ -130,10 +130,10 @@ void actTorch(Entity* my)
 								playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
 							}
 							free(item);
-							if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
+							/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
 							{
 								GenericGUI.tinkeringKitDegradeOnUse(i);
-							}
+							}*/
 							list_RemoveNode(my->light->node);
 							list_RemoveNode(my->mynode);
 							return;

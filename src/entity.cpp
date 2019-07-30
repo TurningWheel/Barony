@@ -16064,6 +16064,19 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			break;
 	}
 
+	if ( shieldLimb->sprite == items[TOOL_TINKERING_KIT].index )
+	{
+		//shieldLimb->pitch = 0;
+		shieldLimb->yaw += PI / 6;
+		shieldLimb->focalx -= .25;
+		shieldLimb->focaly += .25;
+		shieldLimb->focalz += 2;
+		if ( race == INCUBUS || race == SUCCUBUS )
+		{
+			shieldLimb->focalx -= .5;
+		}
+	}
+
 	if ( flameEntity && player >= 0 )
 	{
 		if ( player == clientnum )

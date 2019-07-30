@@ -5073,7 +5073,7 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	if ( crafted )
 	{
 		Item* pickedUp = itemPickup(clientnum, crafted);
-		messagePlayer(clientnum, language[3668], pickedUp->description());
+		messagePlayer(clientnum, language[3668], crafted->description());
 		free(crafted);
 		return true;
 	}
@@ -5397,6 +5397,10 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			for ( int c = 0; c < magic; ++c )
 			{
 				consumeItem(tinkeringMagicScrap, clientnum);
+			}
+			if ( tinkeringKitRollIfShouldBreak() )
+			{
+				tinkeringKitDegradeOnUse(clientnum);
 			}
 			return newItem(item->type, item->status, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 		}
@@ -5838,6 +5842,9 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 				return false;
 			}
 		}
+
+		bool isEquipped = itemIsEquipped(toDegrade, clientnum);
+
 		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
 		if ( toDegrade->status > BROKEN )
 		{
@@ -5852,15 +5859,22 @@ bool GenericGUIMenu::tinkeringKitDegradeOnUse(int player)
 			}
 			tinkeringKitItem = nullptr;
 		}
+		if ( multiplayer == CLIENT && isEquipped )
+		{
+			// the client needs to inform the server that their equipment was damaged.
+			int armornum = 5;
+			strcpy((char*)net_packet->data, "ARMR");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = toDegrade->status;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		return true;
 	}
-	else if ( player > 0 && multiplayer == SERVER )
-	{
-		strcpy((char*)net_packet->data, "TKIT");
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 4;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
-	}
+	return false;
 }
 
 Item* GenericGUIMenu::tinkeringKitFindInInventory()

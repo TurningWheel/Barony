@@ -604,6 +604,21 @@ void actHudWeapon(Entity* my)
 	{
 		swingweapon = true;
 	}
+	else if ( (*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) &&
+		(*inputPressed(impulses[IN_DEFEND]) && stats[clientnum]->defending || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_DEFEND]) && stats[clientnum]->defending)) )
+	{
+		if ( stats[clientnum]->shield && stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
+		{
+			if ( !GenericGUI.isGUIOpen() )
+			{
+				*inputPressed(impulses[IN_ATTACK]) = 0;
+				*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+				GenericGUI.openGUI(GUI_TYPE_TINKERING, stats[clientnum]->shield);
+				swapWeaponGimpTimer = 20;
+				return;
+			}
+		}
+	}
 
 	bool castStrikeAnimation = (players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
 
@@ -2645,6 +2660,10 @@ void actHudShield(Entity* my)
 		my->focalz = 0;
 	}
 
+	if ( my->sprite == items[TOOL_TINKERING_KIT].index && !hideShield )
+	{
+		my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
+	}
 
 	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
 	{

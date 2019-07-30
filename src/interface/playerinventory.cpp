@@ -1589,7 +1589,7 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
 		}
-		if (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC)
+		if (itemCategory(&item) == POTION || item.type == TOOL_ALEMBIC || item.type == TOOL_TINKERING_KIT )
 		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
@@ -1674,7 +1674,7 @@ inline void drawItemMenuOptionSpell(const Item& item, int x, int y)
  */
 inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false)
 {
-	if (itemCategory(&item) != POTION && item.type != TOOL_ALEMBIC )
+	if (itemCategory(&item) != POTION && item.type != TOOL_ALEMBIC && item.type != TOOL_TINKERING_KIT )
 	{
 		return;
 	}
@@ -1692,7 +1692,18 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	}
 	else
 	{
-		if (!is_potion_bad)
+		if ( item.type == TOOL_TINKERING_KIT )
+		{
+			if ( itemIsEquipped(&item, clientnum) )
+			{
+				drawOptionUnwield(x, y);
+			}
+			else
+			{
+				drawOptionWield(x, y);
+			}
+		}
+		else if (!is_potion_bad)
 		{
 			drawOptionUse(item, x, y);
 		}
@@ -1717,6 +1728,11 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 		{
 			TTF_SizeUTF8(ttf12, language[3341], &width, nullptr);
 			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3341]);
+		}
+		else if ( item.type == TOOL_TINKERING_KIT )
+		{
+			TTF_SizeUTF8(ttf12, language[3670], &width, nullptr);
+			ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3670]);
 		}
 		else if (itemIsEquipped(&item, clientnum))
 		{
@@ -2156,6 +2172,17 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
 		}
 	}
+	else if ( item->type == TOOL_TINKERING_KIT )
+	{
+		if ( !disableItemUsage )
+		{
+			GenericGUI.openGUI(GUI_TYPE_TINKERING, item);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
+		}
+	}
 	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK)
 	{
 		//Option 1 = appraise.
@@ -2273,7 +2300,8 @@ inline void executeItemMenuOption2(Item* item)
 
 		identifyGUIIdentify(item);
 	}
-	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK )
+	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
+		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT )
 	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
@@ -2303,7 +2331,8 @@ inline void executeItemMenuOption3(Item* item)
 		dropItem(item, clientnum);
 		return;
 	}
-	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC && itemCategory(item) != SPELLBOOK )
+	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
+		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT )
 	{
 		return;
 	}
@@ -2368,7 +2397,7 @@ void itemContextMenu()
 		{
 			drawItemMenuOptionAutomaton(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
 		}
-		else if ( current_item->type == TOOL_ALEMBIC )
+		else if ( current_item->type == TOOL_ALEMBIC || current_item->type == TOOL_TINKERING_KIT )
 		{
 			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, false);
 		}

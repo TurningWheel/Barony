@@ -2127,18 +2127,10 @@ void actPlayer(Entity* my)
 						inrange[PLAYER_NUM] = true;
 
 						if ( (selectedEntity->behavior == &actItem || selectedEntity->behavior == &actTorch) 
-							&& keystatus[SDL_SCANCODE_LSHIFT] && players[clientnum] 
-							&& players[clientnum]->entity && stats[clientnum] )
+							&& stats[clientnum] && stats[clientnum]->shield && stats[clientnum]->defending
+							&& stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
 						{
-							for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
-							{
-								Item* tinkerItem = (Item*)invnode->element;
-								if ( tinkerItem && tinkerItem->type == TOOL_TINKERING_KIT && tinkerItem->status > BROKEN )
-								{
-									foundTinkeringKit = true;
-									break;
-								}
-							}
+							foundTinkeringKit = true;
 						}
 						if ( foundTinkeringKit && clientnum == 0 )
 						{

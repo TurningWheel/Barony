@@ -235,10 +235,10 @@ void actItem(Entity* my)
 									playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
 								}
 								free(item2);
-								if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
+								/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
 								{
 									GenericGUI.tinkeringKitDegradeOnUse(i);
-								}
+								}*/
 								my->removeLightField();
 								list_RemoveNode(my->mynode);
 								return;

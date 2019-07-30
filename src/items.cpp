@@ -1586,7 +1586,7 @@ void equipItem(Item* item, Item** slot, int player)
 					{
 						playSoundEntity(players[player]->entity, 40 + rand() % 4, 64);
 					}
-					else if ( itemCategory(item) == ARMOR )
+					else if ( itemCategory(item) == ARMOR || item->type == TOOL_TINKERING_KIT )
 					{
 						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
 					}
@@ -2305,6 +2305,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
+		case TOOL_TINKERING_KIT:
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
@@ -2335,16 +2336,6 @@ void useItem(Item* item, int player, Entity* usedBy)
 			else
 			{
 				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, false, item);
-			}
-			break;
-		case TOOL_TINKERING_KIT:
-			if ( player != clientnum )
-			{
-				consumeItem(item, player);
-			}
-			else
-			{
-				GenericGUI.openGUI(GUI_TYPE_TINKERING, item);
 			}
 			break;
 		case FOOD_BREAD:
