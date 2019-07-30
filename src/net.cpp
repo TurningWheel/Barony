@@ -2845,6 +2845,17 @@ void clientHandlePacket()
 		return;
 	}
 
+	// spawn an explosion, custom sprite
+	else if ( !strncmp((char*)net_packet->data, "EXPS", 4) )
+	{
+		Uint16 sprite = (Uint16)SDLNet_Read16(&net_packet->data[4]);
+		Sint16 x = (Sint16)SDLNet_Read16(&net_packet->data[6]);
+		Sint16 y = (Sint16)SDLNet_Read16(&net_packet->data[8]);
+		Sint16 z = (Sint16)SDLNet_Read16(&net_packet->data[10]);
+		spawnExplosionFromSprite(sprite, x, y, z);
+		return;
+	}
+
 	// spawn a bang sprite
 	else if (!strncmp((char*)net_packet->data, "BANG", 4))
 	{

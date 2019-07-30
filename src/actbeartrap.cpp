@@ -654,6 +654,21 @@ void actBomb(Entity* my)
 	real_t entityDistance = 0.f;
 	bool bombExplodeAOETargets = false;
 
+
+	int explosionSprite = 49;
+	if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB )
+	{
+		explosionSprite = 145;
+	}
+	else if ( BOMB_ITEMTYPE == TOOL_FREEZE_BOMB )
+	{
+		explosionSprite = 135;
+	}
+	else if ( BOMB_ITEMTYPE == TOOL_SLEEP_BOMB )
+	{
+		explosionSprite = 0;
+	}
+
 	if ( BOMB_ENTITY_ATTACHED_TO != 0 || BOMB_HIT_BY_PROJECTILE == 1 || BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_WALL )
 	{
 		Entity* onEntity = uidToEntity(static_cast<Uint32>(BOMB_ENTITY_ATTACHED_TO));
@@ -729,16 +744,17 @@ void actBomb(Entity* my)
 		{
 			if ( onEntity )
 			{
-				spawnExplosion(onEntity->x, onEntity->y, onEntity->z);
+				spawnExplosionFromSprite(explosionSprite, onEntity->x, onEntity->y, onEntity->z);
 			}
 			else
 			{
-				spawnExplosion(my->x, my->y, my->z);
+				spawnExplosionFromSprite(explosionSprite, my->x, my->y, my->z);
 			}
 			bombExplodeAOETargets = true;
 			BOMB_TRIGGER_TYPE = Item::ItemBombTriggerType::BOMB_TRIGGER_ALL;
 		}
 	}
+
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !triggered; ++it )
 	{
 		list_t* currentList = *it;
@@ -776,7 +792,7 @@ void actBomb(Entity* my)
 						entityDistance = entityDist(my, entity);
 						if ( entityDistance < 6.5 )
 						{
-							spawnExplosion(my->x - 4 + rand() % 9, my->y + rand() % 9, my->z - 2);
+							spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y + rand() % 9, my->z - 2);
 							triggered = entity;
 						}
 					}
@@ -788,7 +804,7 @@ void actBomb(Entity* my)
 							entityDistance = entityDist(onEntity, entity);
 							if ( entityDistance < STRIKERANGE )
 							{
-								spawnExplosion(entity->x, entity->y, entity->z);
+								spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, entity->z);
 								bombDoEffect(my, entity, entityDistance, true, true);
 							}
 						}
@@ -797,7 +813,7 @@ void actBomb(Entity* my)
 							entityDistance = entityDist(my, entity);
 							if ( entityDistance < STRIKERANGE )
 							{
-								spawnExplosion(entity->x, entity->y, entity->z);
+								spawnExplosionFromSprite(explosionSprite, entity->x, entity->y, entity->z);
 								bombDoEffect(my, entity, entityDistance, true, true);
 							}
 						}
@@ -815,7 +831,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x - rand() % 9, my->y - 4 + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - rand() % 9, my->y - 4 + rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_WEST:
@@ -824,7 +840,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x + rand() % 9, my->y - 4 + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x + rand() % 9, my->y - 4 + rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_SOUTH:
@@ -833,7 +849,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x - 4 + rand() % 9, my->y - rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y - rand() % 9, my->z);
 								}
 								break;
 							case Item::ItemBombFacingDirection::BOMB_NORTH:
@@ -842,7 +858,7 @@ void actBomb(Entity* my)
 								if ( entityDistance < 12 )
 								{
 									triggered = entity;
-									spawnExplosion(my->x - 4 + rand() % 9, my->y + rand() % 9, my->z);
+									spawnExplosionFromSprite(explosionSprite, my->x - 4 + rand() % 9, my->y + rand() % 9, my->z);
 								}
 								break;
 							default:
@@ -941,8 +957,68 @@ void actDecoyBox(Entity* my)
 	{
 		return;
 	}
+
+	if ( my->ticks % TICKS_PER_SECOND == 0 )
+	{
+		Entity* parent = uidToEntity(my->parent);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 5);
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+		{
+			list_t* currentList = *it;
+			node_t* node;
+			for ( node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( parent && entity && entity->behavior == &actMonster
+					&& parent->checkEnemy(entity) && entity->isMobile() )
+				{
+					if ( entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0 )
+					{
+						Stat* myStats = entity->getStats();
+						if ( !entity->isBossMonster() && !entity->monsterIsTinkeringCreation()
+							&& myStats && !uidToEntity(myStats->leader_uid) && entityDist(my, entity) < (TOUCHRANGE * 2) )
+						{
+							if ( entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2) && entity->children.first )
+							{
+								entity->monsterTarget = my->getUID();
+								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
+								serverUpdateEntitySkill(entity, 0);
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], language[3671]);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	if ( my->ticks > TICKS_PER_SECOND * 5 )
 	{
+		for ( int c = 0; c < 3; c++ )
+		{
+			Entity* entity = spawnGib(my);
+			if ( entity )
+			{
+				switch ( c )
+				{
+					case 0:
+						entity->sprite = 895;
+						break;
+					case 1:
+						entity->sprite = 894;
+						break;
+					case 2:
+						entity->sprite = 874;
+						break;
+					default:
+						break;
+				}
+				serverSpawnGibForClient(entity);
+			}
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}
