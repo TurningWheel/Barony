@@ -961,7 +961,25 @@ void actDecoyBox(Entity* my)
 	if ( my->ticks % TICKS_PER_SECOND == 0 )
 	{
 		Entity* parent = uidToEntity(my->parent);
-		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 5);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 10);
+		std::vector<Entity*> listOfOtherDecoys;
+		// find other decoys (so monsters don't wiggle back and forth.)
+		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+		{
+			list_t* currentList = *it;
+			node_t* node;
+			for ( node = currentList->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity && entity->behavior == &actDecoyBox && entity != my )
+				{
+					listOfOtherDecoys.push_back(entity);
+				}
+			}
+		}
+		entLists.clear();
+
+		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 5);
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -976,16 +994,55 @@ void actDecoyBox(Entity* my)
 					{
 						Stat* myStats = entity->getStats();
 						if ( !entity->isBossMonster() && !entity->monsterIsTinkeringCreation()
-							&& myStats && !uidToEntity(myStats->leader_uid) && entityDist(my, entity) < (TOUCHRANGE * 2) )
+							&& myStats && !uidToEntity(myStats->leader_uid) && entityDist(my, entity) > TOUCHRANGE )
 						{
+							// found an eligible monster (far enough away, non-boss)
+							// now look through other decoys, if others are in range of our target,
+							// then the most recent decoy will pull them (this decoy won't do anything)
+							bool foundMoreRecentDecoy = false;
+							if ( !listOfOtherDecoys.empty() )
+							{
+								for ( std::vector<Entity*>::iterator decoyIt = listOfOtherDecoys.begin(); decoyIt != listOfOtherDecoys.end(); ++decoyIt )
+								{
+									Entity* decoy = *decoyIt;
+									if ( entityDist(decoy, entity) < (5 * 16) ) // less than 5 tiles from our monster
+									{
+										if ( decoy->ticks < my->ticks )
+										{
+											// this decoy is newer (less game ticks alive)
+											// defer to this decoy.
+											foundMoreRecentDecoy = true;
+											break;
+										}
+									}
+								}
+							}
+							if ( foundMoreRecentDecoy )
+							{
+								break;
+							}
 							if ( entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2) && entity->children.first )
 							{
 								entity->monsterTarget = my->getUID();
 								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
 								serverUpdateEntitySkill(entity, 0);
-								if ( parent->behavior == &actPlayer )
+								if ( parent->behavior == &actPlayer && stats[parent->skill[2]] )
 								{
-									messagePlayer(parent->skill[2], language[3671]);
+									// see if we have a gyrobot follower to tell us what's goin on
+									for ( node_t* tmpNode = stats[parent->skill[2]]->FOLLOWERS.first; tmpNode != nullptr; tmpNode = tmpNode->next )
+									{
+										Uint32* c = (Uint32*)tmpNode->element;
+										Entity* gyrobot = uidToEntity(*c);
+										if ( gyrobot && gyrobot->getRace() == GYROBOT )
+										{
+											if ( entity->entityShowOnMap < 250 )
+											{
+												entity->entityShowOnMap = TICKS_PER_SECOND * 5;
+											}
+											messagePlayer(parent->skill[2], language[3671]);
+											break;
+										}
+									}
 								}
 							}
 						}

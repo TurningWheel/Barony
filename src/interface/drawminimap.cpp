@@ -30,6 +30,7 @@
 Uint32 minotaur_timer = 0;
 std::vector<MinimapPing> minimapPings;
 int minimapPingGimpTimer = -1;
+Uint32 lastMapTick = 0;
 
 void drawMinimap()
 {
@@ -116,7 +117,7 @@ void drawMinimap()
 			{
 				x = floor(entity->x / 16);
 				y = floor(entity->y / 16);
-				if ( minimap[y][x] || entity->entityShowOnMap == 1 )
+				if ( minimap[y][x] || entity->entityShowOnMap > 0 )
 				{
 					if ( ticks % 40 - ticks % 20 )
 					{
@@ -160,11 +161,11 @@ void drawMinimap()
 				}
 				if ( !warningEffect 
 					&& ((stats[clientnum]->ring && stats[clientnum]->ring->type == RING_WARNING) 
-						|| (entity->entityShowOnMap == 1 && (ticks % 40 - ticks % 20))) )
+						|| (entity->entityShowOnMap > 0)) )
 				{
 					x = floor(entity->x / 16);
 					y = floor(entity->y / 16);
-					glColor4f( .5, .25, .5, 1 );
+					glColor4f(0.75, 0.5, 0.75, 1);
 					//glBegin(GL_QUADS);
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
@@ -179,7 +180,7 @@ void drawMinimap()
 					{
 						x = floor(entity->x / 16);
 						y = floor(entity->y / 16);
-						glColor4f(.5, .25, .5, 1);
+						glColor4f(0.75, 0.5, 0.75, 1);
 						//glBegin(GL_QUADS);
 						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
 						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
@@ -218,7 +219,7 @@ void drawMinimap()
 					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
 				}
 			}
-			else if ( entity->entityShowOnMap == 1 )
+			else if ( entity->entityShowOnMap > 0 )
 			{
 				x = floor(entity->x / 16);
 				y = floor(entity->y / 16);
@@ -232,7 +233,14 @@ void drawMinimap()
 				}
 			}
 		}
+		if ( entity->entityShowOnMap > 0 && lastMapTick != ticks ) 
+		{
+			// only decrease the entities' shown duration when the global game timer passes a tick
+			// (drawMinimap doesn't follow game tick intervals)
+			--entity->entityShowOnMap;
+		}
 	}
+	lastMapTick = ticks;
 	glEnd();
 
 	// draw player pings
@@ -271,7 +279,7 @@ void drawMinimap()
 					int alpha = 255;
 					if ( ping.radiusPing )
 					{
-						alpha = 100;
+						alpha = 50;
 					}
 					if ( aliveTime >= TICKS_PER_SECOND * 2 )
 					{

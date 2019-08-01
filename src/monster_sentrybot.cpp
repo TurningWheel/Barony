@@ -898,7 +898,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( my->ticks % (TICKS_PER_SECOND * 1) == 0 && my->monsterAllyIndex == clientnum )
+	int detectDuration = 1.5 * TICKS_PER_SECOND;
+	if ( my->ticks % (detectDuration) == 0 && my->monsterAllyIndex == clientnum )
 	{
 		Entity* playerLeader = my->monsterAllyGetPlayerLeader();
 		bool doPing = false;
@@ -909,7 +910,6 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			{
 				continue;
 			}
-			ent->entityShowOnMap = 0;
 			if ( playerLeader )
 			{
 				if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_MONSTERS )
@@ -918,7 +918,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
 						{
-							ent->entityShowOnMap = 1;
+							if ( ent->entityShowOnMap < detectDuration )
+							{
+								ent->entityShowOnMap = detectDuration;
+							}
 						}
 					}
 				}
@@ -932,7 +935,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
 						{
-							ent->entityShowOnMap = 1;
+							if ( ent->entityShowOnMap < detectDuration )
+							{
+								ent->entityShowOnMap = detectDuration;
+							}
 						}
 					}
 				}
@@ -942,7 +948,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
 						{
-							ent->entityShowOnMap = 1;
+							if ( ent->entityShowOnMap < detectDuration )
+							{
+								ent->entityShowOnMap = detectDuration;
+							}
 						}
 					}
 				}
@@ -961,24 +970,33 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_BLESSED
 									&& beatitude > 0 )
 								{
-									ent->entityShowOnMap = 1;
+									if ( ent->entityShowOnMap < detectDuration )
+									{
+										ent->entityShowOnMap = detectDuration;
+									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_RARE
 									&& (items[type].level >= (currentlevel + 5) || items[type].level == -1) )
 								{
-									ent->entityShowOnMap = 1;
+									if ( ent->entityShowOnMap < detectDuration )
+									{
+										ent->entityShowOnMap = detectDuration;
+									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
 									&& items[type].value >= 400 )
 								{
-									ent->entityShowOnMap = 1;
+									if ( ent->entityShowOnMap < detectDuration )
+									{
+										ent->entityShowOnMap = detectDuration;
+									}
 								}
 							}
 						}
 					}
 				}
 			}
-			if ( ent->entityShowOnMap == 1 )
+			if ( ent->entityShowOnMap > 0 )
 			{
 				doPing = true;
 			}
