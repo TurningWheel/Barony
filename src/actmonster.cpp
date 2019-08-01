@@ -3504,12 +3504,30 @@ void actMonster(Entity* my)
 				if ( myStats->type != GHOUL && myStats->type != SPIDER 
 					&& !myStats->EFFECTS[EFF_FEAR] && !isIllusionTaunt )
 				{
-					my->monsterLookDir = (rand() % 360) * PI / 180;
+					if ( monsterIsImmobileTurret(my, myStats) )
+					{
+						if ( abs(my->monsterSentrybotLookDir) > 0.001 )
+						{
+							my->monsterLookDir = my->monsterSentrybotLookDir + (-30 + rand() % 61) * PI / 180;
+						}
+						else
+						{
+							my->monsterLookDir = (rand() % 360) * PI / 180;
+						}
+					}
+					else
+					{
+						my->monsterLookDir = (rand() % 360) * PI / 180;
+					}
 				}
-				if ( my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT )
+				if ( my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT && my->monsterAllyGetPlayerLeader() )
 				{
 					// allies should try intelligently scan for enemies in radius.
-					if ( my->monsterAllyGetPlayerLeader() )
+					if ( monsterIsImmobileTurret(my, myStats) && myStats->LVL < 5 )
+					{
+						// don't scan cause dumb robot.
+					}
+					else
 					{
 						for ( node = map.creatures->first; node != nullptr; node = node->next )
 						{
@@ -3526,6 +3544,13 @@ void actMonster(Entity* my)
 										//my->monsterLookTime = 1;
 										//my->monsterMoveTime = rand() % 10 + 1;
 										my->monsterLookDir = tangent;
+										if ( monsterIsImmobileTurret(my, myStats) )
+										{
+											if ( myStats->LVL >= 10 )
+											{
+												my->monsterHitTime = HITRATE * 2 - 20;
+											}
+										}
 									}
 								}
 							}
@@ -7964,11 +7989,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		return;
 	}
 
-	bool isTinkeringFollower = false;
-	if ( myStats->type == GYROBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT || myStats->type == DUMMYBOT )
-	{
-		isTinkeringFollower = true;
-	}
+	bool isTinkeringFollower = FollowerMenu.isTinkeringFollower(myStats->type);
 	int tinkeringLVL = 0;
 	int skillLVL = 0;
 	if ( stats[monsterAllyIndex] )
@@ -8079,17 +8100,33 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			break;
 		case ALLY_CMD_DEFEND:
 			monsterAllyState = ALLY_STATE_DEFEND;
-			createPathBoundariesNPC(5);
-			// stop in your tracks!
-			handleNPCInteractDialogue(*myStats, ALLY_EVENT_WAIT);
-			monsterState = MONSTER_STATE_WAIT; // wait state
-			serverUpdateEntitySkill(this, 0);
+			if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+			{
+				monsterSentrybotLookDir = monsterLookDir;
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_WAIT);
+			}
+			else
+			{
+				createPathBoundariesNPC(5);
+				// stop in your tracks!
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_WAIT);
+				monsterState = MONSTER_STATE_WAIT; // wait state
+				serverUpdateEntitySkill(this, 0);
+			}
 			break;
 		case ALLY_CMD_MOVETO_SELECT:
 			break;
 		case ALLY_CMD_FOLLOW:
 			monsterAllyState = ALLY_STATE_DEFAULT;
-			handleNPCInteractDialogue(*myStats, ALLY_EVENT_FOLLOW);
+			if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+			{
+				monsterSentrybotLookDir = 0.0;
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_FOLLOW);
+			}
+			else
+			{
+				handleNPCInteractDialogue(*myStats, ALLY_EVENT_FOLLOW);
+			}
 			break;
 		case ALLY_CMD_CLASS_TOGGLE:
 			++monsterAllyClass;
@@ -8119,14 +8156,73 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			serverUpdateEntitySkill(this, 46);
 			break;
 		case ALLY_CMD_GYRO_DETECT_TOGGLE:
+		{
 			++monsterAllyPickupItems;
+			bool failQuality = false;
+			bool failSkillRequirement = false;
 			if ( monsterAllyPickupItems >= ALLY_GYRO_DETECT_END )
 			{
+				monsterAllyPickupItems = ALLY_GYRO_DETECT_NONE;
+			}
+			else if ( monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
+			{
+				if ( myStats->LVL < 15 )
+				{
+					failQuality = true;
+				}
+				if ( skillLVL < SKILL_LEVEL_MASTER )
+				{
+					failSkillRequirement = true;
+				}
+			}
+			else if ( monsterAllyPickupItems == ALLY_GYRO_DETECT_MONSTERS )
+			{
+				if ( myStats->LVL < 10 )
+				{
+					failQuality = true;
+				}
+				if ( skillLVL < SKILL_LEVEL_EXPERT )
+				{
+					failSkillRequirement = true;
+				}
+			}
+			else if ( monsterAllyPickupItems == ALLY_GYRO_DETECT_TRAPS
+				|| monsterAllyPickupItems == ALLY_GYRO_DETECT_EXITS )
+			{
+				if ( myStats->LVL < 5 )
+				{
+					failQuality = true;
+				}
+				if ( skillLVL < SKILL_LEVEL_SKILLED )
+				{
+					failSkillRequirement = true;
+				}
+			}
+			else if ( monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
+				|| monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC )
+			{
+				if ( skillLVL < SKILL_LEVEL_BASIC )
+				{
+					failSkillRequirement = true;
+				}
+			}
+
+			if ( failSkillRequirement || failQuality )
+			{
+				if ( skillLVL < SKILL_LEVEL_BASIC )
+				{
+					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3680]);
+				}
+				else
+				{
+					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3679]);
+				}
 				monsterAllyPickupItems = ALLY_GYRO_DETECT_NONE;
 			}
 			myStats->allyItemPickup = monsterAllyPickupItems;
 			serverUpdateEntitySkill(this, 44);
 			break;
+		}
 		case ALLY_CMD_DROP_EQUIP:
 			if ( strcmp(myStats->name, "") && myStats->type == HUMAN )
 			{
@@ -8331,6 +8427,12 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				monsterLookTime = 1;
 				monsterMoveTime = rand() % 10 + 1;
 				monsterLookDir = tangent;
+				monsterSentrybotLookDir = monsterLookDir;
+				if ( monsterAllyState != ALLY_STATE_DEFEND )
+				{
+					handleNPCInteractDialogue(*myStats, ALLY_EVENT_WAIT);
+				}
+				monsterAllyState = ALLY_STATE_DEFEND;
 			}
 			else if ( monsterSetPathToLocation(destX, destY, 1) )
 			{
@@ -8880,12 +8982,26 @@ void Entity::handleNPCInteractDialogue(Stat& myStats, AllyNPCChatter event)
 					myStats, genericStr, namedStr, MSG_COMBAT);
 				break;
 			case ALLY_EVENT_WAIT:
-				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
-					myStats, language[3105], language[3106], MSG_COMBAT);
+				if ( myStats.type == SENTRYBOT || myStats.type == SPELLBOT )
+				{
+					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3676], monstertypename[myStats.type]);
+				}
+				else
+				{
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+						myStats, language[3105], language[3106], MSG_COMBAT);
+				}
 				break;
 			case ALLY_EVENT_FOLLOW:
-				messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
-					myStats, language[529], language[3128], MSG_COMBAT);
+				if ( myStats.type == SENTRYBOT || myStats.type == SPELLBOT )
+				{
+					messagePlayerColor(monsterAllyIndex, 0xFFFFFFFF, language[3677], monstertypename[myStats.type]);
+				}
+				else
+				{
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF,
+						myStats, language[529], language[3128], MSG_COMBAT);
+				}
 				break;
 			case ALLY_EVENT_MOVETO_REPATH:
 				/*if ( rand() % 20 == 0 )

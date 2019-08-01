@@ -1600,11 +1600,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
-		bool isTinkeringFollower = false;
-		if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
-		{
-			isTinkeringFollower = true;
-		}
+		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		int skillLVL = 0;
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
@@ -1634,7 +1630,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 			if ( optionSelected >= ALLY_CMD_DEFEND && optionSelected < ALLY_CMD_END && optionSelected != ALLY_CMD_ATTACK_CONFIRM )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
-				if ( isTinkeringFollower )
+				if ( tinkeringFollower )
 				{
 					skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
 				}
@@ -1796,7 +1792,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 							{
 								messagePlayer(clientnum, language[3640], language[90 + followerStats->type]);
 							}
-							else if ( isTinkeringFollower )
+							else if ( tinkeringFollower )
 							{
 								messagePlayer(clientnum, language[3639], language[90 + followerStats->type]);
 							}
@@ -1811,7 +1807,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 							{
 								messagePlayer(clientnum, language[3640], language[2000 + (followerStats->type - KOBOLD)]);
 							}
-							else if ( isTinkeringFollower )
+							else if ( tinkeringFollower )
 							{
 								messagePlayer(clientnum, language[3639], language[2000 + (followerStats->type - KOBOLD)]);
 							}
@@ -1849,15 +1845,11 @@ void FollowerRadialMenu::drawFollowerMenu()
 		{
 			return;
 		}
-		bool isTinkeringFollower = false;
-		if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT )
-		{
-			isTinkeringFollower = true;
-		}
+		bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 		if ( stats[clientnum] && players[clientnum] && players[clientnum]->entity )
 		{
 			skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
-			if ( isTinkeringFollower )
+			if ( tinkeringFollower )
 			{
 				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
 			}
@@ -1983,13 +1975,28 @@ void FollowerRadialMenu::drawFollowerMenu()
 			else if ( i == ALLY_CMD_DEFEND
 				&& (followerToCommand->monsterAllyState == ALLY_STATE_DEFEND || followerToCommand->monsterAllyState == ALLY_STATE_MOVETO) )
 			{
-				TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
-				ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+				if ( followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+				{
+					TTF_SizeUTF8(ttf12, language[3675], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3675]);
+				}
+				else
+				{
+					TTF_SizeUTF8(ttf12, language[3037 + i + 8], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3037 + i + 8]);
+				}
 			}
 			else
 			{
 				TTF_SizeUTF8(ttf12, language[3037 + i], &width, nullptr);
-				if ( i == ALLY_CMD_CLASS_TOGGLE )
+				if ( i == ALLY_CMD_DEFEND 
+					&& followerToCommand->monsterAllyState == ALLY_STATE_DEFAULT
+					&& (followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
+				{
+					TTF_SizeUTF8(ttf12, language[3674], &width, nullptr);
+					ttfPrintText(ttf12, txt.x - width / 2, txt.y - 4, language[3674]);
+				}
+				else if ( i == ALLY_CMD_CLASS_TOGGLE )
 				{
 					if ( followerStats->type == GYROBOT )
 					{
@@ -2016,8 +2023,9 @@ void FollowerRadialMenu::drawFollowerMenu()
 				{
 					if ( followerStats->type == GYROBOT )
 					{
-						if ( followerToCommand->monsterAllyPickupItems >= ALLY_GYRO_DETECT_ITEMS_BLESSED
-							&& followerToCommand->monsterAllyPickupItems < ALLY_GYRO_DETECT_END )
+						if ( followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
+							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
+							|| followerToCommand->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
 						{
 							TTF_SizeUTF8(ttf12, "Detect", &width, nullptr);
 							ttfPrintText(ttf12, txt.x - width / 2, txt.y - 24, language[3636]);
@@ -2176,7 +2184,12 @@ void FollowerRadialMenu::drawFollowerMenu()
 			SDL_Rect tooltip;
 			tooltip.x = omousex + 16;
 			tooltip.y = omousey + 16;
-			tooltip.w = longestline(language[3062]) * TTF12_WIDTH + 8;
+			char* lowSkillLVLTooltip = language[3062];
+			if ( tinkeringFollower )
+			{
+				lowSkillLVLTooltip = language[3672];
+			}
+			tooltip.w = longestline(lowSkillLVLTooltip) * TTF12_WIDTH + 8;
 			tooltip.h = TTF12_HEIGHT * 2 + 8;
 
 			if ( disableOption == -2 ) // disabled due to cooldown
@@ -2203,6 +2216,19 @@ void FollowerRadialMenu::drawFollowerMenu()
 					drawTooltip(&tooltip);
 					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
 						uint32ColorOrange(*mainsurface), language[3103], language[2000 + followerStats->type - KOBOLD]);
+				}
+			}
+			else if ( disableOption == -3 ) // disabled due to tinkerbot quality
+			{
+				tooltip.h = TTF12_HEIGHT + 8;
+				tooltip.w = longestline(language[3673]) * TTF12_WIDTH + 8;
+				drawTooltip(&tooltip);
+				if ( followerStats->type >= KOBOLD ) //New monsters
+				{
+					tooltip.w += strlen(language[2000 + followerStats->type - KOBOLD]) * TTF12_WIDTH;
+					drawTooltip(&tooltip);
+					ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6,
+						uint32ColorOrange(*mainsurface), language[3673], language[2000 + followerStats->type - KOBOLD]);
 				}
 			}
 			else
@@ -2271,7 +2297,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 					current.erase(std::remove(current.begin(), current.end(), ' '), current.end()); // trim whitespace
 				}
 				ttfPrintTextFormattedColor(ttf12, tooltip.x + 4, tooltip.y + 6, 
-					uint32ColorOrange(*mainsurface), language[3062], requirement.c_str(), current.c_str());
+					uint32ColorOrange(*mainsurface), lowSkillLVLTooltip, requirement.c_str(), current.c_str());
 			}
 		}
 
@@ -2435,6 +2461,16 @@ void FollowerRadialMenu::updateScrollPartySheet()
 	}
 }
 
+bool FollowerRadialMenu::isTinkeringFollower(int type)
+{
+	if ( type == GYROBOT || type == SENTRYBOT
+		|| type == SPELLBOT || type == DUMMYBOT )
+	{
+		return true;
+	}
+	return false;
+}
+
 bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 {
 	if ( optionSelected != ALLY_CMD_ATTACK_SELECT )
@@ -2464,13 +2500,9 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 
 	bool interactItems = allowedInteractItems(followerStats->type) || allowedInteractFood(followerStats->type);
 	bool interactWorld = allowedInteractWorld(followerStats->type);
-	bool isTinkeringFollower = false;
-	if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT )
-	{
-		isTinkeringFollower = true;
-	}
+	bool tinkeringFollower = isTinkeringFollower(followerStats->type);
 	int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] + statGetCHR(stats[clientnum], players[clientnum]->entity);
-	if ( isTinkeringFollower )
+	if ( tinkeringFollower )
 	{
 		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity);
 	}
@@ -2580,11 +2612,66 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 			break;
 	}
 
+	Stat* followerStats = nullptr;
+	if ( followerToCommand )
+	{
+		followerStats = followerToCommand->getStats();
+	}
+
 	int requirement = AllyNPCSkillRequirements[option];
 
 	if ( monsterType == GYROBOT )
 	{
 		monsterGyroBotConvertCommand(&option);
+		if ( followerStats )
+		{
+			if ( option == ALLY_CMD_GYRO_DETECT_TOGGLE )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_SKILLED )
+				{
+					return SKILL_LEVEL_SKILLED;
+				}
+				if ( followerStats->LVL < 10 )
+				{
+					return -3;
+				}
+			}
+			else if ( option == ALLY_CMD_GYRO_LIGHT_TOGGLE )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_BASIC )
+				{
+					return SKILL_LEVEL_BASIC;
+				}
+				if ( followerStats->LVL < 5 )
+				{
+					return -3;
+				}
+			}
+			else if ( option == ALLY_CMD_MOVETO_CONFIRM || option == ALLY_CMD_MOVETO_SELECT )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_BASIC )
+				{
+					return SKILL_LEVEL_BASIC;
+				}
+				if ( followerStats->LVL < 5 )
+				{
+					return -3;
+				}
+			}
+			else if ( option == ALLY_CMD_ATTACK_SELECT || option == ALLY_CMD_ATTACK_CONFIRM 
+				|| option == ALLY_CMD_DROP_EQUIP )
+			{
+				if ( playerSkillLVL < SKILL_LEVEL_SKILLED )
+				{
+					return SKILL_LEVEL_SKILLED;
+				}
+				if ( followerStats->LVL < 10 )
+				{
+					return -3;
+				}
+			}
+		}
+
 	}
 	else
 	{
@@ -2611,9 +2698,26 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		{
 			if ( option != ALLY_CMD_MOVETO_CONFIRM && option != ALLY_CMD_MOVETO_SELECT
 				&&  option != ALLY_CMD_ATTACK_SELECT && option != ALLY_CMD_ATTACK_CONFIRM
-				&&  option != ALLY_CMD_CANCEL )
+				&&  option != ALLY_CMD_CANCEL && option != ALLY_CMD_DEFEND && option != ALLY_CMD_FOLLOW )
 			{
 				return -1; // disabled due to monster.
+			}
+			else
+			{
+				if ( followerStats && (option != ALLY_CMD_CANCEL && option != ALLY_CMD_DEFEND && option != ALLY_CMD_FOLLOW ) )
+				{
+					if ( followerStats->LVL < 5 )
+					{
+						return -3; // disable all due to LVL
+					}
+					else if ( followerStats->LVL < 10 )
+					{
+						if ( option == ALLY_CMD_ATTACK_SELECT || option == ALLY_CMD_ATTACK_CONFIRM )
+						{
+							return -3; // disabled attack commands due to LVL
+						}
+					}
+				}
 			}
 		}
 		else
@@ -2647,7 +2751,7 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		case ALLY_CMD_DEFEND:
 			if ( monsterType == SENTRYBOT || monsterType == SPELLBOT )
 			{
-				return -1; // can't use.
+				return 0;
 			}
 			if ( creatureTier > 0 )
 			{

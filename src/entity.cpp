@@ -128,6 +128,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterFearfulOfUid(skill[53]),
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
+	monsterSentrybotLookDir(fskill[10]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -12385,6 +12386,13 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		if ( monsterIsImmobileTurret(nullptr, target.getStats()) && state == MONSTER_STATE_PATH )
 		{
 			return;
+		}
+		if ( monsterState == MONSTER_STATE_WAIT )
+		{
+			if ( myStats->LVL >= 10 && monsterHitTime < HITRATE )
+			{
+				monsterHitTime = HITRATE;
+			}
 		}
 	}
 

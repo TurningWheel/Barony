@@ -671,6 +671,7 @@ public:
 	void monsterGyroBotConvertCommand(int* option);
 	bool monsterGyroBotOnlyCommand(int option);
 	bool monsterGyroBotDisallowedCommands(int option);
+	bool isTinkeringFollower(int type);
 };
 extern FollowerRadialMenu FollowerMenu;
 extern SDL_Rect interfaceSkillsSheet;

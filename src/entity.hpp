@@ -203,6 +203,7 @@ public:
 	Sint32& creatureShadowTaggedThisUid; //skill[54]
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& entityShowOnMap; //skill[59]
+	real_t& monsterSentrybotLookDir; //fskill[10]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]

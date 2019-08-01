@@ -102,6 +102,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterFearfulOfUid(skill[53]),
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
+	monsterSentrybotLookDir(fskill[10]),
 	entityShowOnMap(skill[59]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),

@@ -955,28 +955,30 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( my->monsterAllyPickupItems >= ALLY_GYRO_DETECT_ITEMS_BLESSED
-					&& my->monsterAllyPickupItems < ALLY_GYRO_DETECT_END )
+				else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
+					|| my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
+					|| my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE )
 				{
 					if ( ent->behavior == &actItem )
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
 						{
-							ItemType type = static_cast<ItemType>(ent->skill[10]);
-							Status status = static_cast<Status>(ent->skill[11]);
-							int beatitude = ent->skill[12];
-							if ( status > BROKEN && type >= WOODEN_SHIELD && type < NUMITEMS )
+							Item* itemOnGround = newItemFromEntity(ent);
+							int metal = 0;
+							int magic = 0;
+							if ( itemOnGround )
 							{
-								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_BLESSED
-									&& beatitude > 0 )
+								GenericGUI.tinkeringGetItemValue(itemOnGround, &metal, &magic);
+								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
+									&& metal > 0 )
 								{
 									if ( ent->entityShowOnMap < detectDuration )
 									{
 										ent->entityShowOnMap = detectDuration;
 									}
 								}
-								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_RARE
-									&& (items[type].level >= (currentlevel + 5) || items[type].level == -1) )
+								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
+									&& magic > 0 )
 								{
 									if ( ent->entityShowOnMap < detectDuration )
 									{
@@ -984,13 +986,14 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 									}
 								}
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
-									&& items[type].value >= 400 )
+									&& items[itemOnGround->type].value >= 400 )
 								{
 									if ( ent->entityShowOnMap < detectDuration )
 									{
 										ent->entityShowOnMap = detectDuration;
 									}
 								}
+								free(itemOnGround);
 							}
 						}
 					}
