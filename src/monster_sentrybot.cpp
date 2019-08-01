@@ -69,9 +69,16 @@ void initSentryBot(Entity* my, Stat* myStats)
 			{
 				myStats->weapon = newItem(CROSSBOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 			}
-			else if ( myStats->weapon == nullptr && my->sprite == 875/*&& myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1*/ )
+			else if ( myStats->weapon == nullptr && my->sprite == 885/*&& myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1*/ )
 			{
-				myStats->weapon = newItem(SPELLBOOK_SLOW, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				if ( myStats->LVL >= 15 )
+				{
+					myStats->weapon = newItem(SPELLBOOK_MAGICMISSILE, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
+				else
+				{
+					myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+				}
 			}
 		}
 	}
@@ -520,7 +527,35 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 
 			if ( my->monsterAttack > 0 )
 			{
-				if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP1 )
+				if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 )
+				{
+					if ( my->monsterAttackTime == 0 )
+					{
+						createParticleDot(my);
+						Entity* particle = createParticleAestheticOrbit(my, 173, 15, PARTICLE_EFFECT_SPELLBOT_ORBIT);
+						if ( particle )
+						{
+							particle->actmagicOrbitDist = 1;
+							particle->x = my->x + 2 * cos(my->yaw);
+							particle->y = my->y + 2 * sin(my->yaw);
+							particle->fskill[0] = particle->x;
+							particle->fskill[1] = particle->y;
+							particle->z = my->z - 1.5;
+							particle->scalex = 0.5;
+							particle->scaley = 0.5;
+							particle->scalez = 0.5;
+						}
+					}
+
+					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
+						}
+					}
+				}
+				else if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP1 )
 				{
 					if ( my->monsterAttackTime == 0 )
 					{
@@ -533,11 +568,11 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( multiplayer != CLIENT )
 						{
-							my->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
+							my->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
 						}
 					}
 				}
-				else if ( my->monsterAttack == MONSTER_POSE_RANGED_SHOOT1 )
+				else if ( my->monsterAttack == MONSTER_POSE_RANGED_SHOOT1 || my->monsterAttack == MONSTER_POSE_MAGIC_CAST1 )
 				{
 					if ( entity->fskill[0] < 0.01 )
 					{

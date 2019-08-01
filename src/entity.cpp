@@ -5505,10 +5505,36 @@ void Entity::attack(int pose, int charge, Entity* target)
 					switch ( myStats->weapon->type )
 					{
 						case SPELLBOOK_FORCEBOLT:
-							castSpell(uid, &spell_forcebolt, true, false);
+							if ( myStats->type == SPELLBOT )
+							{
+								Entity* cast = castSpell(uid, &spell_forcebolt, true, false);
+								if ( cast )
+								{
+									cast->z -= 1;
+									cast->x = this->x + 2 * cos(this->yaw);
+									cast->y = this->y + 2 * sin(this->yaw);
+								}
+							}
+							else
+							{
+								castSpell(uid, &spell_forcebolt, true, false);
+							}
 							break;
 						case SPELLBOOK_MAGICMISSILE:
-							castSpell(uid, &spell_magicmissile, true, false);
+							if ( myStats->type == SPELLBOT )
+							{
+								Entity* cast = castSpell(uid, &spell_magicmissile, true, false);
+								if ( cast )
+								{
+									cast->z -= 1;
+									cast->x = this->x + 2 * cos(this->yaw);
+									cast->y = this->y + 2 * sin(this->yaw);
+								}
+							}
+							else
+							{
+								castSpell(uid, &spell_magicmissile, true, false);
+							}
 							break;
 						case SPELLBOOK_COLD:
 							castSpell(uid, &spell_cold, true, false);
@@ -10863,6 +10889,10 @@ int Entity::getAttackPose() const
 		else if ( myStats->type == SENTRYBOT )
 		{
 			pose = MONSTER_POSE_RANGED_WINDUP1;
+		}
+		else if ( myStats->type == SPELLBOT )
+		{
+			pose = MONSTER_POSE_MAGIC_WINDUP1;
 		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
@@ -16401,7 +16431,9 @@ int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
 		{
 			return 0;
 		}
-		return ((appearance * myStats->HP) / 4);
+		int randomHP = std::max(1, myStats->MAXHP / 4);
+		randomHP = rand() % randomHP;
+		return std::min(myStats->MAXHP, ((appearance * myStats->HP) / 4) + randomHP);
 	}
 	return 0;
 }

@@ -3009,6 +3009,8 @@ Entity* createParticleAestheticOrbit(Entity* parent, int sprite, int duration, i
 	//entity->vel_z = -1;
 	//entity->yaw = (rand() % 360) * PI / 180.0;
 	entity->skill[0] = duration;
+	entity->fskill[0] = entity->x;
+	entity->fskill[1] = entity->y;
 	entity->behavior = &actParticleAestheticOrbit;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
@@ -3118,16 +3120,34 @@ void actParticleAestheticOrbit(Entity* my)
 			return;
 		}
 		Stat* stats = parent->getStats();
-		if ( my->sprite == 863 && !stats->EFFECTS[EFF_WEBBED] )
+		if ( my->skill[1] == PARTICLE_EFFECT_SPELLBOT_ORBIT )
 		{
-			list_RemoveNode(my->mynode);
-			return;
+			my->yaw = parent->yaw;
+			my->x = parent->x + 2 * cos(parent->yaw);
+			my->y = parent->y + 2 * sin(parent->yaw);
+			my->z = parent->z - 1.5;
+			Entity* particle = spawnMagicParticle(my);
+			particle->x = my->x + (-10 + rand() % 21) / (50.f);
+			particle->y = my->y + (-10 + rand() % 21) / (50.f);
+			particle->z = my->z + (-10 + rand() % 21) / (50.f);
+			particle->scalex = my->scalex;
+			particle->scaley = my->scaley;
+			particle->scalez = my->scalez;
+			//spawnMagicParticle(my);
+		}
+		else if ( my->skill[1] == PARTICLE_EFFECT_SPELL_WEB_ORBIT )
+		{
+			if ( my->sprite == 863 && !stats->EFFECTS[EFF_WEBBED] )
+			{
+				list_RemoveNode(my->mynode);
+				return;
+			}
+			my->yaw += 0.2;
+			spawnMagicParticle(my);
+			my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
+			my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
 		}
 		--PARTICLE_LIFE;
-		my->yaw += 0.2;
-		spawnMagicParticle(my);
-		my->x = parent->x + my->actmagicOrbitDist * cos(my->yaw);
-		my->y = parent->y + my->actmagicOrbitDist * sin(my->yaw);
 	}
 	return;
 }

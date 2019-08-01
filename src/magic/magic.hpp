@@ -138,6 +138,7 @@ static const int PARTICLE_EFFECT_SPELL_WEB_ORBIT = 18;
 static const int PARTICLE_EFFECT_TELEPORT_PULL = 19;
 static const int PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION = 20;
 static const int PARTICLE_EFFECT_SHADOW_TAG = 21;
+static const int PARTICLE_EFFECT_SPELLBOT_ORBIT = 22;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
