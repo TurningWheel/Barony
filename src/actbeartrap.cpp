@@ -366,7 +366,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			Entity* entity = (Entity*)node->element;
 			if ( entity && entity != my && entity->behavior == &actBomb )
 			{
-				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == 1 )
+				if ( entity->skill[21] == TOOL_TELEPORT_BOMB && entity->skill[22] == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 				{
 					// receiver location.
 					goodspots.push_back(entity);
@@ -585,7 +585,7 @@ void actBomb(Entity* my)
 	{
 		if ( BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 		{
-			my->spawnAmbientParticles(25, 579, 10 + rand() % 40, 1.0, false);
+			my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
 		}
 		return;
@@ -643,9 +643,14 @@ void actBomb(Entity* my)
 
 	if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB && BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 	{
-		my->spawnAmbientParticles(25, 579, 10 + rand() % 40, 1.0, false);
+		my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 92);
+		my->sprite = 899;
 		return;
+	}
+	else if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB )
+	{
+		my->sprite = 884;
 	}
 
 	// launch bomb
@@ -697,6 +702,10 @@ void actBomb(Entity* my)
 			checkx = checkx >> 4;
 			checky = checky >> 4;
 			if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )   // wall
+			{
+				shouldExplode = true;
+			}
+			else if ( BOMB_HIT_BY_PROJECTILE == 1 )
 			{
 				shouldExplode = true;
 			}
@@ -906,7 +915,7 @@ bool Entity::entityCheckIfTriggeredBomb(bool triggerBomb)
 		return false;
 	}
 	bool foundBomb = false;
-	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 1);
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(this, 2);
 	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 	{
 		list_t* currentList = *it;

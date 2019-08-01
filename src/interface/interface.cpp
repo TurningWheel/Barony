@@ -2627,13 +2627,17 @@ int FollowerRadialMenu::optionDisabledForCreature(int playerSkillLVL, int monste
 		{
 			if ( option == ALLY_CMD_GYRO_DETECT_TOGGLE )
 			{
-				if ( playerSkillLVL < SKILL_LEVEL_SKILLED )
+				if ( playerSkillLVL < SKILL_LEVEL_BASIC )
 				{
-					return SKILL_LEVEL_SKILLED;
+					return SKILL_LEVEL_BASIC;
 				}
-				if ( followerStats->LVL < 10 )
+				else if ( followerStats->LVL < 5 )
 				{
 					return -3;
+				}
+				else
+				{
+					return 0;
 				}
 			}
 			else if ( option == ALLY_CMD_GYRO_LIGHT_TOGGLE )

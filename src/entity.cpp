@@ -8871,7 +8871,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 					y = (iy << 4) + 8;
 					real_t tangent = atan2(target->y - this->y, target->x - this->x);
 					lineTraceTarget(this, this->x, this->y, tangent, 64 * dist, 0, false, target);
-					if ( hit.entity == target )
+					if ( hit.entity == target && !entityInsideSomething(this) )
 					{
 						numlocations++;
 						real_t targetYaw = target->yaw;
@@ -8900,20 +8900,43 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 				}
 				else
 				{
-					if ( target->behavior == &actBomb && target->skill[22] == 1 ) // teleport receiver.
+					if ( target->behavior == &actBomb && target->skill[22] == 1 && ix == tx && iy == ty ) // teleport receiver.
 					{
-						if ( ix == tx && iy == ty )
+						// directly on top, let's go there.
+						real_t tmpx = x;
+						real_t tmpy = y;
+						x = (ix << 4) + 8;
+						y = (iy << 4) + 8;
+						if ( !entityInsideSomething(this) )
 						{
-							// directly on top, let's go there.
 							forceSpot = true;
 							goodspots.clear();
 							goodspots.push_back(std::make_pair(ix, iy));
 							numlocations = 1;
+							// restore coordinates.
+							x = tmpx;
+							y = tmpy;
 							break;
 						}
+						// restore coordinates.
+						x = tmpx;
+						y = tmpy;
 					}
-					goodspots.push_back(std::make_pair(ix, iy));
-					numlocations++;
+					else
+					{
+						real_t tmpx = x;
+						real_t tmpy = y;
+						x = (ix << 4) + 8;
+						y = (iy << 4) + 8;
+						if ( !entityInsideSomething(this) )
+						{
+							goodspots.push_back(std::make_pair(ix, iy));
+							numlocations++;
+						}
+						// restore coordinates.
+						x = tmpx;
+						y = tmpy;
+					}
 				}
 			}
 		}

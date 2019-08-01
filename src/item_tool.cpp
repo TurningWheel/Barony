@@ -90,8 +90,8 @@ void Item::applyLockpick(int player, Entity& entity)
 			messagePlayer(player, language[3610]);
 
 			playSoundEntity(&entity, 166, 128); // invisible.ogg
-			createParticleDropRising(&entity, 579, 1.0);
-			serverSpawnMiscParticles(&entity, PARTICLE_EFFECT_RISING_DROP, 579);
+			createParticleDropRising(&entity, 576, 1.0);
+			serverSpawnMiscParticles(&entity, PARTICLE_EFFECT_RISING_DROP, 576);
 		}
 		serverUpdateEntitySkill(&entity, 22);
 		playSoundEntity(&entity, 253, 64);
