@@ -1236,9 +1236,13 @@ void updatePlayerInventory()
 								|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
 							{
 								int health = 100;
-								if ( item->appearance > 0 && item->appearance <= 4 )
+								if ( item->appearance >= 0 && item->appearance <= 4 )
 								{
 									health = 25 * item->appearance;
+									if ( health == 0 )
+									{
+										health = 5;
+									}
 								}
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), health);
 							}

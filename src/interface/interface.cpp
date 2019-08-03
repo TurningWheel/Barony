@@ -3747,9 +3747,13 @@ void GenericGUIMenu::updateGUI()
 							if ( showTinkeringBotHealthPercentage )
 							{
 								int health = 100;
-								if ( item->appearance > 0 && item->appearance <= 4 )
+								if ( item->appearance >= 0 && item->appearance <= 4 )
 								{
 									health = 25 * item->appearance;
+									if ( health == 0 )
+									{
+										health = 5;
+									}
 								}
 								char healthstr[32] = "";
 								snprintf(healthstr, 16, " (%d%%)", health);

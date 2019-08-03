@@ -3452,7 +3452,7 @@ void actMonster(Entity* my)
 					if ( dist > WAIT_FOLLOWDIST )
 					{
 						my->monsterReleaseAttackTarget();
-						if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 1) )
+						if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2) )
 						{
 							my->monsterState = MONSTER_STATE_HUNT; // hunt state
 						}
@@ -5144,7 +5144,7 @@ timeToGoAgain:
 									my->monsterAllyState = ALLY_STATE_DEFAULT;
 								}
 							}
-							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 1) )
+							else if ( my->monsterSetPathToLocation(static_cast<int>(target->x / 16), static_cast<int>(target->y / 16), 2) )
 							{
 								my->monsterState = MONSTER_STATE_HUNT;
 								my->monsterAllyState = ALLY_STATE_MOVETO;
