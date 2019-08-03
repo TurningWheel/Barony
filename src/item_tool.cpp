@@ -995,7 +995,7 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 				}
 				summonedStats->monsterTinkeringStatus = static_cast<Sint32>(this->status); // store the type of item that was used to summon me.
 				summon->tinkerBotSetStats(summonedStats, this->status);
-				if ( this->appearance > 0 && this->appearance != ITEM_TINKERING_APPEARANCE && this->appearance < summonedStats->MAXHP )
+				if ( this->appearance != ITEM_TINKERING_APPEARANCE && this->appearance < summonedStats->MAXHP )
 				{
 					summon->setHP(monsterTinkeringConvertAppearanceToHP(summonedStats, this->appearance));
 				}

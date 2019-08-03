@@ -372,6 +372,42 @@ void sentryBotDie(Entity* my)
 			gibs = false;
 		}
 	}
+	else
+	{
+		ItemType type = TOOL_SENTRYBOT;
+		Stat* myStats = my->getStats();
+		if ( myStats && myStats->type == SPELLBOT )
+		{
+			type = TOOL_SPELLBOT;
+		}
+		bool dropBrokenShell = false;
+		if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 90 )
+		{
+			dropBrokenShell = true;
+		}
+		else if ( myStats->monsterTinkeringStatus == SERVICABLE && rand() % 100 < 80 )
+		{
+			dropBrokenShell = true;
+		}
+		else if ( myStats->monsterTinkeringStatus == WORN && rand() % 100 < 70 )
+		{
+			dropBrokenShell = true;
+		}
+		else if ( myStats->monsterTinkeringStatus == DECREPIT && rand() % 100 < 60 )
+		{
+			dropBrokenShell = true;
+		}
+
+		if ( dropBrokenShell )
+		{
+			Item* item = newItem(type, BROKEN, 0, 1, 0, true, nullptr);
+			Entity* entity = dropItemMonster(item, my, myStats);
+			if ( entity )
+			{
+				entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
+			}
+		}
+	}
 
 	my->removeMonsterDeathNodes();
 	if ( gibs )
@@ -531,7 +567,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( my->monsterAttackTime == 0 )
 					{
-						createParticleDot(my);
+						//createParticleDot(my);
 						Entity* particle = createParticleAestheticOrbit(my, 173, 15, PARTICLE_EFFECT_SPELLBOT_ORBIT);
 						if ( particle )
 						{
@@ -545,7 +581,10 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 							particle->scaley = 0.5;
 							particle->scalez = 0.5;
 						}
+						entity->fskill[0] = -0.2;
 					}
+
+					entity->pitch += entity->fskill[0];
 
 					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 					{
@@ -1504,6 +1543,37 @@ void dummyBotDie(Entity* my)
 		{
 			// returning to box, don't explode into gibs.
 			gibs = false;
+		}
+	}
+	else
+	{
+		Stat* myStats = my->getStats();
+		bool dropBrokenShell = false;
+		if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 80 )
+		{
+			dropBrokenShell = true;
+		}
+		else if ( myStats->monsterTinkeringStatus == SERVICABLE && rand() % 100 < 60 )
+		{
+			dropBrokenShell = true;
+		}
+		else if ( myStats->monsterTinkeringStatus == WORN && rand() % 100 < 40 )
+		{
+			dropBrokenShell = true;
+		}
+		else if ( myStats->monsterTinkeringStatus == DECREPIT && rand() % 100 < 20 )
+		{
+			dropBrokenShell = true;
+		}
+
+		if ( dropBrokenShell )
+		{
+			Item* item = newItem(TOOL_DUMMYBOT, BROKEN, 0, 1, 0, true, nullptr);
+			Entity* entity = dropItemMonster(item, my, myStats);
+			if ( entity )
+			{
+				entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
+			}
 		}
 	}
 

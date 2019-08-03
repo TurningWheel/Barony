@@ -3682,6 +3682,7 @@ void GenericGUIMenu::updateGUI()
 								continue;
 							}
 							char tempstr[256] = { 0 };
+							int showTinkeringBotHealthPercentage = false;
 							Uint32 color = uint32ColorWhite(*mainsurface);
 							if ( guiType == GUI_TYPE_TINKERING )
 							{
@@ -3699,10 +3700,38 @@ void GenericGUIMenu::updateGUI()
 									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
 									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
 								}
-								else if ( true )
+								else if ( tinkeringIsItemRepairable(item, clientnum) )
 								{
-									strncpy(tempstr, language[3646], strlen(language[3646])); // repair
-									strncat(tempstr, item->description(), 46 - strlen(language[3646]));
+									if ( tinkeringIsItemUpgradeable(item) )
+									{
+										if ( tinkeringUpgradeMaxStatus(item) <= item->status )
+										{
+											color = uint32ColorGray(*mainsurface); // can't upgrade since it's higher status than we can craft.
+										}
+										else if ( !tinkeringPlayerCanAffordRepair(item) )
+										{
+											color = uint32ColorGray(*mainsurface); // can't upgrade since no materials
+										}
+										strncpy(tempstr, language[3684], strlen(language[3684])); // upgrade
+										strncat(tempstr, item->description(), 46 - strlen(language[3684]));
+									}
+									else
+									{
+										if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
+										{
+											color = uint32ColorGray(*mainsurface); // can't repair since no we can't craft it.
+										}
+										else if ( !tinkeringPlayerCanAffordRepair(item) )
+										{
+											color = uint32ColorGray(*mainsurface); // can't repair since no materials
+										}
+										strncpy(tempstr, language[3646], strlen(language[3646])); // repair
+										strncat(tempstr, item->description(), 46 - strlen(language[3646]));
+									}
+									if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_SPELLBOT )
+									{
+										showTinkeringBotHealthPercentage = true;
+									}
 								}
 								else
 								{
@@ -3714,7 +3743,21 @@ void GenericGUIMenu::updateGUI()
 							{
 								strncpy(tempstr, item->description(), 46);
 							}
-							if ( strlen(tempstr) == 46 )
+
+							if ( showTinkeringBotHealthPercentage )
+							{
+								int health = 100;
+								if ( item->appearance > 0 && item->appearance <= 4 )
+								{
+									health = 25 * item->appearance;
+								}
+								char healthstr[32] = "";
+								snprintf(healthstr, 16, " (%d%%)", health);
+								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
+							}
+							
+
+							if ( strlen(tempstr) >= 46 )
 							{
 								strcat(tempstr, " ...");
 							}
@@ -3735,6 +3778,10 @@ void GenericGUIMenu::updateGUI()
 								else if ( isItemSalvageable(item, clientnum) )
 								{
 									tinkeringGetItemValue(item, &metal, &magic);
+								}
+								else if ( tinkeringIsItemRepairable(item, clientnum) )
+								{
+									tinkeringGetRepairCost(item, &metal, &magic);
 								}
 								pos.x = windowX2 - 20 - TTF8_WIDTH * 12;
 								ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
@@ -3789,6 +3836,13 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		else if ( isItemSalvageable(item, clientnum) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				return true;
+			}
+		}
+		else if ( tinkeringIsItemRepairable(item, clientnum) )
+		{
+			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 			{
 				return true;
 			}
@@ -4161,7 +4215,14 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		}
 		else if ( isNodeFromPlayerInventory(item->node) )
 		{
-			tinkeringSalvageItem(item, false, clientnum);
+			if ( tinkeringIsItemRepairable(item, clientnum) )
+			{
+				tinkeringRepairItem(item);
+			}
+			else
+			{
+				tinkeringSalvageItem(item, false, clientnum);
+			}
 		}
 		return true;
 	}
@@ -5080,9 +5141,9 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 		{
 			int skillLVL = 0;
 			int requiredSkill = tinkeringPlayerHasSkillLVLToCraft(item);
-			if ( stats[clientnum] )
+			if ( stats[clientnum] && players[clientnum] )
 			{
-				skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0 to 5
+				skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
 			}
 			if ( item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT
 				|| item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT )
@@ -5209,7 +5270,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 	int skillLVL = 0;
 	int bonusMetalScrap = 0;
 	int bonusMagicScrap = 0;
-	if ( stats[player] )
+	if ( stats[player] && players[player] )
 	{
 		skillLVL = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity);
 		skillLVL /= 5;
@@ -5396,6 +5457,53 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 	if ( tinkeringGetItemValue(item, &metal, &magic) )
 	{
 		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringIsItemRepairable(const Item* item, int player)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	/*if ( player == clientnum && itemIsEquipped(item, clientnum) )
+	{
+		return false;
+	}*/
+	if ( item == tinkeringKitItem )
+	{
+		return false;
+	}
+
+	int metal = 0;
+	int magic = 0;
+	if ( tinkeringGetRepairCost(item, &metal, &magic) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringPlayerCanAffordRepair(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetRepairCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return false;
+	}
+	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+	{
+		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -5864,6 +5972,21 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			*magic = 16;
 			break;
 
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
+		case TOOL_DUMMYBOT:
+			if ( item->status == BROKEN )
+			{
+				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
+				*metal /= 2;
+				*magic /= 2;
+			}
+			else
+			{
+				*metal = 0;
+				*magic = 0;
+			}
+			break;
 		default:
 			*metal = 0;
 			*magic = 0;
@@ -5876,6 +5999,65 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 	return false;
 }
 
+bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* magic)
+{
+	if ( !item || !metal || !magic )
+	{
+		return false;
+	}
+
+	switch ( item->type )
+	{
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
+		case TOOL_DUMMYBOT:
+			if ( item->status != BROKEN )
+			{
+				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
+				*metal /= 4;
+				*magic /= 4;
+			}
+			else
+			{
+				*metal = 0;
+				*magic = 0;
+			}
+			break;
+		default:
+			*metal = 0;
+			*magic = 0;
+			break;
+	}
+	if ( *metal > 0 || *magic > 0 )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	switch ( item->type )
+	{
+		case TOOL_SENTRYBOT:
+		case TOOL_SPELLBOT:
+		case TOOL_DUMMYBOT:
+			if ( item->appearance == ITEM_TINKERING_APPEARANCE && (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+	return false;
+}
+
+
 int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 {
 	if ( !item )
@@ -5883,9 +6065,9 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 		return -1;
 	}
 	int skillLVL = 0;
-	if ( stats[clientnum] )
+	if ( stats[clientnum] && players[clientnum] )
 	{
-		skillLVL = stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0 to 5
+		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
 	}
 
 	switch ( item->type )
@@ -6010,6 +6192,214 @@ bool GenericGUIMenu::tinkeringKitRollIfShouldBreak()
 	if ( rand() % 20 == 10 )
 	{
 		return true;
+	}
+	return false;
+}
+
+bool GenericGUIMenu::tinkeringRepairItem(Item* item)
+{
+	if ( itemIsEquipped(item, clientnum) )
+	{
+		messagePlayer(clientnum, language[3681]);
+		return false; // don't want to deal with client/server desync problems here.
+	}
+	if ( !item )
+	{
+		return false;
+	}
+
+
+
+	if ( stats[clientnum] && players[clientnum] )
+	{
+		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT )
+		{
+			if ( item->appearance == ITEM_TINKERING_APPEARANCE )
+			{
+				// try upgrade item?
+				int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+				if ( craftRequirement == -1 ) // can't craft, can't upgrade!
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3685], items[item->type].name_identified);
+					return false;
+				}
+				else if ( !tinkeringPlayerCanAffordRepair(item) )
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3687], items[item->type].name_identified);
+					return false;
+				}
+				
+				Status newStatus = DECREPIT;
+				Status maxStatus = static_cast<Status>(tinkeringUpgradeMaxStatus(item));
+
+				if ( maxStatus <= item->status )
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3685], items[item->type].name_identified);
+					return false;
+				}
+
+				if ( tinkeringConsumeMaterialsForRepair(item, true) )
+				{
+					newStatus = std::min(static_cast<Status>(item->status + 1), maxStatus);
+					Item* upgradedItem = newItem(item->type, newStatus, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+					if ( upgradedItem )
+					{
+						itemPickup(clientnum, upgradedItem);
+						free(upgradedItem);
+					}
+					messagePlayer(clientnum, language[3683], items[item->type].name_identified);
+					consumeItem(item, clientnum);
+					return true;
+				}
+			}
+			else
+			{
+				int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+				if ( craftRequirement == -1 ) // can't craft, can't repair!
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3688], items[item->type].name_identified);
+					return false;
+				}
+				else if ( !tinkeringPlayerCanAffordRepair(item) )
+				{
+					playSound(90, 64);
+					messagePlayer(clientnum, language[3686], items[item->type].name_identified);
+					return false;
+				}
+
+				if ( tinkeringConsumeMaterialsForRepair(item, true) )
+				{
+					Uint32 repairedAppearance = std::min(item->appearance + 1, static_cast<Uint32>(4));
+					if ( repairedAppearance == 4 )
+					{
+						repairedAppearance = ITEM_TINKERING_APPEARANCE;
+					}
+					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, repairedAppearance, true, nullptr);
+					if ( repairedItem )
+					{
+						itemPickup(clientnum, repairedItem);
+						free(repairedItem);
+					}
+					messagePlayer(clientnum, language[3682], items[item->type].name_identified);
+					consumeItem(item, clientnum);
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+int GenericGUIMenu::tinkeringUpgradeMaxStatus(Item* item)
+{
+	if ( !item )
+	{
+		return BROKEN;
+	}
+	int skillLVL = 0;
+	if ( stats[clientnum] && players[clientnum] )
+	{
+		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+		int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
+		if ( skillLVL == 5 )
+		{
+			return EXCELLENT;
+		}
+		else
+		{
+			if ( skillLVL - craftRequirement == 1 )
+			{
+				return WORN;
+			}
+			else if ( skillLVL - craftRequirement == 2 )
+			{
+				return SERVICABLE;
+			}
+			else if ( skillLVL - craftRequirement >= 3 )
+			{
+				return EXCELLENT;
+			}
+		}
+	}
+	return BROKEN;
+}
+
+bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(const Item* item, bool upgradingItem)
+{
+	if ( !item )
+	{
+		return false;
+	}
+	int metal = 0;
+	int magic = 0;
+	tinkeringGetRepairCost(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return false;
+	}
+	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+	{
+		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
+		{
+			bool increaseSkill = false;
+			if ( stats[clientnum] )
+			{
+				if ( !upgradingItem )
+				{
+					if ( rand() % 40 == 0 )
+					{
+						increaseSkill = true;
+					}
+				}
+				else
+				{
+					if ( rand() % 10 == 0 )
+					{
+						increaseSkill = true;
+					}
+				}
+			}
+
+			if ( increaseSkill )
+			{
+				if ( multiplayer == CLIENT )
+				{
+					// request level up
+					strcpy((char*)net_packet->data, "CSKL");
+					net_packet->data[4] = clientnum;
+					net_packet->data[5] = PRO_LOCKPICKING;
+					net_packet->address.host = net_server.host;
+					net_packet->address.port = net_server.port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+				else
+				{
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+					}
+				}
+			}
+
+			for ( int c = 0; c < metal; ++c )
+			{
+				consumeItem(tinkeringMetalScrap, clientnum);
+			}
+			for ( int c = 0; c < magic; ++c )
+			{
+				consumeItem(tinkeringMagicScrap, clientnum);
+			}
+			if ( tinkeringKitRollIfShouldBreak() )
+			{
+				tinkeringKitDegradeOnUse(clientnum);
+			}
+			return true;
+		}
 	}
 	return false;
 }

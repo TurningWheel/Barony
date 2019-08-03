@@ -6569,7 +6569,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	{
 		// increment the hit time, don't attack until this reaches the hitrate of the weapon
 		this->monsterHitTime++;
-		int bow = 1;
+		real_t bow = 1;
 		if ( hasrangedweapon )
 		{
 			if ( myStats->weapon && (myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW) )
@@ -6580,9 +6580,28 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		if ( monsterIsImmobileTurret(this, myStats) )
 		{
 			bow = 2;
+			if ( myStats->type == SPELLBOT )
+			{
+				if ( myStats->LVL >= 15 )
+				{
+					bow = 1.2;
+				}
+				else if ( myStats->LVL >= 10 )
+				{
+					bow = 1.5;
+				}
+				else if ( myStats->LVL >= 5 )
+				{
+					bow = 1.8;
+				}
+				else
+				{
+					bow = 2;
+				}
+			}
 		}
 		// check if ready to attack
-		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow 
+		if ( (this->monsterHitTime >= static_cast<int>(HITRATE * monsterGlobalAttackTimeMultiplier * bow) 
 				&& (myStats->type != LICH && myStats->type != LICH_ICE))
 			|| (this->monsterHitTime >= 5 && myStats->type == LICH)
 			|| (this->monsterHitTime >= HITRATE * 2 && myStats->type == LICH_ICE)

@@ -6448,7 +6448,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					bool backstab = false;
 					bool flanking = false;
-					if ( player >= 0 )
+					if ( player >= 0 && !monsterIsImmobileTurret(hit.entity, hitstats) )
 					{
 						real_t hitAngle = hit.entity->yawDifferenceFromPlayer(player);
 						if ( (hitAngle >= 0 && hitAngle <= 2 * PI / 3) ) // 120 degree arc
@@ -6468,10 +6468,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 2) * (2 * stealthCapstoneBonus);
 								if ( rand() % 4 > 0 )
 								{
-									if ( !monsterIsImmobileTurret(hit.entity, hitstats) )
-									{
-										this->increaseSkill(PRO_STEALTH);
-									}
+									this->increaseSkill(PRO_STEALTH);
 								}
 							}
 							else if ( rand() % 2 == 0 )
@@ -6482,10 +6479,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								damage += (stats[player]->PROFICIENCIES[PRO_STEALTH] / 20 + 1) * (stealthCapstoneBonus);
 								if ( rand() % 20 == 0 )
 								{
-									if ( !monsterIsImmobileTurret(hit.entity, hitstats) )
-									{
-										this->increaseSkill(PRO_STEALTH);
-									}
+									this->increaseSkill(PRO_STEALTH);
 								}
 							}
 						}
@@ -16427,12 +16421,8 @@ int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
 		{
 			return myStats->MAXHP;
 		}
-		if ( appearance == 0 )
-		{
-			return 0;
-		}
-		int randomHP = std::max(1, myStats->MAXHP / 4);
-		randomHP = rand() % randomHP;
+		int randomHP = std::max(1, myStats->MAXHP / 8);
+		randomHP = randomHP + rand() % randomHP;
 		return std::min(myStats->MAXHP, ((appearance * myStats->HP) / 4) + randomHP);
 	}
 	return 0;
