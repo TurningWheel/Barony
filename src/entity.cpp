@@ -5808,6 +5808,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					normalisedCharge /= MAXCHARGE;
 					entity->sizex = 4;
 					entity->sizey = 4;
+					if ( myStats->weapon->type >= TOOL_BOMB && myStats->weapon->type <= TOOL_TELEPORT_BOMB )
+					{
+						entity->sizex = 2;
+						entity->sizey = 2;
+					}
 					entity->vel_x = (1.f + normalisedCharge) * cos(players[player]->entity->yaw);
 					entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
 					entity->vel_z = -.3;

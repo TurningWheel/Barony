@@ -797,6 +797,68 @@ void Item::applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement,
 				default:
 					break;
 			}
+
+			// check the wall because there is an edge case where the model clips a wall edge and there's technically no wall behind it
+			// = boom for player.
+			int checkx = entity->x;
+			int checky = entity->y;
+			switch ( dir )
+			{
+				case BOMB_EAST:
+					checkx = static_cast<int>(entity->x - 8) >> 4;
+					checky = static_cast<int>(entity->y) >> 4;
+					break;
+				case BOMB_WEST:
+					checkx = static_cast<int>(entity->x + 8) >> 4;
+					checky = static_cast<int>(entity->y) >> 4;
+					break;
+				case BOMB_SOUTH:
+					checky = static_cast<int>(entity->y - 8) >> 4;
+					checkx = static_cast<int>(entity->x) >> 4;
+					break;
+				case BOMB_NORTH:
+					checky = static_cast<int>(entity->y + 8) >> 4;
+					checkx = static_cast<int>(entity->x) >> 4;
+					break;
+				default:
+					break;
+			}
+			if ( !map.tiles[OBSTACLELAYER + checky * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+			{
+				// no wall.
+				switch ( dir )
+				{
+					case BOMB_EAST:
+					case BOMB_WEST:
+						if ( map.tiles[OBSTACLELAYER + (static_cast<int>(entity->y + 4) >> 4) * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+						{
+							// try 4 units away.
+							entity->y += 4; // coordinates good.
+						}
+						else if ( map.tiles[OBSTACLELAYER + (static_cast<int>(entity->y - 4) >> 4) * MAPLAYERS + checkx * MAPLAYERS * map.height] )
+						{
+							// try 4 units away other direction.
+							entity->y -= 4; // coordinates good.
+						}
+						break;
+					case BOMB_NORTH:
+					case BOMB_SOUTH:
+						if ( map.tiles[OBSTACLELAYER + checky * MAPLAYERS + (static_cast<int>(entity->x + 4) >> 4)  * MAPLAYERS * map.height] )
+						{
+							// try 4 units away.
+							entity->x += 4; // coordinates good.
+						}
+						else if ( map.tiles[OBSTACLELAYER + checky * MAPLAYERS + (static_cast<int>(entity->x - 4) >> 4)  * MAPLAYERS * map.height] )
+						{
+							// try 4 units away other direction.
+							entity->x -= 4; // coordinates good.
+						}
+						break;
+					default:
+						break;
+				}
+			}
+
 			entity->roll = 0; // flip the model
 			if ( parent )
 			{
