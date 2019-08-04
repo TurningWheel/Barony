@@ -111,19 +111,49 @@ void Item::applyLockpick(int player, Entity& entity)
 					stats[player]->GOLD += goldAmount;
 					messagePlayerColor(player, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
 				}
+				if ( !entity.chestPreventLockpickCapstoneExploit )
+				{
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_SKILLED )
+					{
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+					}
+					else
+					{
+						if ( rand() % 20 == 0 )
+						{
+							messagePlayer(player, language[3689], language[675]);
+						}
+					}
+				}
 				entity.unlockChest();
-				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 			}
 			else
 			{
 				//Failed to unlock chest.
 				playSoundEntity(&entity, 92, 64);
 				messagePlayer(player, language[1102]);
-				if ( rand() % 10 == 0 )
+				bool tryDegradeLockpick = true;
+				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
-					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					{
+						if ( rand() % 10 == 0 )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							tryDegradeLockpick = false;
+						}
+					}
+					else
+					{
+						if ( rand() % 20 == 0 )
+						{
+							messagePlayer(player, language[3689], language[675]);
+							tryDegradeLockpick = false;
+						}
+					}
 				}
-				else
+				
+				if ( tryDegradeLockpick )
 				{
 					if ( rand() % 5 == 0 )
 					{
@@ -173,18 +203,49 @@ void Item::applyLockpick(int player, Entity& entity)
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, language[1099]);
 				entity.skill[5] = 0;
-				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+				if ( !entity.doorPreventLockpickExploit )
+				{
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					{
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+					}
+					else
+					{
+						if ( rand() % 20 == 0 )
+						{
+							messagePlayer(player, language[3689], language[674]);
+						}
+					}
+				}
+				entity.doorPreventLockpickExploit = 1;
 			}
 			else
 			{
 				//Failed to unlock door.
 				playSoundEntity(&entity, 92, 64);
 				messagePlayer(player, language[1106]);
-				if ( rand() % 10 == 0 )
+				bool tryDegradeLockpick = true;
+				if ( !entity.doorPreventLockpickExploit )
 				{
-					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
+					{
+						if ( rand() % 10 == 0 )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+							tryDegradeLockpick = false;
+						}
+					}
+					else
+					{
+						if ( rand() % 20 == 0 )
+						{
+							messagePlayer(player, language[3689], language[674]);
+							tryDegradeLockpick = false;
+						}
+					}
 				}
-				else
+				
+				if ( tryDegradeLockpick )
 				{
 					if ( rand() % 5 == 0 )
 					{

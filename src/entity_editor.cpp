@@ -143,6 +143,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	doorOldStatus(skill[8]),
 	doorMaxHealth(skill[9]),
 	doorStartAng(fskill[0]),
+	doorPreventLockpickExploit(skill[10]),
 	particleTimerDuration(skill[0]),
 	particleTimerEndAction(skill[1]),
 	particleTimerEndSprite(skill[3]),

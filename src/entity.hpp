@@ -293,6 +293,7 @@ public:
 	Sint32& doorOldStatus; //skill[8]
 	Sint32& doorMaxHealth; //skill[9]
 	real_t& doorStartAng; //fskill[0]
+	Sint32& doorPreventLockpickExploit; //skill[10]
 
 	//--PUBLIC PEDESTAL SKILLS--
 	Sint32& pedestalHasOrb; //skill[0]

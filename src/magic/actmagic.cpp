@@ -2135,7 +2135,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								// Open the Door
 								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
-								hit.entity->skill[5] = 0; // Unlocks the Door
+								hit.entity->doorLocked = 0; // Unlocks the Door
+								hit.entity->doorPreventLockpickExploit = 1;
 
 								if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
 								{
