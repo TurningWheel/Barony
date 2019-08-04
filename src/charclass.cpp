@@ -420,7 +420,7 @@ void initClass(int player)
 		// skills
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 25;
 		stats[player]->PROFICIENCIES[PRO_STEALTH] = 50;
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 40;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;
@@ -2064,29 +2064,25 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_MACHINIST )
 	{
 		// attributes
-		/*stats[player]->STR -= 1;
-		stats[player]->DEX += 1;
-		stats[player]->CON -= 1;
-		stats[player]->INT -= 1;*/
+		stats[player]->STR -= 2;
+		//stats[player]->DEX -= 2;
+		stats[player]->CON -= 3;
+		stats[player]->INT += 1;
+		stats[player]->PER += 2;
 
-		/*stats[player]->MAXHP += 5;
-		stats[player]->HP += 5;
+		stats[player]->MAXHP -= 5;
+		stats[player]->HP -= 5;
 
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;*/
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 
 		// skills
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 40;
-		//stats[player]->PROFICIENCIES[PRO_MAGIC] = 20;
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 20;
-		//stats[player]->PROFICIENCIES[PRO_AXE] = 25;
-		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
+		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
+		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
 
-		item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
+		item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);
@@ -2098,38 +2094,81 @@ void initClass(int player)
 		{
 			useItem(item, player);
 		}
+
+		item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
-			item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[5].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( player == clientnum )
+		{
+			item = newItem(TOOL_BEARTRAP, EXCELLENT, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 20, 0, true, NULL);
+			item = newItem(TOOL_DUMMYBOT, DECREPIT, 0, 1, ITEM_TINKERING_APPEARANCE, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+
+			item = newItem(TOOL_SENTRYBOT, DECREPIT, 0, 1, ITEM_TINKERING_APPEARANCE, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
+
+			item = newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
+
+			item = newItem(TOOL_LOCKPICK, EXCELLENT, 0, 4, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[6].item = item2->uid;
+			free(item);
+
+			if ( stats[player]->playerRace != RACE_AUTOMATON )
+			{
+				item = newItem(FOOD_APPLE, EXCELLENT, 0, 2, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+
+				item = newItem(FOOD_CHEESE, EXCELLENT, 0, 2, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
+			else
+			{
+				item = newItem(SCROLL_FIRE, SERVICABLE, 0, 1, 0, true, NULL);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
+
+			item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 16, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 20, 0, true, NULL);
+			item = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 8, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(IRON_HELM, DECREPIT, 0, 5, 0, true, NULL);
+			item = newItem(POTION_EMPTY, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(SPELLBOOK_LIGHT, DECREPIT, 0, 5, 0, true, NULL);
+			item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(TOOL_GYROBOT, EXCELLENT, 0, 3, ITEM_TINKERING_APPEARANCE, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
-
-			item = newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 3, ITEM_TINKERING_APPEARANCE, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
-
-			item = newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 3, ITEM_TINKERING_APPEARANCE, true, NULL);
+			item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
