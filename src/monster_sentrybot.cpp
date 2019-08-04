@@ -380,8 +380,8 @@ void sentryBotDie(Entity* my)
 		{
 			type = TOOL_SPELLBOT;
 		}
-		bool dropBrokenShell = false;
-		if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 90 )
+		bool dropBrokenShell = true;
+		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 90 )
 		{
 			dropBrokenShell = true;
 		}
@@ -396,7 +396,7 @@ void sentryBotDie(Entity* my)
 		else if ( myStats->monsterTinkeringStatus == DECREPIT && rand() % 100 < 60 )
 		{
 			dropBrokenShell = true;
-		}
+		}*/
 
 		if ( dropBrokenShell )
 		{
@@ -1548,8 +1548,8 @@ void dummyBotDie(Entity* my)
 	else
 	{
 		Stat* myStats = my->getStats();
-		bool dropBrokenShell = false;
-		if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 80 )
+		bool dropBrokenShell = true;
+		/*if ( myStats->monsterTinkeringStatus == EXCELLENT && rand() % 100 < 80 )
 		{
 			dropBrokenShell = true;
 		}
@@ -1564,7 +1564,7 @@ void dummyBotDie(Entity* my)
 		else if ( myStats->monsterTinkeringStatus == DECREPIT && rand() % 100 < 20 )
 		{
 			dropBrokenShell = true;
-		}
+		}*/
 
 		if ( dropBrokenShell )
 		{

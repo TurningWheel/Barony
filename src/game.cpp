@@ -1037,12 +1037,15 @@ void gameLogic(void)
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
 							{
 								Stat* tempStats = (Stat*)node->element;
-								if ( gyrobotNode && tempStats && (tempStats->type == DUMMYBOT
+								if ( tempStats && (tempStats->type == DUMMYBOT
 									|| tempStats->type == SENTRYBOT
 									|| tempStats->type == SPELLBOT) )
 								{
-									// gyrobot will pick up these guys into it's inventory.
-									allyRobotNodes.push_back(node);
+									// gyrobot will pick up these guys into it's inventory, otherwise leave them behind.
+									if ( gyrobotNode )
+									{
+										allyRobotNodes.push_back(node);
+									}
 									continue;
 								}
 								Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);

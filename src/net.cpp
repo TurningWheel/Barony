@@ -4430,7 +4430,6 @@ void serverHandlePacket()
 	{
 		int player = net_packet->data[4];
 		Item* equipment = nullptr;
-		//messagePlayer(0, "client: %d, armornum: %d, status %d", player, net_packet->data[5], net_packet->data[6]);
 
 		switch ( net_packet->data[5] )
 		{
@@ -4467,7 +4466,7 @@ void serverHandlePacket()
 		{
 			return;
 		}
-
+		
 		if ( static_cast<int>(net_packet->data[6]) > EXCELLENT )
 		{
 			equipment->status = EXCELLENT;
