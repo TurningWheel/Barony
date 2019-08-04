@@ -364,7 +364,8 @@ void actItem(Entity* my)
 						}
 					}
 					else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
-						|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
+						|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
+						|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
 					{
 						my->roll = PI;
 						my->z = 7 - models[my->sprite]->sizey * .25;
@@ -418,7 +419,8 @@ void actItem(Entity* my)
 		groundheight = 8.5 - models[my->sprite]->sizey * .25;
 	}
 	else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
-		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
+		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
+		|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
 	{
 		groundheight = 7 - models[my->sprite]->sizey * .25;
 	}

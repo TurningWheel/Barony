@@ -3146,6 +3146,19 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 				case TOOL_MIRROR:
 				case TOOL_SKELETONKEY:
 				case TOOL_TINOPENER:
+				case TOOL_METAL_SCRAP:
+				case TOOL_MAGIC_SCRAP:
+				case TOOL_TINKERING_KIT:
+				case TOOL_SENTRYBOT:
+				case TOOL_DETONATOR_CHARGE:
+				case TOOL_BOMB:
+				case TOOL_SLEEP_BOMB:
+				case TOOL_FREEZE_BOMB:
+				case TOOL_TELEPORT_BOMB:
+				case TOOL_GYROBOT:
+				case TOOL_SPELLBOT:
+				case TOOL_DECOY:
+				case TOOL_DUMMYBOT:
 					return false;
 					break;
 				default:
@@ -5143,6 +5156,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	items.push_back(newItem(TOOL_GYROBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(CLOAK_BACKPACK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(TOOL_ALEMBIC, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
@@ -5190,7 +5204,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 		}
 	}
 	//newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
-	//newItem(TOOL_REPAIRKIT, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
+	//newItem(TOOL_DETONATOR_CHARGE, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 
 	messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
 	if ( stats[clientnum] )
@@ -5285,7 +5299,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 	int skillLVL = 0;
 	int bonusMetalScrap = 0;
 	int bonusMagicScrap = 0;
-	if ( stats[player] && players[player] )
+	if ( stats[player] && players[player] && item->status > BROKEN )
 	{
    		skillLVL = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity)) / 20;
 		switch ( skillLVL )
@@ -5989,6 +6003,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
 		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
 			if ( item->status == BROKEN )
 			{
 				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
@@ -6000,6 +6015,10 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 				*metal = 0;
 				*magic = 0;
 			}
+			break;
+		case TOOL_DETONATOR_CHARGE:
+			*metal = 2;
+			*magic = 4;
 			break;
 		default:
 			*metal = 0;
@@ -6031,6 +6050,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* m
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
 		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
 			if ( item->status != BROKEN )
 			{
 				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
@@ -6040,7 +6060,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* m
 				}
 				if ( magic > 0 )
 				{
-					*magic = std::max(1, (*magic) / 4);
+					*magic = std::max(0, (*magic) / 4);
 				}
 			}
 			else
@@ -6079,6 +6099,7 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 		case TOOL_SENTRYBOT:
 		case TOOL_SPELLBOT:
 		case TOOL_DUMMYBOT:
+		case TOOL_GYROBOT:
 			if ( item->appearance == ITEM_TINKERING_APPEARANCE && (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
 			{
 				return true;
@@ -6114,6 +6135,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 				return 0;
 			}
 			break;
+		case TOOL_BEARTRAP:
 		case TOOL_GYROBOT:
 		case TOOL_SLEEP_BOMB:
 		case TOOL_FREEZE_BOMB:
@@ -6246,7 +6268,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 
 	if ( stats[clientnum] && players[clientnum] )
 	{
-		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT )
+		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_GYROBOT )
 		{
 			if ( item->appearance == ITEM_TINKERING_APPEARANCE )
 			{

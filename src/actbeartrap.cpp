@@ -887,17 +887,51 @@ void actBomb(Entity* my)
 		// found enemy, do AoE effect.
 		BOMB_HIT_BY_PROJECTILE = 1;
 	}
-	else if ( bombExplodeAOETargets )
+	else if ( bombExplodeAOETargets || triggered )
 	{
+		//Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+		//entity->flags[INVISIBLE] = true;
+		//entity->flags[UPDATENEEDED] = true;
+		//entity->flags[PASSABLE] = true;
+		//entity->x = my->x;
+		//entity->y = my->y;
+		//entity->z = my->z;
+		//entity->sizex = my->sizex;
+		//entity->sizey = my->sizey;
+		//entity->yaw = my->yaw;
+		//entity->pitch = my->pitch;
+		//entity->roll = 3 * PI / 2;
+		//entity->behavior = &actItem;
+		//entity->skill[10] = TOOL_DETONATOR_CHARGE;
+		//entity->skill[11] = BROKEN;
+		//entity->skill[12] = 0;
+		//entity->skill[13] = 1;
+		//entity->skill[14] = ITEM_TINKERING_APPEARANCE;
+		//entity->skill[15] = 1;
+		//if ( BOMB_PLACEMENT == Item::ItemBombPlacement::BOMB_FLOOR )
+		//{
+		//	// don't fall down
+		//	entity->itemNotMoving = 1;
+		//	entity->itemNotMovingClient = 1;
+		//	serverUpdateEntitySkill(entity, 18); //update both the above flags.
+		//	serverUpdateEntitySkill(entity, 19);
+		//}
+		//else
+		//{
+		//	entity->itemNotMoving = 0;
+		//	entity->itemNotMovingClient = 0;
+		//}
+		Item* charge = newItem(TOOL_DETONATOR_CHARGE, BROKEN, 0, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
+		Entity* dropped = dropItemMonster(charge, my, nullptr);
+		if ( dropped )
+		{
+			dropped->flags[USERFLAG1] = true;
+		}
 		my->removeLightField();
-		playSoundEntity(my, 76, 64);
-		list_RemoveNode(my->mynode);
-		return;
-	}
-	else if ( triggered )
-	{
-		my->removeLightField();
-		bombDoEffect(my, triggered, entityDistance, false, false);
+		if ( triggered )
+		{
+			bombDoEffect(my, triggered, entityDistance, false, false);
+		}
 		playSoundEntity(my, 76, 64);
 		list_RemoveNode(my->mynode);
 		return;
