@@ -32,6 +32,7 @@
 #define BOULDER_PLAYERPUSHED my->skill[8]
 #define BOULDER_SPAWNBLOOD my->skill[9]
 #define BOULDER_BLOODTIME my->skill[10]
+#define BOULDER_INIT my->skill[11]
 
 bool boulderCheckIfBlockedExit(Entity* my)
 {
@@ -197,7 +198,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
 						if ( BOULDER_PLAYERPUSHED >= 0 && entity->skill[2] != BOULDER_PLAYERPUSHED )
 						{
-							steamAchievementClient(entity->skill[2], "BARONY_ACH_MOVED_ITSELF");
+							steamAchievementClient(BOULDER_PLAYERPUSHED, "BARONY_ACH_MOVED_ITSELF");
 						}
 					}
 				}
@@ -423,6 +424,12 @@ void actBoulder(Entity* my)
 	if ( !map.tiles[index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
 	{
 		noground = true;
+	}
+
+	if ( !BOULDER_INIT )
+	{
+		BOULDER_INIT = 1;
+		BOULDER_PLAYERPUSHED = -1;
 	}
 
 	// gravity
