@@ -4793,6 +4793,17 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
 	}
+	if ( entitystats->breastplate )
+	{
+		if ( entitystats->breastplate->type == MACHINIST_APRON )
+		{
+			if ( entitystats->breastplate->beatitude >= 0 || cursedItemIsBuff )
+			{
+				PER += 2;
+			}
+			PER += (cursedItemIsBuff ? abs(entitystats->breastplate->beatitude) : entitystats->breastplate->beatitude);
+		}
+	}
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 	{
 		PER += 8;

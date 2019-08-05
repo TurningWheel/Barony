@@ -1986,6 +1986,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case SILVER_DOUBLET:
 		case ARTIFACT_BREASTPIECE:
 		case TUNIC:
+		case MACHINIST_APRON:
 			equipItem(item, &stats[player]->breastplate, player);
 			break;
 		case HAT_PHRYGIAN:
@@ -3006,6 +3007,10 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 	else if ( type == STEEL_BREASTPIECE )
 	{
 		armor += 4;
+	}
+	else if ( type == MACHINIST_APRON )
+	{
+		armor += 1;
 	}
 	else if ( type == WIZARD_DOUBLET || type == HEALER_DOUBLET )
 	{

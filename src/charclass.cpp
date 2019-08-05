@@ -2068,7 +2068,7 @@ void initClass(int player)
 		//stats[player]->DEX -= 2;
 		stats[player]->CON -= 3;
 		stats[player]->INT += 1;
-		stats[player]->PER += 2;
+		stats[player]->PER += 0;
 
 		stats[player]->MAXHP -= 5;
 		stats[player]->HP -= 5;
@@ -2077,7 +2077,7 @@ void initClass(int player)
 		stats[player]->MP -= 10;
 
 		// skills
-		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 40;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 10;
 		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 10;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 10;
@@ -2101,6 +2101,18 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
 			hotbar[5].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(MACHINIST_APRON, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
 			free(item);
 		}
 		else
