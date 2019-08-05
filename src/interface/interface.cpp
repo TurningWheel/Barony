@@ -5162,7 +5162,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	items.push_back(newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(TOOL_GLASSES, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	items.push_back(newItem(TOOL_LANTERN, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
-	items.push_back(newItem(POTION_EMPTY, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
+	items.push_back(newItem(POTION_EMPTY, SERVICABLE, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems));
 	for ( auto it = items.begin(); it != items.end(); ++it )
 	{
 		Item* item = *it;
@@ -5581,7 +5581,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			{
 				if ( metal > 4 || magic > 4 )
 				{
-					if ( rand() % 2 == 0 )
+					if ( rand() % 10 == 0 )
 					{
 						increaseSkill = true;
 					}
@@ -5590,7 +5590,7 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 				{
 					if ( metal > 2 || magic > 2 )
 					{
-						if ( rand() % 10 == 0 )
+						if ( rand() % 20 == 0 )
 						{
 							increaseSkill = true;
 						}
@@ -6488,10 +6488,10 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(const Item* item, bool u
 			{
 				if ( !upgradingItem )
 				{
-					if ( rand() % 40 == 0 )
+					/*if ( rand() % 40 == 0 )
 					{
 						increaseSkill = true;
-					}
+					}*/
 				}
 				else
 				{

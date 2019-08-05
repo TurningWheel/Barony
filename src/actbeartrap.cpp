@@ -536,19 +536,19 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				if ( oldHP > 0 && stat->HP == 0 ) // got a kill
 				{
-					if ( rand() % 2 == 0 )
+					if ( rand() % 5 == 0 )
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
 				}
 				else if ( oldHP > stat->HP )
 				{
-					if ( rand() % 5 == 0 ) // wounded
+					if ( rand() % 20 == 0 ) // wounded
 					{
 						parent->increaseSkill(PRO_LOCKPICKING);
 					}
 				}
-				else if( rand() % 10 == 0) // any other effect
+				else if( rand() % 20 == 0) // any other effect
 				{
 					parent->increaseSkill(PRO_LOCKPICKING);
 				}
