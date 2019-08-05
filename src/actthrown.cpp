@@ -218,7 +218,8 @@ void actThrown(Entity* my)
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
 			// landing on the ground.
-			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
+			int index = (int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height;
+			if ( map.tiles[index] )
 			{
 				item = newItemFromEntity(my);
 				if ( itemCategory(item) == POTION )
@@ -248,8 +249,10 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( item && (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB) )
+				else if ( item && (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
 				{
+					// don't deploy on swimming/lava tiles.
 					if ( parent )
 					{
 						item->applyBomb(parent, item->type, Item::ItemBombPlacement::BOMB_FLOOR, Item::ItemBombFacingDirection::BOMB_UP, my, nullptr);
@@ -258,8 +261,10 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( item && itemIsThrowableTinkerTool(item) )
+				else if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
 				{
+					// don't deploy on swimming/lava tiles.
 					if ( parent )
 					{
 						item->applyTinkeringCreation(parent, my);
