@@ -4762,12 +4762,15 @@ void item_FoodAutomaton(Item*& item, int player)
 		return;
 	}
 
-	// automaton hunger/combustion tick is every 0.6 seconds. 
+	// automaton hunger/combustion tick is every 0.6 seconds.
+	// 600 hunger = 6 minutes
+	// 200 hunger = 2 minutes
 	// 100 hunger = 60 seconds.
 	// 80 hunger = 48 seconds
 	// 50 hunger = 30 seconds
 	// 40 hunger = 24 seconds
 	// 20 hunger = 12 seconds
+	int oldHunger = stats[player]->HUNGER;
 
 	// replenish nutrition points
 	if ( svFlags & SV_FLAG_HUNGER )
@@ -4777,23 +4780,23 @@ void item_FoodAutomaton(Item*& item, int player)
 			case FOOD_BREAD:
 			case FOOD_CREAMPIE:
 			case FOOD_BLOOD:
-				stats[player]->HUNGER += 20;
+				stats[player]->HUNGER += 50;
 				break;
 			case FOOD_CHEESE:
 			case FOOD_APPLE:
 			case FOOD_TOMALLEY:
-				stats[player]->HUNGER += 20;
+				stats[player]->HUNGER += 50;
 				break;
 			case FOOD_MEAT:
 			case FOOD_FISH:
-				stats[player]->HUNGER += 20;
+				stats[player]->HUNGER += 50;
 				break;
 			case FOOD_TIN:
-				stats[player]->HUNGER += 100;
+				stats[player]->HUNGER += 200;
 				break;
 			case GEM_ROCK:
 			case GEM_GLASS:
-				stats[player]->HUNGER += 10;
+				stats[player]->HUNGER += 20;
 				break;
 			case GEM_LUCK:
 			case GEM_GARNET:
@@ -4811,15 +4814,15 @@ void item_FoodAutomaton(Item*& item, int player)
 			case GEM_DIAMOND:
 			case GEM_JETSTONE:
 			case GEM_OBSIDIAN:
-				stats[player]->HUNGER += 100;
+				stats[player]->HUNGER += 600;
 				players[player]->entity->modMP(10);
 				break;
 			case READABLE_BOOK:
-				stats[player]->HUNGER += 50;
+				stats[player]->HUNGER += 200;
 				break;
 			case SCROLL_MAIL:
 			case SCROLL_BLANK:
-				stats[player]->HUNGER += 50;
+				stats[player]->HUNGER += 200;
 				break;
 			case SCROLL_IDENTIFY:
 			case SCROLL_LIGHT:
@@ -4831,15 +4834,15 @@ void item_FoodAutomaton(Item*& item, int player)
 			case SCROLL_TELEPORTATION:
 			case SCROLL_SUMMON:
 				players[player]->entity->modMP(20);
-				stats[player]->HUNGER += 50;
+				stats[player]->HUNGER += 200;
 				break;
 			case SCROLL_ENCHANTWEAPON:
 			case SCROLL_ENCHANTARMOR:
 				players[player]->entity->modMP(40);
-				stats[player]->HUNGER += 50;
+				stats[player]->HUNGER += 200;
 				break;
 			case SCROLL_FIRE:
-				stats[player]->HUNGER += 300;
+				stats[player]->HUNGER += 1500;
 				players[player]->entity->modMP(stats[player]->MAXMP);
 				break;
 			default:
@@ -4856,20 +4859,23 @@ void item_FoodAutomaton(Item*& item, int player)
 		messagePlayer(player, language[911]);
 	}
 
-	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 300);
+	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 1500);
 	// results of eating
 	if ( true /*(svFlags & SV_FLAG_HUNGER)*/ )
 	{
-		if ( stats[player]->HUNGER >= 300 )
+		if ( stats[player]->HUNGER >= 1500 )
 		{
-			messagePlayer(player, language[3483]);
+			messagePlayer(player, language[3483]); // at capacity
+		}
+		else if ( stats[player]->HUNGER >= 1200 && oldHunger < 1200 )
+		{
 			messagePlayer(player, language[3484]);
 		}
-		else if ( stats[player]->HUNGER > 200 )
+		else if ( stats[player]->HUNGER >= 600 && oldHunger < 600 )
 		{
-			messagePlayer(player, language[3484]);
+			messagePlayer(player, language[3696]);
 		}
-		else if ( stats[player]->HUNGER > 50 )
+		else if ( stats[player]->HUNGER >= 300 && oldHunger < 300 )
 		{
 			messagePlayer(player, language[3485]);
 		}

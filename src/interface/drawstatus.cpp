@@ -726,21 +726,29 @@ void drawStatus()
 		}
 	}
 
-	if ( stats[clientnum]->type == AUTOMATON && stats[clientnum]->HUNGER > 0 )
+	if ( stats[clientnum]->type == AUTOMATON )
 	{
-		if ( stats[clientnum]->HUNGER > 50 || (ticks % 50) - (ticks % 25) )
+		if ( stats[clientnum]->HUNGER > 300 || (ticks % 50) - (ticks % 25) )
 		{
 			pos.x = xoffset + playerStatusBarWidth + 10; // was pos.x = 128;
 			pos.y = yres - 160;
 			pos.w = 64;
 			pos.h = 64;
-			if ( stats[clientnum]->HUNGER > 200 )
+			if ( stats[clientnum]->HUNGER > 1200 )
 			{
 				drawImageScaled(hunger_boiler_hotflame_bmp, nullptr, &pos);
 			}
 			else
 			{
-				drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, std::max(std::min(stats[clientnum]->HUNGER - 50, 100), 10) / 100.f);
+				if ( stats[clientnum]->HUNGER > 600 )
+				{
+					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, 1.f);
+				}
+				else
+				{
+					float percent = (stats[clientnum]->HUNGER - 300) / 300.f; // always show a little bit more at the bottom (10-20%)
+					drawImageScaledPartial(hunger_boiler_flame_bmp, nullptr, &pos, percent);
+				}
 			}
 			drawImageScaled(hunger_boiler_bmp, nullptr, &pos);
 		}

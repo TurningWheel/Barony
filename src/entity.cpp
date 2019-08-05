@@ -2838,7 +2838,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( myStats->type == AUTOMATON && player >= 0 )
 	{
-		if ( ticks % hungerTickRate == 0 )
+		if ( ticks % (hungerTickRate / 5) == 0 )
 		{
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 			if ( myStats->HUNGER > 0 )
@@ -3127,13 +3127,19 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		int manaRegenInterval = getManaRegenInterval(*myStats);
 		this->char_energize++;
-		if ( this->char_energize >= manaRegenInterval && myStats->HUNGER <= 0 )
+		if ( this->char_energize >= (manaRegenInterval / 6) && myStats->HUNGER <= 300 )
 		{
-			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
+			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 300.f);
 			this->char_energize = 0;
 			this->modMP(-1);
 		}
-		else if ( this->char_energize >= manaRegenInterval && myStats->HUNGER > 200 )
+		else if ( this->char_energize >= (manaRegenInterval / 4) && myStats->HUNGER > 1200 )
+		{
+			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 200.f);
+			this->char_energize = 0;
+			this->modMP(1);
+		}
+		else if ( this->char_energize >= (manaRegenInterval) && myStats->HUNGER > 300 )
 		{
 			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
 			this->char_energize = 0;
@@ -14184,9 +14190,9 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		}
 	}
 
-	if ( behavior == &actPlayer && myStats.type == AUTOMATON && myStats.HUNGER < 200 )
+	if ( behavior == &actPlayer && myStats.type == AUTOMATON && myStats.HUNGER < 300 )
 	{
-		float floatRegenTime = (90 * regenTime) / (std::max(myStats.MAXMP, 1));
+		float floatRegenTime = (60 * regenTime) / (std::max(myStats.MAXMP, 1));
 		if ( manaring > 0 )
 		{
 			return floatRegenTime * (manaring * 2); // lose 1 MP each 12 base seconds - good!

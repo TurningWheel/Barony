@@ -29,8 +29,8 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	client_classes[player] = CLASS_MACHINIST;/*
-	stats[player]->playerRace = RACE_INCUBUS;*/
+	//client_classes[player] = CLASS_MACHINIST;/*
+	//stats[player]->playerRace = RACE_INCUBUS;*/
 	//stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
