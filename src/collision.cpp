@@ -1100,6 +1100,10 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 			{
 				ground = false;
 			}
+			else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT )
+			{
+				ground = false;
+			}
 		}
 	}
 
