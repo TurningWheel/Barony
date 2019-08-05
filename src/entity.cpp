@@ -750,6 +750,10 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 		light = TOUCHRANGE;
 	}
 	light = std::max(light, 0);
+	if ( myStats.type == DUMMYBOT )
+	{
+		light = std::max(light, 64); // dummybots can always be seen at least 4 tiles away.
+	}
 	return light;
 }
 
