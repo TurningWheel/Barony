@@ -2838,7 +2838,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( myStats->type == AUTOMATON && player >= 0 )
 	{
-		if ( ticks % (hungerTickRate / 5) == 0 )
+		if ( ticks % (hungerTickRate / 2) == 0 )
 		{
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 			if ( myStats->HUNGER > 0 )
@@ -3129,19 +3129,28 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_energize++;
 		if ( this->char_energize >= (manaRegenInterval / 6) && myStats->HUNGER <= 300 )
 		{
-			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 300.f);
+			if ( rand() % 5 == 0 )
+			{
+				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 300.f);
+			}
 			this->char_energize = 0;
 			this->modMP(-1);
 		}
 		else if ( this->char_energize >= (manaRegenInterval / 4) && myStats->HUNGER > 1200 )
 		{
-			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 200.f);
+			if ( rand() % 5 == 0 )
+			{
+				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 200.f);
+			}
 			this->char_energize = 0;
 			this->modMP(1);
 		}
 		else if ( this->char_energize >= (manaRegenInterval) && myStats->HUNGER > 300 )
 		{
-			messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
+			if ( rand() % 5 == 0 )
+			{
+				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
+			}
 			this->char_energize = 0;
 			this->modMP(1);
 		}
@@ -4458,6 +4467,19 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		if ( stats[my->monsterAllyIndex] )
 		{
 			DEX += 1 + (stats[my->monsterAllyIndex]->PROFICIENCIES[PRO_LEADERSHIP] / 20);
+		}
+	}
+
+	if ( my && my->behavior == &actPlayer && entitystats->type == AUTOMATON )
+	{
+		real_t ratio = entitystats->MP / static_cast<real_t>(entitystats->MAXMP);
+		if ( ratio < 0.1 )
+		{
+			DEX -= std::max((std::max(0, DEX) / 2), 3);
+		}
+		else if ( ratio < 0.25 )
+		{
+			DEX -= std::max((std::max(0, DEX) / 4), 2);
 		}
 	}
 	if ( svFlags & SV_FLAG_HUNGER )

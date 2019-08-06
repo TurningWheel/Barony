@@ -4792,11 +4792,11 @@ void item_FoodAutomaton(Item*& item, int player)
 				stats[player]->HUNGER += 50;
 				break;
 			case FOOD_TIN:
-				stats[player]->HUNGER += 200;
+				stats[player]->HUNGER += 400;
 				break;
 			case GEM_ROCK:
 			case GEM_GLASS:
-				stats[player]->HUNGER += 20;
+				stats[player]->HUNGER += 50;
 				break;
 			case GEM_LUCK:
 			case GEM_GARNET:
@@ -4814,15 +4814,15 @@ void item_FoodAutomaton(Item*& item, int player)
 			case GEM_DIAMOND:
 			case GEM_JETSTONE:
 			case GEM_OBSIDIAN:
-				stats[player]->HUNGER += 600;
+				stats[player]->HUNGER += 1000;
 				players[player]->entity->modMP(10);
 				break;
 			case READABLE_BOOK:
-				stats[player]->HUNGER += 200;
+				stats[player]->HUNGER += 400;
 				break;
 			case SCROLL_MAIL:
 			case SCROLL_BLANK:
-				stats[player]->HUNGER += 200;
+				stats[player]->HUNGER += 600;
 				break;
 			case SCROLL_IDENTIFY:
 			case SCROLL_LIGHT:
@@ -4834,12 +4834,12 @@ void item_FoodAutomaton(Item*& item, int player)
 			case SCROLL_TELEPORTATION:
 			case SCROLL_SUMMON:
 				players[player]->entity->modMP(20);
-				stats[player]->HUNGER += 200;
+				stats[player]->HUNGER += 600;
 				break;
 			case SCROLL_ENCHANTWEAPON:
 			case SCROLL_ENCHANTARMOR:
 				players[player]->entity->modMP(40);
-				stats[player]->HUNGER += 200;
+				stats[player]->HUNGER += 600;
 				break;
 			case SCROLL_FIRE:
 				stats[player]->HUNGER += 1500;
@@ -4879,7 +4879,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		{
 			messagePlayer(player, language[3485]);
 		}
-		else
+		else if ( stats[player]->HUNGER <= 300 )
 		{
 			messagePlayer(player, language[3486]);
 		}

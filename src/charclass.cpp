@@ -2208,7 +2208,7 @@ void initClass(int player)
 
 	if ( stats[player]->appearance == 0 && stats[player]->playerRace == RACE_AUTOMATON )
 	{
-		stats[player]->HUNGER = 150;
+		//stats[player]->HUNGER = 150;
 	}
 
 	if ( stats[player]->appearance == 0 
