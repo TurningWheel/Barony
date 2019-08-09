@@ -5937,7 +5937,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				if ( myStats->weapon != nullptr || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
-					if ( myStats->weapon->type == TOOL_PICKAXE || pose == PLAYER_POSE_GOLEM_SMASH )
+					if ( (myStats->weapon && myStats->weapon->type == TOOL_PICKAXE) || pose == PLAYER_POSE_GOLEM_SMASH )
 					{
 						// spawn several rock items
 						if ( pose == PLAYER_POSE_GOLEM_SMASH )
