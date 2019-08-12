@@ -3165,7 +3165,11 @@ bool Item::canUnequip(Stat* wielder)
 
 	if ( wielder )
 	{
-		if ( shouldInvertEquipmentBeatitude(wielder) )
+		if ( wielder->type == AUTOMATON )
+		{
+			return true;
+		}
+		else if ( shouldInvertEquipmentBeatitude(wielder) )
 		{
 			if ( beatitude > 0 )
 			{
