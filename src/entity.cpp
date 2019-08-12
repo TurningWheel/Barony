@@ -2836,7 +2836,9 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( myStats->type == AUTOMATON && player >= 0 )
+	bool playerAutomaton = (myStats->type == AUTOMATON && player >= 0);
+
+	if ( playerAutomaton )
 	{
 		if ( ticks % (hungerTickRate / 2) == 0 )
 		{
@@ -2847,17 +2849,18 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-
+				myStats->HUNGER = 0;
 			}
 		}
 	}
-	else if ( !processHunger )
+	
+	if ( !processHunger && !playerAutomaton )
 	{
 		if ( behavior == &actMonster )
 		{
 			myStats->HUNGER = 500;
 		}
-		else if ( myStats->HUNGER <= 100 )
+		else if ( myStats->HUNGER < 100 )
 		{
 			myStats->HUNGER = 100;
 			serverUpdateHunger(player);
@@ -2908,41 +2911,44 @@ void Entity::handleEffects(Stat* myStats)
 		//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 		if ( myStats->HUNGER > 0 )
 		{
-			myStats->HUNGER--;
-			if ( myStats->HUNGER == 1500 )
+			if ( !playerAutomaton )
 			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				myStats->HUNGER--;
+				if ( myStats->HUNGER == 1500 )
 				{
-					messagePlayer(player, language[629]);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, language[629]);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
-			}
-			else if ( myStats->HUNGER == 250 )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				else if ( myStats->HUNGER == 250 )
 				{
-					messagePlayer(player, language[630]);
-					playSoundPlayer(player, 32, 128);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, language[630]);
+						playSoundPlayer(player, 32, 128);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
-			}
-			else if ( myStats->HUNGER == 150 )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				else if ( myStats->HUNGER == 150 )
 				{
-					messagePlayer(player, language[631]);
-					playSoundPlayer(player, 32, 128);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, language[631]);
+						playSoundPlayer(player, 32, 128);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
-			}
-			else if ( myStats->HUNGER == 50 )
-			{
-				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				else if ( myStats->HUNGER == 50 )
 				{
-					messagePlayer(player, language[632]);
-					playSoundPlayer(player, 32, 128);
+					if ( !myStats->EFFECTS[EFF_VOMITING] )
+					{
+						messagePlayer(player, language[632]);
+						playSoundPlayer(player, 32, 128);
+					}
+					serverUpdateHunger(player);
 				}
-				serverUpdateHunger(player);
 			}
 		}
 		else
@@ -2954,8 +2960,16 @@ void Entity::handleEffects(Stat* myStats)
 			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 150 == 0 )
 			{
 				serverUpdateHunger(player);
+				bool allowStarve = true;
+				if ( playerAutomaton )
+				{
+					if ( !(svFlags & SV_FLAG_HUNGER) )
+					{
+						allowStarve = false; // hunger off, don't starve at 0 MP.
+					}
+				}
 
-				if ( player >= 0 ) // Only Players can starve
+				if ( player >= 0 && allowStarve ) // Only Players can starve
 				{
 					if ( buddhamode )
 					{
@@ -3011,7 +3025,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	// "random" vomiting
 	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] 
-		&& myStats->type != SKELETON && effectShapeshift != NOTHING )
+		&& myStats->type != SKELETON && effectShapeshift != NOTHING && myStats->type != AUTOMATON )
 	{
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
@@ -3071,11 +3085,14 @@ void Entity::handleEffects(Stat* myStats)
 			entity->vel_x = vel * cos(entity->yaw);
 			entity->vel_y = vel * sin(entity->yaw);
 			entity->vel_z = -.5;
-			myStats->HUNGER -= 40;
-			if ( myStats->HUNGER <= 50 )
+			if ( svFlags & SV_FLAG_HUNGER )
 			{
-				myStats->HUNGER = 50;
-				myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+				myStats->HUNGER -= 40;
+				if ( myStats->HUNGER <= 50 )
+				{
+					myStats->HUNGER = 50;
+					myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+				}
 			}
 			serverSpawnGibForClient(entity);
 		}

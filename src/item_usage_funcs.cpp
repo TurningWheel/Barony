@@ -4741,7 +4741,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
 	}
 
-	/*if ( item->beatitude < 0 && item->type != FOOD_CREAMPIE )
+	if ( item->beatitude < 0 && item->type != FOOD_CREAMPIE )
 	{
 		if ( players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER) )
 		{
@@ -4750,7 +4750,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		}
 		consumeItem(item, player);
 		return;
-	}*/
+	}
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
 	{
 		messagePlayer(player, language[909]);
@@ -4773,116 +4773,112 @@ void item_FoodAutomaton(Item*& item, int player)
 	int oldHunger = stats[player]->HUNGER;
 
 	// replenish nutrition points
-	if ( svFlags & SV_FLAG_HUNGER )
+	// automaton hunger is always in effect
+	// hunger disabled will simply add 5 HP and still add fuel to the fire.
+	switch ( item->type )
 	{
-		switch ( item->type )
-		{
-			case FOOD_BREAD:
-			case FOOD_CREAMPIE:
-			case FOOD_BLOOD:
-				stats[player]->HUNGER += 50;
-				break;
-			case FOOD_CHEESE:
-			case FOOD_APPLE:
-			case FOOD_TOMALLEY:
-				stats[player]->HUNGER += 50;
-				break;
-			case FOOD_MEAT:
-			case FOOD_FISH:
-				stats[player]->HUNGER += 50;
-				break;
-			case FOOD_TIN:
-				stats[player]->HUNGER += 400;
-				break;
-			case GEM_ROCK:
-			case GEM_GLASS:
-				stats[player]->HUNGER += 50;
-				break;
-			case GEM_LUCK:
-			case GEM_GARNET:
-			case GEM_RUBY:
-			case GEM_JACINTH:
-			case GEM_AMBER:
-			case GEM_CITRINE:
-			case GEM_JADE:
-			case GEM_EMERALD:
-			case GEM_SAPPHIRE:
-			case GEM_AQUAMARINE:
-			case GEM_AMETHYST:
-			case GEM_FLUORITE:
-			case GEM_OPAL:
-			case GEM_DIAMOND:
-			case GEM_JETSTONE:
-			case GEM_OBSIDIAN:
-				stats[player]->HUNGER += 1000;
-				players[player]->entity->modMP(10);
-				break;
-			case READABLE_BOOK:
-				stats[player]->HUNGER += 400;
-				break;
-			case SCROLL_MAIL:
-			case SCROLL_BLANK:
-				stats[player]->HUNGER += 600;
-				break;
-			case SCROLL_IDENTIFY:
-			case SCROLL_LIGHT:
-			case SCROLL_REMOVECURSE:
-			case SCROLL_FOOD:
-			case SCROLL_MAGICMAPPING:
-			case SCROLL_REPAIR:
-			case SCROLL_DESTROYARMOR:
-			case SCROLL_TELEPORTATION:
-			case SCROLL_SUMMON:
-				players[player]->entity->modMP(20);
-				stats[player]->HUNGER += 600;
-				break;
-			case SCROLL_ENCHANTWEAPON:
-			case SCROLL_ENCHANTARMOR:
-				players[player]->entity->modMP(40);
-				stats[player]->HUNGER += 600;
-				break;
-			case SCROLL_FIRE:
-				stats[player]->HUNGER += 1500;
-				players[player]->entity->modMP(stats[player]->MAXMP);
-				break;
-			default:
-				messagePlayer(player, "Unknown food?");
-				break;
-		}
+		case FOOD_BREAD:
+		case FOOD_CREAMPIE:
+		case FOOD_BLOOD:
+		case FOOD_CHEESE:
+		case FOOD_APPLE:
+		case FOOD_TOMALLEY:
+		case FOOD_MEAT:
+		case FOOD_FISH:
+		case FOOD_TIN:
+			if ( svFlags & SV_FLAG_HUNGER )
+			{
+				messagePlayer(player, language[3697]); // no effect.
+				consumeItem(item, player);
+				return;
+			}
+			break;
+		case GEM_ROCK:
+		case GEM_GLASS:
+			stats[player]->HUNGER += 50;
+			break;
+		case GEM_LUCK:
+		case GEM_GARNET:
+		case GEM_RUBY:
+		case GEM_JACINTH:
+		case GEM_AMBER:
+		case GEM_CITRINE:
+		case GEM_JADE:
+		case GEM_EMERALD:
+		case GEM_SAPPHIRE:
+		case GEM_AQUAMARINE:
+		case GEM_AMETHYST:
+		case GEM_FLUORITE:
+		case GEM_OPAL:
+		case GEM_DIAMOND:
+		case GEM_JETSTONE:
+		case GEM_OBSIDIAN:
+			stats[player]->HUNGER += 1000;
+			players[player]->entity->modMP(10);
+			break;
+		case READABLE_BOOK:
+			stats[player]->HUNGER += 400;
+			break;
+		case SCROLL_MAIL:
+		case SCROLL_BLANK:
+			stats[player]->HUNGER += 600;
+			break;
+		case SCROLL_IDENTIFY:
+		case SCROLL_LIGHT:
+		case SCROLL_REMOVECURSE:
+		case SCROLL_FOOD:
+		case SCROLL_MAGICMAPPING:
+		case SCROLL_REPAIR:
+		case SCROLL_DESTROYARMOR:
+		case SCROLL_TELEPORTATION:
+		case SCROLL_SUMMON:
+			players[player]->entity->modMP(20);
+			stats[player]->HUNGER += 600;
+			break;
+		case SCROLL_ENCHANTWEAPON:
+		case SCROLL_ENCHANTARMOR:
+			players[player]->entity->modMP(40);
+			stats[player]->HUNGER += 600;
+			break;
+		case SCROLL_FIRE:
+			stats[player]->HUNGER += 1500;
+			players[player]->entity->modMP(stats[player]->MAXMP);
+			break;
+		default:
+			messagePlayer(player, "Unknown food?");
+			break;
 	}
-	else
+
+	if ( !(svFlags & SV_FLAG_HUNGER) && oldHunger == stats[player]->HUNGER ) // ate food, hunger is disabled and did not gain heat (normal food items)
 	{
 		if ( players[player] && players[player]->entity )
 		{
 			players[player]->entity->modHP(5);
 		}
-		messagePlayer(player, language[911]);
+		messagePlayer(player, language[911]); // mmm, tasty!
 	}
 
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 1500);
 	// results of eating
-	if ( true /*(svFlags & SV_FLAG_HUNGER)*/ )
+	if ( stats[player]->HUNGER >= 1500 )
 	{
-		if ( stats[player]->HUNGER >= 1500 )
-		{
-			messagePlayer(player, language[3483]); // at capacity
-		}
-		else if ( stats[player]->HUNGER >= 1200 && oldHunger < 1200 )
-		{
-			messagePlayer(player, language[3484]);
-		}
-		else if ( stats[player]->HUNGER >= 600 && oldHunger < 600 )
-		{
-			messagePlayer(player, language[3696]);
-		}
-		else if ( stats[player]->HUNGER >= 300 && oldHunger < 300 )
-		{
-			messagePlayer(player, language[3485]);
-		}
-		else if ( stats[player]->HUNGER <= 300 )
-		{
-			messagePlayer(player, language[3486]);
-		}
+		messagePlayer(player, language[3483]); // at capacity
+	}
+	else if ( stats[player]->HUNGER >= 1200 && oldHunger < 1200 )
+	{
+		messagePlayer(player, language[3484]);
+	}
+	else if ( stats[player]->HUNGER >= 600 && oldHunger < 600 )
+	{
+		messagePlayer(player, language[3696]);
+	}
+	else if ( stats[player]->HUNGER >= 300 && oldHunger < 300 )
+	{
+		messagePlayer(player, language[3485]);
+	}
+	else if ( stats[player]->HUNGER <= 300 )
+	{
+		messagePlayer(player, language[3486]);
 	}
 
 	serverUpdateHunger(player);
@@ -4901,6 +4897,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case FOOD_TOMALLEY:
 		case FOOD_MEAT:
 		case FOOD_FISH:
+		case FOOD_TIN:
 
 		case GEM_ROCK:
 		case GEM_GLASS:
