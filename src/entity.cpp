@@ -3144,7 +3144,28 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		int manaRegenInterval = getManaRegenInterval(*myStats);
 		this->char_energize++;
-		if ( this->char_energize >= (manaRegenInterval / 6) && myStats->HUNGER <= 300 )
+
+		if ( myStats->HUNGER <= 300 )
+		{
+			manaRegenInterval /= 6; // degrade faster
+		}
+		else if ( myStats->HUNGER > 1200 )
+		{
+			if ( myStats->MP / static_cast<real_t>(std::max(1, myStats->MAXMP)) <= 0.5 )
+			{
+				manaRegenInterval /= 4; // increase faster at < 50% mana
+			}
+			else
+			{
+				manaRegenInterval /= 2; // increase less faster at > 50% mana
+			}
+		}
+		else if ( myStats->HUNGER > 300 )
+		{
+			// normal manaRegenInterval 300-1200 hunger.
+		}
+
+		if ( this->char_energize >= manaRegenInterval && myStats->HUNGER <= 300 )
 		{
 			if ( rand() % 5 == 0 )
 			{
@@ -3153,16 +3174,7 @@ void Entity::handleEffects(Stat* myStats)
 			this->char_energize = 0;
 			this->modMP(-1);
 		}
-		else if ( this->char_energize >= (manaRegenInterval / 4) && myStats->HUNGER > 1200 )
-		{
-			if ( rand() % 5 == 0 )
-			{
-				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 200.f);
-			}
-			this->char_energize = 0;
-			this->modMP(1);
-		}
-		else if ( this->char_energize >= (manaRegenInterval) && myStats->HUNGER > 300 )
+		else if ( this->char_energize >= manaRegenInterval )
 		{
 			if ( rand() % 5 == 0 )
 			{
@@ -9650,7 +9662,7 @@ bool Entity::checkEnemy(Entity* your)
 						}
 						break;
 					case AUTOMATON:
-						if ( yourStats->type == KOBOLD )
+						if ( yourStats->type == INCUBUS || yourStats->type == SUCCUBUS )
 						{
 							result = false;
 						}
@@ -9735,7 +9747,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( myStats->type == KOBOLD )
+							if ( myStats->type == INCUBUS || myStats->type == SUCCUBUS )
 							{
 								result = false;
 							}
@@ -9979,10 +9991,10 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( yourStats->type == KOBOLD )
+							/*if ( yourStats->type == KOBOLD )
 							{
 								result = true;
-							}
+							}*/
 							break;
 						default:
 							break;
@@ -10064,10 +10076,10 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							if ( myStats->type == KOBOLD )
+							/*if ( myStats->type == KOBOLD )
 							{
 								result = true;
-							}
+							}*/
 							break;
 						default:
 							break;
@@ -12966,7 +12978,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				}
 				else if ( shouldWield )
 				{
-					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 )
+					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 && myStats->type != AUTOMATON )
 					{
 						if ( item && item->interactNPCUid == getUID() && forcePickupItem )
 						{
