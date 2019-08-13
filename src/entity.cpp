@@ -14463,9 +14463,16 @@ void Entity::SetEntityOnFire()
 		if ( this->behavior == &actPlayer )
 		{
 			Stat* myStats = this->getStats();
-			if ( myStats && myStats->type == SKELETON )
+			if ( myStats )
 			{
-				return;
+				if ( myStats->type == SKELETON )
+				{
+					return;
+				}
+				if ( myStats->breastplate && myStats->breastplate->type == MACHINIST_APRON )
+				{
+					return;
+				}
 			}
 		}
 		// Check if the Entity is already on fire
