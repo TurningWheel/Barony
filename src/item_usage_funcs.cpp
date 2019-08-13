@@ -97,10 +97,13 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 			else
 			{
-				entity->modHP(5 * item->beatitude);
+				if ( stats->type != AUTOMATON )
+				{
+					entity->modHP(5 * item->beatitude);
+					playSoundEntity(entity, 168, 128);
+					spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
+				}
 				playSoundEntity(entity, 52, 64);
-				playSoundEntity(entity, 168, 128);
-				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 			}
 		}
 		else
@@ -143,6 +146,19 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 				createParticleDropRising(entity, 593, 1.f);
 				serverSpawnMiscParticles(entity, PARTICLE_EFFECT_RISING_DROP, 593);
 			}
+			if ( stats->type == AUTOMATON )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+				messagePlayerColor(player, color, language[3700]);
+				stats->HUNGER -= 200; //Lose boiler
+				int mpAmount = 3 + rand() % 6;
+				if ( item->beatitude > 0 )
+				{
+					mpAmount += 2 + rand() % 4;
+				}
+				players[player]->entity->modMP(mpAmount); //Raise temperature because steam.
+				serverUpdateHunger(player);
+			}
 		}
 		if ( player != clientnum )
 		{
@@ -163,7 +179,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
-		else
+		else if ( stats->type != AUTOMATON )
 		{
 			messagePlayer(player, language[752]);
 		}
@@ -189,7 +205,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			camera_shakex += .1;
 			camera_shakey += 10;
 		}
-		else
+		else if ( stats->type != AUTOMATON )
 		{
 			messagePlayer(player, language[753]);
 		}
@@ -4716,7 +4732,7 @@ void item_FoodAutomaton(Item*& item, int player)
 
 	if ( player >= 0 && stats[player]->type != AUTOMATON )
 	{
-		messagePlayer(player, "Err: You are not an Automaton!");
+		//messagePlayer(player, "Err: You are not an Automaton!");
 		return;
 	}
 
@@ -4768,6 +4784,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	// 40 hunger = 24 seconds
 	// 20 hunger = 12 seconds
 	int oldHunger = stats[player]->HUNGER;
+	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 
 	// replenish nutrition points
 	// automaton hunger is always in effect
@@ -4838,11 +4855,12 @@ void item_FoodAutomaton(Item*& item, int player)
 			stats[player]->HUNGER += 600;
 			break;
 		case SCROLL_FIRE:
+		{
 			stats[player]->HUNGER += 1500;
 			players[player]->entity->modMP(stats[player]->MAXMP);
-			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 			messagePlayerColor(player, color, language[3699]); // superheats
 			break;
+		}
 		default:
 			messagePlayer(player, "Unknown food?");
 			break;
@@ -4870,23 +4888,27 @@ void item_FoodAutomaton(Item*& item, int player)
 	// results of eating
 	if ( stats[player]->HUNGER >= 1500 )
 	{
-		messagePlayer(player, language[3483]); // at capacity
+		messagePlayerColor(player, color, language[3483]); // at capacity
 	}
 	else if ( stats[player]->HUNGER >= 1200 && oldHunger < 1200 )
 	{
-		messagePlayer(player, language[3484]);
+		messagePlayerColor(player, color, language[3484]);
 	}
 	else if ( stats[player]->HUNGER >= 600 && oldHunger < 600 )
 	{
-		messagePlayer(player, language[3696]);
+		messagePlayerColor(player, color, language[3696]);
 	}
 	else if ( stats[player]->HUNGER >= 300 && oldHunger < 300 )
 	{
-		messagePlayer(player, language[3485]);
+		messagePlayerColor(player, color, language[3485]);
 	}
 	else if ( stats[player]->HUNGER <= 300 )
 	{
-		messagePlayer(player, language[3486]);
+		messagePlayerColor(player, color, language[3486]);
+	}
+	else if ( oldHunger < stats[player]->HUNGER )
+	{
+		messagePlayerColor(player, color, language[3704]);
 	}
 
 	serverUpdateHunger(player);
