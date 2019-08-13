@@ -491,7 +491,7 @@ void item_ScrollBlank(Item* item, int player);
 void item_ScrollEnchantWeapon(Item* item, int player);
 void item_ScrollEnchantArmor(Item* item, int player);
 void item_ScrollRemoveCurse(Item* item, int player);
-void item_ScrollFire(Item* item, int player);
+bool item_ScrollFire(Item* item, int player); // return true if exploded into fire.
 void item_ScrollFood(Item* item, int player);
 void item_ScrollMagicMapping(Item* item, int player);
 void item_ScrollRepair(Item* item, int player);

@@ -14469,6 +14469,10 @@ void Entity::SetEntityOnFire()
 				{
 					return;
 				}
+				if ( myStats->type == AUTOMATON )
+				{
+					return;
+				}
 				if ( myStats->breastplate && myStats->breastplate->type == MACHINIST_APRON )
 				{
 					return;

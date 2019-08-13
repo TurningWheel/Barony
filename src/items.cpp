@@ -2135,12 +2135,25 @@ void useItem(Item* item, int player, Entity* usedBy)
 			}
 			break;
 		case SCROLL_FIRE:
-			item_ScrollFire(item, player);
+		{
+			bool exploded = item_ScrollFire(item, player);
+			if ( exploded && stats[player] && stats[player]->type == AUTOMATON )
+			{
+				if ( multiplayer != CLIENT )
+				{
+					stats[player]->HUNGER = std::min(stats[player]->HUNGER + 1500, 1500);
+					// results of eating
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(player, color, language[3699]); // superheats
+					serverUpdateHunger(player);
+				}
+			}
 			if ( !players[player]->entity->isBlind() )
 			{
 				consumeItem(item, player);
 			}
 			break;
+		}
 		case SCROLL_FOOD:
 			item_ScrollFood(item, player);
 			if ( !players[player]->entity->isBlind() )

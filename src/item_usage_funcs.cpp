@@ -2724,22 +2724,22 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	consumeItem(item, player);
 }
 
-void item_ScrollFire(Item* item, int player)
+bool item_ScrollFire(Item* item, int player)
 {
 	if (multiplayer == CLIENT)
 	{
-		return;
+		return false;
 	}
 
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
-		return;
+		return false;
 	}
 
 	if (players[player]->entity->isBlind())
 	{
 		messagePlayer(player, language[775]);
-		return;
+		return false;
 	}
 
 	if (player == clientnum)
@@ -2753,6 +2753,7 @@ void item_ScrollFire(Item* item, int player)
 	if (item->beatitude < 0)
 	{
 		messagePlayer(player, language[863]);
+		return false;
 	}
 	else
 	{
@@ -2773,7 +2774,9 @@ void item_ScrollFire(Item* item, int player)
 			entity->vel_z = vel * sin(entity->pitch) * .2;
 			entity->skill[0] = 5 + rand() % 10;
 		}
+		return true;
 	}
+	return false;
 }
 
 void item_ScrollFood(Item* item, int player)
@@ -4745,16 +4748,6 @@ void item_FoodAutomaton(Item*& item, int player)
 		playSoundEntity(players[player]->entity, 50 + rand() % 2, 64);
 	}
 
-	if ( item->beatitude < 0 && item->type != FOOD_CREAMPIE )
-	{
-		if ( players[player] && players[player]->entity && !(svFlags & SV_FLAG_HUNGER) )
-		{
-			playSoundEntity(players[player]->entity, 28, 64);
-			players[player]->entity->modHP(-5);
-		}
-		consumeItem(item, player);
-		return;
-	}
 	if ( item->beatitude < 0 && item->type == FOOD_CREAMPIE )
 	{
 		messagePlayer(player, language[909]);
@@ -4847,6 +4840,8 @@ void item_FoodAutomaton(Item*& item, int player)
 		case SCROLL_FIRE:
 			stats[player]->HUNGER += 1500;
 			players[player]->entity->modMP(stats[player]->MAXMP);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			messagePlayerColor(player, color, language[3699]); // superheats
 			break;
 		default:
 			messagePlayer(player, "Unknown food?");
@@ -4857,6 +4852,15 @@ void item_FoodAutomaton(Item*& item, int player)
 	{
 		if ( players[player] && players[player]->entity )
 		{
+			if ( item->beatitude < 0 )
+			{
+				playSoundEntity(players[player]->entity, 28, 64);
+				players[player]->entity->modHP(-5);
+				messagePlayer(player, language[908]); // blecch! rotten food!
+				consumeItem(item, player);
+				return;
+			}
+
 			players[player]->entity->modHP(5);
 		}
 		messagePlayer(player, language[911]); // mmm, tasty!
