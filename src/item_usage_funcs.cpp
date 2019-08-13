@@ -3566,6 +3566,10 @@ void item_ToolMirror(Item*& item, int player)
 		}
 		return;
 	}
+	else if ( stats[player] && stats[player]->type == AUTOMATON )
+	{
+		messagePlayer(player, language[3698]);
+	}
 
 	if (item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY])
 	{
@@ -4821,7 +4825,7 @@ void item_FoodAutomaton(Item*& item, int player)
 			break;
 		case SCROLL_MAIL:
 		case SCROLL_BLANK:
-			stats[player]->HUNGER += 600;
+			stats[player]->HUNGER += 200;
 			break;
 		case SCROLL_IDENTIFY:
 		case SCROLL_LIGHT:

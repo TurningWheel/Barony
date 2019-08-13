@@ -2366,9 +2366,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								parent->killedByMonsterObituary(hit.entity);
 							}
 
-							hitstats->EFFECTS[EFF_BLEEDING] = true;
-							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] /= (1 + (int)resistance);
+							int bleedDuration = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							bleedDuration /= (1 + (int)resistance);
+							hit.entity->setEffect(EFF_BLEEDING, true, bleedDuration, true);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= 4;
