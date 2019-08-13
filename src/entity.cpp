@@ -6602,6 +6602,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					
+					if ( hitstats->type == DUMMYBOT )
+					{
+						// higher level dummy bots have damage cap limits on hit.
+						if ( hitstats->LVL >= 10 )
+						{
+							damage = std::min(damage, 15);
+						}
+						else if ( hitstats->LVL >= 5 )
+						{
+							damage = std::min(damage, 25);
+						}
+					}
+
 					hit.entity->modHP(-damage); // do the damage
 					bool skillIncreased = false;
 					// skill increase
