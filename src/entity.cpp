@@ -9687,7 +9687,7 @@ bool Entity::checkEnemy(Entity* your)
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
 			{
 				result = swornenemies[myStats->type][HUMAN];
-				if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
+				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && yourStats->type != AUTOMATON )
 				{
 					// enemies.
 					result = true;
@@ -9931,7 +9931,7 @@ bool Entity::checkFriend(Entity* your)
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = monsterally[HUMAN][yourStats->type];
-				if ( yourStats->type == HUMAN || yourStats->type == SHOPKEEPER )
+				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
 				{
 					result = false;
 				}
@@ -10004,10 +10004,10 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							/*if ( yourStats->type == KOBOLD )
+							if ( yourStats->type == HUMAN || yourStats->type == SHOPKEEPER )
 							{
 								result = true;
-							}*/
+							}
 							break;
 						default:
 							break;
@@ -10017,7 +10017,7 @@ bool Entity::checkFriend(Entity* your)
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
 			{
 				result = monsterally[myStats->type][HUMAN];
-				if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
+				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && yourStats->type != AUTOMATON )
 				{
 					result = false;
 				}
@@ -10089,10 +10089,10 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case AUTOMATON:
-							/*if ( myStats->type == KOBOLD )
+							if ( myStats->type == HUMAN || myStats->type == SHOPKEEPER )
 							{
 								result = true;
-							}*/
+							}
 							break;
 						default:
 							break;
