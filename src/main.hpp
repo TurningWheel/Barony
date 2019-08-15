@@ -25,6 +25,7 @@ typedef double real_t;
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 #include "Config.hpp"
 #include "physfs.h"
 
