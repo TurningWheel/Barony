@@ -1639,6 +1639,10 @@ void actPlayer(Entity* my)
 					if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						messagePlayer(PLAYER_NUM, language[573]);
+						if ( stats[PLAYER_NUM]->type == AUTOMATON )
+						{
+							messagePlayer(PLAYER_NUM, language[3703]);
+						}
 					}
 					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 					{
@@ -1647,6 +1651,11 @@ void actPlayer(Entity* my)
 						playSoundPlayer(PLAYER_NUM, 249, 128);
 						camera_shakex += .1;
 						camera_shakey += 10;
+					}
+					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == AUTOMATON )
+					{
+						messagePlayer(PLAYER_NUM, language[3702]);
+						playSound(136, 128);
 					}
 					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
@@ -1701,10 +1710,33 @@ void actPlayer(Entity* my)
 								steamAchievementClient(PLAYER_NUM, "BARONY_ACH_BLOOD_BOIL");
 							}
 						}
+						else if ( stats[PLAYER_NUM]->type == AUTOMATON )
+						{
+							if ( ticks % 10 == 0 ) // Water deals heat damage every 10 ticks
+							{
+								my->safeConsumeMP(2);
+							}
+							if ( ticks % 50 == 0 )
+							{
+								messagePlayer(PLAYER_NUM, language[3702]);
+								stats[PLAYER_NUM]->HUNGER -= 25;
+								serverUpdateHunger(PLAYER_NUM);
+							}
+						}
 					}
 					else if ( ticks % 10 == 0 ) // Lava deals damage every 10 ticks
 					{
 						my->modHP(-2 - rand() % 2);
+						if ( stats[PLAYER_NUM]->type == AUTOMATON )
+						{
+							my->modMP(2);
+							if ( ticks % 50 == 0 )
+							{
+								messagePlayer(PLAYER_NUM, language[3703]);
+								stats[PLAYER_NUM]->HUNGER += 50;
+								serverUpdateHunger(PLAYER_NUM);
+							}
+						}
 						my->setObituary(language[1506]); // "goes for a swim in some lava."
 						if ( !my->flags[BURNING] )
 						{
