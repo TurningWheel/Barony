@@ -7152,8 +7152,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 			if ( oldLeaderStats )
 			{
 				if ( leader.behavior == &actPlayer 
-					&& oldLeader == &leader
-					&& follower.flags[USERFLAG2] == false )
+					&& oldLeader == &leader )
 				{
 					steamAchievementClient(leader.skill[2], "BARONY_ACH_CONFESSOR");
 				}
