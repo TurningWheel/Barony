@@ -2267,6 +2267,10 @@ void initClass(int player)
 			addSpell(SPELL_TELEPORTATION, player, true);
 			addSpell(SPELL_SHADOW_TAG, player, true);
 		}
+		else if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+		{
+			addSpell(SPELL_SALVAGE, player, true);
+		}
 
 		if ( stats[player]->PROFICIENCIES[PRO_ALCHEMY] >= 0 )
 		{
