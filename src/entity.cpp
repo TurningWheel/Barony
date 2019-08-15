@@ -227,7 +227,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitDist(skill[8]),
 	actmagicOrbitVerticalDirection(skill[9]),
 	actmagicOrbitLifetime(skill[10]),
-	actmagicMirrorReflected(skill[11]),
+	actmagicMirrorReflected(skill[24]),
 	actmagicMirrorReflectedCaster(skill[12]),
 	actmagicCastByMagicstaff(skill[13]),
 	actmagicOrbitVerticalSpeed(fskill[2]),
