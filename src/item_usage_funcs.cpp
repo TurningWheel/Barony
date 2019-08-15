@@ -4861,6 +4861,32 @@ void item_FoodAutomaton(Item*& item, int player)
 			messagePlayerColor(player, color, language[3699]); // superheats
 			break;
 		}
+		case TOOL_METAL_SCRAP:
+			if ( stats[player]->HUNGER > 500 )
+			{
+				messagePlayer(player, language[3707]); // fails to add any more heat.
+				consumeItem(item, player);
+				return;
+			}
+			else
+			{
+				stats[player]->HUNGER += 50;
+				stats[player]->HUNGER = std::min(stats[player]->HUNGER, 550);
+			}
+			break;
+		case TOOL_MAGIC_SCRAP:
+			if ( stats[player]->HUNGER > 1100 )
+			{
+				messagePlayer(player, language[3707]); // fails to add any more heat.
+				consumeItem(item, player);
+				return;
+			}
+			else
+			{
+				stats[player]->HUNGER += 100;
+				stats[player]->HUNGER = std::min(stats[player]->HUNGER, 1199);
+			}
+			break;
 		default:
 			messagePlayer(player, "Unknown food?");
 			break;
@@ -4908,7 +4934,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	}
 	else if ( oldHunger < stats[player]->HUNGER )
 	{
-		messagePlayerColor(player, color, language[3704]);
+		messagePlayer(player, language[3704]);
 	}
 
 	serverUpdateHunger(player);
@@ -4964,6 +4990,9 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case SCROLL_TELEPORTATION:
 		case SCROLL_SUMMON:
 		case SCROLL_FIRE:
+
+		case TOOL_MAGIC_SCRAP:
+		case TOOL_METAL_SCRAP:
 			return true;
 			break;
 		default:

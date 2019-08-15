@@ -2365,6 +2365,27 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case FOOD_TIN:
 			item_FoodTin(item, player);
 			break;
+		case TOOL_MAGIC_SCRAP:
+		case TOOL_METAL_SCRAP:
+			if ( stats[player] && stats[player]->type == AUTOMATON )
+			{
+				item_Food(item, player);
+			}
+			else
+			{
+				if ( player == clientnum )
+				{
+					if ( item->type == TOOL_METAL_SCRAP )
+					{
+						messagePlayer(player, language[3705]);
+					}
+					else
+					{
+						messagePlayer(player, language[3706]);
+					}
+				}
+			}
+			break;
 		case READABLE_BOOK:
 			if (numbooks && player == clientnum)
 			{

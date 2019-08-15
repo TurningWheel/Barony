@@ -225,6 +225,17 @@ char* itemUseString(const Item* item)
 				return language[337];
 			case TOOL_ALEMBIC:
 				return language[3339];
+			case TOOL_METAL_SCRAP:
+			case TOOL_MAGIC_SCRAP:
+				if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
+				{
+					return language[338];
+				}
+				else
+				{
+					return language[1881];
+				}
+				break;
 			default:
 				break;
 		}

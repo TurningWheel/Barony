@@ -2845,7 +2845,24 @@ void Entity::handleEffects(Stat* myStats)
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 			if ( myStats->HUNGER > 0 )
 			{
+				bool update = (myStats->HUNGER % 100 == 0);
 				myStats->HUNGER--;
+				if ( update )
+				{
+					serverUpdateHunger(player);
+				}
+				if ( myStats->HUNGER == 299 )
+				{
+					messagePlayer(player, language[3708]);
+					messagePlayer(player, language[3709]);
+					playSoundPlayer(player, 32, 128);
+				}
+				else if ( myStats->HUNGER == 0 )
+				{
+					messagePlayer(player, language[3708]);
+					messagePlayer(player, language[3710]);
+					playSoundPlayer(player, 32, 128);
+				}
 			}
 			else
 			{
@@ -4510,8 +4527,13 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 		{
 			DEX -= std::max((std::max(0, DEX) / 4), 2);
 		}
+
+		if ( entitystats->HUNGER == 0 )
+		{
+			DEX -= 2;
+		}
 	}
-	if ( svFlags & SV_FLAG_HUNGER )
+	else if ( svFlags & SV_FLAG_HUNGER )
 	{
 		if ( entitystats->HUNGER >= 1500 )
 		{
