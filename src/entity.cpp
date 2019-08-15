@@ -13015,7 +13015,13 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						Entity* dropped = dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
 						if ( dropped && item && item->interactNPCUid == getUID() )
 						{
-							dropped->itemOriginalOwner = monsterAllyIndex;
+							if ( monsterAllyIndex >= 0 && monsterAllyIndex < MAXPLAYERS )
+							{
+								if ( players[monsterAllyIndex] && players[monsterAllyIndex]->entity )
+								{
+									dropped->itemOriginalOwner = players[monsterAllyIndex]->entity->getUID();
+								}
+							}
 						}
 					}
 
