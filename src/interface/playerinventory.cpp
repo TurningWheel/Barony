@@ -227,14 +227,7 @@ char* itemUseString(const Item* item)
 				return language[3339];
 			case TOOL_METAL_SCRAP:
 			case TOOL_MAGIC_SCRAP:
-				if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
-				{
-					return language[338];
-				}
-				else
-				{
-					return language[1881];
-				}
+				return language[1881];
 				break;
 			default:
 				break;
@@ -1599,7 +1592,8 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
 
-		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) && itemCategory(&item) != FOOD )
+		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
+			&& itemCategory(&item) != FOOD )
 		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
@@ -1789,7 +1783,7 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 	{
 		if ( !is_potion_bad )
 		{
-			if ( !itemIsConsumableByAutomaton(item) || itemCategory(&item) != FOOD )
+			if ( !itemIsConsumableByAutomaton(item) || (itemCategory(&item) != FOOD && item.type != TOOL_METAL_SCRAP && item.type != TOOL_MAGIC_SCRAP) )
 			{
 				drawOptionUse(item, x, y);
 			}
@@ -1814,7 +1808,13 @@ inline void drawItemMenuOptionAutomaton(const Item& item, int x, int y, int heig
 	y += height;
 
 	//Option 1.
-	if ( itemCategory(&item) != FOOD )
+	if ( item.type == TOOL_METAL_SCRAP || item.type == TOOL_MAGIC_SCRAP )
+	{
+		TTF_SizeUTF8(ttf12, language[1881], &width, nullptr);
+		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1881]);
+		y += height;
+	}
+	else if ( itemCategory(&item) != FOOD )
 	{
 		TTF_SizeUTF8(ttf12, language[3487], &width, nullptr);
 		ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[3487]);
@@ -1953,7 +1953,8 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 		}
 		current_y += slot_height;
 		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK
-			|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) && itemCategory(&item) != FOOD) )
+			|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
+				&& itemCategory(&item) != FOOD) )
 		{
 			if (mousey >= current_y && mousey < current_y + slot_height)
 			{
@@ -2038,7 +2039,31 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 			{
 				if ( !disableItemUsage )
 				{
-					useItem(item, clientnum);
+					if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON 
+						&& (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+					{
+						// consume item
+						if ( multiplayer == CLIENT )
+						{
+							strcpy((char*)net_packet->data, "FODA");
+							SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+							SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+							SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+							SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+							net_packet->data[24] = item->identified;
+							net_packet->data[25] = clientnum;
+							net_packet->address.host = net_server.host;
+							net_packet->address.port = net_server.port;
+							net_packet->len = 26;
+							sendPacketSafe(net_sock, -1, net_packet, 0);
+						}
+						item_FoodAutomaton(item, clientnum);
+					}
+					else
+					{
+						useItem(item, clientnum);
+					}
 				}
 				else
 				{
@@ -2155,25 +2180,33 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		}
 	}
 
-	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) && itemCategory(item) != FOOD )
+	if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) 
+		&& itemCategory(item) != FOOD )
 	{
-		// consume item
-		if ( multiplayer == CLIENT )
+		if ( item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP )
 		{
-			strcpy((char*)net_packet->data, "FODA");
-			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
-			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
-			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
-			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-			net_packet->data[24] = item->identified;
-			net_packet->data[25] = clientnum;
-			net_packet->address.host = net_server.host;
-			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
-			sendPacketSafe(net_sock, -1, net_packet, 0);
+			useItem(item, clientnum);
 		}
-		item_FoodAutomaton(item, clientnum);
+		else
+		{
+			// consume item
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "FODA");
+				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 26;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			item_FoodAutomaton(item, clientnum);
+		}
 	}
 	else if ( item->type == TOOL_ALEMBIC )
 	{
