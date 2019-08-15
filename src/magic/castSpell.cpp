@@ -881,6 +881,114 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			playSoundEntity(caster, 167, 128);
 		}
+		else if ( !strcmp(element->name, spellElement_salvageItem.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					int searchx = static_cast<int>(caster->x + 32 * cos(caster->yaw)) >> 4;
+					int searchy = static_cast<int>(caster->y + 32 * sin(caster->yaw)) >> 4;
+					std::vector<list_t*> itemsOnGround = TileEntityList.getEntitiesWithinRadius(searchx, searchy, 2);
+					int totalMetal = 0;
+					int totalMagic = 0;
+					int numItems = 0;
+					std::set<std::pair<int, int>> effectCoordinates;
+					for ( auto it = itemsOnGround.begin(); it != itemsOnGround.end(); ++it )
+					{
+						list_t* currentList = *it;
+						node_t* itemNode;
+						node_t* nextItemNode = nullptr;
+						for ( itemNode = currentList->first; itemNode != nullptr; itemNode = nextItemNode )
+						{
+							nextItemNode = itemNode->next;
+							Entity* itemEntity = (Entity*)itemNode->element;
+							if ( itemEntity && itemEntity->behavior == &actItem && entityDist(itemEntity, caster) < TOUCHRANGE )
+							{
+								Item* toSalvage = newItemFromEntity(itemEntity);
+								if ( toSalvage && GenericGUI.isItemSalvageable(toSalvage, i) )
+								{
+									int metal = 0;
+									int magic = 0;
+									GenericGUI.tinkeringGetItemValue(toSalvage, &metal, &magic);
+									totalMetal += metal;
+									totalMagic += magic;
+									++numItems;
+									effectCoordinates.insert(std::make_pair(static_cast<int>(itemEntity->x) >> 4, static_cast<int>(itemEntity->y) >> 4));
+
+									// delete item on ground.
+									itemEntity->removeLightField();
+									list_RemoveNode(itemEntity->mynode);
+								}
+								free(toSalvage);
+							}
+						}
+					}
+					if ( totalMetal == 0 && totalMagic == 0 )
+					{
+						messagePlayer(i, language[3713]);
+						playSoundEntity(caster, 163, 128);
+					}
+					else
+					{
+						messagePlayerColor(i, SDL_MapRGB(mainsurface->format, 0, 255, 0), language[3712], numItems);
+						playSoundEntity(caster, 167, 128);
+					}
+
+					if ( totalMetal > 0 )
+					{
+						Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, totalMetal, 0, true, nullptr);
+						if ( crafted )
+						{
+							Item* pickedUp = itemPickup(player, crafted);
+							messagePlayer(player, language[3665], totalMetal, items[pickedUp->type].name_identified);
+							if ( i == 0 ) // server/singleplayer
+							{
+								free(crafted); // if player != clientnum, then crafted == pickedUp
+							}
+							if ( i != 0 )
+							{
+								free(pickedUp);
+							}
+						}
+					}
+					if ( totalMagic > 0 )
+					{
+						Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, totalMagic, 0, true, nullptr);
+						if ( crafted )
+						{
+							Item* pickedUp = itemPickup(player, crafted);
+							messagePlayer(player, language[3665], totalMagic, items[pickedUp->type].name_identified);
+							if ( i == 0 ) // server/singleplayer
+							{
+								free(crafted); // if player != clientnum, then crafted == pickedUp
+							}
+							if ( i != 0 )
+							{
+								free(pickedUp);
+							}
+						}
+					}
+					if ( !effectCoordinates.empty() )
+					{
+						for ( auto it = effectCoordinates.begin(); it != effectCoordinates.end(); ++it )
+						{
+							std::pair<int, int> coords = *it;
+							spawnMagicEffectParticles(coords.first * 16 + 8, coords.second * 16 + 8, 7.5, 171);
+						}
+					}
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+				}
+			}
+			/*for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					spell_detectFoodEffectOnMap(i);
+				}
+			}*/
+		}
 		else if ( !strcmp(element->name, spellElement_trollsBlood.name) )
 		{
 			for ( i = 0; i < numplayers; ++i )

@@ -4679,8 +4679,8 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_TROLLS_BLOOD:
 				learned = addSpell(SPELL_TROLLS_BLOOD, player);
 				break;
-			case SPELLBOOK_5:
-				learned = addSpell(SPELL_5, player);
+			case SPELLBOOK_SALVAGE:
+				learned = addSpell(SPELL_SALVAGE, player);
 				break;
 			case SPELLBOOK_6:
 				learned = addSpell(SPELL_6, player);
@@ -4748,10 +4748,13 @@ void item_FoodAutomaton(Item*& item, int player)
 	}
 
 	// consumption message
-	int oldcount = item->count;
-	item->count = 1;
-	messagePlayer(player, language[907], item->description());
-	item->count = oldcount;
+	if ( item->type != TOOL_MAGIC_SCRAP && item->type != TOOL_METAL_SCRAP )
+	{
+		int oldcount = item->count;
+		item->count = 1;
+		messagePlayer(player, language[907], item->description());
+		item->count = oldcount;
+	}
 
 	// eating sound
 	if ( item->type == FOOD_BLOOD )

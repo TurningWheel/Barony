@@ -3812,7 +3812,14 @@ void GenericGUIMenu::updateGUI()
 									tinkeringGetRepairCost(item, &metal, &magic);
 								}
 								pos.x = windowX2 - 20 - TTF8_WIDTH * 12;
-								ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
+								if ( !item->identified )
+								{
+									ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "  ?    ?");
+								}
+								else
+								{
+									ttfPrintTextFormattedColor(ttf8, windowX2 - 24 - TTF8_WIDTH * 15, y, color, "%3d  %3d", metal, magic);
+								}
 								node_t* imageNode = items[TOOL_METAL_SCRAP].surfaces.first;
 								if ( imageNode )
 								{

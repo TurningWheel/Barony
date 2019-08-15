@@ -367,6 +367,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_trollsBlood.duration = 80 * TICKS_PER_SECOND;
 	strcpy(spellElement_detectFood.name, language[3489]);
 
+	spellElementConstructor(&spellElement_salvageItem);
+	spellElement_salvageItem.mana = 6;
+	spellElement_salvageItem.base_mana = 6;
+	spellElement_salvageItem.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
+	spellElement_salvageItem.damage = 0;
+	spellElement_salvageItem.duration = 0;
+	strcpy(spellElement_salvageItem.name, language[3711]);
+
 	spellElementConstructor(&spellElement_shadowTag);
 	spellElement_shadowTag.mana = 4;
 	spellElement_shadowTag.base_mana = 4;
@@ -1204,6 +1212,19 @@ void setupSpells()   ///TODO: Verify this function.
 	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_demonIllusion);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_salvageItem);
+	strcpy(spell_salvageItem.name, language[3711]);
+	spell_salvageItem.ID = SPELL_SALVAGE;
+	spell_salvageItem.difficulty = 40;
+	spell_salvageItem.elements.first = NULL;
+	spell_salvageItem.elements.last = NULL;
+	node = list_AddNodeLast(&spell_salvageItem.elements);
+	node->element = copySpellElement(&spellElement_salvageItem);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
