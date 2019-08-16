@@ -636,7 +636,10 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 				{
 					if (selectedItem->count > 1)
 					{
-						dropItem(selectedItem, clientnum);
+						if ( dropItem(selectedItem, clientnum) )
+						{
+							selectedItem = NULL;
+						}
 						toggleclick = true;
 					}
 					else

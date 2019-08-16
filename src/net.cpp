@@ -4079,7 +4079,13 @@ void serverHandlePacket()
 		entity->flags[INVISIBLE] = true;
 		for ( c = item->count; c > 0; c-- )
 		{
-			dropItemMonster(item, entity, stats[net_packet->data[25]]);
+			int qtyToDrop = 1;
+			if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+			{
+				qtyToDrop = 10;
+				c -= 9;
+			}
+			dropItemMonster(item, entity, stats[net_packet->data[25]], qtyToDrop);
 		}
 		list_RemoveNode(entity->mynode);
 		return;

@@ -2659,7 +2659,13 @@ void actPlayer(Entity* my)
 									entity->skill[10] = item->type;
 									entity->skill[11] = item->status;
 									entity->skill[12] = item->beatitude;
-									entity->skill[13] = 1;
+									int qtyToDrop = 1;
+									if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+									{
+										qtyToDrop = 10;
+										c -= 9;
+									}
+									entity->skill[13] = qtyToDrop;
 									entity->skill[14] = item->appearance;
 									entity->skill[15] = item->identified;
 								}

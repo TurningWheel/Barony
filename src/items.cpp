@@ -1141,15 +1141,15 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 
 	dropItem
 
-	Handles the client impulse to drop an item
+	Handles the client impulse to drop an item, returns true on free'd item.
 
 -------------------------------------------------------------------------------*/
 
-void dropItem(Item* item, int player)
+bool dropItem(Item* item, int player)
 {
 	if (!item)
 	{
-		return;
+		return false;
 	}
 
 	Entity* entity;
@@ -1157,7 +1157,7 @@ void dropItem(Item* item, int player)
 
 	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr || itemCategory(item) == SPELL_CAT)
 	{
-		return;
+		return false;
 	}
 	if ( itemIsEquipped(item, player) )
 	{
@@ -1171,7 +1171,7 @@ void dropItem(Item* item, int player)
 			{
 				messagePlayer(player, language[1087]);
 			}
-			return;
+			return false;
 		}
 	}
 
@@ -1195,9 +1195,18 @@ void dropItem(Item* item, int player)
 		}
 
 		oldcount = item->count;
-		item->count = 1;
-		messagePlayer(player, language[1088], item->description());
-		item->count = oldcount - 1;
+		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+		{
+			item->count = 10;
+			messagePlayer(player, language[1088], item->description());
+			item->count = oldcount - 10;
+		}
+		else
+		{
+			item->count = 1;
+			messagePlayer(player, language[1088], item->description());
+			item->count = oldcount - 1;
+		}
 
 		// unequip the item
 		/*if ( item->count <= 1 )
@@ -1212,6 +1221,7 @@ void dropItem(Item* item, int player)
 		if ( item->count <= 0 )
 		{
 			list_RemoveNode(item->node);
+			return true;
 		}
 	}
 	else
@@ -1220,6 +1230,12 @@ void dropItem(Item* item, int player)
 		{
 			closeBookGUI();
 		}
+		int qtyToDrop = 1;
+		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+		{
+			qtyToDrop = 10;
+		}
+
 		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
@@ -1236,7 +1252,7 @@ void dropItem(Item* item, int player)
 		entity->skill[10] = item->type;
 		entity->skill[11] = item->status;
 		entity->skill[12] = item->beatitude;
-		entity->skill[13] = 1;
+		entity->skill[13] = qtyToDrop;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
 		entity->parent = players[player]->entity->getUID();
@@ -1256,23 +1272,26 @@ void dropItem(Item* item, int player)
 			if ( item->node->list == &stats[0]->inventory )
 			{
 				oldcount = item->count;
-				item->count = 1;
+				item->count = qtyToDrop;
 				messagePlayer(player, language[1088], item->description());
-				item->count = oldcount - 1;
+				item->count = oldcount - qtyToDrop;
 				if ( item->count <= 0 )
 				{
 					list_RemoveNode(item->node);
+					return true;
 				}
 			}
 		}
 		else
 		{
-			item->count--;
+			item->count = item->count - qtyToDrop;
 			if ( item->count <= 0 )
 			{
 				free(item);
+				return true;
 			}
 		}
+		return false;
 	}
 }
 

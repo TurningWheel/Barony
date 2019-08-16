@@ -253,20 +253,26 @@ void actItem(Entity* my)
 						}
 						else
 						{
+							int pickedUpCount = item2->count;
 							item = itemPickup(i, item2);
 							if (item)
 							{
 								if (i == 0)
 								{
-									free(item2);
+									// item is the new inventory stack for server, free the picked up items
+									free(item2); 
+									int oldcount = item->count;
+									item->count = pickedUpCount;
+									messagePlayer(i, language[504], item->description());
+									item->count = oldcount;
 								}
-								int oldcount = item->count;
-								item->count = 1;
-								messagePlayer(i, language[504], item->description());
-								item->count = oldcount;
+								else
+								{
+									messagePlayer(i, language[504], item->description());
+								}
 								if (i != 0)
 								{
-									free(item);
+									free(item); // item is the picked up items (item == item2)
 								}
 								my->removeLightField();
 								list_RemoveNode(my->mynode);

@@ -1429,11 +1429,15 @@ void gameLogic(void)
 				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
+					bool droppedAll = false;
 					while ( item->count > 1 )
+					{
+						bool droppedAll = dropItem(item, clientnum);
+					}
+					if ( !droppedAll )
 					{
 						dropItem(item, clientnum);
 					}
-					dropItem(item, clientnum);
 				}
 				else
 				{
@@ -1922,11 +1926,15 @@ void gameLogic(void)
 				if ( itemCategory(item) != SPELL_CAT && (item->x >= INVENTORY_SIZEX || item->y >= INVENTORY_SIZEY) )
 				{
 					messagePlayer(clientnum, language[727], item->getName());
+					bool droppedAll = false;
 					while ( item->count > 1 )
+					{
+						droppedAll = dropItem(item, clientnum);
+					}
+					if ( !droppedAll )
 					{
 						dropItem(item, clientnum);
 					}
-					dropItem(item, clientnum);
 				}
 				else
 				{
