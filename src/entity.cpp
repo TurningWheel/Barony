@@ -2926,55 +2926,71 @@ void Entity::handleEffects(Stat* myStats)
 	else if ( ticks % hungerTickRate == 0 )
 	{
 		//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
-		if ( myStats->HUNGER > 0 )
+		if ( myStats->HUNGER > 0 && !playerAutomaton )
 		{
-			if ( !playerAutomaton )
+			myStats->HUNGER--;
+			if ( myStats->HUNGER == 1500 )
 			{
-				myStats->HUNGER--;
-				if ( myStats->HUNGER == 1500 )
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					if ( !myStats->EFFECTS[EFF_VOMITING] )
-					{
-						messagePlayer(player, language[629]);
-					}
-					serverUpdateHunger(player);
+					messagePlayer(player, language[629]);
 				}
-				else if ( myStats->HUNGER == 250 )
+				serverUpdateHunger(player);
+			}
+			else if ( myStats->HUNGER == 250 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					if ( !myStats->EFFECTS[EFF_VOMITING] )
-					{
-						messagePlayer(player, language[630]);
-						playSoundPlayer(player, 32, 128);
-					}
-					serverUpdateHunger(player);
+					messagePlayer(player, language[630]);
+					playSoundPlayer(player, 32, 128);
 				}
-				else if ( myStats->HUNGER == 150 )
+				serverUpdateHunger(player);
+			}
+			else if ( myStats->HUNGER == 150 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					if ( !myStats->EFFECTS[EFF_VOMITING] )
-					{
-						messagePlayer(player, language[631]);
-						playSoundPlayer(player, 32, 128);
-					}
-					serverUpdateHunger(player);
+					messagePlayer(player, language[631]);
+					playSoundPlayer(player, 32, 128);
 				}
-				else if ( myStats->HUNGER == 50 )
+				serverUpdateHunger(player);
+			}
+			else if ( myStats->HUNGER == 50 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
-					if ( !myStats->EFFECTS[EFF_VOMITING] )
-					{
-						messagePlayer(player, language[632]);
-						playSoundPlayer(player, 32, 128);
-					}
-					serverUpdateHunger(player);
+					messagePlayer(player, language[632]);
+					playSoundPlayer(player, 32, 128);
 				}
+				serverUpdateHunger(player);
 			}
 		}
 		else
 		{
+			bool doStarvation = true;
 			// Process HUNGER Effect - Wasting Away
-			myStats->HUNGER = 0;
+			if ( playerAutomaton )
+			{
+				if ( myStats->HUNGER == 0 && myStats->MP <= 0 )
+				{
+					// deal HP damage.
+					/*if ( myStats->HUNGER > 1 )
+					{
+						myStats->HUNGER = 1;
+					}*/
+				}
+				else
+				{
+					doStarvation = false;
+				}
+			}
+			else
+			{
+				myStats->HUNGER = 0;
+			}
 
 			// Deal Hunger damage every three seconds
-			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 150 == 0 )
+			if ( doStarvation && !myStats->EFFECTS[EFF_VOMITING] && ticks % 150 == 0 )
 			{
 				serverUpdateHunger(player);
 				bool allowStarve = true;
@@ -3015,7 +3031,14 @@ void Entity::handleEffects(Stat* myStats)
 
 					if ( myStats->HP > 0 )
 					{
-						messagePlayer(player, language[633]);
+						if ( playerAutomaton )
+						{
+							messagePlayer(player, language[3714]);
+						}
+						else
+						{
+							messagePlayer(player, language[633]);
+						}
 					}
 
 					// Shake the Host's screen
@@ -12116,11 +12139,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	else if ( !armBended )
 	{
 		weaponLimb->focalx = limbs[monsterType][6][0]; // 2.5
+		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 		if ( weaponLimb->sprite == items[CROSSBOW].index )
 		{
-			weaponLimb->focalx += 2;
+			weaponLimb->focalx += 2.1;
+			weaponLimb->focaly -= 0.1;
 		}
-		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
 		weaponLimb->focalz = limbs[monsterType][6][2]; // -.5
 		if ( isPlayer && isPotion )
 		{
@@ -12144,6 +12168,16 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		else if ( weaponLimb->sprite >= items[TOOL_BOMB].index && weaponLimb->sprite <= items[TOOL_TELEPORT_BOMB].index )
 		{
 			weaponLimb->focalz += 2;
+			if ( monsterType == SKELETON )
+			{
+				weaponLimb->focalx -= 0.25;
+				weaponLimb->focaly += 0.1;
+			}
+			else if ( monsterType == AUTOMATON )
+			{
+				weaponLimb->focaly += 0.5;
+				weaponLimb->focalz -= 1;
+			}
 		}
 	}
 	else
@@ -16122,6 +16156,11 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				{
 					shieldLimb->focaly += .5;
 				}
+				else if ( race == AUTOMATON )
+				{
+					shieldLimb->focaly += .5;
+					shieldLimb->focalz -= .5;
+				}
 				shieldLimb->focalz += .5;
 				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
 				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
@@ -16129,6 +16168,18 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->scalex = 0.8;
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
+			}
+			else
+			{
+				if ( shieldLimb->sprite != items[TOOL_TINKERING_KIT].index )
+				{
+					// automaton arm clips through shield. extend shield out more.
+					if ( race == AUTOMATON )
+					{
+						shieldLimb->focalx += 0.75;
+						shieldLimb->focaly += 1.25;
+					}
+				}
 			}
 
 			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
@@ -16256,12 +16307,34 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	{
 		//shieldLimb->pitch = 0;
 		shieldLimb->yaw += PI / 6;
-		shieldLimb->focalx -= .25;
+		shieldLimb->focalx -= .5;
 		shieldLimb->focaly += .25;
-		shieldLimb->focalz += 2;
+		shieldLimb->focalz += 2.25;
 		if ( race == INCUBUS || race == SUCCUBUS )
 		{
 			shieldLimb->focalx -= .5;
+			shieldLimb->focaly -= 0.7;
+		}
+		else if ( race == GOATMAN || race == GOBLIN || race == INSECTOID )
+		{
+			shieldLimb->focalz -= 0.5;
+		}
+		else if ( race == AUTOMATON || race == SKELETON )
+		{
+			shieldLimb->focalz -= 1;
+			if ( race == SKELETON )
+			{
+				shieldLimb->focalx -= 0.5;
+			}
+			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
+			{
+				shieldLimb->focalx += 2;
+			}
+			else
+			{
+				shieldLimb->focalx += 1;
+				shieldLimb->focaly -= 0.8;
+			}
 		}
 	}
 
