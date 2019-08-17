@@ -689,10 +689,12 @@ void gameLogic(void)
 						{
 							continue;
 						}
+						int ox = -1;
+						int oy = -1;
 						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 						{
-							int ox = static_cast<int>(entity->x) >> 4;
-							int oy = static_cast<int>(entity->y) >> 4;
+							ox = static_cast<int>(entity->x) >> 4;
+							oy = static_cast<int>(entity->y) >> 4;
 							if ( !entity->myTileListNode )
 							{
 								TileEntityList.addEntity(*entity);
@@ -700,12 +702,6 @@ void gameLogic(void)
 
 							(*entity->behavior)(entity);
 
-							if ( ox != static_cast<int>(entity->x) >> 4
-								|| oy != static_cast<int>(entity->y) >> 4 )
-							{
-								// if entity moved into a new tile, update it's tile position in global tile list.
-								TileEntityList.updateEntity(*entity);
-							}
 						}
 						if ( entitiesdeleted.first != nullptr )
 						{
@@ -720,6 +716,15 @@ void gameLogic(void)
 							}
 							if ( entitydeletedself == false )
 							{
+								if ( ox != -1 && oy != -1 )
+								{
+									if ( ox != static_cast<int>(entity->x) >> 4
+										|| oy != static_cast<int>(entity->y) >> 4 )
+									{
+										// if entity moved into a new tile, update it's tile position in global tile list.
+										TileEntityList.updateEntity(*entity);
+									}
+								}
 								entity->ranbehavior = true;
 							}
 							nextnode = map.entities->first;
@@ -727,6 +732,15 @@ void gameLogic(void)
 						}
 						else
 						{
+							if ( ox != -1 && oy != -1 )
+							{
+								if ( ox != static_cast<int>(entity->x) >> 4
+									|| oy != static_cast<int>(entity->y) >> 4 )
+								{
+									// if entity moved into a new tile, update it's tile position in global tile list.
+									TileEntityList.updateEntity(*entity);
+								}
+							}
 							entity->ranbehavior = true;
 							nextnode = node->next;
 						}

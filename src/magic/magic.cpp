@@ -396,6 +396,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
 	playSoundEntity(&my, 173, 128);
+		
 	if ( hit.entity )
 	{
 		int damage = element.damage;
@@ -428,6 +429,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				resistance += 2;
 				hasamulet = true;
 			}
+			int oldHP = hitstats->HP;
 			damage /= (1 + (int)resistance);
 			damage *= damagetables[hitstats->type][5];
 			hit.entity->modHP(-damage);
@@ -478,7 +480,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 			}
 
-			if ( hitstats->HP <= 0 && parent )
+			if ( oldHP > 0 && hitstats->HP <= 0 && parent )
 			{
 				parent->awardXP(hit.entity, true, true);
 			}
