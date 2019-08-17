@@ -2141,7 +2141,7 @@ int deinitApp()
 	printlog("freeing sounds...\n");
 	if ( sounds != NULL )
 	{
-		for ( c = 0; c < numsounds; c++ )
+		for ( c = 0; c < numsounds && !no_sound; c++ )
 		{
 			if (sounds[c] != NULL)
 			{

@@ -2808,6 +2808,10 @@ int main(int argc, char** argv)
 						strncpy(datadir, argv[c] + 9, datadirsz);
 						datadir[datadirsz] = '\0';
 					}
+					else if ( !strcmp(argv[c], "-nosound") )
+					{
+						no_sound = true;
+					}
 				}
 			}
 		}
