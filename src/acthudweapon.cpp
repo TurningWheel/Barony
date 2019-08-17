@@ -2660,9 +2660,10 @@ void actHudShield(Entity* my)
 		my->focalz = 0;
 	}
 
-	if ( my->sprite == items[TOOL_TINKERING_KIT].index && !hideShield )
+	if ( my->sprite == items[TOOL_TINKERING_KIT].fpindex && !hideShield )
 	{
 		my->yaw += PI / 2 - HUDSHIELD_YAW / 4;
+		my->focalz -= 0.5;
 	}
 
 	if ( playerRace == SPIDER && hudarm && players[clientnum]->entity->bodyparts.at(0) )
