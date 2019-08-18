@@ -195,6 +195,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 				{
 					if ( stats->HP <= 0 )
 					{
+						if ( stats->type == AUTOMATON )
+						{
+							entity->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
+						}
 						steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
 						if ( BOULDER_PLAYERPUSHED >= 0 && entity->skill[2] != BOULDER_PLAYERPUSHED )
 						{

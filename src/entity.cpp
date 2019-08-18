@@ -90,6 +90,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	playerLevelEntrySpeech(skill[18]),
 	playerAliveTime(skill[12]),
 	playerVampireCurse(skill[51]),
+	playerAutomatonDeathCounter(skill[15]),
+	playerCreatedDeathCam(skill[16]),
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
@@ -2089,7 +2091,7 @@ void Entity::modHP(int amount)
 		{
 			amount = 0;
 		}
-		else if ( entitystats->type == AUTOMATON && this->skill[15] != 0 )
+		else if ( entitystats->type == AUTOMATON && this->playerAutomatonDeathCounter != 0 )
 		{
 			return;
 		}
@@ -5997,6 +5999,60 @@ void Entity::attack(int pose, int charge, Entity* target)
 		else
 		{
 			hit.entity = target;
+
+			// special AoE attack.
+			if ( behavior == &actPlayer && pose == MONSTER_POSE_AUTOMATON_MALFUNCTION )
+			{
+				list_t* aoeTargets = nullptr;
+				getTargetsAroundEntity(this, this, 24, PI, MONSTER_TARGET_ALL, &aoeTargets);
+				if ( aoeTargets )
+				{
+					for ( node = aoeTargets->first; node != NULL; node = node->next )
+					{
+						Entity* tmpEntity = (Entity*)node->element;
+						if ( tmpEntity != nullptr )
+						{
+							spawnExplosion(tmpEntity->x, tmpEntity->y, tmpEntity->z);
+							Stat* tmpStats = tmpEntity->getStats();
+							if ( tmpStats )
+							{
+								int explodeDmg = (10 + rand() % 10 + myStats->LVL) * damagetables[tmpStats->type][5]; // check base magic damage resist.
+								Entity* gib = spawnGib(tmpEntity);
+								serverSpawnGibForClient(gib);
+								if ( tmpEntity->behavior == &actPlayer )
+								{
+									playerhit = tmpEntity->skill[2];
+									if ( playerhit > 0 && multiplayer == SERVER )
+									{
+										strcpy((char*)net_packet->data, "SHAK");
+										net_packet->data[4] = 20; // turns into .1
+										net_packet->data[5] = 20;
+										net_packet->address.host = net_clients[playerhit - 1].host;
+										net_packet->address.port = net_clients[playerhit - 1].port;
+										net_packet->len = 6;
+										sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+									}
+									else if ( playerhit == 0 )
+									{
+										camera_shakex += 0.2;
+										camera_shakey += 20;
+									}
+									if ( playerhit >= 0 )
+									{
+										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										messagePlayerColor(playerhit, color, language[2523]);
+									}
+								}
+								tmpEntity->modHP(-explodeDmg);
+							}
+						}
+					}
+					//Free the list.
+					list_FreeAll(aoeTargets);
+					free(aoeTargets);
+				}
+				return;
+			}
 		}
 
 		if ( hit.entity != nullptr )
@@ -6766,7 +6822,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// write the obituary
-					killedByMonsterObituary(hit.entity);
+					if ( hit.entity != this )
+					{
+						killedByMonsterObituary(hit.entity);
+					}
 
 					// damage weapon if applicable
 

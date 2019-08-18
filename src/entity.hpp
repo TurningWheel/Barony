@@ -216,6 +216,8 @@ public:
 	Sint32& playerLevelEntrySpeech; //skill[18]
 	Sint32& playerAliveTime; //skill[12]
 	Sint32& playerVampireCurse; //skill[51]
+	Sint32& playerAutomatonDeathCounter; //skill[15] - 0 if unused, > 0 if counting to death
+	Sint32& playerCreatedDeathCam; //skill[16] - if we triggered actDeathCam already.
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]

@@ -2481,15 +2481,20 @@ void actPlayer(Entity* my)
 							entity->behavior = &actDeathCam;
 							entity->yaw = my->yaw;
 							entity->pitch = PI / 8;
+							my->playerCreatedDeathCam = 1;
 						}
 						createParticleExplosionCharge(my, 174, 100, 0.25);
 						serverSpawnMiscParticles(my, PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH, 174);
+						playSoundEntity(my, 263, 128);
+						playSoundEntity(my, 321, 128);
 					}
 					++PLAYER_DEATH_AUTOMATON;
-					if ( PLAYER_DEATH_AUTOMATON >= TICKS_PER_SECOND * 1 )
+					if ( PLAYER_DEATH_AUTOMATON >= TICKS_PER_SECOND * 2 )
 					{
 						doDeathProcedure = true;
 						spawnExplosion(my->x, my->y, my->z);
+						playSoundEntity(my, 260 + rand() % 2, 128);
+						my->attack(MONSTER_POSE_AUTOMATON_MALFUNCTION, 0, my);
 					}
 					else
 					{
@@ -2632,7 +2637,8 @@ void actPlayer(Entity* my)
 						*/
 						if ( clientnum == PLAYER_NUM )
 						{
-							if ( stats[PLAYER_NUM]->type != AUTOMATON )
+							if ( (stats[PLAYER_NUM]->type != AUTOMATON) 
+								|| (stats[PLAYER_NUM]->type == AUTOMATON && my->playerCreatedDeathCam == 0) )
 							{
 								// deathcam
 								entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
@@ -2902,6 +2908,7 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
+				my->playerCreatedDeathCam = 0;
 				PLAYER_DEATH_AUTOMATON = 0;
 			}
 		}
@@ -4743,7 +4750,7 @@ void actPlayerLimb(Entity* my)
 		{
 			if ( parent && parent->getMonsterTypeFromSprite() == AUTOMATON )
 			{
-				if ( parent->skill[15] != 0 )
+				if ( parent->playerAutomatonDeathCounter != 0 )
 				{
 					my->flags[INVISIBLE] = false;
 				}

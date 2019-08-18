@@ -2115,7 +2115,7 @@ void clientHandlePacket()
 		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
 		{
 			// this is how the client knows it died...
-			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->skill[15] != 0 )
+			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0 )
 			{
 				// don't spawn deathcam
 			}
@@ -2788,10 +2788,11 @@ void clientHandlePacket()
 					{
 						if ( entity->getMonsterTypeFromSprite() == AUTOMATON )
 						{
-							entity->skill[15] = 1;
+							entity->playerAutomatonDeathCounter = 1;
 							if ( entity->skill[2] == clientnum )
 							{
 								// this is me dying, setup the deathcam.
+								entity->playerCreatedDeathCam = 1;
 								Entity* entity = newEntity(-1, 1, map.entities, nullptr);
 								entity->x = camera.x * 16;
 								entity->y = camera.y * 16;

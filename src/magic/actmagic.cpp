@@ -4221,7 +4221,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->z = 0 + rand() % 190;
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			entity->z /= 4;
+			entity->z /= 2;
 		}
 		entity->vel_z = -1;
 		entity->yaw = (rand() % 360) * PI / 180.0;
@@ -4267,7 +4267,7 @@ void createParticleExplosionCharge(Entity* parent, int sprite, int particleCount
 		entity->vel_z = -1;
 		if ( parent && parent->behavior == &actPlayer )
 		{
-			entity->z /= 4;
+			entity->z /= 2;
 		}
 		randScale = 1 + rand() % 3;
 
