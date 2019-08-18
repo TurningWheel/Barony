@@ -4414,7 +4414,7 @@ void item_Spellbook(Item*& item, int player)
 	if ( item->beatitude < 0 && !shouldInvertEquipmentBeatitude(stats[player]) )
 	{
 		messagePlayer(clientnum, language[971]);
-		if ( list_Size(&spellList) > 0 )
+		if ( list_Size(&spellList) > 0 && stats[player]->type != AUTOMATON )
 		{
 			// randomly delete a spell
 			int spellToDelete = rand() % list_Size(&spellList);
