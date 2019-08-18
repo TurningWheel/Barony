@@ -289,6 +289,11 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 	Entity* parent = uidToEntity(my->parent);
 	Stat* stat = triggered->getStats();
+	Stat* parentStats = nullptr;
+	if ( parent )
+	{
+		parentStats = parent->getStats();
+	}
 	int damage = 0;
 	//messagePlayer(0, "dmg: %d", damage);
 	int doSpell = SPELL_NONE;
@@ -298,6 +303,10 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		case TOOL_BOMB:
 			doSpell = SPELL_FIREBALL;
 			damage = 5;
+			if ( parentStats )
+			{
+				damage += std::max(0, parent->getPER() / 2);
+			}
 			break;
 		case TOOL_SLEEP_BOMB:
 			doSpell = SPELL_SLEEP;
@@ -306,6 +315,10 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		case TOOL_FREEZE_BOMB:
 			doSpell = SPELL_COLD;
 			damage = 5;
+			if ( parentStats )
+			{
+				damage += std::max(0, parent->getPER() / 4);
+			}
 			break;
 		case TOOL_TELEPORT_BOMB:
 			doSpell = SPELL_TELEPORTATION;
@@ -415,7 +428,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			if ( triggered->behavior == &actPlayer )
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
-				messagePlayerColor(triggered->skill[2], color, language[3611], items[BOMB_ITEMTYPE].name_identified);
+				messagePlayerColor(triggered->skill[2], color, language[3611]);
 			}
 
 			if ( triggered->behavior == &actMonster )
@@ -483,6 +496,10 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	}
 	// set obituary
 	int oldHP = stat->HP;
+	if ( stat )
+	{
+		damage *= damagetables[stat->type][5]; // reduce/increase by magic table.
+	}
 	triggered->modHP(-damage);
 	triggered->setObituary(language[3496]);
 
@@ -771,6 +788,10 @@ void actBomb(Entity* my)
 		for ( node = currentList->first; node != nullptr && !triggered; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
+			if ( !entity )
+			{
+				continue;
+			}
 			if ( my->parent == entity->getUID() && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
 			{
 				continue;

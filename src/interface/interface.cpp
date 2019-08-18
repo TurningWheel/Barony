@@ -5213,7 +5213,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 	//newItem(TOOL_BEARTRAP, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 	//newItem(TOOL_DETONATOR_CHARGE, EXCELLENT, 0, 1, ITEM_TINKERING_APPEARANCE, true, &tinkeringTotalItems);
 
-	messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
+	//messagePlayer(clientnum, "asserting craftable num items: %d", list_Size(&tinkeringTotalItems));
 	if ( stats[clientnum] )
 	{
 		// make the last node jump to the player's actual items, 
@@ -5223,7 +5223,7 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 		{
 			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
 		}
-		messagePlayer(clientnum, "asserting total list size: %d", list_Size(&tinkeringTotalItems));
+		//messagePlayer(clientnum, "asserting total list size: %d", list_Size(&tinkeringTotalItems));
 	}
 }
 
@@ -5244,7 +5244,7 @@ void GenericGUIMenu::tinkeringFreeLists()
 		}
 		else if ( node->list == &stats[clientnum]->inventory )
 		{
-			messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			//messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
 			break;
 		}
 	}
