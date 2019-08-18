@@ -327,7 +327,33 @@ void Item::applyLockpick(int player, Entity& entity)
 						playSoundEntity(&entity, 76, 128);
 						messagePlayer(player, language[2527], entity.getMonsterLangEntry());
 
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						if ( rand() % 3 == 0 )
+						{
+							players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+						}
+
+						int qtyMetalScrap = 5 + rand() % 6;
+						int qtyMagicScrap = 8 + rand() % 6;
+						if ( stats[player] )
+						{
+							if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_MASTER )
+							{
+								qtyMetalScrap += 5 + rand() % 6; // 10-20 total
+								qtyMagicScrap += 8 + rand() % 11; // 16-31 total
+							}
+							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_EXPERT )
+							{
+								qtyMetalScrap += 3 + rand() % 4; // 8-16 total
+								qtyMagicScrap += 5 + rand() % 8; // 13-25 total
+							}
+							else if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_SKILLED )
+							{
+								qtyMetalScrap += 1 + rand() % 4; // 6-14 total
+								qtyMagicScrap += 3 + rand() % 4; // 11-19 total
+							}
+						}
+						Item* item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, qtyMetalScrap, 0, true, &myStats->inventory);
+						item = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, qtyMagicScrap, 0, true, &myStats->inventory);
 						serverUpdatePlayerGameplayStats(player, STATISTICS_BOMB_SQUAD, 1);
 						players[player]->entity->awardXP(&entity, true, true);
 					}
