@@ -30,7 +30,7 @@ void initClass(int player)
 {
 	Item* item, *item2;
 	//client_classes[player] = CLASS_MACHINIST;/*
-	//stats[player]->playerRace = RACE_INCUBUS;*/
+	//stats[player]->playerRace = RACE_AUTOMATON;
 	//stats[player]->appearance = 0;
 	if ( player == clientnum)
 	{
@@ -2173,14 +2173,6 @@ void initClass(int player)
 			free(item);
 
 			item = newItem(POTION_EMPTY, SERVICABLE, 0, 2, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
-
-			item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
-
-			item = newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 		}
