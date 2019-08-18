@@ -1039,6 +1039,11 @@ void drawStatus()
 								learnedSpell = true; // goblinos can't learn spells but always equip books.
 							}
 
+							if ( itemCategory(item) == SPELLBOOK )
+							{
+								learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
+							}
+
 							if ( !badpotion && !learnedSpell )
 							{
 								if ( !(isItemEquippableInShieldSlot(item) && cast_animation.active_spellbook) )
@@ -1700,6 +1705,11 @@ void drawStatus()
 			if ( itemCategory(item) == SPELLBOOK && stats[clientnum] && stats[clientnum]->type == GOBLIN )
 			{
 				learnedSpell = true; // goblinos can't learn spells but always equip books.
+			}
+
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
 			}
 
 			bool disableItemUsage = false;
