@@ -129,7 +129,7 @@ void actBeartrap(Entity* my)
 					Stat* trapperStat = nullptr;
 					if ( parent && (trapperStat = parent->getStats()) )
 					{
-						damage += trapperStat->PROFICIENCIES[PRO_LOCKPICKING] / 5;
+						//damage += trapperStat->PROFICIENCIES[PRO_LOCKPICKING] / 20;
 					}
 					//messagePlayer(0, "dmg: %d", damage);
 					entity->modHP(-damage);

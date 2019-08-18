@@ -597,7 +597,7 @@ void drawSkillsSheet()
 						skillDetails[0] = 100.f;
 					}
 					skillDetails[1] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
-					skillDetails[2] = static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5); // beartrap dmg
+					skillDetails[2] = 0; //static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5); // beartrap dmg
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
 						skillDetails[0], skillDetails[1], skillDetails[2]
