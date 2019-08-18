@@ -345,7 +345,7 @@ void actHudWeapon(Entity* my)
 		entity->flags[NOUPDATE] = true;
 	}
 
-	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
+	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr || (multiplayer != CLIENT && stats[clientnum]->HP <= 0) )
 	{
 		hudweapon = nullptr; //PLAYER DED. NULLIFY THIS.
 		list_RemoveNode(my->mynode);

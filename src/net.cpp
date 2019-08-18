@@ -2115,16 +2115,23 @@ void clientHandlePacket()
 		if ( !strcmp((char*)(&net_packet->data[8]), language[577]) )    //TODO: Replace with a UDIE packet.
 		{
 			// this is how the client knows it died...
-			Entity* entity = newEntity(-1, 1, map.entities, nullptr);
-			entity->x = camera.x * 16;
-			entity->y = camera.y * 16;
-			entity->z = -2;
-			entity->flags[NOUPDATE] = true;
-			entity->flags[PASSABLE] = true;
-			entity->flags[INVISIBLE] = true;
-			entity->behavior = &actDeathCam;
-			entity->yaw = camera.ang;
-			entity->pitch = PI / 8;
+			if ( players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->skill[15] != 0 )
+			{
+				// don't spawn deathcam
+			}
+			else
+			{
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+				entity->x = camera.x * 16;
+				entity->y = camera.y * 16;
+				entity->z = -2;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->behavior = &actDeathCam;
+				entity->yaw = camera.ang;
+				entity->pitch = PI / 8;
+			}
 
 			//deleteSaveGame(multiplayer); // stops save scumming c: //Not here, because it'll make the game unresumable if the game crashes but not all players have died.
 
@@ -2774,6 +2781,30 @@ void clientHandlePacket()
 					spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 					spellTimer->particleTimerCountdownSprite = sprite;
 				}
+					break;
+				case PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH:
+					createParticleExplosionCharge(entity, 174, 100, 0.25);
+					if ( entity && entity->behavior == &actPlayer )
+					{
+						if ( entity->getMonsterTypeFromSprite() == AUTOMATON )
+						{
+							entity->skill[15] = 1;
+							if ( entity->skill[2] == clientnum )
+							{
+								// this is me dying, setup the deathcam.
+								Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+								entity->x = camera.x * 16;
+								entity->y = camera.y * 16;
+								entity->z = -2;
+								entity->flags[NOUPDATE] = true;
+								entity->flags[PASSABLE] = true;
+								entity->flags[INVISIBLE] = true;
+								entity->behavior = &actDeathCam;
+								entity->yaw = camera.ang;
+								entity->pitch = PI / 8;
+							}
+						}
+					}
 					break;
 				default:
 					break;

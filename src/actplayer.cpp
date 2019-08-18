@@ -171,6 +171,7 @@ void actDeathCam(Entity* my)
 #define PLAYER_ALIVETIME my->skill[12]
 #define PLAYER_INWATER my->skill[13]
 #define PLAYER_CLICKED my->skill[14]
+#define PLAYER_DEATH_AUTOMATON my->skill[15]
 #define PLAYER_VELX my->vel_x
 #define PLAYER_VELY my->vel_y
 #define PLAYER_VELZ my->vel_z
@@ -2455,254 +2456,234 @@ void actPlayer(Entity* my)
 			}
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 )
 			{
-				// remove body parts
-				node_t* nextnode;
-				for ( node = my->children.first, i = 0; node != NULL; node = nextnode, i++ )
+				bool doDeathProcedure = true;
+				if ( client_disconnected[PLAYER_NUM] )
 				{
-					nextnode = node->next;
-					if ( i == 0 )
+					doDeathProcedure = true;
+				}
+				else if ( stats[PLAYER_NUM]->type == AUTOMATON && !client_disconnected[PLAYER_NUM] && stats[PLAYER_NUM]->HP <= 0 )
+				{
+					// delay death. (not via disconnection).
+					if ( PLAYER_DEATH_AUTOMATON == 0 )
 					{
-						continue;
+						my->flags[PASSABLE] = true;
+						serverUpdateEntityFlag(my, PASSABLE);
+						if ( clientnum == PLAYER_NUM )
+						{
+							// deathcam
+							entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
+							entity->x = my->x;
+							entity->y = my->y;
+							entity->z = -2;
+							entity->flags[NOUPDATE] = true;
+							entity->flags[PASSABLE] = true;
+							entity->flags[INVISIBLE] = true;
+							entity->behavior = &actDeathCam;
+							entity->yaw = my->yaw;
+							entity->pitch = PI / 8;
+						}
+						createParticleExplosionCharge(my, 174, 100, 0.25);
+						serverSpawnMiscParticles(my, PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH, 174);
 					}
-					if ( node->element )
+					++PLAYER_DEATH_AUTOMATON;
+					if ( PLAYER_DEATH_AUTOMATON >= TICKS_PER_SECOND * 1 )
 					{
-						Entity* tempEntity = (Entity*)node->element;
-						if ( tempEntity )
-						{
-							list_RemoveNode(tempEntity->mynode);
-						}
-						if ( i > 28 )
-						{
-							break;
-						}
+						doDeathProcedure = true;
+						spawnExplosion(my->x, my->y, my->z);
+					}
+					else
+					{
+						doDeathProcedure = false;
 					}
 				}
-				if ( stats[PLAYER_NUM]->HP <= 0 )
+				if ( doDeathProcedure )
 				{
-					// die //TODO: Refactor.
-					playSoundEntity(my, 28, 128);
-					for ( i = 0; i < 5; i++ )
+					// remove body parts
+					node_t* nextnode;
+					for ( node = my->children.first, i = 0; node != NULL; node = nextnode, i++ )
 					{
-						Entity* gib = spawnGib(my);
-						serverSpawnGibForClient(gib);
-					}
-					if (spawn_blood)
-					{
-						if ( !checkObstacle(my->x, my->y, my, NULL) )
-						{
-							int x, y;
-							x = std::min(std::max<unsigned int>(0, my->x / 16), map.width - 1);
-							y = std::min(std::max<unsigned int>(0, my->y / 16), map.height - 1);
-							if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-							{
-								entity = newEntity(160, 1, map.entities, nullptr); //Limb entity.
-								entity->x = my->x;
-								entity->y = my->y;
-								entity->z = 8.0 + (rand() % 20) / 100.0;
-								entity->parent = my->getUID();
-								entity->sizex = 2;
-								entity->sizey = 2;
-								entity->yaw = (rand() % 360) * PI / 180.0;
-								entity->flags[UPDATENEEDED] = true;
-								entity->flags[PASSABLE] = true;
-							}
-						}
-					}
-					node_t* spellnode;
-					spellnode = stats[PLAYER_NUM]->magic_effects.first;
-					while (spellnode)
-					{
-						node_t* oldnode = spellnode;
-						spellnode = spellnode->next;
-						spell_t* spell = (spell_t*)oldnode->element;
-						spell->magic_effects_node = NULL;
-						list_RemoveNode(oldnode);
-					}
-					int c;
-					for ( c = 0; c < MAXPLAYERS; c++ )
-					{
-						if ( client_disconnected[c] )
+						nextnode = node->next;
+						if ( i == 0 )
 						{
 							continue;
 						}
-						char whatever[256];
-						snprintf(whatever, 255, "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary); //Potential snprintf of 256 bytes into 255 byte destination
-						messagePlayer(c, whatever);
-					}
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerColor(PLAYER_NUM, color, language[577]);
-
-					for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = nextnode )
-					{
-						nextnode = node->next;
-						Uint32* c = (Uint32*)node->element;
-						Entity* myFollower = uidToEntity(*c);
-						if ( myFollower )
+						if ( node->element )
 						{
-							if ( myFollower->monsterAllySummonRank != 0 )
+							Entity* tempEntity = (Entity*)node->element;
+							if ( tempEntity )
 							{
-								myFollower->setMP(0);
-								myFollower->setHP(0); // rip
+								list_RemoveNode(tempEntity->mynode);
 							}
-							else if ( myFollower->flags[USERFLAG2] )
+							if ( i > 28 )
 							{
-								// our leader died, let's undo the color change since we're now rabid.
-								myFollower->flags[USERFLAG2] = false;
-								serverUpdateEntityFlag(myFollower, USERFLAG2);
-
-								int bodypart = 0;
-								for ( node_t* node = myFollower->children.first; node != nullptr; node = node->next )
-								{
-									if ( bodypart >= LIMB_HUMANOID_TORSO )
-									{
-										Entity* tmp = (Entity*)node->element;
-										if ( tmp )
-										{
-											tmp->flags[USERFLAG2] = false;
-										}
-									}
-									++bodypart;
-								}
-
-								Stat* followerStats = myFollower->getStats();
-								if ( followerStats )
-								{
-									followerStats->leader_uid = 0;
-								}
-								list_RemoveNode(node);
-								if ( PLAYER_NUM != clientnum )
-								{
-									serverRemoveClientFollower(PLAYER_NUM, myFollower->getUID());
-								}
+								break;
 							}
 						}
-
 					}
-
-					/* //TODO: Eventually.
+					if ( stats[PLAYER_NUM]->HP <= 0 )
 					{
-						strcpy((char *)net_packet->data,"UDIE");
-						net_packet->address.host = net_clients[player-1].host;
-						net_packet->address.port = net_clients[player-1].port;
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, player-1);
-					}
-					*/
-					if ( clientnum == PLAYER_NUM )
-					{
-						// deathcam
-						entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
-						entity->x = my->x;
-						entity->y = my->y;
-						entity->z = -2;
-						entity->flags[NOUPDATE] = true;
-						entity->flags[PASSABLE] = true;
-						entity->flags[INVISIBLE] = true;
-						entity->behavior = &actDeathCam;
-						entity->yaw = my->yaw;
-						entity->pitch = PI / 8;
-						node_t* nextnode;
-
-						if ( multiplayer == SINGLE )
+						// die //TODO: Refactor.
+						playSoundEntity(my, 28, 128);
+						for ( i = 0; i < 5; i++ )
 						{
-							deleteSaveGame(multiplayer); // stops save scumming c:
+							Entity* gib = spawnGib(my);
+							serverSpawnGibForClient(gib);
 						}
-						else
+						if ( spawn_blood )
 						{
-							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
-						}
-
-						closeBookGUI();
-
-#ifdef SOUND
-						levelmusicplaying = true;
-						combatmusicplaying = false;
-						fadein_increment = default_fadein_increment * 4;
-						fadeout_increment = default_fadeout_increment * 4;
-						playmusic(sounds[209], false, true, false);
-#endif
-						combat = false;
-						if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
-						{
-							for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
+							if ( !checkObstacle(my->x, my->y, my, NULL) )
 							{
-								nextnode = node->next;
-								Item* item = (Item*)node->element;
-								if (itemCategory(item) == SPELL_CAT)
+								int x, y;
+								x = std::min(std::max<unsigned int>(0, my->x / 16), map.width - 1);
+								y = std::min(std::max<unsigned int>(0, my->y / 16), map.height - 1);
+								if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
 								{
-									continue;    // don't drop spells on death, stupid!
-								}
-								if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
-								{
-									if ( itemIsEquipped(item, clientnum) )
-									{
-										steamAchievement("BARONY_ACH_CHOSEN_ONE");
-									}
-								}
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-									entity->flags[INVISIBLE] = true;
-									entity->flags[UPDATENEEDED] = true;
+									entity = newEntity(160, 1, map.entities, nullptr); //Limb entity.
 									entity->x = my->x;
 									entity->y = my->y;
-									entity->sizex = 4;
-									entity->sizey = 4;
-									entity->yaw = (rand() % 360) * (PI / 180.f);
-									entity->vel_x = (rand() % 20 - 10) / 10.0;
-									entity->vel_y = (rand() % 20 - 10) / 10.0;
-									entity->vel_z = -.5;
+									entity->z = 8.0 + (rand() % 20) / 100.0;
+									entity->parent = my->getUID();
+									entity->sizex = 2;
+									entity->sizey = 2;
+									entity->yaw = (rand() % 360) * PI / 180.0;
+									entity->flags[UPDATENEEDED] = true;
 									entity->flags[PASSABLE] = true;
-									entity->flags[USERFLAG1] = true;
-									entity->behavior = &actItem;
-									entity->skill[10] = item->type;
-									entity->skill[11] = item->status;
-									entity->skill[12] = item->beatitude;
-									int qtyToDrop = 1;
-									if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
-									{
-										qtyToDrop = 10;
-										c -= 9;
-									}
-									entity->skill[13] = qtyToDrop;
-									entity->skill[14] = item->appearance;
-									entity->skill[15] = item->identified;
 								}
 							}
-							if (multiplayer != SINGLE)
+						}
+						node_t* spellnode;
+						spellnode = stats[PLAYER_NUM]->magic_effects.first;
+						while ( spellnode )
+						{
+							node_t* oldnode = spellnode;
+							spellnode = spellnode->next;
+							spell_t* spell = (spell_t*)oldnode->element;
+							spell->magic_effects_node = NULL;
+							list_RemoveNode(oldnode);
+						}
+						int c;
+						for ( c = 0; c < MAXPLAYERS; c++ )
+						{
+							if ( client_disconnected[c] )
 							{
-								for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
+								continue;
+							}
+							char whatever[256];
+							snprintf(whatever, 255, "%s %s", stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->obituary); //Potential snprintf of 256 bytes into 255 byte destination
+							messagePlayer(c, whatever);
+						}
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(PLAYER_NUM, color, language[577]);
+
+						for ( node_t* node = stats[PLAYER_NUM]->FOLLOWERS.first; node != nullptr; node = nextnode )
+						{
+							nextnode = node->next;
+							Uint32* c = (Uint32*)node->element;
+							Entity* myFollower = uidToEntity(*c);
+							if ( myFollower )
+							{
+								if ( myFollower->monsterAllySummonRank != 0 )
+								{
+									myFollower->setMP(0);
+									myFollower->setHP(0); // rip
+								}
+								else if ( myFollower->flags[USERFLAG2] )
+								{
+									// our leader died, let's undo the color change since we're now rabid.
+									myFollower->flags[USERFLAG2] = false;
+									serverUpdateEntityFlag(myFollower, USERFLAG2);
+
+									int bodypart = 0;
+									for ( node_t* node = myFollower->children.first; node != nullptr; node = node->next )
+									{
+										if ( bodypart >= LIMB_HUMANOID_TORSO )
+										{
+											Entity* tmp = (Entity*)node->element;
+											if ( tmp )
+											{
+												tmp->flags[USERFLAG2] = false;
+											}
+										}
+										++bodypart;
+									}
+
+									Stat* followerStats = myFollower->getStats();
+									if ( followerStats )
+									{
+										followerStats->leader_uid = 0;
+									}
+									list_RemoveNode(node);
+									if ( PLAYER_NUM != clientnum )
+									{
+										serverRemoveClientFollower(PLAYER_NUM, myFollower->getUID());
+									}
+								}
+							}
+						}
+
+						/* //TODO: Eventually.
+						{
+							strcpy((char *)net_packet->data,"UDIE");
+							net_packet->address.host = net_clients[player-1].host;
+							net_packet->address.port = net_clients[player-1].port;
+							net_packet->len = 4;
+							sendPacketSafe(net_sock, -1, net_packet, player-1);
+						}
+						*/
+						if ( clientnum == PLAYER_NUM )
+						{
+							if ( stats[PLAYER_NUM]->type != AUTOMATON )
+							{
+								// deathcam
+								entity = newEntity(-1, 1, map.entities, nullptr); //Deathcam entity.
+								entity->x = my->x;
+								entity->y = my->y;
+								entity->z = -2;
+								entity->flags[NOUPDATE] = true;
+								entity->flags[PASSABLE] = true;
+								entity->flags[INVISIBLE] = true;
+								entity->behavior = &actDeathCam;
+								entity->yaw = my->yaw;
+								entity->pitch = PI / 8;
+							}
+							node_t* nextnode;
+
+							if ( multiplayer == SINGLE )
+							{
+								deleteSaveGame(multiplayer); // stops save scumming c:
+							}
+							else
+							{
+								deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
+							}
+
+							closeBookGUI();
+
+#ifdef SOUND
+							levelmusicplaying = true;
+							combatmusicplaying = false;
+							fadein_increment = default_fadein_increment * 4;
+							fadeout_increment = default_fadeout_increment * 4;
+							playmusic(sounds[209], false, true, false);
+#endif
+							combat = false;
+							if ( multiplayer == SINGLE || !(svFlags & SV_FLAG_KEEPINVENTORY) )
+							{
+								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
 								{
 									nextnode = node->next;
 									Item* item = (Item*)node->element;
-									if (itemCategory(item) == SPELL_CAT)
+									if ( itemCategory(item) == SPELL_CAT )
 									{
 										continue;    // don't drop spells on death, stupid!
 									}
-									list_RemoveNode(node);
-								}
-								stats[0]->helmet = NULL;
-								stats[0]->breastplate = NULL;
-								stats[0]->gloves = NULL;
-								stats[0]->shoes = NULL;
-								stats[0]->shield = NULL;
-								stats[0]->weapon = NULL;
-								stats[0]->cloak = NULL;
-								stats[0]->amulet = NULL;
-								stats[0]->ring = NULL;
-								stats[0]->mask = NULL;
-							}
-						}
-						else
-						{
-							// to not soft lock at Herx
-							for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
-							{
-								nextnode = node->next;
-								Item* item = (Item*)node->element;
-								if ( item->type == ARTIFACT_ORB_PURPLE )
-								{
+									if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES )
+									{
+										if ( itemIsEquipped(item, clientnum) )
+										{
+											steamAchievement("BARONY_ACH_CHOSEN_ONE");
+										}
+									}
 									int c = item->count;
 									for ( c = item->count; c > 0; c-- )
 									{
@@ -2723,136 +2704,205 @@ void actPlayer(Entity* my)
 										entity->skill[10] = item->type;
 										entity->skill[11] = item->status;
 										entity->skill[12] = item->beatitude;
-										entity->skill[13] = 1;
+										int qtyToDrop = 1;
+										if ( c >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
+										{
+											qtyToDrop = 10;
+											c -= 9;
+										}
+										entity->skill[13] = qtyToDrop;
 										entity->skill[14] = item->appearance;
 										entity->skill[15] = item->identified;
 									}
-									break;
+								}
+								if ( multiplayer != SINGLE )
+								{
+									for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
+									{
+										nextnode = node->next;
+										Item* item = (Item*)node->element;
+										if ( itemCategory(item) == SPELL_CAT )
+										{
+											continue;    // don't drop spells on death, stupid!
+										}
+										list_RemoveNode(node);
+									}
+									stats[0]->helmet = NULL;
+									stats[0]->breastplate = NULL;
+									stats[0]->gloves = NULL;
+									stats[0]->shoes = NULL;
+									stats[0]->shield = NULL;
+									stats[0]->weapon = NULL;
+									stats[0]->cloak = NULL;
+									stats[0]->amulet = NULL;
+									stats[0]->ring = NULL;
+									stats[0]->mask = NULL;
+								}
+							}
+							else
+							{
+								// to not soft lock at Herx
+								for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode )
+								{
+									nextnode = node->next;
+									Item* item = (Item*)node->element;
+									if ( item->type == ARTIFACT_ORB_PURPLE )
+									{
+										int c = item->count;
+										for ( c = item->count; c > 0; c-- )
+										{
+											entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+											entity->flags[INVISIBLE] = true;
+											entity->flags[UPDATENEEDED] = true;
+											entity->x = my->x;
+											entity->y = my->y;
+											entity->sizex = 4;
+											entity->sizey = 4;
+											entity->yaw = (rand() % 360) * (PI / 180.f);
+											entity->vel_x = (rand() % 20 - 10) / 10.0;
+											entity->vel_y = (rand() % 20 - 10) / 10.0;
+											entity->vel_z = -.5;
+											entity->flags[PASSABLE] = true;
+											entity->flags[USERFLAG1] = true;
+											entity->behavior = &actItem;
+											entity->skill[10] = item->type;
+											entity->skill[11] = item->status;
+											entity->skill[12] = item->beatitude;
+											entity->skill[13] = 1;
+											entity->skill[14] = item->appearance;
+											entity->skill[15] = item->identified;
+										}
+										break;
+									}
+								}
+							}
+							for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+							{
+								Entity* mapCreature = (Entity*)mapNode->element;
+								if ( mapCreature )
+								{
+									mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
 								}
 							}
 						}
-						for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+						else
 						{
-							Entity* mapCreature = (Entity*)mapNode->element;
-							if ( mapCreature )
+							if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
 							{
-								mapCreature->monsterEntityRenderAsTelepath = 0; // do a final pass to undo any telepath rendering.
+								my->x = ((int)(my->x / 16)) * 16 + 8;
+								my->y = ((int)(my->y / 16)) * 16 + 8;
+								item = stats[PLAYER_NUM]->helmet;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->breastplate;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->gloves;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->shoes;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->shield;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->weapon;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->cloak;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->amulet;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->ring;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								item = stats[PLAYER_NUM]->mask;
+								if ( item )
+								{
+									int c = item->count;
+									for ( c = item->count; c > 0; c-- )
+									{
+										dropItemMonster(item, my, stats[PLAYER_NUM]);
+									}
+								}
+								list_FreeAll(&stats[PLAYER_NUM]->inventory);
 							}
+
+							deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
 						}
-					}
-					else
-					{
-						if ( !(svFlags & SV_FLAG_KEEPINVENTORY) )
+
+						assailant[PLAYER_NUM] = false;
+						assailantTimer[PLAYER_NUM] = 0;
+
+						if ( multiplayer != SINGLE )
 						{
-							my->x = ((int)(my->x / 16)) * 16 + 8;
-							my->y = ((int)(my->y / 16)) * 16 + 8;
-							item = stats[PLAYER_NUM]->helmet;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->breastplate;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->gloves;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->shoes;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->shield;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->weapon;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->cloak;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->amulet;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->ring;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							item = stats[PLAYER_NUM]->mask;
-							if (item)
-							{
-								int c = item->count;
-								for (c = item->count; c > 0; c--)
-								{
-									dropItemMonster(item, my, stats[PLAYER_NUM]);
-								}
-							}
-							list_FreeAll(&stats[PLAYER_NUM]->inventory);
+							messagePlayer(PLAYER_NUM, language[578]);
 						}
-
-						deleteMultiplayerSaveGames(); //Will only delete save games if was last player alive.
 					}
-
-					assailant[PLAYER_NUM] = false;
-					assailantTimer[PLAYER_NUM] = 0;
-
-					if ( multiplayer != SINGLE )
-					{
-						messagePlayer(PLAYER_NUM, language[578]);
-					}
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
 				}
-				my->removeLightField();
-				list_RemoveNode(my->mynode);
-				return;
+			}
+			else
+			{
+				PLAYER_DEATH_AUTOMATON = 0;
 			}
 		}
 	}
@@ -3198,6 +3248,13 @@ void actPlayer(Entity* my)
 			}
 		}
 		my->pitch -= PLAYER_ROTY;
+		if ( PLAYER_DEATH_AUTOMATON > 0 )
+		{
+			if ( my->pitch < PI / 3 || my->pitch > 5 * PI / 3 )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.01, PI / 3, true, 0.005);
+			}
+		}
 		if ( softwaremode )
 		{
 			if ( my->pitch > PI / 6 )
@@ -3946,6 +4003,12 @@ void actPlayer(Entity* my)
 								entity->focaly = limbs[playerRace][4][1];
 								entity->focalz = limbs[playerRace][4][2];
 							}
+							else if ( playerRace == AUTOMATON )
+							{
+								entity->focalx = limbs[playerRace][4][0] + 1.5; // 1
+								entity->focaly = limbs[playerRace][4][1] + 0.25; // 0
+								entity->focalz = limbs[playerRace][4][2] - 1; // 1
+							}
 							else
 							{
 								entity->focalx = limbs[playerRace][4][0] + 0.75;
@@ -4060,6 +4123,12 @@ void actPlayer(Entity* my)
 								entity->focalx = limbs[playerRace][5][0];
 								entity->focaly = limbs[playerRace][5][1];
 								entity->focalz = limbs[playerRace][5][2];
+							}
+							else if ( playerRace == AUTOMATON )
+							{
+								entity->focalx = limbs[playerRace][5][0] + 1.5; // 1
+								entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
+								entity->focalz = limbs[playerRace][5][2] - 1; // 1
 							}
 							else
 							{
@@ -4635,7 +4704,7 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// camera
-		if ( !PLAYER_DEBUGCAM )
+		if ( !PLAYER_DEBUGCAM && stats[PLAYER_NUM] && stats[PLAYER_NUM]->HP > 0 )
 		{
 			camera.x = my->x / 16.0;
 			camera.y = my->y / 16.0;
@@ -4672,7 +4741,21 @@ void actPlayerLimb(Entity* my)
 	{
 		if ( stats[PLAYER_NUM]->HP <= 0 )
 		{
-			my->flags[INVISIBLE] = true;
+			if ( parent && parent->getMonsterTypeFromSprite() == AUTOMATON )
+			{
+				if ( parent->skill[15] != 0 )
+				{
+					my->flags[INVISIBLE] = false;
+				}
+				else
+				{
+					my->flags[INVISIBLE] = true;
+				}
+			}
+			else
+			{
+				my->flags[INVISIBLE] = true;
+			}
 			return;
 		}
 	}

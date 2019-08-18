@@ -2083,9 +2083,16 @@ void Entity::modHP(int amount)
 {
 	Stat* entitystats = this->getStats();
 
-	if ( this->behavior == &actPlayer && godmode && amount < 0 )
+	if ( this->behavior == &actPlayer )
 	{
-		amount = 0;
+		if ( godmode && amount < 0 )
+		{
+			amount = 0;
+		}
+		else if ( entitystats->type == AUTOMATON && this->skill[15] != 0 )
+		{
+			return;
+		}
 	}
 	if ( !entitystats || amount == 0 )
 	{
@@ -5125,6 +5132,10 @@ bool Entity::isMobile()
 	}
 
 	if ( behavior == &actPlayer && (entitystats->EFFECTS[EFF_PACIFY] || entitystats->EFFECTS[EFF_FEAR]) )
+	{
+		return false;
+	}
+	else if ( behavior == &actPlayer && entitystats->HP <= 0 )
 	{
 		return false;
 	}
@@ -14360,6 +14371,10 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 		{
 			return -1;
 		}
+	}
+	if ( myStats.HP <= 0 )
+	{
+		return -1;
 	}
 	bool cursedItemIsBuff = false;
 	if ( behavior == &actPlayer )
