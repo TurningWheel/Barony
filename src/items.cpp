@@ -1223,6 +1223,7 @@ bool dropItem(Item* item, int player)
 			list_RemoveNode(item->node);
 			return true;
 		}
+		return false;
 	}
 	else
 	{
