@@ -2449,11 +2449,7 @@ void actPlayer(Entity* my)
 		if ( !intro )
 		{
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
-			if ( ticks % (TICKS_PER_SECOND * 3) == 0 )
-			{
-				// send update to all clients for global stats[NUMPLAYERS] struct
-				serverUpdatePlayerStats();
-			}
+			
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 )
 			{
 				bool doDeathProcedure = true;

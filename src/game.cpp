@@ -1214,6 +1214,12 @@ void gameLogic(void)
 					}
 				}
 
+				if ( ticks % (TICKS_PER_SECOND * 2) == 0 )
+				{
+					// send update to all clients for global stats[NUMPLAYERS] struct
+					serverUpdatePlayerStats();
+				}
+
 				// send entity info to clients
 				if ( ticks % (TICKS_PER_SECOND / 8) == 0 )
 				{
