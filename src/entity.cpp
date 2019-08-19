@@ -2091,7 +2091,7 @@ void Entity::modHP(int amount)
 		{
 			amount = 0;
 		}
-		else if ( entitystats->type == AUTOMATON && this->playerAutomatonDeathCounter != 0 )
+		else if ( entitystats && entitystats->type == AUTOMATON && entitystats->HP <= 0 && this->playerAutomatonDeathCounter != 0 )
 		{
 			return;
 		}

@@ -318,7 +318,9 @@ void actItem(Entity* my)
 
 	// gravity
 	bool onground = false;
-	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
+	real_t groundHeight = 7.5 - models[my->sprite]->sizey * .25;
+
+	if ( my->z < groundHeight )
 	{
 		// fall
 		// chakram and shuriken lie flat, needs to use sprites for client
@@ -336,6 +338,30 @@ void actItem(Entity* my)
 			my->z += ITEM_VELZ;
 			my->roll += 0.02;
 			my->roll = std::min(my->roll, PI / 2);
+		}
+		else if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
+			|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
+			|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
+		{
+			ITEM_VELZ += 0.04;
+			my->z += ITEM_VELZ;
+			while ( my->roll > 2 * PI )
+			{
+				my->roll -= 2 * PI;
+			}
+			while ( my->roll < 0 )
+			{
+				my->roll += 2 * PI;
+			}
+			if ( my->roll > PI / 2 && my->roll < 3 * PI / 2 )
+			{
+				my->roll += 0.08;
+				my->roll = std::min(my->roll, 3 * PI / 2);
+			}
+			else
+			{
+				my->roll += 0.08;
+			}
 		}
 		else
 		{
@@ -373,8 +399,8 @@ void actItem(Entity* my)
 						|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
 						|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
 					{
-						my->roll = PI;
-						my->z = 7 - models[my->sprite]->sizey * .25;
+						my->roll = 3 * PI / 2;
+						my->z = 7.5 - models[my->sprite]->sizey * .25;
 					}
 					else
 					{

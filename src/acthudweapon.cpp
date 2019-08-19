@@ -345,7 +345,8 @@ void actHudWeapon(Entity* my)
 		entity->flags[NOUPDATE] = true;
 	}
 
-	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr || (multiplayer != CLIENT && stats[clientnum]->HP <= 0) )
+	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr 
+		|| (multiplayer != CLIENT && players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0) )
 	{
 		hudweapon = nullptr; //PLAYER DED. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
@@ -506,6 +507,12 @@ void actHudWeapon(Entity* my)
 					my->scalex = 0.7;
 					my->scaley = 0.7;
 					my->scalez = 0.7;
+				}
+				else if ( stats[clientnum]->weapon->type >= TOOL_BOMB && stats[clientnum]->weapon->type <= TOOL_TELEPORT_BOMB )
+				{
+					my->scalex = 1.f;
+					my->scaley = 1.f;
+					my->scalez = 1.f;
 				}
 				else if ( itemModelFirstperson(stats[clientnum]->weapon) != itemModel(stats[clientnum]->weapon) )
 				{
