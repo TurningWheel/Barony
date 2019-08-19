@@ -184,6 +184,7 @@
     <ClCompile Include="..\..\src\monster_rat.cpp" />
     <ClCompile Include="..\..\src\monster_scarab.cpp" />
     <ClCompile Include="..\..\src\monster_scorpion.cpp" />
+    <ClCompile Include="..\..\src\monster_sentrybot.cpp" />
     <ClCompile Include="..\..\src\monster_shadow.cpp" />
     <ClCompile Include="..\..\src\monster_shared.cpp" />
     <ClCompile Include="..\..\src\monster_shopkeeper.cpp" />
