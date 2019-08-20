@@ -316,8 +316,9 @@ void Item::applyLockpick(int player, Entity& entity)
 				{
 					messagePlayer(player, language[2524], getName(), entity.getMonsterLangEntry());
 					int chance = stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 20 + 1;
-					if ( rand() % chance > 1 )
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= 60 || (rand() % chance > 0) )
 					{
+						// 100% >= 60 lockpicking. 40 = 66%, 20 = 50%, 0 = 0%
 						entity.monsterSpecialState = AUTOMATON_MALFUNCTION_START;
 						entity.monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_MALFUNCTION;
 						serverUpdateEntitySkill(&entity, 33);
