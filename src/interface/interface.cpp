@@ -3719,7 +3719,7 @@ void GenericGUIMenu::updateGUI()
 										color = uint32ColorGray(*mainsurface);
 									}
 								}
-								else if ( isItemSalvageable(item, clientnum) )
+								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
 								{
 									strncpy(tempstr, language[3645], strlen(language[3645])); // salvage
 									strncat(tempstr, item->description(), 46 - strlen(language[3645]));
@@ -3741,7 +3741,7 @@ void GenericGUIMenu::updateGUI()
 									}
 									else
 									{
-										if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 )
+										if ( tinkeringPlayerHasSkillLVLToCraft(item) == -1 && itemCategory(item) == TOOL )
 										{
 											color = uint32ColorGray(*mainsurface); // can't repair since no we can't craft it.
 										}
@@ -3803,7 +3803,7 @@ void GenericGUIMenu::updateGUI()
 								{
 									tinkeringGetCraftingCost(item, &metal, &magic);
 								}
-								else if ( isItemSalvageable(item, clientnum) )
+								else if ( isItemSalvageable(item, clientnum) && tinkeringFilter != TINKER_FILTER_REPAIRABLE )
 								{
 									tinkeringGetItemValue(item, &metal, &magic);
 								}
@@ -3868,16 +3868,13 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 				return true;
 			}
 		}
+		else if ( tinkeringIsItemRepairable(item, clientnum) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
+		{
+			return true;
+		}
 		else if ( isItemSalvageable(item, clientnum) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
-			{
-				return true;
-			}
-		}
-		else if ( tinkeringIsItemRepairable(item, clientnum) )
-		{
-			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 			{
 				return true;
 			}
@@ -4250,7 +4247,7 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 		}
 		else if ( isNodeFromPlayerInventory(item->node) )
 		{
-			if ( tinkeringIsItemRepairable(item, clientnum) )
+			if ( tinkeringIsItemRepairable(item, clientnum) && tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 			{
 				tinkeringRepairItem(item);
 			}
@@ -6086,13 +6083,71 @@ bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* m
 		default:
 			*metal = 0;
 			*magic = 0;
+			if ( item->status < EXCELLENT )
+			{
+				int requirement = tinkeringRepairGeneralItemSkillRequirement(item);
+				if ( requirement >= 0 && stats[clientnum] 
+					&& (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) >= requirement )
+				{
+					int metalSalvage = 0;
+					int magicSalvage = 0;
+					tinkeringGetItemValue(item, &metalSalvage, &magicSalvage);
+					*metal = metalSalvage * 16;
+					*magic = magicSalvage * 8;
+					int blessingOrCurse = abs(item->beatitude);
+					magic += blessingOrCurse * 4;
+				}
+			}
 			break;
 	}
 	if ( *metal > 0 || *magic > 0 )
 	{
 		return true;
 	}
+
 	return false;
+}
+
+int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(const Item* item)
+{
+	if ( !item )
+	{
+		return -1;
+	}
+	if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+	{
+		return -1;
+	}
+	int metal = 0;
+	int magic = 0;
+	int requirement = 0;
+	tinkeringGetItemValue(item, &metal, &magic);
+	if ( metal == 0 && magic == 0 )
+	{
+		return -1;
+	}
+	if ( magic > 0 || metal >= 3 )
+	{
+		requirement = SKILL_LEVEL_LEGENDARY;
+	}
+	else if ( metal >= 2 )
+	{
+		requirement = SKILL_LEVEL_MASTER;
+	}
+	else if ( metal >= 1 )
+	{
+		requirement = SKILL_LEVEL_EXPERT;
+	}
+
+	if ( requirement > 0 )
+	{
+		if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
+		{
+			requirement -= 20;
+		}
+		return requirement;
+	}
+	return -1;
 }
 
 bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
@@ -6267,11 +6322,11 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 	{
 		return false;
 	}
-	if ( itemIsEquipped(item, clientnum) && item->type != TOOL_TINKERING_KIT )
-	{
-		messagePlayer(clientnum, language[3681]);
-		return false; // don't want to deal with client/server desync problems here.
-	}
+	//if ( itemIsEquipped(item, clientnum) && item->type != TOOL_TINKERING_KIT )
+	//{
+	//	messagePlayer(clientnum, language[3681]);
+	//	return false; // don't want to deal with client/server desync problems here.
+	//}
 
 	if ( stats[clientnum] && players[clientnum] )
 	{
@@ -6357,7 +6412,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 		{
 			// normal items.
 			int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
-			if ( craftRequirement == -1 ) // can't craft, can't repair!
+			if ( craftRequirement == -1 && itemCategory(item) == TOOL ) // can't craft, can't repair!
 			{
 				playSound(90, 64);
 				messagePlayer(clientnum, language[3688], items[item->type].name_identified);

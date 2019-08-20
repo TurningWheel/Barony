@@ -391,6 +391,7 @@ public:
 	int tinkeringUpgradeMaxStatus(Item* item);
 	bool tinkeringConsumeMaterialsForRepair(const Item* item, bool upgradingItem);
 	bool tinkeringPlayerCanAffordRepair(const Item* item);
+	int tinkeringRepairGeneralItemSkillRequirement(const Item* item);
 
 	inline bool isGUIOpen()
 	{
