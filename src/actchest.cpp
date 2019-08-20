@@ -121,10 +121,21 @@ void Entity::actChest()
 				chesttype = rand() % 8;
 				if ( chesttype == 1 )
 				{
-					if ( rand() % 2 == 0 )
+					if ( currentlevel > 10 )
 					{
 						// re-roll the garbage chest.
-						chesttype = rand() % 8;
+						while ( chesttype == 1 )
+						{
+							chesttype = rand() % 8;
+						}
+					}
+					else
+					{
+						// re-roll the garbage chest 50% chance
+						if ( rand() % 2 == 0 )
+						{
+							chesttype = rand() % 8;
+						}
 					}
 				}
 			}
@@ -383,6 +394,12 @@ void Entity::actChest()
 						if ( rand() % 20 == 0 )
 						{
 							newItem(CLOAK_BACKPACK, durability, 0, 1, rand(), false, inventory);
+						}
+						if ( rand() % 5 == 0 )
+						{
+							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), false, inventory);
+							newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, false, inventory);
+							newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, 10 + rand() % 11, 0, false, inventory);
 						}
 						break;
 					case 2:

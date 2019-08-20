@@ -203,6 +203,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneAlembic = false;
 			bool doneLockpick = false;
 			bool doneBackpack = false;
+			bool doneTinkeringKit = false;
 
 			switch ( my->monsterStoreType )
 			{
@@ -438,6 +439,12 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							doneLockpick = true;
 						}
 
+						if ( !doneTinkeringKit && rand() % 5 == 0 )
+						{
+							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), true, &myStats->inventory);
+							doneTinkeringKit = true;
+						}
+
 						if ( !doneAlembic && rand() % 2 == 0 )
 						{
 							tmpItem = newItem(TOOL_ALEMBIC, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), true, &myStats->inventory);
@@ -497,6 +504,19 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							{
 								tmpItem->count = 1;
 							}
+						}
+
+						if ( !doneTinkeringKit && rand() % 20 == 0 )
+						{
+							if ( rand() % 5 == 0 )
+							{
+								newItem(TOOL_TINKERING_KIT, WORN, 0, 1, rand(), true, &myStats->inventory);
+							}
+							else
+							{
+								newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), true, &myStats->inventory);
+							}
+							doneTinkeringKit = true;
 						}
 					}
 					if ( sellVampireBlood )
