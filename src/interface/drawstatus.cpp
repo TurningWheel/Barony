@@ -1034,14 +1034,29 @@ void drawStatus()
 								learnedSpell = true;
 							}
 
+							if ( !learnedSpell && item->identified 
+								&& itemCategory(item) == SPELLBOOK && players[clientnum] && players[clientnum]->entity )
+							{
+								learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
+								spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+								if ( currentSpell )
+								{
+									int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
+									if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+									{
+										skillLVL = 100;
+									}
+									if ( skillLVL >= currentSpell->difficulty )
+									{
+										// can learn spell, try that instead.
+										learnedSpell = false;
+									}
+								}
+							}
+
 							if ( itemCategory(item) == SPELLBOOK && stats[clientnum] && stats[clientnum]->type == GOBLIN )
 							{
 								learnedSpell = true; // goblinos can't learn spells but always equip books.
-							}
-
-							if ( itemCategory(item) == SPELLBOOK )
-							{
-								learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
 							}
 
 							if ( !badpotion && !learnedSpell )
@@ -1702,14 +1717,29 @@ void drawStatus()
 				learnedSpell = true;
 			}
 
+			if ( !learnedSpell && item->identified
+				&& itemCategory(item) == SPELLBOOK && players[clientnum] && players[clientnum]->entity )
+			{
+				learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
+				spell_t* currentSpell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+				if ( currentSpell )
+				{
+					int skillLVL = stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity);
+					if ( stats[clientnum]->PROFICIENCIES[PRO_MAGIC] >= 100 )
+					{
+						skillLVL = 100;
+					}
+					if ( skillLVL >= currentSpell->difficulty )
+					{
+						// can learn spell, try that instead.
+						learnedSpell = false;
+					}
+				}
+			}
+
 			if ( itemCategory(item) == SPELLBOOK && stats[clientnum] && stats[clientnum]->type == GOBLIN )
 			{
 				learnedSpell = true; // goblinos can't learn spells but always equip books.
-			}
-
-			if ( itemCategory(item) == SPELLBOOK )
-			{
-				learnedSpell = true; // let's always equip/unequip spellbooks from the hotbar?
 			}
 
 			bool disableItemUsage = false;
