@@ -380,7 +380,7 @@ public:
 	Sint32& actmagicMirrorReflected; //skill[24] -- skill[11] IS LIGHTBALL_FLICKER!!
 	Sint32& actmagicMirrorReflectedCaster; //skill[12]
 	Sint32& actmagicCastByMagicstaff; //skill[13]
-	Sint32& actmagicBlessedSpellbookBonus; //skill[21]
+	Sint32& actmagicSpellbookBonus; //skill[21]
 	real_t& actmagicOrbitVerticalSpeed; //fskill[2]
 	real_t& actmagicOrbitStartZ; //fskill[3]
 	real_t& actmagicOrbitStationaryX; // fskill[4]

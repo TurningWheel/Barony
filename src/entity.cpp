@@ -244,7 +244,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	actmagicOrbitHitTargetUID4(skill[18]),
 	actmagicProjectileArc(skill[19]),
 	actmagicOrbitCastFromSpell(skill[20]),
-	actmagicBlessedSpellbookBonus(skill[21]),
+	actmagicSpellbookBonus(skill[21]),
 	actmagicCastByTinkerTrap(skill[22]),
 	actmagicTinkerTrapFriendlyFire(skill[23]),
 	goldAmount(skill[0]),

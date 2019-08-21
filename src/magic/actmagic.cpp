@@ -1113,10 +1113,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
-				real_t blessedSpellbookDamageBonus = (my->actmagicBlessedSpellbookBonus * 0.25);
+				real_t spellbookDamageBonus = (my->actmagicSpellbookBonus / 100.f);
 				if ( my->actmagicCastByMagicstaff == 0 && my->actmagicCastByTinkerTrap == 0 )
 				{
-					blessedSpellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
+					spellbookDamageBonus += getBonusFromCasterOfSpellElement(parent, element);
 				}
 
 				if (!strcmp(element->name, spellElement_force.name))
@@ -1128,7 +1128,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
@@ -1169,7 +1169,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actDoor)
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
@@ -1179,7 +1179,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( hit.entity->behavior == &actChest )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							my->removeLightField();
@@ -1189,7 +1189,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actFurniture )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
 							if ( hit.entity->furnitureHealth < 0 )
@@ -1240,7 +1240,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* parent = uidToEntity(my->parent);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
@@ -1294,7 +1294,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( hit.entity->behavior == &actDoor )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
@@ -1317,7 +1317,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( hit.entity->behavior == &actChest )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -1339,7 +1339,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actFurniture )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
 							if ( hit.entity->furnitureHealth < 0 )
@@ -1412,7 +1412,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							if ( my->actmagicIsOrbiting == 2 )
 							{
@@ -1519,7 +1519,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actDoor)
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 
 							hit.entity->doorHandleDamageMagic(damage, *my, parent);
@@ -1542,7 +1542,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actChest) 
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1+(int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -1564,7 +1564,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actFurniture )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
 							if ( hit.entity->furnitureHealth < 0 )
@@ -1674,7 +1674,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
+							//messagePlayer(0, "damage: %d", damage);
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
@@ -1889,7 +1890,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							if ( my->actmagicIsOrbiting == 2 )
 							{
 								if ( parent && my->actmagicOrbitCastFromSpell == 0 )
@@ -1970,7 +1971,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( hit.entity->behavior == &actDoor )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
@@ -1990,7 +1991,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( hit.entity->behavior == &actChest )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->chestHandleDamageMagic(damage, *my, parent);
 							if ( my->actmagicProjectileArc > 0 )
@@ -2008,7 +2009,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actFurniture )
 						{
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							damage /= (1 + (int)resistance);
 							hit.entity->furnitureHealth -= damage;
 							if ( hit.entity->furnitureHealth < 0 )
@@ -2345,7 +2346,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							damage += (blessedSpellbookDamageBonus * damage);
+							damage += (spellbookDamageBonus * damage);
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							if ( parent )

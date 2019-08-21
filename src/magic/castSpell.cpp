@@ -260,16 +260,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool newbie = false;
 	bool overdrewIntoHP = false;
 	bool playerCastingFromKnownSpellbook = false;
-	int usingBlessedSpellbook = 0;
+	int spellBookBonusPercent = 0;
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = caster->isSpellcasterBeginner();
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
+			spellBookBonusPercent += (caster->getINT() * 0.5);
 			if ( stat->shield->beatitude > 0 
 				|| (shouldInvertEquipmentBeatitude(stat) && stat->shield->beatitude < 0) )
 			{
-				usingBlessedSpellbook = abs(stat->shield->beatitude);
+				spellBookBonusPercent += abs(stat->shield->beatitude) * 25;
 			}
 			if ( spellcasting >= spell->difficulty || playerLearnedSpellbook(stat->shield) )
 			{
@@ -996,7 +997,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( caster == players[i]->entity )
 				{
 					int amount = element->duration;
-					amount += (usingBlessedSpellbook * amount * 0.5);
+					amount += ((spellBookBonusPercent * 2 / 100.f) * amount); // 100-200%
 
 					if ( overdrewIntoHP )
 					{
@@ -1046,7 +1047,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					//Duration for speed.
 					int duration = element->duration;
-					duration += (usingBlessedSpellbook * duration * 0.5); // 100-200%
+					duration += ((spellBookBonusPercent * 2 / 100.f) * duration); // 100-200%
+					
 					//duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 					//if ( newbie )
 					//{
@@ -1119,7 +1121,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 					}
 					// spellbook 100-150%, 50 INT = 200%.
-					amount += amount * ((usingBlessedSpellbook * 0.25) + getBonusFromCasterOfSpellElement(caster, element));
+					amount += amount * ((spellBookBonusPercent * 1 / 100.f) + getBonusFromCasterOfSpellElement(caster, element));
 
 					int totalHeal = 0;
 					int oldHP = players[i]->entity->getHP();
@@ -1276,9 +1278,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
 
-					if ( usingBlessedSpellbook > 0 )
+					if ( spellBookBonusPercent >= 25 )
 					{
-						caster->setEffect(EFF_HP_REGEN, true, 20 * usingBlessedSpellbook * TICKS_PER_SECOND, true);
+						int bonus = 10 * ((spellBookBonusPercent * 4) / 100.f); // 25% = 10 seconds, 50% = 20 seconds.
+						caster->setEffect(EFF_HP_REGEN, true, bonus * TICKS_PER_SECOND, true);
 					}
 
 					for ( node = map.creatures->first; node->next; node = node->next )
@@ -1310,9 +1313,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 									entity->setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
 									serverUpdatePlayerGameplayStats(i, STATISTICS_FUNCTIONAL, 1);
 								}
-								if ( usingBlessedSpellbook > 0 )
+								if ( spellBookBonusPercent >= 25 )
 								{
-									entity->setEffect(EFF_HP_REGEN, true, 20 * usingBlessedSpellbook * TICKS_PER_SECOND, true);
+									int bonus = 10 * ((spellBookBonusPercent * 4) / 100.f); // 25% = 10 seconds, 50% = 20 seconds.
+									entity->setEffect(EFF_HP_REGEN, true, bonus * TICKS_PER_SECOND, true);
 								}
 								if ( entity->behavior == &actPlayer )
 								{
@@ -1529,9 +1533,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			else if ( usingSpellbook && spellBookBonusPercent > 0 )
 			{
-				entity->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+				entity->actmagicSpellbookBonus = spellBookBonusPercent;
 			}
 			Stat* casterStats = caster->getStats();
 			if ( !trap && !using_magicstaff && casterStats && casterStats->EFFECTS[EFF_MAGICAMPLIFY] )
@@ -1653,9 +1657,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			else if ( usingSpellbook && spellBookBonusPercent > 0 )
 			{
-				entity->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+				entity->actmagicSpellbookBonus = spellBookBonusPercent;
 			}
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
@@ -1691,9 +1695,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity1->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			else if ( usingSpellbook && spellBookBonusPercent > 0 )
 			{
-				entity1->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+				entity1->actmagicSpellbookBonus = spellBookBonusPercent;
 			}
 			node = list_AddNodeFirst(&entity1->children);
 			node->element = copySpell(spell);
@@ -1725,9 +1729,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				entity2->actmagicCastByMagicstaff = 1;
 			}
-			else if ( usingSpellbook && usingBlessedSpellbook >= 0 )
+			else if ( usingSpellbook && spellBookBonusPercent > 0 )
 			{
-				entity2->actmagicBlessedSpellbookBonus = usingBlessedSpellbook;
+				entity2->actmagicSpellbookBonus = spellBookBonusPercent;
 			}
 			node = list_AddNodeFirst(&entity2->children);
 			node->element = copySpell(spell);
