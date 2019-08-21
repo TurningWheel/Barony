@@ -5493,7 +5493,7 @@ bool GenericGUIMenu::isItemSalvageable(const Item* item, int player)
 	return false;
 }
 
-bool GenericGUIMenu::tinkeringIsItemRepairable(const Item* item, int player)
+bool GenericGUIMenu::tinkeringIsItemRepairable(Item* item, int player)
 {
 	if ( !item )
 	{
@@ -5517,7 +5517,7 @@ bool GenericGUIMenu::tinkeringIsItemRepairable(const Item* item, int player)
 	return false;
 }
 
-bool GenericGUIMenu::tinkeringPlayerCanAffordRepair(const Item* item)
+bool GenericGUIMenu::tinkeringPlayerCanAffordRepair(Item* item)
 {
 	if ( !item )
 	{
@@ -6042,7 +6042,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 	return false;
 }
 
-bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* magic)
+bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 {
 	if ( !item || !metal || !magic )
 	{
@@ -6092,10 +6092,10 @@ bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* m
 					int metalSalvage = 0;
 					int magicSalvage = 0;
 					tinkeringGetItemValue(item, &metalSalvage, &magicSalvage);
-					*metal = metalSalvage * 16;
+					*metal = metalSalvage * 8;
 					*magic = magicSalvage * 8;
 					int blessingOrCurse = abs(item->beatitude);
-					magic += blessingOrCurse * 4;
+					*magic += blessingOrCurse * 4;
 				}
 			}
 			break;
@@ -6108,7 +6108,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(const Item* item, int* metal, int* m
 	return false;
 }
 
-int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(const Item* item)
+int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(Item* item)
 {
 	if ( !item )
 	{
@@ -6121,7 +6121,11 @@ int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(const Item* item)
 	int metal = 0;
 	int magic = 0;
 	int requirement = 0;
+	int blessing = item->beatitude;
+	item->beatitude = 0;
 	tinkeringGetItemValue(item, &metal, &magic);
+	item->beatitude = blessing;
+
 	if ( metal == 0 && magic == 0 )
 	{
 		return -1;
@@ -6528,7 +6532,7 @@ int GenericGUIMenu::tinkeringUpgradeMaxStatus(Item* item)
 	return BROKEN;
 }
 
-bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(const Item* item, bool upgradingItem)
+bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradingItem)
 {
 	if ( !item )
 	{

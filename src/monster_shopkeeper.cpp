@@ -506,18 +506,18 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							}
 						}
 
-						if ( !doneTinkeringKit && rand() % 20 == 0 )
+					}
+					if ( !doneTinkeringKit && rand() % 20 == 0 )
+					{
+						if ( rand() % 5 == 0 )
 						{
-							if ( rand() % 5 == 0 )
-							{
-								newItem(TOOL_TINKERING_KIT, WORN, 0, 1, rand(), true, &myStats->inventory);
-							}
-							else
-							{
-								newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), true, &myStats->inventory);
-							}
-							doneTinkeringKit = true;
+							newItem(TOOL_TINKERING_KIT, WORN, 0, 1, rand(), true, &myStats->inventory);
 						}
+						else
+						{
+							newItem(TOOL_TINKERING_KIT, DECREPIT, 0, 1, rand(), true, &myStats->inventory);
+						}
+						doneTinkeringKit = true;
 					}
 					if ( sellVampireBlood )
 					{

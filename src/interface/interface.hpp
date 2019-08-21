@@ -384,14 +384,14 @@ public:
 	bool tinkeringKitDegradeOnUse(int player);
 	Item* tinkeringKitFindInInventory();
 	bool tinkeringKitRollIfShouldBreak();
-	bool tinkeringGetRepairCost(const Item* item, int* metal, int* magic);
-	bool tinkeringIsItemRepairable(const Item* item, int player);
+	bool tinkeringGetRepairCost(Item* item, int* metal, int* magic);
+	bool tinkeringIsItemRepairable(Item* item, int player);
 	bool tinkeringIsItemUpgradeable(const Item* item);
 	bool tinkeringRepairItem(Item* item);
 	int tinkeringUpgradeMaxStatus(Item* item);
-	bool tinkeringConsumeMaterialsForRepair(const Item* item, bool upgradingItem);
-	bool tinkeringPlayerCanAffordRepair(const Item* item);
-	int tinkeringRepairGeneralItemSkillRequirement(const Item* item);
+	bool tinkeringConsumeMaterialsForRepair(Item* item, bool upgradingItem);
+	bool tinkeringPlayerCanAffordRepair(Item* item);
+	int tinkeringRepairGeneralItemSkillRequirement(Item* item);
 
 	inline bool isGUIOpen()
 	{
