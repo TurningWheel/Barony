@@ -1067,6 +1067,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						caster->setEffect(EFF_SLOW, false, 0, true);
 					}
 					caster->setEffect(EFF_FAST, true, duration, true);
+					messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[768]);
 					for ( node = map.creatures->first; node; node = node->next )
 					{
 						entity = (Entity*)(node->element);
@@ -1084,6 +1085,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							entity->setEffect(EFF_FAST, true, duration, true);
 							playSoundEntity(entity, 178, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 174);
+							if ( entity->behavior == &actPlayer )
+							{
+								messagePlayerColor(entity->skill[2], uint32ColorGreen(*mainsurface), language[768]);
+							}
 						}
 					}
 					break;
