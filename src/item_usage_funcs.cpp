@@ -1205,7 +1205,7 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[2902]);
 			stats->EFFECTS[EFF_SLOW] = true;
-			stats->EFFECTS_TIMERS[EFF_SLOW] = 600;
+			stats->EFFECTS_TIMERS[EFF_SLOW] = 1800;
 		}
 	}
 	else
@@ -1214,10 +1214,10 @@ bool item_PotionSpeed(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			messagePlayer(player, language[768]);
 			stats->EFFECTS[EFF_FAST] = true;
-			stats->EFFECTS_TIMERS[EFF_FAST] = 600;
+			stats->EFFECTS_TIMERS[EFF_FAST] += 3000;
 			if ( item->beatitude > 0 )
 			{
-				stats->EFFECTS_TIMERS[EFF_FAST] += 600 * item->beatitude;
+				stats->EFFECTS_TIMERS[EFF_FAST] += 3000 * item->beatitude;
 			}
 		}
 		else
@@ -1314,7 +1314,7 @@ bool item_PotionStrength(Item*& item, Entity* entity, Entity* usedBy)
 		stats->EFFECTS_TIMERS[EFF_POTION_STR] = 3000; // 60 seconds
 		if ( item->beatitude > 0 )
 		{
-			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 1500 * item->beatitude; // 30 seconds each blessing
+			stats->EFFECTS_TIMERS[EFF_POTION_STR] += 3000 * item->beatitude; // 60 seconds each blessing
 		}
 	}
 	serverUpdateEffects(player);

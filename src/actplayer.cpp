@@ -2953,6 +2953,10 @@ void actPlayer(Entity* my)
 			}
 		}
 		weight += stats[PLAYER_NUM]->GOLD / 100;
+		if ( stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && !stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
+		{
+			weight = weight * 0.5;
+		}
 		weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
 		weightratio = fmin(fmax(0, weightratio), 1);
 
@@ -3041,15 +3045,19 @@ void actPlayer(Entity* my)
 			}
 
 
-			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 25 * 0.5 + 10);
+			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 18.0);
 			if ( my->getDEX() <= 5 )
 			{
-				speedFactor = std::min((my->getDEX() + 10) * weightratio, 25 * 0.5 + 10);
+				speedFactor = std::min((my->getDEX() + 10) * weightratio, 18.0);
 			}
 			else if ( my->getDEX() <= 15 )
 			{
-				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 25 * 0.5 + 10);
+				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 18.0);
 			}
+			/*if ( ticks % 50 == 0 )
+			{
+				messagePlayer(0, "%f", speedFactor);
+			}*/
 			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));

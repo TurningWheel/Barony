@@ -4533,7 +4533,14 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	}
 	else if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
-		DEX += 10;
+		if ( my && my->behavior == &actPlayer )
+		{
+			DEX += 5;
+		}
+		else
+		{
+			DEX += 10;
+		}
 	}
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
 	{
