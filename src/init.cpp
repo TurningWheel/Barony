@@ -958,12 +958,15 @@ void generatePolyModels(int start, int end, bool forceCacheRebuild)
 		// print a loading message
 		if ( start == 0 && end == nummodels )
 		{
-			drawClearBuffers();
-			int w, h;
-			TTF_SizeUTF8(ttf16, loadText, &w, &h);
-			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
+			if ( c % 50 == 0 )
+			{
+				drawClearBuffers();
+				int w, h;
+				TTF_SizeUTF8(ttf16, loadText, &w, &h);
+				ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
 
-			GO_SwapBuffers(screen);
+				GO_SwapBuffers(screen);
+			}
 		}
 		numquads = 0;
 		polymodels[c].numfaces = 0;
