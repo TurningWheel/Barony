@@ -4402,7 +4402,7 @@ void item_Spellbook(Item*& item, int player)
 			messagePlayer(player, language[3445]);
 			return;
 		}
-		else if ( stats[player] && stats[player]->type == GOBLIN )
+		else if ( stats[player] && (stats[player]->type == GOBLIN || stats[player]->playerRace == RACE_GOBLIN) )
 		{
 			messagePlayer(player, language[3444]);
 			return;
@@ -4704,6 +4704,16 @@ void item_Spellbook(Item*& item, int player)
 
 		if ( learned )
 		{
+			if ( item->type >= SPELLBOOK_RAT_FORM && item->type <= SPELLBOOK_IMP_FORM )
+			{
+				ItemType originalSpellbook = item->type;
+				item->type = SPELLBOOK_REVERT_FORM;
+				if ( !playerLearnedSpellbook(item) ) // have we learnt "revert form"?
+				{
+					addSpell(SPELL_REVERT_FORM, player, true); // add it.
+				}
+				item->type = originalSpellbook;
+			}
 			item->status = static_cast<Status>(item->status - 1);
 			if ( item->status != BROKEN )
 			{
