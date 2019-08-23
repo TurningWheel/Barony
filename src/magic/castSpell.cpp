@@ -2057,10 +2057,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					magicChance *= 2;
 				}
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
-				if ( spell->ID == SPELL_REVERT_FORM || 
-					(!strcmp(element->name, spellElement_light.name)
+				if ( (!strcmp(element->name, spellElement_light.name) || spell->ID == SPELL_REVERT_FORM)
 						&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
-						&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED) )
+						&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
 				{
 					// light provides no levelling past 40 in both spellcasting and magic.
 					if ( rand() % 20 == 0 )
