@@ -1230,10 +1230,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 
 						messagePlayer(caster->skill[2], language[3417]);
+						playSoundEntity(caster, 400, 92);
+						createParticleDropRising(caster, 593, 1.f);
+						serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
 					}
-					playSoundEntity(caster, 400, 92);
-					createParticleDropRising(caster, 593, 1.f);
-					serverSpawnMiscParticles(caster, PARTICLE_EFFECT_RISING_DROP, 593);
+					else
+					{
+						messagePlayer(caster->skill[2], language[3715]);
+						playSoundEntity(caster, 163, 128);
+					}
 				}
 				else
 				{
@@ -1569,7 +1574,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				volume = 96;
 			}
 
-			if( !strcmp(spell->name, spell_cold.name) )
+			if( !strcmp(element->name, spell_cold.name) )
 			{
 				if ( volume > 64 )
 				{
@@ -1577,12 +1582,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 			
-			if ( !strcmp(spell->name, spell_acidSpray.name) )
+			if ( !strcmp(element->name, spell_acidSpray.name) )
 			{
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
-			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
+			else if ( !strcmp(element->name, spell_sprayWeb.name) )
 			{
 				traveltime = 15;
 				entity->skill[5] = traveltime;
@@ -1611,12 +1616,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			real_t baseSpeed = 2;
 			real_t baseSideSpeed = 1;
 			int sprite = 170;
-			if ( !strcmp(spell->name, spell_stoneblood.name) )
+			if ( !strcmp(element->name, spell_stoneblood.name) )
 			{
 				angle = PI / 6;
 				baseSpeed = 2;
 			}
-			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			else if ( !strcmp(element->name, spell_acidSpray.name) )
 			{
 				sprite = 597;
 				angle = PI / 16;
@@ -1624,7 +1629,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				baseSideSpeed = 2;
 				traveltime = 20;
 			}
-			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
+			else if ( !strcmp(element->name, spell_sprayWeb.name) )
 			{
 				sprite = 861;
 				angle = PI / 16;
@@ -1895,14 +1900,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					entity->sprite = 172;
 				}
 			}
-			else if (!strcmp(spell->name, spell_magicmissile.name))
+			else if (!strcmp(element->name, spell_magicmissile.name))
 			{
 				if (propulsion == PROPULSION_MISSILE)
 				{
 					entity->sprite = 173;
 				}
 			}
-			else if ( !strcmp(spell->name, spell_dominate.name) )
+			else if ( !strcmp(element->name, spell_dominate.name) )
 			{
 				if ( propulsion == PROPULSION_MISSILE )
 				{
@@ -2052,9 +2057,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					magicChance *= 2;
 				}
 				//messagePlayer(0, "Difficulty: %d, chance 1 in %d, 1 in %d", castDifficulty, spellCastChance, magicChance);
-				if ( !strcmp(element->name, spellElement_light.name)
-					&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
-					&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED )
+				if ( spell->ID == SPELL_REVERT_FORM || 
+					(!strcmp(element->name, spellElement_light.name)
+						&& stat->PROFICIENCIES[PRO_SPELLCASTING] >= SKILL_LEVEL_SKILLED
+						&& stat->PROFICIENCIES[PRO_MAGIC] >= SKILL_LEVEL_SKILLED) )
 				{
 					// light provides no levelling past 40 in both spellcasting and magic.
 					if ( rand() % 20 == 0 )
