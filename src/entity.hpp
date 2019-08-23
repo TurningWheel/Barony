@@ -480,8 +480,8 @@ public:
 	void modHP(int amount); //Adds amount to HP.
 	int getHP();
 
-	void setMP(int amount);
-	void modMP(int amount); //Adds amount to MP.
+	void setMP(int amount, bool updateClients = true);
+	void modMP(int amount, bool updateClients = true); //Adds amount to MP.
 	int getMP();
 
 	void drainMP(int amount, bool notifyOverexpend = true); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.

@@ -2112,7 +2112,7 @@ sets the MP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setMP(int amount)
+void Entity::setMP(int amount, bool updateClients)
 {
 	Stat* entitystats = this->getStats();
 
@@ -2127,7 +2127,7 @@ void Entity::setMP(int amount)
 	entitystats->MP = std::min(std::max(0, amount), entitystats->MAXMP);
 
 	int i = 0;
-	if ( multiplayer == SERVER )
+	if ( multiplayer == SERVER && updateClients )
 	{
 		for ( i = 1; i < numplayers; i++ )
 		{
@@ -2153,7 +2153,7 @@ modifies the MP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::modMP(int amount)
+void Entity::modMP(int amount, bool updateClients)
 {
 	Stat* entitystats = this->getStats();
 
@@ -2171,7 +2171,7 @@ void Entity::modMP(int amount)
 		return;
 	}
 
-	this->setMP(entitystats->MP + amount);
+	this->setMP(entitystats->MP + amount, updateClients);
 }
 
 int Entity::getMP()
@@ -2849,6 +2849,15 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( playerAutomaton )
 	{
+		// give a little extra hunger duration.
+		if ( playerCount == 3 )
+		{
+			hungerTickRate *= 1.25; // 1.55x (1.25 x 1.25)
+		}
+		else if ( playerCount == 4 )
+		{
+			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
+		}
 		if ( ticks % (hungerTickRate / 2) == 0 )
 		{
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
@@ -3216,19 +3225,33 @@ void Entity::handleEffects(Stat* myStats)
 
 		if ( this->char_energize >= manaRegenInterval && myStats->HUNGER <= 300 )
 		{
-			if ( rand() % 5 == 0 )
+			/*if ( rand() % 5 == 0 )
 			{
-				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 300.f);
-			}
+				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
+			}*/
 			this->char_energize = 0;
-			this->modMP(-1);
+			if ( manaRegenInterval / 50.f < 0.5 ) // less than half a second, don't update clients as often.
+			{
+				if ( ticks % 25 == 0 )
+				{
+					this->modMP(-1, true);
+				}
+				else
+				{
+					this->modMP(-1, false);
+				}
+			}
+			else
+			{
+				this->modMP(-1);
+			}
 		}
 		else if ( this->char_energize >= manaRegenInterval )
 		{
-			if ( rand() % 5 == 0 )
+			/*if ( rand() % 5 == 0 )
 			{
 				messagePlayer(0, "1 MP every %f seconds", manaRegenInterval / 50.f);
-			}
+			}*/
 			this->char_energize = 0;
 			this->modMP(1);
 		}
@@ -14402,7 +14425,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		}
 		else if ( manaring < 0 )
 		{
-			return floatRegenTime / abs(manaring) * 2; // lose 1 MP each 3 base seconds - bad!
+			return floatRegenTime / (abs(manaring) * 2); // lose 1 MP each 3 base seconds - bad!
 		}
 		else if ( manaring == 0 )
 		{
