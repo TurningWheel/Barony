@@ -1567,11 +1567,45 @@ void statsHoverText(Stat* tmpStat)
 							{
 								tmp = players[clientnum]->entity;
 								real_t regen = (static_cast<real_t>(tmp->getManaRegenInterval(*tmpStat)) / TICKS_PER_SECOND);
+								if ( stats[clientnum]->type == AUTOMATON )
+								{
+									if ( stats[clientnum]->HUNGER <= 300 )
+									{
+										regen /= 6; // degrade faster
+									}
+									else if ( stats[clientnum]->HUNGER > 1200 )
+									{
+										if ( stats[clientnum]->MP / static_cast<real_t>(std::max(1, stats[clientnum]->MAXMP)) <= 0.5 )
+										{
+											regen /= 4; // increase faster at < 50% mana
+										}
+										else
+										{
+											regen /= 2; // increase less faster at > 50% mana
+										}
+									}
+									else if ( stats[clientnum]->HUNGER > 300 )
+									{
+										// normal manaRegenInterval 300-1200 hunger.
+									}
+								}
 								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
-								if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
+								if ( stats[clientnum]->type == AUTOMATON )
+								{
+									if ( stats[clientnum]->HUNGER <= 300 )
+									{
+										color = uint32ColorRed(*mainsurface);
+									}
+									else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND )
+									{
+										color = uint32ColorGreen(*mainsurface);
+									}
+								}
+								else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
 								{
 									color = uint32ColorGreen(*mainsurface);
 								}
+								
 							}
 							else
 							{
