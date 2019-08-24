@@ -30,6 +30,8 @@ ItemGeneric items[NUMITEMS];
 int INVENTORY_SIZEY = 3;
 const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f };
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
+std::mt19937 enchantedFeatherScrollSeed(0);
+std::vector<int> enchantedFeatherScrollsShuffled;
 
 /*-------------------------------------------------------------------------------
 
@@ -2373,6 +2375,16 @@ void useItem(Item* item, int player, Entity* usedBy)
 				GenericGUI.openGUI(GUI_TYPE_ALCHEMY, false, item);
 			}
 			break;
+		case ENCHANTED_FEATHER:
+			if ( player != clientnum )
+			{
+				consumeItem(item, player);
+			}
+			else
+			{
+				GenericGUI.openGUI(GUI_TYPE_SCRIBING, item);
+			}
+			break;
 		case FOOD_BREAD:
 		case FOOD_CREAMPIE:
 		case FOOD_CHEESE:
@@ -3974,11 +3986,16 @@ bool Item::shouldItemStack(int player)
 				&& itemCategory(this) != SPELLBOOK
 				&& this->type != TOOL_PICKAXE
 				&& this->type != TOOL_ALEMBIC
-				&& this->type != TOOL_TINKERING_KIT )
+				&& this->type != TOOL_TINKERING_KIT
+				&& this->type != ENCHANTED_FEATHER )
 			|| itemCategory(this) == THROWN
 			|| itemCategory(this) == GEM
 			|| itemCategory(this) == POTION
-			|| (itemCategory(this) == TOOL && this->type != TOOL_PICKAXE && this->type != TOOL_ALEMBIC && this->type != TOOL_TINKERING_KIT)
+			|| (itemCategory(this) == TOOL 
+				&& this->type != TOOL_PICKAXE 
+				&& this->type != TOOL_ALEMBIC 
+				&& this->type != TOOL_TINKERING_KIT
+				&& this->type != ENCHANTED_FEATHER)
 			)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.

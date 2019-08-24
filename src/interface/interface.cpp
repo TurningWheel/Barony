@@ -28,6 +28,7 @@
 #include "../net.hpp"
 #include "../draw.hpp"
 #include "../scores.hpp"
+#include "../scrolls.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface* backdrop_minotaur_bmp = nullptr;
@@ -3188,6 +3189,15 @@ void GenericGUIMenu::rebuildGUIInventory()
 			tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
 		}
 	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		player_inventory = &scribingTotalItems;
+		scribingTotalLastCraftableNode = scribingTotalItems.last;
+		if ( scribingTotalLastCraftableNode )
+		{
+			scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+	}
 
 	if ( player_inventory )
 	{
@@ -3310,6 +3320,29 @@ void GenericGUIMenu::updateGUI()
 				return;
 			}
 		}
+		else if ( guiType == GUI_TYPE_SCRIBING )
+		{
+			if ( !scribingToolItem )
+			{
+				closeGUI();
+				return;
+			}
+			if ( !scribingToolItem->node )
+			{
+				closeGUI();
+				return;
+			}
+			if ( scribingToolItem->node->list != &stats[clientnum]->inventory )
+			{
+				// dropped out of inventory or something.
+				closeGUI();
+				return;
+			}
+			if ( scribingBlankScrollTarget && scribingFilter != SCRIBING_FILTER_CRAFTABLE )
+			{
+				scribingBlankScrollTarget = nullptr;
+			}
+		}
 
 		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 		gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
@@ -3380,11 +3413,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( mousestatus[SDL_BUTTON_LEFT]
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
 				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_CRAFTABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 			}
 			if ( tinkeringFilter == TINKER_FILTER_CRAFTABLE )
 			{
@@ -3398,11 +3432,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( mousestatus[SDL_BUTTON_LEFT]
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
 				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_SALVAGEABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 			}
 			if ( tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
 			{
@@ -3416,11 +3451,12 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = txtWidth + 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( mousestatus[SDL_BUTTON_LEFT]
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
 				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_REPAIRABLE;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 			}
 			if ( tinkeringFilter == TINKER_FILTER_REPAIRABLE )
 			{
@@ -3434,17 +3470,129 @@ void GenericGUIMenu::updateGUI()
 			highlightBtn.y = pos.y + (12 - txtHeight);
 			highlightBtn.w = 2 * charWidth + 4;
 			highlightBtn.h = txtHeight + 4;
-			if ( mousestatus[SDL_BUTTON_LEFT]
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
 				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
 			{
 				tinkeringFilter = TINKER_FILTER_ALL;
 				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 			}
 			if ( tinkeringFilter == TINKER_FILTER_ALL )
 			{
 				drawImageScaled(smallbutton_bmp, NULL, &highlightBtn);
 			}
 			ttfPrintText(font, highlightBtn.x + (highlightBtn.w - txtWidth) / 2, pos.y - (8 - txtHeight), language[356]);
+		}
+		else if ( guiType == GUI_TYPE_SCRIBING )
+		{
+			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
+
+			// title
+			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
+				language[3716]);
+			char toolStatusText[64] = "";
+			if ( scribingToolItem )
+			{
+				snprintf(toolStatusText, 63, language[3717], language[3691 + std::max(1, static_cast<int>(scribingToolItem->status))]);
+			}
+			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
+				toolStatusText);
+
+			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			{
+				if ( scribingBlankScrollTarget )
+				{
+					snprintf(tempstr, 1024, language[3722], scribingBlankScrollTarget->beatitude, items[SCROLL_BLANK].name_identified);
+					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8, tempstr);
+
+					SDL_Rect smallIcon;
+					smallIcon.x = windowX1 + 16 + (longestline(tempstr) - 5) * TTF12_WIDTH;
+					smallIcon.y = windowY2 - TTF12_HEIGHT - 12 - 4;
+					smallIcon.h = 16;
+					smallIcon.w = 16;
+					node_t* imageNode = items[SCROLL_BLANK].surfaces.first;
+					if ( imageNode )
+					{
+						drawImageScaled(*((SDL_Surface**)imageNode->element), NULL, &smallIcon);
+					}
+					smallIcon.x += smallIcon.w + 4;
+					smallIcon.w = longestline(language[3723]) * TTF12_WIDTH + 8;
+					smallIcon.y -= 2;
+					smallIcon.h += 2;
+					if ( mouseInBounds(smallIcon.x, smallIcon.x + smallIcon.w, smallIcon.y, smallIcon.y + smallIcon.h) )
+					{
+						drawDepressed(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+						if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+						{
+							*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+							scribingBlankScrollTarget = nullptr;
+						}
+					}
+					else
+					{
+						drawWindow(smallIcon.x, smallIcon.y, smallIcon.x + smallIcon.w, smallIcon.y + smallIcon.h);
+					}
+					ttfPrintTextFormatted(ttf12, smallIcon.x + 6, windowY2 - 2 * TTF12_HEIGHT + 2, language[3723]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+						language[3720]);
+				}
+			}
+			else if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			{
+				ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY2 - 2 * TTF12_HEIGHT - 8,
+					language[3726]);
+			}
+
+			// draw filter labels.
+			int txtWidth = 0;
+			int txtHeight = 0;
+			int charWidth = 0;
+			TTF_Font* font = ttf8;
+			TTF_SizeUTF8(font, "a", &charWidth, nullptr); // get 1 character width.
+			int textstartx = pos.x + 2 * charWidth + 4;
+
+			SDL_Rect highlightBtn;
+			// Inscribe
+			TTF_SizeUTF8(ttf8, language[3718], &txtWidth, &txtHeight);
+			highlightBtn.x = textstartx;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				scribingFilter = SCRIBING_FILTER_CRAFTABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3718]);
+
+			// Repair
+			TTF_SizeUTF8(font, language[3719], &txtWidth, &txtHeight);
+			highlightBtn.x += highlightBtn.w;
+			highlightBtn.y = pos.y + (12 - txtHeight);
+			highlightBtn.w = txtWidth + 2 * charWidth + 4;
+			highlightBtn.h = txtHeight + 4;
+			if ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]))
+				&& mouseInBounds(highlightBtn.x, highlightBtn.x + highlightBtn.w, highlightBtn.y, highlightBtn.y + highlightBtn.h) )
+			{
+				scribingFilter = SCRIBING_FILTER_REPAIRABLE;
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
+			}
+			if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+			{
+				drawImageScaled(button_bmp, NULL, &highlightBtn);
+			}
+			ttfPrintText(font, highlightBtn.x + 4 + charWidth, pos.y - (8 - txtHeight), language[3719]);
 		}
 		drawImage(identifyGUI_img, NULL, &pos);
 
@@ -3545,6 +3693,15 @@ void GenericGUIMenu::updateGUI()
 			if ( tinkeringTotalLastCraftableNode )
 			{
 				tinkeringTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+			}
+		}
+		else if ( guiType == GUI_TYPE_SCRIBING )
+		{
+			player_inventory = &scribingTotalItems;
+			scribingTotalLastCraftableNode = scribingTotalItems.last;
+			if ( scribingTotalLastCraftableNode )
+			{
+				scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
 			}
 		}
 
@@ -3763,6 +3920,29 @@ void GenericGUIMenu::updateGUI()
 									strncat(tempstr, "invalid item", 12);
 								}
 							}
+							else if ( guiType == GUI_TYPE_SCRIBING )
+							{
+								if ( isNodeScribingCraftableItem(item->node) )
+								{
+									snprintf(tempstr, sizeof(tempstr), language[3721], scroll_label[item->appearance % NUMLABELS]);
+								}
+								else
+								{
+									if ( scribingFilter == SCRIBING_FILTER_REPAIRABLE )
+									{
+										strncpy(tempstr, language[3719], strlen(language[3719])); // repair
+										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
+									}
+									else
+									{
+										strncpy(tempstr, language[3718], strlen(language[3718])); // inscribe
+										int oldcount = item->count;
+										item->count = 1;
+										strncat(tempstr, item->description(), 46 - strlen(language[3718]));
+										item->count = oldcount;
+									}
+								}
+							}
 							else
 							{
 								strncpy(tempstr, item->description(), 46);
@@ -3861,7 +4041,7 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	}
 	else if ( guiType == GUI_TYPE_TINKERING )
 	{
-		if ( item && isNodeTinkeringCraftableItem(item->node) )
+		if ( isNodeTinkeringCraftableItem(item->node) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_CRAFTABLE )
 			{
@@ -3875,6 +4055,34 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		else if ( isItemSalvageable(item, clientnum) )
 		{
 			if ( tinkeringFilter == TINKER_FILTER_ALL || tinkeringFilter == TINKER_FILTER_SALVAGEABLE )
+			{
+				return true;
+			}
+		}
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		if ( scribingFilter != SCRIBING_FILTER_REPAIRABLE )
+		{
+			if ( isNodeScribingCraftableItem(item->node) )
+			{
+				if ( scribingBlankScrollTarget )
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else if ( !scribingBlankScrollTarget && item->identified && item->type == SCROLL_BLANK )
+			{
+				return true;
+			}
+		}
+		else if ( scribingFilter != SCRIBING_FILTER_CRAFTABLE )
+		{
+			if ( itemCategory(item) == SPELLBOOK && item->identified && item->status < EXCELLENT )
 			{
 				return true;
 			}
@@ -3957,6 +4165,7 @@ void GenericGUIMenu::repairItem(Item* item)
 void GenericGUIMenu::closeGUI()
 {
 	tinkeringFreeLists();
+	scribingFreeLists();
 	guiActive = false;
 	selectedSlot = -1;
 	guiType = GUI_TYPE_NONE;
@@ -4152,14 +4361,22 @@ void GenericGUIMenu::openGUI(int type, Item* itemOpenedWith)
 	shootmode = false;
 	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
 	guiActive = true;
-	tinkeringKitItem = itemOpenedWith;
 	guiType = static_cast<GUICurrentType>(type);
 
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
 	gui_startx = ((yres / 2) - (inventoryChest_bmp->h / 2)) + offsety;
 
 	// build the craftables list.
-	tinkeringCreateCraftableItemList();
+	if ( guiType == GUI_TYPE_TINKERING )
+	{
+		tinkeringKitItem = itemOpenedWith;
+		tinkeringCreateCraftableItemList();
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		scribingToolItem = itemOpenedWith;
+		scribingCreateCraftableItemList();
+	}
 
 	if ( removecursegui_active )
 	{
@@ -4254,6 +4471,25 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			else
 			{
 				tinkeringSalvageItem(item, false, clientnum);
+			}
+		}
+		return true;
+	}
+	else if ( guiType == GUI_TYPE_SCRIBING )
+	{
+		if ( isNodeScribingCraftableItem(item->node) )
+		{
+			scribingWriteItem(item);
+		}
+		else if ( isNodeFromPlayerInventory(item->node) )
+		{
+			if ( item->identified && item->type == SCROLL_BLANK )
+			{
+				scribingBlankScrollTarget = item;
+			}
+			else if ( item->identified && itemCategory(item) == SPELLBOOK )
+			{
+				scribingWriteItem(item);
 			}
 		}
 		return true;
@@ -6604,6 +6840,249 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 			}
 			return true;
 		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::scribingCreateCraftableItemList()
+{
+	scribingFreeLists();
+	std::vector<Item*> items;
+	for ( int i = 0; i < NUMLABELS && i < enchantedFeatherScrollsShuffled.size(); ++i )
+	{
+		items.push_back(newItem(static_cast<ItemType>(enchantedFeatherScrollsShuffled.at(i)), 
+			EXCELLENT, 0, 1, i, false, &scribingTotalItems));
+	}
+
+	if ( stats[clientnum] )
+	{
+		// make the last node jump to the player's actual items, 
+		// so consuming the items in this list will actually update the player's inventory.
+		node_t* scribingTotalLastCraftableNode = scribingTotalItems.last;
+		if ( scribingTotalLastCraftableNode )
+		{
+			scribingTotalLastCraftableNode->next = stats[clientnum]->inventory.first;
+		}
+	}
+}
+
+void GenericGUIMenu::scribingFreeLists()
+{
+	node_t* nextnode = nullptr;
+	int itemcnt = 0;
+
+	// totalItems is a unique list, contains unique craftable data, 
+	// as well as a pointer to continue to the player's inventory
+	for ( node_t* node = scribingTotalItems.first; node; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->list == &scribingTotalItems )
+		{
+			list_RemoveNode(node);
+			++itemcnt;
+		}
+		else if ( node->list == &stats[clientnum]->inventory )
+		{
+			//messagePlayer(clientnum, "reached inventory after clearing %d items", itemcnt);
+			break;
+		}
+	}
+	scribingTotalItems.first = nullptr;
+	scribingTotalItems.last = nullptr;
+	scribingTotalLastCraftableNode = nullptr;
+	scribingBlankScrollTarget = nullptr;
+}
+
+bool GenericGUIMenu::scribingToolDegradeOnUse(int player)
+{
+	if ( player == clientnum )
+	{
+		Item* toDegrade = scribingToolItem;
+		if ( !toDegrade && player == clientnum )
+		{
+			// look for scribing tool in inventory.
+			toDegrade = scribingToolFindInInventory();
+			if ( !toDegrade )
+			{
+				return false;
+			}
+		}
+
+		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
+		if ( toDegrade->status > BROKEN )
+		{
+			messagePlayer(clientnum, language[681], toDegrade->getName());
+		}
+		else
+		{
+			messagePlayer(clientnum, language[662], toDegrade->getName());
+			if ( players[clientnum] && players[clientnum]->entity )
+			{
+				playSoundEntityLocal(players[clientnum]->entity, 76, 64);
+			}
+			scribingToolItem = nullptr;
+		}
+		return true;
+	}
+	return false;
+}
+
+Item* GenericGUIMenu::scribingToolFindInInventory()
+{
+	if ( scribingToolItem )
+	{
+		return scribingToolItem;
+	}
+	else
+	{
+		for ( node_t* invnode = stats[clientnum]->inventory.first; invnode != NULL; invnode = invnode->next )
+		{
+			Item* scribeItem = (Item*)invnode->element;
+			if ( scribeItem && scribeItem->type == ENCHANTED_FEATHER && scribeItem->status > BROKEN )
+			{
+				return scribeItem;
+			}
+		}
+	}
+	return nullptr;
+}
+
+bool GenericGUIMenu::scribingWriteItem(Item* item)
+{
+	if ( !item )
+	{
+		return false;
+	}
+
+	if ( itemCategory(item) == SCROLL )
+	{
+		if ( !scribingBlankScrollTarget )
+		{
+			return false;
+		}
+
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
+		{
+			if ( rand() % 10 == 0 )
+			{
+				increaseSkill = true;
+			}
+		}
+
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_MAGIC;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+				}
+			}
+		}
+		/*if ( tinkeringKitRollIfShouldBreak() )
+		{
+			tinkeringKitDegradeOnUse(clientnum);
+		}*/
+
+		Item* crafted = newItem(item->type, scribingBlankScrollTarget->status, 
+			scribingBlankScrollTarget->beatitude, 1, item->appearance, false, nullptr);
+		if ( crafted )
+		{
+			Item* pickedUp = itemPickup(clientnum, crafted);
+			messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724]);
+			/*int oldcount = pickedUp->count;
+			pickedUp->count = 1;
+			messagePlayer(clientnum, language[504], pickedUp->description());
+			pickedUp->count = oldcount;*/
+			consumeItem(scribingBlankScrollTarget, clientnum);
+			scribingBlankScrollTarget = nullptr;
+			free(crafted);
+			return true;
+		}
+	}
+	else if ( itemCategory(item) == SPELLBOOK )
+	{
+		if ( item->status == EXCELLENT )
+		{
+			return false;
+		}
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
+		{
+			if ( rand() % 20 == 0 )
+			{
+				increaseSkill = true;
+			}
+		}
+
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_MAGIC;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+				}
+			}
+		}
+
+		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
+		bool isEquipped = itemIsEquipped(item, clientnum);
+		item->status = static_cast<Status>(repairedStatus);
+		messagePlayer(clientnum, language[3725]);
+		messagePlayer(clientnum, language[872], item->getName());
+		if ( !isEquipped )
+		{
+			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
+			if ( repairedItem )
+			{
+				itemPickup(clientnum, repairedItem);
+				free(repairedItem);
+			}
+			consumeItem(item, clientnum);
+		}
+		else if ( multiplayer == CLIENT && isEquipped )
+		{
+			// the client needs to inform the server that their equipment was repaired.
+			int armornum = 0;
+			if ( item == stats[clientnum]->shield )
+			{
+				armornum = 5;
+			}
+
+			strcpy((char*)net_packet->data, "REPA");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = armornum;
+			net_packet->data[6] = item->status;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 7;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		return true;
 	}
 	return false;
 }

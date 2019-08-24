@@ -3215,6 +3215,15 @@ int main(int argc, char** argv)
 
 						saveGame();
 
+						enchantedFeatherScrollSeed.seed(uniqueGameKey);
+						enchantedFeatherScrollsShuffled.clear();
+						enchantedFeatherScrollsShuffled = enchantedFeatherScrollsFixedList;
+						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
+						for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
+						{
+							printlog("Sequence: %d", *it);
+						}
+
 						// kick off the main loop!
 						strcpy(classtoquickstart, "");
 						intro = false;

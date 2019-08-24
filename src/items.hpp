@@ -537,6 +537,36 @@ bool itemIsConsumableByAutomaton(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];
+extern std::mt19937 enchantedFeatherScrollSeed;
+extern std::vector<int> enchantedFeatherScrollsShuffled;
+static const std::vector<int> enchantedFeatherScrollsFixedList =
+{
+	SCROLL_MAIL,
+	SCROLL_MAIL,
+	SCROLL_DESTROYARMOR,
+	SCROLL_DESTROYARMOR,
+	SCROLL_DESTROYARMOR,
+	SCROLL_FIRE,
+	SCROLL_FIRE,
+	SCROLL_FIRE,
+	SCROLL_LIGHT,
+	SCROLL_LIGHT,
+	SCROLL_LIGHT,
+	SCROLL_SUMMON,
+	SCROLL_SUMMON,
+	SCROLL_IDENTIFY,
+	SCROLL_IDENTIFY,
+	SCROLL_REMOVECURSE,
+	SCROLL_REMOVECURSE,
+	SCROLL_FOOD,
+	SCROLL_FOOD,
+	SCROLL_TELEPORTATION,
+	SCROLL_TELEPORTATION,
+	SCROLL_REPAIR,
+	SCROLL_MAGICMAPPING,
+	SCROLL_ENCHANTWEAPON,
+	SCROLL_ENCHANTARMOR
+};
 
 //-----ITEM COMPARISON FUNCS-----
 /*

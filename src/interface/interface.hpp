@@ -275,7 +275,8 @@ enum GUICurrentType
 	GUI_TYPE_NONE,
 	GUI_TYPE_REPAIR,
 	GUI_TYPE_ALCHEMY,
-	GUI_TYPE_TINKERING
+	GUI_TYPE_TINKERING,
+	GUI_TYPE_SCRIBING
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -318,6 +319,18 @@ public:
 	Item* tinkeringAutoSalvageKitItem;
 	Item* tinkeringAutoSalvageThisItem;
 
+	// Scribing
+	Item* scribingToolItem;
+	list_t scribingTotalItems;
+	node_t* scribingTotalLastCraftableNode;
+	Item* scribingBlankScrollTarget;
+	enum ScribingFilter
+	{
+		SCRIBING_FILTER_CRAFTABLE,
+		SCRIBING_FILTER_REPAIRABLE
+	};
+	ScribingFilter scribingFilter;
+
 	GenericGUIMenu() :
 		guiActive(false),
 		offsetx(0),
@@ -335,7 +348,11 @@ public:
 		tinkeringMetalScrap(nullptr),
 		tinkeringMagicScrap(nullptr),
 		tinkeringAutoSalvageKitItem(nullptr),
-		tinkeringAutoSalvageThisItem(nullptr)
+		tinkeringAutoSalvageThisItem(nullptr),
+		scribingFilter(SCRIBING_FILTER_CRAFTABLE),
+		scribingToolItem(false),
+		scribingTotalLastCraftableNode(nullptr),
+		scribingBlankScrollTarget(nullptr)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -343,6 +360,8 @@ public:
 		}
 		tinkeringTotalItems.first = nullptr;
 		tinkeringTotalItems.last = nullptr;
+		scribingTotalItems.first = nullptr;
+		scribingTotalItems.last = nullptr;
 	};
 
 	void warpMouseToSelectedSlot();
@@ -393,6 +412,12 @@ public:
 	bool tinkeringPlayerCanAffordRepair(Item* item);
 	int tinkeringRepairGeneralItemSkillRequirement(Item* item);
 
+	void scribingCreateCraftableItemList();
+	void scribingFreeLists();
+	bool scribingToolDegradeOnUse(int player);
+	Item* scribingToolFindInInventory();
+	bool scribingWriteItem(Item* item);
+
 	inline bool isGUIOpen()
 	{
 		return guiActive;
@@ -404,6 +429,14 @@ public:
 			return false;
 		}
 		return (node->list == &tinkeringTotalItems);
+	};
+	inline bool isNodeScribingCraftableItem(node_t* node)
+	{
+		if ( !node )
+		{
+			return false;
+		}
+		return (node->list == &scribingTotalItems);
 	};
 	bool isNodeFromPlayerInventory(node_t* node);
 };
