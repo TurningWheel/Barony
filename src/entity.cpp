@@ -10631,6 +10631,7 @@ int checkEquipType(const Item *item)
 		case HAT_FEZ:
 		case HAT_HOOD_RED:
 		case MASK_SHAMAN:
+		case PUNISHER_HOOD:
 			return TYPE_HAT;
 			break;
 
@@ -15076,7 +15077,8 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 		helm->roll = PI / 2;
 	}
 	else if ( (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
-		|| helm->sprite == items[HAT_HOOD_RED].index || helm->sprite == items[HAT_HOOD_SILVER].index )
+		|| helm->sprite == items[HAT_HOOD_RED].index || helm->sprite == items[HAT_HOOD_SILVER].index 
+		|| helm->sprite == items[PUNISHER_HOOD].index )
 	{
 		switch ( monster )
 		{
@@ -15093,6 +15095,11 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
+				else if ( helm->sprite == items[PUNISHER_HOOD].index )
+				{
+					helm->focalx += 0.25;
+					helm->focaly += 0.5;
+				}
 				break;
 			case INCUBUS:
 			case SUCCUBUS:
@@ -15103,6 +15110,14 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
+				else if ( helm->sprite == items[PUNISHER_HOOD].index )
+				{
+					if ( monster == INCUBUS )
+					{
+						helm->focalx += 0.25;
+						helm->focaly += 0.25;
+					}
+				}
 				break;
 			case VAMPIRE:
 			case SHOPKEEPER:
@@ -15110,6 +15125,10 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				helm->focalx = limbs[monster][9][0] - .5;
 				helm->focaly = limbs[monster][9][1] - 2.5;
 				helm->focalz = limbs[monster][9][2] + 2.25;
+				if ( helm->sprite == items[PUNISHER_HOOD].index )
+				{
+					helm->focaly += 0.25;
+				}
 				break;
 			case GOATMAN:
 				helm->focalx = limbs[monster][9][0] - .5;
@@ -15136,6 +15155,11 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 				{
 					helm->focaly -= 0.5; // purple hood
 				}
+				else if ( helm->sprite == items[PUNISHER_HOOD].index )
+				{
+					helm->focalx += 0.5;
+					helm->focaly += 0.15;
+				}
 				break;
 			case GOBLIN:
 			case SHADOW:
@@ -15149,10 +15173,17 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 						helm->focaly -= 0.5; // purple hood
 					}
 				}
+				if ( helm->sprite == items[PUNISHER_HOOD].index )
+				{
+					helm->focaly += 0.25;
+				}
 				break;
 			default:
 				break;
 		}
+		helm->focalx += limbs[HUMAN][12][0];
+		helm->focaly += limbs[HUMAN][12][1];
+		helm->focalz += limbs[HUMAN][12][2];
 		helm->roll = PI / 2;
 	}
 	else if ( helm->sprite == items[HAT_WIZARD].index || helm->sprite == items[HAT_JESTER].index )
@@ -16562,11 +16593,18 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		|| helm->sprite == items[IRON_HELM].index
 		|| (helm->sprite >= items[HAT_HOOD].index && helm->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations)
 		|| helm->sprite == items[HAT_HOOD_RED].index
-		|| helm->sprite == items[HAT_HOOD_SILVER].index )
+		|| helm->sprite == items[HAT_HOOD_SILVER].index
+		|| helm->sprite == items[PUNISHER_HOOD].index )
 	{
 		helm->scalex = 1.05;
 		helm->scaley = 1.05;
 		helm->scalez = 1.05;
+		if ( helm->sprite == items[PUNISHER_HOOD].index )
+		{
+			helm->scalex += limbs[HUMAN][11][0];
+			helm->scaley += limbs[HUMAN][11][1];
+			helm->scalez += limbs[HUMAN][11][2];
+		}
 	}
 
 	mask->scalex = 1.01;
@@ -16583,7 +16621,6 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			{
 				helm->focalz -= 0.2;
 			}
-			break;
 			break;
 		case GOBLIN:
 			if ( helm->sprite == items[LEATHER_HELM].index
@@ -16603,6 +16640,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			{
 				helm->focalz -= 0.25;
 			}
+			else if ( helm->sprite == items[PUNISHER_HOOD].index )
+			{
+				helm->scaley += 0.05;
+			}
 			break;
 		case INCUBUS:
 			if ( helm->sprite == items[LEATHER_HELM].index
@@ -16610,6 +16651,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			{
 				helm->focalx += 0.4;
 				helm->focalz -= 0.2;
+			}
+			else if ( helm->sprite == items[PUNISHER_HOOD].index )
+			{
+				mask->focalx -= 0.1;
 			}
 			break;
 		case SUCCUBUS:
@@ -16625,6 +16670,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 			{
 				mask->focalx -= 0.2;
 			}
+			else if ( helm->sprite == items[PUNISHER_HOOD].index )
+			{
+				mask->focalx -= 0.2;
+			}
 			break;
 		case INSECTOID:
 			if ( helm->sprite == items[LEATHER_HELM].index )
@@ -16636,6 +16685,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 				// black hood
 				helm->focalx += 0.25;
 				helm->focaly += 0.06;
+			}
+			else if ( helm->sprite == items[PUNISHER_HOOD].index )
+			{
+				mask->focalx -= 0.2;
 			}
 			break;
 		case SKELETON:

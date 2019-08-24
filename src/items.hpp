@@ -294,9 +294,11 @@ typedef enum ItemType
 	TOOL_SPELLBOT,
 	TOOL_DECOY,
 	TOOL_DUMMYBOT,
-	MACHINIST_APRON
+	MACHINIST_APRON,
+	ENCHANTED_FEATHER,
+	PUNISHER_HOOD
 } ItemType;
-const int NUMITEMS = 272;
+const int NUMITEMS = 274;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

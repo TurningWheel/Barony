@@ -401,7 +401,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"tool_spellbot",
 	"tool_decoy",
 	"tool_dummybot",
-	"machinist_apron"
+	"machinist_apron",
+	"enchanted_feather",
+	"punisher_hood",
 	""
 };
 
@@ -418,6 +420,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"hat_hood_silver",
 		"hat_hood_red",
 		"mask_shaman",
+		"punisher_hood",
 		"leather_helm",
 		"iron_helm",
 		"steel_helm",

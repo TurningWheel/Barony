@@ -4477,21 +4477,28 @@ void actPlayer(Entity* my)
 						entity->focalx = limbs[playerRace][10][0] + .25; // .25
 						entity->focaly = limbs[playerRace][10][1] - 2.25; // -2.25
 						entity->focalz = limbs[playerRace][10][2]; // .5
-						//if ( helmet && helmet->sprite == items[MASK_SHAMAN].index )
-						//{
-						//	if ( playerRace == SUCCUBUS || playerRace == INCUBUS || playerRace == GOATMAN || playerRace == SKELETON )
-						//	{
-						//		entity->focalx += 0.25;
-						//	}
-						//	else if ( playerRace == INSECTOID )
-						//	{
-						//		entity->focaly += 0.5; // make it lower
-						//	}
-						//	else
-						//	{
-						//		entity->focalx += 0.5;
-						//	}
-						//}
+						if ( helmet && !helmet->flags[INVISIBLE] && helmet->sprite == items[PUNISHER_HOOD].index )
+						{
+							switch ( playerRace )
+							{
+								case HUMAN:
+								case VAMPIRE:
+								case SHOPKEEPER:
+								case INSECTOID:
+									entity->focaly += 0.25; // lower glasses a bit.
+									break;
+								case INCUBUS:
+								case SUCCUBUS:
+								case AUTOMATON:
+								case GOBLIN:
+								case GOATMAN:
+								case SKELETON:
+									// no change.
+									break;
+								default:
+									break;
+							}
+						}
 					}
 					else if ( entity->sprite == items[MASK_SHAMAN].index )
 					{
@@ -4505,6 +4512,7 @@ void actPlayer(Entity* my)
 						entity->focaly = limbs[playerRace][10][1] - 2; // -2
 						entity->focalz = limbs[playerRace][10][2]; // .5
 					}
+
 					break;
 				case 11:
 					additionalLimb = entity;
