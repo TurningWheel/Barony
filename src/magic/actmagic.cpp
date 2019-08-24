@@ -3493,7 +3493,8 @@ void actParticleTimer(Entity* my)
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
 				if ( parent && target )
 				{
-					real_t distance = (entityDist(parent, target)) / 16;
+					real_t oldx = target->x;
+					real_t oldy = target->y;
 					my->flags[PASSABLE] = true;
 					int tx = static_cast<int>(std::floor(my->x)) >> 4;
 					int ty = static_cast<int>(std::floor(my->y)) >> 4;
@@ -3514,17 +3515,19 @@ void actParticleTimer(Entity* my)
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 							messagePlayerColor(target->skill[2], color, language[3461]);
 						}
+						real_t distance =  sqrt((target->x - oldx) * (target->x - oldx) + (target->y - oldy) * (target->y - oldy)) / 16.f;
+						//real_t distance = (entityDist(parent, target)) / 16;
 						createParticleErupt(target, my->particleTimerEndSprite);
-						int durationToStun = 50;
-						if ( distance >= 4 )
+						int durationToStun = 0;
+						if ( distance >= 2 )
 						{
-							durationToStun += std::min((distance - 4) * 10, 50.0);
+							durationToStun = 25 + std::min((distance - 4) * 10, 50.0);
 						}
 						if ( target->behavior == &actMonster )
 						{
-							if ( target->setEffect(EFF_DISORIENTED, true, durationToStun, false) )
+							if ( durationToStun > 0 && target->setEffect(EFF_DISORIENTED, true, durationToStun, false) )
 							{
-								int numSprites = durationToStun / TICKS_PER_SECOND;
+								int numSprites = std::min(3, durationToStun / 25);
 								for ( int i = 0; i < numSprites; ++i )
 								{
 									spawnFloatingSpriteMisc(134, target->x + (-4 + rand() % 9) + cos(target->yaw) * 2, 
@@ -3537,8 +3540,9 @@ void actParticleTimer(Entity* my)
 						}
 						else if ( target->behavior == &actPlayer )
 						{
+							durationToStun = std::max(50, durationToStun);
 							target->setEffect(EFF_DISORIENTED, true, durationToStun, false);
-							int numSprites = durationToStun / TICKS_PER_SECOND;
+							int numSprites = std::min(3, durationToStun / 50);
 							for ( int i = 0; i < numSprites; ++i )
 							{
 								spawnFloatingSpriteMisc(134, target->x + (-4 + rand() % 9) + cos(target->yaw) * 2,
