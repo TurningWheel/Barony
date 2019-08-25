@@ -296,9 +296,10 @@ typedef enum ItemType
 	TOOL_DUMMYBOT,
 	MACHINIST_APRON,
 	ENCHANTED_FEATHER,
-	PUNISHER_HOOD
+	PUNISHER_HOOD,
+	SCROLL_CHARGING
 } ItemType;
-const int NUMITEMS = 274;
+const int NUMITEMS = 275;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -551,7 +552,6 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 	SCROLL_FIRE,
 	SCROLL_LIGHT,
 	SCROLL_LIGHT,
-	SCROLL_LIGHT,
 	SCROLL_SUMMON,
 	SCROLL_SUMMON,
 	SCROLL_IDENTIFY,
@@ -562,6 +562,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 	SCROLL_FOOD,
 	SCROLL_TELEPORTATION,
 	SCROLL_TELEPORTATION,
+	SCROLL_CHARGING,
 	SCROLL_REPAIR,
 	SCROLL_MAGICMAPPING,
 	SCROLL_ENCHANTWEAPON,

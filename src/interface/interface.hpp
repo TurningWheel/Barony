@@ -296,6 +296,9 @@ public:
 	bool guiActive;
 	int selectedSlot;
 
+	// Repair
+	int repairItemType;
+	
 	// Alchemy
 	Item* basePotion;
 	Item* secondaryPotion;
@@ -352,7 +355,10 @@ public:
 		scribingFilter(SCRIBING_FILTER_CRAFTABLE),
 		scribingToolItem(false),
 		scribingTotalLastCraftableNode(nullptr),
-		scribingBlankScrollTarget(nullptr)
+		scribingBlankScrollTarget(nullptr),
+		scribingLastUsageAmount(0),
+		scribingLastUsageDisplayTimer(0),
+		repairItemType(0)
 	{
 		for ( int i = 0; i < kNumShownItems; ++i )
 		{
@@ -367,7 +373,7 @@ public:
 	void warpMouseToSelectedSlot();
 	void selectSlot(int slot);
 	void closeGUI();
-	void openGUI(int type, int scrollBeatitude);
+	void openGUI(int type, int scrollBeatitude, int scrollType);
 	void openGUI(int type, bool experimenting, Item* itemOpenedWith);
 	void openGUI(int type, Item* itemOpenedWith);
 	inline Item* getItemInfo(int slot);
@@ -379,7 +385,7 @@ public:
 
 	// repair menu funcs
 	void repairItem(Item* item);
-	bool isItemRepairable(const Item* item);
+	bool isItemRepairable(const Item* item, int repairScroll);
 
 	//alchemy menu funcs
 	bool isItemMixable(const Item* item);
@@ -417,6 +423,8 @@ public:
 	int scribingToolDegradeOnUse(Item* itemUsedWith);
 	Item* scribingToolFindInInventory();
 	bool scribingWriteItem(Item* item);
+	int scribingLastUsageAmount;
+	int scribingLastUsageDisplayTimer;
 
 	inline bool isGUIOpen()
 	{

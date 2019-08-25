@@ -2192,6 +2192,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 			}
 			break;
 		case SCROLL_REPAIR:
+		case SCROLL_CHARGING:
 			item_ScrollRepair(item, player);
 			break;
 		case SCROLL_DESTROYARMOR:

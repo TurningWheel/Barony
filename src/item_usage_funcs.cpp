@@ -2934,7 +2934,7 @@ void item_ScrollRepair(Item* item, int player)
 		for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* inventoryItem = (Item*)node->element;
-			if ( GenericGUI.isItemRepairable(inventoryItem) )
+			if ( GenericGUI.isItemRepairable(inventoryItem, item->type) )
 			{
 				foundRepairableItem = true;
 				break;
@@ -2942,7 +2942,14 @@ void item_ScrollRepair(Item* item, int player)
 		}
 		if ( !foundRepairableItem )
 		{
-			messagePlayer(player, language[3288]);
+			if ( item->type == SCROLL_REPAIR )
+			{
+				messagePlayer(player, language[3288]);
+			}
+			else if ( item->type == SCROLL_CHARGING )
+			{
+				messagePlayer(player, language[3731]);
+			}
 			return;
 		}
 	}
@@ -3034,7 +3041,14 @@ void item_ScrollRepair(Item* item, int player)
 		else if ( armor != nullptr )
 		{
 			messagePlayer(player, language[871], armor->getName());
-			armor->status = static_cast<Status>(std::max(armor->status - 2, static_cast<int>(BROKEN)));
+			if ( item->type == SCROLL_CHARGING )
+			{
+				armor->status = BROKEN;
+			}
+			else
+			{
+				armor->status = static_cast<Status>(std::max(armor->status - 2, static_cast<int>(BROKEN)));
+			}
 			if ( multiplayer == CLIENT )
 			{
 				strcpy((char*)net_packet->data, "REPA");
@@ -3077,7 +3091,7 @@ void item_ScrollRepair(Item* item, int player)
 	else
 	{
 		// Repair an item
-		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude);
+		GenericGUI.openGUI(GUI_TYPE_REPAIR, item->beatitude, item->type);
 	}
 	consumeItem(item, player);
 }

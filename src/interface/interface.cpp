@@ -3115,7 +3115,7 @@ bool FollowerRadialMenu::monsterGyroBotDisallowedCommands(int option)
 	return false;
 }
 
-bool GenericGUIMenu::isItemRepairable(const Item* item)
+bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 {
 	if ( !item )
 	{
@@ -3125,11 +3125,35 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 	{
 		return false;
 	}
-	if ( item->status == EXCELLENT )
+	Category cat = itemCategory(item);
+	if ( repairScroll == SCROLL_CHARGING )
 	{
+		if ( item->type == ENCHANTED_FEATHER )
+		{
+			if ( item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY < 100 )
+			{
+				return true;
+			}
+			return false;
+		}
+		else if ( cat == MAGICSTAFF )
+		{
+			if ( item->status == EXCELLENT )
+			{
+				return false;
+			}
+			return true;
+		}
+
 		return false;
 	}
-	Category cat = itemCategory(item);
+	else if ( repairScroll == SCROLL_REPAIR )
+	{
+		if ( item->status == EXCELLENT )
+		{
+			return false;
+		}
+	}
 	switch ( cat )
 	{
 		case WEAPON:
@@ -3137,7 +3161,7 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 		case ARMOR:
 			return true;
 		case MAGICSTAFF:
-			return true;
+			return false;
 		case THROWN:
 			return true;
 		case TOOL:
@@ -3160,6 +3184,7 @@ bool GenericGUIMenu::isItemRepairable(const Item* item)
 				case TOOL_SPELLBOT:
 				case TOOL_DECOY:
 				case TOOL_DUMMYBOT:
+				case ENCHANTED_FEATHER:
 					return false;
 					break;
 				default:
@@ -3342,6 +3367,18 @@ void GenericGUIMenu::updateGUI()
 			{
 				scribingBlankScrollTarget = nullptr;
 			}
+			if ( scribingLastUsageDisplayTimer > 0 )
+			{
+				if ( ticks % 2 == 0 )
+				{
+					--scribingLastUsageDisplayTimer;
+				}
+			}
+			else
+			{
+				scribingLastUsageDisplayTimer = 0;
+				scribingLastUsageAmount = 0;
+			}
 		}
 
 		gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
@@ -3497,6 +3534,11 @@ void GenericGUIMenu::updateGUI()
 			}
 			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
 				toolStatusText);
+			/*if ( scribingLastUsageDisplayTimer > 0 )
+			{
+				ttfPrintTextFormattedColor(ttf12, windowX2 - 16 - 11 * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8, uint32ColorRed(*mainsurface),
+						"(%3d)", -scribingLastUsageAmount);
+			}*/
 
 			if ( scribingFilter == SCRIBING_FILTER_CRAFTABLE )
 			{
@@ -3715,7 +3757,14 @@ void GenericGUIMenu::updateGUI()
 			char* window_name;
 			if ( guiType == GUI_TYPE_REPAIR )
 			{
-				window_name = language[3286];
+				if ( repairItemType == SCROLL_REPAIR )
+				{
+					window_name = language[3286];
+				}
+				else if ( repairItemType == SCROLL_CHARGING )
+				{
+					window_name = language[3732];
+				}
 				ttfPrintText(ttf8, (gui_starty + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), gui_startx + 4, window_name);
 			}
 			else if ( guiType == GUI_TYPE_ALCHEMY )
@@ -3963,6 +4012,12 @@ void GenericGUIMenu::updateGUI()
 								snprintf(healthstr, 16, " (%d%%)", health);
 								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
 							}
+							else if ( item->type == ENCHANTED_FEATHER )
+							{
+								char healthstr[32] = "";
+								snprintf(healthstr, 16, " (%d%%)", item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
+								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
+							}
 							
 
 							if ( strlen(tempstr) >= 46 )
@@ -4033,7 +4088,7 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 	}
 	if ( guiType == GUI_TYPE_REPAIR )
 	{
-		return isItemRepairable(item);
+		return isItemRepairable(item, repairItemType);
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
 	{
@@ -4105,15 +4160,54 @@ void GenericGUIMenu::repairItem(Item* item)
 
 	bool isEquipped = itemIsEquipped(item, clientnum);
 
-	if ( item->status == BROKEN )
+	if ( repairItemType == SCROLL_CHARGING )
 	{
-		item->status = DECREPIT;
+		if ( itemCategory(item) == MAGICSTAFF )
+		{
+			if ( item->status == BROKEN )
+			{
+				if ( usingScrollBeatitude > 0 )
+				{
+					item->status = EXCELLENT;
+				}
+				else
+				{
+					item->status = WORN;
+				}
+			}
+			else
+			{
+				item->status = EXCELLENT;
+			}
+		}
+		else if ( item->type == ENCHANTED_FEATHER )
+		{
+			int durability = item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+			int repairAmount = 100 - durability;
+			if ( repairAmount > (ENCHANTED_FEATHER_MAX_DURABILITY / 2) )
+			{
+				if ( usingScrollBeatitude == 0 )
+				{
+					repairAmount = ENCHANTED_FEATHER_MAX_DURABILITY / 2;
+				}
+			}
+			item->appearance += repairAmount;
+			item->status = EXCELLENT;
+		}
+		messagePlayer(clientnum, language[3730], item->getName());
 	}
 	else
 	{
-		item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+		if ( item->status == BROKEN )
+		{
+			item->status = DECREPIT;
+		}
+		else
+		{
+			item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+		}
+		messagePlayer(clientnum, language[872], item->getName());
 	}
-	messagePlayer(clientnum, language[872], item->getName());
 	closeGUI();
 	if ( multiplayer == CLIENT && isEquipped )
 	{
@@ -4172,6 +4266,7 @@ void GenericGUIMenu::closeGUI()
 	basePotion = nullptr;
 	secondaryPotion = nullptr;
 	alembicItem = nullptr;
+	repairItemType = 0;
 }
 
 inline Item* GenericGUIMenu::getItemInfo(int slot)
@@ -4294,13 +4389,14 @@ void GenericGUIMenu::initGUIControllerCode()
 	}
 }
 
-void GenericGUIMenu::openGUI(int type, int scrollBeatitude)
+void GenericGUIMenu::openGUI(int type, int scrollBeatitude, int scrollType)
 {
 	this->closeGUI();
 	shootmode = false;
 	gui_mode = GUI_MODE_INVENTORY; // Reset the GUI to the inventory.
 	guiActive = true;
 	usingScrollBeatitude = scrollBeatitude;
+	repairItemType = scrollType;
 	guiType = static_cast<GUICurrentType>(type);
 
 	gui_starty = ((xres / 2) - (inventoryChest_bmp->w / 2)) + offsetx;
@@ -5413,11 +5509,12 @@ void GenericGUIMenu::tinkeringCreateCraftableItemList()
 			if ( stats[clientnum] && players[clientnum] )
 			{
 				skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+				skillLVL = std::min(skillLVL, 5);
 			}
 			if ( item->type == TOOL_DUMMYBOT || item->type == TOOL_SENTRYBOT
 				|| item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT )
 			{
-				if ( skillLVL == 5 ) // maximum
+				if ( skillLVL >= 5 ) // maximum
 				{
 					item->status = EXCELLENT;
 				}
@@ -5542,6 +5639,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 	if ( stats[player] && players[player] && item->status > BROKEN )
 	{
    		skillLVL = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[player], players[player]->entity)) / 20;
+		skillLVL = std::min(skillLVL, 5);
 		switch ( skillLVL )
 		{
 			case 5:
@@ -6745,7 +6843,7 @@ int GenericGUIMenu::tinkeringUpgradeMaxStatus(Item* item)
 	{
 		skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
 		int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
-		if ( skillLVL == 5 )
+		if ( skillLVL >= 5 )
 		{
 			return EXCELLENT;
 		}
@@ -6891,6 +6989,8 @@ void GenericGUIMenu::scribingFreeLists()
 	scribingTotalItems.last = nullptr;
 	scribingTotalLastCraftableNode = nullptr;
 	scribingBlankScrollTarget = nullptr;
+	scribingLastUsageDisplayTimer = 0;
+	scribingLastUsageAmount = 0;
 }
 
 int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
@@ -6928,19 +7028,19 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 			case SCROLL_SUMMON:
 			case SCROLL_IDENTIFY:
 			case SCROLL_REMOVECURSE:
-				usageCost = 8;
+				usageCost = 6;
 				break;
 			case SCROLL_FOOD:
 			case SCROLL_TELEPORTATION:
-				usageCost = 12;
+				usageCost = 8;
 				break;
 			case SCROLL_REPAIR:
 			case SCROLL_MAGICMAPPING:
-				usageCost = 16;
+				usageCost = 12;
 				break;
 			case SCROLL_ENCHANTWEAPON:
 			case SCROLL_ENCHANTARMOR:
-				usageCost = 20;
+				usageCost = 16;
 				break;
 			default:
 				usageCost = 8;
@@ -6949,7 +7049,36 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	}
 	else if ( itemCategory(itemUsedWith) == SPELLBOOK )
 	{
-		usageCost = 10;
+		usageCost = 16;
+	}
+	int randomValue = 0;
+	if ( stats[clientnum] )
+	{
+		int skillLVL = 0;
+		if ( stats[clientnum] && players[clientnum] )
+		{
+			skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
+		}
+		if ( skillLVL < 2 )
+		{
+			randomValue = rand() % 7;
+			usageCost += randomValue;
+		}
+		else if ( skillLVL < 3 )
+		{
+			randomValue = rand() % 5;
+			usageCost += randomValue;
+		}
+		else if ( skillLVL < 4 )
+		{
+			randomValue = rand() % 3;
+			usageCost += randomValue;
+		}
+		else if ( skillLVL >= 4 )
+		{
+			randomValue = rand() % 5;
+			usageCost = std::max(2, usageCost - randomValue);
+		}
 	}
 
 	if ( durability - usageCost < 0 )
@@ -6959,6 +7088,8 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	}
 	else
 	{
+		scribingLastUsageDisplayTimer = 200;
+		scribingLastUsageAmount = usageCost;
 		toDegrade->appearance -= usageCost;
 		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
 		{
@@ -6966,6 +7097,14 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 			messagePlayer(clientnum, language[3727], toDegrade->getName());
 			scribingToolItem = nullptr;
 			return usageCost;
+		}
+		else
+		{
+			if ( durability > 25 && (toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY) <= 25 )
+			{
+				// notify we're at less than 25%.
+				messagePlayer(clientnum, language[3729], toDegrade->getName());
+			}
 		}
 	}
 	if ( toDegrade->status > BROKEN )
@@ -6975,9 +7114,19 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 	}
 	else
 	{
-		messagePlayer(clientnum, language[3728], toDegrade->getName());
-		scribingToolItem = nullptr;
-		return 0;
+		if ( (usageCost / 2) < durability && itemCategory(itemUsedWith) == SCROLL )
+		{
+			// if scroll cost is a little more than the durability, then let it succeed.
+			messagePlayer(clientnum, language[3727], toDegrade->getName());
+			scribingToolItem = nullptr;
+			return usageCost;
+		}
+		else
+		{
+			messagePlayer(clientnum, language[3728], toDegrade->getName());
+			scribingToolItem = nullptr;
+			return 0;
+		}
 	}
 	return -1;
 }
@@ -7031,7 +7180,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		bool increaseSkill = false;
 		if ( stats[clientnum] )
 		{
-			if ( rand() % 10 == 0 )
+			if ( rand() % 5 == 0 )
 			{
 				increaseSkill = true;
 			}
@@ -7096,7 +7245,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		bool increaseSkill = false;
 		if ( stats[clientnum] )
 		{
-			if ( rand() % 20 == 0 )
+			if ( rand() % 10 == 0 )
 			{
 				increaseSkill = true;
 			}

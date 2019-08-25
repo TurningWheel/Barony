@@ -404,6 +404,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"machinist_apron",
 	"enchanted_feather",
 	"punisher_hood",
+	"scroll_charging",
 	""
 };
 
