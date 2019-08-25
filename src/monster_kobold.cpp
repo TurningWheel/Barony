@@ -161,7 +161,11 @@ void initKobold(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
-					if ( rand() % 5 == 0 ) // 20% chance
+					if ( rand() % 20 == 0 )
+					{
+						newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
+					}
+					else if ( rand() % 5 == 0 ) // 20% chance
 					{
 						if ( rand() % 2 )
 						{

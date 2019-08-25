@@ -204,6 +204,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneLockpick = false;
 			bool doneBackpack = false;
 			bool doneTinkeringKit = false;
+			bool doneFeather = false;
 
 			switch ( my->monsterStoreType )
 			{
@@ -318,7 +319,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							case 0:
 								if ( currentlevel >= 18 )
 								{
-									tmpItem = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
+									tmpItem = newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel), static_cast<Status>(WORN + rand() % 3), rand() % blessedShopkeeper, 1 + rand() % 2, rand(), true, &myStats->inventory);
 								}
 								else
 								{
@@ -326,7 +327,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								}
 								break;
 							case 1:
-								tmpItem = newItem(static_cast<ItemType>(SCROLL_MAIL + rand() % 14), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
+								tmpItem = newItem(itemLevelCurve(SCROLL, 0, 35), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
 								break;
 							case 2:
 								tmpItem = newItem(READABLE_BOOK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
@@ -337,6 +338,19 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						{
 							tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
 						}
+					}
+					if ( !doneFeather && rand() % 20 == 0 )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, true, &myStats->inventory);
+						}
+						else
+						{
+							newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (3 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, true, &myStats->inventory);
+						}
+						tmpItem = newItem(SCROLL_BLANK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), true, &myStats->inventory);
+						doneFeather = true;
 					}
 					break;
 				case 4:

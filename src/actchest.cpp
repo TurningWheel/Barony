@@ -437,6 +437,21 @@ void Entity::actChest()
 							//newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 							newItem(itemLevelCurve(SCROLL, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						}
+						if ( rand() % 10 == 0 )
+						{
+							if ( rand() % 5 == 0 )
+							{
+								newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, false, inventory);
+							}
+							else
+							{
+								newItem(ENCHANTED_FEATHER, SERVICABLE, 0, 1, (3 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, inventory);
+							}
+							if ( rand() % 2 == 0 )
+							{
+								newItem(SCROLL_BLANK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, inventory);
+							}
+						}
 						break;
 					case 1:
 						//Have 1-3 books.
@@ -467,7 +482,7 @@ void Entity::actChest()
 						newItem(itemLevelCurve(SPELLBOOK, 0, currentlevel + 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						//newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 						newItem(itemLevelCurve(MAGICSTAFF, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
-						switch (rand() % 6)
+						switch (rand() % 7)
 						{
 							case 0:
 								//A cloak. Item 24.
@@ -499,6 +514,13 @@ void Entity::actChest()
 							case 5:
 								//A wizard's hat. Item 39.
 								newItem(HAT_WIZARD, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+								break;
+							case 6:
+								newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, false, inventory);
+								if ( rand() % 2 == 0 )
+								{
+									newItem(SCROLL_BLANK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, inventory);
+								}
 								break;
 						}
 						break;

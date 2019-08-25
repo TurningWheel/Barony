@@ -83,7 +83,14 @@ void initGnome(Entity* my, Stat* myStats)
 				case 3:
 					if ( rand() % 50 == 0 )
 					{
-						newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
+						if ( rand() % 2 == 0 )
+						{
+							newItem(ENCHANTED_FEATHER, WORN, 0, 1, (2 * (ENCHANTED_FEATHER_MAX_DURABILITY - 1)) / 4, false, &myStats->inventory);
+						}
+						else
+						{
+							newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
+						}
 					}
 				case 2:
 					if ( rand() % 10 == 0 )
