@@ -3493,7 +3493,7 @@ void GenericGUIMenu::updateGUI()
 			char toolStatusText[64] = "";
 			if ( scribingToolItem )
 			{
-				snprintf(toolStatusText, 63, language[3717], language[3691 + std::max(1, static_cast<int>(scribingToolItem->status))]);
+				snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
 			}
 			ttfPrintTextFormatted(ttf12, windowX2 - 16 - (strlen(toolStatusText) + 1) * TTF12_WIDTH, windowY2 - TTF12_HEIGHT - 8,
 				toolStatusText);
@@ -6893,38 +6893,93 @@ void GenericGUIMenu::scribingFreeLists()
 	scribingBlankScrollTarget = nullptr;
 }
 
-bool GenericGUIMenu::scribingToolDegradeOnUse(int player)
+int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 {
-	if ( player == clientnum )
+	if ( !itemUsedWith )
 	{
-		Item* toDegrade = scribingToolItem;
-		if ( !toDegrade && player == clientnum )
-		{
-			// look for scribing tool in inventory.
-			toDegrade = scribingToolFindInInventory();
-			if ( !toDegrade )
-			{
-				return false;
-			}
-		}
-
-		toDegrade->status = std::max(BROKEN, static_cast<Status>(toDegrade->status - 1));
-		if ( toDegrade->status > BROKEN )
-		{
-			messagePlayer(clientnum, language[681], toDegrade->getName());
-		}
-		else
-		{
-			messagePlayer(clientnum, language[662], toDegrade->getName());
-			if ( players[clientnum] && players[clientnum]->entity )
-			{
-				playSoundEntityLocal(players[clientnum]->entity, 76, 64);
-			}
-			scribingToolItem = nullptr;
-		}
-		return true;
+		return -1;
 	}
-	return false;
+	Item* toDegrade = scribingToolItem;
+	if ( !toDegrade )
+	{
+		// look for scribing tool in inventory.
+		toDegrade = scribingToolFindInInventory();
+		if ( !toDegrade )
+		{
+			return -1;
+		}
+	}
+
+	int durability = toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY;
+	int usageCost = 0;
+	if ( itemCategory(itemUsedWith) == SCROLL )
+	{
+		switch ( itemUsedWith->type )
+		{
+			case SCROLL_MAIL:
+				usageCost = 2;
+				break;
+			case SCROLL_DESTROYARMOR:
+			case SCROLL_FIRE:
+			case SCROLL_LIGHT:
+				usageCost = 4;
+				break;
+				break;
+			case SCROLL_SUMMON:
+			case SCROLL_IDENTIFY:
+			case SCROLL_REMOVECURSE:
+				usageCost = 8;
+				break;
+			case SCROLL_FOOD:
+			case SCROLL_TELEPORTATION:
+				usageCost = 12;
+				break;
+			case SCROLL_REPAIR:
+			case SCROLL_MAGICMAPPING:
+				usageCost = 16;
+				break;
+			case SCROLL_ENCHANTWEAPON:
+			case SCROLL_ENCHANTARMOR:
+				usageCost = 20;
+				break;
+			default:
+				usageCost = 8;
+				break;
+		}
+	}
+	else if ( itemCategory(itemUsedWith) == SPELLBOOK )
+	{
+		usageCost = 10;
+	}
+
+	if ( durability - usageCost < 0 )
+	{
+		toDegrade->status = BROKEN;
+		toDegrade->appearance = 0;
+	}
+	else
+	{
+		toDegrade->appearance -= usageCost;
+		if ( toDegrade->appearance % ENCHANTED_FEATHER_MAX_DURABILITY == 0 )
+		{
+			toDegrade->status = BROKEN;
+			messagePlayer(clientnum, language[3727], toDegrade->getName());
+			scribingToolItem = nullptr;
+			return usageCost;
+		}
+	}
+	if ( toDegrade->status > BROKEN )
+	{
+		//messagePlayer(clientnum, language[681], toDegrade->getName());
+		return usageCost;
+	}
+	else
+	{
+		messagePlayer(clientnum, language[3728], toDegrade->getName());
+		scribingToolItem = nullptr;
+		return 0;
+	}
+	return -1;
 }
 
 Item* GenericGUIMenu::scribingToolFindInInventory()
@@ -6961,6 +7016,18 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			return false;
 		}
 
+		int result = scribingToolDegradeOnUse(item);
+		if ( result == 0 )
+		{
+			// item broken before completion.
+			return false;
+		}
+		else if ( result < 0 )
+		{
+			// failure - invalid variables.
+			return false;
+		}
+
 		bool increaseSkill = false;
 		if ( stats[clientnum] )
 		{
@@ -6991,23 +7058,19 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				}
 			}
 		}
-		/*if ( tinkeringKitRollIfShouldBreak() )
-		{
-			tinkeringKitDegradeOnUse(clientnum);
-		}*/
 
 		Item* crafted = newItem(item->type, scribingBlankScrollTarget->status, 
 			scribingBlankScrollTarget->beatitude, 1, item->appearance, false, nullptr);
 		if ( crafted )
 		{
 			Item* pickedUp = itemPickup(clientnum, crafted);
-			messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724]);
-			/*int oldcount = pickedUp->count;
+			//messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724]);
+			int oldcount = pickedUp->count;
 			pickedUp->count = 1;
-			messagePlayer(clientnum, language[504], pickedUp->description());
-			pickedUp->count = oldcount;*/
+			messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724], pickedUp->description());
+			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, clientnum);
-			scribingBlankScrollTarget = nullptr;
+			//scribingBlankScrollTarget = nullptr;
 			free(crafted);
 			return true;
 		}
@@ -7018,6 +7081,18 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 		{
 			return false;
 		}
+		int result = scribingToolDegradeOnUse(item);
+		if ( result == 0 )
+		{
+			// item broken before completion.
+			return false;
+		}
+		else if ( result < 0 )
+		{
+			// failure - invalid variables.
+			return false;
+		}
+
 		bool increaseSkill = false;
 		if ( stats[clientnum] )
 		{
@@ -7048,7 +7123,6 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				}
 			}
 		}
-
 		int repairedStatus = std::min(static_cast<Status>(item->status + 1), EXCELLENT);
 		bool isEquipped = itemIsEquipped(item, clientnum);
 		item->status = static_cast<Status>(repairedStatus);

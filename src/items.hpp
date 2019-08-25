@@ -567,6 +567,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 	SCROLL_ENCHANTWEAPON,
 	SCROLL_ENCHANTARMOR
 };
+static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
 
 //-----ITEM COMPARISON FUNCS-----
 /*

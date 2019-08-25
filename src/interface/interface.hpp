@@ -414,7 +414,7 @@ public:
 
 	void scribingCreateCraftableItemList();
 	void scribingFreeLists();
-	bool scribingToolDegradeOnUse(int player);
+	int scribingToolDegradeOnUse(Item* itemUsedWith);
 	Item* scribingToolFindInInventory();
 	bool scribingWriteItem(Item* item);
 

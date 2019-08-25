@@ -2888,6 +2888,12 @@ void assignActions(map_t* map)
 				{
 					entity->skill[15] = 0; // unidentified.
 				}
+
+				if ( entity->skill[10] == ENCHANTED_FEATHER )
+				{
+					entity->skill[14] = 75 + 25 * (prng_get_uint() % 2);    // appearance
+				}
+
 				item = newItemFromEntity(entity);
 				entity->sprite = itemModel(item);
 				if ( !entity->itemNotMoving )
