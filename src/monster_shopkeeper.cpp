@@ -330,7 +330,14 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								tmpItem = newItem(itemLevelCurve(SCROLL, 0, 35), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
 								break;
 							case 2:
-								tmpItem = newItem(READABLE_BOOK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
+								if ( rand() % 3 == 0 )
+								{
+									tmpItem = newItem(itemLevelCurve(SCROLL, 0, 35), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
+								}
+								else
+								{
+									tmpItem = newItem(READABLE_BOOK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
+								}
 								break;
 						}
 						// post-processing
