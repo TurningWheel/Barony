@@ -832,7 +832,7 @@ char* Item::description()
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].name_unidentified, scroll_label[appearance % NUMLABELS]);
+					snprintf(&tempstr[c], 1024 - c, language[1059], items[type].name_unidentified, this->getScrollLabel());
 				}
 				else
 				{
@@ -901,7 +901,7 @@ char* Item::description()
 			{
 				if ( itemCategory(this) == SCROLL )
 				{
-					snprintf(&tempstr[c], 1024 - c, language[1085], count, items[type].name_unidentified, scroll_label[appearance % NUMLABELS]);
+					snprintf(&tempstr[c], 1024 - c, language[1085], count, items[type].name_unidentified, this->getScrollLabel());
 				}
 				else
 				{
@@ -968,7 +968,7 @@ char* Item::getName()
 		{
 			if ( itemCategory(this) == SCROLL )
 			{
-				snprintf(tempstr, sizeof(tempstr), language[1059], items[type].name_unidentified, scroll_label[appearance % NUMLABELS]);
+				snprintf(tempstr, sizeof(tempstr), language[1059], items[type].name_unidentified, this->getScrollLabel());
 			}
 			else if ( itemCategory(this) == BOOK )
 			{
@@ -1123,6 +1123,13 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	if (item1->identified != item2->identified)
 	{
 		return 1;
+	}
+	if ( !item1->identified && itemCategory(item1) == SCROLL && itemCategory(item2) == SCROLL )
+	{
+		if ( item1->getScrollLabel() != item2->getScrollLabel() )
+		{
+			return 1;
+		}
 	}
 
 	if ( item1->type == TOOL_GYROBOT || item1->type == TOOL_SENTRYBOT || item1->type == TOOL_SPELLBOT || item1->type == TOOL_DUMMYBOT )
@@ -4083,4 +4090,37 @@ bool Item::usableWhileShapeshifted(Stat* wielder) const
 			break;
 	}
 	return false;
+}
+
+char* Item::getScrollLabel() const
+{
+	if ( enchantedFeatherScrollsShuffled.empty() )
+	{
+		strcpy(tempstr, "");
+		return tempstr;
+	}
+	std::vector<int> indices;
+	for ( int i = 0; i < NUMLABELS && i < enchantedFeatherScrollsShuffled.size(); ++i )
+	{
+		if ( enchantedFeatherScrollsShuffled.at(i) == this->type )
+		{
+			indices.push_back(i);
+		}
+	}
+
+	if ( indices.empty() )
+	{
+		strcpy(tempstr, "");
+		return tempstr;
+	}
+	int chosenLabel = 0;
+	if ( this->appearance >= indices.size() )
+	{
+		chosenLabel = indices[this->appearance % indices.size()];
+	}
+	else
+	{
+		chosenLabel = indices[this->appearance];
+	}
+	return scroll_label[chosenLabel];
 }

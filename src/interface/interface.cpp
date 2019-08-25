@@ -3973,7 +3973,7 @@ void GenericGUIMenu::updateGUI()
 							{
 								if ( isNodeScribingCraftableItem(item->node) )
 								{
-									snprintf(tempstr, sizeof(tempstr), language[3721], scroll_label[item->appearance % NUMLABELS]);
+									snprintf(tempstr, sizeof(tempstr), language[3721], item->getScrollLabel());
 								}
 								else
 								{
@@ -6946,10 +6946,26 @@ void GenericGUIMenu::scribingCreateCraftableItemList()
 {
 	scribingFreeLists();
 	std::vector<Item*> items;
-	for ( int i = 0; i < NUMLABELS && i < enchantedFeatherScrollsShuffled.size(); ++i )
+	std::unordered_map<int, int> scrollAppearanceMap;
+	for ( int i = 0; i < (NUMLABELS) && i < enchantedFeatherScrollsShuffled.size(); ++i )
 	{
-		items.push_back(newItem(static_cast<ItemType>(enchantedFeatherScrollsShuffled.at(i)), 
-			EXCELLENT, 0, 1, i, false, &scribingTotalItems));
+		int itemType = enchantedFeatherScrollsShuffled.at(i);
+		if ( itemType != SCROLL_BLANK )
+		{
+			auto find = scrollAppearanceMap.find(itemType);
+			if ( find != scrollAppearanceMap.end() )
+			{
+				// found ItemType in map.
+				scrollAppearanceMap[itemType] = (*find).second + 1;
+			}
+			else
+			{
+				// new element.
+				scrollAppearanceMap.insert({ itemType, 0 });
+			}
+			items.push_back(newItem(static_cast<ItemType>(itemType),
+				EXCELLENT, 0, 1, scrollAppearanceMap[itemType], false, &scribingTotalItems));
+		}
 	}
 
 	if ( stats[clientnum] )
@@ -7221,6 +7237,11 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			scribingBlankScrollTarget->beatitude, 1, item->appearance, false, nullptr);
 		if ( crafted )
 		{
+			if ( crafted->type == SCROLL_MAIL )
+			{
+				// mail uses the appearance to generate the text, so randomise it here.
+				crafted->appearance = rand(); 
+			}
 			Item* pickedUp = itemPickup(clientnum, crafted);
 			//messagePlayerColor(clientnum, uint32ColorGreen(*mainsurface), language[3724]);
 			int oldcount = pickedUp->count;

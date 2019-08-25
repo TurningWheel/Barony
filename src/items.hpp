@@ -398,6 +398,7 @@ public:
 	int buyValue(int player);
 	int sellValue(int player);
 	bool usableWhileShapeshifted(Stat* wielder = nullptr) const;
+	char* getScrollLabel() const;
 
 	void apply(int player, Entity* entity);
 
@@ -542,7 +543,7 @@ extern std::mt19937 enchantedFeatherScrollSeed;
 extern std::vector<int> enchantedFeatherScrollsShuffled;
 static const std::vector<int> enchantedFeatherScrollsFixedList =
 {
-	SCROLL_MAIL,
+	SCROLL_BLANK,
 	SCROLL_MAIL,
 	SCROLL_DESTROYARMOR,
 	SCROLL_DESTROYARMOR,
