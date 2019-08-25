@@ -3244,6 +3244,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 			}
 		}
 	}
+	consumeItem(item, player);
 }
 
 void item_ScrollTeleportation(Item* item, int player)
