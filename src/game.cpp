@@ -3890,7 +3890,7 @@ int main(int argc, char** argv)
 							{
 								if ( FollowerMenu.followerToCommand
 									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT)
+										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 									)
 								{
 									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
@@ -3955,7 +3955,7 @@ int main(int argc, char** argv)
 							{
 								if ( FollowerMenu.followerToCommand
 									&& (FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT
-										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SENTRYBOT)
+										|| FollowerMenu.followerToCommand->getMonsterTypeFromSprite() == SPELLBOT)
 									)
 								{
 									ttfPrintTextFormatted(ttf12, pos.x + 24, pos.y + 24, language[3650]);
