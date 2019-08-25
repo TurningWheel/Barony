@@ -1172,7 +1172,8 @@ void updatePlayerInventory()
 									src.h += height * TTF12_HEIGHT;
 								}
 								else if ( item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT
-									|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
+									|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+									|| item->type == ENCHANTED_FEATHER )
 								{
 									src.w += 7 * TTF12_WIDTH;
 								}
@@ -1252,6 +1253,10 @@ void updatePlayerInventory()
 									}
 								}
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), health);
+							}
+							else if ( item->type == ENCHANTED_FEATHER )
+							{
+								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
 							}
 							else
 							{
