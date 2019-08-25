@@ -3528,7 +3528,7 @@ void GenericGUIMenu::updateGUI()
 			ttfPrintTextFormatted(ttf12, windowX1 + 16, windowY1 + 8,
 				language[3716]);
 			char toolStatusText[64] = "";
-			if ( scribingToolItem )
+			if ( scribingToolItem && scribingToolItem->identified )
 			{
 				snprintf(toolStatusText, 63, language[3717], scribingToolItem->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
 			}
@@ -4012,7 +4012,7 @@ void GenericGUIMenu::updateGUI()
 								snprintf(healthstr, 16, " (%d%%)", health);
 								strncat(tempstr, healthstr, 46 - strlen(tempstr) - strlen(healthstr));
 							}
-							else if ( item->type == ENCHANTED_FEATHER )
+							else if ( item->type == ENCHANTED_FEATHER && item->identified )
 							{
 								char healthstr[32] = "";
 								snprintf(healthstr, 16, " (%d%%)", item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
@@ -7059,25 +7059,34 @@ int GenericGUIMenu::scribingToolDegradeOnUse(Item* itemUsedWith)
 		{
 			skillLVL = (stats[clientnum]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[clientnum], players[clientnum]->entity)) / 20; // 0 to 5
 		}
-		if ( skillLVL < 2 )
+		if ( toDegrade->beatitude > 0 )
+		{
+			skillLVL = 5; // blessed feather.
+		}
+		else if ( toDegrade->beatitude < 0 )
+		{
+			skillLVL = 0; // cursed feather.
+		}
+
+		if ( skillLVL >= 4 )
+		{
+			randomValue = rand() % 5;
+			usageCost = std::max(2, usageCost - randomValue);
+		}
+		else if ( skillLVL < 2 )
 		{
 			randomValue = rand() % 7;
 			usageCost += randomValue;
 		}
-		else if ( skillLVL < 3 )
+		else if ( skillLVL == 2 )
 		{
 			randomValue = rand() % 5;
 			usageCost += randomValue;
 		}
-		else if ( skillLVL < 4 )
+		else if ( skillLVL == 3 )
 		{
 			randomValue = rand() % 3;
 			usageCost += randomValue;
-		}
-		else if ( skillLVL >= 4 )
-		{
-			randomValue = rand() % 5;
-			usageCost = std::max(2, usageCost - randomValue);
 		}
 	}
 
