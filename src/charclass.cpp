@@ -1979,6 +1979,11 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
+
+			item = newItem(ENCHANTED_FEATHER, EXCELLENT, 0, 1, ENCHANTED_FEATHER_MAX_DURABILITY - 1, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
 		}
 	}
 	else if ( client_classes[player] == CLASS_PUNISHER )
@@ -2019,7 +2024,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		item = newItem(HAT_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
+		item = newItem(PUNISHER_HOOD, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
 			item2 = itemPickup(player, item);

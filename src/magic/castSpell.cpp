@@ -1574,7 +1574,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				volume = 96;
 			}
 
-			if( !strcmp(element->name, spell_cold.name) )
+			if( !strcmp(spell->name, spell_cold.name) )
 			{
 				if ( volume > 64 )
 				{
@@ -1582,12 +1582,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 			
-			if ( !strcmp(element->name, spell_acidSpray.name) )
+			if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
 				traveltime = 15;
 				entity->skill[5] = traveltime;
 			}
-			else if ( !strcmp(element->name, spell_sprayWeb.name) )
+			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
 				traveltime = 15;
 				entity->skill[5] = traveltime;
@@ -1616,12 +1616,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			real_t baseSpeed = 2;
 			real_t baseSideSpeed = 1;
 			int sprite = 170;
-			if ( !strcmp(element->name, spell_stoneblood.name) )
+			if ( !strcmp(spell->name, spell_stoneblood.name) )
 			{
 				angle = PI / 6;
 				baseSpeed = 2;
 			}
-			else if ( !strcmp(element->name, spell_acidSpray.name) )
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
 				sprite = 597;
 				angle = PI / 16;
@@ -1629,7 +1629,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				baseSideSpeed = 2;
 				traveltime = 20;
 			}
-			else if ( !strcmp(element->name, spell_sprayWeb.name) )
+			else if ( !strcmp(spell->name, spell_sprayWeb.name) )
 			{
 				sprite = 861;
 				angle = PI / 16;
