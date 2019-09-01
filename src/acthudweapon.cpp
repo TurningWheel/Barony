@@ -701,6 +701,7 @@ void actHudWeapon(Entity* my)
 	}
 #endif
 	bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
+	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -870,6 +871,10 @@ void actHudWeapon(Entity* my)
 						else if (itemCategory(item) == MAGICSTAFF)
 						{
 							HUDWEAPON_CHOP = 7; // magicstaffs lunge
+						}
+						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM )
+						{
+							HUDWEAPON_CHOP = 1; // thrown normal swing
 						}
 						else if (item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY )
 						{
@@ -1207,15 +1212,25 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_ROLL = 0;
 		}
-		HUDWEAPON_MOVEX -= .35;
+		int targetY = -2;
+		if ( thrownWeapon )
+		{
+			targetY = -1;
+			HUDWEAPON_MOVEY -= .25;
+			HUDWEAPON_MOVEX -= .15;
+		}
+		else
+		{
+			HUDWEAPON_MOVEY -= .45;
+			HUDWEAPON_MOVEX -= .35;
+		}
 		if ( HUDWEAPON_MOVEX < -1 )
 		{
 			HUDWEAPON_MOVEX = -1;
 		}
-		HUDWEAPON_MOVEY -= .45;
-		if ( HUDWEAPON_MOVEY < -2 )
+		if ( HUDWEAPON_MOVEY < targetY )
 		{
-			HUDWEAPON_MOVEY = -2;
+			HUDWEAPON_MOVEY = targetY;
 		}
 		int targetZ = -6;
 		if ( whip )
@@ -1227,14 +1242,19 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_MOVEY -= .45; // returning from side swing, y offset is larger than normal so assist here.
 			}
 		}
+		else if ( thrownWeapon )
+		{
+			targetZ = -3;
+			HUDWEAPON_MOVEZ -= .35;
+		}
 		else
 		{
 			HUDWEAPON_MOVEZ -= .65;
 		}
-		if (HUDWEAPON_MOVEZ < targetZ )
+		if ( HUDWEAPON_MOVEZ < targetZ )
 		{
 			HUDWEAPON_MOVEZ = targetZ;
-			if (HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == -2)
+			if ( HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == targetY )
 			{
 				if ( !swingweapon )
 				{
@@ -1343,12 +1363,11 @@ void actHudWeapon(Entity* my)
 					&& item->type != TOOL_LOCKPICK 
 					&& itemCategory(item) != POTION 
 					&& itemCategory(item) != GEM 
-					&& itemCategory(item) != THROWN
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
 					&& !(itemIsThrowableTinkerTool(item))
 					&& item->type != TOOL_WHIP )
 				{
-					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )
+					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE && itemCategory(item) != THROWN )
 					{
 						HUDWEAPON_CHOP = 4;
 					}
