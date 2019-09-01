@@ -165,7 +165,7 @@ void initClass(int player)
 			free(item);
 
 			// tomahawk
-			item = newItem(BRONZE_TOMAHAWK, WORN, 0, 2, 1, true, NULL);
+			item = newItem(BRONZE_TOMAHAWK, DECREPIT, 0, 2, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[4].item = item2->uid;
 			free(item);
