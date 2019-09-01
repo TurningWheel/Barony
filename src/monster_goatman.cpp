@@ -212,7 +212,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			{
 				if ( !isShaman && rand() % 3 > 0 )
 				{
-					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+					newItem(STEEL_CHAKRAM, SERVICABLE, 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
 				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
 				if ( rand() % 3 == 0 )

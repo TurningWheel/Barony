@@ -1388,7 +1388,7 @@ void initClass(int player)
 		if ( player == clientnum )
 		{
 			// daggers
-			item = newItem(IRON_DAGGER, SERVICABLE, 0, 5, 0, true, NULL);
+			item = newItem(IRON_DAGGER, WORN, 0, 5, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);

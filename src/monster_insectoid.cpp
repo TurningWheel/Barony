@@ -137,11 +137,11 @@ void initInsectoid(Entity* my, Stat* myStats)
 				case 1:
 					if ( lesserMonster )
 					{
-						newItem(IRON_DAGGER, SERVICABLE, 0, 0 + rand() % 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						newItem(IRON_DAGGER, WORN, 0, 0 + rand() % 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					}
 					else
 					{
-						newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						newItem(IRON_DAGGER, WORN, 0, 2 + rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					}
 					break;
 				default:
