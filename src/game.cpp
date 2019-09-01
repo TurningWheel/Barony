@@ -3183,6 +3183,7 @@ int main(int argc, char** argv)
 							if ( startfloor )
 							{
 								physfsLoadMapFile(currentlevel, 0, true, &checkMapHash);
+								conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
 							}
 							else
 							{

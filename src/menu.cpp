@@ -7600,6 +7600,10 @@ void handleMainMenu(bool mode)
 			completionTime = 0;
 
 			setDefaultPlayerConducts(); // penniless, foodless etc.
+			if ( startfloor != 0 )
+			{
+				conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 1;
+			}
 
 			minimapPings.clear(); // clear minimap pings
 
