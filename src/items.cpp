@@ -4011,6 +4011,13 @@ bool Item::shouldItemStack(int player)
 		{
 			// THROWN, GEM, TOOLS, POTIONS should stack when equipped.
 			// otherwise most equippables should not stack.
+			if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
+			{
+				if ( this->count >= 9 )
+				{
+					return false;
+				}
+			}
 			return true;
 		}
 	}
