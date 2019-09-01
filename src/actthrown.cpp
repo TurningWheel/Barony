@@ -512,16 +512,12 @@ void actThrown(Entity* my)
 					{
 						if ( itemCategory(item) == THROWN )
 						{
-							int skillLVL = parentStats->PROFICIENCIES[PRO_RANGED] / 20;
-							int dex = parent->getDEX() / 4;
-							damage = (damage + dex) * thrownDamageSkillMultipliers[std::min(skillLVL, 5)];
+							damage = my->thrownProjectilePower;
 							damage -= (AC(hit.entity->getStats()) / 4);
 						}
 						else
 						{
-							int dex = parent->getDEX() / 4;
-							damage += dex;
-							damage += parentStats->PROFICIENCIES[PRO_RANGED] / 10; // 0 to 10 bonus attack.
+							damage = my->thrownProjectilePower;
 							damage -= (AC(hit.entity->getStats()) / 2);
 						}
 					}

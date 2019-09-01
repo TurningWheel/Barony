@@ -278,7 +278,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalInputDirection(skill[5]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),
-	entityShowOnMap(skill[59])
+	entityShowOnMap(skill[59]),
+	thrownProjectilePower(skill[19])
 {
 	int c;
 	// add the entity to the entity list
@@ -5982,14 +5983,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
+					real_t speed = 5.f;
+					if ( itemCategory(myStats->weapon) == GEM )
+					{
+						real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
+						speed = 5.f + normalisedCharge;
+					}
 					// thrown items have slightly faster velocities
 					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
 					{
 						if ( this->behavior == &actPlayer )
 						{
 							// todo: change velocity of chakram/shuriken?
-							entity->vel_x = 6 * cos(players[player]->entity->yaw);
-							entity->vel_y = 6 * sin(players[player]->entity->yaw);
+							entity->vel_x = speed * cos(players[player]->entity->yaw);
+							entity->vel_y = speed * sin(players[player]->entity->yaw);
 							entity->vel_z = -.3;
 						}
 						else if ( this->behavior == &actMonster )
@@ -6004,8 +6011,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( this->behavior == &actPlayer )
 						{
-							entity->vel_x = 6 * cos(players[player]->entity->yaw);
-							entity->vel_y = 6 * sin(players[player]->entity->yaw);
+							entity->vel_x = speed * cos(players[player]->entity->yaw);
+							entity->vel_y = speed * sin(players[player]->entity->yaw);
 							entity->vel_z = -.3;
 						}
 						else if ( this->behavior == &actMonster )
@@ -6015,6 +6022,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							entity->vel_z = -.3;
 						}
 					}
+					entity->thrownProjectilePower = this->getThrownAttack();
 				}
 				else if ( itemIsThrowableTinkerTool(myStats->weapon) )
 				{
@@ -6034,16 +6042,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else
 				{
+					real_t speed = 5.f;
+					if ( itemCategory(myStats->weapon) == GEM )
+					{
+						real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
+						speed = 3.f + normalisedCharge;
+					}
+					entity->thrownProjectilePower = this->getThrownAttack();
 					if ( this->behavior == &actPlayer )
 					{
-						entity->vel_x = 5 * cos(players[player]->entity->yaw);
-						entity->vel_y = 5 * sin(players[player]->entity->yaw);
+						entity->vel_x = speed * cos(players[player]->entity->yaw);
+						entity->vel_y = speed * sin(players[player]->entity->yaw);
 						entity->vel_z = -.5;
 					}
 					else if ( this->behavior == &actMonster )
 					{
-						entity->vel_x = 5 * cos(this->yaw);
-						entity->vel_y = 5 * sin(this->yaw);
+						entity->vel_x = speed * cos(this->yaw);
+						entity->vel_y = speed * sin(this->yaw);
 						entity->vel_z = -.5;
 					}
 				}

@@ -434,6 +434,9 @@ public:
 	Sint32& signalTimerLatchInput; //skill[4]
 	Sint32& signalInputDirection; //skill[5]
 
+	//--THROWN PROJECTILE--
+	Sint32& thrownProjectilePower; //skill[19]
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)

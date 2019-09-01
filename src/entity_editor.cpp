@@ -252,7 +252,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	signalTimerInterval(skill[2]),
 	signalTimerRepeatCount(skill[3]),
 	signalTimerLatchInput(skill[4]),
-	signalInputDirection(skill[5])
+	signalInputDirection(skill[5]),
+	thrownProjectilePower(skill[19])
 {
 	int c;
 	// add the entity to the entity list
