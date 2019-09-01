@@ -1101,9 +1101,12 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	{
 		return 1;
 	}
-	if (item1->status != item2->status)
+	if ( itemCategory(item1) != THROWN )
 	{
-		return 1;
+		if (item1->status != item2->status)
+		{
+			return 1;
+		}
 	}
 	if (item1->beatitude != item2->beatitude)
 	{

@@ -177,7 +177,15 @@ void Entity::actChest()
 					//}
 					//newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
 					int cat = rand() % (NUMCATEGORIES - 1); // exclude spell_cat
-					newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					Item* currentItem = newItem(itemLevelCurve(static_cast<Category>(cat), 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, inventory);
+					if ( currentItem )
+					{
+						if ( currentItem->type >= BRONZE_TOMAHAWK && currentItem->type <= CRYSTAL_SHURIKEN )
+						{
+							// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+							currentItem->status = std::min(static_cast<Status>(DECREPIT + (currentItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
+						}
+					}
 				}
 				break;
 			case 1:
@@ -362,8 +370,15 @@ void Entity::actChest()
 						itemcount = 0 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							Status durability = static_cast<Status>(WORN + rand() % 3);
-							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), WORN, 0, 3 + rand() % 3, rand(), false, inventory);
+							if ( thrown )
+							{
+								if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
+								{
+									// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+									thrown->status = std::min(static_cast<Status>(DECREPIT + (thrown->type - BRONZE_TOMAHAWK)), EXCELLENT);
+								}
+							}
 						}
 					}
 					break;
@@ -406,7 +421,15 @@ void Entity::actChest()
 						itemcount = 1 + rand() % 2;
 						for ( i = 0; i < itemcount; ++i )
 						{
-							newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), durability, 0, 3 + rand() % 3, rand(), false, inventory);
+							Item* thrown = newItem(itemLevelCurve(THROWN, minimumQuality, currentlevel), WORN, 0, 3 + rand() % 3, rand(), false, inventory);
+							if ( thrown )
+							{
+								if ( thrown->type >= BRONZE_TOMAHAWK && thrown->type <= CRYSTAL_SHURIKEN )
+								{
+									// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+									thrown->status = std::min(static_cast<Status>(DECREPIT + (thrown->type - BRONZE_TOMAHAWK)), EXCELLENT);
+								}
+							}
 						}
 						break;
 					default:

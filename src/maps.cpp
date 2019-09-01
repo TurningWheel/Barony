@@ -2893,6 +2893,11 @@ void assignActions(map_t* map)
 				{
 					entity->skill[14] = 75 + 25 * (prng_get_uint() % 2);    // appearance
 				}
+				else if ( entity->skill[10] >= BRONZE_TOMAHAWK && entity->skill[10] <= CRYSTAL_SHURIKEN )
+				{
+					// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+					entity->skill[11] = std::min(DECREPIT + (entity->skill[10] - BRONZE_TOMAHAWK), static_cast<int>(EXCELLENT));
+				}
 
 				item = newItemFromEntity(entity);
 				entity->sprite = itemModel(item);
