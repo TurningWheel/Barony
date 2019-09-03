@@ -297,9 +297,14 @@ typedef enum ItemType
 	MACHINIST_APRON,
 	ENCHANTED_FEATHER,
 	PUNISHER_HOOD,
-	SCROLL_CHARGING
+	SCROLL_CHARGING,
+	QUIVER_1,
+	QUIVER_2,
+	QUIVER_3,
+	QUIVER_4,
+	QUIVER_5
 } ItemType;
-const int NUMITEMS = 275;
+const int NUMITEMS = 280;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -595,6 +600,7 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
 ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
+bool itemSpriteIsQuiverModel(int sprite);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

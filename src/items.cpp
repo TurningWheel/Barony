@@ -2354,6 +2354,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
 		case TOOL_TINKERING_KIT:
+		case QUIVER_1:
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
@@ -4133,4 +4134,15 @@ char* Item::getScrollLabel() const
 		chosenLabel = indices[this->appearance];
 	}
 	return scroll_label[chosenLabel];
+}
+
+bool itemSpriteIsQuiverModel(int sprite)
+{
+	if ( sprite == items[QUIVER_1].index
+		|| sprite == items[QUIVER_1].index + 1
+		|| sprite == items[QUIVER_1].index + 2 )
+	{
+		return true;
+	}
+	return false;
 }

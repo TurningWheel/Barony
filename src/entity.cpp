@@ -16155,6 +16155,32 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	shieldLimb->focaly = limbs[race][7][1];
 	shieldLimb->focalz = limbs[race][7][2];
 
+	/*if ( shieldLimb->sprite == items[QUIVER_1].index )
+	{
+		shieldLimb->focalx += limbs[HUMAN][11][0];
+		shieldLimb->focaly += limbs[HUMAN][11][1];
+		shieldLimb->focalz += (3 + limbs[HUMAN][11][2]);
+
+		shieldLimb->x -= limbs[HUMAN][12][0] * cos(this->yaw + PI / 2) + (1.35 + limbs[HUMAN][12][1]) * cos(this->yaw);
+		shieldLimb->y -= limbs[HUMAN][12][0] * sin(this->yaw + PI / 2) + (1.35 + limbs[HUMAN][12][1]) * sin(this->yaw);
+		shieldLimb->z += (-1.78 + limbs[HUMAN][12][2]);
+
+		shieldLimb->scalex = 1.f;
+		shieldLimb->scaley = 1.f;
+		shieldLimb->scalez = 1.f;
+		if ( race == INCUBUS )
+		{
+			shieldLimb->scalex = 1.01;
+			shieldLimb->scaley = 1.01;
+		}
+	}*/
+	shieldLimb->scalex = 1.f;
+	shieldLimb->scaley = 1.f;
+	shieldLimb->scalez = 1.f;
+
+	shieldLimb->x -= limbs[HUMAN][12][0] * cos(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * cos(this->yaw);
+	shieldLimb->y -= limbs[HUMAN][12][0] * sin(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * sin(this->yaw);
+
 	switch ( race )
 	{
 		case CREATURE_IMP:
@@ -16168,9 +16194,6 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->yaw = shieldArmLimb->yaw;
 			shieldLimb->roll = 0;
 			shieldLimb->pitch = 0;
-			shieldLimb->scalex = 1.f;
-			shieldLimb->scaley = 1.f;
-			shieldLimb->scalez = 1.f;
 
 			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
@@ -16195,9 +16218,6 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->yaw = shieldArmLimb->yaw;
 			shieldLimb->roll = 0;
 			shieldLimb->pitch = 0;
-			shieldLimb->scalex = 1.f;
-			shieldLimb->scaley = 1.f;
-			shieldLimb->scalez = 1.f;
 
 			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
 			{
@@ -16220,6 +16240,14 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				flameEntity->x += 2 * cos(shieldArmLimb->yaw);
 				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
 				flameEntity->z += 1;
+			}
+			else if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+			{
+				shieldLimb->focalz += 3;
+				shieldLimb->scalex = 1.05;
+				shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.3 * cos(this->yaw);
+				shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.3 * sin(this->yaw);
+				shieldLimb->z += -1.78;
 			}
 			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
@@ -16272,6 +16300,26 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->focalx = limbs[race][7][0] - 0.65;
 				shieldLimb->focaly = limbs[race][7][1];
 				shieldLimb->focalz = limbs[race][7][2];
+			}
+			if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+			{
+				if ( shieldLimb->sprite == items[QUIVER_1].index )
+				{
+					shieldLimb->sprite++;
+				}
+				shieldLimb->focalz += 3;
+				shieldLimb->z += -1.78;
+				shieldLimb->scalex = 1.05;
+				if ( race == SKELETON )
+				{
+					shieldLimb->x -= -0.2 * cos(this->yaw + PI / 2) + 1.6 * cos(this->yaw);
+					shieldLimb->y -= -0.2 * sin(this->yaw + PI / 2) + 1.6 * sin(this->yaw);
+				}
+				else if ( race == AUTOMATON )
+				{
+					shieldLimb->x -= 1.35 * cos(this->yaw + PI / 2) + 2.1 * cos(this->yaw);
+					shieldLimb->y -= 1.35 * sin(this->yaw + PI / 2) + 2.1 * sin(this->yaw);
+				}
 			}
 
 			if ( shieldLimb->sprite == items[TOOL_TORCH].index )
@@ -16357,7 +16405,10 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			{
 				if ( !shieldLimb->flags[INVISIBLE] )
 				{
-					shieldArmLimb->yaw -= PI / 8;
+					if ( !itemSpriteIsQuiverModel(shieldLimb->sprite) )
+					{
+						shieldArmLimb->yaw -= PI / 8;
+					}
 				}
 			}
 			break;
@@ -16426,6 +16477,45 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
 			}
+			else if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+			{
+				shieldLimb->scalex = 1.05;
+				//shieldLimb->scalez = 1.05;
+				shieldLimb->focalz += 3;
+				if ( race == INCUBUS || race == SUCCUBUS )
+				{
+					if ( race == SUCCUBUS )
+					{
+						shieldLimb->x -= 0.05 * cos(this->yaw + PI / 2) + (1.8) * cos(this->yaw);
+						shieldLimb->y -= 0.05 * sin(this->yaw + PI / 2) + (1.8) * sin(this->yaw);
+					}
+					else
+					{
+						shieldLimb->x -= 0.05 * cos(this->yaw + PI / 2) + (1.55) * cos(this->yaw);
+						shieldLimb->y -= 0.05 * sin(this->yaw + PI / 2) + (1.55) * sin(this->yaw);
+					}
+					shieldLimb->z += -2.78;
+				}
+				else
+				{
+					if ( race == GOATMAN )
+					{
+						shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.5 * cos(this->yaw);
+						shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.5 * sin(this->yaw);
+					}
+					else if ( race == GOBLIN )
+					{
+						shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.25 * cos(this->yaw);
+						shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.25 * sin(this->yaw);
+					}
+					else
+					{
+						shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.05 * cos(this->yaw);
+						shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.05 * sin(this->yaw);
+					}
+					shieldLimb->z += -1.78;
+				}
+			}
 
 			if ( this->fskill[8] > PI / 32 ) //MONSTER_SHIELDYAW and PLAYER_SHIELDYAW defending animation
 			{
@@ -16486,6 +16576,19 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->focaly -= 0.8;
 			}
 		}
+	}
+	else if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+	{
+		shieldLimb->yaw += PI / 6;
+		/*node_t* legNode = list_Node(&this->children, LIMB_HUMANOID_RIGHTLEG);
+		if ( legNode )
+		{
+			Entity* leg = (Entity*)legNode->element;
+			if ( leg )
+			{
+				shieldLimb->pitch = -leg->pitch / 4;
+			}
+		}*/
 	}
 
 	if ( flameEntity && player >= 0 )

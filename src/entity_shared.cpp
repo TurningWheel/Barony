@@ -405,6 +405,11 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"enchanted_feather",
 	"punisher_hood",
 	"scroll_charging",
+	"quiver_1",
+	"quiver_2",
+	"quiver_3",
+	"quiver_4",
+	"quiver_5"
 	""
 };
 
@@ -569,6 +574,11 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_torch",
 		"tool_lantern",
 		"tool_crystalshard",
+		"quiver_1",
+		"quiver_2",
+		"quiver_3",
+		"quiver_4",
+		"quiver_5",
 		""
 	},
 	{
