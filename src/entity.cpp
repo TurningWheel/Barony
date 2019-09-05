@@ -4082,7 +4082,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( player >= 0 
 		&& myStats->mask != nullptr
-		&& myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY
+		&& myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY 
 		&& (ticks % 65 == 0 || !myStats->EFFECTS[EFF_TELEPATH]) )
 	{
 		setEffect(EFF_TELEPATH, true, 100, true);
@@ -4935,7 +4935,15 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 					|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
 					|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
-			PER -= 10;
+			if ( entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
+				|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
+			{
+				PER += 10; // increase your perception
+			}
+			else
+			{
+				PER -= 10;
+			}
 			PER += (cursedItemIsBuff ? abs(entitystats->mask->beatitude) : entitystats->mask->beatitude);
 		}
 	}
