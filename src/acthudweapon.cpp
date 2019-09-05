@@ -270,22 +270,17 @@ void actHudArm(Entity* my)
 	}
 }
 
-#ifdef USE_FMOD
-FMOD_CHANNEL* bowDrawingSound = NULL;
-FMOD_BOOL bowDrawingSoundPlaying = 0;
-#elif defined USE_OPENAL
-OPENAL_SOUND* bowDrawingSound = NULL;
-ALboolean bowDrawingSoundPlaying = 0;
-#else
-// implement bow drawing timer via SDL_GetTicks()
-bool bowDrawingSound = false;
-bool bowDrawingSoundPlaying = false;
-Uint32 bowDrawingStart = 0;
-// based on superficial analysis of the BowDraw1V1.ogg file
-Uint32 bowDrawingLength = 1030;
-#endif
-
 bool bowFire = false;
+bool bowIsBeingDrawn = false;
+Uint32 bowStartDrawingTick = 0;
+Uint32 bowDrawBaseTicks = 50;
+#ifdef USE_FMOD
+	FMOD_CHANNEL* bowDrawingSoundChannel = NULL;
+	FMOD_BOOL bowDrawingSoundPlaying = 0;
+#elif defined USE_OPENAL
+	OPENAL_SOUND* bowDrawingSoundChannel = NULL;
+	ALboolean bowDrawingSoundPlaying = 0;
+#endif
 
 #define HUDWEAPON_CHOP my->skill[0]
 #define HUDWEAPON_INIT my->skill[1]
@@ -528,36 +523,10 @@ void actHudWeapon(Entity* my)
 				}
 			}
 			my->sprite = itemModelFirstperson(stats[clientnum]->weapon);
-#ifdef SOUND
-			if ( bowDrawingSoundPlaying && bowDrawingSound )
-			{
-				unsigned int position = 0;
-				unsigned int length = 0;
-#ifdef USE_OPENAL
-				OPENAL_Channel_GetPosition(bowDrawingSound, &position);
-				OPENAL_Sound_GetLength(sounds[246], &length);
 
-#else
-				FMOD_Channel_GetPosition(bowDrawingSound, &position, FMOD_TIMEUNIT_MS);
-				FMOD_Sound_GetLength(sounds[246], &length, FMOD_TIMEUNIT_MS);
-#endif
-				if ( position >= length / 4 )
-				{
-					if ( rangedweapon )
-					{
-						if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
-						{
-							my->sprite++;
-						}
-					}
-				}
-			}
-#else
-			if (bowDrawingSoundPlaying && bowDrawingSound)
+			if ( bowIsBeingDrawn )
 			{
-				unsigned int position = SDL_GetTicks() - bowDrawingStart;
-				unsigned int length = bowDrawingLength;
-				if ( position >= length / 4 )
+				if ( (my->ticks - bowStartDrawingTick) >= bowDrawBaseTicks / 4 )
 				{
 					if ( rangedweapon )
 					{
@@ -568,7 +537,7 @@ void actHudWeapon(Entity* my)
 					}
 				}
 			}
-#endif
+
 			if ( itemCategory(stats[clientnum]->weapon) == SPELLBOOK )
 			{
 				my->flags[INVISIBLE] = true;
@@ -655,51 +624,63 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	// bow drawing sound check
+	Uint32 bowFireRate = bowDrawBaseTicks;
+	bool shakeRangedWeapon = false;
+	if ( rangedweapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
+	{
+		if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == SHORTBOW )
+		{
+			bowFireRate = bowDrawBaseTicks / 2;
+		}
+	}
+	// check bow drawing attack and if defending/not firing cancel the SFX.
+	if ( bowIsBeingDrawn && !stats[clientnum]->defending )
+	{
+		if ( (my->ticks - bowStartDrawingTick) < bowFireRate )
+		{
+			/*if ( (my->ticks - bowStartDrawingTick) > bowFireRate * 0.75 )
+			{
+				shakeRangedWeapon = true;
+			}*/
+			bowFire = false;
+		}
+		else
+		{
+			bowIsBeingDrawn = false;
+			bowFire = true; // ready to fire!
+		}
 #ifdef SOUND
-	if ( bowDrawingSound )
-	{
 #ifdef USE_OPENAL
-		ALboolean tempBool = bowDrawingSoundPlaying;
-		OPENAL_Channel_IsPlaying(bowDrawingSound, &bowDrawingSoundPlaying);
+		if ( bowDrawingSoundChannel )
+		{
+			OPENAL_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+		}
 #else
-		FMOD_BOOL tempBool = bowDrawingSoundPlaying;
-		FMOD_Channel_IsPlaying(bowDrawingSound, &bowDrawingSoundPlaying);
+		if ( bowDrawingSoundChannel )
+		{
+			FMOD_Channel_IsPlaying(bowDrawingSoundChannel, &bowDrawingSoundPlaying);
+		}
 #endif
-		if ( tempBool && !bowDrawingSoundPlaying )
-		{
-			bowFire = true;
-		}
-		else if ( !tempBool )
-		{
-			bowFire = false;
-		}
+#endif // SOUND
 	}
 	else
 	{
-		bowDrawingSoundPlaying = 0;
 		bowFire = false;
-	}
+		bowIsBeingDrawn = false;
+#ifdef SOUND
+		if ( bowDrawingSoundPlaying && bowDrawingSoundChannel )
+		{
+#ifdef USE_OPENAL
+			OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-	if ( bowDrawingSound )
-	{
-		bool tempBool = bowDrawingSoundPlaying;
-		bowDrawingSoundPlaying = (SDL_GetTicks() - bowDrawingStart) < bowDrawingLength;
-		if ( tempBool && !bowDrawingSoundPlaying )
-		{
-			bowFire = true;
-		}
-		else if ( !tempBool )
-		{
-			bowFire = false;
-		}
-	}
-	else
-	{
-		bowDrawingSoundPlaying = 0;
-		bowFire = false;
-	}
+			FMOD_Channel_Stop(bowDrawingSoundChannel);
 #endif
+			bowDrawingSoundPlaying = 0;
+			bowDrawingSoundChannel = NULL;
+		}
+#endif
+	}
+
 	bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
 	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
 
@@ -767,9 +748,9 @@ void actHudWeapon(Entity* my)
 							if ( !stats[clientnum]->defending && !throwGimpTimer )
 							{
 								// bows need to be drawn back
-								if (!bowDrawingSoundPlaying)
+								if ( !bowIsBeingDrawn )
 								{
-									if (bowFire)
+									if ( bowFire )
 									{
 										bowFire = false;
 										players[clientnum]->entity->attack(0, 0, nullptr);
@@ -778,17 +759,22 @@ void actHudWeapon(Entity* my)
 									}
 									else
 									{
-#ifdef SOUND
-										bowDrawingSound = playSound(246, 64);
-#else
-										bowDrawingSound = true;
-										bowDrawingStart = SDL_GetTicks();
-#endif
+										bowStartDrawingTick = my->ticks;
+										bowIsBeingDrawn = true;
+										bowDrawingSoundChannel = playSound(246, 64);
 									}
 								}
+
 								if ( HUDWEAPON_MOVEX > 0 )
 								{
-									HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1, 0.0);
+									if ( HUDWEAPON_MOVEX > 1 )
+									{
+										HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1, 0.0);
+									}
+									else
+									{
+										HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 0.2, 0.0);
+									}
 								}
 								else if ( HUDWEAPON_MOVEX < 0 )
 								{
@@ -1000,25 +986,21 @@ void actHudWeapon(Entity* my)
 							|| stats[clientnum]->weapon->type == SHORTBOW 
 							|| stats[clientnum]->weapon->type == ARTIFACT_BOW) )
 					{
+						// not drawing bow anymore, reset.
+						bowIsBeingDrawn = false;
 #ifdef SOUND
-						if ( bowDrawingSoundPlaying && bowDrawingSound )
+						if ( bowDrawingSoundPlaying && bowDrawingSoundChannel )
 						{
 #ifdef USE_OPENAL
-							OPENAL_Channel_Stop(bowDrawingSound);
+							OPENAL_Channel_Stop(bowDrawingSoundChannel);
 #else
-							FMOD_Channel_Stop(bowDrawingSound);
+							FMOD_Channel_Stop(bowDrawingSoundChannel);
 #endif
 							bowDrawingSoundPlaying = 0;
-							bowDrawingSound = NULL;
+							bowDrawingSoundChannel = NULL;
 						}
-#else
-						if ( bowDrawingSoundPlaying && bowDrawingSound )
-						{
-							bowDrawingSoundPlaying = false;
-							bowDrawingSound = false;
-						}
-
 #endif
+
 						if ( HUDWEAPON_MOVEX > 0 )
 						{
 							HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1, 0.0);
@@ -2090,7 +2072,9 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation || players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2 )
+	if ( HUDWEAPON_CHARGE == MAXCHARGE || castStrikeAnimation 
+		|| players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2
+		|| shakeRangedWeapon )
 	{
 		if ( ticks % 5 == 0 && players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2 )
 		{
@@ -2109,9 +2093,14 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEY += HUDWEAPON_OLDVIBRATEY;
 			HUDWEAPON_MOVEZ += HUDWEAPON_OLDVIBRATEZ;
 		}
-		if ( !(castStrikeAnimation || players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2) )
+		if ( (castStrikeAnimation || players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP2)
+			|| shakeRangedWeapon )
 		{
-			HUDWEAPON_OVERCHARGE++; // don't overcharge here.
+			// don't overcharge here.
+		}
+		else
+		{
+			HUDWEAPON_OVERCHARGE++; 
 		}
 	}
 	if ( castStrikeAnimation ) // magic sprite particles around the fist
