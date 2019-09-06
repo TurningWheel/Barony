@@ -2059,7 +2059,7 @@ void handleMainMenu(bool mode)
 										initClass(0);
 									}
 									else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK
-										&& stats[0]->appearance == 0 )
+										&& lastAppearance == 0 )
 									{
 										client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 										stats[0]->clearStats();
@@ -2237,7 +2237,7 @@ void handleMainMenu(bool mode)
 						initClass(0);
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK
-						&& stats[0]->appearance == 0 )
+						&& lastAppearance == 0 )
 					{
 						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
@@ -2367,7 +2367,7 @@ void handleMainMenu(bool mode)
 						initClass(0);
 					}
 					else if ( stats[0]->playerRace != RACE_HUMAN && lastRace == RACE_HUMAN && client_classes[0] > CLASS_MONK 
-						&& stats[0]->appearance == 0 )
+						&& lastAppearance == 0 )
 					{
 						client_classes[0] = CLASS_MONK + stats[0]->playerRace;
 						stats[0]->clearStats();
