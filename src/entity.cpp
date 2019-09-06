@@ -5916,6 +5916,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				// set properties of the arrow.
 				entity->setRangedProjectileAttack(*this, *myStats);
+				if ( behavior == &actPlayer )
+				{
+					entity->vel_z = -0.3;
+				}
 				return;
 			}
 

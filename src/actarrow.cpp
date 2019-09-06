@@ -66,12 +66,16 @@ void actArrow(Entity* my)
 		ARROW_VELX = cos(my->yaw) * 7;
 		ARROW_VELY = sin(my->yaw) * 7;
 
+		ARROW_VELZ += 0.08;
+		my->z += ARROW_VELZ;
+		my->pitch = std::min(my->pitch + .02, PI / 8);
+
 		ARROW_OLDX = my->x;
 		ARROW_OLDY = my->y;
 		dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
 
 		// damage monsters
-		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) )
+		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || my->z >= 7.5 )
 		{
 			ARROW_STUCK = 1;
 			my->x = ARROW_OLDX;
