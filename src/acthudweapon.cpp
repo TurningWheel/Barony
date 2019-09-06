@@ -1256,6 +1256,27 @@ void actHudWeapon(Entity* my)
 						}
 					}
 
+					if ( thrownWeapon && multiplayer == CLIENT )
+					{
+						Item* item = stats[clientnum]->weapon;
+						if ( item )
+						{
+							item->count--;
+							if ( item->count <= 0 )
+							{
+								if ( item->node )
+								{
+									list_RemoveNode(item->node);
+								}
+								else
+								{
+									free(item);
+								}
+								stats[clientnum]->weapon = NULL;
+							}
+						}
+					}
+
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
