@@ -356,9 +356,21 @@ public:
 	real_t& pistonCamRotateSpeed; //fskill[0]
 
 	//--PUBLIC ARROW/PROJECTILE SKILLS--
-	Sint32& arrowPower;
-	Sint32& arrowPoisonTime;
-	Sint32& arrowArmorPierce;
+	Sint32& arrowPower; //skill[3]
+	Sint32& arrowPoisonTime; //skill[4]
+	Sint32& arrowArmorPierce; //skill[5]
+	real_t& arrowSpeed; //fskill[4]
+	real_t& arrowFallSpeed; //fskill[5]
+	Sint32& arrowBoltDropOffRange; //skill[6]
+	Sint32& arrowShotByWeapon; //skill[7]
+	Sint32& arrowQuiverType; //skill[8]
+	Sint32& arrowShotByParent; //skill[9]
+	enum arrowShotBy : int
+	{
+		ARROW_SHOT_BY_TRAP,
+		ARROW_SHOT_BY_PLAYER,
+		ARROW_SHOT_BY_MONSTER
+	};
 
 	//--PUBLIC ITEM SKILLS--
 	Sint32& itemNotMoving; // skill[18]

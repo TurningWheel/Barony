@@ -60,22 +60,58 @@ void actArrow(Entity* my)
 		return;
 	}
 
+	// falling out of the map
+	if ( my->z > 32 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
 	if ( !ARROW_STUCK )
 	{
 		// horizontal motion
-		ARROW_VELX = cos(my->yaw) * 7;
-		ARROW_VELY = sin(my->yaw) * 7;
+		ARROW_VELX = cos(my->yaw) * my->arrowSpeed;
+		ARROW_VELY = sin(my->yaw) * my->arrowSpeed;
 
-		ARROW_VELZ += 0.08;
-		my->z += ARROW_VELZ;
-		my->pitch = std::min(my->pitch + .02, PI / 8);
+		if ( my->arrowBoltDropOffRange > 0 )
+		{
+			if ( my->ticks >= my->arrowBoltDropOffRange )
+			{
+				ARROW_VELZ += my->arrowFallSpeed;
+				my->z += ARROW_VELZ;
+				my->pitch = std::min(my->pitch + .02, PI / 8);
+			}
+		}
+		else
+		{
+			ARROW_VELZ += my->arrowFallSpeed;
+			my->z += ARROW_VELZ;
+			my->pitch = std::min(my->pitch + .02, PI / 8);
+		}
 
 		ARROW_OLDX = my->x;
 		ARROW_OLDY = my->y;
 		dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
 
+		bool arrowInGround = false;
+		int index = (int)(my->y / 16) * MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height;
+		if ( map.tiles[index] )
+		{
+			if ( my->sprite == 167 || my->sprite == 78 ) // bolt/rock
+			{
+				if ( my->z >= 7 )
+				{
+					arrowInGround = true;
+				}
+			}
+			else if ( my->z >= 6.5 )
+			{
+				arrowInGround = true;
+			}
+		}
+
 		// damage monsters
-		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || my->z >= 7.5 )
+		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
 		{
 			ARROW_STUCK = 1;
 			my->x = ARROW_OLDX;

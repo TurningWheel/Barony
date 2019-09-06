@@ -224,6 +224,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	arrowPower(skill[3]),
 	arrowPoisonTime(skill[4]),
 	arrowArmorPierce(skill[5]),
+	arrowSpeed(fskill[4]),
+	arrowFallSpeed(fskill[5]),
+	arrowBoltDropOffRange(skill[6]),
+	arrowShotByWeapon(skill[7]),
+	arrowQuiverType(skill[8]),
+	arrowShotByParent(skill[9]),
 	actmagicIsVertical(skill[6]),
 	actmagicIsOrbiting(skill[7]),
 	actmagicOrbitDist(skill[8]),
@@ -5916,10 +5922,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				// set properties of the arrow.
 				entity->setRangedProjectileAttack(*this, *myStats);
-				if ( behavior == &actPlayer )
-				{
-					entity->vel_z = -0.3;
-				}
 				return;
 			}
 
@@ -14616,10 +14618,13 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 		attack = (attack - chance) + (rand() % chance) + 1;
 	}
 	this->arrowPower = attack;
+	this->arrowSpeed = 7;
+	this->arrowShotByWeapon = 0;
 
 	// get arrow effects.
 	if ( myStats.weapon )
 	{
+		this->arrowShotByWeapon = myStats.weapon->type;
 		if ( myStats.weapon->type == ARTIFACT_BOW )
 		{
 			// poison arrow
@@ -14638,6 +14643,37 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			else
 			{
 				this->arrowArmorPierce = 0;
+			}
+		}
+
+		if ( marksman.behavior == &actPlayer )
+		{
+			if ( myStats.weapon->type == CROSSBOW || myStats.weapon->type == SLING )
+			{
+				this->vel_z = -0.2;
+				this->arrowSpeed = 6;
+				this->pitch = -PI / 32;
+				this->arrowFallSpeed = 0.1;
+				this->arrowBoltDropOffRange = 5; // ticks before projectile starts falling.
+			}
+			else
+			{
+				this->vel_z = -0.6;
+				this->pitch = -PI / 32;
+				this->arrowFallSpeed = 0.08;
+				this->arrowBoltDropOffRange = 0;
+			}
+			this->arrowShotByParent = ARROW_SHOT_BY_PLAYER;
+		}
+		else if ( marksman.behavior == &actMonster )
+		{
+			if ( myStats.type == SENTRYBOT )
+			{
+				this->arrowShotByParent = ARROW_SHOT_BY_TRAP;
+			}
+			else
+			{
+				this->arrowShotByParent = ARROW_SHOT_BY_MONSTER;
 			}
 		}
 	}
