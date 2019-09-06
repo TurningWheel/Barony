@@ -10703,6 +10703,7 @@ void buttonJoinLobby(button_t* my)
 		if ( *portnumbererr != '\0' || portnumber < 1024 )
 		{
 			printlog("warning: invalid port number %d.\n", portnumber);
+			SDLNet_SetError("Invalid address %s.\nExample: 192.168.0.100:12345", connectaddress);
 			openFailedConnectionWindow(CLIENT);
 			return;
 		}
