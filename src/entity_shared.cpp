@@ -410,6 +410,11 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"quiver_3",
 	"quiver_4",
 	"quiver_5"
+	"quiver_6",
+	"quiver_7",
+	"longbow",
+	"compound_bow",
+	"heavy_crossbow",
 	""
 };
 
@@ -460,6 +465,9 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"iron_dagger",
 		"steel_chakram",
 		"crystal_shuriken",
+		"longbow",
+		"compound_bow",
+		"heavy_crossbow",
 		"potion_water",
 		"potion_booze",
 		"potion_juice",
@@ -579,6 +587,8 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"quiver_3",
 		"quiver_4",
 		"quiver_5",
+		"quiver_6",
+		"quiver_7",
 		""
 	},
 	{

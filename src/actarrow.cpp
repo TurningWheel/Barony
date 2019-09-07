@@ -18,6 +18,7 @@
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "items.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -51,7 +52,10 @@ void actArrow(Entity* my)
 	{
 		my->arrowPower = 10 + (my->sprite == 167);
 	}
-
+	if ( my->arrowShotByParent == 0 ) // shot by trap
+	{
+		my->arrowSpeed = 7;
+	}
 	// lifespan
 	ARROW_LIFE++;
 	if ( ARROW_LIFE >= ARROW_MAXLIFE )
@@ -73,20 +77,28 @@ void actArrow(Entity* my)
 		ARROW_VELX = cos(my->yaw) * my->arrowSpeed;
 		ARROW_VELY = sin(my->yaw) * my->arrowSpeed;
 
-		if ( my->arrowBoltDropOffRange > 0 )
+		if ( my->arrowFallSpeed > 0 )
 		{
-			if ( my->ticks >= my->arrowBoltDropOffRange )
+			real_t pitchChange = 0.02;
+			if ( my->arrowShotByWeapon == LONGBOW )
+			{
+				pitchChange = 0.005;
+			}
+			if ( my->arrowBoltDropOffRange > 0 )
+			{
+				if ( my->ticks >= my->arrowBoltDropOffRange )
+				{
+					ARROW_VELZ += my->arrowFallSpeed;
+					my->z += ARROW_VELZ;
+					my->pitch = std::min(my->pitch + pitchChange, PI / 8);
+				}
+			}
+			else
 			{
 				ARROW_VELZ += my->arrowFallSpeed;
 				my->z += ARROW_VELZ;
-				my->pitch = std::min(my->pitch + .02, PI / 8);
+				my->pitch = std::min(my->pitch + pitchChange, PI / 8);
 			}
-		}
-		else
-		{
-			ARROW_VELZ += my->arrowFallSpeed;
-			my->z += ARROW_VELZ;
-			my->pitch = std::min(my->pitch + .02, PI / 8);
 		}
 
 		ARROW_OLDX = my->x;
@@ -158,9 +170,43 @@ void actArrow(Entity* my)
 					{
 						damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
 					}
-					damage *= damagetables[hitstats->type][4];
-					//messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
-					//messagePlayer(0, "Resolved to %d damage.", damage);
+
+					bool hitWeaklyOnTarget = false;
+					int nominalDamage = damage;
+					if ( parent )
+					{
+						if ( my->arrowFallSpeed > 0 )
+						{
+							if ( my->z >= 5.5 )
+							{
+								switch ( hitstats->type )
+								{
+									case RAT:
+									case SPIDER:
+									case SCORPION:
+									case SCARAB:
+									case GNOME:
+									case KOBOLD:
+										// small creatures, no penalty for low shot.
+										hitWeaklyOnTarget = false;
+										break;
+									default:
+										hitWeaklyOnTarget = true;
+										break;
+								}
+							}
+						}
+					}
+					if ( hitWeaklyOnTarget )
+					{
+						damage = damage * (std::max(0.1, damagetables[hitstats->type][4] - 0.5));
+					}
+					else
+					{
+						damage *= damagetables[hitstats->type][4];
+					}
+					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
+					messagePlayer(0, "Resolved to %d damage.", damage);*/
 					hit.entity->modHP(-damage);
 
 					// write obituary
@@ -291,7 +337,15 @@ void actArrow(Entity* my)
 							if ( !strcmp(hitstats->name, "") )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[446], MSG_COMBAT);
+								if ( damage <= (nominalDamage * .7) )
+								{
+									// weak shot.
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3733], language[3733], MSG_COMBAT);
+								}
+								else
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[446], MSG_COMBAT);
+								}
 								if ( damage == 0 )
 								{
 									messagePlayer(parent->skill[2], language[447]);
@@ -304,7 +358,15 @@ void actArrow(Entity* my)
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT);
+								if ( damage <= (nominalDamage * .7) )
+								{
+									// weak shot.
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3733], language[3734], MSG_COMBAT);
+								}
+								else
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT);
+								}
 								if ( damage == 0 )
 								{
 									if ( hitstats->sex )

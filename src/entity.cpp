@@ -5840,7 +5840,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 
 			// ranged weapons (bows)
-			else if ( myStats->weapon->type == SHORTBOW || myStats->weapon->type == CROSSBOW || myStats->weapon->type == SLING || myStats->weapon->type == ARTIFACT_BOW )
+			else if ( isRangedWeapon(*myStats->weapon) )
 			{
 				// damage weapon if applicable
 				int bowDegradeChance = 50;
@@ -10945,7 +10945,7 @@ int getWeaponSkill(Item* weapon)
 	{
 		return PRO_AXE;
 	}
-	if ( weapon->type == SLING || weapon->type == SHORTBOW || weapon->type == CROSSBOW || weapon->type == ARTIFACT_BOW )
+	if ( isRangedWeapon(*weapon) )
 	{
 		return PRO_RANGED;
 	}
@@ -11379,19 +11379,7 @@ bool Entity::hasRangedWeapon() const
 		return false;
 	}
 
-	if ( myStats->weapon->type == SLING )
-	{
-		return true;
-	}
-	else if ( myStats->weapon->type == SHORTBOW )
-	{
-		return true;
-	}
-	else if ( myStats->weapon->type == CROSSBOW )
-	{
-		return true;
-	}
-	else if ( myStats->weapon->type == ARTIFACT_BOW )
+	if ( isRangedWeapon(*myStats->weapon) )
 	{
 		return true;
 	}
@@ -12095,7 +12083,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->z = weaponArmLimb->z + 1;
 			weaponLimb->pitch = weaponArmLimb->pitch + .25;
 		}
-		else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index )
+		else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index 
+			|| weaponLimb->sprite == items[LONGBOW].index
+			|| weaponLimb->sprite == items[COMPOUND_BOW].index )
 		{
 			if ( isPlayer && monsterType == HUMAN )
 			{
@@ -12110,6 +12100,17 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->y = weaponArmLimb->y - 1.5 * sin(weaponArmLimb->yaw);
 				weaponLimb->z = weaponArmLimb->z + 2;
 				weaponLimb->pitch = weaponArmLimb->pitch + .25;
+			}
+
+			if ( weaponLimb->sprite == items[LONGBOW].index )
+			{
+				weaponLimb->x -= .5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y -= .5 * sin(weaponArmLimb->yaw);
+			}
+			else if ( weaponLimb->sprite == items[COMPOUND_BOW].index )
+			{
+				weaponLimb->x += .5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y += .5 * sin(weaponArmLimb->yaw);
 			}
 		}
 		else if ( weaponLimb->sprite == items[CROSSBOW].index )
@@ -14620,6 +14621,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 	this->arrowPower = attack;
 	this->arrowSpeed = 7;
 	this->arrowShotByWeapon = 0;
+	this->arrowQuiverType = 0;
 
 	// get arrow effects.
 	if ( myStats.weapon )
@@ -14648,10 +14650,10 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 
 		if ( marksman.behavior == &actPlayer )
 		{
-			if ( myStats.weapon->type == CROSSBOW || myStats.weapon->type == SLING )
+			if ( myStats.weapon->type == CROSSBOW || myStats.weapon->type == SLING || myStats.weapon->type == HEAVY_CROSSBOW )
 			{
 				this->vel_z = -0.2;
-				this->arrowSpeed = 6;
+				this->arrowSpeed = 6 - 0.1 * (rand() % 6);
 				this->pitch = -PI / 32;
 				this->arrowFallSpeed = 0.1;
 				this->arrowBoltDropOffRange = 5; // ticks before projectile starts falling.
@@ -14659,8 +14661,20 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			else
 			{
 				this->vel_z = -0.6;
-				this->pitch = -PI / 32;
 				this->arrowFallSpeed = 0.08;
+				if ( myStats.weapon->type == SHORTBOW || myStats.weapon->type == COMPOUND_BOW || myStats.weapon->type == ARTIFACT_BOW )
+				{
+					this->arrowSpeed = 7 - 0.1 * (rand() % 6);
+					this->vel_z = -0.6;
+					this->arrowFallSpeed = 0.08;
+				}
+				else if ( myStats.weapon->type == LONGBOW )
+				{
+					this->arrowSpeed = 8 - 0.1 * (rand() % 6);
+					this->vel_z = -0.4;
+					this->arrowFallSpeed = 0.04;
+				}
+				this->pitch = -PI / 32;
 				this->arrowBoltDropOffRange = 0;
 			}
 			this->arrowShotByParent = ARROW_SHOT_BY_PLAYER;

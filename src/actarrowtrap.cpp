@@ -103,10 +103,10 @@ void actArrowTrap(Entity* my)
 					entity->flags[PASSABLE] = true;
 
 					// arrow power
-					entity->skill[3] = 17;
+					entity->arrowPower = 17;
 
 					// causes poison for six seconds
-					entity->skill[4] = 360;
+					entity->arrowPoisonTime = 360;
 				}
 			}
 		}

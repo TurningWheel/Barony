@@ -1970,6 +1970,9 @@ void useItem(Item* item, int player, Entity* usedBy)
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case CROSSBOW:
+		case LONGBOW:
+		case COMPOUND_BOW:
+		case HEAVY_CROSSBOW:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case GLOVES:
@@ -2947,7 +2950,15 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == SHORTBOW )
 	{
+		attack += 6;
+	}
+	else if ( type == LONGBOW )
+	{
 		attack += 8;
+	}
+	else if ( type == COMPOUND_BOW )
+	{
+		attack += 10;
 	}
 	else if ( type == STEEL_HALBERD )
 	{
@@ -2967,7 +2978,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == CROSSBOW )
 	{
-		attack += 8;
+		attack += 6;
 	}
 	else if ( type == ARTIFACT_SWORD )
 	{
@@ -3693,6 +3704,9 @@ bool isRangedWeapon(const Item& item)
 		case SHORTBOW:
 		case CROSSBOW:
 		case ARTIFACT_BOW:
+		case LONGBOW:
+		case COMPOUND_BOW:
+		case HEAVY_CROSSBOW:
 			return true;
 		default:
 			return false;

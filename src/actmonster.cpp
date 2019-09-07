@@ -6572,7 +6572,12 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		real_t bow = 1;
 		if ( hasrangedweapon )
 		{
-			if ( myStats->weapon && (myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW) )
+			if ( myStats->weapon 
+				&& (myStats->weapon->type == SLING 
+					|| myStats->weapon->type == SHORTBOW 
+					|| myStats->weapon->type == ARTIFACT_BOW
+					|| myStats->type == LONGBOW
+					|| myStats->type == COMPOUND_BOW) )
 			{
 				bow = 2;
 			}

@@ -428,19 +428,7 @@ void actHudWeapon(Entity* my)
 	bool rangedweapon = false;
 	if ( stats[clientnum]->weapon && !hideWeapon )
 	{
-		if ( stats[clientnum]->weapon->type == SLING )
-		{
-			rangedweapon = true;
-		}
-		else if ( stats[clientnum]->weapon->type == SHORTBOW )
-		{
-			rangedweapon = true;
-		}
-		else if ( stats[clientnum]->weapon->type == CROSSBOW )
-		{
-			rangedweapon = true;
-		}
-		else if ( stats[clientnum]->weapon->type == ARTIFACT_BOW )
+		if ( isRangedWeapon(*stats[clientnum]->weapon) )
 		{
 			rangedweapon = true;
 		}
@@ -628,9 +616,16 @@ void actHudWeapon(Entity* my)
 	bool shakeRangedWeapon = false;
 	if ( rangedweapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
 	{
-		if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == SHORTBOW )
+		if ( stats[clientnum]->weapon )
 		{
-			bowFireRate = bowDrawBaseTicks / 2;
+			if ( stats[clientnum]->weapon->type == COMPOUND_BOW )
+			{
+				bowFireRate = bowDrawBaseTicks * 0.75;
+			}
+			else if ( stats[clientnum]->weapon->type == SLING )
+			{
+				bowFireRate = bowDrawBaseTicks * 0.75;
+			}
 		}
 	}
 	// check bow drawing attack and if defending/not firing cancel the SFX.
@@ -743,7 +738,11 @@ void actHudWeapon(Entity* my)
 					}
 					else if ( rangedweapon )
 					{
-						if ( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW )
+						if ( stats[clientnum]->weapon->type == SLING
+							|| stats[clientnum]->weapon->type == SHORTBOW
+							|| stats[clientnum]->weapon->type == ARTIFACT_BOW
+							|| stats[clientnum]->weapon->type == LONGBOW
+							|| stats[clientnum]->weapon->type == COMPOUND_BOW )
 						{
 							if ( !stats[clientnum]->defending && !throwGimpTimer )
 							{
@@ -982,9 +981,11 @@ void actHudWeapon(Entity* my)
 				if ( stats[clientnum]->weapon || hideWeapon )
 				{
 					if ( !hideWeapon &&
-						(stats[clientnum]->weapon->type == SLING 
-							|| stats[clientnum]->weapon->type == SHORTBOW 
-							|| stats[clientnum]->weapon->type == ARTIFACT_BOW) )
+						(stats[clientnum]->weapon->type == SLING
+							|| stats[clientnum]->weapon->type == SHORTBOW
+							|| stats[clientnum]->weapon->type == ARTIFACT_BOW
+							|| stats[clientnum]->weapon->type == LONGBOW
+							|| stats[clientnum]->weapon->type == COMPOUND_BOW) )
 					{
 						// not drawing bow anymore, reset.
 						bowIsBeingDrawn = false;
@@ -1392,7 +1393,11 @@ void actHudWeapon(Entity* my)
 		{
 			if (stats[clientnum]->weapon && !hideWeapon )
 			{
-				if (stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW)
+				if ( stats[clientnum]->weapon->type == SLING
+					|| stats[clientnum]->weapon->type == SHORTBOW
+					|| stats[clientnum]->weapon->type == ARTIFACT_BOW
+					|| stats[clientnum]->weapon->type == LONGBOW
+					|| stats[clientnum]->weapon->type == COMPOUND_BOW )
 				{
 					if (bowFire)
 					{
@@ -2224,7 +2229,11 @@ void actHudWeapon(Entity* my)
 				my->pitch = HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 				my->roll = HUDWEAPON_ROLL;
 			}
-			else if (item->type == SLING || item->type == SHORTBOW || item->type == ARTIFACT_BOW)
+			else if ( item->type == SLING
+				|| item->type == SHORTBOW
+				|| item->type == ARTIFACT_BOW
+				|| item->type == LONGBOW
+				|| item->type == COMPOUND_BOW )
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
 				my->y = 3 + HUDWEAPON_MOVEY;

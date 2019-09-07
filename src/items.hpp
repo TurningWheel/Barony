@@ -302,9 +302,14 @@ typedef enum ItemType
 	QUIVER_2,
 	QUIVER_3,
 	QUIVER_4,
-	QUIVER_5
+	QUIVER_5,
+	QUIVER_6,
+	QUIVER_7,
+	LONGBOW,
+	COMPOUND_BOW,
+	HEAVY_CROSSBOW
 } ItemType;
-const int NUMITEMS = 280;
+const int NUMITEMS = 285;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
