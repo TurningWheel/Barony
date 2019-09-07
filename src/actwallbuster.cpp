@@ -97,7 +97,19 @@ void actWallBuilder(Entity* my)
 							if ( my->y - 8 < entity->y + entity->sizey )
 							{
 								somebodyinside = true;
-								break;
+								if ( entity->behavior == &actMonster )
+								{
+									if ( !strncmp(map.name, "Sanctum", 7)
+										|| !strncmp(map.name, "Boss", 4) )
+									{
+										// on boss maps let monsters get stuck
+										somebodyinside = false;
+									}
+								}
+								if ( somebodyinside )
+								{
+									break;
+								}
 							}
 						}
 					}
