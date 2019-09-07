@@ -529,14 +529,16 @@ void actThrown(Entity* my)
 				}
 				switch ( item->type )
 				{
-					// thrown weapons do damage if absorbed by armor.
+					// thrown weapons do some base damage if absorbed by armor.
 					case BRONZE_TOMAHAWK:
 					case IRON_DAGGER:
 					case STEEL_CHAKRAM:
 					case CRYSTAL_SHURIKEN:
 					{
-						int skillLVL = parentStats->PROFICIENCIES[PRO_RANGED] / 20;
-						damage += (thrownDamageSkillMultipliers[std::min(skillLVL, 5)] * item->weaponGetAttack(parentStats));
+						if ( damage <= 0 )
+						{
+							damage += item->weaponGetAttack(parentStats);
+						}
 						break;
 					}
 					default:
