@@ -225,7 +225,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
-	{ 1.f, 1.f, 1.f, 1.f, 0.5, 2.0, 0.5 }  // dummybot
+	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }  // dummybot
 };
 
 static std::vector<std::vector<int>> classStatGrowth =
