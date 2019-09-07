@@ -1345,7 +1345,6 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 889 )     // dummybot head
 			{
-				my->flags[BURNABLE] = false;
 				dummyBotAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else
@@ -1508,7 +1507,6 @@ void actMonster(Entity* my)
 					initGyroBot(my, myStats);
 					break;
 				case DUMMYBOT:
-					my->flags[BURNABLE] = false;
 					initDummyBot(my, myStats);
 					break;
 				default:
@@ -3138,33 +3136,33 @@ void actMonster(Entity* my)
 		}*/
 
 		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
-		//	|| myStats->type == CRYSTALGOLEM )
+		//	|| myStats->type == SHOPKEEPER )
 		//{
-			//std::string state_string;
+		//	std::string state_string;
 
-			//switch(my->monsterState)
-			//{
-			//case MONSTER_STATE_WAIT:
-			//	state_string = "WAIT";
-			//	break;
-			//case MONSTER_STATE_ATTACK:
-			//	state_string = "CHARGE";
-			//	break;
-			//case MONSTER_STATE_PATH:
-			//	state_string = "PATH";
-			//	break;
-			//case MONSTER_STATE_HUNT:
-			//	state_string = "HUNT";
-			//	break;
-			//case MONSTER_STATE_TALK:
-			//	state_string = "TALK";
-			//	break;
-			//default:
-			//	state_string = "Unknown state";
-			//	break;
-			//}
+		//	switch(my->monsterState)
+		//	{
+		//	case MONSTER_STATE_WAIT:
+		//		state_string = "WAIT";
+		//		break;
+		//	case MONSTER_STATE_ATTACK:
+		//		state_string = "CHARGE";
+		//		break;
+		//	case MONSTER_STATE_PATH:
+		//		state_string = "PATH";
+		//		break;
+		//	case MONSTER_STATE_HUNT:
+		//		state_string = "HUNT";
+		//		break;
+		//	case MONSTER_STATE_TALK:
+		//		state_string = "TALK";
+		//		break;
+		//	default:
+		//		state_string = "Unknown state";
+		//		break;
+		//	}
 
-			//messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
+		//	messagePlayer(0, "My state is %s, hittime:%d", state_string.c_str(), my->monsterHitTime); //Debug message.
 		//}
 
 		//Begin state machine
@@ -3363,6 +3361,17 @@ void actMonster(Entity* my)
 					{
 						if (players[c] && players[c]->entity)
 						{
+							list_t* playerPath = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), 
+								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity);
+							if ( playerPath == NULL )
+							{
+								continue;
+							}
+							else
+							{
+								list_FreeAll(playerPath);
+								free(playerPath);
+							}
 							if (!distToPlayer)
 							{
 								distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
@@ -3382,12 +3391,12 @@ void actMonster(Entity* my)
 					if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
 					{
 						my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+						if ( previousMonsterState != my->monsterState )
+						{
+							serverUpdateEntitySkill(my, 0);
+						}
+						return;
 					}
-					if ( previousMonsterState != my->monsterState )
-					{
-						serverUpdateEntitySkill(my, 0);
-					}
-					return;
 				}
 				else if ( myStats->type == SHADOW && my->monsterTarget && my->monsterState != MONSTER_STATE_ATTACK )
 				{
@@ -3812,7 +3821,14 @@ void actMonster(Entity* my)
 							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
 							if ( !levitating )
 							{
-								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+								if ( hasrangedweapon )
+								{
+									dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+								}
+								else
+								{
+									dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+								}
 							}
 							else
 							{
@@ -4519,6 +4535,38 @@ timeToGoAgain:
 											{
 												Entity& attackTarget = *hit.entity;
 												// charge state
+												if ( my->monsterTarget == entity->getUID() )
+												{
+													// this is when a monster is chasing it's known target.
+													// let's to be ready to strike.
+													// otherwise, we bumped into a new unexpected target, don't modify hitTime
+													if ( hasrangedweapon )
+													{
+														// 120 ms reaction time
+														if ( my->monsterHitTime < HITRATE )
+														{
+															if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+															{
+																my->monsterHitTime = std::max(HITRATE, my->monsterHitTime);
+															}
+															else
+															{
+																my->monsterHitTime = std::max(HITRATE - 6, my->monsterHitTime);
+															}
+														}
+														else
+														{
+															// bows have 2x hitrate time compared to standard weapons.
+															my->monsterHitTime = std::max(2 * HITRATE - 6, my->monsterHitTime);
+														}
+													}
+													else
+													{
+														// melee 240ms
+														my->monsterHitTime = std::max(HITRATE - 12, my->monsterHitTime);
+													}
+												}
+												//messagePlayer(0, "hunt -> attack, %d", my->monsterHitTime);
 												my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 
 												if ( MONSTER_SOUND == NULL )
@@ -4594,6 +4642,17 @@ timeToGoAgain:
 					{
 						if (players[c] && players[c]->entity)
 						{
+							list_t* playerPath = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16),
+								(int)floor(players[c]->entity->x / 16), (int)floor(players[c]->entity->y / 16), my, players[c]->entity);
+							if ( playerPath == NULL )
+							{
+								continue;
+							}
+							else
+							{
+								list_FreeAll(playerPath);
+								free(playerPath);
+							}
 							if (!distToPlayer)
 							{
 								distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
@@ -4617,13 +4676,12 @@ timeToGoAgain:
 						{
 							my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
 						}
+						if ( previousMonsterState != my->monsterState )
+						{
+							serverUpdateEntitySkill(my, 0);
+						}
+						return;
 					}
-
-					if ( previousMonsterState != my->monsterState )
-					{
-						serverUpdateEntitySkill(my, 0);
-					}
-					return;
 				}
 			}
 			else if ( myStats->type == SHADOW && my->monsterTarget && (ticks % 180 == 0) )
@@ -4930,6 +4988,36 @@ timeToGoAgain:
 									{
 										//TODO: Refactor with setMonsterStateAttack().
 										my->monsterState = MONSTER_STATE_ATTACK; // charge state
+
+										// this is when a monster is bumps into it's known target.
+										// let's to be ready to strike.
+										// otherwise, we bumped into a new unexpected target, don't modify hitTime
+										if ( hasrangedweapon )
+										{
+											// 120 ms reaction time
+											if ( my->monsterHitTime < HITRATE )
+											{
+												if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+												{
+													my->monsterHitTime = std::max(HITRATE, my->monsterHitTime);
+												}
+												else
+												{
+													my->monsterHitTime = std::max(HITRATE - 6, my->monsterHitTime);
+												}
+											}
+											else
+											{
+												// bows have 2x hitrate time compared to standard weapons.
+												my->monsterHitTime = std::max(2 * HITRATE - 6, my->monsterHitTime);
+											}
+										}
+										else
+										{
+											// melee 240ms
+											my->monsterHitTime = std::max(HITRATE - 12, my->monsterHitTime);
+										}
+										//messagePlayer(0, "bump1 -> attack, %d", my->monsterHitTime);
 									}
 									else if ( yourStats )
 									{
@@ -4962,6 +5050,38 @@ timeToGoAgain:
 									{
 										// charge state
 										Entity& attackTarget = *hit.entity;
+										if ( my->monsterTarget == hit.entity->getUID() )
+										{
+											// this is when a monster is bumps into it's known target.
+											// let's to be ready to strike.
+											// otherwise, we bumped into a new unexpected target, don't modify hitTime
+											if ( hasrangedweapon )
+											{
+												// 120 ms reaction time
+												if ( my->monsterHitTime < HITRATE )
+												{
+													if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+													{
+														my->monsterHitTime = std::max(HITRATE, my->monsterHitTime);
+													}
+													else
+													{
+														my->monsterHitTime = std::max(HITRATE - 6, my->monsterHitTime);
+													}
+												}
+												else
+												{
+													// bows have 2x hitrate time compared to standard weapons.
+													my->monsterHitTime = std::max(2 * HITRATE - 6, my->monsterHitTime);
+												}
+											}
+											else
+											{
+												// melee 240ms
+												my->monsterHitTime = std::max(HITRATE - 12, my->monsterHitTime);
+											}
+										}
+										//messagePlayer(0, "bump2 -> attack, %d", my->monsterHitTime);
 										my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 									}
 									else

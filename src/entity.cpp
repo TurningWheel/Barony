@@ -6776,13 +6776,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( hitstats->type == DUMMYBOT )
 					{
 						// higher level dummy bots have damage cap limits on hit.
-						if ( hitstats->LVL >= 10 )
+						if ( myStats->type != MINOTAUR && myStats->type != LICH_FIRE )
 						{
-							damage = std::min(damage, 15);
-						}
-						else if ( hitstats->LVL >= 5 )
-						{
-							damage = std::min(damage, 25);
+							if ( hitstats->LVL >= 10 )
+							{
+								damage = std::min(damage, 15);
+							}
+							else if ( hitstats->LVL >= 5 )
+							{
+								damage = std::min(damage, 30);
+							}
 						}
 					}
 
@@ -12792,7 +12795,14 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 			{
 				if ( hasRangedWeapon() )
 				{
-					monsterHitTime = 2 * HITRATE - 2;
+					if ( myStats->weapon && itemCategory(myStats->weapon) == MAGICSTAFF )
+					{
+						monsterHitTime = HITRATE - 6; // 120 ms reaction time
+					}
+					else
+					{
+						monsterHitTime = 2 * HITRATE - 2;
+					}
 				}
 				else if ( svFlags & SV_FLAG_HARDCORE )
 				{
@@ -13864,11 +13874,11 @@ void Entity::removeLightField()
 bool Entity::shouldRetreat(Stat& myStats)
 {
 	// monsters that retreat based on CHR
-	// gnomes, spiders, goblins, shopkeeps, trolls, humans (50%)
+	// gnomes, spiders, goblins, trolls, humans (50%)
 	// kobolds, scarabs, suc/incubi, insectoids, goatmen, rats
 
 	// excluded golems, shadows, cockatrice, skeletons, demons, imps
-	// scorpions, slimes, ghouls, vampires
+	// scorpions, slimes, ghouls, vampires, shopkeeps
 
 	// retreating monsters will not try path when losing sight of target
 
@@ -13885,6 +13895,10 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 	else if ( myStats.type == SHADOW )
+	{
+		return false;
+	}
+	else if ( myStats.type == SHOPKEEPER )
 	{
 		return false;
 	}
