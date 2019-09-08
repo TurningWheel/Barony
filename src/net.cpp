@@ -1396,6 +1396,11 @@ void clientActions(Entity* entity)
 					entity->behavior = &actBomb;
 					break;
 				default:
+					if ( c < -1000 && c > -2000 )
+					{
+						entity->arrowShotByWeapon = -(c + 1000);
+						entity->behavior = &actArrow;
+					}
 					break;
 			}
 		}

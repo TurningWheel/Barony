@@ -1733,11 +1733,15 @@ void gameLogic(void)
 										{
 											entity->x += (entity->new_x - entity->x) / 4;
 											entity->y += (entity->new_y - entity->y) / 4;
-											entity->z += (entity->new_z - entity->z) / 4;
+											if ( entity->behavior != &actArrow )
+											{
+												// client handles z in actArrow.
+												entity->z += (entity->new_z - entity->z) / 4;
+											}
 										}
 									}
 									// dead reckoning
-									if ( fabs(entity->vel_x) > 0 || fabs(entity->vel_y) > 0 )
+									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
 										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
@@ -1747,8 +1751,8 @@ void gameLogic(void)
 											onewx = entity->new_x;
 											onewy = entity->new_y;
 										}
-										clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
-										clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
+										real_t dist = clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
+										real_t new_dist = clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
 										if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 										{
 											for (Entity *bodypart : entity->bodyparts)
@@ -1760,8 +1764,12 @@ void gameLogic(void)
 											}
 										}
 									}
-									entity->z += entity->vel_z;
-									entity->new_z += entity->vel_z;
+									if ( entity->behavior != &actArrow )
+									{
+										// client handles z in actArrow.
+										entity->z += entity->vel_z;
+										entity->new_z += entity->vel_z;
+									}
 
 									// rotate to new angles
 									double dir = entity->new_yaw - entity->yaw;
@@ -1782,23 +1790,27 @@ void gameLogic(void)
 									{
 										entity->yaw -= 2 * PI;
 									}
-									dir = entity->new_pitch - entity->pitch;
-									while ( dir >= PI )
+									if ( entity->behavior != &actArrow )
 									{
-										dir -= PI * 2;
-									}
-									while ( dir < -PI )
-									{
-										dir += PI * 2;
-									}
-									entity->pitch += dir / 3;
-									while ( entity->pitch < 0 )
-									{
-										entity->pitch += 2 * PI;
-									}
-									while ( entity->pitch >= 2 * PI )
-									{
-										entity->pitch -= 2 * PI;
+										// client handles pitch in actArrow.
+										dir = entity->new_pitch - entity->pitch;
+										while ( dir >= PI )
+										{
+											dir -= PI * 2;
+										}
+										while ( dir < -PI )
+										{
+											dir += PI * 2;
+										}
+										entity->pitch += dir / 3;
+										while ( entity->pitch < 0 )
+										{
+											entity->pitch += 2 * PI;
+										}
+										while ( entity->pitch >= 2 * PI )
+										{
+											entity->pitch -= 2 * PI;
+										}
 									}
 									dir = entity->new_roll - entity->roll;
 									while ( dir >= PI )
@@ -3222,7 +3234,7 @@ int main(int argc, char** argv)
 						std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
 						for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 						{
-							printlog("Sequence: %d", *it);
+							//printlog("Sequence: %d", *it);
 						}
 
 						// kick off the main loop!

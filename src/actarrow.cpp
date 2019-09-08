@@ -37,6 +37,7 @@
 #define ARROW_OLDX my->fskill[2]
 #define ARROW_OLDY my->fskill[3]
 #define ARROW_MAXLIFE 600
+#define ARROW_INIT my->skill[10]
 
 void actArrow(Entity* my)
 {
@@ -46,16 +47,7 @@ void actArrow(Entity* my)
 	node_t* node;
 	double tangent;
 
-	my->skill[2] = -7; // invokes actEmpty() on clients
 
-	if ( my->arrowPower == 0 )
-	{
-		my->arrowPower = 10 + (my->sprite == 167);
-	}
-	if ( my->arrowShotByParent == 0 ) // shot by trap
-	{
-		my->arrowSpeed = 7;
-	}
 	// lifespan
 	ARROW_LIFE++;
 	if ( ARROW_LIFE >= ARROW_MAXLIFE )
@@ -71,12 +63,41 @@ void actArrow(Entity* my)
 		return;
 	}
 
+	if ( multiplayer != CLIENT )
+	{
+		my->skill[2] = -(1000 + my->arrowShotByWeapon); // invokes actArrow for clients.
+		my->flags[INVISIBLE] = false;
+	}
+
+	if ( !ARROW_INIT )
+	{
+		if ( multiplayer == CLIENT )
+		{
+			if ( my->setArrowProjectileProperties(my->arrowShotByWeapon) )
+			{
+				ARROW_INIT = 1;
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			if ( my->arrowPower == 0 )
+			{
+				my->arrowPower = 10 + (my->sprite == 167);
+			}
+			if ( my->arrowShotByParent == 0 ) // shot by trap
+			{
+				my->arrowSpeed = 7;
+			}
+			ARROW_INIT = 1;
+		}
+	}
+
 	if ( !ARROW_STUCK )
 	{
-		// horizontal motion
-		ARROW_VELX = cos(my->yaw) * my->arrowSpeed;
-		ARROW_VELY = sin(my->yaw) * my->arrowSpeed;
-
 		if ( my->arrowFallSpeed > 0 )
 		{
 			real_t pitchChange = 0.02;
@@ -101,9 +122,15 @@ void actArrow(Entity* my)
 			}
 		}
 
-		ARROW_OLDX = my->x;
-		ARROW_OLDY = my->y;
-		dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+		if ( multiplayer != CLIENT )
+		{
+			// horizontal motion
+			ARROW_VELX = cos(my->yaw) * my->arrowSpeed;
+			ARROW_VELY = sin(my->yaw) * my->arrowSpeed;
+			ARROW_OLDX = my->x;
+			ARROW_OLDY = my->y;
+			dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+		}
 
 		bool arrowInGround = false;
 		int index = (int)(my->y / 16) * MAPLAYERS + (int)(my->x / 16) * MAPLAYERS * map.height;
@@ -122,12 +149,23 @@ void actArrow(Entity* my)
 			}
 		}
 
+		if ( multiplayer == CLIENT )
+		{
+			if ( arrowInGround )
+			{
+				ARROW_STUCK = 1;
+			}
+			return;
+		}
+
 		// damage monsters
 		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
 		{
 			ARROW_STUCK = 1;
+			serverUpdateEntitySkill(my, 0);
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
+
 			Entity* oentity = hit.entity;
 			lineTrace(my, my->x, my->y, my->yaw, sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY), 0, false);
 			hit.entity = oentity;

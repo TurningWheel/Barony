@@ -2472,7 +2472,7 @@ int loadGame(int player, int saveIndex)
 	std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
 	for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 	{
-		printlog("Sequence: %d", *it);
+		//printlog("Sequence: %d", *it);
 	}
 
 	fclose(fp);

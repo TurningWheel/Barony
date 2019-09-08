@@ -8022,7 +8022,7 @@ void handleMainMenu(bool mode)
 			std::shuffle(enchantedFeatherScrollsShuffled.begin(), enchantedFeatherScrollsShuffled.end(), enchantedFeatherScrollSeed);
 			for ( auto it = enchantedFeatherScrollsShuffled.begin(); it != enchantedFeatherScrollsShuffled.end(); ++it )
 			{
-				printlog("Sequence: %d", *it);
+				//printlog("Sequence: %d", *it);
 			}
 
 			list_FreeAll(&removedEntities);

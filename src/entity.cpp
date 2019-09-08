@@ -8204,7 +8204,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						// conjuration deals damage back to attacker.
 						Entity* illusionParent = uidToEntity(hit.entity->parent);
-						this->modHP(-(std::max(1, damage / 2)) );
+						this->modHP(-(std::max(2, damage / 2)) );
 						if ( illusionParent )
 						{
 							if ( myStats->HP <= 0 )
@@ -14668,37 +14668,12 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 
 		if ( marksman.behavior == &actPlayer )
 		{
-			if ( myStats.weapon->type == CROSSBOW || myStats.weapon->type == SLING || myStats.weapon->type == HEAVY_CROSSBOW )
-			{
-				this->vel_z = -0.2;
-				this->arrowSpeed = 6 - 0.1 * (rand() % 6);
-				this->pitch = -PI / 32;
-				this->arrowFallSpeed = 0.1;
-				this->arrowBoltDropOffRange = 5; // ticks before projectile starts falling.
-			}
-			else
-			{
-				this->vel_z = -0.6;
-				this->arrowFallSpeed = 0.08;
-				if ( myStats.weapon->type == SHORTBOW || myStats.weapon->type == COMPOUND_BOW || myStats.weapon->type == ARTIFACT_BOW )
-				{
-					this->arrowSpeed = 7 - 0.1 * (rand() % 6);
-					this->vel_z = -0.6;
-					this->arrowFallSpeed = 0.08;
-				}
-				else if ( myStats.weapon->type == LONGBOW )
-				{
-					this->arrowSpeed = 8 - 0.1 * (rand() % 6);
-					this->vel_z = -0.4;
-					this->arrowFallSpeed = 0.04;
-				}
-				this->pitch = -PI / 32;
-				this->arrowBoltDropOffRange = 0;
-			}
+			this->setArrowProjectileProperties(this->arrowShotByWeapon);
 			this->arrowShotByParent = ARROW_SHOT_BY_PLAYER;
 		}
 		else if ( marksman.behavior == &actMonster )
 		{
+			this->arrowSpeed = 7;
 			if ( myStats.type == SENTRYBOT )
 			{
 				this->arrowShotByParent = ARROW_SHOT_BY_TRAP;
@@ -14709,6 +14684,71 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			}
 		}
 	}
+}
+
+bool Entity::setArrowProjectileProperties(int weaponType)
+{
+	if ( weaponType == WOODEN_SHIELD )
+	{
+		return false;
+	}
+
+	if ( weaponType == CROSSBOW || weaponType == SLING || weaponType == HEAVY_CROSSBOW )
+	{
+		this->vel_z = -0.2;
+		if ( multiplayer == CLIENT )
+		{
+			this->arrowSpeed = 6;
+		}
+		else
+		{
+			this->arrowSpeed = 6;
+		}
+		this->pitch = -PI / 32;
+		this->arrowFallSpeed = 0.1;
+		this->arrowBoltDropOffRange = 5; // ticks before projectile starts falling.
+
+		this->vel_x = cos(this->yaw) * this->arrowSpeed;
+		this->vel_y = sin(this->yaw) * this->arrowSpeed;
+		return true;
+	}
+	else
+	{
+		this->vel_z = -0.6;
+		this->arrowFallSpeed = 0.08;
+		if ( weaponType == SHORTBOW || weaponType == COMPOUND_BOW || weaponType == ARTIFACT_BOW )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				this->arrowSpeed = 7;
+			}
+			else
+			{
+				this->arrowSpeed = 7;
+			}
+			this->vel_z = -0.6;
+			this->arrowFallSpeed = 0.08;
+		}
+		else if ( weaponType == LONGBOW )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				this->arrowSpeed = 8;
+			}
+			else
+			{
+				this->arrowSpeed = 8;
+			}
+			this->vel_z = -0.4;
+			this->arrowFallSpeed = 0.04;
+		}
+		this->pitch = -PI / 32;
+		this->arrowBoltDropOffRange = 0;
+		this->vel_x = cos(this->yaw) * this->arrowSpeed;
+		this->vel_y = sin(this->yaw) * this->arrowSpeed;
+		return true;
+	}
+	return false;
 }
 
 /* SetEntityOnFire
