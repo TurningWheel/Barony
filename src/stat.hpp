@@ -214,6 +214,7 @@ public:
 	Sint32& monsterIsCharmed; // MISC_FLAGS[12]
 	Sint32& playerShapeshiftStorage; // MISC_FLAGS[13]
 	Sint32& monsterTinkeringStatus; // MISC_FLAGS[14]
+	Sint32& monsterDemonHasBeenExorcised; // MISC_FLAGS[15]
 
 	// group think
 	Uint32 leader_uid;

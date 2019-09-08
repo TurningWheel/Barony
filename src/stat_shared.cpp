@@ -32,7 +32,8 @@ Stat::Stat(Sint32 sprite) :
 	playerSummon2PERCHR(MISC_FLAGS[11]),
 	monsterIsCharmed(MISC_FLAGS[12]),
 	playerShapeshiftStorage(MISC_FLAGS[13]),
-	monsterTinkeringStatus(MISC_FLAGS[14])
+	monsterTinkeringStatus(MISC_FLAGS[14]),
+	monsterDemonHasBeenExorcised(MISC_FLAGS[15])
 {
 	this->type = NOTHING;
 	strcpy(this->name, "");

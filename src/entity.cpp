@@ -5038,6 +5038,10 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 			CHR += (cursedItemIsBuff ? abs(entitystats->ring->beatitude) : entitystats->ring->beatitude);
 		}
 	}
+	if ( entitystats->monsterDemonHasBeenExorcised >= 3 )
+	{
+		CHR += 5;
+	}
 	if ( my && entitystats->EFFECTS[EFF_DRUNK] && my->behavior == &actPlayer && entitystats->type == GOATMAN )
 	{
 		CHR += 4;
@@ -8195,14 +8199,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
 
-					if ( damage > 0 && hitstats->type == INCUBUS 
+					if ( hitstats->type == INCUBUS 
 						&& !strncmp(hitstats->name, "inner demon", strlen("inner demon")) )
 					{
 						// conjuration deals damage back to attacker.
 						Entity* illusionParent = uidToEntity(hit.entity->parent);
+						this->modHP(-(std::max(1, damage / 2)) );
 						if ( illusionParent )
 						{
-							this->modHP(-damage / 2);
 							if ( myStats->HP <= 0 )
 							{
 								illusionParent->awardXP(this, true, true);

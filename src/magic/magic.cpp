@@ -2533,7 +2533,8 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				return false;
 			}
 
-			if ( hitstats->type == INCUBUS || hitstats->type == AUTOMATON
+			if ( hitstats->type == INCUBUS || hitstats->type == SUCCUBUS 
+				|| hitstats->type == AUTOMATON || hitstats->type == DEMON || hitstats->type == CREATURE_IMP
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
 				if ( parent->behavior == &actPlayer )
@@ -2541,6 +2542,17 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					// unable to taunt!
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3472], language[3473], MSG_COMBAT);
+				}
+				return false;
+			}
+			else if ( hitstats->monsterDemonHasBeenExorcised != 0 
+				&& target->behavior != &actPlayer )
+			{
+				if ( parent->behavior == &actPlayer )
+				{
+					// already exorcised!
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3735], language[3736], MSG_COMBAT);
 				}
 				return false;
 			}
@@ -2650,7 +2662,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 							messagePlayerColor(parent->skill[2], color, language[621]);
 						}
-						parent->modHP(-(parentStats->MAXHP / 10));
+						parent->modHP(-(parentStats->MAXHP / 20));
 						if ( parentStats->sex == MALE )
 						{
 							parent->setObituary(language[1528]);
@@ -2660,6 +2672,8 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							parent->setObituary(language[1529]);
 						}
 					}
+
+					hitstats->monsterDemonHasBeenExorcised++;
 
 					// hit messages
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
@@ -2678,6 +2692,11 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 				if ( player >= 0 )
 				{
 					messagePlayerColor(player, color, language[3468]);
+					if ( hitstats->monsterDemonHasBeenExorcised == 3 )
+					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						messagePlayerColor(player, color, language[3468]);
+					}
 				}
 			}
 			spawnMagicEffectParticles(target->x, target->y, target->z, my.sprite);
