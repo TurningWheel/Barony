@@ -1377,7 +1377,11 @@ void actHudWeapon(Entity* my)
 					}
 					else
 					{
-						if ( pickaxeGimpTimer <= 0 )
+						if ( itemCategory(item) == THROWN )
+						{
+							HUDWEAPON_CHOP = 0;
+						}
+						else if ( pickaxeGimpTimer <= 0 )
 						{
 							HUDWEAPON_CHOP = 1; // allow another swing of pickaxe
 						}
