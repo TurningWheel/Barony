@@ -12471,7 +12471,7 @@ void buttonRandomCharacter(button_t* my)
 			client_classes[0] = rand() % (CLASS_MONK + 2);
 			if ( client_classes[0] > CLASS_MONK )
 			{
-				client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+				client_classes[0] = CLASS_MONK + stats[0]->playerRace; // monster specific classes.
 			}
 			stats[0]->appearance = 0;
 		}
