@@ -12417,8 +12417,71 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
 	client_classes[0] = rand() % (CLASS_MONK + 1);//NUMCLASSES;
 	stats[0]->clearStats();
+	if ( enabledDLCPack1 || enabledDLCPack2 )
+	{
+		stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+		if ( !enabledDLCPack1 )
+		{
+			while ( stats[0]->playerRace == RACE_SKELETON || stats[0]->playerRace == RACE_VAMPIRE
+				|| stats[0]->playerRace == RACE_SUCCUBUS || stats[0]->playerRace == RACE_GOATMAN )
+			{
+				stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+			}
+		}
+		else if ( !enabledDLCPack2 )
+		{
+			while ( stats[0]->playerRace == RACE_AUTOMATON || stats[0]->playerRace == RACE_GOBLIN
+				|| stats[0]->playerRace == RACE_INCUBUS || stats[0]->playerRace == RACE_INSECTOID )
+			{
+				stats[0]->playerRace = rand() % NUMPLAYABLERACES;
+			}
+		}
+		if ( stats[0]->playerRace == RACE_INCUBUS )
+		{
+			stats[0]->sex = MALE;
+		}
+		else if ( stats[0]->playerRace == RACE_SUCCUBUS )
+		{
+			stats[0]->sex = FEMALE;
+		}
+
+		if ( stats[0]->playerRace == RACE_HUMAN )
+		{
+			client_classes[0] = rand() % (NUMCLASSES);
+			if ( !enabledDLCPack1 )
+			{
+				while ( client_classes[0] == CLASS_CONJURER || client_classes[0] == CLASS_ACCURSED
+					|| client_classes[0] == CLASS_MESMER || client_classes[0] == CLASS_BREWER )
+				{
+					client_classes[0] = rand() % (NUMCLASSES);
+				}
+			}
+			else if ( !enabledDLCPack2 )
+			{
+				while ( client_classes[0] == CLASS_HUNTER || client_classes[0] == CLASS_SHAMAN
+					|| client_classes[0] == CLASS_PUNISHER || client_classes[0] == CLASS_MACHINIST )
+				{
+					client_classes[0] = rand() % (NUMCLASSES);
+				}
+			}
+			stats[0]->appearance = rand() % NUMAPPEARANCES;
+		}
+		else
+		{
+			client_classes[0] = rand() % (CLASS_MONK + 2);
+			if ( client_classes[0] > CLASS_MONK )
+			{
+				client_classes[0] = CLASS_MONK + stats[0]->playerRace;
+			}
+			stats[0]->appearance = 0;
+		}
+	}
+	else
+	{
+		stats[0]->playerRace = RACE_HUMAN;
+		stats[0]->appearance = rand() % NUMAPPEARANCES;
+	}
 	initClass(0);
-	stats[0]->appearance = rand() % NUMAPPEARANCES;
 }
 
 void buttonReplayLastCharacter(button_t* my)
