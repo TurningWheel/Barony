@@ -7968,7 +7968,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
 						}
-						else if ( whip && (hitstats->EFFECTS[EFF_DISORIENTED] || !hit.entity->isMobile()) )
+						else if ( whip && (hitstats->EFFECTS[EFF_DISORIENTED] 
+							|| !hit.entity->isMobile()
+							|| (hitstats->EFFECTS[EFF_DRUNK] && rand() % 3 == 0)
+							|| (hitstats->EFFECTS[EFF_CONFUSED] && rand() % 3 == 0))
+							)
 						{
 							if ( hit.entity->behavior == &actMonster && !hit.entity->isBossMonster() )
 							{
@@ -14091,7 +14095,7 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 	//{
 	//	messagePlayer(0, "%2d, ", *i);
 	//}
-	if ( playerClass == CLASS_SHAMAN && stats[skill[2]] )
+	if ( behavior == &actPlayer && playerClass == CLASS_SHAMAN && stats[skill[2]] )
 	{
 		if ( stats[skill[2]]->type == RAT )
 		{

@@ -250,7 +250,7 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	3,	3,	1,	6,	4,	7 }, // MESMER 15
 	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
 	{	2,	5,	2,	4,	7,	4 }, // MACHINIST 17
-	{	4,	4,	4,	4,	4,	4 }, // RESERVED 18
+	{	4,	3,	2,	3,	4,	4 }, // RESERVED 18
 	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
 	{	4,	4,	4,	4,	4,	4 }  // RESERVED 20
 };
