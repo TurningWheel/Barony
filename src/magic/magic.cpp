@@ -2534,10 +2534,11 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 			}
 
 			if ( hitstats->type == INCUBUS || hitstats->type == SUCCUBUS 
-				|| hitstats->type == AUTOMATON || hitstats->type == DEMON || hitstats->type == CREATURE_IMP
+				|| hitstats->type == AUTOMATON || hitstats->type == DEVIL || hitstats->type == DEMON || hitstats->type == CREATURE_IMP
+				|| hitstats->type == SHADOW
 				|| (hitstats->type == INCUBUS && !strncmp(hitstats->name, "inner demon", strlen("inner demon"))) )
 			{
-				if ( parent->behavior == &actPlayer )
+				if ( parent && parent->behavior == &actPlayer )
 				{
 					// unable to taunt!
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
@@ -2548,7 +2549,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 			else if ( hitstats->monsterDemonHasBeenExorcised != 0 
 				&& target->behavior != &actPlayer )
 			{
-				if ( parent->behavior == &actPlayer )
+				if ( parent && parent->behavior == &actPlayer )
 				{
 					// already exorcised!
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
@@ -2618,7 +2619,6 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					switch ( target->getRace() )
 					{
 						case LICH:
-						case DEVIL:
 						case LICH_FIRE:
 						case LICH_ICE:
 						case MINOTAUR:
@@ -2662,7 +2662,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 							messagePlayerColor(parent->skill[2], color, language[621]);
 						}
-						parent->modHP(-(parentStats->MAXHP / 20));
+						parent->modHP(-(parentStats->MAXHP / 10));
 						if ( parentStats->sex == MALE )
 						{
 							parent->setObituary(language[1528]);
