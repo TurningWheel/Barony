@@ -614,22 +614,29 @@ void actHudWeapon(Entity* my)
 
 	Uint32 bowFireRate = bowDrawBaseTicks;
 	bool shakeRangedWeapon = false;
-	if ( rangedweapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
+	bool cancelRangedAttack = false;
+	if ( rangedweapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW && !hideWeapon )
 	{
-		if ( stats[clientnum]->weapon )
+		if ( stats[clientnum]->weapon->type == COMPOUND_BOW )
 		{
-			if ( stats[clientnum]->weapon->type == COMPOUND_BOW )
-			{
-				bowFireRate = bowDrawBaseTicks * 0.75;
-			}
-			else if ( stats[clientnum]->weapon->type == SLING )
-			{
-				bowFireRate = bowDrawBaseTicks * 0.75;
-			}
+			bowFireRate = bowDrawBaseTicks * 0.75;
+		}
+		else if ( stats[clientnum]->weapon->type == SLING )
+		{
+			bowFireRate = bowDrawBaseTicks * 0.75;
+		}
+
+		if ( swingweapon && HUDWEAPON_CHOP != 0 )
+		{
+			swingweapon = false;
+			HUDWEAPON_CHARGE = 0;
+			HUDWEAPON_OVERCHARGE = 0;
+			HUDWEAPON_CHOP = 0;
+			bowIsBeingDrawn = false;
 		}
 	}
 	// check bow drawing attack and if defending/not firing cancel the SFX.
-	if ( bowIsBeingDrawn && !stats[clientnum]->defending )
+	if ( rangedweapon && bowIsBeingDrawn && !stats[clientnum]->defending && !hideWeapon )
 	{
 		if ( (my->ticks - bowStartDrawingTick) < bowFireRate )
 		{
@@ -678,6 +685,8 @@ void actHudWeapon(Entity* my)
 
 	bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
 	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
+
+	messagePlayer(clientnum, "chop: %d", HUDWEAPON_CHOP);
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
