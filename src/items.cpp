@@ -2358,6 +2358,12 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_CRYSTALSHARD:
 		case TOOL_TINKERING_KIT:
 		case QUIVER_SHARP:
+		case QUIVER_PIERCE:
+		case QUIVER_LIGHTWEIGHT:
+		case QUIVER_FIRE:
+		case QUIVER_HEAVY:
+		case QUIVER_6:
+		case QUIVER_7:
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
@@ -4150,13 +4156,72 @@ char* Item::getScrollLabel() const
 	return scroll_label[chosenLabel];
 }
 
-bool itemSpriteIsQuiverModel(int sprite)
+bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 {
-	if ( sprite == items[QUIVER_SHARP].index
-		|| sprite == items[QUIVER_SHARP].index + 1
-		|| sprite == items[QUIVER_SHARP].index + 2 )
+	for ( int i = QUIVER_SHARP; i <= QUIVER_7; ++i )
 	{
-		return true;
+		if ( sprite == items[i].index
+			|| sprite == items[i].index + 1
+			|| sprite == items[i].index + 2 )
+		{
+			return true;
+		}
 	}
 	return false;
+}
+
+bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
+{
+	for ( int i = QUIVER_SHARP; i <= QUIVER_7; ++i )
+	{
+		if ( sprite == items[i].index )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool itemTypeIsQuiver(ItemType type)
+{
+	return (type >= QUIVER_SHARP && type <= QUIVER_7);
+}
+
+real_t rangedAttackGetSpeedModifier(Stat* myStats)
+{
+	if ( !myStats || !myStats->weapon )
+	{
+		return 1.0;
+	}
+
+	real_t bowModifier = 1.00;
+	real_t arrowModifier = 0.0;
+	if ( myStats->shield )
+	{
+		if ( myStats->shield->type == QUIVER_LIGHTWEIGHT )
+		{
+			arrowModifier = -.25;
+		}
+		else if ( myStats->shield->type == QUIVER_HEAVY )
+		{
+			arrowModifier = +.25;
+		}
+	}
+
+	if ( myStats->weapon->type == COMPOUND_BOW )
+	{
+		bowModifier = 0.75;
+		arrowModifier /= 2;
+	}
+	else if ( myStats->weapon->type == SLING )
+	{
+		bowModifier = 0.75;
+		arrowModifier = 0.0; // no impact on slings.
+	}
+	else
+	{
+		bowModifier = 1.00;
+	}
+
+	return std::max(0.25, bowModifier + arrowModifier);
 }

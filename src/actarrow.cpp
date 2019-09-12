@@ -471,6 +471,38 @@ void actArrow(Entity* my)
 						}
 					}
 
+					if ( my->arrowQuiverType == QUIVER_HEAVY
+						&& hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+					{
+						real_t pushbackMultiplier = 1;
+						if ( !hit.entity->isMobile() )
+						{
+							pushbackMultiplier += 0.3;
+						}
+						if ( parent )
+						{
+							real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
+							hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+							hit.entity->monsterKnockbackVelocity = 0.05;
+							hit.entity->monsterKnockbackUID = my->parent;
+							hit.entity->lookAtEntity(*parent);
+						}
+						else
+						{
+							real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
+							hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+							hit.entity->monsterKnockbackVelocity = 0.05;
+							hit.entity->lookAtEntity(*my);
+						}
+
+						if ( hit.entity->monsterAttack == 0 )
+						{
+							hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+						}
+					}
+
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{

@@ -4905,9 +4905,35 @@ timeToGoAgain:
 							{
 								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 							}
-							MONSTER_VELX = cos(tangent) * .045 * (myDex + 10) * weightratio;
-							MONSTER_VELY = sin(tangent) * .045 * (myDex + 10) * weightratio;
+							real_t maxVelX = cos(tangent) * .045 * (myDex + 10) * weightratio;
+							real_t maxVelY = sin(tangent) * .045 * (myDex + 10) * weightratio;
+							if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+							{
+								if ( maxVelX > 0 )
+								{
+									MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
+								}
+								else
+								{
+									MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
+								}
+								if ( maxVelY > 0 )
+								{
+									MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
+								}
+								else
+								{
+									MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
+								}
+								my->monsterKnockbackVelocity *= 1.1;
+							}
+							else
+							{
+								MONSTER_VELX = maxVelX;
+								MONSTER_VELY = maxVelY;
+							}
 							dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+							my->handleKnockbackDamage(*myStats, hit.entity);
 							if ( hit.entity != NULL )
 							{
 								if ( hit.entity->behavior == &actDoor )
@@ -5125,7 +5151,40 @@ timeToGoAgain:
 							}
 
 							// rotate monster
-							dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
+							if ( myStats->EFFECTS[EFF_KNOCKBACK] )
+							{
+								// in knockback, the velocitys change sign from negative/positive or positive/negative.
+								// this makes monsters moonwalk if the direction to rotate is assumed the same.
+								// so we compare goal velocity direction (sin or cos(tangent)) and see if we've reached that sign.
+
+								int multX = 1;
+								int multY = 1;
+								if ( cos(tangent) >= 0 == MONSTER_VELX > 0 )
+								{
+									// same sign.
+									multX = 1;
+								}
+								else
+								{
+									// opposite signed.
+									multX = -1;
+								}
+								if ( sin(tangent) >= 0 == MONSTER_VELY > 0 )
+								{
+									// same sign.
+									multY = 1;
+								}
+								else
+								{
+									// opposite signed.
+									multY = -1;
+								}
+								dir = my->yaw - atan2(multY * MONSTER_VELY, multX * MONSTER_VELX);
+							}
+							else
+							{
+								dir = my->yaw - atan2(MONSTER_VELY, MONSTER_VELX);
+							}
 							while ( dir >= PI )
 							{
 								dir -= PI * 2;

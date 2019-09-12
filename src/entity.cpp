@@ -14633,14 +14633,6 @@ int Entity::getBaseManaRegen(Stat& myStats)
 
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 {
-	// get arrow power.
-	int attack = marksman.getRangedAttack();
-	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
-	if ( chance > 0 )
-	{
-		attack = (attack - chance) + (rand() % chance) + 1;
-	}
-	this->arrowPower = attack;
 	this->arrowSpeed = 7;
 	this->arrowShotByWeapon = 0;
 	this->arrowQuiverType = 0;
@@ -14688,6 +14680,44 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			}
 		}
 	}
+
+	int attack = 0;
+
+	if ( myStats.shield && itemTypeIsQuiver(myStats.shield->type) && !(myStats.weapon && myStats.weapon->type == SLING) )
+	{
+		this->arrowQuiverType = myStats.shield->type;
+		switch ( arrowQuiverType )
+		{
+			case QUIVER_SHARP:
+				attack += 3;
+				break;
+			case QUIVER_PIERCE:
+				arrowArmorPierce = 1;
+				break;
+			case QUIVER_LIGHTWEIGHT:
+				break;
+			case QUIVER_FIRE:
+				break;
+			case QUIVER_HEAVY:
+				attack += 6;
+				break;
+			case QUIVER_6:
+				break;
+			case QUIVER_7:
+				break;
+			default:
+				break;
+		}
+	}
+
+	// get arrow power.
+	attack += marksman.getRangedAttack();
+	int chance = (attack / 2) * (100 - myStats.PROFICIENCIES[PRO_RANGED]) / 100.f;
+	if ( chance > 0 )
+	{
+		attack = (attack - chance) + (rand() % chance) + 1;
+	}
+	this->arrowPower = attack;
 }
 
 bool Entity::setArrowProjectileProperties(int weaponType)
@@ -16365,7 +16395,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				flameEntity->y += 2 * sin(shieldArmLimb->yaw);
 				flameEntity->z += 1;
 			}
-			else if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+			else if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 			{
 				shieldLimb->focalz += 3;
 				shieldLimb->scalex = 1.05;
@@ -16425,11 +16455,11 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->focaly = limbs[race][7][1];
 				shieldLimb->focalz = limbs[race][7][2];
 			}
-			if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+			if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 			{
-				if ( shieldLimb->sprite == items[QUIVER_SHARP].index )
+				if ( itemSpriteIsQuiverBaseThirdPersonModel(shieldLimb->sprite) )
 				{
-					shieldLimb->sprite++;
+					shieldLimb->sprite++; // shortened shoulder sprite variation
 				}
 				shieldLimb->focalz += 3;
 				shieldLimb->z += -1.78;
@@ -16529,7 +16559,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			{
 				if ( !shieldLimb->flags[INVISIBLE] )
 				{
-					if ( !itemSpriteIsQuiverModel(shieldLimb->sprite) )
+					if ( !itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 					{
 						shieldArmLimb->yaw -= PI / 8;
 					}
@@ -16601,7 +16631,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				shieldLimb->scaley = 0.8;
 				shieldLimb->scalez = 0.8;
 			}
-			else if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+			else if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 			{
 				shieldLimb->scalex = 1.05;
 				//shieldLimb->scalez = 1.05;
@@ -16701,18 +16731,9 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 		}
 	}
-	else if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
+	else if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 	{
 		shieldLimb->yaw += PI / 6;
-		/*node_t* legNode = list_Node(&this->children, LIMB_HUMANOID_RIGHTLEG);
-		if ( legNode )
-		{
-			Entity* leg = (Entity*)legNode->element;
-			if ( leg )
-			{
-				shieldLimb->pitch = -leg->pitch / 4;
-			}
-		}*/
 	}
 
 	if ( flameEntity && player >= 0 )

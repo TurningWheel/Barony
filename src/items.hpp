@@ -605,7 +605,10 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
 ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
-bool itemSpriteIsQuiverModel(int sprite);
+bool itemSpriteIsQuiverThirdPersonModel(int sprite);
+bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
+bool itemTypeIsQuiver(ItemType type);
+real_t rangedAttackGetSpeedModifier(Stat* myStats);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

@@ -615,16 +615,12 @@ void actHudWeapon(Entity* my)
 	Uint32 bowFireRate = bowDrawBaseTicks;
 	bool shakeRangedWeapon = false;
 	bool cancelRangedAttack = false;
-	if ( rangedweapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW && !hideWeapon )
+	if ( rangedweapon && stats[clientnum]->weapon 
+		&& stats[clientnum]->weapon->type != CROSSBOW
+		&& stats[clientnum]->weapon->type != HEAVY_CROSSBOW
+		&& !hideWeapon )
 	{
-		if ( stats[clientnum]->weapon->type == COMPOUND_BOW )
-		{
-			bowFireRate = bowDrawBaseTicks * 0.75;
-		}
-		else if ( stats[clientnum]->weapon->type == SLING )
-		{
-			bowFireRate = bowDrawBaseTicks * 0.75;
-		}
+		bowFireRate = bowDrawBaseTicks * (rangedAttackGetSpeedModifier(stats[clientnum]));
 
 		if ( swingweapon && HUDWEAPON_CHOP != 0 )
 		{
@@ -644,6 +640,7 @@ void actHudWeapon(Entity* my)
 			{
 				shakeRangedWeapon = true;
 			}*/
+			messagePlayer(clientnum, "ticks: %d", bowFireRate);
 			bowFire = false;
 		}
 		else
@@ -686,7 +683,7 @@ void actHudWeapon(Entity* my)
 	bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
 	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
 
-	messagePlayer(clientnum, "chop: %d", HUDWEAPON_CHOP);
+	//messagePlayer(clientnum, "chop: %d", HUDWEAPON_CHOP);
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -2504,6 +2501,11 @@ void actHudShield(Entity* my)
 		}
 	}
 
+	if ( stats[clientnum]->shield && itemTypeIsQuiver(stats[clientnum]->shield->type) )
+	{
+		// can't defend with quivers.
+		defending = false;
+	}
 	if ( playerRace == RAT
 		|| playerRace == CREATURE_IMP
 		|| playerRace == TROLL
