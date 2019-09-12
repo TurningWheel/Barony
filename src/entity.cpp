@@ -16279,7 +16279,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	shieldLimb->focaly = limbs[race][7][1];
 	shieldLimb->focalz = limbs[race][7][2];
 
-	/*if ( shieldLimb->sprite == items[QUIVER_1].index )
+	/*if ( shieldLimb->sprite == items[QUIVER_SHARP].index )
 	{
 		shieldLimb->focalx += limbs[HUMAN][11][0];
 		shieldLimb->focaly += limbs[HUMAN][11][1];
@@ -16427,7 +16427,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			if ( itemSpriteIsQuiverModel(shieldLimb->sprite) )
 			{
-				if ( shieldLimb->sprite == items[QUIVER_1].index )
+				if ( shieldLimb->sprite == items[QUIVER_SHARP].index )
 				{
 					shieldLimb->sprite++;
 				}
