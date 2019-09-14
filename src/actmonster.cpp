@@ -3170,8 +3170,21 @@ void actMonster(Entity* my)
 		{
 			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
 			my->monsterReleaseAttackTarget();
-			MONSTER_VELX = 0;
-			MONSTER_VELY = 0;
+			if ( !myStats->EFFECTS[EFF_KNOCKBACK] )
+			{
+				MONSTER_VELX = 0;
+				MONSTER_VELY = 0;
+			}
+			else
+			{
+				// do knockback movement
+				my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
+				if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
+				{
+					dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
+					my->handleKnockbackDamage(*myStats, hit.entity);
+				}
+			}
 			if ( myReflex && !myStats->EFFECTS[EFF_DISORIENTED] && !isIllusionTaunt )
 			{
 				if ( myStats->EFFECTS[EFF_FEAR] && my->monsterFearfulOfUid != 0 )
@@ -3910,11 +3923,7 @@ timeToGoAgain:
 								tangent2 = tangent;
 							}
 
-							int myDex = my->getDEX();
-							if ( my->monsterAllyGetPlayerLeader() )
-							{
-								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP); // speed cap.
-							}
+							int myDex = my->monsterGetDexterityForMovement();
 							real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
 							real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
 							if ( !myStats->EFFECTS[EFF_KNOCKBACK] )
@@ -4084,35 +4093,12 @@ timeToGoAgain:
 									}
 									else
 									{
-										int myDex = my->getDEX();
-										if ( my->monsterAllyGetPlayerLeader() )
-										{
-											myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
-										}
-
+										int myDex = my->monsterGetDexterityForMovement();
 										real_t maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
 										real_t maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio * -.5;
 										if ( myStats->EFFECTS[EFF_KNOCKBACK] )
 										{
-											maxVelX = cos(tangent2) * .045 * (myDex + 10) * weightratio;
-											maxVelY = sin(tangent2) * .045 * (myDex + 10) * weightratio;
-											if ( maxVelX > 0 )
-											{
-												MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
-											}
-											else
-											{
-												MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
-											}
-											if ( maxVelY > 0 )
-											{
-												MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
-											}
-											else
-											{
-												MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
-											}
-											my->monsterKnockbackVelocity *= 1.1;
+											my->monsterHandleKnockbackVelocity(tangent2, weightratio);
 										}
 										else
 										{
@@ -4126,11 +4112,7 @@ timeToGoAgain:
 								else
 								{
 									// this is just so that the monster rotates. it doesn't actually move
-									int myDex = my->getDEX();
-									if ( my->monsterAllyGetPlayerLeader() )
-									{
-										myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
-									}
+									int myDex = my->monsterGetDexterityForMovement();
 									MONSTER_VELX = cos(tangent) * .02 * .045 * (myDex + 10) * weightratio;
 									MONSTER_VELY = sin(tangent) * .02 * .045 * (myDex + 10) * weightratio;
 								}
@@ -4909,23 +4891,7 @@ timeToGoAgain:
 							real_t maxVelY = sin(tangent) * .045 * (myDex + 10) * weightratio;
 							if ( myStats->EFFECTS[EFF_KNOCKBACK] )
 							{
-								if ( maxVelX > 0 )
-								{
-									MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
-								}
-								else
-								{
-									MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), maxVelX);
-								}
-								if ( maxVelY > 0 )
-								{
-									MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
-								}
-								else
-								{
-									MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), maxVelY);
-								}
-								my->monsterKnockbackVelocity *= 1.1;
+								my->monsterHandleKnockbackVelocity(tangent, weightratio);
 							}
 							else
 							{
@@ -6526,25 +6492,7 @@ timeToGoAgain:
 	{
 		if ( myStats->EFFECTS[EFF_KNOCKBACK] )
 		{
-			real_t maxVelX = cos(my->monsterLookDir) * .045 * 10 * weightratio;
-			real_t maxVelY = sin(my->monsterLookDir) * .045 * 10 * weightratio;
-			if ( maxVelX > 0 )
-			{
-				MONSTER_VELX = std::min(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), (real_t)0);
-			}
-			else
-			{
-				MONSTER_VELX = std::max(MONSTER_VELX + (my->monsterKnockbackVelocity * maxVelX), (real_t)0);
-			}
-			if ( maxVelY > 0 )
-			{
-				MONSTER_VELY = std::min(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), (real_t)0);
-			}
-			else
-			{
-				MONSTER_VELY = std::max(MONSTER_VELY + (my->monsterKnockbackVelocity * maxVelY), (real_t)0);
-			}
-			my->monsterKnockbackVelocity *= 1.1;
+			my->monsterHandleKnockbackVelocity(my->monsterKnockbackTangentDir, weightratio);
 			if ( abs(MONSTER_VELX) > 0.01 || abs(MONSTER_VELY) > 0.01 )
 			{
 				dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
@@ -9722,4 +9670,41 @@ bool Entity::monsterIsTinkeringCreation()
 		return true;
 	}
 	return false;
+}
+
+void Entity::monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t weightratio)
+{
+	// this function makes the monster accelerate to running forwards or 0 movement speed after being knocked back.
+	// vel_x, vel_y are set on knockback impact and this slowly accumulates speed from the knocked back movement by a factor of monsterKnockbackVelocity.
+	real_t maxVelX = cos(monsterFacingTangent) * .045 * (monsterGetDexterityForMovement() + 10) * weightratio;
+	real_t maxVelY = sin(monsterFacingTangent) * .045 * (monsterGetDexterityForMovement() + 10) * weightratio;
+	bool mobile = ((monsterState == MONSTER_STATE_WAIT) || isMobile()); // if immobile, the intended max speed is 0 (stopped).
+	
+	if ( maxVelX > 0 )
+	{
+		this->vel_x = std::min(this->vel_x + (this->monsterKnockbackVelocity * maxVelX), mobile ? maxVelX : 0.0);
+	}
+	else
+	{
+		this->vel_x = std::max(this->vel_x + (this->monsterKnockbackVelocity * maxVelX), mobile ? maxVelX : 0.0);
+	}
+	if ( maxVelY > 0 )
+	{
+		this->vel_y = std::min(this->vel_y + (this->monsterKnockbackVelocity * maxVelY), mobile ? maxVelY : 0.0);
+	}
+	else
+	{
+		this->vel_y = std::max(this->vel_y + (this->monsterKnockbackVelocity * maxVelY), mobile ? maxVelY : 0.0);
+	}
+	this->monsterKnockbackVelocity *= 1.1;
+}
+
+int Entity::monsterGetDexterityForMovement()
+{
+	int myDex = this->getDEX();
+	if ( this->monsterAllyGetPlayerLeader() )
+	{
+		myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
+	}
+	return myDex;
 }

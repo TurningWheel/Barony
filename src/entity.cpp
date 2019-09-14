@@ -131,6 +131,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
 	monsterSentrybotLookDir(fskill[10]),
+	monsterKnockbackTangentDir(fskill[11]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -7280,10 +7281,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 							baseMultiplier = 0.9;
 						}
 						real_t pushbackMultiplier = baseMultiplier;
-						/*if ( myStats->shield && hasMeleeGloves )
-						{
-						pushbackMultiplier /= 2;
-						}*/
 						if ( !hit.entity->isMobile() )
 						{
 							pushbackMultiplier += 0.3;
@@ -7293,6 +7290,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 						hit.entity->monsterKnockbackVelocity = 0.05;
 						hit.entity->monsterKnockbackUID = this->getUID();
+						hit.entity->monsterKnockbackTangentDir = tangent;
 						hit.entity->lookAtEntity(*this);
 						if ( !(backstab || flanking) )
 						{
@@ -7377,6 +7375,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 							hit.entity->monsterKnockbackVelocity = 0.05;
 							hit.entity->monsterKnockbackUID = this->getUID();
+							hit.entity->monsterKnockbackTangentDir = tangent;
 							hit.entity->lookAtEntity(*this);
 							if ( !(backstab || flanking) )
 							{
@@ -7429,6 +7428,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 									hit.entity->monsterKnockbackVelocity = 0.05;
 									hit.entity->monsterKnockbackUID = this->getUID();
+									hit.entity->monsterKnockbackTangentDir = tangent;
 									hit.entity->lookAtEntity(*this);
 									if ( !(backstab || flanking) )
 									{

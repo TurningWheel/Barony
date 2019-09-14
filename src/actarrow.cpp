@@ -474,7 +474,7 @@ void actArrow(Entity* my)
 					if ( my->arrowQuiverType == QUIVER_HEAVY
 						&& hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
-						real_t pushbackMultiplier = 1;
+						real_t pushbackMultiplier = 0.6;
 						if ( !hit.entity->isMobile() )
 						{
 							pushbackMultiplier += 0.3;
@@ -486,6 +486,7 @@ void actArrow(Entity* my)
 							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 							hit.entity->monsterKnockbackVelocity = 0.05;
 							hit.entity->monsterKnockbackUID = my->parent;
+							hit.entity->monsterKnockbackTangentDir = tangent;
 							hit.entity->lookAtEntity(*parent);
 						}
 						else
@@ -494,6 +495,7 @@ void actArrow(Entity* my)
 							hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
 							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
 							hit.entity->monsterKnockbackVelocity = 0.05;
+							hit.entity->monsterKnockbackTangentDir = tangent;
 							hit.entity->lookAtEntity(*my);
 						}
 

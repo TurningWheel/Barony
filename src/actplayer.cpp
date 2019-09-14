@@ -2252,7 +2252,7 @@ void actPlayer(Entity* my)
 	{
 		if ( multiplayer == SERVER || PLAYER_NUM == clientnum )
 		{
-			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) )
+			if ( stats[PLAYER_NUM]->shield != NULL && (showEquipment && isHumanoid) && !itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
 			{
 				if ( PLAYER_NUM == clientnum )
 				{

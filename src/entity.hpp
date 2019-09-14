@@ -204,6 +204,7 @@ public:
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& entityShowOnMap; //skill[59]
 	real_t& monsterSentrybotLookDir; //fskill[10]
+	real_t& monsterKnockbackTangentDir; //fskill[11]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]
@@ -553,7 +554,8 @@ public:
 	Entity* monsterAllyGetPlayerLeader();
 	bool monsterAllyEquipmentInClass(const Item& item) const;
 	bool monsterIsTinkeringCreation();
-
+	void monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t weightratio);
+	int monsterGetDexterityForMovement();
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 
 	//--- Mechanism functions ---
