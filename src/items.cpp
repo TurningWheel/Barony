@@ -1903,7 +1903,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 	if ( multiplayer == CLIENT && !intro )
 	{
 		if ( swapWeaponGimpTimer > 0
-			&& ( itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+			&& ( itemCategory(item) == GEM || itemCategory(item) == THROWN || itemTypeIsQuiver(item->type)) )
 		{
 			// don't send to host as we're not allowed to "use" or equip these items. 
 			// will return false in equipItem.
@@ -2731,50 +2731,47 @@ Item* itemPickup(int player, Item* item)
 			{
 				if ( itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
 				{
-					if ( (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
-					{
-						// too many arrows, split off into a new stack with reduced qty.
-						int total = item->count + item2->count;
-						item2->count = QUIVER_MAX_AMMO_QTY - 1;
-						item->count = total - item2->count;
+					// too many arrows, split off into a new stack with reduced qty.
+					int total = item->count + item2->count;
+					item2->count = QUIVER_MAX_AMMO_QTY - 1;
+					item->count = total - item2->count;
 
-						if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
+					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
+					{
+						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+						strcpy((char*)net_packet->data, "EQUS");
+						SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+						net_packet->data[24] = item2->identified;
+						net_packet->data[25] = clientnum;
+						net_packet->address.host = net_server.host;
+						net_packet->address.port = net_server.port;
+						net_packet->len = 26;
+						sendPacketSafe(net_sock, -1, net_packet, 0);
+					}
+					item2->ownerUid = item->ownerUid;
+					if ( item->count <= 0 )
+					{
+						return item2;
+					}
+					else
+					{
+						if ( !itemCompare(item, item2, true) )
 						{
-							// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-							strcpy((char*)net_packet->data, "EQUS");
-							SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
-							SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
-							SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
-							SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
-							SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
-							net_packet->data[24] = item2->identified;
-							net_packet->data[25] = clientnum;
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 26;
-							sendPacketSafe(net_sock, -1, net_packet, 0);
-						}
-						item2->ownerUid = item->ownerUid;
-						if ( item->count <= 0 )
-						{
-							return item2;
-						}
-						else
-						{
-							if ( !itemCompare(item, item2, true) )
+							// items are the same (incl. appearance!)
+							// if they shouldn't stack, we need to change appearance of the new item.
+							while ( item2->appearance == item->appearance )
 							{
-								// items are the same (incl. appearance!)
-								// if they shouldn't stack, we need to change appearance of the new item.
-								while ( item2->appearance == item->appearance )
-								{
-									item->appearance = rand();
-								}
+								item->appearance = rand();
 							}
-							// add the remaining arrows to a new quiver.
-							item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
-							item2->ownerUid = item->ownerUid;
-							return item2;
 						}
+						// add the remaining arrows to a new quiver.
+						item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
+						item2->ownerUid = item->ownerUid;
+						return item2;
 					}
 				}
 				// if items are the same, check to see if they should stack
@@ -2784,7 +2781,14 @@ Item* itemPickup(int player, Item* item)
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
 					{
 						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						strcpy((char*)net_packet->data, "EQUI"); 
+						if ( itemTypeIsQuiver(item2->type) )
+						{
+							strcpy((char*)net_packet->data, "EQUS");
+						}
+						else
+						{
+							strcpy((char*)net_packet->data, "EQUI"); 
+						}
 						SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
 						SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
 						SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
