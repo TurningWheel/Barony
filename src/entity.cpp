@@ -1386,6 +1386,8 @@ void Entity::effectTimes()
 						messagePlayer(player, language[3491]);
 						updateClient = true;
 						break;
+					case EFF_KNOCKBACK:
+						break;
 					case EFF_WITHDRAWAL:
 						if ( player >= 0 && player < MAXPLAYERS )
 						{
@@ -5927,6 +5929,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 				// set properties of the arrow.
 				entity->setRangedProjectileAttack(*this, *myStats);
+
+				if ( entity->arrowQuiverType != 0 && myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
+				{
+					//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
+					myStats->shield->count--;
+					if ( myStats->shield->count <= 0 )
+					{
+						if ( myStats->shield->node )
+						{
+							list_RemoveNode(myStats->shield->node);
+						}
+						else
+						{
+							free(myStats->shield);
+						}
+						myStats->shield = nullptr;
+					}
+				}
 				return;
 			}
 
@@ -14683,7 +14703,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 
 	int attack = 0;
 
-	if ( myStats.shield && itemTypeIsQuiver(myStats.shield->type) && !(myStats.weapon && myStats.weapon->type == SLING) )
+	if ( rangedWeaponUseQuiverOnAttack(&myStats) )
 	{
 		this->arrowQuiverType = myStats.shield->type;
 		switch ( arrowQuiverType )

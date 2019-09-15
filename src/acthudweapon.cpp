@@ -630,6 +630,21 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_CHOP = 0;
 			bowIsBeingDrawn = false;
 		}
+		else if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+		{
+			if ( swingweapon )
+			{
+				swapWeaponGimpTimer = 20; // gimp timer for quivers and ranged weapons.
+			}
+			else
+			{
+				// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
+				if ( swapWeaponGimpTimer > 5 )
+				{
+					swapWeaponGimpTimer = 5;
+				}
+			}
+		}
 	}
 	// check bow drawing attack and if defending/not firing cancel the SFX.
 	if ( rangedweapon && bowIsBeingDrawn && !stats[clientnum]->defending && !hideWeapon )
@@ -640,7 +655,7 @@ void actHudWeapon(Entity* my)
 			{
 				shakeRangedWeapon = true;
 			}*/
-			messagePlayer(clientnum, "ticks: %d", bowFireRate);
+			//messagePlayer(clientnum, "ticks: %d", bowFireRate);
 			bowFire = false;
 		}
 		else
@@ -761,6 +776,27 @@ void actHudWeapon(Entity* my)
 										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = TICKS_PER_SECOND / 4;
+
+										if ( multiplayer == CLIENT )
+										{
+											if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+											{
+												Item* quiver = stats[clientnum]->shield;
+												quiver->count--;
+												if ( quiver->count <= 0 )
+												{
+													if ( quiver->node )
+													{
+														list_RemoveNode(quiver->node);
+													}
+													else
+													{
+														free(quiver);
+													}
+													stats[clientnum]->shield = NULL;
+												}
+											}
+										}
 									}
 									else
 									{

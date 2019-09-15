@@ -580,6 +580,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 	SCROLL_ENCHANTARMOR
 };
 static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
+static const int QUIVER_MAX_AMMO_QTY = 51;
 
 //-----ITEM COMPARISON FUNCS-----
 /*
@@ -609,6 +610,7 @@ bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
 real_t rangedAttackGetSpeedModifier(Stat* myStats);
+bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

@@ -1258,6 +1258,11 @@ void updatePlayerInventory()
 							{
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
 							}
+							else if ( itemTypeIsQuiver(item->type) )
+							{
+								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%2d/%2d)", item->description(),
+									item->count, QUIVER_MAX_AMMO_QTY - 1);
+							}
 							else
 							{
 								ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
@@ -2094,7 +2099,8 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 				if (multiplayer == CLIENT)
 				{
 					if ( swapWeaponGimpTimer > 0
-						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
+							|| itemTypeIsQuiver(item->type)) )
 					{
 						// don't send to host as we're not allowed to "use" or equip these items. 
 						// will return false in equipItem.
@@ -2260,7 +2266,8 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 				if (multiplayer == CLIENT)
 				{
 					if ( swapWeaponGimpTimer > 0
-						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
+							|| itemTypeIsQuiver(item->type)) )
 					{
 						// don't send to host as we're not allowed to "use" or equip these items. 
 						// will return false in equipItem.

@@ -3163,7 +3163,7 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 		case MAGICSTAFF:
 			return false;
 		case THROWN:
-			return true;
+			return false;
 		case TOOL:
 			switch ( item->type )
 			{
@@ -3188,6 +3188,10 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 					return false;
 					break;
 				default:
+					if ( itemTypeIsQuiver(item->type) )
+					{
+						return false;
+					}
 					return true;
 					break;
 			}

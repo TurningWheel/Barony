@@ -7982,11 +7982,13 @@ void handleMainMenu(bool mode)
 			// spice of life achievement
 			usedClass[client_classes[clientnum]] = true;
 			bool usedAllClasses = true;
-			for ( c = 0; c < NUMCLASSES; c++ )
+			for ( c = 0; c <= CLASS_MONK; c++ )
+			{
 				if ( !usedClass[c] )
 				{
 					usedAllClasses = false;
 				}
+			}
 			if ( usedAllClasses )
 			{
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");

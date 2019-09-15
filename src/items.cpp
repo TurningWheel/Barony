@@ -653,6 +653,10 @@ char* Item::description()
 				{
 					snprintf(tempstr, 1024, language[3653 + status]);
 				}
+				else if ( itemTypeIsQuiver(this->type) )
+				{
+					snprintf(tempstr, 1024, language[3738], beatitude);
+				}
 				else
 				{
 					snprintf(tempstr, 1024, language[982 + status], beatitude);
@@ -724,6 +728,10 @@ char* Item::description()
 						percentHP = std::min(percentHP, 100);
 					}
 					snprintf(tempstr, 1024, language[3658 + status], count, percentHP);
+				}
+				else if ( itemTypeIsQuiver(this->type) )
+				{
+					snprintf(tempstr, 1024, language[3738], beatitude);
 				}
 				else
 				{
@@ -1101,7 +1109,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 	{
 		return 1;
 	}
-	if ( itemCategory(item1) != THROWN )
+	if ( itemCategory(item1) != THROWN && !itemTypeIsQuiver(item1->type) )
 	{
 		if (item1->status != item2->status)
 		{
@@ -1201,7 +1209,7 @@ bool dropItem(Item* item, int player)
 		net_packet->address.port = net_server.port;
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
-		if (item == open_book_item)
+		if ( item == open_book_item )
 		{
 			closeBookGUI();
 		}
@@ -1212,6 +1220,12 @@ bool dropItem(Item* item, int player)
 			item->count = 10;
 			messagePlayer(player, language[1088], item->description());
 			item->count = oldcount - 10;
+		}
+		else if ( itemTypeIsQuiver(item->type) )
+		{
+			item->count = 1;
+			messagePlayer(player, language[1088], item->description());
+			item->count = 0;
 		}
 		else
 		{
@@ -1247,6 +1261,10 @@ bool dropItem(Item* item, int player)
 		if ( item->count >= 10 && (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP) )
 		{
 			qtyToDrop = 10;
+		}
+		else if ( itemTypeIsQuiver(item->type) )
+		{
+			qtyToDrop = item->count;
 		}
 
 		entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
@@ -1570,7 +1588,8 @@ void equipItem(Item* item, Item** slot, int player)
 	}
 
 	if ( player == clientnum && multiplayer != SINGLE && swapWeaponGimpTimer > 0
-		&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) )
+		&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
+			|| itemTypeIsQuiver(item->type)) )
 	{
 		return;
 	}
@@ -2653,7 +2672,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		}
 	}
 }
-
+	
 /*-------------------------------------------------------------------------------
 
 	itemPickup
@@ -2710,8 +2729,56 @@ Item* itemPickup(int player, Item* item)
 			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2, false))
 			{
+				if ( itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
+				{
+					if ( (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
+					{
+						// too many arrows, split off into a new stack with reduced qty.
+						int total = item->count + item2->count;
+						item2->count = QUIVER_MAX_AMMO_QTY - 1;
+						item->count = total - item2->count;
+
+						if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
+						{
+							// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+							strcpy((char*)net_packet->data, "EQUS");
+							SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
+							SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
+							SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
+							SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+							net_packet->data[24] = item2->identified;
+							net_packet->data[25] = clientnum;
+							net_packet->address.host = net_server.host;
+							net_packet->address.port = net_server.port;
+							net_packet->len = 26;
+							sendPacketSafe(net_sock, -1, net_packet, 0);
+						}
+						item2->ownerUid = item->ownerUid;
+						if ( item->count <= 0 )
+						{
+							return item2;
+						}
+						else
+						{
+							if ( !itemCompare(item, item2, true) )
+							{
+								// items are the same (incl. appearance!)
+								// if they shouldn't stack, we need to change appearance of the new item.
+								while ( item2->appearance == item->appearance )
+								{
+									item->appearance = rand();
+								}
+							}
+							// add the remaining arrows to a new quiver.
+							item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
+							item2->ownerUid = item->ownerUid;
+							return item2;
+						}
+					}
+				}
 				// if items are the same, check to see if they should stack
-				if ( item2->shouldItemStack(player) )
+				else if ( item2->shouldItemStack(player) )
 				{
 					item2->count += item->count;
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
@@ -2737,7 +2804,10 @@ Item* itemPickup(int player, Item* item)
 				{
 					// items are the same (incl. appearance!)
 					// if they shouldn't stack, we need to change appearance of the new item.
-					item->appearance = rand();
+					while ( item2->appearance == item->appearance )
+					{
+						item->appearance = rand();
+					}
 				}
 			}
 		}
@@ -4039,6 +4109,14 @@ bool Item::shouldItemStack(int player)
 					return false;
 				}
 			}
+			else if ( itemTypeIsQuiver(this->type) )
+			{
+				if ( this->count >= QUIVER_MAX_AMMO_QTY - 1 )
+				{
+					return false;
+				}
+				return true;
+			}
 			return true;
 		}
 	}
@@ -4060,6 +4138,11 @@ bool isItemEquippableInShieldSlot(Item* item)
 	if ( !item )
 	{
 		return false;
+	}
+
+	if ( itemTypeIsQuiver(item->type) )
+	{
+		return true;
 	}
 
 	switch ( item->type )
@@ -4224,4 +4307,22 @@ real_t rangedAttackGetSpeedModifier(Stat* myStats)
 	}
 
 	return std::max(0.25, bowModifier + arrowModifier);
+}
+
+bool rangedWeaponUseQuiverOnAttack(Stat* myStats)
+{
+	if ( !myStats || !myStats->weapon || !myStats->shield )
+	{
+		return false;
+	}
+	if ( !isRangedWeapon(*myStats->weapon) )
+	{
+		return false;
+	}
+
+	if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) && !(myStats->weapon && myStats->weapon->type == SLING) )
+	{
+		return true;
+	}
+	return false;
 }
