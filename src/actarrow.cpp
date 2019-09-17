@@ -38,6 +38,8 @@
 #define ARROW_OLDY my->fskill[3]
 #define ARROW_MAXLIFE 600
 #define ARROW_INIT my->skill[10]
+#define ARROW_FLICKER my->skill[11]
+#define ARROW_LIGHTING my->skill[12]
 
 void actArrow(Entity* my)
 {
@@ -50,6 +52,8 @@ void actArrow(Entity* my)
 
 	// lifespan
 	ARROW_LIFE++;
+	my->removeLightField();
+
 	if ( ARROW_LIFE >= ARROW_MAXLIFE )
 	{
 		list_RemoveNode(my->mynode);
@@ -61,6 +65,32 @@ void actArrow(Entity* my)
 	{
 		list_RemoveNode(my->mynode);
 		return;
+	}
+
+	if ( my->arrowQuiverType == QUIVER_FIRE )
+	{
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
+		if ( flickerLights )
+		{
+			//Torches will never flicker if this setting is disabled.
+			ARROW_FLICKER++;
+		}
+		if ( ARROW_FLICKER > 5 )
+		{
+			ARROW_LIGHTING = (ARROW_LIGHTING == 1) + 1;
+
+			if ( ARROW_LIGHTING == 1 )
+			{
+				my->removeLightField();
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
+			}
+			else
+			{
+				my->removeLightField();
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 174);
+			}
+			ARROW_FLICKER = 0;
+		}
 	}
 
 	if ( multiplayer != CLIENT )
@@ -187,6 +217,7 @@ void actArrow(Entity* my)
 						// test for friendly fire
 						if ( parent && parent->checkFriend(hit.entity) )
 						{
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -524,10 +555,12 @@ void actArrow(Entity* my)
 					}
 
 				}
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 			}
 			else if ( my->sprite == 78 )
 			{
+				my->removeLightField();
 				list_RemoveNode(my->mynode); // rocks don't stick to walls...
 			}
 			else

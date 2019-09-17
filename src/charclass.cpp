@@ -2146,7 +2146,7 @@ void initClass(int player)
 
 			for ( int i = QUIVER_SHARP; i <= QUIVER_7; ++i )
 			{
-				item = newItem(static_cast<ItemType>(i), EXCELLENT, 0, 1, 25, true, NULL);
+				item = newItem(static_cast<ItemType>(i), EXCELLENT, 0, 48, 0, true, NULL);
 				item2 = itemPickup(player, item);
 				free(item);
 			}

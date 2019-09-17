@@ -1258,11 +1258,6 @@ void updatePlayerInventory()
 							{
 								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%d%%)", item->description(), item->appearance % ENCHANTED_FEATHER_MAX_DURABILITY);
 							}
-							else if ( itemTypeIsQuiver(item->type) )
-							{
-								ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s (%2d/%2d)", item->description(),
-									item->count, QUIVER_MAX_AMMO_QTY - 1);
-							}
 							else
 							{
 								ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
