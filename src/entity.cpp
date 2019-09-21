@@ -5933,18 +5933,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( entity->arrowQuiverType != 0 && myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
 				{
 					//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
-					myStats->shield->count--;
-					if ( myStats->shield->count <= 0 )
+					if ( behavior == &actPlayer )
 					{
-						if ( myStats->shield->node )
+						myStats->shield->count--;
+						if ( myStats->shield->count <= 0 )
 						{
-							list_RemoveNode(myStats->shield->node);
+							if ( myStats->shield->node )
+							{
+								list_RemoveNode(myStats->shield->node);
+							}
+							else
+							{
+								free(myStats->shield);
+							}
+							myStats->shield = nullptr;
 						}
-						else
-						{
-							free(myStats->shield);
-						}
-						myStats->shield = nullptr;
 					}
 				}
 				return;
@@ -14708,22 +14711,29 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 		this->arrowQuiverType = myStats.shield->type;
 		switch ( arrowQuiverType )
 		{
-			case QUIVER_SHARP:
+			case QUIVER_SILVER:
 				attack += 3;
+				sprite = 924;
 				break;
 			case QUIVER_PIERCE:
 				arrowArmorPierce = 1;
+				sprite = 925;
 				break;
 			case QUIVER_LIGHTWEIGHT:
+				sprite = 926;
 				break;
 			case QUIVER_FIRE:
+				sprite = 927;
 				break;
 			case QUIVER_HEAVY:
 				attack += 6;
+				sprite = 928;
 				break;
-			case QUIVER_6:
+			case QUIVER_CRYSTAL:
+				sprite = 929;
 				break;
 			case QUIVER_7:
+				sprite = 930;
 				break;
 			default:
 				break;
@@ -16329,7 +16339,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	shieldLimb->focaly = limbs[race][7][1];
 	shieldLimb->focalz = limbs[race][7][2];
 
-	/*if ( shieldLimb->sprite == items[QUIVER_SHARP].index )
+	/*if ( shieldLimb->sprite == items[QUIVER_SILVER].index )
 	{
 		shieldLimb->focalx += limbs[HUMAN][11][0];
 		shieldLimb->focaly += limbs[HUMAN][11][1];

@@ -2376,12 +2376,12 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
 		case TOOL_TINKERING_KIT:
-		case QUIVER_SHARP:
+		case QUIVER_SILVER:
 		case QUIVER_PIERCE:
 		case QUIVER_LIGHTWEIGHT:
 		case QUIVER_FIRE:
 		case QUIVER_HEAVY:
-		case QUIVER_6:
+		case QUIVER_CRYSTAL:
 		case QUIVER_7:
 			equipItem(item, &stats[player]->shield, player);
 			break;
@@ -4245,7 +4245,7 @@ char* Item::getScrollLabel() const
 
 bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 {
-	for ( int i = QUIVER_SHARP; i <= QUIVER_7; ++i )
+	for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
 	{
 		if ( sprite == items[i].index
 			|| sprite == items[i].index + 1
@@ -4259,7 +4259,7 @@ bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 {
-	for ( int i = QUIVER_SHARP; i <= QUIVER_7; ++i )
+	for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
 	{
 		if ( sprite == items[i].index )
 		{
@@ -4271,7 +4271,7 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 
 bool itemTypeIsQuiver(ItemType type)
 {
-	return (type >= QUIVER_SHARP && type <= QUIVER_7);
+	return (type >= QUIVER_SILVER && type <= QUIVER_7);
 }
 
 real_t rangedAttackGetSpeedModifier(Stat* myStats)

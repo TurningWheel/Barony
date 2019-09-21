@@ -3058,10 +3058,24 @@ void actPlayer(Entity* my)
 			{
 				messagePlayer(0, "%f", speedFactor);
 			}*/
+			if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
+			{
+				speedFactor = std::min(speedFactor, 5.0);
+				PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir);
+				PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir);
+				my->monsterKnockbackVelocity *= 0.95;
+			}
+			else
+			{
+				my->monsterKnockbackVelocity = 0.f;
+				my->monsterKnockbackTangentDir = 0.f;
+			}
+
 			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 			PLAYER_VELY += y_force * sin(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
 			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
+
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;

@@ -2144,7 +2144,7 @@ void initClass(int player)
 			hotbar[5].item = item2->uid;
 			free(item);
 
-			for ( int i = QUIVER_SHARP; i <= QUIVER_7; ++i )
+			for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
 			{
 				item = newItem(static_cast<ItemType>(i), EXCELLENT, 0, 48, 0, true, NULL);
 				item2 = itemPickup(player, item);
