@@ -582,7 +582,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
+			if ( (my->behavior == &actMonster || my->behavior == &actBoulder) && entity->behavior == &actDoorFrame )
 			{
 				continue;    // monsters don't have hard collision with door frames
 			}

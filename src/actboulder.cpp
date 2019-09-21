@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "paths.hpp"
+#include "scores.hpp"
 
 #define BOULDER_STOPPED my->skill[0]
 #define BOULDER_AMBIENCE my->skill[1]
@@ -36,6 +37,10 @@
 
 bool boulderCheckIfBlockedExit(Entity* my)
 {
+	if ( conductGameChallenges[CONDUCT_MODDED] )
+	{
+		return true; // ignore for custom maps.
+	}
 	bool playerAlive = false;
 	for ( int c = 0; c < MAXPLAYERS; ++c )
 	{
@@ -152,7 +157,7 @@ bool doesEntityStopBoulder(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-int boulderCheckAgainstEntity(Entity* my, Entity* entity)
+int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntity)
 {
 	if (!my || !entity)
 	{
@@ -357,7 +362,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 	{
 		if ( !entity->flags[PASSABLE] )
 		{
-			if ( entityInsideEntity( my, entity ) )
+			if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 			{
 				// stop the boulder
 				BOULDER_STOPPED = 1;
@@ -378,7 +383,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 	}
 	else if ( entity->behavior == &actDoor )
 	{
-		if ( entityInsideEntity( my, entity ) )
+		if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 		{
 			playSoundEntity(entity, 28, 64);
 			entity->skill[4] = 0;
@@ -395,7 +400,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 	}
 	else if ( entity->behavior == &actFurniture )
 	{
-		if ( entityInsideEntity(my, entity) )
+		if ( ignoreInsideEntity || entityInsideEntity(my, entity) )
 		{
 			playSoundEntity(entity, 28, 64);
 			entity->furnitureHealth = 0;
@@ -439,10 +444,12 @@ void actBoulder(Entity* my)
 	// gravity
 	bool nobounce = true;
 	if ( !BOULDER_NOGROUND )
+	{
 		if ( noground )
 		{
 			BOULDER_NOGROUND = true;
 		}
+	}
 	if ( my->z < 0 || BOULDER_NOGROUND )
 	{
 		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
@@ -474,9 +481,21 @@ void actBoulder(Entity* my)
 						{
 							continue;
 						}
-						if ( boulderCheckAgainstEntity(my, entity) )
+						if ( boulderCheckAgainstEntity(my, entity, false) )
 						{
 							return;
+						}
+						else
+						{
+							if ( entity->behavior == &actBoulder && entityInsideEntity(my, entity) )
+							{
+								// destroy this boulder if falling on another boulder.
+								Entity* ohitentity = hit.entity;
+								hit.entity = my;
+								magicDig(nullptr, nullptr, 2, 4);
+								hit.entity = ohitentity;
+								return;
+							}
 						}
 					}
 				}
@@ -563,7 +582,7 @@ void actBoulder(Entity* my)
 			
 			if ( !foundPathToExit )
 			{
-				hit.entity = my;
+				hit.entity = my; // for magicDig
 
 				// spawn luckstone
 				Entity* rock = newEntity(-1, 1, map.entities, nullptr); //Rock entity.
@@ -602,8 +621,7 @@ void actBoulder(Entity* my)
 		}
 		else
 		{
-			my->x += my->vel_x;
-			my->y += my->vel_y;
+			real_t clipDist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
 			double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
 			my->pitch += dist * .06;
 			my->roll = PI / 2;
@@ -624,9 +642,23 @@ void actBoulder(Entity* my)
 							continue;
 						}
 						bool wasStopped = (BOULDER_STOPPED == 1);
-						if ( boulderCheckAgainstEntity(my, entity) )
+						if ( clipDist != dist )
 						{
-							return;
+							if ( hit.entity )
+							{
+								if ( boulderCheckAgainstEntity(my, hit.entity, true) )
+								{
+									return;
+								}
+								hit.entity = nullptr;
+							}
+						}
+						else
+						{
+							if ( boulderCheckAgainstEntity(my, entity, false) )
+							{
+								return;
+							}
 						}
 						if ( BOULDER_STOPPED == 1 && !wasStopped )
 						{
@@ -705,8 +737,9 @@ void actBoulder(Entity* my)
 							{
 								playSoundEntity(my, 151, 128);
 								BOULDER_ROLLING = 1;
-								my->x = floor(my->x / 16) * 16 + 8;
-								my->y = floor(my->y / 16) * 16 + 8;
+								/*my->x = floor(my->x / 16) * 16 + 8;
+								my->y = floor(my->y / 16) * 16 + 8;*/
+
 								BOULDER_DESTX = (int)(my->x / 16) * 16 + 8;
 								BOULDER_DESTY = (int)(my->y / 16) * 16 + 8;
 								if ( (int)(players[i]->entity->x / 16) < (int)(my->x / 16) )
@@ -780,8 +813,9 @@ void actBoulder(Entity* my)
 			}
 			else
 			{
-				my->x += my->vel_x;
-				my->y += my->vel_y;
+				real_t clipDist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+				/*my->x += my->vel_x;
+				my->y += my->vel_y;*/
 				double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
 				my->pitch += dist * .06;
 
@@ -845,9 +879,16 @@ void actBoulder(Entity* my)
 				}
 
 				// crush objects
-				if ( dist && !BOULDER_NOGROUND )
+				if ( !BOULDER_NOGROUND )
 				{
-					std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
+					if ( clipDist != dist )
+					{
+						if ( hit.entity && boulderCheckAgainstEntity(my, hit.entity, true) )
+						{
+							return;
+						}
+					}
+					/*std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 2);
 					for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 					{
 						list_t* currentList = *it;
@@ -864,7 +905,7 @@ void actBoulder(Entity* my)
 								return;
 							}
 						}
-					}
+					}*/
 				}
 			}
 		}
