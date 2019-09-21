@@ -4122,6 +4122,11 @@ void serverHandlePacket()
 				qtyToDrop = 10;
 				c -= 9;
 			}
+			else if ( itemTypeIsQuiver(item->type) )
+			{
+				qtyToDrop = item->count;
+				c -= item->count;
+			}
 			dropItemMonster(item, entity, stats[net_packet->data[25]], qtyToDrop);
 		}
 		list_RemoveNode(entity->mynode);

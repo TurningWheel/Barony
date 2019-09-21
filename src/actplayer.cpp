@@ -2712,6 +2712,11 @@ void actPlayer(Entity* my)
 											qtyToDrop = 10;
 											c -= 9;
 										}
+										else if ( itemTypeIsQuiver(item->type) )
+										{
+											qtyToDrop = item->count;
+											c -= item->count;
+										}
 										entity->skill[13] = qtyToDrop;
 										entity->skill[14] = item->appearance;
 										entity->skill[15] = item->identified;

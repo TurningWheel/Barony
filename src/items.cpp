@@ -3058,7 +3058,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == CROSSBOW )
 	{
-		attack += 6;
+		attack += 7;
 	}
 	else if ( type == ARTIFACT_SWORD )
 	{

@@ -118,8 +118,16 @@ void actArrow(Entity* my)
 			spawnMagicParticle(my);
 			my->sprite = oldSprite;*/
 			Entity* entity = spawnFlame(my, SPRITE_FLAME);
-			entity->x += .5 * cos(my->yaw);
-			entity->y += .5 * sin(my->yaw);
+			if ( ARROW_STUCK == 1 )
+			{
+				entity->x += .5 * cos(my->yaw);
+				entity->y += .5 * sin(my->yaw);
+			}
+			else
+			{
+				entity->x += 1.5 * cos(my->yaw);
+				entity->y += 1.5 * sin(my->yaw);
+			}
 			entity->z = my->z;
 			entity->flags[GENIUS] = false;
 			entity->setUID(-3);
@@ -160,7 +168,7 @@ void actArrow(Entity* my)
 		}
 	}
 
-	if ( !ARROW_STUCK )
+	if ( ARROW_STUCK == 0 )
 	{
 		if ( my->arrowFallSpeed > 0 )
 		{
@@ -207,9 +215,29 @@ void actArrow(Entity* my)
 					arrowInGround = true;
 				}
 			}
-			else if ( my->z >= 6.5 )
+			else 
 			{
-				arrowInGround = true;
+				if ( my->pitch >= PI / 12 ) // heavily pitched
+				{
+					if ( my->z >= 6.5 )
+					{
+						arrowInGround = true;
+					}
+				}
+				else
+				{
+					if ( my->z >= 7 ) // shallow pitch, make ground criteria lower.
+					{
+						arrowInGround = true;
+					}
+				}
+			}
+
+			if ( swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+			{
+				my->removeLightField();
+				list_RemoveNode(my->mynode);
+				return;
 			}
 		}
 
@@ -217,7 +245,7 @@ void actArrow(Entity* my)
 		{
 			if ( arrowInGround )
 			{
-				ARROW_STUCK = 1;
+				ARROW_STUCK = 2;
 			}
 			if ( fabs(ARROW_VELX) < 0.01 && fabs(ARROW_VELY) < 0.01 )
 			{
@@ -235,7 +263,14 @@ void actArrow(Entity* my)
 		// damage monsters
 		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
 		{
-			ARROW_STUCK = 1;
+			if ( arrowInGround )
+			{
+				ARROW_STUCK = 2;
+			}
+			else
+			{
+				ARROW_STUCK = 1;
+			}
 			serverUpdateEntitySkill(my, 0);
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
@@ -285,6 +320,7 @@ void actArrow(Entity* my)
 							case DEVIL:
 								// smite these creatures
 								silverDamage = true;
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 174);
 								break;
 							default:
 								silverDamage = false;
@@ -295,13 +331,16 @@ void actArrow(Entity* my)
 					// do damage
 					if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 					{
-						if ( hit.entity->behavior == &actPlayer && hitstats && !hitstats->defending )
+						if ( my->arrowQuiverType == QUIVER_PIERCE )
 						{
-							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
+							bool oldDefend = hitstats->defending;
+							hitstats->defending = false;
+							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor not caring about shield
+							hitstats->defending = oldDefend;
 						}
 						else
 						{
-							damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
 						}
 					}
 					else
@@ -500,32 +539,40 @@ void actArrow(Entity* my)
 					if ( hit.entity->behavior == &actPlayer )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( my )
+						if ( silverDamage )
 						{
-							if ( my->sprite == PROJECTILE_ROCK_SPRITE )
-							{
-								// rock.
-								messagePlayerColor(hit.entity->skill[2], color, language[2512]);
-							}
-							else if (my->sprite == PROJECTILE_BOLT_SPRITE )
-							{
-								// bolt.
-								messagePlayerColor(hit.entity->skill[2], color, language[2511]);
-							}
-							else
-							{
-								// arrow.
-								messagePlayerColor(hit.entity->skill[2], color, language[451]);
-							}
+							messagePlayerColor(hit.entity->skill[2], color, language[3745]); // you are smited!
+						}
+						else if ( my->arrowQuiverType == QUIVER_HEAVY )
+						{
+							// no "hit by arrow!" message, let the knockback do the work.
 						}
 						else
 						{
-							messagePlayerColor(hit.entity->skill[2], color, language[451]);
+							if ( my )
+							{
+								if ( my->sprite == PROJECTILE_ROCK_SPRITE )
+								{
+									// rock.
+									messagePlayerColor(hit.entity->skill[2], color, language[2512]);
+								}
+								else if (my->sprite == PROJECTILE_BOLT_SPRITE )
+								{
+									// bolt.
+									messagePlayerColor(hit.entity->skill[2], color, language[2511]);
+								}
+								else
+								{
+									// arrow.
+									messagePlayerColor(hit.entity->skill[2], color, language[451]);
+								}
+							}
+							else
+							{
+								messagePlayerColor(hit.entity->skill[2], color, language[451]);
+							}
 						}
-						if ( silverDamage )
-						{
-							messagePlayerColor(hit.entity->skill[2], color, language[3745]);
-						}
+
 						if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 						{
 							messagePlayerColor(hit.entity->skill[2], color, language[2515]);
@@ -578,6 +625,10 @@ void actArrow(Entity* my)
 						{
 							pushbackMultiplier += 0.3;
 						}
+						if ( hitWeaklyOnTarget )
+						{
+							pushbackMultiplier -= 0.3;
+						}
 
 						if ( hit.entity->behavior == &actMonster )
 						{
@@ -603,6 +654,14 @@ void actArrow(Entity* my)
 						}
 						else if ( hit.entity->behavior == &actPlayer )
 						{
+							if ( parent )
+							{
+								real_t dist = entityDist(parent, hit.entity);
+								if ( dist < TOUCHRANGE )
+								{
+									pushbackMultiplier += 0.5;
+								}
+							}
 							if ( hit.entity->skill[2] != clientnum )
 							{
 								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;

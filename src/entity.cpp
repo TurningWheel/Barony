@@ -7083,6 +7083,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( damage > 0 )
 					{
 						// choose random piece of equipment to target
+						int armorRoll = rand() % 6;
+						if ( armorRoll == 4 && hitstats->shield )
+						{
+							if ( itemTypeIsQuiver(hitstats->shield->type) )
+							{
+								armorRoll = rand() % 4; // reroll for non-shield slot.
+							}
+						}
 						switch ( rand() % 6 )
 						{
 							case 0:
@@ -7195,7 +7203,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// if nothing chosen to degrade, check extra shield chances to degrade
-					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL )
+					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
+						&& !itemTypeIsQuiver(hitstats->shield->type) )
 					{
 						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 						{
@@ -13837,6 +13846,12 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		return;
 	}
 
+	if ( itemTypeIsQuiver(armor.type) )
+	{
+		// quivers don't break.
+		return;
+	}
+
 	int playerhit = -1;
 
 	if ( this->behavior == &actPlayer )
@@ -14706,30 +14721,34 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 
 	int attack = 0;
 
-	if ( rangedWeaponUseQuiverOnAttack(&myStats) )
+	if ( myStats.shield && rangedWeaponUseQuiverOnAttack(&myStats) )
 	{
 		this->arrowQuiverType = myStats.shield->type;
 		switch ( arrowQuiverType )
 		{
 			case QUIVER_SILVER:
-				attack += 3;
+				attack += 2;
 				sprite = 924;
 				break;
 			case QUIVER_PIERCE:
-				arrowArmorPierce = 1;
+				attack += 4;
+				arrowArmorPierce = 2;
 				sprite = 925;
 				break;
 			case QUIVER_LIGHTWEIGHT:
+				attack -= 2;
 				sprite = 926;
 				break;
 			case QUIVER_FIRE:
+				attack += 2;
 				sprite = 927;
 				break;
 			case QUIVER_HEAVY:
-				attack += 6;
+				attack += 4;
 				sprite = 928;
 				break;
 			case QUIVER_CRYSTAL:
+				attack += 6;
 				sprite = 929;
 				break;
 			case QUIVER_7:
@@ -14737,6 +14756,14 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 				break;
 			default:
 				break;
+		}
+		if ( shouldInvertEquipmentBeatitude(&myStats) )
+		{
+			attack += abs(myStats.shield->beatitude);
+		}
+		else
+		{
+			attack += myStats.shield->beatitude;
 		}
 	}
 
