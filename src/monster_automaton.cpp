@@ -48,7 +48,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 			if ( !strncmp(myStats->name, "damaged automaton", strlen("damaged automaton")) )
 			{
 				lesserMonster = true;
-				myStats->HP = 60;
+				myStats->HP = 80;
 				myStats->MAXHP = 115;
 				myStats->RANDOM_MAXHP = 0;
 				myStats->RANDOM_HP = 30;
@@ -209,24 +209,31 @@ void initAutomaton(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				if ( greaterMonster )
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 				{
-					switch ( rand() % 4 )
+					my->monsterGenerateQuiverItem(myStats);
+				}
+				else
+				{
+					if ( greaterMonster )
 					{
-						case 0:
-							myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						case 1:
-							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						case 2:
-							myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						case 3:
-							myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
-							break;
-						default:
-							break;
+						switch ( rand() % 4 )
+						{
+							case 0:
+								myStats->shield = newItem(CRYSTAL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							case 1:
+								myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							case 2:
+								myStats->shield = newItem(STEEL_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							case 3:
+								myStats->shield = newItem(MIRROR_SHIELD, EXCELLENT, -1 + rand() % 2, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, NULL);
+								break;
+							default:
+								break;
+						}
 					}
 				}
 			}

@@ -4069,6 +4069,11 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave
 		return false;
 	}
 
+	if ( itemTypeIsQuiver(armorAlreadyHave->type) )
+	{
+		return false;
+	}
+
 	//If the new weapon defends better than the current armor, it's better. Even if it's cursed, eh?
 	//TODO: Special effects/abilities, like magic resistance or reflection...
 	if ( newArmor.armorGetAC() > armorAlreadyHave->armorGetAC() )

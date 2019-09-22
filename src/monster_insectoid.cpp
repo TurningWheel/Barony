@@ -130,10 +130,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 						newItem(SPELLBOOK_ACID_SPRAY, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 					}
 				case 2:
-					if ( rand() % 2 == 0 )
+					/*if ( rand() % 2 == 0 )
 					{
 						newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
-					}
+					}*/
 				case 1:
 					if ( lesserMonster )
 					{
@@ -150,30 +150,6 @@ void initInsectoid(Entity* my, Stat* myStats)
 
 			if ( lesserMonster )
 			{
-				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-				{
-					// give shield
-					switch ( rand() % 10 )
-					{
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-							break;
-						case 5:
-						case 6:
-							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 7:
-						case 8:
-						case 9:
-							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						default:
-							break;
-					}
-				}
 
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
@@ -181,27 +157,66 @@ void initInsectoid(Entity* my, Stat* myStats)
 					switch ( rand() % 10 )
 					{
 						case 0:
-							myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 1:
 						case 2:
 						case 3:
 						case 4:
-							myStats->weapon = newItem(IRON_SWORD, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 5:
+							if ( rand() % 2 )
+							{
+								myStats->weapon = newItem(LONGBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+							}
+							else
+							{
+								myStats->weapon = newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+							}
+							break;
 						case 6:
 						case 7:
-							myStats->weapon = newItem(IRON_SPEAR, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 8:
-							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
 						case 9:
 							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						default:
 							break;
+					}
+				}
+
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				{
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+					{
+						my->monsterGenerateQuiverItem(myStats, lesserMonster);
+					}
+					else
+					{
+						// give shield
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+								break;
+							case 5:
+							case 6:
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 7:
+							case 8:
+							case 9:
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							default:
+								break;
+						}
 					}
 				}
 
@@ -254,37 +269,6 @@ void initInsectoid(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-				{
-					// give shield
-					switch ( rand() % 20 )
-					{
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-						case 6:
-						case 7:
-							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 8:
-						case 9:
-						case 10:
-						case 11:
-							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 18:
-							myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 19:
-							myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						default:
-							break;
-					}
-				}
 
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
@@ -293,38 +277,84 @@ void initInsectoid(Entity* my, Stat* myStats)
 					{
 						case 0:
 						case 1:
-						case 2:
-							myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							//10%
+							myStats->weapon = newItem(SHORTBOW, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
+						case 2:
 						case 3:
 						case 4:
+							//15%
+							myStats->weapon = newItem(LONGBOW, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
 						case 5:
 						case 6:
+							//10%
+							myStats->weapon = newItem(COMPOUND_BOW, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
 						case 7:
 						case 8:
-							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+							//10%
+							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 9:
 						case 10:
 						case 11:
 						case 12:
 						case 13:
-						case 14:
-							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 15:
-							myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 16:
-						case 17:
+							//25%
 							myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(SERVICABLE + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
-						case 18:
+						case 14:
+						case 15:
+						case 16:
+							//15%
 							myStats->weapon = newItem(CRYSTAL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
+						case 17:
+						case 18:
 						case 19:
+							//15%
 							myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
+					}
+				}
+
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				{
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+					{
+						my->monsterGenerateQuiverItem(myStats, lesserMonster);
+					}
+					else
+					{
+						// give shield
+						switch ( rand() % 20 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+							case 6:
+							case 7:
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 8:
+							case 9:
+							case 10:
+							case 11:
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 18:
+								myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 19:
+								myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							default:
+								break;
+						}
 					}
 				}
 

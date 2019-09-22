@@ -192,41 +192,48 @@ void initKobold(Entity* my, Stat* myStats)
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				if ( cultist > 0 )
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 				{
-					if ( cultist == 1 )
-					{
-						myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-					}
-					else
-					{
-						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-					}
+					my->monsterGenerateQuiverItem(myStats);
 				}
 				else
 				{
-					switch ( rand() % 10 )
+					if ( cultist > 0 )
 					{
-						case 0:
-						case 1:
-							myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
-							break;
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-							myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 6:
-						case 7:
+						if ( cultist == 1 )
+						{
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+						}
+						else
+						{
 							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 8:
-							myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
-						case 9:
-							// nothing
-							break;
+						}
+					}
+					else
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+								myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
+								break;
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+								myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 6:
+							case 7:
+								myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 8:
+								myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+							case 9:
+								// nothing
+								break;
+						}
 					}
 				}
 			}

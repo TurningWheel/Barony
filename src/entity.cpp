@@ -10620,6 +10620,14 @@ void setRandomMonsterStats(Stat* stats)
 
 int checkEquipType(const Item *item)
 {
+	if ( !item )
+	{
+		return TYPE_NONE;
+	}
+	if ( itemTypeIsQuiver(item->type) )
+	{
+		return TYPE_OFFHAND;
+	}
 	switch ( item->type ) {
 
 		case LEATHER_BOOTS:
@@ -13581,6 +13589,10 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			return true;
 			break;
 		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return (shouldEquip = shouldMonsterEquipThisArmor(item));
+			}
 			if ( item.interactNPCUid == getUID() )
 			{
 				if ( item.type == TOOL_TORCH || item.type == TOOL_LANTERN || item.type == TOOL_CRYSTALSHARD )
@@ -13637,6 +13649,7 @@ Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
 			return Item::isThisABetterArmor(item, myStats->helmet) ? &myStats->helmet : nullptr;
 			break;
 		case TYPE_SHIELD:
+		case TYPE_OFFHAND:
 			if ( item.interactNPCUid == getUID() && myStats->shield )
 			{
 				return &myStats->shield;
@@ -14714,8 +14727,13 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 			}
 			else
 			{
+				this->setArrowProjectileProperties(this->arrowShotByWeapon);
 				this->arrowShotByParent = ARROW_SHOT_BY_MONSTER;
 			}
+		}
+		if ( multiplayer == SERVER )
+		{
+			skill[2] = -(1000 + arrowShotByWeapon); // invokes actArrow for clients.
 		}
 	}
 
@@ -14787,14 +14805,7 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 	if ( weaponType == CROSSBOW || weaponType == SLING || weaponType == HEAVY_CROSSBOW )
 	{
 		this->vel_z = -0.2;
-		if ( multiplayer == CLIENT )
-		{
-			this->arrowSpeed = 6;
-		}
-		else
-		{
-			this->arrowSpeed = 6;
-		}
+		this->arrowSpeed = 6;
 		this->pitch = -PI / 32;
 		this->arrowFallSpeed = 0.1;
 		this->arrowBoltDropOffRange = 5; // ticks before projectile starts falling.
@@ -14809,27 +14820,13 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 		this->arrowFallSpeed = 0.08;
 		if ( weaponType == SHORTBOW || weaponType == COMPOUND_BOW || weaponType == ARTIFACT_BOW )
 		{
-			if ( multiplayer == CLIENT )
-			{
-				this->arrowSpeed = 7;
-			}
-			else
-			{
-				this->arrowSpeed = 7;
-			}
+			this->arrowSpeed = 7;
 			this->vel_z = -0.6;
 			this->arrowFallSpeed = 0.08;
 		}
 		else if ( weaponType == LONGBOW )
 		{
-			if ( multiplayer == CLIENT )
-			{
-				this->arrowSpeed = 8;
-			}
-			else
-			{
-				this->arrowSpeed = 8;
-			}
+			this->arrowSpeed = 8;
 			this->vel_z = -0.4;
 			this->arrowFallSpeed = 0.04;
 		}

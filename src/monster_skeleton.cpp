@@ -347,25 +347,32 @@ void initSkeleton(Entity* my, Stat* myStats)
 				//give shield
 				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					switch ( rand() % 10 )
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 					{
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-							break;
-						case 6:
-						case 7:
-							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 8:
-							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
-						case 9:
-							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
-							break;
+						my->monsterGenerateQuiverItem(myStats);
+					}
+					else
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+								break;
+							case 6:
+							case 7:
+								myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 8:
+								myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+							case 9:
+								myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, nullptr);
+								break;
+						}
 					}
 				}
 			}

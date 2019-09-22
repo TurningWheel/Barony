@@ -289,21 +289,28 @@ void initIncubus(Entity* my, Stat* myStats)
 				// give shield
 				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					switch ( rand() % 10 )
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
 					{
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-						case 6:
-						case 7:
-							break;
-						case 8:
-						case 9:
-							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
-							break;
+						my->monsterGenerateQuiverItem(myStats);
+					}
+					else
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+							case 6:
+							case 7:
+								break;
+							case 8:
+							case 9:
+								myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+								break;
+						}
 					}
 				}
 			}

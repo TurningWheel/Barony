@@ -233,7 +233,7 @@ void actArrow(Entity* my)
 				}
 			}
 
-			if ( swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+			if ( arrowInGround && (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
 			{
 				my->removeLightField();
 				list_RemoveNode(my->mynode);

@@ -556,6 +556,8 @@ public:
 	bool monsterIsTinkeringCreation();
 	void monsterHandleKnockbackVelocity(real_t monsterFacingTangent, real_t weightratio);
 	int monsterGetDexterityForMovement();
+	void monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster = false);
+	int getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon);
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 
 	//--- Mechanism functions ---

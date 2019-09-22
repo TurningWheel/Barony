@@ -6692,21 +6692,41 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	}
 
 	// check the range to the target, depending on ranged weapon or melee.
-	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) || lichRangeCheckOverride )
+	if ( (dist < STRIKERANGE && !hasrangedweapon) || (hasrangedweapon && dist < getMonsterEffectiveDistanceOfRangedWeapon(myStats->weapon)) || lichRangeCheckOverride )
 	{
 		// increment the hit time, don't attack until this reaches the hitrate of the weapon
 		this->monsterHitTime++;
 		real_t bow = 1;
-		if ( hasrangedweapon )
+		if ( hasrangedweapon && myStats->weapon )
 		{
-			if ( myStats->weapon 
-				&& (myStats->weapon->type == SLING 
+			if ( (myStats->weapon->type == SLING 
 					|| myStats->weapon->type == SHORTBOW 
 					|| myStats->weapon->type == ARTIFACT_BOW
 					|| myStats->type == LONGBOW
 					|| myStats->type == COMPOUND_BOW) )
 			{
 				bow = 2;
+				if ( myStats->type == COMPOUND_BOW )
+				{
+					bow = 1.5;
+				}
+				if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
+				{
+					if ( myStats->shield->type == QUIVER_LIGHTWEIGHT )
+					{
+						bow -= 0.5;
+					}
+				}
+			}
+			else if ( myStats->weapon->type == CROSSBOW )
+			{
+				if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
+				{
+					if ( myStats->shield->type == QUIVER_LIGHTWEIGHT )
+					{
+						bow = 0.8;
+					}
+				}
 			}
 		}
 		if ( monsterIsImmobileTurret(this, myStats) )
@@ -9184,6 +9204,11 @@ int Entity::shouldMonsterDefend(Stat& myStats, const Entity& target, const Stat&
 		return MONSTER_DEFEND_NONE;
 	}
 
+	if ( itemTypeIsQuiver(myStats.shield->type) )
+	{
+		return MONSTER_DEFEND_NONE;
+	}
+
 	if ( monsterSpecialState > 0 )
 	{
 		return MONSTER_DEFEND_NONE;
@@ -9570,6 +9595,10 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 		}
 		else if ( monsterAllyClass == ALLY_CLASS_RANGED )
 		{
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
 			switch ( itemCategory(&item) )
 			{
 				case WEAPON:
@@ -9707,4 +9736,245 @@ int Entity::monsterGetDexterityForMovement()
 		myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 	}
 	return myDex;
+}
+
+void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
+{
+	if ( !myStats )
+	{
+		return;
+	}
+	int ammo = 5;
+	if ( currentlevel >= 15 )
+	{
+		ammo += 5 + rand() % 16;
+	}
+	else
+	{
+		ammo += rand() % 11;
+	}
+	switch ( myStats->type )
+	{
+		case HUMAN:
+			switch ( rand() % 5 )
+			{
+				case 0:
+				case 1:
+					myStats->shield = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->shield = newItem(QUIVER_SILVER, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 4:
+					if ( currentlevel >= 18 )
+					{
+						if ( rand() % 2 )
+						{
+							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+					}
+					else
+					{
+						myStats->shield = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case GOBLIN:
+			switch ( rand() % 5 )
+			{
+				case 0:
+				case 1:
+					myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 4:
+					if ( currentlevel >= 18 )
+					{
+						if ( rand() % 2 )
+						{
+							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+					}
+					else
+					{
+						myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case INSECTOID:
+			switch ( rand() % 5 )
+			{
+				case 0:
+				case 1:
+					myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->shield = newItem(QUIVER_7, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 4:
+					if ( currentlevel >= 18 )
+					{
+						if ( rand() % 2 )
+						{
+							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+					}
+					else
+					{
+						myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case KOBOLD:
+			switch ( rand() % 5 )
+			{
+				case 0:
+				case 1:
+					myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 4:
+					if ( currentlevel >= 28 )
+					{
+						if ( rand() % 2 )
+						{
+							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+					}
+					else
+					{
+						myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case INCUBUS:
+			switch ( rand() % 5 )
+			{
+				case 0:
+				case 1:
+					myStats->shield = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 4:
+					if ( currentlevel >= 18 )
+					{
+						if ( rand() % 2 )
+						{
+							myStats->shield = newItem(QUIVER_CRYSTAL, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+					}
+					else
+					{
+						myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case SKELETON:
+			switch ( rand() % 5 )
+			{
+				case 0:
+				case 1:
+					myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 2:
+				case 3:
+					myStats->shield = newItem(QUIVER_LIGHTWEIGHT, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					break;
+				case 4:
+					if ( currentlevel >= 18 )
+					{
+						if ( rand() % 2 )
+						{
+							myStats->shield = newItem(QUIVER_FIRE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+						else
+						{
+							myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						}
+					}
+					else
+					{
+						myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case AUTOMATON:
+			myStats->shield = newItem(QUIVER_PIERCE, SERVICABLE, 0, ammo, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+			break;
+		default:
+			break;
+	}
+}
+
+int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
+{
+	if ( !weapon )
+	{
+		return STRIKERANGE;
+	}
+
+	int distance = 160;
+	switch ( weapon->type )
+	{
+		case SLING:
+		case CROSSBOW:
+		case HEAVY_CROSSBOW:
+			distance = 120;
+			break;
+		case LONGBOW:
+			distance = 200;
+			break;
+		default:
+			break;
+	}
+	return distance;
 }

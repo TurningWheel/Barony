@@ -367,32 +367,6 @@ void initHuman(Entity* my, Stat* myStats)
 			{
 				// generate random equipment if not a named special human
 
-				//give shield
-				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-				{
-					switch ( rand() % 10 )
-					{
-						case 0:
-						case 1:
-						case 2:
-							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, nullptr);
-							break;
-						case 3:
-						case 4:
-							break;
-						case 5:
-						case 6:
-							myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, nullptr);
-							break;
-						case 7:
-						case 8:
-							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, nullptr);
-							break;
-						case 9:
-							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, nullptr);
-							break;
-					}
-				}
 
 				//give weapon
 				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
@@ -423,6 +397,40 @@ void initHuman(Entity* my, Stat* myStats)
 						case 9:
 							myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, nullptr);
 							break;
+					}
+				}
+
+				//give shield
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				{
+					if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+					{
+						my->monsterGenerateQuiverItem(myStats);
+					}
+					else
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+								myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, nullptr);
+								break;
+							case 3:
+							case 4:
+								break;
+							case 5:
+							case 6:
+								myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, nullptr);
+								break;
+							case 7:
+							case 8:
+								myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, nullptr);
+								break;
+							case 9:
+								myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, nullptr);
+								break;
+						}
 					}
 				}
 

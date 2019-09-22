@@ -109,33 +109,6 @@ void initGoblin(Entity* my, Stat* myStats)
 					break;
 			}
 
-			//give shield
-			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				// give shield
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-				}
-			}
 
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
@@ -162,6 +135,41 @@ void initGoblin(Entity* my, Stat* myStats)
 					case 9:
 						myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
+				}
+			}
+
+			//give shield
+			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			{
+				if ( myStats->weapon && isRangedWeapon(*myStats->weapon) )
+				{
+					my->monsterGenerateQuiverItem(myStats);
+				}
+				else
+				{
+					// give shield
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+							myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 7:
+						case 8:
+							myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
 				}
 			}
 
