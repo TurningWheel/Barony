@@ -3932,6 +3932,17 @@ timeToGoAgain:
 								MONSTER_VELY = maxVelY;
 							}
 
+							int rangedWeaponDistance = 160;
+							if ( hasrangedweapon )
+							{
+								int effectiveDistance = my->getMonsterEffectiveDistanceOfRangedWeapon(myStats->weapon);
+								if ( effectiveDistance < rangedWeaponDistance )
+								{
+									// shorter range xbows etc should advance at a little less than the extremity.
+									rangedWeaponDistance = effectiveDistance - 10; 
+								}
+							}
+
 							if ( monsterIsImmobileTurret(my, myStats) )
 							{
 								// this is just so that the monster rotates. it doesn't actually move
@@ -3939,7 +3950,8 @@ timeToGoAgain:
 								MONSTER_VELY = maxVelY * 0.01;
 							}
 							else if ( !myStats->EFFECTS[EFF_KNOCKBACK] && 
-								((dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon)) )
+								((dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) 
+									|| (hasrangedweapon && dist > rangedWeaponDistance)) )
 							{
 								if ( my->shouldRetreat(*myStats) )
 								{
@@ -9959,7 +9971,7 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 {
 	if ( !weapon )
 	{
-		return STRIKERANGE;
+		return 160;
 	}
 
 	int distance = 160;
@@ -9968,7 +9980,7 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 		case SLING:
 		case CROSSBOW:
 		case HEAVY_CROSSBOW:
-			distance = 120;
+			distance = 100;
 			break;
 		case LONGBOW:
 			distance = 200;

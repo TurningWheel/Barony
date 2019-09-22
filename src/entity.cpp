@@ -14002,7 +14002,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 	if ( myStats.MAXHP >= 100 )
 	{
-		if ( myStats.HP <= myStats.MAXHP / 6 && this->getCHR() >= -2 )
+		if ( myStats.HP <= myStats.MAXHP / 8 && this->getCHR() >= -2 )
 		{
 			return true;
 		}
@@ -14017,7 +14017,15 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon)
 {
-	if ( dist >= 100 || !hasrangedweapon )
+	int distanceLimit = 100;
+	if ( hasrangedweapon && myStats.weapon )
+	{
+		if ( distanceLimit >= getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) )
+		{
+			distanceLimit = getMonsterEffectiveDistanceOfRangedWeapon(myStats.weapon) - 20;
+		}
+	}
+	if ( dist >= distanceLimit || !hasrangedweapon )
 	{
 		return false;
 	}
