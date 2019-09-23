@@ -2747,6 +2747,40 @@ Entity* spawnMagicParticle(Entity* parentent)
 	return entity;
 }
 
+Entity* spawnMagicParticleCustom(Entity* parentent, int sprite, real_t scale, real_t spreadReduce)
+{
+	Entity* entity;
+
+	entity = newEntity(sprite, 1, map.entities, nullptr); //Particle entity.
+
+	int size = 50 / spreadReduce;
+	entity->x = parentent->x + (rand() % size - size / 2) / 20.f;
+	entity->y = parentent->y + (rand() % size - size / 2) / 20.f;
+	entity->z = parentent->z + (rand() % size - size / 2) / 20.f;
+	entity->scalex = scale;
+	entity->scaley = scale;
+	entity->scalez = scale;
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->yaw = parentent->yaw;
+	entity->pitch = parentent->pitch;
+	entity->roll = parentent->roll;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UPDATENEEDED] = false;
+	entity->behavior = &actMagicParticle;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+
+	return entity;
+}
+
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 {
 	int c;

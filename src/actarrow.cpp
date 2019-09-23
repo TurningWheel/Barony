@@ -54,6 +54,7 @@ enum ArrowSpriteTypes : int
 	PROJECTILE_FIRE_SPRITE,
 	PROJECTILE_HEAVY_SPRITE,
 	PROJECTILE_CRYSTAL_SPRITE,
+	PROJECTILE_HUNTING_SPRITE
 };
 
 void actArrow(Entity* my)
@@ -113,10 +114,6 @@ void actArrow(Entity* my)
 				}
 				ARROW_FLICKER = 0;
 			}
-			/*int oldSprite = my->sprite;
-			my->sprite = 174;
-			spawnMagicParticle(my);
-			my->sprite = oldSprite;*/
 			Entity* entity = spawnFlame(my, SPRITE_FLAME);
 			if ( ARROW_STUCK == 1 )
 			{
@@ -132,7 +129,48 @@ void actArrow(Entity* my)
 			entity->flags[GENIUS] = false;
 			entity->setUID(-3);
 		}
-
+	}
+	else if ( my->arrowQuiverType == QUIVER_HEAVY || my->sprite == PROJECTILE_HEAVY_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			spawnMagicParticleCustom(my, 171, 0.5, 4);
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_SILVER || my->sprite == PROJECTILE_SILVER_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			spawnMagicParticleCustom(my, 932, 1.f, 4);
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_CRYSTAL || my->sprite == PROJECTILE_CRYSTAL_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			spawnMagicParticleCustom(my, 606, 1.f, 4);
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			spawnMagicParticleCustom(my, 608, 1.f, 4);
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT || my->sprite == PROJECTILE_SWIFT_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			spawnMagicParticleCustom(my, 931, 1.f, 4);
+		}
+	}
+	else if ( my->arrowQuiverType == QUIVER_7 || my->sprite == PROJECTILE_HUNTING_SPRITE )
+	{
+		if ( ARROW_STUCK == 0 )
+		{
+			spawnMagicParticleCustom(my, 933, 1.f, 4);
+		}
 	}
 
 	if ( multiplayer != CLIENT )
@@ -320,7 +358,7 @@ void actArrow(Entity* my)
 							case DEVIL:
 								// smite these creatures
 								silverDamage = true;
-								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 174);
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 860);
 								break;
 							default:
 								silverDamage = false;
