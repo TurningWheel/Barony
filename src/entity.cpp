@@ -12149,9 +12149,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			}
 			else
 			{
-				weaponLimb->x = weaponArmLimb->x - 1.5 * cos(weaponArmLimb->yaw);
-				weaponLimb->y = weaponArmLimb->y - 1.5 * sin(weaponArmLimb->yaw);
-				weaponLimb->z = weaponArmLimb->z + 2;
+				weaponLimb->x = weaponArmLimb->x - .5 * cos(weaponArmLimb->yaw);
+				weaponLimb->y = weaponArmLimb->y - .5 * sin(weaponArmLimb->yaw);
+				weaponLimb->z = weaponArmLimb->z + 1;
 				weaponLimb->pitch = weaponArmLimb->pitch + .25;
 			}
 
@@ -12362,6 +12362,169 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->focaly += 0.5;
 				weaponLimb->focalz -= 1;
 			}
+		}
+		else if ( weaponLimb->sprite == items[SHORTBOW].index || weaponLimb->sprite == items[ARTIFACT_BOW].index
+			|| weaponLimb->sprite == items[LONGBOW].index || weaponLimb->sprite == items[COMPOUND_BOW].index )
+		{
+			if ( weaponLimb->sprite == items[SHORTBOW].index )
+			{
+				switch ( monsterType )
+				{
+					case HUMAN:
+					case VAMPIRE:
+					case SHOPKEEPER:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1.25;
+						weaponLimb->focalx += -0.5;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.75;
+						break;
+					case GOBLIN:
+					case GOATMAN:
+					case INSECTOID:
+					case SUCCUBUS:
+					case INCUBUS:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					case SKELETON:
+					case AUTOMATON:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += -0.5;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1;
+						break;
+					default:
+						break;
+				}
+			}
+			else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index
+				|| weaponLimb->sprite == items[LONGBOW].index )
+			{
+				switch ( monsterType )
+				{
+					case HUMAN:
+					case VAMPIRE:
+					case SHOPKEEPER:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.75 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.75 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1.25;
+						weaponLimb->focalx += -0.5;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.75;
+						if ( weaponLimb->sprite == items[LONGBOW].index )
+						{
+							weaponLimb->x += -0.25 * cos(weaponArmLimb->yaw);
+							weaponLimb->y += -0.25 * sin(weaponArmLimb->yaw);
+							weaponLimb->z += 0.25;
+							weaponLimb->focalx += 0.5;
+							weaponLimb->focaly += 0;
+							weaponLimb->focalz += -0.5;
+						}
+						break;
+					case GOBLIN:
+					case GOATMAN:
+					case INSECTOID:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					case SUCCUBUS:
+					case INCUBUS:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					case SKELETON:
+					case AUTOMATON:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1.25;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					default:
+						break;
+				}
+				if ( weaponLimb->sprite == items[LONGBOW].index )
+				{
+					// this applies to all offsets for all monsters.
+					weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.75 * cos(weaponArmLimb->yaw);
+					weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.75 * sin(weaponArmLimb->yaw);
+					weaponLimb->z += 0.25;
+					weaponLimb->focalx += -.75;
+					weaponLimb->focaly += 0;
+					weaponLimb->focalz += 0;
+				}
+			}
+			else if ( weaponLimb->sprite == items[COMPOUND_BOW].index )
+			{
+				switch ( monsterType )
+				{
+					case HUMAN:
+					case VAMPIRE:
+					case SHOPKEEPER:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.f * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.f * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1.25;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.75;
+						break;
+					case GOBLIN:
+					case GOATMAN:
+					case INSECTOID:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					case SUCCUBUS:
+					case INCUBUS:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					case SKELETON:
+					case AUTOMATON:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1.25;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
+					default:
+						break;
+				}
+			}
+
+
+			weaponLimb->x += limbs[HUMAN][12][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * cos(weaponArmLimb->yaw);
+			weaponLimb->y += limbs[HUMAN][12][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * sin(weaponArmLimb->yaw);
+			weaponLimb->z += limbs[HUMAN][12][2];
+			weaponLimb->focalx += limbs[HUMAN][11][0];
+			weaponLimb->focaly += limbs[HUMAN][11][1];
+			weaponLimb->focalz += limbs[HUMAN][11][2];
 		}
 	}
 	else
@@ -14855,7 +15018,7 @@ bool Entity::setArrowProjectileProperties(int weaponType)
  * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
  * Calculations for reductions is outlined in this function
  */
-void Entity::SetEntityOnFire()
+void Entity::SetEntityOnFire(Entity* sourceOfFire)
 {
 	// Check if the Entity can be set on fire
 	if ( this->flags[BURNABLE] )
@@ -14938,6 +15101,15 @@ void Entity::SetEntityOnFire()
 			else
 			{
 				this->char_fire -= static_cast<Sint32>(floor((entityCON * 0.5) * TICKS_TO_PROCESS_FIRE));
+			}
+
+			if ( sourceOfFire && sourceOfFire->behavior == &actArrow )
+			{
+				if ( behavior == &actMonster )
+				{
+					// monsters shot with arrow burn less, harder for players.
+					this->char_fire = std::min(this->char_fire, TICKS_TO_PROCESS_FIRE * 6);
+				}
 			}
 
 			return; // The Entity was set on fire, with a reduced duration

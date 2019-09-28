@@ -671,7 +671,7 @@ public:
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
-	void Entity::handleQuiverThirdPersonModel(Stat& myStats);
+	void handleQuiverThirdPersonModel(Stat& myStats);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
 	// monster special attack handler, returns true if monster should attack after calling this function.
@@ -819,7 +819,7 @@ public:
 	 * Entities with Stats will have their fire time (char_fire) and chance to stop being on fire (chanceToPutOutFire) reduced by their CON
 	 * Calculations for reductions is outlined in this function
 	 */
-	void SetEntityOnFire();
+	void SetEntityOnFire(Entity* sourceOfFire = nullptr);
 
 	void addToCreatureList(list_t* list);
 	std::vector<Entity*> bodyparts;

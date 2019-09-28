@@ -141,42 +141,48 @@ void actArrow(Entity* my)
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 944, 0.5, 4);
+			Entity* particle = spawnMagicParticleCustom(my, 159, 0.5, 4);
+			particle->flags[SPRITE] = true;
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_SILVER || my->sprite == PROJECTILE_SILVER_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 932, 1.f, 4);
+			Entity* particle = spawnMagicParticleCustom(my, 160, 0.5, 4);
+			particle->flags[SPRITE] = true;
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_CRYSTAL || my->sprite == PROJECTILE_CRYSTAL_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 942, 1.f, 4);
+			Entity* particle = spawnMagicParticleCustom(my, 155, 0.5, 4);
+			particle->flags[SPRITE] = true;
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 943, 1.f, 4);
+			Entity* particle = spawnMagicParticleCustom(my, 158, 0.5, 4);
+			particle->flags[SPRITE] = true;
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT || my->sprite == PROJECTILE_SWIFT_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 931, 1.f, 4);
+			Entity* particle = spawnMagicParticleCustom(my, 156, 0.5, 4);
+			particle->flags[SPRITE] = true;
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_7 || my->sprite == PROJECTILE_HUNTING_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 933, 1.f, 4);
+			Entity* particle = spawnMagicParticleCustom(my, 157, 0.5, 4);
+			particle->flags[SPRITE] = true;
 		}
 	}
 
@@ -642,7 +648,7 @@ void actArrow(Entity* my)
 					if ( my->arrowQuiverType == QUIVER_FIRE )
 					{
 						bool burning = hit.entity->flags[BURNING];
-						hit.entity->SetEntityOnFire();
+						hit.entity->SetEntityOnFire(my);
 						if ( hitstats )
 						{
 							hitstats->poisonKiller = my->parent;
