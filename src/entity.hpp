@@ -671,6 +671,7 @@ public:
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
+	void Entity::handleQuiverThirdPersonModel(Stat& myStats);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
 	// monster special attack handler, returns true if monster should attack after calling this function.

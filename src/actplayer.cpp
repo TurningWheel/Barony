@@ -4298,6 +4298,13 @@ void actPlayer(Entity* my)
 							{
 								entity->flags[INVISIBLE] = false;
 								entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
+								if ( itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
+								{
+									if ( itemTypeIsQuiver(stats[PLAYER_NUM]->shield->type) )
+									{
+										entity->handleQuiverThirdPersonModel(*stats[PLAYER_NUM]);
+									}
+								}
 							}
 							if ( my->isInvisible() )
 							{

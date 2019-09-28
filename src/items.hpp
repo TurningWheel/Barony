@@ -609,6 +609,7 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
+bool itemSpriteIsBreastpiece(int sprite);
 real_t rangedAttackGetSpeedModifier(Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
 

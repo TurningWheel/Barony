@@ -114,27 +114,34 @@ void actArrow(Entity* my)
 				}
 				ARROW_FLICKER = 0;
 			}
-			Entity* entity = spawnFlame(my, SPRITE_FLAME);
-			if ( ARROW_STUCK == 1 )
+
+			if ( ARROW_STUCK != 0 )
 			{
-				entity->x += .5 * cos(my->yaw);
-				entity->y += .5 * sin(my->yaw);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
+				if ( ARROW_STUCK == 1 )
+				{
+					entity->x += .5 * cos(my->yaw);
+					entity->y += .5 * sin(my->yaw);
+				}
+				else
+				{
+					entity->x += 1.5 * cos(my->yaw);
+					entity->y += 1.5 * sin(my->yaw);
+				}
+				entity->z = my->z;
 			}
 			else
 			{
-				entity->x += 1.5 * cos(my->yaw);
-				entity->y += 1.5 * sin(my->yaw);
+				Entity* flame = spawnMagicParticleCustom(my, SPRITE_FLAME, 0.5, 4); // this looks nicer than the spawnFlame :)
+				flame->flags[SPRITE] = true;
 			}
-			entity->z = my->z;
-			entity->flags[GENIUS] = false;
-			entity->setUID(-3);
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_HEAVY || my->sprite == PROJECTILE_HEAVY_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 171, 0.5, 4);
+			spawnMagicParticleCustom(my, 944, 0.5, 4);
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_SILVER || my->sprite == PROJECTILE_SILVER_SPRITE )
@@ -148,14 +155,14 @@ void actArrow(Entity* my)
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 606, 1.f, 4);
+			spawnMagicParticleCustom(my, 942, 1.f, 4);
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_PIERCE || my->sprite == PROJECTILE_PIERCE_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
-			spawnMagicParticleCustom(my, 608, 1.f, 4);
+			spawnMagicParticleCustom(my, 943, 1.f, 4);
 		}
 	}
 	else if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT || my->sprite == PROJECTILE_SWIFT_SPRITE )

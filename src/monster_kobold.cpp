@@ -846,6 +846,10 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
+						if ( itemTypeIsQuiver(myStats->shield->type) )
+						{
+							entity->handleQuiverThirdPersonModel(*myStats);
+						}
 					}
 					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
@@ -925,6 +929,15 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity2->y += 0.75 * sin(shieldarm->yaw);
 						}
 					}
+				}
+				if ( itemSpriteIsQuiverThirdPersonModel(entity->sprite) )
+				{
+					/*shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.25 * cos(this->yaw);
+					shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.25 * sin(this->yaw);*/
+					entity->x -= 0.25 * cos(my->yaw + PI / 2);
+					entity->y -= 0.25 * sin(my->yaw + PI / 2);
+					entity->z += 1;
+					entity->yaw += PI / 6;
 				}
 				break;
 			// cloak

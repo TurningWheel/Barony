@@ -4254,7 +4254,8 @@ bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 	{
 		if ( sprite == items[i].index
 			|| sprite == items[i].index + 1
-			|| sprite == items[i].index + 2 )
+			|| sprite == items[i].index + 2
+			|| sprite == items[i].index + 3 )
 		{
 			return true;
 		}
@@ -4266,7 +4267,7 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 {
 	for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
 	{
-		if ( sprite == items[i].index )
+		if ( sprite == items[i].index + 1 )
 		{
 			return true;
 		}
@@ -4330,6 +4331,29 @@ bool rangedWeaponUseQuiverOnAttack(Stat* myStats)
 	}
 
 	if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) && !(myStats->weapon && myStats->weapon->type == SLING) )
+	{
+		return true;
+	}
+	return false;
+}
+
+bool itemSpriteIsBreastpiece(int sprite)
+{
+	if ( sprite < 0 || sprite > NUMITEMS )
+	{
+		return false;
+	}
+	if ( sprite == items[LEATHER_BREASTPIECE].index
+		|| sprite == items[IRON_BREASTPIECE].index
+		|| sprite == items[STEEL_BREASTPIECE].index
+		|| sprite == items[CRYSTAL_BREASTPIECE].index
+		|| sprite == items[VAMPIRE_DOUBLET].index
+		|| sprite == items[WIZARD_DOUBLET].index
+		|| sprite == items[HEALER_DOUBLET].index
+		|| sprite == items[SILVER_DOUBLET].index
+		|| sprite == items[ARTIFACT_BREASTPIECE].index
+		|| sprite == items[TUNIC].index
+		|| sprite == items[MACHINIST_APRON].index )
 	{
 		return true;
 	}

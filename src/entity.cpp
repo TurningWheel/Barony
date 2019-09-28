@@ -16141,6 +16141,8 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				{
 					limb->z += 0.15;
 					limb->scalez = 0.9;
+					limb->x += .1 * cos(this->yaw);
+					limb->y += .1 * sin(this->yaw);
 				}
 				else
 				{
@@ -16238,6 +16240,14 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 						limb->z -= 1;
 					}
 				}
+
+				/*if ( limb->sprite == items[WIZARD_DOUBLET].index
+					|| limb->sprite == items[HEALER_DOUBLET].index
+					|| limb->sprite == items[TUNIC].index
+					|| limb->sprite == items[TUNIC].index + 1 )
+				{
+					limb->z += 0.25;
+				}*/
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -16297,6 +16307,14 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x -= .5 * cos(this->yaw);
 				limb->y -= .5 * sin(this->yaw);
 				limb->z += 2.5;
+
+				if ( limb->sprite == items[WIZARD_DOUBLET].index
+					|| limb->sprite == items[HEALER_DOUBLET].index
+					|| limb->sprite == items[TUNIC].index
+					|| limb->sprite == items[TUNIC].index + 1 )
+				{
+					limb->z += 0.5;
+				}
 			}
 			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
 			{
@@ -16396,8 +16414,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	shieldLimb->scaley = 1.f;
 	shieldLimb->scalez = 1.f;
 
-	shieldLimb->x -= limbs[HUMAN][12][0] * cos(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * cos(this->yaw);
-	shieldLimb->y -= limbs[HUMAN][12][0] * sin(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * sin(this->yaw);
+	/*if ( behavior == &actMonster )
+	{
+		shieldLimb->x -= limbs[HUMAN][12][0] * cos(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * cos(this->yaw);
+		shieldLimb->y -= limbs[HUMAN][12][0] * sin(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * sin(this->yaw);
+		shieldLimb->z += limbs[HUMAN][12][2];
+	}*/
 
 	switch ( race )
 	{
@@ -16463,9 +16485,9 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			{
 				shieldLimb->focalz += 3;
 				shieldLimb->scalex = 1.05;
-				shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.3 * cos(this->yaw);
-				shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.3 * sin(this->yaw);
-				shieldLimb->z += -1.78;
+				shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.25 * cos(this->yaw);
+				shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.25 * sin(this->yaw);
+				shieldLimb->z += -1.28;
 			}
 			else if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
 				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
@@ -16521,10 +16543,6 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			}
 			if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
 			{
-				if ( itemSpriteIsQuiverBaseThirdPersonModel(shieldLimb->sprite) )
-				{
-					shieldLimb->sprite++; // shortened shoulder sprite variation
-				}
 				shieldLimb->focalz += 3;
 				shieldLimb->z += -1.78;
 				shieldLimb->scalex = 1.05;
@@ -16532,11 +16550,19 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				{
 					shieldLimb->x -= -0.2 * cos(this->yaw + PI / 2) + 1.6 * cos(this->yaw);
 					shieldLimb->y -= -0.2 * sin(this->yaw + PI / 2) + 1.6 * sin(this->yaw);
+					if ( behavior == &actMonster )
+					{
+						// additional offsets for skellie monsters since the player offsets slightly different
+						shieldLimb->x += -0.25 * cos(this->yaw);
+						shieldLimb->y += -0.25 * sin(this->yaw);
+						shieldLimb->z += -0.25;
+					}
 				}
 				else if ( race == AUTOMATON )
 				{
-					shieldLimb->x -= 1.35 * cos(this->yaw + PI / 2) + 2.1 * cos(this->yaw);
-					shieldLimb->y -= 1.35 * sin(this->yaw + PI / 2) + 2.1 * sin(this->yaw);
+					shieldLimb->x -= 1.1 * cos(this->yaw + PI / 2) + 2.1 * cos(this->yaw);
+					shieldLimb->y -= 1.1 * sin(this->yaw + PI / 2) + 2.1 * sin(this->yaw);
+					shieldLimb->z += 0.1;
 				}
 			}
 
@@ -16704,15 +16730,15 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				{
 					if ( race == SUCCUBUS )
 					{
-						shieldLimb->x -= 0.05 * cos(this->yaw + PI / 2) + (1.8) * cos(this->yaw);
-						shieldLimb->y -= 0.05 * sin(this->yaw + PI / 2) + (1.8) * sin(this->yaw);
+						shieldLimb->x -= 0.05 * cos(this->yaw + PI / 2) + (1.75) * cos(this->yaw);
+						shieldLimb->y -= 0.05 * sin(this->yaw + PI / 2) + (1.75) * sin(this->yaw);
 					}
 					else
 					{
-						shieldLimb->x -= 0.05 * cos(this->yaw + PI / 2) + (1.55) * cos(this->yaw);
-						shieldLimb->y -= 0.05 * sin(this->yaw + PI / 2) + (1.55) * sin(this->yaw);
+						shieldLimb->x -= 0.05 * cos(this->yaw + PI / 2) + (1.5) * cos(this->yaw);
+						shieldLimb->y -= 0.05 * sin(this->yaw + PI / 2) + (1.5) * sin(this->yaw);
 					}
-					shieldLimb->z += -2.78;
+					shieldLimb->z += -2.28;
 				}
 				else
 				{
@@ -16728,8 +16754,8 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 					}
 					else
 					{
-						shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.05 * cos(this->yaw);
-						shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.05 * sin(this->yaw);
+						shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.0 * cos(this->yaw);
+						shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.0 * sin(this->yaw);
 					}
 					shieldLimb->z += -1.78;
 				}
@@ -17116,4 +17142,42 @@ int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
 		return std::min(myStats->MAXHP, ((appearance * myStats->HP) / 4) + randomHP);
 	}
 	return 0;
+}
+
+void Entity::handleQuiverThirdPersonModel(Stat& myStats)
+{
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( !myStats.breastplate )
+	{
+		switch ( myStats.type )
+		{
+			case SKELETON:
+			case AUTOMATON:
+				sprite += 2; // short strap
+				break;
+			case KOBOLD:
+			case GNOME:
+				// no strap.
+				break;
+			default:
+				sprite += 1; // normal strap
+				break;
+		}
+	}
+	else
+	{
+		switch ( myStats.type )
+		{
+			case SKELETON:
+			case AUTOMATON:
+				sprite += 2; // short strap
+				break;
+			default:
+				sprite += 3; // shoulderpad-less.
+				break;
+		}
+	}
 }
