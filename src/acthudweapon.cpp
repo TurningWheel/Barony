@@ -287,6 +287,8 @@ Uint32 bowDrawBaseTicks = 50;
 #define HUDWEAPON_CHARGE my->skill[3]
 #define HUDWEAPON_OVERCHARGE my->skill[4]
 #define HUDWEAPON_WHIP_ANGLE my->skill[5]
+#define HUDWEAPON_HIDEWEAPON my->skill[6]
+#define HUDWEAPON_SHOOTING_RANGED_WEAPON my->skill[7]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -425,6 +427,9 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	HUDWEAPON_HIDEWEAPON = hideWeapon;
+	HUDWEAPON_SHOOTING_RANGED_WEAPON = 0;
+
 	bool rangedweapon = false;
 	if ( stats[clientnum]->weapon && !hideWeapon )
 	{
@@ -521,6 +526,7 @@ void actHudWeapon(Entity* my)
 						if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
 						{
 							my->sprite++;
+							HUDWEAPON_SHOOTING_RANGED_WEAPON = 1;
 						}
 					}
 				}
@@ -3057,4 +3063,115 @@ void actHudAdditional(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
+}
+
+void actHudArrowModel(Entity* my)
+{
+	bool bow = false;
+	if ( stats[clientnum]->weapon 
+		&& (stats[clientnum]->weapon->type == SHORTBOW
+			|| stats[clientnum]->weapon->type == CROSSBOW
+			|| stats[clientnum]->weapon->type == LONGBOW
+			|| stats[clientnum]->weapon->type == COMPOUND_BOW
+			|| stats[clientnum]->weapon->type == HEAVY_CROSSBOW)
+		)
+	{
+		bow = true;
+	}
+
+	my->flags[UNCLICKABLE] = true;
+
+	// isn't active during intro/menu sequence
+	if ( intro == true )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		if ( stats[clientnum]->HP <= 0 )
+		{
+			my->flags[INVISIBLE] = true;
+			return;
+		}
+	}
+
+	// this entity only exists so long as the player exists
+	if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !hudweapon )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if ( !bow || cast_animation.active || cast_animation.active_spellbook )
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+
+	if ( hudweapon->flags[INVISIBLE] 
+		|| hudweapon->skill[6] != 0
+		|| hudweapon->skill[7] == 0 ) // skill[6] is hiding weapon, skill[7] is shooting something
+	{
+		my->flags[INVISIBLE] = true;
+		return;
+	}
+
+	my->scalex = 1.f;
+	my->scaley = 1.f;
+	my->scalez = 1.f;
+	my->flags[INVISIBLE] = false;
+	my->sprite = 934;
+
+	if ( stats[clientnum]->shield && itemTypeIsQuiver(stats[clientnum]->shield->type) )
+	{
+		switch ( stats[clientnum]->shield->type )
+		{
+			case QUIVER_SILVER:
+				my->sprite = 935;
+				break;
+			case QUIVER_PIERCE:
+				my->sprite = 936;
+				break;
+			case QUIVER_LIGHTWEIGHT:
+				my->sprite = 937;
+				break;
+			case QUIVER_FIRE:
+				my->sprite = 938;
+				break;
+			case QUIVER_HEAVY:
+				my->sprite = 939;
+				break;
+			case QUIVER_CRYSTAL:
+				my->sprite = 940;
+				break;
+			case QUIVER_7:
+				my->sprite = 941;
+				break;
+			default:
+				break;
+		}
+	}
+
+	// set entity position
+	my->x = hudweapon->x;
+	my->y = hudweapon->y;
+	my->z = hudweapon->z;
+
+	my->yaw = hudweapon->yaw;
+	my->pitch = hudweapon->pitch;
+	my->roll = hudweapon->roll;
+
+	my->focalx = hudweapon->focalx - 0.125;
+	if ( hudweapon->sprite == items[COMPOUND_BOW].fpindex + 1 )
+	{
+		my->focalx += 0.125; // shorter bowstring on compound bow, push arrow forward.
+	}
+	my->focaly = hudweapon->focaly - 0.25;
+	my->focalz = hudweapon->focalz - 0.25;
+
+	my->scalex = hudweapon->scalex;
+	my->scaley = hudweapon->scaley;
+	my->scalez = hudweapon->scalez;
 }

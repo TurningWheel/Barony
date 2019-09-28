@@ -205,6 +205,8 @@ public:
 	Sint32& entityShowOnMap; //skill[59]
 	real_t& monsterSentrybotLookDir; //fskill[10]
 	real_t& monsterKnockbackTangentDir; //fskill[11]
+	real_t& playerStrafeVelocity; //fskill[12]
+	real_t& playerStrafeDir; //fskill[13]
 
 	//--EFFECTS--
 	Sint32& effectPolymorph; // skill[50]

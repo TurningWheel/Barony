@@ -481,6 +481,15 @@ void actPlayer(Entity* my)
 			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actHudAdditional;
 			my->bodyparts.push_back(entity);
+
+			// hud additional limb 2
+			entity = newEntity(-1, 1, map.entities, nullptr); //HUD entity.
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
+			entity->behavior = &actHudArrowModel;
+			my->bodyparts.push_back(entity);
 		}
 		else
 		{
@@ -3074,6 +3083,34 @@ void actPlayer(Entity* my)
 			{
 				my->monsterKnockbackVelocity = 0.f;
 				my->monsterKnockbackTangentDir = 0.f;
+			}
+
+			if ( fabs(my->playerStrafeVelocity) > 0.1 )
+			{
+				if ( fabs(my->playerStrafeDir) < 0.01 )
+				{
+					if ( fabs(x_force) > 0.01 )
+					{
+						my->playerStrafeDir = x_force;
+						if ( my->playerStrafeDir <= 0.0f )
+						{
+							my->playerStrafeVelocity *= -1;
+						}
+					}
+					else
+					{
+						my->playerStrafeVelocity = 0.0f;
+						my->playerStrafeDir = 0.0f;
+					}
+				}
+				PLAYER_VELX += my->playerStrafeVelocity * cos(my->yaw + PI / 2);
+				PLAYER_VELY += my->playerStrafeVelocity * sin(my->yaw + PI / 2);
+				my->playerStrafeVelocity *= 0.90;
+			}
+			else
+			{
+				my->playerStrafeDir = 0.0f;
+				my->playerStrafeVelocity = 0.0f;
 			}
 
 			PLAYER_VELX += y_force * cos(my->yaw) * .045 * speedFactor / (1 + (stats[PLAYER_NUM]->defending || stats[PLAYER_NUM]->sneaking == 1));
