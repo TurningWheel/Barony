@@ -4007,7 +4007,7 @@ void GenericGUIMenu::updateGUI()
 								if ( item->appearance >= 0 && item->appearance <= 4 )
 								{
 									health = 25 * item->appearance;
-									if ( health == 0 )
+									if ( health == 0 && item->status != BROKEN )
 									{
 										health = 5;
 									}
