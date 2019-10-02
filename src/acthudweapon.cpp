@@ -519,6 +519,7 @@ void actHudWeapon(Entity* my)
 
 			if ( bowIsBeingDrawn )
 			{
+				HUDWEAPON_SHOOTING_RANGED_WEAPON = 1;
 				if ( (my->ticks - bowStartDrawingTick) >= bowDrawBaseTicks / 4 )
 				{
 					if ( rangedweapon )
@@ -526,7 +527,7 @@ void actHudWeapon(Entity* my)
 						if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
 						{
 							my->sprite++;
-							HUDWEAPON_SHOOTING_RANGED_WEAPON = 1;
+							HUDWEAPON_SHOOTING_RANGED_WEAPON = 2;
 						}
 					}
 				}
@@ -2438,6 +2439,7 @@ void actHudShield(Entity* my)
 	}
 
 	bool spellbook = false;
+	bool quiver = false;
 	if ( stats[clientnum]->shield && itemCategory(stats[clientnum]->shield) == SPELLBOOK )
 	{
 		spellbook = true;
@@ -2446,7 +2448,10 @@ void actHudShield(Entity* my)
 			hideShield = false;
 		}
 	}
-
+	else if ( stats[clientnum]->shield && itemTypeIsQuiver(stats[clientnum]->shield->type) )
+	{
+		quiver = true;
+	}
 
 	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
@@ -2469,6 +2474,12 @@ void actHudShield(Entity* my)
 						my->scalex = 0.35;
 						my->scaley = 0.35;
 						my->scalez = 0.35;
+					}
+					else if ( quiver )
+					{
+						my->scalex = 0.5f;
+						my->scaley = 0.5f;
+						my->scalez = 0.5f;
 					}
 					else
 					{
@@ -2679,6 +2690,65 @@ void actHudShield(Entity* my)
 						HUDSHIELD_MOVEZ = -1;
 					}
 				}
+			}
+		}
+	}
+	else if ( !hideShield && quiver && hudweapon && hudweapon->skill[7] != 0 ) // skill[7] == 1 is hudweapon bow drawing
+	{
+		if ( hudweapon->skill[7] == 2 )
+		{
+			my->flags[INVISIBLE] = true;
+			HUDSHIELD_MOVEY = 0;
+			HUDSHIELD_PITCH = 0;
+			HUDSHIELD_YAW = 0;
+			HUDSHIELD_MOVEZ = 0;
+			HUDSHIELD_MOVEX = 0;
+		}
+
+		real_t targetY = 5.05 + limbs[HUMAN][11][0];
+		real_t targetPitch = PI / 2 + limbs[HUMAN][11][1];
+		real_t targetYaw = PI / 3 - 0.1 + limbs[HUMAN][11][2];
+		real_t targetZ = -3.375 + limbs[HUMAN][12][0];
+		real_t targetX = limbs[HUMAN][12][1];
+
+		if ( HUDSHIELD_MOVEY < targetY )
+		{
+			HUDSHIELD_MOVEY += 0.5;
+			if ( HUDSHIELD_MOVEY > targetY )
+			{
+				HUDSHIELD_MOVEY = targetY;
+			}
+		}
+		if ( HUDSHIELD_MOVEX > targetX )
+		{
+			HUDSHIELD_MOVEX -= 0.4;
+			if ( HUDSHIELD_MOVEX < targetX )
+			{
+				HUDSHIELD_MOVEX = targetX;
+			}
+		}
+		if ( HUDSHIELD_PITCH < targetPitch )
+		{
+			HUDSHIELD_PITCH += .2;
+			if ( HUDSHIELD_PITCH > targetPitch )
+			{
+				HUDSHIELD_PITCH = targetPitch;
+			}
+		}
+		if ( HUDSHIELD_YAW < targetYaw )
+		{
+			HUDSHIELD_YAW += .3;
+			if ( HUDSHIELD_YAW > targetYaw )
+			{
+				HUDSHIELD_YAW = targetYaw;
+			}
+		}
+		if ( HUDSHIELD_MOVEZ > targetZ )
+		{
+			HUDSHIELD_MOVEZ -= 0.4;
+			if ( HUDSHIELD_MOVEZ < targetZ )
+			{
+				HUDSHIELD_MOVEZ = targetZ;
 			}
 		}
 	}
@@ -3112,7 +3182,7 @@ void actHudArrowModel(Entity* my)
 
 	if ( hudweapon->flags[INVISIBLE] 
 		|| hudweapon->skill[6] != 0
-		|| hudweapon->skill[7] == 0 ) // skill[6] is hiding weapon, skill[7] is shooting something
+		|| hudweapon->skill[7] != 2 ) // skill[6] is hiding weapon, skill[7] is shooting something
 	{
 		my->flags[INVISIBLE] = true;
 		return;

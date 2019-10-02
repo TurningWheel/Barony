@@ -106,6 +106,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterIllusionTauntingThisUid(skill[55]),
 	monsterSentrybotLookDir(fskill[10]),
 	monsterKnockbackTangentDir(fskill[11]),
+	playerStrafeVelocity(fskill[12]),
+	playerStrafeDir(fskill[13]),
 	entityShowOnMap(skill[59]),
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),

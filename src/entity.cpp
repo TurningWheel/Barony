@@ -9504,14 +9504,14 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 							Stat* followerStats = follower->getStats();
 							if ( followerStats )
 							{
-								int xpDivide = std::min(std::max(1, numFollowers), 4); // 1 - 4 depending on followers.
+								//int xpDivide = std::min(std::max(1, numFollowers), 4); // 1 - 4 depending on followers.
 								if ( follower->monsterAllySummonRank != 0 && numshares > 0 )
 								{
 									followerStats->EXP += (xpGain * numshares); // summoned monsters aren't penalised XP.
 								}
 								else
 								{
-									followerStats->EXP += (xpGain / xpDivide);
+									followerStats->EXP += (xpGain);
 								}
 								//messagePlayer(0, "monster got %d xp", xpGain);
 							}

@@ -411,7 +411,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"quiver_fire",
 	"quiver_heavy",
 	"quiver_crystal",
-	"quiver_7",
+	"quiver_hunting",
 	"longbow",
 	"compound_bow",
 	"heavy_crossbow",
@@ -588,7 +588,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"quiver_fire",
 		"quiver_heavy",
 		"quiver_crystal",
-		"quiver_7",
+		"quiver_hunting",
 		""
 	},
 	{
