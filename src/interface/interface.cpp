@@ -6404,6 +6404,13 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 				{
 					*magic = std::max(0, (*magic) / 4);
 				}
+
+				if ( item->appearance == ITEM_TINKERING_APPEARANCE && item->status == EXCELLENT )
+				{
+					// can't repair/upgrade.
+					*metal = 0;
+					*magic = 0;
+				}
 			}
 			else
 			{
@@ -6504,7 +6511,8 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 		case TOOL_SPELLBOT:
 		case TOOL_DUMMYBOT:
 		case TOOL_GYROBOT:
-			if ( item->appearance == ITEM_TINKERING_APPEARANCE && (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
+			if ( item->appearance == ITEM_TINKERING_APPEARANCE 
+				&& (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
 			{
 				return true;
 			}
