@@ -5582,6 +5582,8 @@ void GenericGUIMenu::tinkeringFreeLists()
 			break;
 		}
 	}
+	tinkeringMetalScrap = nullptr;
+	tinkeringMagicScrap = nullptr;
 	tinkeringTotalItems.first = nullptr;
 	tinkeringTotalItems.last = nullptr;
 	tinkeringTotalLastCraftableNode = nullptr;
