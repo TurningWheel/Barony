@@ -12519,12 +12519,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			}
 
 
-			weaponLimb->x += limbs[HUMAN][12][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * cos(weaponArmLimb->yaw);
+			/*weaponLimb->x += limbs[HUMAN][12][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * cos(weaponArmLimb->yaw);
 			weaponLimb->y += limbs[HUMAN][12][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * sin(weaponArmLimb->yaw);
 			weaponLimb->z += limbs[HUMAN][12][2];
 			weaponLimb->focalx += limbs[HUMAN][11][0];
 			weaponLimb->focaly += limbs[HUMAN][11][1];
-			weaponLimb->focalz += limbs[HUMAN][11][2];
+			weaponLimb->focalz += limbs[HUMAN][11][2];*/
 		}
 	}
 	else
@@ -15586,9 +15586,9 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 			default:
 				break;
 		}
-		helm->focalx += limbs[HUMAN][12][0];
+		/*helm->focalx += limbs[HUMAN][12][0];
 		helm->focaly += limbs[HUMAN][12][1];
-		helm->focalz += limbs[HUMAN][12][2];
+		helm->focalz += limbs[HUMAN][12][2];*/
 		helm->roll = PI / 2;
 	}
 	else if ( helm->sprite == items[HAT_WIZARD].index || helm->sprite == items[HAT_JESTER].index )
@@ -17126,9 +17126,9 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		helm->scalez = 1.05;
 		if ( helm->sprite == items[PUNISHER_HOOD].index )
 		{
-			helm->scalex += limbs[HUMAN][11][0];
+			/*helm->scalex += limbs[HUMAN][11][0];
 			helm->scaley += limbs[HUMAN][11][1];
-			helm->scalez += limbs[HUMAN][11][2];
+			helm->scalez += limbs[HUMAN][11][2];*/
 		}
 	}
 

@@ -2705,11 +2705,11 @@ void actHudShield(Entity* my)
 			HUDSHIELD_MOVEX = 0;
 		}
 
-		real_t targetY = 5.05 + limbs[HUMAN][11][0];
-		real_t targetPitch = PI / 2 + limbs[HUMAN][11][1];
-		real_t targetYaw = PI / 3 - 0.1 + limbs[HUMAN][11][2];
-		real_t targetZ = -3.375 + limbs[HUMAN][12][0];
-		real_t targetX = limbs[HUMAN][12][1];
+		real_t targetY = 5.05;
+		real_t targetPitch = PI / 2;
+		real_t targetYaw = PI / 3 - 0.1;
+		real_t targetZ = -3.5;
+		real_t targetX = -1.75;
 
 		if ( HUDSHIELD_MOVEY < targetY )
 		{
