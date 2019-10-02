@@ -166,7 +166,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 
 	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 	{
-		if ( entityInsideEntity( my, entity ) )
+		if ( ignoreInsideEntity || entityInsideEntity( my, entity ) )
 		{
 			Stat* stats = entity->getStats();
 			if ( stats )
@@ -573,6 +573,11 @@ void actBoulder(Entity* my)
 		}
 		int x = std::min<int>(std::max<int>(0, (my->x + cos(my->yaw) * 8) / 16), map.width - 1);
 		int y = std::min<int>(std::max<int>(0, (my->y + sin(my->yaw) * 8) / 16), map.height - 1);
+		//int x = std::min<int>(std::max<int>(0, (my->x + my->vel_x * 8) / 16), map.width - 1);
+		//int y = std::min<int>(std::max<int>(0, (my->y + my->vel_y * 8) / 16), map.height - 1);
+
+		real_t clipDist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+		double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
 		if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 		{
 			playSoundEntity(my, 181, 128);
@@ -621,8 +626,6 @@ void actBoulder(Entity* my)
 		}
 		else
 		{
-			real_t clipDist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
-			double dist = sqrt(pow(my->vel_x, 2) + pow(my->vel_y, 2));
 			my->pitch += dist * .06;
 			my->roll = PI / 2;
 
