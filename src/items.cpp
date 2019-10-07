@@ -4295,15 +4295,15 @@ real_t rangedAttackGetSpeedModifier(Stat* myStats)
 	{
 		if ( myStats->shield->type == QUIVER_LIGHTWEIGHT )
 		{
-			arrowModifier = -.25;
-		}
-		else if ( myStats->shield->type == QUIVER_HEAVY )
-		{
-			arrowModifier = +.25;
+			arrowModifier = -.5;
 		}
 	}
 
-	if ( myStats->weapon->type == COMPOUND_BOW )
+	if ( myStats->weapon->type == LONGBOW )
+	{
+		bowModifier = 1.25;
+	}
+	else if ( myStats->weapon->type == COMPOUND_BOW )
 	{
 		bowModifier = 0.75;
 		arrowModifier /= 2;

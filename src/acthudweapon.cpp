@@ -538,6 +538,10 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_SHOOTING_RANGED_WEAPON = 1;
 				if ( HUDWEAPON_CHOP != 0 )
 				{
+					if ( HUDWEAPON_CHOP == 16 )
+					{
+						my->sprite = 975;
+					}
 					HUDWEAPON_SHOOTING_RANGED_WEAPON = 2;
 				}
 			}
@@ -612,7 +616,7 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_CHARGE = 0;
 			HUDWEAPON_OVERCHARGE = 0;
 			HUDWEAPON_CHOP = 0;
-			throwGimpTimer = 20;
+			throwGimpTimer = std::max(throwGimpTimer, 20);
 			
 			if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
 			{
@@ -2223,7 +2227,7 @@ void actHudWeapon(Entity* my)
 		}
 		else if ( HUDWEAPON_MOVEX < 0 )
 		{
-			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .1, 0.0);
+			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .15, 0.0);
 			if ( HUDWEAPON_MOVEX > -1 )
 			{
 				HUDWEAPON_RANGED_QUIVER_RELOAD = 2;
@@ -2465,6 +2469,12 @@ void actHudWeapon(Entity* my)
 		{
 			my->z -= -2 * .5;
 		}
+	}
+	if ( !my->flags[OVERDRAW] )
+	{
+		my->x += 32;
+		my->y += 32;
+		my->z -= 3.5;
 	}
 }
 
@@ -2863,11 +2873,11 @@ void actHudShield(Entity* my)
 
 		if ( crossbow )
 		{
-			targetY = 4.8;
+			targetY = 4.8 + 0.01;
 			targetPitch = PI / 2;
-			targetYaw = PI / 3 - 0.1;
+			targetYaw = PI / 3 - 0.05;
 			targetZ = -2.75;
-			targetX = 3.5;
+			targetX = 2.75;
 
 			if ( stats[clientnum]->shield->type == QUIVER_LIGHTWEIGHT )
 			{
@@ -2879,11 +2889,11 @@ void actHudShield(Entity* my)
 				hudweapon->skill[8] = 2;
 				hudweapon->skill[0] = 16;
 				hudweapon->fskill[0] = -1;
-				throwGimpTimer = 20;
+				throwGimpTimer = std::max(throwGimpTimer, 20);
 
 				if ( fabs(hudweapon->fskill[5]) < 0.01 )
 				{
-					throwGimpTimer = 40;
+					throwGimpTimer = std::max(throwGimpTimer, 20);
 					my->flags[INVISIBLE] = true;
 					HUDSHIELD_MOVEY = 0;
 					HUDSHIELD_PITCH = 0;
@@ -3014,6 +3024,12 @@ void actHudShield(Entity* my)
 	my->x = 7 + HUDSHIELD_MOVEX;
 	my->y = -3.5 + HUDSHIELD_MOVEY;
 	my->z = 6 + HUDSHIELD_MOVEZ + (camera.z * .5 - players[clientnum]->entity->z);
+	if ( !my->flags[OVERDRAW] )
+	{
+		my->x += 32;
+		my->y += 32;
+		my->z -= 3.5;
+	}
 	my->yaw = HUDSHIELD_YAW - camera_shakex2 - PI / 3;
 	my->pitch = HUDSHIELD_PITCH - camera_shakey2 / 200.f;
 	my->roll = HUDSHIELD_ROLL;
