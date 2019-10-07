@@ -606,6 +606,33 @@ void actHudWeapon(Entity* my)
 	if ( weaponSwitch )
 	{
 		weaponSwitch = false;
+		if ( !hideWeapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW )
+		{
+			swingweapon = false;
+			HUDWEAPON_CHARGE = 0;
+			HUDWEAPON_OVERCHARGE = 0;
+			HUDWEAPON_CHOP = 0;
+			throwGimpTimer = 20;
+			
+			if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+			{
+				HUDWEAPON_RANGED_QUIVER_RELOAD = 4;
+				if ( swingweapon )
+				{
+					swapWeaponGimpTimer = 20; // gimp timer for quivers and ranged weapons.
+				}
+				else
+				{
+					// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
+					if ( swapWeaponGimpTimer > 5 )
+					{
+						swapWeaponGimpTimer = 5;
+					}
+				}
+				swingweapon = false;
+			}
+		}
+
 		if ( !HUDWEAPON_CHOP && !hideWeapon )
 		{
 			HUDWEAPON_MOVEZ = 2;
@@ -626,6 +653,11 @@ void actHudWeapon(Entity* my)
 		{
 			swapWeaponGimpTimer = 5;
 		}
+	}
+
+	if ( HUDWEAPON_RANGED_QUIVER_RELOAD == 4 )
+	{
+		swapWeaponGimpTimer = 20;
 	}
 
 	Uint32 bowFireRate = bowDrawBaseTicks;
@@ -719,8 +751,22 @@ void actHudWeapon(Entity* my)
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
 	{
-		HUDWEAPON_RANGED_QUIVER_RELOAD = 0;
-		if ( swingweapon || castStrikeAnimation )
+		if ( HUDWEAPON_RANGED_QUIVER_RELOAD != 4 )
+		{
+			HUDWEAPON_RANGED_QUIVER_RELOAD = 0;
+		}
+		bool ignoreAttack = false;
+		if ( swingweapon && throwGimpTimer > 0 && stats[clientnum]->weapon &&
+			( stats[clientnum]->weapon->type == CROSSBOW
+				|| itemCategory(stats[clientnum]->weapon) == POTION
+				|| itemCategory(stats[clientnum]->weapon) == GEM
+				|| itemCategory(stats[clientnum]->weapon) == THROWN)
+			)
+		{
+			ignoreAttack = true;
+		}
+
+		if ( !ignoreAttack && (swingweapon || castStrikeAnimation) )
 		{
 			if ( cast_animation.active || cast_animation.active_spellbook )
 			{
@@ -895,7 +941,7 @@ void actHudWeapon(Entity* my)
 								{
 									HUDWEAPON_CHOP = 16;
 									HUDWEAPON_RANGED_QUIVER_RELOAD = 1;
-									throwGimpTimer = 60;
+									throwGimpTimer = 40;
 								}
 							}
 						}
@@ -2193,6 +2239,14 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_CHOP = 17;
 		}
+		if ( HUDWEAPON_ROLL > 0 )
+		{
+			HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1, 0.0);
+		}
+		else if ( HUDWEAPON_ROLL < 0 )
+		{
+			HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
+		}
 	}
 	else if ( HUDWEAPON_CHOP == 17 )     // crossbow reload
 	{
@@ -2205,6 +2259,14 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_MOVEZ = 0;
 			HUDWEAPON_CHOP = 0;
+		}
+		if ( HUDWEAPON_ROLL > 0 )
+		{
+			HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1, 0.0);
+		}
+		else if ( HUDWEAPON_ROLL < 0 )
+		{
+			HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
 		}
 	}
 
@@ -2692,11 +2754,19 @@ void actHudShield(Entity* my)
 		}
 	}
 
-	//if ( hudweapon && rangedWeaponUseQuiverOnAttack(stats[clientnum])
-	//	&& crossbow && fabs(hudweapon->fskill[5]) > 0.01 ) // HUDWEAPON_ROLL from weaponSwitch animation
-	//{
-	//	doCrossbowReloadAnimation = true;
-	//}
+	bool crossbowReloadAnimation = true;
+	if ( hudweapon && crossbow 
+		&& hudweapon->skill[8] == 4 && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+	{
+		if ( fabs(hudweapon->fskill[5]) < (3 * PI / 8) )
+		{
+			doCrossbowReloadAnimation = true;
+		}
+		else
+		{
+			crossbowReloadAnimation = false;
+		}
+	}
 
 	// main animation
 	if ( defending || cast_animation.active_spellbook )
@@ -2768,7 +2838,7 @@ void actHudShield(Entity* my)
 	}
 	else if ( !hideShield && quiver && hudweapon 
 		&& hudweapon->skill[7] != 0 
-		&& (!crossbow || (crossbow && hudweapon->skill[8] != 2)) ) // skill[7] == 1 is hudweapon bow drawing
+		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != 2)) ) // skill[7] == 1 is hudweapon bow drawing
 	{
 		if ( hudweapon->skill[7] == 2 && (!crossbow || (crossbow && hudweapon->skill[8] == 1)) )
 		{
@@ -2785,11 +2855,11 @@ void actHudShield(Entity* my)
 			}
 		}
 
-		real_t targetY = 5.05 + limbs[HUMAN][11][0];
-		real_t targetPitch = PI / 2 + limbs[HUMAN][11][1];
-		real_t targetYaw = PI / 3 - 0.1 + limbs[HUMAN][11][2];
-		real_t targetZ = -3.5 + limbs[HUMAN][12][0];
-		real_t targetX = -1.75 + limbs[HUMAN][12][1];
+		real_t targetY = 5.05;// +limbs[HUMAN][11][0];
+		real_t targetPitch = PI / 2;// +limbs[HUMAN][11][1];
+		real_t targetYaw = PI / 3 - 0.1;// +limbs[HUMAN][11][2];
+		real_t targetZ = -3.5;// +limbs[HUMAN][12][0];
+		real_t targetX = -1.75;// +limbs[HUMAN][12][1];
 
 		if ( crossbow )
 		{
@@ -2799,7 +2869,7 @@ void actHudShield(Entity* my)
 			targetZ = -2.75;
 			targetX = 3.5;
 
-			if ( stats[clientnum]->shield->type == QUIVER_PIERCE )
+			if ( stats[clientnum]->shield->type == QUIVER_LIGHTWEIGHT )
 			{
 				targetZ -= 0.25; // offset a bit higher.
 			}
@@ -2809,19 +2879,23 @@ void actHudShield(Entity* my)
 				hudweapon->skill[8] = 2;
 				hudweapon->skill[0] = 16;
 				hudweapon->fskill[0] = -1;
-				throwGimpTimer = 40;
+				throwGimpTimer = 20;
 
-				my->flags[INVISIBLE] = true;
-				HUDSHIELD_MOVEY = 0;
-				HUDSHIELD_PITCH = 0;
-				HUDSHIELD_YAW = 0;
-				HUDSHIELD_MOVEZ = 2;
-				HUDSHIELD_MOVEX = 0;
+				if ( fabs(hudweapon->fskill[5]) < 0.01 )
+				{
+					throwGimpTimer = 40;
+					my->flags[INVISIBLE] = true;
+					HUDSHIELD_MOVEY = 0;
+					HUDSHIELD_PITCH = 0;
+					HUDSHIELD_YAW = 0;
+					HUDSHIELD_MOVEZ = 2;
+					HUDSHIELD_MOVEX = 0;
+				}
 			}
 		}
 
 		bool doMovement = true;
-		if ( hudweapon && crossbow && fabs(hudweapon->fskill[5]) > 0.01 ) // HUDWEAPON_ROLL from weaponSwitch animation
+		if ( doCrossbowReloadAnimation )
 		{
 			doMovement = false;
 		}
@@ -2959,11 +3033,14 @@ void actHudShield(Entity* my)
 	}
 	else if ( quiver && hudweapon && crossbow )
 	{
-		if ( hudweapon->skill[8] != 1 && hudweapon->skill[8] != 2 )
+		if ( hudweapon->skill[8] != 1 && hudweapon->skill[8] != 2 && hudweapon->skill[8] != 4 )
 		{
 			my->x += hudweapon->fskill[0]; // HUDWEAPON_MOVEX
 			my->z += hudweapon->fskill[2]; // HUDWEAPON_MOVEZ
 		}
+		my->focalx = 0;
+		my->focaly = 0;
+		my->focalz = 0;
 	}
 	else
 	{

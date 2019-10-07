@@ -1637,7 +1637,9 @@ void equipItem(Item* item, Item** slot, int player)
 					{
 						playSoundEntity(players[player]->entity, 40 + rand() % 4, 64);
 					}
-					else if ( itemCategory(item) == ARMOR || item->type == TOOL_TINKERING_KIT )
+					else if ( itemCategory(item) == ARMOR 
+						|| item->type == TOOL_TINKERING_KIT 
+						|| itemTypeIsQuiver(item->type) )
 					{
 						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
 					}
@@ -1726,7 +1728,7 @@ void equipItem(Item* item, Item** slot, int player)
 			{
 				if (players[player]->entity->ticks > 60)
 				{
-					if (itemCategory(item) == ARMOR)
+					if (itemCategory(item) == ARMOR )
 					{
 						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
 					}
