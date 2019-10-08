@@ -668,8 +668,7 @@ void actArrow(Entity* my)
 							statusEffectApplied = true;
 						}
 					}
-
-					if ( my->arrowQuiverType == QUIVER_HEAVY && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+					else if ( my->arrowQuiverType == QUIVER_HEAVY && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 					{
 						real_t pushbackMultiplier = 0.6;
 						if ( !hit.entity->isMobile() )
@@ -766,7 +765,7 @@ void actArrow(Entity* my)
 							}
 							else
 							{
-								messagePlayer(parent->skill[2], language[448]);
+								messagePlayer(parent->skill[2], language[447]);
 							}
 						}
 					}
