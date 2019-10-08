@@ -289,7 +289,8 @@ Uint32 bowDrawBaseTicks = 50;
 #define HUDWEAPON_WHIP_ANGLE my->skill[5]
 #define HUDWEAPON_HIDEWEAPON my->skill[6]
 #define HUDWEAPON_SHOOTING_RANGED_WEAPON my->skill[7]
-#define HUDWEAPON_RANGED_QUIVER_RELOAD my->skill[8]
+#define HUDWEAPON_CROSSBOW_RELOAD_ANIMATION my->skill[8]
+#define HUDWEAPON_CROSSBOW_HAS_QUIVER my->skill[9]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -299,6 +300,28 @@ Uint32 bowDrawBaseTicks = 50;
 #define HUDWEAPON_OLDVIBRATEX my->fskill[6]
 #define HUDWEAPON_OLDVIBRATEY my->fskill[7]
 #define HUDWEAPON_OLDVIBRATEZ my->fskill[8]
+
+enum CrossbowAnimState : int
+{
+	CROSSBOW_ANIM_NONE,
+	CROSSBOW_ANIM_SHOOT,
+	CROSSBOW_ANIM_RELOAD_START,
+	CROSSBOW_ANIM_RELOAD_END,
+	CROSSBOW_ANIM_SWAPPED_WEAPON
+};
+
+enum RangedWeaponAnimState : int
+{
+	RANGED_ANIM_IDLE,
+	RANGED_ANIM_BEING_DRAWN,
+	RANGED_ANIM_FIRED
+};
+
+enum CrossbowHudweaponChop : int
+{
+	CROSSBOW_CHOP_RELOAD_START = 16,
+	CROSSBOW_CHOP_RELOAD_ENDING = 17
+};
 
 Uint32 hudweaponuid = 0;
 void actHudWeapon(Entity* my)
@@ -429,7 +452,7 @@ void actHudWeapon(Entity* my)
 	}
 
 	HUDWEAPON_HIDEWEAPON = hideWeapon;
-	HUDWEAPON_SHOOTING_RANGED_WEAPON = 0;
+	HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_IDLE;
 
 	bool rangedweapon = false;
 	if ( stats[clientnum]->weapon && !hideWeapon )
@@ -520,7 +543,7 @@ void actHudWeapon(Entity* my)
 
 			if ( bowIsBeingDrawn )
 			{
-				HUDWEAPON_SHOOTING_RANGED_WEAPON = 1;
+				HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_BEING_DRAWN;
 				if ( (my->ticks - bowStartDrawingTick) >= bowDrawBaseTicks / 4 )
 				{
 					if ( rangedweapon )
@@ -529,20 +552,35 @@ void actHudWeapon(Entity* my)
 						{
 							my->sprite++;
 						}
-						HUDWEAPON_SHOOTING_RANGED_WEAPON = 2;
+						HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_FIRED;
 					}
 				}
 			}
 			else if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW )
 			{
-				HUDWEAPON_SHOOTING_RANGED_WEAPON = 1;
+				HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_BEING_DRAWN;
+				if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+				{
+					HUDWEAPON_CROSSBOW_HAS_QUIVER = 1;
+				}
+				else
+				{
+					if ( HUDWEAPON_CROSSBOW_HAS_QUIVER == 1 )
+					{
+						// force a reload animation.
+						HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
+						HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
+						HUDWEAPON_MOVEX = -1;
+					}
+					HUDWEAPON_CROSSBOW_HAS_QUIVER = 0;
+				}
 				if ( HUDWEAPON_CHOP != 0 )
 				{
-					if ( HUDWEAPON_CHOP == 16 )
+					if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_START )
 					{
-						my->sprite = 975;
+						my->sprite = 975; // model has been "fired" and the bowstring not pulled back
 					}
-					HUDWEAPON_SHOOTING_RANGED_WEAPON = 2;
+					HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_FIRED;
 				}
 			}
 
@@ -620,7 +658,7 @@ void actHudWeapon(Entity* my)
 			
 			if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
 			{
-				HUDWEAPON_RANGED_QUIVER_RELOAD = 4;
+				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SWAPPED_WEAPON;
 				if ( swingweapon )
 				{
 					swapWeaponGimpTimer = 20; // gimp timer for quivers and ranged weapons.
@@ -634,6 +672,12 @@ void actHudWeapon(Entity* my)
 					}
 				}
 				swingweapon = false;
+			}
+			else
+			{
+				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
+				HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
+				HUDWEAPON_MOVEX = -1;
 			}
 		}
 
@@ -659,7 +703,7 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	if ( HUDWEAPON_RANGED_QUIVER_RELOAD == 4 )
+	if ( HUDWEAPON_CROSSBOW_RELOAD_ANIMATION == CROSSBOW_ANIM_SWAPPED_WEAPON )
 	{
 		swapWeaponGimpTimer = 20;
 	}
@@ -755,9 +799,11 @@ void actHudWeapon(Entity* my)
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
 	{
-		if ( HUDWEAPON_RANGED_QUIVER_RELOAD != 4 )
+		if ( HUDWEAPON_CROSSBOW_RELOAD_ANIMATION != CROSSBOW_ANIM_SWAPPED_WEAPON )
 		{
-			HUDWEAPON_RANGED_QUIVER_RELOAD = 0;
+			// CROSSBOW_ANIM_SWAPPED_WEAPON requires the weapon to not be in the swapping animation to finish.
+			// otherwise, the animation sets HUDWEAPON_CHOP to 0 so it has finished.
+			HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_NONE;
 		}
 		bool ignoreAttack = false;
 		if ( swingweapon && throwGimpTimer > 0 && stats[clientnum]->weapon &&
@@ -937,16 +983,12 @@ void actHudWeapon(Entity* my)
 							{
 								players[clientnum]->entity->attack(0, 0, nullptr);
 								HUDWEAPON_MOVEX = -4;
-								HUDWEAPON_CHOP = 3;
+
 								// set delay before crossbow can fire again
 								throwGimpTimer = 40;
 
-								if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
-								{
-									HUDWEAPON_CHOP = 16;
-									HUDWEAPON_RANGED_QUIVER_RELOAD = 1;
-									throwGimpTimer = 40;
-								}
+								HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
+								HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SHOOT;
 							}
 						}
 					}
@@ -2219,7 +2261,7 @@ void actHudWeapon(Entity* my)
 			}
 		}
 	}
-	else if ( HUDWEAPON_CHOP == 16 )     // crossbow reload
+	else if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_START )     // crossbow reload
 	{
 		if ( HUDWEAPON_MOVEX > 0 )
 		{
@@ -2230,18 +2272,18 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + .15, 0.0);
 			if ( HUDWEAPON_MOVEX > -1 )
 			{
-				HUDWEAPON_RANGED_QUIVER_RELOAD = 2;
+				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
 				HUDWEAPON_MOVEZ += .15;
 				if ( HUDWEAPON_MOVEZ > 1 )
 				{
-					HUDWEAPON_RANGED_QUIVER_RELOAD = 3;
+					HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_END;
 					HUDWEAPON_MOVEZ = 1;
 				}
 			}
 		}
 		if ( fabs(HUDWEAPON_MOVEX) < 0.01 )
 		{
-			HUDWEAPON_CHOP = 17;
+			HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_ENDING;
 		}
 		if ( HUDWEAPON_ROLL > 0 )
 		{
@@ -2252,7 +2294,7 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
 		}
 	}
-	else if ( HUDWEAPON_CHOP == 17 )     // crossbow reload
+	else if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_ENDING )     // crossbow reload
 	{
 		if ( HUDWEAPON_MOVEZ > 1 )
 		{
@@ -2766,8 +2808,9 @@ void actHudShield(Entity* my)
 
 	bool crossbowReloadAnimation = true;
 	if ( hudweapon && crossbow 
-		&& hudweapon->skill[8] == 4 && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+		&& hudweapon->skill[8] == CROSSBOW_ANIM_SWAPPED_WEAPON && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
 	{
+		// CROSSBOW_ANIM_SWAPPED_WEAPON requires the weapon to not be in the swapping animation to finish.
 		if ( fabs(hudweapon->fskill[5]) < (3 * PI / 8) )
 		{
 			doCrossbowReloadAnimation = true;
@@ -2847,10 +2890,11 @@ void actHudShield(Entity* my)
 		}
 	}
 	else if ( !hideShield && quiver && hudweapon 
-		&& hudweapon->skill[7] != 0 
-		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != 2)) ) // skill[7] == 1 is hudweapon bow drawing
+		&& hudweapon->skill[7] != RANGED_ANIM_IDLE 
+		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START)) ) 
 	{
-		if ( hudweapon->skill[7] == 2 && (!crossbow || (crossbow && hudweapon->skill[8] == 1)) )
+		// skill[7] == 1 is hudweapon bow drawing, skill[8] is the crossbow reload animation state.
+		if ( hudweapon->skill[7] == RANGED_ANIM_FIRED && (!crossbow || (crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT)) )
 		{
 			my->flags[INVISIBLE] = true;
 			HUDSHIELD_MOVEY = 0;
@@ -2859,8 +2903,9 @@ void actHudShield(Entity* my)
 			HUDSHIELD_MOVEZ = 0;
 			HUDSHIELD_MOVEX = 0;
 
-			if ( crossbow && hudweapon->skill[8] == 1 )
+			if ( crossbow && hudweapon->skill[8] == CROSSBOW_ANIM_SHOOT )
 			{
+				// after shooting, lower the Z to create illusion of drawing the next arrow out of your hud.
 				HUDSHIELD_MOVEZ = 2;
 			}
 		}
@@ -2886,8 +2931,8 @@ void actHudShield(Entity* my)
 
 			if ( doCrossbowReloadAnimation )
 			{
-				hudweapon->skill[8] = 2;
-				hudweapon->skill[0] = 16;
+				hudweapon->skill[8] = CROSSBOW_ANIM_RELOAD_START;
+				hudweapon->skill[0] = CROSSBOW_CHOP_RELOAD_START;
 				hudweapon->fskill[0] = -1;
 				throwGimpTimer = std::max(throwGimpTimer, 20);
 
@@ -3049,8 +3094,11 @@ void actHudShield(Entity* my)
 	}
 	else if ( quiver && hudweapon && crossbow )
 	{
-		if ( hudweapon->skill[8] != 1 && hudweapon->skill[8] != 2 && hudweapon->skill[8] != 4 )
+		if ( hudweapon->skill[8] != CROSSBOW_ANIM_SHOOT 
+			&& hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START 
+			&& hudweapon->skill[8] != CROSSBOW_ANIM_SWAPPED_WEAPON )
 		{
+			// only bob the arrow if idle animation or DRAW_END animation
 			my->x += hudweapon->fskill[0]; // HUDWEAPON_MOVEX
 			my->z += hudweapon->fskill[2]; // HUDWEAPON_MOVEZ
 		}
@@ -3371,6 +3419,7 @@ void actHudAdditional(Entity* my)
 void actHudArrowModel(Entity* my)
 {
 	bool bow = false;
+	bool crossbow = false;
 	if ( stats[clientnum]->weapon 
 		&& (stats[clientnum]->weapon->type == SHORTBOW
 			|| stats[clientnum]->weapon->type == LONGBOW
@@ -3379,6 +3428,11 @@ void actHudArrowModel(Entity* my)
 		)
 	{
 		bow = true;
+	}
+	else if ( stats[clientnum]->weapon
+		&& stats[clientnum]->weapon->type == CROSSBOW )
+	{
+		crossbow = true;
 	}
 
 	my->flags[UNCLICKABLE] = true;
@@ -3406,15 +3460,36 @@ void actHudArrowModel(Entity* my)
 		return;
 	}
 
-	if ( !bow || cast_animation.active || cast_animation.active_spellbook )
+	if ( (!crossbow && !bow) || cast_animation.active || cast_animation.active_spellbook )
 	{
 		my->flags[INVISIBLE] = true;
 		return;
 	}
 
-	if ( hudweapon->flags[INVISIBLE] 
+	if ( crossbow )
+	{
+		if ( hudweapon->flags[INVISIBLE] || hudweapon->skill[6] != 0 ) // skill[6] is hideWeapon
+		{
+			my->flags[INVISIBLE] = true;
+			return;
+		}
+		if ( stats[clientnum]->shield && itemTypeIsQuiver(stats[clientnum]->shield->type) )
+		{
+			my->flags[INVISIBLE] = true;
+			return;
+		}
+		if ( stats[clientnum]->weapon->type == CROSSBOW )
+		{
+			if ( hudweapon->sprite != items[CROSSBOW].fpindex )
+			{
+				my->flags[INVISIBLE] = true;
+				return;
+			}
+		}
+	}
+	else if ( hudweapon->flags[INVISIBLE] 
 		|| hudweapon->skill[6] != 0
-		|| hudweapon->skill[7] != 2 ) // skill[6] is hiding weapon, skill[7] is shooting something
+		|| hudweapon->skill[7] != RANGED_ANIM_FIRED ) // skill[6] is hiding weapon, skill[7] is shooting something
 	{
 		my->flags[INVISIBLE] = true;
 		return;
@@ -3426,7 +3501,11 @@ void actHudArrowModel(Entity* my)
 	my->flags[INVISIBLE] = false;
 	my->sprite = 934;
 
-	if ( stats[clientnum]->shield && itemTypeIsQuiver(stats[clientnum]->shield->type) )
+	if ( crossbow )
+	{
+		my->sprite = 976;
+	}
+	else if ( stats[clientnum]->shield && itemTypeIsQuiver(stats[clientnum]->shield->type) )
 	{
 		switch ( stats[clientnum]->shield->type )
 		{
@@ -3472,6 +3551,16 @@ void actHudArrowModel(Entity* my)
 	}
 	my->focaly = hudweapon->focaly - 0.25;
 	my->focalz = hudweapon->focalz - 0.25;
+
+	if ( crossbow )
+	{
+		if ( hudweapon->sprite == items[CROSSBOW].fpindex )
+		{
+			my->focalx += 3.5;
+			my->focaly += 0.25;
+			my->focalz += -0.25;
+		}
+	}
 
 	my->scalex = hudweapon->scalex;
 	my->scaley = hudweapon->scaley;
