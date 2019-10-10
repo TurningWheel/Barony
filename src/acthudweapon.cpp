@@ -648,44 +648,57 @@ void actHudWeapon(Entity* my)
 	if ( weaponSwitch )
 	{
 		weaponSwitch = false;
-		if ( !hideWeapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW )
+		if ( !hideWeapon )
 		{
-			swingweapon = false;
-			HUDWEAPON_CHARGE = 0;
-			HUDWEAPON_OVERCHARGE = 0;
-			HUDWEAPON_CHOP = 0;
-			throwGimpTimer = std::max(throwGimpTimer, 20);
-			
-			if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+			if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW )
 			{
-				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SWAPPED_WEAPON;
-				if ( swingweapon )
+				swingweapon = false;
+				HUDWEAPON_CHARGE = 0;
+				HUDWEAPON_OVERCHARGE = 0;
+				HUDWEAPON_CHOP = 0;
+				throwGimpTimer = std::max(throwGimpTimer, 20);
+			
+				HUDWEAPON_MOVEY = 0;
+				HUDWEAPON_PITCH = 0;
+				HUDWEAPON_YAW = -0.1;
+				HUDWEAPON_MOVEZ = 0;
+
+				if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
 				{
-					swapWeaponGimpTimer = 20; // gimp timer for quivers and ranged weapons.
+					HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SWAPPED_WEAPON;
+					if ( swingweapon )
+					{
+						swapWeaponGimpTimer = 20; // gimp timer for quivers and ranged weapons.
+					}
+					else
+					{
+						// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
+						if ( swapWeaponGimpTimer > 5 )
+						{
+							swapWeaponGimpTimer = 5;
+						}
+					}
+					swingweapon = false;
 				}
 				else
 				{
-					// let go of attack button, if the animation is the post-attack portion, then quickly fade the timer.
-					if ( swapWeaponGimpTimer > 5 )
-					{
-						swapWeaponGimpTimer = 5;
-					}
+					HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
+					HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
+					HUDWEAPON_MOVEX = -1;
 				}
-				swingweapon = false;
 			}
-			else
+			else if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_START || HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_ENDING )
 			{
-				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
-				HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
-				HUDWEAPON_MOVEX = -1;
+				// non-crossbow, if we're in these unique crossbow states then reset the chop.
+				HUDWEAPON_CHOP = 0;
 			}
-		}
 
-		if ( !HUDWEAPON_CHOP && !hideWeapon )
-		{
-			HUDWEAPON_MOVEZ = 2;
-			HUDWEAPON_MOVEX = -.5;
-			HUDWEAPON_ROLL = -PI / 2;
+			if ( !HUDWEAPON_CHOP )
+			{
+				HUDWEAPON_MOVEZ = 2;
+				HUDWEAPON_MOVEX = -.5;
+				HUDWEAPON_ROLL = -PI / 2;
+			}
 		}
 	}
 
@@ -2273,11 +2286,17 @@ void actHudWeapon(Entity* my)
 			if ( HUDWEAPON_MOVEX > -1 )
 			{
 				HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
+
 				HUDWEAPON_MOVEZ += .15;
-				if ( HUDWEAPON_MOVEZ > 1 )
+				real_t targetZ = 1;
+				if ( !rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+				{
+					targetZ = 0.5;
+				}
+				if ( HUDWEAPON_MOVEZ > targetZ )
 				{
 					HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_END;
-					HUDWEAPON_MOVEZ = 1;
+					HUDWEAPON_MOVEZ = targetZ;
 				}
 			}
 		}
@@ -2285,6 +2304,23 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_ENDING;
 		}
+
+		if ( HUDWEAPON_MOVEY > 0 )
+		{
+			HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1, 0.0);
+		}
+		else if ( HUDWEAPON_MOVEY < 0 )
+		{
+			HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1, 0.0);
+		}
+		if ( HUDWEAPON_YAW > -.1 )
+		{
+			HUDWEAPON_YAW = std::max<real_t>(HUDWEAPON_YAW - .1, -.1);
+		}
+		else if ( HUDWEAPON_YAW < -.1 )
+		{
+			HUDWEAPON_YAW = std::min<real_t>(HUDWEAPON_YAW + .1, -.1);
+		}
 		if ( HUDWEAPON_ROLL > 0 )
 		{
 			HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1, 0.0);
@@ -2293,12 +2329,20 @@ void actHudWeapon(Entity* my)
 		{
 			HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
 		}
+		if ( HUDWEAPON_PITCH > 0 )
+		{
+			HUDWEAPON_PITCH = std::max<real_t>(HUDWEAPON_PITCH - .1, 0.0);
+		}
+		else if ( HUDWEAPON_PITCH < 0 )
+		{
+			HUDWEAPON_PITCH = std::min<real_t>(HUDWEAPON_PITCH + .1, 0.0);
+		}
 	}
 	else if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_ENDING )     // crossbow reload
 	{
 		if ( HUDWEAPON_MOVEZ > 1 )
 		{
-			HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 1, 1);
+			HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 0.2, 1);
 		}
 		HUDWEAPON_MOVEZ -= .1;
 		if ( HUDWEAPON_MOVEZ < 0 )
@@ -2306,6 +2350,23 @@ void actHudWeapon(Entity* my)
 			HUDWEAPON_MOVEZ = 0;
 			HUDWEAPON_CHOP = 0;
 		}
+
+		if ( HUDWEAPON_MOVEY > 0 )
+		{
+			HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1, 0.0);
+		}
+		else if ( HUDWEAPON_MOVEY < 0 )
+		{
+			HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1, 0.0);
+		}
+		if ( HUDWEAPON_YAW > -.1 )
+		{
+			HUDWEAPON_YAW = std::max<real_t>(HUDWEAPON_YAW - .1, -.1);
+		}
+		else if ( HUDWEAPON_YAW < -.1 )
+		{
+			HUDWEAPON_YAW = std::min<real_t>(HUDWEAPON_YAW + .1, -.1);
+		}
 		if ( HUDWEAPON_ROLL > 0 )
 		{
 			HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1, 0.0);
@@ -2313,6 +2374,14 @@ void actHudWeapon(Entity* my)
 		else if ( HUDWEAPON_ROLL < 0 )
 		{
 			HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
+		}
+		if ( HUDWEAPON_PITCH > 0 )
+		{
+			HUDWEAPON_PITCH = std::max<real_t>(HUDWEAPON_PITCH - .1, 0.0);
+		}
+		else if ( HUDWEAPON_PITCH < 0 )
+		{
+			HUDWEAPON_PITCH = std::min<real_t>(HUDWEAPON_PITCH + .1, 0.0);
 		}
 	}
 
