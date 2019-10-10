@@ -1788,11 +1788,11 @@ void actPlayer(Entity* my)
 				{
 					if (PLAYER_BOBMODE)
 					{
-						PLAYER_BOBMOVE += .05;
+						PLAYER_BOBMOVE += .0125;
 					}
 					else
 					{
-						PLAYER_BOBMOVE -= .05;
+						PLAYER_BOBMOVE -= .0125;
 					}
 				}
 				else
@@ -1867,14 +1867,14 @@ void actPlayer(Entity* my)
 
 			if ( !swimming && !(stats[clientnum]->defending || stats[clientnum]->sneaking == 0) )
 			{
-				if ( PLAYER_BOBMOVE > .2 )
+				if ( PLAYER_BOBMOVE > .1 )
 				{
-					PLAYER_BOBMOVE = .2;
+					PLAYER_BOBMOVE = .1;
 					PLAYER_BOBMODE = 0;
 				}
-				else if ( PLAYER_BOBMOVE < -.2 )
+				else if ( PLAYER_BOBMOVE < -.1 )
 				{
-					PLAYER_BOBMOVE = -.2;
+					PLAYER_BOBMOVE = -.1;
 					PLAYER_BOBMODE = 1;
 				}
 			}
