@@ -6030,7 +6030,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					real_t speed = 5.f;
 					real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
-					speed = 5.f + normalisedCharge;
+					if ( myStats->weapon->type == BOOMERANG )
+					{
+						speed = 0.1 + normalisedCharge; //3.75
+					}
+					else
+					{
+						speed = 5.f + normalisedCharge;
+					}
 
 					// thrown items have slightly faster velocities
 					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
@@ -6048,6 +6055,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 							entity->vel_x = 6 * cos(this->yaw);
 							entity->vel_y = 6 * sin(this->yaw);
 							entity->vel_z = -.3;
+						}
+					}
+					else if ( myStats->weapon->type == BOOMERANG )
+					{
+						if ( this->behavior == &actPlayer )
+						{
+							entity->vel_x = speed * cos(players[player]->entity->yaw);
+							entity->vel_y = speed * sin(players[player]->entity->yaw);
+							entity->vel_z = -.25;
+						}
+						else if ( this->behavior == &actMonster )
+						{
+							entity->vel_x = 6 * cos(this->yaw);
+							entity->vel_y = 6 * sin(this->yaw);
+							entity->vel_z = -.25;
 						}
 					}
 					else
@@ -12267,6 +12289,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->roll += (PI / 2); // potion sprites rotated
 				isPotion = true;
 			}
+			else if ( weaponLimb->sprite == items[BOOMERANG].index )
+			{
+				weaponLimb->roll += (PI / 2); // sprite rotated
+				weaponLimb->pitch -= PI / 8;
+			}
 		}
 	}
 
@@ -12346,8 +12373,22 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->focalz -= 1.5;
 			}
 		}
-
-		if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+		else if ( weaponLimb->sprite == items[BOOMERANG].index )
+		{
+			/*weaponLimb->focalx -= 1;
+			weaponLimb->focaly -= 1;
+			if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
+			{
+				weaponLimb->focaly += 1;
+			}*/
+			weaponLimb->focalx += limbs[HUMAN][11][0];
+			weaponLimb->focaly += limbs[HUMAN][11][1];
+			weaponLimb->focalz += limbs[HUMAN][11][2];
+			weaponLimb->x += limbs[HUMAN][12][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * cos(weaponArmLimb->yaw);
+			weaponLimb->y += limbs[HUMAN][12][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * sin(weaponArmLimb->yaw);
+			weaponLimb->z += limbs[HUMAN][12][2];
+		}
+		else if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
 		{
 			weaponLimb->focalx += 1;
 			weaponLimb->focalz += 1.5;

@@ -154,6 +154,10 @@ void actThrown(Entity* my)
 	{
 		groundHeight = 3;
 	}
+	else if ( type == BOOMERANG )
+	{
+		groundHeight = 10.0 - models[my->sprite]->sizey * .25;
+	}
 	bool processXYCollision = true;
 	if ( my->z < groundHeight )
 	{
@@ -161,7 +165,12 @@ void actThrown(Entity* my)
 		if ( cat == THROWN )
 		{
 			// todo: adjust falling rates for thrown items if need be
-			if ( specialMonster )
+			if ( type == BOOMERANG )
+			{
+				THROWN_VELZ += 0.01;
+				THROWN_VELZ = std::min(THROWN_VELZ, 0.25);
+			}
+			else if ( specialMonster )
 			{
 				THROWN_VELZ += 0.01;
 			}
@@ -177,15 +186,28 @@ void actThrown(Entity* my)
 			}
 			else
 			{
-				if ( specialMonster )
+				if ( type == BOOMERANG )
+				{
+					if ( my->z > (groundHeight / 2) )
+					{
+						my->roll = std::max(my->roll - 0.003, 0.0);
+					}
+					else
+					{
+						my->roll += 0.003;
+					}
+					my->yaw -= 0.3;
+				}
+				else if ( specialMonster )
 				{
 					my->roll += 0.003;
+					my->yaw += 0.5;
 				}
 				else
 				{
 					my->roll += 0.01;
+					my->yaw += 0.5;
 				}
-				my->yaw += 0.5;
 			}
 		}
 		else if ( itemIsThrowableTinkerTool(item) )
@@ -424,7 +446,8 @@ void actThrown(Entity* my)
 	if ( processXYCollision && result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
 		item = newItemFromEntity(my);
-		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
+		if ( itemCategory(item) == THROWN 
+			&& (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN || item->type == BOOMERANG) )
 		{
 			real_t bouncePenalty = 0.85;
 			// shurikens and chakrams bounce off walls.
@@ -1152,7 +1175,8 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
-		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) && hit.entity == NULL )
+		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM 
+			|| item->type == CRYSTAL_SHURIKEN || item->type == BOOMERANG) && hit.entity == NULL )
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
 			playSoundEntity(my, 66, 64);

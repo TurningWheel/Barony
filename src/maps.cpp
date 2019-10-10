@@ -2904,12 +2904,16 @@ void assignActions(map_t* map)
 				if ( !entity->itemNotMoving )
 				{
 					// shurikens and chakrams need to lie flat on floor as their models are rotated.
-					if ( item->type == CRYSTAL_SHURIKEN || item->type == STEEL_CHAKRAM )
+					if ( item->type == CRYSTAL_SHURIKEN || item->type == STEEL_CHAKRAM || item->type == BOOMERANG )
 					{
 						entity->roll = PI;
 						if ( item->type == CRYSTAL_SHURIKEN )
 						{
 							entity->z = 8.5 - models[entity->sprite]->sizey * .25;
+						}
+						else if ( item->type == BOOMERANG )
+						{
+							entity->z = 9.0 - models[entity->sprite]->sizey * .25;
 						}
 						else
 						{

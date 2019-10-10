@@ -324,7 +324,7 @@ void actItem(Entity* my)
 	{
 		// fall
 		// chakram and shuriken lie flat, needs to use sprites for client
-		if ( my->sprite == 567 || my->sprite == 569 )
+		if ( my->sprite == 567 || my->sprite == 569 || my->sprite == items[BOOMERANG].index )
 		{
 			// todo: adjust falling rates for thrown items if need be
 			ITEM_VELZ += 0.04;
@@ -382,13 +382,24 @@ void actItem(Entity* my)
 				if ( ITEM_VELZ > -.35 )
 				{
 					// chakram and shuriken lie flat, needs to use sprites for client
-					if ( my->sprite == 567 || my->sprite == 569 )
+					if ( my->sprite == 567 || my->sprite == 569 || my->sprite == items[BOOMERANG].index )
 					{
-						my->roll = PI;
+						if ( my->sprite == items[BOOMERANG].index )
+						{
+							my->roll = 0;
+						}
+						else
+						{
+							my->roll = PI;
+						}
 						my->pitch = 0;
 						if ( my->sprite == 569 )
 						{
 							my->z = 8.5 - models[my->sprite]->sizey * .25;
+						}
+						else if ( my->sprite == items[BOOMERANG].index )
+						{
+							my->z = 10.0 - models[my->sprite]->sizey * .25;
 						}
 						else
 						{
@@ -459,6 +470,10 @@ void actItem(Entity* my)
 	else if ( my->sprite == 567 )
 	{
 		groundheight = 8.75 - models[my->sprite]->sizey * .25;
+	}
+	else if ( my->sprite == items[BOOMERANG].index )
+	{
+		groundheight = 10.0 - models[my->sprite]->sizey * .25;
 	}
 	else
 	{
