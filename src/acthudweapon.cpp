@@ -1030,7 +1030,11 @@ void actHudWeapon(Entity* my)
 						}
 						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM )
 						{
-							HUDWEAPON_CHOP = 1; // thrown normal swing
+							if ( !throwGimpTimer )
+							{
+								throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+								HUDWEAPON_CHOP = 1; // thrown normal swing
+							}
 						}
 						else if (item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY )
 						{
@@ -1419,7 +1423,7 @@ void actHudWeapon(Entity* my)
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
-					if ( (stats[clientnum]->weapon
+					else if ( (stats[clientnum]->weapon
 						&& stats[clientnum]->weapon->type == TOOL_PICKAXE) || whip )
 					{
 						if ( pickaxeGimpTimer < 20 )
@@ -1550,6 +1554,7 @@ void actHudWeapon(Entity* my)
 					{
 						if ( itemCategory(item) == THROWN )
 						{
+							throwGimpTimer = 20;
 							HUDWEAPON_CHOP = 0;
 						}
 						else if ( pickaxeGimpTimer <= 0 )
