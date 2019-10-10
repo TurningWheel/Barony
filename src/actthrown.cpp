@@ -513,12 +513,25 @@ void actThrown(Entity* my)
 						if ( itemCategory(item) == THROWN )
 						{
 							damage = my->thrownProjectilePower;
-							damage -= (AC(hit.entity->getStats()) / 4);
+							if ( my->thrownProjectileCharge >= 1 )
+							{
+								damage += my->thrownProjectileCharge / 5; //0-3 base +damage
+								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-35% of armor taken into account
+								damage -= (AC(hit.entity->getStats()) * bypassArmor);
+							}
+							else
+							{
+								damage -= (AC(hit.entity->getStats()) * .5);
+							}
 						}
 						else
 						{
 							damage = my->thrownProjectilePower;
-							damage -= (AC(hit.entity->getStats()) / 2);
+							if ( my->thrownProjectileCharge >= 1 )
+							{
+								damage += my->thrownProjectileCharge / 5;
+							}
+							damage -= (AC(hit.entity->getStats()) * .5);
 						}
 					}
 				}

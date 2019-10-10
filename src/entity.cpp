@@ -288,7 +288,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	effectPolymorph(skill[50]),
 	effectShapeshift(skill[53]),
 	entityShowOnMap(skill[59]),
-	thrownProjectilePower(skill[19])
+	thrownProjectilePower(skill[19]),
+	thrownProjectileCharge(skill[20])
 {
 	int c;
 	// add the entity to the entity list
@@ -6028,11 +6029,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
 					real_t speed = 5.f;
-					if ( itemCategory(myStats->weapon) == GEM )
-					{
-						real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
-						speed = 5.f + normalisedCharge;
-					}
+					real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
+					speed = 5.f + normalisedCharge;
+
 					// thrown items have slightly faster velocities
 					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
 					{
@@ -6067,6 +6066,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					entity->thrownProjectilePower = this->getThrownAttack();
+					if ( behavior == &actPlayer )
+					{
+						entity->thrownProjectileCharge = normalisedCharge * 10;
+					}
 				}
 				else if ( itemIsThrowableTinkerTool(myStats->weapon) )
 				{
@@ -6091,6 +6094,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
 						speed = 3.f + normalisedCharge;
+						if ( behavior == &actPlayer )
+						{
+							entity->thrownProjectileCharge = normalisedCharge * 10;
+						}
 					}
 					entity->thrownProjectilePower = this->getThrownAttack();
 					if ( this->behavior == &actPlayer )

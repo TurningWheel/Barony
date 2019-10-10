@@ -451,6 +451,7 @@ public:
 
 	//--THROWN PROJECTILE--
 	Sint32& thrownProjectilePower; //skill[19]
+	Sint32& thrownProjectileCharge; //skill[20]
 
 	void pedestalOrbInit(); // init orb properties
 
