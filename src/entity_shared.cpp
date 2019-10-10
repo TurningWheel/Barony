@@ -415,6 +415,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"longbow",
 	"compound_bow",
 	"heavy_crossbow",
+	"boomerang",
 	""
 };
 
@@ -465,6 +466,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"iron_dagger",
 		"steel_chakram",
 		"crystal_shuriken",
+		"boomerang",
 		"longbow",
 		"compound_bow",
 		"heavy_crossbow",

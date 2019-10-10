@@ -1986,6 +1986,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case IRON_DAGGER:
 		case STEEL_CHAKRAM:
 		case CRYSTAL_SHURIKEN:
+		case BOOMERANG:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:
@@ -3107,6 +3108,10 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 		attack += 2;
 	}
 	else if ( type == IRON_DAGGER )
+	{
+		attack += 4;
+	}
+	else if ( type == BOOMERANG )
 	{
 		attack += 4;
 	}

@@ -547,6 +547,7 @@ void actThrown(Entity* my)
 					case IRON_DAGGER:
 					case STEEL_CHAKRAM:
 					case CRYSTAL_SHURIKEN:
+					case BOOMERANG:
 					{
 						if ( damage <= 0 )
 						{
