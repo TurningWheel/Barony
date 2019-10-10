@@ -1430,6 +1430,10 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 	}
 
 	count = std::min(count, item->count);
+	if ( itemTypeIsQuiver(item->type) )
+	{
+		count = item->count;
+	}
 
 	if ( itemDroppable )
 	{
