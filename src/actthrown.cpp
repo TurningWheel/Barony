@@ -106,6 +106,12 @@ void actThrown(Entity* my)
 				}
 			}
 		}
+		if ( my->sprite == 977 )
+		{
+			my->focalx = 2;
+			my->focaly = 0;
+			my->focalz = 0.5;
+		}
 	}
 	else
 	{
@@ -167,8 +173,8 @@ void actThrown(Entity* my)
 			// todo: adjust falling rates for thrown items if need be
 			if ( type == BOOMERANG )
 			{
-				THROWN_VELZ += 0.01;
-				THROWN_VELZ = std::min(THROWN_VELZ, 0.25);
+				THROWN_VELZ += 0.005;
+				THROWN_VELZ = std::min(THROWN_VELZ, 0.05);
 			}
 			else if ( specialMonster )
 			{
@@ -178,6 +184,9 @@ void actThrown(Entity* my)
 			{
 				THROWN_VELZ += 0.03;
 			}
+			/*THROWN_VELX = 0.f;
+			THROWN_VELY = 0.f;
+			THROWN_VELZ = 0.f;*/
 			my->z += THROWN_VELZ;
 			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER )
 			{
@@ -188,15 +197,11 @@ void actThrown(Entity* my)
 			{
 				if ( type == BOOMERANG )
 				{
-					if ( my->z > (groundHeight / 2) )
-					{
-						my->roll = std::max(my->roll - 0.003, 0.0);
-					}
-					else
-					{
-						my->roll += 0.003;
-					}
-					my->yaw -= 0.3;
+					my->pitch = std::max(my->pitch - 0.03, 0.0);
+					my->roll -= 0.5;
+					my->focalx = 2;
+					my->focaly = 0;
+					my->focalz = 0.5;
 				}
 				else if ( specialMonster )
 				{
@@ -270,6 +275,22 @@ void actThrown(Entity* my)
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
+				}
+				else if ( item->type == BOOMERANG && uidToEntity(my->parent) )
+				{
+					Entity* parent = uidToEntity(my->parent);
+					Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
+					if ( spellEntity )
+					{
+						spellEntity->skill[0] = 150; // 3 second lifetime.
+						// store weapon data
+						spellEntity->skill[10] = item->type;
+						spellEntity->skill[11] = item->status;
+						spellEntity->skill[12] = item->beatitude;
+						spellEntity->skill[13] = 1;
+						spellEntity->skill[14] = item->appearance;
+						spellEntity->skill[15] = item->identified;
+					}
 				}
 				else if ( item && (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
 					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
@@ -429,6 +450,27 @@ void actThrown(Entity* my)
 	// falling out of the map
 	if ( my->z > 128 )
 	{
+		if ( my->sprite == 977 )
+		{
+			item = newItemFromEntity(my);
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent && item )
+			{
+				Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
+				if ( spellEntity )
+				{
+					spellEntity->skill[0] = 150; // 3 second lifetime.
+					// store weapon data
+					spellEntity->skill[10] = item->type;
+					spellEntity->skill[11] = item->status;
+					spellEntity->skill[12] = item->beatitude;
+					spellEntity->skill[13] = 1;
+					spellEntity->skill[14] = item->appearance;
+					spellEntity->skill[15] = item->identified;
+				}
+			}
+			free(item);
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -447,7 +489,7 @@ void actThrown(Entity* my)
 	{
 		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN 
-			&& (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN || item->type == BOOMERANG) )
+			&& (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
 			real_t bouncePenalty = 0.85;
 			// shurikens and chakrams bounce off walls.
@@ -465,6 +507,26 @@ void actThrown(Entity* my)
 				THROWN_VELX = -THROWN_VELX * bouncePenalty;
 			}
 			++THROWN_BOUNCES;
+		}
+
+		if ( item->type == BOOMERANG )
+		{
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent )
+			{
+				Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
+				if ( spellEntity )
+				{
+					spellEntity->skill[0] = 150; // 3 second lifetime.
+					// store weapon data
+					spellEntity->skill[10] = item->type;
+					spellEntity->skill[11] = item->status;
+					spellEntity->skill[12] = item->beatitude;
+					spellEntity->skill[13] = 1;
+					spellEntity->skill[14] = item->appearance;
+					spellEntity->skill[15] = item->identified;
+				}
+			}
 		}
 
 		cat = itemCategory(item);
@@ -1180,6 +1242,20 @@ void actThrown(Entity* my)
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
 			playSoundEntity(my, 66, 64);
+			if ( item->type == BOOMERANG )
+			{
+				// boomerang always tink and return to owner.
+				free(item);
+				list_RemoveNode(my->mynode);
+				return;
+			}
+		}
+		else if ( item->type == BOOMERANG && hit.entity )
+		{
+			// boomerang always return to owner.
+			free(item);
+			list_RemoveNode(my->mynode);
+			return;
 		}
 		else if ( item && itemIsThrowableTinkerTool(item) /*&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)*/ )
 		{

@@ -2701,6 +2701,12 @@ void actMagicParticle(Entity* my)
 	my->x += my->vel_x;
 	my->y += my->vel_y;
 	my->z += my->vel_z;
+	if ( my->sprite == 943 || my->sprite == 979 )
+	{
+		my->scalex -= 0.05;
+		my->scaley -= 0.05;
+		my->scalez -= 0.05;
+	}
 	my->scalex -= 0.05;
 	my->scaley -= 0.05;
 	my->scalez -= 0.05;
@@ -3258,6 +3264,14 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 	entity->skill[5] = endSprite; // sprite to spawn on return to caster.
 	entity->skill[6] = spell;
 	entity->behavior = &actParticleSapCenter;
+	if ( target->behavior == &actThrown && target->sprite == 977 )
+	{
+		// boomerang.
+		entity->yaw = target->yaw;
+		entity->roll = target->roll;
+		entity->pitch = target->pitch;
+		entity->z = target->z;
+	}
 	entity->flags[INVISIBLE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
@@ -3268,10 +3282,23 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 void createParticleSap(Entity* parent)
 {
 	real_t speed = 0.4;
+	if ( !parent )
+	{
+		return;
+	}
 	for ( int c = 0; c < 4; c++ )
 	{
 		// 4 particles, in an 'x' pattern around parent sprite.
 		int sprite = parent->sprite;
+		if ( parent->sprite == 977 )
+		{
+			if ( c > 0 )
+			{
+				continue;
+			}
+			// boomerang return.
+			sprite = parent->sprite;
+		}
 		if ( parent->skill[6] == SPELL_STEAL_WEAPON || parent->skill[6] == SHADOW_SPELLCAST )
 		{
 			sprite = parent->sprite;
@@ -3383,6 +3410,26 @@ void createParticleSap(Entity* parent)
 			entity_uids--;
 		}
 		entity->setUID(-3);
+
+		if ( sprite = 977 ) // boomerang
+		{
+			entity->z = parent->z;
+			entity->scalex = 1.f;
+			entity->scaley = 1.f;
+			entity->scalez = 1.f;
+			entity->skill[0] = 250;
+			entity->fskill[2] = -((PI / 3) + (PI / 6)) / (parent->skill[0]); // yaw rate of change.
+			entity->fskill[3] = 0.f;
+			entity->focalx = 2;
+			entity->focalz = 0.5;
+			entity->pitch = parent->pitch;
+			entity->yaw = parent->yaw;
+			entity->roll = parent->roll;
+
+			entity->vel_x = 1 * cos(entity->yaw);
+			entity->vel_y = 1 * sin(entity->yaw);
+			entity->yaw += PI / 3;
+		}
 	}
 }
 
@@ -3870,7 +3917,20 @@ void actParticleSap(Entity* my)
 	}
 	else
 	{
-		spawnMagicParticle(my);
+		if ( my->sprite == 977 ) // boomerang
+		{
+			accel = 0.97 + 0.0018; // specific for the animation I want...
+			decel = accel;
+			Entity* particle = spawnMagicParticleCustom(my, (rand() % 2) ? 943 : 979, 1, 10);
+			particle->focalx = 2;
+			particle->focaly = -2;
+			particle->focalz = 2.5;
+			//particle->flags[SPRITE] = true;
+		}
+		else
+		{
+			spawnMagicParticle(my);
+		}
 		Entity* parent = uidToEntity(my->parent);
 		if ( parent )
 		{
@@ -3933,6 +3993,14 @@ void actParticleSap(Entity* my)
 		my->scalex *= 0.99;
 		my->scaley *= 0.99;
 		my->scalez *= 0.99;
+		if ( my->sprite == 977 )
+		{
+			my->scalex = 1.f;
+			my->scaley = 1.f;
+			my->scalez = 1.f;
+			my->roll -= 0.5;
+			my->pitch = std::max(my->pitch - 0.015, 0.0);
+		}
 		--PARTICLE_LIFE;
 	}
 }
@@ -3956,7 +4024,11 @@ void actParticleSapCenter(Entity* my)
 	if ( parent )
 	{
 		// if reached the caster, delete self and spawn some particles.
-		if ( entityInsideEntity(my, parent) )
+		if ( my->sprite == 977 && PARTICLE_LIFE > 1 )
+		{
+
+		}
+		else if ( entityInsideEntity(my, parent) )
 		{
 			if ( my->skill[6] == SPELL_STEAL_WEAPON )
 			{
@@ -4030,6 +4102,44 @@ void actParticleSapCenter(Entity* my)
 					spellEffectFear(nullptr, spellElement_fear, caster, parent, 0);
 				}
 			}
+			else if ( my->sprite == 977 ) // boomerang
+			{
+				Item* item = newItemFromEntity(my);
+				if ( parent->behavior == &actPlayer )
+				{
+					Item* pickedUp = itemPickup(parent->skill[2], item);
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
+					if ( pickedUp )
+					{
+						if ( parent->skill[2] == 0 )
+						{
+							// pickedUp is the new inventory stack for server, free the original items
+							free(item);
+							item = nullptr;
+						}
+						else
+						{
+							free(pickedUp); // item is the picked up items (item == pickedUp)
+						}
+					}
+				}
+				else if ( parent->behavior == &actMonster )
+				{
+					parent->addItemToMonsterInventory(item);
+					Stat *myStats = parent->getStats();
+					if ( myStats )
+					{
+						node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+						if ( weaponNode )
+						{
+							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
+						}
+					}
+				}
+				playSoundEntity(parent, 66, 92);
+				item = nullptr;
+			}
 			list_RemoveNode(my->mynode);
 			return;
 		}
@@ -4037,7 +4147,7 @@ void actParticleSapCenter(Entity* my)
 		// calculate direction to caster and move.
 		real_t tangent = atan2(parent->y - my->y, parent->x - my->x);
 		real_t dist = sqrt(pow(my->x - parent->x, 2) + pow(my->y - parent->y, 2));
-		real_t speed = dist / PARTICLE_LIFE;
+		real_t speed = dist / std::max(PARTICLE_LIFE, 1);
 		my->vel_x = speed * cos(tangent);
 		my->vel_y = speed * sin(tangent);
 		my->x += my->vel_x;

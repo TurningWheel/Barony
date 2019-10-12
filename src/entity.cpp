@@ -6032,7 +6032,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					real_t normalisedCharge = (charge * 1.5 / MAXCHARGE); // 0-1.5
 					if ( myStats->weapon->type == BOOMERANG )
 					{
-						speed = 0.1 + normalisedCharge; //3.75
+						speed = 3.75 + normalisedCharge; //3.75
 					}
 					else
 					{
@@ -6059,6 +6059,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( myStats->weapon->type == BOOMERANG )
 					{
+						entity->pitch = PI;
+						entity->yaw -= PI / 2;
 						if ( this->behavior == &actPlayer )
 						{
 							entity->vel_x = speed * cos(players[player]->entity->yaw);
@@ -12375,18 +12377,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		else if ( weaponLimb->sprite == items[BOOMERANG].index )
 		{
-			/*weaponLimb->focalx -= 1;
-			weaponLimb->focaly -= 1;
-			if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
-			{
-				weaponLimb->focaly += 1;
-			}*/
-			weaponLimb->focalx += limbs[HUMAN][11][0];
-			weaponLimb->focaly += limbs[HUMAN][11][1];
-			weaponLimb->focalz += limbs[HUMAN][11][2];
-			weaponLimb->x += limbs[HUMAN][12][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * cos(weaponArmLimb->yaw);
-			weaponLimb->y += limbs[HUMAN][12][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * sin(weaponArmLimb->yaw);
-			weaponLimb->z += limbs[HUMAN][12][2];
+			weaponLimb->focalx += 2;
+			weaponLimb->focaly += 0.25;
+			weaponLimb->focalz += 0;
+			weaponLimb->x += -1.2 * cos(weaponArmLimb->yaw + PI / 2) + -.6 * cos(weaponArmLimb->yaw);
+			weaponLimb->y += -1.2 * sin(weaponArmLimb->yaw + PI / 2) + -.6 * sin(weaponArmLimb->yaw);
+			weaponLimb->z += 0.25;
 		}
 		else if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
 		{
