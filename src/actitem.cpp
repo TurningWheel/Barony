@@ -386,7 +386,7 @@ void actItem(Entity* my)
 					{
 						if ( my->sprite == items[BOOMERANG].index )
 						{
-							my->roll = 0;
+							my->roll = PI;
 						}
 						else
 						{
@@ -399,7 +399,7 @@ void actItem(Entity* my)
 						}
 						else if ( my->sprite == items[BOOMERANG].index )
 						{
-							my->z = 10.0 - models[my->sprite]->sizey * .25;
+							my->z = 9.0 - models[my->sprite]->sizey * .25;
 						}
 						else
 						{
@@ -473,7 +473,7 @@ void actItem(Entity* my)
 	}
 	else if ( my->sprite == items[BOOMERANG].index )
 	{
-		groundheight = 10.0 - models[my->sprite]->sizey * .25;
+		groundheight = 9.0 - models[my->sprite]->sizey * .25;
 	}
 	else
 	{

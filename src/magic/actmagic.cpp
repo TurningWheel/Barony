@@ -4055,7 +4055,10 @@ void actParticleSapCenter(Entity* my)
 		// if reached the caster, delete self and spawn some particles.
 		if ( my->sprite == 977 && PARTICLE_LIFE > 1 )
 		{
-
+			// store these in case parent dies.
+			// boomerang doesn't check for collision until end of life.
+			my->fskill[4] = parent->x; 
+			my->fskill[5] = parent->y;
 		}
 		else if ( entityInsideEntity(my, parent) )
 		{
@@ -4366,6 +4369,47 @@ void actParticleSapCenter(Entity* my)
 			// no parent, no target to travel to.
 			list_RemoveNode(my->mynode);
 			return;
+		}
+		else if ( my->sprite == 977 )
+		{
+			// calculate direction to caster and move.
+			real_t tangent = atan2(my->fskill[5] - my->y, parent->x - my->fskill[4]);
+			real_t dist = sqrt(pow(my->x - my->fskill[4], 2) + pow(my->y - my->fskill[5], 2));
+			real_t speed = dist / std::max(PARTICLE_LIFE, 1);
+
+			if ( dist < 4 || (abs(my->fskill[5]) < 0.001 && abs(my->fskill[4]) < 0.001) )
+			{
+				// reached goal, or goal not set then spawn the item.
+				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = my->yaw;
+				entity->vel_x = (rand() % 20 - 10) / 10.0;
+				entity->vel_y = (rand() % 20 - 10) / 10.0;
+				entity->vel_z = -.5;
+				entity->flags[PASSABLE] = true;
+				entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+				entity->behavior = &actItem;
+				entity->skill[10] = my->skill[10];
+				entity->skill[11] = my->skill[11];
+				entity->skill[12] = my->skill[12];
+				entity->skill[13] = my->skill[13];
+				entity->skill[14] = my->skill[14];
+				entity->skill[15] = my->skill[15];
+				entity->itemOriginalOwner = 0;
+				entity->parent = 0;
+
+				list_RemoveNode(my->mynode);
+				return;
+			}
+			my->vel_x = speed * cos(tangent);
+			my->vel_y = speed * sin(tangent);
+			my->x += my->vel_x;
+			my->y += my->vel_y;
 		}
 		else
 		{

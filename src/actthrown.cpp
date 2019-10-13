@@ -46,6 +46,8 @@
 #define THROWN_LINGER my->skill[18]
 #define THROWN_BOOMERANG_STOP_Z my->skill[21]
 
+#define BOOMERANG_PARTICLE 977
+
 void actThrown(Entity* my)
 {
 	Item* item = nullptr;
@@ -107,7 +109,7 @@ void actThrown(Entity* my)
 				}
 			}
 		}
-		if ( my->sprite == 977 )
+		if ( my->sprite == BOOMERANG_PARTICLE )
 		{
 			my->focalx = 2;
 			my->focaly = 0;
@@ -123,6 +125,10 @@ void actThrown(Entity* my)
 		if ( item )
 		{
 			my->sprite = itemModel(item);
+			if ( item->type == BOOMERANG )
+			{
+				my->sprite = BOOMERANG_PARTICLE;
+			}
 			free(item);
 		}
 	}
@@ -471,7 +477,7 @@ void actThrown(Entity* my)
 	// falling out of the map
 	if ( my->z > 128 )
 	{
-		if ( my->sprite == 977 )
+		if ( my->sprite == BOOMERANG_PARTICLE ) // boomerang
 		{
 			item = newItemFromEntity(my);
 			Entity* parent = uidToEntity(my->parent);
