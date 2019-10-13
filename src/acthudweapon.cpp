@@ -31,6 +31,7 @@ Sint32 pickaxeGimpTimer = 0; // player cannot swap weapons immediately after usi
 							 // due to multiplayer weapon degrade lag... equipping new weapon before degrade
 							// message hits can degrade the wrong weapon.
 Sint32 swapWeaponGimpTimer = 0; // player cannot swap weapons unless zero
+Sint32 bowGimpTimer = 0; // can't draw bow unless zero.
 
 /*-------------------------------------------------------------------------------
 
@@ -290,7 +291,8 @@ Uint32 bowDrawBaseTicks = 50;
 #define HUDWEAPON_HIDEWEAPON my->skill[6]
 #define HUDWEAPON_SHOOTING_RANGED_WEAPON my->skill[7]
 #define HUDWEAPON_CROSSBOW_RELOAD_ANIMATION my->skill[8]
-#define HUDWEAPON_CROSSBOW_HAS_QUIVER my->skill[9]
+#define HUDWEAPON_BOW_HAS_QUIVER my->skill[9]
+#define HUDWEAPON_BOW_FORCE_RELOAD my->skill[10]
 #define HUDWEAPON_MOVEX my->fskill[0]
 #define HUDWEAPON_MOVEY my->fskill[1]
 #define HUDWEAPON_MOVEZ my->fskill[2]
@@ -387,6 +389,10 @@ void actHudWeapon(Entity* my)
 	if ( swapWeaponGimpTimer > 0 )
 	{
 		--swapWeaponGimpTimer;
+	}
+	if ( bowGimpTimer > 0 )
+	{
+		--bowGimpTimer;
 	}
 
 	// check levitating value
@@ -561,18 +567,18 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_BEING_DRAWN;
 				if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
 				{
-					HUDWEAPON_CROSSBOW_HAS_QUIVER = 1;
+					HUDWEAPON_BOW_HAS_QUIVER = 1;
 				}
 				else
 				{
-					if ( HUDWEAPON_CROSSBOW_HAS_QUIVER == 1 )
+					if ( HUDWEAPON_BOW_HAS_QUIVER == 1 )
 					{
 						// force a reload animation.
 						HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_RELOAD_START;
 						HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
 						HUDWEAPON_MOVEX = -1;
 					}
-					HUDWEAPON_CROSSBOW_HAS_QUIVER = 0;
+					HUDWEAPON_BOW_HAS_QUIVER = 0;
 				}
 				if ( HUDWEAPON_CHOP != 0 )
 				{
@@ -693,6 +699,14 @@ void actHudWeapon(Entity* my)
 				HUDWEAPON_CHOP = 0;
 			}
 
+			if ( rangedweapon && stats[clientnum]->weapon
+				&& stats[clientnum]->weapon->type != CROSSBOW
+				&& stats[clientnum]->weapon->type != HEAVY_CROSSBOW
+				)
+			{
+				HUDWEAPON_BOW_FORCE_RELOAD = 1;
+			}
+
 			if ( !HUDWEAPON_CHOP )
 			{
 				HUDWEAPON_MOVEZ = 2;
@@ -723,16 +737,30 @@ void actHudWeapon(Entity* my)
 
 	Uint32 bowFireRate = bowDrawBaseTicks;
 	bool shakeRangedWeapon = false;
-	bool cancelRangedAttack = false;
 	if ( rangedweapon && stats[clientnum]->weapon 
 		&& stats[clientnum]->weapon->type != CROSSBOW
 		&& stats[clientnum]->weapon->type != HEAVY_CROSSBOW
 		&& !hideWeapon )
 	{
 		bowFireRate = bowDrawBaseTicks * (rangedAttackGetSpeedModifier(stats[clientnum]));
-
-		if ( swingweapon && HUDWEAPON_CHOP != 0 )
+		if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
 		{
+			HUDWEAPON_BOW_HAS_QUIVER = 1;
+		}
+		else
+		{
+			if ( HUDWEAPON_BOW_HAS_QUIVER == 1 )
+			{
+				// unequipped quiver, force a reload.
+				HUDWEAPON_BOW_FORCE_RELOAD = 1;
+				bowGimpTimer = std::max(bowGimpTimer, 12);
+			}
+			HUDWEAPON_BOW_HAS_QUIVER = 0;
+		}
+
+		if ( (swingweapon && HUDWEAPON_CHOP != 0) || HUDWEAPON_BOW_FORCE_RELOAD == 1 )
+		{
+			HUDWEAPON_BOW_FORCE_RELOAD = 0;
 			swingweapon = false;
 			HUDWEAPON_CHARGE = 0;
 			HUDWEAPON_OVERCHARGE = 0;
@@ -760,11 +788,6 @@ void actHudWeapon(Entity* my)
 	{
 		if ( (my->ticks - bowStartDrawingTick) < bowFireRate )
 		{
-			/*if ( (my->ticks - bowStartDrawingTick) > bowFireRate * 0.75 )
-			{
-				shakeRangedWeapon = true;
-			}*/
-			//messagePlayer(clientnum, "ticks: %d", bowFireRate);
 			bowFire = false;
 		}
 		else
@@ -825,6 +848,13 @@ void actHudWeapon(Entity* my)
 				|| itemCategory(stats[clientnum]->weapon) == GEM
 				|| itemCategory(stats[clientnum]->weapon) == THROWN)
 			)
+		{
+			ignoreAttack = true;
+		}
+		else if ( swingweapon && bowGimpTimer > 0 && rangedweapon && stats[clientnum]->weapon
+			&& stats[clientnum]->weapon->type != CROSSBOW
+			&& stats[clientnum]->weapon->type != HEAVY_CROSSBOW
+			&& !hideWeapon )
 		{
 			ignoreAttack = true;
 		}
@@ -2857,6 +2887,7 @@ void actHudShield(Entity* my)
 
 	bool crossbow = (stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW);
 	bool doCrossbowReloadAnimation = false;
+	bool doBowReload = false;
 
 	// shield switching animation
 	if ( shieldSwitch )
@@ -2871,13 +2902,33 @@ void actHudShield(Entity* my)
 			HUDSHIELD_MOVEZ = 2;
 			HUDSHIELD_MOVEX = -2;
 		}
-		if ( hudweapon && crossbow )
+		if ( hudweapon )
 		{
-			if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+			if ( crossbow )
 			{
-				doCrossbowReloadAnimation = true;
+				if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+				{
+					doCrossbowReloadAnimation = true;
+				}
+			}
+			else if ( stats[clientnum]->weapon && isRangedWeapon(*stats[clientnum]->weapon) )
+			{
+				if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+				{
+					hudweapon->skill[10] = 1; // HUDWEAPON_BOW_FORCE_RELOAD
+					hudweapon->skill[7] = RANGED_ANIM_IDLE;
+					doBowReload = true;
+					bowGimpTimer = std::max(bowGimpTimer, 12);
+					//my->flags[INVISIBLE] = true;
+					//HUDSHIELD_MOVEY = 0;
+					//HUDSHIELD_PITCH = 0;
+					//HUDSHIELD_YAW = 0;
+					//HUDSHIELD_MOVEZ = 0;
+					//HUDSHIELD_MOVEX = 0;
+				}
 			}
 		}
+
 	}
 
 	bool crossbowReloadAnimation = true;
@@ -3024,7 +3075,7 @@ void actHudShield(Entity* my)
 		}
 
 		bool doMovement = true;
-		if ( doCrossbowReloadAnimation )
+		if ( doCrossbowReloadAnimation || doBowReload )
 		{
 			doMovement = false;
 		}
