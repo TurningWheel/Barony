@@ -44,6 +44,7 @@
 #define THROWN_LIFE my->skill[16]
 #define THROWN_BOUNCES my->skill[17]
 #define THROWN_LINGER my->skill[18]
+#define THROWN_BOOMERANG_STOP_Z my->skill[21]
 
 void actThrown(Entity* my)
 {
@@ -173,21 +174,41 @@ void actThrown(Entity* my)
 			// todo: adjust falling rates for thrown items if need be
 			if ( type == BOOMERANG )
 			{
-				THROWN_VELZ += 0.005;
-				THROWN_VELZ = std::min(THROWN_VELZ, 0.05);
+				if ( !THROWN_BOOMERANG_STOP_Z )
+				{
+					if ( THROWN_VELZ > 0.001 )
+					{
+						THROWN_VELZ += 0.005;
+						if ( THROWN_VELZ > 0.05 )
+						{
+							THROWN_VELZ = -0.001;
+						}
+					}
+					else
+					{
+						THROWN_VELZ -= 0.005;
+						if ( THROWN_VELZ < -0.05 )
+						{
+							THROWN_BOOMERANG_STOP_Z = 1;
+							THROWN_VELZ = 0.f;
+						}
+					}
+					my->z += THROWN_VELZ;
+				}
 			}
 			else if ( specialMonster )
 			{
 				THROWN_VELZ += 0.01;
+				my->z += THROWN_VELZ;
 			}
 			else
 			{
 				THROWN_VELZ += 0.03;
+				my->z += THROWN_VELZ;
 			}
 			/*THROWN_VELX = 0.f;
 			THROWN_VELY = 0.f;
 			THROWN_VELZ = 0.f;*/
-			my->z += THROWN_VELZ;
 			if ( type == BRONZE_TOMAHAWK || type == IRON_DAGGER )
 			{
 				// axe and dagger spin vertically
