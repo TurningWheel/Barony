@@ -137,7 +137,7 @@ void actArrow(Entity* my)
 			}
 		}
 	}
-	else if ( my->arrowQuiverType == QUIVER_HEAVY || my->sprite == PROJECTILE_HEAVY_SPRITE )
+	else if ( my->arrowQuiverType == QUIVER_KNOCKBACK || my->sprite == PROJECTILE_HEAVY_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
@@ -177,7 +177,7 @@ void actArrow(Entity* my)
 			particle->flags[SPRITE] = true;
 		}
 	}
-	else if ( my->arrowQuiverType == QUIVER_7 || my->sprite == PROJECTILE_HUNTING_SPRITE )
+	else if ( my->arrowQuiverType == QUIVER_HUNTING || my->sprite == PROJECTILE_HUNTING_SPRITE )
 	{
 		if ( ARROW_STUCK == 0 )
 		{
@@ -354,6 +354,7 @@ void actArrow(Entity* my)
 					}
 
 					bool silverDamage = false;
+					bool huntingDamage = false;
 					if ( my->arrowQuiverType == QUIVER_SILVER )
 					{
 						switch ( hitstats->type )
@@ -378,6 +379,33 @@ void actArrow(Entity* my)
 								break;
 						}
 					}
+					else if ( my->arrowQuiverType == QUIVER_HUNTING )
+					{
+						switch ( hitstats->type )
+						{
+							case RAT:
+							case SPIDER:
+							case SCORPION:
+							case SCARAB:
+							case SLIME:
+							case CREATURE_IMP:
+							case DEMON:
+							case MINOTAUR:
+							case KOBOLD:
+							case COCKATRICE:
+								// more damage to these creatures
+								huntingDamage = true;
+								for ( int gibs = 0; gibs < 10; ++gibs )
+								{
+									Entity* gib = spawnGib(hit.entity);
+									serverSpawnGibForClient(gib);
+								}
+								break;
+							default:
+								huntingDamage = false;
+								break;
+						}
+					}
 
 					// do damage
 					if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
@@ -399,7 +427,7 @@ void actArrow(Entity* my)
 						damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
 					}
 
-					if ( silverDamage )
+					if ( silverDamage || huntingDamage )
 					{
 						damage *= 1.5;
 					}
@@ -430,13 +458,19 @@ void actArrow(Entity* my)
 							}
 						}
 					}
+					real_t damageMultiplier = damagetables[hitstats->type][4];
+					if ( huntingDamage || silverDamage )
+					{
+						damageMultiplier = std::max(0.75, damageMultiplier);
+					}
+
 					if ( hitWeaklyOnTarget )
 					{
-						damage = damage * (std::max(0.1, damagetables[hitstats->type][4] - 0.5));
+						damage = damage * (std::max(0.1, damageMultiplier - 0.5));
 					}
 					else
 					{
-						damage *= damagetables[hitstats->type][4];
+						damage *= damageMultiplier;
 					}
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
@@ -568,18 +602,25 @@ void actArrow(Entity* my)
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( damage <= (nominalDamage * .7) )
+							if ( huntingDamage )
+							{
+								// plunges into the %s!
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3750], language[3751], MSG_COMBAT);
+							}
+							else if ( silverDamage )
+							{
+								// smites the %s!
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3743], language[3744], MSG_COMBAT);
+							}
+							else if ( damage <= (nominalDamage * .7) )
 							{
 								// weak shot.
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3733], language[3734], MSG_COMBAT);
 							}
 							else
 							{
+								// you shot the %s!
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[446], language[448], MSG_COMBAT);
-							}
-							if ( silverDamage )
-							{
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3743], language[3744], MSG_COMBAT);
 							}
 							if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 							{
@@ -594,7 +635,11 @@ void actArrow(Entity* my)
 						{
 							messagePlayerColor(hit.entity->skill[2], color, language[3745]); // you are smited!
 						}
-						else if ( my->arrowQuiverType == QUIVER_HEAVY )
+						else if ( huntingDamage )
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[3752]); // arrow plunged into you!
+						}
+						else if ( my->arrowQuiverType == QUIVER_KNOCKBACK )
 						{
 							// no "hit by arrow!" message, let the knockback do the work.
 						}
@@ -631,117 +676,152 @@ void actArrow(Entity* my)
 					}
 
 					bool statusEffectApplied = false;
-					if ( my->arrowPoisonTime > 0 && damage > 0 )
+					if ( hitstats->HP > 0 )
 					{
-						hitstats->poisonKiller = my->parent;
-						hitstats->EFFECTS[EFF_POISONED] = true;
-						hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
-						if ( hit.entity->behavior == &actPlayer )
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							messagePlayerColor(hit.entity->skill[2], color, language[453]);
-							serverUpdateEffects(hit.entity->skill[2]);
-						}
-						statusEffectApplied = true;
-					}
-
-					if ( my->arrowQuiverType == QUIVER_FIRE )
-					{
-						bool burning = hit.entity->flags[BURNING];
-						hit.entity->SetEntityOnFire(my);
-						if ( hitstats )
+						if ( my->arrowPoisonTime > 0 && damage > 0 )
 						{
 							hitstats->poisonKiller = my->parent;
+							hitstats->EFFECTS[EFF_POISONED] = true;
+							hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], color, language[453]);
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+							statusEffectApplied = true;
 						}
-						if ( !burning && hit.entity->flags[BURNING] )
+
+						if ( my->arrowQuiverType == QUIVER_FIRE )
 						{
+							bool burning = hit.entity->flags[BURNING];
+							hit.entity->SetEntityOnFire(my);
+							if ( hitstats )
+							{
+								hitstats->poisonKiller = my->parent;
+							}
+							if ( !burning && hit.entity->flags[BURNING] )
+							{
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3739], language[3740], MSG_COMBAT);
+								}
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], color, language[3741]);
+								}
+								statusEffectApplied = true;
+							}
+						}
+						else if ( my->arrowQuiverType == QUIVER_KNOCKBACK && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+						{
+							real_t pushbackMultiplier = 0.6;
+							if ( !hit.entity->isMobile() )
+							{
+								pushbackMultiplier += 0.3;
+							}
+							if ( hitWeaklyOnTarget )
+							{
+								pushbackMultiplier -= 0.3;
+							}
+
+							if ( hit.entity->behavior == &actMonster )
+							{
+								if ( parent )
+								{
+									real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
+									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+									hit.entity->monsterKnockbackVelocity = 0.05;
+									hit.entity->monsterKnockbackUID = my->parent;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									//hit.entity->lookAtEntity(*parent);
+								}
+								else
+								{
+									real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
+									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+									hit.entity->monsterKnockbackVelocity = 0.05;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									//hit.entity->lookAtEntity(*my);
+								}
+							}
+							else if ( hit.entity->behavior == &actPlayer )
+							{
+								if ( parent )
+								{
+									real_t dist = entityDist(parent, hit.entity);
+									if ( dist < TOUCHRANGE )
+									{
+										pushbackMultiplier += 0.5;
+									}
+								}
+								if ( hit.entity->skill[2] != clientnum )
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = my->yaw;
+									serverUpdateEntityFSkill(hit.entity, 11);
+									serverUpdateEntityFSkill(hit.entity, 9);
+								}
+								else
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = my->yaw;
+								}
+							}
+
 							if ( parent && parent->behavior == &actPlayer )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3739], language[3740], MSG_COMBAT);
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3215], language[3214], MSG_COMBAT);
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								messagePlayerColor(hit.entity->skill[2], color, language[3741]);
+								messagePlayerColor(hit.entity->skill[2], color, language[3742]);
+							}
+
+							if ( hit.entity->monsterAttack == 0 )
+							{
+								hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
 							}
 							statusEffectApplied = true;
 						}
-					}
-					else if ( my->arrowQuiverType == QUIVER_HEAVY && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
-					{
-						real_t pushbackMultiplier = 0.6;
-						if ( !hit.entity->isMobile() )
+						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) )
 						{
-							pushbackMultiplier += 0.3;
-						}
-						if ( hitWeaklyOnTarget )
-						{
-							pushbackMultiplier -= 0.3;
-						}
-
-						if ( hit.entity->behavior == &actMonster )
-						{
-							if ( parent )
+							if ( !hitstats->EFFECTS[EFF_POISONED] )
 							{
-								real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
-								hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
-								hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-								hit.entity->monsterKnockbackVelocity = 0.05;
-								hit.entity->monsterKnockbackUID = my->parent;
-								hit.entity->monsterKnockbackTangentDir = tangent;
-								//hit.entity->lookAtEntity(*parent);
+								hitstats->poisonKiller = my->parent;
+								hitstats->EFFECTS[EFF_POISONED] = true;
+								hitstats->EFFECTS_TIMERS[EFF_POISONED] = 160;
+								hitstats->EFFECTS[EFF_SLOW] = true;
+								hitstats->EFFECTS_TIMERS[EFF_SLOW] = 160;
+								statusEffectApplied = true;
 							}
-							else
+							if ( statusEffectApplied )
 							{
-								real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
-								hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
-								hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-								hit.entity->monsterKnockbackVelocity = 0.05;
-								hit.entity->monsterKnockbackTangentDir = tangent;
-								//hit.entity->lookAtEntity(*my);
-							}
-						}
-						else if ( hit.entity->behavior == &actPlayer )
-						{
-							if ( parent )
-							{
-								real_t dist = entityDist(parent, hit.entity);
-								if ( dist < TOUCHRANGE )
+								serverUpdateEffects(hit.entity->skill[2]);
+								if ( parent && parent->behavior == &actPlayer )
 								{
-									pushbackMultiplier += 0.5;
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3747], language[3748], MSG_COMBAT);
+								}
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									if ( rand() % 8 == 0 && hit.entity->skill[26] == 0 && !hitstats->EFFECTS[EFF_VOMITING] )
+									{
+										// maybe vomit
+										messagePlayer(hit.entity->skill[2], language[634]);
+										hit.entity->skill[26] = 140 + rand() % 60; 
+									}
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], color, language[3749]);
 								}
 							}
-							if ( hit.entity->skill[2] != clientnum )
-							{
-								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
-								hit.entity->monsterKnockbackTangentDir = my->yaw;
-								serverUpdateEntityFSkill(hit.entity, 11);
-								serverUpdateEntityFSkill(hit.entity, 9);
-							}
-							else
-							{
-								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
-								hit.entity->monsterKnockbackTangentDir = my->yaw;
-							}
 						}
-
-						if ( parent && parent->behavior == &actPlayer )
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3215], language[3214], MSG_COMBAT);
-						}
-						if ( hit.entity->behavior == &actPlayer )
-						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							messagePlayerColor(hit.entity->skill[2], color, language[3742]);
-						}
-
-						if ( hit.entity->monsterAttack == 0 )
-						{
-							hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
-						}
-						statusEffectApplied = true;
 					}
 
 					if ( damage == 0 && !statusEffectApplied )

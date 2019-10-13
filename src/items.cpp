@@ -2387,9 +2387,9 @@ void useItem(Item* item, int player, Entity* usedBy)
 		case QUIVER_PIERCE:
 		case QUIVER_LIGHTWEIGHT:
 		case QUIVER_FIRE:
-		case QUIVER_HEAVY:
+		case QUIVER_KNOCKBACK:
 		case QUIVER_CRYSTAL:
-		case QUIVER_7:
+		case QUIVER_HUNTING:
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
@@ -3126,6 +3126,34 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	else if ( type == TOOL_WHIP )
 	{
 		attack += 2;
+	}
+	else if ( type == QUIVER_SILVER )
+	{
+		return 2;
+	}
+	else if ( type == QUIVER_PIERCE )
+	{
+		return 4;
+	}
+	else if ( type == QUIVER_LIGHTWEIGHT )
+	{
+		return -2;
+	}
+	else if ( type == QUIVER_FIRE )
+	{
+		return 2;
+	}
+	else if ( type == QUIVER_KNOCKBACK )
+	{
+		return 4;
+	}
+	else if ( type == QUIVER_CRYSTAL )
+	{
+		return 6;
+	}
+	else if ( type == QUIVER_HUNTING )
+	{
+		return 4;
 	}
 	// old formula
 	//attack *= (double)(status / 5.0);
@@ -4261,7 +4289,7 @@ char* Item::getScrollLabel() const
 
 bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 {
-	for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
+	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 	{
 		if ( sprite == items[i].index
 			|| sprite == items[i].index + 1
@@ -4276,7 +4304,7 @@ bool itemSpriteIsQuiverThirdPersonModel(int sprite)
 
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 {
-	for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
+	for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 	{
 		if ( sprite == items[i].index + 1 )
 		{
@@ -4288,7 +4316,7 @@ bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite)
 
 bool itemTypeIsQuiver(ItemType type)
 {
-	return (type >= QUIVER_SILVER && type <= QUIVER_7);
+	return (type >= QUIVER_SILVER && type <= QUIVER_HUNTING);
 }
 
 real_t rangedAttackGetSpeedModifier(Stat* myStats)

@@ -12660,7 +12660,6 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				default:
 					break;
 			}
-
 		}
 		else if ( weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
 		{
@@ -15036,7 +15035,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 				attack += 2;
 				sprite = 927;
 				break;
-			case QUIVER_HEAVY:
+			case QUIVER_KNOCKBACK:
 				attack += 4;
 				sprite = 928;
 				break;
@@ -15044,7 +15043,8 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 				attack += 6;
 				sprite = 929;
 				break;
-			case QUIVER_7:
+			case QUIVER_HUNTING:
+				attack += 4;
 				sprite = 930;
 				break;
 			default:
@@ -16665,35 +16665,9 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 	shieldLimb->focaly = limbs[race][7][1];
 	shieldLimb->focalz = limbs[race][7][2];
 
-	/*if ( shieldLimb->sprite == items[QUIVER_SILVER].index )
-	{
-		shieldLimb->focalx += limbs[HUMAN][11][0];
-		shieldLimb->focaly += limbs[HUMAN][11][1];
-		shieldLimb->focalz += (3 + limbs[HUMAN][11][2]);
-
-		shieldLimb->x -= limbs[HUMAN][12][0] * cos(this->yaw + PI / 2) + (1.35 + limbs[HUMAN][12][1]) * cos(this->yaw);
-		shieldLimb->y -= limbs[HUMAN][12][0] * sin(this->yaw + PI / 2) + (1.35 + limbs[HUMAN][12][1]) * sin(this->yaw);
-		shieldLimb->z += (-1.78 + limbs[HUMAN][12][2]);
-
-		shieldLimb->scalex = 1.f;
-		shieldLimb->scaley = 1.f;
-		shieldLimb->scalez = 1.f;
-		if ( race == INCUBUS )
-		{
-			shieldLimb->scalex = 1.01;
-			shieldLimb->scaley = 1.01;
-		}
-	}*/
 	shieldLimb->scalex = 1.f;
 	shieldLimb->scaley = 1.f;
 	shieldLimb->scalez = 1.f;
-
-	/*if ( behavior == &actMonster )
-	{
-		shieldLimb->x -= limbs[HUMAN][12][0] * cos(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * cos(this->yaw);
-		shieldLimb->y -= limbs[HUMAN][12][0] * sin(this->yaw + PI / 2) + (limbs[HUMAN][12][1]) * sin(this->yaw);
-		shieldLimb->z += limbs[HUMAN][12][2];
-	}*/
 
 	switch ( race )
 	{

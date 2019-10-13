@@ -3595,13 +3595,13 @@ void actHudArrowModel(Entity* my)
 			case QUIVER_FIRE:
 				my->sprite = 938;
 				break;
-			case QUIVER_HEAVY:
+			case QUIVER_KNOCKBACK:
 				my->sprite = 939;
 				break;
 			case QUIVER_CRYSTAL:
 				my->sprite = 940;
 				break;
-			case QUIVER_7:
+			case QUIVER_HUNTING:
 				my->sprite = 941;
 				break;
 			default:

@@ -9808,7 +9808,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 					break;
 				case 2:
 				case 3:
-					myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 					break;
 				case 4:
 					if ( currentlevel >= 18 )
@@ -9819,12 +9819,12 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 						}
 						else
 						{
-							myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+							myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 						}
 					}
 					else
 					{
-						myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 					}
 					break;
 				default:
@@ -9840,7 +9840,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 					break;
 				case 2:
 				case 3:
-					myStats->shield = newItem(QUIVER_7, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					myStats->shield = newItem(QUIVER_HUNTING, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 					break;
 				case 4:
 					if ( currentlevel >= 18 )
@@ -9872,7 +9872,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 					break;
 				case 2:
 				case 3:
-					myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 					break;
 				case 4:
 					if ( currentlevel >= 28 )
@@ -9932,7 +9932,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 			{
 				case 0:
 				case 1:
-					myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+					myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 					break;
 				case 2:
 				case 3:
@@ -9952,7 +9952,7 @@ void Entity::monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster)
 					}
 					else
 					{
-						myStats->shield = newItem(QUIVER_HEAVY, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
+						myStats->shield = newItem(QUIVER_KNOCKBACK, SERVICABLE, 0, ammo, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr);
 					}
 					break;
 				default:
