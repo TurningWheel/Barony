@@ -2986,7 +2986,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 				}
 			}
 		}
-		if ( wielder->type == INCUBUS && !strncmp(wielder->name, "inner demon", strlen("inner demon")) )
+		if ( wielder->type == INCUBUS && wielder->playerRace == 0 && !strncmp(wielder->name, "inner demon", strlen("inner demon")) )
 		{
 			return -9999;
 		}

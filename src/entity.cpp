@@ -15016,35 +15016,29 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 	if ( myStats.shield && rangedWeaponUseQuiverOnAttack(&myStats) )
 	{
 		this->arrowQuiverType = myStats.shield->type;
+		attack += myStats.shield->weaponGetAttack(nullptr);
 		switch ( arrowQuiverType )
 		{
 			case QUIVER_SILVER:
-				attack += 2;
 				sprite = 924;
 				break;
 			case QUIVER_PIERCE:
-				attack += 4;
 				arrowArmorPierce = 2;
 				sprite = 925;
 				break;
 			case QUIVER_LIGHTWEIGHT:
-				attack -= 2;
 				sprite = 926;
 				break;
 			case QUIVER_FIRE:
-				attack += 2;
 				sprite = 927;
 				break;
 			case QUIVER_KNOCKBACK:
-				attack += 4;
 				sprite = 928;
 				break;
 			case QUIVER_CRYSTAL:
-				attack += 6;
 				sprite = 929;
 				break;
 			case QUIVER_HUNTING:
-				attack += 4;
 				sprite = 930;
 				break;
 			default:

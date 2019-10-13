@@ -1152,7 +1152,8 @@ void updatePlayerInventory()
 							char spellEffectText[256] = "";
 							if ( item->identified )
 							{
-								if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == THROWN )
+								if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == THROWN
+									|| itemTypeIsQuiver(item->type) )
 								{
 									src.h += TTF12_HEIGHT;
 								}
@@ -1271,7 +1272,8 @@ void updatePlayerInventory()
 
 							if ( item->identified )
 							{
-								if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
+								if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN 
+									|| itemTypeIsQuiver(item->type) )
 								{
 									Monster tmpRace = stats[clientnum]->type;
 									if ( stats[clientnum]->type == TROLL
