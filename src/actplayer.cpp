@@ -1653,6 +1653,8 @@ void actPlayer(Entity* my)
 						{
 							messagePlayer(PLAYER_NUM, language[3703]);
 						}
+						camera_shakex += .1;
+						camera_shakey += 10;
 					}
 					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && stats[PLAYER_NUM]->type == VAMPIRE )
 					{
@@ -1752,6 +1754,13 @@ void actPlayer(Entity* my)
 						{
 							// Attempt to set the Entity on fire
 							my->SetEntityOnFire();
+						}
+						if ( stats[PLAYER_NUM]->type == AUTOMATON || stats[PLAYER_NUM]->type == SKELETON )
+						{
+							if ( ticks % 20 == 0 )
+							{
+								playSoundPlayer(PLAYER_NUM, 28, 92);
+							}
 						}
 					}
 				}
