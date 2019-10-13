@@ -1272,7 +1272,7 @@ void drawStatus()
 						char spellEffectText[256] = "";
 						if ( item->identified )
 						{
-							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
+							if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == THROWN )
 							{
 								src.h += TTF12_HEIGHT;
 							}
@@ -1383,7 +1383,7 @@ void drawStatus()
 
 						if ( item->identified )
 						{
-							if ( itemCategory(item) == WEAPON )
+							if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 							{
 								Monster tmpRace = stats[clientnum]->type;
 								if ( stats[clientnum]->type == TROLL

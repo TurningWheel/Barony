@@ -6059,19 +6059,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( myStats->weapon->type == BOOMERANG )
 					{
+						entity->sprite = 977;
 						entity->pitch = PI;
 						entity->yaw -= PI / 2;
 						if ( this->behavior == &actPlayer )
 						{
 							entity->vel_x = speed * cos(players[player]->entity->yaw);
 							entity->vel_y = speed * sin(players[player]->entity->yaw);
-							entity->vel_z = -.25;
+							entity->vel_z = -.1;
 						}
 						else if ( this->behavior == &actMonster )
 						{
 							entity->vel_x = 6 * cos(this->yaw);
 							entity->vel_y = 6 * sin(this->yaw);
-							entity->vel_z = -.25;
+							entity->vel_z = -.1;
 						}
 					}
 					else
@@ -12295,6 +12296,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			{
 				weaponLimb->roll += (PI / 2); // sprite rotated
 				weaponLimb->pitch -= PI / 8;
+				weaponLimb->pitch += .25 * (myAttack != 0); // add 0.25 if attacking
 			}
 		}
 	}
@@ -12383,6 +12385,29 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->x += -1.2 * cos(weaponArmLimb->yaw + PI / 2) + -.6 * cos(weaponArmLimb->yaw);
 			weaponLimb->y += -1.2 * sin(weaponArmLimb->yaw + PI / 2) + -.6 * sin(weaponArmLimb->yaw);
 			weaponLimb->z += 0.25;
+			switch ( monsterType )
+			{
+				case SKELETON:
+				case AUTOMATON:
+				case GOATMAN:
+				case INSECTOID:
+				case GOBLIN:
+					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
+					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
+					break;
+				case INCUBUS:
+				case SUCCUBUS:
+					weaponLimb->x += 1.75 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+					weaponLimb->y += 1.75 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+					weaponLimb->z += 0;
+
+					weaponLimb->focalx += -0.75;
+					weaponLimb->focaly += 1;
+					weaponLimb->focalz += 0;
+					break;
+				default:
+					break;
+			}
 		}
 		else if ( weaponLimb->sprite == items[TOOL_WHIP].index || weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
 		{
@@ -12604,7 +12629,40 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			}
 		}
 
-		if ( weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
+		if ( weaponLimb->sprite == items[BOOMERANG].index )
+		{
+			weaponLimb->focalx += 2;
+			weaponLimb->focaly += 0.25;
+			weaponLimb->focalz += 2;
+			weaponLimb->x += -1.2 * cos(weaponArmLimb->yaw + PI / 2) + -.1 * cos(weaponArmLimb->yaw);
+			weaponLimb->y += -1.2 * sin(weaponArmLimb->yaw + PI / 2) + -.1 * sin(weaponArmLimb->yaw);
+			weaponLimb->z += 0.25;
+			switch ( monsterType )
+			{
+				case SKELETON:
+				case AUTOMATON:
+				case GOATMAN:
+				case INSECTOID:
+				case GOBLIN:
+					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
+					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
+					break;
+				case INCUBUS:
+				case SUCCUBUS:
+					weaponLimb->x += 1.75 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+					weaponLimb->y += 1.75 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+					weaponLimb->z += 0;
+
+					weaponLimb->focalx += -0.75;
+					weaponLimb->focaly += 1;
+					weaponLimb->focalz += 1.5;
+					break;
+				default:
+					break;
+			}
+
+		}
+		else if ( weaponLimb->sprite == items[TOOL_WHIP].index + 1 )
 		{
 			weaponLimb->focalx += 5.5;
 			weaponLimb->focalz += 3.5;
