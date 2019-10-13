@@ -3264,7 +3264,7 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 	entity->skill[5] = endSprite; // sprite to spawn on return to caster.
 	entity->skill[6] = spell;
 	entity->behavior = &actParticleSapCenter;
-	if ( target->behavior == &actThrown && target->sprite == 977 )
+	if ( target->sprite == 977 )
 	{
 		// boomerang.
 		entity->yaw = target->yaw;
@@ -3418,7 +3418,7 @@ void createParticleSap(Entity* parent)
 			entity->scaley = 1.f;
 			entity->scalez = 1.f;
 			entity->skill[0] = 250;
-			entity->fskill[2] = -((PI / 3) + (PI / 6)) / (parent->skill[0]); // yaw rate of change.
+			entity->fskill[2] = -((PI / 3) + (PI / 6)) / (150); // yaw rate of change over 3 seconds
 			entity->fskill[3] = 0.f;
 			entity->focalx = 2;
 			entity->focalz = 0.5;
@@ -3428,6 +3428,18 @@ void createParticleSap(Entity* parent)
 
 			entity->vel_x = 1 * cos(entity->yaw);
 			entity->vel_y = 1 * sin(entity->yaw);
+			int x = entity->x / 16;
+			int y = entity->y / 16;
+			if ( !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				// no ceiling, bounce higher.
+				entity->vel_z = -0.4;
+				entity->skill[3] = 1; // high bounce.
+			}
+			else
+			{
+				entity->vel_z = -0.08;
+			}
 			entity->yaw += PI / 3;
 		}
 	}
@@ -3908,6 +3920,8 @@ void actParticleSap(Entity* my)
 {
 	real_t decel = 0.9;
 	real_t accel = 0.9;
+	real_t z_accel = accel;
+	real_t z_decel = decel;
 	real_t minSpeed = 0.05;
 
 	if ( PARTICLE_LIFE < 0 )
@@ -3919,8 +3933,23 @@ void actParticleSap(Entity* my)
 	{
 		if ( my->sprite == 977 ) // boomerang
 		{
-			accel = 0.97 + 0.0018; // specific for the animation I want...
-			decel = accel;
+			if ( my->skill[3] == 1 )
+			{
+				// specific for the animation I want...
+				// magic numbers that take approximately 75 frames (50% of travel time) to go outward or inward.
+				// acceleration is a little faster to overshoot into the right hand side.
+				decel = 0.9718; 
+				accel = 0.9710;
+				z_decel = decel;
+				z_accel = z_decel;
+			}
+			else
+			{
+				decel = 0.95;
+				accel = 0.949;
+				z_decel = 0.9935;
+				z_accel = z_decel;
+			}
 			Entity* particle = spawnMagicParticleCustom(my, (rand() % 2) ? 943 : 979, 1, 10);
 			particle->focalx = 2;
 			particle->focaly = -2;
@@ -3954,7 +3983,7 @@ void actParticleSap(Entity* my)
 				my->vel_y *= decel;
 
 				my->z += my->vel_z;
-				my->vel_z *= decel;
+				my->vel_z *= z_decel;
 
 				my->yaw += my->fskill[2];
 				my->pitch += my->fskill[3];
@@ -3970,7 +3999,7 @@ void actParticleSap(Entity* my)
 		else if ( my->skill[1] == 1 )
 		{
 			// move inwards diagonally.
-			if ( abs(my->vel_z) < 0.4 )
+			if ( (abs(my->vel_z) < 0.08 && my->skill[3] == 0) || (abs(my->vel_z) < 0.4 && my->skill[3] == 1) )
 			{
 				my->fskill[0] += my->vel_x;
 				my->fskill[1] += my->vel_y;
@@ -3978,7 +4007,7 @@ void actParticleSap(Entity* my)
 				my->vel_y /= accel;
 
 				my->z += my->vel_z;
-				my->vel_z /= accel;
+				my->vel_z /= z_accel;
 
 				my->yaw += my->fskill[2];
 				my->pitch += my->fskill[3];
@@ -4137,7 +4166,7 @@ void actParticleSapCenter(Entity* my)
 						}
 					}
 				}
-				playSoundEntity(parent, 66, 92);
+				playSoundEntity(parent, 35 + rand() % 3, 92);
 				item = nullptr;
 			}
 			list_RemoveNode(my->mynode);
