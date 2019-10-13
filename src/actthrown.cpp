@@ -661,7 +661,7 @@ void actThrown(Entity* my)
 					case CRYSTAL_SHURIKEN:
 					case BOOMERANG:
 					{
-						if ( damage <= 0 )
+						if ( damage <= 0 && hit.entity->behavior == &actPlayer )
 						{
 							damage += item->weaponGetAttack(parentStats);
 						}
