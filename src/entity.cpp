@@ -6531,7 +6531,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 						hit.entity->skill[3] -= 2 + axe; // decrease chest health extra
 					}
 				}
-				playSoundEntity(hit.entity, 28, 64);
+				if ( whip )
+				{
+					playSoundEntity(hit.entity, 407 + rand() % 3, 64);
+				}
+				else
+				{
+					playSoundEntity(hit.entity, 28, 64);
+				}
 				if ( (hit.entity->behavior != &::actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &::actChest && hit.entity->skill[3] > 0) )
 				{
 					if ( hit.entity->behavior == &actDoor )
@@ -6643,7 +6650,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( hit.entity->behavior == &actSink )
 			{
-				playSoundEntity(hit.entity, 28, 64);
+				if ( whip )
+				{
+					playSoundEntity(hit.entity, 407 + rand() % 3, 64);
+				}
+				else
+				{
+					playSoundEntity(hit.entity, 28, 64);
+				}
 				playSoundEntity(hit.entity, 140 + rand(), 64);
 				messagePlayer(player, language[678]);
 				if ( hit.entity->skill[0] > 0 )
@@ -8028,6 +8042,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					bool disarmed = false;
 					if ( hitstats->HP > 0 )
 					{
 						if ( !whip && hitstats->EFFECTS[EFF_DISORIENTED] )
@@ -8053,7 +8068,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										{
 											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
 										}
-										playSoundEntity(this, 407, 128);
+										playSoundEntity(hit.entity, 406, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
 										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent + PI;
@@ -8062,6 +8077,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->vel_z = (-10 - rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3454], language[3455], MSG_COMBAT);
+										disarmed = true;
 									}
 								}
 								else if ( hitstats->shield )
@@ -8073,7 +8089,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										{
 											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
 										}
-										playSoundEntity(this, 407, 128);
+										playSoundEntity(hit.entity, 406, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
 										double tangent = atan2(hit.entity->y - y, hit.entity->x - x) + PI;
 										dropped->yaw = tangent;
@@ -8082,6 +8098,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->vel_z = (-10 - rand() % 20) * .01;
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
+										disarmed = true;
 									}
 								}
 								else
@@ -8320,7 +8337,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					playSoundEntity(hit.entity, 28, 64);
+					if ( !disarmed )
+					{
+						if ( whip )
+						{
+							playSoundEntity(hit.entity, 407 + rand() % 3, 64);
+						}
+						else
+						{
+							playSoundEntity(hit.entity, 28, 64);
+						}
+					}
 
 					// chance of bleeding
 					bool wasBleeding = hitstats->EFFECTS[EFF_BLEEDING]; // check if currently bleeding when this roll occurred.
@@ -8330,6 +8357,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( bleedStatusInflicted || (rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
+								|| (whip && ( (flanking && rand() % 5 == 0) || (backstab && rand() % 2 == 0) || disarmed) )
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 4 == 0 && pose == PLAYER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
@@ -8363,6 +8391,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										// 5 seconds bleeding minimum
 										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(hitstats->EFFECTS_TIMERS[EFF_BLEEDING], 250); 
+									}
+									else if ( myStats->weapon && myStats->weapon->type == TOOL_WHIP )
+									{
+										// 5 seconds bleeding minimum
+										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(hitstats->EFFECTS_TIMERS[EFF_BLEEDING], 250);
+										spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 643);
+										for ( int gibs = 0; gibs < 5; ++gibs )
+										{
+											Entity* gib = spawnGib(hit.entity);
+											serverSpawnGibForClient(gib);
+										}
 									}
 									else
 									{
@@ -8423,6 +8462,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									{
 										serverUpdateEffects(hit.entity->skill[2]);
 									}
+
 									if ( playerhit >= 0 )
 									{
 										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -8439,6 +8479,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 										{
 											messagePlayerColor(player, color, monsterHitMessage, hitstats->name);
 										}
+									}
+
+									// energize if wearing punisher hood!
+									if ( myStats->helmet && myStats->helmet->type == PUNISHER_HOOD )
+									{
+										this->modMP(1 + rand() % 2);
+										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										this->setEffect(EFF_MP_REGEN, true, 250, true);
+										if ( behavior == &actPlayer )
+										{
+											messagePlayerColor(player, color, language[3753]);
+										}
+										playSoundEntity(this, 168, 128);
 									}
 								}
 							}
@@ -14785,7 +14838,7 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		steamAchievementEntity(this, "BARONY_ACH_ARCANE_LINK");
 	}
 
-	if ( myStats.EFFECTS[EFF_MP_REGEN] )
+	if ( myStats.EFFECTS[EFF_MP_REGEN] && myStats.type != AUTOMATON )
 	{
 		manaring += 2;
 		if ( manaring > 3 )
