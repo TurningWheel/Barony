@@ -21,8 +21,8 @@
 #include "player.hpp"
 #include "scores.hpp"
 
-Entity* hudweapon = NULL;
-Entity* hudarm = NULL;
+Entity* hudweapon = nullptr;
+Entity* hudarm = nullptr;
 bool weaponSwitch = false;
 bool shieldSwitch = false;
 
@@ -705,6 +705,11 @@ void actHudWeapon(Entity* my)
 				)
 			{
 				HUDWEAPON_BOW_FORCE_RELOAD = 1;
+				if ( HUDWEAPON_BOW_HAS_QUIVER == 1 )
+				{
+					// reequiped bow, force a reload.
+					bowGimpTimer = std::max(bowGimpTimer, 3);
+				}
 			}
 
 			if ( !HUDWEAPON_CHOP )
@@ -760,8 +765,19 @@ void actHudWeapon(Entity* my)
 
 		if ( (swingweapon && HUDWEAPON_CHOP != 0) || HUDWEAPON_BOW_FORCE_RELOAD == 1 )
 		{
+			if ( HUDWEAPON_BOW_FORCE_RELOAD == 1 )
+			{
+				if ( HUDWEAPON_SHOOTING_RANGED_WEAPON == RANGED_ANIM_FIRED )
+				{
+					HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_IDLE;
+				}
+				// don't undo swing weapon.
+			}
+			else
+			{
+				swingweapon = false;
+			}
 			HUDWEAPON_BOW_FORCE_RELOAD = 0;
-			swingweapon = false;
 			HUDWEAPON_CHARGE = 0;
 			HUDWEAPON_OVERCHARGE = 0;
 			HUDWEAPON_CHOP = 0;
@@ -829,8 +845,6 @@ void actHudWeapon(Entity* my)
 
 	bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
 	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
-
-	//messagePlayer(clientnum, "chop: %d", HUDWEAPON_CHOP);
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )
@@ -2892,16 +2906,6 @@ void actHudShield(Entity* my)
 	// shield switching animation
 	if ( shieldSwitch )
 	{
-		if ( !spellbook )
-		{
-			shieldSwitch = false;
-		}
-		if ( !(defending || (spellbook && cast_animation.active_spellbook)) )
-		{
-			HUDSHIELD_MOVEY = -6;
-			HUDSHIELD_MOVEZ = 2;
-			HUDSHIELD_MOVEX = -2;
-		}
 		if ( hudweapon )
 		{
 			if ( crossbow )
@@ -2918,17 +2922,20 @@ void actHudShield(Entity* my)
 					hudweapon->skill[10] = 1; // HUDWEAPON_BOW_FORCE_RELOAD
 					hudweapon->skill[7] = RANGED_ANIM_IDLE;
 					doBowReload = true;
-					bowGimpTimer = std::max(bowGimpTimer, 12);
-					//my->flags[INVISIBLE] = true;
-					//HUDSHIELD_MOVEY = 0;
-					//HUDSHIELD_PITCH = 0;
-					//HUDSHIELD_YAW = 0;
-					//HUDSHIELD_MOVEZ = 0;
-					//HUDSHIELD_MOVEX = 0;
 				}
 			}
 		}
 
+		if ( !spellbook )
+		{
+			shieldSwitch = false;
+		}
+		if ( !(defending || (spellbook && cast_animation.active_spellbook) || doBowReload) )
+		{
+			HUDSHIELD_MOVEY = -6;
+			HUDSHIELD_MOVEZ = 2;
+			HUDSHIELD_MOVEX = -2;
+		}
 	}
 
 	bool crossbowReloadAnimation = true;
@@ -3014,7 +3021,7 @@ void actHudShield(Entity* my)
 			}
 		}
 	}
-	else if ( !hideShield && quiver && hudweapon 
+	else if ( !hideShield && quiver && hudweapon && rangedWeaponUseQuiverOnAttack(stats[clientnum])
 		&& hudweapon->skill[7] != RANGED_ANIM_IDLE 
 		&& (!crossbow || (crossbow && crossbowReloadAnimation && hudweapon->skill[8] != CROSSBOW_ANIM_RELOAD_START)) ) 
 	{
@@ -3040,6 +3047,10 @@ void actHudShield(Entity* my)
 		real_t targetYaw = PI / 3 - 0.1;// +limbs[HUMAN][11][2];
 		real_t targetZ = -3.5;// +limbs[HUMAN][12][0];
 		real_t targetX = -1.75;// +limbs[HUMAN][12][1];
+		if ( stats[clientnum]->shield->type == QUIVER_LIGHTWEIGHT )
+		{
+			targetZ -= 0.25; // offset a bit higher.
+		}
 
 		if ( crossbow )
 		{
@@ -3268,7 +3279,6 @@ void actHudShield(Entity* my)
 	{
 		my->z -= -2 * .5;
 	}
-
 
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
@@ -3623,6 +3633,7 @@ void actHudArrowModel(Entity* my)
 	my->scalex = 1.f;
 	my->scaley = 1.f;
 	my->scalez = 1.f;
+
 	my->flags[INVISIBLE] = false;
 	my->sprite = 934;
 
