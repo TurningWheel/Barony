@@ -648,6 +648,7 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
+	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
 	bool castStrikeAnimation = (players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
 
 	// weapon switch animation
@@ -697,6 +698,16 @@ void actHudWeapon(Entity* my)
 			{
 				// non-crossbow, if we're in these unique crossbow states then reset the chop.
 				HUDWEAPON_CHOP = 0;
+			}
+
+			if ( thrownWeapon && HUDWEAPON_CHOP > 3 )
+			{
+				// prevent thrown weapon rapid firing.
+				swingweapon = false;
+				HUDWEAPON_CHARGE = 0;
+				HUDWEAPON_OVERCHARGE = 0;
+				HUDWEAPON_CHOP = 0;
+				throwGimpTimer = std::max(throwGimpTimer, 5);
 			}
 
 			if ( rangedweapon && stats[clientnum]->weapon
@@ -844,7 +855,6 @@ void actHudWeapon(Entity* my)
 	}
 
 	bool whip = stats[clientnum]->weapon && stats[clientnum]->weapon->type == TOOL_WHIP;
-	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
 
 	// main animation
 	if ( HUDWEAPON_CHOP == 0 )

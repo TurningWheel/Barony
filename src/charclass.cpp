@@ -29,7 +29,7 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	client_classes[player] = CLASS_HUNTER;
+	//client_classes[player] = CLASS_HUNTER;
 	//stats[player]->playerRace = RACE_AUTOMATON;
 	//stats[player]->appearance = 0;
 	if ( player == clientnum)
@@ -2144,12 +2144,17 @@ void initClass(int player)
 			hotbar[5].item = item2->uid;
 			free(item);
 
-			for ( int i = QUIVER_SILVER; i <= QUIVER_7; ++i )
+			for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 			{
 				item = newItem(static_cast<ItemType>(i), EXCELLENT, 0, 48, 0, true, NULL);
 				item2 = itemPickup(player, item);
 				free(item);
 			}
+
+			item = newItem(BOOMERANG, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[6].item = item2->uid;
+			free(item);
 		}
 	}
 	else if ( client_classes[player] == CLASS_MACHINIST )

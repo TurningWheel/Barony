@@ -263,7 +263,9 @@ void initSkeleton(Entity* my, Stat* myStats)
 					myStats->HP = 100;
 					myStats->MAXHP = 100;
 					strcpy(myStats->name, "Funny Bones");
-					myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
+					myStats->STR += 6;
+					int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+					myStats->weapon = newItem(ARTIFACT_AXE, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
 					myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 				}
 

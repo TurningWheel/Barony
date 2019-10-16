@@ -613,6 +613,7 @@ bool itemTypeIsQuiver(ItemType type);
 bool itemSpriteIsBreastpiece(int sprite);
 real_t rangedAttackGetSpeedModifier(Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
+real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

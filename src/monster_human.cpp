@@ -96,6 +96,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
 						case 1:
+						{
 							// king arthur
 							strcpy(myStats->name, "King Arthur");
 							myStats->appearance = 0;
@@ -105,7 +106,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->MAXHP = myStats->HP;
 							myStats->MP = 100;
 							myStats->MAXMP = myStats->MP;
-							myStats->STR = 5;
+							myStats->STR = 10;
 							myStats->DEX = 5;
 							myStats->CON = 5;
 							myStats->INT = 5;
@@ -115,9 +116,11 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->gloves = newItem(GAUNTLETS, EXCELLENT, 1, 1, 1, true, nullptr);
 							myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, nullptr);
-							myStats->weapon = newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), true, nullptr);
+							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+							myStats->weapon = newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
 							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, nullptr);
 							break;
+						}
 						case 2:
 							// merlin
 							strcpy(myStats->name, "Merlin");
@@ -203,6 +206,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
 							break;
 						case 6:
+						{
 							// anansi
 							strcpy(myStats->name, "Anansi");
 							myStats->appearance = 15;
@@ -212,14 +216,15 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->MAXHP = myStats->HP;
 							myStats->MP = 100;
 							myStats->MAXMP = myStats->MP;
-							myStats->STR = 5;
+							myStats->STR = 10;
 							myStats->DEX = 8;
 							myStats->CON = 5;
 							myStats->INT = 20;
 							myStats->PER = 20;
 							myStats->CHR = 10;
 							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, nullptr);
-							myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), false, nullptr);
+							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+							myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rand(), false, nullptr);
 							int c;
 							for ( c = 0; c < 2; c++ )
 							{
@@ -231,6 +236,7 @@ void initHuman(Entity* my, Stat* myStats)
 								}
 							}
 							break;
+						}
 						case 7:
 							// oya
 							strcpy(myStats->name, "Oya");
@@ -251,6 +257,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 3, 1, 1, false, nullptr);
 							break;
 						case 8:
+						{
 							// vishpala
 							strcpy(myStats->name, "Vishpala");
 							myStats->appearance = 17;
@@ -260,7 +267,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->MAXHP = myStats->HP;
 							myStats->MP = 20;
 							myStats->MAXMP = myStats->MP;
-							myStats->STR = 5;
+							myStats->STR = 10;
 							myStats->DEX = 5;
 							myStats->CON = 5;
 							myStats->INT = 5;
@@ -269,9 +276,11 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
 							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, nullptr);
 							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, nullptr);
-							myStats->weapon = newItem(ARTIFACT_SPEAR, EXCELLENT, 1, 1, rand(), false, nullptr);
+							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+							myStats->weapon = newItem(ARTIFACT_SPEAR, static_cast<Status>(status), 1, 1, rand(), false, nullptr);
 							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
+						}
 						case 9:
 							// kali
 							strcpy(myStats->name, "Kali");

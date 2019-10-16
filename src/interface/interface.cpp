@@ -4208,7 +4208,14 @@ void GenericGUIMenu::repairItem(Item* item)
 		}
 		else
 		{
-			item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+			if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_BOW )
+			{
+				item->status = static_cast<Status>(std::min(item->status + 1, static_cast<int>(EXCELLENT)));
+			}
+			else
+			{
+				item->status = static_cast<Status>(std::min(item->status + 2 + usingScrollBeatitude, static_cast<int>(EXCELLENT)));
+			}
 		}
 		messagePlayer(clientnum, language[872], item->getName());
 	}

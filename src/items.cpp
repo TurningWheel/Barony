@@ -3035,18 +3035,6 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	{
 		attack += 5;
 	}
-	else if ( type == SHORTBOW )
-	{
-		attack += 6;
-	}
-	else if ( type == LONGBOW )
-	{
-		attack += 8;
-	}
-	else if ( type == COMPOUND_BOW )
-	{
-		attack += 10;
-	}
 	else if ( type == STEEL_HALBERD )
 	{
 		attack += 6;
@@ -3063,29 +3051,41 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	{
 		attack += 6;
 	}
+	else if ( type == ARTIFACT_SWORD )
+	{
+		return (attack + 2 + status * 2);
+	}
+	else if ( type == ARTIFACT_MACE )
+	{
+		return (attack + 2 + status * 2);
+	}
+	else if ( type == ARTIFACT_SPEAR )
+	{
+		return (attack + 2 + status * 2);
+	}
+	else if ( type == ARTIFACT_AXE )
+	{
+		return (attack + 2 + status * 2);
+	}
+	else if ( type == ARTIFACT_BOW )
+	{
+		return (attack + 2 + status * 2);
+	}
+	else if ( type == SHORTBOW )
+	{
+		attack += 6;
+	}
 	else if ( type == CROSSBOW )
 	{
 		attack += 7;
 	}
-	else if ( type == ARTIFACT_SWORD )
+	else if ( type == LONGBOW )
 	{
 		attack += 10;
 	}
-	else if ( type == ARTIFACT_MACE )
+	else if ( type == COMPOUND_BOW )
 	{
-		attack += 10;
-	}
-	else if ( type == ARTIFACT_SPEAR )
-	{
-		attack += 10;
-	}
-	else if ( type == ARTIFACT_AXE )
-	{
-		attack += 10;
-	}
-	else if ( type == ARTIFACT_BOW )
-	{
-		attack += 15;
+		attack += 9;
 	}
 	else if ( type == CRYSTAL_SWORD )
 	{
@@ -3105,23 +3105,23 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == BRONZE_TOMAHAWK )
 	{
-		attack += 2;
+		attack += 4;
 	}
 	else if ( type == IRON_DAGGER )
 	{
-		attack += 4;
+		attack += 6;
 	}
 	else if ( type == BOOMERANG )
 	{
-		attack += 4;
+		attack += 2;// std::max(2, 2 * status);
 	}
 	else if ( type == STEEL_CHAKRAM )
 	{
-		attack += 6;
+		attack += 8;
 	}
 	else if ( type == CRYSTAL_SHURIKEN )
 	{
-		attack += 8;
+		attack += 10;
 	}
 	else if ( type == TOOL_WHIP )
 	{
@@ -4397,4 +4397,48 @@ bool itemSpriteIsBreastpiece(int sprite)
 		return true;
 	}
 	return false;
+}
+
+real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount)
+{
+	if ( type == ARTIFACT_AXE )
+	{
+		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f;
+		if ( effectAmount )
+		{
+			*effectAmount = 1.5;
+		}
+		return percent;
+	}
+	else if ( type == ARTIFACT_SWORD )
+	{
+		real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]);
+		if ( effectAmount )
+		{
+			*effectAmount = percent / 200;
+		}
+		return percent;
+	}
+	else if ( type == ARTIFACT_SPEAR )
+	{
+		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f;
+		if ( effectAmount )
+		{
+			*effectAmount = 1.5;
+		}
+		return percent;
+	}
+	else if ( type == ARTIFACT_MACE )
+	{
+		if ( effectAmount )
+		{
+
+		}
+
+	}
+	else if ( type == ARTIFACT_BOW )
+	{
+
+	}
+	return 0.0;
 }

@@ -6711,6 +6711,54 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					weaponskill == PRO_UNARMED;
 				}
+
+				real_t weaponMultipliers = 0.0;
+				if ( weaponskill == PRO_UNARMED )
+				{
+					weaponMultipliers = damagetables[hitstats->type][6];
+				}
+				else if ( weaponskill == PRO_RANGED )
+				{
+					weaponMultipliers = damagetables[hitstats->type][4];
+				}
+				else if ( weaponskill >= 0 )
+				{
+					weaponMultipliers = damagetables[hitstats->type][weaponskill - PRO_SWORD];
+				}
+
+				bool drynwynSmite = false;
+				if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD )
+				{
+					switch ( hitstats->type )
+					{
+						case SKELETON:
+						case CREATURE_IMP:
+						case GHOUL:
+						case DEMON:
+						case SUCCUBUS:
+						case INCUBUS:
+						case VAMPIRE:
+						case LICH:
+						case LICH_ICE:
+						case LICH_FIRE:
+						case DEVIL:
+						{
+							// smite these creatures
+							real_t amount = 0.0;
+							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
+							if ( rand() % 100 < static_cast<int>(percent) )
+							{
+								weaponMultipliers += amount;
+								drynwynSmite = true;
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 860);
+								playSoundEntity(hit.entity, 249, 64);
+							}
+							break;
+						}
+						default:
+							break;
+					}
+				}
 				/*if( weaponskill>=0 )
 				hitskill = myStats->PROFICIENCIES[weaponskill]/5;
 				c = rand()%20 + hitskill + (weaponskill==PRO_POLEARM);
@@ -6741,15 +6789,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( weaponskill == PRO_UNARMED )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][6];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
 					}
 					else if ( weaponskill == PRO_RANGED )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][4];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
 					}
 					else if ( weaponskill >= 0 )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
 					}
 					else
 					{
@@ -6837,14 +6885,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					int olddamage = damage;
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
-
+					bool parashuProc = false;
+					bool drynwynSmite = false;
 					if ( myStats->weapon )
 					{
 						if ( myStats->weapon->type == ARTIFACT_AXE )
 						{
-							if ( rand() % 3 == 0 )
+							real_t amount = 0.0;
+							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
+
+							if ( rand() % 100 < static_cast<int>(percent) )
 							{
-								damage *= 2;    // Parashu sometimes doubles damage
+								damage *= amount; // Parashu sometimes multiplier damage
+								parashuProc = true;
 							}
 						}
 					}
@@ -7321,36 +7374,51 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
-					// special weapon effects
-					if ( myStats->weapon && !shapeshifted )
-					{
-						if ( myStats->weapon->type == ARTIFACT_SWORD )
-						{
-							if ( hit.entity->flags[BURNABLE] )
-							{
-								if ( hitstats )
-								{
-									hitstats->poisonKiller = uid;
-								}
-
-								// Attempt to set the Entity on fire
-								hit.entity->SetEntityOnFire();
-
-								// If a Player was hit, and they are now on fire, tell them what set them on fire
-								if ( playerhit > 0 && hit.entity->flags[BURNING] )
-								{
-									messagePlayer(playerhit, language[683]); // "Dyrnwyn sets you on fire!"
-								}
-							}
-						}
-					}
-
 					bool statusInflicted = false;
 					bool paralyzeStatusInflicted = false;
 					bool slowStatusInflicted = false;
 					bool bleedStatusInflicted = false;
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
+
+					// special weapon effects
+					if ( myStats->weapon && !shapeshifted )
+					{
+						if ( myStats->weapon->type == ARTIFACT_SWORD )
+						{
+							real_t amount = 0.0;
+							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
+							if ( drynwynSmite || (rand() % 100 < static_cast<int>(percent)) )
+							{
+								if ( hit.entity->flags[BURNABLE] )
+								{
+									if ( hitstats )
+									{
+										hitstats->poisonKiller = uid;
+									}
+
+									// Attempt to set the Entity on fire
+									hit.entity->SetEntityOnFire();
+
+									// If a Player was hit, and they are now on fire, tell them what set them on fire
+									if ( playerhit > 0 && hit.entity->flags[BURNING] )
+									{
+										messagePlayer(playerhit, language[683]); // "Dyrnwyn sets you on fire!"
+									}
+								}
+							}
+						}
+						else if ( myStats->weapon->type == ARTIFACT_AXE )
+						{
+							int duration = 100; // 2 seconds
+							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) )
+							{
+								slowStatusInflicted = true;
+								playSoundEntity(hit.entity, 396 + rand() % 3, 64);
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
+							}
+						}
+					}
 
 					if ( (hitstats->EFFECTS[EFF_WEBBED] || pose == PLAYER_POSE_GOLEM_SMASH) 
 						&& !hitstats->EFFECTS[EFF_KNOCKBACK] && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
@@ -7546,13 +7614,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( chance > 0 ) // always
 							{
 								int duration = 150; // 3 seconds
-								if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) )
+								if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) && !slowStatusInflicted )
 								{
 									slowStatusInflicted = true;
 									playSoundEntity(hit.entity, 396 + rand() % 3, 64);
 									spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 171);
 								}
 								hit.entity->modHP(-capstoneDamage); // do the damage
+								// don't re-notify if already inflicted slow from Parashu.
 							}
 						}
 						else if ( weaponskill == PRO_SWORD && hitstats->HP > 0 )
@@ -7829,6 +7898,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
 							}
+							if ( drynwynSmite )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3754], language[3755], MSG_COMBAT);
+							}
 							if ( paralyzeStatusInflicted )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3206], language[3205], MSG_COMBAT);
@@ -7956,6 +8029,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( playerPoisonedTarget )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
+							}
+							if ( drynwynSmite )
+							{
+								messagePlayerMonsterEvent(player, color, *hitstats, language[3754], language[3755], MSG_COMBAT);
 							}
 							if ( paralyzeStatusInflicted )
 							{

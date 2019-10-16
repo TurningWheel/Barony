@@ -609,7 +609,7 @@ void actThrown(Entity* my)
 			{
 				int oldHP = 0;
 				oldHP = hit.entity->getHP();
-				int damage = (BASE_THROWN_DAMAGE + item->beatitude); // thrown takes half of armor into account.
+				int damage = (BASE_THROWN_DAMAGE + item->beatitude);
 				if ( parentStats )
 				{
 					if ( itemCategory(item) == POTION )
