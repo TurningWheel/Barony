@@ -1970,8 +1970,12 @@ void clientHandlePacket()
 	{
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[28], NULL);
 		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
-		itemPickup(clientnum, item);
+		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
+		if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon )
+		{
+			useItem(pickedUp, clientnum);
+		}
 		return;
 	}
 
