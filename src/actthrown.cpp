@@ -1133,24 +1133,46 @@ void actThrown(Entity* my)
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
-							if ( damage == 0 )
+							if ( hitstats->HP <= 0 )
 							{
-								messagePlayer(parent->skill[2], language[447]);
+								// HP <= 0
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+								}
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[690], MSG_COMBAT);
+								if ( damage == 0 )
+								{
+									messagePlayer(parent->skill[2], language[447]);
+								}
 							}
 						}
 						else
 						{
-							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
-							if ( damage == 0 )
+							if ( hitstats->HP <= 0 )
 							{
-								if ( hitstats->sex )
+								// HP <= 0
+								if ( parent && parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[449]);
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
 								}
-								else
+							}
+							else
+							{
+								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[690], language[694], MSG_COMBAT);
+								if ( damage == 0 )
 								{
-									messagePlayer(parent->skill[2], language[450]);
+									if ( hitstats->sex )
+									{
+										messagePlayer(parent->skill[2], language[449]);
+									}
+									else
+									{
+										messagePlayer(parent->skill[2], language[450]);
+									}
 								}
 							}
 						}

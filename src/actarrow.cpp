@@ -824,6 +824,15 @@ void actArrow(Entity* my)
 							}
 						}
 					}
+					else
+					{
+						// HP <= 0
+						if ( parent && parent->behavior == &actPlayer )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[692], language[697], MSG_COMBAT);
+						}
+					}
 
 					if ( damage == 0 && !statusEffectApplied )
 					{
