@@ -953,13 +953,32 @@ void actHudWeapon(Entity* my)
 									if ( bowFire )
 									{
 										bowFire = false;
-										players[clientnum]->entity->attack(0, 0, nullptr);
+
+										bool artifactBowSaveAmmo = false;
+										if ( stats[clientnum]->weapon->type == ARTIFACT_BOW && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+										{
+											real_t amount = 0.f;
+											real_t percent = getArtifactWeaponEffectChance(ARTIFACT_BOW, *(stats[clientnum]), &amount);
+											if ( (rand() % 100 < static_cast<int>(percent)) )
+											{
+												artifactBowSaveAmmo = true;
+											}
+										}
+
+										if ( artifactBowSaveAmmo )
+										{
+											players[clientnum]->entity->attack(MONSTER_POSE_RANGED_SHOOT2, 0, nullptr);
+										}
+										else
+										{
+											players[clientnum]->entity->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
+										}
 										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = TICKS_PER_SECOND / 4;
 
 										if ( multiplayer == CLIENT )
 										{
-											if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+											if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) && !artifactBowSaveAmmo )
 											{
 												Item* quiver = stats[clientnum]->shield;
 												quiver->count--;
@@ -1048,7 +1067,7 @@ void actHudWeapon(Entity* my)
 							// crossbows
 							if ( throwGimpTimer == 0 )
 							{
-								players[clientnum]->entity->attack(0, 0, nullptr);
+								players[clientnum]->entity->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
 								HUDWEAPON_MOVEX = -4;
 
 								// set delay before crossbow can fire again
@@ -1056,6 +1075,27 @@ void actHudWeapon(Entity* my)
 
 								HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
 								HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SHOOT;
+
+								if ( multiplayer == CLIENT )
+								{
+									if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+									{
+										Item* quiver = stats[clientnum]->shield;
+										quiver->count--;
+										if ( quiver->count <= 0 )
+										{
+											if ( quiver->node )
+											{
+												list_RemoveNode(quiver->node);
+											}
+											else
+											{
+												free(quiver);
+											}
+											stats[clientnum]->shield = NULL;
+										}
+									}
+								}
 							}
 						}
 					}

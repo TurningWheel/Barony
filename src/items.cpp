@@ -4403,42 +4403,48 @@ real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effec
 {
 	if ( type == ARTIFACT_AXE )
 	{
-		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f;
+		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
-			*effectAmount = 1.5;
+			*effectAmount = 1.5; //1.5x damage.
 		}
 		return percent;
 	}
 	else if ( type == ARTIFACT_SWORD )
 	{
-		real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]);
+		real_t percent = (wielder.PROFICIENCIES[PRO_SWORD]); //0-100%
 		if ( effectAmount )
 		{
-			*effectAmount = percent / 200;
+			*effectAmount = (wielder.PROFICIENCIES[PRO_SWORD]) / 200.f + 0.5; //0.5x-1.0x add to weapon multiplier
 		}
 		return percent;
 	}
 	else if ( type == ARTIFACT_SPEAR )
 	{
-		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_AXE]) / 100.f;
+		real_t percent = 25 * (wielder.PROFICIENCIES[PRO_POLEARM]) / 100.f; //0-25%
 		if ( effectAmount )
 		{
-			*effectAmount = 1.5;
+			*effectAmount = .5; // bypasses 50% enemies' armor.
 		}
 		return percent;
 	}
 	else if ( type == ARTIFACT_MACE )
 	{
+		real_t percent = 1.f; //100%
 		if ( effectAmount )
 		{
-
+			*effectAmount = wielder.PROFICIENCIES[PRO_MACE]; // 0-2 second bonus mana regen
 		}
-
+		return percent;
 	}
 	else if ( type == ARTIFACT_BOW )
 	{
-
+		real_t percent = wielder.PROFICIENCIES[PRO_RANGED] / 2.f; //0-50%
+		if ( effectAmount )
+		{
+			*effectAmount = 0.f; // no use here.
+		}
+		return percent;
 	}
 	return 0.0;
 }

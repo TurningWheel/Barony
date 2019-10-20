@@ -372,7 +372,7 @@ void actArrow(Entity* my)
 							case DEVIL:
 								// smite these creatures
 								silverDamage = true;
-								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 860);
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
 								playSoundEntity(hit.entity, 249, 64);
 								break;
 							default:

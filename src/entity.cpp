@@ -5936,7 +5936,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				if ( entity->arrowQuiverType != 0 && myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
 				{
 					//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
-					if ( behavior == &actPlayer )
+					if ( behavior == &actPlayer && pose != MONSTER_POSE_RANGED_SHOOT2 )
 					{
 						myStats->shield->count--;
 						if ( myStats->shield->count <= 0 )
@@ -6726,7 +6726,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					weaponMultipliers = damagetables[hitstats->type][weaponskill - PRO_SWORD];
 				}
 
-				bool drynwynSmite = false;
+				bool dyrnwynSmite = false;
+				bool gugnirProc = false;
 				if ( weaponskill == PRO_SWORD && myStats->weapon && myStats->weapon->type == ARTIFACT_SWORD )
 				{
 					switch ( hitstats->type )
@@ -6749,9 +6750,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( rand() % 100 < static_cast<int>(percent) )
 							{
 								weaponMultipliers += amount;
-								drynwynSmite = true;
-								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 860);
-								playSoundEntity(hit.entity, 249, 64);
+								dyrnwynSmite = true;
+								spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 981);
+								//playSoundEntity(hit.entity, 249, 64);
 							}
 							break;
 						}
@@ -6797,7 +6798,18 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( weaponskill >= 0 )
 					{
-						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * weaponMultipliers;
+						int enemyAC = AC(hitstats);
+						if ( weaponskill == PRO_POLEARM && myStats->weapon && myStats->weapon->type == ARTIFACT_SPEAR )
+						{
+							real_t amount = 0.f;
+							real_t percent = getArtifactWeaponEffectChance(ARTIFACT_SPEAR, *myStats, &amount);
+							if ( (rand() % 100 < static_cast<int>(percent)) )
+							{
+								enemyAC *= amount;
+								gugnirProc = true;
+							}
+						}
+						damage = std::max(0, (getAttack() * damagePreMultiplier) + getBonusAttackOnTarget(*hitstats) - enemyAC) * weaponMultipliers;
 					}
 					else
 					{
@@ -6886,7 +6898,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int olddamage = damage;
 					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
 					bool parashuProc = false;
-					bool drynwynSmite = false;
 					if ( myStats->weapon )
 					{
 						if ( myStats->weapon->type == ARTIFACT_AXE )
@@ -7380,6 +7391,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool bleedStatusInflicted = false;
 					bool swordExtraDamageInflicted = false;
 					bool knockbackInflicted = false;
+					bool dyrnwynBurn = false;
 
 					// special weapon effects
 					if ( myStats->weapon && !shapeshifted )
@@ -7388,7 +7400,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							real_t amount = 0.0;
 							real_t percent = getArtifactWeaponEffectChance(myStats->weapon->type, *myStats, &amount);
-							if ( drynwynSmite || (rand() % 100 < static_cast<int>(percent)) )
+							if ( dyrnwynSmite || (rand() % 100 < static_cast<int>(percent)) )
 							{
 								if ( hit.entity->flags[BURNABLE] )
 								{
@@ -7397,8 +7409,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 										hitstats->poisonKiller = uid;
 									}
 
+									bool wasBurning = hit.entity->flags[BURNING];
 									// Attempt to set the Entity on fire
 									hit.entity->SetEntityOnFire();
+
+									if ( !wasBurning && hit.entity->flags[BURNING] )
+									{
+										// 6 ticks maximum burning.
+										hit.entity->char_fire = std::min(hit.entity->char_fire, static_cast<int>(TICKS_TO_PROCESS_FIRE * (6 + amount)));
+										dyrnwynBurn = true;
+									}
 
 									// If a Player was hit, and they are now on fire, tell them what set them on fire
 									if ( playerhit > 0 && hit.entity->flags[BURNING] )
@@ -7408,7 +7428,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 						}
-						else if ( myStats->weapon->type == ARTIFACT_AXE )
+						else if ( myStats->weapon->type == ARTIFACT_AXE && parashuProc )
 						{
 							int duration = 100; // 2 seconds
 							if ( hitstats->HP > 0 && hit.entity->setEffect(EFF_SLOW, true, duration, true) )
@@ -7860,22 +7880,46 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 
+					bool artifactWeaponProc = parashuProc || dyrnwynSmite || dyrnwynBurn || gugnirProc;
+
 					// send messages
 					if ( !strcmp(hitstats->name, "") )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorSpecial = color;// SDL_MapRGB(mainsurface->format, 255, 0, 255);
 						if ( hitstats->HP > 0 )
 						{
-							if ( damage > olddamage )
+							if ( !artifactWeaponProc )
 							{
-								// critical hit
-								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[689], MSG_COMBAT);
+								if ( damage > olddamage )
+								{
+									// critical hit
+									messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[689], MSG_COMBAT);
+								}
+								else
+								{
+									// normal hit
+									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT);
+								}
 							}
-							else
+
+							if ( dyrnwynSmite )
 							{
-								// normal hit
-								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[690], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3754], language[3755], MSG_COMBAT);
 							}
+							else if ( dyrnwynBurn )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3756], language[3757], MSG_COMBAT);
+							}
+							else if ( parashuProc )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3758], language[3759], MSG_COMBAT);
+							}
+							else if ( gugnirProc )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3760], language[3761], MSG_COMBAT);
+							}
+
 							if ( damage == 0 )
 							{
 								// blow bounces off
@@ -7894,13 +7938,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
 								}
 							}
+
 							if ( playerPoisonedTarget )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
-							}
-							if ( drynwynSmite )
-							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3754], language[3755], MSG_COMBAT);
 							}
 							if ( paralyzeStatusInflicted )
 							{
@@ -7989,18 +8030,40 @@ void Entity::attack(int pose, int charge, Entity* target)
 					else
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorSpecial = color;// SDL_MapRGB(mainsurface->format, 255, 0, 255);
 						if ( hitstats->HP > 0 )
 						{
-							if ( damage > olddamage )
+							if ( !artifactWeaponProc )
 							{
-								// critical hit
-								messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[693], MSG_COMBAT);
+								if ( damage > olddamage )
+								{
+									// critical hit
+									messagePlayerMonsterEvent(player, color, *hitstats, language[689], language[693], MSG_COMBAT);
+								}
+								else
+								{
+									// normal hit
+									messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT);
+								}
 							}
-							else
+
+							if ( dyrnwynSmite )
 							{
-								// normal hit
-								messagePlayerMonsterEvent(player, color, *hitstats, language[690], language[694], MSG_COMBAT);
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3754], language[3755], MSG_COMBAT);
 							}
+							else if ( dyrnwynBurn )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3756], language[3757], MSG_COMBAT);
+							}
+							else if ( parashuProc )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3758], language[3759], MSG_COMBAT);
+							}
+							else if ( gugnirProc )
+							{
+								messagePlayerMonsterEvent(player, colorSpecial, *hitstats, language[3760], language[3761], MSG_COMBAT);
+							}
+
 							if ( damage == 0 )
 							{
 								// blow bounces off
@@ -8026,13 +8089,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
 								}
 							}
+
 							if ( playerPoisonedTarget )
 							{
 								messagePlayerMonsterEvent(player, color, *hitstats, language[3478], language[3479], MSG_COMBAT);
-							}
-							if ( drynwynSmite )
-							{
-								messagePlayerMonsterEvent(player, color, *hitstats, language[3754], language[3755], MSG_COMBAT);
 							}
 							if ( paralyzeStatusInflicted )
 							{
@@ -15075,7 +15135,7 @@ int Entity::getHealthRegenInterval(Stat& myStats)
 
 int Entity::getBaseManaRegen(Stat& myStats)
 {
-	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
+	// reduced time from intelligence and spellcasting ability, 0-200 ticks of 300.
 	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 2 to 7
 	int statMultiplier = std::max(getINT(), 0); // get intelligence
 	if ( myStats.type == AUTOMATON )
@@ -15083,7 +15143,16 @@ int Entity::getBaseManaRegen(Stat& myStats)
 		return MAGIC_REGEN_TIME;
 	}
 
-	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(profMultiplier * statMultiplier, 100))); // return 300-100 ticks, 6-2 seconds.
+	int multipliedTotal = profMultiplier * statMultiplier;
+
+	if ( myStats.weapon && myStats.weapon->type == ARTIFACT_MACE )
+	{
+		real_t amount = 0.0;
+		getArtifactWeaponEffectChance(myStats.weapon->type, myStats, &amount);
+		multipliedTotal += amount;
+	}
+
+	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
 }
 
 void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)

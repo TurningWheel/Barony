@@ -3857,6 +3857,64 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_RANGED_SHOOT1 || PLAYER_ATTACK == MONSTER_POSE_RANGED_SHOOT2 )
+					{
+						// init rotations
+						PLAYER_ARMBENDED = 0;
+						PLAYER_WEAPONYAW = 0;
+						weaponarm->roll = 0;
+						weaponarm->skill[1] = 0;
+						weaponarm->pitch = 0;
+						PLAYER_ATTACK = MONSTER_POSE_RANGED_SHOOT3;
+					}
+					else if ( PLAYER_ATTACK == MONSTER_POSE_RANGED_SHOOT3 )
+					{
+						// recoil upwards
+						if ( weaponarm->skill[1] == 0 )
+						{
+							real_t targetPitch = 14 * PI / 8;
+							if ( weaponarm->sprite == items[CROSSBOW].index )
+							{
+								targetPitch = 15 * PI / 8;
+							}
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 14 * PI / 8, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						// recoil downwards
+						else if ( weaponarm->skill[1] == 1 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.1, 1 * PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 2;
+							}
+						}
+						else if ( weaponarm->skill[1] >= 2 )
+						{
+							// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
+							real_t targetPitch = rightbody->pitch;
+							while ( targetPitch < 0 )
+							{
+								targetPitch += 2 * PI;
+							}
+							while ( targetPitch >= 2 * PI )
+							{
+								targetPitch -= 2 * PI;
+							}
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, targetPitch, false, 0.0) 
+								|| limbAngleWithinRange(weaponarm->pitch, -0.4, targetPitch)
+								|| weaponarm->pitch < -PI / 8)
+							{
+								weaponarm->skill[0] = rightbody->skill[0];
+								PLAYER_WEAPONYAW = 0;
+								weaponarm->pitch = rightbody->pitch;
+								weaponarm->roll = 0;
+								PLAYER_ARMBENDED = 0;
+								PLAYER_ATTACK = 0;
+							}
+						}
+					}
 				}
 				else if ( bodypart == 8 )
 				{
