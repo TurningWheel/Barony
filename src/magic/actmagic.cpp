@@ -4060,7 +4060,7 @@ void actParticleSapCenter(Entity* my)
 			my->fskill[4] = parent->x; 
 			my->fskill[5] = parent->y;
 		}
-		else if ( entityInsideEntity(my, parent) )
+		else if ( entityInsideEntity(my, parent) || (my->sprite == 977 && PARTICLE_LIFE == 0) )
 		{
 			if ( my->skill[6] == SPELL_STEAL_WEAPON )
 			{
@@ -4139,6 +4139,7 @@ void actParticleSapCenter(Entity* my)
 				Item* item = newItemFromEntity(my);
 				if ( parent->behavior == &actPlayer )
 				{
+					item->ownerUid = parent->getUID();
 					Item* pickedUp = itemPickup(parent->skill[2], item);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
@@ -4149,6 +4150,10 @@ void actParticleSapCenter(Entity* my)
 							// pickedUp is the new inventory stack for server, free the original items
 							free(item);
 							item = nullptr;
+							if ( multiplayer != CLIENT && !stats[parent->skill[2]]->weapon )
+							{
+								useItem(pickedUp, parent->skill[2]);
+							}
 						}
 						else
 						{

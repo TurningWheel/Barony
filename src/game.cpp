@@ -753,6 +753,41 @@ void gameLogic(void)
 					{
 						entity = (Entity*)node->element;
 						entity->flags[NOUPDATE] = true;
+
+						if ( (entity->behavior == &actThrown || entity->behavior == &actParticleSapCenter) && entity->sprite == 977 )
+						{
+							// boomerang particle, make sure to return on level change.
+							Entity* parent = uidToEntity(entity->parent);
+							if ( parent && parent->behavior == &actPlayer && stats[parent->skill[2]] )
+							{
+								Item* item = newItemFromEntity(entity);
+								if ( !item )
+								{
+									continue;
+								}
+								item->ownerUid = parent->getUID();
+								Item* pickedUp = itemPickup(parent->skill[2], item);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
+								if ( pickedUp )
+								{
+									if ( parent->skill[2] == 0 )
+									{
+										// pickedUp is the new inventory stack for server, free the original items
+										free(item);
+										item = nullptr;
+										if ( multiplayer != CLIENT && !stats[parent->skill[2]]->weapon )
+										{
+											useItem(pickedUp, parent->skill[2]);
+										}
+									}
+									else
+									{
+										free(pickedUp); // item is the picked up items (item == pickedUp)
+									}
+								}
+							}
+						}
 					}
 
 					// hack to fix these things from breaking everything...
