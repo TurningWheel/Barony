@@ -14389,8 +14389,8 @@ void Entity::removeLightField()
 bool Entity::shouldRetreat(Stat& myStats)
 {
 	// monsters that retreat based on CHR
-	// gnomes, spiders, goblins, trolls, humans (50%)
-	// kobolds, scarabs, suc/incubi, insectoids, goatmen, rats
+	// gnomes, spiders, humans (50%)
+	// kobolds, scarabs, suc/incubi, goatmen, rats
 
 	// excluded golems, shadows, cockatrice, skeletons, demons, imps
 	// scorpions, slimes, ghouls, vampires, shopkeeps
@@ -14463,7 +14463,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 			return true;
 		}
 	}
-	else if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
+	else if ( myStats.HP <= myStats.MAXHP / 4 && this->getCHR() >= -2 )
 	{
 		return true;
 	}
