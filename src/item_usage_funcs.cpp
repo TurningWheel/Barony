@@ -2882,45 +2882,25 @@ void item_ScrollConjureArrow(Item* item, int player)
 	item->identified = 1;
 	messagePlayer(player, language[848]);
 	messagePlayer(player, language[3762]);
-	ItemType type = QUIVER_SILVER;
-	int roll = rand() % 7;
-	switch ( roll )
-	{
-		case 0:
-			type = QUIVER_SILVER;
-			break;
-		case 1:
-			type = QUIVER_KNOCKBACK;
-			break;
-		case 2:
-			type = QUIVER_FIRE;
-			break;
-		case 3:
-			type = QUIVER_LIGHTWEIGHT;
-			break;
-		case 4:
-			type = QUIVER_HUNTING;
-			break;
-		case 5:
-			type = QUIVER_CRYSTAL;
-			break;
-		case 6:
-			type = QUIVER_PIERCE;
-			break;
-		default:
-			break;
-	}
+	ItemType type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
 
 	int amount = 20 + rand() % 6;
 	if ( item->beatitude < 0 )
 	{
-		amount -= rand() % 20;
+		amount -= (15  + rand() % 6);
 	}
 	else if ( item->beatitude > 0 )
 	{
-		amount += 20 + rand() % 11;
+		amount += 20 + rand() % 6;
 	}
 	dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
+	if ( item->beatitude >= 2 )
+	{
+		// re-roll!
+		type = static_cast<ItemType>(QUIVER_SILVER + rand() % 7);
+		amount = 40 + rand() % 11;
+		dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
+	}
 }
 
 void item_ScrollMagicMapping(Item* item, int player)
