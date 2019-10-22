@@ -2069,27 +2069,24 @@ void initClass(int player)
 	else if ( client_classes[player] == CLASS_HUNTER )
 	{
 		// attributes
-		/*stats[player]->STR -= 1;
+		stats[player]->STR -= 3;
 		stats[player]->DEX += 1;
+		stats[player]->PER += 3;
+		stats[player]->INT -= 3;
 		stats[player]->CON -= 1;
-		stats[player]->INT -= 1;*/
 
-		/*stats[player]->MAXHP += 5;
-		stats[player]->HP += 5;
-
-		stats[player]->MAXMP += 10;
-		stats[player]->MP += 10;*/
+		stats[player]->MAXHP -= 10;
+		stats[player]->HP -= 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 
 		// skills
-		/*stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 40;
-		stats[player]->PROFICIENCIES[PRO_MAGIC] = 20;*/
-		stats[player]->PROFICIENCIES[PRO_RANGED] = 60;
-		//stats[player]->PROFICIENCIES[PRO_AXE] = 25;
-		/*stats[player]->PROFICIENCIES[PRO_SHIELD] = 40;
-		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 10;
-		stats[player]->PROFICIENCIES[PRO_POLEARM] = 10;
-		stats[player]->PROFICIENCIES[PRO_UNARMED] = 50;
-		stats[player]->PROFICIENCIES[PRO_ALCHEMY] = 20;*/
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 10;
+		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 20;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 50;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 50;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 10;
 
 		item = newItem(LONGBOW, EXCELLENT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
@@ -2104,57 +2101,110 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		//// ring slow digestion
-		//item = newItem(RING_SLOWDIGESTION, SERVICABLE, 0, 1, 0, true, NULL);
-		//if ( player == clientnum )
-		//{
-		//	item2 = itemPickup(player, item);
-		//	useItem(item2, player);
-		//	free(item);
-		//}
-		//else
-		//{
-		//	useItem(item, player);
-		//}
+		item = newItem(AMULET_POISONRESISTANCE, SERVICABLE, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(BRACERS, WORN, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(LEATHER_BOOTS, EXCELLENT, 0, 1, 0, true, NULL);
+		if ( player == clientnum )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
 
 		if ( player == clientnum )
 		{
-			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, NULL);
+			item = newItem(BOOMERANG, WORN, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item = newItem(QUIVER_SILVER, EXCELLENT, 0, 30, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item = newItem(QUIVER_LIGHTWEIGHT, EXCELLENT, 0, 40, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
-			item = newItem(COMPOUND_BOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item = newItem(QUIVER_HUNTING, EXCELLENT, 0, 20, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[4].item = item2->uid;
 			free(item);
 
-			item = newItem(ARTIFACT_BOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item = newItem(SCROLL_CONJUREARROW, EXCELLENT, 0, 2, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(FOOD_MEAT, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(FOOD_FISH, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_SPEED, EXCELLENT, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[5].item = item2->uid;
 			free(item);
 
+			// TO DELETE **********
+			item = newItem(ARTIFACT_BOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(COMPOUND_BOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			free(item);
+
 			for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
 			{
-				item = newItem(static_cast<ItemType>(i), EXCELLENT, 0, 48, 0, true, NULL);
+				item = newItem(static_cast<ItemType>(i), EXCELLENT, 1, 48, 0, true, NULL);
 				item2 = itemPickup(player, item);
 				free(item);
 			}
 
-			item = newItem(BOOMERANG, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[6].item = item2->uid;
-			free(item);
+			// TO DELETE **********
 		}
 	}
 	else if ( client_classes[player] == CLASS_MACHINIST )
