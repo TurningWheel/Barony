@@ -140,6 +140,11 @@ void initGoblin(Entity* my, Stat* myStats)
 				}
 			}
 
+			if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+			{
+				myStats->CHR = -3; // don't retreat
+			}
+
 			//give shield
 			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
