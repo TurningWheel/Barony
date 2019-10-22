@@ -1307,8 +1307,54 @@ void actPlayer(Entity* my)
 							Item* item2 = (Item*)node->element;
 							if ( item2 && item2 != tempItem && !itemCompare(tempItem, item2, false) )
 							{
+								if ( itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
+								{
+									// too many arrows, split off into a new stack with reduced qty.
+									if ( tempItem->count >= (QUIVER_MAX_AMMO_QTY - 1) )
+									{
+										// identified item is at 50 arrows so don't stack, abort.
+										break;
+									}
+									if ( item2->count >= (QUIVER_MAX_AMMO_QTY - 1) )
+									{
+										// if we're at 50 arrows then skip this check.
+										continue;
+									}
+									int total = tempItem->count + item2->count;
+									item2->count = QUIVER_MAX_AMMO_QTY - 1;
+									tempItem->count = total - item2->count;
+									if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
+									{
+										// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
+										strcpy((char*)net_packet->data, "EQUS");
+										SDLNet_Write32((Uint32)item2->type, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)item2->status, &net_packet->data[8]);
+										SDLNet_Write32((Uint32)item2->beatitude, &net_packet->data[12]);
+										SDLNet_Write32((Uint32)item2->count, &net_packet->data[16]);
+										SDLNet_Write32((Uint32)item2->appearance, &net_packet->data[20]);
+										net_packet->data[24] = item2->identified;
+										net_packet->data[25] = clientnum;
+										net_packet->address.host = net_server.host;
+										net_packet->address.port = net_server.port;
+										net_packet->len = 26;
+										sendPacketSafe(net_sock, -1, net_packet, 0);
+									}
+									if ( tempItem->count <= 0 )
+									{
+										if ( tempItem->node )
+										{
+											list_RemoveNode(tempItem->node);
+										}
+										else
+										{
+											free(tempItem);
+											tempItem = nullptr;
+										}
+									}
+									break;
+								}
 								// if items are the same, check to see if they should stack
-								if ( item2->shouldItemStack(PLAYER_NUM) )
+								else if ( item2->shouldItemStack(PLAYER_NUM) )
 								{
 									item2->count += tempItem->count;
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
@@ -2971,7 +3017,14 @@ void actPlayer(Entity* my)
 			{
 				if ( item->type >= 0 && item->type < NUMITEMS )
 				{
-					weight += items[item->type].weight * item->count;
+					if ( itemTypeIsQuiver(item->type) )
+					{
+						weight += std::max(1, items[item->type].weight * item->count / 5);
+					}
+					else
+					{
+						weight += items[item->type].weight * item->count;
+					}
 				}
 			}
 		}

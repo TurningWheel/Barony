@@ -308,9 +308,10 @@ typedef enum ItemType
 	LONGBOW,
 	COMPOUND_BOW,
 	HEAVY_CROSSBOW,
-	BOOMERANG
+	BOOMERANG,
+	SCROLL_CONJUREARROW
 } ItemType;
-const int NUMITEMS = 286;
+const int NUMITEMS = 287;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -508,6 +509,7 @@ void item_ScrollEnchantArmor(Item* item, int player);
 void item_ScrollRemoveCurse(Item* item, int player);
 bool item_ScrollFire(Item* item, int player); // return true if exploded into fire.
 void item_ScrollFood(Item* item, int player);
+void item_ScrollConjureArrow(Item* item, int player);
 void item_ScrollMagicMapping(Item* item, int player);
 void item_ScrollRepair(Item* item, int player);
 void item_ScrollDestroyArmor(Item* item, int player);
@@ -539,7 +541,7 @@ Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
-bool dropItem(Item* item, int player); // return true on free'd item
+bool dropItem(Item* item, int player, bool notifyMessage = true); // return true on free'd item
 void useItem(Item* item, int player, Entity* usedBy = nullptr);
 void equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
@@ -569,7 +571,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 	SCROLL_IDENTIFY,
 	SCROLL_IDENTIFY,
 	SCROLL_REMOVECURSE,
-	SCROLL_REMOVECURSE,
+	SCROLL_CONJUREARROW,
 	SCROLL_FOOD,
 	SCROLL_FOOD,
 	SCROLL_TELEPORTATION,
@@ -582,6 +584,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 };
 static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
 static const int QUIVER_MAX_AMMO_QTY = 51;
+
 
 //-----ITEM COMPARISON FUNCS-----
 /*

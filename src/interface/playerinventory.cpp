@@ -1263,7 +1263,12 @@ void updatePlayerInventory()
 							{
 								ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 							}
-							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
+							int itemWeight = items[item->type].weight * item->count;
+							if ( itemTypeIsQuiver(item->type) )
+							{
+								itemWeight = std::max(1, itemWeight / 5);
+							}
+							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], itemWeight);
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
 							if ( strcmp(spellEffectText, "") )
 							{

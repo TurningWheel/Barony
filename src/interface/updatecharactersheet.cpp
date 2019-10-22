@@ -1736,6 +1736,13 @@ Sint32 displayAttackPower(Sint32 output[6])
 						output[0] = 1; // ranged
 						output[1] = attack;
 						output[2] = stats[clientnum]->weapon->weaponGetAttack(stats[clientnum]); // bonus from weapon
+						output[5] = 0;
+						if ( stats[clientnum]->shield && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+						{
+							int quiverATK = stats[clientnum]->shield->weaponGetAttack(stats[clientnum]);
+							output[5] += quiverATK;
+							attack += quiverATK;
+						}
 						output[3] = entity->getDEX(); // bonus from main attribute
 						//output[4] = attack - output[2] - output[3] - BASE_RANGED_DAMAGE; // bonus from proficiency
 
@@ -1876,7 +1883,7 @@ void attackHoverText(Sint32 input[6])
 					break;
 				case 1: // ranged
 					snprintf(tooltipHeader, strlen(language[2530]), language[2530]);
-					numInfoLines = 3;
+					numInfoLines = 4;
 					break;
 				case 2: // thrown
 					snprintf(tooltipHeader, strlen(language[2531]), language[2531]);
@@ -1966,6 +1973,9 @@ void attackHoverText(Sint32 input[6])
 							break;
 						case 2:
 							snprintf(buf, longestline(language[2539]), language[2539], input[4]);
+							break;
+						case 3:
+							snprintf(buf, longestline(language[2536]), language[2536], input[5]);
 							break;
 						default:
 							break;

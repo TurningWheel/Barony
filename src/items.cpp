@@ -798,6 +798,10 @@ char* Item::description()
 				{
 					strncpy(tempstr, language[3653 + status], 1024);
 				}
+				else if ( itemTypeIsQuiver(this->type) )
+				{
+					snprintf(tempstr, 1024, language[3763]);
+				}
 				else
 				{
 					strncpy(tempstr, language[1034 + status], 1024);
@@ -866,6 +870,10 @@ char* Item::description()
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
 					snprintf(tempstr, 1024, language[3658 + status], count);
+				}
+				else if ( itemTypeIsQuiver(this->type) )
+				{
+					snprintf(tempstr, 1024, language[3763]);
 				}
 				else
 				{
@@ -1165,7 +1173,7 @@ int itemCompare(const Item* item1, const Item* item2, bool checkAppearance)
 
 -------------------------------------------------------------------------------*/
 
-bool dropItem(Item* item, int player)
+bool dropItem(Item* item, int player, bool notifyMessage)
 {
 	if (!item)
 	{
@@ -1224,13 +1232,19 @@ bool dropItem(Item* item, int player)
 		else if ( itemTypeIsQuiver(item->type) )
 		{
 			item->count = 1;
-			messagePlayer(player, language[1088], item->description());
+			if ( notifyMessage )
+			{
+				messagePlayer(player, language[1088], item->description());
+			}
 			item->count = 0;
 		}
 		else
 		{
 			item->count = 1;
-			messagePlayer(player, language[1088], item->description());
+			if ( notifyMessage )
+			{
+				messagePlayer(player, language[1088], item->description());
+			}
 			item->count = oldcount - 1;
 		}
 
@@ -1304,7 +1318,10 @@ bool dropItem(Item* item, int player)
 			{
 				oldcount = item->count;
 				item->count = qtyToDrop;
-				messagePlayer(player, language[1088], item->description());
+				if ( notifyMessage )
+				{
+					messagePlayer(player, language[1088], item->description());
+				}
 				item->count = oldcount - qtyToDrop;
 				if ( item->count <= 0 )
 				{
@@ -2223,6 +2240,13 @@ void useItem(Item* item, int player, Entity* usedBy)
 				consumeItem(item, player);
 			}
 			break;
+		case SCROLL_CONJUREARROW:
+			item_ScrollConjureArrow(item, player);
+			if ( !players[player]->entity->isBlind() )
+			{
+				consumeItem(item, player);
+			}
+			break;
 		case SCROLL_MAGICMAPPING:
 			item_ScrollMagicMapping(item, player);
 			if ( !players[player]->entity->isBlind() )
@@ -3113,7 +3137,7 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == BOOMERANG )
 	{
-		attack += 2;// std::max(2, 2 * status);
+		return (attack + std::max(2,(status - 1) * 2));
 	}
 	else if ( type == STEEL_CHAKRAM )
 	{
@@ -3129,31 +3153,31 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == QUIVER_SILVER )
 	{
-		return 2;
+		return attack + 2;
 	}
 	else if ( type == QUIVER_PIERCE )
 	{
-		return 4;
+		return attack + 4;
 	}
 	else if ( type == QUIVER_LIGHTWEIGHT )
 	{
-		return -2;
+		return attack - 2;
 	}
 	else if ( type == QUIVER_FIRE )
 	{
-		return 2;
+		return attack + 2;
 	}
 	else if ( type == QUIVER_KNOCKBACK )
 	{
-		return 4;
+		return attack + 4;
 	}
 	else if ( type == QUIVER_CRYSTAL )
 	{
-		return 6;
+		return attack + 6;
 	}
 	else if ( type == QUIVER_HUNTING )
 	{
-		return 4;
+		return attack + 4;
 	}
 	// old formula
 	//attack *= (double)(status / 5.0);
@@ -3184,6 +3208,11 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 		{
 			armor = abs(beatitude);
 		}
+	}
+
+	if ( itemTypeIsQuiver(type) )
+	{
+		armor = 0;
 	}
 
 	if ( type == LEATHER_HELM )

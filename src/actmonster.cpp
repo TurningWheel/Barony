@@ -2685,7 +2685,14 @@ void actMonster(Entity* my)
 	}
 	if ( myStats->shield != NULL )
 	{
-		weight += items[myStats->shield->type].weight * myStats->shield->count;
+		if ( itemTypeIsQuiver(myStats->shield->type) )
+		{
+			weight += std::max(1, items[myStats->shield->type].weight * myStats->shield->count / 5);
+		}
+		else
+		{
+			weight += items[myStats->shield->type].weight * myStats->shield->count;
+		}
 	}
 	if ( myStats->weapon != NULL )
 	{

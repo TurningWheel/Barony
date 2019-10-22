@@ -15215,7 +15215,7 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 	if ( myStats.shield && rangedWeaponUseQuiverOnAttack(&myStats) )
 	{
 		this->arrowQuiverType = myStats.shield->type;
-		attack += myStats.shield->weaponGetAttack(nullptr);
+		attack += myStats.shield->weaponGetAttack(&myStats);
 		switch ( arrowQuiverType )
 		{
 			case QUIVER_SILVER:
@@ -15242,14 +15242,6 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 				break;
 			default:
 				break;
-		}
-		if ( shouldInvertEquipmentBeatitude(&myStats) )
-		{
-			attack += abs(myStats.shield->beatitude);
-		}
-		else
-		{
-			attack += myStats.shield->beatitude;
 		}
 	}
 

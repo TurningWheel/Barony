@@ -416,6 +416,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"compound_bow",
 	"heavy_crossbow",
 	"boomerang",
+	"scroll_conjurearrow",
 	""
 };
 

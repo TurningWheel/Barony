@@ -2826,12 +2826,8 @@ void item_ScrollFood(Item* item, int player)
 	messagePlayer(player, language[848]);
 	if ( item->beatitude >= 0 )
 	{
-		messagePlayer(player, language[865]);
+		messagePlayer(player, language[3762]);
 		dropItem(newItem(FOOD_FISH, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_BREAD, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
 		return;
 	}
 	else
@@ -2858,6 +2854,81 @@ void item_ScrollFood(Item* item, int player)
 	{
 		messagePlayer(player, language[867]);
 	}
+}
+
+void item_ScrollConjureArrow(Item* item, int player)
+{
+	if ( players[player] == nullptr || players[player]->entity == nullptr )
+	{
+		return;
+	}
+
+	// this is a CLIENT function
+	if ( player != clientnum )
+	{
+		return;
+	}
+
+	if ( players[player]->entity->isBlind() )
+	{
+		messagePlayer(player, language[775]);
+		return;
+	}
+
+	if ( player == clientnum )
+	{
+		conductIlliterate = false;
+	}
+	item->identified = 1;
+	messagePlayer(player, language[848]);
+	messagePlayer(player, language[3762]);
+	int roll = rand() % 10;
+	ItemType type = QUIVER_SILVER;
+	if ( currentlevel < 10 )
+	{
+		roll = rand() % 7;
+	}
+
+	switch ( roll )
+	{
+		case 0:
+		case 1:
+			type = QUIVER_SILVER;
+			break;
+		case 2:
+		case 3:
+			type = QUIVER_KNOCKBACK;
+			break;
+		case 4:
+			type = QUIVER_FIRE;
+			break;
+		case 5:
+		case 6:
+			type = QUIVER_LIGHTWEIGHT;
+			break;
+		case 7:
+			type = QUIVER_HUNTING;
+			break;
+		case 8:
+			type = QUIVER_CRYSTAL;
+			break;
+		case 9:
+			type = QUIVER_PIERCE;
+			break;
+		default:
+			break;
+	}
+
+	int amount = 20 + rand() % 6;
+	if ( item->beatitude < 0 )
+	{
+		amount -= rand() % 20;
+	}
+	else if ( item->beatitude > 0 )
+	{
+		amount += 20 + rand() % 11;
+	}
+	dropItem(newItem(type, SERVICABLE, item->beatitude, amount, ITEM_GENERATED_QUIVER_APPEARANCE, false, &stats[player]->inventory), player, false);
 }
 
 void item_ScrollMagicMapping(Item* item, int player)
@@ -4874,6 +4945,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case SCROLL_DESTROYARMOR:
 		case SCROLL_TELEPORTATION:
 		case SCROLL_SUMMON:
+		case SCROLL_CONJUREARROW:
 			players[player]->entity->modMP(20);
 			stats[player]->HUNGER += 600;
 			break;
@@ -5018,6 +5090,7 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case SCROLL_TELEPORTATION:
 		case SCROLL_SUMMON:
 		case SCROLL_FIRE:
+		case SCROLL_CONJUREARROW:
 
 		case TOOL_MAGIC_SCRAP:
 		case TOOL_METAL_SCRAP:
