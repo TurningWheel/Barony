@@ -3163,6 +3163,10 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 		case MAGICSTAFF:
 			return false;
 		case THROWN:
+			if ( item->type == BOOMERANG )
+			{
+				return true;
+			}
 			return false;
 		case TOOL:
 			switch ( item->type )
@@ -4208,7 +4212,7 @@ void GenericGUIMenu::repairItem(Item* item)
 		}
 		else
 		{
-			if ( item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_BOW )
+			if ( (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_BOW) || item->type == BOOMERANG )
 			{
 				item->status = static_cast<Status>(std::min(item->status + 1, static_cast<int>(EXCELLENT)));
 			}
@@ -6322,6 +6326,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case ARTIFACT_BOW:
+		case BOOMERANG:
 			*metal = 4;
 			*magic = 32;
 			break;
@@ -6454,6 +6459,10 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 			}
 			break;
 	}
+	// clamp repair cost limits to 99 since GUI overlaps 3 digits...
+	*metal = std::min(99, *metal);
+	*magic = std::min(99, *magic);
+
 	if ( *metal > 0 || *magic > 0 )
 	{
 		return true;
@@ -6470,7 +6479,14 @@ int GenericGUIMenu::tinkeringRepairGeneralItemSkillRequirement(Item* item)
 	}
 	if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
 	{
-		return -1;
+		if ( item->type == BOOMERANG )
+		{
+			// exception, allowed to repair.
+		}
+		else
+		{
+			return -1;
+		}
 	}
 	int metal = 0;
 	int magic = 0;
