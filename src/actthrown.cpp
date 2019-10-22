@@ -629,10 +629,18 @@ void actThrown(Entity* my)
 							{
 								damage += my->thrownProjectileCharge / 5; //0-3 base +damage
 								real_t bypassArmor = 1 - my->thrownProjectileCharge * 0.05; //100-35% of armor taken into account
+								if ( item->type == BOOMERANG )
+								{
+									damage *= damagetables[hitstats->type][4]; // ranged damage tables.
+								}
 								damage -= (AC(hit.entity->getStats()) * bypassArmor);
 							}
 							else
 							{
+								if ( item->type == BOOMERANG )
+								{
+									damage *= damagetables[hitstats->type][4]; // ranged damage tables.
+								}
 								damage -= (AC(hit.entity->getStats()) * .5);
 							}
 						}
