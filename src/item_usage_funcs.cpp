@@ -2882,37 +2882,29 @@ void item_ScrollConjureArrow(Item* item, int player)
 	item->identified = 1;
 	messagePlayer(player, language[848]);
 	messagePlayer(player, language[3762]);
-	int roll = rand() % 10;
 	ItemType type = QUIVER_SILVER;
-	if ( currentlevel < 10 )
-	{
-		roll = rand() % 7;
-	}
-
+	int roll = rand() % 7;
 	switch ( roll )
 	{
 		case 0:
-		case 1:
 			type = QUIVER_SILVER;
 			break;
-		case 2:
-		case 3:
+		case 1:
 			type = QUIVER_KNOCKBACK;
 			break;
-		case 4:
+		case 2:
 			type = QUIVER_FIRE;
 			break;
-		case 5:
-		case 6:
+		case 3:
 			type = QUIVER_LIGHTWEIGHT;
 			break;
-		case 7:
+		case 4:
 			type = QUIVER_HUNTING;
 			break;
-		case 8:
+		case 5:
 			type = QUIVER_CRYSTAL;
 			break;
-		case 9:
+		case 6:
 			type = QUIVER_PIERCE;
 			break;
 		default:
