@@ -1972,9 +1972,12 @@ void clientHandlePacket()
 		item->ownerUid = SDLNet_Read32(&net_packet->data[24]);
 		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
-		if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon )
+		if ( players[clientnum] && players[clientnum]->entity )
 		{
-			useItem(pickedUp, clientnum);
+			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && item->ownerUid == players[clientnum]->entity->getUID() )
+			{
+				useItem(pickedUp, clientnum);
+			}
 		}
 		return;
 	}
