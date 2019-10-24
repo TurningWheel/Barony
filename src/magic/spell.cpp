@@ -73,6 +73,8 @@ spellElement_t spellElement_telePull;
 spellElement_t spellElement_demonIllusion;
 spellElement_t spellElement_trollsBlood;
 spellElement_t spellElement_salvageItem;
+spellElement_t spellElement_flutter;
+spellElement_t spellElement_dash;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -124,6 +126,8 @@ spell_t spell_telePull;
 spell_t spell_demonIllusion;
 spell_t spell_trollsBlood;
 spell_t spell_salvageItem;
+spell_t spell_flutter;
+spell_t spell_dash;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -286,8 +290,12 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_SALVAGE:
 			new_spell = copySpell(&spell_salvageItem);
 			break;
-		case SPELL_6:
-		case SPELL_7:
+		case SPELL_FLUTTER:
+			new_spell = copySpell(&spell_flutter);
+			break;
+		case SPELL_DASH:
+			new_spell = copySpell(&spell_dash);
+			break;
 		case SPELL_8:
 		case SPELL_9:
 		case SPELL_10:
@@ -780,8 +788,12 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_SALVAGE:
 			spell = &spell_salvageItem;
 			break;
-		case SPELL_6:
-		case SPELL_7:
+		case SPELL_FLUTTER:
+			spell = &spell_flutter;
+			break;
+		case SPELL_DASH:
+			spell = &spell_dash;
+			break;
 		case SPELL_8:
 		case SPELL_9:
 		case SPELL_10:
@@ -946,11 +958,11 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_SALVAGE:
 			itemType = SPELLBOOK_SALVAGE;
 			break;
-		case SPELL_6:
-			itemType = SPELLBOOK_6;
+		case SPELL_FLUTTER:
+			itemType = SPELLBOOK_FLUTTER;
 			break;
-		case SPELL_7:
-			itemType = SPELLBOOK_7;
+		case SPELL_DASH:
+			itemType = SPELLBOOK_DASH;
 			break;
 		case SPELL_8:
 			itemType = SPELLBOOK_8;
@@ -1068,10 +1080,10 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_trollsBlood.ID;
 		case SPELL_SALVAGE:
 			return spell_salvageItem.ID;
-		case SPELL_6:
-			return spell_weakness.ID;
-		case SPELL_7:
-			return spell_weakness.ID;
+		case SPELL_FLUTTER:
+			return spell_flutter.ID;
+		case SPELL_DASH:
+			return spell_dash.ID;
 		case SPELL_8:
 			return spell_weakness.ID;
 		case SPELL_9:

@@ -1168,7 +1168,10 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
-							messagePlayer(player, language[607]);
+							if ( !isLevitating(myStats) )
+							{
+								messagePlayer(player, language[607]);
+							}
 						}
 						break;
 					case EFF_TELEPATH:
@@ -1224,6 +1227,12 @@ void Entity::effectTimes()
 						break;
 					case EFF_MAGICRESIST:
 						messagePlayer(player, language[2470]);
+						break;
+					case EFF_FLUTTER:
+						if ( !isLevitating(myStats) )
+						{
+							messagePlayer(player, language[607]);
+						}
 						break;
 					case EFF_MAGICREFLECT:
 						dissipate = true; //Remove the effect by default.
@@ -3587,12 +3596,12 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( player >= 0 && myStats->EFFECTS[EFF_LEVITATING] && MFLAG_DISABLELEVITATION)
+	if ( player >= 0 && (myStats->EFFECTS[EFF_LEVITATING] || myStats->EFFECTS[EFF_FLUTTER]) && MFLAG_DISABLELEVITATION)
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 		messagePlayerColor(player, color, language[2382]); // disabled levitation.
-		myStats->EFFECTS[EFF_LEVITATING] = false;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+		this->setEffect(EFF_LEVITATING, false, 0, true);
+		this->setEffect(EFF_FLUTTER, false, 0, true);
 	}
 
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
@@ -11161,6 +11170,10 @@ bool isLevitating(Stat* mystats)
 	}
 
 	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
+	{
+		return true;
+	}
+	else if ( mystats->EFFECTS[EFF_FLUTTER] )
 	{
 		return true;
 	}

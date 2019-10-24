@@ -277,6 +277,10 @@ void drawSustainedSpells()
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_TROLLS_BLOOD);
 					tooltipText = language[3492];
 					break;
+				case EFF_FLUTTER:
+					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_FLUTTER);
+					tooltipText = language[3766];
+					break;
 				case EFF_FAST:
 					effectImageNode = list_Node(&items[SPELL_ITEM].surfaces, SPELL_SPEED);
 					tooltipText = language[3493];

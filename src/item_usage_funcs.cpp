@@ -4740,11 +4740,11 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_SALVAGE:
 				learned = addSpell(SPELL_SALVAGE, player);
 				break;
-			case SPELLBOOK_6:
-				learned = addSpell(SPELL_6, player);
+			case SPELLBOOK_FLUTTER:
+				learned = addSpell(SPELL_FLUTTER, player);
 				break;
-			case SPELLBOOK_7:
-				learned = addSpell(SPELL_7, player);
+			case SPELLBOOK_DASH:
+				learned = addSpell(SPELL_DASH, player);
 				break;
 			case SPELLBOOK_8:
 				learned = addSpell(SPELL_8, player);

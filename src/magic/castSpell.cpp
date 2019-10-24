@@ -1039,6 +1039,28 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			playSoundEntity(caster, 168, 128);
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
+		else if ( !strcmp(element->name, spellElement_flutter.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					//Duration for flutter.
+					int duration = element->duration;
+
+					if ( caster->setEffect(EFF_FLUTTER, true, duration, true) )
+					{
+						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3767]);
+						playSoundEntity(caster, 178, 128);
+						spawnMagicEffectParticles(caster->x, caster->y, caster->z, 170);
+					}
+					break;
+				}
+			}
+
+			playSoundEntity(caster, 178, 128);
+			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+		}
 		else if ( !strcmp(element->name, spellElement_speed.name) )
 		{
 			for ( i = 0; i < numplayers; ++i )

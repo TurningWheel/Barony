@@ -365,7 +365,23 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_trollsBlood.overload_multiplier = 0; //NOTE: Might segfault due to divide by zero?
 	spellElement_trollsBlood.damage = 0;
 	spellElement_trollsBlood.duration = 80 * TICKS_PER_SECOND;
-	strcpy(spellElement_detectFood.name, language[3489]);
+	strcpy(spellElement_trollsBlood.name, language[3489]);
+
+	spellElementConstructor(&spellElement_flutter);
+	spellElement_flutter.mana = 10;
+	spellElement_flutter.base_mana = 10;
+	spellElement_flutter.overload_multiplier = 1;
+	spellElement_flutter.damage = 0;
+	spellElement_flutter.duration = 6 * TICKS_PER_SECOND;
+	strcpy(spellElement_flutter.name, language[3764]);
+
+	spellElementConstructor(&spellElement_dash);
+	spellElement_dash.mana = 10;
+	spellElement_dash.base_mana = 10;
+	spellElement_dash.overload_multiplier = 1;
+	spellElement_dash.damage = 0;
+	spellElement_dash.duration = 1 * TICKS_PER_SECOND;
+	strcpy(spellElement_dash.name, language[3765]);
 
 	spellElementConstructor(&spellElement_salvageItem);
 	spellElement_salvageItem.mana = 6;
@@ -1152,6 +1168,32 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_trollsBlood.elements.last = NULL;
 	node = list_AddNodeLast(&spell_trollsBlood.elements);
 	node->element = copySpellElement(&spellElement_trollsBlood);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_flutter);
+	strcpy(spell_flutter.name, language[3764]);
+	spell_flutter.ID = SPELL_FLUTTER;
+	spell_flutter.difficulty = 60;
+	spell_flutter.elements.first = NULL;
+	spell_flutter.elements.last = NULL;
+	node = list_AddNodeLast(&spell_flutter.elements);
+	node->element = copySpellElement(&spellElement_flutter);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_dash);
+	strcpy(spell_dash.name, language[3765]);
+	spell_dash.ID = SPELL_DASH;
+	spell_dash.difficulty = 60;
+	spell_dash.elements.first = NULL;
+	spell_dash.elements.last = NULL;
+	node = list_AddNodeLast(&spell_dash.elements);
+	node->element = copySpellElement(&spellElement_dash);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
