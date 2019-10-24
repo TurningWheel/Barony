@@ -728,6 +728,7 @@ void handleMainMenu(bool mode)
 				client_classes[clientnum] = CLASS_BARBARIAN;
 				stats[0]->appearance = 0;
 				stats[0]->playerRace = RACE_HUMAN;
+				initClass(0);
 				strcpy(stats[0]->name, "The Server");
 				keystatus[SDL_SCANCODE_L] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
@@ -746,6 +747,7 @@ void handleMainMenu(bool mode)
 				client_classes[clientnum] = CLASS_BARBARIAN;
 				stats[0]->appearance = 0;
 				stats[0]->playerRace = RACE_HUMAN;
+				initClass(0);
 				strcpy(stats[0]->name, "The Client");
 				keystatus[SDL_SCANCODE_M] = 0;
 				keystatus[SDL_SCANCODE_LCTRL] = 0;
