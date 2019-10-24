@@ -12789,14 +12789,29 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						break;
 				}
 			}
-
-
 			/*weaponLimb->x += limbs[HUMAN][12][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * cos(weaponArmLimb->yaw);
 			weaponLimb->y += limbs[HUMAN][12][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[HUMAN][12][1] * sin(weaponArmLimb->yaw);
 			weaponLimb->z += limbs[HUMAN][12][2];
 			weaponLimb->focalx += limbs[HUMAN][11][0];
 			weaponLimb->focaly += limbs[HUMAN][11][1];
 			weaponLimb->focalz += limbs[HUMAN][11][2];*/
+		}
+		else
+		{
+			switch ( monsterType )
+			{
+				case SUCCUBUS:
+				case INCUBUS:
+				case HUMAN:
+				case VAMPIRE:
+				case AUTOMATON:
+				case INSECTOID:
+				case GOBLIN:
+					weaponLimb->focaly -= 0.05; // minor z-fighting fix.
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	else

@@ -264,6 +264,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = caster->isSpellcasterBeginner();
+		if ( stat->type == INSECTOID && (spell->ID == SPELL_DASH || spell->ID == SPELL_FLUTTER) )
+		{
+			newbie = false;
+		}
+
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
 			spellBookBonusPercent += (caster->getINT() * 0.5);
@@ -1057,9 +1062,46 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					break;
 				}
 			}
-
-			playSoundEntity(caster, 178, 128);
-			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+		}
+		else if ( !strcmp(element->name, spellElement_dash.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					if ( i > 0 && multiplayer == SERVER )
+					{
+						strcpy((char*)net_packet->data, "DASH");
+						net_packet->data[4] = 1;
+						net_packet->address.host = net_clients[i - 1].host;
+						net_packet->address.port = net_clients[i - 1].port;
+						net_packet->len = 5;
+						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+					}
+					else
+					{
+						/*if ( hit.entity->skill[2] != clientnum )
+						{
+							hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+							hit.entity->monsterKnockbackTangentDir = my->yaw;
+							serverUpdateEntityFSkill(hit.entity, 11);
+							serverUpdateEntityFSkill(hit.entity, 9);
+						}
+						else*/
+						{
+						}
+					}
+					caster->setEffect(EFF_DASH, true, 30, false);
+					real_t vel = sqrt(pow(caster->vel_y, 2) + pow(caster->vel_x, 2));
+					caster->monsterKnockbackVelocity = std::max(1.0, vel);
+					caster->monsterKnockbackTangentDir = atan2(caster->vel_y, caster->vel_x);
+					if ( vel < 0.01 )
+					{
+						caster->monsterKnockbackTangentDir = caster->yaw + PI;
+					}
+					break;
+				}
+			}
 		}
 		else if ( !strcmp(element->name, spellElement_speed.name) )
 		{

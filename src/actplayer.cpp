@@ -32,6 +32,7 @@ bool settings_smoothmouse = false;
 bool swimDebuffMessageHasPlayed = false;
 int monsterEmoteGimpTimer = 0;
 int selectedEntityGimpTimer = 0;
+bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 
 /*-------------------------------------------------------------------------------
 
@@ -255,7 +256,7 @@ void actPlayer(Entity* my)
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 	int playerAppearance = stats[PLAYER_NUM]->appearance;
-
+	
 	if ( my->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(my->effectShapeshift);
@@ -1549,6 +1550,9 @@ void actPlayer(Entity* my)
 	}
 
 	real_t zOffset = 0;
+	bool oldInsectoidLevitate = insectoidLevitating[PLAYER_NUM];
+	insectoidLevitating[PLAYER_NUM] = false;
+
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
 		switch ( stats[PLAYER_NUM]->type )
@@ -1634,6 +1638,7 @@ void actPlayer(Entity* my)
 		if ( levitating )
 		{
 			my->z -= 1; // floating
+			insectoidLevitating[PLAYER_NUM] = (playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER]);
 		}
 
 		if ( !levitating && prevlevitating )
@@ -1658,6 +1663,13 @@ void actPlayer(Entity* my)
 					break;
 				}
 			}
+		}
+	}
+	else
+	{
+		if ( playerRace == INSECTOID && stats[PLAYER_NUM]->EFFECTS[EFF_FLUTTER] && (my->z >= -2.05 && my->z <= -1.95) )
+		{
+			insectoidLevitating[PLAYER_NUM] = true;
 		}
 	}
 
@@ -3074,11 +3086,17 @@ void actPlayer(Entity* my)
 			}
 			else
 			{
+				double backpedalMultiplier = 0.25;
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+				{
+					backpedalMultiplier = 1.25;
+				}
+
 				if (!stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
 				{
 					//Normal controls.
 					x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
-					y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * .25);
+					y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * backpedalMultiplier);
 					if ( noclip )
 					{
 						if ( keystatus[SDL_SCANCODE_LSHIFT] )
@@ -3092,7 +3110,7 @@ void actPlayer(Entity* my)
 				{
 					//Confused controls.
 					x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
-					y_force = (*inputPressed(impulses[IN_BACK]) - (double) * inputPressed(impulses[IN_FORWARD]) * .25);
+					y_force = (*inputPressed(impulses[IN_BACK]) - (double) * inputPressed(impulses[IN_FORWARD]) * backpedalMultiplier);
 				}
 
 				if (game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]))
@@ -3115,7 +3133,7 @@ void actPlayer(Entity* my)
 
 					if (y_force < 0)
 					{
-						y_force *= 0.25f;    //Move backwards more slowly.
+						y_force *= backpedalMultiplier;    //Move backwards more slowly.
 					}
 				}
 			}
@@ -3134,7 +3152,13 @@ void actPlayer(Entity* my)
 			{
 				messagePlayer(0, "%f", speedFactor);
 			}*/
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
+			if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+			{
+				PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir);
+				PLAYER_VELY += my->monsterKnockbackVelocity * sin(my->monsterKnockbackTangentDir);
+				my->monsterKnockbackVelocity *= 0.95;
+			}
+			else if ( stats[PLAYER_NUM]->EFFECTS[EFF_KNOCKBACK] )
 			{
 				speedFactor = std::min(speedFactor, 5.0);
 				PLAYER_VELX += my->monsterKnockbackVelocity * cos(my->monsterKnockbackTangentDir);
@@ -3583,6 +3607,10 @@ void actPlayer(Entity* my)
 					limbSpeed = 1 / 12.f;
 					pitchLimit = PI / 8.f;
 				}
+				if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+				{
+					limbSpeed = 1 / 12.f;
+				}
 				node_t* shieldNode = list_Node(&my->children, 7);
 				if ( shieldNode )
 				{
@@ -3597,9 +3625,62 @@ void actPlayer(Entity* my)
 					{
 						bendArm = false;
 					}
-					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || !bendArm)
+
+					if ( insectoidLevitating[PLAYER_NUM] )
+					{
+						// hands stationary, legs pitched back and little swing.
+						limbSpeed = 0.03;
+						if ( bodypart == 5 ) // left arm
+						{
+							if ( entity->pitch < 0 )
+							{
+								entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
+								if ( entity->pitch > 0 )
+								{
+									entity->pitch = 0;
+								}
+							}
+							else if ( entity->pitch > 0 )
+							{
+								entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
+								if ( entity->pitch < 0 )
+								{
+									entity->pitch = 0;
+								}
+							}
+						}
+						else if ( bodypart == 2 )
+						{
+							if ( entity->pitch < 0 )
+							{
+								entity->pitch += 5 * limbSpeed * PLAYERWALKSPEED; // speed up to reach target.
+							}
+							if ( !rightbody->skill[3] )
+							{
+								entity->pitch -= limbSpeed * PLAYERWALKSPEED;
+								if ( entity->pitch < PI / 6.f )
+								{
+									entity->pitch = PI / 6.f;
+								}
+							}
+							else
+							{
+								entity->pitch += limbSpeed * PLAYERWALKSPEED;
+								if ( entity->pitch > PI / 3.f )
+								{
+									entity->pitch = PI / 3.f;
+								}
+							}
+						}
+					}
+					else if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || !bendArm)
 						|| playerRace == CREATURE_IMP )
 					{
+						if ( oldInsectoidLevitate )
+						{
+							entity->pitch = 0;
+						}
+
 						if ( !rightbody->skill[0] )
 						{
 							entity->pitch -= limbSpeed * PLAYERWALKSPEED;
@@ -3974,8 +4055,67 @@ void actPlayer(Entity* my)
 					entity->pitch = entity->fskill[0];
 				}
 
-				if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
+				if ( insectoidLevitating[PLAYER_NUM] )
 				{
+					// hands stationary, legs pitched back and little swing.
+					double limbSpeed = 0.03;
+					if ( bodypart == 4 && (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) ) // right arm relaxed, not attacking.
+					{
+						entity->skill[0] = rightbody->skill[0];
+						if ( entity->pitch < 0 )
+						{
+							entity->pitch += 1 / fmax(limbSpeed * .1, 10.0);
+							if ( entity->pitch > 0 )
+							{
+								entity->pitch = 0;
+							}
+						}
+						else if ( entity->pitch > 0 )
+						{
+							entity->pitch -= 1 / fmax(limbSpeed * .1, 10.0);
+							if ( entity->pitch < 0 )
+							{
+								entity->pitch = 0;
+							}
+						}
+					}
+					else if ( bodypart == 3 ) // leftleg
+					{
+						if ( entity->pitch < 0 )
+						{
+							entity->pitch += 5 * limbSpeed * PLAYERWALKSPEED; // speed up to reach target.
+						}
+						entity->skill[0] = 1;
+						if ( entity->skill[3] == 1 ) // throwaway skill.
+						{
+							entity->pitch -= limbSpeed * PLAYERWALKSPEED;
+							if ( entity->pitch < PI / 6.f )
+							{
+								entity->skill[3] = 0;
+								entity->pitch = PI / 6.f;
+							}
+						}
+						else
+						{
+							entity->pitch += limbSpeed * PLAYERWALKSPEED;
+							if ( entity->pitch > PI / 3.f )
+							{
+								entity->skill[3] = 1;
+								entity->pitch = PI / 3.f;
+							}
+						}
+					}
+				}
+				else if ( bodypart != 4 || (PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
+				{
+					if ( bodypart != 8 )
+					{
+						if ( oldInsectoidLevitate )
+						{
+							entity->pitch = 0;
+						}
+					}
+
 					double limbSpeed = dist;
 					double pitchLimit = PI / 4.f;
 					if ( playerRace == CREATURE_IMP )
@@ -3983,7 +4123,11 @@ void actPlayer(Entity* my)
 						limbSpeed = 1 / 12.f;
 						pitchLimit = PI / 8.f;
 					}
-					if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 || playerRace == CREATURE_IMP )
+					if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] )
+					{
+						limbSpeed = 1 / 12.f;
+					}
+					if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 || playerRace == CREATURE_IMP) )
 					{
 						if ( entity->skill[0] )
 						{
@@ -4144,9 +4288,15 @@ void actPlayer(Entity* my)
 								// successfully set sprite for the human model
 							}
 						}
-						if ( !PLAYER_ARMBENDED && showEquipment )
+						if ( (!PLAYER_ARMBENDED && showEquipment) || (insectoidLevitating[PLAYER_NUM] && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 						{
 							entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
+
+							if ( stats[PLAYER_NUM]->weapon == nullptr
+								&& insectoidLevitating[PLAYER_NUM] )
+							{
+								entity->sprite += 2;
+							}
 						}
 						if ( multiplayer == SERVER )
 						{
@@ -4226,6 +4376,10 @@ void actPlayer(Entity* my)
 						if ( showEquipment )
 						{
 							bool bendArm = false;
+							if ( insectoidLevitating[PLAYER_NUM] )
+							{
+								bendArm = true;
+							}
 							if ( stats[PLAYER_NUM]->shield != NULL )
 							{
 								if ( itemCategory(stats[PLAYER_NUM]->shield) == SPELLBOOK )
@@ -4277,6 +4431,10 @@ void actPlayer(Entity* my)
 						if ( shield->flags[INVISIBLE] )
 						{
 							bendArm = false;
+							if ( insectoidLevitating[PLAYER_NUM] )
+							{
+								bendArm = true;
+							}
 						}
 						else if ( shield->sprite >= items[SPELLBOOK_LIGHT].index
 							&& shield->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
@@ -4739,7 +4897,7 @@ void actPlayer(Entity* my)
 							entity->z += 1;
 						}
 						bool moving = false;
-						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 )
+						if ( fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1 || insectoidLevitating )
 						{
 							moving = true;
 						}
@@ -4748,7 +4906,14 @@ void actPlayer(Entity* my)
 						{
 							if ( moving )
 							{
-								entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+								if ( insectoidLevitating[PLAYER_NUM] )
+								{
+									entity->fskill[0] += std::min(std::max(0.2, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED); // move proportional to move speed
+								}
+								else
+								{
+									entity->fskill[0] += std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED); // move proportional to move speed
+								}
 							}
 							else if ( PLAYER_ATTACK != 0 )
 							{
@@ -4771,7 +4936,14 @@ void actPlayer(Entity* my)
 						{
 							if ( moving )
 							{
-								entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+								if ( insectoidLevitating[PLAYER_NUM] )
+								{
+									entity->fskill[0] -= std::min(std::max(0.15, dist * PLAYERWALKSPEED), 2.f * PLAYERWALKSPEED);
+								}
+								else
+								{
+									entity->fskill[0] -= std::min(dist * PLAYERWALKSPEED, 2.f * PLAYERWALKSPEED);
+								}
 							}
 							else if ( PLAYER_ATTACK != 0 )
 							{

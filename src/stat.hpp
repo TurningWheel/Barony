@@ -60,6 +60,7 @@ static const int EFF_DISORIENTED = 33;
 static const int EFF_SHADOW_TAGGED = 34;
 static const int EFF_TROLLS_BLOOD = 35;
 static const int EFF_FLUTTER = 36;
+static const int EFF_DASH = 37;
 static const int NUMEFFECTS = 40;
 
 // stats

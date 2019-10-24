@@ -376,8 +376,8 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_flutter.name, language[3764]);
 
 	spellElementConstructor(&spellElement_dash);
-	spellElement_dash.mana = 10;
-	spellElement_dash.base_mana = 10;
+	spellElement_dash.mana = 5;
+	spellElement_dash.base_mana = 5;
 	spellElement_dash.overload_multiplier = 1;
 	spellElement_dash.damage = 0;
 	spellElement_dash.duration = 1 * TICKS_PER_SECOND;
