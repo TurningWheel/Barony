@@ -61,7 +61,7 @@ void initGoblin(Entity* my, Stat* myStats)
 				myStats->OLDHP = myStats->HP;
 				strcpy(myStats->name, "The Potato King");
 				myStats->STR += 6;
-				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+				int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 				myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
 				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, rand(), false, nullptr);
 

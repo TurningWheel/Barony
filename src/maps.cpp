@@ -2800,7 +2800,7 @@ void assignActions(map_t* map)
 				}
 				else
 				{
-					entity->skill[11] = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+					entity->skill[11] = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 				}
 				if ( entity->sprite == 8 )
 				{

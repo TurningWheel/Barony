@@ -116,7 +116,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->gloves = newItem(GAUNTLETS, EXCELLENT, 1, 1, 1, true, nullptr);
 							myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, nullptr);
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, nullptr);
-							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 							myStats->weapon = newItem(ARTIFACT_SWORD, static_cast<Status>(status), 1, 1, rand(), true, nullptr);
 							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, nullptr);
 							break;
@@ -223,7 +223,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->PER = 20;
 							myStats->CHR = 10;
 							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, nullptr);
-							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 							myStats->weapon = newItem(ARTIFACT_MACE, static_cast<Status>(status), 1, 1, rand(), false, nullptr);
 							int c;
 							for ( c = 0; c < 2; c++ )
@@ -276,7 +276,7 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
 							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, nullptr);
 							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, nullptr);
-							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 10) + (currentlevel > 15);
+							int status = DECREPIT + (currentlevel > 5) + (currentlevel > 15) + (currentlevel > 20);
 							myStats->weapon = newItem(ARTIFACT_SPEAR, static_cast<Status>(status), 1, 1, rand(), false, nullptr);
 							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
