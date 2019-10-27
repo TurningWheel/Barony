@@ -394,6 +394,7 @@ void actArrow(Entity* my)
 							case MINOTAUR:
 							case KOBOLD:
 							case COCKATRICE:
+							case TROLL:
 								// more damage to these creatures
 								huntingDamage = true;
 								for ( int gibs = 0; gibs < 10; ++gibs )

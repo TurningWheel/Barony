@@ -4212,7 +4212,7 @@ void GenericGUIMenu::repairItem(Item* item)
 		}
 		else
 		{
-			if ( (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_BOW) || item->type == BOOMERANG )
+			if ( (item->type >= ARTIFACT_SWORD && item->type <= ARTIFACT_GLOVES) || item->type == BOOMERANG )
 			{
 				item->status = static_cast<Status>(std::min(item->status + 1, static_cast<int>(EXCELLENT)));
 			}

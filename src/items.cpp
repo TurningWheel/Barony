@@ -3131,23 +3131,23 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	}
 	else if ( type == BRONZE_TOMAHAWK )
 	{
-		attack += 4;
+		attack += 6;
 	}
 	else if ( type == IRON_DAGGER )
 	{
-		attack += 6;
+		attack += 8;
 	}
 	else if ( type == BOOMERANG )
 	{
-		return (attack + std::max(2,(status - 1) * 2));
+		return (attack + std::max(0, (status - 1) * 2));
 	}
 	else if ( type == STEEL_CHAKRAM )
 	{
-		attack += 8;
+		attack += 10;
 	}
 	else if ( type == CRYSTAL_SHURIKEN )
 	{
-		attack += 10;
+		attack += 12;
 	}
 	else if ( type == TOOL_WHIP )
 	{
@@ -3323,19 +3323,19 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 	}
 	else if ( type == ARTIFACT_BREASTPIECE )
 	{
-		armor += 6;
+		armor += std::max(2, 2 + (status - 1)); // 2-5
 	}
 	else if ( type == ARTIFACT_HELM)
 	{
-		armor += 6;
+		armor += std::max(1, 1 + (status - 1)); // 1-4
 	}
 	else if ( type == ARTIFACT_BOOTS )
 	{
-		armor += 6;
+		armor += std::max(1, 1 + (status - 1)); // 1-4
 	}
 	else if ( type == ARTIFACT_GLOVES )
 	{
-		armor += 6;
+		armor += std::max(1, 1 + (status - 1)); // 1-4
 	}
 	else if ( type == ARTIFACT_CLOAK )
 	{
