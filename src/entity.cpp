@@ -2880,12 +2880,17 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
 		}
+
 		if ( ticks % (hungerTickRate / 2) == 0 )
 		{
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);
 			if ( myStats->HUNGER > 0 )
 			{
 				bool update = (myStats->HUNGER % 100 == 0);
+				if ( myStats->HUNGER > 300 && myStats->HUNGER <= 600 )
+				{
+					update = (myStats->HUNGER % 25 == 0); // critical levels for players to show hunger meter.
+				}
 				myStats->HUNGER--;
 				if ( update )
 				{
