@@ -137,6 +137,19 @@ void gameLogic(void)
 		fourthendmovietime++;
 	}
 
+#ifdef STEAMWORKS
+	if ( ticks % 500 == 0 && SteamUser()->BLoggedOn() )
+	{
+		uint64 id = SteamUser()->GetSteamID().ConvertToUint64();
+		auto it = betaPlayers.find(id);
+		if ( it == betaPlayers.end() )
+		{
+			// not found user.
+			buttonQuitConfirm(nullptr);
+		}
+	}
+#endif // STEAMWORKS
+
 	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
 
 #ifdef SOUND
@@ -1485,9 +1498,13 @@ void gameLogic(void)
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					bool droppedAll = false;
-					while ( item->count > 1 )
+					while ( item && item->count > 1 )
 					{
-						bool droppedAll = dropItem(item, clientnum);
+						droppedAll = dropItem(item, clientnum);
+						if ( droppedAll )
+						{
+							item = nullptr;
+						}
 					}
 					if ( !droppedAll )
 					{
@@ -1994,9 +2011,13 @@ void gameLogic(void)
 				{
 					messagePlayer(clientnum, language[727], item->getName());
 					bool droppedAll = false;
-					while ( item->count > 1 )
+					while ( item && item->count > 1 )
 					{
 						droppedAll = dropItem(item, clientnum);
+						if ( droppedAll )
+						{
+							item = nullptr;
+						}
 					}
 					if ( !droppedAll )
 					{
