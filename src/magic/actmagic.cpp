@@ -4378,7 +4378,7 @@ void actParticleSapCenter(Entity* my)
 		else if ( my->sprite == 977 )
 		{
 			// calculate direction to caster and move.
-			real_t tangent = atan2(my->fskill[5] - my->y, parent->x - my->fskill[4]);
+			real_t tangent = atan2(my->fskill[5] - my->y, my->fskill[4] - my->x);
 			real_t dist = sqrt(pow(my->x - my->fskill[4], 2) + pow(my->y - my->fskill[5], 2));
 			real_t speed = dist / std::max(PARTICLE_LIFE, 1);
 

@@ -1295,7 +1295,8 @@ void actThrown(Entity* my)
 			return;
 		}
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM 
-			|| item->type == CRYSTAL_SHURIKEN || item->type == BOOMERANG) && hit.entity == NULL )
+			|| item->type == CRYSTAL_SHURIKEN || (item->type == BOOMERANG && uidToEntity(my->parent))) 
+				&& hit.entity == NULL )
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
 			playSoundEntity(my, 66, 64);
@@ -1307,7 +1308,7 @@ void actThrown(Entity* my)
 				return;
 			}
 		}
-		else if ( item->type == BOOMERANG && hit.entity )
+		else if ( item->type == BOOMERANG && hit.entity && uidToEntity(my->parent) )
 		{
 			// boomerang always return to owner.
 			free(item);
