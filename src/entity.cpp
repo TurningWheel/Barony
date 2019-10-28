@@ -2414,6 +2414,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+
+
 	// level ups
 	if ( myStats->EXP >= 100 )
 	{
@@ -2424,8 +2426,8 @@ void Entity::handleEffects(Stat* myStats)
 		playSoundPlayer(player, 97, 128);
 
 		// increase MAXHP/MAXMP
-		myStats->HP += HP_MOD;
 		myStats->MAXHP += HP_MOD;
+		modHP(HP_MOD);
 		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
 		{
@@ -15198,11 +15200,13 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 	if ( myStats.weapon )
 	{
 		this->arrowShotByWeapon = myStats.weapon->type;
-		if ( myStats.weapon->type == ARTIFACT_BOW )
-		{
-			// poison arrow
-			this->arrowPoisonTime = 540;    // 9 seconds of poison
-		}
+		
+		// no longer poisons!
+		//if ( myStats.weapon->type == ARTIFACT_BOW )
+		//{
+		//	// poison arrow
+		//	//this->arrowPoisonTime = 540;    // 9 seconds of poison
+		//}
 
 		if ( myStats.weapon->type != SLING )
 		{
