@@ -3764,7 +3764,7 @@ void actMonster(Entity* my)
 					{
 						if ( my->monsterTarget == players[c]->entity->getUID() )
 						{
-							if ( stats[c] && stats[c]->type == HUMAN )
+							if ( stats[c] && stats[c]->type == HUMAN && !stats[c]->EFFECTS[EFF_POLYMORPH] )
 							{
 								swornenemies[SHOPKEEPER][HUMAN] = true;
 								monsterally[SHOPKEEPER][HUMAN] = false;
