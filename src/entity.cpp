@@ -4646,7 +4646,14 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 	}
 	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
 	{
-		DEX = std::min(DEX - 3, -2);
+		if ( my && my->behavior == &actPlayer )
+		{
+			DEX = std::max(DEX - 5, -2);
+		}
+		else
+		{
+			DEX = std::min(DEX - 3, -2);
+		}
 	}
 	if ( entitystats->shoes != nullptr )
 	{

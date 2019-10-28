@@ -3138,15 +3138,21 @@ void actPlayer(Entity* my)
 				}
 			}
 
-
-			real_t speedFactor = std::min((my->getDEX() * 0.1 + 15.5) * weightratio, 18.0);
-			if ( my->getDEX() <= 5 )
+			int DEX = my->getDEX();
+			real_t slowSpeedPenalty = 0.0;
+			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_FAST] && stats[PLAYER_NUM]->EFFECTS[EFF_SLOW] )
 			{
-				speedFactor = std::min((my->getDEX() + 10) * weightratio, 18.0);
+				DEX = std::min(DEX - 3, -2);
+				slowSpeedPenalty = 2.0;
 			}
-			else if ( my->getDEX() <= 15 )
+			real_t speedFactor = std::min((DEX * 0.1 + 15.5 - slowSpeedPenalty) * weightratio, 18.0);
+			if ( DEX <= 5 )
 			{
-				speedFactor = std::min((my->getDEX() * 0.2 + 14) * weightratio, 18.0);
+				speedFactor = std::min((DEX + 10) * weightratio, 18.0);
+			}
+			else if ( DEX <= 15 )
+			{
+				speedFactor = std::min((DEX * 0.2 + 14 - slowSpeedPenalty) * weightratio, 18.0);
 			}
 			/*if ( ticks % 50 == 0 )
 			{
