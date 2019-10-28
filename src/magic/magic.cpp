@@ -2288,20 +2288,62 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 				int ty = static_cast<int>(std::floor(parent->y + 32 * sin(parent->yaw))) >> 4;
 				int dist = 2;
 				bool foundLocation = false;
-				if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, target, NULL) )
+				int numlocations = 0;
+				std::vector<std::pair<int, int>> goodspots;
+				std::vector<std::pair<int, int>> spotsWithLineOfSight;
+				if ( !checkObstacle((tx << 4) + 8, (ty << 4) + 8, target, NULL) ) // try find directly infront of caster.
 				{
-					foundLocation = true;
+					Entity* ohitentity = hit.entity;
+					real_t ox = target->x;
+					real_t oy = target->y;
+					target->x = (tx << 4) + 8;
+					target->y = (ty << 4) + 8;
+					TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+
+					// pretend the target is in the supposed spawn locations and try linetrace from each position.
+					real_t tangent = atan2(target->y - parent->y, target->x - parent->x);
+					lineTraceTarget(parent, parent->x, parent->y, tangent, 92, 0, true, target);
+					if ( hit.entity == target )
+					{
+						foundLocation = true;
+					}
+					
+					// reset the coordinates we messed with
+					target->x = ox;
+					target->y = oy;
+					TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+					hit.entity = ohitentity;
 				}
 				if ( !foundLocation )
 				{
-					int numlocations = 0;
+					// otherwise, let's search in an area
 					for ( int iy = std::max(1, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 					{
 						for ( int ix = std::max(1, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
 						{
 							if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
 							{
+								Entity* ohitentity = hit.entity;
+								real_t ox = target->x;
+								real_t oy = target->y;
+								target->x = (ix << 4) + 8;
+								target->y = (iy << 4) + 8;
+								TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+
+								// pretend the target is in the supposed spawn locations and try linetrace from each position.
+								real_t tangent = atan2(target->y - parent->y, target->x - parent->x);
+								lineTraceTarget(parent, parent->x, parent->y, tangent, 92, 0, false, target);
+								if ( hit.entity == target )
+								{
+									spotsWithLineOfSight.push_back(std::make_pair(ix, iy));
+								}
+								goodspots.push_back(std::make_pair(ix, iy));
 								numlocations++;
+								// reset the coordinates we messed with
+								target->x = ox;
+								target->y = oy;
+								TileEntityList.updateEntity(*target); // important - lineTrace needs the TileEntityListUpdated.
+								hit.entity = ohitentity;
 							}
 						}
 					}
@@ -2314,39 +2356,28 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 						}
 						return false;
 					}
-					int pickedlocation = rand() % numlocations;
-					numlocations = 0;
-					for ( int iy = std::max(0, ty - dist); !foundLocation && iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
-					{
-						for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
-						{
-							if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, target, NULL) )
-							{
-								if ( numlocations == pickedlocation )
-								{
-									foundLocation = true;
-									tx = ix;
-									ty = iy;
-									break;
-								}
-								numlocations++;
-							}
-						}
-						if ( foundLocation )
-						{
-							break;
-						}
-					}
-				}
 
-				if ( !foundLocation )
-				{
-					if ( parent->behavior == &actPlayer )
+					if ( !spotsWithLineOfSight.empty() )
 					{
-						// no room to teleport!
-						messagePlayer(parent->skill[2], language[3453]);
+						std::pair<int, int> tmpPair = spotsWithLineOfSight[rand() % spotsWithLineOfSight.size()];
+						tx = tmpPair.first;
+						ty = tmpPair.second;
 					}
-					return false;
+					else if ( !goodspots.empty() )
+					{
+						std::pair<int, int> tmpPair = goodspots[rand() % goodspots.size()];
+						tx = tmpPair.first;
+						ty = tmpPair.second;
+					}
+					else
+					{
+						if ( parent->behavior == &actPlayer )
+						{
+							// no room to teleport!
+							messagePlayer(parent->skill[2], language[3453]);
+						}
+						return false;
+					}
 				}
 
 				// this timer is the entity spawn location.
@@ -2580,6 +2611,8 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							real_t oy = parent->y;
 							parent->x = (ix << 4) + 8;
 							parent->y = (iy << 4) + 8;
+							TileEntityList.updateEntity(*parent); // important - lineTrace needs the TileEntityListUpdated.
+
 							// pretend the parent is in the supposed spawn locations and try linetrace from each position.
 							real_t tangent = atan2(parent->y - target->y, parent->x - target->x);
 							lineTraceTarget(target, target->x, target->y, tangent, 64, 0, false, parent);
@@ -2591,6 +2624,7 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 							// reset the coordinates we messed with
 							parent->x = ox;
 							parent->y = oy;
+							TileEntityList.updateEntity(*parent); // important - lineTrace needs the TileEntityListUpdated.
 							hit.entity = ohitentity;
 						}
 					}

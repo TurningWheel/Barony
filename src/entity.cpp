@@ -9437,6 +9437,8 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 					real_t tmpy = y;
 					x = (ix << 4) + 8;
 					y = (iy << 4) + 8;
+					TileEntityList.updateEntity(*this); // important - lineTrace needs the TileEntityListUpdated.
+
 					real_t tangent = atan2(target->y - this->y, target->x - this->x);
 					lineTraceTarget(this, this->x, this->y, tangent, 64 * dist, 0, false, target);
 					if ( hit.entity == target && !entityInsideSomething(this) )
@@ -9464,6 +9466,7 @@ bool Entity::teleportAroundEntity(Entity* target, int dist, int effectType)
 					// restore coordinates.
 					x = tmpx;
 					y = tmpy;
+					TileEntityList.updateEntity(*this); // important - lineTrace needs the TileEntityListUpdated.
 					hit.entity = ohit;
 				}
 				else
