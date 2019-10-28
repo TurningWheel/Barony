@@ -1945,7 +1945,7 @@ void consoleCommand(char* command_str)
 			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
 		}
 	}
-	else if ( !strncmp(command_str, "/maxskill ", 9) )
+	else if ( !strncmp(command_str, "/maxskill ", 10) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{
@@ -1958,7 +1958,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		int skill = atoi(&command_str[12]);
+		int skill = atoi(&command_str[10]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
 			messagePlayer(clientnum, language[2451]); //Skill out of range.
