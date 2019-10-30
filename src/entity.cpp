@@ -14491,7 +14491,7 @@ bool Entity::shouldRetreat(Stat& myStats)
 	}
 
 	Entity* leader = monsterAllyGetPlayerLeader();
-	if ( leader && stats[monsterAllyIndex] )
+	if ( leader )
 	{
 		// do not retreat for brave leader!
 		return false;
