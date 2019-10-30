@@ -792,7 +792,13 @@ void drawStatus()
 	}
 	Uint32 mpColorBG = SDL_MapRGB(mainsurface->format, 0, 0, 48);
 	Uint32 mpColorFG = SDL_MapRGB(mainsurface->format, 0, 24, 128);
-	if ( stats[clientnum]->type == AUTOMATON )
+	if ( stats[clientnum] && stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
+	{
+		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3768]);
+		mpColorBG = SDL_MapRGB(mainsurface->format, 32, 48, 0);
+		mpColorFG = SDL_MapRGB(mainsurface->format, 92, 192, 0);
+	}
+	else if ( stats[clientnum] && stats[clientnum]->type == AUTOMATON )
 	{
 		ttfPrintText(ttf12, pos.x + (playerStatusBarWidth / 2 - 10), pos.y + 6, language[3474]);
 		mpColorBG = SDL_MapRGB(mainsurface->format, 64, 32, 0);
