@@ -2436,6 +2436,18 @@ void consoleCommand(char* command_str)
 				players[clientnum]->entity->setEffect(EFF_GREASY, true, TICKS_PER_SECOND * 20, false);
 			}
 		}
+		else if ( !strncmp(command_str, "/gimmearrows", 12) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
+			{
+				dropItem(newItem(static_cast<ItemType>(i), EXCELLENT, 0, 25 + rand() % 26, rand(), true, &stats[clientnum]->inventory), 0);
+			}
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
