@@ -30,8 +30,8 @@ void initClass(int player)
 {
 	Item* item, *item2;
 	//client_classes[player] = CLASS_HUNTER;
-	//stats[player]->playerRace = RACE_AUTOMATON;
-	//stats[player]->appearance = 0;
+	/*stats[player]->playerRace = RACE_AUTOMATON;
+	stats[player]->appearance = 0;*/
 	if ( player == clientnum)
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -2139,12 +2139,12 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			item = newItem(BOOMERANG, WORN, 0, 1, 0, true, NULL);
+			item = newItem(BOOMERANG, DECREPIT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			item = newItem(QUIVER_SILVER, EXCELLENT, 0, 30, 0, true, NULL);
+			item = newItem(QUIVER_SILVER, EXCELLENT, 0, 40, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
@@ -2171,38 +2171,43 @@ void initClass(int player)
 			item2 = itemPickup(player, item);
 			free(item);
 
-			item = newItem(POTION_SPEED, EXCELLENT, 0, 2, 0, true, NULL);
+			item = newItem(TOOL_BLINDFOLD_TELEPATHY, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[5].item = item2->uid;
 			free(item);
 
+			item = newItem(POTION_SPEED, EXCELLENT, 0, 2, 0, true, NULL);
+			item2 = itemPickup(player, item);
+			hotbar[6].item = item2->uid;
+			free(item);
+
 			// TO DELETE **********
-			item = newItem(ARTIFACT_BOW, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
+			//item = newItem(ARTIFACT_BOW, EXCELLENT, 0, 1, 0, true, NULL);
+			//item2 = itemPickup(player, item);
+			//free(item);
 
-			item = newItem(COMPOUND_BOW, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
+			//item = newItem(COMPOUND_BOW, EXCELLENT, 0, 1, 0, true, NULL);
+			//item2 = itemPickup(player, item);
+			//free(item);
 
-			item = newItem(SLING, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
+			//item = newItem(SLING, EXCELLENT, 0, 1, 0, true, NULL);
+			//item2 = itemPickup(player, item);
+			//free(item);
 
-			item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
+			//item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
+			//item2 = itemPickup(player, item);
+			//free(item);
 
-			item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, NULL);
-			item2 = itemPickup(player, item);
-			free(item);
+			//item = newItem(CROSSBOW, EXCELLENT, 0, 1, 0, true, NULL);
+			//item2 = itemPickup(player, item);
+			//free(item);
 
-			for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
-			{
-				item = newItem(static_cast<ItemType>(i), EXCELLENT, 1, 48, 0, true, NULL);
-				item2 = itemPickup(player, item);
-				free(item);
-			}
+			//for ( int i = QUIVER_SILVER; i <= QUIVER_HUNTING; ++i )
+			//{
+			//	item = newItem(static_cast<ItemType>(i), EXCELLENT, 1, 48, 0, true, NULL);
+			//	item2 = itemPickup(player, item);
+			//	free(item);
+			//}
 
 			// TO DELETE **********
 		}
@@ -2399,6 +2404,11 @@ void initClass(int player)
 		else if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
+		}
+		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			addSpell(SPELL_FLUTTER, player, true);
+			addSpell(SPELL_DASH, player, true);
 		}
 		else if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->appearance == 0 )
 		{
