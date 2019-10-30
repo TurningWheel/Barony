@@ -2433,7 +2433,7 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			myStats->MP += MP_MOD;
 			myStats->MAXMP += MP_MOD;
-			if ( myStats->type == INSECTOID )
+			if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 			{
 				myStats->MAXMP = std::min(50, myStats->MAXMP);
 			}
@@ -3309,7 +3309,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->char_energize = 0;
 				this->modMP(1);
-				if ( behavior == &actPlayer && myStats->type == INSECTOID )
+				if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 				{
 					if ( svFlags & SV_FLAG_HUNGER )
 					{
@@ -4762,7 +4762,7 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		if ( my && my->behavior == &actPlayer && entitystats->type == INSECTOID )
+		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->appearance == 0 )
 		{
 			int dexDebuff = 0;
 			if ( entitystats->MP < (entitystats->MAXMP) / 5 )
@@ -5081,7 +5081,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 
 	if ( !(svFlags & SV_FLAG_HUNGER) )
 	{
-		if ( my && my->behavior == &actPlayer && entitystats->type == INSECTOID )
+		if ( my && my->behavior == &actPlayer && entitystats->playerRace == RACE_INSECTOID && entitystats->appearance == 0 )
 		{
 			int perDebuff = 0;
 			if ( entitystats->MP < (entitystats->MAXMP) / 5 )
