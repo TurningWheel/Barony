@@ -2483,6 +2483,15 @@ void consoleCommand(char* command_str)
 			dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 			dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 		}
+		else if ( !strncmp(command_str, "/showhunger", 11) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			messagePlayer(clientnum, "Hunger value: %d", stats[clientnum]->HUNGER);
+		}
 		else
 		{
 			messagePlayer(clientnum, language[305], command_str);
