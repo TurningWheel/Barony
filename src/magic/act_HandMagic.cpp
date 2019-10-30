@@ -188,7 +188,8 @@ void actLeftHandMagic(Entity* my)
 		my->focalz = -1.5;
 	}
 
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr
+		|| (players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0) )
 	{
 		magicLeftHand = nullptr;
 		spellcastingAnimationManager_deactivate(&cast_animation);
@@ -543,7 +544,8 @@ void actRightHandMagic(Entity* my)
 		my->focalz = -1.5;
 	}
 
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr
+		|| (players[clientnum]->entity && players[clientnum]->entity->playerCreatedDeathCam != 0) )
 	{
 		magicRightHand = nullptr;
 		list_RemoveNode(my->mynode);
