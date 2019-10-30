@@ -1632,7 +1632,7 @@ void equipItem(Item* item, Item** slot, int player)
 				{
 					if ( player == clientnum )
 					{
-						if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
 							messagePlayer(player, language[3217], (*slot)->getName());
 						}
@@ -1721,7 +1721,7 @@ void equipItem(Item* item, Item** slot, int player)
 				{
 					if ( player == clientnum )
 					{
-						if ( shouldInvertEquipmentBeatitude(stats[player]) && item->beatitude > 0 )
+						if ( shouldInvertEquipmentBeatitude(stats[player]) && (*slot)->beatitude > 0 )
 						{
 							messagePlayer(player, language[3217], (*slot)->getName());
 						}
