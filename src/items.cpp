@@ -3025,6 +3025,10 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	{
 		attack += 6;
 	}
+	else if ( itemCategory(this) == GEM )
+	{
+		attack += 4;
+	}
 	else if ( type == SLING )
 	{
 		attack += 4;
