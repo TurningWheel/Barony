@@ -1374,7 +1374,8 @@ void gameLogic(void)
 			}
 
 			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? stats[clientnum]->cloak->beatitude <= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
 				INVENTORY_SIZEY = 4;
 			}
@@ -1894,7 +1895,8 @@ void gameLogic(void)
 				entity->ranbehavior = false;
 			}
 			bool tooManySpells = (list_Size(&spellList) >= INVENTORY_SIZEX * 3);
-			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+			if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+				&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? stats[clientnum]->cloak->beatitude <= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 			{
 				INVENTORY_SIZEY = 4;
 			}

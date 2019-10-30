@@ -106,7 +106,8 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 			{
 				if ( stats[i] && &stats[i]->inventory == inventory )
 				{
-					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK && stats[i]->cloak->beatitude >= 0 )
+					if ( stats[i]->cloak && stats[i]->cloak->type == CLOAK_BACKPACK 
+						&& (shouldInvertEquipmentBeatitude(stats[i]) ? stats[i]->cloak->beatitude <= 0 : stats[i]->cloak->beatitude >= 0) )
 					{
 						inventory_y = 4;
 						break;
@@ -119,7 +120,8 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		{
 			if ( stats[clientnum] && &stats[clientnum]->inventory == inventory )
 			{
-				if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK && stats[clientnum]->cloak->beatitude >= 0 )
+				if ( stats[clientnum]->cloak && stats[clientnum]->cloak->type == CLOAK_BACKPACK 
+					&& (shouldInvertEquipmentBeatitude(stats[clientnum]) ? stats[clientnum]->cloak->beatitude <= 0 : stats[clientnum]->cloak->beatitude >= 0) )
 				{
 					inventory_y = 4;
 				}
