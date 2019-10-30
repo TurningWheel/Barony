@@ -2433,6 +2433,10 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			myStats->MP += MP_MOD;
 			myStats->MAXMP += MP_MOD;
+			if ( myStats->type == INSECTOID )
+			{
+				myStats->MAXMP = std::min(50, myStats->MAXMP);
+			}
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 		}
 
@@ -2856,6 +2860,10 @@ void Entity::handleEffects(Stat* myStats)
 		hungerTickRate *= 1.25;
 	}
 	else if ( playerCount == 4 )
+	{
+		hungerTickRate *= 1.5;
+	}
+	if ( myStats->type == INSECTOID )
 	{
 		hungerTickRate *= 1.5;
 	}
@@ -3301,6 +3309,56 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->char_energize = 0;
 				this->modMP(1);
+				if ( behavior == &actPlayer && myStats->type == INSECTOID )
+				{
+					if ( svFlags & SV_FLAG_HUNGER )
+					{
+						int hungerLoss = 10;
+						int modHunger = myStats->HUNGER % 50;
+						if ( modHunger < 10 )
+						{
+							hungerLoss = modHunger;
+							// if we had 259 hunger, then modHunger is 9.
+							// this will trigger a serverUpdateHunger() when it ticks down to a round interval (50/150/250)
+						}
+						myStats->HUNGER = std::max(0, myStats->HUNGER - hungerLoss);
+						if ( myStats->HUNGER == 1500 )
+						{
+							if ( !myStats->EFFECTS[EFF_VOMITING] )
+							{
+								messagePlayer(player, language[629]);
+							}
+							serverUpdateHunger(player);
+						}
+						else if ( myStats->HUNGER == 250 )
+						{
+							if ( !myStats->EFFECTS[EFF_VOMITING] )
+							{
+								messagePlayer(player, language[630]);
+								playSoundPlayer(player, 32, 128);
+							}
+							serverUpdateHunger(player);
+						}
+						else if ( myStats->HUNGER == 150 )
+						{
+							if ( !myStats->EFFECTS[EFF_VOMITING] )
+							{
+								messagePlayer(player, language[631]);
+								playSoundPlayer(player, 32, 128);
+							}
+							serverUpdateHunger(player);
+						}
+						else if ( myStats->HUNGER == 50 )
+						{
+							if ( !myStats->EFFECTS[EFF_VOMITING] )
+							{
+								messagePlayer(player, language[632]);
+								playSoundPlayer(player, 32, 128);
+							}
+							serverUpdateHunger(player);
+						}
+					}
+				}
 			}
 		}
 		else
@@ -4695,12 +4753,34 @@ Sint32 statGetDEX(Stat* entitystats, Entity* my)
 					DEX -= (minusDex / 4); // -1 DEX for every 4 DEX we have.
 				}
 			}
-				break;
+			break;
 			default:
 				--DEX;
 				break;
 		}
 	}
+
+	if ( !(svFlags & SV_FLAG_HUNGER) )
+	{
+		if ( my && my->behavior == &actPlayer && entitystats->type == INSECTOID )
+		{
+			int dexDebuff = 0;
+			if ( entitystats->MP < (entitystats->MAXMP) / 5 )
+			{
+				dexDebuff = 2;
+			}
+			else if ( entitystats->MP < 2 * (entitystats->MAXMP) / 5 )
+			{
+				dexDebuff = 1;
+			}
+			DEX -= dexDebuff;
+			if ( DEX > 0 )
+			{
+				DEX -= dexDebuff * (DEX / 4); // -X DEX for every 4 DEX we have.
+			}
+		}
+	}
+
 	if ( entitystats->EFFECTS[EFF_WITHDRAWAL] && !entitystats->EFFECTS[EFF_DRUNK] )
 	{
 		DEX -= 3; // hungover.
@@ -4998,6 +5078,28 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			PER += (cursedItemIsBuff ? abs(entitystats->breastplate->beatitude) : entitystats->breastplate->beatitude);
 		}
 	}
+
+	if ( !(svFlags & SV_FLAG_HUNGER) )
+	{
+		if ( my && my->behavior == &actPlayer && entitystats->type == INSECTOID )
+		{
+			int perDebuff = 0;
+			if ( entitystats->MP < (entitystats->MAXMP) / 5 )
+			{
+				perDebuff = 2;
+			}
+			else if ( entitystats->MP < 2 * (entitystats->MAXMP) / 5 )
+			{
+				perDebuff = 1;
+			}
+			PER -= perDebuff;
+			if ( PER > 0 )
+			{
+				PER -= perDebuff * (PER / 4); // -X DEX for every 4 DEX we have.
+			}
+		}
+	}
+
 	if ( entitystats->EFFECTS[EFF_SHRINE_GREEN_BUFF] )
 	{
 		PER += 8;
@@ -15196,6 +15298,11 @@ int Entity::getBaseManaRegen(Stat& myStats)
 		real_t amount = 0.0;
 		getArtifactWeaponEffectChance(myStats.weapon->type, myStats, &amount);
 		multipliedTotal += amount;
+	}
+
+	if ( myStats.type == INSECTOID )
+	{
+		return ((MAGIC_REGEN_TIME / 2) - static_cast<int>(std::min(multipliedTotal, 100))); // return 150-50 ticks, 3-1 seconds.
 	}
 
 	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
