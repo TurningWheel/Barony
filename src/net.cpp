@@ -3697,6 +3697,19 @@ void clientHandlePacket()
 		MinimapPing newPing(ticks, net_packet->data[4], net_packet->data[5], net_packet->data[6]);
 		minimapPingAdd(newPing);
 	}
+	else if ( !strncmp((char*)net_packet->data, "DASH", 4) )
+	{
+		if ( players[clientnum] && players[clientnum]->entity && stats[clientnum] )
+		{
+			real_t vel = sqrt(pow(players[clientnum]->entity->vel_y, 2) + pow(players[clientnum]->entity->vel_x, 2));
+			players[clientnum]->entity->monsterKnockbackVelocity = std::max(1.0, vel);
+			players[clientnum]->entity->monsterKnockbackTangentDir = atan2(players[clientnum]->entity->vel_y, players[clientnum]->entity->vel_x);
+			if ( vel < 0.01 )
+			{
+				players[clientnum]->entity->monsterKnockbackTangentDir = players[clientnum]->entity->yaw + PI;
+			}
+		}
+	}
 
 	// game restart
 	if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17))

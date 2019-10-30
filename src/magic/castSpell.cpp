@@ -1069,35 +1069,26 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster == players[i]->entity )
 				{
+					playSoundEntity(caster, 180, 128);
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 982);
+					caster->setEffect(EFF_DASH, true, 30, true);
 					if ( i > 0 && multiplayer == SERVER )
 					{
 						strcpy((char*)net_packet->data, "DASH");
-						net_packet->data[4] = 1;
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 5;
+						net_packet->len = 4;
 						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 					else
 					{
-						/*if ( hit.entity->skill[2] != clientnum )
+						real_t vel = sqrt(pow(caster->vel_y, 2) + pow(caster->vel_x, 2));
+						caster->monsterKnockbackVelocity = std::max(1.0, vel);
+						caster->monsterKnockbackTangentDir = atan2(caster->vel_y, caster->vel_x);
+						if ( vel < 0.01 )
 						{
-							hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
-							hit.entity->monsterKnockbackTangentDir = my->yaw;
-							serverUpdateEntityFSkill(hit.entity, 11);
-							serverUpdateEntityFSkill(hit.entity, 9);
+							caster->monsterKnockbackTangentDir = caster->yaw + PI;
 						}
-						else*/
-						{
-						}
-					}
-					caster->setEffect(EFF_DASH, true, 30, false);
-					real_t vel = sqrt(pow(caster->vel_y, 2) + pow(caster->vel_x, 2));
-					caster->monsterKnockbackVelocity = std::max(1.0, vel);
-					caster->monsterKnockbackTangentDir = atan2(caster->vel_y, caster->vel_x);
-					if ( vel < 0.01 )
-					{
-						caster->monsterKnockbackTangentDir = caster->yaw + PI;
 					}
 					break;
 				}
