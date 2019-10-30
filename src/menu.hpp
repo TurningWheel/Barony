@@ -161,6 +161,7 @@ bool gamemodsCheckIfSubscribedAndDownloadedFileID(uint64 fileID);
 bool gamemodsCheckFileIDInLoadedPaths(uint64 fileID);
 bool gamemodsIsClientLoadOrderMatchingHost(std::vector<std::string> serverModList);
 extern std::vector<std::pair<std::string, uint64>> gamemods_workshopLoadedFileIDMap;
+extern std::unordered_set<uint64> betaPlayers;
 #endif // STEAMWORKS
 bool drawClickableButton(int padx, int pady, int padw, int padh, Uint32 btnColor);
 extern bool scoreDisplayMultiplayer;

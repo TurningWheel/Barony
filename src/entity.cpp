@@ -5058,7 +5058,7 @@ Sint32 statGetPER(Stat* entitystats, Entity* my)
 			if ( entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
 				|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 			{
-				PER += 10; // increase your perception
+				PER += 0;
 			}
 			else
 			{
@@ -5230,12 +5230,14 @@ bool Entity::isBlind()
 
 	// wearing blindfolds
 	if ( entitystats->mask != nullptr && !shapeshifted )
-		if ( entitystats->mask->type == TOOL_BLINDFOLD 
-			|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY 
+	{
+		if ( entitystats->mask->type == TOOL_BLINDFOLD
+			|| entitystats->mask->type == TOOL_BLINDFOLD_TELEPATHY
 			|| entitystats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			return true;
 		}
+	}
 
 	return false;
 }

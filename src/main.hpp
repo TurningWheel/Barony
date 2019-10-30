@@ -580,6 +580,15 @@ extern char tempstr[1024];
 extern Sint8 minimap[64][64];
 extern Uint32 mapseed;
 extern bool* shoparea;
+extern real_t globalLightModifier;
+extern real_t globalLightTelepathyModifier;
+extern int globalLightModifierActive;
+enum LightModifierValues : int
+{
+	GLOBAL_LIGHT_MODIFIER_STOPPED,
+	GLOBAL_LIGHT_MODIFIER_INUSE,
+	GLOBAL_LIGHT_MODIFIER_DISSIPATING
+};
 
 // function prototypes for main.c:
 int sgn(real_t x);

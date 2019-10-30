@@ -2608,6 +2608,7 @@ void clientHandlePacket()
 		}
 
 		minimapPings.clear(); // clear minimap pings
+		globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 		// clear follower menu entities.
 		FollowerMenu.closeFollowerMenuGUI(true);

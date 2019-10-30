@@ -140,6 +140,9 @@ list_t button_l;
 list_t light_l;
 Uint32 mapseed;
 bool* shoparea = nullptr;
+real_t globalLightModifier = 0.f;
+real_t globalLightTelepathyModifier = 0.f;
+int globalLightModifierActive = 0;
 
 // game variables
 bool shootmode = false;

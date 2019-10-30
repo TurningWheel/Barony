@@ -971,6 +971,7 @@ void gameLogic(void)
 					}
 
 					minimapPings.clear(); // clear minimap pings
+					globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 
 					// clear follower menu entities.
 					FollowerMenu.closeFollowerMenuGUI(true);
@@ -3038,6 +3039,7 @@ int main(int argc, char** argv)
 			DebugStats.t3SteamCallbacks = std::chrono::high_resolution_clock::now();
 			if ( intro )
 			{
+				globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
 				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
 				if ( introstage == -1 )
 				{
@@ -3408,8 +3410,7 @@ int main(int argc, char** argv)
 				drawClearBuffers();
 				camera.ang += camera_shakex2;
 				camera.vang += camera_shakey2 / 200.0;
-				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()
-					|| (stats[clientnum] && stats[clientnum]->EFFECTS[EFF_TELEPATH]) )
+				if ( true/*players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()*/ )
 				{
 					// drunkenness spinning
 					double cosspin = cos(ticks % 360 * PI / 180.f) * 0.25;
@@ -3428,21 +3429,79 @@ int main(int argc, char** argv)
 
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
-						if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_TELEPATH] )
+						if ( players[clientnum]->entity->isBlind() )
 						{
-							// don't draw world with telepath blindfold.
+							if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_STOPPED 
+								|| (globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_DISSIPATING && globalLightModifier < 1.f) )
+							{
+								globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_INUSE;
+								globalLightModifier = 0.f;
+								globalLightTelepathyModifier = 0.f;
+								if ( stats[clientnum]->mask && stats[clientnum]->mask->type == TOOL_BLINDFOLD_TELEPATHY )
+								{
+									for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+									{
+										Entity* mapCreature = (Entity*)mapNode->element;
+										if ( mapCreature )
+										{
+											mapCreature->monsterEntityRenderAsTelepath = 1;
+										}
+									}
+								}
+							}
+
+							int PERModifier = 0;
+							if ( stats[clientnum] && stats[clientnum]->EFFECTS[EFF_BLIND]
+								&& !stats[clientnum]->EFFECTS[EFF_ASLEEP] && !stats[clientnum]->EFFECTS[EFF_MESSY] )
+							{
+								// blind but not messy or asleep = allow PER to let you see the world a little.
+								PERModifier = players[clientnum]->entity->getPER() / 5;
+								if ( PERModifier < 0 )
+								{
+									PERModifier = 0;
+								}
+							}
+
+							real_t limit = PERModifier * 0.01;
+							globalLightModifier = std::min(limit, globalLightModifier + 0.0005);
+
+							int telepathyLimit = std::min(64, 48 + players[clientnum]->entity->getPER());
+							globalLightTelepathyModifier = std::min(telepathyLimit / 255.0, globalLightTelepathyModifier + (0.2 / 255.0));
 						}
 						else
 						{
-							raycast(&camera, REALCOLORS);
-							glDrawWorld(&camera, REALCOLORS);
+							if ( globalLightModifierActive == GLOBAL_LIGHT_MODIFIER_INUSE )
+							{
+								for ( node_t* mapNode = map.creatures->first; mapNode != nullptr; mapNode = mapNode->next )
+								{
+									Entity* mapCreature = (Entity*)mapNode->element;
+									if ( mapCreature )
+									{
+										mapCreature->monsterEntityRenderAsTelepath = 0;
+									}
+								}
+							}
+							globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_DISSIPATING;
+							globalLightTelepathyModifier = 0.f;
+							if ( globalLightModifier < 1.f )
+							{
+								globalLightModifier += 0.01;
+							}
+							else
+							{
+								globalLightModifier = 1.01;
+								globalLightModifierActive = GLOBAL_LIGHT_MODIFIER_STOPPED;
+							}
 						}
+						raycast(&camera, REALCOLORS);
+						glDrawWorld(&camera, REALCOLORS);
 					}
 					else
 					{
 						raycast(&camera, REALCOLORS);
 						glDrawWorld(&camera, REALCOLORS);
 					}
+
 					//drawFloors(&camera);
 					drawEntities3D(&camera, REALCOLORS);
 					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
