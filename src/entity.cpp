@@ -2883,6 +2883,11 @@ void Entity::handleEffects(Stat* myStats)
 			hungerTickRate *= 1.5; // 2.55x (1.5 x 1.5)
 		}
 
+		if ( myStats->HUNGER > 1000 && hungerTickRate > 30 )
+		{
+			hungerTickRate = 30; // don't slow down during superheated.
+		}
+
 		if ( ticks % (hungerTickRate / 2) == 0 )
 		{
 			//messagePlayer(0, "hungertick %d, curr %d, players: %d", hungerTickRate, myStats->HUNGER, playerCount);

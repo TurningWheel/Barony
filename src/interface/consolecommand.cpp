@@ -1961,7 +1961,7 @@ void consoleCommand(char* command_str)
 		int skill = atoi(&command_str[10]);
 		if ( skill >= NUMPROFICIENCIES )
 		{
-			messagePlayer(clientnum, language[2451]); //Skill out of range.
+			messagePlayer(clientnum, "Invalid skill ID"); //Skill out of range.
 		}
 		else
 		{
