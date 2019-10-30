@@ -743,6 +743,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					&& stats[monsterclicked]->type != INCUBUS )
 				{
 					canAlly = true;
+					if ( myStats->EFFECTS[EFF_CONFUSED] )
+					{
+						my->setEffect(EFF_CONFUSED, false, 0, false);
+					}
 				}
 			}
 			else if ( stats[monsterclicked]->type == GOATMAN )
@@ -862,6 +866,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 							if ( stats[monsterclicked]->type == SUCCUBUS )
 							{
 								steamAchievementClient(monsterclicked, "BARONY_ACH_TEMPTRESS");
+							}
+							if ( myStats->EFFECTS[EFF_CONFUSED] )
+							{
+								my->setEffect(EFF_CONFUSED, false, 0, false);
 							}
 						}
 					}

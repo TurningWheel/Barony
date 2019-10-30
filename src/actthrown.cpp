@@ -714,6 +714,7 @@ void actThrown(Entity* my)
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
+				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
 
 				if ( hitstats )
 				{
@@ -1066,8 +1067,19 @@ void actThrown(Entity* my)
 					parent->awardXP(hit.entity, true, true);
 				}
 
+				bool doAlert = true;
+				// fix for confuse potion aggro'ing monsters on impact.
+				if ( !wasConfused && hitstats && hitstats->EFFECTS[EFF_CONFUSED] && hit.entity->behavior == &actMonster && parent )
+				{
+					doAlert = false;
+					if ( hit.entity->monsterTarget == parent->getUID() )
+					{
+						hit.entity->monsterReleaseAttackTarget();
+					}
+				}
+
 				// alert the monster
-				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr )
+				if ( hit.entity->behavior == &actMonster && hitstats && parent != nullptr && doAlert )
 				{
 					bool alertTarget = true;
 					bool targetHealed = false;
