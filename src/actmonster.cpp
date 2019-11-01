@@ -3252,7 +3252,14 @@ void actMonster(Entity* my)
 								light += 150;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
-							if ( targetdist > sightranges[myStats->type] )
+
+							int monsterVisionRange = sightranges[myStats->type];
+							if ( hitstats->type == DUMMYBOT )
+							{
+								monsterVisionRange = std::min(monsterVisionRange, 96);
+							}
+
+							if ( targetdist > monsterVisionRange )
 							{
 								continue;
 							}
@@ -3260,11 +3267,11 @@ void actMonster(Entity* my)
 							{
 								if ( !levitating )
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 								}
 								if ( hit.entity == entity )
 									if ( rand() % 100 == 0 )
@@ -3274,7 +3281,14 @@ void actMonster(Entity* my)
 								continue;
 							}
 							bool visiontest = false;
-							if ( myStats->type != SPIDER )
+							if ( hitstats->type == DUMMYBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+							{
+								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
+								{
+									visiontest = true;
+								}
+							}
+							else if ( myStats->type != SPIDER )
 							{
 								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
 								{
@@ -3293,11 +3307,11 @@ void actMonster(Entity* my)
 								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 								{
 									//See invisible
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], IGNORE_ENTITIES, false);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, IGNORE_ENTITIES, false);
 								}
 								if ( !hit.entity )
 								{
@@ -3355,7 +3369,7 @@ void actMonster(Entity* my)
 													if ( entity->skill[0] == MONSTER_STATE_WAIT )   // monster is waiting
 													{
 														tangent = atan2( entity->y - my->y, entity->x - my->x );
-														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+														lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 														if ( hit.entity == entity )
 														{
 															entity->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_PATH);
@@ -3797,7 +3811,14 @@ void actMonster(Entity* my)
 					light += 150;
 				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
-				if ( targetdist > sightranges[myStats->type] )
+
+				int monsterVisionRange = sightranges[myStats->type];
+				if ( hitstats && hitstats->type == DUMMYBOT )
+				{
+					monsterVisionRange = std::min(monsterVisionRange, 96);
+				}
+
+				if ( targetdist > monsterVisionRange )
 				{
 					// if target has left my sight, decide whether or not to path or retreat (stay put).
 					if ( my->shouldRetreat(*myStats) && !myStats->EFFECTS[EFF_FEAR] )
@@ -3817,11 +3838,11 @@ void actMonster(Entity* my)
 						tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
 						if ( !levitating )
 						{
-							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+							lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
 						}
 						else
 						{
-							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+							lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 						}
 						if ( hit.entity == entity )
 						{	
@@ -3851,16 +3872,16 @@ void actMonster(Entity* my)
 							{
 								if ( hasrangedweapon )
 								{
-									dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 								}
 								else
 								{
-									dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+									dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
 								}
 							}
 							else
 							{
-								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+								dist = lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 							}
 						}
 						else
@@ -4094,7 +4115,7 @@ timeToGoAgain:
 												lichAlly = uidToEntity(my->monsterLichAllyUID);
 											}
 											Entity* tmpEntity = hit.entity;
-											lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+											lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 											if ( hit.entity != tmpEntity )
 											{
 												// sight is blocked, keep strafing.
@@ -4490,7 +4511,14 @@ timeToGoAgain:
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
-							if ( targetdist > sightranges[myStats->type] )
+
+							int monsterVisionRange = sightranges[myStats->type];
+							if ( hitstats->type == DUMMYBOT )
+							{
+								monsterVisionRange = std::min(monsterVisionRange, 96);
+							}
+
+							if ( targetdist > monsterVisionRange )
 							{
 								continue;
 							}
@@ -4498,11 +4526,11 @@ timeToGoAgain:
 							{
 								if ( !levitating )
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, true);
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+									lineTrace(my, my->x, my->y, tangent, monsterVisionRange, 0, false);
 								}
 								if ( hit.entity == entity )
 								{
@@ -4514,7 +4542,14 @@ timeToGoAgain:
 								continue;
 							}
 							bool visiontest = false;
-							if ( myStats->type != SPIDER )
+							if ( hitstats->type == DUMMYBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+							{
+								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
+								{
+									visiontest = true;
+								}
+							}
+							else if ( myStats->type != SPIDER )
 							{
 								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
 								{
@@ -4530,16 +4565,16 @@ timeToGoAgain:
 							}
 							if ( visiontest )   // vision cone
 							{
-								lineTrace(my, my->x + 1, my->y, tangent, sightranges[myStats->type], 0, (levitating == false));
+								lineTrace(my, my->x + 1, my->y, tangent, monsterVisionRange, 0, (levitating == false));
 								if ( hit.entity == entity )
 								{
-									lineTrace(my, my->x - 1, my->y, tangent, sightranges[myStats->type], 0, (levitating == false));
+									lineTrace(my, my->x - 1, my->y, tangent, monsterVisionRange, 0, (levitating == false));
 									if ( hit.entity == entity )
 									{
-										lineTrace(my, my->x, my->y + 1, tangent, sightranges[myStats->type], 0, (levitating == false));
+										lineTrace(my, my->x, my->y + 1, tangent, monsterVisionRange, 0, (levitating == false));
 										if ( hit.entity == entity )
 										{
-											lineTrace(my, my->x, my->y - 1, tangent, sightranges[myStats->type], 0, (levitating == false));
+											lineTrace(my, my->x, my->y - 1, tangent, monsterVisionRange, 0, (levitating == false));
 											if ( hit.entity == entity )
 											{
 												Entity& attackTarget = *hit.entity;
