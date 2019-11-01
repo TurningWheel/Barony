@@ -765,7 +765,7 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 	light = std::max(light, 0);
 	if ( myStats.type == DUMMYBOT )
 	{
-		light = std::max(light, 128); // dummybots can always be seen at least 8 tiles away.
+		light = std::max(light, 256); // dummybots can always be seen at least 16 tiles away.
 	}
 	return light;
 }
@@ -7064,7 +7064,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					hit.entity->modHP(-damage); // do the damage
 					bool skillIncreased = false;
 					// skill increase
-					if ( !monsterIsImmobileTurret(hit.entity, hitstats)
+					// can raise skills up to skill level 20 on dummybots...
+					bool doSkillIncrease = true;
+					if ( monsterIsImmobileTurret(hit.entity, hitstats) )
+					{
+						if ( hitstats->type == DUMMYBOT && hitstats->HP > 0 )
+						{
+							doSkillIncrease = true; // can train on dummybots.
+						}
+						else
+						{
+							doSkillIncrease = false; // no skill for killing/hurting other turrets.
+						}
+					}
+					if ( doSkillIncrease
 						&& ((weaponskill >= PRO_SWORD && weaponskill <= PRO_POLEARM) || weaponskill == PRO_UNARMED) )
 					{
 						if ( myStats->weapon &&
@@ -7080,10 +7093,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 								chance = 10;
 								notify = false;
 							}
+
 							if ( rand() % chance == 0 )
 							{
-								this->increaseSkill(weaponskill, notify);
-								skillIncreased = true;
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
+								{
+									this->increaseSkill(weaponskill, notify);
+									skillIncreased = true;
+								}
 							}
 						}
 						else if ( hitstats->HP <= 0 )
@@ -7116,11 +7133,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 								chance = 14;
 								notify = false;
 							}
-							if ( rand() % 14 == 0 )
+							if ( rand() % chance == 0 )
 							{
-								this->increaseSkill(weaponskill, notify);
-								skillIncreased = true;
-
+								if ( hitstats->type != DUMMYBOT || (hitstats->type == DUMMYBOT && myStats->PROFICIENCIES[weaponskill] < 20) )
+								{
+									this->increaseSkill(weaponskill, notify);
+									skillIncreased = true;
+								}
 							}
 						}
 					}
