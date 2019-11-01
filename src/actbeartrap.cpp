@@ -1025,7 +1025,7 @@ void actDecoyBox(Entity* my)
 	if ( my->ticks % TICKS_PER_SECOND == 0 )
 	{
 		Entity* parent = uidToEntity(my->parent);
-		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 10);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 15);
 		std::vector<Entity*> listOfOtherDecoys;
 		// find other decoys (so monsters don't wiggle back and forth.)
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -1043,7 +1043,7 @@ void actDecoyBox(Entity* my)
 		}
 		entLists.clear();
 
-		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 5);
+		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 7);
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -1069,7 +1069,7 @@ void actDecoyBox(Entity* my)
 								for ( std::vector<Entity*>::iterator decoyIt = listOfOtherDecoys.begin(); decoyIt != listOfOtherDecoys.end(); ++decoyIt )
 								{
 									Entity* decoy = *decoyIt;
-									if ( entityDist(decoy, entity) < (5 * 16) ) // less than 5 tiles from our monster
+									if ( entityDist(decoy, entity) < (7 * 16) ) // less than 5 tiles from our monster
 									{
 										if ( decoy->ticks < my->ticks )
 										{
@@ -1116,32 +1116,58 @@ void actDecoyBox(Entity* my)
 		}
 	}
 
-	if ( my->ticks > TICKS_PER_SECOND * 5 )
+	if ( my->ticks > TICKS_PER_SECOND * 7 )
 	{
-		for ( int c = 0; c < 3; c++ )
+		// stop working.
+		bool decoyBreak = (rand() % 5 == 0);
+		Entity* parent = uidToEntity(my->parent);
+
+		if ( !decoyBreak )
 		{
-			Entity* entity = spawnGib(my);
+			Item* item = newItem(TOOL_DECOY, static_cast<Status>(BEARTRAP_STATUS), BEARTRAP_BEATITUDE, 1, BEARTRAP_APPEARANCE, true, nullptr);
+			Entity* entity = dropItemMonster(item, my, nullptr);
 			if ( entity )
 			{
-				switch ( c )
-				{
-					case 0:
-						entity->sprite = 895;
-						break;
-					case 1:
-						entity->sprite = 894;
-						break;
-					case 2:
-						entity->sprite = 874;
-						break;
-					default:
-						break;
-				}
-				serverSpawnGibForClient(entity);
+				entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
 			}
+			/*if ( parent && parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[3769]);
+			}*/
+			list_RemoveNode(my->mynode);
+			return;
 		}
-		list_RemoveNode(my->mynode);
-		return;
+		else
+		{
+			for ( int c = 0; c < 3; c++ )
+			{
+				Entity* entity = spawnGib(my);
+				if ( entity )
+				{
+					switch ( c )
+					{
+						case 0:
+							entity->sprite = 895;
+							break;
+						case 1:
+							entity->sprite = 894;
+							break;
+						case 2:
+							entity->sprite = 874;
+							break;
+						default:
+							break;
+					}
+					serverSpawnGibForClient(entity);
+				}
+			}
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[3770]);
+			}
+			list_RemoveNode(my->mynode);
+			return;
+		}
 	}
 }
 
