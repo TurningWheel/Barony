@@ -2214,7 +2214,7 @@ int loadGame(int player, int saveIndex)
 		for ( c = 0; c < 32; c++ )
 		{
 			fread(&stats[player]->MISC_FLAGS[c], sizeof(Sint32), 1, fp);
-			if ( c < STAT_FLAG_PLAYER_RACE || c > STAT_FLAG_ALLY_SUMMON2_PERCHR )
+			if ( c < STAT_FLAG_PLAYER_RACE )
 			{
 				stats[player]->MISC_FLAGS[c] = 0; // we don't really need these on load.
 			}
