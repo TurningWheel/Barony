@@ -4602,16 +4602,16 @@ void handleMainMenu(bool mode)
 						net_packet->data[11] = stats[c]->sex; // sex
 						net_packet->data[12] = (Uint8)stats[c]->appearance; // appearance
 						net_packet->data[13] = (Uint8)stats[c]->playerRace; // player race
-						char shortname[16] = "";
-						strncpy(shortname, stats[c]->name, 15);
+						char shortname[32] = "";
+						strncpy(shortname, stats[c]->name, 22);
 						strcpy((char*)(&net_packet->data[14]), shortname);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;
 						net_packet->len = 14 + strlen(stats[c]->name) + 1;
 						sendPacketSafe(net_sock, -1, net_packet, x - 1);
 					}
-					char shortname[11] = { 0 };
-					strncpy(shortname, stats[c]->name, 10);
+					char shortname[32] = { 0 };
+					strncpy(shortname, stats[c]->name, 22);
 
 					newString(&lobbyChatboxMessages, 0xFFFFFFFF, "\n***   %s has joined the game   ***\n", shortname);
 
@@ -4619,18 +4619,18 @@ void handleMainMenu(bool mode)
 					SDLNet_Write32(c, &net_packet->data[0]);
 					for ( x = 0; x < MAXPLAYERS; x++ )
 					{
-						net_packet->data[4 + x * (5 + 16)] = client_classes[x]; // class
-						net_packet->data[5 + x * (5 + 16)] = stats[x]->sex; // sex
-						net_packet->data[6 + x * (5 + 16)] = client_disconnected[x]; // connectedness :p
-						net_packet->data[7 + x * (5 + 16)] = (Uint8)stats[x]->appearance; // appearance
-						net_packet->data[8 + x * (5 + 16)] = (Uint8)stats[x]->playerRace; // player race
-						char shortname[16] = "";
-						strncpy(shortname, stats[x]->name, 15);
-						strcpy((char*)(&net_packet->data[9 + x * (5 + 16)]), shortname);  // name
+						net_packet->data[4 + x * (5 + 23)] = client_classes[x]; // class
+						net_packet->data[5 + x * (5 + 23)] = stats[x]->sex; // sex
+						net_packet->data[6 + x * (5 + 23)] = client_disconnected[x]; // connectedness :p
+						net_packet->data[7 + x * (5 + 23)] = (Uint8)stats[x]->appearance; // appearance
+						net_packet->data[8 + x * (5 + 23)] = (Uint8)stats[x]->playerRace; // player race
+						char shortname[32] = "";
+						strncpy(shortname, stats[x]->name, 22);
+						strcpy((char*)(&net_packet->data[9 + x * (5 + 23)]), shortname);  // name
 					}
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
-					net_packet->len = 4 + MAXPLAYERS * (5 + 16);
+					net_packet->len = 4 + MAXPLAYERS * (5 + 23);
 					if ( directConnect )
 					{
 						SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
@@ -4694,8 +4694,8 @@ void handleMainMenu(bool mode)
 					net_packet->len = 17;
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 				}
-				char shortname[11] = { 0 };
-				strncpy(shortname, stats[net_packet->data[16]]->name, 10);
+				char shortname[32] = { 0 };
+				strncpy(shortname, stats[net_packet->data[16]]->name, 22);
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1376], shortname);
 				continue;
 			}
@@ -4744,7 +4744,7 @@ void handleMainMenu(bool mode)
 			bool gotPacket = false;
 			if ( directConnect )
 			{
-				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 16)) )
+				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (5 + 23)) )
 				{
 					gotPacket = true;
 				}
@@ -4762,7 +4762,7 @@ void handleMainMenu(bool mode)
 					}
 					packetlen = std::min<int>(packetlen, NET_PACKET_SIZE - 1);
 					Uint32 bytesRead = 0;
-					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 16) )
+					if ( !SteamNetworking()->ReadP2PPacket(net_packet->data, packetlen, &bytesRead, &newSteamID, 0) || bytesRead != 4 + MAXPLAYERS * (5 + 23) )
 					{
 						continue;
 					}
@@ -4897,12 +4897,12 @@ void handleMainMenu(bool mode)
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
 						client_disconnected[c] = false;
-						client_classes[c] = net_packet->data[4 + c * (5 + 16)]; // class
-						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 16)]); // sex
-						client_disconnected[c] = net_packet->data[6 + c * (5 + 16)]; // connectedness :p
-						stats[c]->appearance = net_packet->data[7 + c * (5 + 16)]; // appearance
-						stats[c]->playerRace = net_packet->data[8 + c * (5 + 16)]; // player race
-						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 16)]));  // name
+						client_classes[c] = net_packet->data[4 + c * (5 + 23)]; // class
+						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (5 + 23)]); // sex
+						client_disconnected[c] = net_packet->data[6 + c * (5 + 23)]; // connectedness :p
+						stats[c]->appearance = net_packet->data[7 + c * (5 + 23)]; // appearance
+						stats[c]->playerRace = net_packet->data[8 + c * (5 + 23)]; // player race
+						strcpy(stats[c]->name, (char*)(&net_packet->data[9 + c * (5 + 23)]));  // name
 					}
 
 					// request svFlags
@@ -5061,8 +5061,8 @@ void handleMainMenu(bool mode)
 					stats[net_packet->data[9]]->playerRace = net_packet->data[13];
 					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[14]));
 
-					char shortname[11] = { 0 };
-					strncpy(shortname, stats[net_packet->data[9]]->name, 10);
+					char shortname[32] = { 0 };
+					strncpy(shortname, stats[net_packet->data[9]]->name, 22);
 					newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1388], shortname);
 					continue;
 				}
