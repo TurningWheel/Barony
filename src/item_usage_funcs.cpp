@@ -2826,8 +2826,12 @@ void item_ScrollFood(Item* item, int player)
 	messagePlayer(player, language[848]);
 	if ( item->beatitude >= 0 )
 	{
-		messagePlayer(player, language[3762]);
+		messagePlayer(player, language[865]);
 		dropItem(newItem(FOOD_FISH, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_BREAD, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
 		return;
 	}
 	else
