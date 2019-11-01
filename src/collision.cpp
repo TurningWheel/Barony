@@ -285,6 +285,28 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride)
 				case INCUBUS:
 					sfx = 276 + rand() % 3;
 					break;
+				case RAT:
+					sfx = 29;
+					break;
+				case TROLL:
+					if ( rand() % 3 == 0 )
+					{
+						sfx = 79;
+					}
+					break;
+				case SPIDER:
+					if ( rand() % 3 == 2 )
+					{
+						sfx = 235;
+					}
+					else
+					{
+						sfx = 230 + rand() % 2;
+					}
+					break;
+				case CREATURE_IMP:
+					sfx = 198 + rand() % 3;
+					break;
 				default:
 					sfx = 0;
 					break;
