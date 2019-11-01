@@ -589,8 +589,8 @@ void glDrawSpriteFromImage(view_t* camera, Entity* entity, std::string text, int
 		return;
 	}
 
-	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 16));
-	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 16)] = '\0';
+	strncpy(textToRetrieve, text.c_str(), std::min(static_cast<int>(strlen(text.c_str())), 22));
+	textToRetrieve[std::min(static_cast<int>(strlen(text.c_str())), 22)] = '\0';
 	if ( (image = ttfTextHashRetrieve(ttfTextHash, textToRetrieve, ttf12, true)) != NULL )
 	{
 		textureId = texid[image->refcount];

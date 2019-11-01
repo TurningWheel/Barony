@@ -1101,7 +1101,18 @@ void drawPartySheet()
 		{
 			if ( !client_disconnected[i] && stats[i] )
 			{
-				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+				
+				if ( strlen(stats[i]->name) > 16 )
+				{
+					char shortname[32] = "";
+					strncpy(shortname, stats[i]->name, 14);
+					strcat(shortname, "..");
+					ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, shortname);
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y, color, "[%d] %s", i, stats[i]->name);
+				}
 
 				ttfPrintTextFormattedColor(fontPlayer, pos.x + 12, pos.y + fontHeight, color, "%s", playerClassLangEntry(client_classes[i], i));
 				ttfPrintTextFormattedColor(fontPlayer, xres - 8 * 12, pos.y + fontHeight, color, "LVL %2d", stats[i]->LVL);
