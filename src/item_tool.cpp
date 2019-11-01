@@ -1108,7 +1108,9 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 		entity->skill[10] = this->type;
 		entity->skill[11] = this->status;
 		entity->skill[12] = this->beatitude;
+		entity->skill[13] = 1;
 		entity->skill[14] = this->appearance;
+		entity->skill[15] = 1;
 	}
 	else if ( type == TOOL_DUMMYBOT || type == TOOL_GYROBOT || type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
 	{
