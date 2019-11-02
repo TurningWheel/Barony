@@ -1623,7 +1623,7 @@ void actPlayer(Entity* my)
 			}
 			my->pitch = PI / 4;
 		}
-		else if ( !noclip )
+		else if ( !noclip || (noclip && intro) )
 		{
 			my->z = -1;
 			if ( abs(zOffset) >= 0.05 )

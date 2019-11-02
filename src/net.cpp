@@ -3630,20 +3630,7 @@ void clientHandlePacket()
 		{
 			pauseGame(2, false);
 		}
-		introstage = 9; // prepares mid game sequence
-		return;
-	}
-
-	// mid game jump level
-	else if ( !strncmp((char*)net_packet->data, "MIDJ", 4) )
-	{
-		subwindow = 0;
-		fadeout = true;
-		if ( !intro )
-		{
-			pauseGame(2, false);
-		}
-		introstage = 9; // prepares mid game sequence
+		introstage = net_packet->data[4]; // prepares mid game sequence
 		return;
 	}
 

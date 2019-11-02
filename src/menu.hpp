@@ -35,6 +35,23 @@ extern int thirdendmoviestage;
 extern int thirdendmovietime;
 extern int fourthendmoviestage;
 extern int fourthendmovietime;
+extern int DLCendmovieStageAndTime[8][2];
+enum NewMovieStageAndTimeIndex : int
+{
+	MOVIE_STAGE,
+	MOVIE_TIME,
+};
+enum NewMovieCrawlTypes : int
+{
+	MOVIE_MIDGAME_HERX_MONSTERS,
+	MOVIE_MIDGAME_BAPHOMET_MONSTERS,
+	MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON,
+	MOVIE_CLASSIC_WIN_MONSTERS,
+	MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS,
+	MOVIE_WIN_AUTOMATON,
+	MOVIE_WIN_DEMONS_UNDEAD,
+	MOVIE_WIN_BEASTS
+};
 extern real_t drunkextend;
 extern bool losingConnection[4];
 extern int rebindaction;

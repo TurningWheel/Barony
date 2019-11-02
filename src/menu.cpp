@@ -264,6 +264,22 @@ bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
 
+// new text crawls...
+int DLCendmoviealpha[8][30] = { 0 };
+int DLCendmovieStageAndTime[8][2] = { 0 };
+
+int DLCendmovieNumLines[8] = 
+{
+	6,	// MOVIE_MIDGAME_HERX_MONSTERS,
+	7,	// MOVIE_MIDGAME_BAPHOMET_MONSTERS,
+	7,	// MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON,
+	5,	// MOVIE_CLASSIC_WIN_MONSTERS,
+	7,	// MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS,
+	13,	// MOVIE_WIN_AUTOMATON,
+	13,	// MOVIE_WIN_DEMONS_UNDEAD,
+	13	// MOVIE_WIN_BEASTS
+};
+
 //Confirm resolution window stuff.
 bool resolutionChanged = false;
 bool confirmResolutionWindow = false;
@@ -8185,6 +8201,49 @@ void handleMainMenu(bool mode)
 				}
 			}
 
+			// figure out the victory crawl texts...
+			int movieCrawlType = -1;
+			if ( victory )
+			{
+				if ( stats[0] )
+				{
+					if ( victory == 1 && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					{
+						// herx defeat by monsters.
+						movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
+					}
+					else if ( victory == 2 && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					{
+						// baphomet defeat by monsters.
+						movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
+					}
+					else if ( victory == 3 )
+					{
+						switch ( stats[0]->playerRace )
+						{
+							case RACE_AUTOMATON:
+								movieCrawlType = MOVIE_WIN_AUTOMATON;
+								break;
+							case RACE_SKELETON:
+							case RACE_VAMPIRE:
+							case RACE_SUCCUBUS:
+							case RACE_INCUBUS:
+								movieCrawlType = MOVIE_WIN_DEMONS_UNDEAD;
+								break;
+							case RACE_GOATMAN:
+							case RACE_GOBLIN:
+							case RACE_INSECTOID:
+								movieCrawlType = MOVIE_WIN_BEASTS;
+								break;
+							case RACE_HUMAN:
+								break;
+							default:
+								break;
+						}
+					}
+				}
+			}
+
 			// make a highscore!
 			int saveScoreResult = saveScore();
 
@@ -8507,6 +8566,11 @@ void handleMainMenu(bool mode)
 				{
 					introstage = 10;
 				}
+
+				if ( movieCrawlType >= 0 ) // overrides the introstage 7,8,10 sequences for DLC monsters.
+				{
+					introstage = 11 + movieCrawlType;
+				}
 			}
 
 			// finish handling invite
@@ -8664,6 +8728,126 @@ void handleMainMenu(bool mode)
 				fadefinished = false;
 				fadeout = false;
 				fourthendmovietime = 0;
+				movie = true;
+			}
+		}
+		else if ( introstage >= 11 && introstage <= 15 )     // new mid and classic end sequences.
+		{
+			int movieType = introstage - 11;
+			for ( int i = 0; i < 8; ++i )
+			{
+				if ( i != movieType )
+				{
+					// clean the other end stage credits.
+					DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
+					DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
+				}
+			}
+#ifdef MUSIC
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS || movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+			{
+				// win crawls.
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+				{
+					introstage = 4;
+					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+					DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+					int c;
+					for ( c = 0; c < 30; c++ )
+					{
+						DLCendmoviealpha[movieType][c] = 0;
+					}
+					fadeout = true;
+				}
+				else
+				{
+					fadefinished = false;
+					fadeout = false;
+					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+					movie = true;
+				}
+			}
+			else
+			{
+				// mid-game sequences
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+				{
+					int c;
+					for ( c = 0; c < 30; c++ )
+					{
+						DLCendmoviealpha[movieType][c] = 0;
+					}
+					fadefinished = false;
+					fadeout = false;
+					if ( multiplayer != CLIENT )
+					{
+						movie = false; // allow normal pause screen.
+						DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+						DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+						introstage = 1; // return to normal game functionality
+						if ( movieType == MOVIE_MIDGAME_HERX_MONSTERS )
+						{
+							skipLevelsOnLoad = 5;
+						}
+						else
+						{
+							skipLevelsOnLoad = 0;
+						}
+						loadnextlevel = true; // load the next level.
+						pauseGame(1, false); // unpause game
+					}
+				}
+				else
+				{
+					fadefinished = false;
+					fadeout = false;
+					DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+					movie = true;
+				}
+			}
+		}
+		else if ( introstage >= 16 && introstage <= 18 )     // expansion end game sequence DLC
+		{
+			int movieType = introstage - 11;
+			for ( int i = 0; i < 8; ++i )
+			{
+				if ( i != movieType )
+				{
+					// clean the other end stage credits.
+					DLCendmovieStageAndTime[i][MOVIE_STAGE] = 0;
+					DLCendmovieStageAndTime[i][MOVIE_TIME] = 0;
+				}
+			}
+#ifdef MUSIC
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 0 )
+			{
+				playmusic(endgamemusic, true, true, false);
+			}
+#endif
+			DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+			{
+				int c;
+				for ( c = 0; c < 30; c++ )
+				{
+					DLCendmoviealpha[movieType][c] = 0;
+				}
+				introstage = 4;
+				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE] = 0;
+				fadeout = true;
+			}
+			else
+			{
+				fadefinished = false;
+				fadeout = false;
+				DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
 				movie = true;
 			}
 		}
@@ -9244,6 +9428,321 @@ void handleMainMenu(bool mode)
 			}
 		}
 		if ( fourthendmoviestage >= 13 )
+		{
+			fadealpha = std::min(fadealpha + 2, 255);
+		}
+	}
+
+	// new end movie stage
+	int movieType = -1;
+	for ( int i = 0; i < 8; ++i )
+	{
+		if ( DLCendmovieStageAndTime[i][MOVIE_STAGE] > 0 )
+		{
+			movieType = i;
+			break;
+		}
+	}
+	if ( movieType >= MOVIE_MIDGAME_HERX_MONSTERS && movieType <= MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_minotaur_bmp->w) * backdrop_minotaur_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_minotaur_bmp, NULL, &pos);
+
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
+			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1) )
+		{
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < DLCendmovieNumLines[movieType] )
+			{
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			}
+			else if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == DLCendmovieNumLines[movieType] )
+			{
+				if ( movieType == MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+					|| movieType == MOVIE_MIDGAME_BAPHOMET_MONSTERS
+					|| movieType == MOVIE_MIDGAME_HERX_MONSTERS )
+				{
+					// midgame - clients pause until host continues.
+					if ( multiplayer != CLIENT )
+					{
+						fadeout = true;
+						++DLCendmovieStageAndTime[movieType][MOVIE_STAGE];
+					}
+				}
+				else
+				{
+					// endgame - fade and return to credits.
+					if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS
+						|| movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+					{
+						// classic mode end.
+						introstage = 11 + movieType;
+					}
+					fadeout = true;
+				}
+			}
+		}
+
+		std::vector<char*> langEntries;
+		switch ( movieType )
+		{
+			case MOVIE_MIDGAME_HERX_MONSTERS:
+				langEntries.push_back(language[3771]);
+				langEntries.push_back(language[3772]);
+				langEntries.push_back(language[3773]);
+				langEntries.push_back(language[3774]);
+				langEntries.push_back(language[3775]);
+				break;
+			case MOVIE_MIDGAME_BAPHOMET_MONSTERS:
+				langEntries.push_back(language[3776]);
+				langEntries.push_back(language[3777]);
+				langEntries.push_back(language[3778]);
+				langEntries.push_back(language[3779]);
+				langEntries.push_back(language[3780]);
+				langEntries.push_back(language[3781]);
+				break;
+			case MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON:
+				langEntries.push_back(language[3782]);
+				langEntries.push_back(language[3783]);
+				langEntries.push_back(language[3784]);
+				langEntries.push_back(language[3785]);
+				langEntries.push_back(language[3786]);
+				langEntries.push_back(language[3787]);
+				break;
+			case MOVIE_CLASSIC_WIN_MONSTERS:
+				langEntries.push_back(language[3788]);
+				langEntries.push_back(language[3789]);
+				langEntries.push_back(language[3790]);
+				langEntries.push_back(language[3791]);
+				break;
+			case MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS:
+				langEntries.push_back(language[3792]);
+				langEntries.push_back(language[3793]);
+				langEntries.push_back(language[3794]);
+				langEntries.push_back(language[3795]);
+				langEntries.push_back(language[3796]);
+				langEntries.push_back(language[3797]);
+				break;
+			default:
+				break;
+		}
+
+		Uint32 color = 0x00FFFFFF;
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
+		{
+			DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue
+		}
+
+		int index = 0;
+		for ( index = 0; index < DLCendmovieNumLines[movieType]; ++index )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= index + 2 && langEntries.size() > index )
+			{
+				DLCendmoviealpha[movieType][index] = std::min(DLCendmoviealpha[movieType][index] + 2, 255);
+				color = 0x00FFFFFF;
+				color += std::min(std::max(0, DLCendmoviealpha[movieType][index]), 255) << 24;
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(index));
+			}
+		}
+		index = DLCendmovieNumLines[movieType];
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= index + 2 )
+		{
+			DLCendmoviealpha[movieType][index] = std::min(DLCendmoviealpha[movieType][index] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][4]), 255) << 24;
+			if ( multiplayer == CLIENT )
+			{
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
+			}
+			else
+			{
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
+			}
+		}
+	}
+	else if ( movieType > MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS )
+	{
+		SDL_Rect pos;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((real_t)xres) / backdrop_blessed_bmp->w) * backdrop_blessed_bmp->h;
+		drawRect(&pos, 0, 255);
+		drawImageScaled(backdrop_blessed_bmp, NULL, &pos);
+
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 600
+			|| (mousestatus[SDL_BUTTON_LEFT]
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 10
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 5
+				&& DLCendmovieStageAndTime[movieType][MOVIE_STAGE] != 1)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 120 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 1)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 60 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 5)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 240 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 10)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 200 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 11)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 60 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 12)
+			|| (DLCendmovieStageAndTime[movieType][MOVIE_TIME] >= 400 && DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == 13)
+			)
+		{
+			DLCendmovieStageAndTime[movieType][MOVIE_TIME] = 0;
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < DLCendmovieNumLines[movieType] )
+			{
+				DLCendmovieStageAndTime[movieType][MOVIE_STAGE]++;
+			}
+			else if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] == DLCendmovieNumLines[movieType] )
+			{
+				fadeout = true;
+				introstage = 11 + movieType;
+			}
+		}
+
+		std::vector<char*> langEntries;
+		switch ( movieType )
+		{
+			case MOVIE_WIN_AUTOMATON:
+				langEntries.push_back(language[3798]);
+				langEntries.push_back(language[3799]);
+				langEntries.push_back(language[3800]);
+				langEntries.push_back(language[3801]);
+				langEntries.push_back(language[3802]);
+				langEntries.push_back(language[3803]);
+				langEntries.push_back(language[3804]);
+				break;
+			case MOVIE_WIN_DEMONS_UNDEAD:
+				langEntries.push_back(language[3805]);
+				langEntries.push_back(language[3806]);
+				langEntries.push_back(language[3807]);
+				langEntries.push_back(language[3808]);
+				langEntries.push_back(language[3809]);
+				langEntries.push_back(language[3810]);
+				langEntries.push_back(language[3811]);
+				break;
+			case MOVIE_WIN_BEASTS:
+				langEntries.push_back(language[3812]);
+				langEntries.push_back(language[3813]);
+				langEntries.push_back(language[3814]);
+				langEntries.push_back(language[3815]);
+				langEntries.push_back(language[3816]);
+				langEntries.push_back(language[3817]);
+				langEntries.push_back(language[3818]);
+				break;
+			default:
+				break;
+		}
+
+		Uint32 color = 0x00FFFFFF;
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
+		{
+			DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue.
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 2 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 5 )
+			{
+				DLCendmoviealpha[movieType][0] = std::min(DLCendmoviealpha[movieType][0] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][0]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(0));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 3 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 5 )
+			{
+				DLCendmoviealpha[movieType][1] = std::min(DLCendmoviealpha[movieType][1] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][1]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(1));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 4 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 5 )
+			{
+				DLCendmoviealpha[movieType][2] = std::min(DLCendmoviealpha[movieType][2] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][2]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(2));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 5 )
+		{
+			DLCendmoviealpha[movieType][0] = std::max(DLCendmoviealpha[movieType][2] - 2, 0);
+			DLCendmoviealpha[movieType][1] = std::max(DLCendmoviealpha[movieType][2] - 2, 0);
+			DLCendmoviealpha[movieType][2] = std::max(DLCendmoviealpha[movieType][2] - 2, 0);
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 6 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][3] = std::min(DLCendmoviealpha[movieType][3] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][3]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(3));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 7 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][4] = std::min(DLCendmoviealpha[movieType][4] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][4]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(4));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 8 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][5] = std::min(DLCendmoviealpha[movieType][5] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][5]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(5));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 9 )
+		{
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] < 10 )
+			{
+				DLCendmoviealpha[movieType][6] = std::min(DLCendmoviealpha[movieType][6] + 2, 255);
+			}
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][6]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(6));
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 10 )
+		{
+			DLCendmoviealpha[movieType][3] = std::max(DLCendmoviealpha[movieType][3] - 2, 0);
+			DLCendmoviealpha[movieType][4] = std::max(DLCendmoviealpha[movieType][4] - 2, 0);
+			DLCendmoviealpha[movieType][5] = std::max(DLCendmoviealpha[movieType][5] - 2, 0);
+			DLCendmoviealpha[movieType][6] = std::max(DLCendmoviealpha[movieType][6] - 2, 0);
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 11 )
+		{
+			DLCendmoviealpha[movieType][7] = std::min(DLCendmoviealpha[movieType][7] + 2, 255);
+			color = 0x00FFFFFF;
+			color += std::min(std::max(0, DLCendmoviealpha[movieType][7]), 255) << 24;
+			ttfPrintTextColor(ttf16, 16 + (xres / 2) - 256, (yres / 2) - 64, color, true, language[2614]);
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_TIME] % 50 == 0 )
+			{
+				steamAchievement("BARONY_ACH_ALWAYS_WAITING");
+			}
+		}
+		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 13 )
 		{
 			fadealpha = std::min(fadealpha + 2, 255);
 		}

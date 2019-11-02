@@ -136,6 +136,13 @@ void gameLogic(void)
 	{
 		fourthendmovietime++;
 	}
+	for ( int i = 0; i < 8; ++i )
+	{
+		if ( DLCendmovieStageAndTime[i][MOVIE_STAGE] > 0 )
+		{
+			DLCendmovieStageAndTime[i][MOVIE_TIME]++;
+		}
+	}
 
 #ifdef STEAMWORKS
 	if ( ticks % 500 == 0 && SteamUser()->BLoggedOn() )
