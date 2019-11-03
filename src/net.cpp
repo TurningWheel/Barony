@@ -2490,11 +2490,21 @@ void clientHandlePacket()
 			return;
 		}
 
-		if ( introstage == 9 )
+		if ( introstage == 9
+			|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON
+			|| introstage == 11 + MOVIE_MIDGAME_BAPHOMET_MONSTERS
+			|| introstage == 11 + MOVIE_MIDGAME_HERX_MONSTERS )
 		{
 			thirdendmovietime = 0;
-			movie = false; // allow normal pause screen.
 			thirdendmoviestage = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_HERX_MONSTERS][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_HERX_MONSTERS][MOVIE_TIME] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_MONSTERS][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_MONSTERS][MOVIE_TIME] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON][MOVIE_STAGE] = 0;
+			DLCendmovieStageAndTime[MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON][MOVIE_TIME] = 0;
+
+			movie = false; // allow normal pause screen.
 			introstage = 1; // return to normal game functionality
 			pauseGame(1, false); // unpause game
 		}

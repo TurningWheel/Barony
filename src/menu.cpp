@@ -270,15 +270,18 @@ int DLCendmovieStageAndTime[8][2] = { 0 };
 
 int DLCendmovieNumLines[8] = 
 {
-	6,	// MOVIE_MIDGAME_HERX_MONSTERS,
-	7,	// MOVIE_MIDGAME_BAPHOMET_MONSTERS,
-	7,	// MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON,
+	7,	// MOVIE_MIDGAME_HERX_MONSTERS,
+	8,	// MOVIE_MIDGAME_BAPHOMET_MONSTERS,
+	8,	// MOVIE_MIDGAME_BAPHOMET_HUMAN_AUTOMATON,
 	5,	// MOVIE_CLASSIC_WIN_MONSTERS,
 	7,	// MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS,
 	13,	// MOVIE_WIN_AUTOMATON,
 	13,	// MOVIE_WIN_DEMONS_UNDEAD,
 	13	// MOVIE_WIN_BEASTS
 };
+char epilogueHostName[128] = "";
+int epilogueHostRace = 0;
+int epilogueMultiplayerType = SINGLE;
 
 //Confirm resolution window stuff.
 bool resolutionChanged = false;
@@ -8207,6 +8210,9 @@ void handleMainMenu(bool mode)
 			{
 				if ( stats[0] )
 				{
+					strcpy(epilogueHostName, stats[0]->name);
+					epilogueHostRace = stats[0]->playerRace;
+					epilogueMultiplayerType = multiplayer;
 					if ( victory == 1 && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
 					{
 						// herx defeat by monsters.
@@ -9100,6 +9106,21 @@ void handleMainMenu(bool mode)
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+
+			int titlex = 16;
+			int titley = 12;
+			// epilogues
+			if ( epilogueMultiplayerType == CLIENT )
+			{
+				if ( strcmp(epilogueHostName, "") )
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+				}
+			}
+			else
+			{
+				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+			}
 		}
 		if ( firstendmoviestage >= 2 )
 		{
@@ -9163,6 +9184,21 @@ void handleMainMenu(bool mode)
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
+
+			int titlex = 16;
+			int titley = 12;
+			// epilogues
+			if ( epilogueMultiplayerType == CLIENT )
+			{
+				if ( strcmp(epilogueHostName, "") )
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+				}
+			}
+			else
+			{
+				ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+			}
 		}
 		if ( secondendmoviestage >= 2 )
 		{
@@ -9240,10 +9276,49 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( thirdendmoviestage >= 1 )
 		{
-			thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255);
+			if ( thirdendmoviestage >= 6 )
+			{
+				thirdendmoviealpha[8] = std::max(thirdendmoviealpha[8] - 4, 0); // click to continue decrease alpha
+				if ( thirdendmoviealpha[8] == 0 )
+				{
+					thirdendmoviealpha[10] = std::min(thirdendmoviealpha[10] + 4, 255);
+					color = 0x00FFFFFF;
+					color += std::min(std::max(0, thirdendmoviealpha[10]), 255) << 24;
+					if ( multiplayer == CLIENT )
+					{
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+					}
+					else
+					{
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+					}
+				}
+			}
+			else
+			{
+				thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255); // click to continue increase alpha
+			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+
+			if ( stats[0] )
+			{
+				int titlex = 16;
+				int titley = 12;
+				// interludes
+				if ( multiplayer == CLIENT )
+				{
+					if ( strcmp(stats[0]->name, "") )
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + stats[0]->playerRace]); // says who's story type it is.
+					}
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + stats[0]->playerRace]); // says who's story type it is.
+				}
+			}
 		}
 		if ( thirdendmoviestage >= 2 )
 		{
@@ -9272,20 +9347,6 @@ void handleMainMenu(bool mode)
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[3]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
-		}
-		if ( thirdendmoviestage >= 6 )
-		{
-			thirdendmoviealpha[4] = std::min(thirdendmoviealpha[4] + 2, 255);
-			color = 0x00FFFFFF;
-			color += std::min(std::max(0, thirdendmoviealpha[4]), 255) << 24;
-			if ( multiplayer == CLIENT )
-			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
-			}
-			else
-			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
-			}
 		}
 	}
 	// fourth (expansion) end movie stage
@@ -9332,6 +9393,33 @@ void handleMainMenu(bool mode)
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
+
+			if ( stats[0] )
+			{
+				color = 0x00FFFFFF;
+				if ( fourthendmoviestage >= 10 )
+				{
+					fourthendmoviealpha[9] = std::max(fourthendmoviealpha[9] - 2, 0);
+				}
+				else
+				{
+					fourthendmoviealpha[9] = std::min(fourthendmoviealpha[9] + 2, 255);
+				}
+				color += std::min(std::max(0, fourthendmoviealpha[9]), 255) << 24;
+				int titlex = 16;
+				int titley = 12;
+				if ( epilogueMultiplayerType == CLIENT )
+				{
+					if ( strcmp(epilogueHostName, "") )
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+					}
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // singleplayer story
+				}
+			}
 		}
 		if ( fourthendmoviestage >= 2 )
 		{
@@ -9536,10 +9624,70 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
 		{
-			DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255);
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+			{
+				DLCendmoviealpha[movieType][8] = std::max(DLCendmoviealpha[movieType][8] - 4, 0); // click to continue decrease alpha
+				if ( DLCendmoviealpha[movieType][8] == 0 )
+				{
+					DLCendmoviealpha[movieType][10] = std::min(DLCendmoviealpha[movieType][10] + 4, 255);
+					color = 0x00FFFFFF;
+					color += std::min(std::max(0, DLCendmoviealpha[movieType][10]), 255) << 24;
+					if ( multiplayer == CLIENT )
+					{
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+					}
+					else
+					{
+						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+					}
+				}
+			}
+			else
+			{
+				DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255); // click to continue increase alpha
+			}
+
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue
+
+			if ( stats[0] )
+			{
+				int titlex = 16;
+				int titley = 12;
+
+				if ( movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS
+					|| movieType == MOVIE_CLASSIC_WIN_MONSTERS )
+				{
+					// epilogues
+					if ( epilogueMultiplayerType == CLIENT )
+					{
+						if ( strcmp(epilogueHostName, "") )
+						{
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+						}
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // says who's story type it is
+					}
+				}
+				else
+				{
+					// interludes
+					if ( multiplayer == CLIENT )
+					{
+						if ( strcmp(stats[0]->name, "") )
+						{
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + stats[0]->playerRace]); // says who's story type it is.
+						}
+					}
+					else
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + stats[0]->playerRace]); // says who's story type it is.
+					}
+				}
+			}
 		}
 
 		int index = 0;
@@ -9551,21 +9699,6 @@ void handleMainMenu(bool mode)
 				color = 0x00FFFFFF;
 				color += std::min(std::max(0, DLCendmoviealpha[movieType][index]), 255) << 24;
 				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, langEntries.at(index));
-			}
-		}
-		index = DLCendmovieNumLines[movieType];
-		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= index + 2 )
-		{
-			DLCendmoviealpha[movieType][index] = std::min(DLCendmoviealpha[movieType][index] + 2, 255);
-			color = 0x00FFFFFF;
-			color += std::min(std::max(0, DLCendmoviealpha[movieType][4]), 255) << 24;
-			if ( multiplayer == CLIENT )
-			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
-			}
-			else
-			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
 			}
 		}
 	}
@@ -9643,10 +9776,44 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
 		{
-			DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255);
+			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 10 )
+			{
+				DLCendmoviealpha[movieType][8] = std::max(DLCendmoviealpha[movieType][8] - 2, 0);
+			}
+			else
+			{
+				DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255);
+			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, DLCendmoviealpha[movieType][8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]); // click to continue.
+
+			if ( stats[0] )
+			{
+				color = 0x00FFFFFF;
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 10 )
+				{
+					DLCendmoviealpha[movieType][9] = std::max(DLCendmoviealpha[movieType][9] - 2, 0);
+				}
+				else
+				{
+					DLCendmoviealpha[movieType][9] = std::min(DLCendmoviealpha[movieType][9] + 2, 255);
+				}
+				color += std::min(std::max(0, DLCendmoviealpha[movieType][9]), 255) << 24;
+				int titlex = 16;
+				int titley = 12;
+				if ( epilogueMultiplayerType == CLIENT )
+				{
+					if ( strcmp(epilogueHostName, "") )
+					{
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3819], epilogueHostName, language[3821 + epilogueHostRace]); // says who's story type it is.
+					}
+				}
+				else
+				{
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3830], language[3821 + epilogueHostRace]); // singleplayer story
+				}
+			}
 		}
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 2 )
 		{
