@@ -3527,7 +3527,7 @@ void clientHandlePacket()
 			{
 				if ( entity->behavior == &actWinningPortal )
 				{
-					entity->flags[INVISIBLE] = false;
+					//entity->flags[INVISIBLE] = false;
 				}
 			}
 			else if ( strstr(map.name, "Boss") )

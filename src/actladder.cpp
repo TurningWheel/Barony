@@ -319,11 +319,6 @@ void actWinningPortal(Entity* my)
 					}
 				}
 			}
-			else
-			{
-				// hell map doesn't need signal.
-				my->flags[INVISIBLE] = false;
-			}
 		}
 		else
 		{
@@ -599,7 +594,7 @@ void Entity::actMidGamePortal()
 						Stat* stats = entity->getStats();
 						if ( stats )
 						{
-							if ( stats->type == LICH )
+							if ( stats->type == LICH || stats->type == DEVIL )
 							{
 								return;
 							}
@@ -622,11 +617,6 @@ void Entity::actMidGamePortal()
 						portalFireAnimation = 1;
 					}
 				}
-			}
-			else
-			{
-				// hell map doesn't need signal.
-				flags[INVISIBLE] = false;
 			}
 		}
 		else

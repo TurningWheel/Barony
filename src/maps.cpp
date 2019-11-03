@@ -4089,6 +4089,8 @@ void assignActions(map_t* map)
 				if ( strstr(map->name, "Hell") )
 				{
 					entity->skill[4] = 2;
+					entity->flags[INVISIBLE] = true;
+					entity->skill[28] = 1; // is a mechanism
 				}
 				else
 				{
