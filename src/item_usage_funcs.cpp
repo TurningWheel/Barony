@@ -481,6 +481,15 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
 	}
 	stats->HUNGER += 100;
+	if ( entity->behavior == &actPlayer )
+	{
+		if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		{
+			stats->HUNGER += 300;
+		}
+		// results of eating
+		updateHungerMessages(entity, stats, item);
+	}
 	entity->modHP(5 * (1 + item->beatitude));
 	serverUpdateEffects(player);
 
@@ -596,6 +605,13 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		}
 		stats->HUNGER += 50;
 		entity->modHP(5);
+		if ( entity->behavior == &actPlayer )
+		{
+			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				stats->HUNGER += 200;
+			}
+		}
 		serverUpdateEffects(player);
 	}
 	else
@@ -603,7 +619,17 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, language[760]);
 		stats->HUNGER += 50;
 		entity->modHP(5 * (1 + item->beatitude));
+		if ( entity->behavior == &actPlayer )
+		{
+			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				stats->HUNGER += 200;
+			}
+		}
 	}
+
+	// results of eating
+	updateHungerMessages(entity, stats, item);
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
@@ -3985,6 +4011,10 @@ void item_Food(Item*& item, int player)
 	{
 		pukeChance = 100; // shapeshifted players don't puke
 	}
+	if ( player >= 0 && stats[player]->type == INSECTOID )
+	{
+		pukeChance = 100; // insectoids can eat anything.
+	}
 
 	if (((item->beatitude < 0 && item->type != FOOD_CREAMPIE) || (rand() % pukeChance == 0)) && pukeChance < 100)
 	{
@@ -4026,44 +4056,50 @@ void item_Food(Item*& item, int player)
 	// replenish nutrition points
 	if ( svFlags & SV_FLAG_HUNGER )
 	{
+		int hungerIncrease = 10;
 		switch ( item->type )
 		{
 			case FOOD_BREAD:
-				stats[player]->HUNGER += 400;
+				hungerIncrease += 400;
 				break;
 			case FOOD_CREAMPIE:
-				stats[player]->HUNGER += 200;
+				hungerIncrease += 200;
 				break;
 			case FOOD_CHEESE:
-				stats[player]->HUNGER += 100;
+				hungerIncrease += 100;
 				break;
 			case FOOD_APPLE:
-				stats[player]->HUNGER += 200;
+				hungerIncrease += 200;
 				break;
 			case FOOD_MEAT:
-				stats[player]->HUNGER += 600;
+				hungerIncrease += 600;
 				break;
 			case FOOD_FISH:
-				stats[player]->HUNGER += 500;
+				hungerIncrease += 500;
 				break;
 			case FOOD_TOMALLEY:
-				stats[player]->HUNGER += 400;
+				hungerIncrease += 400;
 				break;
 			case FOOD_BLOOD:
 				if ( players[player] && players[player]->entity 
 					&& players[player]->entity->playerRequiresBloodToSustain() )
 				{
-					stats[player]->HUNGER += 250;
+					hungerIncrease += 250;
 				}
 				else
 				{
-					stats[player]->HUNGER += 10;
+					hungerIncrease += 10;
 				}
 				break;
 			default:
-				stats[player]->HUNGER += 10;
+				hungerIncrease += 10;
 				break;
 		}
+		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			hungerIncrease *= 2;
+		}
+		stats[player]->HUNGER += hungerIncrease;
 	}
 	else
 	{
@@ -4080,56 +4116,10 @@ void item_Food(Item*& item, int player)
 	}
 
 	// results of eating
-	if ( (svFlags & SV_FLAG_HUNGER) )
+	if ( players[player] )
 	{
-		if ( stats[player]->HUNGER <= 250 )
-		{
-			messagePlayer(player, language[912]);
-		}
-		else if ( stats[player]->HUNGER < 500 )
-		{
-			messagePlayer(player, language[913]);
-		}
-		else if ( stats[player]->HUNGER < 1000 )
-		{
-			messagePlayer(player, language[914], item->getName());
-		}
-		else if ( stats[player]->HUNGER < 1500 )
-		{
-			messagePlayer(player, language[915]);
-		}
-		else if ( stats[player]->HUNGER < 2000 )
-		{
-			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
-			{
-				messagePlayer(player, language[916]); // shapeshifted players don't puke
-			}
-			else if (rand() % 3)
-			{
-				messagePlayer(player, language[916]);
-			}
-			else
-			{
-				messagePlayer(player, language[917]);
-				players[player]->entity->skill[26] = 40 + rand() % 10;
-			}
-		}
-		else
-		{
-			if ( players[player] && players[player]->entity && players[player]->entity->effectShapeshift != NOTHING )
-			{
-				messagePlayer(player, language[916]); // shapeshifted players don't puke
-			}
-			else
-			{
-				messagePlayer(player, language[917]);
-				players[player]->entity->skill[26] = 40 + rand() % 10;
-			}
-		}
+		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
-
-	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
-	serverUpdateHunger(player);
 	consumeItem(item, player);
 }
 
@@ -4326,6 +4316,10 @@ void item_FoodTin(Item*& item, int player)
 	if (svFlags & SV_FLAG_HUNGER)
 	{
 		stats[player]->HUNGER += 600;
+		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			stats[player]->HUNGER += 600; // doubled.
+		}
 		stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
 		stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
 		stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
@@ -4350,51 +4344,16 @@ void item_FoodTin(Item*& item, int player)
 	}
 
 	// results of eating
-	if ( svFlags & SV_FLAG_HUNGER )
+	if ( players[player] )
 	{
-		if ( stats[player]->HUNGER <= 250 )
-		{
-			messagePlayer(player, language[912]);
-		}
-		else if ( stats[player]->HUNGER < 500 )
-		{
-			messagePlayer(player, language[913]);
-		}
-		else if ( stats[player]->HUNGER < 1000 )
-		{
-			messagePlayer(player, language[914], item->getName());
-		}
-		else if ( stats[player]->HUNGER < 1500 )
-		{
-			messagePlayer(player, language[915]);
-		}
-		else if ( stats[player]->HUNGER < 2000 )
-		{
-			if (rand() % 3)
-			{
-				messagePlayer(player, language[916]);
-			}
-			else
-			{
-				messagePlayer(player, language[917]);
-				players[player]->entity->skill[26] = 40 + rand() % 10;
-			}
-		}
-		else
-		{
-			messagePlayer(player, language[917]);
-			players[player]->entity->skill[26] = 40 + rand() % 10;
-		}
+		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
-
-	stats[player]->HUNGER = std::min(stats[player]->HUNGER, 2000);
 
 	if ( (hpBuff || mpBuff) && (svFlags & SV_FLAG_HUNGER) )
 	{
 		messagePlayer(player, language[911]);
 	}
 
-	serverUpdateHunger(player);
 	consumeItem(item, player);
 }
 
@@ -5077,4 +5036,53 @@ bool itemIsConsumableByAutomaton(const Item& item)
 			break;
 	}
 	return false;
+}
+
+void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
+{
+	if ( !myStats || !eaten || !my)
+	{
+		return;
+	}
+	if ( my->behavior != &actPlayer )
+	{
+		return;
+	}
+	if ( (svFlags & SV_FLAG_HUNGER) )
+	{
+		if ( myStats->HUNGER <= 250 )
+		{
+			messagePlayer(my->skill[2], language[912]);
+		}
+		else if ( myStats->HUNGER < 500 )
+		{
+			messagePlayer(my->skill[2], language[913]);
+		}
+		else if ( myStats->HUNGER < 1000 )
+		{
+			messagePlayer(my->skill[2], language[914], eaten->getName());
+		}
+		else if ( myStats->HUNGER < 1500 )
+		{
+			messagePlayer(my->skill[2], language[915]);
+		}
+		else if ( myStats->HUNGER < 2000 )
+		{
+			if ( my->effectShapeshift != NOTHING )
+			{
+				messagePlayer(my->skill[2], language[916]); // shapeshifted players don't puke
+			}
+			else if ( rand() % 3 )
+			{
+				messagePlayer(my->skill[2], language[916]);
+			}
+			else
+			{
+				messagePlayer(my->skill[2], language[917]);
+				my->skill[26] = 40 + rand() % 10;
+			}
+		}
+	}
+	myStats->HUNGER = std::min(myStats->HUNGER, 2000);
+	serverUpdateHunger(my->skill[2]);
 }

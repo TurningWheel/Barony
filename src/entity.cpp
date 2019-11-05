@@ -3300,6 +3300,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 	else if ( myStats->MP < myStats->MAXMP )
 	{
+		messagePlayer(0, "%d", myStats->HUNGER);
 		int manaRegenInterval = getManaRegenInterval(*myStats);
 		// summons don't regen MP. we use this to refund mana to the caster.
 		if ( !(this->behavior == &actMonster && this->monsterAllySummonRank != 0) )
@@ -3313,49 +3314,22 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					if ( svFlags & SV_FLAG_HUNGER )
 					{
-						int hungerLoss = 10;
+						int hungerLoss = 5;
+						if ( (myStats->MP / static_cast<real_t>(myStats->MAXMP)) <= 0.2 )
+						{
+							hungerLoss *= 2;
+						}
 						int modHunger = myStats->HUNGER % 50;
-						if ( modHunger < 10 )
+						if ( modHunger < 5 && modHunger > 0 )
 						{
 							hungerLoss = modHunger;
 							// if we had 259 hunger, then modHunger is 9.
-							// this will trigger a serverUpdateHunger() when it ticks down to a round interval (50/150/250)
 						}
 						myStats->HUNGER = std::max(0, myStats->HUNGER - hungerLoss);
-						if ( myStats->HUNGER == 1500 )
+						if ( myStats->HUNGER % 50 == 0 && myStats->HUNGER != 0 )
 						{
-							if ( !myStats->EFFECTS[EFF_VOMITING] )
-							{
-								messagePlayer(player, language[629]);
-							}
-							serverUpdateHunger(player);
-						}
-						else if ( myStats->HUNGER == 250 )
-						{
-							if ( !myStats->EFFECTS[EFF_VOMITING] )
-							{
-								messagePlayer(player, language[630]);
-								playSoundPlayer(player, 32, 128);
-							}
-							serverUpdateHunger(player);
-						}
-						else if ( myStats->HUNGER == 150 )
-						{
-							if ( !myStats->EFFECTS[EFF_VOMITING] )
-							{
-								messagePlayer(player, language[631]);
-								playSoundPlayer(player, 32, 128);
-							}
-							serverUpdateHunger(player);
-						}
-						else if ( myStats->HUNGER == 50 )
-						{
-							if ( !myStats->EFFECTS[EFF_VOMITING] )
-							{
-								messagePlayer(player, language[632]);
-								playSoundPlayer(player, 32, 128);
-							}
-							serverUpdateHunger(player);
+							myStats->HUNGER++;
+							// this will trigger a serverUpdateHunger() when it ticks down to a round interval (50/150/250)
 						}
 					}
 				}
@@ -15321,9 +15295,18 @@ int Entity::getBaseManaRegen(Stat& myStats)
 		multipliedTotal += amount;
 	}
 
-	if ( myStats.type == INSECTOID )
+	if ( behavior == &actPlayer && myStats.type == INSECTOID )
 	{
-		return ((MAGIC_REGEN_TIME / 2) - static_cast<int>(std::min(multipliedTotal, 100))); // return 150-50 ticks, 3-1 seconds.
+		int base = MAGIC_REGEN_TIME / 3;
+		if ( myStats.HUNGER < 50 )
+		{
+			base = MAGIC_REGEN_TIME * 3;
+		}
+		else if ( myStats.HUNGER < 250 )
+		{
+			base = MAGIC_REGEN_TIME;
+		}
+		return (base - static_cast<int>(std::min(multipliedTotal, 100))); // return 100-33 ticks, 2-0.67 seconds.
 	}
 
 	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
