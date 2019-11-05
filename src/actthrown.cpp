@@ -639,7 +639,7 @@ void actThrown(Entity* my)
 							{
 								if ( item->type == BOOMERANG )
 								{
-									damage *= damagetables[hitstats->type][4]; // ranged damage tables.
+									//damage *= damagetables[hitstats->type][4]; // ranged damage tables.
 								}
 								damage -= (AC(hit.entity->getStats()) * .5);
 							}
