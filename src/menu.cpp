@@ -8211,21 +8211,25 @@ void handleMainMenu(bool mode)
 				if ( stats[0] )
 				{
 					strcpy(epilogueHostName, stats[0]->name);
-					epilogueHostRace = stats[0]->playerRace;
+					epilogueHostRace = RACE_HUMAN;
+					if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+					{
+						epilogueHostRace = stats[0]->playerRace;
+					}
 					epilogueMultiplayerType = multiplayer;
-					if ( victory == 1 && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					if ( victory == 1 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
 					{
 						// herx defeat by monsters.
 						movieCrawlType = MOVIE_CLASSIC_WIN_MONSTERS;
 					}
-					else if ( victory == 2 && stats[0]->playerRace > 0 && stats[0]->playerRace != RACE_AUTOMATON )
+					else if ( victory == 2 && epilogueHostRace > 0 && epilogueHostRace != RACE_AUTOMATON )
 					{
 						// baphomet defeat by monsters.
 						movieCrawlType = MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS;
 					}
 					else if ( victory == 3 )
 					{
-						switch ( stats[0]->playerRace )
+						switch ( epilogueHostRace )
 						{
 							case RACE_AUTOMATON:
 								movieCrawlType = MOVIE_WIN_AUTOMATON;
@@ -9306,17 +9310,22 @@ void handleMainMenu(bool mode)
 			{
 				int titlex = 16;
 				int titley = 12;
+				int race = RACE_HUMAN;
+				if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+				{
+					race = stats[0]->playerRace;
+				}
 				// interludes
 				if ( multiplayer == CLIENT )
 				{
 					if ( strcmp(stats[0]->name, "") )
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + stats[0]->playerRace]); // says who's story type it is.
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + race]); // says who's story type it is.
 					}
 				}
 				else
 				{
-					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + stats[0]->playerRace]); // says who's story type it is.
+					ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + race]); // says who's story type it is.
 				}
 			}
 		}
@@ -9624,22 +9633,31 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= 1 )
 		{
-			if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
+			if ( !(movieType == MOVIE_CLASSIC_WIN_BAPHOMET_MONSTERS
+				|| movieType == MOVIE_CLASSIC_WIN_MONSTERS) )
 			{
-				DLCendmoviealpha[movieType][8] = std::max(DLCendmoviealpha[movieType][8] - 4, 0); // click to continue decrease alpha
-				if ( DLCendmoviealpha[movieType][8] == 0 )
+				// only do this on interludes, not intermission.
+				if ( DLCendmovieStageAndTime[movieType][MOVIE_STAGE] >= DLCendmovieNumLines[movieType] )
 				{
-					DLCendmoviealpha[movieType][10] = std::min(DLCendmoviealpha[movieType][10] + 4, 255);
-					color = 0x00FFFFFF;
-					color += std::min(std::max(0, DLCendmoviealpha[movieType][10]), 255) << 24;
-					if ( multiplayer == CLIENT )
+					DLCendmoviealpha[movieType][8] = std::max(DLCendmoviealpha[movieType][8] - 4, 0); // click to continue decrease alpha
+					if ( DLCendmoviealpha[movieType][8] == 0 )
 					{
-						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+						DLCendmoviealpha[movieType][10] = std::min(DLCendmoviealpha[movieType][10] + 4, 255);
+						color = 0x00FFFFFF;
+						color += std::min(std::max(0, DLCendmoviealpha[movieType][10]), 255) << 24;
+						if ( multiplayer == CLIENT )
+						{
+							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3833]);
+						}
+						else
+						{
+							ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
+						}
 					}
-					else
-					{
-						ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[3832]);
-					}
+				}
+				else
+				{
+					DLCendmoviealpha[movieType][8] = std::min(DLCendmoviealpha[movieType][8] + 2, 255); // click to continue increase alpha
 				}
 			}
 			else
@@ -9674,17 +9692,22 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
+					int race = RACE_HUMAN;
+					if ( stats[0]->playerRace > 0 && stats[0]->appearance == 0 )
+					{
+						race = stats[0]->playerRace;
+					}
 					// interludes
 					if ( multiplayer == CLIENT )
 					{
 						if ( strcmp(stats[0]->name, "") )
 						{
-							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + stats[0]->playerRace]); // says who's story type it is.
+							ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3820], stats[0]->name, language[3821 + race]); // says who's story type it is.
 						}
 					}
 					else
 					{
-						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + stats[0]->playerRace]); // says who's story type it is.
+						ttfPrintTextFormattedColor(ttf16, titlex, titley, color, language[3831], language[3821 + race]); // says who's story type it is.
 					}
 				}
 			}
