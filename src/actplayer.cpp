@@ -3475,7 +3475,7 @@ void actPlayer(Entity* my)
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
 			// bumping into monsters disturbs them
-			if ( hit.entity && !everybodyfriendly )
+			if ( hit.entity && !everybodyfriendly && clientnum == 0 )
 			{
 				if ( hit.entity->behavior == &actMonster )
 				{
@@ -3490,6 +3490,10 @@ void actPlayer(Entity* my)
 							hit.entity->fskill[4] = tangent;
 						}
 					}
+				}
+				else if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] && hit.entity->behavior == &actDoor )
+				{
+					hit.entity->doorHealth = 0;
 				}
 			}
 		}
@@ -3527,6 +3531,10 @@ void actPlayer(Entity* my)
 							hit.entity->fskill[4] = tangent;
 						}
 					}
+				}
+				else if ( stats[PLAYER_NUM]->EFFECTS[EFF_DASH] && hit.entity->behavior == &actDoor )
+				{
+					hit.entity->doorHealth = 0;
 				}
 			}
 		}
