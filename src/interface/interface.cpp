@@ -6113,6 +6113,15 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case HEALER_DOUBLET:
 		case BRASS_KNUCKLES:
 		case BRONZE_TOMAHAWK:
+		case CLOAK_BLACK:
+		case POTION_EMPTY:
+		case TUNIC:
+		case SUEDE_BOOTS:
+		case SUEDE_GLOVES:
+		case HAT_HOOD_RED:
+		case HAT_HOOD_SILVER:
+		case SILVER_DOUBLET:
+		case CLOAK_SILVER:
 			*metal = 1;
 			*magic = 0;
 			break;
@@ -6136,6 +6145,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
 		case TOOL_CRYSTALSHARD:
+		case HAT_FEZ:
 			*metal = 1;
 			*magic = 1;
 			break;
@@ -6148,6 +6158,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case MAGICSTAFF_FIRE:
 		case MAGICSTAFF_LIGHTNING:
 		case MAGICSTAFF_SLEEP:
+		case MAGICSTAFF_POISON:
 		case RING_STRENGTH:
 		case RING_CONSTITUTION:
 		case RING_CONFLICT:
@@ -6170,6 +6181,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_SAPPHIRE:
 		case GEM_AQUAMARINE:
 		case GEM_OPAL:
+		case TOOL_BLINDFOLD_FOCUS:
 			*metal = 1;
 			*magic = 3;
 			break;
@@ -6183,6 +6195,11 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case GEM_DIAMOND:
 		case TOOL_SKELETONKEY:
 		case VAMPIRE_DOUBLET:
+		case MAGICSTAFF_CHARM:
+		case MAGICSTAFF_BLEED:
+		case MAGICSTAFF_STONEBLOOD:
+		case MAGICSTAFF_SUMMON:
+		case MASK_SHAMAN:
 			*metal = 1;
 			*magic = 4;
 			break;
@@ -6206,8 +6223,25 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_SLOW:
 		case SPELLBOOK_LOCKING:
 		case SPELLBOOK_TELEPORTATION:
+		case SPELLBOOK_REVERT_FORM:
+		case SPELLBOOK_RAT_FORM:
+		case SPELLBOOK_SPRAY_WEB:
+		case SPELLBOOK_POISON:
+		case SPELLBOOK_SPEED:
+		case SPELLBOOK_DETECT_FOOD:
+		case SPELLBOOK_SHADOW_TAG:
+		case SPELLBOOK_SALVAGE:
+		case SPELLBOOK_DASH:
+		case SPELLBOOK_8:
+		case SPELLBOOK_9:
+		case SPELLBOOK_10:
 			*metal = 0;
 			*magic = 4;
+			break;
+
+		case TOOL_BLINDFOLD_TELEPATHY:
+			*metal = 1;
+			*magic = 6;
 			break;
 
 		case SCROLL_ENCHANTWEAPON:
@@ -6223,6 +6257,16 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_OPENING:
 		case SPELLBOOK_HEALING:
 		case SPELLBOOK_CUREAILMENT:
+		case SPELLBOOK_ACID_SPRAY:
+		case SPELLBOOK_CHARM_MONSTER:
+		case SPELLBOOK_SPIDER_FORM:
+		case SPELLBOOK_TROLL_FORM:
+		case SPELLBOOK_FEAR:
+		case SPELLBOOK_STRIKE:
+		case SPELLBOOK_TELEPULL:
+		case SPELLBOOK_FLUTTER:
+		case SCROLL_CHARGING:
+		case SCROLL_CONJUREARROW:
 			*metal = 0;
 			*magic = 6;
 			break;
@@ -6232,7 +6276,20 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_INVISIBILITY:
 		case SPELLBOOK_EXTRAHEALING:
 		case SPELLBOOK_DIG:
+		case SPELLBOOK_SUMMON:
+		case SPELLBOOK_BLEED:
+		case SPELLBOOK_REFLECT_MAGIC:
+		case SPELLBOOK_STONEBLOOD:
+		case SPELLBOOK_STEAL_WEAPON:
+		case SPELLBOOK_DRAIN_SOUL:
+		case SPELLBOOK_VAMPIRIC_AURA:
+		case SPELLBOOK_IMP_FORM:
+		case SPELLBOOK_TROLLS_BLOOD:
+		case SPELLBOOK_WEAKNESS:
+		case SPELLBOOK_AMPLIFY_MAGIC:
+		case SPELLBOOK_DEMON_ILLU:
 		case GEM_LUCK:
+		case ENCHANTED_FEATHER:
 			*metal = 0;
 			*magic = 8;
 
@@ -6257,6 +6314,8 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case BRACERS_CONSTITUTION:
+		case TOOL_ALEMBIC:
+		case PUNISHER_HOOD:
 			*metal = 2;
 			*magic = 2;
 			break;
@@ -6283,6 +6342,9 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case STEEL_HELM:
 		case SPIKED_GAUNTLETS:
 		case STEEL_CHAKRAM:
+		case TOOL_WHIP:
+		case MACHINIST_APRON:
+		case LONGBOW:
 			*metal = 3;
 			*magic = 0;
 			break;
@@ -6299,6 +6361,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 
 		case STEEL_BREASTPIECE:
 		case CRYSTAL_SHURIKEN:
+		case HEAVY_CROSSBOW:
 			*metal = 4;
 			*magic = 0;
 			break;
@@ -6311,6 +6374,8 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case CRYSTAL_SPEAR:
 		case CRYSTAL_BATTLEAXE:
 		case CRYSTAL_MACE:
+		case CLOAK_BACKPACK:
+		case COMPOUND_BOW:
 			*metal = 4;
 			*magic = 2;
 			break;
@@ -6328,7 +6393,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case ARTIFACT_BOW:
 		case BOOMERANG:
 			*metal = 4;
-			*magic = 32;
+			*magic = 16;
 			break;
 		case ARTIFACT_CLOAK:
 			*metal = 4;
@@ -6371,6 +6436,10 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 				*metal = 0;
 				*magic = 0;
 			}
+			break;
+		case TOOL_DECOY:
+			*metal = 2;
+			*magic = 0;
 			break;
 		case TOOL_DETONATOR_CHARGE:
 			*metal = 2;
