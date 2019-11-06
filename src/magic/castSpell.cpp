@@ -264,10 +264,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	if ( !using_magicstaff && !trap)
 	{
 		newbie = caster->isSpellcasterBeginner();
-		if ( stat->type == INSECTOID && (spell->ID == SPELL_DASH || spell->ID == SPELL_FLUTTER) )
-		{
-			newbie = false;
-		}
 
 		if ( usingSpellbook && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
@@ -390,16 +386,31 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			caster->drainMP(extramagic);
 		}
 
-		//Now, there's a chance they'll fumble the spell.
+		bool fizzleSpell = false;
 		chance = rand() % 10;
-		if (chance >= spellcastingAbility / 10)
+		if ( chance >= spellcastingAbility / 10 )
 		{
-			if (rand() % 3 == 1)
+			fizzleSpell = true;
+		}
+
+		// Check for natural monster spells - we won't fizzle those.
+		if ( caster->behavior == &actPlayer )
+		{
+			if ( spellIsNaturallyLearnedByRaceOrClass(*caster, *stat, spell->ID) )
+			{
+				fizzleSpell = false;
+			}
+		}
+
+		//Now, there's a chance they'll fumble the spell.
+		if ( fizzleSpell )
+		{
+			if ( rand() % 3 == 1 )
 			{
 				//Fizzle the spell.
 				//TODO: Cool effects.
 				playSoundEntity(caster, 163, 128);
-				if (player >= 0)
+				if ( player >= 0 )
 				{
 					messagePlayer(player, language[409]);
 				}
@@ -2247,4 +2258,89 @@ int spellGetCastSound(spell_t* spell)
 		return 169;
 	}
 	return 0;
+}
+
+bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellID)
+{
+	if ( caster.behavior != &actPlayer )
+	{
+		return false;
+	}
+
+	// player races:
+	if ( stat.playerRace == RACE_INSECTOID && stat.appearance == 0 && (spellID == SPELL_DASH || spellID == SPELL_FLUTTER || spellID == SPELL_ACID_SPRAY) )
+	{
+		return true;
+	}
+	else if ( stat.playerRace == RACE_VAMPIRE && stat.appearance == 0 && (spellID == SPELL_LEVITATION || spellID == SPELL_BLEED) )
+	{
+		return true;
+	}
+	else if ( stat.playerRace == RACE_SUCCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION) )
+	{
+		return true;
+	}
+	else if ( stat.playerRace == RACE_INCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SHADOW_TAG) )
+	{
+		return true;
+	}
+	else if ( stat.playerRace == RACE_AUTOMATON && stat.appearance == 0 && (spellID == SPELL_SALVAGE) )
+	{
+		return true;
+	}
+	
+	// class specific:
+	int playernum = caster.skill[2];
+	if ( client_classes[playernum] == CLASS_PUNISHER && (spellID == SPELL_TELEPULL || spellID == SPELL_DEMON_ILLUSION) )
+	{
+		return true;
+	}
+	else if ( client_classes[playernum] == CLASS_SHAMAN )
+	{
+		if ( spellID == SPELL_RAT_FORM || spellID == SPELL_SPIDER_FORM || spellID == SPELL_TROLL_FORM
+			|| spellID == SPELL_IMP_FORM || spellID == SPELL_REVERT_FORM )
+		{
+			return true;
+		}
+	}
+	else if ( stat.EFFECTS[EFF_SHAPESHIFT] )
+	{
+		switch ( spellID )
+		{
+			case SPELL_SPEED:
+			case SPELL_DETECT_FOOD:
+				if ( stat.type == RAT )
+				{
+					return true;
+				}
+				break;
+			case SPELL_POISON:
+			case SPELL_SPRAY_WEB:
+				if ( stat.type == SPIDER )
+				{
+					return true;
+				}
+				break;
+			case SPELL_STRIKE:
+			case SPELL_FEAR:
+			case SPELL_TROLLS_BLOOD:
+				if ( stat.type == TROLL )
+				{
+					return true;
+				}
+				break;
+			case SPELL_LIGHTNING:
+			case SPELL_CONFUSE:
+			case SPELL_AMPLIFY_MAGIC:
+				if ( stat.type == CREATURE_IMP )
+				{
+					return true;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	return false;
 }
