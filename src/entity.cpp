@@ -14743,6 +14743,10 @@ bool Entity::isSpellcasterBeginner()
 	{
 		return false;
 	}
+	else if ( behavior == &actMonster )
+	{
+		return false;
+	}
 	else if ( myStats->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER )
 	{
 		return true; //The caster has lower spellcasting skill. Cue happy fun times.
