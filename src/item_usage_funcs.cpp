@@ -4106,8 +4106,35 @@ void item_Food(Item*& item, int player)
 		if (players[player] && players[player]->entity)
 		{
 			players[player]->entity->modHP(5);
+			messagePlayer(player, language[911]);
+			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			{
+				real_t multiplier = 1.f;
+				switch ( item->type )
+				{
+					case FOOD_MEAT:
+					case FOOD_FISH:
+					case FOOD_TOMALLEY:
+						multiplier = 1.f;
+						break;
+					case FOOD_BREAD:
+					case FOOD_CREAMPIE:
+						multiplier = 0.5;
+						break;
+					case FOOD_APPLE:
+					case FOOD_CHEESE:
+						multiplier = 0.25;
+						break;
+					case FOOD_BLOOD:
+						multiplier = 0.1;
+						break;
+					default:
+						break;
+				}
+				int amount = multiplier * stats[player]->MAXMP;
+				players[player]->entity->modMP(amount);
+			}
 		}
-		messagePlayer(player, language[911]);
 	}
 
 	if ( item->type == FOOD_TOMALLEY )

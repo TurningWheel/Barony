@@ -3329,7 +3329,7 @@ Sint32 Item::armorGetAC(Stat* wielder) const
 	}
 	else if ( type == ARTIFACT_BREASTPIECE )
 	{
-		armor += std::max(2, 2 + (status - 1)); // 2-5
+		armor += std::max(3, 3 + (status - 1)); // 2-6
 	}
 	else if ( type == ARTIFACT_HELM)
 	{
