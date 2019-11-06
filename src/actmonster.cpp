@@ -3150,35 +3150,35 @@ void actMonster(Entity* my)
 			messagePlayer(0, "defending!");
 		}*/
 
-		//if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget)
-		//	|| myStats->type == SHOPKEEPER )
-		//{
-		//	std::string state_string;
+		if ( myStats->type == DEVIL )
+		{
+			std::string state_string;
 
-		//	switch(my->monsterState)
-		//	{
-		//	case MONSTER_STATE_WAIT:
-		//		state_string = "WAIT";
-		//		break;
-		//	case MONSTER_STATE_ATTACK:
-		//		state_string = "CHARGE";
-		//		break;
-		//	case MONSTER_STATE_PATH:
-		//		state_string = "PATH";
-		//		break;
-		//	case MONSTER_STATE_HUNT:
-		//		state_string = "HUNT";
-		//		break;
-		//	case MONSTER_STATE_TALK:
-		//		state_string = "TALK";
-		//		break;
-		//	default:
-		//		state_string = "Unknown state";
-		//		break;
-		//	}
+			switch(my->monsterState)
+			{
+			case MONSTER_STATE_WAIT:
+				state_string = "WAIT";
+				break;
+			case MONSTER_STATE_ATTACK:
+				state_string = "CHARGE";
+				break;
+			case MONSTER_STATE_PATH:
+				state_string = "PATH";
+				break;
+			case MONSTER_STATE_HUNT:
+				state_string = "HUNT";
+				break;
+			case MONSTER_STATE_TALK:
+				state_string = "TALK";
+				break;
+			default:
+				state_string = std::to_string(my->monsterState);
+				//state_string = "Unknown state";
+				break;
+			}
 
-		//	messagePlayer(0, "My state is %s, hittime:%d", state_string.c_str(), my->monsterHitTime); //Debug message.
-		//}
+			messagePlayer(0, "My state is %s, ATK: %d hittime:%d", state_string.c_str(), my->monsterAttack, my->monsterHitTime); //Debug message.
+		}
 
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
@@ -3502,29 +3502,16 @@ void actMonster(Entity* my)
 
 					if ( dist > WAIT_FOLLOWDIST )
 					{
-						my->monsterReleaseAttackTarget();
-						if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2) )
+						bool doFollow = true;
+						if ( my->monsterTarget != 0 )
 						{
-							my->monsterState = MONSTER_STATE_HUNT; // hunt state
+							doFollow = my->isFollowerFreeToPathToPlayer(myStats);
 						}
-						if ( previousMonsterState != my->monsterState )
-						{
-							serverUpdateEntitySkill(my, 0);
-							if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
-							{
-								serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
-							}
-						}
-						return;
-					}
-					else if ( myStats->type != GYROBOT )
-					{
-						tangent = atan2( leader->y - my->y, leader->x - my->x );
-						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
-						if ( hit.entity != leader )
+
+						if ( doFollow )
 						{
 							my->monsterReleaseAttackTarget();
-							if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
+							if ( my->monsterSetPathToLocation(static_cast<int>(followx) / 16, static_cast<int>(followy) / 16, 2) )
 							{
 								my->monsterState = MONSTER_STATE_HUNT; // hunt state
 							}
@@ -3537,6 +3524,36 @@ void actMonster(Entity* my)
 								}
 							}
 							return;
+						}
+					}
+					else if ( myStats->type != GYROBOT )
+					{
+						tangent = atan2( leader->y - my->y, leader->x - my->x );
+						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+						if ( hit.entity != leader )
+						{
+							bool doFollow = true;
+							if ( my->monsterTarget != 0 )
+							{
+								doFollow = my->isFollowerFreeToPathToPlayer(myStats);
+							}
+							if ( doFollow )
+							{
+								my->monsterReleaseAttackTarget();
+								if ( my->monsterSetPathToLocation(static_cast<int>(leader->x) / 16, static_cast<int>(leader->y) / 16, 1) )
+								{
+									my->monsterState = MONSTER_STATE_HUNT; // hunt state
+								}
+								if ( previousMonsterState != my->monsterState )
+								{
+									serverUpdateEntitySkill(my, 0);
+									if ( my->monsterAllyIndex > 0 && my->monsterAllyIndex < MAXPLAYERS )
+									{
+										serverUpdateEntitySkill(my, 1); // update monsterTarget for player leaders.
+									}
+								}
+								return;
+							}
 						}
 					}
 				}
@@ -3552,7 +3569,7 @@ void actMonster(Entity* my)
 			{
 				my->monsterLookTime = 0;
 				my->monsterMoveTime--;
-				if ( myStats->type != GHOUL && myStats->type != SPIDER 
+				if ( myStats->type != GHOUL && (myStats->type != SPIDER || (myStats->type == SPIDER && my->monsterAllyGetPlayerLeader()))
 					&& !myStats->EFFECTS[EFF_FEAR] && !isIllusionTaunt )
 				{
 					if ( monsterIsImmobileTurret(my, myStats) )
@@ -3580,13 +3597,15 @@ void actMonster(Entity* my)
 					}
 					else
 					{
+						real_t dist = sightranges[myStats->type];
 						for ( node = map.creatures->first; node != nullptr; node = node->next )
 						{
 							Entity* target = (Entity*)node->element;
 							if ( target->behavior == &actMonster && my->checkEnemy(target) )
 							{
+								real_t oldDist = dist;
 								dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
-								if ( dist < sightranges[myStats->type] )
+								if ( dist < sightranges[myStats->type] && dist <= oldDist )
 								{
 									double tangent = atan2(target->y - my->y, target->x - my->x);
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
@@ -3602,6 +3621,7 @@ void actMonster(Entity* my)
 												my->monsterHitTime = HITRATE * 2 - 20;
 											}
 										}
+										break;
 									}
 								}
 							}
@@ -4803,54 +4823,18 @@ timeToGoAgain:
 						//createParticleFollowerCommand(previousx, previousy, 0, 175); debug particle
 					}
 					double dist = sqrt(pow(my->x - followx, 2) + pow(my->y - followy, 2));
-					if ( dist > HUNT_FOLLOWDIST && !my->monsterTarget )
+					if ( dist > HUNT_FOLLOWDIST  )
 					{
-						x = ((int)floor(followx)) >> 4;
-						y = ((int)floor(followy)) >> 4;
-						int u, v;
-						bool foundplace = false;
-						for ( u = x - 1; u <= x + 1; u++ )
+						bool doFollow = true;
+						if ( my->monsterTarget != 0 )
 						{
-							for ( v = y - 1; v <= y + 1; v++ )
-							{
-								if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
-								{
-									x = u;
-									y = v;
-									foundplace = true;
-									break;
-								}
-							}
-							if ( foundplace )
-							{
-								break;
-							}
+							doFollow = my->isFollowerFreeToPathToPlayer(myStats);
 						}
-						path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
-						if ( my->children.first != NULL )
+
+						if ( doFollow )
 						{
-							list_RemoveNode(my->children.first);
-						}
-						node = list_AddNodeFirst(&my->children);
-						node->element = path;
-						node->deconstructor = &listDeconstructor;
-						my->monsterState = MONSTER_STATE_HUNT; // hunt state
-						if ( previousMonsterState != my->monsterState )
-						{
-							serverUpdateEntitySkill(my, 0);
-						}
-						return;
-					}
-					else if ( myStats->type != GYROBOT )
-					{
-						double tangent = atan2( leader->y - my->y, leader->x - my->x );
-						Entity* ohitentity = hit.entity;
-						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
-						if ( hit.entity != leader )
-						{
-							my->monsterReleaseAttackTarget();
-							int x = ((int)floor(leader->x)) >> 4;
-							int y = ((int)floor(leader->y)) >> 4;
+							x = ((int)floor(followx)) >> 4;
+							y = ((int)floor(followy)) >> 4;
 							int u, v;
 							bool foundplace = false;
 							for ( u = x - 1; u <= x + 1; u++ )
@@ -4885,7 +4869,61 @@ timeToGoAgain:
 							}
 							return;
 						}
-						hit.entity = ohitentity;
+					}
+					else if ( myStats->type != GYROBOT )
+					{
+						bool doFollow = true;
+						if ( my->monsterTarget != 0 )
+						{
+							doFollow = my->isFollowerFreeToPathToPlayer(myStats);
+						}
+
+						if ( doFollow )
+						{
+							double tangent = atan2( leader->y - my->y, leader->x - my->x );
+							Entity* ohitentity = hit.entity;
+							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
+							if ( hit.entity != leader )
+							{
+								my->monsterReleaseAttackTarget();
+								int x = ((int)floor(leader->x)) >> 4;
+								int y = ((int)floor(leader->y)) >> 4;
+								int u, v;
+								bool foundplace = false;
+								for ( u = x - 1; u <= x + 1; u++ )
+								{
+									for ( v = y - 1; v <= y + 1; v++ )
+									{
+										if ( !checkObstacle((u << 4) + 8, (v << 4) + 8, my, leader) )
+										{
+											x = u;
+											y = v;
+											foundplace = true;
+											break;
+										}
+									}
+									if ( foundplace )
+									{
+										break;
+									}
+								}
+								path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, leader );
+								if ( my->children.first != NULL )
+								{
+									list_RemoveNode(my->children.first);
+								}
+								node = list_AddNodeFirst(&my->children);
+								node->element = path;
+								node->deconstructor = &listDeconstructor;
+								my->monsterState = MONSTER_STATE_HUNT; // hunt state
+								if ( previousMonsterState != my->monsterState )
+								{
+									serverUpdateEntitySkill(my, 0);
+								}
+								return;
+							}
+							hit.entity = ohitentity;
+						}
 					}
 				}
 			}
@@ -5276,13 +5314,15 @@ timeToGoAgain:
 							{
 								//messagePlayer(0, "Sent a move to command, defending here!");
 								// scan for enemies after reaching move point.
+								real_t dist = sightranges[myStats->type];
 								for ( node = map.creatures->first; node != nullptr; node = node->next )
 								{
 									Entity* target = (Entity*)node->element;
 									if ( target->behavior == &actMonster && my->checkEnemy(target) )
 									{
+										real_t oldDist = dist;
 										dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
-										if ( dist < sightranges[myStats->type] )
+										if ( dist < sightranges[myStats->type] && dist <= oldDist )
 										{
 											double tangent = atan2(target->y - my->y, target->x - my->x);
 											lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
@@ -5291,6 +5331,7 @@ timeToGoAgain:
 												my->monsterLookTime = 1;
 												my->monsterMoveTime = rand() % 10 + 1;
 												my->monsterLookDir = tangent;
+												break;
 											}
 										}
 									}
@@ -5302,6 +5343,32 @@ timeToGoAgain:
 									my->monsterSpecialState = GYRO_RETURN_LANDING;
 									my->monsterState = MONSTER_STATE_WAIT;
 									serverUpdateEntitySkill(my, 33); // for clients to keep track of animation
+								}
+							}
+						}
+						else if ( !target && my->monsterAllyGetPlayerLeader() )
+						{
+							// scan for enemies after reaching move point.
+							real_t dist = sightranges[myStats->type];
+							for ( node = map.creatures->first; node != nullptr; node = node->next )
+							{
+								Entity* target = (Entity*)node->element;
+								if ( target->behavior == &actMonster && my->checkEnemy(target) )
+								{
+									real_t oldDist = dist;
+									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
+									if ( dist < sightranges[myStats->type] && dist <= oldDist )
+									{
+										double tangent = atan2(target->y - my->y, target->x - my->x);
+										lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+										if ( hit.entity == target )
+										{
+											my->monsterLookTime = 1;
+											my->monsterMoveTime = rand() % 10 + 1;
+											my->monsterLookDir = tangent;
+											break;
+										}
+									}
 								}
 							}
 						}
@@ -5371,18 +5438,25 @@ timeToGoAgain:
 						{
 							//messagePlayer(0, "Issued move command, defending here.");
 							// scan for enemies after reaching move point.
+							real_t dist = sightranges[myStats->type];
 							for ( node = map.creatures->first; node != nullptr; node = node->next )
 							{
 								Entity* target = (Entity*)node->element;
 								if ( target->behavior == &actMonster && my->checkEnemy(target) )
 								{
+									real_t oldDist = dist;
 									dist = sqrt(pow(my->x - target->x, 2) + pow(my->y - target->y, 2));
-									if ( dist < sightranges[myStats->type] )
+									if ( dist < sightranges[myStats->type] && dist <= oldDist )
 									{
 										double tangent = atan2(target->y - my->y, target->x - my->x);
-										my->monsterLookTime = 1;
-										my->monsterMoveTime = rand() % 10 + 1;
-										my->monsterLookDir = tangent;
+										lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
+										if ( hit.entity == target )
+										{
+											my->monsterLookTime = 1;
+											my->monsterMoveTime = rand() % 10 + 1;
+											my->monsterLookDir = tangent;
+											break;
+										}
 									}
 								}
 							}
@@ -10039,4 +10113,23 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 			break;
 	}
 	return distance;
+}
+
+bool Entity::isFollowerFreeToPathToPlayer(Stat* myStats)
+{
+	Entity* currentTarget = uidToEntity(monsterTarget);
+	if ( currentTarget )
+	{
+		if ( monsterState == MONSTER_STATE_ATTACK )
+		{
+			// fighting something.
+			return false;
+		}
+		else if ( entityDist(this, currentTarget) < TOUCHRANGE * 2 )
+		{
+			// in the vicinity of our target
+			return false;
+		}
+	}
+	return true;
 }
