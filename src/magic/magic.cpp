@@ -2648,8 +2648,8 @@ bool spellEffectDemonIllusion(Entity& my, spellElement_t& element, Entity* paren
 					spawnExplosion(monster->x, monster->y, -1);
 					playSoundEntity(monster, 171, 128);
 					//playSoundEntity(&my, 178, 128);
-					createParticleErupt(monster, 171);
-					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 171);
+					createParticleErupt(monster, 983);
+					serverSpawnMiscParticles(monster, PARTICLE_EFFECT_ERUPT, 983);
 
 					monster->parent = parent->getUID();
 					monster->monsterIllusionTauntingThisUid = static_cast<Sint32>(target->getUID());

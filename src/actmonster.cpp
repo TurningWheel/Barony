@@ -3150,35 +3150,35 @@ void actMonster(Entity* my)
 			messagePlayer(0, "defending!");
 		}*/
 
-		if ( myStats->type == DEVIL || myStats->type == HUMAN )
-		{
-			std::string state_string;
+		//if ( myStats->type == DEVIL || myStats->type == HUMAN )
+		//{
+		//	std::string state_string;
 
-			switch(my->monsterState)
-			{
-			case MONSTER_STATE_WAIT:
-				state_string = "WAIT";
-				break;
-			case MONSTER_STATE_ATTACK:
-				state_string = "CHARGE";
-				break;
-			case MONSTER_STATE_PATH:
-				state_string = "PATH";
-				break;
-			case MONSTER_STATE_HUNT:
-				state_string = "HUNT";
-				break;
-			case MONSTER_STATE_TALK:
-				state_string = "TALK";
-				break;
-			default:
-				state_string = std::to_string(my->monsterState);
-				//state_string = "Unknown state";
-				break;
-			}
+		//	switch(my->monsterState)
+		//	{
+		//	case MONSTER_STATE_WAIT:
+		//		state_string = "WAIT";
+		//		break;
+		//	case MONSTER_STATE_ATTACK:
+		//		state_string = "CHARGE";
+		//		break;
+		//	case MONSTER_STATE_PATH:
+		//		state_string = "PATH";
+		//		break;
+		//	case MONSTER_STATE_HUNT:
+		//		state_string = "HUNT";
+		//		break;
+		//	case MONSTER_STATE_TALK:
+		//		state_string = "TALK";
+		//		break;
+		//	default:
+		//		state_string = std::to_string(my->monsterState);
+		//		//state_string = "Unknown state";
+		//		break;
+		//	}
 
-			messagePlayer(0, "My state is %s, ATK: %d hittime:%d", state_string.c_str(), my->monsterAttack, my->monsterHitTime); //Debug message.
-		}
+		//	messagePlayer(0, "My state is %s, ATK: %d hittime:%d", state_string.c_str(), my->monsterAttack, my->monsterHitTime); //Debug message.
+		//}
 
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state

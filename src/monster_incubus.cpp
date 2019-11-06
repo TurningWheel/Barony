@@ -532,8 +532,8 @@ void incubusDie(Entity* my)
 	{
 		// die, no blood.
 		//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
-		createParticleErupt(my, 171);
-		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 171);
+		createParticleErupt(my, 983);
+		serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 983);
 		//playSoundEntity(my, 279 + rand() % 3, 128);
 		playSoundEntity(my, 178, 128);
 		my->removeMonsterDeathNodes();

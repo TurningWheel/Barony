@@ -8581,6 +8581,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						// conjuration deals damage back to attacker.
 						Entity* illusionParent = uidToEntity(hit.entity->parent);
 						this->modHP(-(std::max(2, damage / 2)) );
+						playSoundEntity(this, 173, 64);
 						if ( illusionParent )
 						{
 							if ( myStats->HP <= 0 )
@@ -8603,7 +8604,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								camera_shakey += 10;
 							}
 
-							spawnMagicEffectParticles(this->x, this->y, this->z, 643);
+							spawnMagicEffectParticles(this->x, this->y, this->z, 983);
 							if ( illusionParent->behavior == &actPlayer && illusionParent != this )
 							{
 								// update enemy bar for attacker
@@ -10125,12 +10126,28 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return true;
 	}
-	else if ( myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
+	else if ( behavior == &actMonster && myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
 	{
 		Entity* parentEntity = uidToEntity(this->parent);
 		if ( parentEntity != your )
 		{
 			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if ( behavior == &actPlayer && yourStats->type == INCUBUS && !strncmp(yourStats->name, "inner demon", strlen("inner demon")) )
+	{
+		Entity* parentEntity = uidToEntity(your->parent);
+		if ( parentEntity != this )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 
@@ -10454,6 +10471,30 @@ bool Entity::checkFriend(Entity* your)
 	else if ( behavior == &actPlayer && yourStats->type == VAMPIRE && !strncmp(yourStats->name, "Bram Kindly", 11) )
 	{
 		return false;
+	}
+	else if ( behavior == &actMonster && myStats->type == INCUBUS && !strncmp(myStats->name, "inner demon", strlen("inner demon")) )
+	{
+		Entity* parentEntity = uidToEntity(this->parent);
+		if ( parentEntity == your )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if ( behavior == &actPlayer && your->behavior == &actMonster && yourStats->type == INCUBUS && !strncmp(yourStats->name, "inner demon", strlen("inner demon")) )
+	{
+		Entity* parentEntity = uidToEntity(your->parent);
+		if ( parentEntity == this )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	// if you have a leader, check whether we are friends instead
