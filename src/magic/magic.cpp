@@ -427,7 +427,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				return;
 			}
 			bool hasamulet = false;
-			if ( hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE )
+			if ( (hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) || hitstats->type == INSECTOID )
 			{
 				resistance += 2;
 				hasamulet = true;
@@ -561,7 +561,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				return;
 			}
 			bool hasamulet = false;
-			if ( hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE )
+			if ( (hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) || hitstats->type == INSECTOID )
 			{
 				resistance += 2;
 				hasamulet = true;

@@ -3165,6 +3165,11 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			playSoundEntity(this, 78, 96);
 			serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 5);
+
+			if ( myStats->type == INSECTOID )
+			{
+				castSpell(uid, &spell_acidSpray, true, false);
+			}
 		}
 	}
 
@@ -3449,6 +3454,14 @@ void Entity::handleEffects(Stat* myStats)
 				serverUpdateEffects(player);
 				this->char_poison = 0;
 			}
+		}
+		else if ( myStats->type == INSECTOID )
+		{
+			messagePlayer(player, language[640]);
+			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+			myStats->EFFECTS[EFF_POISONED] = false;
+			serverUpdateEffects(player);
+			this->char_poison = 0;
 		}
 		this->char_poison++;
 		if ( this->char_poison > 150 )   // three seconds

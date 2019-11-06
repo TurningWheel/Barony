@@ -5093,7 +5093,7 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 		{
 			messagePlayer(my->skill[2], language[915]);
 		}
-		else if ( myStats->HUNGER < 2000 )
+		else if ( myStats->HUNGER >= 1500 )
 		{
 			if ( my->effectShapeshift != NOTHING )
 			{

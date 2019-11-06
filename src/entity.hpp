@@ -561,6 +561,7 @@ public:
 	int monsterGetDexterityForMovement();
 	void monsterGenerateQuiverItem(Stat* myStats, bool lesserMonster = false);
 	int getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon);
+	bool isFollowerFreeToPathToPlayer(Stat* myStats);
 	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 
 	//--- Mechanism functions ---

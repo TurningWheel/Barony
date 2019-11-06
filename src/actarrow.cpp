@@ -792,7 +792,8 @@ void actArrow(Entity* my)
 							}
 							statusEffectApplied = true;
 						}
-						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE) )
+						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE)
+							&& !hitstats->type == INSECTOID )
 						{
 							if ( !hitstats->EFFECTS[EFF_POISONED] )
 							{
