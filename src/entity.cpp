@@ -3300,10 +3300,20 @@ void Entity::handleEffects(Stat* myStats)
 	}
 	else if ( myStats->MP < myStats->MAXMP )
 	{
-		messagePlayer(0, "%d", myStats->HUNGER);
 		int manaRegenInterval = getManaRegenInterval(*myStats);
 		// summons don't regen MP. we use this to refund mana to the caster.
-		if ( !(this->behavior == &actMonster && this->monsterAllySummonRank != 0) )
+		bool doManaRegen = true;
+		if ( this->behavior == &actMonster && this->monsterAllySummonRank != 0 )
+		{
+			doManaRegen = false;
+		}
+		else if ( this->behavior == &actPlayer && !(svFlags & SV_FLAG_HUNGER)
+			&& myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+		{
+			doManaRegen = false;
+		}
+
+		if ( doManaRegen )
 		{
 			this->char_energize++;
 			if ( this->char_energize >= manaRegenInterval )
@@ -3312,6 +3322,10 @@ void Entity::handleEffects(Stat* myStats)
 				this->modMP(1);
 				if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 				{
+					if ( myStats->MP % 5 == 0 )
+					{
+						messagePlayer(0, "Hunger left: %d", myStats->HUNGER);
+					}
 					if ( svFlags & SV_FLAG_HUNGER )
 					{
 						int hungerLoss = 5;
@@ -4148,17 +4162,17 @@ void Entity::handleEffects(Stat* myStats)
 	if ( player >= 0 
 		&& myStats->mask != nullptr
 		&& myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY 
-		&& (ticks % 65 == 0 || !myStats->EFFECTS[EFF_TELEPATH]) )
+		&& (ticks % 45 == 0 || !myStats->EFFECTS[EFF_TELEPATH]) )
 	{
-		setEffect(EFF_TELEPATH, true, 100, true);
+		setEffect(EFF_TELEPATH, true, 60, true);
 	}
 
 	if ( player >= 0
 		&& myStats->mask != nullptr
 		&& (myStats->mask->type == TOOL_BLINDFOLD || myStats->mask->type == TOOL_BLINDFOLD_FOCUS || myStats->mask->type == TOOL_BLINDFOLD_TELEPATHY )
-		&& (ticks % 65 == 0 || !myStats->EFFECTS[EFF_BLIND]) )
+		&& (ticks % 45 == 0 || !myStats->EFFECTS[EFF_BLIND]) )
 	{
-		setEffect(EFF_BLIND, true, 100, true);
+		setEffect(EFF_BLIND, true, 60, true);
 		if ( myStats->mask->type == TOOL_BLINDFOLD_FOCUS )
 		{
 			bool cured = false;
@@ -14022,6 +14036,12 @@ bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
 	if ( itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == THROWN || itemCategory(myStats->weapon) == GEM )
 	{
 		//If current hand item is not cursed, but it's a certain item, don't want to equip this new one.
+		return false;
+	}
+
+	if ( !isRangedWeapon(itemToEquip) && isRangedWeapon(*(myStats->weapon)) && rangedWeaponUseQuiverOnAttack(myStats) )
+	{
+		// have ranged weapon and quiver, don't pickup non-ranged weapon.
 		return false;
 	}
 
