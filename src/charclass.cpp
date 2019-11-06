@@ -29,8 +29,8 @@
 void initClass(int player)
 {
 	Item* item, *item2;
-	//client_classes[player] = CLASS_HUNTER;
-	/*stats[player]->playerRace = RACE_AUTOMATON;
+	/*client_classes[player] = CLASS_HUNTER;
+	stats[player]->playerRace = RACE_INSECTOID;
 	stats[player]->appearance = 0;*/
 	if ( player == clientnum)
 	{
@@ -2409,6 +2409,7 @@ void initClass(int player)
 		{
 			addSpell(SPELL_FLUTTER, player, true);
 			addSpell(SPELL_DASH, player, true);
+			addSpell(SPELL_ACID_SPRAY, player, true);
 		}
 		else if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->appearance == 0 )
 		{
