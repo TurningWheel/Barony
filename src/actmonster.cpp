@@ -3150,7 +3150,7 @@ void actMonster(Entity* my)
 			messagePlayer(0, "defending!");
 		}*/
 
-		if ( myStats->type == DEVIL )
+		if ( myStats->type == DEVIL || myStats->type == HUMAN )
 		{
 			std::string state_string;
 
@@ -3253,10 +3253,10 @@ void actMonster(Entity* my)
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
-							int monsterVisionRange = sightranges[myStats->type];
+							real_t monsterVisionRange = sightranges[myStats->type];
 							if ( hitstats->type == DUMMYBOT )
 							{
-								monsterVisionRange = std::min(monsterVisionRange, 96);
+								monsterVisionRange = std::min(monsterVisionRange, 96.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
@@ -3588,7 +3588,7 @@ void actMonster(Entity* my)
 						my->monsterLookDir = (rand() % 360) * PI / 180;
 					}
 				}
-				if ( my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT && my->monsterAllyGetPlayerLeader() )
+				if ( !myStats->EFFECTS[EFF_FEAR] && my->monsterTarget == 0 && my->monsterState == MONSTER_STATE_WAIT && my->monsterAllyGetPlayerLeader() )
 				{
 					// allies should try intelligently scan for enemies in radius.
 					if ( monsterIsImmobileTurret(my, myStats) && myStats->LVL < 5 )
@@ -3832,10 +3832,14 @@ void actMonster(Entity* my)
 				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
-				int monsterVisionRange = sightranges[myStats->type];
+				real_t monsterVisionRange = sightranges[myStats->type];
 				if ( hitstats && hitstats->type == DUMMYBOT )
 				{
-					monsterVisionRange = std::min(monsterVisionRange, 96);
+					monsterVisionRange = std::min(monsterVisionRange, 96.0);
+				}
+				if ( myStats->EFFECTS[EFF_FEAR] )
+				{
+					targetdist = 0.0; // so we can always see our scary target.
 				}
 
 				if ( targetdist > monsterVisionRange )
@@ -3885,6 +3889,11 @@ void actMonster(Entity* my)
 					}
 					else
 					{
+						if ( myStats->EFFECTS[EFF_FEAR] )
+						{
+							myReflex = false; // don't determine if you lost sight of the scary monster.
+						}
+
 						if ( myReflex )
 						{
 							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
@@ -4532,10 +4541,10 @@ timeToGoAgain:
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 
-							int monsterVisionRange = sightranges[myStats->type];
+							real_t monsterVisionRange = sightranges[myStats->type];
 							if ( hitstats->type == DUMMYBOT )
 							{
-								monsterVisionRange = std::min(monsterVisionRange, 96);
+								monsterVisionRange = std::min(monsterVisionRange, 96.0);
 							}
 
 							if ( targetdist > monsterVisionRange )
