@@ -2731,6 +2731,7 @@ void actMonster(Entity* my)
 
 	// effect of a ring of conflict
 	bool ringconflict = false;
+	Entity* ringConflictHolder = nullptr;
 	if ( myStats->type != LICH_ICE && myStats->type != LICH_FIRE )
 	{
 		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures can wear rings, so don't search map.entities.
@@ -2739,17 +2740,19 @@ void actMonster(Entity* my)
 			if ( tempentity != nullptr && tempentity != my )
 			{
 				Stat* tempstats = tempentity->getStats();
-				if ( tempstats != nullptr )
+				if ( tempstats && tempstats->ring && tempstats->ring->type == RING_CONFLICT )
 				{
-					if ( tempstats->ring != nullptr )
+					int conflictRange = 5 * TOUCHRANGE;
+					if ( sqrt(pow(my->x - tempentity->x, 2) + pow(my->y - tempentity->y, 2)) < conflictRange )
 					{
-						if ( tempstats->ring->type == RING_CONFLICT )
+						tangent = atan2(tempentity->y - my->y, tempentity->x - my->x);
+						lineTrace(my, my->x, my->y, tangent, conflictRange, 0, false);
+						ringconflict = true;
+						if ( hit.entity == tempentity )
 						{
-							if ( sqrt(pow(my->x - tempentity->x, 2) + pow(my->y - tempentity->y, 2)) < 200 )
-							{
-								ringconflict = true;
-							}
+							ringConflictHolder = tempentity;
 						}
+						break;
 					}
 				}
 			}
@@ -3281,7 +3284,8 @@ void actMonster(Entity* my)
 								continue;
 							}
 							bool visiontest = false;
-							if ( hitstats->type == DUMMYBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+							if ( hitstats->type == DUMMYBOT || myStats->type == SENTRYBOT || myStats->type == SPELLBOT
+								|| (ringConflictHolder && ringConflictHolder == entity) )
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
 								{
@@ -3302,6 +3306,7 @@ void actMonster(Entity* my)
 									visiontest = true;
 								}
 							}
+
 							if ( visiontest )   // vision cone
 							{
 								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
