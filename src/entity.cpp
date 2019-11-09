@@ -7606,17 +7606,44 @@ void Entity::attack(int pose, int charge, Entity* target)
 							pushbackMultiplier += 0.3;
 						}
 						real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
-						hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
-						hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-						hit.entity->monsterKnockbackVelocity = 0.05;
-						hit.entity->monsterKnockbackUID = this->getUID();
-						hit.entity->monsterKnockbackTangentDir = tangent;
-						hit.entity->lookAtEntity(*this);
-						if ( !(backstab || flanking) )
+						if ( hit.entity->behavior == &actMonster )
 						{
-							if ( hit.entity->monsterAttack == 0 )
+							hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+							hit.entity->monsterKnockbackVelocity = 0.05;
+							hit.entity->monsterKnockbackUID = this->getUID();
+							hit.entity->monsterKnockbackTangentDir = tangent;
+							hit.entity->lookAtEntity(*this);
+							if ( !(backstab || flanking) )
 							{
-								hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+								if ( hit.entity->monsterAttack == 0 )
+								{
+									hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+								}
+							}
+						}
+						else if ( hit.entity->behavior == &actPlayer )
+						{
+							// normalize tangent
+							while ( tangent < 0 )
+							{
+								tangent += 2 * PI;
+							}
+							while ( tangent > 2 * PI )
+							{
+								tangent -= 2 * PI;
+							}
+							if ( hit.entity->skill[2] != clientnum )
+							{
+								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+								hit.entity->monsterKnockbackTangentDir = tangent;
+								serverUpdateEntityFSkill(hit.entity, 11);
+								serverUpdateEntityFSkill(hit.entity, 9);
+							}
+							else
+							{
+								hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+								hit.entity->monsterKnockbackTangentDir = tangent;
 							}
 						}
 						knockbackInflicted = true;
@@ -7661,7 +7688,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							hit.entity->modHP(-5); // do extra damage.
 						}
 						if ( !knockbackInflicted && hasMeleeGloves
-							&& hit.entity->behavior == &actMonster && hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
+							&& hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
 						{
 							real_t baseMultiplier = 0.5;
 							if ( myStats->gloves )
@@ -7691,17 +7718,44 @@ void Entity::attack(int pose, int charge, Entity* target)
 								pushbackMultiplier += 0.3;
 							}
 							real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
-							hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
-							hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-							hit.entity->monsterKnockbackVelocity = 0.05;
-							hit.entity->monsterKnockbackUID = this->getUID();
-							hit.entity->monsterKnockbackTangentDir = tangent;
-							hit.entity->lookAtEntity(*this);
-							if ( !(backstab || flanking) )
+							if ( hit.entity->behavior == &actMonster )
 							{
-								if ( hit.entity->monsterAttack == 0 )
+								hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
+								hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
+								hit.entity->monsterKnockbackVelocity = 0.05;
+								hit.entity->monsterKnockbackUID = this->getUID();
+								hit.entity->monsterKnockbackTangentDir = tangent;
+								hit.entity->lookAtEntity(*this);
+								if ( !(backstab || flanking) )
 								{
-									hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+									if ( hit.entity->monsterAttack == 0 )
+									{
+										hit.entity->monsterHitTime = std::max(HITRATE - 12, hit.entity->monsterHitTime);
+									}
+								}
+							}
+							else if ( hit.entity->behavior == &actPlayer )
+							{
+								// normalize tangent
+								while ( tangent < 0 )
+								{
+									tangent += 2 * PI;
+								}
+								while ( tangent > 2 * PI )
+								{
+									tangent -= 2 * PI;
+								}
+								if ( hit.entity->skill[2] != clientnum )
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = tangent;
+									serverUpdateEntityFSkill(hit.entity, 11);
+									serverUpdateEntityFSkill(hit.entity, 9);
+								}
+								else
+								{
+									hit.entity->monsterKnockbackVelocity = pushbackMultiplier;
+									hit.entity->monsterKnockbackTangentDir = tangent;
 								}
 							}
 							knockbackInflicted = true;

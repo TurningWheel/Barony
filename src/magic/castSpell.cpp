@@ -1022,7 +1022,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 
 					caster->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
-					playSoundEntity(caster, 168, 128);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(i, color, language[3490]);
 					for ( node = map.creatures->first; node; node = node->next )
@@ -1039,7 +1038,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 						if ( entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster) )
 						{
-							caster->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
+							entity->setEffect(EFF_TROLLS_BLOOD, true, amount, true);
 							playSoundEntity(entity, 168, 128);
 							spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 							if ( entity->behavior == &actPlayer )

@@ -2062,6 +2062,10 @@ int drawSpellTooltip(spell_t* spell, Item* item)
 		{
 			snprintf(tempstr, 63, language[2977], getCostOfSpell(spell));
 		}
+		else if ( spell->ID == SPELL_DEMON_ILLUSION )
+		{
+			snprintf(tempstr, 63, language[3853], getCostOfSpell(spell));
+		}
 		else
 		{
 			if ( players[clientnum] && players[clientnum]->entity )
@@ -2169,6 +2173,11 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 			break;
 		case SPELL_COLD:
 			snprintf(effectTextBuffer, 255, language[3290], value, language[3294]);
+			snprintf(spellType, 31, language[3303]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_POISON:
+			snprintf(effectTextBuffer, 255, language[3290], value, language[3300]);
 			snprintf(spellType, 31, language[3303]);
 			*spellInfoLines = 2;
 			break;
@@ -2297,6 +2306,105 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 			snprintf(effectTextBuffer, 255, language[3326]);
 			*spellInfoLines = 3;
 			break;
+		case SPELL_REVERT_FORM:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3851]);
+			*spellInfoLines = 1;
+			break;
+		case SPELL_RAT_FORM:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3847]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_SPIDER_FORM:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3848]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_TROLL_FORM:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3849]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_IMP_FORM:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3850]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_SPRAY_WEB:
+			snprintf(spellType, 31, language[3304]);
+			snprintf(effectTextBuffer, 255, language[3834]);
+			*spellInfoLines = 4;
+			break;
+		case SPELL_SPEED:
+			snprintf(spellType, 31, language[3301]);
+			snprintf(effectTextBuffer, 255, language[3835]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_FEAR:
+			snprintf(spellType, 31, language[3301]);
+			snprintf(effectTextBuffer, 255, language[3836]);
+			*spellInfoLines = 3;
+			break;
+		case SPELL_STRIKE:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3838]);
+			*spellInfoLines = 4;
+			break;
+		case SPELL_DETECT_FOOD:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3839]);
+			*spellInfoLines = 1;
+			break;
+		case SPELL_WEAKNESS:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3837]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_AMPLIFY_MAGIC:
+			snprintf(spellType, 31, language[3302]);
+			snprintf(effectTextBuffer, 255, language[3852]);
+			*spellInfoLines = 2;
+			*sustainCostPerSecond = 0.25;
+			break;
+		case SPELL_SHADOW_TAG:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3843]);
+			*spellInfoLines = 3;
+			break;
+		case SPELL_TELEPULL:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3844]);
+			*spellInfoLines = 3;
+			break;
+		case SPELL_DEMON_ILLUSION:
+			snprintf(spellType, 31, language[3303]);
+			snprintf(effectTextBuffer, 255, language[3845]);
+			*spellInfoLines = 3;
+			break;
+		case SPELL_TROLLS_BLOOD:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3840]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_SALVAGE:
+			snprintf(spellType, 31, language[3301]);
+			snprintf(effectTextBuffer, 255, language[3846]);
+			*spellInfoLines = 2;
+			break;
+		case SPELL_FLUTTER:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3841]);
+			*spellInfoLines = 1;
+			break;
+		case SPELL_DASH:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3842]);
+			*spellInfoLines = 3;
+			break;
+		case SPELL_8:
+		case SPELL_9:
+		case SPELL_10:
 		default:
 			break;
 	}

@@ -634,7 +634,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			}
 			if ( player >= 0 )
 			{
-				messagePlayerColor(player, color, language[3438]);
+				messagePlayerColor(player, color, language[3428]);
 			}
 		}
 		else if ( hit.entity->behavior == &actDoor )
@@ -815,7 +815,10 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( parent->behavior == &actPlayer )
 				{
-					messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3430], language[3429], MSG_COMBAT);
+					if ( duration - previousDuration > 10 ) // message if not recently webbed
+					{
+						messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3430], language[3429], MSG_COMBAT);
+					}
 				}
 			}
 
@@ -828,7 +831,10 @@ void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, in
 			}
 			if ( player >= 0 )
 			{
-				messagePlayerColor(player, color, language[3431]);
+				if ( duration - previousDuration > 10 ) // message if not recently webbed
+				{
+					messagePlayerColor(player, color, language[3431]);
+				}
 			}
 		}
 		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 863);
