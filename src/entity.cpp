@@ -2250,6 +2250,23 @@ void Entity::drainMP(int amount, bool notifyOverexpend)
 			player = i; //Set the player.
 		}
 	}
+
+	if ( player >= 0 && entitystats->playerRace == RACE_INSECTOID && entitystats->appearance == 0 )
+	{
+		// we cast a spell or forcibly reduced our MP. therefore our hunger should reduce to match the MP value.
+		if ( amount > 0 )
+		{
+			Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*entitystats);
+			Sint32 oldHunger = entitystats->HUNGER;
+			entitystats->HUNGER -= amount * hungerPointPerMana;
+			entitystats->HUNGER = std::max(0, entitystats->HUNGER);
+			if ( player > 0 )
+			{
+				serverUpdateHunger(player);
+			}
+		}
+	}
+
 	if ( entitystats->MP < 0 )
 	{
 		//Overdrew. Take that extra and flow it over into HP.
@@ -2348,6 +2365,21 @@ bool Entity::safeConsumeMP(int amount)
 	}
 	else
 	{
+		if ( behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->appearance == 0 )
+		{
+			// we cast a spell or forcibly reduced our MP. therefore our hunger should reduce to match the MP value.
+			if ( amount > 0 )
+			{
+				Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*stat);
+				Sint32 oldHunger = stat->HUNGER;
+				stat->HUNGER -= amount * hungerPointPerMana;
+				stat->HUNGER = std::max(0, stat->HUNGER);
+				if ( this->skill[2] > 0 )
+				{
+					serverUpdateHunger(this->skill[2]);
+				}
+			}
+		}
 		this->modMP(-amount);
 		return true;
 	}
@@ -2989,7 +3021,19 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->HUNGER > 0 && !playerAutomaton )
 		{
 			myStats->HUNGER--;
-			if ( myStats->HUNGER == 1500 )
+			Sint32 noLongerFull = 1500;
+			Sint32 youFeelHungry = 250;
+			Sint32 youFeelWeak = 150;
+			Sint32 youFeelFaint = 50;
+
+			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+			{
+				youFeelHungry = 100;
+				youFeelWeak = 50;
+				youFeelFaint = 25;
+			}
+
+			if ( myStats->HUNGER == noLongerFull )
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
@@ -2997,7 +3041,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				serverUpdateHunger(player);
 			}
-			else if ( myStats->HUNGER == 250 )
+			else if ( myStats->HUNGER == youFeelHungry )
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
@@ -3006,7 +3050,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				serverUpdateHunger(player);
 			}
-			else if ( myStats->HUNGER == 150 )
+			else if ( myStats->HUNGER == youFeelWeak )
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
@@ -3015,7 +3059,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				serverUpdateHunger(player);
 			}
-			else if ( myStats->HUNGER == 50 )
+			else if ( myStats->HUNGER == youFeelFaint )
 			{
 				if ( !myStats->EFFECTS[EFF_VOMITING] )
 				{
@@ -3303,17 +3347,80 @@ void Entity::handleEffects(Stat* myStats)
 			this->modMP(1);
 		}
 	}
+	else if ( this->behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+	{
+		this->char_energize++;
+		if ( this->char_energize > 0 && this->char_energize % 5 == 0 ) // check every 5 ticks.
+		{
+			real_t manaPercentFromHunger = myStats->HUNGER / 1000.f;
+			real_t expectedManaValue = std::floor(myStats->MAXMP * manaPercentFromHunger);
+			Sint32 Sint32expectedMana = static_cast<Sint32>(expectedManaValue);
+			if ( myStats->HUNGER > 0 ) 
+			{
+				// add extra expected mana point here.
+				// i.e 950 hunger is still full mana to avoid always having 1 short.
+				// skip 0 hunger as it will be 0 expected.
+				Sint32expectedMana++;
+			}
+			//messagePlayer(0, "Hunger: %d, expected MP: %d", myStats->HUNGER, Sint32expectedMana);
+
+			if ( myStats->MP < Sint32expectedMana )
+			{
+				if ( player == 0 ) // singleplayer/server only.
+				{
+					int difference = Sint32expectedMana - myStats->MP;
+					if ( difference > 8 )
+					{
+						this->modMP(1);
+						this->char_energize = 0;
+					}
+					else if ( difference > 4 )
+					{
+						if ( this->char_energize >= 10 )
+						{
+							this->modMP(1);
+							this->char_energize = 0;
+						}
+					}
+					else
+					{
+						if ( this->char_energize >= 15 )
+						{
+							this->modMP(1);
+							this->char_energize = 0;
+						}
+					}
+				}
+				else
+				{
+					int difference = Sint32expectedMana - myStats->MP;
+					if ( this->char_energize % 50 == 0 ) // only update clients every 1 second.
+					{
+						this->modMP(std::min(difference, 5)); // jump by max of 5.
+						this->char_energize = 0;
+					}
+				}
+			}
+			else if ( myStats->MP > Sint32expectedMana )
+			{
+				if ( this->char_energize % 50 == 0 )
+				{
+					this->modMP(-1); // update MP decrease every second.
+					this->char_energize = 0;
+				}
+			}
+			else
+			{
+				this->char_energize = 0;
+			}
+		}
+	}
 	else if ( myStats->MP < myStats->MAXMP )
 	{
 		int manaRegenInterval = getManaRegenInterval(*myStats);
 		// summons don't regen MP. we use this to refund mana to the caster.
 		bool doManaRegen = true;
 		if ( this->behavior == &actMonster && this->monsterAllySummonRank != 0 )
-		{
-			doManaRegen = false;
-		}
-		else if ( this->behavior == &actPlayer && !(svFlags & SV_FLAG_HUNGER)
-			&& myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 		{
 			doManaRegen = false;
 		}
@@ -3325,33 +3432,6 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->char_energize = 0;
 				this->modMP(1);
-				if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
-				{
-					if ( myStats->MP % 5 == 0 )
-					{
-						messagePlayer(0, "Hunger left: %d", myStats->HUNGER);
-					}
-					if ( svFlags & SV_FLAG_HUNGER )
-					{
-						int hungerLoss = 5;
-						if ( (myStats->MP / static_cast<real_t>(myStats->MAXMP)) <= 0.2 )
-						{
-							hungerLoss *= 2;
-						}
-						int modHunger = myStats->HUNGER % 50;
-						if ( modHunger < 5 && modHunger > 0 )
-						{
-							hungerLoss = modHunger;
-							// if we had 259 hunger, then modHunger is 9.
-						}
-						myStats->HUNGER = std::max(0, myStats->HUNGER - hungerLoss);
-						if ( myStats->HUNGER % 50 == 0 && myStats->HUNGER != 0 )
-						{
-							myStats->HUNGER++;
-							// this will trigger a serverUpdateHunger() when it ticks down to a round interval (50/150/250)
-						}
-					}
-				}
 			}
 		}
 		else
@@ -15274,6 +15354,29 @@ int Entity::getManaRegenInterval(Stat& myStats)
 			return floatRegenTime;
 		}
 	}
+	else if ( behavior == &actPlayer && myStats.playerRace == RACE_INSECTOID && myStats.appearance == 0 )
+	{
+		// how many hunger ticks in seconds from max of 1000.
+		float floatRegenTime = (1000.f * 30 / static_cast<float>(TICKS_PER_SECOND)); 
+
+		floatRegenTime /= (std::max(myStats.MAXMP, 1)); // time for 1 mana in seconds
+		floatRegenTime *= TICKS_PER_SECOND; // game ticks for 1 mana
+
+		if ( manaring > 0 )
+		{
+			return floatRegenTime * (manaring * 2); // lose 1 MP each 2x base seconds - good!
+		}
+		else if ( manaring < 0 )
+		{
+			return floatRegenTime / (abs(manaring) * 2); // lose 1 MP each 0.5x base seconds - bad!
+		}
+		else if ( manaring == 0 )
+		{
+			return floatRegenTime;
+		}
+
+		return floatRegenTime;
+	}
 
 	if ( manaring > 0 )
 	{
@@ -17903,4 +18006,24 @@ void Entity::handleQuiverThirdPersonModel(Stat& myStats)
 				break;
 		}
 	}
+}
+
+Sint32 Entity::playerInsectoidExpectedManaFromHunger(Stat& myStats)
+{
+	real_t manaPercentFromHunger = myStats.HUNGER / 1000.f;
+	real_t expectedManaValue = std::floor(myStats.MAXMP * manaPercentFromHunger);
+	if ( myStats.HUNGER > 0 )
+	{
+		// add extra expected mana point here.
+		// i.e 950 hunger is still full mana to avoid always having 1 short.
+		// skip 0 hunger as it will be 0 expected.
+		return (static_cast<Sint32>(expectedManaValue) + 1);
+	}
+	return static_cast<Sint32>(expectedManaValue);
+}
+
+Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
+{
+	float manaPointPercentage = 1 / static_cast<float>(myStats.MAXMP);
+	return static_cast<Sint32>(1000 * manaPointPercentage);
 }

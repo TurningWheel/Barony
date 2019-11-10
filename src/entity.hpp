@@ -854,6 +854,8 @@ public:
 	void handleKnockbackDamage(Stat& myStats, Entity* knockedInto); // handle knockback damage from getting hit into other things.
 	void setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask);
 	bool entityCheckIfTriggeredBomb(bool triggerBomb);
+	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
+	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

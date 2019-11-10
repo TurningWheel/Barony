@@ -4095,10 +4095,10 @@ void item_Food(Item*& item, int player)
 				hungerIncrease += 10;
 				break;
 		}
-		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		/*if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 		{
 			hungerIncrease *= 2;
-		}
+		}*/
 		stats[player]->HUNGER += hungerIncrease;
 	}
 	else
@@ -4107,33 +4107,6 @@ void item_Food(Item*& item, int player)
 		{
 			players[player]->entity->modHP(5);
 			messagePlayer(player, language[911]);
-			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
-			{
-				real_t multiplier = 1.f;
-				switch ( item->type )
-				{
-					case FOOD_MEAT:
-					case FOOD_FISH:
-					case FOOD_TOMALLEY:
-						multiplier = 1.f;
-						break;
-					case FOOD_BREAD:
-					case FOOD_CREAMPIE:
-						multiplier = 0.5;
-						break;
-					case FOOD_APPLE:
-					case FOOD_CHEESE:
-						multiplier = 0.25;
-						break;
-					case FOOD_BLOOD:
-						multiplier = 0.1;
-						break;
-					default:
-						break;
-				}
-				int amount = multiplier * stats[player]->MAXMP;
-				players[player]->entity->modMP(amount);
-			}
 		}
 	}
 
@@ -4306,6 +4279,10 @@ void item_FoodTin(Item*& item, int player)
 	{
 		pukeChance = 1;
 	}
+	else if ( stats[player]->type == INSECTOID )
+	{
+		pukeChance = 100; // insectoids can eat anything.
+	}
 
 	if ((item->beatitude < 0 || rand() % pukeChance == 0) && pukeChance < 100)
 	{
@@ -4343,10 +4320,6 @@ void item_FoodTin(Item*& item, int player)
 	if (svFlags & SV_FLAG_HUNGER)
 	{
 		stats[player]->HUNGER += 600;
-		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
-		{
-			stats[player]->HUNGER += 600; // doubled.
-		}
 		stats[player]->EFFECTS[EFF_HP_REGEN] = hpBuff;
 		stats[player]->EFFECTS[EFF_MP_REGEN] = mpBuff;
 		stats[player]->EFFECTS_TIMERS[EFF_HP_REGEN] = buffDuration;
@@ -5110,6 +5083,14 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 			}
 		}
 	}
-	myStats->HUNGER = std::min(myStats->HUNGER, 2000);
+
+	if ( myStats->type == INSECTOID )
+	{
+		myStats->HUNGER = std::min(myStats->HUNGER, 1250); // smaller hunger range.
+	}
+	else
+	{
+		myStats->HUNGER = std::min(myStats->HUNGER, 2000);
+	}
 	serverUpdateHunger(my->skill[2]);
 }
