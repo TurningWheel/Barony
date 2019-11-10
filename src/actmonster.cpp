@@ -777,10 +777,16 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 					canAlly = true;
 				}
 			}
-			else if ( stats[monsterclicked]->type == SPIDER || stats[monsterclicked]->type == INSECTOID )
+			else if ( stats[monsterclicked]->type == SPIDER )
 			{
-				if ( race == SPIDER || race == INSECTOID
-					|| race == SCARAB || race == SCORPION )
+				if ( race == SPIDER	|| race == SCARAB || race == SCORPION )
+				{
+					canAlly = true;
+				}
+			}
+			else if ( stats[monsterclicked]->type == INSECTOID )
+			{
+				if ( race == INSECTOID || race == SCARAB || race == SCORPION )
 				{
 					canAlly = true;
 				}
@@ -901,10 +907,16 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 							canAlly = true;
 						}
 					}
-					else if ( stats[monsterclicked]->type == SPIDER || stats[monsterclicked]->type == INSECTOID )
+					else if ( stats[monsterclicked]->type == SPIDER )
 					{
-						if ( race == SPIDER || race == INSECTOID
-							|| race == SCARAB || race == SCORPION )
+						if ( race == SPIDER	|| race == SCARAB || race == SCORPION )
+						{
+							canAlly = true;
+						}
+					}
+					else if ( stats[monsterclicked]->type == INSECTOID )
+					{
+						if ( race == INSECTOID || race == SCARAB || race == SCORPION )
 						{
 							canAlly = true;
 						}

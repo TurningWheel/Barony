@@ -10291,7 +10291,7 @@ bool Entity::checkEnemy(Entity* your)
 						}
 						break;
 					case SPIDER:
-						if ( yourStats->type == SPIDER || yourStats->type == INSECTOID
+						if ( yourStats->type == SPIDER
 							|| yourStats->type == SCARAB || yourStats->type == SCORPION )
 						{
 							result = false;
@@ -10329,7 +10329,7 @@ bool Entity::checkEnemy(Entity* your)
 						}
 						break;
 					case INSECTOID:
-						if ( yourStats->type == SCARAB || yourStats->type == SPIDER 
+						if ( yourStats->type == SCARAB 
 							|| myStats->type == INSECTOID || myStats->type == SCORPION )
 						{
 							result = false;
@@ -10376,7 +10376,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case SPIDER:
-							if ( myStats->type == SPIDER || myStats->type == INSECTOID
+							if ( myStats->type == SPIDER
 								|| myStats->type == SCARAB || myStats->type == SCORPION )
 							{
 								result = false;
@@ -10414,7 +10414,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( myStats->type == SCARAB || myStats->type == SPIDER 
+							if ( myStats->type == SCARAB 
 								|| myStats->type == INSECTOID || myStats->type == SCORPION )
 							{
 								result = false;
@@ -10644,8 +10644,7 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case SPIDER:
-							if ( yourStats->type == SPIDER || yourStats->type == INSECTOID 
-								|| yourStats->type == SCARAB || yourStats->type == SCORPION )
+							if ( yourStats->type == SPIDER || yourStats->type == SCARAB || yourStats->type == SCORPION )
 							{
 								result = true;
 							}
@@ -10682,7 +10681,7 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( yourStats->type == SCARAB || yourStats->type == SPIDER 
+							if ( yourStats->type == SCARAB 
 								|| yourStats->type == INSECTOID || yourStats->type == SCORPION )
 							{
 								result = true;
@@ -10729,7 +10728,7 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case SPIDER:
-							if ( myStats->type == SPIDER || myStats->type == INSECTOID
+							if ( myStats->type == SPIDER
 								|| myStats->type == SCARAB || myStats->type == SCORPION )
 							{
 								result = true;
@@ -10767,7 +10766,7 @@ bool Entity::checkFriend(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( myStats->type == SCARAB || myStats->type == SPIDER 
+							if ( myStats->type == SCARAB 
 								|| myStats->type == INSECTOID || myStats->type == SCORPION )
 							{
 								result = true;
