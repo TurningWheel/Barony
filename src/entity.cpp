@@ -3523,19 +3523,7 @@ void Entity::handleEffects(Stat* myStats)
 	// effects of being poisoned
 	if ( myStats->EFFECTS[EFF_POISONED] )
 	{
-		if ( myStats->amulet != NULL )
-		{
-			if ( myStats->amulet->type == AMULET_POISONRESISTANCE )
-			{
-				messagePlayer(player, language[639]);
-				messagePlayer(player, language[640]);
-				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
-				myStats->EFFECTS[EFF_POISONED] = false;
-				serverUpdateEffects(player);
-				this->char_poison = 0;
-			}
-		}
-		else if ( myStats->type == INSECTOID )
+		if ( myStats->type == INSECTOID )
 		{
 			messagePlayer(player, language[640]);
 			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
@@ -3543,6 +3531,16 @@ void Entity::handleEffects(Stat* myStats)
 			serverUpdateEffects(player);
 			this->char_poison = 0;
 		}
+		else if ( myStats->amulet && myStats->amulet->type == AMULET_POISONRESISTANCE )
+		{
+			messagePlayer(player, language[639]);
+			messagePlayer(player, language[640]);
+			myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+			myStats->EFFECTS[EFF_POISONED] = false;
+			serverUpdateEffects(player);
+			this->char_poison = 0;
+		}
+
 		this->char_poison++;
 		if ( this->char_poison > 150 )   // three seconds
 		{
