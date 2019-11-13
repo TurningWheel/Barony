@@ -485,7 +485,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	{
 		if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
 		{
-			stats->HUNGER += 300;
+			stats->HUNGER += 250;
 		}
 		// results of eating
 		updateHungerMessages(entity, stats, item);
@@ -2014,6 +2014,19 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 		messagePlayer(player, language[774]);
 	}
 	entity->modMP(amount);
+
+	if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+	{
+		Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
+		Sint32 oldHunger = stats->HUNGER;
+		stats->HUNGER += amount * hungerPointPerMana;
+		stats->HUNGER = std::min(999, stats->HUNGER);
+		updateHungerMessages(entity, stats, item);
+		if ( player > 0 )
+		{
+			serverUpdateHunger(player);
+		}
+	}
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
