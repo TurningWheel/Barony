@@ -5086,7 +5086,7 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 
 	if ( myStats->type == INSECTOID )
 	{
-		myStats->HUNGER = std::min(myStats->HUNGER, 1250); // smaller hunger range.
+		myStats->HUNGER = std::min(myStats->HUNGER, 1000); // smaller hunger range.
 	}
 	else
 	{
