@@ -1794,7 +1794,14 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 						}
 					}
 				}
-				entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
+				if ( arrowtrap )
+				{
+					entity = newEntity(33, 1, map.entities, nullptr); // pressure plate
+				}
+				else
+				{
+					entity = newEntity(34, 1, map.entities, nullptr); // pressure plate
+				}
 				entity->x = x * 16;
 				entity->y = y * 16;
 				//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
@@ -3760,6 +3767,16 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->skill[1] = QUIVER_SILVER + rand() % 7; // random arrow type.
+				if ( currentlevel <= 15 )
+				{
+					while ( entity->skill[1] == QUIVER_CRYSTAL || entity->skill[1] == QUIVER_PIERCE )
+					{
+						entity->skill[1] = QUIVER_SILVER + rand() % 7; // random arrow type.
+					}
+				}
+				entity->skill[3] = 0; // refire type.
+				entity->skill[4] = 3 + rand() % 6; // arrows on unlocking.
 				break;
 			// trap (pressure plate thingy)
 			case 33:

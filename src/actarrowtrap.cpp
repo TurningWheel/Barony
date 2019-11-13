@@ -15,6 +15,7 @@
 #include "entity.hpp"
 #include "sound.hpp"
 #include "collision.hpp"
+#include "items.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -26,6 +27,8 @@
 -------------------------------------------------------------------------------*/
 
 #define ARROWTRAP_FIRED my->skill[0]
+#define ARROWTRAP_TYPE my->skill[1]
+#define ARROWTRAP_REFIRE my->skill[3]
 #define ARROWTRAP_AMBIENCE my->skill[6]
 
 void actArrowTrap(Entity* my)
@@ -42,7 +45,7 @@ void actArrowTrap(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	if ( ARROWTRAP_FIRED == 1 ) // shot my piece, time to die.
+	if ( ARROWTRAP_FIRED >= 10 ) // shot my piece, time to die.
 	{
 		list_RemoveNode(my->mynode);
 		return;
@@ -63,9 +66,25 @@ void actArrowTrap(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2)
 	{
-		if ( !ARROWTRAP_FIRED )
+		if ( ARROWTRAP_FIRED % 2 == 1 ) // not ready to fire.
 		{
-			ARROWTRAP_FIRED = 1;
+			if ( ARROWTRAP_TYPE == QUIVER_LIGHTWEIGHT )
+			{
+				if ( ARROWTRAP_REFIRE > 0 )
+				{
+					--ARROWTRAP_REFIRE;
+					if ( ARROWTRAP_REFIRE == 0 )
+					{
+						++ARROWTRAP_FIRED;
+					}
+				}
+			}
+		}
+
+		if ( ARROWTRAP_FIRED % 2 == 0 && ARROWTRAP_REFIRE <= 0 )
+		{
+			ARROWTRAP_FIRED++;
+			ARROWTRAP_REFIRE = 5;
 			for ( c = 0; c < 4; c++ )
 			{
 				switch ( c )
@@ -104,11 +123,55 @@ void actArrowTrap(Entity* my)
 
 					// arrow power
 					entity->arrowPower = 17;
-
-					// causes poison for six seconds
-					entity->arrowPoisonTime = 360;
+					if ( currentlevel >= 10 )
+					{
+						entity->arrowPower += currentlevel - 10;
+					}
+					switch ( ARROWTRAP_TYPE )
+					{
+						case QUIVER_SILVER:
+							entity->sprite = 924;
+							break;
+						case QUIVER_PIERCE:
+							entity->arrowArmorPierce = 2;
+							entity->sprite = 925;
+							break;
+						case QUIVER_LIGHTWEIGHT:
+							entity->sprite = 926;
+							ARROWTRAP_REFIRE = 50;
+							break;
+						case QUIVER_FIRE:
+							entity->sprite = 927;
+							break;
+						case QUIVER_KNOCKBACK:
+							entity->sprite = 928;
+							break;
+						case QUIVER_CRYSTAL:
+							entity->sprite = 929;
+							break;
+						case QUIVER_HUNTING:
+							entity->sprite = 930;
+							// causes poison for six seconds
+							entity->arrowPoisonTime = 360;
+							break;
+						default:
+							break;
+					}
+					entity->arrowQuiverType = ARROWTRAP_TYPE;
 				}
 			}
+		}
+	}
+	else
+	{
+		if ( ARROWTRAP_REFIRE > 0 )
+		{
+			--ARROWTRAP_REFIRE;
+		}
+		else if ( ARROWTRAP_FIRED % 2 == 1 )
+		{
+			// fired, time to reload.
+			ARROWTRAP_FIRED++;
 		}
 	}
 }

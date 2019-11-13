@@ -521,7 +521,7 @@ void actArrow(Entity* my)
 					}
 					else
 					{
-						playSoundEntity(hit.entity, 66, 64); //*tink*
+						// playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							if ( hit.entity->skill[2] == clientnum )
@@ -645,6 +645,11 @@ void actArrow(Entity* my)
 						{
 							// no "hit by arrow!" message, let the knockback do the work.
 						}
+						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE)
+							&& !(hitstats->type == INSECTOID) )
+						{
+							// no "hit by arrow!" message, let the hunting arrow effect do the work.
+						}
 						else
 						{
 							if ( my )
@@ -680,7 +685,7 @@ void actArrow(Entity* my)
 					bool statusEffectApplied = false;
 					if ( hitstats->HP > 0 )
 					{
-						if ( my->arrowPoisonTime > 0 && damage > 0 )
+						/*if ( my->arrowPoisonTime > 0 && damage > 0 )
 						{
 							hitstats->poisonKiller = my->parent;
 							hitstats->EFFECTS[EFF_POISONED] = true;
@@ -692,7 +697,7 @@ void actArrow(Entity* my)
 								serverUpdateEffects(hit.entity->skill[2]);
 							}
 							statusEffectApplied = true;
-						}
+						}*/
 
 						if ( my->arrowQuiverType == QUIVER_FIRE )
 						{
@@ -793,15 +798,23 @@ void actArrow(Entity* my)
 							statusEffectApplied = true;
 						}
 						else if ( my->arrowQuiverType == QUIVER_HUNTING && !(hitstats->amulet && hitstats->amulet->type == AMULET_POISONRESISTANCE)
-							&& !hitstats->type == INSECTOID )
+							&& !(hitstats->type == INSECTOID) )
 						{
 							if ( !hitstats->EFFECTS[EFF_POISONED] )
 							{
 								hitstats->poisonKiller = my->parent;
 								hitstats->EFFECTS[EFF_POISONED] = true;
-								hitstats->EFFECTS_TIMERS[EFF_POISONED] = 160;
 								hitstats->EFFECTS[EFF_SLOW] = true;
-								hitstats->EFFECTS_TIMERS[EFF_SLOW] = 160;
+								if ( my->arrowPoisonTime > 0 )
+								{
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = my->arrowPoisonTime;
+									hitstats->EFFECTS_TIMERS[EFF_SLOW] = my->arrowPoisonTime;
+								}
+								else
+								{
+									hitstats->EFFECTS_TIMERS[EFF_POISONED] = 160;
+									hitstats->EFFECTS_TIMERS[EFF_SLOW] = 160;
+								}
 								statusEffectApplied = true;
 							}
 							if ( statusEffectApplied )
@@ -824,6 +837,11 @@ void actArrow(Entity* my)
 									messagePlayerColor(hit.entity->skill[2], color, language[3749]);
 								}
 							}
+							else if ( hit.entity->behavior == &actPlayer )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], color, language[451]); // you are hit by an arrow!
+							}
 						}
 					}
 					else
@@ -838,6 +856,7 @@ void actArrow(Entity* my)
 
 					if ( damage == 0 && !statusEffectApplied )
 					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							messagePlayer(hit.entity->skill[2], language[452]); // player notified no damage.
@@ -860,6 +879,10 @@ void actArrow(Entity* my)
 								messagePlayer(parent->skill[2], language[447]);
 							}
 						}
+					}
+					else if ( damage == 0 && statusEffectApplied )
+					{
+						playSoundEntity(hit.entity, 28, 64);
 					}
 
 					// update enemy bar for attacker
