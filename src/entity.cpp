@@ -2465,9 +2465,13 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			myStats->MP += MP_MOD;
 			myStats->MAXMP += MP_MOD;
-			if ( myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
+			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 			{
 				myStats->MAXMP = std::min(50, myStats->MAXMP);
+				Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
+				myStats->HUNGER += MP_MOD * hungerPointPerMana;
+				myStats->HUNGER = std::min(1000, myStats->HUNGER);
+				serverUpdateHunger(skill[2]);
 			}
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 		}
