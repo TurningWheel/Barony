@@ -1,0 +1,1437 @@
+{
+    "Classes": [
+
+        {
+            "Name": "Barbarian",
+            "ID": 0,
+            "Strength": 1,
+            "Constitution": 1,
+            "Dexterity": -1,
+            "Intelligence": -1,
+            "Perception": 0,
+            "Charisma": 0,
+            "MaxHP": 10,
+            "MaxMP": -10,
+            "Skills": {
+                "Swimming": 25,
+                "Shield": 25,
+                "Axe": 50,
+                "Mace": 50,
+                "Unarmed": 20,
+                "Alchemy": 10
+            },
+            "Items": [{
+                    "ID": 10,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 0,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 2
+
+                },
+                {
+                    "ID": 44,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": -1
+
+
+                },
+                {
+                    "ID": 9,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 154,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+
+                },
+                {
+                    "ID": 158,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 148,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 54,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 191,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": false
+                }
+            ]
+        },
+        {
+            "Name": "Warrior",
+            "ID": 1,
+            "Strength": 1,
+            "Constitution": -3,
+            "Dexterity": 1,
+            "Intelligence": -1,
+            "Perception": 1,
+            "Charisma": 1,
+            "MaxHP": 0,
+            "MaxMP": -10,
+            "Skills": {
+                "Leadership": 40,
+                "Ranged": 25,
+                "Sword": 50,
+                "Polearm": 50,
+                "Shield": 50,
+                "Unarmed": 10
+            },
+            "Items": [{
+                    "ID": 7,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 5,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 3
+
+                },
+                {
+                    "ID": 44,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 38,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 30,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 8,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 12,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 2
+                },
+                {
+                    "ID": 154,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 159,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                }
+            ]
+        }, {
+            "Name": "Healer",
+            "ID": 2,
+            "Strength": -1,
+            "Constitution": 2,
+            "Dexterity": -1,
+            "Intelligence": 1,
+            "Perception": 0,
+            "Charisma": 0,
+            "MaxHP": -10,
+            "MaxMP": 10,
+            "Skills": {
+                "Spellcasting": 50,
+                "Magic": 25,
+                "Swimming": 25,
+                "Polearm": 25,
+                "Alchemy": 30
+            },
+            "Items": [{
+                    "ID": 1,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 40,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 3
+
+                },
+                {
+                    "ID": 180,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 26,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 159,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 58,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 6,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 2
+                },
+                {
+                    "ID": 123,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 8
+                },
+                {
+                    "ID": 121,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 9
+                },
+                {
+                    "ID": 157,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 151,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 87,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 3,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                }
+            ]
+        }, {
+            "Name": "Rogue",
+            "ID": 3,
+            "Strength": -1,
+            "Constitution": 0,
+            "Dexterity": 2,
+            "Intelligence": -1,
+            "Perception": 2,
+            "Charisma": -1,
+            "MaxHP": -10,
+            "MaxMP": -10,
+            "Skills": {
+                "Appraisal": 25,
+                "Stealth": 50,
+                "Lockpicking": 50,
+                "Ranged": 25,
+                "Sword": 25,
+                "Alchemy": 20
+            },
+            "Items": [{
+                    "ID": 2,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 26,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 41,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 20,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 37,
+                    "Status": 1,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 12,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 56,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 5,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 146,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 2
+                }
+            ]
+        }, {
+            "Name": "Wanderer",
+            "ID": 4,
+            "Strength": 0,
+            "Constitution": 1,
+            "Dexterity": 0,
+            "Intelligence": -1,
+            "Perception": 0,
+            "Charisma": -1,
+            "MaxHP": 10,
+            "MaxMP": -10,
+            "Skills": {
+                "Stealth": 25,
+                "Swimming": 50,
+                "Polearm": 25,
+                "Ranged": 25,
+                "Trading": 25,
+                "Unarmed": 10,
+                "Alchemy": 30
+            },
+            "Items": [{
+                    "ID": 1,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 41,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 26,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 30,
+                    "Status": 3,
+                    "Beatitude": 1,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 19,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 160,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 154,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 159,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 144,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 151,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 148,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 2
+                },
+                {
+                    "ID": 149,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 3
+                }
+            ]
+        }, {
+            "Name": "Cleric",
+            "ID": 5,
+            "Strength": 0,
+            "Constitution": 1,
+            "Dexterity": -1,
+            "Intelligence": 0,
+            "Perception": 2,
+            "Charisma": 1,
+            "MaxHP": 0,
+            "MaxMP": 0,
+            "Skills": {
+                "Mace": 25,
+                "Swimming": 25,
+                "Magic": 25,
+                "Spellcasting": 25,
+                "Leadership": 20,
+                "Alchemy": 20
+            },
+            "Items": [{
+                    "ID": 9,
+                    "Status": 3,
+                    "Beatitude": 1,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 0,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 37,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 26,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 3,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 22,
+                    "Status": 2,
+                    "Beatitude": 1,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 148,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 2
+                },
+                {
+                    "ID": 59,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 7,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 3
+                },
+                {
+                    "ID": 81,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 4
+                },
+                {
+                    "ID": 154,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                }
+            ]
+        }, {
+            "Name": "Merchant",
+            "ID": 6,
+            "Strength": 0,
+            "Constitution": 0,
+            "Dexterity": -1,
+            "Intelligence": -1,
+            "Perception": 1,
+            "Charisma": 1,
+            "Gold": 500,
+            "MaxHP": 0,
+            "MaxMP": -10,
+            "Skills": {
+                "Axe": 25,
+                "Leadership": 20,
+                "Appraisal": 50,
+                "Trading": 50,
+                "Alchemy": 10
+            },
+            "Items": [{
+                    "ID": 4,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 40,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 37,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 152,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 143,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 20,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 74,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 156,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 158,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                }
+            ]
+        }, {
+            "Name": "Wizard",
+            "ID": 7,
+            "Strength": 0,
+            "Constitution": 0,
+            "Dexterity": -1,
+            "Intelligence": 1,
+            "Perception": 1,
+            "Charisma": -1,
+            "MaxHP": -10,
+            "MaxMP": 10,
+            "Skills": {
+                "Polearm": 25,
+                "Spellcasting": 50,
+                "Magic": 50,
+                "Alchemy": 10
+            },
+            "Items": [{
+                    "ID": 1,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 42,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 179,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 3,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 29,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 50,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 30,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 82,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 62,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 107,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 3,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 7
+                },
+                {
+                    "ID": 106,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 4,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 8
+                },
+                {
+                    "ID": 108,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 5,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 9
+                }
+            ]
+        }, {
+            "Name": "Arcanist",
+            "ID": 8,
+            "Strength": -1,
+            "Constitution": 0,
+            "Dexterity": 0,
+            "Intelligence": 1,
+            "Perception": -1,
+            "Charisma": 1,
+            "MaxHP": 0,
+            "MaxMP": 10,
+            "Skills": {
+                "Magic": 25,
+                "Spellcasting": 50,
+                "Stealth": 25,
+                "Lockpicking": 25,
+                "Sword": 25,
+                "Ranged": 25
+            },
+            "Items": [{
+                    "ID": 8,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 19,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 37,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 3,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 30,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 26,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 41,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 3,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 86,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 2
+                },
+                {
+                    "ID": 104,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 6,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 8
+                },
+                {
+                    "ID": 108,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 7,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 9
+                }
+            ]
+        }, {
+            "Name": "Joker",
+            "ID": 9,
+            "Strength": -1,
+            "Constitution": -1,
+            "Dexterity": 0,
+            "Intelligence": 1,
+            "Perception": 0,
+            "Charisma": 1,
+            "Gold": 200,
+            "MaxHP": 0,
+            "MaxMP": 0,
+            "Skills": {
+                "Lockpicking": 25,
+                "Trading": 25,
+                "Leadership": 20,
+                "Magic": 25,
+                "Spellcasting": 25,
+                "Alchemy": 10
+            },"Spells": [
+                6
+            ],
+            "Items": [{
+                    "ID": 43,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 6,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 0
+                },
+                {
+                    "ID": 146,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 1
+                },
+                {
+                    "ID": 80,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 8
+                },
+                {
+                    "ID": 76,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 9
+                },
+                {
+                    "ID": 101,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 114,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 8,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar": 7
+                },
+                {
+                    "ID": 150,
+                    "Status": 3,
+                    "Beatitude": -1,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 126,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": false,
+                    "Equipped": false
+                },
+                {
+                    "ID": 159,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 74,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":5
+                }
+            ]
+        }, {
+            "Name": "Sexton",
+            "ID": 10,
+            "Strength": -1,
+            "Constitution": -1,
+            "Dexterity": 1,
+            "Intelligence": 1,
+            "Perception": 0,
+            "Charisma": 0,
+            "MaxHP": 0,
+            "MaxMP": 5,
+            "Skills": {
+                "Mace": 10,
+                "Shield": 10,
+                "Stealth": 40,
+                "Spellcasting": 40,
+                "Magic": 40,
+                "Ranged": 20,
+                "Alchemy":20
+            },
+            "Items": [{
+                    "ID": 3,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar":0
+                },
+                {
+                    "ID": 186,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 2,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar": 2
+                },
+                {
+                    "ID": 37,
+                    "Status":2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 30,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 216,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 193,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":1
+                },
+                {
+                    "ID": 154,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 185,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 113,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 7,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar":7
+                },
+                {
+                    "ID": 116,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 6,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":8
+                },
+                {
+                    "ID": 117,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 6,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":9
+                }
+            ]
+        }, {
+            "Name": "Ninja",
+            "ID": 11,
+            "Strength": -1,
+            "Constitution": -1,
+            "Dexterity": 1,
+            "Intelligence": -2,
+            "Perception": 0,
+            "Charisma": 0,
+            "MaxHP": 5,
+            "MaxMP": 0,
+            "Skills": {
+                "Stealth": 60,
+                "Sword": 60,
+                "Ranged": 40
+            },
+            "Items": [{
+                    "ID": 187,
+                    "Status": 1,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar":0
+                },
+                {
+                    "ID": 41,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 2,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 215,
+                    "Status":3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 31,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 195,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 192,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 5,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":1
+                },
+                {
+                    "ID": 153,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":2
+                },
+                {
+                    "ID": 67,
+                    "Status": 3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 1,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":2
+                },
+                {
+                    "ID": 63,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                },
+                {
+                    "ID": 80,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 3,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": false
+                }
+            ]
+        }, {
+            "Name": "Monk",
+            "ID": 12,
+            "Strength": 1,
+            "Constitution": 1,
+            "Dexterity": 0,
+            "Intelligence": 0,
+            "Perception": -1,
+            "Charisma": -1,
+            "MaxHP": 10,
+            "MaxMP": 0,
+            "Skills": {
+                "Shield": 40,
+                "Spellcasting": 20,
+                "Leadership": 10,
+                "Polearm": 10,
+                "Magic": 10,
+                "Ranged": 10,
+                "Unarmed":50,
+                "Alchemy":20
+            },
+            "Items": [{
+                    "ID": 182,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true,
+                    "Hotbar":0
+                },
+                {
+                    "ID": 215,
+                    "Status": 4,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 93,
+                    "Status":3,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 0,
+                    "Identified": true,
+                    "Equipped": true
+                },
+                {
+                    "ID": 108,
+                    "Status": 2,
+                    "Beatitude": 0,
+                    "Count": 1,
+                    "Appearence": 7,
+                    "Identified": true,
+                    "Equipped": false,
+                    "Hotbar":9
+                }
+            ]
+        }
+    ]
+}
