@@ -10358,79 +10358,88 @@ bool Entity::checkEnemy(Entity* your)
 			if ( behavior == &actPlayer && myStats->type != HUMAN )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
-				switch ( myStats->type )
+
+				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) && myStats->type != AUTOMATON )
 				{
-					case SKELETON:
-						if ( yourStats->type == GHOUL )
-						{
-							result = false;
-						}
-						break;
-					case RAT:
-						if ( yourStats->type == RAT )
-						{
-							result = false;
-						}
-						break;
-					case SPIDER:
-						if ( yourStats->type == SPIDER
-							|| yourStats->type == SCARAB || yourStats->type == SCORPION )
-						{
-							result = false;
-						}
-						break;
-					case TROLL:
-						if ( yourStats->type == TROLL )
-						{
-							result = false;
-						}
-						break;
-					case CREATURE_IMP:
-						if ( yourStats->type == CREATURE_IMP )
-						{
-							result = false;
-						}
-						break;
-					case GOBLIN:
-						if ( yourStats->type == GOBLIN )
-						{
-							result = false;
-						}
-						break;
-					case GOATMAN:
-						if ( yourStats->type == GOATMAN )
-						{
-							result = false;
-						}
-						break;
-					case INCUBUS:
-					case SUCCUBUS:
-						if ( yourStats->type == SUCCUBUS || yourStats->type == INCUBUS )
-						{
-							result = false;
-						}
-						break;
-					case INSECTOID:
-						if ( yourStats->type == SCARAB 
-							|| myStats->type == INSECTOID || myStats->type == SCORPION )
-						{
-							result = false;
-						}
-						break;
-					case VAMPIRE:
-						if ( yourStats->type == VAMPIRE )
-						{
-							result = false;
-						}
-						break;
-					case AUTOMATON:
-						if ( yourStats->type == INCUBUS || yourStats->type == SUCCUBUS )
-						{
-							result = false;
-						}
-						break;
-					default:
-						break;
+					// enemies.
+					result = true;
+				}
+				else
+				{
+					switch ( myStats->type )
+					{
+						case SKELETON:
+							if ( yourStats->type == GHOUL )
+							{
+								result = false;
+							}
+							break;
+						case RAT:
+							if ( yourStats->type == RAT )
+							{
+								result = false;
+							}
+							break;
+						case SPIDER:
+							if ( yourStats->type == SPIDER
+								|| yourStats->type == SCARAB || yourStats->type == SCORPION )
+							{
+								result = false;
+							}
+							break;
+						case TROLL:
+							if ( yourStats->type == TROLL )
+							{
+								result = false;
+							}
+							break;
+						case CREATURE_IMP:
+							if ( yourStats->type == CREATURE_IMP )
+							{
+								result = false;
+							}
+							break;
+						case GOBLIN:
+							if ( yourStats->type == GOBLIN )
+							{
+								result = false;
+							}
+							break;
+						case GOATMAN:
+							if ( yourStats->type == GOATMAN )
+							{
+								result = false;
+							}
+							break;
+						case INCUBUS:
+						case SUCCUBUS:
+							if ( yourStats->type == SUCCUBUS || yourStats->type == INCUBUS )
+							{
+								result = false;
+							}
+							break;
+						case INSECTOID:
+							if ( yourStats->type == SCARAB
+								|| myStats->type == INSECTOID || myStats->type == SCORPION )
+							{
+								result = false;
+							}
+							break;
+						case VAMPIRE:
+							if ( yourStats->type == VAMPIRE )
+							{
+								result = false;
+							}
+							break;
+						case AUTOMATON:
+							if ( yourStats->type == INCUBUS || yourStats->type == SUCCUBUS )
+							{
+								result = false;
+							}
+							break;
+						default:
+							break;
+					}
 				}
 			}
 			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )

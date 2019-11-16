@@ -935,8 +935,16 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
-			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
+			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my 
+				|| (entities && 
+						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
+							|| (entity->behavior == &actMonster && entity->flags[INVISIBLE])
+						)
+					) 
+				)
 			{
+				// if entities == 1, then ignore entities that block sight.
+				// 16/11/19 - added exception to monsters. if monster, use the INVISIBLE flag to skip checking.
 				continue;
 			}
 			if ( entity->behavior == &actParticleTimer )
@@ -1190,6 +1198,40 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		// check against entity
 		if ( entity )
 		{
+			// debug particles.
+			//if ( entity->behavior == &actMonster && entities != 0 )
+			//{
+			//	Entity* particle = spawnMagicParticle(my);
+			//	particle->sprite = 576;
+			//	particle->x = ix;
+			//	particle->y = iy;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x + entity->sizex;
+			//	particle->y = entity->y + entity->sizey;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x - entity->sizex;
+			//	particle->y = entity->y + entity->sizey;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x + entity->sizex;
+			//	particle->y = entity->y - entity->sizey;
+			//	particle->z = 0;
+
+			//	particle = spawnMagicParticle(my);
+			//	particle->sprite = 942;
+			//	particle->x = entity->x - entity->sizex;
+			//	particle->y = entity->y - entity->sizey;
+			//	particle->z = 0;
+			//}
+
 			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex )
 			{
 				if ( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey )
