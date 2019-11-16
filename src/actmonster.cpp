@@ -4597,9 +4597,19 @@ timeToGoAgain:
 							}
 							else if ( myStats->type != SPIDER )
 							{
-								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
+								if ( my->monsterAllyGetPlayerLeader() )
 								{
-									visiontest = true;
+									if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
+									{
+										visiontest = true; // increase ally vision when hunting.
+									}
+								}
+								else
+								{
+									if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
+									{
+										visiontest = true;
+									}
 								}
 							}
 							else
