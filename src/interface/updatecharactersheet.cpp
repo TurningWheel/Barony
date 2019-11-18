@@ -1600,7 +1600,17 @@ void statsHoverText(Stat* tmpStat)
 										// normal manaRegenInterval 300-1200 hunger.
 									}
 								}
-								snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
+
+								if ( regen < 0.f /*stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0*/ )
+								{
+									regen = 0.f;
+									snprintf(buf, longestline("MP regen rate: 0 / %2.1fs"), "MP regen rate: 0 / %2.1fs", (static_cast<real_t>(MAGIC_REGEN_TIME) / TICKS_PER_SECOND));
+								}
+								else
+								{
+									snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], regen);
+								}
+
 								if ( stats[clientnum]->type == AUTOMATON )
 								{
 									if ( stats[clientnum]->HUNGER <= 300 )
@@ -1614,7 +1624,14 @@ void statsHoverText(Stat* tmpStat)
 								}
 								else if ( stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
 								{
-									color = uint32ColorRed(*mainsurface);
+									if ( !(svFlags & SV_FLAG_HUNGER) )
+									{
+										color = uint32ColorWhite(*mainsurface);
+									}
+									else
+									{
+										color = uint32ColorRed(*mainsurface);
+									}
 								}
 								else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
 								{
@@ -1644,7 +1661,14 @@ void statsHoverText(Stat* tmpStat)
 								if ( regen < 0 )
 								{
 									regen = 0.f;
-									color = uint32ColorRed(*mainsurface);
+									if ( !(svFlags & SV_FLAG_HUNGER) )
+									{
+										color = uint32ColorWhite(*mainsurface);
+									}
+									else
+									{
+										color = uint32ColorRed(*mainsurface);
+									}
 									snprintf(buf, longestline("HP regen rate: 0 / %2.1fs"), "HP regen rate: 0 / %2.1fs", (static_cast<real_t>(HEAL_TIME) / TICKS_PER_SECOND));
 								}
 								else if ( regen < HEAL_TIME / TICKS_PER_SECOND )
