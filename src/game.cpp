@@ -720,6 +720,14 @@ void gameLogic(void)
 								TileEntityList.addEntity(*entity);
 							}
 
+							/*if ( entity->getUID() >= 0 && entity->behavior != &actFlame && !entity->flags[INVISIBLE]
+								&& entity->behavior != &actDoor && entity->behavior != &actDoorFrame
+								&& entity->behavior != &actGate && entity->behavior != &actTorch
+								&& entity->behavior != &actSprite && !entity->flags[SPRITE]
+								&& entity->skill[28] == 0 )
+							{
+								printlog("DEBUG: Starting Entity sprite: %d", entity->sprite);
+							}*/
 							(*entity->behavior)(entity);
 
 						}
@@ -730,6 +738,7 @@ void gameLogic(void)
 							{
 								if ( entity == (Entity*)node2->element )
 								{
+									//printlog("DEBUG: Entity deleted self, sprite: %d", entity->sprite);
 									entitydeletedself = true;
 									break;
 								}
