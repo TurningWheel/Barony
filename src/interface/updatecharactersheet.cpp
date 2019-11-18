@@ -1612,6 +1612,10 @@ void statsHoverText(Stat* tmpStat)
 										color = uint32ColorGreen(*mainsurface);
 									}
 								}
+								else if ( stats[clientnum]->playerRace == RACE_INSECTOID && stats[clientnum]->appearance == 0 )
+								{
+									color = uint32ColorRed(*mainsurface);
+								}
 								else if ( regen < static_cast<real_t>(tmp->getBaseManaRegen(*tmpStat)) / TICKS_PER_SECOND)
 								{
 									color = uint32ColorGreen(*mainsurface);
