@@ -1157,6 +1157,11 @@ void updatePlayerInventory()
 								{
 									src.h += TTF12_HEIGHT;
 								}
+								else if ( itemCategory(item) == SCROLL && item->identified )
+								{
+									src.h += TTF12_HEIGHT;
+									src.w = std::max((2 + longestline(language[3862]) + longestline(item->getScrollLabel())) * TTF12_WIDTH + 8, src.w);
+								}
 								else if ( itemCategory(item) == SPELLBOOK && playerLearnedSpellbook(item) )
 								{
 									int height = 1;
@@ -1333,6 +1338,11 @@ void updatePlayerInventory()
 
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC(stats[clientnum]));
 									stats[clientnum]->type = tmpRace;
+								}
+								else if ( itemCategory(item) == SCROLL )
+								{
+									color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
+									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, "%s%s", language[3862], item->getScrollLabel());
 								}
 							}
 						}
