@@ -480,17 +480,29 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 	{
 		stats->EFFECTS_TIMERS[EFF_DRUNK] = 2400 + rand() % 1200;
 	}
-	stats->HUNGER += 100;
-	if ( entity->behavior == &actPlayer )
+
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		stats->HUNGER += 100;
+		if ( entity->behavior == &actPlayer )
 		{
-			stats->HUNGER += 250;
+			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				stats->HUNGER += 250;
+			}
 		}
-		// results of eating
-		updateHungerMessages(entity, stats, item);
+	}
+	else
+	{
+		// hunger off.
+		if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+		{
+			entity->modMP(5 * (1 + item->beatitude));
+		}
 	}
 	entity->modHP(5 * (1 + item->beatitude));
+	// results of eating
+	updateHungerMessages(entity, stats, item);
 	serverUpdateEffects(player);
 
 	// play drink sound
@@ -603,27 +615,52 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = 1000 + rand() % 300;
 		}
-		stats->HUNGER += 50;
 		entity->modHP(5);
-		if ( entity->behavior == &actPlayer )
+
+		if ( svFlags & SV_FLAG_HUNGER )
 		{
-			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			stats->HUNGER += 50;
+			if ( entity->behavior == &actPlayer )
 			{
-				stats->HUNGER += 200;
+				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+				{
+					stats->HUNGER += 200;
+				}
 			}
 		}
+		else
+		{
+			// hunger off.
+			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				entity->modMP(5);
+			}
+		}
+
 		serverUpdateEffects(player);
 	}
 	else
 	{
 		messagePlayer(player, language[760]);
-		stats->HUNGER += 50;
 		entity->modHP(5 * (1 + item->beatitude));
-		if ( entity->behavior == &actPlayer )
+
+		if ( svFlags & SV_FLAG_HUNGER )
 		{
-			if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			stats->HUNGER += 50;
+			if ( entity->behavior == &actPlayer )
 			{
-				stats->HUNGER += 200;
+				if ( stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+				{
+					stats->HUNGER += 200;
+				}
+			}
+		}
+		else
+		{
+			// hunger off.
+			if ( entity->behavior == &actPlayer && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+			{
+				entity->modMP(5 * (1 + item->beatitude));
 			}
 		}
 	}
@@ -2015,16 +2052,19 @@ bool item_PotionRestoreMagic(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	entity->modMP(amount);
 
-	if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
+	if ( svFlags & SV_FLAG_HUNGER )
 	{
-		Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
-		Sint32 oldHunger = stats->HUNGER;
-		stats->HUNGER += amount * hungerPointPerMana;
-		stats->HUNGER = std::min(999, stats->HUNGER);
-		updateHungerMessages(entity, stats, item);
-		if ( player > 0 )
+		if ( player >= 0 && stats->playerRace == RACE_INSECTOID && stats->appearance == 0 )
 		{
-			serverUpdateHunger(player);
+			Sint32 hungerPointPerMana = entity->playerInsectoidHungerValueOfManaPoint(*stats);
+			Sint32 oldHunger = stats->HUNGER;
+			stats->HUNGER += amount * hungerPointPerMana;
+			stats->HUNGER = std::min(999, stats->HUNGER);
+			updateHungerMessages(entity, stats, item);
+			if ( player > 0 )
+			{
+				serverUpdateHunger(player);
+			}
 		}
 	}
 
@@ -4073,45 +4113,41 @@ void item_Food(Item*& item, int player)
 		switch ( item->type )
 		{
 			case FOOD_BREAD:
-				hungerIncrease += 400;
+				hungerIncrease = 400;
 				break;
 			case FOOD_CREAMPIE:
-				hungerIncrease += 200;
+				hungerIncrease = 200;
 				break;
 			case FOOD_CHEESE:
-				hungerIncrease += 100;
+				hungerIncrease = 100;
 				break;
 			case FOOD_APPLE:
-				hungerIncrease += 200;
+				hungerIncrease = 200;
 				break;
 			case FOOD_MEAT:
-				hungerIncrease += 600;
+				hungerIncrease = 600;
 				break;
 			case FOOD_FISH:
-				hungerIncrease += 500;
+				hungerIncrease = 500;
 				break;
 			case FOOD_TOMALLEY:
-				hungerIncrease += 400;
+				hungerIncrease = 400;
 				break;
 			case FOOD_BLOOD:
 				if ( players[player] && players[player]->entity 
 					&& players[player]->entity->playerRequiresBloodToSustain() )
 				{
-					hungerIncrease += 250;
+					hungerIncrease = 250;
 				}
 				else
 				{
-					hungerIncrease += 10;
+					hungerIncrease = 10;
 				}
 				break;
 			default:
-				hungerIncrease += 10;
+				hungerIncrease = 10;
 				break;
 		}
-		/*if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
-		{
-			hungerIncrease *= 2;
-		}*/
 		stats[player]->HUNGER += hungerIncrease;
 	}
 	else
@@ -4120,6 +4156,47 @@ void item_Food(Item*& item, int player)
 		{
 			players[player]->entity->modHP(5);
 			messagePlayer(player, language[911]);
+
+
+			if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			{
+				real_t manaRegenPercent = 0.f;
+				switch ( item->type )
+				{
+					case FOOD_BREAD:
+					case FOOD_TOMALLEY:
+						manaRegenPercent = 0.4;
+						break;
+					case FOOD_CREAMPIE:
+						manaRegenPercent = 0.2;
+						break;
+					case FOOD_CHEESE:
+						manaRegenPercent = 0.1;
+						break;
+					case FOOD_APPLE:
+						manaRegenPercent = 0.2;
+						break;
+					case FOOD_MEAT:
+					case FOOD_FISH:
+						manaRegenPercent = 0.5;
+						break;
+					case FOOD_BLOOD:
+						if ( players[player] && players[player]->entity
+							&& players[player]->entity->playerRequiresBloodToSustain() )
+						{
+							manaRegenPercent = 0.25;
+						}
+						else
+						{
+							manaRegenPercent = 0.1;
+						}
+						break;
+					default:
+						break;
+				}
+				int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+				players[player]->entity->modMP(manaAmount);
+			}
 		}
 	}
 
@@ -4345,6 +4422,12 @@ void item_FoodTin(Item*& item, int player)
 			players[player]->entity->modHP(5);
 		}
 		messagePlayer(player, language[911]);
+		if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+		{
+			real_t manaRegenPercent = 0.6;
+			int manaAmount = stats[player]->MAXMP * manaRegenPercent;
+			players[player]->entity->modMP(manaAmount);
+		}
 	}
 
 	// greasy fingers
