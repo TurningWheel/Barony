@@ -460,7 +460,7 @@ void actArrow(Entity* my)
 							}
 						}
 					}
-					real_t damageMultiplier = damagetables[hitstats->type][4];
+					real_t damageMultiplier = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_RANGED);
 					if ( huntingDamage || silverDamage )
 					{
 						damageMultiplier = std::max(0.75, damageMultiplier);

@@ -498,7 +498,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	int oldHP = stat->HP;
 	if ( stat )
 	{
-		damage *= damagetables[stat->type][5]; // reduce/increase by magic table.
+		damage *= triggered->getDamageTableMultiplier(*stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
 	}
 	triggered->modHP(-damage);
 	triggered->setObituary(language[3496]);

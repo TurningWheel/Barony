@@ -5739,7 +5739,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						Stat* tmpStats = tmpEntity->getStats();
 						if ( tmpStats )
 						{
-							int explodeDmg = (10 + rand() % 10 + myStats->LVL) * damagetables[tmpStats->type][5]; // check base magic damage resist.
+							int explodeDmg = (10 + rand() % 10 + myStats->LVL) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 							Entity* gib = spawnGib(tmpEntity);
 							serverSpawnGibForClient(gib);
 							if ( tmpEntity->behavior == &actPlayer )
@@ -6942,15 +6942,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 				real_t weaponMultipliers = 0.0;
 				if ( weaponskill == PRO_UNARMED )
 				{
-					weaponMultipliers = damagetables[hitstats->type][6];
+					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_UNARMED);
 				}
 				else if ( weaponskill == PRO_RANGED )
 				{
-					weaponMultipliers = damagetables[hitstats->type][4];
+					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_RANGED);
 				}
 				else if ( weaponskill >= 0 )
 				{
-					weaponMultipliers = damagetables[hitstats->type][weaponskill - PRO_SWORD];
+					DamageTableType dmgType = static_cast<DamageTableType>(weaponskill - PRO_SWORD);
+					weaponMultipliers = hit.entity->getDamageTableMultiplier(*hitstats, dmgType);
 				}
 
 				bool dyrnwynSmite = false;
@@ -8999,7 +9000,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Stat* tmpStats = tmpEntity->getStats();
 									if ( tmpStats )
 									{
-										int explodeDmg = (40 + myStats->HP) * damagetables[tmpStats->type][5]; // check base magic damage resist.
+										int explodeDmg = (40 + myStats->HP) * tmpEntity->getDamageTableMultiplier(*tmpStats, DAMAGE_TABLE_MAGIC); // check base magic damage resist.
 										Entity* gib = spawnGib(tmpEntity);
 										serverSpawnGibForClient(gib);
 										playerhit = tmpEntity->skill[2];
@@ -18054,4 +18055,23 @@ Sint32 Entity::playerInsectoidHungerValueOfManaPoint(Stat& myStats)
 {
 	float manaPointPercentage = 1 / static_cast<float>(myStats.MAXMP);
 	return static_cast<Sint32>(1000 * manaPointPercentage);
+}
+
+real_t Entity::getDamageTableMultiplier(Stat& myStats, DamageTableType damageType)
+{
+	real_t damageMultiplier = damagetables[myStats.type][damageType];
+	if ( myStats.EFFECTS[EFF_SHADOW_TAGGED] )
+	{
+		if ( myStats.type == LICH || myStats.type == LICH_FIRE || myStats.type == LICH_ICE
+			|| myStats.type == DEVIL )
+		{
+			return 1.5; // rough average.
+		}
+		else
+		{
+			return 1.0;
+		}
+	}
+	//messagePlayer(0, "%f", damageMultiplier);
+	return damageMultiplier;
 }

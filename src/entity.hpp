@@ -856,6 +856,7 @@ public:
 	bool entityCheckIfTriggeredBomb(bool triggerBomb);
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
+	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);

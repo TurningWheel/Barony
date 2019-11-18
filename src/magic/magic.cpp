@@ -434,7 +434,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 			int oldHP = hitstats->HP;
 			damage /= (1 + (int)resistance);
-			damage *= damagetables[hitstats->type][5];
+			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -567,7 +567,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 				hasamulet = true;
 			}
 			damage /= (1 + (int)resistance);
-			damage *= damagetables[hitstats->type][5];
+			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -1033,7 +1033,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			damage += damage * ((my.actmagicSpellbookBonus / 100.f) + getBonusFromCasterOfSpellElement(parent, &element));
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage /= (1 + (int)resistance);
-			damage *= damagetables[hitstats->type][5];
+			damage *= hit.entity->getDamageTableMultiplier(*hitstats, DAMAGE_TABLE_MAGIC);
 
 			if ( parent )
 			{
@@ -2502,7 +2502,14 @@ void spellEffectShadowTag(Entity& my, spellElement_t& element, Entity* parent, i
 						}
 					}
 				}
-				hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 60 * TICKS_PER_SECOND, true);
+				if ( parent->checkFriend(hit.entity) )
+				{
+					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 60 * TICKS_PER_SECOND, true);
+				}
+				else
+				{
+					hit.entity->setEffect(EFF_SHADOW_TAGGED, true, 10 * TICKS_PER_SECOND, true);
+				}
 				parent->creatureShadowTaggedThisUid = hit.entity->getUID();
 				serverUpdateEntitySkill(parent, 54);
 				if ( !sameAsPrevious )

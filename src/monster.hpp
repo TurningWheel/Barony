@@ -209,7 +209,7 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 2.5, 2.5, 2.5, 2.5, 1.3, 1.f, 1.8 }, // lich
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f, 1.f }, // devil
-	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.f }, // shopkeeper
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
 	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2, 0.8 }, // kobold
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2, 1.4 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6, 0.6 }, // crystal golem
@@ -227,6 +227,18 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 1.2, 0.5 }  // dummybot
 };
+
+enum DamageTableType : int
+{
+	DAMAGE_TABLE_SWORD,
+	DAMAGE_TABLE_MACE,
+	DAMAGE_TABLE_AXE,
+	DAMAGE_TABLE_POLEARM,
+	DAMAGE_TABLE_RANGED,
+	DAMAGE_TABLE_MAGIC,
+	DAMAGE_TABLE_UNARMED
+};
+static const int numDamageTableTypes = 7;
 
 static std::vector<std::vector<int>> classStatGrowth =
 {
