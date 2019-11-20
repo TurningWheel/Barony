@@ -1158,6 +1158,27 @@ void actPlayer(Entity* my)
 	{
 		messagePlayer(clientnum, "%d", stats[clientnum]->HUNGER);
 	}*/
+	if ( keystatus[SDL_SCANCODE_F1] )
+	{
+		gameloopFreezeEntities = !gameloopFreezeEntities;
+		keystatus[SDL_SCANCODE_F1] = 0;
+	}
+	if ( keystatus[SDL_SCANCODE_F2] )
+	{
+		if ( players[clientnum] != nullptr && players[clientnum]->entity != nullptr )
+		{
+			lightSphereShadow(players[clientnum]->entity->x / 16, players[clientnum]->entity->y / 16, 8, 150);
+		}
+		keystatus[SDL_SCANCODE_F2] = 0;
+	}
+	if ( keystatus[SDL_SCANCODE_F3] )
+	{
+		if ( players[clientnum] != nullptr && players[clientnum]->entity != nullptr )
+		{
+			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
+		}
+		keystatus[SDL_SCANCODE_F3] = 0;
+	}
 
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
 	{

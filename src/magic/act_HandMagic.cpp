@@ -405,12 +405,12 @@ void actLeftHandMagic(Entity* my)
 		my->flags[INVISIBLE] = true;
 	}
 
-	if (cast_animation.active || cast_animation.active_spellbook )
+	if ( (cast_animation.active || cast_animation.active_spellbook) )
 	{
 		switch (cast_animation.stage)
 		{
 			case CIRCLE:
-				if (ticks % 5 == 0)
+				if ( ticks % 5 == 0 && !(players[clientnum]->entity->skill[3] == 1) )
 				{
 					Entity* entity = spawnGib(my);
 					entity->flags[INVISIBLE] = false;
@@ -756,12 +756,12 @@ void actRightHandMagic(Entity* my)
 		my->flags[INVISIBLE] = true;
 	}
 
-	if ( cast_animation.active || cast_animation.active_spellbook )
+	if ( (cast_animation.active || cast_animation.active_spellbook) )
 	{
 		switch (cast_animation.stage)
 		{
 			case CIRCLE:
-				if (ticks % 5 == 0)
+				if ( ticks % 5 == 0 && !(players[clientnum]->entity->skill[3] == 1) )
 				{
 					//messagePlayer(0, "Pingas!");
 					Entity* entity = spawnGib(my);

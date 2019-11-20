@@ -705,7 +705,15 @@ void gameLogic(void)
 					}
 					if ( entity->behavior != nullptr )
 					{
-						if ( gameloopFreezeEntities && entity->behavior != &actPlayer )
+						if ( gameloopFreezeEntities 
+							&& entity->behavior != &actPlayer
+							&& entity->behavior != &actPlayerLimb
+							&& entity->behavior != &actHudWeapon
+							&& entity->behavior != &actHudShield
+							&& entity->behavior != &actHudAdditional
+							&& entity->behavior != &actHudArrowModel
+							&& entity->behavior != &actLeftHandMagic
+							&& entity->behavior != &actRightHandMagic )
 						{
 							continue;
 						}

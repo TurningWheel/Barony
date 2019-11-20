@@ -16,6 +16,7 @@
 #include "entity.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -46,6 +47,13 @@ void actGib(Entity* my)
 	{
 		list_RemoveNode(my->mynode);
 		return;
+	}
+
+	if ( my->flags[OVERDRAW] 
+		&& players[clientnum] && players[clientnum]->entity && players[clientnum]->entity->skill[3] == 1 )
+	{
+		// debug cam, don't draw overdrawn.
+		my->flags[INVISIBLE] = true;
 	}
 
 	// horizontal motion
