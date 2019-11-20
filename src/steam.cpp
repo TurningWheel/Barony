@@ -692,6 +692,8 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
+	//messagePlayer(clientnum, "%s", achName);
+
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
