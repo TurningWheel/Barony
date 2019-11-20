@@ -12567,7 +12567,12 @@ void reloadSavegamesList(bool showWindow)
 			if ( tm )
 			{
 				int timeDifference = std::difftime(timeNow, mktime(tm));
-				savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(true, fileNumber), fileNumber, getSaveGameName(true, fileNumber)));
+				char* saveGameName = getSaveGameName(true, fileNumber);
+				if ( saveGameName )
+				{
+					savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(true, fileNumber), fileNumber, saveGameName));
+					free(saveGameName);
+				}
 			}
 		}
 	}
@@ -12598,7 +12603,12 @@ void reloadSavegamesList(bool showWindow)
 			if ( tm )
 			{
 				int timeDifference = std::difftime(timeNow, mktime(tm));
-				savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(false, fileNumber), fileNumber, getSaveGameName(false, fileNumber)));
+				char* saveGameName = getSaveGameName(false, fileNumber);
+				if ( saveGameName )
+				{
+					savegamesList.push_back(std::make_tuple(timeDifference, getSaveGameType(false, fileNumber), fileNumber, saveGameName));
+					free(saveGameName);
+				}
 			}
 		}
 	}

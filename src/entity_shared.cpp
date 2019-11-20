@@ -1246,19 +1246,20 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			node2->element = nullptr;
 			node2->deconstructor = &emptyDeconstructor;
 
-			myStats = new Stat(entityNew->sprite);
 			node2 = list_AddNodeLast(&entityNew->children);
 			if ( tmpStats != nullptr )
 			{
 				node2->element = tmpStats->copyStats();
+				node2->size = sizeof(tmpStats);
 			}
 			else
 			{
 				// if the previous sprite did not have stats initialised, or creating a new entity.
+				myStats = new Stat(entityNew->sprite);
 				node2->element = myStats;
+				node2->size = sizeof(myStats);
 			}
 			//					node2->deconstructor = &myStats->~Stat;
-			node2->size = sizeof(myStats);
 		}
 	}
 	// chests.

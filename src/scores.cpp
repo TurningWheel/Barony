@@ -236,7 +236,11 @@ void scoreDeconstructor(void* data)
 	if ( data )
 	{
 		score_t* score = (score_t*)data;
-		score->stats->~Stat();
+		if ( score->stats )
+		{
+			delete score->stats;
+		}
+		//score->stats->~Stat();
 		free(data);
 	}
 }

@@ -206,7 +206,7 @@ void actPlayer(Entity* my)
 			logCheckObstacleCount = 0;
 		}
 	}
-	if ( spamming )
+	if ( spamming && my->ticks % 2 == 0 )
 	{
 		for (int i = 0; i < 1; ++i)
 		{

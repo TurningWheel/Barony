@@ -723,6 +723,10 @@ void deinitGame()
 		{
 			if ( books[c] )
 			{
+				if ( books[c]->name )
+				{
+					free(books[c]->name);
+				}
 				if ( books[c]->text )
 				{
 					free(books[c]->text);
@@ -977,6 +981,11 @@ void deinitGame()
 	if (game_controller)
 	{
 		delete game_controller;
+	}
+
+	if ( shoparea )
+	{
+		free(shoparea);
 	}
 
 	for (int i = 0; i < MAXPLAYERS; ++i)
