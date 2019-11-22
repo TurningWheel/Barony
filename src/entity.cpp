@@ -14632,6 +14632,10 @@ Item* Entity::getBestMeleeWeaponIHave() const
 		}
 	}
 
+	if ( currentBest && itemIsThrowableTinkerTool(currentBest) )
+	{
+		currentBest = nullptr;
+	}
 	/*if ( currentBest )
 	{
 		messagePlayer(clientnum, "Found best melee weapon: \"%s\"", currentBest->description());

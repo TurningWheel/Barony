@@ -10134,6 +10134,11 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 		return 160;
 	}
 
+	if ( getMonsterTypeFromSprite() == SENTRYBOT )
+	{
+		return sightranges[SENTRYBOT];
+	}
+
 	int distance = 160;
 	switch ( weapon->type )
 	{
