@@ -6132,7 +6132,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					entity = newEntity(78, 1, map.entities, nullptr); // rock
 					playSoundEntity(this, 239 + rand() % 3, 96);
 				}
-				else if ( myStats->weapon->type == CROSSBOW )
+				else if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
 				{
 					entity = newEntity(167, 1, map.entities, nullptr); // bolt
 					playSoundEntity(this, 239 + rand() % 3, 96);
@@ -11897,7 +11897,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
 				|| myStats->type == SHADOW )
 			{
-				if ( myStats->weapon->type == CROSSBOW )
+				if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP1;
 				}
@@ -12748,7 +12748,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->y += .5 * sin(weaponArmLimb->yaw);
 			}
 		}
-		else if ( weaponLimb->sprite == items[CROSSBOW].index )
+		else if ( weaponLimb->sprite == items[CROSSBOW].index || weaponLimb->sprite == items[HEAVY_CROSSBOW].index )
 		{
 			weaponLimb->x = weaponArmLimb->x;
 			weaponLimb->y = weaponArmLimb->y;
@@ -12912,7 +12912,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	{
 		weaponLimb->focalx = limbs[monsterType][6][0]; // 2.5
 		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
-		if ( weaponLimb->sprite == items[CROSSBOW].index )
+		if ( weaponLimb->sprite == items[CROSSBOW].index || weaponLimb->sprite == items[HEAVY_CROSSBOW].index )
 		{
 			weaponLimb->focalx += 2.1;
 			weaponLimb->focaly -= 0.1;

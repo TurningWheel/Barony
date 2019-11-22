@@ -4046,7 +4046,7 @@ void actPlayer(Entity* my)
 						if ( weaponarm->skill[1] == 0 )
 						{
 							real_t targetPitch = 14 * PI / 8;
-							if ( weaponarm->sprite == items[CROSSBOW].index )
+							if ( weaponarm->sprite == items[CROSSBOW].index || weaponarm->sprite == items[HEAVY_CROSSBOW].index )
 							{
 								targetPitch = 15 * PI / 8;
 							}

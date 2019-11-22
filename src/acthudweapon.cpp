@@ -554,7 +554,8 @@ void actHudWeapon(Entity* my)
 				{
 					if ( rangedweapon )
 					{
-						if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type != CROSSBOW )
+						if ( stats[clientnum]->weapon 
+							&& stats[clientnum]->weapon->type != CROSSBOW )
 						{
 							my->sprite++;
 						}
@@ -562,7 +563,7 @@ void actHudWeapon(Entity* my)
 					}
 				}
 			}
-			else if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW )
+			else if ( stats[clientnum]->weapon && (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) )
 			{
 				HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_BEING_DRAWN;
 				if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
@@ -584,7 +585,14 @@ void actHudWeapon(Entity* my)
 				{
 					if ( HUDWEAPON_CHOP == CROSSBOW_CHOP_RELOAD_START )
 					{
-						my->sprite = 975; // model has been "fired" and the bowstring not pulled back
+						if ( stats[clientnum]->weapon->type == CROSSBOW )
+						{
+							my->sprite = 975; // model has been "fired" and the bowstring not pulled back
+						}
+						else if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
+						{
+							my->sprite = 987;
+						}
 					}
 					HUDWEAPON_SHOOTING_RANGED_WEAPON = RANGED_ANIM_FIRED;
 				}
@@ -657,7 +665,7 @@ void actHudWeapon(Entity* my)
 		weaponSwitch = false;
 		if ( !hideWeapon )
 		{
-			if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW )
+			if ( stats[clientnum]->weapon && (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) )
 			{
 				swingweapon = false;
 				HUDWEAPON_CHARGE = 0;
@@ -819,8 +827,28 @@ void actHudWeapon(Entity* my)
 		}
 		else
 		{
-			bowIsBeingDrawn = false;
-			bowFire = true; // ready to fire!
+			//if ( stats[clientnum]->weapon && stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
+			//{
+			//	if ( ((my->ticks - bowStartDrawingTick) < bowFireRate * 2) && swingweapon )
+			//	{
+			//		// don't shoot yet.
+			//		if ( ((my->ticks - bowStartDrawingTick) > bowFireRate * 1.5) )
+			//		{
+			//			shakeRangedWeapon = true;
+			//		}
+			//	}
+			//	else
+			//	{
+			//		bowIsBeingDrawn = false;
+			//		bowFire = true; // ready to fire!
+			//		swingweapon = true;
+			//	}
+			//}
+			//else
+			{
+				bowIsBeingDrawn = false;
+				bowFire = true; // ready to fire!
+			}
 		}
 #ifdef SOUND
 #ifdef USE_OPENAL
@@ -943,7 +971,8 @@ void actHudWeapon(Entity* my)
 							|| stats[clientnum]->weapon->type == SHORTBOW
 							|| stats[clientnum]->weapon->type == ARTIFACT_BOW
 							|| stats[clientnum]->weapon->type == LONGBOW
-							|| stats[clientnum]->weapon->type == COMPOUND_BOW )
+							|| stats[clientnum]->weapon->type == COMPOUND_BOW
+							|| stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
 						{
 							if ( !stats[clientnum]->defending && !throwGimpTimer )
 							{
@@ -976,6 +1005,14 @@ void actHudWeapon(Entity* my)
 										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = TICKS_PER_SECOND / 4;
 
+										if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
+										{
+											HUDWEAPON_MOVEX = -4;
+											throwGimpTimer = 40;
+											HUDWEAPON_CHOP = CROSSBOW_CHOP_RELOAD_START;
+											HUDWEAPON_CROSSBOW_RELOAD_ANIMATION = CROSSBOW_ANIM_SHOOT;
+										}
+
 										if ( multiplayer == CLIENT )
 										{
 											if ( rangedWeaponUseQuiverOnAttack(stats[clientnum]) && !artifactBowSaveAmmo )
@@ -1005,60 +1042,68 @@ void actHudWeapon(Entity* my)
 									}
 								}
 
-								if ( HUDWEAPON_MOVEX > 0 )
+								real_t targety = -1.0;
+								if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
 								{
-									if ( HUDWEAPON_MOVEX > 1 )
+									// do nothing.
+								}
+								else
+								{
+									if ( HUDWEAPON_MOVEX > 0 )
 									{
-										HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1, 0.0);
+										if ( HUDWEAPON_MOVEX > 1 )
+										{
+											HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1, 0.0);
+										}
+										else
+										{
+											HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 0.2, 0.0);
+										}
 									}
-									else
+									else if ( HUDWEAPON_MOVEX < 0 )
 									{
-										HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 0.2, 0.0);
+										HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + 1, 0.0);
 									}
-								}
-								else if ( HUDWEAPON_MOVEX < 0 )
-								{
-									HUDWEAPON_MOVEX = std::min<real_t>(HUDWEAPON_MOVEX + 1, 0.0);
-								}
-								if ( HUDWEAPON_MOVEY > -1 )
-								{
-									HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1, -1.0);
-								}
-								else if ( HUDWEAPON_MOVEY < -1 )
-								{
-									HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1, -1.0);
-								}
-								if ( HUDWEAPON_MOVEZ > 0 )
-								{
-									HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 1, 0.0);
-								}
-								else if ( HUDWEAPON_MOVEZ < 0 )
-								{
-									HUDWEAPON_MOVEZ = std::min<real_t>(HUDWEAPON_MOVEZ + 1, 0.0);
-								}
-								if ( HUDWEAPON_YAW > -.1 )
-								{
-									HUDWEAPON_YAW = std::max<real_t>(HUDWEAPON_YAW - .1, -.1);
-								}
-								else if ( HUDWEAPON_YAW < -.1 )
-								{
-									HUDWEAPON_YAW = std::min<real_t>(HUDWEAPON_YAW + .1, -.1);
-								}
-								if ( HUDWEAPON_PITCH > 0 )
-								{
-									HUDWEAPON_PITCH = std::max<real_t>(HUDWEAPON_PITCH - .1, 0.0);
-								}
-								else if ( HUDWEAPON_PITCH < 0 )
-								{
-									HUDWEAPON_PITCH = std::min<real_t>(HUDWEAPON_PITCH + .1, 0.0);
-								}
-								if ( HUDWEAPON_ROLL > 0 )
-								{
-									HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1, 0.0);
-								}
-								else if ( HUDWEAPON_ROLL < 0 )
-								{
-									HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
+									if ( HUDWEAPON_MOVEY > targety )
+									{
+										HUDWEAPON_MOVEY = std::max<real_t>(HUDWEAPON_MOVEY - 1, targety);
+									}
+									else if ( HUDWEAPON_MOVEY < targety )
+									{
+										HUDWEAPON_MOVEY = std::min<real_t>(HUDWEAPON_MOVEY + 1, targety);
+									}
+									if ( HUDWEAPON_MOVEZ > 0 )
+									{
+										HUDWEAPON_MOVEZ = std::max<real_t>(HUDWEAPON_MOVEZ - 1, 0.0);
+									}
+									else if ( HUDWEAPON_MOVEZ < 0 )
+									{
+										HUDWEAPON_MOVEZ = std::min<real_t>(HUDWEAPON_MOVEZ + 1, 0.0);
+									}
+									if ( HUDWEAPON_YAW > -.1 )
+									{
+										HUDWEAPON_YAW = std::max<real_t>(HUDWEAPON_YAW - .1, -.1);
+									}
+									else if ( HUDWEAPON_YAW < -.1 )
+									{
+										HUDWEAPON_YAW = std::min<real_t>(HUDWEAPON_YAW + .1, -.1);
+									}
+									if ( HUDWEAPON_PITCH > 0 )
+									{
+										HUDWEAPON_PITCH = std::max<real_t>(HUDWEAPON_PITCH - .1, 0.0);
+									}
+									else if ( HUDWEAPON_PITCH < 0 )
+									{
+										HUDWEAPON_PITCH = std::min<real_t>(HUDWEAPON_PITCH + .1, 0.0);
+									}
+									if ( HUDWEAPON_ROLL > 0 )
+									{
+										HUDWEAPON_ROLL = std::max<real_t>(HUDWEAPON_ROLL - .1, 0.0);
+									}
+									else if ( HUDWEAPON_ROLL < 0 )
+									{
+										HUDWEAPON_ROLL = std::min<real_t>(HUDWEAPON_ROLL + .1, 0.0);
+									}
 								}
 							}
 						}
@@ -1322,6 +1367,24 @@ void actHudWeapon(Entity* my)
 					}
 					else
 					{
+						if ( !hideWeapon && stats[clientnum]->weapon && stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
+						{
+							// not drawing bow anymore, reset.
+							bowIsBeingDrawn = false;
+#ifdef SOUND
+							if ( bowDrawingSoundPlaying && bowDrawingSoundChannel )
+							{
+#ifdef USE_OPENAL
+								OPENAL_Channel_Stop(bowDrawingSoundChannel);
+#else
+								FMOD_Channel_Stop(bowDrawingSoundChannel);
+#endif
+								bowDrawingSoundPlaying = 0;
+								bowDrawingSoundChannel = NULL;
+							}
+#endif
+						}
+
 						if ( HUDWEAPON_MOVEX > 0 )
 						{
 							HUDWEAPON_MOVEX = std::max<real_t>(HUDWEAPON_MOVEX - 1, 0.0);
@@ -1513,7 +1576,7 @@ void actHudWeapon(Entity* my)
 					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 					if ( stats[clientnum]->weapon
-						&& stats[clientnum]->weapon->type == CROSSBOW )
+						&& (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -1682,7 +1745,7 @@ void actHudWeapon(Entity* my)
 			}
 		}
 
-		bool crossbow = stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW;
+		bool crossbow = stats[clientnum]->weapon && (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW);
 
 		if ( stats[clientnum]->weapon && !hideWeapon )
 		{
@@ -1835,7 +1898,7 @@ void actHudWeapon(Entity* my)
 					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
 					if ( stats[clientnum]->weapon
-						&& stats[clientnum]->weapon->type == CROSSBOW )
+						&& (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2035,7 +2098,7 @@ void actHudWeapon(Entity* my)
 						players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
 					}
 					if ( stats[clientnum]->weapon
-						&& stats[clientnum]->weapon->type == CROSSBOW )
+						&& (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) )
 					{
 						throwGimpTimer = 40; // fix for swapping weapon to crossbow while charging.
 					}
@@ -2606,7 +2669,7 @@ void actHudWeapon(Entity* my)
 			{
 				defaultpitch = -PI / 8.f;
 			}
-			if (item->type == CROSSBOW)
+			if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW )
 			{
 				my->x = 6 + HUDWEAPON_MOVEX;
 				my->y = 1.5 + HUDWEAPON_MOVEY;
@@ -2949,7 +3012,7 @@ void actHudShield(Entity* my)
 	HUDSHIELD_DEFEND = defending;
 	HUDSHIELD_SNEAKING = sneaking;
 
-	bool crossbow = (stats[clientnum]->weapon && stats[clientnum]->weapon->type == CROSSBOW);
+	bool crossbow = (stats[clientnum]->weapon && (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) );
 	bool doCrossbowReloadAnimation = false;
 	bool doBowReload = false;
 
@@ -3109,6 +3172,34 @@ void actHudShield(Entity* my)
 			targetYaw = PI / 3 - 0.05;
 			targetZ = -2.75;
 			targetX = 2.75;
+
+			if ( hudweapon && stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
+			{
+				if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex )
+				{
+					targetX += 1;
+				}
+				else if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex + 1 )
+				{
+					targetX += -1.5;
+					if ( HUDSHIELD_MOVEX < targetX )
+					{
+						HUDSHIELD_MOVEX += 2.5;
+						if ( HUDSHIELD_MOVEX > targetX )
+						{
+							HUDSHIELD_MOVEX = targetX;
+						}
+					}
+					else if ( HUDSHIELD_MOVEX > targetX )
+					{
+						HUDSHIELD_MOVEX -= 2.5;
+						if ( HUDSHIELD_MOVEX < targetX )
+						{
+							HUDSHIELD_MOVEX = targetX;
+						}
+					}
+				}
+			}
 
 			if ( stats[clientnum]->shield->type == QUIVER_LIGHTWEIGHT )
 			{
@@ -3615,7 +3706,7 @@ void actHudArrowModel(Entity* my)
 		bow = true;
 	}
 	else if ( stats[clientnum]->weapon
-		&& stats[clientnum]->weapon->type == CROSSBOW )
+		&& (stats[clientnum]->weapon->type == CROSSBOW || stats[clientnum]->weapon->type == HEAVY_CROSSBOW) )
 	{
 		crossbow = true;
 	}
@@ -3666,6 +3757,14 @@ void actHudArrowModel(Entity* my)
 		if ( stats[clientnum]->weapon->type == CROSSBOW )
 		{
 			if ( hudweapon->sprite != items[CROSSBOW].fpindex )
+			{
+				my->flags[INVISIBLE] = true;
+				return;
+			}
+		}
+		if ( stats[clientnum]->weapon->type == HEAVY_CROSSBOW )
+		{
+			if ( hudweapon->sprite != items[HEAVY_CROSSBOW].fpindex && hudweapon->sprite != items[HEAVY_CROSSBOW].fpindex + 1 )
 			{
 				my->flags[INVISIBLE] = true;
 				return;
@@ -3745,6 +3844,17 @@ void actHudArrowModel(Entity* my)
 			my->focalx += 3.5;
 			my->focaly += 0.25;
 			my->focalz += -0.25;
+		}
+		else if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex || hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex + 1 )
+		{
+			my->focalx += 4.5;
+			my->focaly += 0.25;
+			my->focalz += -0.25;
+
+			if ( hudweapon->sprite == items[HEAVY_CROSSBOW].fpindex + 1 )
+			{
+				my->focalx -= 2;
+			}
 		}
 	}
 
