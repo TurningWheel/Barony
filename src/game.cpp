@@ -3662,7 +3662,7 @@ int main(int argc, char** argv)
 								allowCasting = false;
 							}
 
-							if ( (*inputPressed(impulses[IN_DEFEND]) && hasSpellbook) 
+							if ( (*inputPressed(impulses[IN_DEFEND] || *inputPressed(joyimpulses[INJOY_GAME_DEFEND])) && hasSpellbook)
 								&& players[clientnum] && players[clientnum]->entity )
 							{
 								if ( players[clientnum]->entity->effectShapeshift != NOTHING )
@@ -3675,6 +3675,13 @@ int main(int argc, char** argv)
 									{
 										allowCasting = false;
 									}
+								}
+								if ( stats[clientnum]->EFFECTS[EFF_BLIND] )
+								{
+									messagePlayer(clientnum, language[3863]); // prevent casting of spell.
+									allowCasting = false;
+									*inputPressed(impulses[IN_DEFEND]) = 0;
+									*inputPressed(joyimpulses[INJOY_GAME_DEFEND]) = 0;
 								}
 							}
 						}
