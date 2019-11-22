@@ -923,13 +923,14 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void Entity::succubusChooseWeapon(const Entity* target, double dist)
 {
-	if ( monsterSpecialState != 0 )
+
+	Stat *myStats = getStats();
+	if ( !myStats )
 	{
 		return;
 	}
 
-	Stat *myStats = getStats();
-	if ( !myStats )
+	if ( monsterSpecialState != 0 && monsterSpecialTimer != 0 )
 	{
 		return;
 	}

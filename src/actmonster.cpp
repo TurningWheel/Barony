@@ -7606,6 +7606,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						// special handled in succubusChooseWeapon()
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM;
+						monsterSpecialState = 0;
 						break;
 					}
 					break;
@@ -7744,6 +7745,15 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
 								serverUpdateEntitySkill(this, 33); // for clients to handle animation
+							}
+							else
+							{
+								if ( myStats->weapon && itemCategory(myStats->weapon) == SPELLBOOK )
+								{
+									monsterSpecialState = INSECTOID_ACID;
+									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
+									serverUpdateEntitySkill(this, 33); // for clients to handle animation
+								}
 							}
 							break;
 						}
