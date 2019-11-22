@@ -1564,16 +1564,10 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// summon book
-			item = newItem(SPELLBOOK_SUMMON, DECREPIT, 0, 1, 1, true, NULL);
-			item2 = itemPickup(player, item);
-			hotbar[9].item = item2->uid;
-			free(item);
-
 			// slow book
 			item = newItem(SPELLBOOK_SLOW, WORN, 0, 1, 8, true, NULL);
 			item2 = itemPickup(player, item);
-			hotbar[8].item = item2->uid;
+			hotbar[9].item = item2->uid;
 			free(item);
 
 			// restore magic
@@ -2473,6 +2467,10 @@ void initClass(int player)
 		{
 			addSpell(SPELL_TELEPULL, player, true);
 			addSpell(SPELL_DEMON_ILLUSION, player, true);
+		}
+		else if ( client_classes[clientnum] == CLASS_CONJURER )
+		{
+			addSpell(SPELL_SUMMON, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));
