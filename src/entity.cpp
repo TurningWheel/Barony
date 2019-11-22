@@ -2473,9 +2473,9 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->MAXMP += MP_MOD;
 			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->appearance == 0 )
 			{
+				myStats->MAXMP = std::min(50, myStats->MAXMP);
 				if ( svFlags & SV_FLAG_HUNGER )
 				{
-					myStats->MAXMP = std::min(50, myStats->MAXMP);
 					Sint32 hungerPointPerMana = playerInsectoidHungerValueOfManaPoint(*myStats);
 					myStats->HUNGER += MP_MOD * hungerPointPerMana;
 					myStats->HUNGER = std::min(1000, myStats->HUNGER);
@@ -7445,7 +7445,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						int armorRoll = rand() % 6;
 						if ( armorRoll == 4 && hitstats->shield )
 						{
-							if ( itemTypeIsQuiver(hitstats->shield->type) )
+							if ( itemTypeIsQuiver(hitstats->shield->type)
+								|| itemCategory(hitstats->shield) == SPELLBOOK
+								|| hitstats->shield->type == TOOL_TINKERING_KIT )
 							{
 								armorRoll = rand() % 4; // reroll for non-shield slot.
 							}
@@ -7563,7 +7565,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					// if nothing chosen to degrade, check extra shield chances to degrade
 					if ( hitstats->shield != NULL && hitstats->shield->status > BROKEN && armor == NULL
-						&& !itemTypeIsQuiver(hitstats->shield->type) )
+						&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
+						&& hitstats->shield->type != TOOL_TINKERING_KIT )
 					{
 						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 						{
