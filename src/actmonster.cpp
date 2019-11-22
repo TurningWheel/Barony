@@ -7606,7 +7606,6 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						// special handled in succubusChooseWeapon()
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SUCCUBUS_CHARM;
-						monsterSpecialState = 0;
 						break;
 					}
 					break;
