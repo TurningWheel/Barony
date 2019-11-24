@@ -729,10 +729,10 @@ void actArrow(Entity* my)
 							{
 								pushbackMultiplier += 0.3;
 							}
-							if ( hitWeaklyOnTarget )
+							/*if ( hitWeaklyOnTarget )
 							{
 								pushbackMultiplier -= 0.3;
-							}
+							}*/
 
 							if ( hit.entity->behavior == &actMonster )
 							{
@@ -741,7 +741,7 @@ void actArrow(Entity* my)
 									real_t tangent = atan2(hit.entity->y - parent->y, hit.entity->x - parent->x);
 									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
 									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-									hit.entity->monsterKnockbackVelocity = 0.05;
+									hit.entity->monsterKnockbackVelocity = 0.01;
 									hit.entity->monsterKnockbackUID = my->parent;
 									hit.entity->monsterKnockbackTangentDir = tangent;
 									//hit.entity->lookAtEntity(*parent);
@@ -751,7 +751,7 @@ void actArrow(Entity* my)
 									real_t tangent = atan2(hit.entity->y - my->y, hit.entity->x - my->x);
 									hit.entity->vel_x = cos(tangent) * pushbackMultiplier;
 									hit.entity->vel_y = sin(tangent) * pushbackMultiplier;
-									hit.entity->monsterKnockbackVelocity = 0.05;
+									hit.entity->monsterKnockbackVelocity = 0.01;
 									hit.entity->monsterKnockbackTangentDir = tangent;
 									//hit.entity->lookAtEntity(*my);
 								}
