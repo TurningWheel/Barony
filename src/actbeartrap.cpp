@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "scores.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -508,6 +509,13 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		if ( parent )
 		{
 			parent->awardXP(triggered, true, true);
+		}
+		else
+		{
+			if ( achievementObserver.checkUidIsFromPlayer(my->parent) >= 0 )
+			{
+				steamAchievementClient(achievementObserver.checkUidIsFromPlayer(my->parent), "BARONY_ACH_TAKING_WITH");
+			}
 		}
 	}
 

@@ -20,6 +20,7 @@
 #include "items.hpp"
 #include "interface/interface.hpp"
 #include <SDL_thread.h>
+#include "player.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include <steam/steam_gameserver.h>
@@ -692,7 +693,7 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
-	//messagePlayer(clientnum, "%s", achName);
+	messagePlayer(clientnum, "%s", achName);
 
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
@@ -817,6 +818,27 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_VOLATILE:
 				case STEAM_STAT_SURROGATES:
 				case STEAM_STAT_KILL_COMMAND:
+				case STEAM_STAT_TRASH_COMPACTOR:
+				case STEAM_STAT_SPICY:
+				case STEAM_STAT_SERIAL_THRILLA:
+				case STEAM_STAT_TRADITION:
+				case STEAM_STAT_POP_QUIZ:
+				case STEAM_STAT_DYSLEXIA:
+				case STEAM_STAT_BOOKWORM:
+				case STEAM_STAT_MONARCH:
+				case STEAM_STAT_SUPER_SHREDDER:
+				case STEAM_STAT_FIXER_UPPER:
+				case STEAM_STAT_TORCHERER:
+				case STEAM_STAT_MANY_PEDI_PALP:
+				case STEAM_STAT_5000_SECOND_RULE:
+				case STEAM_STAT_SOCIAL_BUTTERFLY:
+				case STEAM_STAT_ROLL_THE_BONES:
+				case STEAM_STAT_COWBOY_FROM_HELL:
+				case STEAM_STAT_SELF_FLAGELLATION:
+				case STEAM_STAT_CHOPPING_BLOCK:
+				case STEAM_STAT_IF_YOU_LOVE_SOMETHING:
+				case STEAM_STAT_RAGE_AGAINST:
+				case STEAM_STAT_GUERILLA_RADIO:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					break;

@@ -1003,6 +1003,8 @@ void gameLogic(void)
 					assignActions(&map);
 					generatePathMaps();
 
+					achievementObserver.updateData();
+
 					if ( !strncmp(map.name, "Mages Guild", 11) )
 					{
 						for ( c = 0; c < MAXPLAYERS; ++c )
@@ -3324,6 +3326,8 @@ int main(int argc, char** argv)
 						}
 						assignActions(&map);
 						generatePathMaps();
+
+						achievementObserver.updateData();
 
 						saveGame();
 

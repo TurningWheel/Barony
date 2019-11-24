@@ -63,7 +63,28 @@ enum SteamStatIndexes : int
 	STEAM_STAT_BARFIGHT_CHAMP,
 	STEAM_STAT_VOLATILE,
 	STEAM_STAT_SURROGATES,
-	STEAM_STAT_KILL_COMMAND
+	STEAM_STAT_KILL_COMMAND,
+	STEAM_STAT_TRASH_COMPACTOR,
+	STEAM_STAT_SPICY,
+	STEAM_STAT_SERIAL_THRILLA,
+	STEAM_STAT_TRADITION,
+	STEAM_STAT_POP_QUIZ,
+	STEAM_STAT_DYSLEXIA,
+	STEAM_STAT_BOOKWORM,
+	STEAM_STAT_MONARCH,
+	STEAM_STAT_SUPER_SHREDDER,
+	STEAM_STAT_FIXER_UPPER,
+	STEAM_STAT_TORCHERER,
+	STEAM_STAT_MANY_PEDI_PALP,
+	STEAM_STAT_5000_SECOND_RULE,
+	STEAM_STAT_SOCIAL_BUTTERFLY,
+	STEAM_STAT_ROLL_THE_BONES,
+	STEAM_STAT_COWBOY_FROM_HELL,
+	STEAM_STAT_SELF_FLAGELLATION,
+	STEAM_STAT_CHOPPING_BLOCK,
+	STEAM_STAT_IF_YOU_LOVE_SOMETHING,
+	STEAM_STAT_RAGE_AGAINST,
+	STEAM_STAT_GUERILLA_RADIO
 };
 
 #ifdef STEAMWORKS
@@ -87,7 +108,28 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_BARFIGHT_CHAMP", 50),		// STEAM_STAT_BARFIGHT_CHAMP,
 	std::make_pair("BARONY_ACH_VOLATILE", 20),				// STEAM_STAT_VOLATILE,
 	std::make_pair("BARONY_ACH_SURROGATES", 50),			// STEAM_STAT_SURROGATES,
-	std::make_pair("BARONY_ACH_KILL_COMMAND", 50)			// STEAM_STAT_KILL_COMMAND
+	std::make_pair("BARONY_ACH_KILL_COMMAND", 50),			// STEAM_STAT_KILL_COMMAND
+	std::make_pair("BARONY_ACH_TRASH_COMPACTOR", 1000),     // STEAM_STAT_TRASH_COMPACTOR
+	std::make_pair("BARONY_ACH_SPICY", 10),                 // STEAM_STAT_SPICY
+	std::make_pair("BARONY_ACH_SERIAL_THRILLA", 1000),      // STEAM_STAT_SERIAL_THRILLA
+	std::make_pair("BARONY_ACH_TRADITION", 20),             // STEAM_STAT_TRADITION
+	std::make_pair("BARONY_ACH_POP_QUIZ", 20),              // STEAM_STAT_POP_QUIZ
+	std::make_pair("BARONY_ACH_DYSLEXIA", 50),              // STEAM_STAT_DYSLEXIA
+	std::make_pair("BARONY_ACH_BOOKWORM", 50),              // STEAM_STAT_BOOKWORM
+	std::make_pair("BARONY_ACH_MONARCH", 20),               // STEAM_STAT_MONARCH
+	std::make_pair("BARONY_ACH_SUPER_SHREDDER", 1000),      // STEAM_STAT_SUPER_SHREDDER
+	std::make_pair("BARONY_ACH_FIXER_UPPER", 100),          // STEAM_STAT_FIXER_UPPER
+	std::make_pair("BARONY_ACH_TORCHERER", 100),            // STEAM_STAT_TORCHERER
+	std::make_pair("BARONY_ACH_MANY_PEDI_PALP", 100),       // STEAM_STAT_MANY_PEDI_PALP
+	std::make_pair("BARONY_ACH_5000_SECOND_RULE", 50),      // STEAM_STAT_5000_SECOND_RULE
+	std::make_pair("BARONY_ACH_SOCIAL_BUTTERFLY", 50),      // STEAM_STAT_SOCIAL_BUTTERFLY
+	std::make_pair("BARONY_ACH_ROLL_THE_BONES", 50),        // STEAM_STAT_ROLL_THE_BONES
+	std::make_pair("BARONY_ACH_COWBOY_FROM_HELL", 50),      // STEAM_STAT_COWBOY_FROM_HELL
+	std::make_pair("BARONY_ACH_SELF_FLAGELLATION", 30),     // STEAM_STAT_SELF_FLAGELLATION
+	std::make_pair("BARONY_ACH_CHOPPING_BLOCK", 100),       // STEAM_STAT_CHOPPING_BLOCK
+	std::make_pair("BARONY_ACH_IF_YOU_LOVE_SOMETHING", 100),// STEAM_STAT_IF_YOU_LOVE_SOMETHING
+	std::make_pair("BARONY_ACH_RAGE_AGAINST", 20),          // STEAM_STAT_RAGE_AGAINST
+	std::make_pair("BARONY_ACH_GUERILLA_RADIO", 20)         // STEAM_STAT_GUERILLA_RADIO
 };
 #endif // STEAMWORKS
 
@@ -161,6 +203,29 @@ void updateAchievementRhythmOfTheKnight(int player, Entity* target, bool playerI
 void updateAchievementThankTheTank(int player, Entity* target, bool targetKilled);
 void updateAchievementBaitAndSwitch(int player, bool isTeleporting);
 static const int SAVE_GAMES_MAX = 10;
+
+class AchievementObserver
+{
+	int levelObserved = -1;
+public:
+	Uint32 playerUids[MAXPLAYERS] = { 0 };
+	void getCurrentPlayerUids();
+	bool updateOnLevelChange();
+	void updateData();
+	int checkUidIsFromPlayer(Uint32 uid);
+	std::unordered_map<Uint32, std::unordered_map<int, int>> entityAchievementsToProcess; // uid of entity, achievement int, ticks remaining int.
+	void addEntityAchievementTimer(Entity* entity, int achievement, int ticks);
+	void achievementTimersTickDown();
+	void awardAchievementIfActive(int player, Entity* entity, int achievement);
+	void awardAchievement(int player, int achievement);
+	void printActiveAchievementTimers();
+
+	enum Achievement : int
+	{
+		BARONY_ACH_TELEFRAG = 1
+	};
+};
+extern AchievementObserver achievementObserver;
 
 #ifdef STEAMWORKS
 bool steamLeaderboardSetScore(score_t* score);

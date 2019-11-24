@@ -3586,6 +3586,13 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					killer->awardXP(this, true, true);
 				}
+				else
+				{
+					if ( achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller) >= 0 )
+					{
+						steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller), "BARONY_ACH_TAKING_WITH");
+					}
+				}
 			}
 			if ( killer && killer->behavior == &actPlayer )
 			{
@@ -3874,6 +3881,13 @@ void Entity::handleEffects(Stat* myStats)
 						if ( killer != nullptr )
 						{
 							killer->awardXP(this, true, true);
+						}
+						else 
+						{
+							if ( achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller) >= 0 )
+							{
+								steamAchievementClient(achievementObserver.checkUidIsFromPlayer(myStats->poisonKiller), "BARONY_ACH_TAKING_WITH");
+							}
 						}
 					}
 				}
@@ -9617,6 +9631,12 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	// play second sound effect
 	playSoundEntity(this, 77, 64);
+
+	if ( behavior == &actMonster )
+	{
+		achievementObserver.addEntityAchievementTimer(this, AchievementObserver::BARONY_ACH_TELEFRAG, 50);
+	}
+
 	return true;
 }
 
@@ -10114,6 +10134,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		{
 			serverUpdatePlayerGameplayStats(player, STATISTICS_SITTING_DUCK, 1);
 		}
+		if ( root )
+		{
+			achievementObserver.awardAchievementIfActive(player, src, AchievementObserver::BARONY_ACH_TELEFRAG);
+		}
 
 		if ( player == 0 )
 		{
@@ -10177,6 +10201,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		Entity* leader = nullptr;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
+
 		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL )
 		{
 			if ( this->monsterIsTinkeringCreation() )
@@ -15611,6 +15636,10 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 		{
 			// get armor pierce chance.
 			int statChance = std::min(std::max(marksman.getPER() / 2, 0), 50); // 0 to 50 value.
+			if ( myStats.weapon->type == HEAVY_CROSSBOW )
+			{
+				statChance += 50;
+			}
 			int chance = rand() % 100;
 			if ( chance < statChance )
 			{

@@ -49,6 +49,7 @@ Uint32 loadingsavegame = 0;
 bool achievementBrawlerMode = false;
 int savegameCurrentFileIndex = 0;
 score_t steamLeaderboardScore;
+AchievementObserver achievementObserver;
 
 /*-------------------------------------------------------------------------------
 
@@ -3367,6 +3368,8 @@ void updatePlayerConductsInMainLoop()
 			conductGameChallenges[CONDUCT_MODDED] = 1;
 		}
 	}
+
+	achievementObserver.achievementTimersTickDown();
 }
 
 void updateGameplayStatisticsInMainLoop()
@@ -4230,3 +4233,167 @@ bool steamLeaderboardReadScore(int tags[CSteamLeaderboards::k_numLeaderboardTags
 }
 
 #endif // STEAMWORKS
+
+void AchievementObserver::getCurrentPlayerUids()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && players[i]->entity )
+		{
+			playerUids[i] = players[i]->entity->getUID();
+		}
+	}
+}
+
+bool AchievementObserver::updateOnLevelChange()
+{
+	if ( levelObserved != currentlevel )
+	{
+		levelObserved = currentlevel;
+		return true;
+	}
+	return false;
+}
+
+int AchievementObserver::checkUidIsFromPlayer(Uint32 uid)
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( achievementObserver.playerUids[i] == uid )
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+void AchievementObserver::updateData()
+{
+	getCurrentPlayerUids();
+	if ( updateOnLevelChange() )
+	{
+		entityAchievementsToProcess.clear();
+	}
+}
+
+void AchievementObserver::addEntityAchievementTimer(Entity* entity, int achievement, int ticks)
+{
+	if ( !entity )
+	{
+		return;
+	}
+	Uint32 uid = entity->getUID();
+	if ( uid == 0 )
+	{
+		return;
+	}
+
+	auto it = entityAchievementsToProcess.find(uid);
+	if ( it != entityAchievementsToProcess.end() )
+	{
+		auto inner_it = (*it).second.find(achievement);
+		if ( inner_it != (*it).second.end() )
+		{
+			//achievement exists, need to update the ticks value.
+			entityAchievementsToProcess[uid][achievement] = ticks;
+		}
+		else
+		{
+			//uid exists, but achievement is not in map. make entry.
+			entityAchievementsToProcess[uid].insert(std::make_pair(achievement, ticks)); // set the inner map properties.
+		}
+	}
+	else
+	{
+		// uid does not exist in map, make new entry.
+		entityAchievementsToProcess.insert(std::make_pair(uid, std::unordered_map<int, int>())); // add a map object at the first key.
+		entityAchievementsToProcess[uid].insert(std::make_pair(achievement, ticks)); // set the inner map properties.
+	}
+}
+
+void AchievementObserver::printActiveAchievementTimers()
+{
+	for ( auto it = entityAchievementsToProcess.begin(); it != entityAchievementsToProcess.end(); ++it )
+	{
+		for ( auto inner_it = (*it).second.begin(); inner_it != (*it).second.end(); ++inner_it )
+		{
+			messagePlayer(0, "Uid: %d, achievement: %d, ticks: %d", (*it).first, (*inner_it).first, (*inner_it).second);
+		}
+	}
+}
+
+void AchievementObserver::achievementTimersTickDown()
+{
+	for ( auto it = entityAchievementsToProcess.begin(); it != entityAchievementsToProcess.end(); /* don't iterate here*/ )
+	{
+		for ( auto inner_it = (*it).second.begin(); inner_it != (*it).second.end(); /* don't iterate here*/ )
+		{
+			bool removeEntry = false;
+			if ( (*inner_it).second > 0 )
+			{
+				--(*inner_it).second;
+				if ( (*inner_it).second == 0 )
+				{
+					// remove me.
+					removeEntry = true;
+				}
+			}
+			else
+			{
+				// remove me.
+				removeEntry = true;
+			}
+
+			if ( removeEntry )
+			{
+				inner_it = (*it).second.erase(inner_it);
+			}
+			else
+			{
+				++inner_it;
+			}
+		}
+
+		if ( (*it).second.empty() )
+		{
+			it = entityAchievementsToProcess.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	printActiveAchievementTimers();
+}
+
+void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, int achievement)
+{
+	if ( !entity )
+	{
+		return;
+	}
+	Uint32 uid = entity->getUID();
+	auto it = entityAchievementsToProcess.find(uid);
+	if ( it != entityAchievementsToProcess.end() )
+	{
+		auto inner_it = (*it).second.find(achievement);
+		if ( inner_it != (*it).second.end() && (*it).second[achievement] > 0 )
+		{
+			awardAchievement(player, achievement);
+		}
+	}
+}
+
+void AchievementObserver::awardAchievement(int player, int achievement)
+{
+	switch ( achievement )
+	{
+		case BARONY_ACH_TELEFRAG:
+			steamAchievementClient(player, "BARONY_ACH_TELEFRAG");
+			break;
+		default:
+			break;
+	}
+}
+

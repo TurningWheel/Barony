@@ -7817,6 +7817,8 @@ void handleMainMenu(bool mode)
 				assignActions(&map);
 				generatePathMaps();
 
+				achievementObserver.updateData();
+
 				if ( loadingsavegame )
 				{
 					for ( c = 0; c < MAXPLAYERS; c++ )
@@ -8549,6 +8551,7 @@ void handleMainMenu(bool mode)
 			numplayers = 0;
 			assignActions(&map);
 			generatePathMaps();
+			achievementObserver.updateData();
 			gamePaused = false;
 			if ( !victory )
 			{
