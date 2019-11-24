@@ -3204,25 +3204,10 @@ void actPlayer(Entity* my)
 
 			if ( fabs(my->playerStrafeVelocity) > 0.1 )
 			{
-				if ( fabs(my->playerStrafeDir) < 0.01 )
-				{
-					if ( fabs(x_force) > 0.01 )
-					{
-						my->playerStrafeDir = x_force;
-						if ( my->playerStrafeDir <= 0.0f )
-						{
-							my->playerStrafeVelocity *= -1;
-						}
-					}
-					else
-					{
-						my->playerStrafeVelocity = 0.0f;
-						my->playerStrafeDir = 0.0f;
-					}
-				}
-				PLAYER_VELX += my->playerStrafeVelocity * cos(my->yaw + PI / 2);
-				PLAYER_VELY += my->playerStrafeVelocity * sin(my->yaw + PI / 2);
-				my->playerStrafeVelocity *= 0.90;
+				speedFactor = std::min(speedFactor, 5.0);
+				PLAYER_VELX += my->playerStrafeVelocity * cos(my->playerStrafeDir);
+				PLAYER_VELY += my->playerStrafeVelocity * sin(my->playerStrafeDir);
+				my->playerStrafeVelocity *= 0.95;
 			}
 			else
 			{
