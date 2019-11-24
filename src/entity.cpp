@@ -6135,7 +6135,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else if ( myStats->weapon->type == CROSSBOW || myStats->weapon->type == HEAVY_CROSSBOW )
 				{
 					entity = newEntity(167, 1, map.entities, nullptr); // bolt
-					playSoundEntity(this, 239 + rand() % 3, 96);
+					if ( myStats->weapon->type == HEAVY_CROSSBOW )
+					{
+						playSoundEntity(this, 411 + rand() % 3, 128);
+					}
+					else
+					{
+						playSoundEntity(this, 239 + rand() % 3, 96);
+					}
 				}
 				else
 				{

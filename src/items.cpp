@@ -3115,6 +3115,10 @@ Sint32 Item::weaponGetAttack(Stat* wielder) const
 	{
 		attack += 10;
 	}
+	else if ( type == HEAVY_CROSSBOW )
+	{
+		attack += 13;
+	}
 	else if ( type == COMPOUND_BOW )
 	{
 		attack += 9;
@@ -4386,6 +4390,11 @@ real_t rangedAttackGetSpeedModifier(Stat* myStats)
 	{
 		bowModifier = 0.75;
 		arrowModifier = 0.0; // no impact on slings.
+	}
+	else if ( myStats->weapon->type == HEAVY_CROSSBOW )
+	{
+		bowModifier = 0.4;
+		return std::max(0.1, bowModifier + arrowModifier);
 	}
 	else
 	{
