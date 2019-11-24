@@ -939,6 +939,7 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist, list_t* crea
 								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 							}
 							fread(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+							delete dummyStats;
 						}
 						break;
 					case 2:
