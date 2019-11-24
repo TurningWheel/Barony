@@ -945,6 +945,9 @@ void gameLogic(void)
 						{
 							case 5:
 								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+								// the observer will send out to clients.
+								achievementObserver.updatePlayerAchievement(clientnum,
+									AchievementObserver::Achievement::BARONY_ACH_COOP_ESCAPE_MINES, AchievementObserver::ACH_EVENT_NONE);
 								break;
 							case 10:
 								steamAchievement("BARONY_ACH_JUNGLE_FEVER");

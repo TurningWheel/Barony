@@ -8094,6 +8094,19 @@ void handleMainMenu(bool mode)
 			{
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 			}
+			// new achievement
+			usedAllClasses = true;
+			for ( c = 0; c <= CLASS_HUNTER; c++ )
+			{
+				if ( !usedClass[c] )
+				{
+					usedAllClasses = false;
+				}
+			}
+			if ( usedAllClasses )
+			{
+				steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
+			}
 
 			steamStatisticUpdate(STEAM_STAT_GAMES_STARTED, STEAM_STAT_INT, 1);
 
@@ -8442,9 +8455,16 @@ void handleMainMenu(bool mode)
 									steamAchievement("BARONY_ACH_BUCKTOOTH_BARON");
 									break;
 								case RACE_INCUBUS:
+									steamAchievement("BARONY_ACH_BAD_BOY_BARON");
+									break;
 								case RACE_INSECTOID:
+									steamAchievement("BARONY_ACH_BUGGAR_BARON");
+									break;
 								case RACE_AUTOMATON:
+									steamAchievement("BARONY_ACH_BOILERPLATE_BARON");
+									break;
 								case RACE_GOBLIN:
+									steamAchievement("BARONY_ACH_BAYOU_BARON");
 									break;
 								default:
 									break;
@@ -8551,7 +8571,6 @@ void handleMainMenu(bool mode)
 			numplayers = 0;
 			assignActions(&map);
 			generatePathMaps();
-			achievementObserver.updateData();
 			gamePaused = false;
 			if ( !victory )
 			{

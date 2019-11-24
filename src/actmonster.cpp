@@ -1038,16 +1038,22 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 		FollowerMenu.recentEntity = my;
 	}
 
-	if ( stats[monsterclicked]->type != HUMAN && myStats->type == HUMAN )
+	if ( (stats[monsterclicked]->type != HUMAN && stats[monsterclicked]->type != AUTOMATON) && myStats->type == HUMAN )
 	{
 		steamAchievementClient(monsterclicked, "BARONY_ACH_PITY_FRIEND");
 	}
-	else if ( stats[monsterclicked]->type == VAMPIRE && myStats->type == VAMPIRE )
+	if ( stats[monsterclicked]->type == VAMPIRE && myStats->type == VAMPIRE )
 	{
 		if ( !strncmp(myStats->name, "young vampire", strlen("young vampire")) )
 		{
 			steamAchievementClient(monsterclicked, "BARONY_ACH_YOUNG_BLOOD");
 		}
+	}
+	if ( myStats->type == HUMAN && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->appearance == 0
+		&& stats[monsterclicked]->playerRace == RACE_AUTOMATON )
+	{
+		achievementObserver.updatePlayerAchievement(monsterclicked, AchievementObserver::Achievement::BARONY_ACH_REAL_BOY,
+			AchievementObserver::AchievementEvent::REAL_BOY_HUMAN_RECRUIT);
 	}
 
 	return true;
@@ -2946,6 +2952,12 @@ void actMonster(Entity* my)
 						{
 							// shopkeepers start trading
 							startTradingServer(my, monsterclicked);
+							if ( stats[monsterclicked] && stats[monsterclicked]->type == HUMAN && stats[monsterclicked]->appearance == 0
+								&& stats[monsterclicked]->playerRace == RACE_AUTOMATON )
+							{
+								achievementObserver.updatePlayerAchievement(monsterclicked, AchievementObserver::Achievement::BARONY_ACH_REAL_BOY,
+									AchievementObserver::AchievementEvent::REAL_BOY_SHOP);
+							}
 						}
 					}
 				}

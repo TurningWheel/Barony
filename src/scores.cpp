@@ -3305,6 +3305,7 @@ void setDefaultPlayerConducts()
 		achievementBaitAndSwitchTimer[c] = 0;
 	}
 	clientLearnedAlchemyIngredients.clear();
+	achievementObserver.clearPlayerAchievementData();
 }
 
 void updatePlayerConductsInMainLoop()
@@ -4385,12 +4386,145 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 	}
 }
 
+void AchievementObserver::updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent)
+{
+	switch ( achievement )
+	{
+		case BARONY_ACH_REAL_BOY:
+			if ( achEvent == REAL_BOY_HUMAN_RECRUIT )
+			{
+				playerAchievements[player].realBoy.first = 1;
+			}
+			else if ( achEvent == REAL_BOY_SHOP )
+			{
+				playerAchievements[player].realBoy.second = 1;
+			}
+
+			if ( playerAchievements[player].realBoy.first == 1 && playerAchievements[player].realBoy.second == 1 )
+			{
+				awardAchievement(player, achievement);
+			}
+			break;
+		case BARONY_ACH_COOP_ESCAPE_MINES:
+		{
+			std::unordered_set<int> races;
+			std::unordered_set<int> classes;
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				if ( !client_disconnected[i] )
+				{
+					if ( stats[i] && stats[i]->playerRace != RACE_HUMAN && stats[i]->appearance == 0 )
+					{
+						races.insert(stats[i]->playerRace);
+					}
+					if ( client_classes[i] > CLASS_MONK )
+					{
+						classes.insert(client_classes[i]);
+					}
+				}
+			}
+			std::vector<int> awardAchievementsToAllPlayers;
+			if ( !races.empty() )
+			{
+				if ( races.find(RACE_INCUBUS) != races.end() && races.find(RACE_SUCCUBUS) != races.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SWINGERS);
+				}
+				if ( races.find(RACE_VAMPIRE) != races.end() && races.find(RACE_INSECTOID) != races.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_COLD_BLOODED);
+				}
+				if ( races.find(RACE_AUTOMATON) != races.end() && races.find(RACE_SKELETON) != races.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SOULLESS);
+				}
+				if ( races.find(RACE_GOATMAN) != races.end() && races.find(RACE_GOBLIN) != races.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_TRIBAL);
+				}
+			}
+
+			if ( !classes.empty() )
+			{
+				if ( classes.find(CLASS_MACHINIST) != classes.end() && classes.find(CLASS_MESMER) != classes.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_MANAGEMENT_TEAM);
+				}
+				if ( classes.find(CLASS_ACCURSED) != classes.end() && classes.find(CLASS_PUNISHER) != classes.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SOCIOPATHS);
+				}
+				if ( classes.find(CLASS_SHAMAN) != classes.end() && classes.find(CLASS_CONJURER) != classes.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_FACES_OF_DEATH);
+				}
+				if ( classes.find(CLASS_HUNTER) != classes.end() && classes.find(CLASS_BREWER) != classes.end() )
+				{
+					awardAchievementsToAllPlayers.push_back(BARONY_ACH_SURVIVALISTS);
+				}
+			}
+			if ( !awardAchievementsToAllPlayers.empty() )
+			{
+				for ( auto it = awardAchievementsToAllPlayers.begin(); it != awardAchievementsToAllPlayers.end(); ++it )
+				{
+					for ( int i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( !client_disconnected[i] )
+						{
+							awardAchievement(i, *it);
+						}
+					}
+				}
+			}
+		}
+			break;
+		default:
+			break;
+	}
+	messagePlayer(player, "Processed achievement %d, event: %d", achievement, achEvent);
+}
+
+void AchievementObserver::clearPlayerAchievementData()
+{
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		playerAchievements[i].realBoy = std::make_pair(0, 0);
+	}
+}
+
 void AchievementObserver::awardAchievement(int player, int achievement)
 {
 	switch ( achievement )
 	{
 		case BARONY_ACH_TELEFRAG:
 			steamAchievementClient(player, "BARONY_ACH_TELEFRAG");
+			break;
+		case BARONY_ACH_REAL_BOY:
+			steamAchievementClient(player, "BARONY_ACH_REAL_BOY");
+			break;
+		case BARONY_ACH_SWINGERS:
+			steamAchievementClient(player, "BARONY_ACH_SWINGERS");
+			break;
+		case BARONY_ACH_COLD_BLOODED:
+			steamAchievementClient(player, "BARONY_ACH_COLD_BLOODED");
+			break;
+		case BARONY_ACH_SOULLESS:
+			steamAchievementClient(player, "BARONY_ACH_SOULLESS");
+			break;
+		case BARONY_ACH_TRIBAL:
+			steamAchievementClient(player, "BARONY_ACH_TRIBAL");
+			break;
+		case BARONY_ACH_MANAGEMENT_TEAM:
+			steamAchievementClient(player, "BARONY_ACH_MANAGEMENT_TEAM");
+			break;
+		case BARONY_ACH_SOCIOPATHS:
+			steamAchievementClient(player, "BARONY_ACH_SOCIOPATHS");
+			break;
+		case BARONY_ACH_FACES_OF_DEATH:
+			steamAchievementClient(player, "BARONY_ACH_FACES_OF_DEATH");
+			break;
+		case BARONY_ACH_SURVIVALISTS:
+			steamAchievementClient(player, "BARONY_ACH_SURVIVALISTS");
 			break;
 		default:
 			break;

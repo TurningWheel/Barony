@@ -222,8 +222,38 @@ public:
 
 	enum Achievement : int
 	{
-		BARONY_ACH_TELEFRAG = 1
+		BARONY_ACH_TELEFRAG = 1,
+		BARONY_ACH_REAL_BOY,
+		BARONY_ACH_COOP_ESCAPE_MINES,
+		BARONY_ACH_SWINGERS,
+		BARONY_ACH_COLD_BLOODED,
+		BARONY_ACH_SOULLESS,
+		BARONY_ACH_TRIBAL,
+		BARONY_ACH_MANAGEMENT_TEAM,
+		BARONY_ACH_SOCIOPATHS,
+		BARONY_ACH_FACES_OF_DEATH,
+		BARONY_ACH_SURVIVALISTS
 	};
+	enum AchievementEvent : int
+	{
+		ACH_EVENT_NONE,
+		REAL_BOY_HUMAN_RECRUIT,
+		REAL_BOY_SHOP,
+	};
+	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
+
+	class PlayerAchievements
+	{
+	public:
+		std::pair<int, int> realBoy;
+		PlayerAchievements()
+		{
+			realBoy = std::make_pair(0, 0);
+		};
+
+	} playerAchievements[MAXPLAYERS];
+
+	void clearPlayerAchievementData();
 };
 extern AchievementObserver achievementObserver;
 
