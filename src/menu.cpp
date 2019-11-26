@@ -380,7 +380,10 @@ std::unordered_set<uint64> betaPlayers
 	76561198175457387,
 	76561198145802480,
 	76561198146718508,
-	76561198880958288
+	76561198880958288,
+	76561198085267620,
+	76561198049280990,
+	76561198833647244
 };
 
 #endif // STEAMWORKS
@@ -6323,6 +6326,7 @@ void handleMainMenu(bool mode)
 				&& !conductGameChallenges[CONDUCT_LIFESAVING]
 				&& !conductGameChallenges[CONDUCT_KEEPINVENTORY]
 				&& !conductGameChallenges[CONDUCT_BRAWLER]
+				&& !conductGameChallenges[CONDUCT_RANGED_ONLY]
 				&& !conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_BOOTS_SPEED]
 				&& !conductGameChallenges[CONDUCT_ACCURSED]
@@ -8433,6 +8437,13 @@ void handleMainMenu(bool mode)
 								}
 							}
 						}
+						else if ( client_classes[clientnum] == CLASS_HUNTER )
+						{
+							if ( conductGameChallenges[CONDUCT_RANGED_ONLY] )
+							{
+								steamAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+							}
+						}
 						else if ( client_classes[clientnum] == CLASS_CONJURER )
 						{
 							steamAchievement("BARONY_ACH_TURN_UNDEAD");
@@ -9423,7 +9434,14 @@ void handleMainMenu(bool mode)
 		Uint32 color = 0x00FFFFFF;
 		if ( fourthendmoviestage >= 1 )
 		{
-			fourthendmoviealpha[8] = std::min(fourthendmoviealpha[8] + 2, 255);
+			if ( fourthendmoviestage >= 10 )
+			{
+				fourthendmoviealpha[8] = std::max(fourthendmoviealpha[8] - 2, 0);
+			}
+			else
+			{
+				fourthendmoviealpha[8] = std::min(fourthendmoviealpha[8] + 2, 255);
+			}
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, fourthendmoviealpha[8]), 255) << 24;
 			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
