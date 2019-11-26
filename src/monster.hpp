@@ -220,8 +220,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 0.7, 1.3, 1.3, 1.1, 1.f, 0.8 }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.4, 1.f }, // goatman
 	{ 1.f, 1.4, 1.3, 1.f, 0.8, 1.2, 0.8 }, // automaton
-	{ 1.5, 1.5, 1.5, 1.5, 1.3, 0.7, 1.2 }, // lich ice
-	{ 1.8, 1.8, 1.8, 1.8, 1.3, 1.f, 1.4 }, // lich fire
+	{ 1.5, 1.5, 1.5, 1.5, 1.5, 0.7, 1.2 }, // lich ice
+	{ 1.8, 1.8, 1.8, 1.8, 1.5, 1.f, 1.4 }, // lich fire
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // sentrybot
 	{ 1.f, 1.f, 1.f, 1.f, 0.5, 0.5, 1.f }, // gyrobot
@@ -262,9 +262,9 @@ static std::vector<std::vector<int>> classStatGrowth =
 	{	3,	3,	1,	6,	4,	7 }, // MESMER 15
 	{	4,	4,	3,	5,	3,	5 }, // BREWER 16
 	{	2,	5,	2,	4,	7,	4 }, // MACHINIST 17
-	{	4,	3,	2,	3,	4,	4 }, // RESERVED 18
+	{	4,	3,	2,	3,	4,	4 }, // PUNISHER 18
 	{	4,	4,	4,	4,	4,	4 }, // SHAMAN 19
-	{	4,	4,	4,	4,	4,	4 }  // RESERVED 20
+	{	1,	7,	1,	4,	7,	4 }  // HUNTER 20
 };
 
 enum AllyNPCCommand : int
