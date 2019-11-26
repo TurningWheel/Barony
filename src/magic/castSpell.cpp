@@ -726,6 +726,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( entityToTeleport )
 				{
 					caster->teleportAroundEntity(entityToTeleport, 3, 0);
+					if ( caster->behavior == &actPlayer )
+					{
+						achievementObserver.addEntityAchievementTimer(caster, AchievementObserver::BARONY_ACH_OHAI_MARK, 100, true, 0);
+					}
 				}
 				else
 				{

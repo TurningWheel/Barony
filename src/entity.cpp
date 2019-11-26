@@ -1549,6 +1549,23 @@ void Entity::increaseSkill(int skill, bool notify)
 			}
 		}
 
+		if ( player >= 0 && stats[player]->playerRace == RACE_GOBLIN && stats[player]->appearance == 0
+			&& myStats->PROFICIENCIES[skill] == 100 )
+		{
+			switch ( skill )
+			{
+				case PRO_SWORD:
+				case PRO_POLEARM:
+				case PRO_AXE:
+				case PRO_MACE:
+				case PRO_UNARMED:
+					steamAchievementClient(player, "BARONY_ACH_SAVAGE");
+					break;
+				default:
+					break;
+			}
+		}
+
 		if ( skill == PRO_ALCHEMY )
 		{
 			if ( player == clientnum )
@@ -3140,6 +3157,11 @@ void Entity::handleEffects(Stat* myStats)
 						if ( myStats->HP <= 0 )
 						{
 							this->setObituary(language[1530]);
+							if ( playerAutomaton )
+							{
+								this->setObituary(language[3864]);
+								steamAchievementEntity(this, "BARONY_ACH_RUST_IN_PEACE");
+							}
 						}
 					}
 
@@ -6950,6 +6972,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 				// hit chance
 				//int hitskill=5; // for unarmed combat
 
+				if ( behavior == &actPlayer && client_classes[skill[2]] == CLASS_HUNTER )
+				{
+					conductGameChallenges[CONDUCT_RANGED_ONLY] = 0;
+				}
+
 				weaponskill = getWeaponSkill(myStats->weapon);
 				if ( behavior == &actMonster && weaponskill == PRO_UNARMED )
 				{
@@ -8300,6 +8327,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									steamStatisticUpdateClient(player, STEAM_STAT_BLOOD_SPORT, STEAM_STAT_INT, 1);
 								}
+								if ( player >= 0 && hitstats->EFFECTS[EFF_SHADOW_TAGGED] && this->creatureShadowTaggedThisUid == hit.entity->getUID() )
+								{
+									achievementObserver.awardAchievementIfActive(player, this, AchievementObserver::BARONY_ACH_OHAI_MARK);
+								}
 							}
 							else
 							{
@@ -8350,6 +8381,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							awardXP(hit.entity, true, true);
+							if ( player >= 0 && myStats->weapon && myStats->weapon->ownerUid == hit.entity->getUID() )
+							{
+								achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
+							}
 						}
 					}
 					else
@@ -8451,6 +8486,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									steamStatisticUpdateClient(player, STEAM_STAT_BLOOD_SPORT, STEAM_STAT_INT, 1);
 								}
+								if ( player >= 0 && hitstats->EFFECTS[EFF_SHADOW_TAGGED] && this->creatureShadowTaggedThisUid == hit.entity->getUID() )
+								{
+									achievementObserver.awardAchievementIfActive(player, this, AchievementObserver::BARONY_ACH_OHAI_MARK);
+								}
 							}
 							else
 							{
@@ -8501,6 +8540,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							awardXP(hit.entity, true, true);
+							if ( player >= 0 && myStats->weapon && myStats->weapon->ownerUid == hit.entity->getUID() )
+							{
+								achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
+							}
 						}
 					}
 
@@ -8540,6 +8583,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3454], language[3455], MSG_COMBAT);
 										disarmed = true;
+										dropped->itemOriginalOwner = hit.entity->getUID();
+										if ( player >= 0 )
+										{
+											achievementObserver.addEntityAchievementTimer(hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT, -1, true, 0);
+											achievementObserver.playerAchievements[player].ironicPunishmentTargets.insert(hit.entity->getUID());
+										}
 									}
 								}
 								else if ( hitstats->shield )
@@ -8561,6 +8610,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropped->flags[USERFLAG1] = false;
 										messagePlayerMonsterEvent(player, color, *hitstats, language[3456], language[3457], MSG_COMBAT);
 										disarmed = true;
+										dropped->itemOriginalOwner = hit.entity->getUID();
 									}
 								}
 								else
@@ -9253,6 +9303,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						magicDig(this, nullptr, 0, 0);
 						playSoundPos(hit.x, hit.y, 67, 128); // bust wall
+						if ( player >= 0 && myStats->type == TROLL )
+						{
+							serverUpdatePlayerGameplayStats(player, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_BREAK_WALL);
+						}
 						for ( int c = 0; c < 5; c++ )
 						{
 							Entity* entity = newEntity(78, 1, map.entities, nullptr); //Particle entity.
@@ -9634,7 +9688,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 	if ( behavior == &actMonster )
 	{
-		achievementObserver.addEntityAchievementTimer(this, AchievementObserver::BARONY_ACH_TELEFRAG, 50);
+		achievementObserver.addEntityAchievementTimer(this, AchievementObserver::BARONY_ACH_TELEFRAG, 50, true, 0);
 	}
 
 	return true;
@@ -10467,8 +10521,7 @@ bool Entity::checkEnemy(Entity* your)
 							}
 							break;
 						case INSECTOID:
-							if ( yourStats->type == SCARAB
-								|| myStats->type == INSECTOID || myStats->type == SCORPION )
+							if ( yourStats->type == SCARAB || yourStats->type == INSECTOID || yourStats->type == SCORPION )
 							{
 								result = false;
 							}

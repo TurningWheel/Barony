@@ -31,6 +31,7 @@ static const int CONDUCT_BOOTS_SPEED = 7; // 2 state, 1 = beat Herx/Baphy in < 2
 static const int CONDUCT_KEEPINVENTORY = 8; // 1 = keep inventory server flag, 0 = not.
 static const int CONDUCT_LIFESAVING = 9; // 1 = lifesaving server flag, 0 = not.
 static const int CONDUCT_ACCURSED = 10; // 1 = cursed, 0 = not
+static const int CONDUCT_RANGED_ONLY = 11; // 1 = ranged only, 0 = not.
 
 static const int STATISTICS_BOMB_SQUAD = 0;
 static const int STATISTICS_SITTING_DUCK = 1;
@@ -41,6 +42,11 @@ static const int STATISTICS_HEAL_BOT = 5;
 static const int STATISTICS_TEMPT_FATE = 6;
 static const int STATISTICS_ALCHEMY_RECIPES = 7;
 static const int STATISTICS_FUNCTIONAL = 8;
+static const int STATISTICS_OHAI_MARK = 9;
+static const int STATISTICS_ITS_A_LIVING = 10;
+static const int STATISTICS_FORUM_TROLL = 11;
+static const int STATISTICS_PIMPING_AINT_EASY = 12;
+static const int STATISTICS_TRIBE_SUBSCRIBE = 13;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 enum SteamStatIndexes : int
@@ -213,8 +219,10 @@ public:
 	bool updateOnLevelChange();
 	void updateData();
 	int checkUidIsFromPlayer(Uint32 uid);
-	std::unordered_map<Uint32, std::unordered_map<int, int>> entityAchievementsToProcess; // uid of entity, achievement int, ticks remaining int.
-	void addEntityAchievementTimer(Entity* entity, int achievement, int ticks);
+	std::unordered_map<Uint32, std::unordered_map<int, std::pair<int,int>>> entityAchievementsToProcess; // uid of entity, achievement int, <ticks remaining, optional counter>
+	
+	bool addEntityAchievementTimer(Entity* entity, int achievement, int ticks, bool resetTimerIfActive, int optionalIncrement);
+
 	void achievementTimersTickDown();
 	void awardAchievementIfActive(int player, Entity* entity, int achievement);
 	void awardAchievement(int player, int achievement);
@@ -232,13 +240,24 @@ public:
 		BARONY_ACH_MANAGEMENT_TEAM,
 		BARONY_ACH_SOCIOPATHS,
 		BARONY_ACH_FACES_OF_DEATH,
-		BARONY_ACH_SURVIVALISTS
+		BARONY_ACH_SURVIVALISTS,
+		BARONY_ACH_BOMBTRACK,
+		BARONY_ACH_CALM_LIKE_A_BOMB,
+		BARONY_ACH_CAUGHT_IN_A_MOSH,
+		BARONY_ACH_PLEASE_HOLD,
+		BARONY_ACH_FELL_BEAST,
+		BARONY_ACH_STRUNG_OUT,
+		BARONY_ACH_OHAI_MARK,
+		BARONY_ACH_IRONIC_PUNISHMENT
 	};
 	enum AchievementEvent : int
 	{
 		ACH_EVENT_NONE,
 		REAL_BOY_HUMAN_RECRUIT,
 		REAL_BOY_SHOP,
+		FORUM_TROLL_BREAK_WALL,
+		FORUM_TROLL_RECRUIT_TROLL,
+		FORUM_TROLL_FEAR
 	};
 	void updatePlayerAchievement(int player, Achievement achievement, AchievementEvent achEvent);
 
@@ -246,6 +265,13 @@ public:
 	{
 	public:
 		std::pair<int, int> realBoy;
+		std::unordered_map<Uint32, int> caughtInAMoshTargets;
+		std::vector<Uint32> strungOutTicks;
+		bool caughtInAMosh = false;
+		bool bombTrack = false;
+		bool calmLikeABomb = false;
+		bool strungOut = false;
+		std::unordered_set<Uint32> ironicPunishmentTargets;
 		PlayerAchievements()
 		{
 			realBoy = std::make_pair(0, 0);

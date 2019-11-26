@@ -21,6 +21,7 @@
 #include "magic.hpp"
 #include "../collision.hpp"
 #include "../classdescriptions.hpp"
+#include "../scores.hpp"
 
 void freeSpells()
 {
@@ -706,6 +707,11 @@ bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, E
 				}
 				target->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 				target->monsterFearfulOfUid = parent->getUID();
+
+				if ( parent->behavior == &actPlayer && parent->getStats() && parent->getStats()->type == TROLL )
+				{
+					serverUpdatePlayerGameplayStats(parent->skill[2], STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_FEAR);
+				}
 			}
 		}
 		else
@@ -2444,14 +2450,6 @@ bool spellEffectTeleportPull(Entity* my, spellElement_t& element, Entity* parent
 					{
 						updateEnemyBar(parent, target, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
-				}
-
-
-				color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-				int player = -1;
-				if ( target->behavior == &actPlayer )
-				{
-					player = target->skill[2];
 				}
 			}
 			return true;

@@ -374,6 +374,7 @@ int totalScore(score_t* score)
 		amount += score->conductIlliterate * 5000;
 		amount += conductGameChallenges[CONDUCT_BOOTS_SPEED] * 20000;
 		amount += conductGameChallenges[CONDUCT_BRAWLER] * 20000;
+		amount += conductGameChallenges[CONDUCT_RANGED_ONLY] * 20000;
 		amount += conductGameChallenges[CONDUCT_ACCURSED] * 50000;
 		amount += conductGameChallenges[CONDUCT_BLESSED_BOOTS_SPEED] * 100000;
 		if ( score->conductGameChallenges[CONDUCT_HARDCORE] == 1
@@ -3284,6 +3285,7 @@ void setDefaultPlayerConducts()
 	conductGameChallenges[CONDUCT_CHEATS_ENABLED] = 0;
 	conductGameChallenges[CONDUCT_CLASSIC_MODE] = 0;
 	conductGameChallenges[CONDUCT_BRAWLER] = 1;
+	conductGameChallenges[CONDUCT_RANGED_ONLY] = 1;
 	conductGameChallenges[CONDUCT_MODDED] = 0;
 	conductGameChallenges[CONDUCT_LIFESAVING] = 0;
 	conductGameChallenges[CONDUCT_KEEPINVENTORY] = 0;
@@ -3404,6 +3406,28 @@ void updateGameplayStatisticsInMainLoop()
 	{
 		steamAchievement("BARONY_ACH_FUNCTIONAL");
 	}
+	if ( gameStatistics[STATISTICS_OHAI_MARK] >= 20 )
+	{
+		steamAchievement("BARONY_ACH_OHAI_MARK");
+	}
+	if ( gameStatistics[STATISTICS_PIMPING_AINT_EASY] >= 6 )
+	{
+		steamAchievement("BARONY_ACH_PIMPIN");
+	}
+	if ( gameStatistics[STATISTICS_TRIBE_SUBSCRIBE] >= 4 )
+	{
+		steamAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
+	}
+	if ( gameStatistics[STATISTICS_FORUM_TROLL] > 0 )
+	{
+		int walls = gameStatistics[STATISTICS_FORUM_TROLL] & 0xFF;
+		int trolls = ((gameStatistics[STATISTICS_FORUM_TROLL] >> 8) & 0xFF);
+		int fears = ((gameStatistics[STATISTICS_FORUM_TROLL] >> 16) & 0xFF);
+		if ( walls == 3 && trolls == 3 && fears == 3 )
+		{
+			steamAchievement("BARONY_ACH_FORUM_TROLL");
+		}
+	}
 
 	if ( gameStatistics[STATISTICS_TEMPT_FATE] == -1 )
 	{
@@ -3457,6 +3481,8 @@ void updateGameplayStatisticsInMainLoop()
 	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
 	{
 		std::unordered_set<int> potionList;
+		std::unordered_set<int> ammoList;
+		std::unordered_set<int> bowList;
 		for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* item = (Item*)node->element;
@@ -3478,11 +3504,30 @@ void updateGameplayStatisticsInMainLoop()
 							break;
 					}
 				}
+				else if ( client_classes[clientnum] == CLASS_HUNTER && itemTypeIsQuiver(item->type) )
+				{
+					ammoList.insert(item->type);
+				}
+				else if ( client_classes[clientnum] == CLASS_HUNTER && isRangedWeapon(*item) )
+				{
+					if ( item->type == CROSSBOW || item->type == HEAVY_CROSSBOW )
+					{
+						bowList.insert(CROSSBOW);
+					}
+					else if ( item->type == SHORTBOW || item->type == LONGBOW || item->type == COMPOUND_BOW )
+					{
+						bowList.insert(SHORTBOW);
+					}
+				}
 			}
 		}
 		if ( potionList.size() >= 16 )
 		{
 			steamAchievement("BARONY_ACH_POTION_PREPARATION");
+		}
+		if ( ammoList.size() >= 7 && bowList.size() >= 2 )
+		{
+			steamAchievement("BARONY_ACH_ARSENAL");
 		}
 	}
 }
@@ -4277,16 +4322,16 @@ void AchievementObserver::updateData()
 	}
 }
 
-void AchievementObserver::addEntityAchievementTimer(Entity* entity, int achievement, int ticks)
+bool AchievementObserver::addEntityAchievementTimer(Entity* entity, int achievement, int ticks, bool resetTimerIfActive, int optionalIncrement)
 {
 	if ( !entity )
 	{
-		return;
+		return false;
 	}
 	Uint32 uid = entity->getUID();
 	if ( uid == 0 )
 	{
-		return;
+		return false;
 	}
 
 	auto it = entityAchievementsToProcess.find(uid);
@@ -4296,19 +4341,26 @@ void AchievementObserver::addEntityAchievementTimer(Entity* entity, int achievem
 		if ( inner_it != (*it).second.end() )
 		{
 			//achievement exists, need to update the ticks value.
-			entityAchievementsToProcess[uid][achievement] = ticks;
+			if ( resetTimerIfActive )
+			{
+				entityAchievementsToProcess[uid][achievement].first = ticks;
+			}
+			entityAchievementsToProcess[uid][achievement].second += optionalIncrement;
+			return false;
 		}
 		else
 		{
 			//uid exists, but achievement is not in map. make entry.
-			entityAchievementsToProcess[uid].insert(std::make_pair(achievement, ticks)); // set the inner map properties.
+			entityAchievementsToProcess[uid].insert(std::make_pair(achievement, std::make_pair(ticks, optionalIncrement))); // set the inner map properties.
+			return true;
 		}
 	}
 	else
 	{
 		// uid does not exist in map, make new entry.
-		entityAchievementsToProcess.insert(std::make_pair(uid, std::unordered_map<int, int>())); // add a map object at the first key.
-		entityAchievementsToProcess[uid].insert(std::make_pair(achievement, ticks)); // set the inner map properties.
+		entityAchievementsToProcess.insert(std::make_pair(uid, std::unordered_map<int, std::pair<int, int>>())); // add a map object at the first key.
+		entityAchievementsToProcess[uid].insert(std::make_pair(achievement, std::make_pair(ticks, optionalIncrement))); // set the inner map properties.
+		return true;
 	}
 }
 
@@ -4318,7 +4370,7 @@ void AchievementObserver::printActiveAchievementTimers()
 	{
 		for ( auto inner_it = (*it).second.begin(); inner_it != (*it).second.end(); ++inner_it )
 		{
-			messagePlayer(0, "Uid: %d, achievement: %d, ticks: %d", (*it).first, (*inner_it).first, (*inner_it).second);
+			//messagePlayer(0, "Uid: %d, achievement: %d, ticks: %d, counter: %d", (*it).first, (*inner_it).first, (*inner_it).second.first, (*inner_it).second.second);
 		}
 	}
 }
@@ -4330,16 +4382,16 @@ void AchievementObserver::achievementTimersTickDown()
 		for ( auto inner_it = (*it).second.begin(); inner_it != (*it).second.end(); /* don't iterate here*/ )
 		{
 			bool removeEntry = false;
-			if ( (*inner_it).second > 0 )
+			if ( (*inner_it).second.first > 0 )
 			{
-				--(*inner_it).second;
-				if ( (*inner_it).second == 0 )
+				--((*inner_it).second.first);
+				if ( (*inner_it).second.first == 0 )
 				{
 					// remove me.
 					removeEntry = true;
 				}
 			}
-			else
+			else if ( (*inner_it).second.first == 0 )
 			{
 				// remove me.
 				removeEntry = true;
@@ -4379,9 +4431,23 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 	if ( it != entityAchievementsToProcess.end() )
 	{
 		auto inner_it = (*it).second.find(achievement);
-		if ( inner_it != (*it).second.end() && (*it).second[achievement] > 0 )
+		if ( inner_it != (*it).second.end() && (*it).second[achievement].first != 0 )
 		{
-			awardAchievement(player, achievement);
+			if ( achievement == BARONY_ACH_BOMBTRACK )
+			{
+				if ( (*it).second[achievement].second >= 5 )
+				{
+					awardAchievement(player, achievement);
+				}
+			}
+			else if ( achievement == BARONY_ACH_OHAI_MARK )
+			{
+				serverUpdatePlayerGameplayStats(player, STATISTICS_OHAI_MARK, 1);
+			}
+			else
+			{
+				awardAchievement(player, achievement);
+			}
 		}
 	}
 }
@@ -4399,11 +4465,35 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 			{
 				playerAchievements[player].realBoy.second = 1;
 			}
-
 			if ( playerAchievements[player].realBoy.first == 1 && playerAchievements[player].realBoy.second == 1 )
 			{
 				awardAchievement(player, achievement);
 			}
+			break;
+		case BARONY_ACH_STRUNG_OUT:
+			if ( !playerAchievements[player].strungOut )
+			{
+				playerAchievements[player].strungOutTicks.push_back(ticks);
+				if ( playerAchievements[player].strungOutTicks.size() >= 10 )
+				{
+					Uint32 timePassed = playerAchievements[player].strungOutTicks.at(playerAchievements[player].strungOutTicks.size() - 1);
+					timePassed -= playerAchievements[player].strungOutTicks.at(0);
+					if ( timePassed < 9 * TICKS_PER_SECOND )
+					{
+						playerAchievements[player].strungOut = true;
+						awardAchievement(player, achievement);
+					}
+
+					while ( playerAchievements[player].strungOutTicks.size() >= 10 )
+					{
+						auto it = playerAchievements[player].strungOutTicks.begin();
+						playerAchievements[player].strungOutTicks.erase(it);
+					}
+				}
+			}
+			break;
+		case BARONY_ACH_IRONIC_PUNISHMENT:
+
 			break;
 		case BARONY_ACH_COOP_ESCAPE_MINES:
 		{
@@ -4489,6 +4579,9 @@ void AchievementObserver::clearPlayerAchievementData()
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
 		playerAchievements[i].realBoy = std::make_pair(0, 0);
+		playerAchievements[i].bombTrack = false;
+		playerAchievements[i].caughtInAMosh = false;
+		playerAchievements[i].caughtInAMoshTargets.clear();
 	}
 }
 
@@ -4526,7 +4619,30 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 		case BARONY_ACH_SURVIVALISTS:
 			steamAchievementClient(player, "BARONY_ACH_SURVIVALISTS");
 			break;
+		case BARONY_ACH_BOMBTRACK:
+			steamAchievementClient(player, "BARONY_ACH_BOMBTRACK");
+			break;
+		case BARONY_ACH_CALM_LIKE_A_BOMB:
+			achievementObserver.playerAchievements[player].calmLikeABomb = true;
+			steamAchievementClient(player, "BARONY_ACH_CALM_LIKE_A_BOMB");
+			break;
+		case BARONY_ACH_CAUGHT_IN_A_MOSH:
+			steamAchievementClient(player, "BARONY_ACH_CAUGHT_IN_A_MOSH");
+			break;
+		case BARONY_ACH_STRUNG_OUT:
+			steamAchievementClient(player, "BARONY_ACH_STRUNG_OUT");
+			break;
+		case BARONY_ACH_PLEASE_HOLD:
+			steamAchievementClient(player, "BARONY_ACH_PLEASE_HOLD");
+			break;
+		case BARONY_ACH_FELL_BEAST:
+			steamAchievementClient(player, "BARONY_ACH_FELL_BEAST");
+			break;
+		case BARONY_ACH_IRONIC_PUNISHMENT:
+			steamAchievementClient(player, "BARONY_ACH_IRONIC_PUNISHMENT");
+			break;
 		default:
+			messagePlayer(player, "unhandled achievement: %d", achievement);
 			break;
 	}
 }

@@ -587,8 +587,8 @@ void gameLogic(void)
 					{
 						continue;
 					}
-
-					if ( list_Size(&stats[c]->FOLLOWERS) >= 3 )
+					int followerCount = list_Size(&stats[c]->FOLLOWERS);
+					if ( followerCount >= 3 )
 					{
 						steamAchievementClient(c, "BARONY_ACH_NATURAL_BORN_LEADER");
 					}
@@ -641,6 +641,12 @@ void gameLogic(void)
 					int squadGhouls = 0;
 					int badRomance = 0;
 					int familyReunion = 0;
+					int machineHead = 0;
+
+					if ( followerCount >= 4 )
+					{
+						achievementObserver.playerAchievements[c].caughtInAMoshTargets.clear();
+					}
 					for ( node = stats[c]->FOLLOWERS.first; node != nullptr; node = node->next )
 					{
 						Entity* follower = uidToEntity(*((Uint32*)node->element));
@@ -653,17 +659,47 @@ void gameLogic(void)
 								{
 									++bodyguards;
 								}
-								else if ( followerStats->type == GHOUL && stats[c]->type == SKELETON )
+								if ( followerStats->type == GHOUL && stats[c]->type == SKELETON )
 								{
 									++squadGhouls;
 								}
-								else if ( stats[c]->type == SUCCUBUS && (followerStats->type == SUCCUBUS || followerStats->type == INCUBUS) )
+								if ( stats[c]->type == SUCCUBUS && (followerStats->type == SUCCUBUS || followerStats->type == INCUBUS) )
 								{
 									++badRomance;
 								}
-								else if ( stats[c]->type == GOATMAN && followerStats->type == GOATMAN )
+								if ( stats[c]->type == GOATMAN && followerStats->type == GOATMAN )
 								{
 									++familyReunion;
+								}
+								if ( followerStats->type == GYROBOT || followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT )
+								{
+									machineHead |= (followerStats->type == GYROBOT);
+									machineHead |= (followerStats->type == SENTRYBOT) << 1;
+									machineHead |= (followerStats->type == SPELLBOT) << 2;
+
+									if ( followerCount >= 4 && !(achievementObserver.playerAchievements[c].caughtInAMosh) )
+									{
+										if ( follower->monsterTarget != 0 
+											&& (follower->monsterState == MONSTER_STATE_ATTACK || follower->monsterState == MONSTER_STATE_HUNT) &&
+											(followerStats->type == SENTRYBOT || followerStats->type == SPELLBOT) )
+										{
+											auto it = achievementObserver.playerAchievements[c].caughtInAMoshTargets.find(follower->monsterTarget);
+											if ( it != achievementObserver.playerAchievements[c].caughtInAMoshTargets.end() )
+											{
+												// key exists.
+												achievementObserver.playerAchievements[c].caughtInAMoshTargets[follower->monsterTarget] += 1; // increase value
+												if ( achievementObserver.playerAchievements[c].caughtInAMoshTargets[follower->monsterTarget] >= 4 )
+												{
+													achievementObserver.awardAchievement(c, AchievementObserver::BARONY_ACH_CAUGHT_IN_A_MOSH);
+													achievementObserver.playerAchievements[c].caughtInAMosh = true;
+												}
+											}
+											else
+											{
+												achievementObserver.playerAchievements[c].caughtInAMoshTargets.insert(std::make_pair(static_cast<Uint32>(follower->monsterTarget), 1));
+											}
+										}
+									}
 								}
 							}
 						}
@@ -683,6 +719,10 @@ void gameLogic(void)
 					if ( familyReunion >= 3 )
 					{
 						steamAchievementClient(c, "BARONY_ACH_FAMILY_REUNION");
+					}
+					if ( machineHead == 7 )
+					{
+						steamAchievementClient(c, "BARONY_ACH_MACHINE_HEAD");
 					}
 				}
 				updateGameplayStatisticsInMainLoop();

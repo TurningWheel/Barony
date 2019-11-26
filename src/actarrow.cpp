@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "items.hpp"
 #include "magic/magic.hpp"
+#include "scores.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -477,7 +478,6 @@ void actArrow(Entity* my)
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
 					hit.entity->modHP(-damage);
-
 					// write obituary
 					if ( parent )
 					{
@@ -488,6 +488,19 @@ void actArrow(Entity* my)
 						else
 						{
 							parent->killedByMonsterObituary(hit.entity);
+						}
+
+						if ( hit.entity->behavior == &actMonster && parent->behavior == &actPlayer )
+						{
+							if ( damage >= 80 && hitstats->type != HUMAN && !parent->checkFriend(hit.entity) )
+							{
+								achievementObserver.awardAchievement(parent->skill[2], AchievementObserver::BARONY_ACH_FELL_BEAST);
+							}
+							if ( my->arrowQuiverType == QUIVER_LIGHTWEIGHT
+								&& my->arrowShotByWeapon == COMPOUND_BOW )
+							{
+								achievementObserver.updatePlayerAchievement(parent->skill[2], AchievementObserver::BARONY_ACH_STRUNG_OUT, AchievementObserver::ACH_EVENT_NONE);
+							}
 						}
 					}
 
@@ -712,7 +725,14 @@ void actArrow(Entity* my)
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3739], language[3740], MSG_COMBAT);
+									if ( hitstats )
+									{
+										messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3739], language[3740], MSG_COMBAT);
+										if ( hit.entity->behavior == &actMonster )
+										{
+											achievementObserver.addEntityAchievementTimer(hit.entity, AchievementObserver::BARONY_ACH_PLEASE_HOLD, 150, true, 0);
+										}
+									}
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{
@@ -784,6 +804,11 @@ void actArrow(Entity* my)
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3215], language[3214], MSG_COMBAT);
+
+								if ( hit.entity->behavior == &actMonster )
+								{
+									achievementObserver.awardAchievementIfActive(parent->skill[2], hit.entity, AchievementObserver::BARONY_ACH_PLEASE_HOLD);
+								}
 							}
 							if ( hit.entity->behavior == &actPlayer )
 							{
@@ -824,6 +849,8 @@ void actArrow(Entity* my)
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3747], language[3748], MSG_COMBAT);
+
+									achievementObserver.addEntityAchievementTimer(hit.entity, AchievementObserver::BARONY_ACH_PLEASE_HOLD, 150, true, 0);
 								}
 								if ( hit.entity->behavior == &actPlayer )
 								{

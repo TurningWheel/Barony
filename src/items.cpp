@@ -2736,7 +2736,20 @@ Item* itemPickup(int player, Item* item)
 
 	if ( multiplayer != CLIENT && players[player] && players[player]->entity )
 	{
-		item->ownerUid = players[player]->entity->getUID();
+		bool assignNewOwner = true;
+		if ( item->ownerUid != 0 && !achievementObserver.playerAchievements[player].ironicPunishmentTargets.empty() )
+		{
+			auto it = achievementObserver.playerAchievements[player].ironicPunishmentTargets.find(item->ownerUid);
+			if ( it != achievementObserver.playerAchievements[player].ironicPunishmentTargets.end() )
+			{
+				assignNewOwner = false;
+			}
+		}
+
+		if ( assignNewOwner )
+		{
+			item->ownerUid = players[player]->entity->getUID();
+		}
 	}
 
 	//messagePlayer(0, "id: %d", item->ownerUid);

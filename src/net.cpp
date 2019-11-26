@@ -930,6 +930,30 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 				}
 			}
 		}
+		else if ( gameplayStat == STATISTICS_FORUM_TROLL )
+		{
+			if ( changeval == AchievementObserver::FORUM_TROLL_BREAK_WALL )
+			{
+				int walls = gameStatistics[gameplayStat] & 0xFF;
+				walls = std::min(walls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFFFF00;
+				gameStatistics[gameplayStat] |= walls;
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_RECRUIT_TROLL )
+			{
+				int trolls = (gameStatistics[gameplayStat] >> 8) & 0xFF;
+				trolls = std::min(trolls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFF00FF;
+				gameStatistics[gameplayStat] |= (trolls << 8);
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_FEAR )
+			{
+				int fears = (gameStatistics[gameplayStat] >> 16) & 0xFF;
+				fears = std::min(fears + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFF00FFFF;
+				gameStatistics[gameplayStat] |= (fears << 16);
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -945,7 +969,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 		net_packet->len = 12;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-	//messagePlayer(clientnum, "sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	messagePlayer(clientnum, "sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2462,6 +2486,30 @@ void clientHandlePacket()
 				{
 					gameStatistics[gameplayStat] = -1;
 				}
+			}
+		}
+		else if ( gameplayStat == STATISTICS_FORUM_TROLL )
+		{
+			if ( changeval == AchievementObserver::FORUM_TROLL_BREAK_WALL )
+			{
+				int walls = gameStatistics[gameplayStat] & 0xFF;
+				walls = std::min(walls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFFFF00;
+				gameStatistics[gameplayStat] |= walls;
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_RECRUIT_TROLL )
+			{
+				int trolls = (gameStatistics[gameplayStat] >> 8) & 0xFF;
+				trolls = std::min(trolls + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFFFF00FF;
+				gameStatistics[gameplayStat] |= (trolls << 8);
+			}
+			else if ( changeval == AchievementObserver::FORUM_TROLL_FEAR )
+			{
+				int fears = (gameStatistics[gameplayStat] >> 16) & 0xFF;
+				fears = std::min(fears + 1, 3);
+				gameStatistics[gameplayStat] = gameStatistics[gameplayStat] & 0xFF00FFFF;
+				gameStatistics[gameplayStat] |= (fears << 16);
 			}
 		}
 		else

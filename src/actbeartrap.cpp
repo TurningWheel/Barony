@@ -501,6 +501,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 	{
 		damage *= triggered->getDamageTableMultiplier(*stat, DAMAGE_TABLE_MAGIC); // reduce/increase by magic table.
 	}
+	bool wasAsleep = stat->EFFECTS[EFF_ASLEEP];
 	triggered->modHP(-damage);
 	triggered->setObituary(language[3496]);
 
@@ -576,6 +577,23 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 				else if( rand() % 20 == 0) // any other effect
 				{
 					parent->increaseSkill(PRO_LOCKPICKING);
+				}
+
+				if ( !achievementObserver.playerAchievements[player].bombTrack )
+				{
+					achievementObserver.addEntityAchievementTimer(triggered, AchievementObserver::BARONY_ACH_BOMBTRACK, 250, false, 1);
+					achievementObserver.awardAchievementIfActive(player, triggered, AchievementObserver::BARONY_ACH_BOMBTRACK);
+				}
+				if ( !achievementObserver.playerAchievements[player].calmLikeABomb )
+				{
+					if ( BOMB_ITEMTYPE == TOOL_SLEEP_BOMB )
+					{
+						achievementObserver.addEntityAchievementTimer(triggered, AchievementObserver::BARONY_ACH_CALM_LIKE_A_BOMB, 50 * 15, true, 0);
+					}
+					else if ( wasAsleep && damage > 0 )
+					{
+						achievementObserver.awardAchievementIfActive(player, triggered, AchievementObserver::BARONY_ACH_CALM_LIKE_A_BOMB);
+					}
 				}
 			}
 			// update enemy bar for attacker

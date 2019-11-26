@@ -1055,6 +1055,33 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 		achievementObserver.updatePlayerAchievement(monsterclicked, AchievementObserver::Achievement::BARONY_ACH_REAL_BOY,
 			AchievementObserver::AchievementEvent::REAL_BOY_HUMAN_RECRUIT);
 	}
+	if ( stats[monsterclicked]->type == TROLL && myStats->type == TROLL )
+	{
+		serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_FORUM_TROLL, AchievementObserver::FORUM_TROLL_RECRUIT_TROLL);
+	}
+	if ( stats[monsterclicked]->appearance == 0
+		&& (stats[monsterclicked]->playerRace == RACE_INCUBUS || stats[monsterclicked]->playerRace == RACE_SUCCUBUS) )
+	{
+		if ( myStats->type == HUMAN )
+		{
+			if ( stats[monsterclicked]->type == INCUBUS || stats[monsterclicked]->type == SUCCUBUS )
+			{
+				serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_PIMPING_AINT_EASY, 1);
+			}
+		}
+		else if ( myStats->type == INCUBUS || myStats->type == SUCCUBUS )
+		{
+			serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_PIMPING_AINT_EASY, 1);
+		}
+	}
+	if ( stats[monsterclicked]->appearance == 0
+		&& (stats[monsterclicked]->playerRace == RACE_GOBLIN && stats[monsterclicked]->type == GOBLIN) )
+	{
+		if ( myStats->type == GOBLIN )
+		{
+			serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_TRIBE_SUBSCRIBE, 1);
+		}
+	}
 
 	return true;
 }

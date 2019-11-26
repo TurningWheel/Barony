@@ -3204,7 +3204,7 @@ void actPlayer(Entity* my)
 
 			if ( fabs(my->playerStrafeVelocity) > 0.1 )
 			{
-				speedFactor = std::min(speedFactor, 5.0);
+				//speedFactor = std::min(speedFactor, 5.0);
 				PLAYER_VELX += my->playerStrafeVelocity * cos(my->playerStrafeDir);
 				PLAYER_VELY += my->playerStrafeVelocity * sin(my->playerStrafeDir);
 				my->playerStrafeVelocity *= 0.95;
