@@ -348,6 +348,27 @@ void initGyroBot(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 	my->bodyparts.push_back(entity);
 
+	// bomb
+	entity = newEntity(-1, 0, map.entities, nullptr); //Limb entity.
+	entity->sizex = 2;
+	entity->sizey = 2;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->yaw = my->yaw;
+	//entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->focalx = limbs[GYROBOT][6][0];
+	entity->focaly = limbs[GYROBOT][6][1];
+	entity->focalz = limbs[GYROBOT][6][2];
+	entity->behavior = &actGyroBotLimb;
+	entity->parent = my->getUID();
+	node = list_AddNodeLast(&my->children);
+	node->element = entity;
+	node->deconstructor = &emptyDeconstructor;
+	node->size = sizeof(Entity*);
+	my->bodyparts.push_back(entity);
+
 	if ( multiplayer == CLIENT || MONSTER_INIT )
 	{
 		return;
@@ -909,6 +930,7 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 
 #define GYRO_ROTOR_LARGE 2
 #define GYRO_ROTOR_SMALL 3
+#define GYRO_BOMB 4
 
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 {
@@ -1266,6 +1288,11 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				entity->pitch -= 2 * PI;
 			}
 		}
+		else if ( bodypart == GYRO_BOMB )
+		{
+			entity->pitch = my->pitch + PI / 2;
+			entity->yaw = my->yaw;
+		}
 
 		switch ( bodypart )
 		{
@@ -1287,6 +1314,49 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				entity->focalx = limbs[GYROBOT][2][0];
 				entity->focaly = limbs[GYROBOT][2][1];
 				entity->focalz = limbs[GYROBOT][2][2];
+				break;
+			case GYRO_BOMB:
+				entity->x += limbs[GYROBOT][7][0] * sin(my->pitch) * cos(my->yaw);
+				entity->y += limbs[GYROBOT][7][1] * sin(my->pitch) * sin(my->yaw);
+				entity->z += limbs[GYROBOT][7][2] * cos(my->pitch);
+				entity->focalx = limbs[GYROBOT][6][0];
+				entity->focaly = limbs[GYROBOT][6][1];
+				entity->focalz = limbs[GYROBOT][6][2];
+
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = -1;
+					for ( node_t* inv = myStats->inventory.first; inv; inv = inv->next )
+					{
+						Item* holding = (Item*)inv->element;
+						if ( holding && holding->type >= TOOL_BOMB && holding->type <= TOOL_TELEPORT_BOMB )
+						{
+							entity->sprite = items[holding->type].index;
+						}
+					}
+					if ( entity->sprite == -1 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+					else
+					{
+						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
+					}
+				}
+
+				if ( multiplayer == SERVER )
+				{
+					// update sprites for clients
+					if ( entity->skill[10] != entity->sprite )
+					{
+						entity->skill[10] = entity->sprite;
+						serverUpdateEntityBodypart(my, bodypart);
+					}
+					if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+					{
+						serverUpdateEntityBodypart(my, bodypart);
+					}
+				}
 				break;
 			default:
 				break;

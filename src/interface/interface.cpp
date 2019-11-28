@@ -2530,6 +2530,11 @@ bool FollowerRadialMenu::allowedInteractEntity(Entity& selectedEntity)
 	{
 		strcat(FollowerMenu.interactText, "switch");
 	}
+	else if ( selectedEntity.behavior == &actBomb && interactWorld && followerStats->type == GYROBOT )
+	{
+		strcpy(FollowerMenu.interactText, language[3093]);
+		strcat(FollowerMenu.interactText, "trap");
+	}
 	else if ( selectedEntity.behavior == &actItem && interactItems )
 	{
 		if ( multiplayer != CLIENT )

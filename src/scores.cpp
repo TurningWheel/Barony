@@ -22,6 +22,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "sys/stat.h"
+#include "paths.hpp"
 
 // definitions
 list_t topscores;
@@ -4647,3 +4648,31 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 	}
 }
 
+bool AchievementObserver::PlayerAchievements::checkLevitantLackeyPath(Entity* player, Entity* target)
+{
+	if ( !player || !target )
+	{
+		return false;
+	}
+
+	if ( achievementObserver.playerAchievements[player->skill[2]].levitantLackey )
+	{
+		return false;
+	}
+
+	list_t* playerPath = generatePath((int)floor(player->x / 16), (int)floor(player->y / 16),
+		(int)floor(target->x / 16), (int)floor(target->y / 16), player, target);
+	if ( playerPath == nullptr )
+	{
+		// no path.
+		steamAchievementClient(player->skill[2], "BARONY_ACH_LEVITANT_LACKEY");
+		achievementObserver.playerAchievements[player->skill[2]].levitantLackey = true;
+		return true;
+	}
+	else
+	{
+		list_FreeAll(playerPath);
+		free(playerPath);
+	}
+	return false;
+}

@@ -684,6 +684,24 @@ void actBomb(Entity* my)
 		}
 	}
 
+	if ( my->isInteractWithMonster() )
+	{
+		Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
+		if ( monsterInteracting && monsterInteracting->getMonsterTypeFromSprite() == GYROBOT )
+		{
+			if ( monsterInteracting->monsterAllyGetPlayerLeader() )
+			{
+				Item* tmp = newItemFromEntity(my);
+				if ( tmp )
+				{
+					tmp->applyLockpick(monsterInteracting->monsterAllyIndex, *my);
+					free(tmp);
+				}
+			}
+		}
+		my->clearMonsterInteract();
+	}
+
 	if ( BOMB_ITEMTYPE == TOOL_TELEPORT_BOMB && BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TELEPORT_RECEIVER )
 	{
 		my->spawnAmbientParticles(25, 576, 10 + rand() % 40, 1.0, false);
@@ -829,6 +847,10 @@ void actBomb(Entity* my)
 				{
 					Entity* parent = uidToEntity(my->parent);
 					if ( parent && parent->checkFriend(entity) && !(BOMB_TRIGGER_TYPE == Item::ItemBombTriggerType::BOMB_TRIGGER_ALL) )
+					{
+						continue;
+					}
+					if ( stat->type == GYROBOT )
 					{
 						continue;
 					}

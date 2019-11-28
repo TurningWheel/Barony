@@ -8621,6 +8621,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			}
 			else if ( myStats->type == GYROBOT )
 			{
+				bool droppedSomething = false;
 				node_t* nextnode = nullptr;
 				for ( node_t* node = myStats->inventory.first; node; node = nextnode )
 				{
@@ -8628,14 +8629,37 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					Item* item = (Item*)node->element;
 					if ( item )
 					{
-						for ( int c = item->count; c > 0; --c )
+						if ( item->type == TOOL_TELEPORT_BOMB || item->type == TOOL_FREEZE_BOMB
+							|| item->type == TOOL_BOMB || item->type == TOOL_SLEEP_BOMB )
 						{
-							Entity* dropped = dropItemMonster(item, this, myStats);
-							if ( dropped )
+							int count = item->count;
+							this->monsterEquipItem(*item, &myStats->weapon);
+							this->attack(0, 0, nullptr);
+							if ( count > 1 )
 							{
+								myStats->weapon = nullptr;
+							}
+							droppedSomething = true;
+							break;
+						}
+						else
+						{
+							for ( int c = item->count; c > 0; --c )
+							{
+								Entity* dropped = dropItemMonster(item, this, myStats, item->count);
+								if ( dropped )
+								{
+									c = 0;
+									droppedSomething = true;
+								}
 							}
 						}
 					}
+				}
+
+				if ( !droppedSomething )
+				{
+					messagePlayer(monsterAllyIndex, language[3868]);
 				}
 			}
 			else if ( stats[monsterAllyIndex] )
@@ -8699,7 +8723,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						if ( myStats->shield->canUnequip(myStats) )
 						{
-							dropped = dropItemMonster(myStats->shield, this, myStats);
+							dropped = dropItemMonster(myStats->shield, this, myStats, myStats->shield->count);
 						}
 						else
 						{
@@ -8786,7 +8810,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				{
 					if ( myStats->weapon->canUnequip(myStats) )
 					{
-						dropped = dropItemMonster(myStats->weapon, this, myStats);
+						dropped = dropItemMonster(myStats->weapon, this, myStats, myStats->weapon->count);
 					}
 					else
 					{
@@ -9799,6 +9823,10 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 					{
 						return true;
 					}
+					else if ( itemTypeIsQuiver(item.type) )
+					{
+						return true;
+					}
 					else
 					{
 						return false;
@@ -9874,6 +9902,12 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 					}
 					return false;
 					break;
+				case TOOL:
+					if ( itemTypeIsQuiver(item.type) )
+					{
+						return true;
+					}
+					break;
 				default:
 					return false;
 					break;
@@ -9899,6 +9933,12 @@ bool Entity::monsterAllyEquipmentInClass(const Item& item) const
 					return false;
 				case THROWN:
 					return false;
+				case TOOL:
+					if ( itemTypeIsQuiver(item.type) )
+					{
+						return false;
+					}
+					break;
 				default:
 					return false;
 			}

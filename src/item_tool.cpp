@@ -62,6 +62,16 @@ void Item::applyLockpick(int player, Entity& entity)
 	bool capstoneUnlocked = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= CAPSTONE_LOCKPICKING_UNLOCK);
 	if ( entity.behavior == &actBomb )
 	{
+		Entity* gyrobotUsing = nullptr;
+		if ( entity.isInteractWithMonster() )
+		{
+			Entity* monsterInteracting = uidToEntity(entity.interactedByMonster);
+			if ( monsterInteracting && monsterInteracting->getMonsterTypeFromSprite() == GYROBOT )
+			{
+				gyrobotUsing = monsterInteracting;
+			}
+		}
+
 		if ( entity.skill[21] == TOOL_TELEPORT_BOMB )
 		{
 			++entity.skill[22];
@@ -76,17 +86,38 @@ void Item::applyLockpick(int player, Entity& entity)
 		}
 		if ( entity.skill[22] == BOMB_TRIGGER_ENEMIES )
 		{
-			messagePlayer(player, language[3605]);
+			if ( gyrobotUsing )
+			{
+				messagePlayer(player, language[3865]);
+			}
+			else
+			{
+				messagePlayer(player, language[3605]);
+			}
 			messagePlayerColor(player, uint32ColorGreen(*mainsurface), language[3606]);
 		}
 		else if ( entity.skill[22] == BOMB_TRIGGER_ALL )
 		{
-			messagePlayer(player, language[3607]);
+			if ( gyrobotUsing )
+			{
+				messagePlayer(player, language[3866]);
+			}
+			else
+			{
+				messagePlayer(player, language[3607]);
+			}
 			messagePlayerColor(player, uint32ColorRed(*mainsurface), language[3608]);
 		}
 		else if ( entity.skill[22] == BOMB_TELEPORT_RECEIVER )
 		{
-			messagePlayer(player, language[3609]);
+			if ( gyrobotUsing )
+			{
+				messagePlayer(player, language[3867]);
+			}
+			else
+			{
+				messagePlayer(player, language[3609]);
+			}
 			messagePlayer(player, language[3610]);
 
 			playSoundEntity(&entity, 166, 128); // invisible.ogg

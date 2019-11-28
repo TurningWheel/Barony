@@ -272,11 +272,12 @@ public:
 		bool calmLikeABomb = false;
 		bool strungOut = false;
 		std::unordered_set<Uint32> ironicPunishmentTargets;
+		bool levitantLackey = false;
 		PlayerAchievements()
 		{
 			realBoy = std::make_pair(0, 0);
 		};
-
+		bool checkLevitantLackeyPath(Entity* player, Entity* target);
 	} playerAchievements[MAXPLAYERS];
 
 	void clearPlayerAchievementData();

@@ -6377,10 +6377,22 @@ void Entity::attack(int pose, int charge, Entity* target)
 						entity->sizex = 2;
 						entity->sizey = 2;
 					}
-					entity->vel_x = (1.f + normalisedCharge) * cos(players[player]->entity->yaw);
-					entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
+					if ( behavior == &actPlayer )
+					{
+						entity->vel_x = (1.f + normalisedCharge) * cos(players[player]->entity->yaw);
+						entity->vel_y = (1.f + normalisedCharge) * sin(players[player]->entity->yaw);
+					}
 					entity->vel_z = -.3;
 					entity->roll -= (PI / 2 - 0.1 + (rand() % 10) * 0.02);
+					if ( myStats->type == GYROBOT )
+					{
+						entity->vel_x = 0.0;
+						entity->vel_y = 0.0;
+						if ( monsterAllyGetPlayerLeader() )
+						{
+							entity->parent = monsterAllyGetPlayerLeader()->getUID();
+						}
+					}
 				}
 				else
 				{
@@ -14239,9 +14251,34 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				}
 				else if ( list_Size(&myStats->inventory) < maxInventoryItems )
 				{
-					addItemToMonsterInventory(item);
-					item = nullptr;
-					list_RemoveNode(entity->mynode);
+					bool addItem = true;
+					if ( myStats->type == GYROBOT && list_Size(&myStats->inventory) >= 1 )
+					{
+						node_t* inv = myStats->inventory.first;
+						Item* toStack = (Item*)inv->element;
+						if ( toStack )
+						{
+							if ( toStack->type >= TOOL_BOMB && toStack->type <= TOOL_TELEPORT_BOMB )
+							{
+								if ( !itemCompare(toStack, item, false) )
+								{
+									// stack the items.
+									toStack->count += item->count;
+									item = nullptr;
+									list_RemoveNode(entity->mynode);
+
+									addItem = false;
+								}
+							}
+						}
+					}
+
+					if ( addItem )
+					{
+						addItemToMonsterInventory(item);
+						item = nullptr;
+						list_RemoveNode(entity->mynode);
+					}
 				}
 
 				if ( item != nullptr )

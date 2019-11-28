@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "player.hpp"
+#include "scores.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 
@@ -186,6 +187,15 @@ void actSwitch(Entity* my)
 		}
 		if ( my->isInteractWithMonster() )
 		{
+			Entity* monsterInteracting = uidToEntity(my->interactedByMonster);
+			if ( monsterInteracting && monsterInteracting->getMonsterTypeFromSprite() == GYROBOT )
+			{
+				Entity* leader = monsterInteracting->monsterAllyGetPlayerLeader();
+				if ( leader )
+				{
+					achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkLevitantLackeyPath(leader, my);
+				}
+			}
 			my->toggleSwitch();
 			my->clearMonsterInteract();
 		}

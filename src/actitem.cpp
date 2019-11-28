@@ -18,6 +18,8 @@
 #include "collision.hpp"
 #include "interface/interface.hpp"
 #include "player.hpp"
+#include "scores.hpp"
+#include "paths.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -163,16 +165,47 @@ void actItem(Entity* my)
 				{
 					if ( monsterInteracting->getMonsterTypeFromSprite() == GYROBOT )
 					{
-						if ( monsterInteracting->getStats() && list_Size(&(monsterInteracting->getStats())->inventory) >= 1 )
+						if ( monsterInteracting->getStats() && list_Size(&(monsterInteracting->getStats())->inventory) > 1 )
 						{
 							if ( monsterInteracting->monsterAllyGetPlayerLeader() )
 							{
+								// "can't carry anymore!"
 								messagePlayer(monsterInteracting->monsterAllyIndex, language[3637]);
 							}
 						}
 						else
 						{
-							monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 1, my);
+							bool oldCount = list_Size(&monsterInteracting->getStats()->inventory);
+							monsterInteracting->monsterAddNearbyItemToInventory(monsterInteracting->getStats(), 16, 2, my);
+							if ( oldCount > 0 && list_Size(&monsterInteracting->getStats()->inventory) > oldCount )
+							{
+								// items didn't stack, throw out the new one.
+								node_t* inv = monsterInteracting->getStats()->inventory.last;
+								if ( inv )
+								{
+									Item* toDrop = (Item*)inv->element;
+									Entity* dropped = dropItemMonster(toDrop, monsterInteracting, monsterInteracting->getStats(), toDrop->count);
+									if ( dropped )
+									{
+										dropped->vel_x = 0.0;
+										dropped->vel_y = 0.0;
+									}
+								}
+
+								if ( monsterInteracting->monsterAllyGetPlayerLeader() )
+								{
+									// "can't carry anymore!"
+									messagePlayer(monsterInteracting->monsterAllyIndex, language[3637]);
+								}
+							}
+							else
+							{
+								Entity* leader = monsterInteracting->monsterAllyGetPlayerLeader();
+								if ( leader )
+								{
+									achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkLevitantLackeyPath(leader, my);
+								}
+							}
 						}
 					}
 					else if ( items[my->skill[10]].category == Category::FOOD && monsterInteracting->getMonsterTypeFromSprite() != SLIME )
@@ -465,7 +498,7 @@ void actItem(Entity* my)
 		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index
 		|| my->sprite == items[TOOL_DETONATOR_CHARGE].index )
 	{
-		groundheight = 7 - models[my->sprite]->sizey * .25;
+		groundheight = 7.5 - models[my->sprite]->sizey * .25;
 	}
 	else if ( my->sprite == 567 )
 	{

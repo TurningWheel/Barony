@@ -335,6 +335,21 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				}
 				else
 				{
+					if ( stats->type == GYROBOT )
+					{
+						Entity* leader = entity->monsterAllyGetPlayerLeader();
+						if ( leader )
+						{
+							real_t tangent = atan2(leader->y - entity->y, leader->x - entity->x);
+							Entity* ohitentity = hit.entity;
+							lineTraceTarget(entity, entity->x, entity->y, tangent, 1024, 0, false, leader);
+							if ( hit.entity == leader )
+							{
+								steamAchievementClient(entity->monsterAllyIndex, "BARONY_ACH_GOODNIGHT_SWEET_PRINCE");
+							}
+							hit.entity = ohitentity;
+						}
+					}
 					if ( gibtype[stats->type] > 0 )
 					{
 						if ( gibtype[stats->type] == 1 )
