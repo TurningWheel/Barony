@@ -596,9 +596,20 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		for ( node = currentList->first; node != nullptr; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
+			if ( entity == my || my->parent == entity->getUID() )
 			{
 				continue;
+			}
+			if ( entity->flags[PASSABLE] )
+			{
+				if ( my->behavior == &actBoulder && entity->sprite == 886 )
+				{
+					// 886 is gyrobot, as they are passable, force collision here.
+				}
+				else
+				{
+					continue;
+				}
 			}
 			if ( entity->behavior == &actParticleTimer && static_cast<Uint32>(entity->particleTimerTarget) == my->getUID() )
 			{
