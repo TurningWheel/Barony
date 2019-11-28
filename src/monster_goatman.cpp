@@ -1605,6 +1605,13 @@ bool Entity::goatmanCanWieldItem(const Item& item) const
 				default:
 					return false;
 			}
+			break;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		case THROWN:
 			return true;
 		case ARMOR:

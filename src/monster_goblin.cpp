@@ -1102,6 +1102,12 @@ bool Entity::goblinCanWieldItem(const Item& item) const
 			return true;
 		case THROWN:
 			return true;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		default:
 			return false;
 	}

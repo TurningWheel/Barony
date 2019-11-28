@@ -1365,6 +1365,12 @@ bool Entity::automatonCanWieldItem(const Item& item) const
 			}
 		case THROWN:
 			return true;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		case MAGICSTAFF:
 			return true;
 		default:

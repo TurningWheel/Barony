@@ -1726,6 +1726,12 @@ bool Entity::humanCanWieldItem(const Item& item) const
 			return false;
 		case THROWN:
 			return false;
+		case TOOL:
+			if ( itemTypeIsQuiver(item.type) )
+			{
+				return true;
+			}
+			break;
 		default:
 			return false;
 	}
