@@ -6984,7 +6984,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				if ( shapeshifted || pose == PLAYER_POSE_GOLEM_SMASH )
 				{
-					weaponskill == PRO_UNARMED;
+					weaponskill = PRO_UNARMED;
 				}
 
 				real_t weaponMultipliers = 0.0;
