@@ -2434,7 +2434,7 @@ void assignActions(map_t* map)
 							for ( c = 0; c < NUMEFFECTS; ++c )
 							{
 								if ( !(c == EFF_VAMPIRICAURA && stats[numplayers]->EFFECTS_TIMERS[c] == -2) 
-									&& c != EFF_WITHDRAWAL )
+									&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 								{
 									stats[numplayers]->EFFECTS[c] = false;
 									stats[numplayers]->EFFECTS_TIMERS[c] = 0;

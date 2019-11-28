@@ -2278,7 +2278,7 @@ void clientHandlePacket()
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
 				if ( !(c == EFF_VAMPIRICAURA && stats[clientnum]->EFFECTS_TIMERS[c] == -2)
-					&& c != EFF_WITHDRAWAL )
+					&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 				{
 					stats[clientnum]->EFFECTS[c] = false;
 					stats[clientnum]->EFFECTS_TIMERS[c] = 0;

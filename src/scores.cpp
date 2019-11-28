@@ -3484,6 +3484,17 @@ void updateGameplayStatisticsInMainLoop()
 		std::unordered_set<int> potionList;
 		std::unordered_set<int> ammoList;
 		std::unordered_set<int> bowList;
+		std::unordered_set<int> utilityBeltList;
+		int badAndBeautiful = -1;
+		if ( stats[clientnum]->appearance == 0 && (stats[clientnum]->type == INCUBUS || stats[clientnum]->type == SUCCUBUS) )
+		{
+			if ( stats[clientnum]->playerRace == RACE_INCUBUS || stats[clientnum]->playerRace == RACE_SUCCUBUS )
+			{
+				badAndBeautiful = 0;
+			}
+		}
+		int dummy1 = 0;
+		int dummy2 = 0;
 		for ( node_t* node = stats[clientnum]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* item = (Item*)node->element;
@@ -3520,6 +3531,14 @@ void updateGameplayStatisticsInMainLoop()
 						bowList.insert(SHORTBOW);
 					}
 				}
+				if ( GenericGUI.tinkeringGetCraftingCost(item, &dummy1, &dummy2) )
+				{
+					utilityBeltList.insert(item->type);
+				}
+				if ( badAndBeautiful >= 0 && item->identified && item->beatitude < 0 && itemIsEquipped(item, clientnum) )
+				{
+					++badAndBeautiful;
+				}
 			}
 		}
 		if ( potionList.size() >= 16 )
@@ -3529,6 +3548,14 @@ void updateGameplayStatisticsInMainLoop()
 		if ( ammoList.size() >= 7 && bowList.size() >= 2 )
 		{
 			steamAchievement("BARONY_ACH_ARSENAL");
+		}
+		if ( utilityBeltList.size() >= 16 )
+		{
+			steamAchievement("BARONY_ACH_UTILITY_BELT");
+		}
+		if ( badAndBeautiful >= 4 )
+		{
+			steamAchievement("BARONY_ACH_BAD_BEAUTIFUL");
 		}
 	}
 }
@@ -4296,6 +4323,14 @@ bool AchievementObserver::updateOnLevelChange()
 {
 	if ( levelObserved != currentlevel )
 	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			playerAchievements[i].flutterShyCoordinates = std::make_pair(0.0, 0.0);
+			playerAchievements[i].caughtInAMoshTargets.clear();
+			playerAchievements[i].strungOutTicks.clear();
+			playerAchievements[i].ironicPunishmentTargets.clear();
+			playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
+		}
 		levelObserved = currentlevel;
 		return true;
 	}
@@ -4320,6 +4355,7 @@ void AchievementObserver::updateData()
 	if ( updateOnLevelChange() )
 	{
 		entityAchievementsToProcess.clear();
+		messagePlayer(0, "[DEBUG]: Achievement data reset for floor.");
 	}
 }
 
@@ -4493,9 +4529,6 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 				}
 			}
 			break;
-		case BARONY_ACH_IRONIC_PUNISHMENT:
-
-			break;
 		case BARONY_ACH_COOP_ESCAPE_MINES:
 		{
 			std::unordered_set<int> races;
@@ -4579,10 +4612,21 @@ void AchievementObserver::clearPlayerAchievementData()
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		playerAchievements[i].realBoy = std::make_pair(0, 0);
-		playerAchievements[i].bombTrack = false;
 		playerAchievements[i].caughtInAMosh = false;
+		playerAchievements[i].bombTrack = false;
+		playerAchievements[i].calmLikeABomb = false;
+		playerAchievements[i].strungOut = false;
+		playerAchievements[i].wonderfulToys = false;
+		playerAchievements[i].levitantLackey = false;
+		playerAchievements[i].flutterShy = false;
+		playerAchievements[i].gastricBypass = false;
+
+		playerAchievements[i].realBoy = std::make_pair(0, 0);
 		playerAchievements[i].caughtInAMoshTargets.clear();
+		playerAchievements[i].strungOutTicks.clear();
+		playerAchievements[i].ironicPunishmentTargets.clear();
+		playerAchievements[i].flutterShyCoordinates = std::make_pair(0.0, 0.0);
+		playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
 	}
 }
 
@@ -4648,14 +4692,49 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 	}
 }
 
-bool AchievementObserver::PlayerAchievements::checkLevitantLackeyPath(Entity* player, Entity* target)
+bool AchievementObserver::PlayerAchievements::checkPathBetweenObjects(Entity* player, Entity* target, int achievement)
 {
-	if ( !player || !target )
+	if ( !player )
 	{
 		return false;
 	}
 
-	if ( achievementObserver.playerAchievements[player->skill[2]].levitantLackey )
+	real_t oldx = 0.0;
+	real_t oldy = 0.0;
+	if ( achievement == BARONY_ACH_LEVITANT_LACKEY )
+	{
+		if ( this->levitantLackey )
+		{
+			return false;
+		}
+	}
+	else if ( achievement == BARONY_ACH_WONDERFUL_TOYS )
+	{
+		if ( this->wonderfulToys )
+		{
+			return false;
+		}
+	}
+	else if ( achievement == BARONY_ACH_FLUTTERSHY )
+	{
+		if ( this->flutterShy )
+		{
+			return false;
+		}
+
+		// if the player exists, we need another entity to path to (target is nullptr)
+		// use a bodypart entity
+		if ( !target )
+		{
+			target = player->bodyparts.at(0);
+			oldx = target->x;
+			oldy = target->y;
+		}
+		target->x = this->flutterShyCoordinates.first;
+		target->y = this->flutterShyCoordinates.second;
+	}
+
+	if ( !target )
 	{
 		return false;
 	}
@@ -4665,14 +4744,34 @@ bool AchievementObserver::PlayerAchievements::checkLevitantLackeyPath(Entity* pl
 	if ( playerPath == nullptr )
 	{
 		// no path.
-		steamAchievementClient(player->skill[2], "BARONY_ACH_LEVITANT_LACKEY");
-		achievementObserver.playerAchievements[player->skill[2]].levitantLackey = true;
+		if ( achievement == BARONY_ACH_LEVITANT_LACKEY )
+		{
+			steamAchievementClient(player->skill[2], "BARONY_ACH_LEVITANT_LACKEY");
+			this->levitantLackey = true;
+		}
+		else if ( achievement == BARONY_ACH_WONDERFUL_TOYS )
+		{
+			steamAchievementClient(player->skill[2], "BARONY_ACH_WONDERFUL_TOYS");
+			this->wonderfulToys = true;
+		}
+		else if ( achievement == BARONY_ACH_FLUTTERSHY )
+		{
+			steamAchievementClient(player->skill[2], "BARONY_ACH_FLUTTERSHY");
+			this->flutterShy = true;
+			target->x = oldx;
+			target->y = oldy;
+		}
 		return true;
 	}
 	else
 	{
 		list_FreeAll(playerPath);
 		free(playerPath);
+		if ( achievement == BARONY_ACH_FLUTTERSHY )
+		{
+			target->x = oldx;
+			target->y = oldy;
+		}
 	}
 	return false;
 }

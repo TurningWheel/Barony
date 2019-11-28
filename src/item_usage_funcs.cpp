@@ -917,7 +917,8 @@ bool item_PotionCureAilment(Item*& item, Entity* entity, Entity* usedBy)
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+		if ( !(c == EFF_VAMPIRICAURA && stats->EFFECTS_TIMERS[c] == -2) 
+			&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 		{
 			stats->EFFECTS[c] = false;
 			stats->EFFECTS_TIMERS[c] = 0;

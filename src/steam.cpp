@@ -837,6 +837,8 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_IF_YOU_LOVE_SOMETHING:
 				case STEAM_STAT_RAGE_AGAINST:
 				case STEAM_STAT_GUERILLA_RADIO:
+				case STEAM_STAT_ITS_A_LIVING:
+				case STEAM_STAT_FASCIST:
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
 					break;
@@ -900,6 +902,27 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					else if ( ((oldValue / 50) < (g_SteamStats[statisticNum].m_iValue / 50)) ) // show every 50.
+					{
+						indicateProgress = true;
+					}
+					break;
+				case STEAM_STAT_OVERCLOCKED:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 30 && ((oldValue / 30) < (g_SteamStats[statisticNum].m_iValue / 30)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 60) < (g_SteamStats[statisticNum].m_iValue / 60)) ) // show every 60.
 					{
 						indicateProgress = true;
 					}
@@ -1008,6 +1031,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_ROLL_THE_BONES:
 			case STEAM_STAT_COWBOY_FROM_HELL:
 			case STEAM_STAT_SELF_FLAGELLATION:
+			case STEAM_STAT_FASCIST:
+			case STEAM_STAT_ITS_A_LIVING:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
@@ -1080,6 +1105,18 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 						{
 							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
 						}
+					}
+				}
+				break;
+			// below is 600 max value
+			case STEAM_STAT_OVERCLOCKED:
+				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
+				{
+					SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
+						iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
 					}
 				}
 				break;

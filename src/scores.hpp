@@ -90,7 +90,10 @@ enum SteamStatIndexes : int
 	STEAM_STAT_CHOPPING_BLOCK,
 	STEAM_STAT_IF_YOU_LOVE_SOMETHING,
 	STEAM_STAT_RAGE_AGAINST,
-	STEAM_STAT_GUERILLA_RADIO
+	STEAM_STAT_GUERILLA_RADIO,
+	STEAM_STAT_FASCIST,
+	STEAM_STAT_ITS_A_LIVING,
+	STEAM_STAT_OVERCLOCKED
 };
 
 #ifdef STEAMWORKS
@@ -135,7 +138,10 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_CHOPPING_BLOCK", 100),       // STEAM_STAT_CHOPPING_BLOCK
 	std::make_pair("BARONY_ACH_IF_YOU_LOVE_SOMETHING", 100),// STEAM_STAT_IF_YOU_LOVE_SOMETHING
 	std::make_pair("BARONY_ACH_RAGE_AGAINST", 20),          // STEAM_STAT_RAGE_AGAINST
-	std::make_pair("BARONY_ACH_GUERILLA_RADIO", 20)         // STEAM_STAT_GUERILLA_RADIO
+	std::make_pair("BARONY_ACH_GUERILLA_RADIO", 20),        // STEAM_STAT_GUERILLA_RADIO
+	std::make_pair("BARONY_ACH_FASCIST", 50),				// STEAM_STAT_FASCIST,
+	std::make_pair("BARONY_ACH_ITS_A_LIVING", 50),			// STEAM_STAT_ITS_A_LIVING,
+	std::make_pair("BARONY_ACH_OVERCLOCKED", 600)			// STEAM_STAT_OVERCLOCKED
 };
 #endif // STEAMWORKS
 
@@ -248,7 +254,10 @@ public:
 		BARONY_ACH_FELL_BEAST,
 		BARONY_ACH_STRUNG_OUT,
 		BARONY_ACH_OHAI_MARK,
-		BARONY_ACH_IRONIC_PUNISHMENT
+		BARONY_ACH_IRONIC_PUNISHMENT,
+		BARONY_ACH_LEVITANT_LACKEY,
+		BARONY_ACH_WONDERFUL_TOYS,
+		BARONY_ACH_FLUTTERSHY
 	};
 	enum AchievementEvent : int
 	{
@@ -264,20 +273,28 @@ public:
 	class PlayerAchievements
 	{
 	public:
-		std::pair<int, int> realBoy;
-		std::unordered_map<Uint32, int> caughtInAMoshTargets;
-		std::vector<Uint32> strungOutTicks;
 		bool caughtInAMosh = false;
 		bool bombTrack = false;
 		bool calmLikeABomb = false;
 		bool strungOut = false;
-		std::unordered_set<Uint32> ironicPunishmentTargets;
+		bool wonderfulToys = false;
 		bool levitantLackey = false;
+		bool flutterShy = false;
+		bool gastricBypass = false;
+
+		std::pair<int, int> realBoy;
+		std::unordered_map<Uint32, int> caughtInAMoshTargets;
+		std::vector<Uint32> strungOutTicks;
+		std::unordered_set<Uint32> ironicPunishmentTargets;
+		std::pair<real_t, real_t> flutterShyCoordinates;
+		std::pair<int, Uint32> gastricBypassSpell;
 		PlayerAchievements()
 		{
 			realBoy = std::make_pair(0, 0);
+			gastricBypassSpell = std::make_pair(0, 0);
+			flutterShyCoordinates = std::make_pair(0.0, 0.0);
 		};
-		bool checkLevitantLackeyPath(Entity* player, Entity* target);
+		bool checkPathBetweenObjects(Entity* player, Entity* target, int achievement);
 	} playerAchievements[MAXPLAYERS];
 
 	void clearPlayerAchievementData();

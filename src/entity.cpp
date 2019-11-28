@@ -1232,6 +1232,18 @@ void Entity::effectTimes()
 						if ( !isLevitating(myStats) )
 						{
 							messagePlayer(player, language[607]);
+							if ( behavior == &actPlayer 
+								&& achievementObserver.playerAchievements[skill[2]].flutterShyCoordinates.first > 0.01
+								&& achievementObserver.playerAchievements[skill[2]].flutterShyCoordinates.second > 0.01 )
+							{
+								int playerx = std::min(std::max<unsigned int>(1, this->x / 16), map.width - 2);
+								int playery = std::min(std::max<unsigned int>(1, this->y / 16), map.height - 2);
+								if ( map.tiles[0 + playery * MAPLAYERS + playerx * MAPLAYERS * map.height] )
+								{
+									// there's ground..
+									achievementObserver.playerAchievements[skill[2]].checkPathBetweenObjects(this, nullptr, AchievementObserver::BARONY_ACH_FLUTTERSHY);
+								}
+							}
 						}
 						break;
 					case EFF_MAGICREFLECT:
@@ -4082,7 +4094,8 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				for ( c = 0; c < NUMEFFECTS; c++ )
 				{
-					if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+					if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
+						&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 					{
 						myStats->EFFECTS[c] = false;
 						myStats->EFFECTS_TIMERS[c] = 0;
@@ -4249,7 +4262,8 @@ void Entity::handleEffects(Stat* myStats)
 					this->setHP(std::max(myStats->MAXHP, 10));
 					for ( c = 0; c < NUMEFFECTS; c++ )
 					{
-						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
+							&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 						{
 							myStats->EFFECTS[c] = false;
 							myStats->EFFECTS_TIMERS[c] = 0;
@@ -10275,6 +10289,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 				if ( rand() % 10 == 0 )
 				{
 					leader->increaseSkill(PRO_LOCKPICKING);
+				}
+				if ( root && leader->behavior == &actPlayer && srcStats->type == MINOTAUR )
+				{
+					steamAchievementClient(leader->skill[2], "BARONY_ACH_TIME_TO_PLAN");
 				}
 			}
 			else

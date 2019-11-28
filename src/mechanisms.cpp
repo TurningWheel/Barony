@@ -193,7 +193,7 @@ void actSwitch(Entity* my)
 				Entity* leader = monsterInteracting->monsterAllyGetPlayerLeader();
 				if ( leader )
 				{
-					achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkLevitantLackeyPath(leader, my);
+					achievementObserver.playerAchievements[monsterInteracting->monsterAllyIndex].checkPathBetweenObjects(leader, my, AchievementObserver::BARONY_ACH_LEVITANT_LACKEY);
 				}
 			}
 			my->toggleSwitch();

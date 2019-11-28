@@ -1425,7 +1425,8 @@ void consoleCommand(char* command_str)
 
 		for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 		{
-			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+			if ( !(c == EFF_VAMPIRICAURA && players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] == -2) 
+				&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 			{
 				players[clientnum]->entity->getStats()->EFFECTS[c] = false;
 				players[clientnum]->entity->getStats()->EFFECTS_TIMERS[c] = 0;

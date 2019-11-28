@@ -1500,20 +1500,34 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 							}
-							if ( oldHP > 0 && hitstats->HP <= 0 && parent)
+							if ( oldHP > 0 && hitstats->HP <= 0 )
 							{
-								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
+								if ( parent )
 								{
-									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
 									{
-										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 										{
-											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+											if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+											{
+												steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+											}
 										}
+										steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 									}
-									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+									if ( my->actmagicCastByTinkerTrap == 1 && parent->behavior == &actPlayer && hitstats->type == MINOTAUR )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
+									}
+									parent->awardXP( hit.entity, true, true );
 								}
-								parent->awardXP( hit.entity, true, true );
+								else
+								{
+									if ( achievementObserver.checkUidIsFromPlayer(my->parent) >= 0 )
+									{
+										steamAchievementClient(achievementObserver.checkUidIsFromPlayer(my->parent), "BARONY_ACH_TAKING_WITH");
+									}
+								}
 							}
 						}
 						else if (hit.entity->behavior == &actDoor)
@@ -1753,19 +1767,33 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								messagePlayerColor(player, color, language[395]);
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-							if ( oldHP > 0 && hitstats->HP <= 0 && parent )
+							if ( oldHP > 0 && hitstats->HP <= 0 )
 							{
-								parent->awardXP(hit.entity, true, true);
-								if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
+								if ( parent )
 								{
-									if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+									parent->awardXP(hit.entity, true, true);
+									if ( my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 0 && parent->behavior == &actPlayer )
 									{
-										if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+										if ( hitstats->type == LICH || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 										{
-											steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+											if ( client_classes[parent->skill[2]] == CLASS_BREWER )
+											{
+												steamAchievementClient(parent->skill[2], "BARONY_ACH_SECRET_WEAPON");
+											}
 										}
+										steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 									}
-									steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
+									if ( my->actmagicCastByTinkerTrap == 1 && parent->behavior == &actPlayer && hitstats->type == MINOTAUR )
+									{
+										steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
+									}
+								}
+								else
+								{
+									if ( achievementObserver.checkUidIsFromPlayer(my->parent) >= 0 )
+									{
+										steamAchievementClient(achievementObserver.checkUidIsFromPlayer(my->parent), "BARONY_ACH_TAKING_WITH");
+									}
 								}
 							}
 						}
@@ -2574,6 +2602,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									// killed a monster with it's own spell with mirror reflection.
 									steamAchievementEntity(parent, "BARONY_ACH_NARCISSIST");
+								}
+								if ( stats[parent->skill[2]] && stats[parent->skill[2]]->playerRace == RACE_INSECTOID && stats[parent->skill[2]]->appearance == 0 )
+								{
+									if ( !achievementObserver.playerAchievements[parent->skill[2]].gastricBypass )
+									{
+										if ( achievementObserver.playerAchievements[parent->skill[2]].gastricBypassSpell.first == spell->ID )
+										{
+											Uint32 oldTicks = achievementObserver.playerAchievements[parent->skill[2]].gastricBypassSpell.second;
+											if ( parent->ticks - oldTicks < TICKS_PER_SECOND * 5 )
+											{
+												steamAchievementEntity(parent, "BARONY_ACH_GASTRIC_BYPASS");
+												achievementObserver.playerAchievements[parent->skill[2]].gastricBypass = true;
+											}
+										}
+									}
 								}
 							}
 						}

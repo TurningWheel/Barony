@@ -430,6 +430,7 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 			{
 				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 				messagePlayerColor(triggered->skill[2], color, language[3611]);
+				achievementObserver.playerAchievements[triggered->skill[2]].checkPathBetweenObjects(triggered, my, AchievementObserver::BARONY_ACH_WONDERFUL_TOYS);
 			}
 
 			if ( triggered->behavior == &actMonster )
@@ -510,6 +511,13 @@ void bombDoEffect(Entity* my, Entity* triggered, real_t entityDistance, bool spa
 		if ( parent )
 		{
 			parent->awardXP(triggered, true, true);
+			if ( stat->type == MINOTAUR )
+			{
+				if ( parent->behavior == &actPlayer )
+				{
+					steamAchievementClient(parent->skill[2], "BARONY_ACH_TIME_TO_PLAN");
+				}
+			}
 		}
 		else
 		{

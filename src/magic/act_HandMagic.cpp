@@ -19,6 +19,7 @@
 #include "../player.hpp"
 #include "magic.hpp"
 #include "../net.hpp"
+#include "../scores.hpp"
 
 //The spellcasting animation stages:
 #define CIRCLE 0 //One circle
@@ -70,6 +71,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	//Save these two very important pieces of data.
 	animation_manager->caster = caster->getUID();
 	animation_manager->spell = spell;
+
 	if ( !usingSpellbook )
 	{
 		animation_manager->active = true;

@@ -343,6 +343,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				caster->drainMP(magiccost);
 			}
 		}
+
+		if ( multiplayer != CLIENT )
+		{
+			if ( caster->behavior == &actPlayer && stat->playerRace == RACE_INSECTOID && stat->appearance == 0 )
+			{
+				if ( !achievementObserver.playerAchievements[caster->skill[2]].gastricBypass )
+				{
+					int fullCostOfSpell = getCostOfSpell(spell, caster);
+					achievementObserver.playerAchievements[caster->skill[2]].gastricBypassSpell = std::make_pair(0, 0);
+					if ( stat->MP <= 5 && stat->MP + fullCostOfSpell > 5 )
+					{
+						achievementObserver.playerAchievements[caster->skill[2]].gastricBypassSpell = std::make_pair(spell->ID, caster->ticks);
+					}
+				}
+			}
+		}
+
 		if ( caster->getHP() < prevHP )
 		{
 			overdrewIntoHP = true;
@@ -1067,6 +1084,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					//Duration for flutter.
 					int duration = element->duration;
 
+					if ( caster->getStats() && !caster->getStats()->EFFECTS[EFF_FLUTTER] )
+					{
+						achievementObserver.playerAchievements[i].flutterShyCoordinates = std::make_pair(caster->x, caster->y);
+					}
+
 					if ( caster->setEffect(EFF_FLUTTER, true, duration, true) )
 					{
 						messagePlayerColor(i, uint32ColorGreen(*mainsurface), language[3767]);
@@ -1332,7 +1354,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						}
 						else
 						{
-							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+							if ( !(c == EFF_VAMPIRICAURA && stats[i]->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL
+								&& c != EFF_SHAPESHIFT )
 							{
 								stats[i]->EFFECTS[c] = false;
 								stats[i]->EFFECTS_TIMERS[c] = 0;
@@ -1376,7 +1399,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) && c != EFF_WITHDRAWAL )
+									if ( !(c == EFF_VAMPIRICAURA && target_stat->EFFECTS_TIMERS[c] == -2) 
+										&& c != EFF_WITHDRAWAL && c != EFF_SHAPESHIFT )
 									{
 										target_stat->EFFECTS[c] = false;
 										target_stat->EFFECTS_TIMERS[c] = 0;
