@@ -159,7 +159,6 @@ void actSpearTrap(Entity* my)
 								// set obituary
 								entity->setObituary(language[1507]);
 							}
-							hitList.insert(entity->getUID());
 						}
 					}
 				}
