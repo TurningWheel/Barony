@@ -114,50 +114,62 @@ void actSpearTrap(Entity* my)
 			}
 			else if ( SPEARTRAP_OUTTIME == 1 )
 			{
-				node_t* node;
-				for ( node = map.creatures->first; node != nullptr; node = node->next ) //Searching explicitly for players and monsters, so search only creature list, not map.entities.
+				std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+				std::unordered_set<Uint32> hitList;
+				for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 				{
-					Entity* entity = (Entity*)node->element;
-					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+					list_t* currentList = *it;
+					node_t* node;
+					for ( node = map.creatures->first; node != nullptr; node = node->next ) //Searching explicitly for players and monsters, so search only creature list, not map.entities.
 					{
-						Stat* stats = entity->getStats();
-						if ( stats )
+						Entity* entity = (Entity*)node->element;
+						auto find = hitList.find(entity->getUID());
+						if ( find != hitList.end() )
 						{
-							if ( entityInsideEntity(my, entity) )
+							continue;
+						}
+						if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+						{
+							Stat* stats = entity->getStats();
+							if ( stats )
 							{
-								// do damage!
-								if ( entity->behavior == &actPlayer )
+								if ( !entity->flags[PASSABLE] && entityInsideEntity(my, entity) )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(entity->skill[2], color, language[586]);
-									if ( entity->skill[2] == clientnum )
+									// do damage!
+									if ( entity->behavior == &actPlayer )
 									{
-										camera_shakex += .1;
-										camera_shakey += 10;
+										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										messagePlayerColor(entity->skill[2], color, language[586]);
+										if ( entity->skill[2] == clientnum )
+										{
+											camera_shakex += .1;
+											camera_shakey += 10;
+										}
+										else
+										{
+											strcpy((char*)net_packet->data, "SHAK");
+											net_packet->data[4] = 10; // turns into .1
+											net_packet->data[5] = 10;
+											net_packet->address.host = net_clients[entity->skill[2] - 1].host;
+											net_packet->address.port = net_clients[entity->skill[2] - 1].port;
+											net_packet->len = 6;
+											sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+										}
 									}
-									else
+									playSoundEntity(entity, 28, 64);
+									spawnGib(entity);
+									entity->modHP(-50);
+									if ( stats->HP <= 0 )
 									{
-										strcpy((char*)net_packet->data, "SHAK");
-										net_packet->data[4] = 10; // turns into .1
-										net_packet->data[5] = 10;
-										net_packet->address.host = net_clients[entity->skill[2] - 1].host;
-										net_packet->address.port = net_clients[entity->skill[2] - 1].port;
-										net_packet->len = 6;
-										sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+										if ( stats->type == AUTOMATON )
+										{
+											entity->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
+										}
 									}
+									// set obituary
+									entity->setObituary(language[1507]);
 								}
-								playSoundEntity(entity, 28, 64);
-								spawnGib(entity);
-								entity->modHP(-50);
-								if ( stats->HP <= 0 )
-								{
-									if ( stats->type == AUTOMATON )
-									{
-										entity->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
-									}
-								}
-								// set obituary
-								entity->setObituary(language[1507]);
+								hitList.insert(entity->getUID());
 							}
 						}
 					}
