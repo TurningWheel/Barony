@@ -7383,7 +7383,10 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, clientnum);
 			//scribingBlankScrollTarget = nullptr;
-			steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
+			if ( client_classes[clientnum] == CLASS_SHAMAN )
+			{
+				steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
+			}
 			free(crafted);
 			return true;
 		}

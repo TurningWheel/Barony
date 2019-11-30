@@ -954,6 +954,21 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 				gameStatistics[gameplayStat] |= (fears << 16);
 			}
 		}
+		else if ( gameplayStat == STATISTICS_POP_QUIZ_1 || gameplayStat == STATISTICS_POP_QUIZ_2 )
+		{
+			int spellID = changeval;
+			if ( spellID >= 30 )
+			{
+				spellID -= 30;
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+			else
+			{
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -969,7 +984,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 		net_packet->len = 12;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-	messagePlayer(clientnum, "sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2512,6 +2527,21 @@ void clientHandlePacket()
 				gameStatistics[gameplayStat] |= (fears << 16);
 			}
 		}
+		else if ( gameplayStat == STATISTICS_POP_QUIZ_1 || gameplayStat == STATISTICS_POP_QUIZ_2 )
+		{
+			int spellID = changeval;
+			if ( spellID >= 32 )
+			{
+				spellID -= 32;
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+			else
+			{
+				int shifted = (1 << spellID);
+				gameStatistics[gameplayStat] |= shifted;
+			}
+		}
 		else
 		{
 			gameStatistics[gameplayStat] += changeval;
@@ -4051,7 +4081,9 @@ void serverHandlePacket()
 	}
 
 	// clicked entity in range
-	else if (!strncmp((char*)net_packet->data, "CKIR", 4) || !strncmp((char*)net_packet->data, "SALV", 4) )
+	else if (!strncmp((char*)net_packet->data, "CKIR", 4) 
+		|| !strncmp((char*)net_packet->data, "SALV", 4)
+		|| !strncmp((char*)net_packet->data, "RATF", 4) )
 	{
 		client_keepalive[net_packet->data[4]] = ticks;
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
@@ -4065,6 +4097,10 @@ void serverHandlePacket()
 				{
 					entity->itemAutoSalvageByPlayer = static_cast<Sint32>(players[net_packet->data[4]]->entity->getUID());
 				}
+			}
+			else if ( entity->behavior == &actItem && !strncmp((char*)net_packet->data, "RATF", 4) )
+			{
+				achievementObserver.playerAchievements[net_packet->data[4]].rat5000secondRule.insert(uid);
 			}
 			client_selected[net_packet->data[4]] = entity;
 			inrange[net_packet->data[4]] = true;

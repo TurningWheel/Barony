@@ -1081,7 +1081,10 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 		{
 			serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_TRIBE_SUBSCRIBE, 1);
 		}
-		else if ( myStats->type != GOBLIN )
+	}
+	if ( client_classes[monsterclicked] == CLASS_SHAMAN )
+	{
+		if ( players[monsterclicked]->entity->effectPolymorph != 0 || players[monsterclicked]->entity->effectShapeshift != 0 )
 		{
 			achievementObserver.playerAchievements[monsterclicked].socialButterfly++;
 		}

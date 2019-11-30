@@ -4572,6 +4572,10 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 			{
 				playerAchievements[player].ifYouLoveSomething++;
 			}
+			else if ( achievement == BARONY_ACH_COWBOY_FROM_HELL )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_COWBOY_FROM_HELL, STEAM_STAT_INT, 1);
+			}
 			else
 			{
 				awardAchievement(player, achievement);

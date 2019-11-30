@@ -8427,9 +8427,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							awardXP(hit.entity, true, true);
-							if ( player >= 0 && myStats->weapon && myStats->weapon->ownerUid == hit.entity->getUID() )
+							if ( player >= 0 && myStats->weapon && this->checkEnemy(hit.entity) )
 							{
-								achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
+								if ( myStats->weapon->ownerUid == hit.entity->getUID() )
+								{
+									achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
+								}
+								if ( myStats->weapon->type == TOOL_WHIP )
+								{
+									achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_COWBOY_FROM_HELL);
+								}
+								if ( weaponskill == PRO_AXE && client_classes[player] == CLASS_PUNISHER )
+								{
+									if ( hitstats->EFFECTS[EFF_DISORIENTED] || hitstats->EFFECTS[EFF_PARALYZED]
+										|| hitstats->EFFECTS[EFF_SLOW] || hitstats->EFFECTS[EFF_ASLEEP] )
+									{
+										steamStatisticUpdateClient(player, STEAM_STAT_CHOPPING_BLOCK, STEAM_STAT_INT, 1);
+									}
+								}
 							}
 						}
 					}
@@ -8590,9 +8605,24 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 							awardXP(hit.entity, true, true);
-							if ( player >= 0 && myStats->weapon && myStats->weapon->ownerUid == hit.entity->getUID() )
+							if ( player >= 0 && myStats->weapon && this->checkEnemy(hit.entity) )
 							{
-								achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
+								if ( myStats->weapon->ownerUid == hit.entity->getUID() )
+								{
+									achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_IRONIC_PUNISHMENT);
+								}
+								if ( myStats->weapon->type == TOOL_WHIP )
+								{
+									achievementObserver.awardAchievementIfActive(player, hit.entity, AchievementObserver::BARONY_ACH_COWBOY_FROM_HELL);
+								}
+								if ( weaponskill == PRO_AXE && client_classes[player] == CLASS_PUNISHER )
+								{
+									if ( hitstats->EFFECTS[EFF_DISORIENTED] || hitstats->EFFECTS[EFF_PARALYZED]
+										|| hitstats->EFFECTS[EFF_SLOW] || hitstats->EFFECTS[EFF_ASLEEP] )
+									{
+										steamStatisticUpdateClient(player, STEAM_STAT_CHOPPING_BLOCK, STEAM_STAT_INT, 1);
+									}
+								}
 							}
 						}
 					}
@@ -8622,10 +8652,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( hitstats->EFFECTS[EFF_DISORIENTED] && !hitstats->shield )
 										{
 											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
-											if ( player >= 0 )
-											{
-												steamStatisticUpdateClient(player, STEAM_STAT_COWBOY_FROM_HELL, STEAM_STAT_INT, 1);
-											}
 										}
 										playSoundEntity(hit.entity, 406, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
@@ -8864,6 +8890,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 							if ( myStats->HP <= 0 )
 							{
 								illusionParent->awardXP(this, true, true);
+								if ( illusionParent->behavior == &actPlayer )
+								{
+									steamStatisticUpdateClient(illusionParent->skill[2], STEAM_STAT_SELF_FLAGELLATION, STEAM_STAT_INT, 1);
+								}
 							}
 							if ( player > 0 && multiplayer == SERVER )
 							{
@@ -9057,6 +9087,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( behavior == &actPlayer )
 										{
 											messagePlayerColor(player, color, language[3753]);
+											steamStatisticUpdateClient(player, STEAM_STAT_ITS_A_LIVING, STEAM_STAT_INT, 1);
 										}
 										playSoundEntity(this, 168, 128);
 									}
@@ -9743,6 +9774,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	if ( behavior == &actMonster )
 	{
 		achievementObserver.addEntityAchievementTimer(this, AchievementObserver::BARONY_ACH_TELEFRAG, 50, true, 0);
+		achievementObserver.addEntityAchievementTimer(this, AchievementObserver::BARONY_ACH_COWBOY_FROM_HELL, 150, true, 0);
 	}
 
 	return true;
@@ -15029,6 +15061,18 @@ bool Entity::shouldRetreat(Stat& myStats)
 	if ( myStats.type == INCUBUS && !strncmp(myStats.name, "inner demon", strlen("inner demon")) )
 	{
 		return false;
+	}
+	if ( monsterTarget != 0 && myStats.monsterDemonHasBeenExorcised != 0 )
+	{
+		Entity* target = uidToEntity(monsterTarget);
+		if ( target )
+		{
+			Stat* targetStats = target->getStats();
+			if ( targetStats && targetStats->type == INCUBUS && !strncmp(targetStats->name, "inner demon", strlen("inner demon")) )
+			{
+				return false;
+			}
+		}
 	}
 
 	Entity* leader = monsterAllyGetPlayerLeader();
