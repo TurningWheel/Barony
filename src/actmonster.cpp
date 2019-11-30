@@ -1075,11 +1075,15 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 		}
 	}
 	if ( stats[monsterclicked]->appearance == 0
-		&& (stats[monsterclicked]->playerRace == RACE_GOBLIN && stats[monsterclicked]->type == GOBLIN) )
+		&& (stats[monsterclicked]->playerRace == RACE_GOBLIN) )
 	{
 		if ( myStats->type == GOBLIN )
 		{
 			serverUpdatePlayerGameplayStats(monsterclicked, STATISTICS_TRIBE_SUBSCRIBE, 1);
+		}
+		else if ( myStats->type != GOBLIN )
+		{
+			achievementObserver.playerAchievements[monsterclicked].socialButterfly++;
 		}
 	}
 

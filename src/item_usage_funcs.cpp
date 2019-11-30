@@ -23,6 +23,7 @@
 #include "monster.hpp"
 #include "player.hpp"
 #include "collision.hpp"
+#include "scores.hpp"
 
 bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 {
@@ -2843,7 +2844,10 @@ bool item_ScrollFire(Item* item, int player)
 		conductIlliterate = false;
 	}
 
-	serverUpdatePlayerGameplayStats(player, STATISTICS_FIRE_MAYBE_DIFFERENT, 1);
+	if ( stats[player]->type != AUTOMATON )
+	{
+		serverUpdatePlayerGameplayStats(player, STATISTICS_FIRE_MAYBE_DIFFERENT, 1);
+	}
 
 	item->identified = 1;
 	if (item->beatitude < 0)
@@ -4843,6 +4847,10 @@ void item_Spellbook(Item*& item, int player)
 				consumeItem(item, player);
 			}
 
+			if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+			}
 			if ( list_Size(&spellList) >= 20 )
 			{
 				steamAchievement("BARONY_ACH_MAGIC_MASTERY");
@@ -4963,6 +4971,10 @@ void item_FoodAutomaton(Item*& item, int player)
 			break;
 		case READABLE_BOOK:
 			stats[player]->HUNGER += 400;
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
+			}
 			break;
 		case SCROLL_MAIL:
 		case SCROLL_BLANK:
@@ -4991,9 +5003,17 @@ void item_FoodAutomaton(Item*& item, int player)
 			stats[player]->HUNGER += 1500;
 			players[player]->entity->modMP(stats[player]->MAXMP);
 			messagePlayerColor(player, color, language[3699]); // superheats
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
+			}
 			break;
 		}
 		case TOOL_METAL_SCRAP:
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, 1);
+			}
 			if ( stats[player]->HUNGER > 500 )
 			{
 				messagePlayer(player, language[3707]); // fails to add any more heat.
@@ -5007,6 +5027,10 @@ void item_FoodAutomaton(Item*& item, int player)
 			}
 			break;
 		case TOOL_MAGIC_SCRAP:
+			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, 1);
+			}
 			if ( stats[player]->HUNGER > 1100 )
 			{
 				messagePlayer(player, language[3707]); // fails to add any more heat.
@@ -5022,6 +5046,14 @@ void item_FoodAutomaton(Item*& item, int player)
 		default:
 			messagePlayer(player, "Unknown food?");
 			break;
+	}
+
+	if ( itemCategory(item) == SCROLL )
+	{
+		if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+		{
+			steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
+		}
 	}
 
 	if ( !(svFlags & SV_FLAG_HUNGER) && oldHunger == stats[player]->HUNGER ) // ate food, hunger is disabled and did not gain heat (normal food items)

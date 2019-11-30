@@ -23,6 +23,7 @@
 #include "player.hpp"
 #include "sys/stat.h"
 #include "paths.hpp"
+#include "collision.hpp"
 
 // definitions
 list_t topscores;
@@ -3479,6 +3480,74 @@ void updateGameplayStatisticsInMainLoop()
 			steamAchievement("BARONY_ACH_MIXOLOGIST");
 		}
 	}
+
+	if ( (ticks % (TICKS_PER_SECOND * 8) == 0) && (gameStatistics[STATISTICS_POP_QUIZ_1] != 0 || gameStatistics[STATISTICS_POP_QUIZ_2] != 0) )
+	{
+		int numSpellsCast = 0;
+		int stat1 = gameStatistics[STATISTICS_POP_QUIZ_1];
+		int stat2 = gameStatistics[STATISTICS_POP_QUIZ_1];
+		for ( int i = 0; i < 30; ++i )
+		{
+			// count the bits set.
+			numSpellsCast += (stat1 & 1);
+			numSpellsCast += (stat2 & 1);
+			stat1 = stat1 >> 1;
+			stat2 = stat2 >> 1;
+		}
+		if ( numSpellsCast >= 20 )
+		{
+			steamAchievement("BARONY_ACH_POP_QUIZ");
+		}
+	}
+
+	if ( ticks % (TICKS_PER_SECOND * 10) == 0 )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( (i == clientnum) || (multiplayer == SERVER && i != clientnum) )
+			{
+				// clients update their own total, server can update clients.
+				if ( achievementObserver.playerAchievements[i].torchererScrap > 0 )
+				{
+					if ( i == clientnum )
+					{
+						steamStatisticUpdate(STEAM_STAT_TORCHERER, STEAM_STAT_INT, achievementObserver.playerAchievements[i].torchererScrap);
+					}
+					else
+					{
+						steamStatisticUpdateClient(i, STEAM_STAT_TORCHERER, STEAM_STAT_INT, 
+							achievementObserver.playerAchievements[i].torchererScrap);
+					}
+					achievementObserver.playerAchievements[i].torchererScrap = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].superShredder > 0 )
+				{
+					if ( i == clientnum )
+					{
+						steamStatisticUpdate(STEAM_STAT_SUPER_SHREDDER, STEAM_STAT_INT, achievementObserver.playerAchievements[i].superShredder);
+					}
+					else
+					{
+						steamStatisticUpdateClient(i, STEAM_STAT_SUPER_SHREDDER, STEAM_STAT_INT, achievementObserver.playerAchievements[i].superShredder);
+					}
+					achievementObserver.playerAchievements[i].superShredder = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].fixerUpper > 0 )
+				{
+					if ( i == clientnum )
+					{
+						steamStatisticUpdate(STEAM_STAT_FIXER_UPPER, STEAM_STAT_INT, achievementObserver.playerAchievements[i].fixerUpper);
+					}
+					else
+					{
+						steamStatisticUpdateClient(i, STEAM_STAT_FIXER_UPPER, STEAM_STAT_INT, achievementObserver.playerAchievements[i].fixerUpper);
+					}
+					achievementObserver.playerAchievements[i].fixerUpper = 0;
+				}
+			}
+		}
+	}
+
 	if ( ticks % (TICKS_PER_SECOND * 5) == 0 )
 	{
 		std::unordered_set<int> potionList;
@@ -3556,6 +3625,24 @@ void updateGameplayStatisticsInMainLoop()
 		if ( badAndBeautiful >= 4 )
 		{
 			steamAchievement("BARONY_ACH_BAD_BEAUTIFUL");
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int i = 0; i < MAXPLAYERS; ++i )
+			{
+				// server only will have these numbers here.
+				if ( achievementObserver.playerAchievements[i].ifYouLoveSomething > 0 )
+				{
+					steamStatisticUpdateClient(i, STEAM_STAT_IF_YOU_LOVE_SOMETHING, STEAM_STAT_INT, achievementObserver.playerAchievements[i].ifYouLoveSomething);
+					achievementObserver.playerAchievements[i].ifYouLoveSomething = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].socialButterfly > 0 )
+				{
+					steamStatisticUpdateClient(i, STEAM_STAT_SOCIAL_BUTTERFLY, STEAM_STAT_INT, achievementObserver.playerAchievements[i].socialButterfly);
+					achievementObserver.playerAchievements[i].socialButterfly = 0;
+				}
+			}
 		}
 	}
 }
@@ -4481,6 +4568,10 @@ void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, i
 			{
 				serverUpdatePlayerGameplayStats(player, STATISTICS_OHAI_MARK, 1);
 			}
+			else if ( achievement == BARONY_ACH_IF_YOU_LOVE_SOMETHING )
+			{
+				playerAchievements[player].ifYouLoveSomething++;
+			}
 			else
 			{
 				awardAchievement(player, achievement);
@@ -4605,7 +4696,7 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		default:
 			break;
 	}
-	messagePlayer(player, "Processed achievement %d, event: %d", achievement, achEvent);
+	messagePlayer(player, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
 }
 
 void AchievementObserver::clearPlayerAchievementData()
@@ -4774,4 +4865,47 @@ bool AchievementObserver::PlayerAchievements::checkPathBetweenObjects(Entity* pl
 		}
 	}
 	return false;
+}
+
+bool AchievementObserver::PlayerAchievements::checkTraditionKill(Entity* player, Entity* target)
+{
+	if ( tradition )
+	{
+		return false;
+	}
+
+	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(target, 3);
+	bool foundFountain = false;
+	for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
+	{
+		list_t* currentList = *it;
+		node_t* node;
+		for ( node = currentList->first; node != nullptr; node = node->next )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity && entity->behavior == &actFountain )
+			{
+				if ( entityDist(target, entity) < 16 * 3 )
+				{
+					foundFountain = true;
+					break;
+				}
+			}
+		}
+		if ( foundFountain )
+		{
+			break;
+		}
+	}
+
+	if ( foundFountain )
+	{
+		steamStatisticUpdateClient(player->skill[2], STEAM_STAT_TRADITION, STEAM_STAT_INT, 1);
+		++traditionKills;
+		if ( traditionKills >= 25 ) // max is 20, but allow some error in transmission
+		{
+			tradition = true;
+		}
+	}
+	return true;
 }

@@ -2260,7 +2260,9 @@ void actPlayer(Entity* my)
 					{
 						inrange[PLAYER_NUM] = true;
 
-						if ( (selectedEntity->behavior == &actItem || selectedEntity->behavior == &actTorch) 
+						if ( (selectedEntity->behavior == &actItem 
+							|| selectedEntity->behavior == &actTorch
+							|| selectedEntity->behavior == &actCrystalShard)
 							&& stats[clientnum] && stats[clientnum]->shield && stats[clientnum]->defending
 							&& stats[clientnum]->shield->type == TOOL_TINKERING_KIT )
 						{
@@ -2286,6 +2288,12 @@ void actPlayer(Entity* my)
 							else
 							{
 								strcpy((char*)net_packet->data, "CKIR");
+								if ( stats[PLAYER_NUM]->type == RAT
+									&& selectedEntity->behavior == &actItem
+									&& selectedEntity->itemShowOnMap == 1 )
+								{
+									strcpy((char*)net_packet->data, "RATF");
+								}
 							}
 						}
 						else

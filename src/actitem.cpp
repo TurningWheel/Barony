@@ -298,10 +298,32 @@ void actItem(Entity* my)
 									item->count = pickedUpCount;
 									messagePlayer(i, language[504], item->description());
 									item->count = oldcount;
+									if ( itemCategory(item) == FOOD && my->itemShowOnMap != 0
+										&& stats[i] && stats[i]->type == RAT )
+									{
+										Entity* parent = uidToEntity(my->parent);
+										if ( !parent || (parent && parent->behavior != &actPlayer) )
+										{
+											steamStatisticUpdateClient(i, STEAM_STAT_5000_SECOND_RULE, STEAM_STAT_INT, 1);
+										}
+									}
 								}
 								else
 								{
 									messagePlayer(i, language[504], item->description());
+									if ( itemCategory(item) == FOOD	&& stats[i] && stats[i]->type == RAT )
+									{
+										auto find = achievementObserver
+											.playerAchievements[i].rat5000secondRule.find(my->getUID());
+										if ( find != achievementObserver.playerAchievements[i].rat5000secondRule.end() )
+										{
+											Entity* parent = uidToEntity(my->parent);
+											if ( !parent || (parent && parent->behavior != &actPlayer) )
+											{
+												steamStatisticUpdateClient(i, STEAM_STAT_5000_SECOND_RULE, STEAM_STAT_INT, 1);
+											}
+										}
+									}
 								}
 								if (i != 0)
 								{

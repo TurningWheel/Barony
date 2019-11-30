@@ -5712,6 +5712,10 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				messagePlayer(player, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			free(crafted); // if player != clientnum, then crafted == pickedUp
+			if ( item->type == TOOL_TORCH || item->type == TOOL_CRYSTALSHARD )
+			{
+				achievementObserver.playerAchievements[player].torchererScrap += metal;
+			}
 			didCraft = true;
 		}
 	}
@@ -5766,6 +5770,22 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 			}
 		}
+
+		if ( item->type == TOOL_TORCH || item->type == TOOL_CRYSTALSHARD )
+		{
+			achievementObserver.playerAchievements[player].torchererScrap += (magic + metal);
+		}
+		else if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT
+			|| item->type == TOOL_GYROBOT || item->type == TOOL_DUMMYBOT 
+			|| item->type == TOOL_DETONATOR_CHARGE )
+		{
+			if ( item->status == BROKEN )
+			{
+				achievementObserver.playerAchievements[player].fixerUpper += 1;
+			}
+		}
+
+		achievementObserver.playerAchievements[player].superShredder += (magic + metal);
 	}
 
 	if ( increaseSkill )
@@ -6814,6 +6834,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* upgradedItem = newItem(item->type, newStatus, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 					if ( upgradedItem )
 					{
+						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
 						itemPickup(clientnum, upgradedItem);
 						free(upgradedItem);
 					}
@@ -6848,6 +6869,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, repairedAppearance, true, nullptr);
 					if ( repairedItem )
 					{
+						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
 						itemPickup(clientnum, repairedItem);
 						free(repairedItem);
 					}
@@ -7361,6 +7383,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			pickedUp->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, clientnum);
 			//scribingBlankScrollTarget = nullptr;
+			steamStatisticUpdate(STEAM_STAT_ROLL_THE_BONES, STEAM_STAT_INT, 1);
 			free(crafted);
 			return true;
 		}

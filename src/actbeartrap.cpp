@@ -1146,6 +1146,7 @@ void actDecoyBox(Entity* my)
 								entity->monsterTarget = my->getUID();
 								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
 								serverUpdateEntitySkill(entity, 0);
+								bool message = false;
 								if ( parent->behavior == &actPlayer && stats[parent->skill[2]] )
 								{
 									// see if we have a gyrobot follower to tell us what's goin on
@@ -1158,8 +1159,16 @@ void actDecoyBox(Entity* my)
 											if ( entity->entityShowOnMap < 250 )
 											{
 												entity->entityShowOnMap = TICKS_PER_SECOND * 5;
+												if ( parent->skill[2] != 0 )
+												{
+													serverUpdateEntitySkill(entity, 59);
+												}
 											}
-											messagePlayer(parent->skill[2], language[3671]);
+											if ( !message )
+											{
+												messagePlayer(parent->skill[2], language[3671]);
+												message = true;
+											}
 											break;
 										}
 									}

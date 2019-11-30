@@ -787,7 +787,7 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
-		return;
+		//return;
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -884,7 +884,6 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					break;
-				case STEAM_STAT_SERIAL_THRILLA:
 				case STEAM_STAT_SUPER_SHREDDER:
 					indicateProgress = false;
 					g_SteamStats[statisticNum].m_iValue =
@@ -927,6 +926,27 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 						indicateProgress = true;
 					}
 					break;
+				case STEAM_STAT_SERIAL_THRILLA:
+					indicateProgress = false;
+					g_SteamStats[statisticNum].m_iValue =
+						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
+					if ( g_SteamStats[statisticNum].m_iValue == steamStatAchStringsAndMaxVals[statisticNum].second )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue == 0 && g_SteamStats[statisticNum].m_iValue > 0 )
+					{
+						indicateProgress = true;
+					}
+					else if ( oldValue < 10 && ((oldValue / 10) < (g_SteamStats[statisticNum].m_iValue / 10)) )
+					{
+						indicateProgress = true;
+					}
+					else if ( ((oldValue / 25) < (g_SteamStats[statisticNum].m_iValue / 25)) ) // show every 25.
+					{
+						indicateProgress = true;
+					}
+					break;
 				default:
 					break;
 			}
@@ -955,7 +975,7 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
-		return;
+		//return;
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -1080,8 +1100,9 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					}
 				}
 				break;
-			// below are 1000 max value
+			// below is 100 max value
 			case STEAM_STAT_SERIAL_THRILLA:
+			// below are 1000 max value
 			case STEAM_STAT_SUPER_SHREDDER:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
@@ -1093,7 +1114,7 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					}
 				}
 				break;
-			// below is 1000 max value
+			// below is 100 max value
 			case STEAM_STAT_TRASH_COMPACTOR:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
@@ -1158,8 +1179,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			default:
 				break;
 		}
-		//messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
-			//iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+		messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
+			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
 	}
 #endif // !STEAMWORKS
 }

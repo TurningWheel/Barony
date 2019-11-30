@@ -2227,6 +2227,11 @@ void useItem(Item* item, int player, Entity* usedBy)
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 					messagePlayerColor(player, color, language[3699]); // superheats
 					serverUpdateHunger(player);
+					if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
+						steamStatisticUpdateClient(player, STEAM_STAT_FASCIST, STEAM_STAT_INT, 1);
+					}
 				}
 			}
 			if ( !players[player]->entity->isBlind() )

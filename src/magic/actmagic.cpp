@@ -4186,6 +4186,7 @@ void actParticleSapCenter(Entity* my)
 					Item* pickedUp = itemPickup(parent->skill[2], item);
 					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 					messagePlayerColor(parent->skill[2], color, language[3746], items[item->type].name_unidentified);
+					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
 					if ( pickedUp )
 					{
 						if ( parent->skill[2] == 0 )

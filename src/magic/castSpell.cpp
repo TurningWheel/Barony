@@ -2176,6 +2176,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if ( rand() % magicChance == 0 )
 					{
 						caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
+						if ( usingSpellbook && caster->behavior == &actPlayer )
+						{
+							if ( stats[caster->skill[2]] && stats[caster->skill[2]]->playerRace == RACE_INSECTOID && stats[caster->skill[2]]->appearance == 0 )
+							{
+								steamStatisticUpdateClient(caster->skill[2], STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+							}
+						}
 					}
 				}
 			}
@@ -2188,6 +2195,18 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if ( stat->type == GOBLIN )
 		{
 			chance = 16;
+
+			if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+			{
+				if ( spell->ID >= 30 && spell->ID < 60 )
+				{
+					serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_POP_QUIZ_2, spell->ID);
+				}
+				else
+				{
+					serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_POP_QUIZ_1, spell->ID);
+				}
+			}
 		}
 		if ( stat->shield 
 			&& ( (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat))
@@ -2199,8 +2218,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if ( rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
 		{
 			caster->degradeArmor(*stat, *(stat->shield), 4);
-			if ( stat->shield->status == BROKEN )
+			if ( stat->shield->status == BROKEN && player >= 0 )
 			{
+				if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->appearance == 0 )
+				{
+					steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
+				}
 				Item* toBreak = stat->shield;
 				consumeItem(toBreak, player);
 			}

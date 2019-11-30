@@ -3347,6 +3347,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else if ( myStats->HUNGER > 1200 )
 		{
+			achievementObserver.playerAchievements[player].ticksSpentOverclocked++;
 			if ( myStats->MP / static_cast<real_t>(std::max(1, myStats->MAXMP)) <= 0.5 )
 			{
 				manaRegenInterval /= 4; // increase faster at < 50% mana
@@ -4129,13 +4130,28 @@ void Entity::handleEffects(Stat* myStats)
 					messagePlayer(player, language[648]);
 					this->modHP(-(2 + rand() % 3));
 					playSoundEntity(this, 28, 64); // "Damage.ogg"
-					if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
+					if ( player >= 0 )
 					{
-						if ( rand() % 3 > 0 )
+						if ( myStats->type == SUCCUBUS || myStats->type == INCUBUS )
 						{
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							messagePlayerColor(player, color, language[3358]);
-							this->modMP(2);
+							if ( rand() % 3 > 0 && myStats->MP < myStats->MAXMP )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(player, color, language[3358]);
+								int amount = 2 + rand() % 2;
+								int oldMP = myStats->MP;
+								this->modMP(amount);
+								if ( stats[player]->appearance == 0 )
+								{
+									if ( stats[player]->playerRace == RACE_INCUBUS || stats[player]->playerRace == RACE_SUCCUBUS )
+									{
+										if ( oldMP < myStats->MP )
+										{
+											steamStatisticUpdateClient(player, STEAM_STAT_SERIAL_THRILLA, STEAM_STAT_INT, myStats->MP - oldMP);
+										}
+									}
+								}
+							}
 						}
 					}
 					this->setObituary(language[1534]);
@@ -8314,6 +8330,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									// backstab on unaware enemy
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2543], MSG_COMBAT);
+									if ( player >= 0 && hitstats->EFFECTS[EFF_SHADOW_TAGGED] && this->creatureShadowTaggedThisUid == hit.entity->getUID() )
+									{
+										achievementObserver.awardAchievementIfActive(player, this, AchievementObserver::BARONY_ACH_OHAI_MARK);
+									}
 								}
 							}
 
@@ -8473,6 +8493,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									// backstab on unaware enemy
 									messagePlayerMonsterEvent(player, color, *hitstats, language[2543], language[2544], MSG_COMBAT);
+									if ( player >= 0 && hitstats->EFFECTS[EFF_SHADOW_TAGGED] && this->creatureShadowTaggedThisUid == hit.entity->getUID() )
+									{
+										achievementObserver.awardAchievementIfActive(player, this, AchievementObserver::BARONY_ACH_OHAI_MARK);
+									}
 								}
 							}
 
@@ -8598,6 +8622,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										if ( hitstats->EFFECTS[EFF_DISORIENTED] && !hitstats->shield )
 										{
 											hit.entity->setEffect(EFF_DISORIENTED, false, 0, false);
+											if ( player >= 0 )
+											{
+												steamStatisticUpdateClient(player, STEAM_STAT_COWBOY_FROM_HELL, STEAM_STAT_INT, 1);
+											}
 										}
 										playSoundEntity(hit.entity, 406, 128);
 										dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 5;
@@ -10217,6 +10245,29 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		if ( root )
 		{
 			achievementObserver.awardAchievementIfActive(player, src, AchievementObserver::BARONY_ACH_TELEFRAG);
+			if ( stats[player]->playerRace == RACE_INCUBUS && stats[player]->appearance == 0 )
+			{
+				achievementObserver.playerAchievements[player].checkTraditionKill(this, src);
+			}
+			if ( stats[player]->type == SPIDER && srcStats->EFFECTS[EFF_WEBBED] )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_MANY_PEDI_PALP, STEAM_STAT_INT, 1);
+			}
+			if ( src->monsterTarget != 0 )
+			{
+				Entity* wasTargeting = uidToEntity(src->monsterTarget);
+				if ( wasTargeting )
+				{
+					if ( src->monsterState == MONSTER_STATE_ATTACK && wasTargeting->getMonsterTypeFromSprite() == DUMMYBOT )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_RAGE_AGAINST, STEAM_STAT_INT, 1);
+					}
+					else if ( wasTargeting->behavior == &actDecoyBox )
+					{
+						steamStatisticUpdateClient(player, STEAM_STAT_GUERILLA_RADIO, STEAM_STAT_INT, 1);
+					}
+				}
+			}
 		}
 
 		if ( player == 0 )
@@ -10301,10 +10352,20 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 			leader->awardXP(src, true, false);
 
-			if ( leader->behavior == &actPlayer && destStats->monsterIsCharmed == 1 )
+			if ( leader->behavior == &actPlayer )
 			{
-				// charmed follower killed something.
-				steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_KILL_COMMAND, STEAM_STAT_INT, 1);
+				if ( destStats->monsterIsCharmed == 1 )
+				{
+					// charmed follower killed something.
+					steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_KILL_COMMAND, STEAM_STAT_INT, 1);
+				}
+				if ( destStats->type == INSECTOID )
+				{
+					if ( leader->getStats()->playerRace == RACE_INSECTOID && leader->getStats()->appearance == 0 )
+					{
+						steamStatisticUpdateClient(leader->skill[2], STEAM_STAT_MONARCH, STEAM_STAT_INT, 1);
+					}
+				}
 			}
 		}
 	}

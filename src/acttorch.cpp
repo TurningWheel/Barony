@@ -245,12 +245,58 @@ void actCrystalShard(Entity* my)
 			{
 				if ( inrange[i] )
 				{
-					messagePlayer(i, language[589]);
-					list_RemoveNode(my->light->node);
-					list_RemoveNode(my->mynode);
+					bool trySalvage = false;
+					if ( static_cast<Uint32>(my->itemAutoSalvageByPlayer) == players[i]->entity->getUID() )
+					{
+						trySalvage = true;
+						my->itemAutoSalvageByPlayer = 0; // clear interact flag.
+					}
+
 					Item* item = newItem(TOOL_CRYSTALSHARD, WORN, 0, 1, 0, true, NULL);
-					itemPickup(i, item);
-					free(item);
+
+					if ( trySalvage )
+					{
+						// auto salvage this item, don't pick it up.
+						messagePlayer(i, language[589]);
+						bool salvaged = false;
+						if ( GenericGUI.isItemSalvageable(item, i) )
+						{
+							if ( GenericGUI.tinkeringSalvageItem(item, true, i) )
+							{
+								salvaged = true;
+							}
+						}
+
+						if ( salvaged )
+						{
+							if ( players[i] != nullptr && players[i]->entity != nullptr )
+							{
+								playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+							}
+							free(item);
+							/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )
+							{
+							GenericGUI.tinkeringKitDegradeOnUse(i);
+							}*/
+							list_RemoveNode(my->light->node);
+							list_RemoveNode(my->mynode);
+							return;
+						}
+						else
+						{
+							// unable to salvage.
+							free(item);
+							return;
+						}
+					}
+					else
+					{
+						messagePlayer(i, language[589]);
+						list_RemoveNode(my->light->node);
+						list_RemoveNode(my->mynode);
+						itemPickup(i, item);
+						free(item);
+					}
 					return;
 				}
 			}

@@ -724,6 +724,14 @@ void gameLogic(void)
 					{
 						steamAchievementClient(c, "BARONY_ACH_MACHINE_HEAD");
 					}
+					if ( achievementObserver.playerAchievements[c].ticksSpentOverclocked >= 250 )
+					{
+						Uint32 increase = achievementObserver.playerAchievements[c].ticksSpentOverclocked / TICKS_PER_SECOND;
+						steamStatisticUpdateClient(c, STEAM_STAT_OVERCLOCKED, STEAM_STAT_INT, increase);
+
+						// add the leftover sub-second ticks result back into the score.
+						achievementObserver.playerAchievements[c].ticksSpentOverclocked = increase % TICKS_PER_SECOND;
+					}
 				}
 				updateGameplayStatisticsInMainLoop();
 			}

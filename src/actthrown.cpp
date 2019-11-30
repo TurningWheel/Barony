@@ -982,6 +982,13 @@ void actThrown(Entity* my)
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
 					}
+					if ( item->type == BOOMERANG )
+					{
+						if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
+						{
+							achievementObserver.addEntityAchievementTimer(parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING, 6 * TICKS_PER_SECOND, true, 0);
+						}
+					}
 				}
 
 				// update enemy bar for attacker

@@ -47,6 +47,8 @@ static const int STATISTICS_ITS_A_LIVING = 10;
 static const int STATISTICS_FORUM_TROLL = 11;
 static const int STATISTICS_PIMPING_AINT_EASY = 12;
 static const int STATISTICS_TRIBE_SUBSCRIBE = 13;
+static const int STATISTICS_POP_QUIZ_1 = 14;
+static const int STATISTICS_POP_QUIZ_2 = 15;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 
 enum SteamStatIndexes : int
@@ -118,9 +120,9 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_VOLATILE", 20),				// STEAM_STAT_VOLATILE,
 	std::make_pair("BARONY_ACH_SURROGATES", 50),			// STEAM_STAT_SURROGATES,
 	std::make_pair("BARONY_ACH_KILL_COMMAND", 50),			// STEAM_STAT_KILL_COMMAND
-	std::make_pair("BARONY_ACH_TRASH_COMPACTOR", 1000),     // STEAM_STAT_TRASH_COMPACTOR
+	std::make_pair("BARONY_ACH_TRASH_COMPACTOR", 100),      // STEAM_STAT_TRASH_COMPACTOR
 	std::make_pair("BARONY_ACH_SPICY", 10),                 // STEAM_STAT_SPICY
-	std::make_pair("BARONY_ACH_SERIAL_THRILLA", 1000),      // STEAM_STAT_SERIAL_THRILLA
+	std::make_pair("BARONY_ACH_SERIAL_THRILLA", 100),       // STEAM_STAT_SERIAL_THRILLA
 	std::make_pair("BARONY_ACH_TRADITION", 20),             // STEAM_STAT_TRADITION
 	std::make_pair("BARONY_ACH_POP_QUIZ", 20),              // STEAM_STAT_POP_QUIZ
 	std::make_pair("BARONY_ACH_DYSLEXIA", 50),              // STEAM_STAT_DYSLEXIA
@@ -257,7 +259,8 @@ public:
 		BARONY_ACH_IRONIC_PUNISHMENT,
 		BARONY_ACH_LEVITANT_LACKEY,
 		BARONY_ACH_WONDERFUL_TOYS,
-		BARONY_ACH_FLUTTERSHY
+		BARONY_ACH_FLUTTERSHY,
+		BARONY_ACH_IF_YOU_LOVE_SOMETHING
 	};
 	enum AchievementEvent : int
 	{
@@ -281,6 +284,15 @@ public:
 		bool levitantLackey = false;
 		bool flutterShy = false;
 		bool gastricBypass = false;
+		Uint32 ticksSpentOverclocked = 0;
+		bool tradition = false;
+		int traditionKills = 0;
+		int torchererScrap = 0;
+		int superShredder = 0;
+		int fixerUpper = 0;
+		int ifYouLoveSomething = 0;
+		int socialButterfly = 0;
+		int rollTheBones = 0;
 
 		std::pair<int, int> realBoy;
 		std::unordered_map<Uint32, int> caughtInAMoshTargets;
@@ -288,6 +300,8 @@ public:
 		std::unordered_set<Uint32> ironicPunishmentTargets;
 		std::pair<real_t, real_t> flutterShyCoordinates;
 		std::pair<int, Uint32> gastricBypassSpell;
+		std::unordered_set<Uint32> rat5000secondRule;
+		
 		PlayerAchievements()
 		{
 			realBoy = std::make_pair(0, 0);
@@ -295,6 +309,7 @@ public:
 			flutterShyCoordinates = std::make_pair(0.0, 0.0);
 		};
 		bool checkPathBetweenObjects(Entity* player, Entity* target, int achievement);
+		bool checkTraditionKill(Entity* player, Entity* target);
 	} playerAchievements[MAXPLAYERS];
 
 	void clearPlayerAchievementData();
