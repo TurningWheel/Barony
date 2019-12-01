@@ -8100,16 +8100,29 @@ void handleMainMenu(bool mode)
 			{
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 			}
+
+			if ( stats[clientnum]->playerRace >= 0 && stats[clientnum]->playerRace <= RACE_INSECTOID )
+			{
+				usedRace[stats[clientnum]->playerRace] = true;
+			}
 			// new achievement
 			usedAllClasses = true;
-			for ( c = 0; c <= CLASS_HUNTER; c++ )
+			for ( c = 0; c <= CLASS_HUNTER; ++c )
 			{
 				if ( !usedClass[c] )
 				{
 					usedAllClasses = false;
 				}
 			}
-			if ( usedAllClasses )
+			bool usedAllRaces = true;
+			for ( c = RACE_HUMAN; c < RACE_INSECTOID; ++c )
+			{
+				if ( !usedRace[c] )
+				{
+					usedAllRaces = false;
+				}
+			}
+			if ( usedAllClasses && usedAllRaces )
 			{
 				steamAchievement("BARONY_ACH_I_WANT_IT_ALL");
 			}

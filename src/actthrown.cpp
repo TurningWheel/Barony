@@ -714,6 +714,7 @@ void actThrown(Entity* my)
 				bool disableAlertBlindStatus = false;
 				bool ignorePotion = false;
 				bool wasPotion = itemCategory(item) == POTION;
+				bool wasBoomerang = item->type == BOOMERANG;
 				bool wasConfused = (hitstats && hitstats->EFFECTS[EFF_CONFUSED]);
 
 				if ( hitstats )
@@ -982,7 +983,7 @@ void actThrown(Entity* my)
 							steamStatisticUpdateClient(parent->skill[2], STEAM_STAT_BOMBARDIER, STEAM_STAT_INT, 1);
 						}
 					}
-					if ( item->type == BOOMERANG )
+					if ( wasBoomerang )
 					{
 						if ( parent && parent->behavior == &actPlayer && hit.entity->behavior == &actMonster )
 						{

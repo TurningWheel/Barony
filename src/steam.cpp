@@ -700,7 +700,7 @@ void steamAchievement(const char* achName)
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow achievements.
-		return;
+		//return;
 	}
 
 	if ( !strcmp(achName, "BARONY_ACH_BOOTS_OF_SPEED") )
@@ -723,6 +723,15 @@ void steamAchievement(const char* achName)
 		node->deconstructor = &defaultDeconstructor;
 	}
 
+#endif
+}
+
+void steamUnsetAchievement(const char* achName)
+{
+#ifndef STEAMWORKS
+	return;
+#else
+	SteamUserStats()->ClearAchievement(achName);
 #endif
 }
 
@@ -818,15 +827,12 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 				case STEAM_STAT_VOLATILE:
 				case STEAM_STAT_SURROGATES:
 				case STEAM_STAT_KILL_COMMAND:
-				case STEAM_STAT_TRASH_COMPACTOR:
 				case STEAM_STAT_SPICY:
 				case STEAM_STAT_TRADITION:
 				case STEAM_STAT_POP_QUIZ:
 				case STEAM_STAT_DYSLEXIA:
 				case STEAM_STAT_BOOKWORM:
 				case STEAM_STAT_MONARCH:
-				case STEAM_STAT_FIXER_UPPER:
-				case STEAM_STAT_TORCHERER:
 				case STEAM_STAT_MANY_PEDI_PALP:
 				case STEAM_STAT_5000_SECOND_RULE:
 				case STEAM_STAT_SOCIAL_BUTTERFLY:
@@ -927,6 +933,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 					}
 					break;
 				case STEAM_STAT_SERIAL_THRILLA:
+				case STEAM_STAT_TRASH_COMPACTOR:
+				case STEAM_STAT_TORCHERER:
+				case STEAM_STAT_FIXER_UPPER:
 					indicateProgress = false;
 					g_SteamStats[statisticNum].m_iValue =
 						std::min(g_SteamStats[statisticNum].m_iValue, steamStatAchStringsAndMaxVals[statisticNum].second);
@@ -1053,6 +1062,8 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			case STEAM_STAT_SELF_FLAGELLATION:
 			case STEAM_STAT_FASCIST:
 			case STEAM_STAT_ITS_A_LIVING:
+			case STEAM_STAT_CHOPPING_BLOCK:
+			case STEAM_STAT_MANY_PEDI_PALP:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{
 					if ( iVal == 1 || (iVal > 0 && iVal % 5 == 0) )
@@ -1102,6 +1113,9 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				break;
 			// below is 100 max value
 			case STEAM_STAT_SERIAL_THRILLA:
+			case STEAM_STAT_TRASH_COMPACTOR:
+			case STEAM_STAT_TORCHERER:
+			case STEAM_STAT_FIXER_UPPER:
 			// below are 1000 max value
 			case STEAM_STAT_SUPER_SHREDDER:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
@@ -1111,21 +1125,6 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 					if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
 					{
 						steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-					}
-				}
-				break;
-			// below is 100 max value
-			case STEAM_STAT_TRASH_COMPACTOR:
-				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
-				{
-					if ( iVal == 1 || iVal == 5 || (iVal > 0 && iVal % 25 == 0) )
-					{
-						SteamUserStats()->IndicateAchievementProgress(steamStatAchStringsAndMaxVals[statisticNum].first.c_str(),
-							iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
-						if ( iVal == steamStatAchStringsAndMaxVals[statisticNum].second )
-						{
-							steamAchievement(steamStatAchStringsAndMaxVals[statisticNum].first.c_str());
-						}
 					}
 				}
 				break;
@@ -1142,10 +1141,6 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 				}
 				break;
 			// below are 100 max value
-			case STEAM_STAT_FIXER_UPPER:
-			case STEAM_STAT_TORCHERER:
-			case STEAM_STAT_MANY_PEDI_PALP:
-			case STEAM_STAT_CHOPPING_BLOCK:
 			case STEAM_STAT_IF_YOU_LOVE_SOMETHING:
 				if ( !achievementUnlocked(steamStatAchStringsAndMaxVals[statisticNum].first.c_str()) )
 				{

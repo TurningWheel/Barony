@@ -47,6 +47,7 @@ std::vector<Uint32> achievementStrobeVec[MAXPLAYERS] = {};
 bool achievementStatusStrobe[MAXPLAYERS] = { false };
 list_t booksRead;
 bool usedClass[NUMCLASSES] = {0};
+bool usedRace[NUMRACES] = { 0 };
 Uint32 loadingsavegame = 0;
 bool achievementBrawlerMode = false;
 int savegameCurrentFileIndex = 0;
@@ -596,6 +597,10 @@ void saveAllScores(const std::string& scoresfilename)
 	{
 		fwrite(&usedClass[c], sizeof(bool), 1, fp);
 	}
+	for ( c = 0; c < NUMRACES; c++ )
+	{
+		fwrite(&usedRace[c], sizeof(bool), 1, fp);
+	}
 
 	// score list
 	if ( scoresfilename.compare(SCORESFILE) == 0 )
@@ -895,6 +900,19 @@ void loadAllScores(const std::string& scoresfilename)
 		else
 		{
 			fread(&usedClass[c], sizeof(bool), 1, fp);
+		}
+	}
+
+	for ( c = 0; c < NUMRACES; c++ )
+	{
+		if ( versionNumber <= 325 )
+		{
+			// don't read race info.
+			usedRace[c] = false;
+		}
+		else
+		{
+			fread(&usedRace[c], sizeof(bool), 1, fp);
 		}
 	}
 
@@ -3641,6 +3659,11 @@ void updateGameplayStatisticsInMainLoop()
 				{
 					steamStatisticUpdateClient(i, STEAM_STAT_SOCIAL_BUTTERFLY, STEAM_STAT_INT, achievementObserver.playerAchievements[i].socialButterfly);
 					achievementObserver.playerAchievements[i].socialButterfly = 0;
+				}
+				if ( achievementObserver.playerAchievements[i].trashCompactor > 0 )
+				{
+					steamStatisticUpdateClient(i, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, achievementObserver.playerAchievements[i].trashCompactor);
+					achievementObserver.playerAchievements[i].trashCompactor = 0;
 				}
 			}
 		}

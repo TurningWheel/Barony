@@ -2431,9 +2431,9 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[277]);
 				return;
 			}
-			dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), clientnum);
+			dropItem(newItem(TOOL_METAL_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_MAGIC_SCRAP, EXCELLENT, 0, 100, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_TINKERING_KIT, EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 		}
 		else if ( !strncmp(command_str, "/gimmerobots", 12) )
 		{
@@ -2442,10 +2442,10 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[277]);
 				return;
 			}
-			dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
+			dropItem(newItem(TOOL_GYROBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_DUMMYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 		}
 		else if ( !strncmp(command_str, "/gimmegoblinbooks", 17) )
 		{
@@ -2457,8 +2457,87 @@ void consoleCommand(char* command_str)
 			for ( int i = 0; i < NUM_SPELLS; ++i )
 			{
 				int spellbook = getSpellbookFromSpellID(i);
-				dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, rand(), true, &stats[clientnum]->inventory), clientnum);
+				dropItem(newItem(static_cast<ItemType>(spellbook), DECREPIT, -1, 1, rand(), true, &stats[clientnum]->inventory), 0);
 			}
+		}
+		else if ( !strncmp(command_str, "/unsetdlc2achievements", 22) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+
+			steamUnsetAchievement("BARONY_ACH_TAKING_WITH");
+			steamUnsetAchievement("BARONY_ACH_TELEFRAG");
+			steamUnsetAchievement("BARONY_ACH_FASCIST");
+			steamUnsetAchievement("BARONY_ACH_REAL_BOY");
+			steamUnsetAchievement("BARONY_ACH_OVERCLOCKED");
+			steamUnsetAchievement("BARONY_ACH_TRASH_COMPACTOR");
+			steamUnsetAchievement("BARONY_ACH_BOILERPLATE_BARON");
+			steamUnsetAchievement("BARONY_ACH_PIMPIN");
+			steamUnsetAchievement("BARONY_ACH_BAD_BEAUTIFUL");
+			steamUnsetAchievement("BARONY_ACH_SERIAL_THRILLA");
+			steamUnsetAchievement("BARONY_ACH_TRADITION");
+			steamUnsetAchievement("BARONY_ACH_BAD_BOY_BARON");
+			steamUnsetAchievement("BARONY_ACH_POP_QUIZ");
+			steamUnsetAchievement("BARONY_ACH_DYSLEXIA");
+			steamUnsetAchievement("BARONY_ACH_SAVAGE");
+			steamUnsetAchievement("BARONY_ACH_TRIBE_SUBSCRIBE");
+			steamUnsetAchievement("BARONY_ACH_BAYOU_BARON");
+			steamUnsetAchievement("BARONY_ACH_GASTRIC_BYPASS");
+			steamUnsetAchievement("BARONY_ACH_BOOKWORM");
+			steamUnsetAchievement("BARONY_ACH_FLUTTERSHY");
+			steamUnsetAchievement("BARONY_ACH_MONARCH");
+			steamUnsetAchievement("BARONY_ACH_BUGGAR_BARON");
+			steamUnsetAchievement("BARONY_ACH_TIME_TO_PLAN");
+			steamUnsetAchievement("BARONY_ACH_WONDERFUL_TOYS");
+			steamUnsetAchievement("BARONY_ACH_SUPER_SHREDDER");
+			steamUnsetAchievement("BARONY_ACH_UTILITY_BELT");
+			steamUnsetAchievement("BARONY_ACH_FIXER_UPPER");
+			steamUnsetAchievement("BARONY_ACH_TORCHERER");
+			steamUnsetAchievement("BARONY_ACH_LEVITANT_LACKEY");
+			steamUnsetAchievement("BARONY_ACH_GOODNIGHT_SWEET_PRINCE");
+			steamUnsetAchievement("BARONY_ACH_MANY_PEDI_PALP");
+			steamUnsetAchievement("BARONY_ACH_5000_SECOND_RULE");
+			steamUnsetAchievement("BARONY_ACH_FORUM_TROLL");
+			steamUnsetAchievement("BARONY_ACH_SOCIAL_BUTTERFLY");
+			steamUnsetAchievement("BARONY_ACH_ROLL_THE_BONES");
+			steamUnsetAchievement("BARONY_ACH_COWBOY_FROM_HELL");
+			steamUnsetAchievement("BARONY_ACH_IRONIC_PUNISHMENT");
+			steamUnsetAchievement("BARONY_ACH_SELF_FLAGELLATION");
+			steamUnsetAchievement("BARONY_ACH_OHAI_MARK");
+			steamUnsetAchievement("BARONY_ACH_CHOPPING_BLOCK");
+			steamUnsetAchievement("BARONY_ACH_ITS_A_LIVING");
+			steamUnsetAchievement("BARONY_ACH_ARSENAL");
+			steamUnsetAchievement("BARONY_ACH_IF_YOU_LOVE_SOMETHING");
+			steamUnsetAchievement("BARONY_ACH_GUDIPARIAN_BAZI");
+			steamUnsetAchievement("BARONY_ACH_STRUNG_OUT");
+			steamUnsetAchievement("BARONY_ACH_FELL_BEAST");
+			steamUnsetAchievement("BARONY_ACH_PLEASE_HOLD");
+			steamUnsetAchievement("BARONY_ACH_SWINGERS");
+			steamUnsetAchievement("BARONY_ACH_COLD_BLOODED");
+			steamUnsetAchievement("BARONY_ACH_SOULLESS");
+			steamUnsetAchievement("BARONY_ACH_TRIBAL");
+			steamUnsetAchievement("BARONY_ACH_MANAGEMENT_TEAM");
+			steamUnsetAchievement("BARONY_ACH_SOCIOPATHS");
+			steamUnsetAchievement("BARONY_ACH_FACES_OF_DEATH");
+			steamUnsetAchievement("BARONY_ACH_SURVIVALISTS");
+			steamUnsetAchievement("BARONY_ACH_I_WANT_IT_ALL");
+			steamUnsetAchievement("BARONY_ACH_RUST_IN_PEACE");
+			steamUnsetAchievement("BARONY_ACH_MACHINE_HEAD");
+			steamUnsetAchievement("BARONY_ACH_RAGE_AGAINST");
+			steamUnsetAchievement("BARONY_ACH_GUERILLA_RADIO");
+			steamUnsetAchievement("BARONY_ACH_BOMBTRACK");
+			steamUnsetAchievement("BARONY_ACH_CALM_LIKE_A_BOMB");
+			steamUnsetAchievement("BARONY_ACH_CAUGHT_IN_A_MOSH");
+			steamUnsetAchievement("BARONY_ACH_SPICY");
+			for ( int i = STEAM_STAT_TRASH_COMPACTOR; i < 43; ++i )
+			{
+				g_SteamStats[i].m_iValue = 0;
+				SteamUserStats()->SetStat(g_SteamStats[i].m_pchStatName, 0);
+			}
+			SteamUserStats()->StoreStats();
 		}
 		else if ( !strncmp(command_str, "/gimmebombs", 11) )
 		{
@@ -2467,10 +2546,10 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[277]);
 				return;
 			}
-			dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
-			dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), clientnum);
+			dropItem(newItem(TOOL_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_FREEZE_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_TELEPORT_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
+			dropItem(newItem(TOOL_SLEEP_BOMB, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 		}
 		else if ( !strncmp(command_str, "/showhunger", 11) )
 		{

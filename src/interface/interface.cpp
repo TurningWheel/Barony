@@ -5712,10 +5712,6 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				messagePlayer(player, language[3665], metal, items[pickedUp->type].name_identified);
 			}
 			free(crafted); // if player != clientnum, then crafted == pickedUp
-			if ( item->type == TOOL_TORCH || item->type == TOOL_CRYSTALSHARD )
-			{
-				achievementObserver.playerAchievements[player].torchererScrap += metal;
-			}
 			didCraft = true;
 		}
 	}

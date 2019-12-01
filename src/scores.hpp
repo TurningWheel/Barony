@@ -131,13 +131,13 @@ static const std::pair<std::string, int> steamStatAchStringsAndMaxVals[] =
 	std::make_pair("BARONY_ACH_SUPER_SHREDDER", 1000),      // STEAM_STAT_SUPER_SHREDDER
 	std::make_pair("BARONY_ACH_FIXER_UPPER", 100),          // STEAM_STAT_FIXER_UPPER
 	std::make_pair("BARONY_ACH_TORCHERER", 100),            // STEAM_STAT_TORCHERER
-	std::make_pair("BARONY_ACH_MANY_PEDI_PALP", 100),       // STEAM_STAT_MANY_PEDI_PALP
+	std::make_pair("BARONY_ACH_MANY_PEDI_PALP", 50),       // STEAM_STAT_MANY_PEDI_PALP
 	std::make_pair("BARONY_ACH_5000_SECOND_RULE", 50),      // STEAM_STAT_5000_SECOND_RULE
 	std::make_pair("BARONY_ACH_SOCIAL_BUTTERFLY", 50),      // STEAM_STAT_SOCIAL_BUTTERFLY
 	std::make_pair("BARONY_ACH_ROLL_THE_BONES", 50),        // STEAM_STAT_ROLL_THE_BONES
 	std::make_pair("BARONY_ACH_COWBOY_FROM_HELL", 50),      // STEAM_STAT_COWBOY_FROM_HELL
 	std::make_pair("BARONY_ACH_SELF_FLAGELLATION", 30),     // STEAM_STAT_SELF_FLAGELLATION
-	std::make_pair("BARONY_ACH_CHOPPING_BLOCK", 100),       // STEAM_STAT_CHOPPING_BLOCK
+	std::make_pair("BARONY_ACH_CHOPPING_BLOCK", 50),       // STEAM_STAT_CHOPPING_BLOCK
 	std::make_pair("BARONY_ACH_IF_YOU_LOVE_SOMETHING", 100),// STEAM_STAT_IF_YOU_LOVE_SOMETHING
 	std::make_pair("BARONY_ACH_RAGE_AGAINST", 20),          // STEAM_STAT_RAGE_AGAINST
 	std::make_pair("BARONY_ACH_GUERILLA_RADIO", 20),        // STEAM_STAT_GUERILLA_RADIO
@@ -174,6 +174,7 @@ extern bool conductVegetarian;
 extern bool conductIlliterate;
 extern list_t booksRead;
 extern bool usedClass[NUMCLASSES];
+extern bool usedRace[NUMRACES];
 extern Uint32 loadingsavegame;
 extern Sint32 conductGameChallenges[NUM_CONDUCT_CHALLENGES];
 extern Sint32 gameStatistics[NUM_GAMEPLAY_STATISTICS];
@@ -261,7 +262,8 @@ public:
 		BARONY_ACH_WONDERFUL_TOYS,
 		BARONY_ACH_FLUTTERSHY,
 		BARONY_ACH_IF_YOU_LOVE_SOMETHING,
-		BARONY_ACH_COWBOY_FROM_HELL
+		BARONY_ACH_COWBOY_FROM_HELL,
+		BARONY_ACH_TRASH_COMPACTOR
 	};
 	enum AchievementEvent : int
 	{
@@ -294,6 +296,7 @@ public:
 		int ifYouLoveSomething = 0;
 		int socialButterfly = 0;
 		int rollTheBones = 0;
+		int trashCompactor = 0;
 
 		std::pair<int, int> realBoy;
 		std::unordered_map<Uint32, int> caughtInAMoshTargets;

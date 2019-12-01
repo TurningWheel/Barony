@@ -5012,7 +5012,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case TOOL_METAL_SCRAP:
 			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 			{
-				steamStatisticUpdateClient(player, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, 1);
+				achievementObserver.playerAchievements[player].trashCompactor += 1;
 			}
 			if ( stats[player]->HUNGER > 500 )
 			{
@@ -5029,7 +5029,7 @@ void item_FoodAutomaton(Item*& item, int player)
 		case TOOL_MAGIC_SCRAP:
 			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 			{
-				steamStatisticUpdateClient(player, STEAM_STAT_TRASH_COMPACTOR, STEAM_STAT_INT, 1);
+				achievementObserver.playerAchievements[player].trashCompactor += 1;
 			}
 			if ( stats[player]->HUNGER > 1100 )
 			{
