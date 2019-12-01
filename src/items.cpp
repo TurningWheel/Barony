@@ -3513,6 +3513,12 @@ int Item::buyValue(int player)
 
 	// result
 	value = std::max(1, value);
+
+	if ( itemTypeIsQuiver(type) )
+	{
+		return std::max(value, items[type].value) * count;
+	}
+
 	return std::max(value, items[type].value);
 }
 
@@ -3557,6 +3563,12 @@ int Item::sellValue(int player)
 
 	// result
 	value = std::max(1, value);
+
+	if ( itemTypeIsQuiver(type) )
+	{
+		return std::min(value, items[type].value) * count;
+	}
+
 	return std::min(value, items[type].value);
 }
 
@@ -4313,6 +4325,12 @@ bool Item::usableWhileShapeshifted(Stat* wielder) const
 			}
 			break;
 		case POTION:
+			if ( type == POTION_EMPTY )
+			{
+				return false;
+			}
+			return true;
+			break;
 		case AMULET:
 		case RING:
 		case FOOD:

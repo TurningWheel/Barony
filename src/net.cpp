@@ -4266,7 +4266,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SHPB", 4))
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		int client = net_packet->data[25];
+		int client = net_packet->data[29];
 		Entity* entity = uidToEntity(uidnum);
 		if ( !entity )
 		{
@@ -4283,9 +4283,9 @@ void serverHandlePacket()
 		item->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8]));
 		item->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[12]));
 		item->beatitude = SDLNet_Read32(&net_packet->data[16]);
-		item->count = 1;
 		item->appearance = SDLNet_Read32(&net_packet->data[20]);
-		if ( net_packet->data[24] )
+		item->count = SDLNet_Read32(&net_packet->data[24]);
+		if ( net_packet->data[28] )
 		{
 			item->identified = true;
 		}
@@ -4339,7 +4339,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SHPS", 4))
 	{
 		Uint32 uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		int client = net_packet->data[25];
+		int client = net_packet->data[29];
 		Entity* entity = uidToEntity(uidnum);
 		if ( !entity )
 		{
@@ -4354,11 +4354,13 @@ void serverHandlePacket()
 		}
 		if ( net_packet->data[24] )
 		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
+			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
+				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
 		}
 		else
 		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
+			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), 
+				SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[24]), SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
 		stats[client]->GOLD += item->sellValue(client);

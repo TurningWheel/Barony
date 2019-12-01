@@ -205,7 +205,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneBackpack = false;
 			bool doneTinkeringKit = false;
 			bool doneFeather = false;
-
+			my->monsterStoreType = 8;
 			switch ( my->monsterStoreType )
 			{
 				case 0:
@@ -444,7 +444,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					// hardware store
 					for ( c = 0; c < numitems; c++ )
 					{
-						if ( rand() % 6 == 0 )
+						if ( rand() % 20 == 0 )
 						{
 							tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(SERVICABLE + rand() % 2), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
 						}
@@ -513,14 +513,138 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					}
 					break;
 				case 8:
-					// lighting store
+					// weapon/hunting store
+					if ( currentlevel < 10 )
+					{
+						numitems = 7 + rand() % 4;
+					}
 					for ( c = 0; c < numitems; c++ )
 					{
-						tmpItem = newItem(static_cast<ItemType>(TOOL_TORCH + rand() % 2), EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
-						// post-processing
-						if ( rand() % blessedShopkeeper > 0 )
+						switch ( rand() % 20 )
 						{
-							tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							{
+								// ranged weapons
+								std::vector<ItemType> rangedWeapons;
+								rangedWeapons.push_back(SHORTBOW);
+								if ( currentlevel < 5 )
+								{
+									rangedWeapons.push_back(SLING);
+								}
+								if ( currentlevel >= 8 )
+								{
+									rangedWeapons.push_back(CROSSBOW);
+								}
+								if ( currentlevel >= 13 )
+								{
+									rangedWeapons.push_back(LONGBOW);
+								}
+								if ( currentlevel >= 15 )
+								{
+									rangedWeapons.push_back(HEAVY_CROSSBOW);
+									rangedWeapons.push_back(COMPOUND_BOW);
+								}
+								ItemType chosenType = rangedWeapons[rand() % rangedWeapons.size()];
+								tmpItem = newItem(chosenType, static_cast<Status>(WORN + rand() % 3), rand() % blessedShopkeeper, 1, rand(), false, &myStats->inventory);
+								break;
+							}
+							case 4:
+							case 5:
+							case 6:
+							case 7:
+							case 8:
+							case 9:
+							case 10:
+							case 11:
+								// standard weapons
+								if ( currentlevel >= 18 )
+								{
+									tmpItem = newItem(itemLevelCurve(WEAPON, 10, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), rand() % blessedShopkeeper, 1, rand(), false, &myStats->inventory);
+								}
+								else
+								{
+									tmpItem = newItem(itemLevelCurve(WEAPON, 0, currentlevel + 5), static_cast<Status>(WORN + rand() % 3), rand() % blessedShopkeeper, 1, rand(), false, &myStats->inventory);
+								}
+								break;
+							case 12:
+							case 13:
+								// thrown weapons (10%), sometime punching things
+								if ( rand() % 10 == 0 )
+								{
+									// punching stuff (5%)
+									std::vector<ItemType> gloveWeapons;
+									gloveWeapons.push_back(BRASS_KNUCKLES);
+									if ( currentlevel >= items[SPIKED_GAUNTLETS].level )
+									{
+										gloveWeapons.push_back(SPIKED_GAUNTLETS);
+									}
+									if ( currentlevel >= items[IRON_KNUCKLES].level )
+									{
+										gloveWeapons.push_back(IRON_KNUCKLES);
+									}
+									ItemType chosenType = gloveWeapons[rand() % gloveWeapons.size()];
+									tmpItem = newItem(chosenType, static_cast<Status>(WORN + rand() % 3), rand() % blessedShopkeeper, 1, rand(), false, &myStats->inventory);
+								}
+								else
+								{
+									if ( currentlevel >= 18 )
+									{
+										tmpItem = newItem(itemLevelCurve(THROWN, 0, currentlevel + 20), static_cast<Status>(WORN + rand() % 3), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+									}
+									else
+									{
+										tmpItem = newItem(itemLevelCurve(THROWN, 0, 8), static_cast<Status>(SERVICABLE + rand() % 2), 0, 3 + rand() % 3, rand(), false, &myStats->inventory);
+									}
+								}
+								break;
+							case 14:
+							case 15:
+							case 16:
+							case 17:
+							case 18:
+							case 19:
+							{
+								// quivers (30%)
+								std::vector<ItemType> quivers;
+								quivers.push_back(QUIVER_SILVER);
+								quivers.push_back(QUIVER_LIGHTWEIGHT);
+								if ( currentlevel >= 5 )
+								{
+									quivers.push_back(QUIVER_KNOCKBACK);
+								}
+								if ( currentlevel >= 10 )
+								{
+									quivers.push_back(QUIVER_FIRE);
+									quivers.push_back(QUIVER_HUNTING);
+								}
+								if ( currentlevel >= 18 )
+								{
+									quivers.push_back(QUIVER_PIERCE);
+									quivers.push_back(QUIVER_CRYSTAL);
+								}
+								ItemType chosenType = quivers[rand() % quivers.size()];
+								tmpItem = newItem(chosenType, EXCELLENT, 0, 10 + rand() % 6, 0, true, &myStats->inventory); // 10-15 arrows.
+								break;
+							}
+							default:
+								break;
+						}
+						// post-processing
+						if ( tmpItem )
+						{
+							if ( tmpItem->beatitude > 0 )
+							{
+								tmpItem->count = 1;
+								tmpItem->status = static_cast<Status>(SERVICABLE + rand() % 2);
+							}
+							if ( tmpItem->type >= BRONZE_TOMAHAWK && tmpItem->type <= CRYSTAL_SHURIKEN )
+							{
+								// thrown weapons always fixed status. (tomahawk = decrepit, shuriken = excellent)
+								tmpItem->status = std::min(static_cast<Status>(DECREPIT + (tmpItem->type - BRONZE_TOMAHAWK)), EXCELLENT);
+							}
 						}
 					}
 					break;
