@@ -749,6 +749,12 @@ void Item::applyEmptyPotion(int player, Entity& entity)
 			entity.skill[0] = 0; //Dry up fountain.
 			serverUpdateEntitySkill(&entity, 0);
 		}
+		else if ( entity.skill[1] == 3 || entity.skill[1] == 4 )
+		{
+			// fountain would bless equipment.
+			entity.skill[0] = 0; //Dry up fountain.
+			serverUpdateEntitySkill(&entity, 0);
+		}
 		else if ( skillLVL < 2 || (skillLVL >= 2 && rand() % (skillLVL) == 0 ) )
 		{
 			if ( player > 0 )
