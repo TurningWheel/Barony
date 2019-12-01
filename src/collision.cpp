@@ -635,6 +635,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					continue;
 				}
+				if ( entity->behavior == &actMonster && yourStats->type == NOTHING && multiplayer == CLIENT )
+				{
+					// client doesn't know about the type of the monster.
+					yourStats->type = static_cast<Monster>(entity->getMonsterTypeFromSprite());
+				}
 				if ( monsterally[myStats->type][yourStats->type] )
 				{
 					if ( my->behavior == &actPlayer && myStats->type != HUMAN )
