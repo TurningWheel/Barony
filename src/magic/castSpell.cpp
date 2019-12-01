@@ -1294,6 +1294,29 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				caster->effectShapeshift = type;
 				serverUpdateEntitySkill(caster, 53);
 
+				for ( node = map.creatures->first; node && stat; node = node->next )
+				{
+					entity = (Entity*)(node->element);
+					if ( !entity || entity == caster )
+					{
+						continue;
+					}
+					if ( entity->behavior != &actMonster )
+					{
+						continue;
+					}
+					if ( entity->monsterTarget == caster->getUID() && entity->checkEnemy(caster) )
+					{
+						Monster oldType = stat->type;
+						stat->type = type;
+						if ( !entity->checkEnemy(caster) ) // we're now friendly.
+						{
+							entity->monsterReleaseAttackTarget();
+						}
+						stat->type = oldType;
+					}
+				}
+
 				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 				if ( caster->effectShapeshift < KOBOLD )
 				{
