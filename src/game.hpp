@@ -21,7 +21,7 @@
 #endif
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v3.2.5"
+#define VERSION "v3.3.0"
 #define GAME_CODE
 
 //#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
@@ -210,6 +210,7 @@ enum ESteamLeaderboardTitles : int
 
 bool achievementUnlocked(const char* achName);
 void steamAchievement(const char* achName);
+void steamUnsetAchievement(const char* achName);
 void steamAchievementClient(int player, const char* achName);
 void steamAchievementEntity(Entity* my, const char* achName); // give steam achievement to an entity, and check for valid player info.
 void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value);
