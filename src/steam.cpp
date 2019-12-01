@@ -693,14 +693,18 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
+#ifdef DEBUG_ACHIEVEMENTS
 	messagePlayer(clientnum, "%s", achName);
+#endif
 
 	if ( conductGameChallenges[CONDUCT_CHEATS_ENABLED] 
 		|| conductGameChallenges[CONDUCT_LIFESAVING]
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow achievements.
-		//return;
+#ifndef DEBUG_ACHIEVEMENTS
+		return;
+#endif
 	}
 
 	if ( !strcmp(achName, "BARONY_ACH_BOOTS_OF_SPEED") )
@@ -731,7 +735,9 @@ void steamUnsetAchievement(const char* achName)
 #ifndef STEAMWORKS
 	return;
 #else
+#ifdef DEBUG_ACHIEVEMENTS
 	SteamUserStats()->ClearAchievement(achName);
+#endif // DEBUG_ACHIEVEMENTS
 #endif
 }
 
@@ -796,7 +802,9 @@ void steamStatisticUpdate(int statisticNum, ESteamStatTypes type, int value)
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
-		//return;
+#ifndef DEBUG_ACHIEVEMENTS
+		return;
+#endif
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -984,7 +992,9 @@ void steamStatisticUpdateClient(int player, int statisticNum, ESteamStatTypes ty
 		|| gamemods_disableSteamAchievements )
 	{
 		// cheats/mods have been enabled on savefile, disallow statistics update.
-		//return;
+#ifndef DEBUG_ACHIEVEMENTS
+		return;
+#endif
 	}
 
 	if ( statisticNum >= NUM_STEAM_STATISTICS || statisticNum < 0 )
@@ -1174,8 +1184,10 @@ void steamIndicateStatisticProgress(int statisticNum, ESteamStatTypes type)
 			default:
 				break;
 		}
+#ifdef DEBUG_ACHIEVEMENTS
 		messagePlayer(clientnum, "%s: %d, %d", steamStatAchStringsAndMaxVals[statisticNum].first.c_str(), 
 			iVal, steamStatAchStringsAndMaxVals[statisticNum].second);
+#endif
 	}
 #endif // !STEAMWORKS
 }

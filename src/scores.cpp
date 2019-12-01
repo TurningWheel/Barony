@@ -4440,6 +4440,7 @@ bool AchievementObserver::updateOnLevelChange()
 			playerAchievements[i].strungOutTicks.clear();
 			playerAchievements[i].ironicPunishmentTargets.clear();
 			playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
+			playerAchievements[i].rat5000secondRule.clear();
 		}
 		levelObserved = currentlevel;
 		return true;
@@ -4465,7 +4466,9 @@ void AchievementObserver::updateData()
 	if ( updateOnLevelChange() )
 	{
 		entityAchievementsToProcess.clear();
+#ifdef DEBUG_ACHIEVEMENTS
 		messagePlayer(0, "[DEBUG]: Achievement data reset for floor.");
+#endif
 	}
 }
 
@@ -4517,7 +4520,7 @@ void AchievementObserver::printActiveAchievementTimers()
 	{
 		for ( auto inner_it = (*it).second.begin(); inner_it != (*it).second.end(); ++inner_it )
 		{
-			//messagePlayer(0, "Uid: %d, achievement: %d, ticks: %d, counter: %d", (*it).first, (*inner_it).first, (*inner_it).second.first, (*inner_it).second.second);
+			messagePlayer(0, "Uid: %d, achievement: %d, ticks: %d, counter: %d", (*it).first, (*inner_it).first, (*inner_it).second.first, (*inner_it).second.second);
 		}
 	}
 }
@@ -4564,7 +4567,7 @@ void AchievementObserver::achievementTimersTickDown()
 		}
 	}
 
-	printActiveAchievementTimers();
+	//printActiveAchievementTimers();
 }
 
 void AchievementObserver::awardAchievementIfActive(int player, Entity* entity, int achievement)
@@ -4723,7 +4726,9 @@ void AchievementObserver::updatePlayerAchievement(int player, Achievement achiev
 		default:
 			break;
 	}
+#ifdef DEBUG_ACHIEVEMENTS
 	messagePlayer(player, "[DEBUG]: Processed achievement %d, event: %d", achievement, achEvent);
+#endif
 }
 
 void AchievementObserver::clearPlayerAchievementData()
@@ -4738,6 +4743,16 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].levitantLackey = false;
 		playerAchievements[i].flutterShy = false;
 		playerAchievements[i].gastricBypass = false;
+		playerAchievements[i].ticksSpentOverclocked = 0;
+		playerAchievements[i].tradition = false;
+		playerAchievements[i].traditionKills = 0;
+		playerAchievements[i].torchererScrap = 0;
+		playerAchievements[i].superShredder = 0;
+		playerAchievements[i].fixerUpper = 0;
+		playerAchievements[i].ifYouLoveSomething = 0;
+		playerAchievements[i].socialButterfly = 0;
+		playerAchievements[i].rollTheBones = 0;
+		playerAchievements[i].trashCompactor = 0;
 
 		playerAchievements[i].realBoy = std::make_pair(0, 0);
 		playerAchievements[i].caughtInAMoshTargets.clear();
@@ -4745,6 +4760,7 @@ void AchievementObserver::clearPlayerAchievementData()
 		playerAchievements[i].ironicPunishmentTargets.clear();
 		playerAchievements[i].flutterShyCoordinates = std::make_pair(0.0, 0.0);
 		playerAchievements[i].gastricBypassSpell = std::make_pair(0, 0);
+		playerAchievements[i].rat5000secondRule.clear();
 	}
 }
 
@@ -4805,7 +4821,7 @@ void AchievementObserver::awardAchievement(int player, int achievement)
 			steamAchievementClient(player, "BARONY_ACH_IRONIC_PUNISHMENT");
 			break;
 		default:
-			messagePlayer(player, "unhandled achievement: %d", achievement);
+			messagePlayer(player, "[WARNING]: Unhandled achievement: %d", achievement);
 			break;
 	}
 }
