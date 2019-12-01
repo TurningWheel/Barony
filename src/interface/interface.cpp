@@ -6143,6 +6143,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case HAT_HOOD_SILVER:
 		case SILVER_DOUBLET:
 		case CLOAK_SILVER:
+		case TOOL_LOCKPICK:
 			*metal = 1;
 			*magic = 0;
 			break;
