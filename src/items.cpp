@@ -1600,7 +1600,7 @@ void equipItem(Item* item, Item** slot, int player)
 {
 	int oldcount;
 
-	if ( pickaxeGimpTimer > 0 )
+	if ( pickaxeGimpTimer > 0 && !intro )
 	{
 		return;
 	}
