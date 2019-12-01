@@ -1671,23 +1671,105 @@ void actPlayer(Entity* my)
 			int x, y, u, v;
 			x = std::min(std::max<unsigned int>(1, my->x / 16), map.width - 2);
 			y = std::min(std::max<unsigned int>(1, my->y / 16), map.height - 2);
+			std::vector<std::pair<std::pair<int, int>, real_t>> safeTiles; // pair of coordinates, with a distance to player.
+			std::vector<std::pair<int, int>> deathTiles;
+			bool checkSafeTiles = true;
 			for ( u = x - 1; u <= x + 1; u++ )
 			{
 				for ( v = y - 1; v <= y + 1; v++ )
 				{
-					if ( entityInsideTile(my, u, v, 0) )   // no floor
+					if ( entityInsideTile(my, u, v, 0, !checkSafeTiles) )
 					{
-						//messagePlayer(PLAYER_NUM, language[572]);
-						my->setObituary(language[3010]); // fell to their death.
-						stats[PLAYER_NUM]->HP = 0; // kill me instantly
-						break;
+						// intersecting with no floor, we might die.
+						deathTiles.push_back(std::make_pair(u, v));
+					}
+					else if ( entityInsideTile(my, u, v, 0, checkSafeTiles) )
+					{
+						// intersecting with a safe floor, we might live.
+						if ( barony_clear(u * 16 + 8, v * 16 + 8, my) )
+						{
+							// tile is clear from obstacles.
+							real_t dx = my->x - u * 16 + 8;
+							real_t dy = my->y - v * 16 + 8;
+							real_t dist = sqrt(dx * dx + dy * dy);
+							safeTiles.push_back(std::make_pair(std::make_pair(u, v), dist));
+						}
 					}
 				}
-				if ( stats[PLAYER_NUM]->HP == 0 )   //TODO: <= 0?
+			}
+
+			if ( !deathTiles.empty() )
+			{
+				if ( !safeTiles.empty() )
 				{
-					break;
+					// we might be able to warp ourselves to a safe spot.
+					real_t lowestDist = 1000.0;
+					int lowestIndex = -1;
+					for ( auto it = safeTiles.begin(); it != safeTiles.end(); ++it )
+					{
+						if ( (*it).second < lowestDist )
+						{
+							lowestIndex = it - safeTiles.begin();
+						}
+					}
+					if ( lowestIndex >= 0 )
+					{
+						int newx = safeTiles.at(lowestIndex).first.first;
+						int newy = safeTiles.at(lowestIndex).first.second;
+						real_t velx = newx * 16 + 8 - my->x;
+						real_t vely = newy * 16 + 8 - my->y;
+						// try moving in one direction only.
+						if ( newy == y ) // keep y the same
+						{
+							if ( newx != x )
+							{
+								if ( barony_clear(newx * 16 + 8, y, my) )
+								{
+									vely = 0.0;
+								}
+							}
+						}
+						else if ( newx == x ) // keep x the same
+						{
+							if ( newy != y )
+							{
+								if ( barony_clear(x, newy * 16 + 8, my) )
+								{
+									velx = 0.0;
+								}
+							}
+						}
+						clipMove(&my->x, &my->y, velx, vely, my);
+						messagePlayer(PLAYER_NUM, language[3869]);
+						if ( PLAYER_NUM == clientnum )
+						{
+							camera_shakex += .1;
+							camera_shakey += 10;
+						}
+						else if ( PLAYER_NUM != clientnum && multiplayer == SERVER )
+						{
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
+							net_packet->address.host = net_clients[PLAYER_NUM - 1].host;
+							net_packet->address.port = net_clients[PLAYER_NUM - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, PLAYER_NUM - 1);
+						}
+					}
+					else
+					{
+						my->setObituary(language[3010]); // fell to their death.
+						stats[PLAYER_NUM]->HP = 0; // kill me instantly
+					}
+				}
+				else if ( safeTiles.empty() )
+				{
+					my->setObituary(language[3010]); // fell to their death.
+					stats[PLAYER_NUM]->HP = 0; // kill me instantly
 				}
 			}
+
 		}
 	}
 	else

@@ -16,7 +16,7 @@
 // function prototypes
 real_t entityDist(Entity* my, Entity* your);
 Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride);
-bool entityInsideTile(Entity* entity, int x, int y, int z);
+bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles = false);
 bool entityInsideEntity(Entity* entity1, Entity* entity2);
 bool entityInsideSomething(Entity* entity);
 int barony_clear(real_t tx, real_t ty, Entity* my);

@@ -367,7 +367,7 @@ Entity* entityClicked(bool* clickedOnGUI, bool clickCheckOverride)
 
 -------------------------------------------------------------------------------*/
 
-bool entityInsideTile(Entity* entity, int x, int y, int z)
+bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 {
 	if ( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS )
 	{
@@ -390,7 +390,11 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 					}
 					else if ( z == 0 )
 					{
-						if ( !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+						if ( !checkSafeTiles && !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+						{
+							return true;
+						}
+						else if ( checkSafeTiles && map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
 							return true;
 						}
