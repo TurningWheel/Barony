@@ -331,7 +331,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								}
 								else
 								{
-									tmpItem = newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
+									tmpItem = newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory);
 								}
 								break;
 							case 1:

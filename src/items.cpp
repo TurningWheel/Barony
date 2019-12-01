@@ -2777,6 +2777,7 @@ Item* itemPickup(int player, Item* item)
 	}
 	else
 	{
+		std::unordered_set<int> appearancesOfSimilarItems;
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
@@ -2861,13 +2862,24 @@ Item* itemPickup(int player, Item* item)
 				{
 					// items are the same (incl. appearance!)
 					// if they shouldn't stack, we need to change appearance of the new item.
-					while ( item2->appearance == item->appearance )
-					{
-						item->appearance = rand();
-					}
+					appearancesOfSimilarItems.insert(item2->appearance);
 				}
 			}
 		}
+		if ( !appearancesOfSimilarItems.empty() )
+		{
+			int tries = 100;
+			// we need to find a unique appearance within the list.
+			item->appearance = rand();
+			auto it = appearancesOfSimilarItems.find(item->appearance);
+			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
+			{
+				item->appearance = rand();
+				it = appearancesOfSimilarItems.find(item->appearance);
+				--tries;
+			}
+		}
+
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
 		item2->ownerUid = item->ownerUid;
 		return item2;
