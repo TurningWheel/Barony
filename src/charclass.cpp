@@ -44,6 +44,7 @@ void initClass(int player)
 		{
 			hotbar[i].item = 0;
 		}
+		magicBoomerangHotbarSlot = -1;
 	}
 
 	bool curseItems = false;

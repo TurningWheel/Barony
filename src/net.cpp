@@ -2016,6 +2016,17 @@ void clientHandlePacket()
 			if ( pickedUp && pickedUp->type == BOOMERANG && !stats[clientnum]->weapon && item->ownerUid == players[clientnum]->entity->getUID() )
 			{
 				useItem(pickedUp, clientnum);
+				if ( magicBoomerangHotbarSlot >= 0 )
+				{
+					hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+					for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+					{
+						if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+						{
+							hotbar[i].item = 0;
+						}
+					}
+				}
 			}
 		}
 		return;

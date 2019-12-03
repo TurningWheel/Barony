@@ -42,6 +42,7 @@ extern char enemy_name[128];
 extern Sint32 enemy_hp, enemy_maxhp, enemy_oldhp;
 extern Uint32 enemy_timer, enemy_lastuid;
 extern Uint32 enemy_bar_color[MAXPLAYERS];
+extern int magicBoomerangHotbarSlot;
 
 #ifndef SHOPWINDOW_SIZE
 #define SHOPWINDOW_SIZE

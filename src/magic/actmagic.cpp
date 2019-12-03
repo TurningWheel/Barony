@@ -4198,6 +4198,17 @@ void actParticleSapCenter(Entity* my)
 							{
 								useItem(pickedUp, parent->skill[2]);
 							}
+							if ( magicBoomerangHotbarSlot >= 0 )
+							{
+								hotbar[magicBoomerangHotbarSlot].item = pickedUp->uid;
+								for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+								{
+									if ( i != magicBoomerangHotbarSlot && hotbar[i].item == pickedUp->uid )
+									{
+										hotbar[i].item = 0;
+									}
+								}
+							}
 						}
 						else
 						{

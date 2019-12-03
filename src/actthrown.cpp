@@ -1381,9 +1381,26 @@ void actThrown(Entity* my)
 
 	if ( cat == THROWN )
 	{
-		THROWN_VELX = THROWN_VELX * .99;
-		THROWN_VELY = THROWN_VELY * .99;
+		if ( my->sprite == BOOMERANG_PARTICLE )
+		{
+			if ( (THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) > 2.0 )
+			{
+				THROWN_VELX = THROWN_VELX * .99;
+				THROWN_VELY = THROWN_VELY * .99;
+			}
+		}
+		else
+		{
+			THROWN_VELX = THROWN_VELX * .99;
+			THROWN_VELY = THROWN_VELY * .99;
+		}
 		//my->pitch += result * .01;
+		messagePlayer(0, "%.4f, %.4f", THROWN_VELX, THROWN_VELY);
+		/*if ( my->sprite == BOOMERANG_PARTICLE )
+		{
+			THROWN_VELX = std::max(0.05, THROWN_VELX);
+			THROWN_VELY = std::max(0.05, THROWN_VELY);
+		}*/
 	}
 	else
 	{

@@ -26,6 +26,7 @@ char enemy_name[128];
 Sint32 enemy_hp = 0, enemy_maxhp = 0, enemy_oldhp = 0;
 Uint32 enemy_timer = 0, enemy_lastuid = 0;
 Uint32 enemy_bar_color[MAXPLAYERS] = { 0 }; // color for each player's enemy bar to display. multiplayer clients only refer to their own [clientnum] entry.
+int magicBoomerangHotbarSlot = -1;
 
 /*-------------------------------------------------------------------------------
 
@@ -896,6 +897,10 @@ void drawStatus()
 		item = uidToItem(hotbar[num].item);
 		if ( item )
 		{
+			if ( item->type == BOOMERANG )
+			{
+				magicBoomerangHotbarSlot = num;
+			}
 			bool used = false;
 			pos.w = hotbar_img->w * uiscale_hotbar;
 			pos.h = hotbar_img->h * uiscale_hotbar;
