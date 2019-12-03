@@ -30,6 +30,7 @@
 #define ARROWTRAP_TYPE my->skill[1]
 #define ARROWTRAP_REFIRE my->skill[3]
 #define ARROWTRAP_AMBIENCE my->skill[6]
+#define ARROWTRAP_DISABLED my->skill[4]
 
 void actArrowTrap(Entity* my)
 {
@@ -47,6 +48,53 @@ void actArrowTrap(Entity* my)
 	}
 	if ( ARROWTRAP_FIRED >= 10 ) // shot my piece, time to die.
 	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	if ( ARROWTRAP_DISABLED == 1 )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			ItemType quiver = static_cast<ItemType>(ARROWTRAP_TYPE);
+			int qty = 3 + (5 - ARROWTRAP_FIRED / 5); // 3 to 8
+			Entity* dropped = dropItemMonster(newItem(quiver, EXCELLENT, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
+			std::vector<std::pair<int, int>> freeTiles;
+			int x = my->x / 16;
+			int y = my->y / 16;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1) * MAPLAYERS * map.height] )
+			{
+				freeTiles.push_back(std::make_pair(x + 1, y));
+			}
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1) * MAPLAYERS * map.height] )
+			{
+				freeTiles.push_back(std::make_pair(x - 1, y));
+			}
+			if ( !map.tiles[OBSTACLELAYER + (y + 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				freeTiles.push_back(std::make_pair(x, y + 1));
+			}
+			if ( !map.tiles[OBSTACLELAYER + (y - 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				freeTiles.push_back(std::make_pair(x, y - 1));
+			}
+			if ( !freeTiles.empty() )
+			{
+				std::pair<int, int> chosenTile = freeTiles[rand() % freeTiles.size()];
+				dropped->x += (chosenTile.first - x) * 8;
+				dropped->y += (chosenTile.second - y) * 8;
+				dropped->vel_x = (chosenTile.first - x);
+				if ( dropped->vel_x > 0.01 )
+				{
+					dropped->vel_x *= (50 - rand() % 101) / 100.0;
+				}
+				dropped->vel_y = (chosenTile.second - y);
+				if ( dropped->vel_y > 0.01 )
+				{
+					dropped->vel_y *= (50 - rand() % 101) / 100.0;
+				}
+
+			}
+		}
 		list_RemoveNode(my->mynode);
 		return;
 	}

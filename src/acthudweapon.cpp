@@ -1318,14 +1318,28 @@ void actHudWeapon(Entity* my)
 							}
 							if ( !foundBomb )
 							{
-								lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+								real_t dist = lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 								if ( hit.entity && stats[clientnum]->weapon )
 								{
 									stats[clientnum]->weapon->apply(clientnum, hit.entity);
 								}
 								else
 								{
-									messagePlayer(clientnum, language[503], item->getName());
+									bool foundWall = false;
+									if ( dist < STRIKERANGE 
+										&& !hit.entity && hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
+									{
+										// arrow traps
+										if ( map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] == 53 )
+										{
+											foundWall = true;
+											stats[clientnum]->weapon->applyLockpickToWall(clientnum, hit.mapx, hit.mapy);
+										}
+									}
+									if ( !foundWall )
+									{
+										messagePlayer(clientnum, language[503], item->getName());
+									}
 								}
 							}
 						}

@@ -413,6 +413,7 @@ public:
 	char* getScrollLabel() const;
 
 	void apply(int player, Entity* entity);
+	void applyLockpickToWall(int player, int x, int y);
 
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);

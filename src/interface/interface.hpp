@@ -322,6 +322,7 @@ public:
 	Item* tinkeringMagicScrap;
 	Item* tinkeringAutoSalvageKitItem;
 	Item* tinkeringAutoSalvageThisItem;
+	Uint32 tinkeringSfxLastTicks = 0;
 
 	// Scribing
 	Item* scribingToolItem;

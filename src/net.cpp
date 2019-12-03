@@ -984,7 +984,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 		net_packet->len = 12;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
-	messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
+	//messagePlayer(clientnum, "[DEBUG]: sent: %d, %d: val %d", gameplayStat, changeval, gameStatistics[gameplayStat]);
 }
 
 /*-------------------------------------------------------------------------------
@@ -4418,6 +4418,20 @@ void serverHandlePacket()
 		else
 		{
 			printlog("warning: client applied item to entity that does not exist\n");
+		}
+		free(item);
+		return;
+	}
+
+	// apply item to entity
+	else if ( !strncmp((char*)net_packet->data, "APIW", 4) )
+	{
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
+		int wallx = (SDLNet_Read16(&net_packet->data[26]));
+		int wally = (SDLNet_Read16(&net_packet->data[28]));
+		if ( entity )
+		{
+			item->applyLockpickToWall(net_packet->data[25], wallx, wally);
 		}
 		free(item);
 		return;

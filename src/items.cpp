@@ -3635,6 +3635,43 @@ void Item::apply(int player, Entity* entity)
 	}
 }
 
+void Item::applyLockpickToWall(int player, int x, int y)
+{
+	// for clients:
+	if ( multiplayer == CLIENT )
+	{
+		strcpy((char*)net_packet->data, "APIW");
+		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
+		SDLNet_Write32((Uint32)status, &net_packet->data[8]);
+		SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
+		SDLNet_Write32((Uint32)count, &net_packet->data[16]);
+		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
+		net_packet->data[24] = identified;
+		net_packet->data[25] = player;
+		SDLNet_Write16(x, &net_packet->data[26]);
+		SDLNet_Write16(y, &net_packet->data[28]);
+		net_packet->address.host = net_server.host;
+		net_packet->address.port = net_server.port;
+		net_packet->len = 30;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		return;
+	}
+
+	for ( node_t* node = map.entities->first; node != nullptr; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity && entity->behavior == &actArrowTrap
+			&& static_cast<int>(entity->x / 16) == x
+			&& static_cast<int>(entity->y / 16) == y )
+		{
+			// found a trap.
+			entity->skill[4] = 1; // disabled flag and spit out items.
+			serverUpdateEntitySkill(entity, 4); // update clients.
+			break;
+		}
+	}
+}
+
 SummonProperties::SummonProperties()
 {
 	//TODO:

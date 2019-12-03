@@ -5782,6 +5782,19 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		}
 
 		achievementObserver.playerAchievements[player].superShredder += (magic + metal);
+
+		if ( players[player] && players[player]->entity )
+		{
+			if ( (ticks - tinkeringSfxLastTicks) > 100 && ((metal >= 4 || magic >= 4) || rand() % 5 == 0) )
+			{
+				tinkeringSfxLastTicks = ticks;
+				playSoundEntity(players[player]->entity, 421 + (rand() % 2) * 3, 64);
+			}
+			else
+			{
+				playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+			}
+		}
 	}
 
 	if ( increaseSkill )
@@ -5815,7 +5828,6 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			}
 		}
 	}
-	
 
 	if ( !outsideInventory && didCraft )
 	{
@@ -6004,6 +6016,16 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
+		}
+
+		if ( rand() % 5 == 0 && (ticks - tinkeringSfxLastTicks) > 100 )
+		{
+			tinkeringSfxLastTicks = ticks;
+			playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 64);
+		}
+		else
+		{
+			playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
 		}
 
 		for ( int c = 0; c < metal; ++c )
