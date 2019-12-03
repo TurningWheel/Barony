@@ -6048,7 +6048,19 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
 {
 	bool hasMaterials = false;
-	if ( metal > 0 )
+	if ( metal > 0 && magic > 0 )
+	{
+		if ( tinkeringMetalScrap && tinkeringMetalScrap->count >= metal
+			&& tinkeringMagicScrap && tinkeringMagicScrap->count >= magic )
+		{
+			hasMaterials = true;
+		}
+		else
+		{
+			hasMaterials = false;
+		}
+	}
+	else if ( metal > 0 )
 	{
 		if ( tinkeringMetalScrap && tinkeringMetalScrap->count >= metal )
 		{
@@ -6059,7 +6071,7 @@ bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
 			hasMaterials = false;
 		}
 	}
-	if ( magic > 0 )
+	else if ( magic > 0 )
 	{
 		if ( tinkeringMagicScrap && tinkeringMagicScrap->count >= magic )
 		{
