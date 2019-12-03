@@ -7039,10 +7039,10 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 		{
 			if ( !upgradingItem )
 			{
-				/*if ( rand() % 40 == 0 )
+				if ( rand() % 40 == 0 )
 				{
 					increaseSkill = true;
-				}*/
+				}
 			}
 			else
 			{
