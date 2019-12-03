@@ -417,6 +417,7 @@ public:
 	bool tinkeringConsumeMaterialsForRepair(Item* item, bool upgradingItem);
 	bool tinkeringPlayerCanAffordRepair(Item* item);
 	int tinkeringRepairGeneralItemSkillRequirement(Item* item);
+	bool tinkeringPlayerHasMaterialsInventory(int metal, int magic);
 
 	void scribingCreateCraftableItemList();
 	void scribingFreeLists();

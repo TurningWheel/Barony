@@ -5902,13 +5902,12 @@ bool GenericGUIMenu::tinkeringPlayerCanAffordRepair(Item* item)
 	{
 		return false;
 	}
-	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
 	{
-		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
-		{
-			return true;
-		}
+		return true;
 	}
+
 	return false;
 }
 
@@ -5925,13 +5924,12 @@ bool GenericGUIMenu::tinkeringPlayerCanAffordCraft(const Item* item)
 	{
 		return false;
 	}
-	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
 	{
-		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
-		{
-			return true;
-		}
+		return true;
 	}
+	
 	return false;
 }
 
@@ -5948,84 +5946,109 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 	{
 		return nullptr;
 	}
-	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
 	{
-		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
 		{
-			bool increaseSkill = false;
-			if ( stats[clientnum] )
+			if ( metal > 4 || magic > 4 )
 			{
-				if ( metal > 4 || magic > 4 )
+				if ( rand() % 10 == 0 )
 				{
-					if ( rand() % 10 == 0 )
+					increaseSkill = true;
+				}
+			}
+			else
+			{
+				if ( metal > 2 || magic > 2 )
+				{
+					if ( rand() % 20 == 0 )
 					{
 						increaseSkill = true;
 					}
 				}
 				else
 				{
-					if ( metal > 2 || magic > 2 )
+					if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
 					{
-						if ( rand() % 20 == 0 )
+						if ( rand() % 10 == 0 )
 						{
 							increaseSkill = true;
 						}
 					}
-					else
+					else if ( rand() % 20 == 0 )
 					{
-						if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] < SKILL_LEVEL_BASIC )
-						{
-							if ( rand() % 10 == 0 )
-							{
-								increaseSkill = true;
-							}
-						}
-						else if ( rand() % 20 == 0 )
-						{
-							messagePlayer(clientnum, language[3667], items[item->type].name_identified);
-						}
+						messagePlayer(clientnum, language[3667], items[item->type].name_identified);
 					}
 				}
 			}
-			
-			if ( increaseSkill )
-			{
-				if ( multiplayer == CLIENT )
-				{
-					// request level up
-					strcpy((char*)net_packet->data, "CSKL");
-					net_packet->data[4] = clientnum;
-					net_packet->data[5] = PRO_LOCKPICKING;
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, 0);
-				}
-				else
-				{
-					if ( players[clientnum] && players[clientnum]->entity )
-					{
-						players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
-					}
-				}
-			}
-
-			for ( int c = 0; c < metal; ++c )
-			{
-				consumeItem(tinkeringMetalScrap, clientnum);
-			}
-			for ( int c = 0; c < magic; ++c )
-			{
-				consumeItem(tinkeringMagicScrap, clientnum);
-			}
-			if ( tinkeringKitRollIfShouldBreak() )
-			{
-				tinkeringKitDegradeOnUse(clientnum);
-			}
-			return newItem(item->type, item->status, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 		}
+			
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_LOCKPICKING;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+
+		for ( int c = 0; c < metal; ++c )
+		{
+			consumeItem(tinkeringMetalScrap, clientnum);
+		}
+		for ( int c = 0; c < magic; ++c )
+		{
+			consumeItem(tinkeringMagicScrap, clientnum);
+		}
+		if ( tinkeringKitRollIfShouldBreak() )
+		{
+			tinkeringKitDegradeOnUse(clientnum);
+		}
+		return newItem(item->type, item->status, item->beatitude, 1, ITEM_TINKERING_APPEARANCE, true, nullptr);
 	}
 	return nullptr;
+}
+
+bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
+{
+	bool hasMaterials = false;
+	if ( metal > 0 )
+	{
+		if ( tinkeringMetalScrap && tinkeringMetalScrap->count >= metal )
+		{
+			hasMaterials = true;
+		}
+		else
+		{
+			hasMaterials = false;
+		}
+	}
+	if ( magic > 0 )
+	{
+		if ( tinkeringMagicScrap && tinkeringMagicScrap->count >= magic )
+		{
+			hasMaterials = true;
+		}
+		else
+		{
+			hasMaterials = false;
+		}
+	}
+	return hasMaterials;
 }
 
 bool GenericGUIMenu::tinkeringGetCraftingCost(const Item* item, int* metal, int* magic)
@@ -7009,65 +7032,62 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 	{
 		return false;
 	}
-	if ( tinkeringMetalScrap && tinkeringMagicScrap )
+	if ( tinkeringPlayerHasMaterialsInventory(metal, magic) )
 	{
-		if ( tinkeringMetalScrap->count >= metal && tinkeringMagicScrap->count >= magic )
+		bool increaseSkill = false;
+		if ( stats[clientnum] )
 		{
-			bool increaseSkill = false;
-			if ( stats[clientnum] )
+			if ( !upgradingItem )
 			{
-				if ( !upgradingItem )
+				/*if ( rand() % 40 == 0 )
 				{
-					/*if ( rand() % 40 == 0 )
-					{
-						increaseSkill = true;
-					}*/
-				}
-				else
+					increaseSkill = true;
+				}*/
+			}
+			else
+			{
+				if ( rand() % 10 == 0 )
 				{
-					if ( rand() % 10 == 0 )
-					{
-						increaseSkill = true;
-					}
+					increaseSkill = true;
 				}
 			}
-
-			if ( increaseSkill )
-			{
-				if ( multiplayer == CLIENT )
-				{
-					// request level up
-					strcpy((char*)net_packet->data, "CSKL");
-					net_packet->data[4] = clientnum;
-					net_packet->data[5] = PRO_LOCKPICKING;
-					net_packet->address.host = net_server.host;
-					net_packet->address.port = net_server.port;
-					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, 0);
-				}
-				else
-				{
-					if ( players[clientnum] && players[clientnum]->entity )
-					{
-						players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
-					}
-				}
-			}
-
-			for ( int c = 0; c < metal; ++c )
-			{
-				consumeItem(tinkeringMetalScrap, clientnum);
-			}
-			for ( int c = 0; c < magic; ++c )
-			{
-				consumeItem(tinkeringMagicScrap, clientnum);
-			}
-			if ( tinkeringKitRollIfShouldBreak() && item != tinkeringKitItem )
-			{
-				tinkeringKitDegradeOnUse(clientnum);
-			}
-			return true;
 		}
+
+		if ( increaseSkill )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// request level up
+				strcpy((char*)net_packet->data, "CSKL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = PRO_LOCKPICKING;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				if ( players[clientnum] && players[clientnum]->entity )
+				{
+					players[clientnum]->entity->increaseSkill(PRO_LOCKPICKING);
+				}
+			}
+		}
+
+		for ( int c = 0; c < metal; ++c )
+		{
+			consumeItem(tinkeringMetalScrap, clientnum);
+		}
+		for ( int c = 0; c < magic; ++c )
+		{
+			consumeItem(tinkeringMagicScrap, clientnum);
+		}
+		if ( tinkeringKitRollIfShouldBreak() && item != tinkeringKitItem )
+		{
+			tinkeringKitDegradeOnUse(clientnum);
+		}
+		return true;
 	}
 	return false;
 }
