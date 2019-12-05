@@ -4093,9 +4093,14 @@ void item_Food(Item*& item, int player)
 		{
 			messagePlayer(player, language[908]);
 		}
-		if ( stats[player] && stats[player]->type != SKELETON )
+		if ( stats[player] && players[player] && players[player]->entity )
 		{
-			players[player]->entity->skill[26] = 40 + rand() % 10;
+			if ( stats[player]->type != SKELETON
+				&& players[player]->entity->effectShapeshift == NOTHING
+				&& stats[player]->type != AUTOMATON )
+			{
+				players[player]->entity->skill[26] = 40 + rand() % 10;
+			}
 		}
 		consumeItem(item, player);
 		return;
@@ -4393,9 +4398,15 @@ void item_FoodTin(Item*& item, int player)
 		{
 			messagePlayer(player, language[908]);
 		}
-		if ( stats[player] && stats[player]->type != SKELETON )
+
+		if ( stats[player] && players[player] && players[player]->entity )
 		{
-			players[player]->entity->skill[26] = 40 + rand() % 10;
+			if ( stats[player]->type != SKELETON
+				&& players[player]->entity->effectShapeshift == NOTHING
+				&& stats[player]->type != AUTOMATON )
+			{
+				players[player]->entity->skill[26] = 40 + rand() % 10;
+			}
 		}
 		consumeItem(item, player);
 		return;
@@ -5208,7 +5219,10 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 			else
 			{
 				messagePlayer(my->skill[2], language[917]);
-				my->skill[26] = 40 + rand() % 10;
+				if ( myStats->type != SKELETON && myStats->type != AUTOMATON )
+				{
+					my->skill[26] = 40 + rand() % 10;
+				}
 			}
 		}
 	}

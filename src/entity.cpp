@@ -3216,7 +3216,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	// "random" vomiting
 	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] 
-		&& myStats->type != SKELETON && effectShapeshift != NOTHING && myStats->type != AUTOMATON )
+		&& myStats->type != SKELETON && effectShapeshift == NOTHING && myStats->type != AUTOMATON )
 	{
 		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
 		{
@@ -3283,11 +3283,15 @@ void Entity::handleEffects(Stat* myStats)
 			entity->vel_z = -.5;
 			if ( svFlags & SV_FLAG_HUNGER )
 			{
-				myStats->HUNGER -= 40;
-				if ( myStats->HUNGER <= 50 )
+				if ( myStats->type != INSECTOID && myStats->type != AUTOMATON
+					&& myStats->type != SKELETON && effectShapeshift == NOTHING )
 				{
-					myStats->HUNGER = 50;
-					myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+					myStats->HUNGER -= 40;
+					if ( myStats->HUNGER <= 50 )
+					{
+						myStats->HUNGER = 50;
+						myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+					}
 				}
 			}
 			serverSpawnGibForClient(entity);

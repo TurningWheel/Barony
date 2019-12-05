@@ -883,7 +883,12 @@ void actArrow(Entity* my)
 									{
 										// maybe vomit
 										messagePlayer(hit.entity->skill[2], language[634]);
-										hit.entity->skill[26] = 140 + rand() % 60; 
+										if ( hitstats->type != SKELETON
+											&& hit.entity->effectShapeshift == NOTHING
+											&& hitstats->type != AUTOMATON )
+										{
+											hit.entity->skill[26] = 140 + rand() % 60; 
+										}
 									}
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									messagePlayerColor(hit.entity->skill[2], color, language[3749]);
