@@ -3665,10 +3665,89 @@ void Item::applyLockpickToWall(int player, int x, int y)
 			&& static_cast<int>(entity->y / 16) == y )
 		{
 			// found a trap.
-			entity->skill[4] = 1; // disabled flag and spit out items.
-			serverUpdateEntitySkill(entity, 4); // update clients.
+			if ( entity->skill[4] == 0 )
+			{
+				if ( players[player] && players[player]->entity
+					&& stats[player] && stats[player]->weapon
+					&& (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
+				{
+					int requirement = SKILL_LEVEL_EXPERT;
+					bool failed = false;
+					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= requirement )
+					{
+						if ( rand() % 2 == 0 )
+						{
+							// failed.
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							messagePlayerColor(player, color, language[3871]); // trap fires.
+							failed = true;
+						}
+					}
+					else if ( rand() % 5 > 0 )
+					{
+						// failed.
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(player, color, language[3871]); // trap fires.
+						failed = true;
+					}
+
+					if ( failed )
+					{
+						entity->skill[4] = -1; // make the trap shoot.
+						playSoundEntity(entity, 92, 64);
+					}
+					else
+					{
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						messagePlayerColor(player, color, language[3872]);
+						playSoundEntity(entity, 176, 128);
+						entity->skill[4] = player + 1; // disabled flag and spit out items.
+						serverUpdateEntitySkill(entity, 4); // update clients.
+					}
+
+					// degrade lockpick.
+					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && rand() % 4 == 0 )
+					{
+						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+						if ( stats[player]->weapon->status == BROKEN )
+						{
+							messagePlayer(player, language[875], stats[player]->weapon->getName());
+							playSoundEntity(players[player]->entity, 76, 64);
+						}
+						else
+						{
+							messagePlayer(player, language[681], stats[player]->weapon->getName());
+						}
+						if ( player > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)net_packet->data, "ARMR");
+							net_packet->data[4] = 5;
+							net_packet->data[5] = stats[player]->weapon->status;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
+					if ( !failed && rand() % 5 == 0 )
+					{
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+					}
+					return;
+				}
+				else if ( entity->skill[4] != 0 )
+				{
+					messagePlayer(player, language[3870]);
+					return;
+				}
+			}
 			break;
 		}
+	}
+
+	if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] == 53 )
+	{
+		messagePlayer(player, language[3873]);
 	}
 }
 
