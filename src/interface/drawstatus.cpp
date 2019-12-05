@@ -2012,25 +2012,25 @@ int drawSpellTooltip(spell_t* spell, Item* item)
 				if ( primaryElement )
 				{
 					damage = primaryElement->damage;
-					if ( players[clientnum] )
+				}
+			}
+			if ( players[clientnum] )
+			{
+				int bonus = 0;
+				if ( spellbook )
+				{
+					bonus = (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude);
+					if ( bonus < 0 )
 					{
-						int bonus = 0;
-						if ( spellbook )
-						{
-							bonus = (shouldInvertEquipmentBeatitude(stats[clientnum]) ? abs(item->beatitude) : item->beatitude);
-							if ( bonus < 0 )
-							{
-								bonus = 0;
-							}
-						}
-						damage += (damage * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
-						heal += (heal * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
-						if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
-						{
-							damage = heal;
-						}
+						bonus = 0;
 					}
 				}
+				damage += (damage * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+				heal += (heal * (bonus * 0.25 + getBonusFromCasterOfSpellElement(players[clientnum]->entity, primaryElement)));
+			}
+			if ( spell->ID == SPELL_HEALING || spell->ID == SPELL_EXTRAHEALING )
+			{
+				damage = heal;
 			}
 		}
 		int spellInfoLines = 1;
