@@ -246,6 +246,27 @@ void actArrow(Entity* my)
 			}
 		}
 
+		Entity* arrowSpawnedInsideEntity = nullptr;
+		if ( ARROW_LIFE == 1 && my->arrowShotByParent == 0 && multiplayer != CLIENT ) // shot by trap
+		{
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent && parent->behavior == &actArrowTrap )
+			{
+				for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+				{
+					entity = (Entity*)node->element;
+					if ( entity && (entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+					{
+						if ( entityInsideEntity(my, entity) )
+						{
+							arrowSpawnedInsideEntity = entity;
+						}
+						break;
+					}
+				}
+			}
+		}
+
 		if ( multiplayer != CLIENT )
 		{
 			// horizontal motion
@@ -313,7 +334,7 @@ void actArrow(Entity* my)
 		}
 
 		// damage monsters
-		if ( dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
+		if ( arrowSpawnedInsideEntity || dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY) || arrowInGround )
 		{
 			if ( arrowInGround )
 			{
@@ -327,6 +348,10 @@ void actArrow(Entity* my)
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
 
+			if ( arrowSpawnedInsideEntity )
+			{
+				hit.entity = arrowSpawnedInsideEntity;
+			}
 			Entity* oentity = hit.entity;
 			lineTrace(my, my->x, my->y, my->yaw, sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY), 0, false);
 			hit.entity = oentity;

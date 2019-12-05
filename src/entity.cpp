@@ -15940,6 +15940,14 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 	{
 		return false;
 	}
+	if ( multiplayer == CLIENT && weaponType == TOOL_SENTRYBOT )
+	{
+		// hack for arrow traps.
+		this->arrowSpeed = 7;
+		this->vel_x = cos(this->yaw) * this->arrowSpeed;
+		this->vel_y = sin(this->yaw) * this->arrowSpeed;
+		return true;
+	}
 
 	if ( weaponType == CROSSBOW || weaponType == SLING || weaponType == HEAVY_CROSSBOW )
 	{

@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "collision.hpp"
 #include "items.hpp"
+#include "net.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -51,12 +52,12 @@ void actArrowTrap(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	if ( ARROWTRAP_DISABLED == 1 )
+	if ( ARROWTRAP_DISABLED > 0 )
 	{
 		if ( multiplayer != CLIENT )
 		{
 			ItemType quiver = static_cast<ItemType>(ARROWTRAP_TYPE);
-			int qty = 3 + (5 - ARROWTRAP_FIRED / 5); // 3 to 8
+			int qty = 2 + (5 - ARROWTRAP_FIRED / 5); // 2 to 7
 			Entity* dropped = dropItemMonster(newItem(quiver, EXCELLENT, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
 			std::vector<std::pair<int, int>> freeTiles;
 			int x = my->x / 16;
@@ -83,16 +84,15 @@ void actArrowTrap(Entity* my)
 				dropped->x += (chosenTile.first - x) * 8;
 				dropped->y += (chosenTile.second - y) * 8;
 				dropped->vel_x = (chosenTile.first - x);
-				if ( dropped->vel_x > 0.01 )
+				if ( abs(dropped->vel_x) > 0.01 )
 				{
-					dropped->vel_x *= (50 - rand() % 101) / 100.0;
+					dropped->vel_x *= (5 + rand() % 11) / 10.0; //50% to 150%
 				}
 				dropped->vel_y = (chosenTile.second - y);
-				if ( dropped->vel_y > 0.01 )
+				if ( abs(dropped->vel_y) > 0.01 )
 				{
-					dropped->vel_y *= (50 - rand() % 101) / 100.0;
+					dropped->vel_y *= (5 + rand() % 11) / 10.0; //50% to 150%
 				}
-
 			}
 		}
 		list_RemoveNode(my->mynode);
@@ -112,7 +112,7 @@ void actArrowTrap(Entity* my)
 	}
 
 	// received on signal
-	if ( my->skill[28] == 2)
+	if ( my->skill[28] == 2 || ARROWTRAP_DISABLED == -1 )
 	{
 		if ( ARROWTRAP_FIRED % 2 == 1 ) // not ready to fire.
 		{
@@ -127,6 +127,15 @@ void actArrowTrap(Entity* my)
 					}
 				}
 			}
+		}
+		if ( ARROWTRAP_DISABLED == -1 )
+		{
+			ARROWTRAP_DISABLED = 0;
+			if ( ARROWTRAP_FIRED % 2 == 1 )
+			{
+				ARROWTRAP_FIRED++;
+			}
+			ARROWTRAP_REFIRE = 0;
 		}
 
 		if ( ARROWTRAP_FIRED % 2 == 0 && ARROWTRAP_REFIRE <= 0 )
@@ -154,7 +163,10 @@ void actArrowTrap(Entity* my)
 						y = -12;
 						break;
 				}
-				if ( !checkObstacle(my->x + x, my->y + y, my, NULL) )
+				int checkx = (my->x + x) / 16;
+				int checky = (my->y + y) / 16;
+				int index = checky * MAPLAYERS + checkx * MAPLAYERS * map.height;
+				if ( !map.tiles[OBSTACLELAYER + index] )
 				{
 					Entity* entity = newEntity(166, 1, map.entities, nullptr); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
@@ -206,6 +218,14 @@ void actArrowTrap(Entity* my)
 							break;
 					}
 					entity->arrowQuiverType = ARROWTRAP_TYPE;
+					entity->arrowSpeed = 7;
+					entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
+					entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
+					if ( multiplayer == SERVER )
+					{
+						entity->skill[2] = -(1000 + TOOL_SENTRYBOT); // invokes actArrow for clients.
+						entity->arrowShotByWeapon = TOOL_SENTRYBOT;
+					}
 				}
 			}
 		}
