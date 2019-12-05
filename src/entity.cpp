@@ -14970,16 +14970,17 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 	{
 		if ( armor.type == TOOL_CRYSTALSHARD )
 		{
-			playSoundEntity(hit.entity, 162, 64);
+			playSoundEntity(this, 162, 64);
 			messagePlayer(playerhit, language[2351], armor.getName());
 		}
 		else if ( itemCategory(&armor) == SPELLBOOK )
 		{
+			playSoundEntity(this, 414, 64);
 			messagePlayer(playerhit, language[3459], armor.getName());
 		}
 		else
 		{
-			playSoundEntity(hit.entity, 76, 64);
+			playSoundEntity(this, 76, 64);
 			messagePlayer(playerhit, language[682], armor.getName());
 		}
 	}
