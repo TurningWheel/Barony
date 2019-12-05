@@ -3776,7 +3776,6 @@ void assignActions(map_t* map)
 					}
 				}
 				entity->skill[3] = 0; // refire type.
-				entity->skill[4] = 3 + rand() % 6; // arrows on unlocking.
 				break;
 			// trap (pressure plate thingy)
 			case 33:
