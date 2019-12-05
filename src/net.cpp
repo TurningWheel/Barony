@@ -1435,8 +1435,9 @@ void clientActions(Entity* entity)
 					entity->behavior = &actBomb;
 					break;
 				default:
-					if ( c < -1000 && c > -2000 )
+					if ( c < -1000 && c > -1010 )
 					{
+						messagePlayer(1, "???");
 						entity->arrowShotByWeapon = -(c + 1000);
 						entity->behavior = &actArrow;
 					}
@@ -4429,10 +4430,7 @@ void serverHandlePacket()
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
 		int wallx = (SDLNet_Read16(&net_packet->data[26]));
 		int wally = (SDLNet_Read16(&net_packet->data[28]));
-		if ( entity )
-		{
-			item->applyLockpickToWall(net_packet->data[25], wallx, wally);
-		}
+		item->applyLockpickToWall(net_packet->data[25], wallx, wally);
 		free(item);
 		return;
 	}
