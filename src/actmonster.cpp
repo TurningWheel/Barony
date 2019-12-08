@@ -8371,7 +8371,8 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 	{
 		// doesn't respond.
 		if ( monsterAllySpecial == ALLY_SPECIAL_CMD_REST && myStats->EFFECTS[EFF_ASLEEP]
-			&& (command != ALLY_CMD_SPECIAL) )
+			&& (command == ALLY_CMD_MOVETO_CONFIRM || command == ALLY_CMD_ATTACK_CONFIRM
+				|| command == ALLY_CMD_MOVEASIDE) )
 		{
 			myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
 			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
@@ -8901,8 +8902,8 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 		{
 			if ( monsterAllySpecialCooldown == 0 )
 			{
-				int duration = TICKS_PER_SECOND * (60 - (rand() % 30));
-				if ( myStats->HP < myStats->MAXHP && (EFF_ASLEEP, true, duration, false) ) // 30-60 seconds of sleep.
+				int duration = TICKS_PER_SECOND * (60);
+				if ( myStats->HP < myStats->MAXHP && setEffect(EFF_ASLEEP, true, duration, false) ) // 60 seconds of sleep.
 				{
 					setEffect(EFF_HP_REGEN, true, duration, false);
 					monsterAllySpecial = ALLY_SPECIAL_CMD_REST;
@@ -8914,6 +8915,10 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 					{
 						players[monsterAllyIndex]->entity->increaseSkill(PRO_LEADERSHIP);
 					}
+				}
+				else
+				{
+					messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFF, *myStats, language[3880], language[3880], MSG_GENERIC);
 				}
 			}
 			break;

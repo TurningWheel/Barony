@@ -2437,6 +2437,10 @@ void Entity::handleEffects(Stat* myStats)
 	int i, c;
 	int player = -1;
 
+	if ( !myStats )
+	{
+		return;
+	}
 	if ( this->behavior == &actPlayer )
 	{
 		player = this->skill[2];
@@ -2461,6 +2465,8 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		spawnSleepZ(this->x + cos(this->yaw) * 2, this->y + sin(this->yaw) * 2, this->z);
 	}
+
+	int startingHPInHandleEffects = myStats->HP;
 
 	if ( creatureShadowTaggedThisUid != 0 )
 	{
@@ -2801,7 +2807,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						continue;
 					}
-					messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC);
+					messagePlayerMonsterEvent(i, color, *myStats, language[2379], language[2379], MSG_GENERIC, this);
 				}
 			}
 		}
@@ -4385,8 +4391,8 @@ void Entity::handleEffects(Stat* myStats)
 		messagePlayer(player, language[658]);
 		if ( monsterAllyGetPlayerLeader() && monsterAllySpecial == ALLY_SPECIAL_CMD_REST )
 		{
-			// allies resting.
-			if ( !naturalHeal )
+			// allies resting. if poison/bleed damage here, then ignore it (startingHPInHandleEffects will equal current HP)
+			if ( !naturalHeal && startingHPInHandleEffects == myStats->HP )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = false; // wake up
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
@@ -4411,6 +4417,7 @@ void Entity::handleEffects(Stat* myStats)
 			myStats->EFFECTS[EFF_HP_REGEN] = false; // stop regen
 			myStats->EFFECTS_TIMERS[EFF_HP_REGEN] = 0;
 			monsterAllySpecial = ALLY_SPECIAL_CMD_NONE;
+			messagePlayerMonsterEvent(monsterAllyIndex, 0xFFFFFFFF, *myStats, language[3881], language[3881], MSG_GENERIC);
 		}
 	}
 	myStats->OLDHP = myStats->HP;
@@ -16276,7 +16283,7 @@ void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, cha
 		}
 		else if ( detailType == MSG_GENERIC )
 		{
-			if ( namedMonsterAsGeneric || monsterType == HUMAN )
+			if ( namedMonsterAsGeneric || monsterType == HUMAN || (optionalEntity && optionalEntity->behavior == &actPlayer) )
 			{
 				messagePlayerColor(player, color, msgGeneric, monsterStats.name);
 			}
