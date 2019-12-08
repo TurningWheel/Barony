@@ -8,3 +8,5 @@
 #define EDITOR_EXE_NAME "editor"
 
 #define BASE_DATA_DIR "./"
+
+//#define DEBUG_ACHIEVEMENTS
