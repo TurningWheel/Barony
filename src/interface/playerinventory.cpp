@@ -1427,7 +1427,7 @@ void updatePlayerInventory()
 							//Cleanup identify GUI gamecontroller code here.
 							selectedIdentifySlot = -1;
 						}
-						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK ) &&
+						else if ( !disableItemUsage && (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) &&
 							(keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
 							&& !(*inputPressed(joyimpulses[INJOY_MENU_USE])) )
 						{
@@ -1629,6 +1629,11 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
 		}
 		else if ( itemCategory(&item) == SPELLBOOK )
+		{
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
+		}
+		else if ( item.type == FOOD_CREAMPIE )
 		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
@@ -1948,6 +1953,44 @@ inline void drawItemMenuOptionSpellbook(const Item& item, int x, int y, int heig
 	drawOptionDrop(x, y);
 }
 
+inline void drawItemMenuOptionUsableAndWieldable(const Item& item, int x, int y, int height)
+{
+	int width = 0;
+
+	//Option 0.
+	if ( openedChest[clientnum] )
+	{
+		drawOptionStoreInChest(x, y);
+	}
+	else if ( gui_mode == GUI_MODE_SHOP )
+	{
+		drawOptionSell(x, y);
+	}
+	else
+	{
+		drawOptionUse(item, x, y);
+	}
+	y += height;
+
+	//Option 1
+	if ( itemIsEquipped(&item, clientnum) )
+	{
+		drawOptionUnwield(x, y);
+	}
+	else
+	{
+		drawOptionWield(x, y);
+	}
+	y += height;
+
+	//Option 2
+	drawOptionAppraise(x, y);
+	y += height;
+
+	//Option 3
+	drawOptionDrop(x, y);
+}
+
 /*
  * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
  */
@@ -1977,7 +2020,7 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 			itemMenuSelected = 2;
 		}
 		current_y += slot_height;
-		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK
+		if ( itemCategory(&item) == POTION || itemCategory(&item) == SPELLBOOK || item.type == FOOD_CREAMPIE
 			|| (stats[clientnum] && stats[clientnum]->type == AUTOMATON && itemIsConsumableByAutomaton(item) 
 				&& itemCategory(&item) != FOOD) )
 		{
@@ -2110,9 +2153,7 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad, bool learnedS
 				//Option 0 = equip.
 				if (multiplayer == CLIENT)
 				{
-					if ( swapWeaponGimpTimer > 0
-						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
-							|| itemTypeIsQuiver(item->type)) )
+					if ( item->unableToEquipDueToSwapWeaponTimer() )
 					{
 						// don't send to host as we're not allowed to "use" or equip these items. 
 						// will return false in equipItem.
@@ -2196,6 +2237,10 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 		{
 			disableItemUsage = true;
 		}
+		if ( item->type == FOOD_CREAMPIE )
+		{
+			disableItemUsage = true;
+		}
 	}
 
 	if ( client_classes[clientnum] == CLASS_SHAMAN )
@@ -2257,7 +2302,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 			messagePlayer(clientnum, language[3432]); // unable to use in current form message.
 		}
 	}
-	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK)
+	else if (itemCategory(item) != POTION && itemCategory(item) != SPELLBOOK && item->type != FOOD_CREAMPIE)
 	{
 		//Option 1 = appraise.
 		identifygui_active = false;
@@ -2277,9 +2322,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad, bool learnedS
 				//Option 1 = equip.
 				if (multiplayer == CLIENT)
 				{
-					if ( swapWeaponGimpTimer > 0
-						&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
-							|| itemTypeIsQuiver(item->type)) )
+					if ( item->unableToEquipDueToSwapWeaponTimer() )
 					{
 						// don't send to host as we're not allowed to "use" or equip these items. 
 						// will return false in equipItem.
@@ -2376,7 +2419,8 @@ inline void executeItemMenuOption2(Item* item)
 		identifyGUIIdentify(item);
 	}
 	else if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
-		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT )
+		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT
+		&& item->type != FOOD_CREAMPIE )
 	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
@@ -2407,7 +2451,8 @@ inline void executeItemMenuOption3(Item* item)
 		return;
 	}
 	if ( itemCategory(item) != POTION && item->type != TOOL_ALEMBIC 
-		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT )
+		&& itemCategory(item) != SPELLBOOK && item->type != TOOL_TINKERING_KIT
+		&& item->type != FOOD_CREAMPIE )
 	{
 		return;
 	}
@@ -2501,6 +2546,10 @@ void itemContextMenu()
 
 			drawItemMenuOptionSpellbook(*current_item, itemMenuX, itemMenuY, slot_height, learnedSpell);
 		}
+		else if ( current_item->type == FOOD_CREAMPIE )
+		{
+			drawItemMenuOptionUsableAndWieldable(*current_item, itemMenuX, itemMenuY, slot_height);
+		}
 		else
 		{
 			drawItemMenuOptionGeneric(*current_item, itemMenuX, itemMenuY, slot_height); //Every other item besides potions and spells.
@@ -2563,6 +2612,10 @@ int numItemMenuSlots(const Item& item)
 		else if ( itemCategory(&item) == SPELLBOOK )
 		{
 			numSlots += 1; //Can read/equip spellbooks
+		}
+		else if ( item.type == FOOD_CREAMPIE )
+		{
+			numSlots += 1; //Can equip
 		}
 	}
 

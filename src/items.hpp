@@ -453,6 +453,7 @@ public:
 	};
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
+	bool unableToEquipDueToSwapWeaponTimer();
 };
 extern Uint32 itemuids;
 

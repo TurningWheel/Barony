@@ -1610,9 +1610,8 @@ void equipItem(Item* item, Item** slot, int player)
 		return;
 	}
 
-	if ( player == clientnum && multiplayer != SINGLE && swapWeaponGimpTimer > 0
-		&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
-			|| itemTypeIsQuiver(item->type)) )
+	if ( player == clientnum && multiplayer != SINGLE 
+		&& item->unableToEquipDueToSwapWeaponTimer() )
 	{
 		return;
 	}
@@ -1897,6 +1896,11 @@ void useItem(Item* item, int player, Entity* usedBy)
 		messagePlayer(player, language[1092], item->getName());
 		return;
 	}
+	if ( item->type == FOOD_CREAMPIE && player == clientnum && itemIsEquipped(item, player) )
+	{
+		messagePlayer(player, language[3874]); // can't eat while equipped.
+		return;
+	}
 
 	// tins need a tin opener to open...
 	if ( player == clientnum && !(stats[player]->type == GOATMAN || stats[player]->type == AUTOMATON) )
@@ -1927,8 +1931,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 
 	if ( multiplayer == CLIENT && !intro )
 	{
-		if ( swapWeaponGimpTimer > 0
-			&& ( itemCategory(item) == GEM || itemCategory(item) == THROWN || itemTypeIsQuiver(item->type)) )
+		if ( item->unableToEquipDueToSwapWeaponTimer() && itemCategory(item) != POTION )
 		{
 			// don't send to host as we're not allowed to "use" or equip these items. 
 			// will return false in equipItem.
@@ -4647,4 +4650,19 @@ real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effec
 		return percent;
 	}
 	return 0.0;
+}
+
+bool Item::unableToEquipDueToSwapWeaponTimer()
+{
+	if ( swapWeaponGimpTimer <= 0 )
+	{
+		return false;
+	}
+
+	if ( itemCategory(this) == POTION || itemCategory(this) == GEM || itemCategory(this) == THROWN
+		|| itemTypeIsQuiver(this->type) || this->type == FOOD_CREAMPIE )
+	{
+		return true;
+	}
+	return false;
 }

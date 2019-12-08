@@ -675,6 +675,9 @@ void actThrown(Entity* my)
 						}
 						break;
 					}
+					case FOOD_CREAMPIE:
+						damage = 0;
+						break;
 					default:
 						break;
 				}
@@ -747,6 +750,7 @@ void actThrown(Entity* my)
 							case POTION_LEVITATION:
 							case POTION_STRENGTH:
 							case POTION_PARALYSIS:
+							case FOOD_CREAMPIE:
 								ignorePotion = true;
 								break;
 							default:
@@ -927,6 +931,47 @@ void actThrown(Entity* my)
 								item_PotionParalysis(item, hit.entity, parent);
 								usedpotion = true;
 								break;
+							case FOOD_CREAMPIE:
+							{
+								skipMessage = true;
+								playSoundEntity(hit.entity, 28, 64);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent && parent->behavior == &actPlayer )
+								{
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3875], language[3876], MSG_COMBAT);
+								}
+								if ( hit.entity->behavior == &actMonster )
+								{
+									bool wasBlind = hit.entity->isBlind();
+									if ( hit.entity->setEffect(EFF_BLIND, true, 250, false) )
+									{
+										if ( parent && parent->behavior == &actPlayer )
+										{
+											messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[3878], language[3879], MSG_COMBAT);
+										}
+									}
+									if ( hit.entity->isBlind() && !wasBlind )
+									{
+										disableAlertBlindStatus = true; // don't aggro target.
+									}
+
+								}
+								else if ( hit.entity->behavior == &actPlayer )
+								{
+									hit.entity->setEffect(EFF_MESSY, true, 250, false);
+									serverUpdateEffects(hit.entity->skill[2]);
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(hit.entity->skill[2], color, language[3877]);
+									messagePlayer(hit.entity->skill[2], language[910]);
+								}
+								for ( int i = 0; i < 5; ++i )
+								{
+									Entity* gib = spawnGib(hit.entity, 863);
+									serverSpawnGibForClient(gib);
+								}
+								usedpotion = true;
+								break;
+							}
 							case POTION_POLYMORPH:
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
@@ -1103,6 +1148,10 @@ void actThrown(Entity* my)
 					if ( disableAlertBlindStatus )
 					{
 						alertTarget = false;
+						if ( hitstats->EFFECTS[EFF_BLIND] )
+						{
+							hit.entity->monsterReleaseAttackTarget();
+						}
 					}
 
 					if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
@@ -1314,6 +1363,21 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+		else if ( item->type == FOOD_CREAMPIE )
+		{
+			if ( !usedpotion )
+			{
+				for ( int i = 0; i < 5; ++i )
+				{
+					Entity* gib = spawnGib(my, 863);
+					serverSpawnGibForClient(gib);
+				}
+			}
+			free(item);
+			item = nullptr;
+			list_RemoveNode(my->mynode);
+			return;
+		}
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM 
 			|| item->type == CRYSTAL_SHURIKEN || (item->type == BOOMERANG && uidToEntity(my->parent))) 
 				&& hit.entity == NULL )
@@ -1395,7 +1459,7 @@ void actThrown(Entity* my)
 			THROWN_VELY = THROWN_VELY * .99;
 		}
 		//my->pitch += result * .01;
-		messagePlayer(0, "%.4f, %.4f", THROWN_VELX, THROWN_VELY);
+		//messagePlayer(0, "%.4f, %.4f", THROWN_VELX, THROWN_VELY);
 		/*if ( my->sprite == BOOMERANG_PARTICLE )
 		{
 			THROWN_VELX = std::max(0.05, THROWN_VELX);

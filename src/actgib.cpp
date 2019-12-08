@@ -167,6 +167,13 @@ Entity* spawnGib(Entity* parentent, int customGibSprite)
 			}
 		}
 	}
+	else if ( parentent->behavior == &actThrown )
+	{
+		if ( customGibSprite != -1 )
+		{
+			gibsprite = customGibSprite;
+		}
+	}
 
 	entity = newEntity(gibsprite, 1, map.entities, nullptr); //Gib entity.
 	if ( !entity )

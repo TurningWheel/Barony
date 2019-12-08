@@ -527,7 +527,8 @@ void actHudWeapon(Entity* my)
 					my->scaley = 0.7;
 					my->scalez = 0.7;
 				}
-				else if ( stats[clientnum]->weapon->type >= TOOL_BOMB && stats[clientnum]->weapon->type <= TOOL_TELEPORT_BOMB )
+				else if ( (stats[clientnum]->weapon->type >= TOOL_BOMB && stats[clientnum]->weapon->type <= TOOL_TELEPORT_BOMB)
+					|| stats[clientnum]->weapon->type == FOOD_CREAMPIE )
 				{
 					my->scalex = 1.f;
 					my->scaley = 1.f;
@@ -671,7 +672,9 @@ void actHudWeapon(Entity* my)
 		}
 	}
 
-	bool thrownWeapon = stats[clientnum]->weapon && (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM);
+	bool thrownWeapon = stats[clientnum]->weapon 
+		&& (itemCategory(stats[clientnum]->weapon) == THROWN || itemCategory(stats[clientnum]->weapon) == GEM
+			|| stats[clientnum]->weapon->type == FOOD_CREAMPIE);
 	bool castStrikeAnimation = (players[clientnum]->entity->skill[9] == MONSTER_POSE_SPECIAL_WINDUP1);
 
 	// weapon switch animation
@@ -934,7 +937,8 @@ void actHudWeapon(Entity* my)
 			( stats[clientnum]->weapon->type == CROSSBOW
 				|| itemCategory(stats[clientnum]->weapon) == POTION
 				|| itemCategory(stats[clientnum]->weapon) == GEM
-				|| itemCategory(stats[clientnum]->weapon) == THROWN)
+				|| itemCategory(stats[clientnum]->weapon) == THROWN
+				|| stats[clientnum]->weapon->type == FOOD_CREAMPIE )
 			)
 		{
 			ignoreAttack = true;
@@ -969,6 +973,7 @@ void actHudWeapon(Entity* my)
 					if ( itemCategory(stats[clientnum]->weapon) == WEAPON 
 						|| rangedweapon 
 						|| itemCategory(stats[clientnum]->weapon) == THROWN
+						|| stats[clientnum]->weapon->type == FOOD_CREAMPIE
 						|| itemCategory(stats[clientnum]->weapon) == MAGICSTAFF
 						|| itemCategory(stats[clientnum]->weapon) == GEM
 						|| stats[clientnum]->weapon->type == TOOL_PICKAXE )
@@ -1284,7 +1289,7 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_CHOP = 7; // magicstaffs lunge
 						}
-						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM )
+						else if ( itemCategory(item) == THROWN || itemCategory(item) == GEM || item->type == FOOD_CREAMPIE )
 						{
 							if ( !throwGimpTimer )
 							{
@@ -1384,7 +1389,8 @@ void actHudWeapon(Entity* my)
 								throwGimpTimer = TICKS_PER_SECOND / 2;
 							}
 						}
-						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN || item->type == FOOD_CREAMPIE ) 
+							&& !throwGimpTimer)
 						{
 							if ( itemCategory(item) == THROWN )
 							{
@@ -1811,7 +1817,8 @@ void actHudWeapon(Entity* my)
 					&& item->type != TOOL_SKELETONKEY 
 					&& item->type != TOOL_LOCKPICK 
 					&& itemCategory(item) != POTION 
-					&& itemCategory(item) != GEM 
+					&& itemCategory(item) != GEM
+					&& item->type != FOOD_CREAMPIE
 					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN)
 					&& !(itemIsThrowableTinkerTool(item))
 					&& item->type != TOOL_WHIP )

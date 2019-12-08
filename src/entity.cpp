@@ -6264,6 +6264,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( itemCategory(myStats->weapon) == POTION 
 				|| itemCategory(myStats->weapon) == GEM 
 				|| itemCategory(myStats->weapon) == THROWN
+				|| myStats->weapon->type == FOOD_CREAMPIE
 				|| itemIsThrowableTinkerTool(myStats->weapon) )
 			{
 				bool drankPotion = false;
@@ -13059,6 +13060,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				weaponLimb->roll += (PI / 2); // sprite rotated
 				weaponLimb->pitch -= PI / 8;
 				weaponLimb->pitch += .25 * (myAttack != 0); // add 0.25 if attacking
+			}
+			else if ( weaponLimb->sprite == items[FOOD_CREAMPIE].index )
+			{
+				weaponLimb->roll += (PI / 2); // sprite rotated
 			}
 		}
 	}

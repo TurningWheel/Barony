@@ -1038,7 +1038,7 @@ void drawStatus()
 						}
 						else
 						{
-							if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK)
+							if ( (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE )
 								&& (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) )
 							{
 								badpotion = true;
@@ -1121,9 +1121,7 @@ void drawStatus()
 								{
 									if ( multiplayer == CLIENT )
 									{
-										if ( swapWeaponGimpTimer > 0
-											&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
-												|| itemTypeIsQuiver(item->type) ))
+										if ( item->unableToEquipDueToSwapWeaponTimer() )
 										{
 											// don't send to host as we're not allowed to "use" or equip these items. 
 											// will return false in equipItem.
@@ -1745,7 +1743,7 @@ void drawStatus()
 			}
 
 			if ( (keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT]) 
-				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK) )
+				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || item->type == FOOD_CREAMPIE) )
 			{
 				badpotion = true;
 				learnedSpell = true;
@@ -1842,9 +1840,7 @@ void drawStatus()
 				{
 					if ( multiplayer == CLIENT )
 					{
-						if ( swapWeaponGimpTimer > 0
-							&& (itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN
-								|| itemTypeIsQuiver(item->type)) )
+						if ( item->unableToEquipDueToSwapWeaponTimer() )
 						{
 							// don't send to host as we're not allowed to "use" or equip these items. 
 							// will return false in equipItem.
