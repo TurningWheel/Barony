@@ -3671,19 +3671,9 @@ void Item::applyLockpickToWall(int player, int x, int y)
 					&& stats[player] && stats[player]->weapon
 					&& (stats[player]->weapon->type == TOOL_LOCKPICK || stats[player]->weapon->type == TOOL_SKELETONKEY) )
 				{
-					int requirement = SKILL_LEVEL_EXPERT;
+					int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 					bool failed = false;
-					if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= requirement )
-					{
-						if ( rand() % 2 == 0 )
-						{
-							// failed.
-							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-							messagePlayerColor(player, color, language[3871]); // trap fires.
-							failed = true;
-						}
-					}
-					else if ( rand() % 5 > 0 )
+					if ( rand() % skill == 0 )
 					{
 						// failed.
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);

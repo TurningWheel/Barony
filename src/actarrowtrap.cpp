@@ -57,7 +57,7 @@ void actArrowTrap(Entity* my)
 		if ( multiplayer != CLIENT )
 		{
 			ItemType quiver = static_cast<ItemType>(ARROWTRAP_TYPE);
-			int qty = 2 + (5 - ARROWTRAP_FIRED / 5); // 2 to 7
+			int qty = 2 + (5 - ARROWTRAP_FIRED / 2); // 2 to 7
 			Entity* dropped = dropItemMonster(newItem(quiver, EXCELLENT, 0, qty, ITEM_GENERATED_QUIVER_APPEARANCE, false, nullptr), my, nullptr, qty);
 			std::vector<std::pair<int, int>> freeTiles;
 			int x = my->x / 16;
