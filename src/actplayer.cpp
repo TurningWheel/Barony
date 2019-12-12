@@ -1335,19 +1335,20 @@ void actPlayer(Entity* my)
 							{
 								if ( itemTypeIsQuiver(item2->type) && (tempItem->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
 								{
-									// too many arrows, split off into a new stack with reduced qty.
-									if ( tempItem->count >= (QUIVER_MAX_AMMO_QTY - 1) )
+									int maxStack = QUIVER_MAX_AMMO_QTY;
+									// too many, split off into a new stack with reduced qty.
+									if ( tempItem->count >= (maxStack - 1) )
 									{
-										// identified item is at 50 arrows so don't stack, abort.
+										// identified item is at max count so don't stack, abort.
 										break;
 									}
-									if ( item2->count >= (QUIVER_MAX_AMMO_QTY - 1) )
+									if ( item2->count >= (maxStack - 1) )
 									{
-										// if we're at 50 arrows then skip this check.
+										// if we're at max count then skip this check.
 										continue;
 									}
 									int total = tempItem->count + item2->count;
-									item2->count = QUIVER_MAX_AMMO_QTY - 1;
+									item2->count = maxStack - 1;
 									tempItem->count = total - item2->count;
 									if ( multiplayer == CLIENT && itemIsEquipped(item2, clientnum) )
 									{

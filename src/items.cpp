@@ -719,17 +719,7 @@ char* Item::description()
 			{
 				if ( this->type == TOOL_GYROBOT || this->type == TOOL_DUMMYBOT || this->type == TOOL_SENTRYBOT || this->type == TOOL_SPELLBOT )
 				{
-					int percentHP = 100;
-					if ( this->appearance == ITEM_TINKERING_APPEARANCE || this->appearance == 0 )
-					{
-						percentHP = 100;
-					}
-					else
-					{
-						percentHP = this->appearance * 25;
-						percentHP = std::min(percentHP, 100);
-					}
-					snprintf(tempstr, 1024, language[3658 + status], count, percentHP);
+					snprintf(tempstr, 1024, language[3658 + status], count);
 				}
 				else if ( itemTypeIsQuiver(this->type) )
 				{
@@ -2786,11 +2776,25 @@ Item* itemPickup(int player, Item* item)
 			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2, false))
 			{
-				if ( itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY )
+				if ( (itemTypeIsQuiver(item2->type) && (item->count + item2->count) >= QUIVER_MAX_AMMO_QTY)
+					|| ((item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP) 
+							&& (item->count + item2->count) >= SCRAP_MAX_STACK_QTY) )
 				{
+					int maxStack = QUIVER_MAX_AMMO_QTY;
+					if ( item2->type == TOOL_MAGIC_SCRAP || item2->type == TOOL_METAL_SCRAP )
+					{
+						maxStack = SCRAP_MAX_STACK_QTY;
+					}
+
+					if ( item->count == maxStack - 1 )
+					{
+						// can't add anymore to this stack, let's skip over this.
+						continue;
+					}
+
 					// too many arrows, split off into a new stack with reduced qty.
 					int total = item->count + item2->count;
-					item2->count = QUIVER_MAX_AMMO_QTY - 1;
+					item2->count = maxStack - 1;
 					item->count = total - item2->count;
 
 					if ( multiplayer == CLIENT && player == clientnum && itemIsEquipped(item2, clientnum) )
@@ -2816,19 +2820,22 @@ Item* itemPickup(int player, Item* item)
 					}
 					else
 					{
-						if ( !itemCompare(item, item2, true) )
-						{
-							// items are the same (incl. appearance!)
-							// if they shouldn't stack, we need to change appearance of the new item.
-							while ( item2->appearance == item->appearance )
-							{
-								item->appearance = rand();
-							}
-						}
-						// add the remaining arrows to a new quiver.
-						item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
-						item2->ownerUid = item->ownerUid;
-						return item2;
+						// we have to search other items to stack with, otherwise this search ends after 1 full stack.
+						continue; 
+						
+						//if ( !itemCompare(item, item2, true) )
+						//{
+						//	// items are the same (incl. appearance!)
+						//	// if they shouldn't stack, we need to change appearance of the new item.
+						//	while ( item2->appearance == item->appearance )
+						//	{
+						//		item->appearance = rand();
+						//	}
+						//}
+						//// add the remaining arrows to a new quiver.
+						//item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
+						//item2->ownerUid = item->ownerUid;
+						//return item2;
 					}
 				}
 				// if items are the same, check to see if they should stack
@@ -2872,12 +2879,29 @@ Item* itemPickup(int player, Item* item)
 		if ( !appearancesOfSimilarItems.empty() )
 		{
 			int tries = 100;
+			bool robot = false;
 			// we need to find a unique appearance within the list.
-			item->appearance = rand();
+			if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_GYROBOT
+				|| item->type == TOOL_DUMMYBOT )
+			{
+				robot = true;
+				item->appearance += (rand() % 1000000) * 10;
+			}
+			else
+			{
+				item->appearance = rand();
+			}
 			auto it = appearancesOfSimilarItems.find(item->appearance);
 			while ( it != appearancesOfSimilarItems.end() && tries > 0 )
 			{
-				item->appearance = rand();
+				if ( robot )
+				{
+					item->appearance += (rand() % 1000000) * 10;
+				}
+				else
+				{
+					item->appearance = rand();
+				}
 				it = appearancesOfSimilarItems.find(item->appearance);
 				--tries;
 			}
@@ -4344,18 +4368,30 @@ bool Item::shouldItemStack(int player)
 			// otherwise most equippables should not stack.
 			if ( itemCategory(this) == THROWN || itemCategory(this) == GEM )
 			{
-				if ( this->count >= 9 )
+				if ( count >= 9 )
 				{
 					return false;
 				}
 			}
 			else if ( itemTypeIsQuiver(this->type) )
 			{
-				if ( this->count >= QUIVER_MAX_AMMO_QTY - 1 )
+				if ( count >= QUIVER_MAX_AMMO_QTY - 1 )
 				{
 					return false;
 				}
 				return true;
+			}
+			else if ( type == TOOL_METAL_SCRAP || type == TOOL_MAGIC_SCRAP )
+			{
+				if ( count >= SCRAP_MAX_STACK_QTY - 1 )
+				{
+					return false;
+				}
+				return true;
+			}
+			else if ( type == TOOL_SPELLBOT || type == TOOL_DUMMYBOT || type == TOOL_SENTRYBOT || type == TOOL_GYROBOT )
+			{
+				return false;
 			}
 			return true;
 		}
@@ -4663,6 +4699,18 @@ bool Item::unableToEquipDueToSwapWeaponTimer()
 		|| itemTypeIsQuiver(this->type) || this->type == FOOD_CREAMPIE )
 	{
 		return true;
+	}
+	return false;
+}
+
+bool Item::tinkeringBotIsMaxHealth() const
+{
+	if ( type == TOOL_GYROBOT || type == TOOL_DUMMYBOT || type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT )
+	{
+		if ( appearance == ITEM_TINKERING_APPEARANCE || (appearance > 0 && appearance % 10 == 0) )
+		{
+			return true;
+		}
 	}
 	return false;
 }

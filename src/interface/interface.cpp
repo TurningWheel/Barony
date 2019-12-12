@@ -3255,11 +3255,11 @@ void GenericGUIMenu::rebuildGUIInventory()
 					{
 						if ( item->type == TOOL_METAL_SCRAP )
 						{
-							tinkeringMetalScrap = item;
+							tinkeringMetalScrap.insert(item->uid);
 						}
 						else if ( item->type == TOOL_MAGIC_SCRAP )
 						{
-							tinkeringMagicScrap = item;
+							tinkeringMagicScrap.insert(item->uid);
 						}
 					}
 				}
@@ -3409,13 +3409,25 @@ void GenericGUIMenu::updateGUI()
 			drawWindowFancy(windowX1, windowY1, windowX2, windowY2);
 			int numMetalScrap = 0;
 			int numMagicScrap = 0;
-			if ( tinkeringMetalScrap )
+			if ( !tinkeringMetalScrap.empty() )
 			{
-				numMetalScrap = tinkeringMetalScrap->count;
+				for ( auto uid : tinkeringMetalScrap )
+				{
+					if ( uidToItem(uid) )
+					{
+						numMetalScrap += (uidToItem(uid))->count;
+					}
+				}
 			}
-			if ( tinkeringMagicScrap )
+			if ( !tinkeringMagicScrap.empty() )
 			{
-				numMagicScrap = tinkeringMagicScrap->count;
+				for ( auto uid : tinkeringMagicScrap )
+				{
+					if ( uidToItem(uid) )
+					{
+						numMagicScrap += (uidToItem(uid))->count;
+					}
+				}
 			}
 
 			// title
@@ -5598,8 +5610,8 @@ void GenericGUIMenu::tinkeringFreeLists()
 			break;
 		}
 	}
-	tinkeringMetalScrap = nullptr;
-	tinkeringMagicScrap = nullptr;
+	tinkeringMetalScrap.clear();
+	tinkeringMagicScrap.clear();
 	tinkeringTotalItems.first = nullptr;
 	tinkeringTotalItems.last = nullptr;
 	tinkeringTotalLastCraftableNode = nullptr;
@@ -6030,11 +6042,19 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 
 		for ( int c = 0; c < metal; ++c )
 		{
-			consumeItem(tinkeringMetalScrap, clientnum);
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_METAL_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
 		}
 		for ( int c = 0; c < magic; ++c )
 		{
-			consumeItem(tinkeringMagicScrap, clientnum);
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_MAGIC_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
 		}
 		if ( tinkeringKitRollIfShouldBreak() )
 		{
@@ -6045,13 +6065,87 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 	return nullptr;
 }
 
+Uint32 GenericGUIMenu::tinkeringRetrieveLeastScrapStack(int type)
+{
+	if ( type == TOOL_METAL_SCRAP )
+	{
+		if ( !tinkeringMetalScrap.empty() )
+		{
+			int lowestCount = 9999;
+			Uint32 lowestUid = 0;
+			for ( auto it : tinkeringMetalScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item && item->count > 0 && item->count < lowestCount )
+				{
+					lowestCount = item->count;
+					lowestUid = it;
+				}
+			}
+			return lowestUid;
+		}
+	}
+	else if ( type == TOOL_MAGIC_SCRAP )
+	{
+		if ( !tinkeringMagicScrap.empty() )
+		{
+			int lowestCount = 9999;
+			Uint32 lowestUid = 0;
+			for ( auto it : tinkeringMagicScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item && item->count > 0 && item->count < lowestCount )
+				{
+					lowestCount = item->count;
+					lowestUid = it;
+				}
+			}
+			return lowestUid;
+		}
+	}
+	return 0;
+}
+
+int GenericGUIMenu::tinkeringCountScrapTotal(int type)
+{
+	int count = 0;
+	if ( type == TOOL_METAL_SCRAP )
+	{
+		if ( !tinkeringMetalScrap.empty() )
+		{
+			for ( auto it : tinkeringMetalScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item )
+				{
+					count += item->count;
+				}
+			}
+		}
+	}
+	else if ( type == TOOL_MAGIC_SCRAP )
+	{
+		if ( !tinkeringMagicScrap.empty() )
+		{
+			for ( auto it : tinkeringMagicScrap )
+			{
+				Item* item = uidToItem(it);
+				if ( item )
+				{
+					count += item->count;
+				}
+			}
+		}
+	}
+	return count;
+}
+
 bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
 {
 	bool hasMaterials = false;
 	if ( metal > 0 && magic > 0 )
 	{
-		if ( tinkeringMetalScrap && tinkeringMetalScrap->count >= metal
-			&& tinkeringMagicScrap && tinkeringMagicScrap->count >= magic )
+		if ( tinkeringCountScrapTotal(TOOL_METAL_SCRAP) >= metal && tinkeringCountScrapTotal(TOOL_MAGIC_SCRAP) >= magic )
 		{
 			hasMaterials = true;
 		}
@@ -6062,7 +6156,7 @@ bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
 	}
 	else if ( metal > 0 )
 	{
-		if ( tinkeringMetalScrap && tinkeringMetalScrap->count >= metal )
+		if ( tinkeringCountScrapTotal(TOOL_METAL_SCRAP) >= metal )
 		{
 			hasMaterials = true;
 		}
@@ -6073,7 +6167,7 @@ bool GenericGUIMenu::tinkeringPlayerHasMaterialsInventory(int metal, int magic)
 	}
 	else if ( magic > 0 )
 	{
-		if ( tinkeringMagicScrap && tinkeringMagicScrap->count >= magic )
+		if ( tinkeringCountScrapTotal(TOOL_MAGIC_SCRAP) >= magic )
 		{
 			hasMaterials = true;
 		}
@@ -6567,7 +6661,7 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 					*magic = std::max(0, (*magic) / 4);
 				}
 
-				if ( item->appearance == ITEM_TINKERING_APPEARANCE && item->status == EXCELLENT )
+				if ( item->tinkeringBotIsMaxHealth() && item->status == EXCELLENT )
 				{
 					// can't repair/upgrade.
 					*metal = 0;
@@ -6684,8 +6778,7 @@ bool GenericGUIMenu::tinkeringIsItemUpgradeable(const Item* item)
 		case TOOL_SPELLBOT:
 		case TOOL_DUMMYBOT:
 		case TOOL_GYROBOT:
-			if ( item->appearance == ITEM_TINKERING_APPEARANCE 
-				&& (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
+			if ( item->tinkeringBotIsMaxHealth() && (tinkeringPlayerHasSkillLVLToCraft(item) != -1) )
 			{
 				return true;
 			}
@@ -6855,7 +6948,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 	{
 		if ( item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT || item->type == TOOL_DUMMYBOT || item->type == TOOL_GYROBOT )
 		{
-			if ( item->appearance == ITEM_TINKERING_APPEARANCE )
+			if ( item->tinkeringBotIsMaxHealth() )
 			{
 				// try upgrade item?
 				int craftRequirement = tinkeringPlayerHasSkillLVLToCraft(item);
@@ -6915,7 +7008,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 
 				if ( tinkeringConsumeMaterialsForRepair(item, false) )
 				{
-					Uint32 repairedAppearance = std::min(item->appearance + 1, static_cast<Uint32>(4));
+					Uint32 repairedAppearance = std::min((item->appearance % 10) + 1, static_cast<Uint32>(4));
 					if ( repairedAppearance == 4 )
 					{
 						repairedAppearance = ITEM_TINKERING_APPEARANCE;
@@ -7111,11 +7204,19 @@ bool GenericGUIMenu::tinkeringConsumeMaterialsForRepair(Item* item, bool upgradi
 
 		for ( int c = 0; c < metal; ++c )
 		{
-			consumeItem(tinkeringMetalScrap, clientnum);
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_METAL_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
 		}
 		for ( int c = 0; c < magic; ++c )
 		{
-			consumeItem(tinkeringMagicScrap, clientnum);
+			Item* item = uidToItem(tinkeringRetrieveLeastScrapStack(TOOL_MAGIC_SCRAP));
+			if ( item )
+			{
+				consumeItem(item, clientnum);
+			}
 		}
 		if ( tinkeringKitRollIfShouldBreak() && item != tinkeringKitItem )
 		{

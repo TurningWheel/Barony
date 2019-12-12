@@ -18269,13 +18269,14 @@ int monsterTinkeringConvertAppearanceToHP(Stat* myStats, int appearance)
 {
 	if ( myStats )
 	{
-		if ( appearance == ITEM_TINKERING_APPEARANCE )
+		if ( appearance == ITEM_TINKERING_APPEARANCE || (appearance > 0 && appearance % 10 == 0) )
 		{
 			return myStats->MAXHP;
 		}
 		int randomHP = std::max(1, myStats->MAXHP / 8);
 		randomHP = randomHP + rand() % randomHP;
-		return std::min(myStats->MAXHP, ((appearance * myStats->HP) / 4) + randomHP);
+		int convertedAppearance = appearance % 10;
+		return std::min(myStats->MAXHP, ((convertedAppearance * myStats->HP) / 4) + randomHP);
 	}
 	return 0;
 }

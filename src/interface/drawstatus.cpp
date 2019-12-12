@@ -1371,9 +1371,9 @@ void drawStatus()
 							|| item->type == TOOL_SENTRYBOT || item->type == TOOL_SPELLBOT )
 						{
 							int health = 100;
-							if ( item->appearance >= 0 && item->appearance <= 4 )
+							if ( !item->tinkeringBotIsMaxHealth() )
 							{
-								health = 25 * item->appearance;
+								health = 25 * (item->appearance % 10);
 								if ( health == 0 && item->status != BROKEN )
 								{
 									health = 5;

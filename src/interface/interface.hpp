@@ -318,8 +318,8 @@ public:
 	list_t tinkeringTotalItems;
 	node_t* tinkeringTotalLastCraftableNode;
 	TinkeringFilter tinkeringFilter;
-	Item* tinkeringMetalScrap;
-	Item* tinkeringMagicScrap;
+	std::unordered_set<Uint32> tinkeringMetalScrap;
+	std::unordered_set<Uint32> tinkeringMagicScrap;
 	Item* tinkeringAutoSalvageKitItem;
 	Item* tinkeringAutoSalvageThisItem;
 	Uint32 tinkeringSfxLastTicks = 0;
@@ -350,8 +350,6 @@ public:
 		tinkeringKitItem(false),
 		tinkeringTotalLastCraftableNode(nullptr),
 		tinkeringFilter(TINKER_FILTER_ALL),
-		tinkeringMetalScrap(nullptr),
-		tinkeringMagicScrap(nullptr),
 		tinkeringAutoSalvageKitItem(nullptr),
 		tinkeringAutoSalvageThisItem(nullptr),
 		scribingFilter(SCRIBING_FILTER_CRAFTABLE),
@@ -420,6 +418,8 @@ public:
 	bool tinkeringPlayerCanAffordRepair(Item* item);
 	int tinkeringRepairGeneralItemSkillRequirement(Item* item);
 	bool tinkeringPlayerHasMaterialsInventory(int metal, int magic);
+	Uint32 tinkeringRetrieveLeastScrapStack(int type);
+	int tinkeringCountScrapTotal(int type);
 
 	void scribingCreateCraftableItemList();
 	void scribingFreeLists();

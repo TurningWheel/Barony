@@ -454,6 +454,7 @@ public:
 	void applyBomb(Entity* parent, ItemType type, ItemBombPlacement placement, ItemBombFacingDirection dir, Entity* thrown, Entity* onEntity);
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
 	bool unableToEquipDueToSwapWeaponTimer();
+	bool tinkeringBotIsMaxHealth() const;
 };
 extern Uint32 itemuids;
 
@@ -586,7 +587,7 @@ static const std::vector<int> enchantedFeatherScrollsFixedList =
 };
 static const int ENCHANTED_FEATHER_MAX_DURABILITY = 101;
 static const int QUIVER_MAX_AMMO_QTY = 51;
-
+static const int SCRAP_MAX_STACK_QTY = 101;
 
 //-----ITEM COMPARISON FUNCS-----
 /*
@@ -623,7 +624,7 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
-static const int ITEM_TINKERING_APPEARANCE = 987654321;
+static const int ITEM_TINKERING_APPEARANCE = 987654320;
 static const int ITEM_GENERATED_QUIVER_APPEARANCE = 1122334455;
 
 bool loadItemLists();
