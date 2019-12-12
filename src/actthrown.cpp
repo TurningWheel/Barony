@@ -332,7 +332,9 @@ void actThrown(Entity* my)
 					return;
 				}
 				else if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
-					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
+					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+					&& (!parent || (parent && parent->behavior == &actPlayer && playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]])) )
+					)
 				{
 					// don't deploy on swimming/lava tiles.
 					if ( parent )
@@ -356,6 +358,18 @@ void actThrown(Entity* my)
 				}
 				else
 				{
+					if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
+						&& (parent && parent->behavior == &actPlayer && !playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]])) )
+					{
+						if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+						{
+							messagePlayer(clientnum, language[3884]);
+						}
+						else
+						{
+							messagePlayer(clientnum, language[3883]);
+						}
+					}
 					Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 					entity->flags[INVISIBLE] = true;
 					entity->flags[UPDATENEEDED] = true;

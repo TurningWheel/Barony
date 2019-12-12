@@ -4714,3 +4714,56 @@ bool Item::tinkeringBotIsMaxHealth() const
 	}
 	return false;
 }
+
+bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
+{
+	if ( !myStats )
+	{
+		return false;
+	}
+	int numBots = 0;
+	for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
+	{
+		Entity* follower = uidToEntity(*((Uint32*)node->element));
+		if ( follower )
+		{
+			Stat* followerStats = follower->getStats();
+			if ( followerStats )
+			{
+				if ( followerStats->type == SENTRYBOT || followerStats->type == GYROBOT
+					|| followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT )
+				{
+					++numBots;
+				}
+			}
+		}
+	}
+	int maxFollowers = 2;
+	int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
+	switch ( skillLVL )
+	{
+		case 0:
+		case 1:
+			maxFollowers = 2;
+			break;
+		case 2:
+			maxFollowers = 3;
+			break;
+		case 3:
+			maxFollowers = 4;
+			break;
+		case 4:
+			maxFollowers = 6;
+			break;
+		case 5:
+			maxFollowers = 8;
+			break;
+		default:
+			break;
+	}
+	if ( numBots < maxFollowers )
+	{
+		return true;
+	}
+	return false;
+}

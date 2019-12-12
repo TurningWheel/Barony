@@ -2474,7 +2474,19 @@ void actHudWeapon(Entity* my)
 						camera_shakex += .07;
 					}
 					Entity* player = players[clientnum]->entity;
-					if ( stats[clientnum]->weapon && player )
+					if ( !playerCanSpawnMoreTinkeringBots(stats[clientnum]) )
+					{
+						throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+						if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
+						{
+							messagePlayer(clientnum, language[3884]);
+						}
+						else
+						{
+							messagePlayer(clientnum, language[3883]);
+						}
+					}
+					else if ( stats[clientnum]->weapon && player )
 					{
 						//lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
 						players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);

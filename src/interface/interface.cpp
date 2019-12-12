@@ -6808,7 +6808,7 @@ int GenericGUIMenu::tinkeringPlayerHasSkillLVLToCraft(const Item* item)
 		case TOOL_GLASSES:
 		case POTION_EMPTY:
 		case TOOL_DECOY:
-			if ( skillLVL >= 0 ) // 0 requirement
+			if ( stats[clientnum]->PROFICIENCIES[PRO_LOCKPICKING] + statGetPER(stats[clientnum], players[clientnum]->entity) >= 10 ) // 10 requirement
 			{
 				return 0;
 			}

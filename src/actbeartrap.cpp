@@ -1100,6 +1100,8 @@ void actDecoyBox(Entity* my)
 		entLists.clear();
 
 		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 7);
+		bool message = false;
+		bool detected = false;
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
 		{
 			list_t* currentList = *it;
@@ -1146,7 +1148,7 @@ void actDecoyBox(Entity* my)
 								entity->monsterTarget = my->getUID();
 								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
 								serverUpdateEntitySkill(entity, 0);
-								bool message = false;
+								detected = true;
 								if ( parent->behavior == &actPlayer && stats[parent->skill[2]] )
 								{
 									// see if we have a gyrobot follower to tell us what's goin on
@@ -1177,6 +1179,13 @@ void actDecoyBox(Entity* my)
 						}
 					}
 				}
+			}
+		}
+		if ( !message && detected )
+		{
+			if ( parent && parent->behavior == &actPlayer )
+			{
+				messagePlayer(parent->skill[2], language[3882]);
 			}
 		}
 	}
