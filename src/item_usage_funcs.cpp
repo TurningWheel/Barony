@@ -1532,13 +1532,23 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( multiplayer == CLIENT || player == 0 )
 	{
-		camera_shakex += .1;
-		camera_shakey += 10;
+		if ( player == clientnum )
+		{
+			camera_shakex += .1;
+			camera_shakey += 10;
+		}
 		if ( multiplayer == CLIENT )
 		{
 			consumeItem(item, player);
 			return true;
 		}
+	}
+
+	bool playerAutomatonDrink = false;
+	if ( item->type == POTION_FIRESTORM && !thrownPotion && usedBy && usedBy == entity
+		&& usedBy->behavior == &actPlayer && stats->type == AUTOMATON )
+	{
+		playerAutomatonDrink = true;
 	}
 
 	int damage = (10 + 5 * abs(item->beatitude)) * potionDamageSkillMultipliers[std::min(skillLVL, 5)];
@@ -1551,9 +1561,16 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	{
 		damage -= (rand() % (1 + chance));
 	}
-	messagePlayer(player, language[770]);
-	entity->modHP(-damage);
-	playSoundEntity(entity, 28, 64);
+	if ( playerAutomatonDrink )
+	{
+		damage = 0;
+	}
+	else
+	{
+		messagePlayer(player, language[770]);
+		entity->modHP(-damage);
+		playSoundEntity(entity, 28, 64);
+	}
 
 	// set obituary
 	entity->setObituary(language[1535]);
@@ -1568,7 +1585,29 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	}
 	if ( item->type == POTION_FIRESTORM )
 	{
-		spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, entity);
+		if ( playerAutomatonDrink )
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, nullptr);
+			stats->HUNGER = std::min(stats->HUNGER + 1500, 1500);
+			players[player]->entity->modMP(stats->MAXMP);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+			messagePlayerColor(player, color, language[3699]); // superheats
+			serverUpdateHunger(player);
+			for ( int c = 0; c < 100; c++ )
+			{
+				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
+				entity->sprite = 16;
+				double vel = rand() % 10;
+				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_z = vel * sin(entity->pitch) * .2;
+				entity->skill[0] = 5 + rand() % 10;
+			}
+		}
+		else
+		{
+			spawnMagicTower(usedBy, x, y, SPELL_FIREBALL, entity);
+		}
 	}
 	else if ( item->type == POTION_ICESTORM )
 	{
@@ -4883,7 +4922,8 @@ void item_FoodAutomaton(Item*& item, int player)
 		return;
 	}
 
-	if ( !itemIsConsumableByAutomaton(*item) )
+	if ( !itemIsConsumableByAutomaton(*item) 
+		&& item->type != POTION_FIRESTORM )
 	{
 		return;
 	}
@@ -4904,7 +4944,7 @@ void item_FoodAutomaton(Item*& item, int player)
 	}
 
 	// eating sound
-	if ( item->type == FOOD_BLOOD )
+	if ( item->type == FOOD_BLOOD || item->type == POTION_FIRESTORM )
 	{
 		// play drink sound
 		playSoundEntity(players[player]->entity, 52, 64);
@@ -5017,6 +5057,18 @@ void item_FoodAutomaton(Item*& item, int player)
 			if ( stats[player]->playerRace == RACE_AUTOMATON && stats[player]->appearance == 0 )
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_SPICY, STEAM_STAT_INT, 1);
+			}
+
+			playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
+			for ( int c = 0; c < 100; c++ )
+			{
+				Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
+				entity->sprite = 16;
+				double vel = rand() % 10;
+				entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+				entity->vel_z = vel * sin(entity->pitch) * .2;
+				entity->skill[0] = 5 + rand() % 10;
 			}
 			break;
 		}
@@ -5166,7 +5218,6 @@ bool itemIsConsumableByAutomaton(const Item& item)
 		case SCROLL_SUMMON:
 		case SCROLL_FIRE:
 		case SCROLL_CONJUREARROW:
-
 		case TOOL_MAGIC_SCRAP:
 		case TOOL_METAL_SCRAP:
 			return true;

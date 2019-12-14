@@ -2216,6 +2216,7 @@ void useItem(Item* item, int player, Entity* usedBy)
 				if ( multiplayer != CLIENT )
 				{
 					stats[player]->HUNGER = std::min(stats[player]->HUNGER + 1500, 1500);
+					players[player]->entity->modMP(stats[player]->MAXMP);
 					// results of eating
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 					messagePlayerColor(player, color, language[3699]); // superheats
