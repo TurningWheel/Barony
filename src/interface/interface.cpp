@@ -6405,7 +6405,6 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_SHADOW_TAG:
 		case SPELLBOOK_SALVAGE:
 		case SPELLBOOK_DASH:
-		case SPELLBOOK_8:
 		case SPELLBOOK_9:
 		case SPELLBOOK_10:
 			*metal = 0;
@@ -6461,6 +6460,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_WEAKNESS:
 		case SPELLBOOK_AMPLIFY_MAGIC:
 		case SPELLBOOK_DEMON_ILLU:
+		case SPELLBOOK_SELF_POLYMORPH:
 		case GEM_LUCK:
 		case ENCHANTED_FEATHER:
 			*metal = 0;

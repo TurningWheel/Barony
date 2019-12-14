@@ -2399,6 +2399,7 @@ void initClass(int player)
 		else if ( stats[player]->playerRace == RACE_SUCCUBUS && stats[player]->appearance == 0 )
 		{
 			addSpell(SPELL_TELEPORTATION, player, true);
+			addSpell(SPELL_SELF_POLYMORPH, player, true);
 		}
 		else if ( stats[player]->playerRace == RACE_INSECTOID && stats[player]->appearance == 0 )
 		{

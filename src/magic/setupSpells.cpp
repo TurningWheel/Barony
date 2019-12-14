@@ -183,6 +183,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_teleportation.duration = 0;
 	strcpy(spellElement_teleportation.name, language[432]);
 
+	spellElementConstructor(&spellElement_selfPolymorph);
+	spellElement_selfPolymorph.mana = 40;
+	spellElement_selfPolymorph.base_mana = 40;
+	spellElement_selfPolymorph.overload_multiplier = 0;
+	spellElement_selfPolymorph.damage = 0;
+	spellElement_selfPolymorph.duration = 0;
+	strcpy(spellElement_selfPolymorph.name, language[3885]);
+
 	spellElementConstructor(&spellElement_magicmissile);
 	spellElement_magicmissile.mana = 6;
 	spellElement_magicmissile.base_mana = 6;
@@ -712,6 +720,19 @@ void setupSpells()   ///TODO: Verify this function.
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
+	element->node = node; //Tell the element what list it resides in.
+
+	spellConstructor(&spell_polymorph);
+	strcpy(spell_polymorph.name, language[3885]);
+	spell_polymorph.ID = SPELL_SELF_POLYMORPH;
+	spell_polymorph.difficulty = 60;
+	spell_polymorph.elements.first = NULL;
+	spell_polymorph.elements.last = NULL;
+	node = list_AddNodeLast(&spell_polymorph.elements);
+	node->element = copySpellElement(&spellElement_selfPolymorph);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
 	element->node = node; //Tell the element what list it resides in.
 
 	spellConstructor(&spell_healing);

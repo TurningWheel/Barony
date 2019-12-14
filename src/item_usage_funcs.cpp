@@ -2145,7 +2145,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
 	{
-		transformedEntity = spellEffectPolymorph(entity, stats, usedBy);
+		transformedEntity = spellEffectPolymorph(entity, stats, usedBy, false);
 	}
 
 	consumeItem(item, player);
@@ -4821,8 +4821,8 @@ void item_Spellbook(Item*& item, int player)
 			case SPELLBOOK_DASH:
 				learned = addSpell(SPELL_DASH, player);
 				break;
-			case SPELLBOOK_8:
-				learned = addSpell(SPELL_8, player);
+			case SPELLBOOK_SELF_POLYMORPH:
+				learned = addSpell(SPELL_SELF_POLYMORPH, player);
 				break;
 			case SPELLBOOK_9:
 				learned = addSpell(SPELL_9, player);

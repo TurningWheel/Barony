@@ -2413,7 +2413,11 @@ void getSpellEffectString(int spellID, char effectTextBuffer[256], char spellTyp
 			snprintf(effectTextBuffer, 255, language[3842]);
 			*spellInfoLines = 3;
 			break;
-		case SPELL_8:
+		case SPELL_SELF_POLYMORPH:
+			snprintf(spellType, 31, language[3305]);
+			snprintf(effectTextBuffer, 255, language[3886]);
+			*spellInfoLines = 2;
+			break;
 		case SPELL_9:
 		case SPELL_10:
 		default:

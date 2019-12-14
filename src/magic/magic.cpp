@@ -76,6 +76,7 @@ void freeSpells()
 	list_FreeAll(&spell_salvageItem.elements);
 	list_FreeAll(&spell_flutter.elements);
 	list_FreeAll(&spell_dash.elements);
+	list_FreeAll(&spell_polymorph.elements);
 }
 
 void spell_magicMap(int player)
@@ -1594,11 +1595,14 @@ void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent
 	return;
 }
 
-Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, bool fromMagicSpell, int customDuration)
 {
 	int effectDuration = 0;
 	effectDuration = TICKS_PER_SECOND * 60 * (4 + rand() % 3); // 4-6 minutes
-
+	if ( customDuration > 0 )
+	{
+		effectDuration = customDuration;
+	}
 	if ( !target || !targetStats )
 	{
 		if ( parent && parent->behavior == &actPlayer )
@@ -1800,7 +1804,7 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 		summonedStats->CON = targetStats->CON;
 		summonedStats->INT = targetStats->INT;
 		summonedStats->PER = targetStats->PER;
-		summonedStats->CHR = targetStats->CHR;
+		//summonedStats->CHR = targetStats->CHR;
 		summonedStats->LVL = targetStats->LVL;
 		summonedStats->GOLD = targetStats->GOLD;
 
@@ -2067,6 +2071,25 @@ Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent)
 			if ( dropped )
 			{
 				dropped->flags[USERFLAG1] = true;
+			}
+		}
+
+		node_t* nextnode = nullptr;
+		for ( node_t* node = targetStats->inventory.first; node; node = nextnode )
+		{
+			nextnode = node->next;
+			Item* item = (Item*)node->element;
+			if ( item && item->appearance != MONSTER_ITEM_UNDROPPABLE_APPEARANCE && itemSlot(targetStats, item) == nullptr )
+			{
+				Item* copiedItem = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &summonedStats->inventory);
+				if ( item->node )
+				{
+					list_RemoveNode(item->node);
+				}
+				else
+				{
+					free(item);
+				}
 			}
 		}
 

@@ -68,7 +68,7 @@ static const int SPELL_TROLLS_BLOOD = 48;
 static const int SPELL_SALVAGE = 49;
 static const int SPELL_FLUTTER = 50;
 static const int SPELL_DASH = 51;
-static const int SPELL_8 = 52;
+static const int SPELL_SELF_POLYMORPH = 52;
 static const int SPELL_9 = 53;
 static const int SPELL_10 = 54;
 static const int NUM_SPELLS = 55;
@@ -390,6 +390,7 @@ extern spellElement_t spellElement_trollsBlood;
 extern spellElement_t spellElement_salvageItem;
 extern spellElement_t spellElement_flutter;
 extern spellElement_t spellElement_dash;
+extern spellElement_t spellElement_selfPolymorph;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -483,6 +484,7 @@ extern spell_t spell_trollsBlood;
 extern spell_t spell_salvageItem;
 extern spell_t spell_flutter;
 extern spell_t spell_dash;
+extern spell_t spell_polymorph;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -609,7 +611,7 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 void spellEffectCharmMonster(Entity& my, spellElement_t& element, Entity* parent, int resistance, bool magicstaff);
-Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent); // returns nullptr if target was monster, otherwise returns pointer to new creature
+Entity* spellEffectPolymorph(Entity* target, Stat* targetStats, Entity* parent, bool fromMagicSpell, int customDuration = 0); // returns nullptr if target was monster, otherwise returns pointer to new creature
 void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectSprayWeb(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 bool spellEffectFear(Entity* my, spellElement_t& element, Entity* forceParent, Entity* target, int resistance);

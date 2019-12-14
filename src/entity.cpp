@@ -15827,7 +15827,7 @@ int Entity::getBaseManaRegen(Stat& myStats)
 		multipliedTotal += amount;
 	}
 
-	if ( behavior == &actPlayer && myStats.type == INSECTOID )
+	if ( behavior == &actPlayer && myStats.playerRace == INSECTOID && myStats.appearance == 0 )
 	{
 		int base = MAGIC_REGEN_TIME / 3;
 		if ( myStats.HUNGER < 50 )

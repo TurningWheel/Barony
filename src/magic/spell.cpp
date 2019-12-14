@@ -75,6 +75,7 @@ spellElement_t spellElement_trollsBlood;
 spellElement_t spellElement_salvageItem;
 spellElement_t spellElement_flutter;
 spellElement_t spellElement_dash;
+spellElement_t spellElement_selfPolymorph;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -128,6 +129,7 @@ spell_t spell_trollsBlood;
 spell_t spell_salvageItem;
 spell_t spell_flutter;
 spell_t spell_dash;
+spell_t spell_polymorph;
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -296,7 +298,9 @@ bool addSpell(int spell, int player, bool ignoreSkill)
 		case SPELL_DASH:
 			new_spell = copySpell(&spell_dash);
 			break;
-		case SPELL_8:
+		case SPELL_SELF_POLYMORPH:
+			new_spell = copySpell(&spell_polymorph);
+			break;
 		case SPELL_9:
 		case SPELL_10:
 			new_spell = copySpell(&spell_weakness);
@@ -794,7 +798,9 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_DASH:
 			spell = &spell_dash;
 			break;
-		case SPELL_8:
+		case SPELL_SELF_POLYMORPH:
+			spell = &spell_polymorph;
+			break;
 		case SPELL_9:
 		case SPELL_10:
 			spell = &spell_weakness;
@@ -964,8 +970,8 @@ int getSpellbookFromSpellID(int spellID)
 		case SPELL_DASH:
 			itemType = SPELLBOOK_DASH;
 			break;
-		case SPELL_8:
-			itemType = SPELLBOOK_8;
+		case SPELL_SELF_POLYMORPH:
+			itemType = SPELLBOOK_SELF_POLYMORPH;
 			break;
 		case SPELL_9:
 			itemType = SPELLBOOK_9;
@@ -1078,14 +1084,14 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_demonIllusion.ID;
 		case SPELLBOOK_TROLLS_BLOOD:
 			return spell_trollsBlood.ID;
-		case SPELL_SALVAGE:
+		case SPELLBOOK_SALVAGE:
 			return spell_salvageItem.ID;
-		case SPELL_FLUTTER:
+		case SPELLBOOK_FLUTTER:
 			return spell_flutter.ID;
-		case SPELL_DASH:
+		case SPELLBOOK_DASH:
 			return spell_dash.ID;
-		case SPELL_8:
-			return spell_weakness.ID;
+		case SPELLBOOK_SELF_POLYMORPH:
+			return spell_polymorph.ID;
 		case SPELL_9:
 			return spell_weakness.ID;
 		case SPELL_10:

@@ -758,6 +758,17 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				caster->teleportRandom();
 			}
 		}
+		else if ( !strcmp(element->name, spellElement_selfPolymorph.name) )
+		{
+			if ( caster->behavior == &actPlayer )
+			{
+				spellEffectPolymorph(caster, caster->getStats(), caster, true, TICKS_PER_SECOND * 60 * 2); // 2 minutes.
+			}
+			else if ( caster->behavior == &actMonster )
+			{
+				spellEffectPolymorph(caster, caster->getStats(), caster, true);
+			}
+		}
 		else if ( !strcmp(element->name, spellElement_strike.name) )
 		{
 			caster->attack(MONSTER_POSE_SPECIAL_WINDUP1, MAXCHARGE, nullptr); // this is server only, tells client to attack.
@@ -2349,7 +2360,7 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity& caster, Stat& stat, int spellI
 	{
 		return true;
 	}
-	else if ( stat.playerRace == RACE_SUCCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION) )
+	else if ( stat.playerRace == RACE_SUCCUBUS && stat.appearance == 0 && (spellID == SPELL_TELEPORTATION || spellID == SPELL_SELF_POLYMORPH) )
 	{
 		return true;
 	}
