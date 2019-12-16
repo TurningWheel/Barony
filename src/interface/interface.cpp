@@ -6982,7 +6982,25 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					if ( upgradedItem )
 					{
 						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
-						itemPickup(clientnum, upgradedItem);
+						Item* pickedUp = itemPickup(clientnum, upgradedItem);
+						if ( pickedUp && item->count == 1 )
+						{
+							// item* will be consumed, so pickedUp can take the inventory slot of it.
+							pickedUp->x = item->x;
+							pickedUp->y = item->y;
+							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							{
+								if ( hotbar[c].item == item->uid )
+								{
+									hotbar[c].item = pickedUp->uid;
+								}
+								else if ( hotbar[c].item == pickedUp->uid )
+								{
+									// this was auto placed by itemPickup just above, undo it.
+									hotbar[c].item = 0;
+								}
+							}
+						}
 						free(upgradedItem);
 					}
 					messagePlayer(clientnum, language[3683], items[item->type].name_identified);
@@ -7017,7 +7035,25 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					if ( repairedItem )
 					{
 						achievementObserver.playerAchievements[clientnum].fixerUpper += 1;
-						itemPickup(clientnum, repairedItem);
+						Item* pickedUp = itemPickup(clientnum, repairedItem);
+						if ( pickedUp && item->count == 1 )
+						{
+							// item* will be consumed, so pickedUp can take the inventory slot of it.
+							pickedUp->x = item->x;
+							pickedUp->y = item->y;
+							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							{
+								if ( hotbar[c].item == item->uid )
+								{
+									hotbar[c].item = pickedUp->uid;
+								}
+								else if ( hotbar[c].item == pickedUp->uid )
+								{
+									// this was auto placed by itemPickup just above, undo it.
+									hotbar[c].item = 0;
+								}
+							}
+						}
 						free(repairedItem);
 					}
 					messagePlayer(clientnum, language[3682], items[item->type].name_identified);
@@ -7054,7 +7090,25 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 					if ( repairedItem )
 					{
-						itemPickup(clientnum, repairedItem);
+						Item* pickedUp = itemPickup(clientnum, repairedItem);
+						if ( pickedUp && item->count == 1 )
+						{
+							// item* will be consumed, so pickedUp can take the inventory slot of it.
+							pickedUp->x = item->x;
+							pickedUp->y = item->y;
+							for ( int c = 0; c < NUM_HOTBAR_SLOTS; ++c )
+							{
+								if ( hotbar[c].item == item->uid )
+								{
+									hotbar[c].item = pickedUp->uid;
+								}
+								else if ( hotbar[c].item == pickedUp->uid )
+								{
+									// this was auto placed by itemPickup just above, undo it.
+									hotbar[c].item = 0;
+								}
+							}
+						}
 						free(repairedItem);
 					}
 					consumeItem(item, clientnum);
