@@ -2057,6 +2057,12 @@ void handleMainMenu(bool mode)
 							if ( enabledDLCPack2 )
 							{
 								stats[0]->playerRace = RACE_INCUBUS;
+								if ( client_classes[0] == CLASS_MESMER && stats[0]->appearance == 0 )
+								{
+									client_classes[0] = CLASS_PUNISHER;
+									stats[0]->clearStats();
+									initClass(0);
+								}
 							}
 							else
 							{
@@ -2078,6 +2084,12 @@ void handleMainMenu(bool mode)
 							if ( enabledDLCPack1 )
 							{
 								stats[0]->playerRace = RACE_SUCCUBUS;
+								if ( client_classes[0] == CLASS_PUNISHER && stats[0]->appearance == 0 )
+								{
+									client_classes[0] = CLASS_MESMER;
+									stats[0]->clearStats();
+									initClass(0);
+								}
 							}
 							else
 							{
