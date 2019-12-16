@@ -130,6 +130,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	monsterFearfulOfUid(skill[53]),
 	creatureShadowTaggedThisUid(skill[54]),
 	monsterIllusionTauntingThisUid(skill[55]),
+	monsterLastDistractedByNoisemaker(skill[55]), // shares with above as above only applies to inner demons.
 	monsterSentrybotLookDir(fskill[10]),
 	monsterKnockbackTangentDir(fskill[11]),
 	playerStrafeVelocity(fskill[12]),
@@ -751,6 +752,15 @@ int Entity::entityLightAfterReductions(Stat& myStats, Entity* observer)
 			if ( observerStats && observerStats->EFFECTS[EFF_BLIND] )
 			{
 				light = TOUCHRANGE;
+			}
+			if ( observer->monsterLastDistractedByNoisemaker > 0 && uidToEntity(observer->monsterLastDistractedByNoisemaker) )
+			{
+				if ( observer->monsterTarget == observer->monsterLastDistractedByNoisemaker
+					|| myStats.EFFECTS[EFF_DISORIENTED] )
+				{
+					// currently hunting noisemaker.
+					light = 16;
+				}
 			}
 		}
 		else
@@ -10297,6 +10307,8 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			{
 				steamStatisticUpdateClient(player, STEAM_STAT_MANY_PEDI_PALP, STEAM_STAT_INT, 1);
 			}
+
+			bool guerillaRadio = false;
 			if ( src->monsterTarget != 0 )
 			{
 				Entity* wasTargeting = uidToEntity(src->monsterTarget);
@@ -10308,8 +10320,26 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 					}
 					else if ( wasTargeting->behavior == &actDecoyBox )
 					{
-						steamStatisticUpdateClient(player, STEAM_STAT_GUERILLA_RADIO, STEAM_STAT_INT, 1);
+						guerillaRadio = true;
 					}
+				}
+			}
+			if ( !guerillaRadio )
+			{
+				Entity* noisemaker = uidToEntity(src->monsterLastDistractedByNoisemaker);
+				if ( noisemaker && noisemaker->behavior == &actDecoyBox
+					&& entityDist(noisemaker, src) < TOUCHRANGE )
+				{
+					guerillaRadio = true;
+				}
+			}
+
+			if ( guerillaRadio )
+			{
+				steamStatisticUpdateClient(player, STEAM_STAT_GUERILLA_RADIO, STEAM_STAT_INT, 1);
+				if ( rand() % 5 == 0 || (uidToEntity(src->monsterTarget) != this && rand() % 3 == 0) )
+				{
+					this->increaseSkill(PRO_LOCKPICKING);
 				}
 			}
 		}

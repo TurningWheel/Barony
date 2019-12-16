@@ -9048,7 +9048,7 @@ void Entity::clearMonsterInteract()
 	interactedByMonster = 0;
 }
 
-bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck)
+bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToCheck, bool tryRandomSpot)
 {
 	int u, v;
 	bool foundplace = false;
@@ -9061,7 +9061,10 @@ bool Entity::monsterSetPathToLocation(int destX, int destY, int adjacentTilesToC
 	}
 	else if ( !checkObstacle((destX << 4) + 8, (destY << 4) + 8, this, nullptr) )
 	{
-		foundplace = true; // we can path directly to the destination specified.
+		if ( !tryRandomSpot )
+		{
+			foundplace = true; // we can path directly to the destination specified.
+		}
 	}
 
 	std::vector<std::pair<int, std::pair<int, int>>> possibleDestinations; // store distance and the x, y coordinates in each element.

@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "magic/magic.hpp"
 #include "scores.hpp"
+#include "monster.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1112,11 +1113,12 @@ void actDecoyBox(Entity* my)
 				if ( parent && entity && entity->behavior == &actMonster
 					&& parent->checkEnemy(entity) && entity->isMobile() )
 				{
-					if ( entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0 )
+					if ( (entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0) 
+						|| (entityDist(entity,my) < 2 * TOUCHRANGE && (Uint32)(entity->monsterLastDistractedByNoisemaker) != my->getUID()) )
 					{
 						Stat* myStats = entity->getStats();
 						if ( !entity->isBossMonster() && !entity->monsterIsTinkeringCreation()
-							&& myStats && !uidToEntity(myStats->leader_uid) && entityDist(my, entity) > TOUCHRANGE )
+							&& myStats && !uidToEntity(myStats->leader_uid) )
 						{
 							// found an eligible monster (far enough away, non-boss)
 							// now look through other decoys, if others are in range of our target,
@@ -1127,7 +1129,7 @@ void actDecoyBox(Entity* my)
 								for ( std::vector<Entity*>::iterator decoyIt = listOfOtherDecoys.begin(); decoyIt != listOfOtherDecoys.end(); ++decoyIt )
 								{
 									Entity* decoy = *decoyIt;
-									if ( entityDist(decoy, entity) < (7 * 16) ) // less than 5 tiles from our monster
+									if ( entityDist(decoy, entity) < (7 * 16) ) // less than x tiles from our monster
 									{
 										if ( decoy->ticks < my->ticks )
 										{
@@ -1139,16 +1141,81 @@ void actDecoyBox(Entity* my)
 									}
 								}
 							}
+							if ( (Uint32)(entity->monsterLastDistractedByNoisemaker) == my->getUID() )
+							{
+								// ignore pathing to this noisemaker as we're already distracted by it.
+								if ( entityDist(entity, my) < TOUCHRANGE 
+									&& !myStats->EFFECTS[EFF_DISORIENTED]
+									&& !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] )
+								{
+									// if we pathed within range
+									detected = false; // skip the message.
+
+									// can I see the noisemaker next to me?
+									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+									if ( hit.entity == entity )
+									{
+										// set disoriented and start a cooldown on being distracted.
+										if ( entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0 )
+										{
+											// not attacking, duration longer.
+											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 3, false);
+											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
+										}
+										else
+										{
+											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
+											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
+										}
+										spawnFloatingSpriteMisc(134, entity->x + (-4 + rand() % 9) + cos(entity->yaw) * 2,
+											entity->y + (-4 + rand() % 9) + sin(entity->yaw) * 2, entity->z + rand() % 4);
+									}
+								}
+								break;
+							}
 							if ( foundMoreRecentDecoy )
 							{
 								break;
 							}
-							if ( entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2) && entity->children.first )
+							if ( !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] 
+								&& entity->monsterSetPathToLocation(my->x / 16, my->y / 16, 2) && entity->children.first )
 							{
+								// path only if we're not on cooldown
+								entity->monsterLastDistractedByNoisemaker = my->getUID();
 								entity->monsterTarget = my->getUID();
 								entity->monsterState = MONSTER_STATE_HUNT; // hunt state
 								serverUpdateEntitySkill(entity, 0);
 								detected = true;
+
+								if ( entityDist(entity, my) < TOUCHRANGE 
+									&& !myStats->EFFECTS[EFF_DISORIENTED]
+									&& !myStats->EFFECTS[EFF_DISTRACTED_COOLDOWN] )
+								{
+									detected = false; // skip the message.
+
+									// can I see the noisemaker next to me?
+									real_t tangent = atan2(entity->y - my->y, entity->x - my->x);
+									lineTraceTarget(my, my->x, my->y, tangent, 32.0, 0, false, entity);
+									if ( hit.entity == entity )
+									{
+										// set disoriented and start a cooldown on being distracted.
+										if ( entity->monsterState == MONSTER_STATE_WAIT || entity->monsterTarget == 0 )
+										{
+											// not attacking, duration longer.
+											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 3, false);
+											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
+										}
+										else
+										{
+											entity->setEffect(EFF_DISORIENTED, true, TICKS_PER_SECOND * 1, false);
+											entity->setEffect(EFF_DISTRACTED_COOLDOWN, true, TICKS_PER_SECOND * 5, false);
+										}
+										spawnFloatingSpriteMisc(134, entity->x + (-4 + rand() % 9) + cos(entity->yaw) * 2,
+											entity->y + (-4 + rand() % 9) + sin(entity->yaw) * 2, entity->z + rand() % 4);
+									}
+								}
+
 								if ( parent->behavior == &actPlayer && stats[parent->skill[2]] )
 								{
 									// see if we have a gyrobot follower to tell us what's goin on
