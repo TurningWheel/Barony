@@ -3702,11 +3702,15 @@ void Item::applyLockpickToWall(int player, int x, int y)
 				{
 					int skill = std::max(1, stats[player]->PROFICIENCIES[PRO_LOCKPICKING] / 10);
 					bool failed = false;
-					if ( rand() % skill == 0 )
+					if ( skill < 2 || rand() % skill == 0 ) // 20 skill requirement.
 					{
 						// failed.
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(player, color, language[3871]); // trap fires.
+						if ( skill < 2 )
+						{
+							messagePlayer(player, language[3887]); // not skilled enough.
+						}
 						failed = true;
 					}
 
@@ -3727,15 +3731,23 @@ void Item::applyLockpickToWall(int player, int x, int y)
 					// degrade lockpick.
 					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && rand() % 4 == 0 )
 					{
+						if ( player == clientnum )
+						{
+							if ( count > 1 )
+							{
+								newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
+							}
+						}
+						stats[player]->weapon->count = 1;
 						stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 						if ( stats[player]->weapon->status == BROKEN )
 						{
-							messagePlayer(player, language[875], stats[player]->weapon->getName());
+							messagePlayer(player, language[1104]);
 							playSoundEntity(players[player]->entity, 76, 64);
 						}
 						else
 						{
-							messagePlayer(player, language[681], stats[player]->weapon->getName());
+							messagePlayer(player, language[1103]);
 						}
 						if ( player > 0 && multiplayer == SERVER )
 						{

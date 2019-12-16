@@ -1332,7 +1332,7 @@ void actHudWeapon(Entity* my)
 								{
 									bool foundWall = false;
 									if ( dist < STRIKERANGE 
-										&& !hit.entity && hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
+										&& !hit.entity && hit.mapx >= 0 && hit.mapx < map.width && hit.mapy >= 0 && hit.mapy < map.height )
 									{
 										// arrow traps
 										if ( map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] == 53 )

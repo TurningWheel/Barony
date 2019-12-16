@@ -62,21 +62,33 @@ void actArrowTrap(Entity* my)
 			std::vector<std::pair<int, int>> freeTiles;
 			int x = my->x / 16;
 			int y = my->y / 16;
-			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1) * MAPLAYERS * map.height] )
+			if ( (x + 1) >= 0 && (x + 1) < map.width && y >= 0 && y < map.height )
 			{
-				freeTiles.push_back(std::make_pair(x + 1, y));
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x + 1) * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x + 1, y));
+				}
 			}
-			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1) * MAPLAYERS * map.height] )
+			if ( (x - 1) >= 0 && (x - 1) < map.width && y >= 0 && y < map.height )
 			{
-				freeTiles.push_back(std::make_pair(x - 1, y));
+				if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + (x - 1) * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x - 1, y));
+				}
 			}
-			if ( !map.tiles[OBSTACLELAYER + (y + 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+			if ( x >= 0 && x < map.width && (y + 1) >= 0 && (y + 1) < map.height )
 			{
-				freeTiles.push_back(std::make_pair(x, y + 1));
+				if ( !map.tiles[OBSTACLELAYER + (y + 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x, y + 1));
+				}
 			}
-			if ( !map.tiles[OBSTACLELAYER + (y - 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+			if ( x >= 0 && x < map.width && (y - 1) >= 0 && (y - 1) < map.height )
 			{
-				freeTiles.push_back(std::make_pair(x, y - 1));
+				if ( !map.tiles[OBSTACLELAYER + (y - 1) * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					freeTiles.push_back(std::make_pair(x, y - 1));
+				}
 			}
 			if ( !freeTiles.empty() )
 			{
@@ -111,6 +123,8 @@ void actArrowTrap(Entity* my)
 		return;
 	}
 
+	Entity* targetToAutoHit = nullptr;
+
 	// received on signal
 	if ( my->skill[28] == 2 || ARROWTRAP_DISABLED == -1 )
 	{
@@ -136,6 +150,16 @@ void actArrowTrap(Entity* my)
 				ARROWTRAP_FIRED++;
 			}
 			ARROWTRAP_REFIRE = 0;
+			// misfire from a lockpick, try to find a nearby target.
+			for ( node_t* node = map.creatures->first; node != nullptr; node = node->next )
+			{
+				Entity* entity = (Entity*)node->element;
+				if ( entity && entity->behavior == &actPlayer && entityDist(my, entity) < TOUCHRANGE )
+				{
+					targetToAutoHit = entity;
+					break;
+				}
+			}
 		}
 
 		if ( ARROWTRAP_FIRED % 2 == 0 && ARROWTRAP_REFIRE <= 0 )
@@ -165,6 +189,11 @@ void actArrowTrap(Entity* my)
 				}
 				int checkx = (my->x + x) / 16;
 				int checky = (my->y + y) / 16;
+				if ( !(checkx >= 0 && checkx < map.width && checky >= 0 && checky < map.height) )
+				{
+					// out of bounds.
+					continue;
+				}
 				int index = checky * MAPLAYERS + checkx * MAPLAYERS * map.height;
 				if ( !map.tiles[OBSTACLELAYER + index] )
 				{
@@ -225,6 +254,26 @@ void actArrowTrap(Entity* my)
 					{
 						entity->skill[2] = -(1000 + TOOL_SENTRYBOT); // invokes actArrow for clients.
 						entity->arrowShotByWeapon = TOOL_SENTRYBOT;
+					}
+					if ( targetToAutoHit )
+					{
+						/*entity->x = targetToAutoHit->x;
+						entity->y = targetToAutoHit->y;*/
+						if ( rand() % 2 == 0 )
+						{
+							double tangent = atan2(entity->y - targetToAutoHit->y, entity->x - targetToAutoHit->x);
+							entity->yaw = tangent + PI;
+							entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
+							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
+							targetToAutoHit = nullptr;
+						}
+						else if ( rand() % 2 == 0 )
+						{
+							entity->yaw = entity->yaw - PI / 12 + (0.1 * (rand() % 11) * (PI / 6)); // -/+ PI/12 range
+							entity->vel_x = cos(entity->yaw) * entity->arrowSpeed;
+							entity->vel_y = sin(entity->yaw) * entity->arrowSpeed;
+							targetToAutoHit = nullptr;
+						}
 					}
 				}
 			}
