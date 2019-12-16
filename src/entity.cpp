@@ -17696,9 +17696,13 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				}
 				else if ( race == AUTOMATON )
 				{
-					shieldLimb->x -= 1.1 * cos(this->yaw + PI / 2) + 2.1 * cos(this->yaw);
-					shieldLimb->y -= 1.1 * sin(this->yaw + PI / 2) + 2.1 * sin(this->yaw);
+					shieldLimb->x -= 0.1 * cos(this->yaw + PI / 2) + 2.1 * cos(this->yaw);
+					shieldLimb->y -= 0.1 * sin(this->yaw + PI / 2) + 2.1 * sin(this->yaw);
 					shieldLimb->z += 0.1;
+					
+					// originally shieldLimb->x/y was -1.1 * cos or sin but it fell outside the player bounding box and was visible in hud
+					// so shieldLimb->x/y is -0.1 and -1 is added to focaly.
+					shieldLimb->focaly -= 1; 
 				}
 			}
 
