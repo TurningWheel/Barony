@@ -6652,11 +6652,11 @@ bool GenericGUIMenu::tinkeringGetRepairCost(Item* item, int* metal, int* magic)
 			if ( item->status != BROKEN )
 			{
 				tinkeringGetCraftingCost(item, &(*metal), &(*magic));
-				if ( metal > 0 )
+				if ( *metal > 0 )
 				{
 					*metal = std::max(1, (*metal) / 4);
 				}
-				if ( magic > 0 )
+				if ( *magic > 0 )
 				{
 					*magic = std::max(0, (*magic) / 4);
 				}
