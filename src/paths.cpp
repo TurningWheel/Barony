@@ -226,6 +226,8 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	// for boulders falling and checking if a player can reach the ladder.
 	bool playerCheckPathToExit = (my && my->behavior == &actPlayer
 		&& target && (target->behavior == &actLadder || target->behavior == &actPortal));
+	bool playerCheckAchievement = (my && my->behavior == &actPlayer
+		&& target && (target->behavior == &actBomb || target->behavior == &actPlayerLimb || target->behavior == &actItem || target->behavior == &actSwitch));
 
 	if ( !loading )
 	{
@@ -340,6 +342,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			)
 		{
 			//Fix to make ladders generate in hell.
+			continue;
+		}
+		if ( playerCheckAchievement &&
+			(entity->behavior == &actMonster || entity->behavior == &actPlayer) )
+		{
 			continue;
 		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
