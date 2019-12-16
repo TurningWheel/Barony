@@ -1674,7 +1674,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( spell->ID == SPELL_FIREBALL || spell->ID == SPELL_COLD || spell->ID == SPELL_LIGHTNING || spell->ID == SPELL_MAGICMISSILE )
 				{
-					missile_speed /= 2;
+					missile_speed *= 0.75;
 					entity->vel_x = cos(entity->yaw) * (missile_speed);
 					entity->vel_y = sin(entity->yaw) * (missile_speed);
 					entity->actmagicProjectileArc = 1;
