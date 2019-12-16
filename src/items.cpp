@@ -3729,7 +3729,7 @@ void Item::applyLockpickToWall(int player, int x, int y)
 					}
 
 					// degrade lockpick.
-					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && rand() % 4 == 0 )
+					if ( !(stats[player]->weapon->type == TOOL_SKELETONKEY) && (rand() % 10 == 0 || (failed && rand() % 4 == 0) )
 					{
 						if ( player == clientnum )
 						{
