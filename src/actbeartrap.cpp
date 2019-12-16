@@ -724,7 +724,7 @@ void actBomb(Entity* my)
 
 	// launch bomb
 	std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
-	Entity* triggered = false;
+	Entity* triggered = nullptr;
 	real_t entityDistance = 0.f;
 	bool bombExplodeAOETargets = false;
 
