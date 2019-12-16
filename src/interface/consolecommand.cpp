@@ -2447,6 +2447,23 @@ void consoleCommand(char* command_str)
 			dropItem(newItem(TOOL_SENTRYBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 			dropItem(newItem(TOOL_SPELLBOT, EXCELLENT, 0, 10, rand(), true, &stats[clientnum]->inventory), 0);
 		}
+		else if ( !strncmp(command_str, "/toggletinkeringlimits", 22) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			overrideTinkeringLimit = !overrideTinkeringLimit;
+			if ( overrideTinkeringLimit )
+			{
+				messagePlayer(clientnum, "Disabled tinkering bot limit");
+			}
+			else
+			{
+				messagePlayer(clientnum, "Re-enabled tinkering bot limit");
+			}
+		}
 		else if ( !strncmp(command_str, "/gimmegoblinbooks", 17) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -2467,7 +2484,7 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[277]);
 				return;
 			}
-
+#ifdef STEAMWORKS
 			steamUnsetAchievement("BARONY_ACH_TAKING_WITH");
 			steamUnsetAchievement("BARONY_ACH_TELEFRAG");
 			steamUnsetAchievement("BARONY_ACH_FASCIST");
@@ -2538,6 +2555,7 @@ void consoleCommand(char* command_str)
 				SteamUserStats()->SetStat(g_SteamStats[i].m_pchStatName, 0);
 			}
 			SteamUserStats()->StoreStats();
+#endif // STEAMWORKS
 		}
 		else if ( !strncmp(command_str, "/gimmebombs", 11) )
 		{

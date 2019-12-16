@@ -32,6 +32,7 @@ const real_t potionDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.5, 4.f }
 const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f };
 std::mt19937 enchantedFeatherScrollSeed(0);
 std::vector<int> enchantedFeatherScrollsShuffled;
+bool overrideTinkeringLimit = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -4743,6 +4744,10 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 	if ( !myStats )
 	{
 		return false;
+	}
+	if ( overrideTinkeringLimit )
+	{
+		return true;
 	}
 	int numBots = 0;
 	for ( node_t* node = myStats->FOLLOWERS.first; node != nullptr; node = node->next )
