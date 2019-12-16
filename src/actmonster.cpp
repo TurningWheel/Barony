@@ -703,7 +703,24 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 	if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
 	{
 		int allowedFollowers = 8;
-		if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
+		int numFollowers = 0;
+		for ( node_t* node = stats[monsterclicked]->FOLLOWERS.first; node; node = node->next )
+		{
+			Entity* follower = uidToEntity(*((Uint32*)node->element));
+			if ( follower )
+			{
+				Stat* followerStats = follower->getStats();
+				if ( followerStats )
+				{
+					if ( !(followerStats->type == SENTRYBOT || followerStats->type == GYROBOT
+						|| followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT) )
+					{
+						++numFollowers;
+					}
+				}
+			}
+		}
+		if ( allowedFollowers > numFollowers )
 		{
 			//Can control humans & goblins & goatmen & insectoids.
 			//TODO: Control humanoids in general? Or otherwise something from each tileset.
@@ -835,7 +852,24 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 			if ( myStats->leader_uid == 0 )
 			{
 				int allowedFollowers = std::min(8, std::max(4, 2 * (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 20)));
-				if ( allowedFollowers > list_Size(&stats[monsterclicked]->FOLLOWERS) )
+				int numFollowers = 0;
+				for ( node_t* node = stats[monsterclicked]->FOLLOWERS.first; node; node = node->next )
+				{
+					Entity* follower = uidToEntity(*((Uint32*)node->element));
+					if ( follower )
+					{
+						Stat* followerStats = follower->getStats();
+						if ( followerStats )
+						{
+							if ( !(followerStats->type == SENTRYBOT || followerStats->type == GYROBOT
+								|| followerStats->type == SPELLBOT || followerStats->type == DUMMYBOT) )
+							{
+								++numFollowers;
+							}
+						}
+					}
+				}
+				if ( allowedFollowers > numFollowers )
 				{
 					if ( race == AUTOMATON || race == GYROBOT )
 					{
@@ -938,7 +972,14 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 				}
 				else
 				{
-					messagePlayer(monsterclicked, language[3480]);
+					if ( numFollowers >= 8 )
+					{
+						messagePlayer(monsterclicked, language[3482]);
+					}
+					else
+					{
+						messagePlayer(monsterclicked, language[3480]);
+					}
 				}
 			}
 		}
