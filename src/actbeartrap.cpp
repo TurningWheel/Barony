@@ -1082,7 +1082,7 @@ void actDecoyBox(Entity* my)
 	if ( my->ticks % TICKS_PER_SECOND == 0 )
 	{
 		Entity* parent = uidToEntity(my->parent);
-		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 15);
+		std::vector<list_t*> entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, decoyBoxRange * 2 + 1);
 		std::vector<Entity*> listOfOtherDecoys;
 		// find other decoys (so monsters don't wiggle back and forth.)
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -1100,7 +1100,7 @@ void actDecoyBox(Entity* my)
 		}
 		entLists.clear();
 
-		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 7);
+		entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, decoyBoxRange);
 		bool message = false;
 		bool detected = false;
 		for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end(); ++it )
@@ -1129,7 +1129,7 @@ void actDecoyBox(Entity* my)
 								for ( std::vector<Entity*>::iterator decoyIt = listOfOtherDecoys.begin(); decoyIt != listOfOtherDecoys.end(); ++decoyIt )
 								{
 									Entity* decoy = *decoyIt;
-									if ( entityDist(decoy, entity) < (7 * 16) ) // less than x tiles from our monster
+									if ( entityDist(decoy, entity) < (decoyBoxRange * 16) ) // less than x tiles from our monster
 									{
 										if ( decoy->ticks < my->ticks )
 										{

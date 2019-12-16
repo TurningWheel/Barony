@@ -2464,6 +2464,21 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, "Re-enabled tinkering bot limit");
 			}
 		}
+		else if ( !strncmp(command_str, "/setdecoyrange ", 15) )
+		{
+			if ( !(svFlags & SV_FLAG_CHEATS) )
+			{
+				messagePlayer(clientnum, language[277]);
+				return;
+			}
+			if ( multiplayer == CLIENT )
+			{
+				messagePlayer(clientnum, language[284]);
+				return;
+			}
+			decoyBoxRange = atoi(&command_str[15]);
+			messagePlayer(clientnum, "Set decoy range to %d", decoyBoxRange);
+		}
 		else if ( !strncmp(command_str, "/gimmegoblinbooks", 17) )
 		{
 			if ( !(svFlags & SV_FLAG_CHEATS) )

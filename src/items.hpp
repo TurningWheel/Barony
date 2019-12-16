@@ -624,6 +624,7 @@ real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effec
 void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
 bool playerCanSpawnMoreTinkeringBots(Stat* myStats);
 extern bool overrideTinkeringLimit;
+extern int decoyBoxRange;
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

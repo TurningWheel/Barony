@@ -33,6 +33,7 @@ const real_t thrownDamageSkillMultipliers[6] = { 1.f, 1.1, 1.25, 1.5, 2.f, 3.f }
 std::mt19937 enchantedFeatherScrollSeed(0);
 std::vector<int> enchantedFeatherScrollsShuffled;
 bool overrideTinkeringLimit = false;
+int decoyBoxRange = 7;
 
 /*-------------------------------------------------------------------------------
 
