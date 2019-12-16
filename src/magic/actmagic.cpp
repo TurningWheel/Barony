@@ -1048,6 +1048,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								alertTarget = false;
 								alertAllies = false;
 							}
+							if ( my->actmagicCastByTinkerTrap == 1 )
+							{
+								if ( entityDist(hit.entity, parent) > TOUCHRANGE )
+								{
+									// don't alert if bomb thrower far away.
+									alertTarget = false;
+									alertAllies = false;
+								}
+							}
 
 							if ( alertTarget && hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 							{
