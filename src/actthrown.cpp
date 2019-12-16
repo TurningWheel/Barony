@@ -276,6 +276,23 @@ void actThrown(Entity* my)
 			if ( map.tiles[index] )
 			{
 				item = newItemFromEntity(my);
+				bool tinkeringItemCanBePlaced = true;
+				if ( item && item->isTinkeringItemWithThrownLimit() )
+				{
+					if ( !parent )
+					{
+						tinkeringItemCanBePlaced = true;
+					}
+					else if ( parent->behavior == &actMonster )
+					{
+						tinkeringItemCanBePlaced = true;
+					}
+					else if ( parent->behavior == &actPlayer )
+					{
+						tinkeringItemCanBePlaced = playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]]);
+					}
+				}
+				
 				if ( itemCategory(item) == POTION )
 				{
 					switch ( item->type )
@@ -333,8 +350,7 @@ void actThrown(Entity* my)
 				}
 				else if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
 					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
-					&& (!parent || (parent && parent->behavior == &actPlayer && playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]])) )
-					)
+					&& tinkeringItemCanBePlaced )
 				{
 					// don't deploy on swimming/lava tiles.
 					if ( parent )
@@ -358,8 +374,7 @@ void actThrown(Entity* my)
 				}
 				else
 				{
-					if ( item && itemIsThrowableTinkerTool(item) && !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
-						&& (parent && parent->behavior == &actPlayer && !playerCanSpawnMoreTinkeringBots(stats[parent->skill[2]])) )
+					if ( item && item->isTinkeringItemWithThrownLimit() && tinkeringItemCanBePlaced )
 					{
 						if ( stats[parent->skill[2]]->PROFICIENCIES[PRO_LOCKPICKING] >= SKILL_LEVEL_LEGENDARY )
 						{

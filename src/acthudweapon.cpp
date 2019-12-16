@@ -2474,8 +2474,7 @@ void actHudWeapon(Entity* my)
 						camera_shakex += .07;
 					}
 					Entity* player = players[clientnum]->entity;
-					if ( stats[clientnum]->weapon && itemIsThrowableTinkerTool(stats[clientnum]->weapon) 
-						&& !(stats[clientnum]->weapon->type >= TOOL_BOMB && stats[clientnum]->weapon->type <= TOOL_TELEPORT_BOMB)
+					if ( stats[clientnum]->weapon && (stats[clientnum]->weapon->isTinkeringItemWithThrownLimit())
 						&& !playerCanSpawnMoreTinkeringBots(stats[clientnum]) )
 					{
 						throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects

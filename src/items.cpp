@@ -4729,6 +4729,15 @@ bool Item::tinkeringBotIsMaxHealth() const
 	return false;
 }
 
+bool Item::isTinkeringItemWithThrownLimit() const
+{
+	if ( type == TOOL_SENTRYBOT || type == TOOL_SPELLBOT || type == TOOL_DUMMYBOT || type == TOOL_GYROBOT )
+	{
+		return true;
+	}
+	return false;
+}
+
 bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 {
 	if ( !myStats )
@@ -4761,16 +4770,16 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 			maxFollowers = 2;
 			break;
 		case 2:
-			maxFollowers = 3;
-			break;
-		case 3:
 			maxFollowers = 4;
 			break;
-		case 4:
+		case 3:
 			maxFollowers = 6;
 			break;
-		case 5:
+		case 4:
 			maxFollowers = 8;
+			break;
+		case 5:
+			maxFollowers = 10;
 			break;
 		default:
 			break;

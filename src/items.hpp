@@ -455,6 +455,7 @@ public:
 	void applyTinkeringCreation(Entity* parent, Entity* thrown);
 	bool unableToEquipDueToSwapWeaponTimer();
 	bool tinkeringBotIsMaxHealth() const;
+	bool isTinkeringItemWithThrownLimit() const;
 };
 extern Uint32 itemuids;
 
