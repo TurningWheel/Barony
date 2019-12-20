@@ -4322,9 +4322,27 @@ void serverHandlePacket()
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if (rand() % 2 && item->type != GEM_GLASS )
+		if ( rand() % 2 )
 		{
-			players[client]->entity->increaseSkill(PRO_TRADING);
+			if ( item->buyValue(client) <= 1 )
+			{
+				// buying cheap items does not increase trading past basic
+				if ( stats[client]->PROFICIENCIES[PRO_TRADING] < SKILL_LEVEL_SKILLED )
+				{
+					players[client]->entity->increaseSkill(PRO_TRADING);
+				}
+			}
+			else
+			{
+				players[client]->entity->increaseSkill(PRO_TRADING);
+			}
+		}
+		else if ( item->buyValue(client) >= 150 )
+		{
+			if ( item->buyValue(client) >= 300 || rand() % 2 )
+			{
+				players[client]->entity->increaseSkill(PRO_TRADING);
+			}
 		}
 		free(item);
 		return;
