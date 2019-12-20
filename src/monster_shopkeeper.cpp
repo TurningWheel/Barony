@@ -20,6 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "magic/magic.hpp"
+#include "shops.hpp"
 
 void initShopkeeper(Entity* my, Stat* myStats)
 {
@@ -136,6 +137,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] == 14 )
 			{
 				myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] = 1;
+				my->monsterStoreType = 10;
 			}
 			else if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] > 0 )
 			{
@@ -685,6 +687,23 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						tmpItem = newItem(FOOD_BLOOD, EXCELLENT, 0, 1 + rand() % 4, rand(), false, &myStats->inventory);
 					}
 					break;
+				case 10:
+					// mysterious merchant.
+					// general store
+					numitems = 15;
+					while ( numitems > 0 )
+					{
+						for each (auto orbCategories in shopkeeperMysteriousItems)
+						{
+							for each (auto itemInCategory in orbCategories.second)
+							{
+								newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+								--numitems;
+							}
+						}
+						break;
+					}
+					break;
 				default:
 					break;
 			}
@@ -925,8 +944,12 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
-	if ( multiplayer != CLIENT )
+	if ( multiplayer != CLIENT && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
 	{
+		if ( my->ticks == 5 * TICKS_PER_SECOND )
+		{
+			serverUpdateEntitySkill(my, 18); // update the store type for clients.
+		}
 		if ( myStats->HP < ((3 * myStats->MAXHP) / 4) )
 		{
 			playSoundEntity(my, 77, 64);
@@ -1556,4 +1579,41 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+void shopkeeperMysteriousGenerateInventory(ItemType orb)
+{
+	/*std::vector<int> items;
+	if ( orb == ARTIFACT_ORB_GREEN )
+	{
+		items.push_back(QUIVER_CRYSTAL);
+		items.push_back(QUIVER_LIGHTWEIGHT);
+		items.push_back(QUIVER_HUNTING);
+		items.push_back(HEAVY_CROSSBOW);
+		items.push_back(BOOMERANG);
+		items.push_back(ARTIFACT_BOW);
+	}
+	else if ( orb == ARTIFACT_ORB_BLUE )
+	{
+		items.push_back(ARTIFACT_MACE);
+		items.push_back(ENCHANTED_FEATHER);
+	}
+	else if ( orb == ARTIFACT_ORB_RED )
+	{
+		items.push_back(ARTIFACT_AXE);
+		items.push_back(ARTIFACT_SWORD);
+		items.push_back(ARTIFACT_SPEAR);
+	}
+
+	if ( !items.empty() )
+	{
+		if ( shopkeeperMysteriousItems.find(orb) == shopkeeperMysteriousItems.end() )
+		{
+			shopkeeperMysteriousItems.insert(std::make_pair(orb, items));
+		}
+		else
+		{
+			shopkeeperMysteriousItems[orb] = items;
+		}
+	}*/
 }

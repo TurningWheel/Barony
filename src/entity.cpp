@@ -14346,6 +14346,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 								break;
 						}
 					}
+					playSoundEntity(this, 35 + rand() % 3, 64);
 					addItemToMonsterInventory(item);
 					item = nullptr;
 					list_RemoveNode(entity->mynode);

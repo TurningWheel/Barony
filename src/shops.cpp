@@ -33,6 +33,12 @@ char* shopkeepername = NULL;
 char shopkeepername_client[64];
 
 int selectedShopSlot = -1;
+std::unordered_map<int, std::unordered_set<int>> shopkeeperMysteriousItems(
+{
+	{ ARTIFACT_ORB_GREEN, { QUIVER_CRYSTAL, QUIVER_LIGHTWEIGHT, QUIVER_HUNTING, HEAVY_CROSSBOW, BOOMERANG, ARTIFACT_BOW } },
+	{ ARTIFACT_ORB_BLUE, { ARTIFACT_MACE, ENCHANTED_FEATHER } },
+	{ ARTIFACT_ORB_RED, { ARTIFACT_AXE, ARTIFACT_SWORD, ARTIFACT_SPEAR } }
+});
 
 /*-------------------------------------------------------------------------------
 
@@ -247,6 +253,10 @@ void buyItemFromShop(Item* item)
 			net_packet->len = 30;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
+		if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper)) )
+		{
+			buyItemFromMysteriousShopkeepConsumeOrb(*(uidToEntity(shopkeeper)), *item);
+		}
 		if ( itemTypeIsQuiver(item->type) )
 		{
 			item->count = 1; // so we consume it all up.
@@ -359,6 +369,9 @@ void sellItemToShop(Item* item)
 					deal = false;
 				}
 				break;
+			case 10:
+				deal = false;
+				break;
 			default:
 				break;
 		}
@@ -456,4 +469,55 @@ void sellItemToShop(Item* item)
 	}
 	consumeItem(item, clientnum);
 	sellitem = NULL;
+}
+
+bool shopIsMysteriousShopkeeper(Entity* entity)
+{
+	if ( !entity )
+	{
+		return false;
+	}
+	if ( entity->monsterStoreType == 10 )
+	{
+		return true;
+	}
+	return false;
+}
+
+void buyItemFromMysteriousShopkeepConsumeOrb(Entity& entity, Item& boughtItem)
+{
+	list_t* inventory = nullptr;
+	if ( multiplayer == CLIENT )
+	{
+		inventory = shopInv;
+	}
+	else
+	{
+		if ( entity.getStats() )
+		{
+			inventory = &entity.getStats()->inventory;
+		}
+	}
+	if ( inventory )
+	{
+		for each (auto orbCategories in shopkeeperMysteriousItems)
+		{
+			if ( orbCategories.second.find(boughtItem.type) != orbCategories.second.end() )
+			{
+				// item is part of an orb set. need to consume the orb.
+				node_t* nextnode = nullptr;
+				for ( node_t* node = inventory->first; node; node = nextnode )
+				{
+					nextnode = node->next;
+					Item* orb = (Item*)node->element;
+					if ( orb && orb->type == orbCategories.first )
+					{
+						consumeItem(orb, -1);
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
 }

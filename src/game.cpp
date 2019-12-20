@@ -3651,18 +3651,21 @@ int main(int argc, char** argv)
 							FollowerMenu.closeFollowerMenuGUI();
 						}
 
-						//What even is this code? When should it be run?
+						//What even is this code? When should it be run? (it's cancelling a trade by closing the inventory.)
 						if ( shopkeeper != 0 )
 						{
 							if ( multiplayer != CLIENT )
 							{
 								Entity* entity = uidToEntity(shopkeeper);
-								entity->skill[0] = 0;
-								if ( uidToEntity(entity->skill[1]) )
+								if ( entity )
 								{
-									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
+									entity->skill[0] = 0;
+									if ( uidToEntity(entity->skill[1]) )
+									{
+										monsterMoveAside(entity, uidToEntity(entity->skill[1]));
+									}
+									entity->skill[1] = 0;
 								}
-								entity->skill[1] = 0;
 							}
 							else
 							{

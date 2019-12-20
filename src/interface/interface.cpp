@@ -113,6 +113,7 @@ SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoption
 SDL_Surface* itembroken_bmp = nullptr;
 //SDL_Surface *category_bmp[NUMCATEGORIES];
 SDL_Surface* shopkeeper_bmp = NULL;
+SDL_Surface* shopkeeper2_bmp = NULL;
 SDL_Surface* damage_bmp = NULL;
 SDL_Surface *str_bmp64u = NULL;
 SDL_Surface *dex_bmp64u = NULL;
@@ -217,6 +218,7 @@ std::vector<std::pair<SDL_Surface**, std::string>> systemResourceImages =
 	std::make_pair(&attributesleftunclicked_bmp, "images/system/AttributesLeft.png"),
 	std::make_pair(&attributesrightunclicked_bmp, "images/system/AttributesRight.png"),
 	std::make_pair(&shopkeeper_bmp, "images/system/shopkeeper.png"),
+	std::make_pair(&shopkeeper2_bmp, "images/system/shopkeeper2.png"),
 	std::make_pair(&damage_bmp, "images/system/damage.png"),
 
 	//Magic GUI images.
@@ -301,6 +303,7 @@ bool loadInterfaceResources()
 	attributesleftunclicked_bmp = loadImage("images/system/AttributesLeft.png");
 	attributesrightunclicked_bmp = loadImage("images/system/AttributesRight.png");
 	shopkeeper_bmp = loadImage("images/system/shopkeeper.png");
+	shopkeeper2_bmp = loadImage("images/system/shopkeeper2.png");
 	damage_bmp = loadImage("images/system/damage.png");
 
 	//Magic GUI images.
@@ -565,6 +568,10 @@ void freeInterfaceResources()
 	if (shopkeeper_bmp != NULL)
 	{
 		SDL_FreeSurface(shopkeeper_bmp);
+	}
+	if ( shopkeeper2_bmp != NULL )
+	{
+		SDL_FreeSurface(shopkeeper2_bmp);
 	}
 	if (damage_bmp != NULL)
 	{

@@ -84,6 +84,7 @@ extern SDL_Surface* inventory_bmp, *inventoryoption_bmp, *inventoryoptionChest_b
 extern SDL_Surface* itembroken_bmp;
 //extern SDL_Surface *category_bmp[NUMCATEGORIES];
 extern SDL_Surface* shopkeeper_bmp;
+extern SDL_Surface* shopkeeper2_bmp;
 extern SDL_Surface* damage_bmp;
 extern int textscroll;
 extern int attributespage;

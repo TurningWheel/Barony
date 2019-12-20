@@ -31,43 +31,91 @@ bool hideItemFromShopView(Item& item)
 
 void rebuildShopInventory()
 {
+	bool mysteriousShopkeeper = (shopkeepertype == 10);
+	bool mysteriousShopkeeperGreenOrb = false;
+	bool mysteriousShopkeeperBlueOrb = false;
+	bool mysteriousShopkeeperRedOrb = false;
+	if ( mysteriousShopkeeper )
+	{
+		for ( node_t* node = shopInv->first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( item->type == ARTIFACT_ORB_BLUE )
+				{
+					mysteriousShopkeeperBlueOrb = true;
+				}
+				else if ( item->type == ARTIFACT_ORB_RED )
+				{
+					mysteriousShopkeeperRedOrb = true;
+				}
+				else if ( item->type == ARTIFACT_ORB_GREEN )
+				{
+					mysteriousShopkeeperGreenOrb = true;
+				}
+			}
+		}
+	}
+
 	//Count number of items.
 	int c = 0;
 	node_t* node = nullptr;
 	for ( node = shopInv->first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*) node->element;
-		if ( item && hideItemFromShopView(*item) )
+		if ( item )
 		{
-			continue;
-		}
-		if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON && itemCategory(item) != THROWN )
-		{
-			continue;
-		}
-		else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR )
-		{
-			continue;
-		}
-		else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING )
-		{
-			continue;
-		}
-		else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL )
-		{
-			continue;
-		}
-		else if ( shopinventorycategory == 4 && itemCategory(item) != GEM )
-		{
-			continue;
-		}
-		else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION )
-		{
-			continue;
-		}
-		else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK )
-		{
-			continue;
+			if ( mysteriousShopkeeper )
+			{
+				if ( !mysteriousShopkeeperBlueOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].end() )
+				{
+					continue;
+				}
+				if ( !mysteriousShopkeeperGreenOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].end() )
+				{
+					continue;
+				}
+				if ( !mysteriousShopkeeperRedOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_RED].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_RED].end() )
+				{
+					continue;
+				}
+			}
+			if ( hideItemFromShopView(*item) )
+			{
+				continue;
+			}
+			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON && itemCategory(item) != THROWN )
+			{
+				continue;
+			}
+			else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR )
+			{
+				continue;
+			}
+			else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING )
+			{
+				continue;
+			}
+			else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL )
+			{
+				continue;
+			}
+			else if ( shopinventorycategory == 4 && itemCategory(item) != GEM )
+			{
+				continue;
+			}
+			else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION )
+			{
+				continue;
+			}
+			else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK )
+			{
+				continue;
+			}
 		}
 		c++;
 	}
@@ -78,6 +126,7 @@ void rebuildShopInventory()
 	{
 		shopinvitems[c] = NULL;
 	}
+
 	//Display the items.
 	c = 0;
 	for ( node = shopInv->first; node != NULL; node = node->next )
@@ -85,6 +134,24 @@ void rebuildShopInventory()
 		Item* item = (Item*) node->element;
 		if (item)
 		{
+			if ( mysteriousShopkeeper )
+			{
+				if ( !mysteriousShopkeeperBlueOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].end() )
+				{
+					continue;
+				}
+				if ( !mysteriousShopkeeperGreenOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].end() )
+				{
+					continue;
+				}
+				if ( !mysteriousShopkeeperRedOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_RED].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_RED].end() )
+				{
+					continue;
+				}
+			}
 			if ( hideItemFromShopView(*item) )
 			{
 				continue;
@@ -366,12 +433,57 @@ void updateShopWindow()
 	rebuildShopInventory();
 
 	int y3 = y + 22;
+	bool mysteriousShopkeeper = (shopkeepertype == 10);
+	bool mysteriousShopkeeperGreenOrb = false;
+	bool mysteriousShopkeeperBlueOrb = false;
+	bool mysteriousShopkeeperRedOrb = false;
+	if ( mysteriousShopkeeper )
+	{
+		for ( node = shopInv->first; node != NULL; node = node->next )
+		{
+			Item* item = (Item*)node->element;
+			if ( item )
+			{
+				if ( item->type == ARTIFACT_ORB_BLUE )
+				{
+					mysteriousShopkeeperBlueOrb = true;
+				}
+				else if ( item->type == ARTIFACT_ORB_RED )
+				{
+					mysteriousShopkeeperRedOrb = true;
+				}
+				else if ( item->type == ARTIFACT_ORB_GREEN )
+				{
+					mysteriousShopkeeperGreenOrb = true;
+				}
+			}
+		}
+	}
+
 	c = 0;
 	for ( node = shopInv->first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*) node->element;
 		if (item)
 		{
+			if ( mysteriousShopkeeper )
+			{
+				if ( !mysteriousShopkeeperBlueOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_BLUE].end() )
+				{
+					continue;
+				}
+				if ( !mysteriousShopkeeperGreenOrb 
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_GREEN].end() )
+				{
+					continue;
+				}
+				if ( !mysteriousShopkeeperRedOrb
+					&& shopkeeperMysteriousItems[ARTIFACT_ORB_RED].find(item->type) != shopkeeperMysteriousItems[ARTIFACT_ORB_RED].end() )
+				{
+					continue;
+				}
+			}
 			if ( hideItemFromShopView(*item) )
 			{
 				continue;
@@ -422,6 +534,28 @@ void updateShopWindow()
 			}
 			ttfPrintTextColor(ttf8, x + 12 + 36, y3, color, true, tempstr);
 			ttfPrintTextFormatted(ttf8, x + 12 + 348, y3, "%7dG", item->buyValue(clientnum));
+
+			if ( mysteriousShopkeeper )
+			{
+				pos.x = x + 12 + (348);
+				pos.y = y + 17 + 18 * (c - shopitemscroll - 1);
+				pos.w = 16;
+				pos.h = 16;
+
+				for each (auto orbCategories in shopkeeperMysteriousItems)
+				{
+					if ( orbCategories.second.find(item->type) != orbCategories.second.end() )
+					{
+						node_t* tmpNode = items[orbCategories.first].surfaces.first;
+						if ( tmpNode )
+						{
+							drawImageScaled(*(SDL_Surface**)(tmpNode->element), NULL, &pos);
+						}
+						break;
+					}
+				}
+			}
+
 			pos.x = x + 12 + 16;
 			pos.y = y + 17 + 18 * (c - shopitemscroll - 1);
 			pos.w = 16;
@@ -439,13 +573,25 @@ void updateShopWindow()
 	ttfPrintTextFormatted( ttf16, x1 + 16, y2 - 32, language[357], stats[clientnum]->GOLD );
 
 	// chitchat
-	if ( (ticks - shoptimer) % 600 == 0 )
+	if ( (ticks - shoptimer) % 600 == 0 && !mysteriousShopkeeper )
 	{
 		shopspeech = language[216 + rand() % NUMCHITCHAT];
 		shoptimer--;
 	}
 
 	// draw speech
+	if ( !strcmp(shopspeech, language[194]) || !strcmp(shopspeech, language[195]) || !strcmp(shopspeech, language[196]) )
+	{
+		if ( mysteriousShopkeeper )
+		{
+			shopspeech = language[3893 + rand() % 3];
+		}
+		else
+		{
+			ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 64, language[358], shopkeepername, language[184 + shopkeepertype] );
+		}
+	}
+
 	if (sellitem)
 	{
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 32, shopspeech, sellitem->sellValue(clientnum) );
@@ -454,10 +600,7 @@ void updateShopWindow()
 	{
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 32, shopspeech, 0 );
 	}
-	if ( !strcmp(shopspeech, language[194]) || !strcmp(shopspeech, language[195]) || !strcmp(shopspeech, language[196]) )
-	{
-		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 64, language[358], shopkeepername, language[184 + shopkeepertype] );
-	}
+
 
 	// draw black box for shopkeeper
 	pos.x = x1 + 16;
@@ -476,7 +619,14 @@ void updateShopWindow()
 			pos.y = y1 + 16;
 			pos.w = 160;
 			pos.h = 160;
-			drawImage(shopkeeper_bmp, NULL, &pos);
+			if ( mysteriousShopkeeper )
+			{
+				drawImage(shopkeeper2_bmp, NULL, &pos);
+			}
+			else
+			{
+				drawImage(shopkeeper_bmp, NULL, &pos);
+			}
 		}
 		else
 		{

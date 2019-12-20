@@ -3545,6 +3545,11 @@ int Item::buyValue(int player)
 	// result
 	value = std::max(1, value);
 
+	if ( shopIsMysteriousShopkeeper(uidToEntity(shopkeeper)) )
+	{
+		value *= 2;
+	}
+
 	if ( itemTypeIsQuiver(type) )
 	{
 		return std::max(value, items[type].value) * count;

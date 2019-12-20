@@ -19,6 +19,7 @@
 #include "items.hpp"
 #include "magic/magic.hpp"
 #include "scores.hpp"
+#include "shops.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -503,6 +504,49 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			Item* item = stats[player]->weapon;
 			consumeItem(item, player);
 			stats[player]->weapon = nullptr;
+		}
+	}
+	else if ( entity.behavior == &actMonster || entity.behavior == &actPlayer )
+	{
+		if ( entity.getMonsterTypeFromSprite() == SHOPKEEPER && shopIsMysteriousShopkeeper(&entity) && this->type != ARTIFACT_ORB_PURPLE )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				Item* item = stats[player]->weapon;
+				stats[player]->weapon = nullptr;
+				consumeItem(item, player);
+				return;
+			}
+
+			switch ( this->type )
+			{
+				case ARTIFACT_ORB_BLUE:
+					messagePlayer(player, language[3889], entity.getStats()->name);
+					break;
+				case ARTIFACT_ORB_RED:
+					messagePlayer(player, language[3890], entity.getStats()->name);
+					break;
+				case ARTIFACT_ORB_GREEN:
+					messagePlayer(player, language[3888], entity.getStats()->name);
+					break;
+				default:
+					break;
+			}
+
+			playSoundEntity(&entity, 35 + rand() % 3, 64);
+
+			Item* item = stats[player]->weapon;
+			entity.addItemToMonsterInventory(newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr));
+			consumeItem(item, player);
+			stats[player]->weapon = nullptr;
+		}
+		else
+		{
+			if ( multiplayer != CLIENT )
+			{
+				messagePlayerMonsterEvent(player, uint32ColorWhite(*mainsurface), *entity.getStats(), language[3892], language[3891], MSG_COMBAT);
+			}
+			return;
 		}
 	}
 	else
