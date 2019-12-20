@@ -3021,7 +3021,33 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( players[monsterclicked] && players[monsterclicked]->entity )
+					if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 ) // mysterious merchant
+					{
+						bool hasOrb = false;
+						for ( node_t* node = myStats->inventory.first; node; node = node->next )
+						{
+							Item* item = (Item*)node->element;
+							if ( item && (item->type == ARTIFACT_ORB_BLUE
+									|| item->type == ARTIFACT_ORB_GREEN
+									|| item->type == ARTIFACT_ORB_RED)
+								)
+							{
+								hasOrb = true;
+								break;
+							}
+						}
+						if ( !hasOrb )
+						{
+							handleMonsterChatter(monsterclicked, ringconflict, namesays, my, myStats);
+							my->lookAtEntity(*players[monsterclicked]->entity);
+						}
+						else
+						{
+							// shopkeepers start trading
+							startTradingServer(my, monsterclicked);
+						}
+					}
+					else if ( players[monsterclicked] && players[monsterclicked]->entity )
 					{
 						if ( !my->checkEnemy(players[monsterclicked]->entity) )
 						{

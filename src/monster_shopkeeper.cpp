@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initShopkeeper(Entity* my, Stat* myStats)
 {
@@ -132,8 +133,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			}
 
 			// give shopkeeper items
-
-			if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] > 0 )
+			if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] == 14 )
+			{
+				myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] = 1;
+			}
+			else if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] > 0 )
 			{
 				my->monsterStoreType = myStats->MISC_FLAGS[STAT_FLAG_NPC] - 1;
 				if ( my->monsterStoreType > 9 )
@@ -147,11 +151,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				my->monsterStoreType = rand() % 9;
-				if ( my->monsterStoreType == 8 )
-				{
-					my->monsterStoreType++;
-				}
+				my->monsterStoreType = rand() % 10;
 			}
 			int numitems = 10 + rand() % 5;
 
@@ -205,7 +205,6 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			bool doneBackpack = false;
 			bool doneTinkeringKit = false;
 			bool doneFeather = false;
-			my->monsterStoreType = 8;
 			switch ( my->monsterStoreType )
 			{
 				case 0:
@@ -925,6 +924,19 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* weaponarm = nullptr;
 	int bodypart;
 	bool wearingring = false;
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->HP < ((3 * myStats->MAXHP) / 4) )
+		{
+			playSoundEntity(my, 77, 64);
+			createParticleErupt(my, 593);
+			serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 593);
+			my->removeMonsterDeathNodes();
+			list_RemoveNode(my->mynode);
+			return;
+		}
+	}
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )

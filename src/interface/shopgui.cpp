@@ -19,6 +19,16 @@
 #include "interface.hpp"
 #include "../colors.hpp"	
 
+
+bool hideItemFromShopView(Item& item)
+{
+	if ( item.type == ARTIFACT_ORB_GREEN || item.type == ARTIFACT_ORB_RED || item.type == ARTIFACT_ORB_BLUE )
+	{
+		return true;
+	}
+	return false;
+}
+
 void rebuildShopInventory()
 {
 	//Count number of items.
@@ -27,6 +37,10 @@ void rebuildShopInventory()
 	for ( node = shopInv->first; node != NULL; node = node->next )
 	{
 		Item* item = (Item*) node->element;
+		if ( item && hideItemFromShopView(*item) )
+		{
+			continue;
+		}
 		if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON && itemCategory(item) != THROWN )
 		{
 			continue;
@@ -71,6 +85,10 @@ void rebuildShopInventory()
 		Item* item = (Item*) node->element;
 		if (item)
 		{
+			if ( hideItemFromShopView(*item) )
+			{
+				continue;
+			}
 			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON && itemCategory(item) != THROWN )
 			{
 				continue;
@@ -354,6 +372,10 @@ void updateShopWindow()
 		Item* item = (Item*) node->element;
 		if (item)
 		{
+			if ( hideItemFromShopView(*item) )
+			{
+				continue;
+			}
 			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON && itemCategory(item) != THROWN )
 			{
 				continue;

@@ -162,6 +162,7 @@ static const int STAT_FLAG_ALLY_SUMMON_PERCHR = 8;
 static const int STAT_FLAG_ALLY_SUMMON2_LVLHP = 9;
 static const int STAT_FLAG_ALLY_SUMMON2_STRDEXCONINT = 10;
 static const int STAT_FLAG_ALLY_SUMMON2_PERCHR = 11;
+static const int STAT_FLAG_MYSTERIOUS_SHOPKEEP = 16;
 
 typedef enum
 {

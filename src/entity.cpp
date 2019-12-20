@@ -10495,6 +10495,12 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( (myStats->type == SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0)
+		|| (yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0) )
+	{
+		return false;
+	}
+
 	if ( myStats->type == HUMAN && (yourStats->type == AUTOMATON && !strncmp(yourStats->name, "corrupted automaton", 19)) )
 	{
 		return true;
@@ -10842,6 +10848,12 @@ bool Entity::checkFriend(Entity* your)
 	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) )
 	{
 		return true;
+	}
+
+	if ( (myStats->type == SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0)
+		|| (yourStats->type == SHOPKEEPER && yourStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0) )
+	{
+		return false;
 	}
 
 	if ( myStats->type == GYROBOT )
@@ -14105,6 +14117,12 @@ void Entity::checkGroundForItems()
 			case AUTOMATON:
 				monsterAddNearbyItemToInventory(myStats, 16, 5);
 				break;
+			case SHOPKEEPER:
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+				{
+					monsterAddNearbyItemToInventory(myStats, 16, 99);
+				}
+				break;
 			default:
 				return;
 		}
@@ -14307,7 +14325,32 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 					continue;
 				}
 
-				if ( myStats->type == SLIME )
+				if ( myStats->type == SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+				{
+					// pickup the item always.
+					Entity* owner = uidToEntity(item->ownerUid);
+					if ( owner && owner->behavior == &actPlayer )
+					{
+						switch ( item->type )
+						{
+							case ARTIFACT_ORB_BLUE:
+								messagePlayer(owner->skill[2], language[3889], myStats->name);
+								break;
+							case ARTIFACT_ORB_RED:
+								messagePlayer(owner->skill[2], language[3890], myStats->name);
+								break;
+							case ARTIFACT_ORB_GREEN:
+								messagePlayer(owner->skill[2], language[3888], myStats->name);
+								break;
+							default:
+								break;
+						}
+					}
+					addItemToMonsterInventory(item);
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
+				else if ( myStats->type == SLIME )
 				{
 					if ( item->identified )
 					{
@@ -14605,6 +14648,18 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			break;
 		case SLIME:
 			return true; // noms on all items.
+			break;
+		case SHOPKEEPER:
+			if ( myStats->MISC_FLAGS[STAT_FLAG_MYSTERIOUS_SHOPKEEP] > 0 )
+			{
+				if ( item.type == ARTIFACT_ORB_BLUE
+					|| item.type == ARTIFACT_ORB_GREEN
+					|| item.type == ARTIFACT_ORB_RED )
+				{
+					return true;
+				}
+			}
+			return false;
 			break;
 		default:
 			return false;
@@ -17058,7 +17113,8 @@ bool monsterNameIsGeneric(Stat& monsterStats)
 		|| strstr(monsterStats.name, "knight")
 		|| strstr(monsterStats.name, "sentinel")
 		|| strstr(monsterStats.name, "mage")
-		|| strstr(monsterStats.name, "inner") )
+		|| strstr(monsterStats.name, "inner")
+		|| strstr(monsterStats.name, "Mysterious") )
 	{
 		// If true, pretend the monster doesn't have a name and use the generic message "You hit the lesser skeleton!"
 		return true;
