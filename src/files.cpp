@@ -1751,7 +1751,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 {
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	char modelName[128];
-	int startnum = 1;
+	int startnum = 0;
 	int endnum = nummodels;
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
 	FILE *fp = openDataFile(modelsDirectory.c_str(), "r");
@@ -1805,7 +1805,7 @@ bool physfsModelIndexUpdate(int &start, int &end, bool freePreviousModels)
 
 			// this index is not found in the normal models folder.
 			// store the lowest found model number inside startnum.
-			if ( startnum == 1 || c < startnum )
+			if ( startnum == 0 || c < startnum )
 			{
 				startnum = c;
 			}
