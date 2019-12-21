@@ -59,7 +59,7 @@ void initShadow(Entity* my, Stat* myStats)
 			// boss variants
 			if ( my->monsterStoreType == 1 && !my->flags[USERFLAG2] )
 			{
-				strcpy(myStats->name, "Artemicia");
+				strcpy(myStats->name, "Artemisia");
 				myStats->sex = FEMALE;
 				my->monsterShadowDontChangeName = 1;
 				myStats->weapon = newItem(ARTIFACT_BOW, WORN, 0, 1, rand(), false, nullptr);
