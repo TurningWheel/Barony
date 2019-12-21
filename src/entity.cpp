@@ -6252,7 +6252,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 				entity->flags[PASSABLE] = true;
 
 				// set properties of the arrow.
-				entity->setRangedProjectileAttack(*this, *myStats);
+				if ( pose == MONSTER_POSE_RANGED_SHOOT2 && myStats->weapon->type == ARTIFACT_BOW )
+				{
+					entity->setRangedProjectileAttack(*this, *myStats, QUIVER_SILVER + rand() % 7);
+				}
+				else
+				{
+					entity->setRangedProjectileAttack(*this, *myStats);
+				}
 
 				if ( entity->arrowQuiverType != 0 && myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
 				{
@@ -15930,7 +15937,7 @@ int Entity::getBaseManaRegen(Stat& myStats)
 	return (MAGIC_REGEN_TIME - static_cast<int>(std::min(multipliedTotal, 200))); // return 300-100 ticks, 6-2 seconds.
 }
 
-void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
+void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType)
 {
 	this->arrowSpeed = 7;
 	this->arrowShotByWeapon = 0;
@@ -15993,10 +16000,24 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 
 	int attack = 0;
 
-	if ( myStats.shield && rangedWeaponUseQuiverOnAttack(&myStats) )
+	if ( (myStats.shield && rangedWeaponUseQuiverOnAttack(&myStats)) || optionalOverrideForArrowType != WOODEN_SHIELD )
 	{
-		this->arrowQuiverType = myStats.shield->type;
-		attack += myStats.shield->weaponGetAttack(&myStats);
+		if ( optionalOverrideForArrowType != WOODEN_SHIELD )
+		{
+			this->arrowQuiverType = optionalOverrideForArrowType;
+			if ( myStats.weapon )
+			{
+				ItemType oldType = myStats.weapon->type;
+				myStats.weapon->type = static_cast<ItemType>(optionalOverrideForArrowType);
+				attack += myStats.weapon->weaponGetAttack(&myStats);
+				myStats.weapon->type = oldType;
+			}
+		}
+		else
+		{
+			this->arrowQuiverType = myStats.shield->type;
+			attack += myStats.shield->weaponGetAttack(&myStats);
+		}
 		switch ( arrowQuiverType )
 		{
 			case QUIVER_SILVER:

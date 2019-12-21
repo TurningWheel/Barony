@@ -1024,7 +1024,7 @@ void actHudWeapon(Entity* my)
 										bowFire = false;
 
 										bool artifactBowSaveAmmo = false;
-										if ( stats[clientnum]->weapon->type == ARTIFACT_BOW && rangedWeaponUseQuiverOnAttack(stats[clientnum]) )
+										if ( stats[clientnum]->weapon->type == ARTIFACT_BOW /*&& rangedWeaponUseQuiverOnAttack(stats[clientnum])*/ )
 										{
 											real_t amount = 0.f;
 											real_t percent = getArtifactWeaponEffectChance(ARTIFACT_BOW, *(stats[clientnum]), &amount);
