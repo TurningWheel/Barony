@@ -259,6 +259,14 @@ void actPortal(Entity* my)
 					{
 						skipLevelsOnLoad = -1; // don't skip a regular level anymore. still skip if in underworld.
 					}
+					else
+					{
+						// underworld - don't skip on the early sections.
+						if ( currentlevel == 6 || currentlevel == 7 )
+						{
+							skipLevelsOnLoad = -1;
+						}
+					}
 				}
 				if ( !my->portalNotSecret )
 				{
