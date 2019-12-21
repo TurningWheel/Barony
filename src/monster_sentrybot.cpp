@@ -994,7 +994,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	int detectDuration = 1.5 * TICKS_PER_SECOND;
+	int detectDuration = 5 * TICKS_PER_SECOND;
 	if ( my->ticks % (detectDuration) == 0 && my->monsterAllyIndex == clientnum )
 	{
 		Entity* playerLeader = my->monsterAllyGetPlayerLeader();
@@ -1012,7 +1012,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( ent->behavior == &actMonster && ent->monsterAllyIndex < 0 )
 					{
-						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
 							if ( ent->entityShowOnMap < detectDuration )
 							{
@@ -1029,7 +1029,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 						|| ent->behavior == &actBoulderTrapNorth || ent->behavior == &actBoulderTrapSouth
 						|| ent->behavior == &actSummonTrap || ent->behavior == &actSpearTrap )
 					{
-						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
 							if ( ent->entityShowOnMap < detectDuration )
 							{
@@ -1042,7 +1042,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( ent->behavior == &actLadder || ent->behavior == &actPortal )
 					{
-						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
 							if ( ent->entityShowOnMap < detectDuration )
 							{
@@ -1057,7 +1057,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 				{
 					if ( ent->behavior == &actItem )
 					{
-						if ( entityDist(my, ent) < TOUCHRANGE * 3 )
+						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
 							Item* itemOnGround = newItemFromEntity(ent);
 							int metal = 0;

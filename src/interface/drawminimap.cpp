@@ -18,6 +18,7 @@
 #include "../menu.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+#include "../collision.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -163,20 +164,17 @@ void drawMinimap()
 					&& ((stats[clientnum]->ring && stats[clientnum]->ring->type == RING_WARNING) 
 						|| (entity->entityShowOnMap > 0)) )
 				{
-					x = floor(entity->x / 16);
-					y = floor(entity->y / 16);
-					glColor4f(0.75, 0.5, 0.75, 1);
-					//glBegin(GL_QUADS);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-					glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
-					//glEnd();
-					warningEffect = true;
-				}
-				if ( !warningEffect && stats[clientnum]->shoes != NULL )
-				{
-					if ( stats[clientnum]->shoes->type == ARTIFACT_BOOTS )
+					bool doEffect = false;
+					if ( entity->entityShowOnMap > 0 )
+					{
+						doEffect = true;
+					}
+					else if ( stats[clientnum]->ring && players[clientnum] && players[clientnum]->entity 
+						&& entityDist(players[clientnum]->entity, entity) < 16.0 * std::max(3, (11 + 5 * stats[clientnum]->ring->beatitude)) )
+					{
+						doEffect = true;
+					}
+					if ( doEffect )
 					{
 						x = floor(entity->x / 16);
 						y = floor(entity->y / 16);
@@ -187,6 +185,28 @@ void drawMinimap()
 						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
 						glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
 						//glEnd();
+						warningEffect = true;
+					}
+				}
+				if ( !warningEffect && stats[clientnum]->shoes != NULL )
+				{
+					if ( stats[clientnum]->shoes->type == ARTIFACT_BOOTS )
+					{
+						if ( (abs(entity->vel_x) > 0.1 || abs(entity->vel_y) > 0.1)
+							&& players[clientnum] && players[clientnum]->entity
+							&& entityDist(players[clientnum]->entity, entity) < 16.0 * 20 )
+						{
+							entity->entityShowOnMap = std::max(entity->entityShowOnMap, TICKS_PER_SECOND * 5);
+							x = floor(entity->x / 16);
+							y = floor(entity->y / 16);
+							glColor4f(0.75, 0.5, 0.75, 1);
+							//glBegin(GL_QUADS);
+							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale - minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale + minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+							glVertex2f(x * minimapTotalScale + xres - map.width * minimapTotalScale, map.height * minimapTotalScale - y * minimapTotalScale);
+							//glEnd();
+						}
 					}
 				}
 			}
