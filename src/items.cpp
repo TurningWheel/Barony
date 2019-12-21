@@ -4249,7 +4249,7 @@ void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use refe
 	return;
 }
 
-ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
+ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue)
 {
 	int numitems = NUMITEMS;
 	int numoftype = 0;
@@ -4289,7 +4289,7 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
 	}
 
 	// pick the item
-	int pick = prng_get_uint() % numoftype;
+	int pick = rand() % numoftype;// prng_get_uint() % numoftype;
 	for ( c = 0; c < numitems; c++ )
 	{
 		if ( chances[c] == true )
@@ -4745,6 +4745,38 @@ bool Item::isTinkeringItemWithThrownLimit() const
 	return false;
 }
 
+int maximumTinkeringBotsCanBeDeployed(Stat* myStats)
+{
+	if ( !myStats )
+	{
+		return 0;
+	}
+	int maxFollowers = 2;
+	int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
+	switch ( skillLVL )
+	{
+		case 0:
+		case 1:
+			maxFollowers = 2;
+			break;
+		case 2:
+			maxFollowers = 4;
+			break;
+		case 3:
+			maxFollowers = 6;
+			break;
+		case 4:
+			maxFollowers = 8;
+			break;
+		case 5:
+			maxFollowers = 10;
+			break;
+		default:
+			break;
+	}
+	return maxFollowers;
+}
+
 bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 {
 	if ( !myStats )
@@ -4772,30 +4804,7 @@ bool playerCanSpawnMoreTinkeringBots(Stat* myStats)
 			}
 		}
 	}
-	int maxFollowers = 2;
-	int skillLVL = myStats->PROFICIENCIES[PRO_LOCKPICKING] / 20; // 0-5.
-	switch ( skillLVL )
-	{
-		case 0:
-		case 1:
-			maxFollowers = 2;
-			break;
-		case 2:
-			maxFollowers = 4;
-			break;
-		case 3:
-			maxFollowers = 6;
-			break;
-		case 4:
-			maxFollowers = 8;
-			break;
-		case 5:
-			maxFollowers = 10;
-			break;
-		default:
-			break;
-	}
-	if ( numBots < maxFollowers )
+	if ( numBots < maximumTinkeringBotsCanBeDeployed(myStats) )
 	{
 		return true;
 	}

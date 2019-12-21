@@ -460,6 +460,7 @@ void drawSkillsSheet()
 		{
 			skillTooltipRect.w = (longestline(language[3255 + i]) * fontWidth) + 8;
 			skillTooltip = language[3255 + i];
+
 			size_t n = std::count(skillTooltip.begin(), skillTooltip.end(), '\n'); // count newlines
 			skillTooltipRect.h = fontHeight * (n + 2) + 8;
 			skillTooltipRect.x = mousex - 16 - skillTooltipRect.w;
@@ -474,7 +475,7 @@ void drawSkillsSheet()
 			switch ( i )
 			{
 				case PRO_LOCKPICKING:
-					skillTooltipRect.h += 2 * fontHeight;
+					skillTooltipRect.h += 4 * fontHeight;
 					drawTooltip(&skillTooltipRect);
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 16,
 						capstoneTextColor, language[3270], CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT);
@@ -586,23 +587,79 @@ void drawSkillsSheet()
 					headerColor, "%s: (%d / 100)", getSkillLangEntry(i), stats[clientnum]->PROFICIENCIES[i]);
 			}
 
-			real_t skillDetails[5] = { 0.f };
+			real_t skillDetails[6] = { 0.f };
 
 			switch ( i )
 			{
 				case PRO_LOCKPICKING:
+				{
+					Sint32 PER = 0;
+					if ( players[clientnum] && players[clientnum]->entity )
+					{
+						PER = statGetPER(stats[clientnum], players[clientnum]->entity);
+					}
+					statGetPER(stats[clientnum], players[clientnum]->entity);
 					skillDetails[0] = stats[clientnum]->PROFICIENCIES[i] / 2.f; // lockpick chests/doors
 					if ( stats[clientnum]->PROFICIENCIES[i] == SKILL_LEVEL_LEGENDARY )
 					{
 						skillDetails[0] = 100.f;
 					}
-					skillDetails[1] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
-					skillDetails[2] = 0; //static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 5); // beartrap dmg
+					skillDetails[1] = std::min(100.f, stats[clientnum]->PROFICIENCIES[i] + 50.f);
+					if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT )
+					{
+						skillDetails[2] = 100.f; // lockpick automatons
+					}
+					else
+					{
+						skillDetails[2] = (100 - 100 / (static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20 + 1))); // lockpick automatons
+					}
+					skillDetails[3] = (100 - 100 / (std::max(1, static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 10)))); // disarm arrow traps
+					if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
+					{
+						skillDetails[3] = 0.f;
+					}
+					std::string canRepairItems = "none";
+					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_LEGENDARY )
+					{
+						canRepairItems = "all";
+					}
+					if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_MASTER )
+					{
+						canRepairItems = "2/0";
+					}
+					else if ( (stats[clientnum]->PROFICIENCIES[i] + PER + stats[clientnum]->type == AUTOMATON ? 20 : 0) >= SKILL_LEVEL_EXPERT )
+					{
+						canRepairItems = "1/0";
+					}
+					skillDetails[4] = maximumTinkeringBotsCanBeDeployed(stats[clientnum]);
+
+					// bonus scrapping chances.
+					switch ( std::min(5, static_cast<int>((stats[clientnum]->PROFICIENCIES[i] + PER) / 20)) )
+					{
+						case 5:
+							skillDetails[5] = 150.f;
+							break;
+						case 4:
+							skillDetails[5] = 125.f;
+							break;
+						case 3:
+							skillDetails[5] = 50.f;
+							break;
+						case 2:
+							skillDetails[5] = 25.f;
+							break;
+						case 1:
+							skillDetails[5] = 12.5;
+							break;
+						default:
+							skillDetails[5] = 0.f;
+							break;
+					}
 					ttfPrintTextFormattedColor(fontSkill, skillTooltipRect.x + 8, skillTooltipRect.y + 12,
 						uint32ColorWhite(*mainsurface), language[3255 + i],
-						skillDetails[0], skillDetails[1], skillDetails[2]
-					);
+						skillDetails[0], skillDetails[1], skillDetails[2], skillDetails[3], skillDetails[5], canRepairItems.c_str(), skillDetails[4], getInputName(impulses[IN_FOLLOWERMENU]));
 					break;
+				}
 				case PRO_STEALTH:
 					if ( players[clientnum] && players[clientnum]->entity )
 					{
@@ -922,6 +979,7 @@ void drawSkillsSheet()
 					skillDetails[3] = std::min(80, (60 + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 10));
 					skillDetails[4] = 50.f + static_cast<int>(stats[clientnum]->PROFICIENCIES[i] / 20) * 5;
 
+					skillTooltipRect.h = fontHeight * (5 + 2) + 8;
 					skillTooltipRect.h += 4 + (6 + lines) * (fontHeight + lines / 6);
 					drawTooltip(&skillTooltipRect);
 					// legendary text

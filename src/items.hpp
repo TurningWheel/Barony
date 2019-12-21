@@ -613,7 +613,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
 node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFInd);
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
-ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
+ItemType itemTypeWithinGoldValue(int cat, int minValue, int maxValue);
 bool itemSpriteIsQuiverThirdPersonModel(int sprite);
 bool itemSpriteIsQuiverBaseThirdPersonModel(int sprite);
 bool itemTypeIsQuiver(ItemType type);
@@ -623,6 +623,7 @@ bool rangedWeaponUseQuiverOnAttack(Stat* myStats);
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);
 void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
 bool playerCanSpawnMoreTinkeringBots(Stat* myStats);
+int maximumTinkeringBotsCanBeDeployed(Stat* myStats);
 extern bool overrideTinkeringLimit;
 extern int decoyBoxRange;
 

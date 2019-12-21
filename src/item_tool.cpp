@@ -139,9 +139,18 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayer(player, language[1097]);
 				if ( capstoneUnlocked && !entity.chestPreventLockpickCapstoneExploit )
 				{
-					int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
-					stats[player]->GOLD += goldAmount;
-					messagePlayerColor(player, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
+					if ( rand() % 2 == 0 )
+					{
+						Item* generated = newItem(itemTypeWithinGoldValue(-1, 80, 600), static_cast<Status>(SERVICABLE + rand() % 2), 0 + rand() % 2, 1, rand(), false, nullptr);
+						entity.addItemToChest(generated);
+						messagePlayer(player, language[3897]);
+					}
+					else
+					{
+						int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
+						stats[player]->GOLD += goldAmount;
+						messagePlayerColor(player, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
+					}
 				}
 				if ( !entity.chestPreventLockpickCapstoneExploit )
 				{
