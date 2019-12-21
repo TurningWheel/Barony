@@ -2371,10 +2371,15 @@ void actMonster(Entity* my)
 			Item* item = (Item*)node->element;
 			for ( c = item->count; c > 0; c-- )
 			{
+				bool wasQuiver = itemTypeIsQuiver(item->type);
 				entity = dropItemMonster(item, my, myStats);
 				if ( entity )
 				{
 					entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
+					if ( wasQuiver )
+					{
+						break; // always drop the whole stack.
+					}
 				}
 			}
 		}
@@ -4616,7 +4621,7 @@ timeToGoAgain:
 					int specialRoll = rand() % 50;
 					//messagePlayer(0, "roll %d", specialRoll);
 					double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-					if ( specialRoll <= (1 + (targetdist > 80 ? 4 : 0)) )
+					if ( specialRoll <= (2 + (targetdist > 80 ? 4 : 0)) )
 					{
 						passiveTeleport = true;
 					}

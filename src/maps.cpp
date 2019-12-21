@@ -1094,7 +1094,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 			int subRoom_tileStartx = -1;
 			int subRoom_tileStarty = -1;
 			int foundSubRoom = 0;
-			if ( levelnum2 - levelnum > 1 && c > 0 && subroomCount[levelnum2 - 1] > 0 )
+			if ( ((levelnum2 - levelnum) > 1) && (c > 0) && (subroomCount[levelnum2] > 0) )
 			{
 				// levelnum is the start of map search, levelnum2 is jumps required to get to a suitable map.
 				// normal operation is levelnum2 - levelnum == 1. if a levelnum map is unavailable, 
@@ -1103,7 +1103,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 				printlog("[SUBMAP GENERATOR] Skipped map when searching for levelnum %d, setting to %d", levelnum, levelnum2 - 1);
 				levelnum = levelnum2 - 1;
 			}
-
+			//printlog("(%d | %d), possible: (%d, %d) x: %d y: %d", levelnum, levelnum2, possiblerooms[1], possiblerooms[2], x, y);
 			if ( subroomCount[levelnum + 1] > 0 )
 			{
 				int jumps = 0;
@@ -1150,7 +1150,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
 								foundSubRoom = 1;
-								//messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
+								printlog("Picked level: %d from %d possible rooms in submap %d at x:%d y:%d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1, x, y);
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
@@ -1496,7 +1496,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 	}
 	if ( foundsubmaptile )
 	{
-		//messagePlayerColor(0, 0xFFFF00FF, "found some junk tiles!");
+		printlog("[SUBMAP GENERATOR] Found some junk tiles!");
 	}
 
 	for ( node = map.entities->first; node != nullptr; node = node->next )
@@ -2023,9 +2023,13 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 				}
 			}
 		}
-		else if ( c == 1 && secretlevel && currentlevel == 7 )
+		else if ( c == 1 && secretlevel && currentlevel == 7 && !strncmp(map.name, "Underworld", 10) && prng_get_uint() % 2 )
 		{
-			entity = newEntity(68, 1, map.entities, nullptr); // magic (artifact) bow
+			entity = newEntity(89, 1, map.entities, nullptr);
+			entity->monsterStoreType = 1;
+			entity->skill[5] = nummonsters;
+			++nummonsters;
+			//entity = newEntity(68, 1, map.entities, nullptr); // magic (artifact) bow
 		}
 		else
 		{
@@ -3158,7 +3162,7 @@ void assignActions(map_t* map)
 						else
 						{
 							// if monster not random, then create the stat struct here
-							// should not occur
+							// should not occur (unless we hack it)
 							myStats = new Stat(entity->sprite);
 						}
 						node2 = list_AddNodeLast(&entity->children);
@@ -3332,6 +3336,10 @@ void assignActions(map_t* map)
 						entity->focalx = limbs[SHADOW][0][0]; // 0
 						entity->focaly = limbs[SHADOW][0][1]; // 0
 						entity->focalz = limbs[SHADOW][0][2]; // -1.75
+						if ( !strncmp(map->name, "Underworld", 10) && currentlevel <= 7 && entity->monsterStoreType == 0 )
+						{
+							entity->monsterStoreType = 2;
+						}
 						break;
 					case COCKATRICE:
 						entity->z = -4.5;
