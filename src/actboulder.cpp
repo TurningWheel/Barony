@@ -952,7 +952,15 @@ void actBoulder(Entity* my)
 	if ( !BOULDER_STOPPED && (fabs(my->vel_x) > 0 || fabs(my->vel_y) > 0) )
 	{
 		BOULDER_AMBIENCE++;
-		if ( BOULDER_AMBIENCE >= TICKS_PER_SECOND / 3 )
+		if ( !strncmp(map.name, "Hell Boss", 9) )
+		{
+			if ( BOULDER_AMBIENCE >= TICKS_PER_SECOND / 2)
+			{
+				BOULDER_AMBIENCE = 0;
+				playSoundEntity(my, 151, 64);
+			}
+		}
+		else if ( BOULDER_AMBIENCE >= TICKS_PER_SECOND / 3 )
 		{
 			BOULDER_AMBIENCE = 0;
 			playSoundEntity(my, 151, 128);
