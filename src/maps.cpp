@@ -2023,7 +2023,7 @@ int generateDungeon(char* levelset, Uint32 seed, std::tuple<int, int, int> mapPa
 				}
 			}
 		}
-		else if ( c == 1 && secretlevel && currentlevel == 7 && !strncmp(map.name, "Underworld", 10) && prng_get_uint() % 2 )
+		else if ( c == 1 && secretlevel && currentlevel == 7 && !strncmp(map.name, "Underworld", 10) )
 		{
 			entity = newEntity(89, 1, map.entities, nullptr);
 			entity->monsterStoreType = 1;
