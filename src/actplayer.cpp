@@ -50,6 +50,11 @@ bool insectoidLevitating[MAXPLAYERS] = { false, false, false, false };
 
 void actDeathCam(Entity* my)
 {
+	/*if ( keystatus[SDL_SCANCODE_F4] )
+	{
+		buttonStartSingleplayer(nullptr);
+		keystatus[SDL_SCANCODE_F4] = 0;
+	}*/
 	DEATHCAM_TIME++;
 	if ( DEATHCAM_TIME == 1 )
 	{
@@ -1178,6 +1183,11 @@ void actPlayer(Entity* my)
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
 		}
 		keystatus[SDL_SCANCODE_F3] = 0;
+	}*/
+	/*if ( keystatus[SDL_SCANCODE_F4] )
+	{
+		buttonStartSingleplayer(nullptr);
+		keystatus[SDL_SCANCODE_F4] = 0;
 	}*/
 
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
