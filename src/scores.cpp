@@ -1990,6 +1990,12 @@ int loadGame(int player, int saveIndex)
 		return 1;
 	}
 
+	if ( versionNumber > 323 )
+	{
+		printlog("error: '%s' created by a newer version of the game (%d)!\n", path, versionNumber);
+		return 1; //Do not even try to load newer saves.
+	}
+
 	// assemble string
 	Uint32 hash = 0;
 	Uint32 loadedHash = 0;
