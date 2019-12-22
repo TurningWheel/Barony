@@ -693,8 +693,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EXP = 0;
 			stats->LVL = 25;
 			stats->HUNGER = 900;
-			stats->GOLD = 100;
-			stats->RANDOM_GOLD = 50;
+			stats->GOLD = 0;
+			stats->RANDOM_GOLD = 0;
 			stats->PROFICIENCIES[PRO_SWORD] = 90;
 			stats->PROFICIENCIES[PRO_MACE] = 90;
 			stats->PROFICIENCIES[PRO_AXE] = 90;
