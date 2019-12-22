@@ -158,6 +158,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 	particleTimerTarget(skill[6]),
 	particleTimerPreDelay(skill[7]),
 	particleTimerVariable1(skill[8]),
+	particleTimerVariable2(skill[9]),
 	pedestalHasOrb(skill[0]),
 	pedestalOrbType(skill[1]),
 	pedestalInvertedPower(skill[3]),

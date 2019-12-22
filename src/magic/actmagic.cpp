@@ -679,7 +679,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( !strcmp(map.name, "Hell Boss") && hit.entity->behavior == &actPlayer )
 					{
-						bool founddevil = false;
+						/* no longer in use */
+						/*bool founddevil = false;
 						node_t* tempNode;
 						for ( tempNode = map.creatures->first; tempNode != nullptr; tempNode = tempNode->next )
 						{
@@ -700,7 +701,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( !founddevil )
 						{
 							reflection = 3;
-						}
+						}*/
 					}
 					else if ( parent && 
 							(	(hit.entity->getRace() == LICH_ICE && parent->getRace() == LICH_FIRE)
@@ -3713,17 +3714,26 @@ void actParticleTimer(Entity* my)
 					playSoundEntity(parent, 164, 128);
 				}
 				spawnExplosion(my->x, my->y, 0);
-				my->removeLightField();
 			}
-			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SUMMON_MONSTER )
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SUMMON_MONSTER 
+				|| my->particleTimerEndAction == PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER )
 			{
 				playSoundEntity(my, 164, 128);
 				spawnExplosion(my->x, my->y, -4.0);
-				Entity* monster = summonMonster(static_cast<Monster>(my->particleTimerVariable1), my->x, my->y);
+				bool forceLocation = false;
+				if ( my->particleTimerEndAction == PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER &&
+					!map.tiles[static_cast<int>(my->y / 16) * MAPLAYERS + static_cast<int>(my->x / 16) * MAPLAYERS * map.height] )
+				{
+					if ( my->particleTimerVariable1 == SHADOW || my->particleTimerVariable1 == CREATURE_IMP )
+					{
+						forceLocation = true;
+					}
+				}
+				Entity* monster = summonMonster(static_cast<Monster>(my->particleTimerVariable1), my->x, my->y, forceLocation);
 				if ( monster )
 				{
 					Stat* monsterStats = monster->getStats();
-					if ( my->parent != 0 )
+					if ( my->parent != 0 && uidToEntity(my->parent) )
 					{
 						if ( uidToEntity(my->parent)->getRace() == LICH_ICE )
 						{
@@ -3739,13 +3749,21 @@ void actParticleTimer(Entity* my)
 									break;
 							}
 						}
+						else if ( uidToEntity(my->parent)->getRace() == DEVIL )
+						{
+							monsterStats->LVL = 5;
+							if ( my->particleTimerVariable2 >= 0 
+								&& players[my->particleTimerVariable2] && players[my->particleTimerVariable2]->entity )
+							{
+								monster->monsterAcquireAttackTarget(*(players[my->particleTimerVariable2]->entity), MONSTER_STATE_ATTACK);
+							}
+						}
 					}
 				}
-				my->removeLightField();
 			}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SPELL_SUMMON )
 			{
-				my->removeLightField();
+				//my->removeLightField();
 			}
 			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHADOW_TELEPORT )
 			{
@@ -3882,6 +3900,7 @@ void actParticleTimer(Entity* my)
 				}
 			}
 		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -3934,8 +3953,21 @@ void actParticleTimer(Entity* my)
 			{
 				if ( my->particleTimerCountdownAction < 100 )
 				{
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 92);
 					playSoundEntityLocal(my, 167, 128);
 					createParticleDropRising(my, 680, 1.0);
+					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
+					my->particleTimerCountdownAction = 0;
+				}
+			}
+			// fire once off.
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER )
+			{
+				if ( my->particleTimerCountdownAction < 100 )
+				{
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 92);
+					playSoundEntityLocal(my, 167, 128);
+					createParticleDropRising(my, 593, 1.0);
 					createParticleCircling(my, 70, my->particleTimerCountdownSprite);
 					my->particleTimerCountdownAction = 0;
 				}

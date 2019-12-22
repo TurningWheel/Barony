@@ -2948,6 +2948,17 @@ void clientHandlePacket()
 				spellTimer->z = particle_z;
 			}
 				break;
+			case PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER:
+			{
+				Entity* spellTimer = createParticleTimer(nullptr, 70, sprite);
+				spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER;
+				spellTimer->particleTimerCountdownSprite = 174;
+				spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SUMMON_MONSTER;
+				spellTimer->x = particle_x * 16.0 + 8;
+				spellTimer->y = particle_y * 16.0 + 8;
+				spellTimer->z = particle_z;
+			}
+			break;
 			case PARTICLE_EFFECT_SPELL_SUMMON:
 			{
 				Entity* spellTimer = createParticleTimer(nullptr, 55, sprite);

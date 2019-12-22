@@ -140,6 +140,7 @@ static const int PARTICLE_EFFECT_TELEPORT_PULL_TARGET_LOCATION = 20;
 static const int PARTICLE_EFFECT_SHADOW_TAG = 21;
 static const int PARTICLE_EFFECT_SPELLBOT_ORBIT = 22;
 static const int PARTICLE_EFFECT_PLAYER_AUTOMATON_DEATH = 23;
+static const int PARTICLE_EFFECT_DEVIL_SUMMON_MONSTER = 24;
 
 // actmagicIsVertical constants
 static const int MAGIC_ISVERTICAL_NONE = 0;
@@ -151,6 +152,7 @@ static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
 static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
 static const int PARTICLE_TIMER_ACTION_SUMMON_MONSTER = 3;
 static const int PARTICLE_TIMER_ACTION_SPELL_SUMMON = 4;
+static const int PARTICLE_TIMER_ACTION_DEVIL_SUMMON_MONSTER = 5;
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 

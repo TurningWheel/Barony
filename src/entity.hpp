@@ -287,6 +287,7 @@ public:
 	Sint32& particleTimerTarget; //skill[6]
 	Sint32& particleTimerPreDelay; //skill[7]
 	Sint32& particleTimerVariable1; //skill[8]
+	Sint32& particleTimerVariable2; //skill[9]
 
 	//--PUBLIC DOOR SKILLS--
 	Sint32& doorDir; //skill[0]
@@ -695,6 +696,9 @@ public:
 	void lichIceCreateCannon();
 	Entity* lichThrowProjectile(real_t angle);
 	void lichIceSummonMonster(Monster creature);
+	bool devilSummonMonster(Entity* summonOnEntity, Monster creature, int radiusFromCenter, int playerToTarget = -1);
+	int devilGetNumMonstersInArena(Monster creature);
+	bool devilBoulderSummonIfPlayerIsHiding(int player);
 	void lichFireSummonMonster(Monster creature);
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems, Entity* forcePickupItem = nullptr);

@@ -93,7 +93,7 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // LICH
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // DEVIL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0 }, // DEVIL
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
 	{ 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
 	{ 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCARAB
@@ -149,8 +149,8 @@ double sightranges[NUMMONSTERS] =
 	192,  // AUTOMATON
 	512,  // LICH_ICE
 	512,  // LICH_FIRE
-	512,  // SENTRYBOT
-	512,  // SPELLBOT
+	320,  // SENTRYBOT
+	320,  // SPELLBOT
 	256,  // GYROBOT
 	32    // DUMMYBOT
 };
@@ -645,7 +645,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 int devilstate = 0;
 int devilacted = 0;
 int devilroar = 0;
-int devilintro = 0;
+int devilsummonedtimes = 0;
 
 bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Entity* my, Stat* myStats)
 {
@@ -1134,8 +1134,6 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 	return true;
 }
 
-//int devilintro=0;
-
 void actMonster(Entity* my)
 {
 	if (!my)
@@ -1550,6 +1548,8 @@ void actMonster(Entity* my)
 					my->flags[BURNABLE] = false;
 					devilstate = 0;
 					devilacted = 0;
+					devilroar = 0;
+					devilsummonedtimes = 0;
 					initDevil(my, myStats);
 					break;
 				case KOBOLD:
@@ -3283,7 +3283,7 @@ void actMonster(Entity* my)
 			messagePlayer(0, "defending!");
 		}*/
 
-		//if ( myStats->type == DEVIL || myStats->type == HUMAN )
+		//if ( myStats->type == DEVIL )
 		//{
 		//	std::string state_string;
 
@@ -3310,7 +3310,8 @@ void actMonster(Entity* my)
 		//		break;
 		//	}
 
-		//	messagePlayer(0, "My state is %s, ATK: %d hittime:%d", state_string.c_str(), my->monsterAttack, my->monsterHitTime); //Debug message.
+		//	messagePlayer(0, "%s, ATK: %d hittime:%d, atktime:%d, (%d|%d), timer:%d", 
+		//		state_string.c_str(), my->monsterAttack, my->monsterHitTime, MONSTER_ATTACKTIME, devilstate, devilacted, my->monsterSpecialTimer); //Debug message.
 		//}
 
 		//Begin state machine
@@ -3530,7 +3531,8 @@ void actMonster(Entity* my)
 					|| myStats->type == LICH_FIRE 
 					|| myStats->type == LICH_ICE 
 					|| (myStats->type == CREATURE_IMP && strstr(map.name, "Boss") && !my->monsterAllyGetPlayerLeader())
-					|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted automaton")) )
+					|| (myStats->type == AUTOMATON && strstr(myStats->name, "corrupted automaton"))
+					|| (myStats->type == SHADOW && !strncmp(map.name, "Hell Boss", 9) && uidToEntity(my->parent) && uidToEntity(my->parent)->getRace() == DEVIL) )
 				{
 					double distToPlayer = 0;
 					int c, playerToChase = -1;
@@ -3567,7 +3569,14 @@ void actMonster(Entity* my)
 					}
 					if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
 					{
-						my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+						if ( myStats->type == SHADOW )
+						{
+							my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_ATTACK);
+						}
+						else
+						{
+							my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+						}
 						if ( previousMonsterState != my->monsterState )
 						{
 							serverUpdateEntitySkill(my, 0);
@@ -3798,7 +3807,8 @@ void actMonster(Entity* my)
 				&& !myStats->EFFECTS[EFF_FEAR] 
 				&& !myStats->EFFECTS[EFF_DISORIENTED]
 				&& !isIllusionTaunt
-				&& !(monsterIsImmobileTurret(my, myStats)) )
+				&& !(monsterIsImmobileTurret(my, myStats))
+				&& myStats->type != DEVIL )
 			{
 				std::vector<std::pair<int, int>> possibleCoordinates;
 				my->monsterMoveTime = rand() % 30;
@@ -4421,9 +4431,24 @@ timeToGoAgain:
 				if ( !MONSTER_ATTACK || MONSTER_ATTACK == 4 )
 				{
 					my->monsterSpecialTimer++;
-					if ( my->monsterSpecialTimer > 60 )
+					int difficulty = 40;
+					int numPlayers = 0;
+
+					for ( int c = 0; c < MAXPLAYERS; ++c )
 					{
-						if ( !devilstate )
+						if ( players[c] && players[c]->entity )
+						{
+							++numPlayers;
+						}
+					}
+					if ( numPlayers > 0 )
+					{
+						difficulty /= numPlayers; // 40/20/13/10 - basically how long you get to wail on Baphy. Shorter is harder.
+					}
+
+					if ( my->monsterSpecialTimer > 60 || (devilstate == 72 && my->monsterSpecialTimer > difficulty))
+					{
+						if ( !devilstate ) // devilstate is 0 at the start of the fight and doesn't return to 0.
 						{
 							if ( !MONSTER_ATTACK )
 							{
@@ -4439,6 +4464,14 @@ timeToGoAgain:
 								serverUpdateEntitySkill(my, 8);
 								serverUpdateEntitySkill(my, 9);
 								serverUpdateEntitySkill(my, 10);
+								for ( int c = 0; c < MAXPLAYERS; ++c )
+								{
+									if ( players[c] && players[c]->entity )
+									{
+										my->devilSummonMonster(nullptr, SHADOW, 5, c);
+									}
+								}
+								my->devilSummonMonster(nullptr, DEMON, 5);
 							}
 							else if ( MONSTER_ATTACKTIME > 90 )
 							{
@@ -6164,7 +6197,64 @@ timeToGoAgain:
 				serverUpdateEntitySkill(my, 9);
 			}
 			++my->monsterSpecialTimer;
-			if ( my->monsterSpecialTimer > 120 )
+			if ( my->monsterSpecialTimer == 20 ) // start the spawn animations
+			{
+				Monster creature = NOTHING;
+				int numToSpawn = 3;
+				int numPlayers = 1;
+				std::vector<int> alivePlayers;
+				for ( int c = 1; c < MAXPLAYERS; ++c )
+				{
+					if ( !client_disconnected[c] )
+					{
+						++numToSpawn;
+						++numPlayers;
+						if ( players[c] && players[c]->entity )
+						{
+							alivePlayers.push_back(c);
+						}
+					}
+				}
+
+				int spawnedShadows = 0;
+				while ( numToSpawn > 0 )
+				{
+					if ( devilsummonedtimes % 2 == 1 && my->devilGetNumMonstersInArena(SHADOW) + spawnedShadows < numPlayers ) 
+					{
+						// odd numbered spawns.
+						// let's make some shadows.
+						if ( !alivePlayers.empty() )
+						{
+							int vectorEntry = rand() % alivePlayers.size();
+							my->devilSummonMonster(nullptr, SHADOW, 5, alivePlayers[vectorEntry]);
+							alivePlayers.erase(alivePlayers.begin() + vectorEntry);
+						}
+						else
+						{
+							my->devilSummonMonster(nullptr, SHADOW, 9);
+						}
+						++spawnedShadows;
+					}
+					else
+					{
+						switch ( rand() % 5 )
+						{
+							case 0:
+							case 1:
+								my->devilSummonMonster(nullptr, CREATURE_IMP, 9);
+								break;
+							case 2:
+							case 3:
+							case 4:
+								my->devilSummonMonster(nullptr, DEMON, 7);
+								break;
+						}
+					}
+					--numToSpawn;
+				}
+				++devilsummonedtimes;
+			}
+			else if ( my->monsterSpecialTimer > 100 ) // end this state.
 			{
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
@@ -6193,34 +6283,6 @@ timeToGoAgain:
 					my->monsterTargetX = playertotrack->x;
 					my->monsterTargetY = playertotrack->y;
 				}
-
-				int c;
-				double ox = my->x;
-				double oy = my->y;
-				for ( c = 0; c < 3; c++ )
-				{
-					my->x = 21 * 16 + (rand() % (43 - 21)) * 16;
-					my->y = 21 * 16 + (rand() % (43 - 21)) * 16;
-
-					playSoundEntity(my, 166, 128);
-
-					Monster creature = NOTHING;
-					switch ( rand() % 5 )
-					{
-						case 0:
-						case 1:
-							creature = CREATURE_IMP;
-							break;
-						case 2:
-						case 3:
-						case 4:
-							creature = DEMON;
-							break;
-					}
-					summonMonster(creature, ((int)(my->x / 16)) * 16 + 8, ((int)(my->y / 16)) * 16 + 8);
-				}
-				my->x = ox;
-				my->y = oy;
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_DEVIL_BOULDER )     // devil boulder spawn state
@@ -6244,14 +6306,20 @@ timeToGoAgain:
 			}
 			my->yaw = angle * PI / 2;
 			my->monsterSpecialTimer++;
-			if ( my->monsterSpecialTimer == 30 )
+			if ( my->monsterSpecialTimer == 10 )
 			{
 				MONSTER_ATTACK = 1;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
+
+				my->castOrbitingMagicMissile(SPELL_BLEED, 32.0, 0.0, 300);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 32.0, 2 * PI / 5, 300);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 32.0, 4 * PI / 5, 300);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 32.0, 6 * PI / 5, 300);
+				my->castOrbitingMagicMissile(SPELL_BLEED, 32.0, 8 * PI / 5, 300);
 			}
-			if ( my->monsterSpecialTimer == 60 )
+			if ( my->monsterSpecialTimer == 40 )
 			{
 				int c;
 				double oyaw = my->yaw;
@@ -6263,6 +6331,10 @@ timeToGoAgain:
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; ++c )
 				{
+					if ( c == 6 && (angle == 1 || angle == 2) )
+					{
+						continue;
+					}
 					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
 					if ( angle == 0 )
@@ -6294,14 +6366,14 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( my->monsterSpecialTimer == 150 )
+			if ( my->monsterSpecialTimer == 60 )
 			{
 				MONSTER_ATTACK = 2;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			if ( my->monsterSpecialTimer == 180 )
+			if ( my->monsterSpecialTimer == 90 )
 			{
 				int c;
 				double oyaw = my->yaw;
@@ -6310,9 +6382,17 @@ timeToGoAgain:
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
+				for ( c = 0; c < MAXPLAYERS; ++c )
+				{
+					my->devilBoulderSummonIfPlayerIsHiding(c);
+				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; ++c )
 				{
+					if ( c == 6 && (angle == 0 || angle == 3) )
+					{
+						continue;
+					}
 					Entity* entity = newEntity(245, 1, map.entities, nullptr); // boulder
 					entity->parent = my->getUID();
 					if ( angle == 0 )
@@ -6344,14 +6424,14 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( my->monsterSpecialTimer == 270 )
+			if ( my->monsterSpecialTimer == 180 )
 			{
 				MONSTER_ATTACK = 3;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			if ( my->monsterSpecialTimer == 300 )
+			if ( my->monsterSpecialTimer == 210 )
 			{
 				int c;
 				double oyaw = my->yaw;
@@ -6359,6 +6439,10 @@ timeToGoAgain:
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
 					castSpell(my->getUID(), &spell_fireball, true, false);
+				}
+				for ( c = 0; c < MAXPLAYERS; ++c )
+				{
+					my->devilBoulderSummonIfPlayerIsHiding(c);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 12; ++c )
@@ -6394,7 +6478,7 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( my->monsterSpecialTimer == 420 )   // 420 blaze it faggot
+			if ( my->monsterSpecialTimer == 300 )   // 300 blaze it I guess
 			{
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
