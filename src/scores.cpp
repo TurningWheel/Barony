@@ -50,6 +50,10 @@ bool achievementBrawlerMode = false;
 int savegameCurrentFileIndex = 0;
 score_t steamLeaderboardScore;
 
+static const int NUMRACES_FOR_LP_DLC_COMPATIBILITY = 13;
+static const int NUMMONSTERS_FOR_LP_DLC_COMPATIBILITY = 37;
+static const int NUMEFFECTS_FOR_LP_DLC_COMPATIBILITY = 40;
+
 /*-------------------------------------------------------------------------------
 
 	scoreConstructor
@@ -890,6 +894,16 @@ void loadAllScores(const std::string& scoresfilename)
 		}
 	}
 
+	//Forward compatibility code for the L&P release: read in the race data and dump it.
+	if ( versionNumber > 323 )
+	{
+		for ( c = 0; c < NUMRACES_FOR_LP_DLC_COMPATIBILITY; c++ )
+		{
+			bool tmp;
+			fread(&tmp, sizeof(bool), 1, fp);
+		}
+	}
+
 	// read scores
 	Uint32 numscores = 0;
 	fread(&numscores, sizeof(Uint32), 1, fp);
@@ -921,7 +935,25 @@ void loadAllScores(const std::string& scoresfilename)
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
-		if ( versionNumber < 300 )
+		if ( versionNumber > 323 )
+		{
+			//Forward compatibility code for L&P release: read up to our current num-monsters, and anything over that, dump.
+			for ( c = 0; c < NUMMONSTERS_FOR_LP_DLC_COMPATIBILITY; c++ )
+			{
+				if ( c < NUMMONSTERS )
+				{
+					//Legit monsters.
+					fread(&score->kills[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					//New monsters, please ignore.
+					Sint32 tmp;
+					fread(&tmp, sizeof(Sint32), 1, fp);
+				}
+			}
+		}
+		else if ( versionNumber < 300 )
 		{
 			// legacy nummonsters
 			for ( c = 0; c < NUMMONSTERS; c++ )
@@ -1015,6 +1047,25 @@ void loadAllScores(const std::string& scoresfilename)
 				{
 					score->stats->EFFECTS[c] = false;
 					score->stats->EFFECTS_TIMERS[c] = 0;
+				}
+			}
+		}
+		else if ( versionNumber > 323 )
+		{
+			//Forward compatibility code for the L&P release. Basically, read in anything over our num effects and dump it.
+			for ( c = 0; c < NUMEFFECTS_FOR_LP_DLC_COMPATIBILITY; c++ )
+			{
+				if ( c < NUMEFFECTS )
+				{
+					fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
+					fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
+				}
+				else
+				{
+					bool tmp1;
+					Sint32 tmp2;
+					fread(&tmp1, sizeof(bool), 1, fp);
+					fread(&tmp2, sizeof(Sint32), 1, fp);
 				}
 			}
 		}
