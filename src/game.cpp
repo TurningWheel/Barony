@@ -1866,12 +1866,34 @@ void gameLogic(void)
 										// interpolate to new position
 										if ( entity->behavior != &actPlayerLimb || entity->skill[2] != clientnum )
 										{
+											double ox = 0, oy = 0, onewx = 0, onewy = 0;
+
+											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											{
+												ox = entity->x;
+												oy = entity->y;
+												onewx = entity->new_x;
+												onewy = entity->new_y;
+											}
 											entity->x += (entity->new_x - entity->x) / 4;
 											entity->y += (entity->new_y - entity->y) / 4;
 											if ( entity->behavior != &actArrow )
 											{
 												// client handles z in actArrow.
 												entity->z += (entity->new_z - entity->z) / 4;
+											}
+
+											// move the bodyparts of these otherwise the limbs will get left behind in this adjustment.
+											if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+											{
+												for ( Entity *bodypart : entity->bodyparts )
+												{
+													bodypart->x += entity->x - ox;
+													bodypart->y += entity->y - oy;
+													bodypart->new_x += entity->new_x - onewx;
+													bodypart->new_y += entity->new_y - onewy;
+												}
 											}
 										}
 									}
