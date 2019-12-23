@@ -1647,6 +1647,9 @@ void equipItem(Item* item, Item** slot, int player)
 					{
 						playSoundEntity(players[player]->entity, 33 + rand() % 2, 64);
 					}
+					else if ( item->type == BOOMERANG )
+					{
+					}
 					else if ( itemCategory(item) == WEAPON || itemCategory(item) == THROWN )
 					{
 						playSoundEntity(players[player]->entity, 40 + rand() % 4, 64);

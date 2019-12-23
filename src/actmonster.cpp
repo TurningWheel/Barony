@@ -3778,7 +3778,7 @@ void actMonster(Entity* my)
 					{
 						if ( myStats->type != MINOTAUR )
 						{
-							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) )
+							if ( !my->monsterAllyGetPlayerLeader() || (my->monsterAllyGetPlayerLeader() && rand() % 3 == 0) || myStats->type == DUMMYBOT )
 							{
 								// idle sounds. if player follower, reduce noise frequency by 66%.
 								MONSTER_SOUND = playSoundEntity(my, MONSTER_IDLESND + (rand() % MONSTER_IDLEVAR), 128);
@@ -5561,6 +5561,7 @@ timeToGoAgain:
 									my->monsterSpecialState = GYRO_RETURN_LANDING;
 									my->monsterState = MONSTER_STATE_WAIT;
 									serverUpdateEntitySkill(my, 33); // for clients to keep track of animation
+									playSoundEntity(my, 449, 128);
 								}
 							}
 						}
@@ -9152,6 +9153,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 				{
 					monsterSpecialState = GYRO_RETURN_LANDING;
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					playSoundEntity(this, 449, 128);
 				}
 				else if ( monsterSetPathToLocation(destX, destY, 2) )
 				{

@@ -6325,7 +6325,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
-				playSoundEntity(this, 75, 64);
+				if ( myStats->weapon->type == BOOMERANG )
+				{
+					playSoundEntity(this, 75, 64);
+					//playSoundEntity(this, 427 + rand() % 4, 128);
+
+				}
+				else
+				{
+					playSoundEntity(this, 75, 64);
+				}
 				if ( drankPotion )
 				{
 					Item* emptyBottle = newItem(POTION_EMPTY, myStats->weapon->status, myStats->weapon->beatitude, 1, myStats->weapon->appearance, myStats->weapon->appearance, nullptr);
@@ -14945,6 +14954,10 @@ double Entity::monsterRotate()
 			}
 		}
 		yaw -= dir / ratio;
+	}
+	else if ( race == DUMMYBOT )
+	{
+		yaw -= dir / 4;
 	}
 	else
 	{

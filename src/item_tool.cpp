@@ -1235,6 +1235,7 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 					summon->yaw = thrown->yaw;
 					summon->monsterSpecialState = GYRO_START_FLYING;
 					serverUpdateEntitySkill(summon, 33);
+					playSoundPos(summon->x, summon->y, 415, 128);
 				}
 				else if ( summonedStats->type == SENTRYBOT || summonedStats->type == SPELLBOT )
 				{
@@ -1246,10 +1247,15 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 					}
 					summonedStats->EFFECTS[EFF_STUNNED] = true;
 					summonedStats->EFFECTS_TIMERS[EFF_STUNNED] = 30;
+					playSoundEntity(summon, 453 + rand() % 2, 164);
 				}
 				else
 				{
 					summon->yaw = thrown->yaw + ((PI / 2) * (rand() % 4));
+					if ( summonedStats->type == DUMMYBOT )
+					{
+						playSoundEntity(summon, 417 + rand() % 3, 128);
+					}
 				}
 				summonedStats->monsterTinkeringStatus = static_cast<Sint32>(this->status); // store the type of item that was used to summon me.
 				summon->tinkerBotSetStats(summonedStats, this->status);

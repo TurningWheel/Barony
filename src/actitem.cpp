@@ -265,7 +265,7 @@ void actItem(Entity* my)
 							{
 								if ( players[i] != nullptr && players[i]->entity != nullptr )
 								{
-									playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
+									//playSoundEntity(players[i]->entity, 35 + rand() % 3, 64);
 								}
 								free(item2);
 								/*if ( GenericGUI.tinkeringKitRollIfShouldBreak() )

@@ -1708,6 +1708,7 @@ void actHudWeapon(Entity* my)
 						}
 					}
 
+
 					if ( thrownWeapon && multiplayer == CLIENT )
 					{
 						Item* item = stats[clientnum]->weapon;

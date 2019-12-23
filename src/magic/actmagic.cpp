@@ -3486,7 +3486,7 @@ void createParticleSap(Entity* parent)
 			entity->scalex = 1.f;
 			entity->scaley = 1.f;
 			entity->scalez = 1.f;
-			entity->skill[0] = 250;
+			entity->skill[0] = 175;
 			entity->fskill[2] = -((PI / 3) + (PI / 6)) / (150); // yaw rate of change over 3 seconds
 			entity->fskill[3] = 0.f;
 			entity->focalx = 2;
@@ -4054,6 +4054,17 @@ void actParticleSap(Entity* my)
 			particle->focalx = 2;
 			particle->focaly = -2;
 			particle->focalz = 2.5;
+			if ( PARTICLE_LIFE < 100 && my->ticks % 6 == 0 )
+			{
+				if ( PARTICLE_LIFE < 70 )
+				{
+					playSoundEntityLocal(my, 434 + rand() % 10, 64);
+				}
+				else
+				{
+					playSoundEntityLocal(my, 434 + rand() % 10, 32);
+				}
+			}
 			//particle->flags[SPRITE] = true;
 		}
 		else
@@ -4286,7 +4297,7 @@ void actParticleSapCenter(Entity* my)
 						}
 					}
 				}
-				playSoundEntity(parent, 35 + rand() % 3, 92);
+				playSoundEntity(parent, 431 + rand() % 3, 92);
 				item = nullptr;
 			}
 			list_RemoveNode(my->mynode);

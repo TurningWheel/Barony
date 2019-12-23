@@ -5811,7 +5811,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 			}
 			else
 			{
-				playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+				playSoundEntity(players[clientnum]->entity, 462 + rand() % 2, 64);
 			}
 		}
 	}
@@ -6037,10 +6037,17 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			}
 		}
 
-		if ( rand() % 5 == 0 && (ticks - tinkeringSfxLastTicks) > 100 )
+		if ( (ticks - tinkeringSfxLastTicks) > 100 )
 		{
 			tinkeringSfxLastTicks = ticks;
-			playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 64);
+			if ( itemIsThrowableTinkerTool(item) )
+			{
+				playSoundEntity(players[clientnum]->entity, 459 + (rand() % 3), 92);
+			}
+			else
+			{
+				playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 92);
+			}
 		}
 		else
 		{

@@ -23,6 +23,8 @@
 #include "magic/magic.hpp"
 #include "interface/interface.hpp"
 
+std::unordered_map<Uint32, int> gyroBotDetectedUids;
+
 void initSentryBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
@@ -264,6 +266,7 @@ void initSentryBot(Entity* my, Stat* myStats)
 void initGyroBot(Entity* my, Stat* myStats)
 {
 	node_t* node;
+	gyroBotDetectedUids.clear();
 
 	my->initMonster(886);
 
@@ -428,6 +431,7 @@ void sentryBotDie(Entity* my)
 				entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
 			}
 		}
+		playSoundEntity(my, 451 + rand() % 2, 128);
 	}
 
 	my->removeMonsterDeathNodes();
@@ -932,6 +936,35 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 #define GYRO_ROTOR_SMALL 3
 #define GYRO_BOMB 4
 
+bool gyroBotFoundNewEntity(Entity& ent)
+{
+	auto find = gyroBotDetectedUids.find(ent.getUID());
+	if ( find == gyroBotDetectedUids.end() )
+	{
+		gyroBotDetectedUids.insert(std::make_pair(ent.getUID(), ticks));
+		return true; // new uid.
+	}
+	else
+	{
+		if ( ent.behavior == &actItem )
+		{
+			gyroBotDetectedUids[ent.getUID()] = ticks;
+			return false; // items never alert again.
+		}
+		else if ( ticks - gyroBotDetectedUids[ent.getUID()] > 20 * TICKS_PER_SECOND )
+		{
+			gyroBotDetectedUids[ent.getUID()] = ticks;
+			return true; // count this as new, it will be a monster/trap/something important.
+		}
+		else
+		{
+			gyroBotDetectedUids[ent.getUID()] = ticks;
+			return false;
+		}
+	}
+	return false;
+}
+
 void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
@@ -999,6 +1032,8 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 	{
 		Entity* playerLeader = my->monsterAllyGetPlayerLeader();
 		bool doPing = false;
+		int foundGoodSound = 0;
+		int foundBadSound = 0;
 		for ( node_t* searchNode = map.entities->first; searchNode != nullptr; searchNode = searchNode->next )
 		{
 			Entity* ent = (Entity*)searchNode->element;
@@ -1014,6 +1049,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
+							if ( gyroBotFoundNewEntity(*ent) )
+							{
+								++foundBadSound;
+							}
 							if ( ent->entityShowOnMap < detectDuration )
 							{
 								ent->entityShowOnMap = detectDuration;
@@ -1031,6 +1070,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
+							if ( gyroBotFoundNewEntity(*ent) )
+							{
+								foundBadSound = 3;
+							}
 							if ( ent->entityShowOnMap < detectDuration )
 							{
 								ent->entityShowOnMap = detectDuration;
@@ -1044,6 +1087,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 					{
 						if ( entityDist(my, ent) < TOUCHRANGE * 5 )
 						{
+							if ( gyroBotFoundNewEntity(*ent) )
+							{
+								foundGoodSound = 5;
+							}
 							if ( ent->entityShowOnMap < detectDuration )
 							{
 								ent->entityShowOnMap = detectDuration;
@@ -1068,6 +1115,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 								if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_METAL
 									&& metal > 0 )
 								{
+									if ( gyroBotFoundNewEntity(*ent) )
+									{
+										++foundGoodSound;
+									}
 									if ( ent->entityShowOnMap < detectDuration )
 									{
 										ent->entityShowOnMap = detectDuration;
@@ -1076,6 +1127,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_MAGIC
 									&& magic > 0 )
 								{
+									if ( gyroBotFoundNewEntity(*ent) )
+									{
+										++foundGoodSound;
+									}
 									if ( ent->entityShowOnMap < detectDuration )
 									{
 										ent->entityShowOnMap = detectDuration;
@@ -1084,6 +1139,10 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 								else if ( my->monsterAllyPickupItems == ALLY_GYRO_DETECT_ITEMS_VALUABLE
 									&& items[itemOnGround->type].value >= 400 )
 								{
+									if ( gyroBotFoundNewEntity(*ent) )
+									{
+										foundGoodSound = 5;
+									}
 									if ( ent->entityShowOnMap < detectDuration )
 									{
 										ent->entityShowOnMap = detectDuration;
@@ -1106,6 +1165,15 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 			int pingy = my->y / 16;
 			MinimapPing radiusPing(ticks, clientnum, pingx, pingy, true);
 			minimapPingAdd(radiusPing);
+
+			if ( foundGoodSound >= 1 )
+			{
+				playSoundEntity(my, 444 + rand() % 5, 128);
+			}
+			else if ( foundBadSound >= 1 )
+			{
+				playSoundEntity(my, 450, 128);
+			}
 		}
 	}
 
@@ -1131,7 +1199,7 @@ void gyroBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		//my->z = limbs[GYROBOT][3][2];
-		if ( my->ticks % (TICKS_PER_SECOND * 10) == 0 
+		if ( my->ticks % (TICKS_PER_SECOND * 15) == 0 
 			&& my->monsterSpecialTimer == 0
 			&& my->monsterSpecialState == 0 )
 		{
@@ -1386,7 +1454,8 @@ void gyroBotDie(Entity* my)
 	my->removeMonsterDeathNodes();
 	if ( gibs )
 	{
-		// playSoundEntity(my, 298 + rand() % 4, 128);
+		playSoundEntity(my, 451 + rand() % 2, 128);
+		playSoundEntity(my, 450, 128);
 		int c;
 		for ( c = 0; c < 4; c++ )
 		{
@@ -1429,8 +1498,8 @@ void initDummyBot(Entity* my, Stat* myStats)
 	{
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_IDLESND = 456;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -1603,7 +1672,6 @@ void actDummyBotLimb(Entity* my)
 
 void dummyBotDie(Entity* my)
 {
-	// playSoundEntity(my, 298 + rand() % 4, 128);
 	bool gibs = true;
 	if ( my->monsterSpecialState == DUMMYBOT_RETURN_FORM )
 	{
@@ -1650,6 +1718,7 @@ void dummyBotDie(Entity* my)
 	my->removeMonsterDeathNodes();
 	if ( gibs )
 	{
+		playSoundEntity(my, 451 + rand() % 2, 128);
 		int c;
 		for ( c = 0; c < 5; c++ )
 		{

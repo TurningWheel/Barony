@@ -114,6 +114,10 @@ void actThrown(Entity* my)
 			my->focalx = 2;
 			my->focaly = 0;
 			my->focalz = 0.5;
+			if ( my->ticks > 0 && my->ticks % 7 == 0 )
+			{
+				playSoundEntityLocal(my, 434 + rand() % 10, 64);
+			}
 		}
 	}
 	else
@@ -128,10 +132,16 @@ void actThrown(Entity* my)
 			if ( item->type == BOOMERANG )
 			{
 				my->sprite = BOOMERANG_PARTICLE;
+				if ( my->ticks > 0 && my->ticks % 7 == 0 )
+				{
+					playSoundEntityLocal(my, 434 + rand() % 10, 64);
+				}
 			}
 			free(item);
 		}
 	}
+
+	++THROWN_LIFE;
 
 	if ( my->sprite == items[TOOL_BOMB].index || my->sprite == items[TOOL_FREEZE_BOMB].index
 		|| my->sprite == items[TOOL_SLEEP_BOMB].index || my->sprite == items[TOOL_TELEPORT_BOMB].index )
