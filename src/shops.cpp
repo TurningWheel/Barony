@@ -500,7 +500,7 @@ void buyItemFromMysteriousShopkeepConsumeOrb(Entity& entity, Item& boughtItem)
 	}
 	if ( inventory )
 	{
-		for each (auto orbCategories in shopkeeperMysteriousItems)
+		for ( auto orbCategories : shopkeeperMysteriousItems )
 		{
 			if ( orbCategories.second.find(boughtItem.type) != orbCategories.second.end() )
 			{

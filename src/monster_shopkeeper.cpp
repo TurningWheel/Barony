@@ -693,9 +693,9 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					numitems = 15;
 					while ( numitems > 0 )
 					{
-						for each (auto orbCategories in shopkeeperMysteriousItems)
+						for ( auto orbCategories : shopkeeperMysteriousItems )
 						{
-							for each (auto itemInCategory in orbCategories.second)
+							for (auto itemInCategory : orbCategories.second)
 							{
 								newItem(static_cast<ItemType>(itemInCategory), EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
 								--numitems;

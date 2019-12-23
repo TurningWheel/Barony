@@ -542,7 +542,7 @@ void updateShopWindow()
 				pos.w = 16;
 				pos.h = 16;
 
-				for each (auto orbCategories in shopkeeperMysteriousItems)
+				for ( auto orbCategories : shopkeeperMysteriousItems )
 				{
 					if ( orbCategories.second.find(item->type) != orbCategories.second.end() )
 					{
