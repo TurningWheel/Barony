@@ -144,19 +144,6 @@ void gameLogic(void)
 		}
 	}
 
-#ifdef STEAMWORKS
-	if ( ticks % 500 == 0 && SteamUser()->BLoggedOn() )
-	{
-		uint64 id = SteamUser()->GetSteamID().ConvertToUint64();
-		auto it = betaPlayers.find(id);
-		if ( it == betaPlayers.end() )
-		{
-			// not found user.
-			buttonQuitConfirm(nullptr);
-		}
-	}
-#endif // STEAMWORKS
-
 	DebugStats.eventsT1 = std::chrono::high_resolution_clock::now();
 
 #ifdef SOUND
