@@ -539,6 +539,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+			if ( caster->behavior == &actBoulder )
+			{
+				traveltime /= 4; // lava boulder casting.
+			}
 		}
 		else if ( !strcmp(element->name, spellElement_missile_trio.name) )
 		{

@@ -1482,7 +1482,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									&& parent->behavior == &actParticleDot
 									&& parent->skill[1] > 0 )
 								{
-									hit.entity->setObituary(language[3350]);
+									if ( hitstats && hitstats->obituary && !strcmp(hitstats->obituary, language[3898]) )
+									{
+										// was caused by a flaming boulder.
+										hit.entity->setObituary(language[3898]);
+									}
+									else
+									{
+										// blew the brew (alchemy)
+										hit.entity->setObituary(language[3350]);
+									}
 								}
 								else
 								{
@@ -2311,7 +2320,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							magicDig(parent, my, 8, 4);
+							if ( hit.entity->sprite == 989 || hit.entity->sprite == 990 )
+							{
+								magicDig(parent, my, 0, 1);
+							}
+							else
+							{
+								magicDig(parent, my, 8, 4);
+							}
 						}
 						else
 						{
@@ -5489,6 +5505,8 @@ void magicDig(Entity* parent, Entity* projectile, int numRocks, int randRocks)
 
 		double ox = hit.entity->x;
 		double oy = hit.entity->y;
+
+		boulderLavaOrArcaneOnDestroy(hit.entity, hit.entity->sprite, nullptr);
 
 		// destroy the boulder
 		playSoundEntity(hit.entity, 67, 128);

@@ -1301,7 +1301,14 @@ void actThrown(Entity* my)
 					case POTION_FIRESTORM:
 						if ( hit.entity->behavior == &actBoulder )
 						{
-							magicDig(parent, my, 2, 4);
+							if ( hit.entity->sprite == 989 || hit.entity->sprite == 990 )
+							{
+								magicDig(parent, my, 0, 1);
+							}
+							else
+							{
+								magicDig(parent, my, 2, 4);
+							}
 						}
 						spawnMagicTower(parent, my->x, my->y, SPELL_FIREBALL, hit.entity);
 						break;

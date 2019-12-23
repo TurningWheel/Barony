@@ -532,6 +532,18 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	{
 		return;
 	}
+	if ( behavior == &actBoulder)
+	{
+		if ( sprite == 989 )
+		{
+			victim->setObituary(language[3898]);
+		}
+		else if ( sprite == 990 )
+		{
+			victim->setObituary(language[3899]);
+		}
+		return;
+	}
 	Stat* hitstats = victim->getStats();
 	Stat* myStats = this->getStats();
 	if ( !hitstats || !myStats )
@@ -6637,6 +6649,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								steamAchievementClient(player, "BARONY_ACH_LAST_RESORT");
 							}
 						}
+
+						boulderLavaOrArcaneOnDestroy(hit.entity, hit.entity->sprite, nullptr);
 
 						// destroy the boulder
 						playSoundEntity(hit.entity, 67, 128);

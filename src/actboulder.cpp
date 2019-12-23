@@ -34,6 +34,10 @@
 #define BOULDER_SPAWNBLOOD my->skill[9]
 #define BOULDER_BLOODTIME my->skill[10]
 #define BOULDER_INIT my->skill[11]
+#define BOULDER_LAVA_EXPLODE my->skill[12]
+
+const int BOULDER_LAVA_SPRITE = 989;
+const int BOULDER_ARCANE_SPRITE = 990;
 
 bool boulderCheckIfBlockedExit(Entity* my)
 {
@@ -194,8 +198,21 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				playSoundEntity(my, 181, 128);
 				playSoundEntity(entity, 28, 64);
 				Entity* gib = spawnGib(entity);
-				entity->modHP(-80);
-				entity->setObituary(language[1505]);
+				if ( my->sprite == BOULDER_LAVA_SPRITE )
+				{
+					entity->modHP(-50);
+					entity->setObituary(language[3898]);
+				}
+				else if ( my->sprite == BOULDER_ARCANE_SPRITE )
+				{
+					entity->modHP(-50);
+					entity->setObituary(language[3899]);
+				}
+				else
+				{
+					entity->modHP(-80);
+					entity->setObituary(language[1505]);
+				}
 				if ( entity->behavior == &actPlayer )
 				{
 					if ( stats->HP <= 0 )
@@ -273,7 +290,10 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 				{
 					// spawn several rock items
 					int i = 8 + rand() % 4;
-
+					if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
+					{
+						i = 0;
+					}
 					int c;
 					for ( c = 0; c < i; c++ )
 					{
@@ -302,6 +322,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity, bool ignoreInsideEntit
 
 					double ox = my->x;
 					double oy = my->y;
+
+					boulderLavaOrArcaneOnDestroy(my, my->sprite, entity);
 
 					// destroy the boulder
 					playSoundEntity(my, 67, 128);
@@ -447,13 +469,47 @@ void actBoulder(Entity* my)
 	Uint32 index = y * MAPLAYERS + x * MAPLAYERS * map.height;
 	if ( !map.tiles[index] || swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
 	{
-		noground = true;
+		if ( (swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) 
+			&& (my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE) )
+		{
+			// lava/arcane balls, roll over lava.
+			noground = false;
+		}
+		else
+		{
+			noground = true;
+		}
 	}
 
 	if ( !BOULDER_INIT )
 	{
+		BOULDER_LAVA_EXPLODE = -1;
+		if ( my->sprite == BOULDER_LAVA_SPRITE )
+		{
+			if ( rand() % 4 == 0 )
+			{
+				BOULDER_LAVA_EXPLODE = 100 + rand() % 150;
+			}
+		}
 		BOULDER_INIT = 1;
 		BOULDER_PLAYERPUSHED = -1;
+	}
+
+	if ( BOULDER_LAVA_EXPLODE > 0 )
+	{
+		--BOULDER_LAVA_EXPLODE;
+		if ( BOULDER_LAVA_EXPLODE == 0 )
+		{
+			spawnExplosion(my->x, my->y, my->z);
+			boulderLavaOrArcaneOnDestroy(my, my->sprite, nullptr);
+			for ( int c = 0; c < 8; ++c )
+			{
+				my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 8.f;
+				castSpell(my->getUID(), &spell_fireball, true, true);
+			}
+			list_RemoveNode(my->mynode);
+			return;
+		}
 	}
 
 	// gravity
@@ -507,7 +563,14 @@ void actBoulder(Entity* my)
 								// destroy this boulder if falling on another boulder.
 								Entity* ohitentity = hit.entity;
 								hit.entity = my;
-								magicDig(nullptr, nullptr, 2, 4);
+								if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
+								{
+									magicDig(nullptr, nullptr, 0, 1);
+								}
+								else
+								{
+									magicDig(nullptr, nullptr, 2, 4);
+								}
 								hit.entity = ohitentity;
 								return;
 							}
@@ -570,21 +633,26 @@ void actBoulder(Entity* my)
 		// horizontal velocity
 		my->vel_x += cos(my->yaw) * .1;
 		my->vel_y += sin(my->yaw) * .1;
-		if ( my->vel_x > 1.5 )
+		real_t maxSpeed = 1.5;
+		if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
 		{
-			my->vel_x = 1.5;
+			maxSpeed = 2.5;
 		}
-		if ( my->vel_x < -1.5 )
+		if ( my->vel_x > maxSpeed )
 		{
-			my->vel_x = -1.5;
+			my->vel_x = maxSpeed;
 		}
-		if ( my->vel_y > 1.5 )
+		if ( my->vel_x < -maxSpeed )
 		{
-			my->vel_y = 1.5;
+			my->vel_x = -maxSpeed;
 		}
-		if ( my->vel_y < -1.5 )
+		if ( my->vel_y > maxSpeed )
 		{
-			my->vel_y = -1.5;
+			my->vel_y = maxSpeed;
+		}
+		if ( my->vel_y < -maxSpeed )
+		{
+			my->vel_y = -maxSpeed;
 		}
 
 		/*int x = std::min<int>(std::max<int>(0, (my->x + my->vel_x + 8) / 16), map.width - 1);
@@ -635,7 +703,14 @@ void actBoulder(Entity* my)
 					}
 				}
 
-				magicDig(nullptr, nullptr, 2, 4);
+				if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
+				{
+					magicDig(nullptr, nullptr, 0, 1);
+				}
+				else
+				{
+					magicDig(nullptr, nullptr, 2, 4);
+				}
 				printlog("notice: boulder stopped path to exit, removed.");
 				return;
 			}
@@ -718,7 +793,14 @@ void actBoulder(Entity* my)
 									}
 								}
 
-								magicDig(nullptr, nullptr, 2, 4);
+								if ( my->sprite == BOULDER_LAVA_SPRITE || my->sprite == BOULDER_ARCANE_SPRITE )
+								{
+									magicDig(nullptr, nullptr, 0, 1);
+								}
+								else
+								{
+									magicDig(nullptr, nullptr, 2, 4);
+								}
 								printlog("notice: boulder stopped path to exit, removed.");
 								return;
 							}
@@ -964,6 +1046,16 @@ void actBoulder(Entity* my)
 		{
 			BOULDER_AMBIENCE = 0;
 			playSoundEntity(my, 151, 128);
+		}
+
+		if ( my->sprite == BOULDER_LAVA_SPRITE )
+		{
+			if ( !my->flags[BURNING] && BOULDER_LAVA_EXPLODE >= 0 )
+			{
+				my->flags[BURNABLE] = true;
+				my->flags[BURNING] = true;
+				serverUpdateEntityFlag(my, BURNING);
+			}
 		}
 	}
 	if ( (!BOULDER_STOPPED || BOULDER_ROLLING) && (fabs(my->vel_x) > 0 || fabs(my->vel_y) > 0) )
@@ -1560,6 +1652,89 @@ void boulderSokobanOnDestroy(bool pushedOffLedge)
 		{
 			sokobanItemReward->flags[INVISIBLE] = false;
 			serverUpdateEntityFlag(sokobanItemReward, INVISIBLE);
+		}
+	}
+}
+
+bool Entity::isBoulderSprite()
+{
+	if ( sprite == 245 || sprite == 989 || sprite == 990 )
+	{
+		return true;
+	}
+	return false;
+}
+
+void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEntity)
+{
+	if ( !boulderHitEntity && !my )
+	{
+		return;
+	}
+	if ( sprite != BOULDER_LAVA_SPRITE && sprite != BOULDER_ARCANE_SPRITE )
+	{
+		return;
+	}
+
+	if ( !boulderHitEntity )
+	{
+		if ( my )
+		{
+			if ( sprite == BOULDER_LAVA_SPRITE )
+			{
+				spawnMagicTower(my, my->x, my->y, SPELL_FIREBALL, nullptr);
+			}
+			else if ( sprite == BOULDER_ARCANE_SPRITE )
+			{
+				switch ( rand() % 4 )
+				{
+					case 0:
+						spawnMagicTower(my, my->x, my->y, SPELL_LIGHTNING, nullptr);
+						break;
+					case 1:
+						spawnMagicTower(my, my->x, my->y, SPELL_COLD, nullptr);
+						break;
+					case 2:
+						spawnMagicTower(my, my->x, my->y, SPELL_FIREBALL, nullptr);
+						break;
+					case 3:
+						spawnMagicTower(my, my->x, my->y, SPELL_MAGICMISSILE, nullptr);
+						break;
+					default:
+						spawnMagicTower(my, my->x, my->y, SPELL_MAGICMISSILE, nullptr);
+						break;
+				}
+			}
+		}
+	}
+	else
+	{
+		boulderHitEntity->SetEntityOnFire();
+		boulderHitEntity->setObituary(language[3898]);
+		if ( sprite == BOULDER_LAVA_SPRITE )
+		{
+			spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_FIREBALL, boulderHitEntity);
+		}
+		else if ( sprite == BOULDER_ARCANE_SPRITE )
+		{
+			switch ( rand() % 4 )
+			{
+				case 0:
+					spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_LIGHTNING, boulderHitEntity);
+					break;
+				case 1:
+					spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_COLD, boulderHitEntity);
+					break;
+				case 2:
+					spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_FIREBALL, boulderHitEntity);
+					break;
+				case 3:
+					spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_MAGICMISSILE, boulderHitEntity);
+					break;
+				default:
+					spawnMagicTower(nullptr, boulderHitEntity->x, boulderHitEntity->y, SPELL_MAGICMISSILE, boulderHitEntity);
+					break;
+			}
 		}
 	}
 }

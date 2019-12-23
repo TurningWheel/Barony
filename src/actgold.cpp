@@ -39,7 +39,7 @@ void actGoldBag(Entity* my)
 			for ( node = map.entities->first; node != nullptr; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				if ( entity->sprite == 245 )   // boulder.vox
+				if ( entity->isBoulderSprite() )   // boulder.vox
 				{
 					return;
 				}

@@ -1409,6 +1409,10 @@ void clientActions(Entity* entity)
 					break;
 				case -7:
 					entity->behavior = &actEmpty;
+					if ( entity->sprite == 989 ) // boulder_lava.vox
+					{
+						entity->flags[BURNABLE] = true;
+					}
 					break;
 				case -8:
 					entity->behavior = &actThrown;

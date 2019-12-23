@@ -862,6 +862,7 @@ public:
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
 	real_t getDamageTableMultiplier(Stat& myStats, DamageTableType damageType);
+	bool isBoulderSprite();
 };
 
 Sint32 statGetSTR(Stat* entitystats, Entity* my);
@@ -1038,6 +1039,7 @@ extern bool flickerLights;
 
 //Boulder functions.
 void boulderSokobanOnDestroy(bool pushedOffLedge);
+void boulderLavaOrArcaneOnDestroy(Entity* my, int sprite, Entity* boulderHitEntity);
 
 int playerEntityMatchesUid(Uint32 uid); // Returns >= 0 if player uid matches uid.
 bool monsterNameIsGeneric(Stat& monsterStats); // returns true if a monster's name is a generic decription rather than a miniboss.

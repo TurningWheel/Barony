@@ -4517,6 +4517,37 @@ timeToGoAgain:
 					my->yaw = my->yaw + MONSTER_WEAPONYAW;
 					castSpell(my->getUID(), &spell_fireball, true, false);
 					my->yaw = my->yaw - MONSTER_WEAPONYAW;
+
+					// let's throw one specifically aimed at our players to be mean.
+					if ( MONSTER_ATTACKTIME == 10 )
+					{
+						real_t oldYaw = my->yaw;
+						tangent = atan2(entity->y - my->y, entity->x - my->x);
+						my->yaw = tangent;
+						Entity* fireball = castSpell(my->getUID(), &spell_fireball, true, false);
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							if ( players[c] && players[c]->entity && entity != players[c]->entity )
+							{
+								tangent = atan2(entity->y - my->y, entity->x - my->x);
+								real_t dir = oldYaw - tangent;
+								while ( dir >= PI )
+								{
+									dir -= PI * 2;
+								}
+								while ( dir < -PI )
+								{
+									dir += PI * 2;
+								}
+								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
+								{
+									my->yaw = tangent;
+									Entity* fireball = castSpell(my->getUID(), &spell_fireball, true, false);
+								}
+							}
+						}
+						my->yaw = oldYaw;
+					}
 				}
 
 				// rotate monster
@@ -6304,6 +6335,9 @@ timeToGoAgain:
 			{
 				angle = 3;
 			}
+			std::unordered_set<int> lavalLocationsXY = { 22,23,24,31,32,33,40,41,42 };
+			int numLavaBoulders = 0;
+
 			my->yaw = angle * PI / 2;
 			my->monsterSpecialTimer++;
 			if ( my->monsterSpecialTimer == 10 )
@@ -6357,6 +6391,33 @@ timeToGoAgain:
 						entity->x = (32 << 4) + 8 + 32 * c;
 						entity->y = (44 << 4) + 8;
 					}
+
+					if ( lavalLocationsXY.find(static_cast<int>(entity->x / 16)) != lavalLocationsXY.end()
+						|| lavalLocationsXY.find(static_cast<int>(entity->y / 16)) != lavalLocationsXY.end()
+						|| myStats->HP < myStats->MAXHP * 0.5 )
+					{
+						// will roll over lava or Baphy < 50% HP
+						int chance = 4;
+						if ( myStats->HP < myStats->MAXHP * 0.25 )
+						{
+							chance = 1;
+						}
+						else if ( myStats->HP < myStats->MAXHP * 0.5 )
+						{
+							chance = 2;
+						}
+						else if ( myStats->HP < myStats->MAXHP * 0.75 )
+						{
+							chance = 3;
+						}
+
+						if ( rand() % chance == 0 || (numLavaBoulders < 2 && rand() % 2) )
+						{
+							entity->sprite = 989; // lava boulder.
+							++numLavaBoulders;
+						}
+					}
+
 					entity->z = -64;
 					entity->yaw = angle * (PI / 2.f);
 					entity->sizex = 7;
@@ -6387,6 +6448,7 @@ timeToGoAgain:
 					my->devilBoulderSummonIfPlayerIsHiding(c);
 				}
 				my->yaw = oyaw;
+
 				for ( c = 0; c < 7; ++c )
 				{
 					if ( c == 6 && (angle == 0 || angle == 3) )
@@ -6415,6 +6477,33 @@ timeToGoAgain:
 						entity->x = (20 << 4) + 8 + 32 * c;
 						entity->y = (44 << 4) + 8;
 					}
+
+					if ( lavalLocationsXY.find(static_cast<int>(entity->x / 16)) != lavalLocationsXY.end()
+						|| lavalLocationsXY.find(static_cast<int>(entity->y / 16)) != lavalLocationsXY.end() 
+						|| myStats->HP < myStats->MAXHP * 0.5 )
+					{
+						// will roll over lava or Baphy < 50% HP
+						int chance = 4;
+						if ( myStats->HP < myStats->MAXHP * 0.25 )
+						{
+							chance = 1;
+						}
+						else if ( myStats->HP < myStats->MAXHP * 0.5 )
+						{
+							chance = 2;
+						}
+						else if ( myStats->HP < myStats->MAXHP * 0.75 )
+						{
+							chance = 3;
+						}
+
+						if ( rand() % chance == 0 || (numLavaBoulders < 2 && rand() % 2) )
+						{
+							entity->sprite = 989; // lava boulder.
+							++numLavaBoulders;
+						}
+					}
+
 					entity->z = -64;
 					entity->yaw = angle * (PI / 2.f);
 					entity->sizex = 7;
@@ -6469,6 +6558,33 @@ timeToGoAgain:
 						entity->x = (21 << 4) + 8 + 32 * c;
 						entity->y = (44 << 4) + 8;
 					}
+
+					if ( lavalLocationsXY.find(static_cast<int>(entity->x / 16)) != lavalLocationsXY.end()
+						|| lavalLocationsXY.find(static_cast<int>(entity->y / 16)) != lavalLocationsXY.end()
+						|| myStats->HP < myStats->MAXHP * 0.5 )
+					{
+						// will roll over lava or Baphy < 50% HP
+						int chance = 4;
+						if ( myStats->HP < myStats->MAXHP * 0.25 )
+						{
+							chance = 1;
+						}
+						else if ( myStats->HP < myStats->MAXHP * 0.5 )
+						{
+							chance = 2;
+						}
+						else if ( myStats->HP < myStats->MAXHP * 0.75 )
+						{
+							chance = 3;
+						}
+
+						if ( rand() % chance == 0 || (numLavaBoulders < 3 && rand() % 2) )
+						{
+							entity->sprite = 989; // lava boulder.
+							++numLavaBoulders;
+						}
+					}
+
 					entity->z = -64;
 					entity->yaw = angle * (PI / 2.f);
 					entity->sizex = 7;
