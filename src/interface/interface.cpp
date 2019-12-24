@@ -5804,14 +5804,21 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 
 		if ( players[player] && players[player]->entity )
 		{
-			if ( (ticks - tinkeringSfxLastTicks) > 100 && ((metal >= 4 || magic >= 4) || rand() % 5 == 0) )
+			if ( (ticks - tinkeringSfxLastTicks) > 200 && ((metal >= 4 || magic >= 4) || rand() % 5 == 0) )
 			{
 				tinkeringSfxLastTicks = ticks;
 				playSoundEntity(players[player]->entity, 421 + (rand() % 2) * 3, 64);
 			}
 			else
 			{
-				playSoundEntity(players[clientnum]->entity, 462 + rand() % 2, 64);
+				if ( rand() % 4 == 0 )
+				{
+					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+				}
+				else
+				{
+					playSoundEntity(players[clientnum]->entity, 462 + rand() % 2, 64);
+				}
 			}
 		}
 	}
@@ -6046,7 +6053,14 @@ Item* GenericGUIMenu::tinkeringCraftItemAndConsumeMaterials(const Item* item)
 			}
 			else
 			{
-				playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 92);
+				if ( rand() % 3 == 0 )
+				{
+					playSoundEntity(players[clientnum]->entity, 422 + (rand() % 2), 92);
+				}
+				else
+				{
+					playSoundEntity(players[clientnum]->entity, 35 + rand() % 3, 64);
+				}
 			}
 		}
 		else
