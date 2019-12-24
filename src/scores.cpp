@@ -2776,7 +2776,8 @@ bool saveGameExists(bool singleplayer, int saveIndex)
 		}
 		fread(checkstr, sizeof(char), strlen(VERSION), fp);
 		int versionNumber = getSavegameVersion(checkstr);
-		if ( versionNumber == -1 )
+		if ( versionNumber == -1
+			|| versionNumber > 323 ) //compat code for L&P release
 		{
 			// if getSavegameVersion returned -1, abort.
 			fclose(fp);
