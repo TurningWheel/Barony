@@ -1073,6 +1073,19 @@ void actDecoyBox(Entity* my)
 			entity_uids--;
 		}
 		entity->setUID(-3);
+		playSoundEntityLocal(my, 455, 64);
+	}
+	else
+	{
+		// let's make some noise.
+		if ( my->ticks % 5 == 0 && rand() % 3 == 0 )
+		{
+			playSoundEntityLocal(my, 472 + rand() % 13, 192);
+		}
+		if ( my->ticks % 20 == 0 && rand() % 3 > 0 )
+		{
+			playSoundEntityLocal(my, 475 + rand() % 10, 192);
+		}
 	}
 	if ( multiplayer == CLIENT )
 	{
@@ -1262,9 +1275,10 @@ void actDecoyBox(Entity* my)
 		// stop working.
 		bool decoyBreak = (rand() % 5 == 0);
 		Entity* parent = uidToEntity(my->parent);
-
+		playSoundEntity(my, 485 + rand() % 3, 192);
 		if ( !decoyBreak )
 		{
+			playSoundEntity(my, 176, 128);
 			Item* item = newItem(TOOL_DECOY, static_cast<Status>(BEARTRAP_STATUS), BEARTRAP_BEATITUDE, 1, BEARTRAP_APPEARANCE, true, nullptr);
 			Entity* entity = dropItemMonster(item, my, nullptr);
 			if ( entity )
@@ -1280,6 +1294,7 @@ void actDecoyBox(Entity* my)
 		}
 		else
 		{
+			playSoundEntity(my, 132, 16);
 			for ( int c = 0; c < 3; c++ )
 			{
 				Entity* entity = spawnGib(my);

@@ -149,8 +149,8 @@ double sightranges[NUMMONSTERS] =
 	192,  // AUTOMATON
 	512,  // LICH_ICE
 	512,  // LICH_FIRE
-	320,  // SENTRYBOT
-	320,  // SPELLBOT
+	256,  // SENTRYBOT
+	192,  // SPELLBOT
 	256,  // GYROBOT
 	32    // DUMMYBOT
 };
@@ -1132,6 +1132,44 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64], Enti
 	}
 
 	return true;
+}
+
+void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
+{
+	if ( !my || !myStats )
+	{
+		return;
+	}
+	bool doSpecialNoise = false;
+	switch ( my->getUID() % 3 )
+	{
+		case 0:
+			if ( my->ticks % 60 < 20 )
+			{
+				doSpecialNoise = true;
+			}
+		case 1:
+			if ( my->ticks % 60 >= 20 && my->ticks % 60 < 40 )
+			{
+				doSpecialNoise = true;
+			}
+		case 2:
+			if ( my->ticks % 60 >= 40 )
+			{
+				doSpecialNoise = true;
+			}
+			break;
+		default:
+			break;
+	}
+	if ( doSpecialNoise && rand() % 3 == 0 )
+	{
+		MONSTER_SOUND = playSoundEntity(my, 466 + rand() % 3, 64);
+	}
+	else
+	{
+		MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+	}
 }
 
 void actMonster(Entity* my)
@@ -3463,7 +3501,14 @@ void actMonster(Entity* my)
 									{
 										if ( myStats->type != MINOTAUR )
 										{
-											MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+											if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+											{
+												sentrybotPickSpotNoise(my, myStats);
+											}
+											else
+											{
+												MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+											}
 										}
 										else
 										{
@@ -4857,7 +4902,14 @@ timeToGoAgain:
 													{
 														if ( myStats->type != LICH || rand() % 3 == 0 )
 														{
-															MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+															if ( myStats->type == SENTRYBOT || myStats->type == SPELLBOT )
+															{
+																sentrybotPickSpotNoise(my, myStats);
+															}
+															else
+															{
+																MONSTER_SOUND = playSoundEntity(my, MONSTER_SPOTSND + rand() % MONSTER_SPOTVAR, 128);
+															}
 														}
 													}
 													else
@@ -7281,6 +7333,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 			else if ( hasrangedweapon )
 			{
 				tracedist = 160;
+				if ( myStats->weapon )
+				{
+					tracedist = getMonsterEffectiveDistanceOfRangedWeapon(myStats->weapon);
+				}
 			}
 			else
 			{
@@ -9207,6 +9263,7 @@ void Entity::monsterAllySendCommand(int command, int destX, int destY, Uint32 ui
 			{
 				monsterSpecialState = DUMMYBOT_RETURN_FORM;
 				serverUpdateEntitySkill(this, 33);
+				playSoundEntity(this, 469 + rand() % 3, 92);
 			}
 			break;
 		default:
@@ -10514,6 +10571,10 @@ int Entity::getMonsterEffectiveDistanceOfRangedWeapon(Item* weapon)
 	if ( getMonsterTypeFromSprite() == SENTRYBOT )
 	{
 		return sightranges[SENTRYBOT];
+	}
+	else if ( getMonsterTypeFromSprite() == SPELLBOT )
+	{
+		return sightranges[SPELLBOT];
 	}
 
 	int distance = 160;

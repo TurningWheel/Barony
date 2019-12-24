@@ -33,8 +33,8 @@ void initSentryBot(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
+		MONSTER_SPOTSND = 456;
+		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
@@ -527,6 +527,11 @@ void sentryBotAnimate(Entity* my, Stat* myStats, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		my->z = limbs[race][11][2];
+	}
+
+	if ( ticks % (3 * TICKS_PER_SECOND) == 0 && rand() % 5 > 0 )
+	{
+		playSoundEntityLocal(my, 259, 8);
 	}
 
 	Entity* tripod = nullptr;

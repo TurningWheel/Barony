@@ -1247,7 +1247,7 @@ void Item::applyTinkeringCreation(Entity* parent, Entity* thrown)
 					}
 					summonedStats->EFFECTS[EFF_STUNNED] = true;
 					summonedStats->EFFECTS_TIMERS[EFF_STUNNED] = 30;
-					playSoundEntity(summon, 453 + rand() % 2, 164);
+					playSoundEntity(summon, 453 + rand() % 2, 192);
 				}
 				else
 				{
